@@ -14,14 +14,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post("/api/auth/login", async (req, res) => {
     try {
       const { email, password } = loginSchema.parse(req.body);
-      
+
       const user = await storage.getUserByEmail(email);
       if (!user || user.password !== password) {
         return res.status(401).json({ message: "Invalid credentials" });
       }
 
       const restaurant = await storage.getRestaurantByUserId(user.id);
-      
+
       res.json({ 
         user: { ...user, password: undefined },
         restaurant 
@@ -34,14 +34,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post("/api/auth/register", async (req, res) => {
     try {
       const userData = insertUserSchema.parse(req.body);
-      
+
       const existingUser = await storage.getUserByEmail(userData.email);
       if (existingUser) {
         return res.status(400).json({ message: "User already exists" });
       }
 
       const user = await storage.createUser(userData);
-      
+
       if (userData.restaurantName) {
         const restaurant = await storage.createRestaurant({
           name: userData.restaurantName,
@@ -51,7 +51,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           email: userData.email,
           description: ""
         });
-        
+
         // Create default tables
         for (let i = 1; i <= 10; i++) {
           await storage.createTable({
@@ -61,7 +61,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
             isActive: true
           });
         }
-        
+
         res.json({ 
           user: { ...user, password: undefined },
           restaurant 
@@ -79,11 +79,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const userId = parseInt(req.params.userId);
       const restaurant = await storage.getRestaurantByUserId(userId);
-      
+
       if (!restaurant) {
         return res.status(404).json({ message: "Restaurant not found" });
       }
-      
+
       res.json(restaurant);
     } catch (error) {
       res.status(400).json({ message: "Invalid request" });
@@ -106,14 +106,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const restaurantId = parseInt(req.params.restaurantId);
       const { date } = req.query;
-      
+
       let bookings;
       if (date && typeof date === 'string') {
         bookings = await storage.getBookingsByDate(restaurantId, date);
       } else {
         bookings = await storage.getBookingsByRestaurant(restaurantId);
       }
-      
+
       res.json(bookings);
     } catch (error) {
       res.status(400).json({ message: "Invalid request" });
@@ -128,9 +128,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
         restaurantId,
         bookingDate: new Date(req.body.bookingDate)
       });
-      
+
       const booking = await storage.createBooking(bookingData);
-      
+
       // Update or create customer
       let customer = await storage.getCustomerByEmail(restaurantId, bookingData.customerEmail);
       if (customer) {
@@ -146,7 +146,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           phone: bookingData.customerPhone || ""
         });
       }
-      
+
       res.json(booking);
     } catch (error) {
       res.status(400).json({ message: "Invalid booking data" });
@@ -157,17 +157,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const id = parseInt(req.params.id);
       const updates = req.body;
-      
+
       if (updates.bookingDate) {
         updates.bookingDate = new Date(updates.bookingDate);
       }
-      
+
       const booking = await storage.updateBooking(id, updates);
-      
+
       if (!booking) {
         return res.status(404).json({ message: "Booking not found" });
       }
-      
+
       res.json(booking);
     } catch (error) {
       res.status(400).json({ message: "Invalid request" });
@@ -178,11 +178,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const id = parseInt(req.params.id);
       const success = await storage.deleteBooking(id);
-      
+
       if (!success) {
         return res.status(404).json({ message: "Booking not found" });
       }
-      
+
       res.json({ message: "Booking deleted successfully" });
     } catch (error) {
       res.status(400).json({ message: "Invalid request" });
@@ -207,7 +207,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         ...req.body,
         restaurantId
       });
-      
+
       const customer = await storage.createCustomer(customerData);
       res.json(customer);
     } catch (error) {
@@ -215,13 +215,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Subscription Plans routes
+  // Subscription Plans
   app.get("/api/subscription-plans", async (req, res) => {
     try {
       const plans = await storage.getSubscriptionPlans();
+      console.log("Fetched subscription plans:", plans.length, "plans");
       res.json(plans);
     } catch (error) {
-      res.status(400).json({ message: "Invalid request" });
+      console.error("Error fetching subscription plans:", error);
+      res.status(500).json({ error: "Failed to fetch subscription plans" });
     }
   });
 
@@ -240,11 +242,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const userId = parseInt(req.params.userId);
       const subscription = await storage.getUserSubscription(userId);
-      
+
       if (!subscription) {
         return res.status(404).json({ message: "No subscription found" });
       }
-      
+
       res.json(subscription);
     } catch (error) {
       res.status(400).json({ message: "Invalid request" });
@@ -260,7 +262,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         currentPeriodStart: new Date(req.body.currentPeriodStart),
         currentPeriodEnd: new Date(req.body.currentPeriodEnd)
       });
-      
+
       const subscription = await storage.createUserSubscription(subscriptionData);
       res.json(subscription);
     } catch (error) {
@@ -272,20 +274,20 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const id = parseInt(req.params.id);
       const updates = req.body;
-      
+
       if (updates.currentPeriodStart) {
         updates.currentPeriodStart = new Date(updates.currentPeriodStart);
       }
       if (updates.currentPeriodEnd) {
         updates.currentPeriodEnd = new Date(updates.currentPeriodEnd);
       }
-      
+
       const subscription = await storage.updateUserSubscription(id, updates);
-      
+
       if (!subscription) {
         return res.status(404).json({ message: "Subscription not found" });
       }
-      
+
       res.json(subscription);
     } catch (error) {
       res.status(400).json({ message: "Invalid request" });
@@ -296,7 +298,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post("/api/create-checkout-session", async (req, res) => {
     try {
       const { planId, userId, successUrl, cancelUrl } = req.body;
-      
+
       const plan = await storage.getSubscriptionPlan(planId);
       if (!plan) {
         return res.status(404).json({ message: "Plan not found" });

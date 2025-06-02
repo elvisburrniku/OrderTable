@@ -411,7 +411,10 @@ export class MemStorage implements IStorage {
 
     // Subscription Plans
     async getSubscriptionPlans(): Promise<SubscriptionPlan[]> {
-      return Array.from(this.subscriptionPlans.values());
+      const plans = Array.from(this.subscriptionPlans.values());
+      console.log("Storage getSubscriptionPlans called, returning:", plans.length, "plans");
+      console.log("Plans data:", plans.map(p => ({ id: p.id, name: p.name, price: p.price })));
+      return plans;
     }
 
     async getSubscriptionPlan(id: number): Promise<SubscriptionPlan | undefined> {
