@@ -86,11 +86,21 @@ export class MemStorage implements IStorage {
     this.tables = new Map();
     this.bookings = new Map();
     this.customers = new Map();
+    this.smsMessages = new Map();
+    this.waitingList = new Map();
+    this.feedback = new Map();
+    this.activityLog = new Map();
+    this.timeSlots = new Map();
     this.currentUserId = 1;
     this.currentRestaurantId = 1;
     this.currentTableId = 1;
     this.currentBookingId = 1;
     this.currentCustomerId = 1;
+    this.currentSmsMessageId = 1;
+    this.currentWaitingListId = 1;
+    this.currentFeedbackId = 1;
+    this.currentActivityLogId = 1;
+    this.currentTimeSlotsId = 1;
     
     this.seedData();
   }
@@ -278,6 +288,102 @@ export class MemStorage implements IStorage {
     const updatedCustomer = { ...customer, ...updates };
     this.customers.set(id, updatedCustomer);
     return updatedCustomer;
+  }
+
+  // SMS Messages
+  async getSmsMessagesByRestaurant(restaurantId: number): Promise<SmsMessage[]> {
+    return Array.from(this.smsMessages.values()).filter(msg => msg.restaurantId === restaurantId);
+  }
+
+  async createSmsMessage(insertSmsMessage: InsertSmsMessage): Promise<SmsMessage> {
+    const smsMessage: SmsMessage = {
+      id: this.currentSmsMessageId++,
+      ...insertSmsMessage,
+      createdAt: new Date()
+    };
+    this.smsMessages.set(smsMessage.id, smsMessage);
+    return smsMessage;
+  }
+
+  // Waiting List
+  async getWaitingListByRestaurant(restaurantId: number): Promise<WaitingList[]> {
+    return Array.from(this.waitingList.values()).filter(entry => entry.restaurantId === restaurantId);
+  }
+
+  async createWaitingListEntry(insertWaitingList: InsertWaitingList): Promise<WaitingList> {
+    const waitingListEntry: WaitingList = {
+      id: this.currentWaitingListId++,
+      ...insertWaitingList,
+      createdAt: new Date()
+    };
+    this.waitingList.set(waitingListEntry.id, waitingListEntry);
+    return waitingListEntry;
+  }
+
+  async updateWaitingListEntry(id: number, updates: Partial<WaitingList>): Promise<WaitingList | undefined> {
+    const entry = this.waitingList.get(id);
+    if (!entry) return undefined;
+    
+    const updatedEntry = { ...entry, ...updates };
+    this.waitingList.set(id, updatedEntry);
+    return updatedEntry;
+  }
+
+  // Feedback
+  async getFeedbackByRestaurant(restaurantId: number): Promise<Feedback[]> {
+    return Array.from(this.feedback.values()).filter(feedback => feedback.restaurantId === restaurantId);
+  }
+
+  async createFeedback(insertFeedback: InsertFeedback): Promise<Feedback> {
+    const feedback: Feedback = {
+      id: this.currentFeedbackId++,
+      ...insertFeedback,
+      createdAt: new Date()
+    };
+    this.feedback.set(feedback.id, feedback);
+    return feedback;
+  }
+
+  // Activity Log
+  async getActivityLogByRestaurant(restaurantId: number): Promise<ActivityLog[]> {
+    return Array.from(this.activityLog.values()).filter(log => log.restaurantId === restaurantId);
+  }
+
+  async createActivityLog(insertActivityLog: InsertActivityLog): Promise<ActivityLog> {
+    const activityLog: ActivityLog = {
+      id: this.currentActivityLogId++,
+      ...insertActivityLog,
+      createdAt: new Date()
+    };
+    this.activityLog.set(activityLog.id, activityLog);
+    return activityLog;
+  }
+
+  // Time Slots
+  async getTimeSlotsByRestaurant(restaurantId: number, date?: string): Promise<TimeSlots[]> {
+    const slots = Array.from(this.timeSlots.values()).filter(slot => slot.restaurantId === restaurantId);
+    if (date) {
+      return slots.filter(slot => slot.date === date);
+    }
+    return slots;
+  }
+
+  async createTimeSlot(insertTimeSlots: InsertTimeSlots): Promise<TimeSlots> {
+    const timeSlot: TimeSlots = {
+      id: this.currentTimeSlotsId++,
+      ...insertTimeSlots
+    };
+    this.timeSlots.set(timeSlot.id, timeSlot);
+    return timeSlot;
+  }
+
+  async updateTimeSlot(id: number, updates: Partial<TimeSlots>): Promise<TimeSlots | undefined> {
+    const timeSlot = this.timeSlots.get(id);
+    if (!timeSlot) return undefined;
+    
+    const updatedTimeSlot = { ...timeSlot, ...updates };
+    this.timeSlots.set(id, updatedTimeSlot);
+    return updatedTimeSlot;
   }
 }
 

@@ -35,6 +35,12 @@ function Router() {
       <Route path="/statistics" component={Statistics} />
       <Route path="/feedback-responses" component={FeedbackResponses} />
       <Route path="/activity-log" component={ActivityLog} />
+      <Route path="/opening-hours" component={OpeningHours} />
+      <Route path="/special-periods" component={SpecialPeriods} />
+      <Route path="/cut-off-time" component={CutOffTime} />
+      <Route path="/rooms" component={Rooms} />
+      <Route path="/tables" component={Tables} />
+      <Route path="/combined-tables" component={CombinedTables} />
       <Route component={NotFound} />
     </Switch>
   );
