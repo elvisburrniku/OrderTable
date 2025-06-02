@@ -294,6 +294,37 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  app.post("/api/subscriptions/:id/cancel", async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      
+      const subscription = await storage.getUserSubscriptionById(id);
+      if (!subscription) {
+        return res.status(404).json({ message: "Subscription not found" });
+      }
+
+      // Cancel the subscription in Stripe if it exists
+      if (subscription.stripeSubscriptionId) {
+        try {
+          await stripe.subscriptions.cancel(subscription.stripeSubscriptionId);
+        } catch (stripeError) {
+          console.error("Failed to cancel Stripe subscription:", stripeError);
+          // Continue with local cancellation even if Stripe fails
+        }
+      }
+
+      // Update the subscription status to cancelled
+      const updatedSubscription = await storage.updateUserSubscription(id, {
+        status: 'cancelled'
+      });
+
+      res.json(updatedSubscription);
+    } catch (error) {
+      console.error("Error cancelling subscription:", error);
+      res.status(400).json({ message: "Invalid request" });
+    }
+  });
+
   // Stripe checkout session creation
   app.post("/api/create-checkout-session", async (req, res) => {
     try {

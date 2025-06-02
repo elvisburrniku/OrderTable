@@ -48,29 +48,40 @@ export default function Subscription() {
   });
 
   const subscribeMutation = useMutation({
-    mutationFn: async ({ planId }: { planId: number }) => {
-      // Create Stripe checkout session
-      const response = await fetch(`/api/create-checkout-session`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          planId,
-          userId: user?.id,
-          successUrl: `${window.location.origin}/subscription?success=true`,
-          cancelUrl: `${window.location.origin}/subscription?canceled=true`,
-        }),
-      });
+    mutationFn: async ({ planId, action }: { planId: number; action?: 'cancel' }) => {
+      if (action === 'cancel') {
+        // Cancel subscription
+        const response = await fetch(`/api/subscriptions/${currentSubscription?.id}/cancel`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+        });
 
-      if (!response.ok) throw new Error("Failed to create checkout session");
+        if (!response.ok) throw new Error("Failed to cancel subscription");
+        return response.json();
+      } else {
+        // Create Stripe checkout session
+        const response = await fetch(`/api/create-checkout-session`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            planId,
+            userId: user?.id,
+            successUrl: `${window.location.origin}/subscription?success=true`,
+            cancelUrl: `${window.location.origin}/subscription?canceled=true`,
+          }),
+        });
 
-      const { sessionId } = await response.json();
+        if (!response.ok) throw new Error("Failed to create checkout session");
 
-      // Redirect to Stripe Checkout
-      const stripe = await loadStripe(
-        "pk_test_51RVa9XCi9JMBFIWGvumvIFH83ffJhblNsWgBrcbjzjqZkeKNnqs4vJVU0Y8Dqw5soSgwlecY0sHiHzwwJtACaqor00H22GKtKF",
-      ); // Replace with your Stripe publishable key
-      if (stripe) {
-        await stripe.redirectToCheckout({ sessionId });
+        const { sessionId } = await response.json();
+
+        // Redirect to Stripe Checkout
+        const stripe = await loadStripe(
+          "pk_test_51RVa9XCi9JMBFIWGvumvIFH83ffJhblNsWgBrcbjzjqZkeKNnqs4vJVU0Y8Dqw5soSgwlecY0sHiHzwwJtACaqor00H22GKtKF",
+        ); // Replace with your Stripe publishable key
+        if (stripe) {
+          await stripe.redirectToCheckout({ sessionId });
+        }
       }
     },
     onSuccess: () => {
@@ -85,7 +96,13 @@ export default function Subscription() {
   }
 
   const handleSubscribe = (planId: number) => {
-    subscribeMutation.mutate({ planId });
+    if (currentSubscription && currentSubscription.planId === planId) {
+      // Cancel current subscription
+      subscribeMutation.mutate({ planId, action: 'cancel' });
+    } else {
+      // Subscribe to new plan
+      subscribeMutation.mutate({ planId });
+    }
   };
 
   const getFeaturesList = (featuresJson: string) => {
@@ -248,16 +265,21 @@ export default function Subscription() {
                   </div>
                   <Button
                     className="w-full"
-                    onClick={() => handleSubscribe(plan.id)}
-                    disabled={
-                      subscribeMutation.isPending ||
-                      (currentSubscription &&
-                        currentSubscription.planId === plan.id)
+                    variant={
+                      currentSubscription &&
+                      currentSubscription.planId === plan.id
+                        ? "destructive"
+                        : "default"
                     }
+                    onClick={() => handleSubscribe(plan.id)}
+                    disabled={subscribeMutation.isPending}
                   >
                     {currentSubscription &&
                     currentSubscription.planId === plan.id ? (
-                      "Current Plan"
+                      <div className="flex items-center gap-2">
+                        <X className="h-4 w-4" />
+                        Cancel Subscription
+                      </div>
                     ) : subscribeMutation.isPending ? (
                       "Processing..."
                     ) : (

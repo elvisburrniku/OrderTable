@@ -71,6 +71,7 @@ export interface IStorage {
     getAllUserSubscriptions(): Promise<UserSubscription[]>;
     createUserSubscription(subscription: InsertUserSubscription): Promise<UserSubscription>;
     updateUserSubscription(id: number, subscription: Partial<UserSubscription>): Promise<UserSubscription | undefined>;
+    getUserSubscriptionById(id: number): Promise<UserSubscription | undefined>;
 }
 
 export class MemStorage implements IStorage {
@@ -543,6 +544,10 @@ export class MemStorage implements IStorage {
       const updatedSubscription = { ...subscription, ...updates, updatedAt: new Date() };
       this.userSubscriptions.set(id, updatedSubscription);
       return updatedSubscription;
+    }
+
+    async getUserSubscriptionById(id: number): Promise<UserSubscription | undefined> {
+      return this.userSubscriptions.get(id);
     }
 }
 
