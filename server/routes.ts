@@ -1,7 +1,7 @@
 import type { Express } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
-import { insertUserSchema, loginSchema, insertBookingSchema, insertCustomerSchema } from "@shared/schema";
+import { insertUserSchema, loginSchema, insertBookingSchema, insertCustomerSchema, insertSubscriptionPlanSchema, insertUserSubscriptionSchema } from "@shared/schema";
 import { z } from "zod";
 
 export async function registerRoutes(app: Express): Promise<Server> {
@@ -207,6 +207,83 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.json(customer);
     } catch (error) {
       res.status(400).json({ message: "Invalid customer data" });
+    }
+  });
+
+  // Subscription Plans routes
+  app.get("/api/subscription-plans", async (req, res) => {
+    try {
+      const plans = await storage.getSubscriptionPlans();
+      res.json(plans);
+    } catch (error) {
+      res.status(400).json({ message: "Invalid request" });
+    }
+  });
+
+  app.post("/api/subscription-plans", async (req, res) => {
+    try {
+      const planData = insertSubscriptionPlanSchema.parse(req.body);
+      const plan = await storage.createSubscriptionPlan(planData);
+      res.json(plan);
+    } catch (error) {
+      res.status(400).json({ message: "Invalid plan data" });
+    }
+  });
+
+  // User Subscriptions routes
+  app.get("/api/users/:userId/subscription", async (req, res) => {
+    try {
+      const userId = parseInt(req.params.userId);
+      const subscription = await storage.getUserSubscription(userId);
+      
+      if (!subscription) {
+        return res.status(404).json({ message: "No subscription found" });
+      }
+      
+      res.json(subscription);
+    } catch (error) {
+      res.status(400).json({ message: "Invalid request" });
+    }
+  });
+
+  app.post("/api/users/:userId/subscription", async (req, res) => {
+    try {
+      const userId = parseInt(req.params.userId);
+      const subscriptionData = insertUserSubscriptionSchema.parse({
+        ...req.body,
+        userId,
+        currentPeriodStart: new Date(req.body.currentPeriodStart),
+        currentPeriodEnd: new Date(req.body.currentPeriodEnd)
+      });
+      
+      const subscription = await storage.createUserSubscription(subscriptionData);
+      res.json(subscription);
+    } catch (error) {
+      res.status(400).json({ message: "Invalid subscription data" });
+    }
+  });
+
+  app.put("/api/subscriptions/:id", async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      const updates = req.body;
+      
+      if (updates.currentPeriodStart) {
+        updates.currentPeriodStart = new Date(updates.currentPeriodStart);
+      }
+      if (updates.currentPeriodEnd) {
+        updates.currentPeriodEnd = new Date(updates.currentPeriodEnd);
+      }
+      
+      const subscription = await storage.updateUserSubscription(id, updates);
+      
+      if (!subscription) {
+        return res.status(404).json({ message: "Subscription not found" });
+      }
+      
+      res.json(subscription);
+    } catch (error) {
+      res.status(400).json({ message: "Invalid request" });
     }
   });
 

@@ -28,10 +28,11 @@ import EmailNotifications from "./pages/email-notifications";
 import SmsNotifications from "./pages/sms-notifications";
 import FeedbackQuestions from "./pages/feedback-questions";
 import Events from "./pages/events";
-import PaymentSetups from "./pages/payment-setups";
-import PaymentGateway from "./pages/payment-gateway";
-import Products from "./pages/products";
-import ProductGroups from "./pages/product-groups";
+import PaymentSetups from "@/pages/payment-setups";
+import PaymentGateway from "@/pages/payment-gateway";
+import Products from "@/pages/products";
+import ProductGroups from "@/pages/product-groups";
+import Subscription from "@/pages/subscription";
 import NotFound from "./pages/not-found";
 
 function Router() {
@@ -65,6 +66,7 @@ function Router() {
       <Route path="/payment-gateway" component={PaymentGateway} />
       <Route path="/products" component={Products} />
       <Route path="/product-groups" component={ProductGroups} />
+      <Route path="/subscription" component={Subscription} />
       <Route component={NotFound} />
     </Switch>
   );

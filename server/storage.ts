@@ -1,10 +1,13 @@
 import { 
-  users, restaurants, tables, bookings, customers, smsMessages, waitingList, feedback, activityLog, timeSlots,
-  type User, type InsertUser, type Restaurant, type InsertRestaurant,
-  type Table, type InsertTable, type Booking, type InsertBooking,
-  type Customer, type InsertCustomer, type SmsMessage, type InsertSmsMessage,
-  type WaitingList, type InsertWaitingList, type Feedback, type InsertFeedback,
-  type ActivityLog, type InsertActivityLog, type TimeSlots, type InsertTimeSlots
+  users, restaurants, tables, bookings, customers, smsMessages, waitingList,
+  feedback, activityLog, timeSlots, subscriptionPlans, userSubscriptions
+} from "@shared/schema";
+import type { 
+  User, InsertUser, Restaurant, InsertRestaurant, Table, InsertTable, 
+  Booking, InsertBooking, Customer, InsertCustomer, SmsMessage, InsertSmsMessage,
+  WaitingList, InsertWaitingList, Feedback, InsertFeedback, ActivityLog, InsertActivityLog,
+  TimeSlots, InsertTimeSlots, SubscriptionPlan, InsertSubscriptionPlan,
+  UserSubscription, InsertUserSubscription
 } from "@shared/schema";
 
 export interface IStorage {
@@ -12,50 +15,60 @@ export interface IStorage {
   getUser(id: number): Promise<User | undefined>;
   getUserByEmail(email: string): Promise<User | undefined>;
   createUser(user: InsertUser): Promise<User>;
-  
+
   // Restaurants
   getRestaurant(id: number): Promise<Restaurant | undefined>;
   getRestaurantByUserId(userId: number): Promise<Restaurant | undefined>;
   createRestaurant(restaurant: InsertRestaurant): Promise<Restaurant>;
-  
+
   // Tables
   getTablesByRestaurant(restaurantId: number): Promise<Table[]>;
   createTable(table: InsertTable): Promise<Table>;
-  
+
   // Bookings
   getBookingsByRestaurant(restaurantId: number): Promise<Booking[]>;
   getBookingsByDate(restaurantId: number, date: string): Promise<Booking[]>;
   createBooking(booking: InsertBooking): Promise<Booking>;
   updateBooking(id: number, booking: Partial<Booking>): Promise<Booking | undefined>;
   deleteBooking(id: number): Promise<boolean>;
-  
+
   // Customers
   getCustomersByRestaurant(restaurantId: number): Promise<Customer[]>;
   getCustomerByEmail(restaurantId: number, email: string): Promise<Customer | undefined>;
   createCustomer(customer: InsertCustomer): Promise<Customer>;
   updateCustomer(id: number, customer: Partial<Customer>): Promise<Customer | undefined>;
-  
+
   // SMS Messages
   getSmsMessagesByRestaurant(restaurantId: number): Promise<SmsMessage[]>;
   createSmsMessage(message: InsertSmsMessage): Promise<SmsMessage>;
-  
+
   // Waiting List
   getWaitingListByRestaurant(restaurantId: number): Promise<WaitingList[]>;
   createWaitingListEntry(entry: InsertWaitingList): Promise<WaitingList>;
   updateWaitingListEntry(id: number, entry: Partial<WaitingList>): Promise<WaitingList | undefined>;
-  
+
   // Feedback
   getFeedbackByRestaurant(restaurantId: number): Promise<Feedback[]>;
   createFeedback(feedback: InsertFeedback): Promise<Feedback>;
-  
+
   // Activity Log
   getActivityLogByRestaurant(restaurantId: number): Promise<ActivityLog[]>;
   createActivityLog(log: InsertActivityLog): Promise<ActivityLog>;
-  
+
   // Time Slots
   getTimeSlotsByRestaurant(restaurantId: number, date?: string): Promise<TimeSlots[]>;
   createTimeSlot(slot: InsertTimeSlots): Promise<TimeSlots>;
   updateTimeSlot(id: number, slot: Partial<TimeSlots>): Promise<TimeSlots | undefined>;
+
+    // Subscription Plans
+    getSubscriptionPlans(): Promise<SubscriptionPlan[]>;
+    getSubscriptionPlan(id: number): Promise<SubscriptionPlan | undefined>;
+    createSubscriptionPlan(plan: InsertSubscriptionPlan): Promise<SubscriptionPlan>;
+
+    // User Subscriptions
+    getUserSubscription(userId: number): Promise<UserSubscription | undefined>;
+    createUserSubscription(subscription: InsertUserSubscription): Promise<UserSubscription>;
+    updateUserSubscription(id: number, subscription: Partial<UserSubscription>): Promise<UserSubscription | undefined>;
 }
 
 export class MemStorage implements IStorage {
@@ -69,6 +82,8 @@ export class MemStorage implements IStorage {
   private feedback: Map<number, Feedback>;
   private activityLog: Map<number, ActivityLog>;
   private timeSlots: Map<number, TimeSlots>;
+  private subscriptionPlans: Map<number, SubscriptionPlan>;
+  private userSubscriptions: Map<number, UserSubscription>;
   private currentUserId: number;
   private currentRestaurantId: number;
   private currentTableId: number;
@@ -79,6 +94,8 @@ export class MemStorage implements IStorage {
   private currentFeedbackId: number;
   private currentActivityLogId: number;
   private currentTimeSlotsId: number;
+  private currentSubscriptionPlanId: number;
+  private currentUserSubscriptionId: number;
 
   constructor() {
     this.users = new Map();
@@ -91,6 +108,8 @@ export class MemStorage implements IStorage {
     this.feedback = new Map();
     this.activityLog = new Map();
     this.timeSlots = new Map();
+    this.subscriptionPlans = new Map();
+    this.userSubscriptions = new Map();
     this.currentUserId = 1;
     this.currentRestaurantId = 1;
     this.currentTableId = 1;
@@ -101,7 +120,9 @@ export class MemStorage implements IStorage {
     this.currentFeedbackId = 1;
     this.currentActivityLogId = 1;
     this.currentTimeSlotsId = 1;
-    
+    this.currentSubscriptionPlanId = 1;
+    this.currentUserSubscriptionId = 1;
+
     this.seedData();
   }
 
@@ -162,6 +183,18 @@ export class MemStorage implements IStorage {
       };
       this.customers.set(customer.id, customer);
     });
+
+        // Create demo subscription plan
+        const subscriptionPlan: SubscriptionPlan = {
+          id: this.currentSubscriptionPlanId++,
+          name: "Basic",
+          price: 99,
+          description: "Basic plan",
+          features: ["5 tables", "1 user"],
+          isActive: true,
+          createdAt: new Date()
+        };
+        this.subscriptionPlans.set(subscriptionPlan.id, subscriptionPlan);
   }
 
   async getUser(id: number): Promise<User | undefined> {
@@ -248,7 +281,7 @@ export class MemStorage implements IStorage {
   async updateBooking(id: number, updates: Partial<Booking>): Promise<Booking | undefined> {
     const booking = this.bookings.get(id);
     if (!booking) return undefined;
-    
+
     const updatedBooking = { ...booking, ...updates };
     this.bookings.set(id, updatedBooking);
     return updatedBooking;
@@ -284,7 +317,7 @@ export class MemStorage implements IStorage {
   async updateCustomer(id: number, updates: Partial<Customer>): Promise<Customer | undefined> {
     const customer = this.customers.get(id);
     if (!customer) return undefined;
-    
+
     const updatedCustomer = { ...customer, ...updates };
     this.customers.set(id, updatedCustomer);
     return updatedCustomer;
@@ -323,7 +356,7 @@ export class MemStorage implements IStorage {
   async updateWaitingListEntry(id: number, updates: Partial<WaitingList>): Promise<WaitingList | undefined> {
     const entry = this.waitingList.get(id);
     if (!entry) return undefined;
-    
+
     const updatedEntry = { ...entry, ...updates };
     this.waitingList.set(id, updatedEntry);
     return updatedEntry;
@@ -380,11 +413,55 @@ export class MemStorage implements IStorage {
   async updateTimeSlot(id: number, updates: Partial<TimeSlots>): Promise<TimeSlots | undefined> {
     const timeSlot = this.timeSlots.get(id);
     if (!timeSlot) return undefined;
-    
+
     const updatedTimeSlot = { ...timeSlot, ...updates };
     this.timeSlots.set(id, updatedTimeSlot);
     return updatedTimeSlot;
   }
+
+    // Subscription Plans
+    async getSubscriptionPlans(): Promise<SubscriptionPlan[]> {
+      return Array.from(this.subscriptionPlans.values());
+    }
+  
+    async getSubscriptionPlan(id: number): Promise<SubscriptionPlan | undefined> {
+      return this.subscriptionPlans.get(id);
+    }
+  
+    async createSubscriptionPlan(plan: InsertSubscriptionPlan): Promise<SubscriptionPlan> {
+      const newPlan: SubscriptionPlan = {
+        ...plan,
+        id: this.currentSubscriptionPlanId++,
+        createdAt: new Date()
+      };
+      this.subscriptionPlans.set(newPlan.id, newPlan);
+      return newPlan;
+    }
+  
+    // User Subscriptions
+    async getUserSubscription(userId: number): Promise<UserSubscription | undefined> {
+      return Array.from(this.userSubscriptions.values()).find(subscription => subscription.userId === userId);
+    }
+  
+    async createUserSubscription(subscription: InsertUserSubscription): Promise<UserSubscription> {
+      const newSubscription: UserSubscription = {
+        ...subscription,
+        id: this.currentUserSubscriptionId++,
+        createdAt: new Date(),
+        updatedAt: null
+      };
+      this.userSubscriptions.set(newSubscription.id, newSubscription);
+      return newSubscription;
+    }
+  
+    async updateUserSubscription(id: number, updates: Partial<UserSubscription>): Promise<UserSubscription | undefined> {
+      const subscription = this.userSubscriptions.get(id);
+      if (!subscription) return undefined;
+  
+      const updatedSubscription = { ...subscription, ...updates, updatedAt: new Date() };
+      this.userSubscriptions.set(id, updatedSubscription);
+      return updatedSubscription;
+    }
 }
 
 export const storage = new MemStorage();

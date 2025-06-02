@@ -118,6 +118,32 @@ export const timeSlots = pgTable("time_slots", {
   maxCapacity: integer("max_capacity").default(0)
 });
 
+export const subscriptionPlans = pgTable("subscription_plans", {
+  id: serial("id").primaryKey(),
+  name: text("name").notNull(),
+  price: integer("price").notNull(), // price in cents
+  interval: varchar("interval", { length: 20 }).default("monthly"), // monthly, yearly
+  features: text("features").notNull(), // JSON string of features
+  maxTables: integer("max_tables").default(10),
+  maxBookingsPerMonth: integer("max_bookings_per_month").default(100),
+  isActive: boolean("is_active").default(true),
+  createdAt: timestamp("created_at").defaultNow()
+});
+
+export const userSubscriptions = pgTable("user_subscriptions", {
+  id: serial("id").primaryKey(),
+  userId: integer("user_id").references(() => users.id).notNull(),
+  planId: integer("plan_id").references(() => subscriptionPlans.id).notNull(),
+  status: varchar("status", { length: 20 }).default("active"), // active, cancelled, expired
+  currentPeriodStart: timestamp("current_period_start").notNull(),
+  currentPeriodEnd: timestamp("current_period_end").notNull(),
+  cancelAtPeriodEnd: boolean("cancel_at_period_end").default(false),
+  stripeCustomerId: text("stripe_customer_id"),
+  stripeSubscriptionId: text("stripe_subscription_id"),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow()
+});
+
 export const insertUserSchema = createInsertSchema(users).pick({
   email: true,
   password: true,
@@ -170,6 +196,17 @@ export const insertTimeSlotsSchema = createInsertSchema(timeSlots).omit({
   id: true
 });
 
+export const insertSubscriptionPlanSchema = createInsertSchema(subscriptionPlans).omit({
+  id: true,
+  createdAt: true
+});
+
+export const insertUserSubscriptionSchema = createInsertSchema(userSubscriptions).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true
+});
+
 export const loginSchema = z.object({
   email: z.string().email(),
   password: z.string().min(6)
@@ -195,4 +232,8 @@ export type ActivityLog = typeof activityLog.$inferSelect;
 export type InsertActivityLog = z.infer<typeof insertActivityLogSchema>;
 export type TimeSlots = typeof timeSlots.$inferSelect;
 export type InsertTimeSlots = z.infer<typeof insertTimeSlotsSchema>;
+export type SubscriptionPlan = typeof subscriptionPlans.$inferSelect;
+export type InsertSubscriptionPlan = z.infer<typeof insertSubscriptionPlanSchema>;
+export type UserSubscription = typeof userSubscriptions.$inferSelect;
+export type InsertUserSubscription = z.infer<typeof insertUserSubscriptionSchema>;
 export type LoginData = z.infer<typeof loginSchema>;

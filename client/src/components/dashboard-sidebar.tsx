@@ -1,5 +1,5 @@
 import { Link, useLocation } from "wouter";
-import { Calendar, Users, Archive, Grid3x3, MessageSquare, Clock, BarChart3, MessageCircle, FileText, Settings, Clock4, MapPin, Utensils, Table } from "lucide-react";
+import { Calendar, Settings, Clock, MapPin, Table, Utensils, Grid3x3, FileText, Users, MessageSquare, MessageCircle, CreditCard } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { format } from "date-fns";
 import { Booking } from "@shared/schema";
@@ -53,12 +53,12 @@ export default function DashboardSidebar({ selectedDate, bookings }: DashboardSi
         <Grid3x3 className="text-green-600 text-xl mr-2" size={20} />
         <span className="text-xl font-bold text-gray-900">easyTable</span>
       </div>
-      
+
       <nav className="space-y-2 mb-8">
         {navigationItems.map((item) => {
           const Icon = item.icon;
           const isActive = location === item.path;
-          
+
           return (
             <Link key={item.path} href={item.path}>
               <div className={`flex items-center px-3 py-2 text-sm font-medium rounded-lg transition-colors ${
@@ -83,7 +83,7 @@ export default function DashboardSidebar({ selectedDate, bookings }: DashboardSi
           {settingsItems.map((item) => {
             const Icon = item.icon;
             const isActive = location === item.path;
-            
+
             return (
               <Link key={item.path} href={item.path}>
                 <div className={`flex items-center px-3 py-2 text-sm rounded-lg transition-colors ${
@@ -108,7 +108,7 @@ export default function DashboardSidebar({ selectedDate, bookings }: DashboardSi
             {['Mo', 'Tu', 'We', 'Th', 'Fr', 'Sa', 'Su'].map(day => (
               <div key={day} className="text-center p-1 text-gray-500">{day}</div>
             ))}
-            
+
             {/* Simple calendar display - showing just a few days */}
             <div className="text-center p-1">1</div>
             <div className={`text-center p-1 rounded ${
