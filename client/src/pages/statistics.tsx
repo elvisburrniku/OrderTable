@@ -10,6 +10,9 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { format } from "date-fns";
 import { Calendar as CalendarIcon } from "lucide-react";
 import { PieChart, Pie, Cell, BarChart, Bar, XAxis, YAxis, CartesianGrid, ResponsiveContainer, LineChart, Line } from "recharts";
+import { Badge } from "@/components/ui/badge";
+import { TrendingUp, Users, Calendar as CalendarIcon2, DollarSign } from "lucide-react";
+
 
 export default function Statistics() {
   const { user, restaurant } = useAuth();
@@ -19,6 +22,11 @@ export default function Statistics() {
   const { data: bookings } = useQuery({
     queryKey: ['/api/restaurants', restaurant?.id, 'bookings'],
     enabled: !!restaurant
+  });
+
+  const { data: stats, isLoading } = useQuery({
+    queryKey: ["/api/restaurants", restaurant?.id, "statistics"],
+    enabled: !!restaurant?.id,
   });
 
   if (!user || !restaurant) {
@@ -113,326 +121,95 @@ export default function Statistics() {
 
         {/* Main Content */}
         <div className="flex-1 p-6">
-          <div className="bg-white rounded-lg shadow">
-            <div className="p-6">
-              <h2 className="text-lg font-semibold mb-6">Statistics</h2>
-              
-              {/* Date Range Selector */}
-              <div className="mb-6">
-                <label className="block text-sm font-medium text-gray-700 mb-2">Date Range</label>
-                <div className="flex items-center space-x-2">
-                  <Popover>
-                    <PopoverTrigger asChild>
-                      <Button variant="outline" className="justify-start text-left">
-                        <CalendarIcon className="w-4 h-4 mr-2" />
-                        {dateFrom ? format(dateFrom, "dd/MM/yyyy") : "From date"}
-                      </Button>
-                    </PopoverTrigger>
-                    <PopoverContent className="w-auto p-0">
-                      <Calendar mode="single" selected={dateFrom} onSelect={setDateFrom} />
-                    </PopoverContent>
-                  </Popover>
-                  <span>-</span>
-                  <Popover>
-                    <PopoverTrigger asChild>
-                      <Button variant="outline" className="justify-start text-left">
-                        <CalendarIcon className="w-4 h-4 mr-2" />
-                        {dateTo ? format(dateTo, "dd/MM/yyyy") : "To date"}
-                      </Button>
-                    </PopoverTrigger>
-                    <PopoverContent className="w-auto p-0">
-                      <Calendar mode="single" selected={dateTo} onSelect={setDateTo} />
-                    </PopoverContent>
-                  </Popover>
-                </div>
-              </div>
-
-              {/* Tabs */}
-              <Tabs defaultValue="bookings" className="space-y-6">
-                <TabsList className="grid w-full grid-cols-4">
-                  <TabsTrigger value="bookings">Bookings and guests</TabsTrigger>
-                  <TabsTrigger value="satisfaction">Satisfaction</TabsTrigger>
-                  <TabsTrigger value="geography">Geography</TabsTrigger>
-                  <TabsTrigger value="nps">NPS</TabsTrigger>
-                </TabsList>
-
-                <TabsContent value="bookings" className="space-y-6">
-                  {/* Summary */}
-                  <div className="mb-6">
-                    <h3 className="text-lg font-medium">2 bookings, 1002 guests</h3>
-                  </div>
-
-                  {/* Charts Grid */}
-                  <div className="grid grid-cols-2 gap-6">
-                    {/* Booking Status */}
-                    <Card>
-                      <CardHeader>
-                        <CardTitle className="text-base">Booking status</CardTitle>
-                      </CardHeader>
-                      <CardContent>
-                        <div className="h-64">
-                          <ResponsiveContainer width="100%" height="100%">
-                            <PieChart>
-                              <Pie
-                                data={bookingStatusData}
-                                cx="50%"
-                                cy="50%"
-                                innerRadius={60}
-                                outerRadius={100}
-                                paddingAngle={5}
-                                dataKey="value"
-                              >
-                                {bookingStatusData.map((entry, index) => (
-                                  <Cell key={`cell-${index}`} fill={entry.color} />
-                                ))}
-                              </Pie>
-                            </PieChart>
-                          </ResponsiveContainer>
-                        </div>
-                        <div className="flex items-center justify-center space-x-2 mt-2">
-                          <div className="w-3 h-3 bg-green-500 rounded-full"></div>
-                          <span className="text-sm text-gray-600">Active</span>
-                        </div>
-                      </CardContent>
-                    </Card>
-
-                    {/* Booking Origin */}
-                    <Card>
-                      <CardHeader>
-                        <CardTitle className="text-base">Booking origin</CardTitle>
-                      </CardHeader>
-                      <CardContent>
-                        <div className="h-64">
-                          <ResponsiveContainer width="100%" height="100%">
-                            <PieChart>
-                              <Pie
-                                data={bookingOriginData}
-                                cx="50%"
-                                cy="50%"
-                                innerRadius={60}
-                                outerRadius={100}
-                                paddingAngle={5}
-                                dataKey="value"
-                              >
-                                {bookingOriginData.map((entry, index) => (
-                                  <Cell key={`cell-${index}`} fill={entry.color} />
-                                ))}
-                              </Pie>
-                            </PieChart>
-                          </ResponsiveContainer>
-                        </div>
-                        <div className="flex items-center justify-center space-x-4 mt-2">
-                          <div className="flex items-center space-x-2">
-                            <div className="w-3 h-3 bg-blue-500 rounded-full"></div>
-                            <span className="text-sm text-gray-600">Manual</span>
-                          </div>
-                          <div className="flex items-center space-x-2">
-                            <div className="w-3 h-3 bg-red-500 rounded-full"></div>
-                            <span className="text-sm text-gray-600">Google My Business</span>
-                          </div>
-                        </div>
-                      </CardContent>
-                    </Card>
-                  </div>
-
-                  {/* Guests per day */}
-                  <Card>
-                    <CardHeader>
-                      <CardTitle className="text-base">Guests per day</CardTitle>
-                    </CardHeader>
-                    <CardContent>
-                      <div className="h-64">
-                        <ResponsiveContainer width="100%" height="100%">
-                          <LineChart data={guestsPerDayData}>
-                            <CartesianGrid strokeDasharray="3 3" />
-                            <XAxis dataKey="date" />
-                            <YAxis />
-                            <Line type="monotone" dataKey="guests" stroke="#3B82F6" strokeWidth={2} dot={{ fill: '#3B82F6', r: 4 }} />
-                          </LineChart>
-                        </ResponsiveContainer>
-                      </div>
-                    </CardContent>
-                  </Card>
-
-                  {/* Arrival times charts */}
-                  <div className="grid grid-cols-2 gap-6">
-                    <Card>
-                      <CardHeader>
-                        <CardTitle className="text-base">Arrival times (bookings)</CardTitle>
-                      </CardHeader>
-                      <CardContent>
-                        <div className="h-64">
-                          <ResponsiveContainer width="100%" height="100%">
-                            <BarChart data={arrivalTimesBookingsData}>
-                              <CartesianGrid strokeDasharray="3 3" />
-                              <XAxis dataKey="time" />
-                              <YAxis />
-                              <Bar dataKey="bookings" fill="#6366F1" />
-                            </BarChart>
-                          </ResponsiveContainer>
-                        </div>
-                      </CardContent>
-                    </Card>
-
-                    <Card>
-                      <CardHeader>
-                        <CardTitle className="text-base">Arrival times (guests)</CardTitle>
-                      </CardHeader>
-                      <CardContent>
-                        <div className="h-64">
-                          <ResponsiveContainer width="100%" height="100%">
-                            <BarChart data={arrivalTimesGuestsData}>
-                              <CartesianGrid strokeDasharray="3 3" />
-                              <XAxis dataKey="time" />
-                              <YAxis />
-                              <Bar dataKey="guests" fill="#6366F1" />
-                            </BarChart>
-                          </ResponsiveContainer>
-                        </div>
-                        <div className="flex items-center justify-center space-x-2 mt-2">
-                          <div className="w-3 h-3 bg-blue-500 rounded-full"></div>
-                          <span className="text-sm text-gray-600">Guests</span>
-                        </div>
-                      </CardContent>
-                    </Card>
-                  </div>
-
-                  {/* Group sizes and Booking durations */}
-                  <div className="grid grid-cols-2 gap-6">
-                    <Card>
-                      <CardHeader>
-                        <CardTitle className="text-base">Group sizes</CardTitle>
-                      </CardHeader>
-                      <CardContent>
-                        <div className="h-64">
-                          <ResponsiveContainer width="100%" height="100%">
-                            <BarChart data={groupSizesData} layout="horizontal">
-                              <CartesianGrid strokeDasharray="3 3" />
-                              <XAxis type="number" />
-                              <YAxis dataKey="size" type="category" />
-                              <Bar dataKey="count" fill="#6366F1" />
-                            </BarChart>
-                          </ResponsiveContainer>
-                        </div>
-                      </CardContent>
-                    </Card>
-
-                    <Card>
-                      <CardHeader>
-                        <CardTitle className="text-base">Booking durations</CardTitle>
-                      </CardHeader>
-                      <CardContent>
-                        <div className="h-64">
-                          <ResponsiveContainer width="100%" height="100%">
-                            <BarChart data={bookingDurationsData}>
-                              <CartesianGrid strokeDasharray="3 3" />
-                              <XAxis dataKey="duration" />
-                              <YAxis />
-                              <Bar dataKey="count" fill="#6366F1" />
-                            </BarChart>
-                          </ResponsiveContainer>
-                        </div>
-                      </CardContent>
-                    </Card>
-                  </div>
-
-                  {/* Booking creation time */}
-                  <Card>
-                    <CardHeader>
-                      <CardTitle className="text-base">Booking creation time</CardTitle>
-                    </CardHeader>
-                    <CardContent>
-                      <div className="h-64">
-                        <ResponsiveContainer width="100%" height="100%">
-                          <BarChart data={bookingCreationTimeData}>
-                            <CartesianGrid strokeDasharray="3 3" />
-                            <XAxis dataKey="hour" />
-                            <YAxis />
-                            <Bar dataKey="online" fill="#6366F1" />
-                            <Bar dataKey="manual" fill="#EF4444" />
-                          </BarChart>
-                        </ResponsiveContainer>
-                      </div>
-                      <div className="flex items-center justify-center space-x-4 mt-2">
-                        <div className="flex items-center space-x-2">
-                          <div className="w-3 h-3 bg-blue-500 rounded-full"></div>
-                          <span className="text-sm text-gray-600">Online</span>
-                        </div>
-                        <div className="flex items-center space-x-2">
-                          <div className="w-3 h-3 bg-red-500 rounded-full"></div>
-                          <span className="text-sm text-gray-600">Manual</span>
-                        </div>
-                      </div>
-                    </CardContent>
-                  </Card>
-
-                  {/* Bottom charts */}
-                  <div className="grid grid-cols-2 gap-6">
-                    {/* Booking types */}
-                    <Card>
-                      <CardHeader>
-                        <CardTitle className="text-base">Booking types</CardTitle>
-                      </CardHeader>
-                      <CardContent>
-                        <div className="h-64">
-                          <ResponsiveContainer width="100%" height="100%">
-                            <PieChart>
-                              <Pie
-                                data={bookingTypeData}
-                                cx="50%"
-                                cy="50%"
-                                innerRadius={60}
-                                outerRadius={100}
-                                paddingAngle={5}
-                                dataKey="value"
-                              >
-                                {bookingTypeData.map((entry, index) => (
-                                  <Cell key={`cell-${index}`} fill={entry.color} />
-                                ))}
-                              </Pie>
-                            </PieChart>
-                          </ResponsiveContainer>
-                        </div>
-                        <div className="flex items-center justify-center space-x-2 mt-2">
-                          <div className="w-3 h-3 bg-orange-500 rounded-full"></div>
-                          <span className="text-sm text-gray-600">None</span>
-                        </div>
-                      </CardContent>
-                    </Card>
-
-                    {/* Tags */}
-                    <Card>
-                      <CardHeader>
-                        <CardTitle className="text-base">Tags</CardTitle>
-                      </CardHeader>
-                      <CardContent>
-                        <div className="h-64 flex items-center justify-center">
-                          <span className="text-gray-500">No data</span>
-                        </div>
-                      </CardContent>
-                    </Card>
-                  </div>
-                </TabsContent>
-
-                <TabsContent value="satisfaction">
-                  <div className="text-center py-12 text-gray-500">
-                    Satisfaction data not available
-                  </div>
-                </TabsContent>
-
-                <TabsContent value="geography">
-                  <div className="text-center py-12 text-gray-500">
-                    Geography data not available
-                  </div>
-                </TabsContent>
-
-                <TabsContent value="nps">
-                  <div className="text-center py-12 text-gray-500">
-                    NPS data not available
-                  </div>
-                </TabsContent>
-              </Tabs>
+          <div className="space-y-6">
+            <div>
+              <h1 className="text-2xl font-semibold">Statistics & Analytics</h1>
+              <p className="text-sm text-gray-600">
+                Monitor your restaurant's performance and booking trends.
+              </p>
             </div>
+
+            {isLoading ? (
+              <div className="text-center text-gray-500 mt-8">Loading...</div>
+            ) : stats ? (
+              <>
+                {/* Key Metrics */}
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+                  <Card>
+                    <CardContent className="p-6">
+                      <div className="flex items-center">
+                        <CalendarIcon2 className="h-8 w-8 text-blue-600" />
+                        <div className="ml-4">
+                          <p className="text-sm font-medium text-gray-600">Total Bookings</p>
+                          <p className="text-2xl font-bold text-gray-900">{stats.totalBookings}</p>
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
+
+                  <Card>
+                    <CardContent className="p-6">
+                      <div className="flex items-center">
+                        <Users className="h-8 w-8 text-green-600" />
+                        <div className="ml-4">
+                          <p className="text-sm font-medium text-gray-600">Total Customers</p>
+                          <p className="text-2xl font-bold text-gray-900">{stats.totalCustomers}</p>
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
+
+                  <Card>
+                    <CardContent className="p-6">
+                      <div className="flex items-center">
+                        <TrendingUp className="h-8 w-8 text-purple-600" />
+                        <div className="ml-4">
+                          <p className="text-sm font-medium text-gray-600">Table Utilization</p>
+                          <p className="text-2xl font-bold text-gray-900">{stats.tableUtilization.toFixed(1)}%</p>
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
+
+                  <Card>
+                    <CardContent className="p-6">
+                      <div className="flex items-center">
+                        <DollarSign className="h-8 w-8 text-orange-600" />
+                        <div className="ml-4">
+                          <p className="text-sm font-medium text-gray-600">Monthly Revenue</p>
+                          <p className="text-2xl font-bold text-gray-900">${stats.monthlyRevenue}</p>
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
+                </div>
+
+                {/* Booking Status Breakdown */}
+                <Card>
+                  <CardHeader>
+                    <CardTitle>Booking Status Breakdown</CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="space-y-3">
+                      {Object.entries(stats.bookingsByStatus).map(([status, count]: [string, any]) => (
+                        <div key={status} className="flex items-center justify-between">
+                          <div className="flex items-center space-x-2">
+                            <Badge variant={status === 'confirmed' ? 'default' : 'secondary'}>
+                              {status}
+                            </Badge>
+                          </div>
+                          <div className="font-medium">{count} bookings</div>
+                        </div>
+                      ))}
+                    </div>
+                  </CardContent>
+                </Card>
+              </>
+            ) : (
+              <div className="text-center text-gray-500 mt-8">
+                Unable to load statistics
+              </div>
+            )}
           </div>
         </div>
       </div>

@@ -128,7 +128,7 @@ export default function ActivityLog() {
             {/* Header */}
             <div className="p-6 border-b">
               <h2 className="text-lg font-semibold mb-4">Log</h2>
-              
+
               {/* Filters */}
               <div className="flex items-center space-x-4 mb-4">
                 <div>
@@ -235,7 +235,7 @@ export default function ActivityLog() {
               <div className="text-sm text-gray-600">
                 {displayLogs.length} events
               </div>
-              
+
               <div className="flex items-center space-x-4">
                 <div className="flex items-center space-x-2">
                   <span className="text-sm text-gray-600">1</span>

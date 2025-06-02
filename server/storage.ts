@@ -20,6 +20,7 @@ export interface IStorage {
   getRestaurant(id: number): Promise<Restaurant | undefined>;
   getRestaurantByUserId(userId: number): Promise<Restaurant | undefined>;
   createRestaurant(restaurant: InsertRestaurant): Promise<Restaurant>;
+  updateRestaurant(id: number, restaurant: Partial<Restaurant>): Promise<Restaurant | undefined>;
 
   // Tables
   getTablesByRestaurant(restaurantId: number): Promise<Table[]>;
@@ -297,6 +298,15 @@ export class MemStorage implements IStorage {
     };
     this.restaurants.set(restaurant.id, restaurant);
     return restaurant;
+  }
+
+  async updateRestaurant(id: number, updates: Partial<Restaurant>): Promise<Restaurant | undefined> {
+    const restaurant = this.restaurants.get(id);
+    if (!restaurant) return undefined;
+
+    const updatedRestaurant = { ...restaurant, ...updates };
+    this.restaurants.set(id, updatedRestaurant);
+    return updatedRestaurant;
   }
 
   async getTablesByRestaurant(restaurantId: number): Promise<Table[]> {

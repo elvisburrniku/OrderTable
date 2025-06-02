@@ -416,6 +416,230 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Activity Log routes
+  app.get("/api/restaurants/:restaurantId/activity-log", async (req, res) => {
+    try {
+      const restaurantId = parseInt(req.params.restaurantId);
+      const logs = await storage.getActivityLogByRestaurant(restaurantId);
+      res.json(logs);
+    } catch (error) {
+      res.status(400).json({ message: "Invalid request" });
+    }
+  });
+
+  app.post("/api/restaurants/:restaurantId/activity-log", async (req, res) => {
+    try {
+      const restaurantId = parseInt(req.params.restaurantId);
+      const logData = {
+        ...req.body,
+        restaurantId
+      };
+      
+      const log = await storage.createActivityLog(logData);
+      res.json(log);
+    } catch (error) {
+      res.status(400).json({ message: "Invalid log data" });
+    }
+  });
+
+  // SMS Messages routes
+  app.get("/api/restaurants/:restaurantId/sms-messages", async (req, res) => {
+    try {
+      const restaurantId = parseInt(req.params.restaurantId);
+      const messages = await storage.getSmsMessagesByRestaurant(restaurantId);
+      res.json(messages);
+    } catch (error) {
+      res.status(400).json({ message: "Invalid request" });
+    }
+  });
+
+  app.post("/api/restaurants/:restaurantId/sms-messages", async (req, res) => {
+    try {
+      const restaurantId = parseInt(req.params.restaurantId);
+      const messageData = {
+        ...req.body,
+        restaurantId
+      };
+      
+      const message = await storage.createSmsMessage(messageData);
+      res.json(message);
+    } catch (error) {
+      res.status(400).json({ message: "Invalid message data" });
+    }
+  });
+
+  // Waiting List routes
+  app.get("/api/restaurants/:restaurantId/waiting-list", async (req, res) => {
+    try {
+      const restaurantId = parseInt(req.params.restaurantId);
+      const waitingList = await storage.getWaitingListByRestaurant(restaurantId);
+      res.json(waitingList);
+    } catch (error) {
+      res.status(400).json({ message: "Invalid request" });
+    }
+  });
+
+  app.post("/api/restaurants/:restaurantId/waiting-list", async (req, res) => {
+    try {
+      const restaurantId = parseInt(req.params.restaurantId);
+      const entryData = {
+        ...req.body,
+        restaurantId
+      };
+      
+      const entry = await storage.createWaitingListEntry(entryData);
+      res.json(entry);
+    } catch (error) {
+      res.status(400).json({ message: "Invalid waiting list data" });
+    }
+  });
+
+  app.put("/api/waiting-list/:id", async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      const updates = req.body;
+      
+      const entry = await storage.updateWaitingListEntry(id, updates);
+      
+      if (!entry) {
+        return res.status(404).json({ message: "Waiting list entry not found" });
+      }
+      
+      res.json(entry);
+    } catch (error) {
+      res.status(400).json({ message: "Invalid request" });
+    }
+  });
+
+  // Feedback routes
+  app.get("/api/restaurants/:restaurantId/feedback", async (req, res) => {
+    try {
+      const restaurantId = parseInt(req.params.restaurantId);
+      const feedback = await storage.getFeedbackByRestaurant(restaurantId);
+      res.json(feedback);
+    } catch (error) {
+      res.status(400).json({ message: "Invalid request" });
+    }
+  });
+
+  app.post("/api/restaurants/:restaurantId/feedback", async (req, res) => {
+    try {
+      const restaurantId = parseInt(req.params.restaurantId);
+      const feedbackData = {
+        ...req.body,
+        restaurantId
+      };
+      
+      const feedback = await storage.createFeedback(feedbackData);
+      res.json(feedback);
+    } catch (error) {
+      res.status(400).json({ message: "Invalid feedback data" });
+    }
+  });
+
+  // Time Slots routes
+  app.get("/api/restaurants/:restaurantId/time-slots", async (req, res) => {
+    try {
+      const restaurantId = parseInt(req.params.restaurantId);
+      const { date } = req.query;
+      
+      const timeSlots = await storage.getTimeSlotsByRestaurant(restaurantId, date as string);
+      res.json(timeSlots);
+    } catch (error) {
+      res.status(400).json({ message: "Invalid request" });
+    }
+  });
+
+  app.post("/api/restaurants/:restaurantId/time-slots", async (req, res) => {
+    try {
+      const restaurantId = parseInt(req.params.restaurantId);
+      const slotData = {
+        ...req.body,
+        restaurantId
+      };
+      
+      const slot = await storage.createTimeSlot(slotData);
+      res.json(slot);
+    } catch (error) {
+      res.status(400).json({ message: "Invalid time slot data" });
+    }
+  });
+
+  app.put("/api/time-slots/:id", async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      const updates = req.body;
+      
+      const slot = await storage.updateTimeSlot(id, updates);
+      
+      if (!slot) {
+        return res.status(404).json({ message: "Time slot not found" });
+      }
+      
+      res.json(slot);
+    } catch (error) {
+      res.status(400).json({ message: "Invalid request" });
+    }
+  });
+
+  // Restaurant settings routes
+  app.put("/api/restaurants/:id", async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      const updates = req.body;
+      
+      const restaurant = await storage.updateRestaurant(id, updates);
+      
+      if (!restaurant) {
+        return res.status(404).json({ message: "Restaurant not found" });
+      }
+      
+      res.json(restaurant);
+    } catch (error) {
+      res.status(400).json({ message: "Invalid request" });
+    }
+  });
+
+  // Statistics routes (read-only data aggregation)
+  app.get("/api/restaurants/:restaurantId/statistics", async (req, res) => {
+    try {
+      const restaurantId = parseInt(req.params.restaurantId);
+      const { startDate, endDate } = req.query;
+
+      // Get bookings for the date range
+      const bookings = await storage.getBookingsByRestaurant(restaurantId);
+      const customers = await storage.getCustomersByRestaurant(restaurantId);
+      const tables = await storage.getTablesByRestaurant(restaurantId);
+
+      // Calculate statistics
+      const totalBookings = bookings.length;
+      const totalCustomers = customers.length;
+      const totalTables = tables.length;
+      const avgBookingsPerDay = totalBookings / 30; // Rough estimate
+      
+      // Group bookings by status
+      const bookingsByStatus = bookings.reduce((acc: any, booking) => {
+        acc[booking.status] = (acc[booking.status] || 0) + 1;
+        return acc;
+      }, {});
+
+      // Revenue calculation (if you add pricing later)
+      const monthlyRevenue = bookings.length * 50; // Placeholder calculation
+
+      res.json({
+        totalBookings,
+        totalCustomers,
+        totalTables,
+        avgBookingsPerDay,
+        bookingsByStatus,
+        monthlyRevenue,
+        tableUtilization: (totalBookings / (totalTables * 30)) * 100 // Rough estimate
+      });
+    } catch (error) {
+      res.status(400).json({ message: "Invalid request" });
+    }
+  });
+
   // Stripe webhook to handle successful payments
   app.post("/api/stripe-webhook", async (req, res) => {
     const sig = req.headers['stripe-signature'];

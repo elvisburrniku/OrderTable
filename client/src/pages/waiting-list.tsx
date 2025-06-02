@@ -1,17 +1,87 @@
 import { useState } from "react";
-import { useQuery } from "@tanstack/react-query";
-import { useAuth } from "@/lib/auth.tsx";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Textarea } from "@/components/ui/textarea";
+import { useAuth } from "@/lib/auth";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { Badge } from "@/components/ui/badge";
+import { format } from "date-fns";
+import { useToast } from "@/hooks/use-toast";
 import { Download } from "lucide-react";
 
 export default function WaitingList() {
   const { user, restaurant } = useAuth();
+  const queryClient = useQueryClient();
+  const { toast } = useToast();
   const [statusFilter, setStatusFilter] = useState("all");
 
-  const { data: waitingList, isLoading } = useQuery({
-    queryKey: ['/api/restaurants', restaurant?.id, 'waiting-list'],
-    enabled: !!restaurant
+  const [formData, setFormData] = useState({
+    customerName: "",
+    customerEmail: "",
+    customerPhone: "",
+    guestCount: "",
+    requestedDate: "",
+    requestedTime: "",
+    notes: ""
+  });
+
+  const { data: waitingList = [], isLoading } = useQuery({
+    queryKey: ["/api/restaurants", restaurant?.id, "waiting-list"],
+    enabled: !!restaurant?.id,
+  });
+
+  const createEntryMutation = useMutation({
+    mutationFn: async (entryData: any) => {
+      const response = await fetch(`/api/restaurants/${restaurant?.id}/waiting-list`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(entryData),
+      });
+      if (!response.ok) throw new Error("Failed to create waiting list entry");
+      return response.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({
+        queryKey: ["/api/restaurants", restaurant?.id, "waiting-list"],
+      });
+      setFormData({
+        customerName: "",
+        customerEmail: "",
+        customerPhone: "",
+        guestCount: "",
+        requestedDate: "",
+        requestedTime: "",
+        notes: ""
+      });
+      toast({
+        title: "Success",
+        description: "Added to waiting list successfully",
+      });
+    },
+  });
+
+  const updateEntryMutation = useMutation({
+    mutationFn: async ({ id, updates }: { id: number; updates: any }) => {
+      const response = await fetch(`/api/waiting-list/${id}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(updates),
+      });
+      if (!response.ok) throw new Error("Failed to update waiting list entry");
+      return response.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({
+        queryKey: ["/api/restaurants", restaurant?.id, "waiting-list"],
+      });
+      toast({
+        title: "Success",
+        description: "Waiting list entry updated successfully",
+      });
+    },
   });
 
   if (!user || !restaurant) {
@@ -21,6 +91,20 @@ export default function WaitingList() {
   const filteredWaitingList = (waitingList as any)?.filter((item: any) => {
     return statusFilter === "all" || item.status === statusFilter;
   }) || [];
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!restaurant?.id) return;
+
+    createEntryMutation.mutate({
+      ...formData,
+      guestCount: parseInt(formData.guestCount)
+    });
+  };
+
+  const handleStatusUpdate = (id: number, status: string) => {
+    updateEntryMutation.mutate({ id, updates: { status } });
+  };
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -73,11 +157,11 @@ export default function WaitingList() {
             {/* Header */}
             <div className="p-6 border-b">
               <h2 className="text-lg font-semibold mb-4">Waiting List</h2>
-              
+
               {/* Filters */}
               <div className="flex items-center space-x-4 mb-4">
                 <Button variant="outline" size="sm">Show filters</Button>
-                
+
                 <Select value={statusFilter} onValueChange={setStatusFilter}>
                   <SelectTrigger className="w-32">
                     <SelectValue placeholder="Status" />
@@ -164,7 +248,7 @@ export default function WaitingList() {
               <div className="text-sm text-gray-600">
                 {filteredWaitingList.length} bookings, {filteredWaitingList.reduce((sum: number, item: any) => sum + item.guestCount, 0)} guests
               </div>
-              
+
               <div className="flex items-center space-x-4">
                 <div className="flex items-center space-x-2">
                   <span className="text-sm text-gray-600">1</span>
@@ -173,7 +257,7 @@ export default function WaitingList() {
                     <span className="text-sm text-gray-600">results per page</span>
                   </div>
                 </div>
-                
+
                 <Button className="bg-green-600 hover:bg-green-700 text-white flex items-center space-x-2">
                   <Download className="w-4 h-4" />
                   <span>Download as CSV</span>

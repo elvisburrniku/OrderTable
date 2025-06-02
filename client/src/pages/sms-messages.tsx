@@ -1,20 +1,66 @@
 import { useState } from "react";
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { useAuth } from "@/lib/auth.tsx";
-import { apiRequest } from "@/lib/queryClient";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { useAuth } from "@/lib/auth";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Badge } from "@/components/ui/badge";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Calendar } from "@/components/ui/calendar";
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { format } from "date-fns";
-import { Calendar as CalendarIcon, Send, Plus, ArrowLeft } from "lucide-react";
+import { useToast } from "@/hooks/use-toast";
 
 export default function SmsMessages() {
   const { user, restaurant } = useAuth();
+  const queryClient = useQueryClient();
+  const { toast } = useToast();
+
+  const [formData, setFormData] = useState({
+    name: "",
+    messageType: "information",
+    content: "",
+    receivers: "",
+    bookingDateFrom: "",
+    bookingDateTo: "",
+    language: "english"
+  });
+
+  const { data: messages = [], isLoading } = useQuery({
+    queryKey: ["/api/restaurants", restaurant?.id, "sms-messages"],
+    enabled: !!restaurant?.id,
+  });
+
+  const createMessageMutation = useMutation({
+    mutationFn: async (messageData: any) => {
+      const response = await fetch(`/api/restaurants/${restaurant?.id}/sms-messages`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(messageData),
+      });
+      if (!response.ok) throw new Error("Failed to create message");
+      return response.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({
+        queryKey: ["/api/restaurants", restaurant?.id, "sms-messages"],
+      });
+      setFormData({
+        name: "",
+        messageType: "information",
+        content: "",
+        receivers: "",
+        bookingDateFrom: "",
+        bookingDateTo: "",
+        language: "english"
+      });
+      toast({
+        title: "Success",
+        description: "SMS message created successfully",
+      });
+    },
+  });
+
   const [showCompose, setShowCompose] = useState(false);
   const [messageName, setMessageName] = useState("");
   const [messageType, setMessageType] = useState("information");
@@ -23,13 +69,6 @@ export default function SmsMessages() {
   const [dateFrom, setDateFrom] = useState<Date>();
   const [dateTo, setDateTo] = useState<Date>();
   const [language, setLanguage] = useState("english");
-  const queryClient = useQueryClient();
-
-  const { data: messages, isLoading } = useQuery({
-    queryKey: ['/api/restaurants', restaurant?.id, 'sms-messages'],
-    enabled: !!restaurant
-  });
-
   const { data: customers } = useQuery({
     queryKey: ['/api/restaurants', restaurant?.id, 'customers'],
     enabled: !!restaurant
@@ -75,6 +114,16 @@ export default function SmsMessages() {
       bookingDateFrom: dateFrom ? format(dateFrom, 'yyyy-MM-dd') : null,
       bookingDateTo: dateTo ? format(dateTo, 'yyyy-MM-dd') : null,
       language
+    });
+  };
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!restaurant?.id) return;
+
+    createMessageMutation.mutate({
+      ...formData,
+      receivers: formData.receivers.split(',').map(r => r.trim())
     });
   };
 
@@ -159,7 +208,7 @@ export default function SmsMessages() {
                 {/* Receivers */}
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">Receivers</label>
-                  
+
                   <div className="space-y-4">
                     <div>
                       <label className="block text-sm text-gray-600 mb-1">Type</label>
@@ -227,7 +276,7 @@ export default function SmsMessages() {
                         <Badge>1 SMS</Badge>
                         <Badge variant="outline">Recipients: {(customers as any)?.length || 0}</Badge>
                       </div>
-                      
+
                       <div className="bg-white p-3 rounded border">
                         <div className="text-sm text-gray-600 mb-2">Placeholders:</div>
                         <Textarea
@@ -321,42 +370,32 @@ export default function SmsMessages() {
             </div>
 
             <div className="p-6">
-              {isLoading ? (
-                <div className="text-center py-8 text-gray-500">Loading messages...</div>
-              ) : (messages as any)?.length === 0 ? (
-                <div className="text-center py-8 text-gray-500">
-                  <div className="mb-4">No SMS messages sent yet</div>
-                  <Button onClick={() => setShowCompose(true)} className="bg-green-600 hover:bg-green-700 text-white">
-                    Send your first message
-                  </Button>
-                </div>
-              ) : (
-                <div className="space-y-4">
-                  {(messages as any)?.map((message: any) => (
-                    <Card key={message.id}>
-                      <CardContent className="p-4">
-                        <div className="flex items-center justify-between">
-                          <div>
-                            <h3 className="font-medium">{message.name}</h3>
-                            <p className="text-sm text-gray-600">{message.content}</p>
-                            <div className="flex items-center space-x-2 mt-2">
-                              <Badge>{message.messageType}</Badge>
-                              <span className="text-sm text-gray-500">
-                                Sent {new Date(message.createdAt).toLocaleDateString()}
-                              </span>
-                            </div>
-                          </div>
-                          <div className="text-right">
-                            <div className="text-sm text-gray-600">
-                              Recipients: {JSON.parse(message.receivers || '[]').length}
-                            </div>
-                          </div>
+              <div className="bg-gray-50 rounded-lg p-6">
+                {isLoading ? (
+                  <div className="text-center text-gray-500">Loading...</div>
+                ) : messages.length === 0 ? (
+                  <div className="text-center text-gray-500">
+                    No SMS messages sent yet
+                  </div>
+                ) : (
+                  <div className="space-y-4">
+                    {messages.map((message: any) => (
+                      <div key={message.id} className="bg-white p-4 rounded-lg border">
+                        <div className="flex items-center justify-between mb-2">
+                          <h3 className="font-medium">{message.name}</h3>
+                          <Badge variant="secondary">{message.messageType}</Badge>
                         </div>
-                      </CardContent>
-                    </Card>
-                  ))}
-                </div>
-              )}
+                        <p className="text-sm text-gray-600 mb-2">{message.content}</p>
+                        <div className="text-xs text-gray-500">
+                          Sent: {format(new Date(message.createdAt), "MMM dd, yyyy HH:mm")} | 
+                          Language: {message.language} | 
+                          Recipients: {JSON.parse(message.receivers).length}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
             </div>
           </div>
         </div>
