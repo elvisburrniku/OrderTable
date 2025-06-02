@@ -37,10 +37,12 @@ export default function SmsMessages() {
 
   const sendMessageMutation = useMutation({
     mutationFn: async (messageData: any) => {
-      return apiRequest('/api/sms-messages', {
+      const response = await fetch('/api/sms-messages', {
         method: 'POST',
-        body: messageData
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(messageData)
       });
+      return response.json();
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['/api/restaurants', restaurant?.id, 'sms-messages'] });

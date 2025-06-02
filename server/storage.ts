@@ -32,6 +32,28 @@ export interface IStorage {
   getCustomerByEmail(restaurantId: number, email: string): Promise<Customer | undefined>;
   createCustomer(customer: InsertCustomer): Promise<Customer>;
   updateCustomer(id: number, customer: Partial<Customer>): Promise<Customer | undefined>;
+  
+  // SMS Messages
+  getSmsMessagesByRestaurant(restaurantId: number): Promise<SmsMessage[]>;
+  createSmsMessage(message: InsertSmsMessage): Promise<SmsMessage>;
+  
+  // Waiting List
+  getWaitingListByRestaurant(restaurantId: number): Promise<WaitingList[]>;
+  createWaitingListEntry(entry: InsertWaitingList): Promise<WaitingList>;
+  updateWaitingListEntry(id: number, entry: Partial<WaitingList>): Promise<WaitingList | undefined>;
+  
+  // Feedback
+  getFeedbackByRestaurant(restaurantId: number): Promise<Feedback[]>;
+  createFeedback(feedback: InsertFeedback): Promise<Feedback>;
+  
+  // Activity Log
+  getActivityLogByRestaurant(restaurantId: number): Promise<ActivityLog[]>;
+  createActivityLog(log: InsertActivityLog): Promise<ActivityLog>;
+  
+  // Time Slots
+  getTimeSlotsByRestaurant(restaurantId: number, date?: string): Promise<TimeSlots[]>;
+  createTimeSlot(slot: InsertTimeSlots): Promise<TimeSlots>;
+  updateTimeSlot(id: number, slot: Partial<TimeSlots>): Promise<TimeSlots | undefined>;
 }
 
 export class MemStorage implements IStorage {
@@ -40,11 +62,21 @@ export class MemStorage implements IStorage {
   private tables: Map<number, Table>;
   private bookings: Map<number, Booking>;
   private customers: Map<number, Customer>;
+  private smsMessages: Map<number, SmsMessage>;
+  private waitingList: Map<number, WaitingList>;
+  private feedback: Map<number, Feedback>;
+  private activityLog: Map<number, ActivityLog>;
+  private timeSlots: Map<number, TimeSlots>;
   private currentUserId: number;
   private currentRestaurantId: number;
   private currentTableId: number;
   private currentBookingId: number;
   private currentCustomerId: number;
+  private currentSmsMessageId: number;
+  private currentWaitingListId: number;
+  private currentFeedbackId: number;
+  private currentActivityLogId: number;
+  private currentTimeSlotsId: number;
 
   constructor() {
     this.users = new Map();

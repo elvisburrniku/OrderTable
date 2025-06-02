@@ -8,6 +8,12 @@ import Home from "@/pages/home";
 import Login from "@/pages/login";
 import Dashboard from "@/pages/dashboard";
 import Customers from "@/pages/customers";
+import Bookings from "@/pages/bookings";
+import SmsMessages from "@/pages/sms-messages";
+import WaitingList from "@/pages/waiting-list";
+import Statistics from "@/pages/statistics";
+import FeedbackResponses from "@/pages/feedback-responses";
+import ActivityLog from "@/pages/activity-log";
 import NotFound from "@/pages/not-found";
 
 function Router() {
@@ -17,6 +23,12 @@ function Router() {
       <Route path="/login" component={Login} />
       <Route path="/dashboard" component={Dashboard} />
       <Route path="/customers" component={Customers} />
+      <Route path="/bookings" component={Bookings} />
+      <Route path="/sms-messages" component={SmsMessages} />
+      <Route path="/waiting-list" component={WaitingList} />
+      <Route path="/statistics" component={Statistics} />
+      <Route path="/feedback-responses" component={FeedbackResponses} />
+      <Route path="/activity-log" component={ActivityLog} />
       <Route component={NotFound} />
     </Switch>
   );
