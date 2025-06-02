@@ -1,5 +1,5 @@
 import { Link, useLocation } from "wouter";
-import { Calendar, Users, Archive, Grid3x3 } from "lucide-react";
+import { Calendar, Users, Archive, Grid3x3, MessageSquare, Clock, BarChart3, MessageCircle, FileText } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { format } from "date-fns";
 import { Booking } from "@shared/schema";
@@ -19,8 +19,13 @@ export default function DashboardSidebar({ selectedDate, bookings }: DashboardSi
 
   const navigationItems = [
     { path: "/dashboard", icon: Calendar, label: "Booking" },
-    { path: "/customers", icon: Users, label: "CRM" },
-    { path: "/archive", icon: Archive, label: "Archive" }
+    { path: "/customers", icon: Users, label: "Customers" },
+    { path: "/bookings", icon: Calendar, label: "Bookings" },
+    { path: "/sms-messages", icon: MessageSquare, label: "SMS Messages" },
+    { path: "/waiting-list", icon: Clock, label: "Waiting List" },
+    { path: "/statistics", icon: BarChart3, label: "Statistics" },
+    { path: "/feedback-responses", icon: MessageCircle, label: "Feedback" },
+    { path: "/activity-log", icon: FileText, label: "Activity Log" }
   ];
 
   return (
