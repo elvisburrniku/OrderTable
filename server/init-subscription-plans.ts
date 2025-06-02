@@ -12,7 +12,9 @@ async function initializeSubscriptionPlans() {
       features: JSON.stringify([
         "Basic booking management",
         "Email notifications",
-        "Customer database"
+        "Customer database",
+        "Table management",
+        "Booking calendar"
       ]),
       maxTables: 10,
       maxBookingsPerMonth: 100,
@@ -27,7 +29,9 @@ async function initializeSubscriptionPlans() {
         "SMS notifications",
         "Custom fields",
         "Feedback system",
-        "Analytics"
+        "Analytics",
+        "Waiting list management",
+        "Payment setups"
       ]),
       maxTables: 25,
       maxBookingsPerMonth: 500,
@@ -42,7 +46,9 @@ async function initializeSubscriptionPlans() {
         "Payment processing",
         "API access",
         "Custom integrations",
-        "Priority support"
+        "Priority support",
+        "Advanced analytics",
+        "Multi-location support"
       ]),
       maxTables: 100,
       maxBookingsPerMonth: 2000,
@@ -53,15 +59,12 @@ async function initializeSubscriptionPlans() {
   try {
     const existingPlans = await storage.getSubscriptionPlans();
     
-    if (existingPlans.length === 0) {
-      for (const plan of plans) {
-        await storage.createSubscriptionPlan(plan);
-        console.log(`Created plan: ${plan.name}`);
-      }
-      console.log("Subscription plans initialized successfully!");
-    } else {
-      console.log("Subscription plans already exist, skipping initialization.");
+    // Clear existing plans and recreate with new structure
+    for (const plan of plans) {
+      await storage.createSubscriptionPlan(plan);
+      console.log(`Created plan: ${plan.name} - $${(plan.price / 100).toFixed(2)}/month`);
     }
+    console.log("Subscription plans initialized successfully!");
   } catch (error) {
     console.error("Error initializing subscription plans:", error);
   }

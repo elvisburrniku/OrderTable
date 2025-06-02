@@ -184,17 +184,7 @@ export class MemStorage implements IStorage {
       this.customers.set(customer.id, customer);
     });
 
-        // Create demo subscription plan
-        const subscriptionPlan: SubscriptionPlan = {
-          id: this.currentSubscriptionPlanId++,
-          name: "Basic",
-          price: 99,
-          description: "Basic plan",
-          features: ["5 tables", "1 user"],
-          isActive: true,
-          createdAt: new Date()
-        };
-        this.subscriptionPlans.set(subscriptionPlan.id, subscriptionPlan);
+        // Subscription plans will be initialized by init-subscription-plans.ts
   }
 
   async getUser(id: number): Promise<User | undefined> {

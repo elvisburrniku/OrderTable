@@ -28,12 +28,12 @@ export function useSubscription() {
   };
 
   const canCreateTable = (currentTableCount: number): boolean => {
-    if (!currentPlan) return currentTableCount < 5; // Default limit
+    if (!currentPlan) return currentTableCount < 3; // Free tier: 3 tables
     return currentTableCount < currentPlan.maxTables;
   };
 
   const canCreateBooking = (currentMonthBookings: number): boolean => {
-    if (!currentPlan) return currentMonthBookings < 50; // Default limit
+    if (!currentPlan) return currentMonthBookings < 20; // Free tier: 20 bookings
     return currentMonthBookings < currentPlan.maxBookingsPerMonth;
   };
 
