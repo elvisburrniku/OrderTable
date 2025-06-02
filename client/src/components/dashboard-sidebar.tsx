@@ -1,5 +1,5 @@
 import { Link, useLocation } from "wouter";
-import { Calendar, Users, Archive, Grid3x3, MessageSquare, Clock, BarChart3, MessageCircle, FileText } from "lucide-react";
+import { Calendar, Users, Archive, Grid3x3, MessageSquare, Clock, BarChart3, MessageCircle, FileText, Settings, Clock4, MapPin, Utensils, Table } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { format } from "date-fns";
 import { Booking } from "@shared/schema";
@@ -28,6 +28,15 @@ export default function DashboardSidebar({ selectedDate, bookings }: DashboardSi
     { path: "/activity-log", icon: FileText, label: "Activity Log" }
   ];
 
+  const settingsItems = [
+    { path: "/opening-hours", icon: Clock4, label: "Opening Hours" },
+    { path: "/special-periods", icon: Calendar, label: "Special Periods" },
+    { path: "/cut-off-time", icon: Clock, label: "Cut-off Time" },
+    { path: "/rooms", icon: MapPin, label: "Rooms" },
+    { path: "/tables", icon: Table, label: "Tables" },
+    { path: "/combined-tables", icon: Utensils, label: "Combined Tables" }
+  ];
+
   return (
     <div className="w-64 bg-gray-50 border-r border-gray-200 p-4">
       <div className="flex items-center mb-8">
@@ -54,6 +63,32 @@ export default function DashboardSidebar({ selectedDate, bookings }: DashboardSi
           );
         })}
       </nav>
+
+      <div className="mb-8">
+        <div className="flex items-center mb-4">
+          <Settings className="mr-2" size={16} />
+          <span className="text-sm font-semibold text-gray-900">Restaurant Settings</span>
+        </div>
+        <nav className="space-y-1">
+          {settingsItems.map((item) => {
+            const Icon = item.icon;
+            const isActive = location === item.path;
+            
+            return (
+              <Link key={item.path} href={item.path}>
+                <div className={`flex items-center px-3 py-2 text-sm rounded-lg transition-colors ${
+                  isActive 
+                    ? "text-green-600 bg-green-50" 
+                    : "text-gray-600 hover:text-gray-900 hover:bg-gray-100"
+                }`}>
+                  <Icon className="mr-3" size={14} />
+                  {item.label}
+                </div>
+              </Link>
+            );
+          })}
+        </nav>
+      </div>
 
       <Card className="bg-white border mb-4">
         <CardContent className="p-4">
