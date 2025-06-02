@@ -4,13 +4,38 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Check, X, CreditCard, Calendar, ExternalLink } from "lucide-react";
+import { Check, X, CreditCard, Calendar, ExternalLink, CheckCircle, AlertCircle } from "lucide-react";
 import { format } from "date-fns";
 import { loadStripe } from "@stripe/stripe-js";
 
 export default function Subscription() {
   const { user, restaurant } = useAuth();
   const queryClient = useQueryClient();
+  const [showSuccessMessage, setShowSuccessMessage] = useState(false);
+  const [showCancelMessage, setShowCancelMessage] = useState(false);
+
+  // Check URL params for success/cancel messages
+  useEffect(() => {
+    const urlParams = new URLSearchParams(window.location.search);
+    if (urlParams.get('success') === 'true') {
+      setShowSuccessMessage(true);
+      // Refresh subscription data
+      queryClient.invalidateQueries({
+        queryKey: ["/api/users", user?.id, "subscription"],
+      });
+      // Clear the URL parameter
+      window.history.replaceState({}, document.title, window.location.pathname);
+      // Hide message after 5 seconds
+      setTimeout(() => setShowSuccessMessage(false), 5000);
+    }
+    if (urlParams.get('canceled') === 'true') {
+      setShowCancelMessage(true);
+      // Clear the URL parameter
+      window.history.replaceState({}, document.title, window.location.pathname);
+      // Hide message after 5 seconds
+      setTimeout(() => setShowCancelMessage(false), 5000);
+    }
+  }, [queryClient, user?.id]);
 
   const { data: plans = [], isLoading: plansLoading } = useQuery({
     queryKey: ["/api/subscription-plans"],
@@ -71,6 +96,12 @@ export default function Subscription() {
     }
   };
 
+  const getCurrentPlanName = () => {
+    if (!currentSubscription) return null;
+    const plan = plans.find((p: any) => p.id === currentSubscription.planId);
+    return plan?.name || "Unknown Plan";
+  };
+
   return (
     <div className="min-h-screen bg-gray-50">
       {/* Navigation */}
@@ -103,6 +134,40 @@ export default function Subscription() {
       </div>
 
       <div className="p-6">
+        {/* Success Message */}
+        {showSuccessMessage && (
+          <div className="mb-6">
+            <Card className="border-green-200 bg-green-50">
+              <CardContent className="p-4">
+                <div className="flex items-center gap-2 text-green-800">
+                  <CheckCircle className="h-5 w-5" />
+                  <span className="font-medium">Subscription Updated Successfully!</span>
+                </div>
+                <p className="text-sm text-green-700 mt-1">
+                  Your subscription has been activated and you now have access to all features.
+                </p>
+              </CardContent>
+            </Card>
+          </div>
+        )}
+
+        {/* Cancel Message */}
+        {showCancelMessage && (
+          <div className="mb-6">
+            <Card className="border-orange-200 bg-orange-50">
+              <CardContent className="p-4">
+                <div className="flex items-center gap-2 text-orange-800">
+                  <AlertCircle className="h-5 w-5" />
+                  <span className="font-medium">Subscription Update Cancelled</span>
+                </div>
+                <p className="text-sm text-orange-700 mt-1">
+                  Your subscription change was cancelled. No charges were made.
+                </p>
+              </CardContent>
+            </Card>
+          </div>
+        )}
+
         {/* Current Subscription */}
         {currentSubscription && (
           <div className="mb-8">
@@ -117,6 +182,7 @@ export default function Subscription() {
                 <div className="flex items-center justify-between">
                   <div>
                     <div className="flex items-center gap-2 mb-2">
+                      <h3 className="text-lg font-semibold">{getCurrentPlanName()}</h3>
                       <Badge
                         variant={
                           currentSubscription.status === "active"

@@ -354,21 +354,66 @@ export async function registerRoutes(app: Express): Promise<Server> {
       return res.status(400).send(`Webhook Error: ${err}`);
     }
 
+    console.log(`Received webhook event: ${event.type}`);
+
     if (event.type === 'checkout.session.completed') {
       const session = event.data.object as Stripe.Checkout.Session;
       const { userId, planId } = session.metadata!;
 
-      // Create subscription in database
-      await storage.createUserSubscription({
-        userId: parseInt(userId),
-        planId: parseInt(planId),
-        stripeSubscriptionId: session.subscription as string,
-        currentPeriodStart: new Date(),
-        currentPeriodEnd: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000),
-        status: 'active'
-      });
+      console.log(`Processing checkout.session.completed for user ${userId}, plan ${planId}`);
 
-      console.log(`Subscription created for user ${userId} with plan ${planId}`);
+      // Check if user already has a subscription
+      const existingSubscription = await storage.getUserSubscription(parseInt(userId));
+      
+      if (existingSubscription) {
+        // Update existing subscription
+        await storage.updateUserSubscription(existingSubscription.id, {
+          planId: parseInt(planId),
+          stripeSubscriptionId: session.subscription as string,
+          currentPeriodStart: new Date(),
+          currentPeriodEnd: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000),
+          status: 'active'
+        });
+        console.log(`Updated existing subscription for user ${userId}`);
+      } else {
+        // Create new subscription
+        await storage.createUserSubscription({
+          userId: parseInt(userId),
+          planId: parseInt(planId),
+          stripeSubscriptionId: session.subscription as string,
+          currentPeriodStart: new Date(),
+          currentPeriodEnd: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000),
+          status: 'active'
+        });
+        console.log(`Created new subscription for user ${userId}`);
+      }
+    }
+
+    if (event.type === 'invoice.payment_succeeded') {
+      const invoice = event.data.object as Stripe.Invoice;
+      const subscriptionId = invoice.subscription as string;
+      
+      // Find user subscription by Stripe subscription ID and extend their period
+      const userSubscription = await storage.getUserSubscriptionByStripeId(subscriptionId);
+      if (userSubscription) {
+        await storage.updateUserSubscription(userSubscription.id, {
+          currentPeriodStart: new Date(),
+          currentPeriodEnd: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000),
+          status: 'active'
+        });
+        console.log(`Extended subscription for user ${userSubscription.userId}`);
+      }
+    }
+
+    if (event.type === 'customer.subscription.deleted') {
+      const subscription = event.data.object as Stripe.Subscription;
+      const userSubscription = await storage.getUserSubscriptionByStripeId(subscription.id);
+      if (userSubscription) {
+        await storage.updateUserSubscription(userSubscription.id, {
+          status: 'cancelled'
+        });
+        console.log(`Cancelled subscription for user ${userSubscription.userId}`);
+      }
     }
 
     res.json({ received: true });

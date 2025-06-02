@@ -67,6 +67,8 @@ export interface IStorage {
 
     // User Subscriptions
     getUserSubscription(userId: number): Promise<UserSubscription | undefined>;
+    getUserSubscriptionByStripeId(stripeSubscriptionId: string): Promise<UserSubscription | undefined>;
+    getAllUserSubscriptions(): Promise<UserSubscription[]>;
     createUserSubscription(subscription: InsertUserSubscription): Promise<UserSubscription>;
     updateUserSubscription(id: number, subscription: Partial<UserSubscription>): Promise<UserSubscription | undefined>;
 }
@@ -513,6 +515,14 @@ export class MemStorage implements IStorage {
     // User Subscriptions
     async getUserSubscription(userId: number): Promise<UserSubscription | undefined> {
       return Array.from(this.userSubscriptions.values()).find(subscription => subscription.userId === userId);
+    }
+
+    async getUserSubscriptionByStripeId(stripeSubscriptionId: string): Promise<UserSubscription | undefined> {
+      return Array.from(this.userSubscriptions.values()).find(subscription => subscription.stripeSubscriptionId === stripeSubscriptionId);
+    }
+
+    async getAllUserSubscriptions(): Promise<UserSubscription[]> {
+      return Array.from(this.userSubscriptions.values());
     }
 
     async createUserSubscription(subscription: InsertUserSubscription): Promise<UserSubscription> {
