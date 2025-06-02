@@ -39,7 +39,7 @@ export default function Dashboard() {
       <DashboardSidebar 
         selectedDate={selectedDate}
         onDateChange={setSelectedDate}
-        bookings={bookings || []}
+        bookings={(bookings as any) || []}
       />
 
       {/* Main Content */}
@@ -79,8 +79,8 @@ export default function Dashboard() {
         <div className="flex-1 p-6">
           <BookingCalendar 
             selectedDate={selectedDate}
-            bookings={bookings || []}
-            tables={tables || []}
+            bookings={(bookings as any) || []}
+            tables={(tables as any) || []}
             isLoading={isLoading}
           />
         </div>

@@ -228,6 +228,7 @@ export class MemStorage implements IStorage {
     const customer: Customer = {
       ...insertCustomer,
       id: this.currentCustomerId++,
+      phone: insertCustomer.phone || null,
       totalBookings: 0,
       lastVisit: null,
       createdAt: new Date()

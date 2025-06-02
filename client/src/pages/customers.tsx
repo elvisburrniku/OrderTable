@@ -24,7 +24,7 @@ export default function Customers() {
     enabled: !!restaurant
   });
 
-  const filteredCustomers = customers?.filter(customer =>
+  const filteredCustomers = (customers as any)?.filter((customer: any) =>
     customer.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
     customer.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
     customer.phone?.toLowerCase().includes(searchTerm.toLowerCase())
@@ -117,7 +117,7 @@ export default function Customers() {
                       </tr>
                     </thead>
                     <tbody>
-                      {filteredCustomers.map((customer) => (
+                      {filteredCustomers.map((customer: any) => (
                         <tr key={customer.id} className="border-b border-gray-100 hover:bg-gray-50">
                           <td className="py-3 px-4">{customer.name}</td>
                           <td className="py-3 px-4">{customer.email}</td>

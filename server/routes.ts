@@ -130,7 +130,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       let customer = await storage.getCustomerByEmail(restaurantId, bookingData.customerEmail);
       if (customer) {
         await storage.updateCustomer(customer.id, {
-          totalBookings: customer.totalBookings + 1,
+          totalBookings: (customer.totalBookings || 0) + 1,
           lastVisit: new Date()
         });
       } else {
