@@ -126,6 +126,71 @@ export class MemStorage implements IStorage {
     this.seedData();
   }
 
+  private initializeSubscriptionPlans() {
+    const plans = [
+      {
+        name: "Starter",
+        price: 2900, // $29.00
+        interval: "monthly",
+        features: JSON.stringify([
+          "Basic booking management",
+          "Email notifications",
+          "Customer database",
+          "Table management",
+          "Booking calendar"
+        ]),
+        maxTables: 10,
+        maxBookingsPerMonth: 100,
+        isActive: true
+      },
+      {
+        name: "Professional",
+        price: 4900, // $49.00
+        interval: "monthly",
+        features: JSON.stringify([
+          "Advanced booking management",
+          "SMS notifications",
+          "Custom fields",
+          "Feedback system",
+          "Analytics",
+          "Waiting list management",
+          "Payment setups"
+        ]),
+        maxTables: 25,
+        maxBookingsPerMonth: 500,
+        isActive: true
+      },
+      {
+        name: "Enterprise",
+        price: 9900, // $99.00
+        interval: "monthly",
+        features: JSON.stringify([
+          "All Professional features",
+          "Payment processing",
+          "API access",
+          "Custom integrations",
+          "Priority support",
+          "Advanced analytics",
+          "Multi-location support"
+        ]),
+        maxTables: 100,
+        maxBookingsPerMonth: 2000,
+        isActive: true
+      }
+    ];
+
+    plans.forEach(planData => {
+      const plan: SubscriptionPlan = {
+        ...planData,
+        id: this.currentSubscriptionPlanId++,
+        createdAt: new Date()
+      };
+      this.subscriptionPlans.set(plan.id, plan);
+    });
+
+    console.log(`Initialized ${plans.length} subscription plans`);
+  }
+
   private seedData() {
     // Create demo user
     const user: User = {
@@ -184,7 +249,8 @@ export class MemStorage implements IStorage {
       this.customers.set(customer.id, customer);
     });
 
-        // Subscription plans will be initialized by init-subscription-plans.ts
+    // Initialize subscription plans
+    this.initializeSubscriptionPlans();
   }
 
   async getUser(id: number): Promise<User | undefined> {
