@@ -316,7 +316,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
               },
               unit_amount: plan.price,
               recurring: {
-                interval: plan.interval as 'month' | 'year',
+                interval: (plan.interval || 'month') as 'month' | 'year',
               },
             },
             quantity: 1,
