@@ -20,7 +20,19 @@ import CutOffTime from "@/pages/cut-off-time";
 import Rooms from "@/pages/rooms";
 import Tables from "@/pages/tables";
 import CombinedTables from "@/pages/combined-tables";
-import NotFound from "@/pages/not-found";
+import SeatingConfigurations from "./pages/seating-configurations";
+import PeriodicCriteria from "./pages/periodic-criteria";
+import CustomFields from "./pages/custom-fields";
+import BookingAgents from "./pages/booking-agents";
+import EmailNotifications from "./pages/email-notifications";
+import SmsNotifications from "./pages/sms-notifications";
+import FeedbackQuestions from "./pages/feedback-questions";
+import Events from "./pages/events";
+import PaymentSetups from "./pages/payment-setups";
+import PaymentGateway from "./pages/payment-gateway";
+import Products from "./pages/products";
+import ProductGroups from "./pages/product-groups";
+import NotFound from "./pages/not-found";
 
 function Router() {
   return (
@@ -41,6 +53,18 @@ function Router() {
       <Route path="/rooms" component={Rooms} />
       <Route path="/tables" component={Tables} />
       <Route path="/combined-tables" component={CombinedTables} />
+      <Route path="/seating-configurations" component={SeatingConfigurations} />
+      <Route path="/periodic-criteria" component={PeriodicCriteria} />
+      <Route path="/custom-fields" component={CustomFields} />
+      <Route path="/booking-agents" component={BookingAgents} />
+      <Route path="/email-notifications" component={EmailNotifications} />
+      <Route path="/sms-notifications" component={SmsNotifications} />
+      <Route path="/feedback-questions" component={FeedbackQuestions} />
+      <Route path="/events" component={Events} />
+      <Route path="/payment-setups" component={PaymentSetups} />
+      <Route path="/payment-gateway" component={PaymentGateway} />
+      <Route path="/products" component={Products} />
+      <Route path="/product-groups" component={ProductGroups} />
       <Route component={NotFound} />
     </Switch>
   );
