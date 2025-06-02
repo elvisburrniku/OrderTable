@@ -22,24 +22,24 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     // Check for stored user data on app load
     const storedUser = localStorage.getItem("user");
     const storedRestaurant = localStorage.getItem("restaurant");
-    
+
     if (storedUser) {
       setUser(JSON.parse(storedUser));
     }
     if (storedRestaurant) {
       setRestaurant(JSON.parse(storedRestaurant));
     }
-    
+
     setIsLoading(false);
   }, []);
 
   const login = async (email: string, password: string) => {
     const res = await apiRequest("POST", "/api/auth/login", { email, password });
     const data = await res.json();
-    
+
     setUser(data.user);
     setRestaurant(data.restaurant);
-    
+
     localStorage.setItem("user", JSON.stringify(data.user));
     if (data.restaurant) {
       localStorage.setItem("restaurant", JSON.stringify(data.restaurant));
@@ -54,14 +54,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       restaurantName 
     });
     const data = await res.json();
-    
+
     setUser(data.user);
     setRestaurant(data.restaurant);
-    
+
     localStorage.setItem("user", JSON.stringify(data.user));
     if (data.restaurant) {
       localStorage.setItem("restaurant", JSON.stringify(data.restaurant));
     }
+    return data.user;
   };
 
   const logout = () => {

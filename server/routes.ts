@@ -3,6 +3,11 @@ import { createServer, type Server } from "http";
 import { storage } from "./storage";
 import { insertUserSchema, loginSchema, insertBookingSchema, insertCustomerSchema, insertSubscriptionPlanSchema, insertUserSubscriptionSchema } from "@shared/schema";
 import { z } from "zod";
+import Stripe from "stripe";
+
+const stripe = new Stripe(process.env.STRIPE_SECRET_KEY || 'sk_test_your_stripe_secret_key', {
+  apiVersion: '2023-10-16'
+});
 
 export async function registerRoutes(app: Express): Promise<Server> {
   // Auth routes
@@ -285,6 +290,86 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       res.status(400).json({ message: "Invalid request" });
     }
+  });
+
+  // Stripe checkout session creation
+  app.post("/api/create-checkout-session", async (req, res) => {
+    try {
+      const { planId, userId, successUrl, cancelUrl } = req.body;
+      
+      const plan = await storage.getSubscriptionPlan(planId);
+      if (!plan) {
+        return res.status(404).json({ message: "Plan not found" });
+      }
+
+      const session = await stripe.checkout.sessions.create({
+        payment_method_types: ['card'],
+        line_items: [
+          {
+            price_data: {
+              currency: 'usd',
+              product_data: {
+                name: `${plan.name} Plan`,
+                description: `Restaurant booking system - ${plan.name} plan`,
+              },
+              unit_amount: plan.price,
+              recurring: {
+                interval: plan.interval as 'month' | 'year',
+              },
+            },
+            quantity: 1,
+          },
+        ],
+        mode: 'subscription',
+        success_url: successUrl,
+        cancel_url: cancelUrl,
+        metadata: {
+          userId: userId.toString(),
+          planId: planId.toString(),
+        },
+      });
+
+      res.json({ sessionId: session.id });
+    } catch (error) {
+      console.error('Error creating checkout session:', error);
+      res.status(500).json({ message: "Failed to create checkout session" });
+    }
+  });
+
+  // Stripe webhook to handle successful payments
+  app.post("/api/stripe-webhook", async (req, res) => {
+    const sig = req.headers['stripe-signature'];
+    let event;
+
+    try {
+      event = stripe.webhooks.constructEvent(
+        req.body,
+        sig!,
+        process.env.STRIPE_WEBHOOK_SECRET || 'whsec_your_webhook_secret'
+      );
+    } catch (err) {
+      console.log(`Webhook signature verification failed.`, err);
+      return res.status(400).send(`Webhook Error: ${err}`);
+    }
+
+    if (event.type === 'checkout.session.completed') {
+      const session = event.data.object as Stripe.Checkout.Session;
+      const { userId, planId } = session.metadata!;
+
+      // Create subscription in database
+      await storage.createUserSubscription({
+        userId: parseInt(userId),
+        planId: parseInt(planId),
+        stripeSubscriptionId: session.subscription as string,
+        currentPeriodStart: new Date(),
+        currentPeriodEnd: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000),
+        status: 'active'
+      });
+
+      console.log(`Subscription created for user ${userId} with plan ${planId}`);
+    }
+
+    res.json({ received: true });
   });
 
   const httpServer = createServer(app);

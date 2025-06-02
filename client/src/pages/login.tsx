@@ -8,7 +8,8 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Link } from "wouter";
 import { useAuth } from "@/lib/auth.tsx";
 import { useToast } from "@/hooks/use-toast";
-import { Grid3x3, X } from "lucide-react";
+import { Grid3x3, X, Check } from "lucide-react";
+import { useQuery } from "@tanstack/react-query";
 
 export default function Login() {
   const [, setLocation] = useLocation();
@@ -21,7 +22,13 @@ export default function Login() {
     password: "",
     name: "",
     restaurantName: "",
-    rememberMe: false
+    rememberMe: false,
+    selectedPlanId: null as number | null
+  });
+
+  const { data: plans = [] } = useQuery({
+    queryKey: ['/api/subscription-plans'],
+    enabled: !isLogin
   });
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -37,7 +44,22 @@ export default function Login() {
         });
         setLocation("/dashboard");
       } else {
-        await register(formData.email, formData.password, formData.name, formData.restaurantName);
+        const user = await register(formData.email, formData.password, formData.name, formData.restaurantName);
+        
+        // Create subscription if plan selected
+        if (formData.selectedPlanId) {
+          await fetch(`/api/users/${user.id}/subscription`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              planId: formData.selectedPlanId,
+              currentPeriodStart: new Date(),
+              currentPeriodEnd: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000),
+              status: 'active'
+            })
+          });
+        }
+        
         toast({
           title: "Account created!",
           description: "Your restaurant account has been created successfully."
@@ -124,6 +146,66 @@ export default function Login() {
                     />
                   </div>
                 </>
+              )}
+
+              {!isLogin && (
+                <div>
+                  <Label className="text-sm font-medium text-gray-700 mb-3 block">
+                    Choose Your Plan:
+                  </Label>
+                  <div className="space-y-3">
+                    {plans.map((plan: any) => (
+                      <div
+                        key={plan.id}
+                        className={`border rounded-lg p-4 cursor-pointer transition-colors ${
+                          formData.selectedPlanId === plan.id
+                            ? 'border-green-500 bg-green-50'
+                            : 'border-gray-200 hover:border-gray-300'
+                        }`}
+                        onClick={() => setFormData({ ...formData, selectedPlanId: plan.id })}
+                      >
+                        <div className="flex items-center justify-between">
+                          <div>
+                            <h4 className="font-medium text-gray-900">{plan.name}</h4>
+                            <div className="flex items-center gap-2 mt-1">
+                              <span className="text-lg font-bold text-green-600">
+                                ${(plan.price / 100).toFixed(2)}
+                              </span>
+                              <span className="text-sm text-gray-500">/{plan.interval}</span>
+                            </div>
+                            <div className="flex items-center gap-4 mt-2 text-xs text-gray-600">
+                              <span>{plan.maxTables} tables</span>
+                              <span>{plan.maxBookingsPerMonth} bookings/month</span>
+                            </div>
+                          </div>
+                          {formData.selectedPlanId === plan.id && (
+                            <Check className="h-5 w-5 text-green-500" />
+                          )}
+                        </div>
+                      </div>
+                    ))}
+                    <div
+                      className={`border rounded-lg p-4 cursor-pointer transition-colors ${
+                        formData.selectedPlanId === null
+                          ? 'border-green-500 bg-green-50'
+                          : 'border-gray-200 hover:border-gray-300'
+                      }`}
+                      onClick={() => setFormData({ ...formData, selectedPlanId: null })}
+                    >
+                      <div className="flex items-center justify-between">
+                        <div>
+                          <h4 className="font-medium text-gray-900">Free Trial</h4>
+                          <p className="text-sm text-gray-600 mt-1">
+                            3 tables, 20 bookings/month
+                          </p>
+                        </div>
+                        {formData.selectedPlanId === null && (
+                          <Check className="h-5 w-5 text-green-500" />
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                </div>
               )}
               
               <div>

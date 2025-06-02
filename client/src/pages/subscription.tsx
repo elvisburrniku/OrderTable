@@ -5,8 +5,9 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Check, X, CreditCard, Calendar } from "lucide-react";
+import { Check, X, CreditCard, Calendar, ExternalLink } from "lucide-react";
 import { format } from "date-fns";
+import { loadStripe } from "@stripe/stripe-js";
 
 export default function Subscription() {
   const { user, restaurant } = useAuth();
@@ -24,18 +25,27 @@ export default function Subscription() {
 
   const subscribeMutation = useMutation({
     mutationFn: async ({ planId }: { planId: number }) => {
-      const response = await fetch(`/api/users/${user?.id}/subscription`, {
+      // Create Stripe checkout session
+      const response = await fetch(`/api/create-checkout-session`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           planId,
-          currentPeriodStart: new Date(),
-          currentPeriodEnd: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000), // 30 days
-          status: 'active'
+          userId: user?.id,
+          successUrl: `${window.location.origin}/subscription?success=true`,
+          cancelUrl: `${window.location.origin}/subscription?canceled=true`
         })
       });
-      if (!response.ok) throw new Error('Failed to subscribe');
-      return response.json();
+      
+      if (!response.ok) throw new Error('Failed to create checkout session');
+      
+      const { sessionId } = await response.json();
+      
+      // Redirect to Stripe Checkout
+      const stripe = await loadStripe('pk_test_your_stripe_publishable_key'); // Replace with your Stripe publishable key
+      if (stripe) {
+        await stripe.redirectToCheckout({ sessionId });
+      }
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['/api/users', user?.id, 'subscription'] });
@@ -153,7 +163,12 @@ export default function Subscription() {
                       ? 'Current Plan' 
                       : subscribeMutation.isPending 
                         ? 'Processing...' 
-                        : 'Subscribe'
+                        : (
+                          <div className="flex items-center gap-2">
+                            <CreditCard className="h-4 w-4" />
+                            Subscribe with Stripe
+                          </div>
+                        )
                     }
                   </Button>
                 </CardContent>
