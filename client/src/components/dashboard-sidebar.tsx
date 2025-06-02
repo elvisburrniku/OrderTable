@@ -25,7 +25,8 @@ export default function DashboardSidebar({ selectedDate, bookings }: DashboardSi
     { path: "/waiting-list", icon: Clock, label: "Waiting List" },
     { path: "/statistics", icon: BarChart3, label: "Statistics" },
     { path: "/feedback-responses", icon: MessageCircle, label: "Feedback" },
-    { path: "/activity-log", icon: FileText, label: "Activity Log" }
+    { path: "/activity-log", icon: FileText, label: "Activity Log" },
+    { path: "/subscription", icon: CreditCard, label: "Subscription" }
   ];
 
   const settingsItems = [
