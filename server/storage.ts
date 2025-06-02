@@ -132,6 +132,7 @@ export class MemStorage implements IStorage {
     const user: User = {
       ...insertUser,
       id: this.currentUserId++,
+      restaurantName: insertUser.restaurantName || null,
       createdAt: new Date()
     };
     this.users.set(user.id, user);
@@ -150,6 +151,10 @@ export class MemStorage implements IStorage {
     const restaurant: Restaurant = {
       ...insertRestaurant,
       id: this.currentRestaurantId++,
+      address: insertRestaurant.address || null,
+      phone: insertRestaurant.phone || null,
+      email: insertRestaurant.email || null,
+      description: insertRestaurant.description || null,
       createdAt: new Date()
     };
     this.restaurants.set(restaurant.id, restaurant);
@@ -163,7 +168,8 @@ export class MemStorage implements IStorage {
   async createTable(insertTable: InsertTable): Promise<Table> {
     const table: Table = {
       ...insertTable,
-      id: this.currentTableId++
+      id: this.currentTableId++,
+      isActive: insertTable.isActive ?? true
     };
     this.tables.set(table.id, table);
     return table;
@@ -184,6 +190,11 @@ export class MemStorage implements IStorage {
     const booking: Booking = {
       ...insertBooking,
       id: this.currentBookingId++,
+      tableId: insertBooking.tableId || null,
+      customerPhone: insertBooking.customerPhone || null,
+      endTime: insertBooking.endTime || null,
+      status: insertBooking.status || "confirmed",
+      notes: insertBooking.notes || null,
       createdAt: new Date()
     };
     this.bookings.set(booking.id, booking);
