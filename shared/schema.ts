@@ -42,6 +42,7 @@ export const bookings = pgTable("bookings", {
   startTime: text("start_time").notNull(),
   endTime: text("end_time"),
   status: varchar("status", { length: 20 }).default("confirmed"),
+  source: varchar("source", { length: 20 }).default("manual"), // manual, online, google
   notes: text("notes"),
   createdAt: timestamp("created_at").defaultNow()
 });
@@ -55,6 +56,66 @@ export const customers = pgTable("customers", {
   totalBookings: integer("total_bookings").default(0),
   lastVisit: timestamp("last_visit"),
   createdAt: timestamp("created_at").defaultNow()
+});
+
+export const smsMessages = pgTable("sms_messages", {
+  id: serial("id").primaryKey(),
+  restaurantId: integer("restaurant_id").references(() => restaurants.id).notNull(),
+  name: text("name").notNull(),
+  messageType: varchar("message_type", { length: 20 }).default("information"),
+  content: text("content").notNull(),
+  receivers: text("receivers").notNull(), // JSON array of phone numbers
+  bookingDateFrom: text("booking_date_from"),
+  bookingDateTo: text("booking_date_to"),
+  language: varchar("language", { length: 10 }).default("english"),
+  createdAt: timestamp("created_at").defaultNow()
+});
+
+export const waitingList = pgTable("waiting_list", {
+  id: serial("id").primaryKey(),
+  restaurantId: integer("restaurant_id").references(() => restaurants.id).notNull(),
+  customerName: text("customer_name").notNull(),
+  customerEmail: text("customer_email").notNull(),
+  customerPhone: text("customer_phone"),
+  guestCount: integer("guest_count").notNull(),
+  requestedDate: text("requested_date").notNull(),
+  requestedTime: text("requested_time").notNull(),
+  status: varchar("status", { length: 20 }).default("waiting"),
+  notes: text("notes"),
+  createdAt: timestamp("created_at").defaultNow()
+});
+
+export const feedback = pgTable("feedback", {
+  id: serial("id").primaryKey(),
+  restaurantId: integer("restaurant_id").references(() => restaurants.id).notNull(),
+  bookingId: integer("booking_id").references(() => bookings.id),
+  customerName: text("customer_name").notNull(),
+  customerEmail: text("customer_email").notNull(),
+  rating: integer("rating"),
+  comments: text("comments"),
+  nps: integer("nps"), // Net Promoter Score
+  visited: boolean("visited").default(false),
+  createdAt: timestamp("created_at").defaultNow()
+});
+
+export const activityLog = pgTable("activity_log", {
+  id: serial("id").primaryKey(),
+  restaurantId: integer("restaurant_id").references(() => restaurants.id).notNull(),
+  eventType: varchar("event_type", { length: 50 }).notNull(),
+  description: text("description").notNull(),
+  source: varchar("source", { length: 20 }).default("manual"),
+  userEmail: text("user_email"),
+  details: text("details"), // JSON string for additional data
+  createdAt: timestamp("created_at").defaultNow()
+});
+
+export const timeSlots = pgTable("time_slots", {
+  id: serial("id").primaryKey(),
+  restaurantId: integer("restaurant_id").references(() => restaurants.id).notNull(),
+  date: text("date").notNull(),
+  time: text("time").notNull(),
+  isAvailable: boolean("is_available").default(true),
+  maxCapacity: integer("max_capacity").default(0)
 });
 
 export const insertUserSchema = createInsertSchema(users).pick({
@@ -85,6 +146,30 @@ export const insertCustomerSchema = createInsertSchema(customers).omit({
   lastVisit: true
 });
 
+export const insertSmsMessageSchema = createInsertSchema(smsMessages).omit({
+  id: true,
+  createdAt: true
+});
+
+export const insertWaitingListSchema = createInsertSchema(waitingList).omit({
+  id: true,
+  createdAt: true
+});
+
+export const insertFeedbackSchema = createInsertSchema(feedback).omit({
+  id: true,
+  createdAt: true
+});
+
+export const insertActivityLogSchema = createInsertSchema(activityLog).omit({
+  id: true,
+  createdAt: true
+});
+
+export const insertTimeSlotsSchema = createInsertSchema(timeSlots).omit({
+  id: true
+});
+
 export const loginSchema = z.object({
   email: z.string().email(),
   password: z.string().min(6)
@@ -100,4 +185,14 @@ export type Booking = typeof bookings.$inferSelect;
 export type InsertBooking = z.infer<typeof insertBookingSchema>;
 export type Customer = typeof customers.$inferSelect;
 export type InsertCustomer = z.infer<typeof insertCustomerSchema>;
+export type SmsMessage = typeof smsMessages.$inferSelect;
+export type InsertSmsMessage = z.infer<typeof insertSmsMessageSchema>;
+export type WaitingList = typeof waitingList.$inferSelect;
+export type InsertWaitingList = z.infer<typeof insertWaitingListSchema>;
+export type Feedback = typeof feedback.$inferSelect;
+export type InsertFeedback = z.infer<typeof insertFeedbackSchema>;
+export type ActivityLog = typeof activityLog.$inferSelect;
+export type InsertActivityLog = z.infer<typeof insertActivityLogSchema>;
+export type TimeSlots = typeof timeSlots.$inferSelect;
+export type InsertTimeSlots = z.infer<typeof insertTimeSlotsSchema>;
 export type LoginData = z.infer<typeof loginSchema>;
