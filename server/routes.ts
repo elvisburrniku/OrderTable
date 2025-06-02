@@ -101,6 +101,53 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  app.post("/api/restaurants/:restaurantId/tables", async (req, res) => {
+    try {
+      const restaurantId = parseInt(req.params.restaurantId);
+      const tableData = {
+        ...req.body,
+        restaurantId,
+      };
+      
+      const table = await storage.createTable(tableData);
+      res.json(table);
+    } catch (error) {
+      res.status(400).json({ message: "Invalid table data" });
+    }
+  });
+
+  app.put("/api/tables/:id", async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      const updates = req.body;
+      
+      const table = await storage.updateTable(id, updates);
+      
+      if (!table) {
+        return res.status(404).json({ message: "Table not found" });
+      }
+      
+      res.json(table);
+    } catch (error) {
+      res.status(400).json({ message: "Invalid request" });
+    }
+  });
+
+  app.delete("/api/tables/:id", async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      const success = await storage.deleteTable(id);
+      
+      if (!success) {
+        return res.status(404).json({ message: "Table not found" });
+      }
+      
+      res.json({ message: "Table deleted successfully" });
+    } catch (error) {
+      res.status(400).json({ message: "Invalid request" });
+    }
+  });
+
   // Bookings routes
   app.get("/api/restaurants/:restaurantId/bookings", async (req, res) => {
     try {

@@ -24,6 +24,8 @@ export interface IStorage {
   // Tables
   getTablesByRestaurant(restaurantId: number): Promise<Table[]>;
   createTable(table: InsertTable): Promise<Table>;
+  updateTable(id: number, table: Partial<Table>): Promise<Table | undefined>;
+  deleteTable(id: number): Promise<boolean>;
 
   // Bookings
   getBookingsByRestaurant(restaurantId: number): Promise<Booking[]>;
@@ -309,6 +311,19 @@ export class MemStorage implements IStorage {
     };
     this.tables.set(table.id, table);
     return table;
+  }
+
+  async updateTable(id: number, updates: Partial<Table>): Promise<Table | undefined> {
+    const table = this.tables.get(id);
+    if (!table) return undefined;
+
+    const updatedTable = { ...table, ...updates };
+    this.tables.set(id, updatedTable);
+    return updatedTable;
+  }
+
+  async deleteTable(id: number): Promise<boolean> {
+    return this.tables.delete(id);
   }
 
   async getBookingsByRestaurant(restaurantId: number): Promise<Booking[]> {
