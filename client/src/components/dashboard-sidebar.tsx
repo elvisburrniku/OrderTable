@@ -34,7 +34,17 @@ export default function DashboardSidebar({ selectedDate, bookings }: DashboardSi
     { path: "/cut-off-time", icon: Clock, label: "Cut-off Time" },
     { path: "/rooms", icon: MapPin, label: "Rooms" },
     { path: "/tables", icon: Table, label: "Tables" },
-    { path: "/combined-tables", icon: Utensils, label: "Combined Tables" }
+    { path: "/combined-tables", icon: Utensils, label: "Combined Tables" },
+    { path: "/seating-configurations", icon: Grid3x3, label: "Seating Configurations" },
+    { path: "/periodic-criteria", icon: Calendar, label: "Periodic Criteria" },
+    { path: "/custom-fields", icon: FileText, label: "Custom Fields" },
+    { path: "/booking-agents", icon: Users, label: "Booking Agents" },
+    { path: "/email-notifications", icon: MessageSquare, label: "E-mail Notifications" },
+    { path: "/sms-notifications", icon: MessageSquare, label: "SMS Notifications" },
+    { path: "/feedback-questions", icon: MessageCircle, label: "Questions" },
+    { path: "/events", icon: Calendar, label: "Events" },
+    { path: "/payment-setups", icon: Settings, label: "Payment Setups" },
+    { path: "/payment-gateway", icon: Settings, label: "Payment Gateway" }
   ];
 
   return (
