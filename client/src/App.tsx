@@ -14,6 +14,12 @@ import WaitingList from "@/pages/waiting-list";
 import Statistics from "@/pages/statistics";
 import FeedbackResponses from "@/pages/feedback-responses";
 import ActivityLog from "@/pages/activity-log";
+import OpeningHours from "@/pages/opening-hours";
+import SpecialPeriods from "@/pages/special-periods";
+import CutOffTime from "@/pages/cut-off-time";
+import Rooms from "@/pages/rooms";
+import Tables from "@/pages/tables";
+import CombinedTables from "@/pages/combined-tables";
 import NotFound from "@/pages/not-found";
 
 function Router() {

@@ -1,8 +1,10 @@
 import { 
-  users, restaurants, tables, bookings, customers,
+  users, restaurants, tables, bookings, customers, smsMessages, waitingList, feedback, activityLog, timeSlots,
   type User, type InsertUser, type Restaurant, type InsertRestaurant,
   type Table, type InsertTable, type Booking, type InsertBooking,
-  type Customer, type InsertCustomer 
+  type Customer, type InsertCustomer, type SmsMessage, type InsertSmsMessage,
+  type WaitingList, type InsertWaitingList, type Feedback, type InsertFeedback,
+  type ActivityLog, type InsertActivityLog, type TimeSlots, type InsertTimeSlots
 } from "@shared/schema";
 
 export interface IStorage {
