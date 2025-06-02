@@ -413,26 +413,39 @@ export class MemStorage implements IStorage {
     async getSubscriptionPlans(): Promise<SubscriptionPlan[]> {
       return Array.from(this.subscriptionPlans.values());
     }
-  
+
     async getSubscriptionPlan(id: number): Promise<SubscriptionPlan | undefined> {
       return this.subscriptionPlans.get(id);
     }
-  
+
     async createSubscriptionPlan(plan: InsertSubscriptionPlan): Promise<SubscriptionPlan> {
-      const newPlan: SubscriptionPlan = {
+    // Check if plan with same name exists and update it
+    const existingPlan = Array.from(this.subscriptionPlans.values()).find(p => p.name === plan.name);
+    if (existingPlan) {
+      const updatedPlan: SubscriptionPlan = {
+        ...existingPlan,
         ...plan,
-        id: this.currentSubscriptionPlanId++,
-        createdAt: new Date()
+        id: existingPlan.id,
+        createdAt: existingPlan.createdAt
       };
-      this.subscriptionPlans.set(newPlan.id, newPlan);
-      return newPlan;
+      this.subscriptionPlans.set(existingPlan.id, updatedPlan);
+      return updatedPlan;
     }
-  
+
+    const newPlan: SubscriptionPlan = {
+      ...plan,
+      id: this.currentSubscriptionPlanId++,
+      createdAt: new Date()
+    };
+    this.subscriptionPlans.set(newPlan.id, newPlan);
+    return newPlan;
+  }
+
     // User Subscriptions
     async getUserSubscription(userId: number): Promise<UserSubscription | undefined> {
       return Array.from(this.userSubscriptions.values()).find(subscription => subscription.userId === userId);
     }
-  
+
     async createUserSubscription(subscription: InsertUserSubscription): Promise<UserSubscription> {
       const newSubscription: UserSubscription = {
         ...subscription,
@@ -443,11 +456,11 @@ export class MemStorage implements IStorage {
       this.userSubscriptions.set(newSubscription.id, newSubscription);
       return newSubscription;
     }
-  
+
     async updateUserSubscription(id: number, updates: Partial<UserSubscription>): Promise<UserSubscription | undefined> {
       const subscription = this.userSubscriptions.get(id);
       if (!subscription) return undefined;
-  
+
       const updatedSubscription = { ...subscription, ...updates, updatedAt: new Date() };
       this.userSubscriptions.set(id, updatedSubscription);
       return updatedSubscription;

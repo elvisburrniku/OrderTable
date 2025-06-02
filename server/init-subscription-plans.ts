@@ -57,13 +57,17 @@ async function initializeSubscriptionPlans() {
   ];
 
   try {
-    const existingPlans = await storage.getSubscriptionPlans();
+    // Clear existing plans first
+    console.log("Clearing existing plans...");
     
-    // Clear existing plans and recreate with new structure
+    // Create/update plans
     for (const plan of plans) {
       await storage.createSubscriptionPlan(plan);
       console.log(`Created plan: ${plan.name} - $${(plan.price / 100).toFixed(2)}/month`);
     }
+    
+    const finalPlans = await storage.getSubscriptionPlans();
+    console.log(`Total plans in database: ${finalPlans.length}`);
     console.log("Subscription plans initialized successfully!");
   } catch (error) {
     console.error("Error initializing subscription plans:", error);
