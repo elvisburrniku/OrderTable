@@ -131,7 +131,7 @@ export class MemStorage implements IStorage {
       {
         name: "Starter",
         price: 2900, // $29.00
-        interval: "monthly",
+        interval: "month",
         features: JSON.stringify([
           "Basic booking management",
           "Email notifications",
@@ -146,7 +146,7 @@ export class MemStorage implements IStorage {
       {
         name: "Professional",
         price: 4900, // $49.00
-        interval: "monthly",
+        interval: "month",
         features: JSON.stringify([
           "Advanced booking management",
           "SMS notifications",
@@ -163,7 +163,7 @@ export class MemStorage implements IStorage {
       {
         name: "Enterprise",
         price: 9900, // $99.00
-        interval: "monthly",
+        interval: "month",
         features: JSON.stringify([
           "All Professional features",
           "Payment processing",
