@@ -1,38 +1,28 @@
 import type { Express } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
-import { insertUserSchema, insertBookingSchema, insertCustomerSchema } from "@shared/schema";
+import { insertUserSchema, loginSchema, insertBookingSchema, insertCustomerSchema } from "@shared/schema";
 import { z } from "zod";
 
 export async function registerRoutes(app: Express): Promise<Server> {
-  // Authentication endpoints
+  // Auth routes
   app.post("/api/auth/login", async (req, res) => {
     try {
-      const { username, password } = req.body;
+      const { email, password } = loginSchema.parse(req.body);
       
-      if (!username || !password) {
-        return res.status(400).json({ message: "Username and password are required" });
-      }
-
-      const user = await storage.getUserByUsername(username);
-      
+      const user = await storage.getUserByEmail(email);
       if (!user || user.password !== password) {
         return res.status(401).json({ message: "Invalid credentials" });
       }
 
-      const restaurant = await storage.getRestaurantByOwnerId(user.id);
+      const restaurant = await storage.getRestaurantByUserId(user.id);
       
       res.json({ 
-        user: { 
-          id: user.id, 
-          username: user.username, 
-          email: user.email, 
-          restaurantName: user.restaurantName 
-        }, 
+        user: { ...user, password: undefined },
         restaurant 
       });
     } catch (error) {
-      res.status(500).json({ message: "Login failed" });
+      res.status(400).json({ message: "Invalid request data" });
     }
   });
 
@@ -40,52 +30,50 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const userData = insertUserSchema.parse(req.body);
       
-      // Check if user already exists
-      const existingUser = await storage.getUserByUsername(userData.username);
+      const existingUser = await storage.getUserByEmail(userData.email);
       if (existingUser) {
-        return res.status(400).json({ message: "Username already exists" });
-      }
-
-      const existingEmail = await storage.getUserByEmail(userData.email);
-      if (existingEmail) {
-        return res.status(400).json({ message: "Email already exists" });
+        return res.status(400).json({ message: "User already exists" });
       }
 
       const user = await storage.createUser(userData);
       
-      // Create restaurant for the user
-      const restaurant = await storage.createRestaurant({
-        name: userData.restaurantName,
-        ownerId: user.id,
-        address: "",
-        phone: "",
-        email: userData.email,
-        description: "",
-        tables: 10
-      });
-
-      res.status(201).json({ 
-        user: { 
-          id: user.id, 
-          username: user.username, 
-          email: user.email, 
-          restaurantName: user.restaurantName 
-        }, 
-        restaurant 
-      });
-    } catch (error) {
-      if (error instanceof z.ZodError) {
-        return res.status(400).json({ message: "Invalid input data", errors: error.errors });
+      if (userData.restaurantName) {
+        const restaurant = await storage.createRestaurant({
+          name: userData.restaurantName,
+          userId: user.id,
+          address: "",
+          phone: "",
+          email: userData.email,
+          description: ""
+        });
+        
+        // Create default tables
+        for (let i = 1; i <= 10; i++) {
+          await storage.createTable({
+            restaurantId: restaurant.id,
+            tableNumber: i.toString(),
+            capacity: i <= 4 ? 2 : i <= 8 ? 4 : 6,
+            isActive: true
+          });
+        }
+        
+        res.json({ 
+          user: { ...user, password: undefined },
+          restaurant 
+        });
+      } else {
+        res.json({ user: { ...user, password: undefined } });
       }
-      res.status(500).json({ message: "Registration failed" });
+    } catch (error) {
+      res.status(400).json({ message: "Invalid request data" });
     }
   });
 
-  // Restaurant endpoints
-  app.get("/api/restaurants/:id", async (req, res) => {
+  // Restaurant routes
+  app.get("/api/restaurants/:userId", async (req, res) => {
     try {
-      const id = parseInt(req.params.id);
-      const restaurant = await storage.getRestaurant(id);
+      const userId = parseInt(req.params.userId);
+      const restaurant = await storage.getRestaurantByUserId(userId);
       
       if (!restaurant) {
         return res.status(404).json({ message: "Restaurant not found" });
@@ -93,52 +81,81 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       res.json(restaurant);
     } catch (error) {
-      res.status(500).json({ message: "Failed to fetch restaurant" });
+      res.status(400).json({ message: "Invalid request" });
     }
   });
 
-  // Booking endpoints
+  // Tables routes
+  app.get("/api/restaurants/:restaurantId/tables", async (req, res) => {
+    try {
+      const restaurantId = parseInt(req.params.restaurantId);
+      const tables = await storage.getTablesByRestaurant(restaurantId);
+      res.json(tables);
+    } catch (error) {
+      res.status(400).json({ message: "Invalid request" });
+    }
+  });
+
+  // Bookings routes
   app.get("/api/restaurants/:restaurantId/bookings", async (req, res) => {
     try {
       const restaurantId = parseInt(req.params.restaurantId);
       const { date } = req.query;
       
       let bookings;
-      if (date) {
-        bookings = await storage.getBookingsByDate(restaurantId, date as string);
+      if (date && typeof date === 'string') {
+        bookings = await storage.getBookingsByDate(restaurantId, date);
       } else {
         bookings = await storage.getBookingsByRestaurant(restaurantId);
       }
       
       res.json(bookings);
     } catch (error) {
-      res.status(500).json({ message: "Failed to fetch bookings" });
+      res.status(400).json({ message: "Invalid request" });
     }
   });
 
   app.post("/api/restaurants/:restaurantId/bookings", async (req, res) => {
     try {
       const restaurantId = parseInt(req.params.restaurantId);
-      const bookingData = insertBookingSchema.parse(req.body);
-      
-      const booking = await storage.createBooking({
-        ...bookingData,
-        restaurantId
+      const bookingData = insertBookingSchema.parse({
+        ...req.body,
+        restaurantId,
+        bookingDate: new Date(req.body.bookingDate)
       });
       
-      res.status(201).json(booking);
-    } catch (error) {
-      if (error instanceof z.ZodError) {
-        return res.status(400).json({ message: "Invalid booking data", errors: error.errors });
+      const booking = await storage.createBooking(bookingData);
+      
+      // Update or create customer
+      let customer = await storage.getCustomerByEmail(restaurantId, bookingData.customerEmail);
+      if (customer) {
+        await storage.updateCustomer(customer.id, {
+          totalBookings: customer.totalBookings + 1,
+          lastVisit: new Date()
+        });
+      } else {
+        await storage.createCustomer({
+          restaurantId,
+          name: bookingData.customerName,
+          email: bookingData.customerEmail,
+          phone: bookingData.customerPhone || ""
+        });
       }
-      res.status(500).json({ message: "Failed to create booking" });
+      
+      res.json(booking);
+    } catch (error) {
+      res.status(400).json({ message: "Invalid booking data" });
     }
   });
 
-  app.patch("/api/bookings/:id", async (req, res) => {
+  app.put("/api/bookings/:id", async (req, res) => {
     try {
       const id = parseInt(req.params.id);
       const updates = req.body;
+      
+      if (updates.bookingDate) {
+        updates.bookingDate = new Date(updates.bookingDate);
+      }
       
       const booking = await storage.updateBooking(id, updates);
       
@@ -148,7 +165,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       res.json(booking);
     } catch (error) {
-      res.status(500).json({ message: "Failed to update booking" });
+      res.status(400).json({ message: "Invalid request" });
     }
   });
 
@@ -161,47 +178,35 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(404).json({ message: "Booking not found" });
       }
       
-      res.status(204).send();
+      res.json({ message: "Booking deleted successfully" });
     } catch (error) {
-      res.status(500).json({ message: "Failed to delete booking" });
+      res.status(400).json({ message: "Invalid request" });
     }
   });
 
-  // Customer endpoints
+  // Customers routes
   app.get("/api/restaurants/:restaurantId/customers", async (req, res) => {
     try {
       const restaurantId = parseInt(req.params.restaurantId);
-      const { search } = req.query;
-      
-      let customers;
-      if (search) {
-        customers = await storage.searchCustomers(restaurantId, search as string);
-      } else {
-        customers = await storage.getCustomersByRestaurant(restaurantId);
-      }
-      
+      const customers = await storage.getCustomersByRestaurant(restaurantId);
       res.json(customers);
     } catch (error) {
-      res.status(500).json({ message: "Failed to fetch customers" });
+      res.status(400).json({ message: "Invalid request" });
     }
   });
 
   app.post("/api/restaurants/:restaurantId/customers", async (req, res) => {
     try {
       const restaurantId = parseInt(req.params.restaurantId);
-      const customerData = insertCustomerSchema.parse(req.body);
-      
-      const customer = await storage.createCustomer({
-        ...customerData,
+      const customerData = insertCustomerSchema.parse({
+        ...req.body,
         restaurantId
       });
       
-      res.status(201).json(customer);
+      const customer = await storage.createCustomer(customerData);
+      res.json(customer);
     } catch (error) {
-      if (error instanceof z.ZodError) {
-        return res.status(400).json({ message: "Invalid customer data", errors: error.errors });
-      }
-      res.status(500).json({ message: "Failed to create customer" });
+      res.status(400).json({ message: "Invalid customer data" });
     }
   });
 

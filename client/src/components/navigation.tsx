@@ -1,131 +1,65 @@
-import { Link, useLocation } from "wouter";
+import { useState } from "react";
+import { Link } from "wouter";
 import { Button } from "@/components/ui/button";
-import { getCurrentUser, logout } from "@/lib/auth";
-import { Calendar, Users, BarChart3, Settings, LogOut, Menu } from "lucide-react";
-import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
+import { Grid3x3, Menu, X } from "lucide-react";
 
-interface NavigationProps {
-  isPublic?: boolean;
-}
+export default function Navigation() {
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
-export default function Navigation({ isPublic = false }: NavigationProps) {
-  const [location, setLocation] = useLocation();
-  const user = getCurrentUser();
-
-  const handleLogout = () => {
-    logout();
-    setLocation("/");
-  };
-
-  if (isPublic) {
-    return (
-      <nav className="bg-white shadow-sm border-b border-gray-200 sticky top-0 z-50">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between items-center h-16">
-            <Link href="/" className="flex items-center space-x-2">
-              <div className="w-8 h-8 bg-brand-green rounded-lg flex items-center justify-center">
-                <Calendar className="text-white" size={16} />
-              </div>
-              <span className="text-xl font-bold text-brand-dark">easyTable</span>
+  return (
+    <nav className="bg-white shadow-sm sticky top-0 z-50">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="flex justify-between items-center h-16">
+          <div className="flex items-center">
+            <Link href="/" className="flex items-center">
+              <Grid3x3 className="text-green-600 text-xl mr-2" size={24} />
+              <span className="text-xl font-bold text-gray-900">easyTable</span>
             </Link>
-            
-            <div className="hidden md:flex items-center space-x-8">
-              <a href="#features" className="text-brand-gray hover:text-brand-green transition">Features</a>
-              <a href="#pricing" className="text-brand-gray hover:text-brand-green transition">Pricing</a>
-              <a href="#about" className="text-brand-gray hover:text-brand-green transition">About us</a>
-              <a href="#cases" className="text-brand-gray hover:text-brand-green transition">Cases</a>
-              <a href="#contact" className="text-brand-gray hover:text-brand-green transition">Contact</a>
-            </div>
-
-            <div className="flex items-center space-x-4">
+          </div>
+          
+          <div className="hidden md:block">
+            <div className="ml-10 flex items-baseline space-x-8">
+              <a href="#features" className="text-gray-700 hover:text-green-600 px-3 py-2 text-sm font-medium transition-colors">Features</a>
+              <a href="#pricing" className="text-gray-700 hover:text-green-600 px-3 py-2 text-sm font-medium transition-colors">Pricing</a>
+              <a href="#about" className="text-gray-700 hover:text-green-600 px-3 py-2 text-sm font-medium transition-colors">About us</a>
+              <a href="#cases" className="text-gray-700 hover:text-green-600 px-3 py-2 text-sm font-medium transition-colors">Cases</a>
+              <a href="#contact" className="text-gray-700 hover:text-green-600 px-3 py-2 text-sm font-medium transition-colors">Contact</a>
               <Link href="/login">
-                <Button variant="ghost" className="text-brand-gray hover:text-brand-green">
+                <Button className="bg-green-600 hover:bg-green-700 text-white">
                   Log in
                 </Button>
               </Link>
-              <Link href="/login">
-                <Button className="bg-brand-green text-white hover:bg-green-600">
-                  Start free trial
+            </div>
+          </div>
+          
+          <div className="md:hidden">
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
+            >
+              {isMobileMenuOpen ? <X size={20} /> : <Menu size={20} />}
+            </Button>
+          </div>
+        </div>
+        
+        {/* Mobile menu */}
+        {isMobileMenuOpen && (
+          <div className="md:hidden border-t border-gray-200 py-4">
+            <div className="flex flex-col space-y-2">
+              <a href="#features" className="text-gray-700 hover:text-green-600 px-3 py-2 text-sm font-medium">Features</a>
+              <a href="#pricing" className="text-gray-700 hover:text-green-600 px-3 py-2 text-sm font-medium">Pricing</a>
+              <a href="#about" className="text-gray-700 hover:text-green-600 px-3 py-2 text-sm font-medium">About us</a>
+              <a href="#cases" className="text-gray-700 hover:text-green-600 px-3 py-2 text-sm font-medium">Cases</a>
+              <a href="#contact" className="text-gray-700 hover:text-green-600 px-3 py-2 text-sm font-medium">Contact</a>
+              <Link href="/login" className="pt-2">
+                <Button className="bg-green-600 hover:bg-green-700 text-white w-full">
+                  Log in
                 </Button>
               </Link>
             </div>
-
-            <Sheet>
-              <SheetTrigger asChild>
-                <Button variant="ghost" size="icon" className="md:hidden">
-                  <Menu className="h-6 w-6" />
-                </Button>
-              </SheetTrigger>
-              <SheetContent>
-                <div className="flex flex-col space-y-4 mt-8">
-                  <a href="#features" className="text-brand-gray hover:text-brand-green">Features</a>
-                  <a href="#pricing" className="text-brand-gray hover:text-brand-green">Pricing</a>
-                  <a href="#about" className="text-brand-gray hover:text-brand-green">About us</a>
-                  <a href="#cases" className="text-brand-gray hover:text-brand-green">Cases</a>
-                  <a href="#contact" className="text-brand-gray hover:text-brand-green">Contact</a>
-                  <Link href="/login">
-                    <Button className="w-full bg-brand-green text-white hover:bg-green-600">
-                      Start free trial
-                    </Button>
-                  </Link>
-                </div>
-              </SheetContent>
-            </Sheet>
           </div>
-        </div>
-      </nav>
-    );
-  }
-
-  // Dashboard navigation
-  return (
-    <nav className="bg-white shadow-sm border-b border-gray-200">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex justify-between items-center h-16">
-          <Link href="/dashboard" className="flex items-center space-x-2">
-            <div className="w-8 h-8 bg-brand-green rounded-lg flex items-center justify-center">
-              <Calendar className="text-white" size={16} />
-            </div>
-            <span className="text-xl font-bold text-brand-dark">easyTable</span>
-          </Link>
-          
-          <div className="hidden md:flex items-center space-x-6">
-            <Link href="/bookings">
-              <Button 
-                variant={location === "/bookings" ? "default" : "ghost"} 
-                className={location === "/bookings" ? "bg-brand-green text-white" : "text-brand-gray hover:text-brand-green"}
-              >
-                <Calendar className="w-4 h-4 mr-2" />
-                Booking
-              </Button>
-            </Link>
-            <Link href="/customers">
-              <Button 
-                variant={location === "/customers" ? "default" : "ghost"} 
-                className={location === "/customers" ? "bg-brand-green text-white" : "text-brand-gray hover:text-brand-green"}
-              >
-                <Users className="w-4 h-4 mr-2" />
-                CRM
-              </Button>
-            </Link>
-            <Button variant="ghost" className="text-brand-gray hover:text-brand-green">
-              <BarChart3 className="w-4 h-4 mr-2" />
-              Archive
-            </Button>
-          </div>
-
-          <div className="flex items-center space-x-4">
-            <span className="text-sm text-brand-gray hidden sm:block">
-              Welcome, {user?.restaurantName}
-            </span>
-            <Button variant="ghost" size="icon" className="text-brand-gray hover:text-brand-green">
-              <Settings className="w-4 h-4" />
-            </Button>
-            <Button variant="ghost" size="icon" onClick={handleLogout} className="text-brand-gray hover:text-destructive">
-              <LogOut className="w-4 h-4" />
-            </Button>
-          </div>
-        </div>
+        )}
       </div>
     </nav>
   );

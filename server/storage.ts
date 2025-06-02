@@ -1,128 +1,127 @@
 import { 
-  users, 
-  restaurants, 
-  bookings, 
-  customers,
-  type User, 
-  type InsertUser,
-  type Restaurant,
-  type InsertRestaurant,
-  type Booking,
-  type InsertBooking,
-  type Customer,
-  type InsertCustomer
+  users, restaurants, tables, bookings, customers,
+  type User, type InsertUser, type Restaurant, type InsertRestaurant,
+  type Table, type InsertTable, type Booking, type InsertBooking,
+  type Customer, type InsertCustomer 
 } from "@shared/schema";
 
 export interface IStorage {
-  // User methods
+  // Users
   getUser(id: number): Promise<User | undefined>;
-  getUserByUsername(username: string): Promise<User | undefined>;
   getUserByEmail(email: string): Promise<User | undefined>;
   createUser(user: InsertUser): Promise<User>;
   
-  // Restaurant methods
+  // Restaurants
   getRestaurant(id: number): Promise<Restaurant | undefined>;
-  getRestaurantByOwnerId(ownerId: number): Promise<Restaurant | undefined>;
-  createRestaurant(restaurant: InsertRestaurant & { ownerId: number }): Promise<Restaurant>;
+  getRestaurantByUserId(userId: number): Promise<Restaurant | undefined>;
+  createRestaurant(restaurant: InsertRestaurant): Promise<Restaurant>;
   
-  // Booking methods
-  getBooking(id: number): Promise<Booking | undefined>;
+  // Tables
+  getTablesByRestaurant(restaurantId: number): Promise<Table[]>;
+  createTable(table: InsertTable): Promise<Table>;
+  
+  // Bookings
   getBookingsByRestaurant(restaurantId: number): Promise<Booking[]>;
   getBookingsByDate(restaurantId: number, date: string): Promise<Booking[]>;
-  createBooking(booking: InsertBooking & { restaurantId: number }): Promise<Booking>;
-  updateBooking(id: number, updates: Partial<Booking>): Promise<Booking | undefined>;
+  createBooking(booking: InsertBooking): Promise<Booking>;
+  updateBooking(id: number, booking: Partial<Booking>): Promise<Booking | undefined>;
   deleteBooking(id: number): Promise<boolean>;
   
-  // Customer methods
-  getCustomer(id: number): Promise<Customer | undefined>;
+  // Customers
   getCustomersByRestaurant(restaurantId: number): Promise<Customer[]>;
-  searchCustomers(restaurantId: number, query: string): Promise<Customer[]>;
-  createCustomer(customer: InsertCustomer & { restaurantId: number }): Promise<Customer>;
-  updateCustomer(id: number, updates: Partial<Customer>): Promise<Customer | undefined>;
+  getCustomerByEmail(restaurantId: number, email: string): Promise<Customer | undefined>;
+  createCustomer(customer: InsertCustomer): Promise<Customer>;
+  updateCustomer(id: number, customer: Partial<Customer>): Promise<Customer | undefined>;
 }
 
 export class MemStorage implements IStorage {
-  private users: Map<number, User> = new Map();
-  private restaurants: Map<number, Restaurant> = new Map();
-  private bookings: Map<number, Booking> = new Map();
-  private customers: Map<number, Customer> = new Map();
-  private currentUserId = 1;
-  private currentRestaurantId = 1;
-  private currentBookingId = 1;
-  private currentCustomerId = 1;
+  private users: Map<number, User>;
+  private restaurants: Map<number, Restaurant>;
+  private tables: Map<number, Table>;
+  private bookings: Map<number, Booking>;
+  private customers: Map<number, Customer>;
+  private currentUserId: number;
+  private currentRestaurantId: number;
+  private currentTableId: number;
+  private currentBookingId: number;
+  private currentCustomerId: number;
 
   constructor() {
-    // Add demo data
+    this.users = new Map();
+    this.restaurants = new Map();
+    this.tables = new Map();
+    this.bookings = new Map();
+    this.customers = new Map();
+    this.currentUserId = 1;
+    this.currentRestaurantId = 1;
+    this.currentTableId = 1;
+    this.currentBookingId = 1;
+    this.currentCustomerId = 1;
+    
     this.seedData();
   }
 
-  private async seedData() {
-    // Create demo user and restaurant
-    const demoUser = await this.createUser({
-      username: "demo",
-      password: "demo123",
+  private seedData() {
+    // Create demo user
+    const user: User = {
+      id: this.currentUserId++,
       email: "demo@restaurant.com",
-      restaurantName: "Demo Restaurant"
-    });
+      password: "password123",
+      name: "Demo Restaurant Owner",
+      restaurantName: "The Demo Restaurant",
+      createdAt: new Date()
+    };
+    this.users.set(user.id, user);
 
-    const demoRestaurant = await this.createRestaurant({
-      name: "Demo Restaurant",
-      ownerId: demoUser.id,
-      address: "123 Main Street, Copenhagen",
+    // Create demo restaurant
+    const restaurant: Restaurant = {
+      id: this.currentRestaurantId++,
+      name: "The Demo Restaurant",
+      userId: user.id,
+      address: "123 Main Street, Copenhagen, Denmark",
       phone: "+45 12 34 56 78",
       email: "info@demorestaurant.com",
-      description: "A beautiful restaurant with modern cuisine",
-      tables: 12
-    });
+      description: "A modern restaurant with exceptional dining experience",
+      createdAt: new Date()
+    };
+    this.restaurants.set(restaurant.id, restaurant);
 
-    // Add some demo bookings
-    await this.createBooking({
-      restaurantId: demoRestaurant.id,
-      customerName: "John Smith",
-      customerEmail: "john@example.com",
-      customerPhone: "+45 98 76 54 32",
-      date: "2025-01-15",
-      time: "19:00",
-      partySize: 4,
-      tableNumber: 5,
-      notes: "Window table preferred"
-    });
+    // Create demo tables
+    for (let i = 1; i <= 12; i++) {
+      const table: Table = {
+        id: this.currentTableId++,
+        restaurantId: restaurant.id,
+        tableNumber: i.toString(),
+        capacity: i <= 4 ? 2 : i <= 8 ? 4 : 6,
+        isActive: true
+      };
+      this.tables.set(table.id, table);
+    }
 
-    await this.createBooking({
-      restaurantId: demoRestaurant.id,
-      customerName: "Emma Johnson",
-      customerEmail: "emma@example.com",
-      customerPhone: "+45 87 65 43 21",
-      date: "2025-01-15",
-      time: "20:30",
-      partySize: 2,
-      tableNumber: 8,
-      notes: "Anniversary dinner"
-    });
+    // Create demo customers
+    const demoCustomers = [
+      { name: "John Smith", email: "john@example.com", phone: "+45 11 22 33 44" },
+      { name: "Sarah Johnson", email: "sarah@example.com", phone: "+45 22 33 44 55" },
+      { name: "Michael Brown", email: "michael@example.com", phone: "+45 33 44 55 66" }
+    ];
 
-    // Add demo customers
-    await this.createCustomer({
-      restaurantId: demoRestaurant.id,
-      name: "John Smith",
-      email: "john@example.com",
-      phone: "+45 98 76 54 32"
-    });
-
-    await this.createCustomer({
-      restaurantId: demoRestaurant.id,
-      name: "Emma Johnson",
-      email: "emma@example.com",
-      phone: "+45 87 65 43 21"
+    demoCustomers.forEach(customerData => {
+      const customer: Customer = {
+        id: this.currentCustomerId++,
+        restaurantId: restaurant.id,
+        name: customerData.name,
+        email: customerData.email,
+        phone: customerData.phone,
+        totalBookings: 3,
+        lastVisit: new Date(),
+        createdAt: new Date()
+      };
+      this.customers.set(customer.id, customer);
     });
   }
 
-  // User methods
   async getUser(id: number): Promise<User | undefined> {
     return this.users.get(id);
-  }
-
-  async getUserByUsername(username: string): Promise<User | undefined> {
-    return Array.from(this.users.values()).find(user => user.username === username);
   }
 
   async getUserByEmail(email: string): Promise<User | undefined> {
@@ -130,40 +129,44 @@ export class MemStorage implements IStorage {
   }
 
   async createUser(insertUser: InsertUser): Promise<User> {
-    const id = this.currentUserId++;
-    const user: User = { 
-      ...insertUser, 
-      id, 
-      role: "owner",
+    const user: User = {
+      ...insertUser,
+      id: this.currentUserId++,
       createdAt: new Date()
     };
-    this.users.set(id, user);
+    this.users.set(user.id, user);
     return user;
   }
 
-  // Restaurant methods
   async getRestaurant(id: number): Promise<Restaurant | undefined> {
     return this.restaurants.get(id);
   }
 
-  async getRestaurantByOwnerId(ownerId: number): Promise<Restaurant | undefined> {
-    return Array.from(this.restaurants.values()).find(restaurant => restaurant.ownerId === ownerId);
+  async getRestaurantByUserId(userId: number): Promise<Restaurant | undefined> {
+    return Array.from(this.restaurants.values()).find(restaurant => restaurant.userId === userId);
   }
 
-  async createRestaurant(restaurant: InsertRestaurant & { ownerId: number }): Promise<Restaurant> {
-    const id = this.currentRestaurantId++;
-    const newRestaurant: Restaurant = { 
-      ...restaurant, 
-      id,
+  async createRestaurant(insertRestaurant: InsertRestaurant): Promise<Restaurant> {
+    const restaurant: Restaurant = {
+      ...insertRestaurant,
+      id: this.currentRestaurantId++,
       createdAt: new Date()
     };
-    this.restaurants.set(id, newRestaurant);
-    return newRestaurant;
+    this.restaurants.set(restaurant.id, restaurant);
+    return restaurant;
   }
 
-  // Booking methods
-  async getBooking(id: number): Promise<Booking | undefined> {
-    return this.bookings.get(id);
+  async getTablesByRestaurant(restaurantId: number): Promise<Table[]> {
+    return Array.from(this.tables.values()).filter(table => table.restaurantId === restaurantId);
+  }
+
+  async createTable(insertTable: InsertTable): Promise<Table> {
+    const table: Table = {
+      ...insertTable,
+      id: this.currentTableId++
+    };
+    this.tables.set(table.id, table);
+    return table;
   }
 
   async getBookingsByRestaurant(restaurantId: number): Promise<Booking[]> {
@@ -171,21 +174,20 @@ export class MemStorage implements IStorage {
   }
 
   async getBookingsByDate(restaurantId: number, date: string): Promise<Booking[]> {
-    return Array.from(this.bookings.values()).filter(
-      booking => booking.restaurantId === restaurantId && booking.date === date
+    return Array.from(this.bookings.values()).filter(booking => 
+      booking.restaurantId === restaurantId && 
+      booking.bookingDate.toISOString().split('T')[0] === date
     );
   }
 
-  async createBooking(booking: InsertBooking & { restaurantId: number }): Promise<Booking> {
-    const id = this.currentBookingId++;
-    const newBooking: Booking = { 
-      ...booking, 
-      id,
-      status: "confirmed",
+  async createBooking(insertBooking: InsertBooking): Promise<Booking> {
+    const booking: Booking = {
+      ...insertBooking,
+      id: this.currentBookingId++,
       createdAt: new Date()
     };
-    this.bookings.set(id, newBooking);
-    return newBooking;
+    this.bookings.set(booking.id, booking);
+    return booking;
   }
 
   async updateBooking(id: number, updates: Partial<Booking>): Promise<Booking | undefined> {
@@ -201,38 +203,26 @@ export class MemStorage implements IStorage {
     return this.bookings.delete(id);
   }
 
-  // Customer methods
-  async getCustomer(id: number): Promise<Customer | undefined> {
-    return this.customers.get(id);
-  }
-
   async getCustomersByRestaurant(restaurantId: number): Promise<Customer[]> {
     return Array.from(this.customers.values()).filter(customer => customer.restaurantId === restaurantId);
   }
 
-  async searchCustomers(restaurantId: number, query: string): Promise<Customer[]> {
-    const customers = await this.getCustomersByRestaurant(restaurantId);
-    if (!query) return customers;
-    
-    const searchTerm = query.toLowerCase();
-    return customers.filter(customer => 
-      customer.name.toLowerCase().includes(searchTerm) ||
-      customer.email.toLowerCase().includes(searchTerm) ||
-      (customer.phone && customer.phone.includes(searchTerm))
+  async getCustomerByEmail(restaurantId: number, email: string): Promise<Customer | undefined> {
+    return Array.from(this.customers.values()).find(customer => 
+      customer.restaurantId === restaurantId && customer.email === email
     );
   }
 
-  async createCustomer(customer: InsertCustomer & { restaurantId: number }): Promise<Customer> {
-    const id = this.currentCustomerId++;
-    const newCustomer: Customer = { 
-      ...customer, 
-      id,
+  async createCustomer(insertCustomer: InsertCustomer): Promise<Customer> {
+    const customer: Customer = {
+      ...insertCustomer,
+      id: this.currentCustomerId++,
       totalBookings: 0,
       lastVisit: null,
       createdAt: new Date()
     };
-    this.customers.set(id, newCustomer);
-    return newCustomer;
+    this.customers.set(customer.id, customer);
+    return customer;
   }
 
   async updateCustomer(id: number, updates: Partial<Customer>): Promise<Customer | undefined> {
