@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { useAuth } from "@/lib/auth.tsx";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
@@ -14,42 +13,46 @@ export default function Subscription() {
   const queryClient = useQueryClient();
 
   const { data: plans = [], isLoading: plansLoading } = useQuery({
-    queryKey: ['/api/subscription-plans'],
-    enabled: !!user
+    queryKey: ["/api/subscription-plans"],
+    enabled: !!user,
   });
 
   const { data: currentSubscription } = useQuery({
-    queryKey: ['/api/users', user?.id, 'subscription'],
-    enabled: !!user
+    queryKey: ["/api/users", user?.id, "subscription"],
+    enabled: !!user,
   });
 
   const subscribeMutation = useMutation({
     mutationFn: async ({ planId }: { planId: number }) => {
       // Create Stripe checkout session
       const response = await fetch(`/api/create-checkout-session`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           planId,
           userId: user?.id,
           successUrl: `${window.location.origin}/subscription?success=true`,
-          cancelUrl: `${window.location.origin}/subscription?canceled=true`
-        })
+          cancelUrl: `${window.location.origin}/subscription?canceled=true`,
+        }),
       });
-      
-      if (!response.ok) throw new Error('Failed to create checkout session');
-      
+
+      if (!response.ok) throw new Error("Failed to create checkout session");
+
       const { sessionId } = await response.json();
-      
+
       // Redirect to Stripe Checkout
-      const stripe = await loadStripe('pk_test_your_stripe_publishable_key'); // Replace with your Stripe publishable key
+      const stripe = await loadStripe(
+        "pk_test_51RVa9XCi9JMBFIWGvumvIFH83ffJhblNsWgBrcbjzjqZkeKNnqs4vJVU0Y8Dqw5soSgwlecY0sHiHzwwJtACaqor00H22GKtKF",
+      ); // Replace with your Stripe publishable key
       if (stripe) {
         await stripe.redirectToCheckout({ sessionId });
       }
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['/api/users', user?.id, 'subscription'] });
-    }
+      queryClient.invalidateQueries({
+        queryKey: ["/api/users", user?.id, "subscription"],
+      });
+    },
   });
 
   if (!user || !restaurant) {
@@ -76,14 +79,25 @@ export default function Subscription() {
           <div className="flex items-center space-x-6">
             <h1 className="text-xl font-semibold">Subscription</h1>
             <nav className="flex space-x-6">
-              <a href="/dashboard" className="text-gray-600 hover:text-gray-900">Booking</a>
-              <a href="#" className="text-green-600 font-medium">CRM</a>
-              <a href="#" className="text-gray-600 hover:text-gray-900">Archive</a>
+              <a
+                href="/dashboard"
+                className="text-gray-600 hover:text-gray-900"
+              >
+                Booking
+              </a>
+              <a href="#" className="text-green-600 font-medium">
+                CRM
+              </a>
+              <a href="#" className="text-gray-600 hover:text-gray-900">
+                Archive
+              </a>
             </nav>
           </div>
           <div className="flex items-center space-x-4">
             <span className="text-sm text-gray-600">{restaurant.name}</span>
-            <Button variant="outline" size="sm">Profile</Button>
+            <Button variant="outline" size="sm">
+              Profile
+            </Button>
           </div>
         </div>
       </div>
@@ -103,15 +117,20 @@ export default function Subscription() {
                 <div className="flex items-center justify-between">
                   <div>
                     <div className="flex items-center gap-2 mb-2">
-                      <Badge variant={currentSubscription.status === 'active' ? 'default' : 'secondary'}>
+                      <Badge
+                        variant={
+                          currentSubscription.status === "active"
+                            ? "default"
+                            : "secondary"
+                        }
+                      >
                         {currentSubscription.status}
                       </Badge>
                     </div>
                     <p className="text-sm text-gray-600 flex items-center gap-1">
                       <Calendar className="h-4 w-4" />
-                      {currentSubscription.currentPeriodEnd && 
-                        `Next billing: ${format(new Date(currentSubscription.currentPeriodEnd), 'MMM dd, yyyy')}`
-                      }
+                      {currentSubscription.currentPeriodEnd &&
+                        `Next billing: ${format(new Date(currentSubscription.currentPeriodEnd), "MMM dd, yyyy")}`}
                     </p>
                   </div>
                   <Button variant="outline" size="sm">
@@ -132,7 +151,9 @@ export default function Subscription() {
                 <CardHeader>
                   <CardTitle className="text-center">{plan.name}</CardTitle>
                   <div className="text-center">
-                    <span className="text-3xl font-bold">${(plan.price / 100).toFixed(2)}</span>
+                    <span className="text-3xl font-bold">
+                      ${(plan.price / 100).toFixed(2)}
+                    </span>
                     <span className="text-gray-600">/{plan.interval}</span>
                   </div>
                 </CardHeader>
@@ -140,36 +161,45 @@ export default function Subscription() {
                   <div className="space-y-3 mb-6">
                     <div className="flex items-center gap-2">
                       <Check className="h-4 w-4 text-green-500" />
-                      <span className="text-sm">Up to {plan.maxTables} tables</span>
+                      <span className="text-sm">
+                        Up to {plan.maxTables} tables
+                      </span>
                     </div>
                     <div className="flex items-center gap-2">
                       <Check className="h-4 w-4 text-green-500" />
-                      <span className="text-sm">{plan.maxBookingsPerMonth} bookings/month</span>
+                      <span className="text-sm">
+                        {plan.maxBookingsPerMonth} bookings/month
+                      </span>
                     </div>
-                    {getFeaturesList(plan.features).map((feature: string, index: number) => (
-                      <div key={index} className="flex items-center gap-2">
-                        <Check className="h-4 w-4 text-green-500" />
-                        <span className="text-sm">{feature}</span>
-                      </div>
-                    ))}
+                    {getFeaturesList(plan.features).map(
+                      (feature: string, index: number) => (
+                        <div key={index} className="flex items-center gap-2">
+                          <Check className="h-4 w-4 text-green-500" />
+                          <span className="text-sm">{feature}</span>
+                        </div>
+                      ),
+                    )}
                   </div>
-                  <Button 
-                    className="w-full" 
+                  <Button
+                    className="w-full"
                     onClick={() => handleSubscribe(plan.id)}
-                    disabled={subscribeMutation.isPending || 
-                      (currentSubscription && currentSubscription.planId === plan.id)}
-                  >
-                    {currentSubscription && currentSubscription.planId === plan.id 
-                      ? 'Current Plan' 
-                      : subscribeMutation.isPending 
-                        ? 'Processing...' 
-                        : (
-                          <div className="flex items-center gap-2">
-                            <CreditCard className="h-4 w-4" />
-                            Subscribe with Stripe
-                          </div>
-                        )
+                    disabled={
+                      subscribeMutation.isPending ||
+                      (currentSubscription &&
+                        currentSubscription.planId === plan.id)
                     }
+                  >
+                    {currentSubscription &&
+                    currentSubscription.planId === plan.id ? (
+                      "Current Plan"
+                    ) : subscribeMutation.isPending ? (
+                      "Processing..."
+                    ) : (
+                      <div className="flex items-center gap-2">
+                        <CreditCard className="h-4 w-4" />
+                        Subscribe with Stripe
+                      </div>
+                    )}
                   </Button>
                 </CardContent>
               </Card>
