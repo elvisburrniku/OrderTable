@@ -35,6 +35,7 @@ import SeatingConfigurations from "./pages/seating-configurations";
 import CombinedTables from "./pages/combined-tables";
 import Rooms from "./pages/rooms";
 import BookingAgents from "./pages/booking-agents";
+import TablePlan from "./pages/table-plan"; //Import the new TablePlan component
 
 function App() {
   return (
@@ -70,6 +71,7 @@ function App() {
             <Route path="/:tenantId/custom-fields" component={CustomFields} />
             <Route path="/:tenantId/seating-configurations" component={SeatingConfigurations} />
             <Route path="/:tenantId/combined-tables" component={CombinedTables} />
+            <Route path="/:tenantId/table-plan" component={TablePlan} />
             <Route path="/:tenantId/rooms" component={Rooms} />
             <Route path="/:tenantId/booking-agents" component={BookingAgents} />
             <Route component={NotFound} />
@@ -82,3 +84,4 @@ function App() {
 }
 
 export default App;
+```

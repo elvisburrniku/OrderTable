@@ -147,16 +147,25 @@ export default function Tables() {
           <CardHeader>
             <div className="flex items-center justify-between">
               <CardTitle>Table Management</CardTitle>
-              <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-                <DialogTrigger asChild>
-                  <Button 
-                    className="bg-green-600 hover:bg-green-700 text-white"
-                    disabled={!canCreateTable(tables.length)}
-                  >
-                    <Plus className="h-4 w-4 mr-2" />
-                    Add Table
-                  </Button>
-                </DialogTrigger>
+              <div className="flex gap-2">
+                <Button 
+                  variant="outline"
+                  onClick={() => window.location.href = '/table-plan'}
+                  className="border-green-600 text-green-600 hover:bg-green-50"
+                >
+                  View Table Plan
+                </Button>
+                <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+                  <DialogTrigger asChild>
+                    <Button 
+                      className="bg-green-600 hover:bg-green-700 text-white"
+                      disabled={!canCreateTable(tables.length)}
+                    >
+                      <Plus className="h-4 w-4 mr-2" />
+                      Add Table
+                    </Button>
+                  </DialogTrigger></Dialog>
+              </div>
                 <DialogContent>
                   <DialogHeader>
                     <DialogTitle>Add New Table</DialogTitle>
