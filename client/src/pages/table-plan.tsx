@@ -1,4 +1,3 @@
-
 import React, { useState, useRef, useCallback } from "react";
 import { useAuthGuard } from "@/lib/auth.tsx";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
@@ -462,7 +461,7 @@ export default function TablePlan() {
                         {table.tableNumber}
                       </div>
                     </div>
-                    
+
                     {/* Table controls if positioned */}
                     {tablePositions[table.id] && (
                       <div className="mt-2 flex items-center gap-1">
@@ -568,7 +567,7 @@ export default function TablePlan() {
                 {Object.values(tablePositions).map((position) => {
                   // Find corresponding table from database if it exists
                   const dbTable = tables.find((t: any) => t.id === position.id);
-                  
+
                   return (
                     <div
                       key={position.id}
