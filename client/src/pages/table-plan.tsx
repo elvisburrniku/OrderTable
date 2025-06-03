@@ -246,9 +246,9 @@ export default function TablePlan() {
     (e: React.DragEvent) => {
       e.preventDefault();
       e.stopPropagation();
-      
+
       console.log("Drop event fired", { draggedTable, draggedStructure });
-      
+
       if (!planRef.current) {
         console.log("No plan ref");
         return;
@@ -284,12 +284,12 @@ export default function TablePlan() {
         console.log("Adding new table from structure:", draggedStructure);
         // Adding new table from structure - store position and structure info
         const currentStructure = draggedStructure;
-        
+
         // Reset drag states first
         setDraggedTable(null);
         setDraggedStructure(null);
         setIsDragging(false);
-        
+
         // Then set up the dialog
         console.log("Setting up dialog with structure:", currentStructure);
         setPendingTablePosition({ x, y, structure: currentStructure });
@@ -297,7 +297,7 @@ export default function TablePlan() {
           tableNumber: "",
           capacity: currentStructure.defaultCapacity,
         });
-        
+
         // Force show dialog with a small delay to ensure state is updated
         setTimeout(() => {
           console.log("Showing config dialog");
@@ -526,7 +526,6 @@ export default function TablePlan() {
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="main">Main Dining</SelectItem>
                   {rooms.map((room: any) => (
                     <SelectItem key={`room-${room.id}`} value={room.id.toString()}>
                       {room.name}
