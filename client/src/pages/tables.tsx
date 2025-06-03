@@ -33,13 +33,20 @@ export default function Tables() {
   });
 
   const { data: tables = [], isLoading } = useQuery({
-    queryKey: ["/api/restaurants", restaurant?.id, "tables"],
+    queryKey: ["/api/tenants/1/restaurants", restaurant?.id, "tables"],
+    queryFn: async () => {
+      const tenantId = 1; // Default tenant ID
+      const response = await fetch(`/api/tenants/${tenantId}/restaurants/${restaurant?.id}/tables`);
+      if (!response.ok) throw new Error("Failed to fetch tables");
+      return response.json();
+    },
     enabled: !!restaurant,
   });
 
   const createTableMutation = useMutation({
     mutationFn: async (tableData: any) => {
-      const response = await fetch(`/api/restaurants/${restaurant?.id}/tables`, {
+      const tenantId = 1; // Default tenant ID
+      const response = await fetch(`/api/tenants/${tenantId}/restaurants/${restaurant?.id}/tables`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ ...tableData, restaurantId: restaurant?.id }),
@@ -58,7 +65,8 @@ export default function Tables() {
 
   const updateTableMutation = useMutation({
     mutationFn: async ({ id, ...updates }: any) => {
-      const response = await fetch(`/api/tables/${id}`, {
+      const tenantId = 1; // Default tenant ID
+      const response = await fetch(`/api/tenants/${tenantId}/tables/${id}`, {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(updates),
@@ -75,7 +83,8 @@ export default function Tables() {
 
   const deleteTableMutation = useMutation({
     mutationFn: async (id: number) => {
-      const response = await fetch(`/api/tables/${id}`, {
+      const tenantId = 1; // Default tenant ID
+      const response = await fetch(`/api/tenants/${tenantId}/tables/${id}`, {
         method: "DELETE",
       });
       if (!response.ok) throw new Error("Failed to delete table");
