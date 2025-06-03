@@ -7,30 +7,37 @@ async function throwIfResNotOk(res: Response) {
   }
 }
 
-export async function apiRequest(method: string, url: string, data?: any) {
-  // Get tenant ID from current URL path
-  const pathSegments = window.location.pathname.split('/');
-  const tenantId = pathSegments[1]; // Assuming format is /:tenantId/...
-
-  const config: RequestInit = {
+export async function apiRequest(
+  method: string,
+  path: string,
+  body?: any
+): Promise<Response> {
+  const options: RequestInit = {
     method,
     headers: {
       "Content-Type": "application/json",
-      ...(tenantId && !isNaN(Number(tenantId)) ? { "x-tenant-id": tenantId } : {}),
     },
   };
 
-  if (data) {
-    config.body = JSON.stringify(data);
+  if (body) {
+    options.body = JSON.stringify(body);
   }
 
-  const response = await fetch(url, config);
-
-  if (!response.ok) {
-    throw new Error(`HTTP error! status: ${response.status}`);
-  }
-
+  const response = await fetch(path, options);
   return response;
+}
+
+// Helper function to construct tenant-aware API URLs
+export function getTenantApiUrl(path: string, tenantId?: number | null): string {
+  if (tenantId && path.includes('/restaurants/') && !path.includes('/tenants/')) {
+    // Convert non-tenant routes to tenant routes
+    const parts = path.split('/restaurants/');
+    if (parts.length === 2) {
+      const [prefix, suffix] = parts;
+      return `${prefix}/tenants/${tenantId}/restaurants/${suffix}`;
+    }
+  }
+  return path;
 }
 
 type UnauthorizedBehavior = "returnNull" | "throw";

@@ -40,7 +40,7 @@ export default function BookingCalendar({ selectedDate, bookings, tables, isLoad
 
   const createBookingMutation = useMutation({
     mutationFn: async (bookingData: any) => {
-      return apiRequest("POST", `/api/restaurants/${restaurant?.id}/bookings`, bookingData);
+      return apiRequest("POST", `/api/tenants/1/restaurants/${restaurant?.id}/bookings`, bookingData);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ 
@@ -129,7 +129,7 @@ export default function BookingCalendar({ selectedDate, bookings, tables, isLoad
             Table plan
           </Button>
         </div>
-        
+
         <div className="flex space-x-2">
           {["all", "morning", "lunch", "evening"].map((filter) => (
             <Button
@@ -257,7 +257,7 @@ export default function BookingCalendar({ selectedDate, bookings, tables, isLoad
             </span>
           </div>
         </div>
-        
+
         <CardContent className="p-4">
           {/* Time header */}
           <div className="grid grid-cols-13 gap-2 mb-4 text-sm text-gray-600">
