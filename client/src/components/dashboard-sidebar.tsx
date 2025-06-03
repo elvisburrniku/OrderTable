@@ -1,4 +1,4 @@
-import { Link, useLocation } from "wouter";
+import { Link, useLocation, useParams } from "wouter";
 import { Calendar, Settings, Clock, MapPin, Table, Utensils, Grid3x3, FileText, Users, MessageSquare, MessageCircle, CreditCard, BarChart3, Clock4 } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { format } from "date-fns";
@@ -12,40 +12,42 @@ interface DashboardSidebarProps {
 
 export default function DashboardSidebar({ selectedDate, bookings }: DashboardSidebarProps) {
   const [location] = useLocation();
+  const params = useParams();
+  const tenantId = params.tenantId;
 
   const todaysBookings = bookings.filter(booking => 
     booking.bookingDate.toISOString().split('T')[0] === format(new Date(), 'yyyy-MM-dd')
   );
 
   const navigationItems = [
-    { path: "/dashboard", icon: Calendar, label: "Booking" },
-    { path: "/customers", icon: Users, label: "Customers" },
-    { path: "/bookings", icon: Calendar, label: "Bookings" },
-    { path: "/sms-messages", icon: MessageSquare, label: "SMS Messages" },
-    { path: "/waiting-list", icon: Clock, label: "Waiting List" },
-    { path: "/statistics", icon: BarChart3, label: "Statistics" },
-    { path: "/feedback-responses", icon: MessageCircle, label: "Feedback" },
-    { path: "/activity-log", icon: FileText, label: "Activity Log" },
-    { path: "/subscription", icon: CreditCard, label: "Subscription" }
+    { path: `/${tenantId}/dashboard`, icon: Calendar, label: "Booking" },
+    { path: `/${tenantId}/customers`, icon: Users, label: "Customers" },
+    { path: `/${tenantId}/bookings`, icon: Calendar, label: "Bookings" },
+    { path: `/${tenantId}/sms-messages`, icon: MessageSquare, label: "SMS Messages" },
+    { path: `/${tenantId}/waiting-list`, icon: Clock, label: "Waiting List" },
+    { path: `/${tenantId}/statistics`, icon: BarChart3, label: "Statistics" },
+    { path: `/${tenantId}/feedback-responses`, icon: MessageCircle, label: "Feedback" },
+    { path: `/${tenantId}/activity-log`, icon: FileText, label: "Activity Log" },
+    { path: `/${tenantId}/subscription`, icon: CreditCard, label: "Subscription" }
   ];
 
   const settingsItems = [
-    { path: "/opening-hours", icon: Clock4, label: "Opening Hours" },
-    { path: "/special-periods", icon: Calendar, label: "Special Periods" },
-    { path: "/cut-off-time", icon: Clock, label: "Cut-off Time" },
-    { path: "/rooms", icon: MapPin, label: "Rooms" },
-    { path: "/tables", icon: Table, label: "Tables" },
-    { path: "/combined-tables", icon: Utensils, label: "Combined Tables" },
-    { path: "/seating-configurations", icon: Grid3x3, label: "Seating Configurations" },
-    { path: "/periodic-criteria", icon: Calendar, label: "Periodic Criteria" },
-    { path: "/custom-fields", icon: FileText, label: "Custom Fields" },
-    { path: "/booking-agents", icon: Users, label: "Booking Agents" },
-    { path: "/email-notifications", icon: MessageSquare, label: "E-mail Notifications" },
-    { path: "/sms-notifications", icon: MessageSquare, label: "SMS Notifications" },
-    { path: "/feedback-questions", icon: MessageCircle, label: "Questions" },
-    { path: "/events", icon: Calendar, label: "Events" },
-    { path: "/payment-setups", icon: Settings, label: "Payment Setups" },
-    { path: "/payment-gateway", icon: Settings, label: "Payment Gateway" }
+    { path: `/${tenantId}/opening-hours`, icon: Clock4, label: "Opening Hours" },
+    { path: `/${tenantId}/special-periods`, icon: Calendar, label: "Special Periods" },
+    { path: `/${tenantId}/cut-off-time`, icon: Clock, label: "Cut-off Time" },
+    { path: `/${tenantId}/rooms`, icon: MapPin, label: "Rooms" },
+    { path: `/${tenantId}/tables`, icon: Table, label: "Tables" },
+    { path: `/${tenantId}/combined-tables`, icon: Utensils, label: "Combined Tables" },
+    { path: `/${tenantId}/seating-configurations`, icon: Grid3x3, label: "Seating Configurations" },
+    { path: `/${tenantId}/periodic-criteria`, icon: Calendar, label: "Periodic Criteria" },
+    { path: `/${tenantId}/custom-fields`, icon: FileText, label: "Custom Fields" },
+    { path: `/${tenantId}/booking-agents`, icon: Users, label: "Booking Agents" },
+    { path: `/${tenantId}/email-notifications`, icon: MessageSquare, label: "E-mail Notifications" },
+    { path: `/${tenantId}/sms-notifications`, icon: MessageSquare, label: "SMS Notifications" },
+    { path: `/${tenantId}/feedback-questions`, icon: MessageCircle, label: "Questions" },
+    { path: `/${tenantId}/events`, icon: Calendar, label: "Events" },
+    { path: `/${tenantId}/payment-setups`, icon: Settings, label: "Payment Setups" },
+    { path: `/${tenantId}/payment-gateway`, icon: Settings, label: "Payment Gateway" }
   ];
 
   return (
