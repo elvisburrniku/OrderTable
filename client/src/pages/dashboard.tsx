@@ -189,6 +189,7 @@ export default function Dashboard() {
             allBookings={(allBookings as any) || []}
             tables={(tables as any) || []}
             isLoading={isLoading}
+            onDateSelect={setSelectedDate}
           />
         </div>
       </div>
