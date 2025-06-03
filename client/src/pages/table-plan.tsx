@@ -241,32 +241,58 @@ export default function TablePlan() {
     }));
   };
 
+  const createTableMutation = useMutation({
+    mutationFn: async (tableData: any) => {
+      const tenantId = 1;
+      const response = await fetch(`/api/tenants/${tenantId}/restaurants/${restaurant?.id}/tables`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ ...tableData, restaurantId: restaurant?.id }),
+      });
+      if (!response.ok) throw new Error("Failed to create table");
+      return response.json();
+    },
+    onSuccess: (newTable) => {
+      // Add the new table to the layout at the pending position
+      if (pendingTablePosition) {
+        setTablePositions(prev => ({
+          ...prev,
+          [newTable.id]: {
+            id: newTable.id,
+            x: pendingTablePosition.x,
+            y: pendingTablePosition.y,
+            rotation: 0,
+            shape: pendingTablePosition.structure.shape,
+            tableNumber: newTable.tableNumber,
+            capacity: newTable.capacity,
+            isConfigured: true
+          }
+        }));
+      }
+
+      // Refresh tables list
+      queryClient.invalidateQueries({
+        queryKey: ["/api/tenants/1/restaurants", restaurant?.id, "tables"],
+      });
+
+      setShowConfigDialog(false);
+      setPendingTablePosition(null);
+      setTableConfig({ tableNumber: '', capacity: 2 });
+    },
+  });
+
   const handleConfigSubmit = () => {
     if (!pendingTablePosition || !tableConfig.tableNumber.trim()) {
       alert('Please fill in all required fields');
       return;
     }
 
-    // Generate a unique ID for the new table
-    const newTableId = Date.now();
-    
-    setTablePositions(prev => ({
-      ...prev,
-      [newTableId]: {
-        id: newTableId,
-        x: pendingTablePosition.x,
-        y: pendingTablePosition.y,
-        rotation: 0,
-        shape: pendingTablePosition.structure.shape,
-        tableNumber: tableConfig.tableNumber,
-        capacity: tableConfig.capacity,
-        isConfigured: true
-      }
-    }));
-
-    setShowConfigDialog(false);
-    setPendingTablePosition(null);
-    setTableConfig({ tableNumber: '', capacity: 2 });
+    // Create the table in the database
+    createTableMutation.mutate({
+      tableNumber: tableConfig.tableNumber,
+      capacity: tableConfig.capacity,
+      isActive: true
+    });
   };
 
   const handleConfigCancel = () => {
@@ -550,16 +576,18 @@ export default function TablePlan() {
                       onDragStart={(e) => handleDragStart(position.id, e)}
                       style={getTableStyle(dbTable, position)}
                       className="shadow-lg border-2 border-white hover:shadow-xl transition-shadow"
-                      title={position.isConfigured 
-                        ? `Table ${position.tableNumber} (${position.capacity} seats)` 
-                        : dbTable 
-                          ? `Table ${dbTable.tableNumber} (${dbTable.capacity} seats)`
+                      title={dbTable 
+                        ? `Table ${dbTable.tableNumber} (${dbTable.capacity} seats)`
+                        : position.isConfigured 
+                          ? `Table ${position.tableNumber} (${position.capacity} seats)` 
                           : 'Unconfigured table'
                       }
                     >
-                      {position.isConfigured 
-                        ? position.tableNumber 
-                        : dbTable?.tableNumber || '?'
+                      {dbTable 
+                        ? dbTable.tableNumber 
+                        : position.isConfigured 
+                          ? position.tableNumber 
+                          : '?'
                       }
                     </div>
                   );
@@ -615,8 +643,12 @@ export default function TablePlan() {
               <Button variant="outline" onClick={handleConfigCancel}>
                 Cancel
               </Button>
-              <Button onClick={handleConfigSubmit} className="bg-green-600 hover:bg-green-700">
-                Add Table
+              <Button 
+                onClick={handleConfigSubmit} 
+                className="bg-green-600 hover:bg-green-700"
+                disabled={createTableMutation.isPending}
+              >
+                {createTableMutation.isPending ? "Creating..." : "Add Table"}
               </Button>
             </div>
           </div>
