@@ -9,12 +9,20 @@ import { format } from "date-fns";
 import { loadStripe } from "@stripe/stripe-js";
 
 export default function Subscription() {
-  const { user, restaurant } = useAuth();
+  const { user, restaurant, isAuthenticated, authLoading } = useAuth();
   const queryClient = useQueryClient();
   const [showSuccessMessage, setShowSuccessMessage] = useState(false);
   const [showCancelMessage, setShowCancelMessage] = useState(false);
 
-  // Check URL params for success/cancel messages
+  if (authLoading) {
+    return <div>Loading...</div>;
+  }
+
+  if (!isAuthenticated || !user || !restaurant) {
+    return null;
+  }
+
+  // Handle success/cancel from Stripe redirect
   useEffect(() => {
     const urlParams = new URLSearchParams(window.location.search);
     if (urlParams.get('success') === 'true') {
@@ -90,10 +98,6 @@ export default function Subscription() {
       });
     },
   });
-
-  if (!user || !restaurant) {
-    return null;
-  }
 
   const handleSubscribe = (planId: number) => {
     if (currentSubscription && currentSubscription.planId === planId) {

@@ -1,11 +1,20 @@
 import { useState } from "react";
-import { useAuth } from "@/lib/auth.tsx";
+import { useAuthGuard } from "@/lib/auth.tsx";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 
 export default function CutOffTime() {
-  const { user, restaurant } = useAuth();
+  const { isLoading: authLoading, isAuthenticated, user, restaurant } = useAuthGuard();
+
+  if (authLoading) {
+    return <div>Loading...</div>;
+  }
+
+  if (!isAuthenticated || !user || !restaurant) {
+    return null;
+  }
+
   const [cutOffTimes, setCutOffTimes] = useState({
     Monday: "None",
     Tuesday: "None", 
@@ -15,10 +24,6 @@ export default function CutOffTime() {
     Saturday: "None",
     Sunday: "None"
   });
-
-  if (!user || !restaurant) {
-    return null;
-  }
 
   const updateCutOffTime = (day: string, time: string) => {
     setCutOffTimes({ ...cutOffTimes, [day]: time });
@@ -68,7 +73,7 @@ export default function CutOffTime() {
               <a href="#" className="block text-sm text-gray-600 hover:text-gray-900 py-1">General opening hours</a>
               <a href="/special-periods" className="block text-sm text-gray-600 hover:text-gray-900 py-1">Special periods</a>
               <div className="block text-sm text-green-600 font-medium py-1 bg-green-50 px-2 rounded">Cut-off time</div>
-              
+
               <div className="text-sm font-medium text-gray-900 mb-3 mt-6">Tables and rooms</div>
               <a href="/rooms" className="block text-sm text-gray-600 hover:text-gray-900 py-1">Rooms</a>
               <a href="#" className="block text-sm text-gray-600 hover:text-gray-900 py-1">Booking settings</a>
@@ -106,7 +111,7 @@ export default function CutOffTime() {
                   </Select>
                 </div>
               ))}
-              
+
               <div className="pt-6">
                 <Button className="bg-green-600 hover:bg-green-700 text-white">Save</Button>
               </div>

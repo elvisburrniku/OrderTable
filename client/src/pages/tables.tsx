@@ -1,6 +1,5 @@
-
 import { useState } from "react";
-import { useAuth } from "@/lib/auth.tsx";
+import { useAuthGuard } from "@/lib/auth.tsx";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -14,8 +13,15 @@ import { Plus, Users, Edit, Trash2 } from "lucide-react";
 import { useSubscription } from "@/hooks/use-subscription";
 
 export default function Tables() {
-  const { user, restaurant } = useAuth();
-  const { canCreateTable } = useSubscription();
+  const { isLoading: authLoading, isAuthenticated, user, restaurant } = useAuthGuard();
+
+  if (authLoading) {
+    return <div>Loading...</div>;
+  }
+
+  if (!isAuthenticated || !user || !restaurant) {
+    return null;
+  }
   const queryClient = useQueryClient();
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [editingTable, setEditingTable] = useState<any>(null);
@@ -94,9 +100,6 @@ export default function Tables() {
     updateTableMutation.mutate({ id: tableId, isActive });
   };
 
-  if (!user || !restaurant) {
-    return null;
-  }
 
   return (
     <div className="min-h-screen bg-gray-50">

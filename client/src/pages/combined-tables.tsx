@@ -1,14 +1,17 @@
 import { useState } from "react";
-import { useAuth } from "@/lib/auth.tsx";
+import { useAuthGuard } from "@/lib/auth.tsx";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 
 export default function CombinedTables() {
-  const { user, restaurant } = useAuth();
-  const [combinations, setCombinations] = useState<Array<{ tables: string[]; seats: number }>>([]);
+  const { isLoading: authLoading, isAuthenticated, user, restaurant } = useAuthGuard();
 
-  if (!user || !restaurant) {
+  if (authLoading) {
+    return <div>Loading...</div>;
+  }
+
+  if (!isAuthenticated || !user || !restaurant) {
     return null;
   }
 
@@ -49,7 +52,7 @@ export default function CombinedTables() {
               <a href="#" className="block text-sm text-gray-600 hover:text-gray-900 py-1">General opening hours</a>
               <a href="/special-periods" className="block text-sm text-gray-600 hover:text-gray-900 py-1">Special periods</a>
               <a href="/cut-off-time" className="block text-sm text-gray-600 hover:text-gray-900 py-1">Cut-off time</a>
-              
+
               <div className="text-sm font-medium text-gray-900 mb-3 mt-6">Tables and rooms</div>
               <a href="/rooms" className="block text-sm text-gray-600 hover:text-gray-900 py-1">Rooms</a>
               <a href="/tables" className="block text-sm text-gray-600 hover:text-gray-900 py-1">Tables</a>

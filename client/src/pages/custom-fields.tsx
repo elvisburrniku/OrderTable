@@ -1,17 +1,21 @@
 import { useState } from "react";
-import { useAuth } from "@/lib/auth.tsx";
+import { useAuthGuard } from "@/lib/auth.tsx";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Switch } from "@/components/ui/switch";
 
 export default function CustomFields() {
-  const { user, restaurant } = useAuth();
-  const [fields, setFields] = useState<Array<{ name: string; active: boolean; validOnline: boolean }>>([]);
+  const { isLoading: authLoading, isAuthenticated, user, restaurant } = useAuthGuard();
 
-  if (!user || !restaurant) {
+  if (authLoading) {
+    return <div>Loading...</div>;
+  }
+
+  if (!isAuthenticated || !user || !restaurant) {
     return null;
   }
+  const [fields, setFields] = useState<Array<{ name: string; active: boolean; validOnline: boolean }>>([]);
 
   const addField = () => {
     setFields([...fields, { name: "", active: true, validOnline: true }]);
@@ -47,12 +51,12 @@ export default function CustomFields() {
               <a href="/opening-hours" className="block text-sm text-gray-600 hover:text-gray-900 py-1">Opening hours</a>
               <a href="/special-periods" className="block text-sm text-gray-600 hover:text-gray-900 py-1">Special periods</a>
               <a href="/cut-off-time" className="block text-sm text-gray-600 hover:text-gray-900 py-1">Cut-off time</a>
-              
+
               <div className="text-sm font-medium text-gray-900 mb-3 mt-6">Tables and rooms</div>
               <a href="/rooms" className="block text-sm text-gray-600 hover:text-gray-900 py-1">Rooms</a>
               <a href="/tables" className="block text-sm text-gray-600 hover:text-gray-900 py-1">Tables</a>
               <a href="/combined-tables" className="block text-sm text-gray-600 hover:text-gray-900 py-1">Combined tables</a>
-              
+
               <div className="text-sm font-medium text-gray-900 mb-3 mt-6">Booking settings</div>
               <a href="/seating-configurations" className="block text-sm text-gray-600 hover:text-gray-900 py-1">Seating configurations</a>
               <a href="/periodic-criteria" className="block text-sm text-gray-600 hover:text-gray-900 py-1">Periodic criteria</a>
