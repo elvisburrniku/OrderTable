@@ -250,16 +250,22 @@ export default function TablePlan() {
         Math.min(e.clientY - rect.top - 30, rect.height - 60),
       );
 
-      if (draggedTable) {
-        // Moving existing table
-        setTablePositions((prev) => ({
-          ...prev,
-          [draggedTable]: {
-            ...prev[draggedTable],
-            x,
-            y,
-          },
-        }));
+      if (draggedTable !== null) {
+        // Moving existing table - find the position by key or table ID
+        const positionKey = Object.keys(tablePositions).find(key => 
+          parseInt(key) === draggedTable || tablePositions[parseInt(key)].id === draggedTable
+        );
+        
+        if (positionKey) {
+          setTablePositions((prev) => ({
+            ...prev,
+            [parseInt(positionKey)]: {
+              ...prev[parseInt(positionKey)],
+              x,
+              y,
+            },
+          }));
+        }
       } else if (draggedStructure) {
         // Adding new table from structure
         setPendingTablePosition({ x, y, structure: draggedStructure });
@@ -274,30 +280,44 @@ export default function TablePlan() {
       setDraggedStructure(null);
       setIsDragging(false);
     },
-    [draggedTable, draggedStructure],
+    [draggedTable, draggedStructure, tablePositions],
   );
 
   const rotateTable = (tableId: number) => {
-    setTablePositions((prev) => ({
-      ...prev,
-      [tableId]: {
-        ...prev[tableId],
-        rotation: (prev[tableId]?.rotation || 0) + 45,
-      },
-    }));
+    // Find the position key for this table
+    const positionKey = Object.keys(tablePositions).find(key => 
+      tablePositions[parseInt(key)].id === tableId
+    );
+    
+    if (positionKey) {
+      setTablePositions((prev) => ({
+        ...prev,
+        [parseInt(positionKey)]: {
+          ...prev[parseInt(positionKey)],
+          rotation: (prev[parseInt(positionKey)]?.rotation || 0) + 45,
+        },
+      }));
+    }
   };
 
   const changeTableShape = (
     tableId: number,
     shape: "square" | "circle" | "rectangle",
   ) => {
-    setTablePositions((prev) => ({
-      ...prev,
-      [tableId]: {
-        ...prev[tableId],
-        shape,
-      },
-    }));
+    // Find the position key for this table
+    const positionKey = Object.keys(tablePositions).find(key => 
+      tablePositions[parseInt(key)].id === tableId
+    );
+    
+    if (positionKey) {
+      setTablePositions((prev) => ({
+        ...prev,
+        [parseInt(positionKey)]: {
+          ...prev[parseInt(positionKey)],
+          shape,
+        },
+      }));
+    }
   };
 
   const createTableMutation = useMutation({
@@ -676,12 +696,14 @@ export default function TablePlan() {
                 {Object.entries(tablePositions).map(([positionKey, position]) => {
                   // Find corresponding table from database if it exists
                   const dbTable = tables.find((t: any) => t.id === position.id);
+                  // Use the position key as the drag identifier to ensure we can move the table
+                  const dragId = parseInt(positionKey);
 
                   return (
                     <div
                       key={`positioned-table-${positionKey}-${position.id || 'new'}`}
                       draggable
-                      onDragStart={(e) => handleDragStart(position.id, e)}
+                      onDragStart={(e) => handleDragStart(dragId, e)}
                       style={getTableStyle(dbTable, position)}
                       className="shadow-lg border-2 border-white hover:shadow-xl transition-shadow"
                       title={
