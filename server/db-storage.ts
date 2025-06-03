@@ -246,8 +246,13 @@ export class DatabaseStorage implements IStorage {
   }
 
   async getRestaurantByUserId(userId: number): Promise<Restaurant | undefined> {
-    const result = await db.select().from(restaurants).where(eq(restaurants.userId, userId));
-    return result[0];
+    const results = await db.select().from(restaurants).where(eq(restaurants.userId, userId));
+    return results[0];
+  }
+
+  async getRestaurantById(id: number): Promise<Restaurant | undefined> {
+    const results = await db.select().from(restaurants).where(eq(restaurants.id, id));
+    return results[0];
   }
 
   async createRestaurant(restaurant: InsertRestaurant): Promise<Restaurant> {
@@ -513,11 +518,6 @@ export class DatabaseStorage implements IStorage {
 
   async getBookingById(id: number): Promise<Booking | undefined> {
     const result = await db.select().from(bookings).where(eq(bookings.id, id));
-    return result[0];
-  }
-
-  async getRestaurantById(id: number): Promise<Restaurant | undefined> {
-    const result = await db.select().from(restaurants).where(eq(restaurants.id, id));
     return result[0];
   }
 

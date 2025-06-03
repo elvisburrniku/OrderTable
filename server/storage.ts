@@ -65,6 +65,7 @@ export interface IStorage {
   // Restaurants
   getRestaurant(id: number): Promise<Restaurant | undefined>;
   getRestaurantByUserId(userId: number): Promise<Restaurant | undefined>;
+  getRestaurantById(id: number): Promise<Restaurant | undefined>;
   createRestaurant(restaurant: InsertRestaurant): Promise<Restaurant>;
   updateRestaurant(id: number, restaurant: Partial<Restaurant>): Promise<Restaurant | undefined>;
 
@@ -340,6 +341,10 @@ export class MemStorage implements IStorage {
 
   async getRestaurantByUserId(userId: number): Promise<Restaurant | undefined> {
     return Array.from(this.restaurants.values()).find(restaurant => restaurant.userId === userId);
+  }
+
+  async getRestaurantById(id: number): Promise<Restaurant | undefined> {
+    return this.restaurants.get(id);
   }
 
   async createRestaurant(insertRestaurant: InsertRestaurant): Promise<Restaurant> {
