@@ -1,7 +1,7 @@
 // Adds Supabase database connection option using environment variables and conditional drizzle setup.
 import { 
   users, restaurants, tables, bookings, customers, smsMessages, waitingList,
-  feedback, activityLog, timeSlots, subscriptionPlans, userSubscriptions, rooms
+  feedback, activityLog, timeSlots, subscriptionPlans, userSubscriptions, rooms, tableLayouts
 } from "@shared/schema";
 import type {
   User,
@@ -17,6 +17,7 @@ import type {
   UserSubscription,
   TimeSlots,
   Room,
+  TableLayout,
   InsertUser,
   InsertRestaurant,
   InsertTable,
@@ -29,7 +30,8 @@ import type {
   InsertSubscriptionPlan,
   InsertUserSubscription,
   InsertTimeSlots,
-  InsertRoom
+  InsertRoom,
+  InsertTableLayout
 } from "@shared/schema";
 import { neon } from "@neondatabase/serverless";
 import { drizzle } from "drizzle-orm/neon-http";
@@ -118,6 +120,10 @@ export interface IStorage {
   createRoom(room: InsertRoom): Promise<Room>;
   updateRoom(id: number, updates: Partial<Room>): Promise<Room | undefined>;
   deleteRoom(id: number): Promise<boolean>;
+
+  // Table Layouts
+  getTableLayout(restaurantId: number, room: string): Promise<TableLayout | undefined>;
+  saveTableLayout(restaurantId: number, tenantId: number, room: string, positions: any): Promise<TableLayout>;
 
     // Subscription Plans
     getSubscriptionPlans(): Promise<SubscriptionPlan[]>;
@@ -671,6 +677,25 @@ export class MemStorage implements IStorage {
 
     async getUserSubscriptionById(id: number): Promise<UserSubscription | undefined> {
       return this.userSubscriptions.get(id);
+    }
+
+    // Table Layouts
+    async getTableLayout(restaurantId: number, room: string): Promise<TableLayout | undefined> {
+      // For memory storage, we'll just return empty layout
+      return undefined;
+    }
+
+    async saveTableLayout(restaurantId: number, tenantId: number, room: string, positions: any): Promise<TableLayout> {
+      // For memory storage, just return a mock layout
+      return {
+        id: 1,
+        restaurantId,
+        tenantId,
+        room,
+        positions,
+        createdAt: new Date(),
+        updatedAt: new Date()
+      };
     }
 }
 

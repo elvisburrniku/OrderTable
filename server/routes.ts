@@ -876,14 +876,26 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const tenantId = parseInt(req.params.tenantId);
       const { room } = req.query;
 
-      // For now, return empty layout since we don't have table layout storage yet
-      // In a real implementation, you'd fetch from database
+      if (isNaN(restaurantId) || isNaN(tenantId)) {
+        return res.status(400).json({ message: "Invalid restaurant ID or tenant ID" });
+      }
+
+      // Verify restaurant belongs to tenant
+      const restaurant = await storage.getRestaurantById(restaurantId);
+      if (!restaurant || restaurant.tenantId !== tenantId) {
+        return res.status(404).json({ message: "Restaurant not found" });
+      }
+
+      const roomName = (room as string) || "main";
+      const layout = await storage.getTableLayout(restaurantId, roomName);
+
       res.json({
-        room: room || "main",
-        positions: {}
+        room: roomName,
+        positions: layout?.positions || {}
       });
     } catch (error) {
-      res.status(400).json({ message: "Invalid request" });
+      console.error("Error fetching table layout:", error);
+      res.status(500).json({ message: "Internal server error" });
     }
   });
 
@@ -893,24 +905,31 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const tenantId = parseInt(req.params.tenantId);
       const { room, positions } = req.body;
 
+      if (isNaN(restaurantId) || isNaN(tenantId)) {
+        return res.status(400).json({ message: "Invalid restaurant ID or tenant ID" });
+      }
+
       // Verify restaurant belongs to tenant
       const restaurant = await storage.getRestaurantById(restaurantId);
       if (!restaurant || restaurant.tenantId !== tenantId) {
         return res.status(404).json({ message: "Restaurant not found" });
       }
 
-      // For now, just return success
-      // In a real implementation, you'd save the layout to database
-      console.log(`Saving table layout for restaurant ${restaurantId}, room ${room}:`, positions);
+      if (!room || !positions) {
+        return res.status(400).json({ message: "Room and positions are required" });
+      }
+
+      // Save the layout to database
+      const savedLayout = await storage.saveTableLayout(restaurantId, tenantId, room, positions);
       
       res.json({ 
         message: "Table layout saved successfully",
-        room,
-        positions
+        room: savedLayout.room,
+        positions: savedLayout.positions
       });
     } catch (error) {
       console.error("Error saving table layout:", error);
-      res.status(400).json({ message: "Invalid request" });
+      res.status(500).json({ message: "Internal server error" });
     }
   });
 

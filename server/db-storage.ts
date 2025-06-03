@@ -15,6 +15,7 @@ import {
   userSubscriptions, 
   timeSlots,
   rooms,
+  tableLayouts,
   type User,
   type Tenant,
   type TenantUser,
@@ -44,7 +45,9 @@ import {
   type TimeSlots,
   type InsertTimeSlots,
   type Room,
-  type InsertRoom
+  type InsertRoom,
+  type TableLayout,
+  type InsertTableLayout
 } from "@shared/schema";
 import { neon } from "@neondatabase/serverless";
 import { drizzle } from "drizzle-orm/neon-http";
@@ -557,5 +560,41 @@ export class DatabaseStorage implements IStorage {
   async deleteRoom(id: number): Promise<boolean> {
     const result = await db.delete(rooms).where(eq(rooms.id, id));
     return result.rowCount > 0;
+  }
+
+  // Table Layouts
+  async getTableLayout(restaurantId: number, room: string): Promise<TableLayout | undefined> {
+    const result = await db.select().from(tableLayouts)
+      .where(and(
+        eq(tableLayouts.restaurantId, restaurantId),
+        eq(tableLayouts.room, room)
+      ));
+    return result[0];
+  }
+
+  async saveTableLayout(restaurantId: number, tenantId: number, room: string, positions: any): Promise<TableLayout> {
+    // Check if layout already exists
+    const existing = await this.getTableLayout(restaurantId, room);
+    
+    if (existing) {
+      // Update existing layout
+      const [updated] = await db.update(tableLayouts)
+        .set({ positions, updatedAt: new Date() })
+        .where(and(
+          eq(tableLayouts.restaurantId, restaurantId),
+          eq(tableLayouts.room, room)
+        ))
+        .returning();
+      return updated;
+    } else {
+      // Create new layout
+      const [newLayout] = await db.insert(tableLayouts).values({
+        restaurantId,
+        tenantId,
+        room,
+        positions
+      }).returning();
+      return newLayout;
+    }
   }
 }

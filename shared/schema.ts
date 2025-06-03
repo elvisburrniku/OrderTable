@@ -1,6 +1,7 @@
-import { pgTable, text, serial, integer, boolean, timestamp, varchar, primaryKey, date, time } from "drizzle-orm/pg-core";
+import { pgTable, text, serial, integer, boolean, timestamp, varchar, primaryKey, date, time, json } from "drizzle-orm/pg-core";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
+import { InferSelectModel, InferInsertModel } from 'drizzle-orm';
 
 export const tenants = pgTable("tenants", {
   id: serial("id").primaryKey(),
@@ -146,14 +147,14 @@ export const timeSlots = pgTable("time_slots", {
   maxCapacity: integer("max_capacity").default(0)
 });
 
-export const rooms = pgTable("rooms", {
-  id: serial("id").primaryKey(),
-  restaurantId: integer("restaurant_id").references(() => restaurants.id),
-  tenantId: integer("tenant_id").notNull().references(() => tenants.id),
-  name: varchar("name", { length: 255 }).notNull(),
-  priority: varchar("priority", { length: 50 }).default("Medium"),
-  isActive: boolean("is_active").default(true),
-  createdAt: timestamp("created_at").defaultNow()
+export const rooms = pgTable('rooms', {
+  id: serial('id').primaryKey(),
+  restaurantId: integer('restaurant_id').notNull().references(() => restaurants.id),
+  tenantId: integer('tenant_id').notNull().references(() => tenants.id),
+  name: varchar('name', { length: 255 }).notNull(),
+  priority: varchar('priority', { length: 50 }).default("Medium"),
+  isActive: boolean('is_active').default(true),
+  createdAt: timestamp('created_at').defaultNow()
 });
 
 export const subscriptionPlans = pgTable("subscription_plans", {
@@ -315,4 +316,17 @@ export type UserSubscription = typeof userSubscriptions.$inferSelect;
 export type InsertUserSubscription = z.infer<typeof insertUserSubscriptionSchema>;
 export type Room = typeof rooms.$inferSelect;
 export type InsertRoom = z.infer<typeof insertRoomSchema>;
+
+export const tableLayouts = pgTable('table_layouts', {
+  id: serial('id').primaryKey(),
+  restaurantId: integer('restaurant_id').notNull().references(() => restaurants.id),
+  tenantId: integer('tenant_id').notNull().references(() => tenants.id),
+  room: varchar('room', { length: 50 }).notNull(),
+  positions: json('positions').notNull(),
+  createdAt: timestamp('created_at').defaultNow().notNull(),
+  updatedAt: timestamp('updated_at').defaultNow().$onUpdate(() => new Date())
+});
+
+export type TableLayout = InferSelectModel<typeof tableLayouts>;
+export type InsertTableLayout = InferInsertModel<typeof tableLayouts>;
 export type LoginData = z.infer<typeof loginSchema>;
