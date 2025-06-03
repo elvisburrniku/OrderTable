@@ -56,7 +56,7 @@ export default function Login() {
         }
       } else {
         const result = await register({
-          username: formData.email,
+          username: formData.name,
           email: formData.email,
           password: formData.password,
           restaurantName: formData.restaurantName,

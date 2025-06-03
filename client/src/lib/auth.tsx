@@ -57,7 +57,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     email: string;
     restaurantName: string;
   }) => {
-    const res = await apiRequest("POST", "/api/auth/register", userData);
+    const res = await apiRequest("POST", "/api/auth/register", {
+      username: userData.email, // Use email as username
+      email: userData.email,
+      password: userData.password,
+      restaurantName: userData.restaurantName,
+      name: userData.username // Map username to name field
+    });
     const data = await res.json();
 
     if (!data.user || !data.restaurant) {
