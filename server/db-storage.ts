@@ -1,5 +1,4 @@
-
-import { eq, and } from "drizzle-orm";
+import { eq, and, desc, gte, lt } from "drizzle-orm";
 import { 
   users, restaurants, tables, bookings, customers, smsMessages, waitingList,
   feedback, activityLog, timeSlots, subscriptionPlans, userSubscriptions,
@@ -39,7 +38,7 @@ if (process.env.SUPABASE_DATABASE_URL) {
 }
 
 export class DatabaseStorage implements IStorage {
-  
+
   // Initialize default data
   async initialize() {
     await this.initializeSubscriptionPlans();
@@ -48,7 +47,7 @@ export class DatabaseStorage implements IStorage {
 
   private async initializeSubscriptionPlans() {
     const existingPlans = await db.select().from(subscriptionPlans);
-    
+
     if (existingPlans.length === 0) {
       const plans = [
         {
@@ -109,7 +108,7 @@ export class DatabaseStorage implements IStorage {
 
   private async initializeDemoData() {
     const existingUsers = await db.select().from(users);
-    
+
     if (existingUsers.length === 0) {
       // Create demo tenant
       const [tenant] = await db.insert(tenants).values({
@@ -237,11 +236,18 @@ export class DatabaseStorage implements IStorage {
   }
 
   async getBookingsByDate(restaurantId: number, date: string): Promise<Booking[]> {
+    const targetDate = new Date(date);
+    const startOfDay = new Date(targetDate.getFullYear(), targetDate.getMonth(), targetDate.getDate());
+    const endOfDay = new Date(targetDate.getFullYear(), targetDate.getMonth(), targetDate.getDate() + 1);
+
     return await db.select().from(bookings)
-      .where(and(
-        eq(bookings.restaurantId, restaurantId),
-        eq(bookings.bookingDate, new Date(date))
-      ));
+      .where(
+        and(
+          eq(bookings.restaurantId, restaurantId),
+          gte(bookings.bookingDate, startOfDay),
+          lt(bookings.bookingDate, endOfDay)
+        )
+      );
   }
 
   async createBooking(booking: InsertBooking): Promise<Booking> {
@@ -292,7 +298,7 @@ export class DatabaseStorage implements IStorage {
   async getOrCreateCustomer(restaurantId: number, tenantId: number, customerData: { name: string; email: string; phone?: string }): Promise<Customer> {
     // First try to find existing customer
     let customer = await this.getCustomerByEmail(restaurantId, customerData.email);
-    
+
     if (customer) {
       // Update existing customer with latest info and increment booking count
       const updatedCustomer = await this.updateCustomer(customer.id, {
@@ -311,7 +317,7 @@ export class DatabaseStorage implements IStorage {
         email: customerData.email,
         phone: customerData.phone || ""
       });
-      
+
       // Update with first booking count
       const updatedCustomer = await this.updateCustomer(customer.id, {
         totalBookings: 1,
