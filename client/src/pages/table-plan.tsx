@@ -639,8 +639,10 @@ export default function TablePlan() {
                 ))}
               </div>
               <div className="text-xs text-gray-500 p-2 bg-blue-50 rounded">
-                <strong>Tip:</strong> Drag table structures onto the floor plan
-                to add new tables. A configuration dialog will appear automatically.
+                <strong>Tips:</strong>
+                <br />• Drag table structures onto the floor plan to add new tables
+                <br />• Hover over placed tables to see the remove button (×)
+                <br />• Right-click on tables for quick removal
               </div>
             </div>
 
@@ -749,13 +751,23 @@ export default function TablePlan() {
                       className="shadow-lg border-2 border-white hover:shadow-xl transition-shadow"
                       title={
                         dbTable
-                          ? `Table ${dbTable.tableNumber} (${dbTable.capacity} seats)`
+                          ? `Table ${dbTable.tableNumber} (${dbTable.capacity} seats) - Right click to remove`
                           : position.isConfigured
-                            ? `Table ${position.tableNumber} (${position.capacity} seats)`
-                            : "Unconfigured table"
+                            ? `Table ${position.tableNumber} (${position.capacity} seats) - Right click to remove`
+                            : "Unconfigured table - Right click to remove"
                       }
+                      onContextMenu={(e) => {
+                        e.preventDefault();
+                        if (window.confirm(`Are you sure you want to remove this table from the floor plan?`)) {
+                          setTablePositions(prev => {
+                            const newPositions = { ...prev };
+                            delete newPositions[numericTableId];
+                            return newPositions;
+                          });
+                        }
+                      }}
                     >
-                      <div className="text-center">
+                      <div className="text-center relative group">
                         <div className="font-bold">
                           {dbTable
                             ? dbTable.tableNumber
@@ -770,6 +782,24 @@ export default function TablePlan() {
                               ? `${position.capacity} seats`
                               : ""}
                         </div>
+                        {/* Remove button - shown on hover */}
+                        <button
+                          className="absolute -top-2 -right-2 w-5 h-5 bg-red-600 text-white rounded-full text-xs opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center hover:bg-red-700"
+                          onClick={(e) => {
+                            e.preventDefault();
+                            e.stopPropagation();
+                            if (window.confirm(`Are you sure you want to remove this table from the floor plan?`)) {
+                              setTablePositions(prev => {
+                                const newPositions = { ...prev };
+                                delete newPositions[numericTableId];
+                                return newPositions;
+                              });
+                            }
+                          }}
+                          title="Remove table from floor plan"
+                        >
+                          ×
+                        </button>
                       </div>
                     </div>
                   );
