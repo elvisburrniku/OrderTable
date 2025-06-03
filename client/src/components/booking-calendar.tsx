@@ -75,6 +75,20 @@ export default function BookingCalendar({ selectedDate, bookings, allBookings = 
 
   const handleCreateBooking = (e: React.FormEvent) => {
     e.preventDefault();
+    
+    // Validate guest count against selected table capacity if a table is selected
+    if (newBooking.tableId && tables) {
+      const selectedTable = tables.find(t => t.id.toString() === newBooking.tableId);
+      if (selectedTable && newBooking.guestCount > selectedTable.capacity) {
+        toast({
+          title: "Error",
+          description: `Selected table can only accommodate ${selectedTable.capacity} guests. You have ${newBooking.guestCount} guests.`,
+          variant: "destructive"
+        });
+        return;
+      }
+    }
+
     createBookingMutation.mutate({
       ...newBooking,
       bookingDate: selectedDate.toISOString(),
@@ -285,15 +299,27 @@ export default function BookingCalendar({ selectedDate, bookings, allBookings = 
               </div>
               {timeSlots.map((time) => {
                 const booking = getBookingForTableAndTime(table.id, time);
+                const isSelected = newBooking.startTime === time && newBooking.tableId === table.id.toString();
                 return (
                   <div
                     key={time}
                     className={`h-8 rounded ${
                       booking 
-                        ? "bg-blue-200 border border-blue-300" 
-                        : "bg-gray-100"
+                        ? "bg-red-200 border border-red-300" 
+                        : isSelected
+                        ? "bg-green-200 border border-green-300"
+                        : "bg-gray-100 hover:bg-green-50 cursor-pointer"
                     }`}
-                    title={booking ? `${booking.customerName} - ${booking.guestCount} guests` : "Available"}
+                    title={booking ? `${booking.customerName} - ${booking.guestCount} guests` : isSelected ? "Selected for new booking" : "Available"}
+                    onClick={() => {
+                      if (!booking && isNewBookingOpen) {
+                        setNewBooking({ 
+                          ...newBooking, 
+                          tableId: table.id.toString(),
+                          startTime: time 
+                        });
+                      }
+                    }}
                   />
                 );
               })}
@@ -418,16 +444,27 @@ export default function BookingCalendar({ selectedDate, bookings, allBookings = 
                 <Label htmlFor="tableId">Table (Optional)</Label>
                 <Select value={newBooking.tableId} onValueChange={(value) => setNewBooking({ ...newBooking, tableId: value })}>
                   <SelectTrigger>
-                    <SelectValue placeholder="Auto-assign" />
+                    <SelectValue placeholder={tables?.length > 0 ? "Auto-assign" : "No tables available"} />
                   </SelectTrigger>
                   <SelectContent>
-                    {tables.map((table) => (
-                      <SelectItem key={table.id} value={table.id.toString()}>
-                        Table {table.tableNumber} ({table.capacity} seats)
+                    {tables && tables.length > 0 ? (
+                      tables.map((table) => (
+                        <SelectItem key={table.id} value={table.id.toString()}>
+                          Table {table.tableNumber} ({table.capacity} seats)
+                        </SelectItem>
+                      ))
+                    ) : (
+                      <SelectItem value="" disabled>
+                        No tables configured
                       </SelectItem>
-                    ))}
+                    )}
                   </SelectContent>
                 </Select>
+                {tables && tables.length === 0 && (
+                  <p className="text-xs text-gray-500 mt-1">
+                    No tables configured. Tables will be auto-assigned if available.
+                  </p>
+                )}
               </div>
               <Button type="submit" className="w-full bg-green-600 hover:bg-green-700" disabled={createBookingMutation.isPending}>
                 {createBookingMutation.isPending ? "Creating..." : "Create Booking"}
