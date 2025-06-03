@@ -485,7 +485,7 @@ export default function TablePlan() {
                 <SelectContent>
                   <SelectItem value="main">Main Dining</SelectItem>
                   {rooms.map((room: any) => (
-                    <SelectItem key={room.id} value={room.id.toString()}>
+                    <SelectItem key={`room-${room.id}`} value={room.id.toString()}>
                       {room.name}
                     </SelectItem>
                   ))}
@@ -501,7 +501,7 @@ export default function TablePlan() {
               <div className="grid grid-cols-2 gap-2 mb-4">
                 {TABLE_STRUCTURES.map((structure) => (
                   <div
-                    key={structure.id}
+                    key={`structure-${structure.id}`}
                     className="p-2 border rounded-lg hover:bg-gray-50 cursor-grab"
                     draggable
                     onDragStart={(e) => handleStructureDragStart(structure, e)}
@@ -537,7 +537,7 @@ export default function TablePlan() {
               <div className="space-y-2 max-h-60 overflow-y-auto">
                 {tables.map((table: any) => (
                   <div
-                    key={table.id}
+                    key={`table-${table.id}`}
                     className="p-2 border rounded-lg hover:bg-gray-50"
                   >
                     <div className="flex items-center justify-between">
@@ -582,7 +582,7 @@ export default function TablePlan() {
                           </SelectTrigger>
                           <SelectContent>
                             {TABLE_SHAPES.map((shape) => (
-                              <SelectItem key={shape.value} value={shape.value}>
+                              <SelectItem key={`shape-${shape.value}`} value={shape.value}>
                                 {shape.label}
                               </SelectItem>
                             ))}
@@ -679,7 +679,7 @@ export default function TablePlan() {
 
                   return (
                     <div
-                      key={position.id}
+                      key={`positioned-table-${position.id}`}
                       draggable
                       onDragStart={(e) => handleDragStart(position.id, e)}
                       style={getTableStyle(dbTable, position)}
