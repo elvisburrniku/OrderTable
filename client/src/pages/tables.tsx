@@ -15,14 +15,6 @@ import { useSubscription } from "@/hooks/use-subscription";
 export default function Tables() {
   const { isLoading: authLoading, isAuthenticated, user, restaurant } = useAuthGuard();
   const { canCreateTable } = useSubscription();
-
-  if (authLoading) {
-    return <div>Loading...</div>;
-  }
-
-  if (!isAuthenticated || !user || !restaurant) {
-    return null;
-  }
   const queryClient = useQueryClient();
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [editingTable, setEditingTable] = useState<any>(null);
@@ -31,6 +23,14 @@ export default function Tables() {
     capacity: 4,
     isActive: true,
   });
+
+  if (authLoading) {
+    return <div>Loading...</div>;
+  }
+
+  if (!isAuthenticated || !user || !restaurant) {
+    return null;
+  }
 
   const { data: tables = [], isLoading } = useQuery({
     queryKey: ["/api/tenants/1/restaurants", restaurant?.id, "tables"],
