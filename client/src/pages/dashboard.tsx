@@ -85,7 +85,7 @@ export default function Dashboard() {
       <DashboardSidebar 
         selectedDate={selectedDate}
         onDateChange={setSelectedDate}
-        bookings={(bookings as any) || []}
+        bookings={(allBookings as any) || []}
       />
 
       {/* Main Content */}
