@@ -139,7 +139,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post("/api/restaurants/:restaurantId/bookings", async (req, res) => {
     try {
       const restaurantId = parseInt(req.params.restaurantId);
-      
+
       // Get or create customer first
       const customer = await storage.getOrCreateCustomer(restaurantId, 1, {
         name: req.body.customerName,
@@ -246,11 +246,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Bookings routes
   app.get("/api/tenants/:tenantId/restaurants/:restaurantId/bookings", validateTenant, async (req, res) => {
     try {
       const restaurantId = parseInt(req.params.restaurantId);
-      const tenantId = parseInt(req.params.tenantId);
       const { date } = req.query;
 
       let bookings;
@@ -260,9 +258,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         bookings = await storage.getBookingsByRestaurant(restaurantId);
       }
 
-      // Filter bookings by tenantId for security
-      const tenantBookings = bookings.filter(booking => booking.tenantId === tenantId);
-      res.json(tenantBookings);
+      res.json(bookings);
     } catch (error) {
       res.status(400).json({ message: "Invalid request" });
     }
@@ -272,7 +268,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const restaurantId = parseInt(req.params.restaurantId);
       const tenantId = parseInt(req.params.tenantId);
-      
+
       // Get or create customer first
       const customer = await storage.getOrCreateCustomer(restaurantId, tenantId, {
         name: req.body.customerName,

@@ -27,8 +27,12 @@ export default function Dashboard() {
   const { data: todayBookings = [] } = useQuery({
     queryKey: ["/api/tenants", restaurant?.tenantId, "restaurants", restaurant?.id, "bookings", today],
     queryFn: async () => {
-      const response = await fetch(`/api/restaurants/${restaurant?.id}/bookings?date=${today}`);
-      return response.json();
+      const response = await fetch(`/api/tenants/${restaurant?.tenantId}/restaurants/${restaurant?.id}/bookings?date=${today}`);
+      if (!response.ok) {
+        throw new Error('Failed to fetch bookings');
+      }
+      const data = await response.json();
+      return Array.isArray(data) ? data : [];
     },
     enabled: !!restaurant && !!restaurant.tenantId,
   });
@@ -46,7 +50,7 @@ export default function Dashboard() {
   });
 
   const getAvailableTablesCount = () => {
-    if (!tables || !todayBookings) return 0;
+    if (!tables || !Array.isArray(todayBookings)) return 0;
     const currentHour = new Date().getHours();
     const bookedTableIds = todayBookings
       .filter((booking: any) => {
@@ -117,7 +121,7 @@ export default function Dashboard() {
                   <div>
                     <p className="text-sm text-gray-600">Today's Bookings</p>
                     <p className="text-2xl font-bold">
-                      {todayBookings?.length || 0}
+                      {Array.isArray(todayBookings) ? todayBookings.length : 0}
                     </p>
                   </div>
                   <Calendar className="h-8 w-8 text-blue-500" />
