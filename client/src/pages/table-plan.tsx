@@ -3,19 +3,38 @@ import { useAuthGuard } from "@/lib/auth.tsx";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Plus, Save, RotateCw, Move, Square, Circle, Users } from "lucide-react";
+import {
+  Plus,
+  Save,
+  RotateCw,
+  Move,
+  Square,
+  Circle,
+  Users,
+} from "lucide-react";
 
 interface TablePosition {
   id: number;
   x: number;
   y: number;
   rotation: number;
-  shape: 'square' | 'circle' | 'rectangle';
+  shape: "square" | "circle" | "rectangle";
   tableNumber?: string;
   capacity?: number;
   isConfigured?: boolean;
@@ -24,90 +43,102 @@ interface TablePosition {
 interface TableStructure {
   id: string;
   name: string;
-  shape: 'square' | 'circle' | 'rectangle';
+  shape: "square" | "circle" | "rectangle";
   icon: any;
   defaultCapacity: number;
   description: string;
 }
 
 const TABLE_SHAPES = [
-  { value: 'square', label: 'Square', icon: Square },
-  { value: 'circle', label: 'Round', icon: Circle },
-  { value: 'rectangle', label: 'Rectangle', icon: Square }
+  { value: "square", label: "Square", icon: Square },
+  { value: "circle", label: "Round", icon: Circle },
+  { value: "rectangle", label: "Rectangle", icon: Square },
 ];
 
 const TABLE_STRUCTURES: TableStructure[] = [
   {
-    id: 'small-round',
-    name: 'Small Round',
-    shape: 'circle',
+    id: "small-round",
+    name: "Small Round",
+    shape: "circle",
     icon: Circle,
     defaultCapacity: 2,
-    description: '2-person round table'
+    description: "2-person round table",
   },
   {
-    id: 'medium-round',
-    name: 'Medium Round',
-    shape: 'circle',
+    id: "medium-round",
+    name: "Medium Round",
+    shape: "circle",
     icon: Circle,
     defaultCapacity: 4,
-    description: '4-person round table'
+    description: "4-person round table",
   },
   {
-    id: 'large-round',
-    name: 'Large Round',
-    shape: 'circle',
+    id: "large-round",
+    name: "Large Round",
+    shape: "circle",
     icon: Circle,
     defaultCapacity: 6,
-    description: '6-person round table'
+    description: "6-person round table",
   },
   {
-    id: 'small-square',
-    name: 'Small Square',
-    shape: 'square',
+    id: "small-square",
+    name: "Small Square",
+    shape: "square",
     icon: Square,
     defaultCapacity: 2,
-    description: '2-person square table'
+    description: "2-person square table",
   },
   {
-    id: 'medium-square',
-    name: 'Medium Square',
-    shape: 'square',
+    id: "medium-square",
+    name: "Medium Square",
+    shape: "square",
     icon: Square,
     defaultCapacity: 4,
-    description: '4-person square table'
+    description: "4-person square table",
   },
   {
-    id: 'rectangular',
-    name: 'Rectangular',
-    shape: 'rectangle',
+    id: "rectangular",
+    name: "Rectangular",
+    shape: "rectangle",
     icon: Square,
     defaultCapacity: 6,
-    description: '6-person rectangular table'
+    description: "6-person rectangular table",
   },
   {
-    id: 'long-rectangular',
-    name: 'Long Rectangular',
-    shape: 'rectangle',
+    id: "long-rectangular",
+    name: "Long Rectangular",
+    shape: "rectangle",
     icon: Square,
     defaultCapacity: 8,
-    description: '8-person long table'
-  }
+    description: "8-person long table",
+  },
 ];
 
 export default function TablePlan() {
-  const { isLoading: authLoading, isAuthenticated, user, restaurant } = useAuthGuard();
+  const {
+    isLoading: authLoading,
+    isAuthenticated,
+    user,
+    restaurant,
+  } = useAuthGuard();
   const queryClient = useQueryClient();
   const [selectedRoom, setSelectedRoom] = useState<string>("main");
-  const [tablePositions, setTablePositions] = useState<Record<number, TablePosition>>({});
+  const [tablePositions, setTablePositions] = useState<
+    Record<number, TablePosition>
+  >({});
   const [draggedTable, setDraggedTable] = useState<number | null>(null);
-  const [draggedStructure, setDraggedStructure] = useState<TableStructure | null>(null);
+  const [draggedStructure, setDraggedStructure] =
+    useState<TableStructure | null>(null);
   const [isDragging, setIsDragging] = useState(false);
   const [showConfigDialog, setShowConfigDialog] = useState(false);
-  const [pendingTablePosition, setPendingTablePosition] = useState<{x: number, y: number, structure: TableStructure} | null>(null);
+  const [pendingTablePosition, setPendingTablePosition] = useState<{
+    x: number;
+    y: number;
+    structure: TableStructure;
+  } | null>(null);
   const [tableConfig, setTableConfig] = useState({
-    tableNumber: '',
-    capacity: 2
+    tableNumber: "",
+    capacity: 2,
   });
   const planRef = useRef<HTMLDivElement>(null);
 
@@ -115,7 +146,9 @@ export default function TablePlan() {
     queryKey: ["/api/tenants/1/restaurants", restaurant?.id, "tables"],
     queryFn: async () => {
       const tenantId = 1;
-      const response = await fetch(`/api/tenants/${tenantId}/restaurants/${restaurant?.id}/tables`);
+      const response = await fetch(
+        `/api/tenants/${tenantId}/restaurants/${restaurant?.id}/tables`,
+      );
       if (!response.ok) throw new Error("Failed to fetch tables");
       return response.json();
     },
@@ -126,7 +159,9 @@ export default function TablePlan() {
     queryKey: ["/api/tenants/1/restaurants", restaurant?.id, "rooms"],
     queryFn: async () => {
       const tenantId = 1;
-      const response = await fetch(`/api/tenants/${tenantId}/restaurants/${restaurant?.id}/rooms`);
+      const response = await fetch(
+        `/api/tenants/${tenantId}/restaurants/${restaurant?.id}/rooms`,
+      );
       if (!response.ok) throw new Error("Failed to fetch rooms");
       return response.json();
     },
@@ -135,10 +170,17 @@ export default function TablePlan() {
 
   // Load saved table layout
   const { data: savedLayout } = useQuery({
-    queryKey: ["/api/tenants/1/restaurants", restaurant?.id, "table-layout", selectedRoom],
+    queryKey: [
+      "/api/tenants/1/restaurants",
+      restaurant?.id,
+      "table-layout",
+      selectedRoom,
+    ],
     queryFn: async () => {
       const tenantId = 1;
-      const response = await fetch(`/api/tenants/${tenantId}/restaurants/${restaurant?.id}/table-layout?room=${selectedRoom}`);
+      const response = await fetch(
+        `/api/tenants/${tenantId}/restaurants/${restaurant?.id}/table-layout?room=${selectedRoom}`,
+      );
       if (!response.ok) throw new Error("Failed to fetch table layout");
       return response.json();
     },
@@ -155,11 +197,14 @@ export default function TablePlan() {
   const saveLayoutMutation = useMutation({
     mutationFn: async (positions: Record<number, TablePosition>) => {
       const tenantId = 1;
-      const response = await fetch(`/api/tenants/${tenantId}/restaurants/${restaurant?.id}/table-layout`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ room: selectedRoom, positions }),
-      });
+      const response = await fetch(
+        `/api/tenants/${tenantId}/restaurants/${restaurant?.id}/table-layout`,
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ room: selectedRoom, positions }),
+        },
+      );
       if (!response.ok) throw new Error("Failed to save layout");
       return response.json();
     },
@@ -175,86 +220,104 @@ export default function TablePlan() {
     e.dataTransfer.effectAllowed = "move";
   }, []);
 
-  const handleStructureDragStart = useCallback((structure: TableStructure, e: React.DragEvent) => {
-    setDraggedStructure(structure);
-    setDraggedTable(null);
-    setIsDragging(true);
-    e.dataTransfer.effectAllowed = "copy";
-  }, []);
+  const handleStructureDragStart = useCallback(
+    (structure: TableStructure, e: React.DragEvent) => {
+      setDraggedStructure(structure);
+      setDraggedTable(null);
+      setIsDragging(true);
+      e.dataTransfer.effectAllowed = "copy";
+    },
+    [],
+  );
 
   const handleDragOver = useCallback((e: React.DragEvent) => {
     e.preventDefault();
     e.dataTransfer.dropEffect = "move";
   }, []);
 
-  const handleDrop = useCallback((e: React.DragEvent) => {
-    e.preventDefault();
-    if (!planRef.current) return;
+  const handleDrop = useCallback(
+    (e: React.DragEvent) => {
+      e.preventDefault();
+      if (!planRef.current) return;
 
-    const rect = planRef.current.getBoundingClientRect();
-    const x = Math.max(30, Math.min(e.clientX - rect.left - 30, rect.width - 60));
-    const y = Math.max(30, Math.min(e.clientY - rect.top - 30, rect.height - 60));
+      const rect = planRef.current.getBoundingClientRect();
+      const x = Math.max(
+        30,
+        Math.min(e.clientX - rect.left - 30, rect.width - 60),
+      );
+      const y = Math.max(
+        30,
+        Math.min(e.clientY - rect.top - 30, rect.height - 60),
+      );
 
-    if (draggedTable) {
-      // Moving existing table
-      setTablePositions(prev => ({
-        ...prev,
-        [draggedTable]: {
-          ...prev[draggedTable],
-          x,
-          y
-        }
-      }));
-    } else if (draggedStructure) {
-      // Adding new table from structure
-      setPendingTablePosition({ x, y, structure: draggedStructure });
-      setTableConfig({
-        tableNumber: '',
-        capacity: draggedStructure.defaultCapacity
-      });
-      setShowConfigDialog(true);
-    }
+      if (draggedTable) {
+        // Moving existing table
+        setTablePositions((prev) => ({
+          ...prev,
+          [draggedTable]: {
+            ...prev[draggedTable],
+            x,
+            y,
+          },
+        }));
+      } else if (draggedStructure) {
+        // Adding new table from structure
+        setPendingTablePosition({ x, y, structure: draggedStructure });
+        setTableConfig({
+          tableNumber: "",
+          capacity: draggedStructure.defaultCapacity,
+        });
+        setShowConfigDialog(true);
+      }
 
-    setDraggedTable(null);
-    setDraggedStructure(null);
-    setIsDragging(false);
-  }, [draggedTable, draggedStructure]);
+      setDraggedTable(null);
+      setDraggedStructure(null);
+      setIsDragging(false);
+    },
+    [draggedTable, draggedStructure],
+  );
 
   const rotateTable = (tableId: number) => {
-    setTablePositions(prev => ({
+    setTablePositions((prev) => ({
       ...prev,
       [tableId]: {
         ...prev[tableId],
-        rotation: (prev[tableId]?.rotation || 0) + 45
-      }
+        rotation: (prev[tableId]?.rotation || 0) + 45,
+      },
     }));
   };
 
-  const changeTableShape = (tableId: number, shape: 'square' | 'circle' | 'rectangle') => {
-    setTablePositions(prev => ({
+  const changeTableShape = (
+    tableId: number,
+    shape: "square" | "circle" | "rectangle",
+  ) => {
+    setTablePositions((prev) => ({
       ...prev,
       [tableId]: {
         ...prev[tableId],
-        shape
-      }
+        shape,
+      },
     }));
   };
 
   const createTableMutation = useMutation({
     mutationFn: async (tableData: any) => {
       const tenantId = 1;
-      const response = await fetch(`/api/tenants/${tenantId}/restaurants/${restaurant?.id}/tables`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ ...tableData, restaurantId: restaurant?.id }),
-      });
+      const response = await fetch(
+        `/api/tenants/${tenantId}/restaurants/${restaurant?.id}/tables`,
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ ...tableData, restaurantId: restaurant?.id }),
+        },
+      );
       if (!response.ok) throw new Error("Failed to create table");
       return response.json();
     },
     onSuccess: (newTable) => {
       // Add the new table to the layout at the pending position
       if (pendingTablePosition) {
-        setTablePositions(prev => ({
+        setTablePositions((prev) => ({
           ...prev,
           [newTable.id]: {
             id: newTable.id,
@@ -264,8 +327,8 @@ export default function TablePlan() {
             shape: pendingTablePosition.structure.shape,
             tableNumber: newTable.tableNumber,
             capacity: newTable.capacity,
-            isConfigured: true
-          }
+            isConfigured: true,
+          },
         }));
       }
 
@@ -276,13 +339,13 @@ export default function TablePlan() {
 
       setShowConfigDialog(false);
       setPendingTablePosition(null);
-      setTableConfig({ tableNumber: '', capacity: 2 });
+      setTableConfig({ tableNumber: "", capacity: 2 });
     },
   });
 
   const handleConfigSubmit = () => {
     if (!pendingTablePosition || !tableConfig.tableNumber.trim()) {
-      alert('Please fill in all required fields');
+      alert("Please fill in all required fields");
       return;
     }
 
@@ -290,14 +353,14 @@ export default function TablePlan() {
     createTableMutation.mutate({
       tableNumber: tableConfig.tableNumber,
       capacity: tableConfig.capacity,
-      isActive: true
+      isActive: true,
     });
   };
 
   const handleConfigCancel = () => {
     setShowConfigDialog(false);
     setPendingTablePosition(null);
-    setTableConfig({ tableNumber: '', capacity: 2 });
+    setTableConfig({ tableNumber: "", capacity: 2 });
   };
 
   if (authLoading) {
@@ -310,18 +373,19 @@ export default function TablePlan() {
 
   const getTableStyle = (table: any, position?: TablePosition) => {
     const baseStyle = {
-      width: '60px',
-      height: '60px',
-      position: 'absolute' as const,
-      cursor: 'move',
-      display: 'flex',
-      alignItems: 'center',
-      justifyContent: 'center',
-      fontSize: '12px',
-      fontWeight: 'bold',
-      color: 'white',
-      userSelect: 'none' as const,
-      zIndex: isDragging && draggedTable === (table?.id || position?.id) ? 1000 : 1,
+      width: "60px",
+      height: "60px",
+      position: "absolute" as const,
+      cursor: "move",
+      display: "flex",
+      alignItems: "center",
+      justifyContent: "center",
+      fontSize: "12px",
+      fontWeight: "bold",
+      color: "white",
+      userSelect: "none" as const,
+      zIndex:
+        isDragging && draggedTable === (table?.id || position?.id) ? 1000 : 1,
     };
 
     if (position) {
@@ -330,36 +394,48 @@ export default function TablePlan() {
         left: `${position.x}px`,
         top: `${position.y}px`,
         transform: `rotate(${position.rotation}deg)`,
-        backgroundColor: position.isConfigured ? '#16a34a' : (table?.isActive ? '#16a34a' : '#6b7280'),
-        borderRadius: position.shape === 'circle' ? '50%' : 
-                     position.shape === 'rectangle' ? '8px' : '4px',
-        width: position.shape === 'rectangle' ? '80px' : '60px',
+        backgroundColor: position.isConfigured
+          ? "#16a34a"
+          : table?.isActive
+            ? "#16a34a"
+            : "#6b7280",
+        borderRadius:
+          position.shape === "circle"
+            ? "50%"
+            : position.shape === "rectangle"
+              ? "8px"
+              : "4px",
+        width: position.shape === "rectangle" ? "80px" : "60px",
       };
     }
 
     return {
       ...baseStyle,
-      backgroundColor: table?.isActive ? '#16a34a' : '#6b7280',
-      borderRadius: '50%',
-      position: 'relative' as const,
-      margin: '5px',
+      backgroundColor: table?.isActive ? "#16a34a" : "#6b7280",
+      borderRadius: "50%",
+      position: "relative" as const,
+      margin: "5px",
     };
   };
 
   const getStructureStyle = (structure: TableStructure) => ({
-    width: structure.shape === 'rectangle' ? '60px' : '50px',
-    height: '50px',
-    backgroundColor: '#6b7280',
-    borderRadius: structure.shape === 'circle' ? '50%' : 
-                 structure.shape === 'rectangle' ? '8px' : '4px',
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'center',
-    cursor: 'grab',
-    color: 'white',
-    fontSize: '10px',
-    fontWeight: 'bold',
-    userSelect: 'none' as const,
+    width: structure.shape === "rectangle" ? "60px" : "50px",
+    height: "50px",
+    backgroundColor: "#6b7280",
+    borderRadius:
+      structure.shape === "circle"
+        ? "50%"
+        : structure.shape === "rectangle"
+          ? "8px"
+          : "4px",
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "center",
+    cursor: "grab",
+    color: "white",
+    fontSize: "10px",
+    fontWeight: "bold",
+    userSelect: "none" as const,
   });
 
   return (
@@ -370,14 +446,25 @@ export default function TablePlan() {
           <div className="flex items-center space-x-6">
             <h1 className="text-xl font-semibold">Table Plan</h1>
             <nav className="flex space-x-6">
-              <a href="/dashboard" className="text-gray-600 hover:text-gray-900">Booking</a>
-              <a href="#" className="text-green-600 font-medium">CRM</a>
-              <a href="#" className="text-gray-600 hover:text-gray-900">Archive</a>
+              <a
+                href="/dashboard"
+                className="text-gray-600 hover:text-gray-900"
+              >
+                Booking
+              </a>
+              <a href="#" className="text-green-600 font-medium">
+                CRM
+              </a>
+              <a href="#" className="text-gray-600 hover:text-gray-900">
+                Archive
+              </a>
             </nav>
           </div>
           <div className="flex items-center space-x-4">
             <span className="text-sm text-gray-600">{restaurant.name}</span>
-            <Button variant="outline" size="sm">Profile</Button>
+            <Button variant="outline" size="sm">
+              Profile
+            </Button>
           </div>
         </div>
       </div>
@@ -388,7 +475,9 @@ export default function TablePlan() {
           <div className="p-6">
             {/* Room Selection */}
             <div className="mb-6">
-              <label className="block text-sm font-medium text-gray-700 mb-2">Room</label>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Room
+              </label>
               <Select value={selectedRoom} onValueChange={setSelectedRoom}>
                 <SelectTrigger>
                   <SelectValue />
@@ -406,7 +495,9 @@ export default function TablePlan() {
 
             {/* Table Structures */}
             <div className="mb-6">
-              <h3 className="text-sm font-medium text-gray-700 mb-3">Table Structures</h3>
+              <h3 className="text-sm font-medium text-gray-700 mb-3">
+                Table Structures
+              </h3>
               <div className="grid grid-cols-2 gap-2 mb-4">
                 {TABLE_STRUCTURES.map((structure) => (
                   <div
@@ -424,20 +515,25 @@ export default function TablePlan() {
                       </div>
                       <div className="text-xs text-center">
                         <div className="font-medium">{structure.name}</div>
-                        <div className="text-gray-500">{structure.description}</div>
+                        <div className="text-gray-500">
+                          {structure.description}
+                        </div>
                       </div>
                     </div>
                   </div>
                 ))}
               </div>
               <div className="text-xs text-gray-500 p-2 bg-blue-50 rounded">
-                <strong>Tip:</strong> Drag table structures onto the floor plan to add new tables
+                <strong>Tip:</strong> Drag table structures onto the floor plan
+                to add new tables
               </div>
             </div>
 
             {/* Available Tables */}
             <div className="mb-6">
-              <h3 className="text-sm font-medium text-gray-700 mb-3">Existing Tables</h3>
+              <h3 className="text-sm font-medium text-gray-700 mb-3">
+                Existing Tables
+              </h3>
               <div className="space-y-2 max-h-60 overflow-y-auto">
                 {tables.map((table: any) => (
                   <div
@@ -446,7 +542,9 @@ export default function TablePlan() {
                   >
                     <div className="flex items-center justify-between">
                       <div>
-                        <div className="font-medium text-sm">Table {table.tableNumber}</div>
+                        <div className="font-medium text-sm">
+                          Table {table.tableNumber}
+                        </div>
                         <div className="text-xs text-gray-500 flex items-center">
                           <Users className="h-3 w-3 mr-1" />
                           {table.capacity}
@@ -474,10 +572,10 @@ export default function TablePlan() {
                           <RotateCw className="h-3 w-3" />
                         </Button>
                         <Select
-                          value={tablePositions[table.id]?.shape || 'circle'}
-                          onValueChange={(shape: 'square' | 'circle' | 'rectangle') => 
-                            changeTableShape(table.id, shape)
-                          }
+                          value={tablePositions[table.id]?.shape || "circle"}
+                          onValueChange={(
+                            shape: "square" | "circle" | "rectangle",
+                          ) => changeTableShape(table.id, shape)}
                         >
                           <SelectTrigger className="h-6 text-xs">
                             <SelectValue />
@@ -519,7 +617,12 @@ export default function TablePlan() {
           <Card>
             <CardHeader>
               <div className="flex items-center justify-between">
-                <CardTitle>Table Plan - {selectedRoom === "main" ? "Main Dining" : `Room ${selectedRoom}`}</CardTitle>
+                <CardTitle>
+                  Table Plan -{" "}
+                  {selectedRoom === "main"
+                    ? "Main Dining"
+                    : `Room ${selectedRoom}`}
+                </CardTitle>
                 <div className="flex gap-2">
                   <Button
                     onClick={() => saveLayoutMutation.mutate(tablePositions)}
@@ -532,23 +635,25 @@ export default function TablePlan() {
                 </div>
               </div>
               <p className="text-sm text-gray-600">
-                Drag tables from the sidebar onto the floor plan to arrange your restaurant layout.
+                Drag tables from the sidebar onto the floor plan to arrange your
+                restaurant layout.
               </p>
             </CardHeader>
             <CardContent>
               <div
                 ref={planRef}
                 className="relative bg-gray-100 border-2 border-dashed border-gray-300 rounded-lg"
-                style={{ height: '600px', minHeight: '400px' }}
+                style={{ height: "600px", minHeight: "400px" }}
                 onDragOver={handleDragOver}
                 onDrop={handleDrop}
               >
                 {/* Grid pattern */}
-                <div 
+                <div
                   className="absolute inset-0 opacity-20"
                   style={{
-                    backgroundImage: 'radial-gradient(circle, #666 1px, transparent 1px)',
-                    backgroundSize: '20px 20px'
+                    backgroundImage:
+                      "radial-gradient(circle, #666 1px, transparent 1px)",
+                    backgroundSize: "20px 20px",
                   }}
                 />
 
@@ -557,8 +662,12 @@ export default function TablePlan() {
                   <div className="absolute inset-0 flex items-center justify-center">
                     <div className="text-center text-gray-500">
                       <Move className="h-12 w-12 mx-auto mb-2 opacity-50" />
-                      <p className="text-lg font-medium">Drag tables here to create your floor plan</p>
-                      <p className="text-sm">Start by dragging tables from the sidebar</p>
+                      <p className="text-lg font-medium">
+                        Drag tables here to create your floor plan
+                      </p>
+                      <p className="text-sm">
+                        Start by dragging tables from the sidebar
+                      </p>
                     </div>
                   </div>
                 )}
@@ -575,19 +684,19 @@ export default function TablePlan() {
                       onDragStart={(e) => handleDragStart(position.id, e)}
                       style={getTableStyle(dbTable, position)}
                       className="shadow-lg border-2 border-white hover:shadow-xl transition-shadow"
-                      title={dbTable 
-                        ? `Table ${dbTable.tableNumber} (${dbTable.capacity} seats)`
-                        : position.isConfigured 
-                          ? `Table ${position.tableNumber} (${position.capacity} seats)` 
-                          : 'Unconfigured table'
+                      title={
+                        dbTable
+                          ? `Table ${dbTable.tableNumber} (${dbTable.capacity} seats)`
+                          : position.isConfigured
+                            ? `Table ${position.tableNumber} (${position.capacity} seats)`
+                            : "Unconfigured table"
                       }
                     >
-                      {dbTable 
-                        ? dbTable.tableNumber 
-                        : position.isConfigured 
-                          ? position.tableNumber 
-                          : '?'
-                      }
+                      {dbTable
+                        ? dbTable.tableNumber
+                        : position.isConfigured
+                          ? position.tableNumber
+                          : "?"}
                     </div>
                   );
                 })}
@@ -596,13 +705,18 @@ export default function TablePlan() {
               {/* Status */}
               <div className="mt-4 flex items-center justify-between text-sm text-gray-600">
                 <div>
-                  Tables placed: {Object.keys(tablePositions).length} of {tables.length}
+                  Tables placed: {Object.keys(tablePositions).length} of{" "}
+                  {tables.length}
                 </div>
                 <div className="flex items-center gap-4">
                   <Badge variant="outline">
-                    Total Capacity: {tables.reduce((sum: number, table: any) => 
-                      tablePositions[table.id] ? sum + table.capacity : sum, 0
-                    )} seats
+                    Total Capacity:{" "}
+                    {tables.reduce(
+                      (sum: number, table: any) =>
+                        tablePositions[table.id] ? sum + table.capacity : sum,
+                      0,
+                    )}{" "}
+                    seats
                   </Badge>
                 </div>
               </div>
@@ -623,7 +737,12 @@ export default function TablePlan() {
               <Input
                 id="tableNumber"
                 value={tableConfig.tableNumber}
-                onChange={(e) => setTableConfig(prev => ({ ...prev, tableNumber: e.target.value }))}
+                onChange={(e) =>
+                  setTableConfig((prev) => ({
+                    ...prev,
+                    tableNumber: e.target.value,
+                  }))
+                }
                 placeholder="Enter table number"
               />
             </div>
@@ -635,15 +754,20 @@ export default function TablePlan() {
                 min="1"
                 max="20"
                 value={tableConfig.capacity}
-                onChange={(e) => setTableConfig(prev => ({ ...prev, capacity: parseInt(e.target.value) || 1 }))}
+                onChange={(e) =>
+                  setTableConfig((prev) => ({
+                    ...prev,
+                    capacity: parseInt(e.target.value) || 1,
+                  }))
+                }
               />
             </div>
             <div className="flex justify-end gap-2">
               <Button variant="outline" onClick={handleConfigCancel}>
                 Cancel
               </Button>
-              <Button 
-                onClick={handleConfigSubmit} 
+              <Button
+                onClick={handleConfigSubmit}
                 className="bg-green-600 hover:bg-green-700"
                 disabled={createTableMutation.isPending}
               >
