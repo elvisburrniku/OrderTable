@@ -1,5 +1,5 @@
 
-import { useState, useRef, useCallback } from "react";
+import React, { useState, useRef, useCallback } from "react";
 import { useAuthGuard } from "@/lib/auth.tsx";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
@@ -52,6 +52,25 @@ export default function TablePlan() {
     },
     enabled: !!restaurant,
   });
+
+  // Load saved table layout
+  const { data: savedLayout } = useQuery({
+    queryKey: ["/api/tenants/1/restaurants", restaurant?.id, "table-layout", selectedRoom],
+    queryFn: async () => {
+      const tenantId = 1;
+      const response = await fetch(`/api/tenants/${tenantId}/restaurants/${restaurant?.id}/table-layout?room=${selectedRoom}`);
+      if (!response.ok) throw new Error("Failed to fetch table layout");
+      return response.json();
+    },
+    enabled: !!restaurant,
+  });
+
+  // Apply saved layout when it loads
+  React.useEffect(() => {
+    if (savedLayout?.positions) {
+      setTablePositions(savedLayout.positions);
+    }
+  }, [savedLayout]);
 
   const saveLayoutMutation = useMutation({
     mutationFn: async (positions: Record<number, TablePosition>) => {
