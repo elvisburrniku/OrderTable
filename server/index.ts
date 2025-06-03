@@ -37,6 +37,10 @@ app.use((req, res, next) => {
 });
 
 (async () => {
+  // Initialize database with subscription plans and demo data
+  const { storage } = await import("./storage");
+  await storage.initialize();
+  
   const server = await registerRoutes(app);
 
   app.use((err: any, _req: Request, res: Response, _next: NextFunction) => {
