@@ -269,6 +269,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const restaurantId = parseInt(req.params.restaurantId);
       const tenantId = parseInt(req.params.tenantId);
 
+      // Validate required fields
+      if (!req.body.customerName || !req.body.customerEmail || !req.body.bookingDate || !req.body.startTime || !req.body.guestCount) {
+        return res.status(400).json({ message: "Missing required booking fields" });
+      }
+
       // Get or create customer first
       const customer = await storage.getOrCreateCustomer(restaurantId, tenantId, {
         name: req.body.customerName,
@@ -287,7 +292,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const booking = await storage.createBooking(bookingData);
       res.json(booking);
     } catch (error) {
-      res.status(400).json({ message: "Invalid booking data" });
+      console.error("Booking creation error:", error);
+      if (error instanceof Error) {
+        res.status(400).json({ message: `Invalid booking data: ${error.message}` });
+      } else {
+        res.status(400).json({ message: "Invalid booking data" });
+      }
     }
   });
 
