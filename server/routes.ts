@@ -5,6 +5,10 @@ import { insertUserSchema, loginSchema, insertBookingSchema, insertCustomerSchem
 import { z } from "zod";
 import Stripe from "stripe";
 import * as tenantRoutes from "./tenant-routes";
+import { Request, Response } from "express";
+import bcrypt from 'bcrypt';
+import { users, tenants, tenantUsers, restaurants } from "@shared/schema";
+import { eq } from "drizzle-orm";
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY || 'sk_test_your_stripe_secret_key', {
   apiVersion: '2023-10-16'
@@ -14,11 +18,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Middleware to extract and validate tenant ID
   const validateTenant = async (req: any, res: any, next: any) => {
     const tenantId = req.headers['x-tenant-id'] || req.query.tenantId || req.body.tenantId;
-    
+
     if (!tenantId) {
       return res.status(400).json({ message: "Tenant ID is required" });
     }
-    
+
     req.tenantId = parseInt(tenantId as string);
     next();
   };
@@ -29,7 +33,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const { email, password } = loginSchema.parse(req.body);
 
       const user = await storage.getUserByEmail(email);
-      if (!user || user.password !== password) {
+      if (!user) {
+        return res.status(401).json({ message: "Invalid credentials" });
+      }
+
+      // Check password with bcrypt
+      const isValidPassword = await bcrypt.compare(password, user.password);
+      if (!isValidPassword) {
         return res.status(401).json({ message: "Invalid credentials" });
       }
 
@@ -44,46 +54,83 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.post("/api/auth/register", async (req, res) => {
-    try {
-      const userData = insertUserSchema.parse(req.body);
+  // Register endpoint
+  app.post("/api/auth/register", async (req: Request, res: Response) => {
+    const result = insertUserSchema.safeParse(req.body);
+    if (!result.success) {
+      return res.status(400).json({ 
+        message: "Invalid input", 
+        errors: result.error.flatten().fieldErrors 
+      });
+    }
 
-      const existingUser = await storage.getUserByEmail(userData.email);
-      if (existingUser) {
+    const { email, password, name, restaurantName } = result.data;
+
+    try {
+      // Check if user already exists
+      const existingUser = await storage.db.select().from(users).where(eq(users.email, email));
+      if (existingUser.length > 0) {
         return res.status(400).json({ message: "User already exists" });
       }
 
-      const user = await storage.createUser(userData);
+      // Hash password
+      const hashedPassword = await bcrypt.hash(password, 10);
 
-      if (userData.restaurantName) {
-        const restaurant = await storage.createRestaurant({
-          name: userData.restaurantName,
-          userId: user.id,
-          address: "",
-          phone: "",
-          email: userData.email,
-          description: ""
-        });
+      // Create user
+      const [newUser] = await storage.db.insert(users).values({
+        email,
+        password: hashedPassword,
+        name,
+        restaurantName
+      }).returning();
 
-        // Create default tables
-        for (let i = 1; i <= 10; i++) {
-          await storage.createTable({
-            restaurantId: restaurant.id,
-            tableNumber: i.toString(),
-            capacity: i <= 4 ? 2 : i <= 8 ? 4 : 6,
-            isActive: true
-          });
+      // Create tenant for the restaurant with unique slug
+      let baseSlug = restaurantName.toLowerCase().replace(/[^a-z0-9]/g, '-').replace(/-+/g, '-').replace(/^-|-$/g, '');
+      let slug = baseSlug;
+      let counter = 1;
+
+      // Check for slug uniqueness and add counter if needed
+      while (true) {
+        const existingTenant = await storage.db.select().from(tenants).where(eq(tenants.slug, slug));
+        if (existingTenant.length === 0) {
+          break;
         }
-
-        res.json({ 
-          user: { ...user, password: undefined },
-          restaurant 
-        });
-      } else {
-        res.json({ user: { ...user, password: undefined } });
+        slug = `${baseSlug}-${counter}`;
+        counter++;
       }
+
+      const [newTenant] = await storage.db.insert(tenants).values({
+        name: restaurantName,
+        slug: slug
+      }).returning();
+
+      // Add user as owner of the tenant
+      await storage.db.insert(tenantUsers).values({
+        tenantId: newTenant.id,
+        userId: newUser.id,
+        role: "owner"
+      });
+
+      // Create restaurant under the tenant
+      const [newRestaurant] = await storage.db.insert(restaurants).values({
+        tenantId: newTenant.id,
+        name: restaurantName,
+        userId: newUser.id
+      }).returning();
+
+      res.status(201).json({
+        message: "User registered successfully",
+        user: {
+          id: newUser.id,
+          email: newUser.email,
+          name: newUser.name,
+          restaurantName: newUser.restaurantName
+        },
+        restaurant: newRestaurant
+      });
     } catch (error) {
-      res.status(400).json({ message: "Invalid request data" });
+      console.error("Registration error:", error);
+      res.status(500).json({ message: "Internal server error" });
     }
   });
 

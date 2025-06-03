@@ -14,8 +14,8 @@ export default function Bookings() {
   const [sourceFilter, setSourceFilter] = useState("all");
 
   const { data: bookings, isLoading } = useQuery({
-    queryKey: ['/api/restaurants', restaurant?.id, 'bookings'],
-    enabled: !!restaurant
+    queryKey: [`/api/tenants/${restaurant?.tenantId}/restaurants/${restaurant?.id}/bookings`],
+    enabled: !!restaurant && !!restaurant.tenantId
   });
 
   if (!user || !restaurant) {

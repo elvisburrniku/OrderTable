@@ -23,12 +23,12 @@ export default function Login() {
     name: "",
     restaurantName: "",
     rememberMe: false,
-    selectedPlanId: null as number | null
+    selectedPlanId: null as number | null,
   });
 
   const { data: plans = [] } = useQuery({
-    queryKey: ['/api/subscription-plans'],
-    enabled: !isLogin
+    queryKey: ["/api/subscription-plans"],
+    enabled: !isLogin,
   });
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -38,48 +38,66 @@ export default function Login() {
     try {
       if (isLogin) {
         const result = await login(formData.email, formData.password);
-        toast({
-          title: "Welcome back!",
-          description: "You have successfully logged in."
-        });
-        // Use restaurant ID as tenant ID
-        const tenantId = result.restaurant.id;
-        setLocation(`/${tenantId}/dashboard`);
-      } else {
-        const result = await register({
-          username: formData.email,
-          email: formData.email,
-          password: formData.password,
-          restaurantName: formData.restaurantName
-        });
-
-        // Create subscription if plan selected
-        if (formData.selectedPlanId) {
-          await fetch(`/api/users/${result.user.id}/subscription`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-              planId: formData.selectedPlanId,
-              currentPeriodStart: new Date(),
-              currentPeriodEnd: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000),
-              status: 'active'
-            })
+        if(result) {
+          console.log(result);
+          toast({
+            title: "Welcome back!",
+            description: "You have successfully logged in.",
+          });
+          // Use restaurant ID as tenant ID
+          const tenantId = result.restaurant.id;
+          setLocation(`/${tenantId}/dashboard`);
+        } else {
+          toast({
+            title: "Error",
+            description: "Login failed",
+            variant: "destructive",
           });
         }
-
-        toast({
-          title: "Account created!",
-          description: "Your restaurant account has been created successfully."
+      } else {
+        const result = await register({
+          username: formData.name,
+          email: formData.email,
+          password: formData.password,
+          restaurantName: formData.restaurantName,
         });
-        // Use restaurant ID as tenant ID
-        const tenantId = result.restaurant.id;
-        setLocation(`/${tenantId}/dashboard`);
+
+        if(result) {
+          // Create subscription if plan selected
+          if (formData.selectedPlanId) {
+            await fetch(`/api/users/${result.user.id}/subscription`, {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({
+                planId: formData.selectedPlanId,
+                currentPeriodStart: new Date(),
+                currentPeriodEnd: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000),
+                status: "active",
+              }),
+            });
+          }
+
+          toast({
+            title: "Account created!",
+            description: "Your restaurant account has been created successfully.",
+          });
+          // Use restaurant ID as tenant ID
+          const tenantId = result.restaurant.id;
+          setLocation(`/${tenantId}/dashboard`);
+        } else {
+          toast({
+            title: "Error",
+            description: "Registration failed",
+            variant: "destructive",
+          });
+        }
       }
     } catch (error) {
       toast({
         title: "Error",
-        description: error instanceof Error ? error.message : "Authentication failed",
-        variant: "destructive"
+        description:
+          error instanceof Error ? error.message : "Authentication failed",
+        variant: "destructive",
       });
     } finally {
       setIsLoading(false);
@@ -92,10 +110,10 @@ export default function Login() {
         <div className="grid md:grid-cols-2">
           {/* Left side - Restaurant image */}
           <div className="relative h-96 md:h-auto">
-            <div 
+            <div
               className="absolute inset-0 bg-cover bg-center"
               style={{
-                backgroundImage: `url('https://images.unsplash.com/photo-1556909114-f6e7ad7d3136?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&h=600')`
+                backgroundImage: `url('https://images.unsplash.com/photo-1556909114-f6e7ad7d3136?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&h=600')`,
               }}
             />
             <div className="absolute inset-0 bg-black bg-opacity-60 flex items-center justify-center">
@@ -105,7 +123,8 @@ export default function Login() {
                   <span className="text-3xl font-bold">easyTable</span>
                 </div>
                 <h2 className="text-3xl md:text-4xl font-bold leading-tight">
-                  BETTER BOOKING.<br />
+                  BETTER BOOKING.
+                  <br />
                   BETTER BUSINESS.
                 </h2>
               </div>
@@ -129,27 +148,40 @@ export default function Login() {
               {!isLogin && (
                 <>
                   <div>
-                    <Label htmlFor="name" className="text-sm font-medium text-gray-700">
+                    <Label
+                      htmlFor="name"
+                      className="text-sm font-medium text-gray-700"
+                    >
                       Full Name:
                     </Label>
                     <Input
                       id="name"
                       type="text"
                       value={formData.name}
-                      onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                      onChange={(e) =>
+                        setFormData({ ...formData, name: e.target.value })
+                      }
                       className="mt-1"
                       required
                     />
                   </div>
                   <div>
-                    <Label htmlFor="restaurantName" className="text-sm font-medium text-gray-700">
+                    <Label
+                      htmlFor="restaurantName"
+                      className="text-sm font-medium text-gray-700"
+                    >
                       Restaurant Name:
                     </Label>
                     <Input
                       id="restaurantName"
                       type="text"
                       value={formData.restaurantName}
-                      onChange={(e) => setFormData({ ...formData, restaurantName: e.target.value })}
+                      onChange={(e) =>
+                        setFormData({
+                          ...formData,
+                          restaurantName: e.target.value,
+                        })
+                      }
                       className="mt-1"
                       required
                     />
@@ -168,23 +200,31 @@ export default function Login() {
                         key={plan.id}
                         className={`border rounded-lg p-4 cursor-pointer transition-colors ${
                           formData.selectedPlanId === plan.id
-                            ? 'border-green-500 bg-green-50'
-                            : 'border-gray-200 hover:border-gray-300'
+                            ? "border-green-500 bg-green-50"
+                            : "border-gray-200 hover:border-gray-300"
                         }`}
-                        onClick={() => setFormData({ ...formData, selectedPlanId: plan.id })}
+                        onClick={() =>
+                          setFormData({ ...formData, selectedPlanId: plan.id })
+                        }
                       >
                         <div className="flex items-center justify-between">
                           <div>
-                            <h4 className="font-medium text-gray-900">{plan.name}</h4>
+                            <h4 className="font-medium text-gray-900">
+                              {plan.name}
+                            </h4>
                             <div className="flex items-center gap-2 mt-1">
                               <span className="text-lg font-bold text-green-600">
                                 ${(plan.price / 100).toFixed(2)}
                               </span>
-                              <span className="text-sm text-gray-500">/{plan.interval}</span>
+                              <span className="text-sm text-gray-500">
+                                /{plan.interval}
+                              </span>
                             </div>
                             <div className="flex items-center gap-4 mt-2 text-xs text-gray-600">
                               <span>{plan.maxTables} tables</span>
-                              <span>{plan.maxBookingsPerMonth} bookings/month</span>
+                              <span>
+                                {plan.maxBookingsPerMonth} bookings/month
+                              </span>
                             </div>
                           </div>
                           {formData.selectedPlanId === plan.id && (
@@ -196,14 +236,18 @@ export default function Login() {
                     <div
                       className={`border rounded-lg p-4 cursor-pointer transition-colors ${
                         formData.selectedPlanId === null
-                          ? 'border-green-500 bg-green-50'
-                          : 'border-gray-200 hover:border-gray-300'
+                          ? "border-green-500 bg-green-50"
+                          : "border-gray-200 hover:border-gray-300"
                       }`}
-                      onClick={() => setFormData({ ...formData, selectedPlanId: null })}
+                      onClick={() =>
+                        setFormData({ ...formData, selectedPlanId: null })
+                      }
                     >
                       <div className="flex items-center justify-between">
                         <div>
-                          <h4 className="font-medium text-gray-900">Free Trial</h4>
+                          <h4 className="font-medium text-gray-900">
+                            Free Trial
+                          </h4>
                           <p className="text-sm text-gray-600 mt-1">
                             3 tables, 20 bookings/month
                           </p>
@@ -218,14 +262,19 @@ export default function Login() {
               )}
 
               <div>
-                <Label htmlFor="email" className="text-sm font-medium text-gray-700">
+                <Label
+                  htmlFor="email"
+                  className="text-sm font-medium text-gray-700"
+                >
                   E-mail:
                 </Label>
                 <Input
                   id="email"
                   type="email"
                   value={formData.email}
-                  onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                  onChange={(e) =>
+                    setFormData({ ...formData, email: e.target.value })
+                  }
                   placeholder="elvis.presley@gmail.com"
                   className="mt-1"
                   required
@@ -233,14 +282,19 @@ export default function Login() {
               </div>
 
               <div>
-                <Label htmlFor="password" className="text-sm font-medium text-gray-700">
+                <Label
+                  htmlFor="password"
+                  className="text-sm font-medium text-gray-700"
+                >
                   Password:
                 </Label>
                 <Input
                   id="password"
                   type="password"
                   value={formData.password}
-                  onChange={(e) => setFormData({ ...formData, password: e.target.value })}
+                  onChange={(e) =>
+                    setFormData({ ...formData, password: e.target.value })
+                  }
                   className="mt-1"
                   required
                 />
@@ -252,26 +306,39 @@ export default function Login() {
                     <Checkbox
                       id="rememberMe"
                       checked={formData.rememberMe}
-                      onCheckedChange={(checked) => 
-                        setFormData({ ...formData, rememberMe: checked as boolean })
+                      onCheckedChange={(checked) =>
+                        setFormData({
+                          ...formData,
+                          rememberMe: checked as boolean,
+                        })
                       }
                     />
-                    <Label htmlFor="rememberMe" className="text-sm text-gray-600">
+                    <Label
+                      htmlFor="rememberMe"
+                      className="text-sm text-gray-600"
+                    >
                       Log in automatically from this computer
                     </Label>
                   </div>
-                  <Button variant="link" className="text-sm text-green-600 hover:text-green-700 p-0">
+                  <Button
+                    variant="link"
+                    className="text-sm text-green-600 hover:text-green-700 p-0"
+                  >
                     Forgot password?
                   </Button>
                 </div>
               )}
 
-              <Button 
-                type="submit" 
+              <Button
+                type="submit"
                 className="w-full bg-green-600 hover:bg-green-700 text-white"
                 disabled={isLoading}
               >
-                {isLoading ? "Loading..." : isLogin ? "Log in" : "Create Account"}
+                {isLoading
+                  ? "Loading..."
+                  : isLogin
+                    ? "Log in"
+                    : "Create Account"}
               </Button>
 
               <div className="text-center">

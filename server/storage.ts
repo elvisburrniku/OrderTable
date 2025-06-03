@@ -1,3 +1,4 @@
+// Adds Supabase database connection option using environment variables and conditional drizzle setup.
 import { 
   users, restaurants, tables, bookings, customers, smsMessages, waitingList,
   feedback, activityLog, timeSlots, subscriptionPlans, userSubscriptions
@@ -9,6 +10,30 @@ import type {
   TimeSlots, InsertTimeSlots, SubscriptionPlan, InsertSubscriptionPlan,
   UserSubscription, InsertUserSubscription
 } from "@shared/schema";
+import { neon } from "@neondatabase/serverless";
+import { drizzle } from "drizzle-orm/neon-http";
+import { drizzle as drizzlePostgres } from "drizzle-orm/postgres-js";
+import postgres from "postgres";
+import * as schema from "../shared/schema";
+
+// Use Supabase database URL if available, otherwise use the existing DATABASE_URL
+const databaseUrl = process.env.SUPABASE_DATABASE_URL || process.env.DATABASE_URL;
+
+if (!databaseUrl) {
+  throw new Error("No database connection string found. Please set SUPABASE_DATABASE_URL or DATABASE_URL environment variable.");
+}
+
+let db: ReturnType<typeof drizzle>;
+
+if (process.env.SUPABASE_DATABASE_URL) {
+  // Use postgres-js for Supabase connection
+  const client = postgres(databaseUrl);
+  db = drizzlePostgres(client, { schema });
+} else {
+  // Use neon for existing setup
+  const sql = neon(databaseUrl);
+  db = drizzle(sql, { schema });
+}
 
 export interface IStorage {
   // Users
@@ -578,4 +603,10 @@ export class MemStorage implements IStorage {
     }
 }
 
-export const storage = new MemStorage();
+import { DatabaseStorage } from "./db-storage";
+
+// Use database storage instead of memory storage
+export const storage = new DatabaseStorage();
+
+// Initialize database with default data
+storage.initialize().catch(console.error);
