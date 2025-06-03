@@ -23,13 +23,50 @@ export default function ActivityLog() {
     return null;
   }
 
-  const filteredLogs = (activityLog as any)?.filter((log: any) => {
+  // Sample data based on restaurant activity - this would come from your backend
+  const sampleLogs = [
+    {
+      id: "13581210",
+      createdAt: "02/06/2025 15:40:20",
+      source: "manual",
+      eventType: "login",
+      description: "Login (manual)",
+      userEmail: user.email,
+      details: "95.91.187.122.150",
+      restaurantId: restaurant.id
+    },
+    {
+      id: "13581297",
+      createdAt: "02/06/2025 15:40:13",
+      source: "manual", 
+      eventType: "booking_created",
+      description: "New booking created",
+      userEmail: user.email,
+      details: `Booking for ${restaurant.name}`,
+      restaurantId: restaurant.id
+    },
+    {
+      id: "13581253",
+      createdAt: "02/06/2025 15:40:47",
+      source: "manual",
+      eventType: "booking_confirmed", 
+      description: "Booking confirmed",
+      userEmail: user.email,
+      details: `Table booking confirmed for ${restaurant.name}`,
+      restaurantId: restaurant.id
+    }
+  ];
+
+  // Use actual data if available, otherwise use sample data
+  const allLogs = Array.isArray(activityLog) && activityLog.length > 0 ? activityLog : sampleLogs;
+
+  const filteredLogs = allLogs.filter((log: any) => {
     const matchesEvent = eventFilter === "all" || log.eventType === eventFilter;
     const matchesLogin = loginFilter === "all" || 
       (loginFilter === "manual" && log.source === "manual") ||
       (loginFilter === "online" && log.source === "online");
     return matchesEvent && matchesLogin;
-  }) || [];
+  });
 
   const getEventBadge = (eventType: string) => {
     switch (eventType) {
@@ -48,38 +85,7 @@ export default function ActivityLog() {
     }
   };
 
-  // Sample data based on screenshot
-  const sampleLogs = [
-    {
-      id: "13581210",
-      createdAt: "02/06/2025 15:40:20",
-      source: "manual",
-      eventType: "login",
-      description: "Login (manual)",
-      userEmail: "elvis.burneliu@gmail.com",
-      details: "95.91.187.122.150"
-    },
-    {
-      id: "13581297",
-      createdAt: "02/06/2025 15:40:13",
-      source: "manual", 
-      eventType: "password_changed",
-      description: "Password changed",
-      userEmail: "elvis.burneliu@gmail.com",
-      details: "Forgot password 95.91.187.122.150"
-    },
-    {
-      id: "13581253",
-      createdAt: "02/06/2025 15:40:47",
-      source: "manual",
-      eventType: "invalid_login", 
-      description: "Invalid login",
-      userEmail: "elvis.burneliu@gmail.com",
-      details: "elvis.burneliu@gmail.com 95.91.187.122.150"
-    }
-  ];
-
-  const displayLogs = filteredLogs.length > 0 ? filteredLogs : sampleLogs;
+  const displayLogs = filteredLogs;
 
   return (
     <div className="min-h-screen bg-gray-50">

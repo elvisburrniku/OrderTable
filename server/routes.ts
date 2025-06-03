@@ -814,6 +814,46 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Activity Log routes (read-only activity tracking)
+  app.get("/api/tenants/:tenantId/restaurants/:restaurantId/activity-log", validateTenant, async (req, res) => {
+    try {
+      const restaurantId = parseInt(req.params.restaurantId);
+      const tenantId = parseInt(req.params.tenantId);
+
+      // For now, return sample activity log data
+      // In a real implementation, you would fetch from an activity_logs table
+      const activityLog = [
+        {
+          id: `${Date.now()}001`,
+          createdAt: new Date().toLocaleString(),
+          source: "manual",
+          eventType: "login",
+          description: "User login",
+          userEmail: req.user?.email || "user@example.com",
+          details: "Restaurant access",
+          restaurantId,
+          tenantId
+        },
+        {
+          id: `${Date.now()}002`,
+          createdAt: new Date(Date.now() - 3600000).toLocaleString(),
+          source: "manual",
+          eventType: "booking_created",
+          description: "New booking created",
+          userEmail: req.user?.email || "user@example.com",
+          details: "Table reservation created",
+          restaurantId,
+          tenantId
+        }
+      ];
+
+      res.json(activityLog);
+    } catch (error) {
+      console.error("Activity log fetch error:", error);
+      res.status(500).json({ error: "Failed to fetch activity log" });
+    }
+  });
+
   // Statistics routes (read-only data aggregation)
   app.get("/api/tenants/:tenantId/restaurants/:restaurantId/statistics", validateTenant, async (req, res) => {
     try {
@@ -845,6 +885,20 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       // Revenue calculation (if you add pricing later)
       const monthlyRevenue = tenantBookings.length * 50; // Placeholder calculation
+
+      // Ensure we have valid data for table utilization
+      const tableUtilization = totalTables > 0 ? (totalBookings / totalTables) * 10 : 0; // Simple calculation
+
+      const statistics = {
+        totalBookings: totalBookings || 0,
+        totalCustomers: totalCustomers || 0,
+        tableUtilization: Math.min(tableUtilization, 100), // Cap at 100%
+        monthlyRevenue: monthlyRevenue || 0,
+        bookingsByStatus: bookingsByStatus || { confirmed: 0, pending: 0, cancelled: 0 },
+        avgBookingsPerDay: Math.round(avgBookingsPerDay) || 0
+      };
+
+      res.json(statistics);
 
       res.json({
         totalBookings,

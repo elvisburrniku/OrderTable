@@ -15,7 +15,9 @@ export default function Bookings() {
 
   const { data: bookings, isLoading, error } = useQuery({
     queryKey: [`/api/tenants/${restaurant?.tenantId}/restaurants/${restaurant?.id}/bookings`],
-    enabled: !!restaurant && !!restaurant.tenantId && !!restaurant.id
+    enabled: !!restaurant && !!restaurant.tenantId && !!restaurant.id,
+    retry: 1,
+    staleTime: 30000 // 30 seconds
   });
 
   if (!user || !restaurant) {

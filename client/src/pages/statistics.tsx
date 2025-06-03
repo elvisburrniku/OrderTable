@@ -177,7 +177,7 @@ export default function Statistics() {
                         <DollarSign className="h-8 w-8 text-orange-600" />
                         <div className="ml-4">
                           <p className="text-sm font-medium text-gray-600">Monthly Revenue</p>
-                          <p className="text-2xl font-bold text-gray-900">${stats.monthlyRevenue}</p>
+                          <p className="text-2xl font-bold text-gray-900">${stats.monthlyRevenue ?? '0'}</p>
                         </div>
                       </div>
                     </CardContent>
@@ -191,7 +191,7 @@ export default function Statistics() {
                   </CardHeader>
                   <CardContent>
                     <div className="space-y-3">
-                      {Object.entries(stats.bookingsByStatus).map(([status, count]: [string, any]) => (
+                      {stats.bookingsByStatus && Object.entries(stats.bookingsByStatus).map(([status, count]: [string, any]) => (
                         <div key={status} className="flex items-center justify-between">
                           <div className="flex items-center space-x-2">
                             <Badge variant={status === 'confirmed' ? 'default' : 'secondary'}>
@@ -201,6 +201,11 @@ export default function Statistics() {
                           <div className="font-medium">{count} bookings</div>
                         </div>
                       ))}
+                      {(!stats.bookingsByStatus || Object.keys(stats.bookingsByStatus).length === 0) && (
+                        <div className="text-center text-gray-500 py-4">
+                          No booking status data available
+                        </div>
+                      )}
                     </div>
                   </CardContent>
                 </Card>
