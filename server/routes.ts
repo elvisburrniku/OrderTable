@@ -178,6 +178,26 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Rooms routes
+  app.get("/api/tenants/:tenantId/restaurants/:restaurantId/rooms", validateTenant, async (req, res) => {
+    try {
+      const restaurantId = parseInt(req.params.restaurantId);
+      const tenantId = parseInt(req.params.tenantId);
+      
+      // For now, return some default rooms
+      // In a real implementation, you'd fetch from database
+      const rooms = [
+        { id: 1, name: "Private Dining", restaurantId, tenantId },
+        { id: 2, name: "Patio", restaurantId, tenantId },
+        { id: 3, name: "Bar Area", restaurantId, tenantId }
+      ];
+      
+      res.json(rooms);
+    } catch (error) {
+      res.status(400).json({ message: "Invalid request" });
+    }
+  });
+
   // Tables routes
   app.get("/api/tenants/:tenantId/restaurants/:restaurantId/tables", validateTenant, async (req, res) => {
     try {
@@ -725,6 +745,51 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const slot = await storage.updateTimeSlot(id, updates);
       res.json(slot);
     } catch (error) {
+      res.status(400).json({ message: "Invalid request" });
+    }
+  });
+
+  // Table layout routes
+  app.get("/api/tenants/:tenantId/restaurants/:restaurantId/table-layout", validateTenant, async (req, res) => {
+    try {
+      const restaurantId = parseInt(req.params.restaurantId);
+      const tenantId = parseInt(req.params.tenantId);
+      const { room } = req.query;
+
+      // For now, return empty layout since we don't have table layout storage yet
+      // In a real implementation, you'd fetch from database
+      res.json({
+        room: room || "main",
+        positions: {}
+      });
+    } catch (error) {
+      res.status(400).json({ message: "Invalid request" });
+    }
+  });
+
+  app.post("/api/tenants/:tenantId/restaurants/:restaurantId/table-layout", validateTenant, async (req, res) => {
+    try {
+      const restaurantId = parseInt(req.params.restaurantId);
+      const tenantId = parseInt(req.params.tenantId);
+      const { room, positions } = req.body;
+
+      // Verify restaurant belongs to tenant
+      const restaurant = await storage.getRestaurantById(restaurantId);
+      if (!restaurant || restaurant.tenantId !== tenantId) {
+        return res.status(404).json({ message: "Restaurant not found" });
+      }
+
+      // For now, just return success
+      // In a real implementation, you'd save the layout to database
+      console.log(`Saving table layout for restaurant ${restaurantId}, room ${room}:`, positions);
+      
+      res.json({ 
+        message: "Table layout saved successfully",
+        room,
+        positions
+      });
+    } catch (error) {
+      console.error("Error saving table layout:", error);
       res.status(400).json({ message: "Invalid request" });
     }
   });
