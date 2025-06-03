@@ -493,42 +493,6 @@ export default function TablePlan() {
               </Select>
             </div>
 
-            {/* Table Structures */}
-            <div className="mb-6">
-              <h3 className="text-sm font-medium text-gray-700 mb-3">
-                Table Structures
-              </h3>
-              <div className="grid grid-cols-2 gap-2 mb-4">
-                {TABLE_STRUCTURES.map((structure) => (
-                  <div
-                    key={`structure-${structure.id}`}
-                    className="p-2 border rounded-lg hover:bg-gray-50 cursor-grab"
-                    draggable
-                    onDragStart={(e) => handleStructureDragStart(structure, e)}
-                  >
-                    <div className="flex flex-col items-center">
-                      <div
-                        style={getStructureStyle(structure)}
-                        className="mb-1"
-                      >
-                        {structure.defaultCapacity}
-                      </div>
-                      <div className="text-xs text-center">
-                        <div className="font-medium">{structure.name}</div>
-                        <div className="text-gray-500">
-                          {structure.description}
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                ))}
-              </div>
-              <div className="text-xs text-gray-500 p-2 bg-blue-50 rounded">
-                <strong>Tip:</strong> Drag table structures onto the floor plan
-                to add new tables
-              </div>
-            </div>
-
             {/* Available Tables */}
             <div className="mb-6">
               <h3 className="text-sm font-medium text-gray-700 mb-3">
@@ -592,6 +556,42 @@ export default function TablePlan() {
                     )}
                   </div>
                 ))}
+              </div>
+            </div>
+
+            {/* Table Structures */}
+            <div className="mb-6">
+              <h3 className="text-sm font-medium text-gray-700 mb-3">
+                Table Structures
+              </h3>
+              <div className="grid grid-cols-2 gap-2 mb-4">
+                {TABLE_STRUCTURES.map((structure) => (
+                  <div
+                    key={`structure-${structure.id}`}
+                    className="p-2 border rounded-lg hover:bg-gray-50 cursor-grab"
+                    draggable
+                    onDragStart={(e) => handleStructureDragStart(structure, e)}
+                  >
+                    <div className="flex flex-col items-center">
+                      <div
+                        style={getStructureStyle(structure)}
+                        className="mb-1"
+                      >
+                        {structure.defaultCapacity}
+                      </div>
+                      <div className="text-xs text-center">
+                        <div className="font-medium">{structure.name}</div>
+                        <div className="text-gray-500">
+                          {structure.description}
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+              <div className="text-xs text-gray-500 p-2 bg-blue-50 rounded">
+                <strong>Tip:</strong> Drag table structures onto the floor plan
+                to add new tables
               </div>
             </div>
 
