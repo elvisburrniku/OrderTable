@@ -25,8 +25,8 @@ export default function Statistics() {
   });
 
   const { data: stats, isLoading } = useQuery({
-    queryKey: ["/api/restaurants", restaurant?.id, "statistics"],
-    enabled: !!restaurant?.id,
+    queryKey: ["/api/tenants", restaurant?.tenantId, "restaurants", restaurant?.id, "statistics"],
+    enabled: !!restaurant?.id && !!restaurant?.tenantId,
   });
 
   if (!user || !restaurant) {
@@ -177,8 +177,38 @@ export default function Statistics() {
                         <DollarSign className="h-8 w-8 text-orange-600" />
                         <div className="ml-4">
                           <p className="text-sm font-medium text-gray-600">Monthly Revenue</p>
-                          <p className="text-2xl font-bold text-gray-900">${stats.monthlyRevenue ?? '0'}</p>
+                          <p className="text-2xl font-bold text-gray-900">${(stats.monthlyRevenue ?? 0).toLocaleString()}</p>
                         </div>
+                      </div>
+                    </CardContent>
+                  </Card>
+                </div>
+
+                {/* Additional Metrics */}
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                  <Card>
+                    <CardContent className="p-6">
+                      <div className="text-center">
+                        <p className="text-sm font-medium text-gray-600">Monthly Bookings</p>
+                        <p className="text-3xl font-bold text-blue-600">{stats.monthlyBookings ?? 0}</p>
+                      </div>
+                    </CardContent>
+                  </Card>
+
+                  <Card>
+                    <CardContent className="p-6">
+                      <div className="text-center">
+                        <p className="text-sm font-medium text-gray-600">Avg Bookings/Day</p>
+                        <p className="text-3xl font-bold text-green-600">{stats.avgBookingsPerDay ?? 0}</p>
+                      </div>
+                    </CardContent>
+                  </Card>
+
+                  <Card>
+                    <CardContent className="p-6">
+                      <div className="text-center">
+                        <p className="text-sm font-medium text-gray-600">Total Tables</p>
+                        <p className="text-3xl font-bold text-purple-600">{stats.totalTables ?? 0}</p>
                       </div>
                     </CardContent>
                   </Card>
@@ -194,8 +224,8 @@ export default function Statistics() {
                       {stats.bookingsByStatus && Object.entries(stats.bookingsByStatus).map(([status, count]: [string, any]) => (
                         <div key={status} className="flex items-center justify-between">
                           <div className="flex items-center space-x-2">
-                            <Badge variant={status === 'confirmed' ? 'default' : 'secondary'}>
-                              {status}
+                            <Badge variant={status === 'confirmed' ? 'default' : status === 'pending' ? 'secondary' : 'destructive'}>
+                              {status.charAt(0).toUpperCase() + status.slice(1)}
                             </Badge>
                           </div>
                           <div className="font-medium">{count} bookings</div>

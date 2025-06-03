@@ -871,46 +871,53 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const tenantCustomers = customers.filter(customer => customer.tenantId === tenantId);
       const tenantTables = tables.filter(table => table.tenantId === tenantId);
 
+      // Calculate current month's bookings for monthly revenue
+      const currentMonth = new Date().getMonth();
+      const currentYear = new Date().getFullYear();
+      const monthlyBookings = tenantBookings.filter(booking => {
+        const bookingDate = new Date(booking.bookingDate);
+        return bookingDate.getMonth() === currentMonth && bookingDate.getFullYear() === currentYear;
+      });
+
       // Calculate statistics
       const totalBookings = tenantBookings.length;
       const totalCustomers = tenantCustomers.length;
       const totalTables = tenantTables.length;
-      const avgBookingsPerDay = totalBookings / 30; // Rough estimate
 
       // Group bookings by status
       const bookingsByStatus = tenantBookings.reduce((acc: any, booking) => {
-        acc[booking.status] = (acc[booking.status] || 0) + 1;
+        const status = booking.status || 'confirmed';
+        acc[status] = (acc[status] || 0) + 1;
         return acc;
       }, {});
 
-      // Revenue calculation (if you add pricing later)
-      const monthlyRevenue = tenantBookings.length * 50; // Placeholder calculation
+      // Calculate table utilization (percentage of tables used in current month)
+      const uniqueTablesUsed = new Set(monthlyBookings.map(booking => booking.tableId).filter(Boolean)).size;
+      const tableUtilization = totalTables > 0 ? (uniqueTablesUsed / totalTables) * 100 : 0;
 
-      // Ensure we have valid data for table utilization
-      const tableUtilization = totalTables > 0 ? (totalBookings / totalTables) * 10 : 0; // Simple calculation
+      // Calculate monthly revenue (assuming average booking value of $50)
+      const avgBookingValue = 50;
+      const monthlyRevenue = monthlyBookings.length * avgBookingValue;
+
+      // Calculate average bookings per day for current month
+      const daysInMonth = new Date(currentYear, currentMonth + 1, 0).getDate();
+      const avgBookingsPerDay = monthlyBookings.length / daysInMonth;
 
       const statistics = {
         totalBookings: totalBookings || 0,
         totalCustomers: totalCustomers || 0,
-        tableUtilization: Math.min(tableUtilization, 100), // Cap at 100%
+        tableUtilization: Math.min(Math.round(tableUtilization * 10) / 10, 100), // Round to 1 decimal, cap at 100%
         monthlyRevenue: monthlyRevenue || 0,
         bookingsByStatus: bookingsByStatus || { confirmed: 0, pending: 0, cancelled: 0 },
-        avgBookingsPerDay: Math.round(avgBookingsPerDay) || 0
+        avgBookingsPerDay: Math.round(avgBookingsPerDay * 10) / 10 || 0,
+        monthlyBookings: monthlyBookings.length || 0,
+        totalTables: totalTables || 0
       };
 
       res.json(statistics);
-
-      res.json({
-        totalBookings,
-        totalCustomers,
-        totalTables,
-        avgBookingsPerDay,
-        bookingsByStatus,
-        monthlyRevenue,
-        tableUtilization: (totalBookings / (totalTables * 30)) * 100 // Rough estimate
-      });
     } catch (error) {
-      res.status(400).json({ message: "Invalid request" });
+      console.error("Statistics calculation error:", error);
+      res.status(500).json({ message: "Failed to calculate statistics" });
     }
   });
 
