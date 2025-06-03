@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -11,7 +10,7 @@ import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import { format, startOfMonth, endOfMonth, eachDayOfInterval, isSameDay, isToday, addMonths, subMonths } from "date-fns";
-import { List, Table, Calendar, Users, Plus, ChevronLeft, ChevronRight } from "lucide-react";
+import { List, Table, Calendar, Users, Plus, ChevronLeft, ChevronRight, Clock } from "lucide-react";
 import { Booking, Table as TableType } from "@shared/schema";
 
 interface BookingCalendarProps {
@@ -40,6 +39,8 @@ export default function BookingCalendar({ selectedDate, bookings, allBookings = 
     tableId: "",
     notes: ""
   });
+  const [selectedTable, setSelectedTable] = useState<any>(null);
+  const [showTableBookings, setShowTableBookings] = useState(false);
 
   const createBookingMutation = useMutation({
     mutationFn: async (bookingData: any) => {
@@ -75,7 +76,7 @@ export default function BookingCalendar({ selectedDate, bookings, allBookings = 
 
   const handleCreateBooking = (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     // Validate guest count against selected table capacity if a table is selected
     if (newBooking.tableId && tables) {
       const selectedTable = tables.find(t => t.id.toString() === newBooking.tableId);
@@ -149,7 +150,7 @@ export default function BookingCalendar({ selectedDate, bookings, allBookings = 
             <ChevronRight className="h-4 w-4" />
           </Button>
         </div>
-        
+
         {/* Days of week header */}
         <div className="grid grid-cols-7 gap-1 mb-2">
           {['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].map(day => (
@@ -166,7 +167,7 @@ export default function BookingCalendar({ selectedDate, bookings, allBookings = 
             const dayBookings = getBookingsForDate(day);
             const isSelected = isSameDay(day, selectedDate);
             const isTodayDate = isToday(day);
-            
+
             return (
               <div
                 key={day.toISOString()}
@@ -270,65 +271,78 @@ export default function BookingCalendar({ selectedDate, bookings, allBookings = 
     </Card>
   );
 
-  const renderTableView = () => (
-    <Card className="bg-white border border-gray-200 overflow-hidden">
-      <div className="border-b border-gray-200 p-4 bg-gray-50">
-        <div className="flex items-center justify-between">
-          <h3 className="font-medium text-gray-900">Table Overview</h3>
-          <span className="text-sm text-gray-500">
-            {bookings.length} bookings - {bookings.reduce((sum, b) => sum + b.guestCount, 0)} guests
-          </span>
-        </div>
-      </div>
+  const renderTableView = () => {
+    const getTableBookingsForDate = (table: TableType) => {
+      return allBookings?.filter(booking =>
+        booking.tableId === table.id && isSameDay(new Date(booking.bookingDate), selectedDate)
+      );
+    };
 
-      <CardContent className="p-4">
-        {/* Time header */}
-        <div className="grid grid-cols-13 gap-2 mb-4 text-sm text-gray-600">
-          <div></div>
-          {timeSlots.map((time) => (
-            <div key={time} className="text-center">{time}</div>
-          ))}
+    return (
+      <Card className="bg-white border border-gray-200 overflow-hidden">
+        <div className="border-b border-gray-200 p-4 bg-gray-50">
+          <div className="flex items-center justify-between">
+            <h3 className="font-medium text-gray-900">Table Overview</h3>
+            <span className="text-sm text-gray-500">
+              {bookings.length} bookings - {bookings.reduce((sum, b) => sum + b.guestCount, 0)} guests
+            </span>
+          </div>
         </div>
 
-        {/* Table rows */}
-        <div className="space-y-2">
-          {tables.slice(0, 8).map((table) => (
-            <div key={table.id} className="grid grid-cols-13 gap-2 items-center">
-              <div className="text-sm text-gray-600">
-                {table.tableNumber} ({table.capacity})
-              </div>
-              {timeSlots.map((time) => {
-                const booking = getBookingForTableAndTime(table.id, time);
-                const isSelected = newBooking.startTime === time && newBooking.tableId === table.id.toString();
-                return (
-                  <div
-                    key={time}
-                    className={`h-8 rounded ${
-                      booking 
-                        ? "bg-red-200 border border-red-300" 
-                        : isSelected
-                        ? "bg-green-200 border border-green-300"
-                        : "bg-gray-100 hover:bg-green-50 cursor-pointer"
-                    }`}
-                    title={booking ? `${booking.customerName} - ${booking.guestCount} guests` : isSelected ? "Selected for new booking" : "Available"}
-                    onClick={() => {
-                      if (!booking && isNewBookingOpen) {
-                        setNewBooking({ 
-                          ...newBooking, 
-                          tableId: table.id.toString(),
-                          startTime: time 
-                        });
-                      }
-                    }}
-                  />
-                );
-              })}
-            </div>
-          ))}
-        </div>
-      </CardContent>
-    </Card>
-  );
+        <CardContent className="p-4">
+          {/* Time header */}
+          <div className="grid grid-cols-13 gap-2 mb-4 text-sm text-gray-600">
+            <div></div>
+            {timeSlots.map((time) => (
+              <div key={time} className="text-center">{time}</div>
+            ))}
+          </div>
+
+          {/* Table rows */}
+          <div className="space-y-2">
+            {tables.slice(0, 8).map((table) => {
+              const tableBookings = getTableBookingsForDate(table);
+              const isTableBooked = tableBookings && tableBookings.length > 0;
+
+              return (
+                <div key={table.id} className="grid grid-cols-13 gap-2 items-center">
+                  <div className="text-sm text-gray-600">
+                    {table.tableNumber} ({table.capacity})
+                  </div>
+                  {timeSlots.map((time) => {
+                    const booking = getBookingForTableAndTime(table.id, time);
+                    const isSelected = newBooking.startTime === time && newBooking.tableId === table.id.toString();
+                    return (
+                      <div
+                        key={time}
+                        className={`h-8 rounded ${
+                          booking
+                            ? "bg-red-200 border border-red-300"
+                            : isSelected
+                            ? "bg-green-200 border border-green-300"
+                            : "bg-gray-100 hover:bg-green-50 cursor-pointer"
+                        }`}
+                        title={booking ? `${booking.customerName} - ${booking.guestCount} guests` : isSelected ? "Selected for new booking" : "Available"}
+                        onClick={() => {
+                          if (!booking && isNewBookingOpen) {
+                            setNewBooking({
+                              ...newBooking,
+                              tableId: table.id.toString(),
+                              startTime: time
+                            });
+                          }
+                        }}
+                      />
+                    );
+                  })}
+                </div>
+              );
+            })}
+          </div>
+        </CardContent>
+      </Card>
+    );
+  };
 
   return (
     <div>
@@ -356,7 +370,7 @@ export default function BookingCalendar({ selectedDate, bookings, allBookings = 
             className={activeView === "table" ? "bg-green-600 text-white" : ""}
           >
             <Table className="h-4 w-4 mr-2" />
-            Table
+            Table Plan
           </Button>
         </div>
 
