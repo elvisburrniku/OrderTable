@@ -33,99 +33,131 @@ export default function Statistics() {
     return null;
   }
 
-  // Generate real chart data based on actual bookings
+  // Generate real chart data based on actual bookings for this specific restaurant
   const generateBookingTrends = () => {
+    const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+    const currentYear = new Date().getFullYear();
+    const avgBookingValue = 50; // Average booking value in USD - could be made configurable per restaurant
+
     if (!bookings || bookings.length === 0) {
-      return [
-        { month: 'Jan', bookings: 0, revenue: 0 },
-        { month: 'Feb', bookings: 0, revenue: 0 },
-        { month: 'Mar', bookings: 0, revenue: 0 },
-        { month: 'Apr', bookings: 0, revenue: 0 },
-        { month: 'May', bookings: 0, revenue: 0 },
-        { month: 'Jun', bookings: 0, revenue: 0 }
-      ];
+      return months.slice(0, 6).map(month => ({ month, bookings: 0, revenue: 0 }));
     }
 
-    const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun'];
-    const currentYear = new Date().getFullYear();
-    const avgBookingValue = 50; // Average booking value in USD
+    // Filter bookings for this specific restaurant
+    const restaurantBookings = bookings.filter(booking => 
+      booking.restaurantId === restaurant?.id
+    );
 
-    return months.map((month, index) => {
-      const monthBookings = bookings.filter(booking => {
+    return months.slice(0, 6).map((month, index) => {
+      const monthBookings = restaurantBookings.filter(booking => {
         const bookingDate = new Date(booking.bookingDate);
         return bookingDate.getMonth() === index && bookingDate.getFullYear() === currentYear;
       });
 
+      // Calculate revenue based on guest count and average price per person
+      const totalRevenue = monthBookings.reduce((sum, booking) => {
+        return sum + (booking.guestCount || 2) * (avgBookingValue / 2);
+      }, 0);
+
       return {
         month,
         bookings: monthBookings.length,
-        revenue: monthBookings.length * avgBookingValue
+        revenue: Math.round(totalRevenue)
       };
     });
   };
 
   const bookingTrendsData = generateBookingTrends();
 
-  const bookingStatusData = stats?.bookingsByStatus ? 
-    Object.entries(stats.bookingsByStatus).map(([status, count]: [string, any]) => ({
+  // Generate booking status data based on actual bookings for this restaurant
+  const generateBookingStatusData = () => {
+    if (!bookings || bookings.length === 0 || !restaurant?.id) {
+      return [{ name: 'Confirmed', value: 0, color: '#10B981' }];
+    }
+
+    // Filter bookings for this specific restaurant
+    const restaurantBookings = bookings.filter(booking => 
+      booking.restaurantId === restaurant.id
+    );
+
+    // Group by status
+    const statusCounts = restaurantBookings.reduce((acc: any, booking) => {
+      const status = booking.status || 'confirmed';
+      acc[status] = (acc[status] || 0) + 1;
+      return acc;
+    }, {});
+
+    // Convert to chart format
+    return Object.entries(statusCounts).map(([status, count]: [string, any]) => ({
       name: status.charAt(0).toUpperCase() + status.slice(1),
       value: count,
       color: status === 'confirmed' ? '#10B981' : status === 'pending' ? '#F59E0B' : '#EF4444'
-    })) : [
-      { name: 'Confirmed', value: bookings?.length || 0, color: '#10B981' }
-    ];
+    }));
+  };
 
-  // Generate table utilization based on actual bookings
+  const bookingStatusData = generateBookingStatusData();
+
+  // Generate table utilization based on actual bookings for this restaurant
   const generateTableUtilization = () => {
-    if (!bookings || bookings.length === 0) {
-      return Array.from({ length: 8 }, (_, i) => ({
-        time: `${9 + i * 2}:00`.padStart(5, '0'),
-        utilization: 0
-      }));
-    }
-
     const timeSlots = ['09:00', '11:00', '13:00', '15:00', '17:00', '19:00', '21:00', '23:00'];
     const totalTables = stats?.totalTables || 1;
 
+    if (!bookings || bookings.length === 0 || !restaurant?.id) {
+      return timeSlots.map(time => ({ time, utilization: 0 }));
+    }
+
+    // Filter bookings for this specific restaurant and recent dates
+    const recentDate = new Date();
+    recentDate.setDate(recentDate.getDate() - 7); // Last 7 days
+
+    const restaurantBookings = bookings.filter(booking => 
+      booking.restaurantId === restaurant.id &&
+      new Date(booking.bookingDate) >= recentDate
+    );
+
     return timeSlots.map(time => {
       const hour = parseInt(time.split(':')[0]);
-      const bookingsAtTime = bookings.filter(booking => {
+      const bookingsAtTime = restaurantBookings.filter(booking => {
         const startHour = parseInt(booking.startTime.split(':')[0]);
         return Math.abs(startHour - hour) <= 1; // Include bookings within 1 hour
       });
 
-      const utilization = Math.min((bookingsAtTime.length / totalTables) * 100, 100);
-      return { time, utilization: Math.round(utilization) };
+      // Calculate average utilization across the week
+      const avgBookingsAtThisTime = bookingsAtTime.length / 7;
+      const utilization = Math.min((avgBookingsAtThisTime / totalTables) * 100, 100);
+      return { time, utilization: Math.round(utilization * 10) / 10 }; // Round to 1 decimal
     });
   };
 
   const tableUtilizationData = generateTableUtilization();
 
-  // Generate daily bookings based on actual data
+  // Generate daily bookings based on actual data for this restaurant
   const generateDailyBookings = () => {
-    if (!bookings || bookings.length === 0) {
-      return [
-        { day: 'Mon', bookings: 0 },
-        { day: 'Tue', bookings: 0 },
-        { day: 'Wed', bookings: 0 },
-        { day: 'Thu', bookings: 0 },
-        { day: 'Fri', bookings: 0 },
-        { day: 'Sat', bookings: 0 },
-        { day: 'Sun', bookings: 0 }
-      ];
-    }
-
     const daysOfWeek = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
     const dailyCounts = new Array(7).fill(0);
 
-    bookings.forEach(booking => {
+    if (!bookings || bookings.length === 0 || !restaurant?.id) {
+      return daysOfWeek.map((day, index) => ({ day: day.slice(0, 3), bookings: 0 }));
+    }
+
+    // Filter bookings for this specific restaurant and last 4 weeks for better average
+    const fourWeeksAgo = new Date();
+    fourWeeksAgo.setDate(fourWeeksAgo.getDate() - 28);
+
+    const restaurantBookings = bookings.filter(booking => 
+      booking.restaurantId === restaurant.id &&
+      new Date(booking.bookingDate) >= fourWeeksAgo
+    );
+
+    restaurantBookings.forEach(booking => {
       const dayOfWeek = new Date(booking.bookingDate).getDay();
       dailyCounts[dayOfWeek]++;
     });
 
+    // Calculate average per day over 4 weeks
     return daysOfWeek.map((day, index) => ({
-      day,
-      bookings: dailyCounts[index]
+      day: day.slice(0, 3), // Mon, Tue, etc.
+      bookings: Math.round(dailyCounts[index] / 4) // Average over 4 weeks
     }));
   };
 
