@@ -108,7 +108,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         ...req.body,
         restaurantId,
       };
-      
+
       const table = await storage.createTable(tableData);
       res.json(table);
     } catch (error) {
@@ -120,13 +120,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const id = parseInt(req.params.id);
       const updates = req.body;
-      
+
       const table = await storage.updateTable(id, updates);
-      
+
       if (!table) {
         return res.status(404).json({ message: "Table not found" });
       }
-      
+
       res.json(table);
     } catch (error) {
       res.status(400).json({ message: "Invalid request" });
@@ -137,11 +137,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const id = parseInt(req.params.id);
       const success = await storage.deleteTable(id);
-      
+
       if (!success) {
         return res.status(404).json({ message: "Table not found" });
       }
-      
+
       res.json({ message: "Table deleted successfully" });
     } catch (error) {
       res.status(400).json({ message: "Invalid request" });
@@ -344,7 +344,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post("/api/subscriptions/:id/cancel", async (req, res) => {
     try {
       const id = parseInt(req.params.id);
-      
+
       const subscription = await storage.getUserSubscriptionById(id);
       if (!subscription) {
         return res.status(404).json({ message: "Subscription not found" });
@@ -434,7 +434,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         ...req.body,
         restaurantId
       };
-      
+
       const log = await storage.createActivityLog(logData);
       res.json(log);
     } catch (error) {
@@ -460,7 +460,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         ...req.body,
         restaurantId
       };
-      
+
       const message = await storage.createSmsMessage(messageData);
       res.json(message);
     } catch (error) {
@@ -486,7 +486,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         ...req.body,
         restaurantId
       };
-      
+
       const entry = await storage.createWaitingListEntry(entryData);
       res.json(entry);
     } catch (error) {
@@ -498,13 +498,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const id = parseInt(req.params.id);
       const updates = req.body;
-      
+
       const entry = await storage.updateWaitingListEntry(id, updates);
-      
+
       if (!entry) {
         return res.status(404).json({ message: "Waiting list entry not found" });
       }
-      
+
       res.json(entry);
     } catch (error) {
       res.status(400).json({ message: "Invalid request" });
@@ -529,7 +529,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         ...req.body,
         restaurantId
       };
-      
+
       const feedback = await storage.createFeedback(feedbackData);
       res.json(feedback);
     } catch (error) {
@@ -542,7 +542,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const restaurantId = parseInt(req.params.restaurantId);
       const { date } = req.query;
-      
+
       const timeSlots = await storage.getTimeSlotsByRestaurant(restaurantId, date as string);
       res.json(timeSlots);
     } catch (error) {
@@ -557,7 +557,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         ...req.body,
         restaurantId
       };
-      
+
       const slot = await storage.createTimeSlot(slotData);
       res.json(slot);
     } catch (error) {
@@ -569,13 +569,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const id = parseInt(req.params.id);
       const updates = req.body;
-      
+
       const slot = await storage.updateTimeSlot(id, updates);
-      
+
       if (!slot) {
         return res.status(404).json({ message: "Time slot not found" });
       }
-      
+
       res.json(slot);
     } catch (error) {
       res.status(400).json({ message: "Invalid request" });
@@ -587,13 +587,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const id = parseInt(req.params.id);
       const updates = req.body;
-      
+
       const restaurant = await storage.updateRestaurant(id, updates);
-      
+
       if (!restaurant) {
         return res.status(404).json({ message: "Restaurant not found" });
       }
-      
+
       res.json(restaurant);
     } catch (error) {
       res.status(400).json({ message: "Invalid request" });
@@ -616,7 +616,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const totalCustomers = customers.length;
       const totalTables = tables.length;
       const avgBookingsPerDay = totalBookings / 30; // Rough estimate
-      
+
       // Group bookings by status
       const bookingsByStatus = bookings.reduce((acc: any, booking) => {
         acc[booking.status] = (acc[booking.status] || 0) + 1;
@@ -666,7 +666,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       // Check if user already has a subscription
       const existingSubscription = await storage.getUserSubscription(parseInt(userId));
-      
+
       if (existingSubscription) {
         // Update existing subscription
         await storage.updateUserSubscription(existingSubscription.id, {
@@ -694,7 +694,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     if (event.type === 'invoice.payment_succeeded') {
       const invoice = event.data.object as Stripe.Invoice;
       const subscriptionId = invoice.subscription as string;
-      
+
       // Find user subscription by Stripe subscription ID and extend their period
       const userSubscription = await storage.getUserSubscriptionByStripeId(subscriptionId);
       if (userSubscription) {

@@ -1,6 +1,13 @@
-import { pgTable, text, serial, integer, boolean, timestamp, varchar } from "drizzle-orm/pg-core";
+import { pgTable, text, serial, integer, boolean, timestamp, varchar, primaryKey } from "drizzle-orm/pg-core";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
+
+export const tenants = pgTable("tenants", {
+  id: serial("id").primaryKey(),
+  name: text("name").notNull(),
+  slug: text("slug").notNull().unique(),
+  createdAt: timestamp("created_at").defaultNow()
+});
 
 export const users = pgTable("users", {
   id: serial("id").primaryKey(),
@@ -11,8 +18,20 @@ export const users = pgTable("users", {
   createdAt: timestamp("created_at").defaultNow()
 });
 
+export const tenantUsers = pgTable("tenant_users", {
+  tenantId: integer("tenant_id").notNull().references(() => tenants.id),
+  userId: integer("user_id").notNull().references(() => users.id),
+  role: varchar("role", { length: 20 }).default("administrator"),
+  createdAt: timestamp("created_at").defaultNow()
+}, (table) => {
+  return {
+    pk: primaryKey(table.tenantId, table.userId)
+  }
+});
+
 export const restaurants = pgTable("restaurants", {
   id: serial("id").primaryKey(),
+  tenantId: integer("tenant_id").notNull().references(() => tenants.id),
   name: text("name").notNull(),
   userId: integer("user_id").references(() => users.id).notNull(),
   address: text("address"),
@@ -25,6 +44,7 @@ export const restaurants = pgTable("restaurants", {
 export const tables = pgTable("tables", {
   id: serial("id").primaryKey(),
   restaurantId: integer("restaurant_id").references(() => restaurants.id).notNull(),
+  tenantId: integer("tenant_id").notNull().references(() => tenants.id),
   tableNumber: text("table_number").notNull(),
   capacity: integer("capacity").notNull(),
   isActive: boolean("is_active").default(true)
@@ -33,6 +53,7 @@ export const tables = pgTable("tables", {
 export const bookings = pgTable("bookings", {
   id: serial("id").primaryKey(),
   restaurantId: integer("restaurant_id").references(() => restaurants.id).notNull(),
+  tenantId: integer("tenant_id").notNull().references(() => tenants.id),
   tableId: integer("table_id").references(() => tables.id),
   customerName: text("customer_name").notNull(),
   customerEmail: text("customer_email").notNull(),
@@ -50,6 +71,7 @@ export const bookings = pgTable("bookings", {
 export const customers = pgTable("customers", {
   id: serial("id").primaryKey(),
   restaurantId: integer("restaurant_id").references(() => restaurants.id).notNull(),
+  tenantId: integer("tenant_id").notNull().references(() => tenants.id),
   name: text("name").notNull(),
   email: text("email").notNull(),
   phone: text("phone"),
@@ -61,6 +83,7 @@ export const customers = pgTable("customers", {
 export const smsMessages = pgTable("sms_messages", {
   id: serial("id").primaryKey(),
   restaurantId: integer("restaurant_id").references(() => restaurants.id).notNull(),
+  tenantId: integer("tenant_id").notNull().references(() => tenants.id),
   name: text("name").notNull(),
   messageType: varchar("message_type", { length: 20 }).default("information"),
   content: text("content").notNull(),
@@ -74,6 +97,7 @@ export const smsMessages = pgTable("sms_messages", {
 export const waitingList = pgTable("waiting_list", {
   id: serial("id").primaryKey(),
   restaurantId: integer("restaurant_id").references(() => restaurants.id).notNull(),
+  tenantId: integer("tenant_id").notNull().references(() => tenants.id),
   customerName: text("customer_name").notNull(),
   customerEmail: text("customer_email").notNull(),
   customerPhone: text("customer_phone"),
@@ -88,6 +112,7 @@ export const waitingList = pgTable("waiting_list", {
 export const feedback = pgTable("feedback", {
   id: serial("id").primaryKey(),
   restaurantId: integer("restaurant_id").references(() => restaurants.id).notNull(),
+  tenantId: integer("tenant_id").notNull().references(() => tenants.id),
   bookingId: integer("booking_id").references(() => bookings.id),
   customerName: text("customer_name").notNull(),
   customerEmail: text("customer_email").notNull(),
@@ -101,6 +126,7 @@ export const feedback = pgTable("feedback", {
 export const activityLog = pgTable("activity_log", {
   id: serial("id").primaryKey(),
   restaurantId: integer("restaurant_id").references(() => restaurants.id).notNull(),
+  tenantId: integer("tenant_id").notNull().references(() => tenants.id),
   eventType: varchar("event_type", { length: 50 }).notNull(),
   description: text("description").notNull(),
   source: varchar("source", { length: 20 }).default("manual"),
@@ -112,6 +138,7 @@ export const activityLog = pgTable("activity_log", {
 export const timeSlots = pgTable("time_slots", {
   id: serial("id").primaryKey(),
   restaurantId: integer("restaurant_id").references(() => restaurants.id).notNull(),
+  tenantId: integer("tenant_id").notNull().references(() => tenants.id),
   date: text("date").notNull(),
   time: text("time").notNull(),
   isAvailable: boolean("is_available").default(true),
@@ -130,6 +157,20 @@ export const subscriptionPlans = pgTable("subscription_plans", {
   createdAt: timestamp("created_at").defaultNow()
 });
 
+export const tenantSubscriptions = pgTable("tenant_subscriptions", {
+  id: serial("id").primaryKey(),
+  tenantId: integer("tenant_id").references(() => tenants.id).notNull(),
+  planId: integer("plan_id").references(() => subscriptionPlans.id).notNull(),
+  status: varchar("status", { length: 20 }).default("active"), // active, cancelled, expired
+  currentPeriodStart: timestamp("current_period_start").notNull(),
+  currentPeriodEnd: timestamp("current_period_end").notNull(),
+  cancelAtPeriodEnd: boolean("cancel_at_period_end").default(false),
+  stripeCustomerId: text("stripe_customer_id"),
+  stripeSubscriptionId: text("stripe_subscription_id"),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow()
+});
+
 export const userSubscriptions = pgTable("user_subscriptions", {
   id: serial("id").primaryKey(),
   userId: integer("user_id").references(() => users.id).notNull(),
@@ -144,12 +185,19 @@ export const userSubscriptions = pgTable("user_subscriptions", {
   updatedAt: timestamp("updated_at").defaultNow()
 });
 
+export const insertTenantSchema = createInsertSchema(tenants).omit({
+  id: true,
+  createdAt: true
+});
+
 export const insertUserSchema = createInsertSchema(users).pick({
   email: true,
   password: true,
   name: true,
   restaurantName: true
 });
+
+export const insertTenantUserSchema = createInsertSchema(tenantUsers);
 
 export const insertRestaurantSchema = createInsertSchema(restaurants).omit({
   id: true,
@@ -201,6 +249,12 @@ export const insertSubscriptionPlanSchema = createInsertSchema(subscriptionPlans
   createdAt: true
 });
 
+export const insertTenantSubscriptionSchema = createInsertSchema(tenantSubscriptions).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true
+});
+
 export const insertUserSubscriptionSchema = createInsertSchema(userSubscriptions).omit({
   id: true,
   createdAt: true,
@@ -212,8 +266,12 @@ export const loginSchema = z.object({
   password: z.string().min(6)
 });
 
+export type Tenant = typeof tenants.$inferSelect;
+export type InsertTenant = z.infer<typeof insertTenantSchema>;
 export type User = typeof users.$inferSelect;
 export type InsertUser = z.infer<typeof insertUserSchema>;
+export type TenantUser = typeof tenantUsers.$inferSelect;
+export type InsertTenantUser = z.infer<typeof insertTenantUserSchema>;
 export type Restaurant = typeof restaurants.$inferSelect;
 export type InsertRestaurant = z.infer<typeof insertRestaurantSchema>;
 export type Table = typeof tables.$inferSelect;
@@ -234,6 +292,8 @@ export type TimeSlots = typeof timeSlots.$inferSelect;
 export type InsertTimeSlots = z.infer<typeof timeSlotsSchema>;
 export type SubscriptionPlan = typeof subscriptionPlans.$inferSelect;
 export type InsertSubscriptionPlan = z.infer<typeof insertSubscriptionPlanSchema>;
+export type TenantSubscription = typeof tenantSubscriptions.$inferSelect;
+export type InsertTenantSubscription = z.infer<typeof insertTenantSubscriptionSchema>;
 export type UserSubscription = typeof userSubscriptions.$inferSelect;
 export type InsertUserSubscription = z.infer<typeof insertUserSubscriptionSchema>;
 export type LoginData = z.infer<typeof loginSchema>;
