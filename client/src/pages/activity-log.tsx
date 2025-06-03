@@ -11,8 +11,8 @@ export default function ActivityLog() {
   const [loginFilter, setLoginFilter] = useState("all");
 
   const { data: activityLog, isLoading } = useQuery({
-    queryKey: ['/api/restaurants', restaurant?.id, 'activity-log'],
-    enabled: isAuthenticated && !!restaurant
+    queryKey: [`/api/tenants/${restaurant?.tenantId}/restaurants/${restaurant?.id}/activity-log`],
+    enabled: isAuthenticated && !!restaurant && !!restaurant.tenantId
   });
 
   if (authLoading) {

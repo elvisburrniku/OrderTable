@@ -410,4 +410,30 @@ export class DatabaseStorage implements IStorage {
     const result = await db.select().from(userSubscriptions).where(eq(userSubscriptions.id, id));
     return result[0];
   }
+
+  // Additional methods needed for complete functionality
+  async getTableById(id: number): Promise<Table | undefined> {
+    const result = await db.select().from(tables).where(eq(tables.id, id));
+    return result[0];
+  }
+
+  async getBookingById(id: number): Promise<Booking | undefined> {
+    const result = await db.select().from(bookings).where(eq(bookings.id, id));
+    return result[0];
+  }
+
+  async getRestaurantById(id: number): Promise<Restaurant | undefined> {
+    const result = await db.select().from(restaurants).where(eq(restaurants.id, id));
+    return result[0];
+  }
+
+  async getWaitingListEntryById(id: number): Promise<WaitingList | undefined> {
+    const result = await db.select().from(waitingList).where(eq(waitingList.id, id));
+    return result[0];
+  }
+
+  async getTimeSlotById(id: number): Promise<TimeSlots | undefined> {
+    const result = await db.select().from(timeSlots).where(eq(timeSlots.id, id));
+    return result[0];
+  }
 }

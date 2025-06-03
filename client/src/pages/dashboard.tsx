@@ -25,24 +25,24 @@ export default function Dashboard() {
 
   // Fetch today's bookings
   const { data: todayBookings = [] } = useQuery({
-    queryKey: ["/api/restaurants", restaurant?.id, "bookings", today],
+    queryKey: ["/api/tenants", restaurant?.tenantId, "restaurants", restaurant?.id, "bookings", today],
     queryFn: async () => {
       const response = await fetch(`/api/restaurants/${restaurant?.id}/bookings?date=${today}`);
       return response.json();
     },
-    enabled: !!restaurant,
+    enabled: !!restaurant && !!restaurant.tenantId,
   });
 
   // Fetch all bookings for the month
   const { data: allBookings = [] } = useQuery({
-    queryKey: ["/api/restaurants", restaurant?.id, "bookings"],
-    enabled: !!restaurant,
+    queryKey: [`/api/tenants/${restaurant?.tenantId}/restaurants/${restaurant?.id}/bookings`],
+    enabled: !!restaurant?.id && !!restaurant.tenantId,
   });
 
   // Fetch tables
   const { data: tables = [] } = useQuery({
-    queryKey: ["/api/restaurants", restaurant?.id, "tables"],
-    enabled: !!restaurant,
+    queryKey: [`/api/tenants/${restaurant?.tenantId}/restaurants/${restaurant?.id}/tables`],
+    enabled: !!restaurant?.id && !!restaurant.tenantId,
   });
 
   const getAvailableTablesCount = () => {
