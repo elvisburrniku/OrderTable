@@ -20,9 +20,10 @@ interface BookingCalendarProps {
   allBookings?: Booking[];
   tables: TableType[];
   isLoading: boolean;
+  onDateSelect: (date: Date) => void;
 }
 
-export default function BookingCalendar({ selectedDate, bookings, allBookings = [], tables, isLoading }: BookingCalendarProps) {
+export default function BookingCalendar({ selectedDate, bookings, allBookings = [], tables, isLoading, onDateSelect }: BookingCalendarProps) {
   const { restaurant } = useAuth();
   const { toast } = useToast();
   const queryClient = useQueryClient();
@@ -162,6 +163,7 @@ export default function BookingCalendar({ selectedDate, bookings, allBookings = 
                     ? 'bg-blue-50 border-blue-200' 
                     : 'bg-white border-gray-200 hover:bg-gray-50'
                 }`}
+                onClick={() => onDateSelect(day)}
               >
                 <div className={`text-sm font-medium ${
                   isTodayDate ? 'text-blue-600' : 'text-gray-900'

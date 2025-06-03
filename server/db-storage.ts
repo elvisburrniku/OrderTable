@@ -155,6 +155,27 @@ export class DatabaseStorage implements IStorage {
       }
       await db.insert(tables).values(tableData);
 
+      // Create additional tables for any other restaurants that might exist
+      const allRestaurants = await db.select().from(restaurants);
+      for (const r of allRestaurants) {
+        if (r.id !== restaurant.id) {
+          const existingTables = await db.select().from(tables).where(eq(tables.restaurantId, r.id));
+          if (existingTables.length === 0) {
+            const additionalTableData = [];
+            for (let i = 1; i <= 12; i++) {
+              additionalTableData.push({
+                restaurantId: r.id,
+                tenantId: r.tenantId,
+                tableNumber: i.toString(),
+                capacity: i <= 4 ? 2 : i <= 8 ? 4 : 6,
+                isActive: true
+              });
+            }
+            await db.insert(tables).values(additionalTableData);
+          }
+        }
+      }
+
       // Create demo customers
       const customerData = [
         { restaurantId: restaurant.id, tenantId: tenant.id, name: "John Smith", email: "john@example.com", phone: "+45 11 22 33 44" },

@@ -44,13 +44,13 @@ export default function Dashboard() {
   });
 
   // Fetch tables
-  const { data: tables = [] } = useQuery({
+  const { data: tables, isLoading: tablesLoading } = useQuery({
     queryKey: [`/api/tenants/${restaurant?.tenantId}/restaurants/${restaurant?.id}/tables`],
-    enabled: !!restaurant?.id && !!restaurant.tenantId,
+    enabled: !!restaurant && !!restaurant.tenantId && !!restaurant.id
   });
 
   // Fetch bookings for selected date
-  const { data: selectedDateBookings = [], isLoading } = useQuery({
+  const { data: selectedDateBookings = [], isLoading: selectedDateBookingsLoading } = useQuery({
     queryKey: [`/api/tenants/${restaurant?.tenantId}/restaurants/${restaurant?.id}/bookings`, format(selectedDate, 'yyyy-MM-dd')],
     queryFn: async () => {
       const response = await fetch(`/api/tenants/${restaurant?.tenantId}/restaurants/${restaurant?.id}/bookings?date=${format(selectedDate, 'yyyy-MM-dd')}`);
@@ -61,6 +61,12 @@ export default function Dashboard() {
       return Array.isArray(data) ? data : [];
     },
     enabled: !!restaurant && !!restaurant.tenantId,
+  });
+
+  // Fetch all bookings for the month
+  const { data: allBookings = [], isLoading: allBookingsLoading } = useQuery({
+    queryKey: [`/api/tenants/${restaurant?.tenantId}/restaurants/${restaurant?.id}/bookings`],
+    enabled: !!restaurant?.id && !!restaurant.tenantId,
   });
 
   const getAvailableTablesCount = () => {
@@ -75,6 +81,8 @@ export default function Dashboard() {
 
     return tables.filter((table: any) => !bookedTableIds.includes(table.id)).length;
   };
+
+  const isLoading = selectedDateBookingsLoading || allBookingsLoading || tablesLoading;
 
   if (!user || !restaurant) {
     return null;
