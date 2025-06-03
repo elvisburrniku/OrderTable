@@ -3,12 +3,33 @@ import {
   users, restaurants, tables, bookings, customers, smsMessages, waitingList,
   feedback, activityLog, timeSlots, subscriptionPlans, userSubscriptions
 } from "@shared/schema";
-import type { 
-  User, InsertUser, Restaurant, InsertRestaurant, Table, InsertTable, 
-  Booking, InsertBooking, Customer, InsertCustomer, SmsMessage, InsertSmsMessage,
-  WaitingList, InsertWaitingList, Feedback, InsertFeedback, ActivityLog, InsertActivityLog,
-  TimeSlots, InsertTimeSlots, SubscriptionPlan, InsertSubscriptionPlan,
-  UserSubscription, InsertUserSubscription
+import type {
+  User,
+  Restaurant,
+  Table,
+  Booking,
+  Customer,
+  WaitingList,
+  Feedback,
+  SmsMessage,
+  ActivityLog,
+  SubscriptionPlan,
+  UserSubscription,
+  TimeSlots,
+  Room,
+  InsertUser,
+  InsertRestaurant,
+  InsertTable,
+  InsertBooking,
+  InsertCustomer,
+  InsertWaitingList,
+  InsertFeedback,
+  InsertSmsMessage,
+  InsertActivityLog,
+  InsertSubscriptionPlan,
+  InsertUserSubscription,
+  InsertTimeSlots,
+  InsertRoom
 } from "@shared/schema";
 import { neon } from "@neondatabase/serverless";
 import { drizzle } from "drizzle-orm/neon-http";
@@ -87,7 +108,15 @@ export interface IStorage {
   // Time Slots
   getTimeSlotsByRestaurant(restaurantId: number, date?: string): Promise<TimeSlots[]>;
   createTimeSlot(slot: InsertTimeSlots): Promise<TimeSlots>;
-  updateTimeSlot(id: number, slot: Partial<TimeSlots>): Promise<TimeSlots | undefined>;
+  updateTimeSlot(id: number, updates: Partial<TimeSlots>): Promise<TimeSlots | undefined>;
+  getTimeSlotById(id: number): Promise<TimeSlots | undefined>;
+
+  // Rooms
+  getRoomsByRestaurant(restaurantId: number): Promise<Room[]>;
+  getRoomById(id: number): Promise<Room | undefined>;
+  createRoom(room: InsertRoom): Promise<Room>;
+  updateRoom(id: number, updates: Partial<Room>): Promise<Room | undefined>;
+  deleteRoom(id: number): Promise<boolean>;
 
     // Subscription Plans
     getSubscriptionPlans(): Promise<SubscriptionPlan[]>;
@@ -438,7 +467,7 @@ export class MemStorage implements IStorage {
   async getOrCreateCustomer(restaurantId: number, tenantId: number, customerData: { name: string; email: string; phone?: string }): Promise<Customer> {
     // First try to find existing customer
     let customer = await this.getCustomerByEmail(restaurantId, customerData.email);
-    
+
     if (customer) {
       // Update existing customer with latest info and increment booking count
       const updatedCustomer = await this.updateCustomer(customer.id, {
@@ -457,7 +486,7 @@ export class MemStorage implements IStorage {
         email: customerData.email,
         phone: customerData.phone || ""
       });
-      
+
       // Update with first booking count
       const updatedCustomer = await this.updateCustomer(customer.id, {
         totalBookings: 1,

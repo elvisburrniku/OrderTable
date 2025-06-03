@@ -530,4 +530,32 @@ export class DatabaseStorage implements IStorage {
     const result = await db.select().from(timeSlots).where(eq(timeSlots.id, id));
     return result[0];
   }
+
+  // Rooms
+  async getRoomsByRestaurant(restaurantId: number): Promise<Room[]> {
+    return await db.select().from(rooms).where(eq(rooms.restaurantId, restaurantId));
+  }
+
+  async getRoomById(id: number): Promise<Room | undefined> {
+    const result = await db.select().from(rooms).where(eq(rooms.id, id));
+    return result[0];
+  }
+
+  async createRoom(room: InsertRoom): Promise<Room> {
+    const [newRoom] = await db.insert(rooms).values(room).returning();
+    return newRoom;
+  }
+
+  async updateRoom(id: number, updates: Partial<Room>): Promise<Room | undefined> {
+    const [updated] = await db.update(rooms)
+      .set(updates)
+      .where(eq(rooms.id, id))
+      .returning();
+    return updated;
+  }
+
+  async deleteRoom(id: number): Promise<boolean> {
+    const result = await db.delete(rooms).where(eq(rooms.id, id));
+    return result.rowCount > 0;
+  }
 }
