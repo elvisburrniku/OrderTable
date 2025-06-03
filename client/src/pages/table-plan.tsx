@@ -242,12 +242,12 @@ export default function TablePlan() {
 
       const rect = planRef.current.getBoundingClientRect();
       const x = Math.max(
-        30,
-        Math.min(e.clientX - rect.left - 30, rect.width - 60),
+        40,
+        Math.min(e.clientX - rect.left - 40, rect.width - 80),
       );
       const y = Math.max(
-        30,
-        Math.min(e.clientY - rect.top - 30, rect.height - 60),
+        40,
+        Math.min(e.clientY - rect.top - 40, rect.height - 80),
       );
 
       if (draggedTable !== null) {
@@ -261,7 +261,7 @@ export default function TablePlan() {
           },
         }));
       } else if (draggedStructure) {
-        // Adding new table from structure
+        // Adding new table from structure - immediately show configuration dialog
         setPendingTablePosition({ x, y, structure: draggedStructure });
         setTableConfig({
           tableNumber: "",
@@ -345,7 +345,14 @@ export default function TablePlan() {
 
   const handleConfigSubmit = () => {
     if (!pendingTablePosition || !tableConfig.tableNumber.trim()) {
-      alert("Please fill in all required fields");
+      alert("Please enter a table number");
+      return;
+    }
+
+    // Check if table number already exists
+    const existingTable = tables.find((table: any) => table.tableNumber === tableConfig.tableNumber);
+    if (existingTable) {
+      alert("A table with this number already exists. Please choose a different number.");
       return;
     }
 
@@ -591,7 +598,7 @@ export default function TablePlan() {
               </div>
               <div className="text-xs text-gray-500 p-2 bg-blue-50 rounded">
                 <strong>Tip:</strong> Drag table structures onto the floor plan
-                to add new tables
+                to add new tables. A configuration dialog will appear automatically.
               </div>
             </div>
 
@@ -658,7 +665,7 @@ export default function TablePlan() {
                 />
 
                 {/* Drop zone hint */}
-                {Object.keys(tablePositions).length === 0 && (
+                {Object.keys(tablePositions).length === 0 && !isDragging && (
                   <div className="absolute inset-0 flex items-center justify-center">
                     <div className="text-center text-gray-500">
                       <Move className="h-12 w-12 mx-auto mb-2 opacity-50" />
@@ -666,7 +673,22 @@ export default function TablePlan() {
                         Drag tables here to create your floor plan
                       </p>
                       <p className="text-sm">
-                        Start by dragging tables from the sidebar
+                        Start by dragging table structures from the sidebar
+                      </p>
+                    </div>
+                  </div>
+                )}
+
+                {/* Active drop zone indicator */}
+                {isDragging && draggedStructure && (
+                  <div className="absolute inset-0 flex items-center justify-center bg-green-50 bg-opacity-50 border-2 border-dashed border-green-300 rounded-lg">
+                    <div className="text-center text-green-600">
+                      <Plus className="h-16 w-16 mx-auto mb-2" />
+                      <p className="text-lg font-medium">
+                        Drop here to add {draggedStructure.name}
+                      </p>
+                      <p className="text-sm">
+                        Configuration dialog will appear after drop
                       </p>
                     </div>
                   </div>
@@ -741,7 +763,12 @@ export default function TablePlan() {
       <Dialog open={showConfigDialog} onOpenChange={setShowConfigDialog}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Configure Table</DialogTitle>
+            <DialogTitle>Configure New Table</DialogTitle>
+            <p className="text-sm text-gray-600">
+              {pendingTablePosition?.structure && 
+                `Adding ${pendingTablePosition.structure.name} (${pendingTablePosition.structure.description})`
+              }
+            </p>
           </DialogHeader>
           <div className="space-y-4">
             <div>
@@ -755,11 +782,15 @@ export default function TablePlan() {
                     tableNumber: e.target.value,
                   }))
                 }
-                placeholder="Enter table number"
+                placeholder="e.g., 1, A1, VIP-1"
+                autoFocus
               />
+              <p className="text-xs text-gray-500 mt-1">
+                Enter a unique identifier for this table
+              </p>
             </div>
             <div>
-              <Label htmlFor="capacity">Capacity</Label>
+              <Label htmlFor="capacity">Seating Capacity</Label>
               <Input
                 id="capacity"
                 type="number"
@@ -773,15 +804,18 @@ export default function TablePlan() {
                   }))
                 }
               />
+              <p className="text-xs text-gray-500 mt-1">
+                Maximum number of guests this table can accommodate
+              </p>
             </div>
-            <div className="flex justify-end gap-2">
+            <div className="flex justify-end gap-2 pt-4">
               <Button variant="outline" onClick={handleConfigCancel}>
                 Cancel
               </Button>
               <Button
                 onClick={handleConfigSubmit}
                 className="bg-green-600 hover:bg-green-700"
-                disabled={createTableMutation.isPending}
+                disabled={createTableMutation.isPending || !tableConfig.tableNumber.trim()}
               >
                 {createTableMutation.isPending ? "Creating..." : "Add Table"}
               </Button>
