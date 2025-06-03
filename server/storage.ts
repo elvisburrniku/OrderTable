@@ -506,6 +506,10 @@ export class MemStorage implements IStorage {
     return updatedEntry;
   }
 
+  async getWaitingListEntryById(id: number): Promise<WaitingList | undefined> {
+    return this.waitingList.get(id);
+  }
+
   // Feedback
   async getFeedbackByRestaurant(restaurantId: number): Promise<Feedback[]> {
     return Array.from(this.feedback.values()).filter(feedback => feedback.restaurantId === restaurantId);

@@ -31,6 +31,11 @@ export default function WaitingList() {
   const { data: waitingList = [], isLoading } = useQuery({
     queryKey: ["/api/restaurants", restaurant?.id, "waiting-list"],
     enabled: !!restaurant?.id,
+    queryFn: async () => {
+      const response = await fetch(`/api/restaurants/${restaurant?.id}/waiting-list`);
+      if (!response.ok) throw new Error("Failed to fetch waiting list");
+      return response.json();
+    }
   });
 
   const createEntryMutation = useMutation({
@@ -65,7 +70,7 @@ export default function WaitingList() {
 
   const updateEntryMutation = useMutation({
     mutationFn: async ({ id, updates }: { id: number; updates: any }) => {
-      const response = await fetch(`/api/waiting-list/${id}`, {
+      const response = await fetch(`/api/restaurants/${restaurant?.id}/waiting-list/${id}`, {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(updates),
@@ -131,7 +136,7 @@ export default function WaitingList() {
         <div className="w-64 bg-white border-r min-h-screen">
           <div className="p-6">
             <div className="space-y-2">
-              <a href={`/${restaurant.tenantId}/bookings`} className="flex items-center space-x-2 text-gray-600 hover:bg-gray-50 px-3 py-2 rounded">
+              <a href={`/${restaurant.id}/bookings`} className="flex items-center space-x-2 text-gray-600 hover:bg-gray-50 px-3 py-2 rounded">
                 <span className="w-2 h-2 bg-gray-400 rounded-full"></span>
                 <span>Bookings</span>
               </a>
@@ -139,11 +144,11 @@ export default function WaitingList() {
                 <span className="w-2 h-2 bg-green-600 rounded-full"></span>
                 <span className="font-medium">Waiting List</span>
               </div>
-              <a href={`/${restaurant.tenantId}/statistics`} className="flex items-center space-x-2 text-gray-600 hover:bg-gray-50 px-3 py-2 rounded">
+              <a href={`/${restaurant.id}/statistics`} className="flex items-center space-x-2 text-gray-600 hover:bg-gray-50 px-3 py-2 rounded">
                 <span className="w-2 h-2 bg-gray-400 rounded-full"></span>
                 <span>Statistics</span>
               </a>
-              <a href={`/${restaurant.tenantId}/activity-log`} className="flex items-center space-x-2 text-gray-600 hover:bg-gray-50 px-3 py-2 rounded">
+              <a href={`/${restaurant.id}/activity-log`} className="flex items-center space-x-2 text-gray-600 hover:bg-gray-50 px-3 py-2 rounded">
                 <span className="w-2 h-2 bg-gray-400 rounded-full"></span>
                 <span>Log</span>
               </a>

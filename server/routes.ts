@@ -136,6 +136,52 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Restaurant-based waiting list routes
+  app.get("/api/restaurants/:restaurantId/waiting-list", async (req, res) => {
+    try {
+      const restaurantId = parseInt(req.params.restaurantId);
+      const waitingList = await storage.getWaitingListByRestaurant(restaurantId);
+      res.json(waitingList);
+    } catch (error) {
+      res.status(400).json({ message: "Invalid request" });
+    }
+  });
+
+  app.post("/api/restaurants/:restaurantId/waiting-list", async (req, res) => {
+    try {
+      const restaurantId = parseInt(req.params.restaurantId);
+      const entryData = {
+        ...req.body,
+        restaurantId,
+        tenantId: 1 // Default tenant for non-tenant routes
+      };
+
+      const entry = await storage.createWaitingListEntry(entryData);
+      res.json(entry);
+    } catch (error) {
+      res.status(400).json({ message: "Invalid waiting list data" });
+    }
+  });
+
+  app.put("/api/restaurants/:restaurantId/waiting-list/:id", async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      const restaurantId = parseInt(req.params.restaurantId);
+      const updates = req.body;
+
+      // Verify waiting list entry belongs to restaurant before updating
+      const existingEntry = await storage.getWaitingListEntryById(id);
+      if (!existingEntry || existingEntry.restaurantId !== restaurantId) {
+        return res.status(404).json({ message: "Waiting list entry not found" });
+      }
+
+      const entry = await storage.updateWaitingListEntry(id, updates);
+      res.json(entry);
+    } catch (error) {
+      res.status(400).json({ message: "Invalid request" });
+    }
+  });
+
   app.post("/api/restaurants/:restaurantId/bookings", async (req, res) => {
     try {
       const restaurantId = parseInt(req.params.restaurantId);
