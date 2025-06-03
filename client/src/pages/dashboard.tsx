@@ -38,7 +38,7 @@ export default function Dashboard() {
   });
 
   // Fetch all bookings for the month
-  const { data: allBookings = [] } = useQuery({
+  const { data: allBookings = [], isLoading: allBookingsLoading } = useQuery({
     queryKey: [`/api/tenants/${restaurant?.tenantId}/restaurants/${restaurant?.id}/bookings`],
     enabled: !!restaurant?.id && !!restaurant.tenantId,
   });
@@ -61,12 +61,6 @@ export default function Dashboard() {
       return Array.isArray(data) ? data : [];
     },
     enabled: !!restaurant && !!restaurant.tenantId,
-  });
-
-  // Fetch all bookings for the month
-  const { data: allBookings = [], isLoading: allBookingsLoading } = useQuery({
-    queryKey: [`/api/tenants/${restaurant?.tenantId}/restaurants/${restaurant?.id}/bookings`],
-    enabled: !!restaurant?.id && !!restaurant.tenantId,
   });
 
   const getAvailableTablesCount = () => {
