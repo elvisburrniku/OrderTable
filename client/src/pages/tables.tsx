@@ -164,58 +164,58 @@ export default function Tables() {
                       <Plus className="h-4 w-4 mr-2" />
                       Add Table
                     </Button>
-                  </DialogTrigger></Dialog>
+                  </DialogTrigger>
+                  <DialogContent>
+                    <DialogHeader>
+                      <DialogTitle>Add New Table</DialogTitle>
+                    </DialogHeader>
+                    <form onSubmit={handleCreateTable} className="space-y-4">
+                      <div>
+                        <Label htmlFor="tableNumber">Table Number</Label>
+                        <Input
+                          id="tableNumber"
+                          value={newTable.tableNumber}
+                          onChange={(e) =>
+                            setNewTable({ ...newTable, tableNumber: e.target.value })
+                          }
+                          required
+                        />
+                      </div>
+                      <div>
+                        <Label htmlFor="capacity">Capacity</Label>
+                        <Input
+                          id="capacity"
+                          type="number"
+                          min="1"
+                          max="20"
+                          value={newTable.capacity}
+                          onChange={(e) =>
+                            setNewTable({ ...newTable, capacity: parseInt(e.target.value) })
+                          }
+                          required
+                        />
+                      </div>
+                      <div className="flex items-center space-x-2">
+                        <Switch
+                          id="isActive"
+                          checked={newTable.isActive}
+                          onCheckedChange={(checked) =>
+                            setNewTable({ ...newTable, isActive: checked })
+                          }
+                        />
+                        <Label htmlFor="isActive">Active</Label>
+                      </div>
+                      <Button
+                        type="submit"
+                        className="w-full"
+                        disabled={createTableMutation.isPending}
+                      >
+                        {createTableMutation.isPending ? "Adding..." : "Add Table"}
+                      </Button>
+                    </form>
+                  </DialogContent>
+                </Dialog>
               </div>
-                <DialogContent>
-                  <DialogHeader>
-                    <DialogTitle>Add New Table</DialogTitle>
-                  </DialogHeader>
-                  <form onSubmit={handleCreateTable} className="space-y-4">
-                    <div>
-                      <Label htmlFor="tableNumber">Table Number</Label>
-                      <Input
-                        id="tableNumber"
-                        value={newTable.tableNumber}
-                        onChange={(e) =>
-                          setNewTable({ ...newTable, tableNumber: e.target.value })
-                        }
-                        required
-                      />
-                    </div>
-                    <div>
-                      <Label htmlFor="capacity">Capacity</Label>
-                      <Input
-                        id="capacity"
-                        type="number"
-                        min="1"
-                        max="20"
-                        value={newTable.capacity}
-                        onChange={(e) =>
-                          setNewTable({ ...newTable, capacity: parseInt(e.target.value) })
-                        }
-                        required
-                      />
-                    </div>
-                    <div className="flex items-center space-x-2">
-                      <Switch
-                        id="isActive"
-                        checked={newTable.isActive}
-                        onCheckedChange={(checked) =>
-                          setNewTable({ ...newTable, isActive: checked })
-                        }
-                      />
-                      <Label htmlFor="isActive">Active</Label>
-                    </div>
-                    <Button
-                      type="submit"
-                      className="w-full"
-                      disabled={createTableMutation.isPending}
-                    >
-                      {createTableMutation.isPending ? "Adding..." : "Add Table"}
-                    </Button>
-                  </form>
-                </DialogContent>
-              </Dialog>
             </div>
           </CardHeader>
           <CardContent>
