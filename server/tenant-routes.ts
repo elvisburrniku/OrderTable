@@ -1,7 +1,6 @@
 
 import { Request, Response } from "express";
-import { db } from "@db";
-import { tenants, users, tenantUsers, restaurants } from "@db/schema";
+import { tenants, users, tenantUsers, restaurants } from "@shared/schema";
 import { eq, and } from "drizzle-orm";
 import { storage } from "./storage";
 
@@ -10,14 +9,14 @@ export async function getTenant(req: Request, res: Response) {
   try {
     const tenantId = parseInt(req.params.tenantId);
     
-    const tenant = await db.select().from(tenants).where(eq(tenants.id, tenantId));
+    const tenant = await storage.db.select().from(tenants).where(eq(tenants.id, tenantId));
     
     if (!tenant.length) {
       return res.status(404).json({ message: "Tenant not found" });
     }
 
     // Get tenant users
-    const tenantUsersList = await db
+    const tenantUsersList = await storage.db
       .select({
         tenantId: tenantUsers.tenantId,
         userId: tenantUsers.userId,
@@ -46,7 +45,7 @@ export async function getTenant(req: Request, res: Response) {
 // Create new tenant
 export async function createTenant(req: Request, res: Response) {
   try {
-    const { name, subdomain, customDomain } = req.body;
+    const { name, slug } = req.body;
     const userId = req.user?.id;
 
     if (!userId) {
@@ -54,17 +53,16 @@ export async function createTenant(req: Request, res: Response) {
     }
 
     // Create the tenant
-    const [newTenant] = await db
+    const [newTenant] = await storage.db
       .insert(tenants)
       .values({
         name,
-        subdomain,
-        customDomain,
+        slug,
       })
       .returning();
 
     // Add the creating user as owner
-    await db.insert(tenantUsers).values({
+    await storage.db.insert(tenantUsers).values({
       tenantId: newTenant.id,
       userId,
       role: "owner",
@@ -81,7 +79,7 @@ export async function createTenant(req: Request, res: Response) {
 export async function updateTenant(req: Request, res: Response) {
   try {
     const tenantId = parseInt(req.params.tenantId);
-    const { name, subdomain, customDomain, settings } = req.body;
+    const { name, slug } = req.body;
     const userId = req.user?.id;
 
     if (!userId) {
@@ -89,7 +87,7 @@ export async function updateTenant(req: Request, res: Response) {
     }
 
     // Check if user has permission to update tenant
-    const tenantUser = await db
+    const tenantUser = await storage.db
       .select()
       .from(tenantUsers)
       .where(
@@ -103,13 +101,11 @@ export async function updateTenant(req: Request, res: Response) {
       return res.status(403).json({ message: "Insufficient permissions" });
     }
 
-    const [updatedTenant] = await db
+    const [updatedTenant] = await storage.db
       .update(tenants)
       .set({
         name,
-        subdomain,
-        customDomain,
-        settings,
+        slug,
       })
       .where(eq(tenants.id, tenantId))
       .returning();
@@ -133,7 +129,7 @@ export async function inviteUserToTenant(req: Request, res: Response) {
     }
 
     // Check if inviter has permission
-    const inviterTenantUser = await db
+    const inviterTenantUser = await storage.db
       .select()
       .from(tenantUsers)
       .where(
@@ -148,7 +144,7 @@ export async function inviteUserToTenant(req: Request, res: Response) {
     }
 
     // Find or create user
-    let [user] = await db.select().from(users).where(eq(users.email, email));
+    let [user] = await storage.db.select().from(users).where(eq(users.email, email));
     
     if (!user) {
       // For now, we'll just create a placeholder entry
@@ -157,7 +153,7 @@ export async function inviteUserToTenant(req: Request, res: Response) {
     }
 
     // Check if user is already in tenant
-    const existingTenantUser = await db
+    const existingTenantUser = await storage.db
       .select()
       .from(tenantUsers)
       .where(
@@ -172,7 +168,7 @@ export async function inviteUserToTenant(req: Request, res: Response) {
     }
 
     // Add user to tenant
-    const [newTenantUser] = await db
+    const [newTenantUser] = await storage.db
       .insert(tenantUsers)
       .values({
         tenantId,
@@ -200,7 +196,7 @@ export async function removeUserFromTenant(req: Request, res: Response) {
     }
 
     // Check if remover has permission
-    const removerTenantUser = await db
+    const removerTenantUser = await storage.db
       .select()
       .from(tenantUsers)
       .where(
@@ -215,7 +211,7 @@ export async function removeUserFromTenant(req: Request, res: Response) {
     }
 
     // Cannot remove owner
-    const userToRemove = await db
+    const userToRemove = await storage.db
       .select()
       .from(tenantUsers)
       .where(
@@ -230,7 +226,7 @@ export async function removeUserFromTenant(req: Request, res: Response) {
     }
 
     // Remove user from tenant
-    await db
+    await storage.db
       .delete(tenantUsers)
       .where(
         and(
