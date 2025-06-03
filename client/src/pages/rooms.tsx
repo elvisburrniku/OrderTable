@@ -47,40 +47,63 @@ export default function Rooms() {
   const saveRoomsMutation = useMutation({
     mutationFn: async (roomsToSave: Room[]) => {
       const tenantId = 1;
-      const promises = roomsToSave.map(async (room) => {
-        if (room.id) {
-          // Update existing room
-          const response = await fetch(`/api/tenants/${tenantId}/rooms/${room.id}`, {
-            method: "PUT",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify(room),
-          });
-          if (!response.ok) throw new Error("Failed to update room");
-          return response.json();
-        } else {
-          // Create new room
-          const response = await fetch(
-            `/api/tenants/${tenantId}/restaurants/${restaurant?.id}/rooms`,
-            {
-              method: "POST",
-              headers: { "Content-Type": "application/json" },
-              body: JSON.stringify(room),
+
+      // Create new rooms and update existing ones
+      const results = await Promise.all(
+        roomsToSave.map(async (room) => {
+          if (room.id) {
+            // Update existing room
+            const response = await fetch(
+              `/api/tenants/${tenantId}/rooms/${room.id}`,
+              {
+                method: "PUT",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                  name: room.name,
+                  priority: room.priority,
+                  restaurantId: room.restaurantId,
+                  tenantId: room.tenantId,
+                }),
+              },
+            );
+            if (!response.ok) {
+              const errorData = await response.json();
+              throw new Error(`Failed to update room: ${errorData.message || response.statusText}`);
             }
-          );
-          if (!response.ok) throw new Error("Failed to create room");
-          return response.json();
-        }
-      });
-      return Promise.all(promises);
+            return response.json();
+          } else {
+            // Create new room
+            const response = await fetch(
+              `/api/tenants/${tenantId}/restaurants/${restaurant?.id}/rooms`,
+              {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                  name: room.name,
+                  priority: room.priority,
+                  restaurantId: restaurant?.id,
+                  tenantId,
+                }),
+              },
+            );
+            if (!response.ok) {
+              const errorData = await response.json();
+              throw new Error(`Failed to create room: ${errorData.message || response.statusText}`);
+            }
+            return response.json();
+          }
+        }),
+      );
+
+      return results;
     },
     onSuccess: () => {
-      alert("Rooms saved successfully!");
       queryClient.invalidateQueries({
         queryKey: ["/api/tenants/1/restaurants", restaurant?.id, "rooms"],
       });
     },
     onError: (error) => {
-      alert(`Error saving rooms: ${error.message}`);
+      console.error("Room save error:", error);
     },
   });
 
@@ -140,7 +163,7 @@ export default function Rooms() {
               <a href="#" className="block text-sm text-gray-600 hover:text-gray-900 py-1">General opening hours</a>
               <a href="/special-periods" className="block text-sm text-gray-600 hover:text-gray-900 py-1">Special periods</a>
               <a href="/cut-off-time" className="block text-sm text-gray-600 hover:text-gray-900 py-1">Cut-off time</a>
-              
+
               <div className="text-sm font-medium text-gray-900 mb-3 mt-6">Tables and rooms</div>
               <div className="block text-sm text-green-600 font-medium py-1 bg-green-50 px-2 rounded">Rooms</div>
               <a href="/tables" className="block text-sm text-gray-600 hover:text-gray-900 py-1">Tables</a>

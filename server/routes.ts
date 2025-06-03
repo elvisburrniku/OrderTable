@@ -278,6 +278,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const tenantId = parseInt(req.params.tenantId);
       const updates = req.body;
 
+      if (isNaN(id) || isNaN(tenantId)) {
+        return res.status(400).json({ message: "Invalid room ID or tenant ID" });
+      }
+
       // Verify room belongs to tenant before updating
       const existingRoom = await storage.getRoomById(id);
       if (!existingRoom || existingRoom.tenantId !== tenantId) {
@@ -285,9 +289,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
 
       const room = await storage.updateRoom(id, updates);
+      if (!room) {
+        return res.status(404).json({ message: "Failed to update room" });
+      }
+      
       res.json(room);
     } catch (error) {
-      res.status(400).json({ message: "Invalid request" });
+      console.error("Error updating room:", error);
+      res.status(500).json({ message: "Internal server error" });
     }
   });
 
