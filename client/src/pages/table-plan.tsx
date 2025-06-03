@@ -693,11 +693,22 @@ export default function TablePlan() {
                             : "Unconfigured table"
                       }
                     >
-                      {dbTable
-                        ? dbTable.tableNumber
-                        : position.isConfigured
-                          ? position.tableNumber
-                          : "?"}
+                      <div className="text-center">
+                        <div className="font-bold">
+                          {dbTable
+                            ? dbTable.tableNumber
+                            : position.isConfigured
+                              ? position.tableNumber
+                              : "?"}
+                        </div>
+                        <div className="text-xs opacity-80">
+                          {dbTable
+                            ? `${dbTable.capacity} seats`
+                            : position.isConfigured
+                              ? `${position.capacity} seats`
+                              : ""}
+                        </div>
+                      </div>
                     </div>
                   );
                 })}
