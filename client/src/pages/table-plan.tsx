@@ -6,6 +6,9 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import { Plus, Save, RotateCw, Move, Square, Circle, Users } from "lucide-react";
 
 interface TablePosition {
@@ -14,6 +17,18 @@ interface TablePosition {
   y: number;
   rotation: number;
   shape: 'square' | 'circle' | 'rectangle';
+  tableNumber?: string;
+  capacity?: number;
+  isConfigured?: boolean;
+}
+
+interface TableStructure {
+  id: string;
+  name: string;
+  shape: 'square' | 'circle' | 'rectangle';
+  icon: any;
+  defaultCapacity: number;
+  description: string;
 }
 
 const TABLE_SHAPES = [
@@ -22,13 +37,79 @@ const TABLE_SHAPES = [
   { value: 'rectangle', label: 'Rectangle', icon: Square }
 ];
 
+const TABLE_STRUCTURES: TableStructure[] = [
+  {
+    id: 'small-round',
+    name: 'Small Round',
+    shape: 'circle',
+    icon: Circle,
+    defaultCapacity: 2,
+    description: '2-person round table'
+  },
+  {
+    id: 'medium-round',
+    name: 'Medium Round',
+    shape: 'circle',
+    icon: Circle,
+    defaultCapacity: 4,
+    description: '4-person round table'
+  },
+  {
+    id: 'large-round',
+    name: 'Large Round',
+    shape: 'circle',
+    icon: Circle,
+    defaultCapacity: 6,
+    description: '6-person round table'
+  },
+  {
+    id: 'small-square',
+    name: 'Small Square',
+    shape: 'square',
+    icon: Square,
+    defaultCapacity: 2,
+    description: '2-person square table'
+  },
+  {
+    id: 'medium-square',
+    name: 'Medium Square',
+    shape: 'square',
+    icon: Square,
+    defaultCapacity: 4,
+    description: '4-person square table'
+  },
+  {
+    id: 'rectangular',
+    name: 'Rectangular',
+    shape: 'rectangle',
+    icon: Square,
+    defaultCapacity: 6,
+    description: '6-person rectangular table'
+  },
+  {
+    id: 'long-rectangular',
+    name: 'Long Rectangular',
+    shape: 'rectangle',
+    icon: Square,
+    defaultCapacity: 8,
+    description: '8-person long table'
+  }
+];
+
 export default function TablePlan() {
   const { isLoading: authLoading, isAuthenticated, user, restaurant } = useAuthGuard();
   const queryClient = useQueryClient();
   const [selectedRoom, setSelectedRoom] = useState<string>("main");
   const [tablePositions, setTablePositions] = useState<Record<number, TablePosition>>({});
   const [draggedTable, setDraggedTable] = useState<number | null>(null);
+  const [draggedStructure, setDraggedStructure] = useState<TableStructure | null>(null);
   const [isDragging, setIsDragging] = useState(false);
+  const [showConfigDialog, setShowConfigDialog] = useState(false);
+  const [pendingTablePosition, setPendingTablePosition] = useState<{x: number, y: number, structure: TableStructure} | null>(null);
+  const [tableConfig, setTableConfig] = useState({
+    tableNumber: '',
+    capacity: 2
+  });
   const planRef = useRef<HTMLDivElement>(null);
 
   const { data: tables = [], isLoading: tablesLoading } = useQuery({
@@ -90,8 +171,16 @@ export default function TablePlan() {
 
   const handleDragStart = useCallback((tableId: number, e: React.DragEvent) => {
     setDraggedTable(tableId);
+    setDraggedStructure(null);
     setIsDragging(true);
     e.dataTransfer.effectAllowed = "move";
+  }, []);
+
+  const handleStructureDragStart = useCallback((structure: TableStructure, e: React.DragEvent) => {
+    setDraggedStructure(structure);
+    setDraggedTable(null);
+    setIsDragging(true);
+    e.dataTransfer.effectAllowed = "copy";
   }, []);
 
   const handleDragOver = useCallback((e: React.DragEvent) => {
@@ -101,26 +190,36 @@ export default function TablePlan() {
 
   const handleDrop = useCallback((e: React.DragEvent) => {
     e.preventDefault();
-    if (!draggedTable || !planRef.current) return;
+    if (!planRef.current) return;
 
     const rect = planRef.current.getBoundingClientRect();
-    const x = e.clientX - rect.left;
-    const y = e.clientY - rect.top;
+    const x = Math.max(30, Math.min(e.clientX - rect.left - 30, rect.width - 60));
+    const y = Math.max(30, Math.min(e.clientY - rect.top - 30, rect.height - 60));
 
-    setTablePositions(prev => ({
-      ...prev,
-      [draggedTable]: {
-        id: draggedTable,
-        x: Math.max(30, Math.min(x - 30, rect.width - 60)),
-        y: Math.max(30, Math.min(y - 30, rect.height - 60)),
-        rotation: prev[draggedTable]?.rotation || 0,
-        shape: prev[draggedTable]?.shape || 'circle'
-      }
-    }));
+    if (draggedTable) {
+      // Moving existing table
+      setTablePositions(prev => ({
+        ...prev,
+        [draggedTable]: {
+          ...prev[draggedTable],
+          x,
+          y
+        }
+      }));
+    } else if (draggedStructure) {
+      // Adding new table from structure
+      setPendingTablePosition({ x, y, structure: draggedStructure });
+      setTableConfig({
+        tableNumber: '',
+        capacity: draggedStructure.defaultCapacity
+      });
+      setShowConfigDialog(true);
+    }
 
     setDraggedTable(null);
+    setDraggedStructure(null);
     setIsDragging(false);
-  }, [draggedTable]);
+  }, [draggedTable, draggedStructure]);
 
   const rotateTable = (tableId: number) => {
     setTablePositions(prev => ({
@@ -140,6 +239,40 @@ export default function TablePlan() {
         shape
       }
     }));
+  };
+
+  const handleConfigSubmit = () => {
+    if (!pendingTablePosition || !tableConfig.tableNumber.trim()) {
+      alert('Please fill in all required fields');
+      return;
+    }
+
+    // Generate a unique ID for the new table
+    const newTableId = Date.now();
+    
+    setTablePositions(prev => ({
+      ...prev,
+      [newTableId]: {
+        id: newTableId,
+        x: pendingTablePosition.x,
+        y: pendingTablePosition.y,
+        rotation: 0,
+        shape: pendingTablePosition.structure.shape,
+        tableNumber: tableConfig.tableNumber,
+        capacity: tableConfig.capacity,
+        isConfigured: true
+      }
+    }));
+
+    setShowConfigDialog(false);
+    setPendingTablePosition(null);
+    setTableConfig({ tableNumber: '', capacity: 2 });
+  };
+
+  const handleConfigCancel = () => {
+    setShowConfigDialog(false);
+    setPendingTablePosition(null);
+    setTableConfig({ tableNumber: '', capacity: 2 });
   };
 
   if (authLoading) {
@@ -172,7 +305,7 @@ export default function TablePlan() {
         left: `${position.x}px`,
         top: `${position.y}px`,
         transform: `rotate(${position.rotation}deg)`,
-        backgroundColor: table.isActive ? '#16a34a' : '#6b7280',
+        backgroundColor: position.isConfigured ? '#16a34a' : table?.isActive ? '#16a34a' : '#6b7280',
         borderRadius: position.shape === 'circle' ? '50%' : 
                      position.shape === 'rectangle' ? '8px' : '4px',
         width: position.shape === 'rectangle' ? '80px' : '60px',
@@ -181,12 +314,28 @@ export default function TablePlan() {
 
     return {
       ...baseStyle,
-      backgroundColor: table.isActive ? '#16a34a' : '#6b7280',
+      backgroundColor: table?.isActive ? '#16a34a' : '#6b7280',
       borderRadius: '50%',
       position: 'relative' as const,
       margin: '5px',
     };
   };
+
+  const getStructureStyle = (structure: TableStructure) => ({
+    width: structure.shape === 'rectangle' ? '60px' : '50px',
+    height: '50px',
+    backgroundColor: '#6b7280',
+    borderRadius: structure.shape === 'circle' ? '50%' : 
+                 structure.shape === 'rectangle' ? '8px' : '4px',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    cursor: 'grab',
+    color: 'white',
+    fontSize: '10px',
+    fontWeight: 'bold',
+    userSelect: 'none' as const,
+  });
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -230,9 +379,40 @@ export default function TablePlan() {
               </Select>
             </div>
 
+            {/* Table Structures */}
+            <div className="mb-6">
+              <h3 className="text-sm font-medium text-gray-700 mb-3">Table Structures</h3>
+              <div className="grid grid-cols-2 gap-2 mb-4">
+                {TABLE_STRUCTURES.map((structure) => (
+                  <div
+                    key={structure.id}
+                    className="p-2 border rounded-lg hover:bg-gray-50 cursor-grab"
+                    draggable
+                    onDragStart={(e) => handleStructureDragStart(structure, e)}
+                  >
+                    <div className="flex flex-col items-center">
+                      <div
+                        style={getStructureStyle(structure)}
+                        className="mb-1"
+                      >
+                        {structure.defaultCapacity}
+                      </div>
+                      <div className="text-xs text-center">
+                        <div className="font-medium">{structure.name}</div>
+                        <div className="text-gray-500">{structure.description}</div>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+              <div className="text-xs text-gray-500 p-2 bg-blue-50 rounded">
+                <strong>Tip:</strong> Drag table structures onto the floor plan to add new tables
+              </div>
+            </div>
+
             {/* Available Tables */}
             <div className="mb-6">
-              <h3 className="text-sm font-medium text-gray-700 mb-3">Available Tables</h3>
+              <h3 className="text-sm font-medium text-gray-700 mb-3">Existing Tables</h3>
               <div className="space-y-2 max-h-60 overflow-y-auto">
                 {tables.map((table: any) => (
                   <div
@@ -359,20 +539,28 @@ export default function TablePlan() {
                 )}
 
                 {/* Placed Tables */}
-                {tables.map((table: any) => {
-                  const position = tablePositions[table.id];
-                  if (!position) return null;
-
+                {Object.values(tablePositions).map((position) => {
+                  // Find corresponding table from database if it exists
+                  const dbTable = tables.find((t: any) => t.id === position.id);
+                  
                   return (
                     <div
-                      key={table.id}
+                      key={position.id}
                       draggable
-                      onDragStart={(e) => handleDragStart(table.id, e)}
-                      style={getTableStyle(table, position)}
+                      onDragStart={(e) => handleDragStart(position.id, e)}
+                      style={getTableStyle(dbTable, position)}
                       className="shadow-lg border-2 border-white hover:shadow-xl transition-shadow"
-                      title={`Table ${table.tableNumber} (${table.capacity} seats)`}
+                      title={position.isConfigured 
+                        ? `Table ${position.tableNumber} (${position.capacity} seats)` 
+                        : dbTable 
+                          ? `Table ${dbTable.tableNumber} (${dbTable.capacity} seats)`
+                          : 'Unconfigured table'
+                      }
                     >
-                      {table.tableNumber}
+                      {position.isConfigured 
+                        ? position.tableNumber 
+                        : dbTable?.tableNumber || '?'
+                      }
                     </div>
                   );
                 })}
@@ -395,6 +583,45 @@ export default function TablePlan() {
           </Card>
         </div>
       </div>
+
+      {/* Table Configuration Dialog */}
+      <Dialog open={showConfigDialog} onOpenChange={setShowConfigDialog}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Configure Table</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div>
+              <Label htmlFor="tableNumber">Table Number *</Label>
+              <Input
+                id="tableNumber"
+                value={tableConfig.tableNumber}
+                onChange={(e) => setTableConfig(prev => ({ ...prev, tableNumber: e.target.value }))}
+                placeholder="Enter table number"
+              />
+            </div>
+            <div>
+              <Label htmlFor="capacity">Capacity</Label>
+              <Input
+                id="capacity"
+                type="number"
+                min="1"
+                max="20"
+                value={tableConfig.capacity}
+                onChange={(e) => setTableConfig(prev => ({ ...prev, capacity: parseInt(e.target.value) || 1 }))}
+              />
+            </div>
+            <div className="flex justify-end gap-2">
+              <Button variant="outline" onClick={handleConfigCancel}>
+                Cancel
+              </Button>
+              <Button onClick={handleConfigSubmit} className="bg-green-600 hover:bg-green-700">
+                Add Table
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
