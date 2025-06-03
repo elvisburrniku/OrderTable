@@ -17,7 +17,11 @@ import postgres from "postgres";
 import * as schema from "../shared/schema";
 
 // Use Supabase database URL if available, otherwise use the existing DATABASE_URL
-const databaseUrl = process.env.SUPABASE_DATABASE_URL || process.env.DATABASE_URL!;
+const databaseUrl = process.env.SUPABASE_DATABASE_URL || process.env.DATABASE_URL;
+
+if (!databaseUrl) {
+  throw new Error("No database connection string found. Please set SUPABASE_DATABASE_URL or DATABASE_URL environment variable.");
+}
 
 let db: ReturnType<typeof drizzle>;
 
