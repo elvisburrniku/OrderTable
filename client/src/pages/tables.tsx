@@ -56,7 +56,7 @@ export default function Tables() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({
-        queryKey: ["/api/restaurants", restaurant?.id, "tables"],
+        queryKey: ["/api/tenants/1/restaurants", restaurant?.id, "tables"],
       });
       setIsDialogOpen(false);
       setNewTable({ tableNumber: "", capacity: 4, isActive: true });
@@ -76,7 +76,7 @@ export default function Tables() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({
-        queryKey: ["/api/restaurants", restaurant?.id, "tables"],
+        queryKey: ["/api/tenants/1/restaurants", restaurant?.id, "tables"],
       });
     },
   });
@@ -92,7 +92,7 @@ export default function Tables() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({
-        queryKey: ["/api/restaurants", restaurant?.id, "tables"],
+        queryKey: ["/api/tenants/1/restaurants", restaurant?.id, "tables"],
       });
     },
   });
