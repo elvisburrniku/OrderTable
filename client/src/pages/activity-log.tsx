@@ -6,16 +6,20 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Badge } from "@/components/ui/badge";
 
 export default function ActivityLog() {
-  const { user, restaurant } = useAuth();
+  const { isLoading: authLoading, isAuthenticated, user, restaurant } = useAuthGuard();
   const [eventFilter, setEventFilter] = useState("all");
   const [loginFilter, setLoginFilter] = useState("all");
 
   const { data: activityLog, isLoading } = useQuery({
     queryKey: ['/api/restaurants', restaurant?.id, 'activity-log'],
-    enabled: !!restaurant
+    enabled: isAuthenticated && !!restaurant
   });
 
-  if (!user || !restaurant) {
+  if (authLoading) {
+    return <div>Loading...</div>;
+  }
+
+  if (!isAuthenticated || !user || !restaurant) {
     return null;
   }
 

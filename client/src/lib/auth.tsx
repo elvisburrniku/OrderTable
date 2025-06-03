@@ -5,8 +5,13 @@ import { User, Restaurant } from "@shared/schema";
 interface AuthContextType {
   user: User | null;
   restaurant: Restaurant | null;
-  login: (email: string, password: string) => Promise<void>;
-  register: (email: string, password: string, name: string, restaurantName?: string) => Promise<void>;
+  login: (email: string, password: string) => Promise<any>;
+  register: (userData: {
+    username: string;
+    password: string;
+    email: string;
+    restaurantName: string;
+  }) => Promise<any>;
   logout: () => void;
   isLoading: boolean;
 }
@@ -46,23 +51,26 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   };
 
-  const register = async (email: string, password: string, name: string, restaurantName?: string) => {
-    const res = await apiRequest("POST", "/api/auth/register", { 
-      email, 
-      password, 
-      name, 
-      restaurantName 
-    });
+  const register = async (userData: {
+    username: string;
+    password: string;
+    email: string;
+    restaurantName: string;
+  }) => {
+    const res = await apiRequest("POST", "/api/auth/register", userData);
     const data = await res.json();
+
+    if (!data.user || !data.restaurant) {
+      throw new Error("Invalid registration response");
+    }
 
     setUser(data.user);
     setRestaurant(data.restaurant);
 
     localStorage.setItem("user", JSON.stringify(data.user));
-    if (data.restaurant) {
-      localStorage.setItem("restaurant", JSON.stringify(data.restaurant));
-    }
-    return data.user;
+    localStorage.setItem("restaurant", JSON.stringify(data.restaurant));
+
+    return data;
   };
 
   const logout = () => {
@@ -89,7 +97,18 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 export function useAuth() {
   const context = useContext(AuthContext);
   if (!context) {
-    throw new Error("useAuth must be used within AuthProvider");
+    throw new Error("useAuth must be used within an AuthProvider");
   }
   return context;
+}
+
+export function useAuthGuard() {
+  const { user, restaurant, isLoading } = useAuth();
+
+  if (isLoading) {
+    return { isLoading: true, isAuthenticated: false, user: null, restaurant: null };
+  }
+
+  const isAuthenticated = !!(user && restaurant);
+  return { isLoading: false, isAuthenticated, user, restaurant };
 }
