@@ -1,5 +1,6 @@
 
 import React, { createContext, useContext, useEffect, useState } from "react";
+import { useParams } from "wouter";
 import type { Tenant, TenantUser } from "@db/schema";
 
 interface TenantContextType {
@@ -10,6 +11,7 @@ interface TenantContextType {
   canManageUsers: boolean;
   setTenant: (tenant: Tenant | null) => void;
   setTenantUsers: (users: TenantUser[]) => void;
+  tenantId?: number | null;
 }
 
 const TenantContext = createContext<TenantContextType | undefined>(undefined);
@@ -59,8 +61,14 @@ export function TenantProvider({ children }: { children: React.ReactNode }) {
 
 export function useTenant() {
   const context = useContext(TenantContext);
+  const params = useParams();
+  
   if (context === undefined) {
     throw new Error("useTenant must be used within a TenantProvider");
   }
-  return context;
+  
+  return {
+    ...context,
+    tenantId: params.tenantId ? parseInt(params.tenantId) : null
+  };
 }

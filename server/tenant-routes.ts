@@ -1,6 +1,5 @@
-
 import { Request, Response } from "express";
-import { tenants, users, tenantUsers, restaurants } from "@shared/schema";
+import { tenants, users, tenantUsers, restaurants } from "../shared/schema";
 import { eq, and } from "drizzle-orm";
 import { storage } from "./storage";
 
@@ -8,9 +7,9 @@ import { storage } from "./storage";
 export async function getTenant(req: Request, res: Response) {
   try {
     const tenantId = parseInt(req.params.tenantId);
-    
+
     const tenant = await storage.db.select().from(tenants).where(eq(tenants.id, tenantId));
-    
+
     if (!tenant.length) {
       return res.status(404).json({ message: "Tenant not found" });
     }
@@ -145,7 +144,7 @@ export async function inviteUserToTenant(req: Request, res: Response) {
 
     // Find or create user
     let [user] = await storage.db.select().from(users).where(eq(users.email, email));
-    
+
     if (!user) {
       // For now, we'll just create a placeholder entry
       // In a real app, you'd send an invitation email

@@ -44,34 +44,34 @@ function App() {
           <Switch>
             <Route path="/" component={Home} />
             <Route path="/login" component={Login} />
-            <Route path="/dashboard" component={Dashboard} />
-            <Route path="/bookings" component={Bookings} />
-            <Route path="/tables" component={Tables} />
-            <Route path="/customers" component={Customers} />
-            <Route path="/statistics" component={Statistics} />
-            <Route path="/activity-log" component={ActivityLog} />
-            <Route path="/waiting-list" component={WaitingList} />
-            <Route path="/subscription" component={Subscription} />
-            <Route path="/sms-messages" component={SmsMessages} />
-            <Route path="/tenant-settings" component={TenantSettings} />
-            <Route path="/email-notifications" component={EmailNotifications} />
-            <Route path="/sms-notifications" component={SmsNotifications} />
-            <Route path="/feedback-questions" component={FeedbackQuestions} />
-            <Route path="/events" component={Events} />
-            <Route path="/payment-setups" component={PaymentSetups} />
-            <Route path="/payment-gateway" component={PaymentGateway} />
-            <Route path="/products" component={Products} />
-            <Route path="/product-groups" component={ProductGroups} />
-            <Route path="/feedback-responses" component={FeedbackResponses} />
-            <Route path="/opening-hours" component={OpeningHours} />
-            <Route path="/special-periods" component={SpecialPeriods} />
-            <Route path="/cut-off-time" component={CutOffTime} />
-            <Route path="/periodic-criteria" component={PeriodicCriteria} />
-            <Route path="/custom-fields" component={CustomFields} />
-            <Route path="/seating-configurations" component={SeatingConfigurations} />
-            <Route path="/combined-tables" component={CombinedTables} />
-            <Route path="/rooms" component={Rooms} />
-            <Route path="/booking-agents" component={BookingAgents} />
+            <Route path="/:tenantId/dashboard" component={Dashboard} />
+            <Route path="/:tenantId/bookings" component={Bookings} />
+            <Route path="/:tenantId/tables" component={Tables} />
+            <Route path="/:tenantId/customers" component={Customers} />
+            <Route path="/:tenantId/statistics" component={Statistics} />
+            <Route path="/:tenantId/activity-log" component={ActivityLog} />
+            <Route path="/:tenantId/waiting-list" component={WaitingList} />
+            <Route path="/:tenantId/subscription" component={Subscription} />
+            <Route path="/:tenantId/sms-messages" component={SmsMessages} />
+            <Route path="/:tenantId/tenant-settings" component={TenantSettings} />
+            <Route path="/:tenantId/email-notifications" component={EmailNotifications} />
+            <Route path="/:tenantId/sms-notifications" component={SmsNotifications} />
+            <Route path="/:tenantId/feedback-questions" component={FeedbackQuestions} />
+            <Route path="/:tenantId/events" component={Events} />
+            <Route path="/:tenantId/payment-setups" component={PaymentSetups} />
+            <Route path="/:tenantId/payment-gateway" component={PaymentGateway} />
+            <Route path="/:tenantId/products" component={Products} />
+            <Route path="/:tenantId/product-groups" component={ProductGroups} />
+            <Route path="/:tenantId/feedback-responses" component={FeedbackResponses} />
+            <Route path="/:tenantId/opening-hours" component={OpeningHours} />
+            <Route path="/:tenantId/special-periods" component={SpecialPeriods} />
+            <Route path="/:tenantId/cut-off-time" component={CutOffTime} />
+            <Route path="/:tenantId/periodic-criteria" component={PeriodicCriteria} />
+            <Route path="/:tenantId/custom-fields" component={CustomFields} />
+            <Route path="/:tenantId/seating-configurations" component={SeatingConfigurations} />
+            <Route path="/:tenantId/combined-tables" component={CombinedTables} />
+            <Route path="/:tenantId/rooms" component={Rooms} />
+            <Route path="/:tenantId/booking-agents" component={BookingAgents} />
             <Route component={NotFound} />
           </Switch>
           <Toaster />
