@@ -25,7 +25,7 @@ export default function Statistics() {
   });
 
   const { data: stats, isLoading } = useQuery({
-    queryKey: ["/api/tenants", restaurant?.tenantId, "restaurants", restaurant?.id, "statistics"],
+    queryKey: [`/api/tenants/${restaurant?.tenantId}/restaurants/${restaurant?.id}/statistics`],
     enabled: !!restaurant?.id && !!restaurant?.tenantId,
   });
 
