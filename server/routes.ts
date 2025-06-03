@@ -56,67 +56,40 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   // Register endpoint
   app.post("/api/auth/register", async (req: Request, res: Response) => {
-    const result = insertUserSchema.safeParse(req.body);
-    if (!result.success) {
-      return res.status(400).json({ 
-        message: "Invalid input", 
-        errors: result.error.flatten().fieldErrors 
-      });
-    }
-
-    const { email, password, name, restaurantName } = result.data;
-
     try {
+      const result = insertUserSchema.safeParse(req.body);
+      if (!result.success) {
+        return res.status(400).json({ 
+          message: "Invalid input", 
+          errors: result.error.flatten().fieldErrors 
+        });
+      }
+
+      const { email, password, name, restaurantName } = result.data;
+
       // Check if user already exists
-      const existingUser = await storage.db.select().from(users).where(eq(users.email, email));
-      if (existingUser.length > 0) {
+      const existingUser = await storage.getUserByEmail(email);
+      if (existingUser) {
         return res.status(400).json({ message: "User already exists" });
       }
 
       // Hash password
       const hashedPassword = await bcrypt.hash(password, 10);
 
-      // Create user
-      const [newUser] = await storage.db.insert(users).values({
+      // Create user using storage method
+      const newUser = await storage.createUser({
         email,
         password: hashedPassword,
         name,
         restaurantName
-      }).returning();
-
-      // Create tenant for the restaurant with unique slug
-      let baseSlug = restaurantName.toLowerCase().replace(/[^a-z0-9]/g, '-').replace(/-+/g, '-').replace(/^-|-$/g, '');
-      let slug = baseSlug;
-      let counter = 1;
-
-      // Check for slug uniqueness and add counter if needed
-      while (true) {
-        const existingTenant = await storage.db.select().from(tenants).where(eq(tenants.slug, slug));
-        if (existingTenant.length === 0) {
-          break;
-        }
-        slug = `${baseSlug}-${counter}`;
-        counter++;
-      }
-
-      const [newTenant] = await storage.db.insert(tenants).values({
-        name: restaurantName,
-        slug: slug
-      }).returning();
-
-      // Add user as owner of the tenant
-      await storage.db.insert(tenantUsers).values({
-        tenantId: newTenant.id,
-        userId: newUser.id,
-        role: "owner"
       });
 
-      // Create restaurant under the tenant
-      const [newRestaurant] = await storage.db.insert(restaurants).values({
-        tenantId: newTenant.id,
+      // Create restaurant for the user
+      const newRestaurant = await storage.createRestaurant({
         name: restaurantName,
-        userId: newUser.id
-      }).returning();
+        userId: newUser.id,
+        tenantId: 1 // Default tenant for now
+      });
 
       res.status(201).json({
         message: "User registered successfully",
