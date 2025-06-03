@@ -66,8 +66,8 @@ export function getCurrentRestaurant(): Restaurant | null {
   return null;
 }
 
-export async function login(username: string, password: string): Promise<AuthResponse> {
-  const response = await apiRequest("POST", "/api/auth/login", { username, password });
+export async function login(email: string, password: string): Promise<AuthResponse> {
+  const response = await apiRequest("POST", "/api/auth/login", { email, password });
   const data = await response.json();
   setAuth(data.user, data.restaurant);
   return data;

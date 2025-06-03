@@ -37,18 +37,25 @@ export default function Login() {
 
     try {
       if (isLogin) {
-        await login(formData.email, formData.password);
+        const result = await login(formData.email, formData.password);
         toast({
           title: "Welcome back!",
           description: "You have successfully logged in."
         });
-        setLocation("/dashboard");
+        // Use restaurant ID as tenant ID
+        const tenantId = result.restaurant.id;
+        setLocation(`/${tenantId}/dashboard`);
       } else {
-        const user = await register(formData.email, formData.password, formData.name, formData.restaurantName);
-        
+        const result = await register({
+          username: formData.email,
+          email: formData.email,
+          password: formData.password,
+          restaurantName: formData.restaurantName
+        });
+
         // Create subscription if plan selected
         if (formData.selectedPlanId) {
-          await fetch(`/api/users/${user.id}/subscription`, {
+          await fetch(`/api/users/${result.user.id}/subscription`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
@@ -59,12 +66,14 @@ export default function Login() {
             })
           });
         }
-        
+
         toast({
           title: "Account created!",
           description: "Your restaurant account has been created successfully."
         });
-        setLocation("/dashboard");
+        // Use restaurant ID as tenant ID
+        const tenantId = result.restaurant.id;
+        setLocation(`/${tenantId}/dashboard`);
       }
     } catch (error) {
       toast({
@@ -207,7 +216,7 @@ export default function Login() {
                   </div>
                 </div>
               )}
-              
+
               <div>
                 <Label htmlFor="email" className="text-sm font-medium text-gray-700">
                   E-mail:
