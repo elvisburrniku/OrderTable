@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -9,23 +10,24 @@ import { useAuth } from "@/lib/auth.tsx";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
-import { format } from "date-fns";
-import { List, Table, Calendar, Users, Plus } from "lucide-react";
+import { format, startOfMonth, endOfMonth, eachDayOfInterval, isSameDay, isToday, addMonths, subMonths } from "date-fns";
+import { List, Table, Calendar, Users, Plus, ChevronLeft, ChevronRight } from "lucide-react";
 import { Booking, Table as TableType } from "@shared/schema";
 
 interface BookingCalendarProps {
   selectedDate: Date;
   bookings: Booking[];
+  allBookings?: Booking[];
   tables: TableType[];
   isLoading: boolean;
 }
 
-export default function BookingCalendar({ selectedDate, bookings, tables, isLoading }: BookingCalendarProps) {
+export default function BookingCalendar({ selectedDate, bookings, allBookings = [], tables, isLoading }: BookingCalendarProps) {
   const { restaurant } = useAuth();
   const { toast } = useToast();
   const queryClient = useQueryClient();
-  const [activeView, setActiveView] = useState("diagram");
-  const [activeTimeFilter, setActiveTimeFilter] = useState("all");
+  const [activeView, setActiveView] = useState("calendar");
+  const [currentMonth, setCurrentMonth] = useState(new Date());
   const [isNewBookingOpen, setIsNewBookingOpen] = useState(false);
   const [newBooking, setNewBooking] = useState({
     customerName: "",
@@ -91,6 +93,25 @@ export default function BookingCalendar({ selectedDate, bookings, tables, isLoad
     );
   };
 
+  const getBookingsForDate = (date: Date) => {
+    const bookingsToUse = activeView === 'calendar' ? allBookings : bookings;
+    return bookingsToUse.filter(booking => 
+      isSameDay(new Date(booking.bookingDate), date)
+    );
+  };
+
+  const monthStart = startOfMonth(currentMonth);
+  const monthEnd = endOfMonth(currentMonth);
+  const daysInMonth = eachDayOfInterval({ start: monthStart, end: monthEnd });
+
+  const previousMonth = () => {
+    setCurrentMonth(subMonths(currentMonth, 1));
+  };
+
+  const nextMonth = () => {
+    setCurrentMonth(addMonths(currentMonth, 1));
+  };
+
   if (isLoading) {
     return (
       <div className="flex items-center justify-center h-64">
@@ -99,204 +120,330 @@ export default function BookingCalendar({ selectedDate, bookings, tables, isLoad
     );
   }
 
+  const renderCalendarView = () => (
+    <Card className="bg-white border border-gray-200">
+      <div className="border-b border-gray-200 p-4 bg-gray-50">
+        <div className="flex items-center justify-between mb-4">
+          <Button variant="ghost" onClick={previousMonth}>
+            <ChevronLeft className="h-4 w-4" />
+          </Button>
+          <h3 className="font-medium text-gray-900">
+            {format(currentMonth, 'MMMM yyyy')}
+          </h3>
+          <Button variant="ghost" onClick={nextMonth}>
+            <ChevronRight className="h-4 w-4" />
+          </Button>
+        </div>
+        
+        {/* Days of week header */}
+        <div className="grid grid-cols-7 gap-1 mb-2">
+          {['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].map(day => (
+            <div key={day} className="text-center text-sm font-medium text-gray-600 py-2">
+              {day}
+            </div>
+          ))}
+        </div>
+      </div>
+
+      <CardContent className="p-4">
+        <div className="grid grid-cols-7 gap-1">
+          {daysInMonth.map(day => {
+            const dayBookings = getBookingsForDate(day);
+            const isSelected = isSameDay(day, selectedDate);
+            const isTodayDate = isToday(day);
+            
+            return (
+              <div
+                key={day.toISOString()}
+                className={`min-h-[80px] p-2 border rounded cursor-pointer transition-colors ${
+                  isSelected 
+                    ? 'bg-green-100 border-green-300' 
+                    : isTodayDate 
+                    ? 'bg-blue-50 border-blue-200' 
+                    : 'bg-white border-gray-200 hover:bg-gray-50'
+                }`}
+              >
+                <div className={`text-sm font-medium ${
+                  isTodayDate ? 'text-blue-600' : 'text-gray-900'
+                }`}>
+                  {format(day, 'd')}
+                </div>
+                <div className="mt-1 space-y-1">
+                  {dayBookings.slice(0, 2).map(booking => (
+                    <div
+                      key={booking.id}
+                      className="text-xs bg-blue-200 text-blue-800 px-1 py-0.5 rounded truncate"
+                      title={`${booking.customerName} - ${booking.guestCount} guests at ${booking.startTime}`}
+                    >
+                      {booking.startTime} {booking.customerName}
+                    </div>
+                  ))}
+                  {dayBookings.length > 2 && (
+                    <div className="text-xs text-gray-500">
+                      +{dayBookings.length - 2} more
+                    </div>
+                  )}
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      </CardContent>
+    </Card>
+  );
+
+  const renderListView = () => (
+    <Card className="bg-white border border-gray-200">
+      <div className="border-b border-gray-200 p-4 bg-gray-50">
+        <h3 className="font-medium text-gray-900">
+          Bookings for {format(selectedDate, 'EEEE, MMMM d, yyyy')}
+        </h3>
+        <span className="text-sm text-gray-500">
+          {bookings.length} bookings - {bookings.reduce((sum, b) => sum + b.guestCount, 0)} guests
+        </span>
+      </div>
+
+      <CardContent className="p-0">
+        {bookings.length === 0 ? (
+          <div className="p-8 text-center text-gray-500">
+            No bookings for this date
+          </div>
+        ) : (
+          <div className="divide-y divide-gray-200">
+            {bookings.map(booking => (
+              <div key={booking.id} className="p-4 hover:bg-gray-50">
+                <div className="flex items-center justify-between">
+                  <div className="flex-1">
+                    <div className="flex items-center space-x-4">
+                      <div className="font-medium text-gray-900">
+                        {booking.customerName}
+                      </div>
+                      <div className="text-sm text-gray-500">
+                        {booking.customerEmail}
+                      </div>
+                      {booking.customerPhone && (
+                        <div className="text-sm text-gray-500">
+                          {booking.customerPhone}
+                        </div>
+                      )}
+                    </div>
+                    <div className="mt-1 flex items-center space-x-4 text-sm text-gray-600">
+                      <span>{booking.startTime} - {booking.endTime}</span>
+                      <span>{booking.guestCount} guests</span>
+                      {booking.tableId && (
+                        <span>Table {tables.find(t => t.id === booking.tableId)?.tableNumber}</span>
+                      )}
+                    </div>
+                    {booking.notes && (
+                      <div className="mt-1 text-sm text-gray-500">
+                        Notes: {booking.notes}
+                      </div>
+                    )}
+                  </div>
+                  <div className="flex items-center space-x-2">
+                    <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                      {booking.status || 'Confirmed'}
+                    </span>
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+      </CardContent>
+    </Card>
+  );
+
+  const renderTableView = () => (
+    <Card className="bg-white border border-gray-200 overflow-hidden">
+      <div className="border-b border-gray-200 p-4 bg-gray-50">
+        <div className="flex items-center justify-between">
+          <h3 className="font-medium text-gray-900">Table Overview</h3>
+          <span className="text-sm text-gray-500">
+            {bookings.length} bookings - {bookings.reduce((sum, b) => sum + b.guestCount, 0)} guests
+          </span>
+        </div>
+      </div>
+
+      <CardContent className="p-4">
+        {/* Time header */}
+        <div className="grid grid-cols-13 gap-2 mb-4 text-sm text-gray-600">
+          <div></div>
+          {timeSlots.map((time) => (
+            <div key={time} className="text-center">{time}</div>
+          ))}
+        </div>
+
+        {/* Table rows */}
+        <div className="space-y-2">
+          {tables.slice(0, 8).map((table) => (
+            <div key={table.id} className="grid grid-cols-13 gap-2 items-center">
+              <div className="text-sm text-gray-600">
+                {table.tableNumber} ({table.capacity})
+              </div>
+              {timeSlots.map((time) => {
+                const booking = getBookingForTableAndTime(table.id, time);
+                return (
+                  <div
+                    key={time}
+                    className={`h-8 rounded ${
+                      booking 
+                        ? "bg-blue-200 border border-blue-300" 
+                        : "bg-gray-100"
+                    }`}
+                    title={booking ? `${booking.customerName} - ${booking.guestCount} guests` : "Available"}
+                  />
+                );
+              })}
+            </div>
+          ))}
+        </div>
+      </CardContent>
+    </Card>
+  );
+
   return (
     <div>
       <div className="mb-4 flex items-center justify-between">
         <div className="flex items-center space-x-4">
           <Button 
-            variant={activeView === "diagram" ? "default" : "ghost"}
-            onClick={() => setActiveView("diagram")}
-            className={activeView === "diagram" ? "text-green-600 border-b-2 border-green-600" : ""}
+            variant={activeView === "calendar" ? "default" : "ghost"}
+            onClick={() => setActiveView("calendar")}
+            className={activeView === "calendar" ? "bg-green-600 text-white" : ""}
           >
-            <List className="h-4 w-4 mr-2" />
-            Diagram
+            <Calendar className="h-4 w-4 mr-2" />
+            Calendar
           </Button>
           <Button 
             variant={activeView === "list" ? "default" : "ghost"}
             onClick={() => setActiveView("list")}
-            className={activeView === "list" ? "text-green-600 border-b-2 border-green-600" : ""}
+            className={activeView === "list" ? "bg-green-600 text-white" : ""}
           >
-            <Table className="h-4 w-4 mr-2" />
+            <List className="h-4 w-4 mr-2" />
             List
           </Button>
           <Button 
-            variant={activeView === "table-plan" ? "default" : "ghost"}
-            onClick={() => setActiveView("table-plan")}
-            className={activeView === "table-plan" ? "text-green-600 border-b-2 border-green-600" : ""}
+            variant={activeView === "table" ? "default" : "ghost"}
+            onClick={() => setActiveView("table")}
+            className={activeView === "table" ? "bg-green-600 text-white" : ""}
           >
-            <Calendar className="h-4 w-4 mr-2" />
-            Table plan
+            <Table className="h-4 w-4 mr-2" />
+            Table
           </Button>
         </div>
 
-        <div className="flex space-x-2">
-          {["all", "morning", "lunch", "evening"].map((filter) => (
-            <Button
-              key={filter}
-              variant={activeTimeFilter === filter ? "default" : "ghost"}
-              size="sm"
-              onClick={() => setActiveTimeFilter(filter)}
-              className={activeTimeFilter === filter ? "bg-gray-100 text-gray-700" : "text-gray-600"}
-            >
-              {filter.charAt(0).toUpperCase() + filter.slice(1)}
+        {/* New Booking Dialog */}
+        <Dialog open={isNewBookingOpen} onOpenChange={setIsNewBookingOpen}>
+          <DialogTrigger asChild>
+            <Button className="bg-green-600 hover:bg-green-700 text-white">
+              <Plus className="h-4 w-4 mr-2" />
+              New Booking
             </Button>
-          ))}
-        </div>
+          </DialogTrigger>
+          <DialogContent className="max-w-md">
+            <DialogHeader>
+              <DialogTitle>Create New Booking</DialogTitle>
+            </DialogHeader>
+            <form onSubmit={handleCreateBooking} className="space-y-4">
+              <div>
+                <Label htmlFor="customerName">Customer Name</Label>
+                <Input
+                  id="customerName"
+                  value={newBooking.customerName}
+                  onChange={(e) => setNewBooking({ ...newBooking, customerName: e.target.value })}
+                  required
+                />
+              </div>
+              <div>
+                <Label htmlFor="customerEmail">Email</Label>
+                <Input
+                  id="customerEmail"
+                  type="email"
+                  value={newBooking.customerEmail}
+                  onChange={(e) => setNewBooking({ ...newBooking, customerEmail: e.target.value })}
+                  required
+                />
+              </div>
+              <div>
+                <Label htmlFor="customerPhone">Phone</Label>
+                <Input
+                  id="customerPhone"
+                  value={newBooking.customerPhone}
+                  onChange={(e) => setNewBooking({ ...newBooking, customerPhone: e.target.value })}
+                />
+              </div>
+              <div>
+                <Label htmlFor="guestCount">Number of Guests</Label>
+                <Input
+                  id="guestCount"
+                  type="number"
+                  min="1"
+                  max="12"
+                  value={newBooking.guestCount}
+                  onChange={(e) => setNewBooking({ ...newBooking, guestCount: parseInt(e.target.value) })}
+                  required
+                />
+              </div>
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <Label htmlFor="startTime">Start Time</Label>
+                  <Select value={newBooking.startTime} onValueChange={(value) => setNewBooking({ ...newBooking, startTime: value })}>
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {timeSlots.map((time) => (
+                        <SelectItem key={time} value={time}>{time}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div>
+                  <Label htmlFor="endTime">End Time</Label>
+                  <Select value={newBooking.endTime} onValueChange={(value) => setNewBooking({ ...newBooking, endTime: value })}>
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {timeSlots.map((time) => (
+                        <SelectItem key={time} value={time}>{time}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+              <div>
+                <Label htmlFor="tableId">Table (Optional)</Label>
+                <Select value={newBooking.tableId} onValueChange={(value) => setNewBooking({ ...newBooking, tableId: value })}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Auto-assign" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {tables.map((table) => (
+                      <SelectItem key={table.id} value={table.id.toString()}>
+                        Table {table.tableNumber} ({table.capacity} seats)
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              <Button type="submit" className="w-full bg-green-600 hover:bg-green-700" disabled={createBookingMutation.isPending}>
+                {createBookingMutation.isPending ? "Creating..." : "Create Booking"}
+              </Button>
+            </form>
+          </DialogContent>
+        </Dialog>
       </div>
 
-      {/* New Booking Dialog */}
-      <Dialog open={isNewBookingOpen} onOpenChange={setIsNewBookingOpen}>
-        <DialogTrigger asChild>
-          <Button className="bg-green-600 hover:bg-green-700 text-white mb-4">
-            <Plus className="h-4 w-4 mr-2" />
-            New Booking
-          </Button>
-        </DialogTrigger>
-        <DialogContent className="max-w-md">
-          <DialogHeader>
-            <DialogTitle>Create New Booking</DialogTitle>
-          </DialogHeader>
-          <form onSubmit={handleCreateBooking} className="space-y-4">
-            <div>
-              <Label htmlFor="customerName">Customer Name</Label>
-              <Input
-                id="customerName"
-                value={newBooking.customerName}
-                onChange={(e) => setNewBooking({ ...newBooking, customerName: e.target.value })}
-                required
-              />
-            </div>
-            <div>
-              <Label htmlFor="customerEmail">Email</Label>
-              <Input
-                id="customerEmail"
-                type="email"
-                value={newBooking.customerEmail}
-                onChange={(e) => setNewBooking({ ...newBooking, customerEmail: e.target.value })}
-                required
-              />
-            </div>
-            <div>
-              <Label htmlFor="customerPhone">Phone</Label>
-              <Input
-                id="customerPhone"
-                value={newBooking.customerPhone}
-                onChange={(e) => setNewBooking({ ...newBooking, customerPhone: e.target.value })}
-              />
-            </div>
-            <div>
-              <Label htmlFor="guestCount">Number of Guests</Label>
-              <Input
-                id="guestCount"
-                type="number"
-                min="1"
-                max="12"
-                value={newBooking.guestCount}
-                onChange={(e) => setNewBooking({ ...newBooking, guestCount: parseInt(e.target.value) })}
-                required
-              />
-            </div>
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <Label htmlFor="startTime">Start Time</Label>
-                <Select value={newBooking.startTime} onValueChange={(value) => setNewBooking({ ...newBooking, startTime: value })}>
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {timeSlots.map((time) => (
-                      <SelectItem key={time} value={time}>{time}</SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-              <div>
-                <Label htmlFor="endTime">End Time</Label>
-                <Select value={newBooking.endTime} onValueChange={(value) => setNewBooking({ ...newBooking, endTime: value })}>
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {timeSlots.map((time) => (
-                      <SelectItem key={time} value={time}>{time}</SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-            </div>
-            <div>
-              <Label htmlFor="tableId">Table (Optional)</Label>
-              <Select value={newBooking.tableId} onValueChange={(value) => setNewBooking({ ...newBooking, tableId: value })}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Auto-assign" />
-                </SelectTrigger>
-                <SelectContent>
-                  {tables.map((table) => (
-                    <SelectItem key={table.id} value={table.id.toString()}>
-                      Table {table.tableNumber} ({table.capacity} seats)
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-            <Button type="submit" className="w-full bg-green-600 hover:bg-green-700" disabled={createBookingMutation.isPending}>
-              {createBookingMutation.isPending ? "Creating..." : "Create Booking"}
-            </Button>
-          </form>
-        </DialogContent>
-      </Dialog>
-
-      {/* Booking Interface */}
-      <Card className="bg-white border border-gray-200 overflow-hidden">
-        <div className="border-b border-gray-200 p-4 bg-gray-50">
-          <div className="flex items-center justify-between">
-            <h3 className="font-medium text-gray-900">The restaurant</h3>
-            <span className="text-sm text-gray-500">
-              {bookings.length} bookings - {bookings.reduce((sum, b) => sum + b.guestCount, 0)} guests
-            </span>
-          </div>
-        </div>
-
-        <CardContent className="p-4">
-          {/* Time header */}
-          <div className="grid grid-cols-13 gap-2 mb-4 text-sm text-gray-600">
-            <div></div>
-            {timeSlots.map((time) => (
-              <div key={time} className="text-center">{time}</div>
-            ))}
-          </div>
-
-          {/* Table rows */}
-          <div className="space-y-2">
-            {tables.slice(0, 8).map((table) => (
-              <div key={table.id} className="grid grid-cols-13 gap-2 items-center">
-                <div className="text-sm text-gray-600">
-                  {table.tableNumber} ({table.capacity})
-                </div>
-                {timeSlots.map((time) => {
-                  const booking = getBookingForTableAndTime(table.id, time);
-                  return (
-                    <div
-                      key={time}
-                      className={`h-8 rounded ${
-                        booking 
-                          ? "bg-blue-200 border border-blue-300" 
-                          : "bg-gray-100"
-                      }`}
-                      title={booking ? `${booking.customerName} - ${booking.guestCount} guests` : "Available"}
-                    />
-                  );
-                })}
-              </div>
-            ))}
-          </div>
-        </CardContent>
-      </Card>
+      {/* Render based on active view */}
+      {activeView === "calendar" && renderCalendarView()}
+      {activeView === "list" && renderListView()}
+      {activeView === "table" && renderTableView()}
 
       <div className="mt-4 flex items-center space-x-4 text-sm text-gray-600">
         <div className="flex items-center">
           <div className="w-4 h-4 bg-green-600 rounded mr-2" />
-          <span>Special opening hours and notes</span>
+          <span>Available</span>
         </div>
         <div className="flex items-center">
           <div className="w-4 h-4 bg-blue-500 rounded mr-2" />
@@ -304,12 +451,7 @@ export default function BookingCalendar({ selectedDate, bookings, tables, isLoad
         </div>
         <div className="flex items-center">
           <div className="w-4 h-4 bg-red-500 rounded mr-2" />
-          <span>Print version (PDF)</span>
-        </div>
-        <div className="ml-auto">
-          <Button variant="link" className="text-green-600 hover:text-green-700 p-0">
-            Optimize bookings
-          </Button>
+          <span>Fully booked</span>
         </div>
       </div>
     </div>

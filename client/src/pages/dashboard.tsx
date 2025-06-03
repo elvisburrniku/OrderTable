@@ -49,6 +49,20 @@ export default function Dashboard() {
     enabled: !!restaurant?.id && !!restaurant.tenantId,
   });
 
+  // Fetch bookings for selected date
+  const { data: selectedDateBookings = [], isLoading } = useQuery({
+    queryKey: [`/api/tenants/${restaurant?.tenantId}/restaurants/${restaurant?.id}/bookings`, format(selectedDate, 'yyyy-MM-dd')],
+    queryFn: async () => {
+      const response = await fetch(`/api/tenants/${restaurant?.tenantId}/restaurants/${restaurant?.id}/bookings?date=${format(selectedDate, 'yyyy-MM-dd')}`);
+      if (!response.ok) {
+        throw new Error('Failed to fetch bookings');
+      }
+      const data = await response.json();
+      return Array.isArray(data) ? data : [];
+    },
+    enabled: !!restaurant && !!restaurant.tenantId,
+  });
+
   const getAvailableTablesCount = () => {
     if (!tables || !Array.isArray(todayBookings)) return 0;
     const currentHour = new Date().getHours();
@@ -61,11 +75,6 @@ export default function Dashboard() {
 
     return tables.filter((table: any) => !bookedTableIds.includes(table.id)).length;
   };
-
-  const { data: bookings, isLoading } = useQuery({
-    queryKey: ['/api/restaurants', restaurant?.id, 'bookings', format(selectedDate, 'yyyy-MM-dd')],
-    enabled: !!restaurant
-  });
 
   if (!user || !restaurant) {
     return null;
@@ -174,7 +183,8 @@ export default function Dashboard() {
         <div className="flex-1 p-6">
           <BookingCalendar 
             selectedDate={selectedDate}
-            bookings={(bookings as any) || []}
+            bookings={(selectedDateBookings as any) || []}
+            allBookings={(allBookings as any) || []}
             tables={(tables as any) || []}
             isLoading={isLoading}
           />
