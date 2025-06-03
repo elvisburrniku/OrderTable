@@ -90,8 +90,8 @@ export const smsMessages = pgTable("sms_messages", {
   messageType: varchar("message_type", { length: 20 }).default("information"),
   content: text("content").notNull(),
   receivers: text("receivers").notNull(), // JSON array of phone numbers
-  bookingDateFrom: text("booking_date_from"),
-  bookingDateTo: text("booking_date_to"),
+  bookingDateFrom: date("booking_date_from"),
+  bookingDateTo: date("booking_date_to"),
   language: varchar("language", { length: 10 }).default("english"),
   createdAt: timestamp("created_at").defaultNow()
 });
@@ -104,7 +104,7 @@ export const waitingList = pgTable("waiting_list", {
   customerEmail: text("customer_email").notNull(),
   customerPhone: text("customer_phone"),
   guestCount: integer("guest_count").notNull(),
-  requestedDate: text("requested_date").notNull(),
+  requestedDate: date("requested_date").notNull(),
   requestedTime: text("requested_time").notNull(),
   status: varchar("status", { length: 20 }).default("waiting"),
   notes: text("notes"),
