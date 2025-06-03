@@ -13,26 +13,36 @@ export default function Bookings() {
   const [statusFilter, setStatusFilter] = useState("all");
   const [sourceFilter, setSourceFilter] = useState("all");
 
-  const { data: bookings, isLoading } = useQuery({
+  const { data: bookings, isLoading, error } = useQuery({
     queryKey: [`/api/tenants/${restaurant?.tenantId}/restaurants/${restaurant?.id}/bookings`],
-    enabled: !!restaurant && !!restaurant.tenantId
+    enabled: !!restaurant && !!restaurant.tenantId && !!restaurant.id
   });
 
   if (!user || !restaurant) {
-    return null;
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="text-center">
+          <p className="text-gray-600">Please log in to view bookings</p>
+        </div>
+      </div>
+    );
   }
 
-  const filteredBookings = (bookings as any)?.filter((booking: any) => {
+  if (error) {
+    console.error("Bookings fetch error:", error);
+  }
+
+  const filteredBookings = Array.isArray(bookings) ? bookings.filter((booking: any) => {
     const matchesSearch = 
-      booking.customerName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      booking.customerEmail.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      booking.customerName?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      booking.customerEmail?.toLowerCase().includes(searchTerm.toLowerCase()) ||
       booking.customerPhone?.toLowerCase().includes(searchTerm.toLowerCase());
     
     const matchesStatus = statusFilter === "all" || booking.status === statusFilter;
     const matchesSource = sourceFilter === "all" || booking.source === sourceFilter;
     
     return matchesSearch && matchesStatus && matchesSource;
-  }) || [];
+  }) : [];
 
   const getStatusBadge = (status: string) => {
     switch (status) {
@@ -183,6 +193,12 @@ export default function Bookings() {
                     <tr>
                       <td colSpan={7} className="py-8 text-center text-gray-500">
                         No bookings found
+                        {bookings && (
+                          <div className="text-xs mt-2">
+                            Raw data: {Array.isArray(bookings) ? `${bookings.length} items` : 'Not an array'}
+                            {error && <div className="text-red-500">Error: {String(error)}</div>}
+                          </div>
+                        )}
                       </td>
                     </tr>
                   ) : (
