@@ -673,13 +673,13 @@ export default function TablePlan() {
                 )}
 
                 {/* Placed Tables */}
-                {Object.values(tablePositions).map((position) => {
+                {Object.entries(tablePositions).map(([positionKey, position]) => {
                   // Find corresponding table from database if it exists
                   const dbTable = tables.find((t: any) => t.id === position.id);
 
                   return (
                     <div
-                      key={`positioned-table-${position.id}`}
+                      key={`positioned-table-${positionKey}-${position.id || 'new'}`}
                       draggable
                       onDragStart={(e) => handleDragStart(position.id, e)}
                       style={getTableStyle(dbTable, position)}
