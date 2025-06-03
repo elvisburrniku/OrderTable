@@ -1,7 +1,7 @@
 // Adds Supabase database connection option using environment variables and conditional drizzle setup.
 import { 
   users, restaurants, tables, bookings, customers, smsMessages, waitingList,
-  feedback, activityLog, timeSlots, subscriptionPlans, userSubscriptions
+  feedback, activityLog, timeSlots, subscriptionPlans, userSubscriptions, rooms
 } from "@shared/schema";
 import type {
   User,
