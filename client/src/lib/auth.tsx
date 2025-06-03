@@ -1,4 +1,10 @@
-import { createContext, useContext, useState, useEffect, ReactNode } from "react";
+import {
+  createContext,
+  useContext,
+  useState,
+  useEffect,
+  ReactNode,
+} from "react";
 import { apiRequest } from "./queryClient";
 import { User, Restaurant } from "@shared/schema";
 
@@ -39,7 +45,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const login = async (email: string, password: string) => {
-    const res = await apiRequest("POST", "/api/auth/login", { email, password });
+    const res = await apiRequest("POST", "/api/auth/login", {
+      email,
+      password,
+    });
     const data = await res.json();
 
     setUser(data.user);
@@ -49,6 +58,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     if (data.restaurant) {
       localStorage.setItem("restaurant", JSON.stringify(data.restaurant));
     }
+
+    return data;
   };
 
   const register = async (userData: {
@@ -62,7 +73,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       email: userData.email,
       password: userData.password,
       restaurantName: userData.restaurantName,
-      name: userData.username // Map username to name field
+      name: userData.username, // Map username to name field
     });
     const data = await res.json();
 
@@ -87,14 +98,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   };
 
   return (
-    <AuthContext.Provider value={{ 
-      user, 
-      restaurant, 
-      login, 
-      register, 
-      logout, 
-      isLoading 
-    }}>
+    <AuthContext.Provider
+      value={{
+        user,
+        restaurant,
+        login,
+        register,
+        logout,
+        isLoading,
+      }}
+    >
       {children}
     </AuthContext.Provider>
   );
@@ -112,7 +125,12 @@ export function useAuthGuard() {
   const { user, restaurant, isLoading } = useAuth();
 
   if (isLoading) {
-    return { isLoading: true, isAuthenticated: false, user: null, restaurant: null };
+    return {
+      isLoading: true,
+      isAuthenticated: false,
+      user: null,
+      restaurant: null,
+    };
   }
 
   const isAuthenticated = !!(user && restaurant);
