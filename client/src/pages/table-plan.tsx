@@ -122,7 +122,7 @@ export default function TablePlan() {
     restaurant,
   } = useAuthGuard();
   const queryClient = useQueryClient();
-  const [selectedRoom, setSelectedRoom] = useState<string>("main");
+  const [selectedRoom, setSelectedRoom] = useState<string>("");
   const [tablePositions, setTablePositions] = useState<
     Record<number, TablePosition>
   >({});
@@ -186,6 +186,13 @@ export default function TablePlan() {
     },
     enabled: !!restaurant,
   });
+
+  // Auto-select first room when rooms load
+  React.useEffect(() => {
+    if (rooms.length > 0 && !selectedRoom) {
+      setSelectedRoom(rooms[0].id.toString());
+    }
+  }, [rooms, selectedRoom]);
 
   // Apply saved layout when it loads
   React.useEffect(() => {
@@ -661,9 +668,7 @@ export default function TablePlan() {
               <div className="flex items-center justify-between">
                 <CardTitle>
                   Table Plan -{" "}
-                  {selectedRoom === "main"
-                    ? "Main Dining"
-                    : `Room ${selectedRoom}`}
+                  {rooms.find((room: any) => room.id.toString() === selectedRoom)?.name || "Select a room"}
                 </CardTitle>
                 <div className="flex gap-2">
                   <Button
