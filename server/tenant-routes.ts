@@ -3,6 +3,7 @@ import { Request, Response } from "express";
 import { db } from "@db";
 import { tenants, users, tenantUsers, restaurants } from "@db/schema";
 import { eq, and } from "drizzle-orm";
+import { storage } from "./storage";
 
 // Get tenant information
 export async function getTenant(req: Request, res: Response) {
@@ -18,12 +19,10 @@ export async function getTenant(req: Request, res: Response) {
     // Get tenant users
     const tenantUsersList = await db
       .select({
-        id: tenantUsers.id,
+        tenantId: tenantUsers.tenantId,
         userId: tenantUsers.userId,
         role: tenantUsers.role,
-        permissions: tenantUsers.permissions,
-        isActive: tenantUsers.isActive,
-        joinedAt: tenantUsers.joinedAt,
+        createdAt: tenantUsers.createdAt,
         user: {
           id: users.id,
           email: users.email,
@@ -69,15 +68,7 @@ export async function createTenant(req: Request, res: Response) {
       tenantId: newTenant.id,
       userId,
       role: "owner",
-      joinedAt: new Date(),
-      isActive: true,
     });
-
-    // Update user's tenantId
-    await db
-      .update(users)
-      .set({ tenantId: newTenant.id })
-      .where(eq(users.id, userId));
 
     res.status(201).json(newTenant);
   } catch (error) {
@@ -104,12 +95,11 @@ export async function updateTenant(req: Request, res: Response) {
       .where(
         and(
           eq(tenantUsers.tenantId, tenantId),
-          eq(tenantUsers.userId, userId),
-          eq(tenantUsers.isActive, true)
+          eq(tenantUsers.userId, userId)
         )
       );
 
-    if (!tenantUser.length || !["owner", "admin"].includes(tenantUser[0].role)) {
+    if (!tenantUser.length || !["owner", "admin"].includes(tenantUser[0].role || "")) {
       return res.status(403).json({ message: "Insufficient permissions" });
     }
 
@@ -149,12 +139,11 @@ export async function inviteUserToTenant(req: Request, res: Response) {
       .where(
         and(
           eq(tenantUsers.tenantId, tenantId),
-          eq(tenantUsers.userId, inviterId),
-          eq(tenantUsers.isActive, true)
+          eq(tenantUsers.userId, inviterId)
         )
       );
 
-    if (!inviterTenantUser.length || !["owner", "admin"].includes(inviterTenantUser[0].role)) {
+    if (!inviterTenantUser.length || !["owner", "admin"].includes(inviterTenantUser[0].role || "")) {
       return res.status(403).json({ message: "Insufficient permissions" });
     }
 
@@ -189,10 +178,6 @@ export async function inviteUserToTenant(req: Request, res: Response) {
         tenantId,
         userId: user.id,
         role,
-        invitedBy: inviterId,
-        invitedAt: new Date(),
-        joinedAt: new Date(),
-        isActive: true,
       })
       .returning();
 
@@ -221,12 +206,11 @@ export async function removeUserFromTenant(req: Request, res: Response) {
       .where(
         and(
           eq(tenantUsers.tenantId, tenantId),
-          eq(tenantUsers.userId, removerId),
-          eq(tenantUsers.isActive, true)
+          eq(tenantUsers.userId, removerId)
         )
       );
 
-    if (!removerTenantUser.length || !["owner", "admin"].includes(removerTenantUser[0].role)) {
+    if (!removerTenantUser.length || !["owner", "admin"].includes(removerTenantUser[0].role || "")) {
       return res.status(403).json({ message: "Insufficient permissions" });
     }
 

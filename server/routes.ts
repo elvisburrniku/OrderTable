@@ -4,12 +4,25 @@ import { storage } from "./storage";
 import { insertUserSchema, loginSchema, insertBookingSchema, insertCustomerSchema, insertSubscriptionPlanSchema, insertUserSubscriptionSchema } from "@shared/schema";
 import { z } from "zod";
 import Stripe from "stripe";
+import * as tenantRoutes from "./tenant-routes";
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY || 'sk_test_your_stripe_secret_key', {
   apiVersion: '2023-10-16'
 });
 
 export async function registerRoutes(app: Express): Promise<Server> {
+  // Middleware to extract and validate tenant ID
+  const validateTenant = async (req: any, res: any, next: any) => {
+    const tenantId = req.headers['x-tenant-id'] || req.query.tenantId || req.body.tenantId;
+    
+    if (!tenantId) {
+      return res.status(400).json({ message: "Tenant ID is required" });
+    }
+    
+    req.tenantId = parseInt(tenantId as string);
+    next();
+  };
+
   // Auth routes
   app.post("/api/auth/login", async (req, res) => {
     try {
@@ -75,12 +88,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Restaurant routes
-  app.get("/api/restaurants/:userId", async (req, res) => {
+  app.get("/api/tenants/:tenantId/restaurants/:userId", validateTenant, async (req, res) => {
     try {
       const userId = parseInt(req.params.userId);
+      const tenantId = parseInt(req.params.tenantId);
       const restaurant = await storage.getRestaurantByUserId(userId);
 
-      if (!restaurant) {
+      if (!restaurant || restaurant.tenantId !== tenantId) {
         return res.status(404).json({ message: "Restaurant not found" });
       }
 
@@ -91,22 +105,27 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Tables routes
-  app.get("/api/restaurants/:restaurantId/tables", async (req, res) => {
+  app.get("/api/tenants/:tenantId/restaurants/:restaurantId/tables", validateTenant, async (req, res) => {
     try {
       const restaurantId = parseInt(req.params.restaurantId);
+      const tenantId = parseInt(req.params.tenantId);
       const tables = await storage.getTablesByRestaurant(restaurantId);
-      res.json(tables);
+      // Filter tables by tenantId for security
+      const tenantTables = tables.filter(table => table.tenantId === tenantId);
+      res.json(tenantTables);
     } catch (error) {
       res.status(400).json({ message: "Invalid request" });
     }
   });
 
-  app.post("/api/restaurants/:restaurantId/tables", async (req, res) => {
+  app.post("/api/tenants/:tenantId/restaurants/:restaurantId/tables", validateTenant, async (req, res) => {
     try {
       const restaurantId = parseInt(req.params.restaurantId);
+      const tenantId = parseInt(req.params.tenantId);
       const tableData = {
         ...req.body,
         restaurantId,
+        tenantId,
       };
 
       const table = await storage.createTable(tableData);
@@ -116,32 +135,37 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.put("/api/tables/:id", async (req, res) => {
+  app.put("/api/tenants/:tenantId/tables/:id", validateTenant, async (req, res) => {
     try {
       const id = parseInt(req.params.id);
+      const tenantId = parseInt(req.params.tenantId);
       const updates = req.body;
 
-      const table = await storage.updateTable(id, updates);
-
-      if (!table) {
+      // Verify table belongs to tenant before updating
+      const existingTable = await storage.getTableById(id);
+      if (!existingTable || existingTable.tenantId !== tenantId) {
         return res.status(404).json({ message: "Table not found" });
       }
 
+      const table = await storage.updateTable(id, updates);
       res.json(table);
     } catch (error) {
       res.status(400).json({ message: "Invalid request" });
     }
   });
 
-  app.delete("/api/tables/:id", async (req, res) => {
+  app.delete("/api/tenants/:tenantId/tables/:id", validateTenant, async (req, res) => {
     try {
       const id = parseInt(req.params.id);
-      const success = await storage.deleteTable(id);
+      const tenantId = parseInt(req.params.tenantId);
 
-      if (!success) {
+      // Verify table belongs to tenant before deleting
+      const existingTable = await storage.getTableById(id);
+      if (!existingTable || existingTable.tenantId !== tenantId) {
         return res.status(404).json({ message: "Table not found" });
       }
 
+      const success = await storage.deleteTable(id);
       res.json({ message: "Table deleted successfully" });
     } catch (error) {
       res.status(400).json({ message: "Invalid request" });
@@ -149,9 +173,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Bookings routes
-  app.get("/api/restaurants/:restaurantId/bookings", async (req, res) => {
+  app.get("/api/tenants/:tenantId/restaurants/:restaurantId/bookings", validateTenant, async (req, res) => {
     try {
       const restaurantId = parseInt(req.params.restaurantId);
+      const tenantId = parseInt(req.params.tenantId);
       const { date } = req.query;
 
       let bookings;
@@ -161,18 +186,22 @@ export async function registerRoutes(app: Express): Promise<Server> {
         bookings = await storage.getBookingsByRestaurant(restaurantId);
       }
 
-      res.json(bookings);
+      // Filter bookings by tenantId for security
+      const tenantBookings = bookings.filter(booking => booking.tenantId === tenantId);
+      res.json(tenantBookings);
     } catch (error) {
       res.status(400).json({ message: "Invalid request" });
     }
   });
 
-  app.post("/api/restaurants/:restaurantId/bookings", async (req, res) => {
+  app.post("/api/tenants/:tenantId/restaurants/:restaurantId/bookings", validateTenant, async (req, res) => {
     try {
       const restaurantId = parseInt(req.params.restaurantId);
+      const tenantId = parseInt(req.params.tenantId);
       const bookingData = insertBookingSchema.parse({
         ...req.body,
         restaurantId,
+        tenantId,
         bookingDate: new Date(req.body.bookingDate)
       });
 
@@ -188,6 +217,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       } else {
         await storage.createCustomer({
           restaurantId,
+          tenantId,
           name: bookingData.customerName,
           email: bookingData.customerEmail,
           phone: bookingData.customerPhone || ""
@@ -200,36 +230,41 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.put("/api/bookings/:id", async (req, res) => {
+  app.put("/api/tenants/:tenantId/bookings/:id", validateTenant, async (req, res) => {
     try {
       const id = parseInt(req.params.id);
+      const tenantId = parseInt(req.params.tenantId);
       const updates = req.body;
 
       if (updates.bookingDate) {
         updates.bookingDate = new Date(updates.bookingDate);
       }
 
-      const booking = await storage.updateBooking(id, updates);
-
-      if (!booking) {
+      // Verify booking belongs to tenant before updating
+      const existingBooking = await storage.getBookingById(id);
+      if (!existingBooking || existingBooking.tenantId !== tenantId) {
         return res.status(404).json({ message: "Booking not found" });
       }
 
+      const booking = await storage.updateBooking(id, updates);
       res.json(booking);
     } catch (error) {
       res.status(400).json({ message: "Invalid request" });
     }
   });
 
-  app.delete("/api/bookings/:id", async (req, res) => {
+  app.delete("/api/tenants/:tenantId/bookings/:id", validateTenant, async (req, res) => {
     try {
       const id = parseInt(req.params.id);
-      const success = await storage.deleteBooking(id);
+      const tenantId = parseInt(req.params.tenantId);
 
-      if (!success) {
+      // Verify booking belongs to tenant before deleting
+      const existingBooking = await storage.getBookingById(id);
+      if (!existingBooking || existingBooking.tenantId !== tenantId) {
         return res.status(404).json({ message: "Booking not found" });
       }
 
+      const success = await storage.deleteBooking(id);
       res.json({ message: "Booking deleted successfully" });
     } catch (error) {
       res.status(400).json({ message: "Invalid request" });
@@ -237,22 +272,27 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Customers routes
-  app.get("/api/restaurants/:restaurantId/customers", async (req, res) => {
+  app.get("/api/tenants/:tenantId/restaurants/:restaurantId/customers", validateTenant, async (req, res) => {
     try {
       const restaurantId = parseInt(req.params.restaurantId);
+      const tenantId = parseInt(req.params.tenantId);
       const customers = await storage.getCustomersByRestaurant(restaurantId);
-      res.json(customers);
+      // Filter customers by tenantId for security
+      const tenantCustomers = customers.filter(customer => customer.tenantId === tenantId);
+      res.json(tenantCustomers);
     } catch (error) {
       res.status(400).json({ message: "Invalid request" });
     }
   });
 
-  app.post("/api/restaurants/:restaurantId/customers", async (req, res) => {
+  app.post("/api/tenants/:tenantId/restaurants/:restaurantId/customers", validateTenant, async (req, res) => {
     try {
       const restaurantId = parseInt(req.params.restaurantId);
+      const tenantId = parseInt(req.params.tenantId);
       const customerData = insertCustomerSchema.parse({
         ...req.body,
-        restaurantId
+        restaurantId,
+        tenantId
       });
 
       const customer = await storage.createCustomer(customerData);
@@ -261,6 +301,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.status(400).json({ message: "Invalid customer data" });
     }
   });
+
+  // Tenant routes
+  app.get("/api/tenants/:tenantId", tenantRoutes.getTenant);
+  app.post("/api/tenants", tenantRoutes.createTenant);
+  app.put("/api/tenants/:tenantId", tenantRoutes.updateTenant);
+  app.post("/api/tenants/:tenantId/invite", tenantRoutes.inviteUserToTenant);
+  app.delete("/api/tenants/:tenantId/users/:userId", tenantRoutes.removeUserFromTenant);
 
   // Subscription Plans
   app.get("/api/subscription-plans", async (req, res) => {
@@ -417,22 +464,27 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Activity Log routes
-  app.get("/api/restaurants/:restaurantId/activity-log", async (req, res) => {
+  app.get("/api/tenants/:tenantId/restaurants/:restaurantId/activity-log", validateTenant, async (req, res) => {
     try {
       const restaurantId = parseInt(req.params.restaurantId);
+      const tenantId = parseInt(req.params.tenantId);
       const logs = await storage.getActivityLogByRestaurant(restaurantId);
-      res.json(logs);
+      // Filter logs by tenantId for security
+      const tenantLogs = logs.filter(log => log.tenantId === tenantId);
+      res.json(tenantLogs);
     } catch (error) {
       res.status(400).json({ message: "Invalid request" });
     }
   });
 
-  app.post("/api/restaurants/:restaurantId/activity-log", async (req, res) => {
+  app.post("/api/tenants/:tenantId/restaurants/:restaurantId/activity-log", validateTenant, async (req, res) => {
     try {
       const restaurantId = parseInt(req.params.restaurantId);
+      const tenantId = parseInt(req.params.tenantId);
       const logData = {
         ...req.body,
-        restaurantId
+        restaurantId,
+        tenantId
       };
 
       const log = await storage.createActivityLog(logData);
@@ -443,22 +495,27 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // SMS Messages routes
-  app.get("/api/restaurants/:restaurantId/sms-messages", async (req, res) => {
+  app.get("/api/tenants/:tenantId/restaurants/:restaurantId/sms-messages", validateTenant, async (req, res) => {
     try {
       const restaurantId = parseInt(req.params.restaurantId);
+      const tenantId = parseInt(req.params.tenantId);
       const messages = await storage.getSmsMessagesByRestaurant(restaurantId);
-      res.json(messages);
+      // Filter messages by tenantId for security
+      const tenantMessages = messages.filter(message => message.tenantId === tenantId);
+      res.json(tenantMessages);
     } catch (error) {
       res.status(400).json({ message: "Invalid request" });
     }
   });
 
-  app.post("/api/restaurants/:restaurantId/sms-messages", async (req, res) => {
+  app.post("/api/tenants/:tenantId/restaurants/:restaurantId/sms-messages", validateTenant, async (req, res) => {
     try {
       const restaurantId = parseInt(req.params.restaurantId);
+      const tenantId = parseInt(req.params.tenantId);
       const messageData = {
         ...req.body,
-        restaurantId
+        restaurantId,
+        tenantId
       };
 
       const message = await storage.createSmsMessage(messageData);
@@ -469,22 +526,27 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Waiting List routes
-  app.get("/api/restaurants/:restaurantId/waiting-list", async (req, res) => {
+  app.get("/api/tenants/:tenantId/restaurants/:restaurantId/waiting-list", validateTenant, async (req, res) => {
     try {
       const restaurantId = parseInt(req.params.restaurantId);
+      const tenantId = parseInt(req.params.tenantId);
       const waitingList = await storage.getWaitingListByRestaurant(restaurantId);
-      res.json(waitingList);
+      // Filter waiting list by tenantId for security
+      const tenantWaitingList = waitingList.filter(entry => entry.tenantId === tenantId);
+      res.json(tenantWaitingList);
     } catch (error) {
       res.status(400).json({ message: "Invalid request" });
     }
   });
 
-  app.post("/api/restaurants/:restaurantId/waiting-list", async (req, res) => {
+  app.post("/api/tenants/:tenantId/restaurants/:restaurantId/waiting-list", validateTenant, async (req, res) => {
     try {
       const restaurantId = parseInt(req.params.restaurantId);
+      const tenantId = parseInt(req.params.tenantId);
       const entryData = {
         ...req.body,
-        restaurantId
+        restaurantId,
+        tenantId
       };
 
       const entry = await storage.createWaitingListEntry(entryData);
@@ -494,17 +556,19 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.put("/api/waiting-list/:id", async (req, res) => {
+  app.put("/api/tenants/:tenantId/waiting-list/:id", validateTenant, async (req, res) => {
     try {
       const id = parseInt(req.params.id);
+      const tenantId = parseInt(req.params.tenantId);
       const updates = req.body;
 
-      const entry = await storage.updateWaitingListEntry(id, updates);
-
-      if (!entry) {
+      // Verify waiting list entry belongs to tenant before updating
+      const existingEntry = await storage.getWaitingListEntryById(id);
+      if (!existingEntry || existingEntry.tenantId !== tenantId) {
         return res.status(404).json({ message: "Waiting list entry not found" });
       }
 
+      const entry = await storage.updateWaitingListEntry(id, updates);
       res.json(entry);
     } catch (error) {
       res.status(400).json({ message: "Invalid request" });
@@ -512,22 +576,27 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Feedback routes
-  app.get("/api/restaurants/:restaurantId/feedback", async (req, res) => {
+  app.get("/api/tenants/:tenantId/restaurants/:restaurantId/feedback", validateTenant, async (req, res) => {
     try {
       const restaurantId = parseInt(req.params.restaurantId);
+      const tenantId = parseInt(req.params.tenantId);
       const feedback = await storage.getFeedbackByRestaurant(restaurantId);
-      res.json(feedback);
+      // Filter feedback by tenantId for security
+      const tenantFeedback = feedback.filter(fb => fb.tenantId === tenantId);
+      res.json(tenantFeedback);
     } catch (error) {
       res.status(400).json({ message: "Invalid request" });
     }
   });
 
-  app.post("/api/restaurants/:restaurantId/feedback", async (req, res) => {
+  app.post("/api/tenants/:tenantId/restaurants/:restaurantId/feedback", validateTenant, async (req, res) => {
     try {
       const restaurantId = parseInt(req.params.restaurantId);
+      const tenantId = parseInt(req.params.tenantId);
       const feedbackData = {
         ...req.body,
-        restaurantId
+        restaurantId,
+        tenantId
       };
 
       const feedback = await storage.createFeedback(feedbackData);
@@ -538,24 +607,29 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Time Slots routes
-  app.get("/api/restaurants/:restaurantId/time-slots", async (req, res) => {
+  app.get("/api/tenants/:tenantId/restaurants/:restaurantId/time-slots", validateTenant, async (req, res) => {
     try {
       const restaurantId = parseInt(req.params.restaurantId);
+      const tenantId = parseInt(req.params.tenantId);
       const { date } = req.query;
 
       const timeSlots = await storage.getTimeSlotsByRestaurant(restaurantId, date as string);
-      res.json(timeSlots);
+      // Filter time slots by tenantId for security
+      const tenantTimeSlots = timeSlots.filter(slot => slot.tenantId === tenantId);
+      res.json(tenantTimeSlots);
     } catch (error) {
       res.status(400).json({ message: "Invalid request" });
     }
   });
 
-  app.post("/api/restaurants/:restaurantId/time-slots", async (req, res) => {
+  app.post("/api/tenants/:tenantId/restaurants/:restaurantId/time-slots", validateTenant, async (req, res) => {
     try {
       const restaurantId = parseInt(req.params.restaurantId);
+      const tenantId = parseInt(req.params.tenantId);
       const slotData = {
         ...req.body,
-        restaurantId
+        restaurantId,
+        tenantId
       };
 
       const slot = await storage.createTimeSlot(slotData);
@@ -565,17 +639,19 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.put("/api/time-slots/:id", async (req, res) => {
+  app.put("/api/tenants/:tenantId/time-slots/:id", validateTenant, async (req, res) => {
     try {
       const id = parseInt(req.params.id);
+      const tenantId = parseInt(req.params.tenantId);
       const updates = req.body;
 
-      const slot = await storage.updateTimeSlot(id, updates);
-
-      if (!slot) {
+      // Verify time slot belongs to tenant before updating
+      const existingSlot = await storage.getTimeSlotById(id);
+      if (!existingSlot || existingSlot.tenantId !== tenantId) {
         return res.status(404).json({ message: "Time slot not found" });
       }
 
+      const slot = await storage.updateTimeSlot(id, updates);
       res.json(slot);
     } catch (error) {
       res.status(400).json({ message: "Invalid request" });
@@ -583,17 +659,19 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Restaurant settings routes
-  app.put("/api/restaurants/:id", async (req, res) => {
+  app.put("/api/tenants/:tenantId/restaurants/:id", validateTenant, async (req, res) => {
     try {
       const id = parseInt(req.params.id);
+      const tenantId = parseInt(req.params.tenantId);
       const updates = req.body;
 
-      const restaurant = await storage.updateRestaurant(id, updates);
-
-      if (!restaurant) {
+      // Verify restaurant belongs to tenant before updating
+      const existingRestaurant = await storage.getRestaurantById(id);
+      if (!existingRestaurant || existingRestaurant.tenantId !== tenantId) {
         return res.status(404).json({ message: "Restaurant not found" });
       }
 
+      const restaurant = await storage.updateRestaurant(id, updates);
       res.json(restaurant);
     } catch (error) {
       res.status(400).json({ message: "Invalid request" });
@@ -601,9 +679,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Statistics routes (read-only data aggregation)
-  app.get("/api/restaurants/:restaurantId/statistics", async (req, res) => {
+  app.get("/api/tenants/:tenantId/restaurants/:restaurantId/statistics", validateTenant, async (req, res) => {
     try {
       const restaurantId = parseInt(req.params.restaurantId);
+      const tenantId = parseInt(req.params.tenantId);
       const { startDate, endDate } = req.query;
 
       // Get bookings for the date range
@@ -611,20 +690,25 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const customers = await storage.getCustomersByRestaurant(restaurantId);
       const tables = await storage.getTablesByRestaurant(restaurantId);
 
+      // Filter by tenantId for security
+      const tenantBookings = bookings.filter(booking => booking.tenantId === tenantId);
+      const tenantCustomers = customers.filter(customer => customer.tenantId === tenantId);
+      const tenantTables = tables.filter(table => table.tenantId === tenantId);
+
       // Calculate statistics
-      const totalBookings = bookings.length;
-      const totalCustomers = customers.length;
-      const totalTables = tables.length;
+      const totalBookings = tenantBookings.length;
+      const totalCustomers = tenantCustomers.length;
+      const totalTables = tenantTables.length;
       const avgBookingsPerDay = totalBookings / 30; // Rough estimate
 
       // Group bookings by status
-      const bookingsByStatus = bookings.reduce((acc: any, booking) => {
+      const bookingsByStatus = tenantBookings.reduce((acc: any, booking) => {
         acc[booking.status] = (acc[booking.status] || 0) + 1;
         return acc;
       }, {});
 
       // Revenue calculation (if you add pricing later)
-      const monthlyRevenue = bookings.length * 50; // Placeholder calculation
+      const monthlyRevenue = tenantBookings.length * 50; // Placeholder calculation
 
       res.json({
         totalBookings,
