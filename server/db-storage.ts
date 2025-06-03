@@ -289,6 +289,38 @@ export class DatabaseStorage implements IStorage {
     return updated;
   }
 
+  async getOrCreateCustomer(restaurantId: number, tenantId: number, customerData: { name: string; email: string; phone?: string }): Promise<Customer> {
+    // First try to find existing customer
+    let customer = await this.getCustomerByEmail(restaurantId, customerData.email);
+    
+    if (customer) {
+      // Update existing customer with latest info and increment booking count
+      const updatedCustomer = await this.updateCustomer(customer.id, {
+        name: customerData.name,
+        phone: customerData.phone,
+        totalBookings: (customer.totalBookings || 0) + 1,
+        lastVisit: new Date()
+      });
+      return updatedCustomer!;
+    } else {
+      // Create new customer
+      customer = await this.createCustomer({
+        restaurantId,
+        tenantId,
+        name: customerData.name,
+        email: customerData.email,
+        phone: customerData.phone || ""
+      });
+      
+      // Update with first booking count
+      const updatedCustomer = await this.updateCustomer(customer.id, {
+        totalBookings: 1,
+        lastVisit: new Date()
+      });
+      return updatedCustomer!;
+    }
+  }
+
   // SMS Messages
   async getSmsMessagesByRestaurant(restaurantId: number): Promise<SmsMessage[]> {
     return await db.select().from(smsMessages).where(eq(smsMessages.restaurantId, restaurantId));

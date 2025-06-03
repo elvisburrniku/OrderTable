@@ -55,6 +55,7 @@ export const bookings = pgTable("bookings", {
   restaurantId: integer("restaurant_id").references(() => restaurants.id).notNull(),
   tenantId: integer("tenant_id").notNull().references(() => tenants.id),
   tableId: integer("table_id").references(() => tables.id),
+  customerId: integer("customer_id").references(() => customers.id),
   customerName: text("customer_name").notNull(),
   customerEmail: text("customer_email").notNull(),
   customerPhone: text("customer_phone"),

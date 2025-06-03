@@ -65,6 +65,7 @@ export interface IStorage {
   getCustomerByEmail(restaurantId: number, email: string): Promise<Customer | undefined>;
   createCustomer(customer: InsertCustomer): Promise<Customer>;
   updateCustomer(id: number, customer: Partial<Customer>): Promise<Customer | undefined>;
+  getOrCreateCustomer(restaurantId: number, tenantId: number, customerData: { name: string; email: string; phone?: string }): Promise<Customer>;
 
   // SMS Messages
   getSmsMessagesByRestaurant(restaurantId: number): Promise<SmsMessage[]>;
@@ -432,6 +433,38 @@ export class MemStorage implements IStorage {
     const updatedCustomer = { ...customer, ...updates };
     this.customers.set(id, updatedCustomer);
     return updatedCustomer;
+  }
+
+  async getOrCreateCustomer(restaurantId: number, tenantId: number, customerData: { name: string; email: string; phone?: string }): Promise<Customer> {
+    // First try to find existing customer
+    let customer = await this.getCustomerByEmail(restaurantId, customerData.email);
+    
+    if (customer) {
+      // Update existing customer with latest info and increment booking count
+      const updatedCustomer = await this.updateCustomer(customer.id, {
+        name: customerData.name,
+        phone: customerData.phone,
+        totalBookings: (customer.totalBookings || 0) + 1,
+        lastVisit: new Date()
+      });
+      return updatedCustomer!;
+    } else {
+      // Create new customer
+      customer = await this.createCustomer({
+        restaurantId,
+        tenantId,
+        name: customerData.name,
+        email: customerData.email,
+        phone: customerData.phone || ""
+      });
+      
+      // Update with first booking count
+      const updatedCustomer = await this.updateCustomer(customer.id, {
+        totalBookings: 1,
+        lastVisit: new Date()
+      });
+      return updatedCustomer!;
+    }
   }
 
   // SMS Messages

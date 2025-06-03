@@ -44,11 +44,13 @@ export default function BookingCalendar({ selectedDate, bookings, tables, isLoad
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ 
-        queryKey: ['/api/restaurants', restaurant?.id, 'bookings']
+        queryKey: [`/api/restaurants/${restaurant?.id}/bookings`] 
       });
-      toast({
-        title: "Booking Created",
-        description: "The booking has been successfully created."
+      queryClient.invalidateQueries({ 
+        queryKey: [`/api/tenants/1/restaurants/${restaurant?.id}/bookings`] 
+      });
+      queryClient.invalidateQueries({ 
+        queryKey: [`/api/tenants/1/restaurants/${restaurant?.id}/customers`] 
       });
       setIsNewBookingOpen(false);
       setNewBooking({
@@ -61,12 +63,9 @@ export default function BookingCalendar({ selectedDate, bookings, tables, isLoad
         tableId: "",
         notes: ""
       });
-    },
-    onError: (error) => {
       toast({
-        title: "Error",
-        description: "Failed to create booking. Please try again.",
-        variant: "destructive"
+        title: "Success",
+        description: "Booking created successfully",
       });
     }
   });
