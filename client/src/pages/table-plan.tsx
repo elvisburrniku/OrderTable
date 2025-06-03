@@ -296,7 +296,7 @@ export default function TablePlan() {
       fontWeight: 'bold',
       color: 'white',
       userSelect: 'none' as const,
-      zIndex: isDragging && draggedTable === table.id ? 1000 : 1,
+      zIndex: isDragging && draggedTable === (table?.id || position?.id) ? 1000 : 1,
     };
 
     if (position) {
@@ -305,7 +305,7 @@ export default function TablePlan() {
         left: `${position.x}px`,
         top: `${position.y}px`,
         transform: `rotate(${position.rotation}deg)`,
-        backgroundColor: position.isConfigured ? '#16a34a' : table?.isActive ? '#16a34a' : '#6b7280',
+        backgroundColor: position.isConfigured ? '#16a34a' : (table?.isActive ? '#16a34a' : '#6b7280'),
         borderRadius: position.shape === 'circle' ? '50%' : 
                      position.shape === 'rectangle' ? '8px' : '4px',
         width: position.shape === 'rectangle' ? '80px' : '60px',
