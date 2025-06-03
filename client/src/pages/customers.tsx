@@ -24,15 +24,27 @@ export default function Customers() {
   });
 
   const { data: customers = [], isLoading } = useQuery({
-    queryKey: ["/api/restaurants", restaurant?.id, "customers"],
+    queryKey: ["/api/tenants", restaurant?.tenantId, "restaurants", restaurant?.id, "customers"],
     enabled: !!restaurant,
+    queryFn: async () => {
+      const response = await fetch(`/api/tenants/${restaurant?.tenantId}/restaurants/${restaurant?.id}/customers`, {
+        headers: {
+          'x-tenant-id': restaurant?.tenantId?.toString() || '1'
+        }
+      });
+      if (!response.ok) throw new Error("Failed to fetch customers");
+      return response.json();
+    }
   });
 
   const createCustomerMutation = useMutation({
     mutationFn: async (customerData: any) => {
-      const response = await fetch(`/api/restaurants/${restaurant?.id}/customers`, {
+      const response = await fetch(`/api/tenants/${restaurant?.tenantId}/restaurants/${restaurant?.id}/customers`, {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: { 
+          "Content-Type": "application/json",
+          'x-tenant-id': restaurant?.tenantId?.toString() || '1'
+        },
         body: JSON.stringify(customerData),
       });
       if (!response.ok) throw new Error("Failed to create customer");
@@ -40,7 +52,7 @@ export default function Customers() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({
-        queryKey: ["/api/restaurants", restaurant?.id, "customers"],
+        queryKey: ["/api/tenants", restaurant?.tenantId, "restaurants", restaurant?.id, "customers"],
       });
       setIsDialogOpen(false);
       setNewCustomer({ name: "", email: "", phone: "" });

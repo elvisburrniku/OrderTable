@@ -214,6 +214,7 @@ export class MemStorage implements IStorage {
       id: this.currentRestaurantId++,
       name: "The Demo Restaurant",
       userId: user.id,
+      tenantId: 1, // Default tenant
       address: "123 Main Street, Copenhagen, Denmark",
       phone: "+45 12 34 56 78",
       email: "info@demorestaurant.com",
@@ -290,6 +291,7 @@ export class MemStorage implements IStorage {
     const restaurant: Restaurant = {
       ...insertRestaurant,
       id: this.currentRestaurantId++,
+      tenantId: insertRestaurant.tenantId || 1, // Default to tenant 1 if not specified
       address: insertRestaurant.address || null,
       phone: insertRestaurant.phone || null,
       email: insertRestaurant.email || null,
