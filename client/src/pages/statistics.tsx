@@ -99,11 +99,11 @@ export default function Statistics() {
         <div className="w-64 bg-white border-r min-h-screen">
           <div className="p-6">
             <div className="space-y-2">
-              <a href="/bookings" className="flex items-center space-x-2 text-gray-600 hover:bg-gray-50 px-3 py-2 rounded">
+              <a href={`/${restaurant.tenantId}/bookings`} className="flex items-center space-x-2 text-gray-600 hover:bg-gray-50 px-3 py-2 rounded">
                 <span className="w-2 h-2 bg-gray-400 rounded-full"></span>
                 <span>Bookings</span>
               </a>
-              <a href="/waiting-list" className="flex items-center space-x-2 text-gray-600 hover:bg-gray-50 px-3 py-2 rounded">
+              <a href={`/${restaurant.tenantId}/waiting-list`} className="flex items-center space-x-2 text-gray-600 hover:bg-gray-50 px-3 py-2 rounded">
                 <span className="w-2 h-2 bg-gray-400 rounded-full"></span>
                 <span>Waiting List</span>
               </a>
@@ -111,7 +111,7 @@ export default function Statistics() {
                 <span className="w-2 h-2 bg-green-600 rounded-full"></span>
                 <span className="font-medium">Statistics</span>
               </div>
-              <a href="/activity-log" className="flex items-center space-x-2 text-gray-600 hover:bg-gray-50 px-3 py-2 rounded">
+              <a href={`/${restaurant.tenantId}/activity-log`} className="flex items-center space-x-2 text-gray-600 hover:bg-gray-50 px-3 py-2 rounded">
                 <span className="w-2 h-2 bg-gray-400 rounded-full"></span>
                 <span>Log</span>
               </a>

@@ -106,15 +106,15 @@ export default function ActivityLog() {
         <div className="w-64 bg-white border-r min-h-screen">
           <div className="p-6">
             <div className="space-y-2">
-              <a href="/bookings" className="flex items-center space-x-2 text-gray-600 hover:bg-gray-50 px-3 py-2 rounded">
+              <a href={`/${restaurant.tenantId}/bookings`} className="flex items-center space-x-2 text-gray-600 hover:bg-gray-50 px-3 py-2 rounded">
                 <span className="w-2 h-2 bg-gray-400 rounded-full"></span>
                 <span>Bookings</span>
               </a>
-              <a href="/waiting-list" className="flex items-center space-x-2 text-gray-600 hover:bg-gray-50 px-3 py-2 rounded">
+              <a href={`/${restaurant.tenantId}/waiting-list`} className="flex items-center space-x-2 text-gray-600 hover:bg-gray-50 px-3 py-2 rounded">
                 <span className="w-2 h-2 bg-gray-400 rounded-full"></span>
                 <span>Waiting List</span>
               </a>
-              <a href="/statistics" className="flex items-center space-x-2 text-gray-600 hover:bg-gray-50 px-3 py-2 rounded">
+              <a href={`/${restaurant.tenantId}/statistics`} className="flex items-center space-x-2 text-gray-600 hover:bg-gray-50 px-3 py-2 rounded">
                 <span className="w-2 h-2 bg-gray-400 rounded-full"></span>
                 <span>Statistics</span>
               </a>

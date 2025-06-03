@@ -101,15 +101,15 @@ export default function Bookings() {
                 <span className="w-2 h-2 bg-green-600 rounded-full"></span>
                 <span className="font-medium">Bookings</span>
               </div>
-              <a href="/waiting-list" className="flex items-center space-x-2 text-gray-600 hover:bg-gray-50 px-3 py-2 rounded">
+              <a href={`/${restaurant.tenantId}/waiting-list`} className="flex items-center space-x-2 text-gray-600 hover:bg-gray-50 px-3 py-2 rounded">
                 <span className="w-2 h-2 bg-gray-400 rounded-full"></span>
                 <span>Waiting List</span>
               </a>
-              <a href="/statistics" className="flex items-center space-x-2 text-gray-600 hover:bg-gray-50 px-3 py-2 rounded">
+              <a href={`/${restaurant.tenantId}/statistics`} className="flex items-center space-x-2 text-gray-600 hover:bg-gray-50 px-3 py-2 rounded">
                 <span className="w-2 h-2 bg-gray-400 rounded-full"></span>
                 <span>Statistics</span>
               </a>
-              <a href="/activity-log" className="flex items-center space-x-2 text-gray-600 hover:bg-gray-50 px-3 py-2 rounded">
+              <a href={`/${restaurant.tenantId}/activity-log`} className="flex items-center space-x-2 text-gray-600 hover:bg-gray-50 px-3 py-2 rounded">
                 <span className="w-2 h-2 bg-gray-400 rounded-full"></span>
                 <span>Log</span>
               </a>
