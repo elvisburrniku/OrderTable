@@ -34,11 +34,21 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const storedUser = localStorage.getItem("user");
     const storedRestaurant = localStorage.getItem("restaurant");
 
-    if (storedUser) {
-      setUser(JSON.parse(storedUser));
+    if (storedUser && storedUser !== "undefined") {
+      try {
+        setUser(JSON.parse(storedUser));
+      } catch (error) {
+        console.error("Error parsing stored user:", error);
+        localStorage.removeItem("user");
+      }
     }
-    if (storedRestaurant) {
-      setRestaurant(JSON.parse(storedRestaurant));
+    if (storedRestaurant && storedRestaurant !== "undefined") {
+      try {
+        setRestaurant(JSON.parse(storedRestaurant));
+      } catch (error) {
+        console.error("Error parsing stored restaurant:", error);
+        localStorage.removeItem("restaurant");
+      }
     }
 
     setIsLoading(false);
