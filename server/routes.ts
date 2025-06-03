@@ -17,7 +17,7 @@ const stripe = new Stripe(process.env.STRIPE_SECRET_KEY || 'sk_test_your_stripe_
 export async function registerRoutes(app: Express): Promise<Server> {
   // Middleware to extract and validate tenant ID
   const validateTenant = async (req: any, res: any, next: any) => {
-    const tenantId = req.headers['x-tenant-id'] || req.query.tenantId || req.body.tenantId;
+    const tenantId = req.params.tenantId || req.headers['x-tenant-id'] || req.query.tenantId || req.body.tenantId;
 
     if (!tenantId) {
       return res.status(400).json({ message: "Tenant ID is required" });
