@@ -454,7 +454,7 @@ export default function BookingCalendar({ selectedDate, bookings, allBookings = 
                         </SelectItem>
                       ))
                     ) : (
-                      <SelectItem value="" disabled>
+                      <SelectItem value="no-tables" disabled>
                         No tables configured
                       </SelectItem>
                     )}
