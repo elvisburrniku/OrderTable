@@ -260,19 +260,32 @@ export default function TablePlan() {
             y,
           },
         }));
+        setDraggedTable(null);
+        setDraggedStructure(null);
+        setIsDragging(false);
       } else if (draggedStructure) {
         // Adding new table from structure - immediately show configuration dialog
-        setPendingTablePosition({ x, y, structure: draggedStructure });
+        const currentStructure = draggedStructure;
+        setPendingTablePosition({ x, y, structure: currentStructure });
         setTableConfig({
           tableNumber: "",
-          capacity: draggedStructure.defaultCapacity,
+          capacity: currentStructure.defaultCapacity,
         });
-        setShowConfigDialog(true);
+        
+        // Reset drag states first, then show dialog
+        setDraggedTable(null);
+        setDraggedStructure(null);
+        setIsDragging(false);
+        
+        // Show dialog after state reset
+        setTimeout(() => {
+          setShowConfigDialog(true);
+        }, 0);
+      } else {
+        setDraggedTable(null);
+        setDraggedStructure(null);
+        setIsDragging(false);
       }
-
-      setDraggedTable(null);
-      setDraggedStructure(null);
-      setIsDragging(false);
     },
     [draggedTable, draggedStructure],
   );
