@@ -165,7 +165,7 @@ export default function Statistics() {
                         <TrendingUp className="h-8 w-8 text-purple-600" />
                         <div className="ml-4">
                           <p className="text-sm font-medium text-gray-600">Table Utilization</p>
-                          <p className="text-2xl font-bold text-gray-900">{stats.tableUtilization.toFixed(1)}%</p>
+                          <p className="text-2xl font-bold text-gray-900">{stats.tableUtilization?.toFixed(1) ?? '0.0'}%</p>
                         </div>
                       </div>
                     </CardContent>
