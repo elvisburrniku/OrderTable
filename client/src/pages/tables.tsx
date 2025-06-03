@@ -14,6 +14,7 @@ import { useSubscription } from "@/hooks/use-subscription";
 
 export default function Tables() {
   const { isLoading: authLoading, isAuthenticated, user, restaurant } = useAuthGuard();
+  const { canCreateTable } = useSubscription();
 
   if (authLoading) {
     return <div>Loading...</div>;
