@@ -24,14 +24,6 @@ export default function Tables() {
     isActive: true,
   });
 
-  if (authLoading) {
-    return <div>Loading...</div>;
-  }
-
-  if (!isAuthenticated || !user || !restaurant) {
-    return null;
-  }
-
   const { data: tables = [], isLoading } = useQuery({
     queryKey: ["/api/tenants/1/restaurants", restaurant?.id, "tables"],
     queryFn: async () => {
@@ -96,6 +88,14 @@ export default function Tables() {
       });
     },
   });
+
+  if (authLoading) {
+    return <div>Loading...</div>;
+  }
+
+  if (!isAuthenticated || !user || !restaurant) {
+    return null;
+  }
 
   const handleCreateTable = (e: React.FormEvent) => {
     e.preventDefault();
