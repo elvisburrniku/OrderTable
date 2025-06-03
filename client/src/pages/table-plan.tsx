@@ -266,16 +266,19 @@ export default function TablePlan() {
       } else if (draggedStructure) {
         // Adding new table from structure - store position and structure info
         const currentStructure = draggedStructure;
+        
+        // Reset drag states first
+        setDraggedTable(null);
+        setDraggedStructure(null);
+        setIsDragging(false);
+        
+        // Then set up the dialog
         setPendingTablePosition({ x, y, structure: currentStructure });
         setTableConfig({
           tableNumber: "",
           capacity: currentStructure.defaultCapacity,
         });
-        
-        // Reset drag states
-        setDraggedTable(null);
-        setDraggedStructure(null);
-        setIsDragging(false);
+        setShowConfigDialog(true);
       } else {
         setDraggedTable(null);
         setDraggedStructure(null);
@@ -284,13 +287,6 @@ export default function TablePlan() {
     },
     [draggedTable, draggedStructure],
   );
-
-  // Show dialog when pendingTablePosition is set
-  React.useEffect(() => {
-    if (pendingTablePosition) {
-      setShowConfigDialog(true);
-    }
-  }, [pendingTablePosition]);
 
   const rotateTable = (tableId: number) => {
     setTablePositions((prev) => ({
