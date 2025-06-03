@@ -33,15 +33,38 @@ export default function Statistics() {
     return null;
   }
 
-  // Chart data
-  const bookingTrendsData = [
-    { month: 'Jan', bookings: 12, revenue: 1800 },
-    { month: 'Feb', bookings: 19, revenue: 2850 },
-    { month: 'Mar', bookings: 15, revenue: 2250 },
-    { month: 'Apr', bookings: 25, revenue: 3750 },
-    { month: 'May', bookings: stats?.totalBookings || 6, revenue: stats?.monthlyRevenue || 300 },
-    { month: 'Jun', bookings: 0, revenue: 0 }
-  ];
+  // Generate real chart data based on actual bookings
+  const generateBookingTrends = () => {
+    if (!bookings || bookings.length === 0) {
+      return [
+        { month: 'Jan', bookings: 0, revenue: 0 },
+        { month: 'Feb', bookings: 0, revenue: 0 },
+        { month: 'Mar', bookings: 0, revenue: 0 },
+        { month: 'Apr', bookings: 0, revenue: 0 },
+        { month: 'May', bookings: 0, revenue: 0 },
+        { month: 'Jun', bookings: 0, revenue: 0 }
+      ];
+    }
+
+    const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun'];
+    const currentYear = new Date().getFullYear();
+    const avgBookingValue = 50; // Average booking value in USD
+
+    return months.map((month, index) => {
+      const monthBookings = bookings.filter(booking => {
+        const bookingDate = new Date(booking.bookingDate);
+        return bookingDate.getMonth() === index && bookingDate.getFullYear() === currentYear;
+      });
+
+      return {
+        month,
+        bookings: monthBookings.length,
+        revenue: monthBookings.length * avgBookingValue
+      };
+    });
+  };
+
+  const bookingTrendsData = generateBookingTrends();
 
   const bookingStatusData = stats?.bookingsByStatus ? 
     Object.entries(stats.bookingsByStatus).map(([status, count]: [string, any]) => ({
@@ -49,38 +72,70 @@ export default function Statistics() {
       value: count,
       color: status === 'confirmed' ? '#10B981' : status === 'pending' ? '#F59E0B' : '#EF4444'
     })) : [
-      { name: 'Confirmed', value: stats?.totalBookings || 6, color: '#10B981' }
+      { name: 'Confirmed', value: bookings?.length || 0, color: '#10B981' }
     ];
 
-  const tableUtilizationData = [
-    { time: '09:00', utilization: 20 },
-    { time: '11:00', utilization: 45 },
-    { time: '13:00', utilization: 85 },
-    { time: '15:00', utilization: 60 },
-    { time: '17:00', utilization: 40 },
-    { time: '19:00', utilization: 95 },
-    { time: '21:00', utilization: 70 },
-    { time: '23:00', utilization: 30 }
-  ];
+  // Generate table utilization based on actual bookings
+  const generateTableUtilization = () => {
+    if (!bookings || bookings.length === 0) {
+      return Array.from({ length: 8 }, (_, i) => ({
+        time: `${9 + i * 2}:00`.padStart(5, '0'),
+        utilization: 0
+      }));
+    }
 
-  const dailyBookingsData = [
-    { day: 'Mon', bookings: 8 },
-    { day: 'Tue', bookings: 12 },
-    { day: 'Wed', bookings: 6 },
-    { day: 'Thu', bookings: 15 },
-    { day: 'Fri', bookings: 22 },
-    { day: 'Sat', bookings: 18 },
-    { day: 'Sun', bookings: 14 }
-  ];
+    const timeSlots = ['09:00', '11:00', '13:00', '15:00', '17:00', '19:00', '21:00', '23:00'];
+    const totalTables = stats?.totalTables || 1;
 
-  const revenueData = [
-    { month: 'Jan', revenue: 1800 },
-    { month: 'Feb', revenue: 2850 },
-    { month: 'Mar', revenue: 2250 },
-    { month: 'Apr', revenue: 3750 },
-    { month: 'May', revenue: stats?.monthlyRevenue || 300 },
-    { month: 'Jun', revenue: 0 }
-  ];
+    return timeSlots.map(time => {
+      const hour = parseInt(time.split(':')[0]);
+      const bookingsAtTime = bookings.filter(booking => {
+        const startHour = parseInt(booking.startTime.split(':')[0]);
+        return Math.abs(startHour - hour) <= 1; // Include bookings within 1 hour
+      });
+
+      const utilization = Math.min((bookingsAtTime.length / totalTables) * 100, 100);
+      return { time, utilization: Math.round(utilization) };
+    });
+  };
+
+  const tableUtilizationData = generateTableUtilization();
+
+  // Generate daily bookings based on actual data
+  const generateDailyBookings = () => {
+    if (!bookings || bookings.length === 0) {
+      return [
+        { day: 'Mon', bookings: 0 },
+        { day: 'Tue', bookings: 0 },
+        { day: 'Wed', bookings: 0 },
+        { day: 'Thu', bookings: 0 },
+        { day: 'Fri', bookings: 0 },
+        { day: 'Sat', bookings: 0 },
+        { day: 'Sun', bookings: 0 }
+      ];
+    }
+
+    const daysOfWeek = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+    const dailyCounts = new Array(7).fill(0);
+
+    bookings.forEach(booking => {
+      const dayOfWeek = new Date(booking.bookingDate).getDay();
+      dailyCounts[dayOfWeek]++;
+    });
+
+    return daysOfWeek.map((day, index) => ({
+      day,
+      bookings: dailyCounts[index]
+    }));
+  };
+
+  const dailyBookingsData = generateDailyBookings();
+
+  // Generate revenue data based on booking trends
+  const revenueData = bookingTrendsData.map(item => ({
+    month: item.month,
+    revenue: item.revenue
+  }));
 
   return (
     <div className="min-h-screen bg-gray-50">
