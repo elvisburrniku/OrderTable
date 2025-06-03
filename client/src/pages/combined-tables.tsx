@@ -6,6 +6,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 
 export default function CombinedTables() {
   const { isLoading: authLoading, isAuthenticated, user, restaurant } = useAuthGuard();
+  const [combinations, setCombinations] = useState<any[]>([]);
 
   if (authLoading) {
     return <div>Loading...</div>;
