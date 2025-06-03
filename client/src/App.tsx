@@ -35,7 +35,11 @@ import SeatingConfigurations from "./pages/seating-configurations";
 import CombinedTables from "./pages/combined-tables";
 import Rooms from "./pages/rooms";
 import BookingAgents from "./pages/booking-agents";
+<<<<<<< HEAD
 import TablePlan from "./pages/table-plan"; //Import the new TablePlan component
+=======
+import { lazy } from "react";
+>>>>>>> 0915eb8 (Assistant checkpoint: Add booking detail page with edit/delete functionality)
 
 function App() {
   return (
@@ -74,6 +78,7 @@ function App() {
             <Route path="/:tenantId/table-plan" component={TablePlan} />
             <Route path="/:tenantId/rooms" component={Rooms} />
             <Route path="/:tenantId/booking-agents" component={BookingAgents} />
+             <Route path="/:tenantId/booking/:id" component={lazy(() => import("./pages/booking-detail"))} />
             <Route component={NotFound} />
           </Switch>
           <Toaster />

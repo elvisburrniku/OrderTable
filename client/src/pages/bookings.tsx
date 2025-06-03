@@ -203,7 +203,11 @@ export default function Bookings() {
                     </tr>
                   ) : (
                     filteredBookings.map((booking: any) => (
-                      <tr key={booking.id} className="border-b border-gray-100 hover:bg-gray-50">
+                      <tr 
+                        key={booking.id} 
+                        className="border-b border-gray-100 hover:bg-gray-50 cursor-pointer"
+                        onClick={() => window.location.href = `/booking/${booking.id}`}
+                      >
                         <td className="py-3 px-4 text-sm">{booking.id}</td>
                         <td className="py-3 px-4">
                           <div>
