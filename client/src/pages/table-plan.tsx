@@ -287,10 +287,10 @@ export default function TablePlan() {
 
   // Show dialog when pendingTablePosition is set
   React.useEffect(() => {
-    if (pendingTablePosition && !showConfigDialog) {
+    if (pendingTablePosition) {
       setShowConfigDialog(true);
     }
-  }, [pendingTablePosition, showConfigDialog]);
+  }, [pendingTablePosition]);
 
   const rotateTable = (tableId: number) => {
     setTablePositions((prev) => ({
