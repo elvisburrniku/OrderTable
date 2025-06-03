@@ -222,23 +222,37 @@ export default function TablePlan() {
 
   const handleStructureDragStart = useCallback(
     (structure: TableStructure, e: React.DragEvent) => {
+      console.log("Starting drag for structure:", structure);
       setDraggedStructure(structure);
       setDraggedTable(null);
       setIsDragging(true);
       e.dataTransfer.effectAllowed = "copy";
+      e.dataTransfer.setData("text/plain", structure.id);
     },
     [],
   );
 
   const handleDragOver = useCallback((e: React.DragEvent) => {
     e.preventDefault();
-    e.dataTransfer.dropEffect = "move";
-  }, []);
+    e.stopPropagation();
+    if (draggedStructure) {
+      e.dataTransfer.dropEffect = "copy";
+    } else {
+      e.dataTransfer.dropEffect = "move";
+    }
+  }, [draggedStructure]);
 
   const handleDrop = useCallback(
     (e: React.DragEvent) => {
       e.preventDefault();
-      if (!planRef.current) return;
+      e.stopPropagation();
+      
+      console.log("Drop event fired", { draggedTable, draggedStructure });
+      
+      if (!planRef.current) {
+        console.log("No plan ref");
+        return;
+      }
 
       const rect = planRef.current.getBoundingClientRect();
       const x = Math.max(
@@ -250,7 +264,10 @@ export default function TablePlan() {
         Math.min(e.clientY - rect.top - 40, rect.height - 80),
       );
 
+      console.log("Drop position:", { x, y });
+
       if (draggedTable !== null) {
+        console.log("Moving existing table:", draggedTable);
         // Moving existing table - use table ID directly as the key
         setTablePositions((prev) => ({
           ...prev,
@@ -264,6 +281,7 @@ export default function TablePlan() {
         setDraggedStructure(null);
         setIsDragging(false);
       } else if (draggedStructure) {
+        console.log("Adding new table from structure:", draggedStructure);
         // Adding new table from structure - store position and structure info
         const currentStructure = draggedStructure;
         
@@ -273,13 +291,20 @@ export default function TablePlan() {
         setIsDragging(false);
         
         // Then set up the dialog
+        console.log("Setting up dialog with structure:", currentStructure);
         setPendingTablePosition({ x, y, structure: currentStructure });
         setTableConfig({
           tableNumber: "",
           capacity: currentStructure.defaultCapacity,
         });
-        setShowConfigDialog(true);
+        
+        // Force show dialog with a small delay to ensure state is updated
+        setTimeout(() => {
+          console.log("Showing config dialog");
+          setShowConfigDialog(true);
+        }, 100);
       } else {
+        console.log("No dragged item found");
         setDraggedTable(null);
         setDraggedStructure(null);
         setIsDragging(false);
