@@ -15,9 +15,12 @@ export default function DashboardSidebar({ selectedDate, bookings }: DashboardSi
   const params = useParams();
   const tenantId = params.tenantId;
 
-  const todaysBookings = bookings.filter(booking => 
-    booking.bookingDate.toISOString().split('T')[0] === format(new Date(), 'yyyy-MM-dd')
-  );
+  const todaysBookings = bookings.filter(booking => {
+    const bookingDateStr = booking.bookingDate instanceof Date 
+      ? booking.bookingDate.toISOString().split('T')[0]
+      : booking.bookingDate.split('T')[0];
+    return bookingDateStr === format(new Date(), 'yyyy-MM-dd');
+  });
 
   const navigationItems = [
     { path: `/${tenantId}/dashboard`, icon: Calendar, label: "Booking" },
