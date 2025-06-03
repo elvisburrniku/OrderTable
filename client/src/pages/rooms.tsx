@@ -1,20 +1,88 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useAuth } from "@/lib/auth.tsx";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 
 interface Room {
+  id?: number;
   name: string;
   priority: string;
+  restaurantId?: number;
+  tenantId?: number;
 }
 
 export default function Rooms() {
   const { user, restaurant } = useAuth();
-  const [rooms, setRooms] = useState<Room[]>([
-    { name: "The restaurant", priority: "Medium" }
-  ]);
+  const queryClient = useQueryClient();
+  const [rooms, setRooms] = useState<Room[]>([]);
+
+  // Fetch rooms from API
+  const { data: fetchedRooms = [], isLoading } = useQuery({
+    queryKey: ["/api/tenants/1/restaurants", restaurant?.id, "rooms"],
+    queryFn: async () => {
+      const tenantId = 1;
+      const response = await fetch(
+        `/api/tenants/${tenantId}/restaurants/${restaurant?.id}/rooms`,
+      );
+      if (!response.ok) throw new Error("Failed to fetch rooms");
+      return response.json();
+    },
+    enabled: !!restaurant,
+  });
+
+  // Update local state when rooms are fetched
+  useEffect(() => {
+    if (fetchedRooms.length > 0) {
+      setRooms(fetchedRooms);
+    } else if (!isLoading && fetchedRooms.length === 0) {
+      // If no rooms exist, start with default room
+      setRooms([{ name: "The restaurant", priority: "Medium" }]);
+    }
+  }, [fetchedRooms, isLoading]);
+
+  // Save rooms mutation
+  const saveRoomsMutation = useMutation({
+    mutationFn: async (roomsToSave: Room[]) => {
+      const tenantId = 1;
+      const promises = roomsToSave.map(async (room) => {
+        if (room.id) {
+          // Update existing room
+          const response = await fetch(`/api/tenants/${tenantId}/rooms/${room.id}`, {
+            method: "PUT",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(room),
+          });
+          if (!response.ok) throw new Error("Failed to update room");
+          return response.json();
+        } else {
+          // Create new room
+          const response = await fetch(
+            `/api/tenants/${tenantId}/restaurants/${restaurant?.id}/rooms`,
+            {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify(room),
+            }
+          );
+          if (!response.ok) throw new Error("Failed to create room");
+          return response.json();
+        }
+      });
+      return Promise.all(promises);
+    },
+    onSuccess: () => {
+      alert("Rooms saved successfully!");
+      queryClient.invalidateQueries({
+        queryKey: ["/api/tenants/1/restaurants", restaurant?.id, "rooms"],
+      });
+    },
+    onError: (error) => {
+      alert(`Error saving rooms: ${error.message}`);
+    },
+  });
 
   if (!user || !restaurant) {
     return null;
@@ -33,6 +101,12 @@ export default function Rooms() {
   const removeRoom = (index: number) => {
     const newRooms = rooms.filter((_, i) => i !== index);
     setRooms(newRooms);
+  };
+
+  const saveRooms = () => {
+    // Filter out rooms with empty names
+    const validRooms = rooms.filter(room => room.name.trim() !== "");
+    saveRoomsMutation.mutate(validRooms);
   };
 
   return (
@@ -130,10 +204,11 @@ export default function Rooms() {
 
               <div className="flex space-x-4">
                 <Button 
-                  onClick={addRoom}
+                  onClick={saveRooms}
                   className="bg-green-600 hover:bg-green-700 text-white"
+                  disabled={saveRoomsMutation.isPending}
                 >
-                  Save
+                  {saveRoomsMutation.isPending ? "Saving..." : "Save"}
                 </Button>
                 <Button 
                   variant="outline"

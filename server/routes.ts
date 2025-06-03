@@ -230,15 +230,65 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const restaurantId = parseInt(req.params.restaurantId);
       const tenantId = parseInt(req.params.tenantId);
       
-      // For now, return some default rooms
-      // In a real implementation, you'd fetch from database
-      const rooms = [
-        { id: 1, name: "Private Dining", restaurantId, tenantId },
-        { id: 2, name: "Patio", restaurantId, tenantId },
-        { id: 3, name: "Bar Area", restaurantId, tenantId }
-      ];
+      const rooms = await storage.getRoomsByRestaurant(restaurantId);
+      // Filter rooms by tenantId for security
+      const tenantRooms = rooms.filter(room => room.tenantId === tenantId);
       
-      res.json(rooms);
+      res.json(tenantRooms);
+    } catch (error) {
+      res.status(400).json({ message: "Invalid request" });
+    }
+  });
+
+  app.post("/api/tenants/:tenantId/restaurants/:restaurantId/rooms", validateTenant, async (req, res) => {
+    try {
+      const restaurantId = parseInt(req.params.restaurantId);
+      const tenantId = parseInt(req.params.tenantId);
+      const roomData = {
+        ...req.body,
+        restaurantId,
+        tenantId,
+      };
+
+      const room = await storage.createRoom(roomData);
+      res.json(room);
+    } catch (error) {
+      res.status(400).json({ message: "Invalid room data" });
+    }
+  });
+
+  app.put("/api/tenants/:tenantId/rooms/:id", validateTenant, async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      const tenantId = parseInt(req.params.tenantId);
+      const updates = req.body;
+
+      // Verify room belongs to tenant before updating
+      const existingRoom = await storage.getRoomById(id);
+      if (!existingRoom || existingRoom.tenantId !== tenantId) {
+        return res.status(404).json({ message: "Room not found" });
+      }
+
+      const room = await storage.updateRoom(id, updates);
+      res.json(room);
+    } catch (error) {
+      res.status(400).json({ message: "Invalid request" });
+    }
+  });
+
+  app.delete("/api/tenants/:tenantId/rooms/:id", validateTenant, async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      const tenantId = parseInt(req.params.tenantId);
+
+      // Verify room belongs to tenant before deleting
+      const existingRoom = await storage.getRoomById(id);
+      if (!existingRoom || existingRoom.tenantId !== tenantId) {
+        return res.status(404).json({ message: "Room not found" });
+      }
+
+      const success = await storage.deleteRoom(id);
+      res.json({ message: "Room deleted successfully" });
     } catch (error) {
       res.status(400).json({ message: "Invalid request" });
     }

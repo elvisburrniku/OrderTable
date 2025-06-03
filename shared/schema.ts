@@ -1,4 +1,4 @@
-import { pgTable, text, serial, integer, boolean, timestamp, varchar, primaryKey } from "drizzle-orm/pg-core";
+import { pgTable, text, serial, integer, boolean, timestamp, varchar, primaryKey, date, time } from "drizzle-orm/pg-core";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
 
@@ -138,12 +138,22 @@ export const activityLog = pgTable("activity_log", {
 
 export const timeSlots = pgTable("time_slots", {
   id: serial("id").primaryKey(),
-  restaurantId: integer("restaurant_id").references(() => restaurants.id).notNull(),
+  restaurantId: integer("restaurant_id").references(() => restaurants.id),
   tenantId: integer("tenant_id").notNull().references(() => tenants.id),
-  date: text("date").notNull(),
+  date: date("date").notNull(),
   time: text("time").notNull(),
   isAvailable: boolean("is_available").default(true),
   maxCapacity: integer("max_capacity").default(0)
+});
+
+export const rooms = pgTable("rooms", {
+  id: serial("id").primaryKey(),
+  restaurantId: integer("restaurant_id").references(() => restaurants.id),
+  tenantId: integer("tenant_id").notNull().references(() => tenants.id),
+  name: varchar("name", { length: 255 }).notNull(),
+  priority: varchar("priority", { length: 50 }).default("Medium"),
+  isActive: boolean("is_active").default(true),
+  createdAt: timestamp("created_at").defaultNow()
 });
 
 export const subscriptionPlans = pgTable("subscription_plans", {
@@ -262,6 +272,12 @@ export const insertUserSubscriptionSchema = createInsertSchema(userSubscriptions
   updatedAt: true
 });
 
+export const insertRoomSchema = createInsertSchema(rooms).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true
+});
+
 export const loginSchema = z.object({
   email: z.string().email(),
   password: z.string().min(6)
@@ -297,4 +313,6 @@ export type TenantSubscription = typeof tenantSubscriptions.$inferSelect;
 export type InsertTenantSubscription = z.infer<typeof insertTenantSubscriptionSchema>;
 export type UserSubscription = typeof userSubscriptions.$inferSelect;
 export type InsertUserSubscription = z.infer<typeof insertUserSubscriptionSchema>;
+export type Room = typeof rooms.$inferSelect;
+export type InsertRoom = z.infer<typeof insertRoomSchema>;
 export type LoginData = z.infer<typeof loginSchema>;
