@@ -418,6 +418,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const bookingTime = req.body.startTime;
 
       // Validate booking against opening hours and cut-off times
+      const isRestaurantOpen = await storage.isRestaurantOpen(restaurantId, bookingDate, bookingTime);
+      if (!isRestaurantOpen) {
+        return res.status(400).json({ 
+          message: "Booking not allowed: Restaurant is closed on this day and time" 
+        });
+      }
+
       const isAllowed = await storage.isBookingAllowed(restaurantId, bookingDate, bookingTime);
       if (!isAllowed) {
         return res.status(400).json({ 

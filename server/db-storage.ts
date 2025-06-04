@@ -683,32 +683,54 @@ export class DatabaseStorage implements IStorage {
     const dayOfWeek = bookingDate.getDay();
     const dateString = bookingDate.toISOString().split('T')[0];
     
-    // Check for special periods first
-    const specialPeriod = await db.select().from(specialPeriods)
-      .where(and(
-        eq(specialPeriods.restaurantId, restaurantId),
-        eq(specialPeriods.startDate, dateString),
-        eq(specialPeriods.endDate, dateString)
-      ));
-    
-    if (specialPeriod.length > 0) {
-      const period = specialPeriod[0];
-      if (!period.isOpen) return false;
-      if (period.openTime && period.closeTime) {
-        return bookingTime >= period.openTime && bookingTime <= period.closeTime;
+    try {
+      // Check for special periods first
+      const specialPeriod = await db.select().from(specialPeriods)
+        .where(and(
+          eq(specialPeriods.restaurantId, restaurantId),
+          eq(specialPeriods.startDate, dateString),
+          eq(specialPeriods.endDate, dateString)
+        ));
+      
+      if (specialPeriod.length > 0) {
+        const period = specialPeriod[0];
+        if (!period.isOpen) {
+          console.log(`Restaurant closed due to special period: ${period.name}`);
+          return false;
+        }
+        if (period.openTime && period.closeTime) {
+          const isInTime = bookingTime >= period.openTime && bookingTime <= period.closeTime;
+          console.log(`Special period check: ${bookingTime} between ${period.openTime}-${period.closeTime}: ${isInTime}`);
+          return isInTime;
+        }
       }
+      
+      // Check regular opening hours
+      const regularHours = await db.select().from(openingHours)
+        .where(and(
+          eq(openingHours.restaurantId, restaurantId),
+          eq(openingHours.dayOfWeek, dayOfWeek)
+        ));
+      
+      if (regularHours.length === 0) {
+        console.log(`No opening hours found for restaurant ${restaurantId}, day ${dayOfWeek}`);
+        return false;
+      }
+      
+      const dayHours = regularHours[0];
+      if (!dayHours.isOpen) {
+        console.log(`Restaurant closed on day ${dayOfWeek} (${['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'][dayOfWeek]})`);
+        return false;
+      }
+      
+      const isInTime = bookingTime >= dayHours.openTime && bookingTime <= dayHours.closeTime;
+      console.log(`Regular hours check for day ${dayOfWeek}: ${bookingTime} between ${dayHours.openTime}-${dayHours.closeTime}: ${isInTime}`);
+      return isInTime;
+      
+    } catch (error) {
+      console.error("Error checking restaurant opening hours:", error);
+      return false; // Default to closed if there's an error
     }
-    
-    // Check regular opening hours
-    const regularHours = await db.select().from(openingHours)
-      .where(and(
-        eq(openingHours.restaurantId, restaurantId),
-        eq(openingHours.dayOfWeek, dayOfWeek)
-      ));
-    
-    if (regularHours.length === 0 || !regularHours[0].isOpen) return false;
-    
-    return bookingTime >= regularHours[0].openTime && bookingTime <= regularHours[0].closeTime;
   }
 
   async isBookingAllowed(restaurantId: number, bookingDate: Date, bookingTime: string): Promise<boolean> {

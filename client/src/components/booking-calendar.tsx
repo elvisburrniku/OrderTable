@@ -44,6 +44,23 @@ export default function BookingCalendar({ selectedDate, bookings, allBookings = 
 
   const createBookingMutation = useMutation({
     mutationFn: async (bookingData: any) => {
+      // First validate the booking time
+      const validationResponse = await fetch(`/api/tenants/1/restaurants/${restaurant?.id}/validate-booking`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          bookingDate: bookingData.bookingDate,
+          bookingTime: bookingData.startTime
+        })
+      });
+      
+      const validation = await validationResponse.json();
+      if (!validation.isAllowed) {
+        throw new Error("Restaurant is closed at this time");
+      }
+      
       return apiRequest("POST", `/api/tenants/1/restaurants/${restaurant?.id}/bookings`, bookingData);
     },
     onSuccess: () => {
@@ -70,6 +87,13 @@ export default function BookingCalendar({ selectedDate, bookings, allBookings = 
       toast({
         title: "Success",
         description: "Booking created successfully",
+      });
+    },
+    onError: (error: Error) => {
+      toast({
+        title: "Error",
+        description: error.message || "Failed to create booking",
+        variant: "destructive",
       });
     }
   });
