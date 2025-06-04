@@ -139,7 +139,7 @@ export default function BookingCalendar({ selectedDate, bookings, allBookings = 
 
     createBookingMutation.mutate({
       ...newBooking,
-      bookingDate: selectedDate.toISOString(),
+      bookingDate: selectedDate.toISOString().split('T')[0],
       tableId: tableId,
       restaurantId: restaurant?.id
     });

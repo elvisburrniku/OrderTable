@@ -310,6 +310,7 @@ export default function Bookings() {
     // Only proceed with mutation if no conflicts detected
     createBookingMutation.mutate({
       ...newBooking,
+      bookingDate: newBooking.bookingDate, // Already in YYYY-MM-DD format from input
       tableId: newBooking.tableId ? parseInt(newBooking.tableId) : null,
       restaurantId: restaurant?.id
     });
