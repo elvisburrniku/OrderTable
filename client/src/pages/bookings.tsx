@@ -211,14 +211,18 @@ export default function Bookings() {
     }
 
     const tableIdNum = parseInt(tableId);
-    const conflict = checkTableConflict(tableIdNum, newBooking.guestCount, newBooking.bookingDate, newBooking.startTime);
+    
+    // Use current state values for conflict checking
+    const currentBooking = newBooking.tableId === tableId ? newBooking : { ...newBooking, tableId };
+    const conflict = checkTableConflict(tableIdNum, currentBooking.guestCount, currentBooking.bookingDate, currentBooking.startTime);
     
     if (conflict.hasConflict) {
-      // Find alternative table
+      // Find alternative table using current booking state
+      const currentBooking = newBooking.tableId === tableId ? newBooking : { ...newBooking, tableId };
       const alternative = findAlternativeTable(
-        newBooking.guestCount, 
-        newBooking.startTime, 
-        newBooking.bookingDate, 
+        currentBooking.guestCount, 
+        currentBooking.startTime, 
+        currentBooking.bookingDate, 
         tableIdNum
       );
 
@@ -583,9 +587,14 @@ export default function Bookings() {
                   onValueChange={(value) => {
                     const guestCount = parseInt(value);
                     setNewBooking({ ...newBooking, guestCount });
+                    // Clear any existing conflict info when guest count changes
+                    setConflictInfo(null);
+                    setSuggestedTable(null);
                     // Re-check conflicts when guest count changes
                     if (newBooking.tableId) {
-                      handleTableSelection(newBooking.tableId);
+                      setTimeout(() => {
+                        handleTableSelection(newBooking.tableId);
+                      }, 0);
                     }
                   }}
                 >
@@ -609,10 +618,16 @@ export default function Bookings() {
                   type="date"
                   value={newBooking.bookingDate}
                   onChange={(e) => {
-                    setNewBooking({ ...newBooking, bookingDate: e.target.value });
+                    const newDate = e.target.value;
+                    setNewBooking({ ...newBooking, bookingDate: newDate });
+                    // Clear any existing conflict info when date changes
+                    setConflictInfo(null);
+                    setSuggestedTable(null);
                     // Re-check conflicts when date changes
                     if (newBooking.tableId) {
-                      handleTableSelection(newBooking.tableId);
+                      setTimeout(() => {
+                        handleTableSelection(newBooking.tableId);
+                      }, 0);
                     }
                   }}
                   required
@@ -624,9 +639,14 @@ export default function Bookings() {
                   value={newBooking.startTime} 
                   onValueChange={(value) => {
                     setNewBooking({ ...newBooking, startTime: value });
+                    // Clear any existing conflict info when time changes
+                    setConflictInfo(null);
+                    setSuggestedTable(null);
                     // Re-check conflicts when time changes
                     if (newBooking.tableId) {
-                      handleTableSelection(newBooking.tableId);
+                      setTimeout(() => {
+                        handleTableSelection(newBooking.tableId);
+                      }, 0);
                     }
                   }}
                 >
