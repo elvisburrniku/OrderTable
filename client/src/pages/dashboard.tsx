@@ -196,6 +196,8 @@ export default function Dashboard() {
   };
 
   const handleTableClick = (table: any, tableBookings: any[]) => {
+    console.log('Table clicked:', table.tableNumber, 'Bookings:', tableBookings);
+    
     if (tableBookings.length === 0) {
       // Table is available, open booking dialog
       setSelectedTableForBooking(table);
@@ -337,13 +339,15 @@ export default function Dashboard() {
                       onClick={() => handleTableClick(table, tableBookings)}
                       style={{
                         ...getTableStyle(table, position),
-                        cursor: tableBookings.length > 0 ? 'default' : 'pointer'
+                        cursor: 'pointer'
                       }}
                     >
                       <div className="text-center relative">
                         <div className="font-bold">{table.tableNumber}</div>
                         <div className="text-xs opacity-80">
-                          {tableBookings.length > 0 ? `${tableBookings.length} booking(s)` : `${table.capacity} seats`}
+                          {tableBookings.length > 0 
+                            ? `${tableBookings.map(b => b.startTime).join(', ')}` 
+                            : `${table.capacity} seats`}
                         </div>
 
                         {/* Booking details tooltip on hover */}
