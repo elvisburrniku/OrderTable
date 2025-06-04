@@ -241,8 +241,12 @@ export class DatabaseStorage implements IStorage {
   }
 
   async updateRestaurant(id: number, updates: Partial<Restaurant>): Promise<Restaurant | undefined> {
+    // Remove any undefined updatedAt to avoid column errors
+    const cleanUpdates = { ...updates };
+    delete cleanUpdates.updatedAt;
+    
     const [updated] = await this.db.update(restaurants)
-      .set(updates)
+      .set(cleanUpdates)
       .where(eq(restaurants.id, id))
       .returning();
     return updated;
