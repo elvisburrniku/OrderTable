@@ -12,14 +12,9 @@ export class BrevoEmailService {
 
     this.apiInstance = new TransactionalEmailsApi();
     
-    // Initialize authentications object if it doesn't exist
-    if (!this.apiInstance.authentications) {
-      this.apiInstance.authentications = {};
-    }
-    
-    // Set the API key using the correct authentication method
-    this.apiInstance.authentications['api-key'] = {
-      apiKey: apiKey
+    // Set the default headers for authentication
+    this.apiInstance.defaultHeaders = {
+      'api-key': apiKey
     };
   }
 
