@@ -1,5 +1,5 @@
 
-import { ApiClient, TransactionalEmailsApi, SendSmtpEmail } from '@getbrevo/brevo';
+import { TransactionalEmailsApi, SendSmtpEmail } from '@getbrevo/brevo';
 
 export class BrevoEmailService {
   private apiInstance: TransactionalEmailsApi;
@@ -10,11 +10,8 @@ export class BrevoEmailService {
       throw new Error('BREVO_API_KEY environment variable is required');
     }
 
-    const defaultClient = ApiClient.instance;
-    const apiKeyAuth = defaultClient.authentications['api-key'];
-    apiKeyAuth.apiKey = apiKey;
-
     this.apiInstance = new TransactionalEmailsApi();
+    this.apiInstance.setApiKey('api-key', apiKey);
   }
 
   async sendBookingConfirmation(customerEmail: string, customerName: string, bookingData: any): Promise<void> {
