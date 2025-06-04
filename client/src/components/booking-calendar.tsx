@@ -236,7 +236,7 @@ export default function BookingCalendar({ selectedDate, bookings, allBookings = 
 
   const renderListView = () => {
     const selectedDateBookingsData = getBookingsForDate(selectedDate);
-    
+
     return (
       <Card className="bg-white border border-gray-200">
         <div className="border-b border-gray-200 p-4 bg-gray-50">
@@ -377,6 +377,30 @@ export default function BookingCalendar({ selectedDate, bookings, allBookings = 
     );
   };
 
+  // Fetch tables
+  const { data: tables = [], isLoading: tablesLoading } = useQuery({
+    queryKey: ["tables", restaurant?.id, restaurant?.tenantId],
+    queryFn: async () => {
+      if (!restaurant?.id || !restaurant?.tenantId) return [];
+      const response = await fetch(`/api/tenants/${restaurant.tenantId}/restaurants/${restaurant.id}/tables`);
+      if (!response.ok) throw new Error("Failed to fetch tables");
+      return response.json();
+    },
+    enabled: !!restaurant?.id && !!restaurant?.tenantId,
+  });
+
+  // Fetch combined tables
+  const { data: combinedTables = [], isLoading: combinedTablesLoading } = useQuery({
+    queryKey: ["combinedTables", restaurant?.id, restaurant?.tenantId],
+    queryFn: async () => {
+      if (!restaurant?.id || !restaurant?.tenantId) return [];
+      const response = await fetch(`/api/tenants/${restaurant.tenantId}/restaurants/${restaurant.id}/combined-tables`);
+      if (!response.ok) throw new Error("Failed to fetch combined tables");
+      return response.json();
+    },
+    enabled: !!restaurant?.id && !!restaurant?.tenantId,
+  });
+
   return (
     <div>
       <div className="mb-4 flex items-center justify-between">
@@ -497,6 +521,13 @@ export default function BookingCalendar({ selectedDate, bookings, allBookings = 
                         No tables configured
                       </SelectItem>
                     )}
+                    {combinedTables && combinedTables.length > 0 ? (
+                      combinedTables.map((combinedTable) => (
+                        <SelectItem key={combinedTable.id} value={combinedTable.id.toString()}>
+                          Combined Table {combinedTable.name} ({combinedTable.capacity} seats)
+                        </SelectItem>
+                      ))
+                    ) : null}
                   </SelectContent>
                 </Select>
                 {tables && tables.length === 0 && (
