@@ -258,51 +258,121 @@ export default function BookingCalendar({ selectedDate, bookings, allBookings = 
             const isTodayDate = isToday(day);
             const isClosed = !dayHours || !dayHours.isOpen;
 
+            // Generate hourly time slots for this day
+            const generateTimeSlots = () => {
+              if (isClosed) return [];
+              
+              const slots = [];
+              const openHour = parseInt(dayHours.openTime.split(':')[0]);
+              const closeHour = parseInt(dayHours.closeTime.split(':')[0]);
+              
+              for (let hour = openHour; hour < closeHour; hour++) {
+                const timeStr = `${hour.toString().padStart(2, '0')}:00`;
+                const booking = dayBookings.find(b => b.startTime === timeStr);
+                slots.push({ time: timeStr, booking });
+              }
+              return slots;
+            };
+
+            const timeSlots = generateTimeSlots();
+
             return (
               <div
                 key={day.toISOString()}
-                className={`min-h-[100px] p-2 border rounded cursor-pointer transition-colors ${
+                className={`min-h-[160px] border rounded transition-colors ${
                   isSelected 
-                    ? 'bg-green-100 border-green-300' 
+                    ? 'bg-green-50 border-green-300 shadow-md' 
                     : isTodayDate 
                     ? 'bg-blue-50 border-blue-200' 
                     : isClosed
-                    ? 'bg-gray-100 border-gray-300'
-                    : 'bg-white border-gray-200 hover:bg-gray-50'
+                    ? 'bg-gray-50 border-gray-200'
+                    : 'bg-white border-gray-200 hover:shadow-sm'
                 }`}
-                onClick={() => onDateSelect(day)}
               >
-                <div className={`text-sm font-medium ${
-                  isTodayDate ? 'text-blue-600' : isClosed ? 'text-gray-500' : 'text-gray-900'
+                {/* Day Header */}
+                <div className={`p-2 border-b bg-gradient-to-r ${
+                  isSelected 
+                    ? 'from-green-100 to-green-50 border-green-200' 
+                    : isTodayDate 
+                    ? 'from-blue-100 to-blue-50 border-blue-200' 
+                    : isClosed
+                    ? 'from-gray-100 to-gray-50 border-gray-200'
+                    : 'from-white to-gray-50 border-gray-100'
                 }`}>
-                  {format(day, 'd')}
+                  <div className="flex items-center justify-between">
+                    <div className={`text-sm font-semibold ${
+                      isTodayDate ? 'text-blue-700' : isClosed ? 'text-gray-500' : 'text-gray-900'
+                    }`}>
+                      {format(day, 'd')}
+                    </div>
+                    {dayBookings.length > 0 && (
+                      <div className="text-xs bg-blue-500 text-white px-1.5 py-0.5 rounded-full font-medium">
+                        {dayBookings.length}
+                      </div>
+                    )}
+                  </div>
+                  
+                  {/* Opening Hours */}
+                  <div className="mt-1">
+                    {isClosed ? (
+                      <div className="text-xs text-gray-500 italic font-medium">Closed</div>
+                    ) : (
+                      <div className="text-xs text-gray-600 font-medium">
+                        {dayHours.openTime} - {dayHours.closeTime}
+                      </div>
+                    )}
+                  </div>
                 </div>
 
-                {/* Opening Hours */}
-                <div className="mt-1">
+                {/* Time Slots Grid */}
+                <div className="p-1">
                   {isClosed ? (
-                    <div className="text-xs text-gray-500 italic">Closed</div>
+                    <div className="flex items-center justify-center h-20 text-xs text-gray-400">
+                      Restaurant Closed
+                    </div>
                   ) : (
-                    <div className="text-xs text-gray-600">
-                      {dayHours.openTime} - {dayHours.closeTime}
-                    </div>
-                  )}
-                </div>
-
-                {/* Bookings */}
-                <div className="mt-1 space-y-1">
-                  {dayBookings.slice(0, 2).map(booking => (
-                    <div
-                      key={booking.id}
-                      className="text-xs bg-blue-200 text-blue-800 px-1 py-0.5 rounded truncate"
-                      title={`${booking.customerName} - ${booking.guestCount} guests at ${booking.startTime} - ${getTableDisplayName(booking)}`}
-                    >
-                      {booking.startTime} {booking.customerName}
-                    </div>
-                  ))}
-                  {dayBookings.length > 2 && (
-                    <div className="text-xs text-gray-500">
-                      +{dayBookings.length - 2} more
+                    <div className="grid grid-cols-3 gap-1">
+                      {timeSlots.map(({ time, booking }) => (
+                        <div
+                          key={time}
+                          className={`h-8 rounded-sm text-xs font-medium flex items-center justify-center cursor-pointer transition-all duration-200 ${
+                            booking
+                              ? 'bg-red-100 border border-red-200 text-red-800 hover:bg-red-200'
+                              : 'bg-green-100 border border-green-200 text-green-800 hover:bg-green-200 hover:scale-105'
+                          }`}
+                          title={
+                            booking 
+                              ? `${time} - ${booking.customerName} (${booking.guestCount} guests) - ${getTableDisplayName(booking)}`
+                              : `${time} - Available`
+                          }
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            if (!booking) {
+                              onDateSelect(day);
+                              setNewBooking(prev => ({
+                                ...prev,
+                                startTime: time,
+                                endTime: `${(parseInt(time.split(':')[0]) + 2).toString().padStart(2, '0')}:00`
+                              }));
+                              setIsNewBookingOpen(true);
+                            }
+                          }}
+                        >
+                          {booking ? (
+                            <div className="text-center">
+                              <div className="text-xs leading-tight">{time.split(':')[0]}</div>
+                              <div className="text-xs leading-tight opacity-75 truncate w-full">
+                                {booking.customerName.split(' ')[0]}
+                              </div>
+                            </div>
+                          ) : (
+                            <div className="text-center">
+                              <div className="text-xs">{time.split(':')[0]}</div>
+                              <div className="text-xs opacity-60">+</div>
+                            </div>
+                          )}
+                        </div>
+                      ))}
                     </div>
                   )}
                 </div>
@@ -611,22 +681,26 @@ export default function BookingCalendar({ selectedDate, bookings, allBookings = 
       {activeView === "list" && renderListView()}
       {activeView === "table" && renderTableView()}
 
-      <div className="mt-4 flex items-center space-x-4 text-sm text-gray-600">
+      <div className="mt-4 flex flex-wrap items-center gap-4 text-sm text-gray-600">
         <div className="flex items-center">
-          <div className="w-4 h-4 bg-green-600 rounded mr-2" />
-          <span>Available</span>
+          <div className="w-6 h-4 bg-green-100 border border-green-200 rounded mr-2 flex items-center justify-center">
+            <span className="text-xs text-green-800">+</span>
+          </div>
+          <span>Available Time Slot</span>
         </div>
         <div className="flex items-center">
-          <div className="w-4 h-4 bg-blue-500 rounded mr-2" />
-          <span>Bookings</span>
+          <div className="w-6 h-4 bg-red-100 border border-red-200 rounded mr-2 flex items-center justify-center">
+            <span className="text-xs text-red-800">●</span>
+          </div>
+          <span>Booked Time Slot</span>
         </div>
         <div className="flex items-center">
-          <div className="w-4 h-4 bg-gray-400 rounded mr-2" />
-          <span>Closed</span>
+          <div className="w-4 h-4 bg-gray-100 rounded mr-2" />
+          <span>Closed Days</span>
         </div>
         <div className="flex items-center">
           <Clock className="h-4 w-4 mr-2" />
-          <span>Shows opening hours for each day</span>
+          <span>Click green slots to book instantly</span>
         </div>
       </div>
     </div>
