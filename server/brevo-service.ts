@@ -17,6 +17,50 @@ export class BrevoEmailService {
     this.apiInstance = new brevo.TransactionalEmailsApi();
   }
 
+  async sendBookingConfirmation(customerEmail: string, customerName: string, bookingData: any): Promise<void> {
+    const sendSmtpEmail = new brevo.SendSmtpEmail();
+    sendSmtpEmail.to = [{ email: customerEmail, name: customerName }];
+    sendSmtpEmail.sender = { email: 'noreply@restaurant.com', name: 'Restaurant Booking' };
+    sendSmtpEmail.subject = 'Booking Confirmation';
+    sendSmtpEmail.htmlContent = `
+      <h2>Booking Confirmation</h2>
+      <p>Dear ${customerName},</p>
+      <p>Your booking has been confirmed for ${new Date(bookingData.bookingDate).toLocaleDateString()} at ${bookingData.startTime}.</p>
+      <p>Guest count: ${bookingData.guestCount}</p>
+      <p>Thank you for choosing us!</p>
+    `;
+
+    try {
+      await this.apiInstance.sendTransacEmail(sendSmtpEmail);
+    } catch (error) {
+      console.error('Error sending booking confirmation email:', error);
+      throw error;
+    }
+  }
+
+  async sendRestaurantNotification(restaurantEmail: string, bookingData: any): Promise<void> {
+    const sendSmtpEmail = new brevo.SendSmtpEmail();
+    sendSmtpEmail.to = [{ email: restaurantEmail }];
+    sendSmtpEmail.sender = { email: 'noreply@restaurant.com', name: 'Restaurant Booking System' };
+    sendSmtpEmail.subject = 'New Booking Received';
+    sendSmtpEmail.htmlContent = `
+      <h2>New Booking Received</h2>
+      <p>Customer: ${bookingData.customerName}</p>
+      <p>Email: ${bookingData.customerEmail}</p>
+      <p>Phone: ${bookingData.customerPhone}</p>
+      <p>Date: ${new Date(bookingData.bookingDate).toLocaleDateString()}</p>
+      <p>Time: ${bookingData.startTime}</p>
+      <p>Guest count: ${bookingData.guestCount}</p>
+    `;
+
+    try {
+      await this.apiInstance.sendTransacEmail(sendSmtpEmail);
+    } catch (error) {
+      console.error('Error sending restaurant notification email:', error);
+      throw error;
+    }
+  }
+
   async sendBookingConfirmation(customerEmail: string, customerName: string, bookingDetails: any) {
     const sendSmtpEmail = new brevo.SendSmtpEmail();
     

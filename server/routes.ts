@@ -9,14 +9,14 @@ import { Request, Response } from "express";
 import bcrypt from 'bcrypt';
 import { users, tenants, tenantUsers, restaurants } from "@shared/schema";
 import { eq } from "drizzle-orm";
-import { EmailService } from "./email-service"; // Import the EmailService
+import { BrevoEmailService } from "./brevo-service"; // Import the BrevoEmailService
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY || 'sk_test_your_stripe_secret_key', {
   apiVersion: '2023-10-16'
 });
 
 // Initialize email service, passing API key from environment variables
-const emailService = process.env.BREVO_API_KEY ? new EmailService(process.env.BREVO_API_KEY) : null;
+const emailService = process.env.BREVO_API_KEY ? new BrevoEmailService() : null;
 
 export async function registerRoutes(app: Express): Promise<Server> {
   // Middleware to extract and validate tenant ID
