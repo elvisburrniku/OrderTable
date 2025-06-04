@@ -20,6 +20,7 @@ import {
   specialPeriods,
   cutOffTimes
 } from "@shared/schema";
+import type { User, InsertUser, Restaurant, InsertRestaurant, Table, InsertTable, Booking, InsertBooking, Customer, InsertCustomer, SmsMessage, InsertSmsMessage, WaitingList, InsertWaitingList, Feedback, InsertFeedback, ActivityLog, InsertActivityLog, TimeSlots, InsertTimeSlots, Room, InsertRoom, OpeningHours, InsertOpeningHours, SpecialPeriod, InsertSpecialPeriod, CutOffTime, InsertCutOffTime, TableLayout, InsertTableLayout, CombinedTable, InsertCombinedTable } from "@shared/schema";
 import type {
   User,
   Restaurant,
@@ -158,20 +159,27 @@ export interface IStorage {
      // Opening Hours methods
      getOpeningHoursByRestaurant(restaurantId: number): Promise<any>;
      createOrUpdateOpeningHours(restaurantId: number, tenantId: number, hoursData: any[]): Promise<any>;
- 
+
      // Special Periods methods
      getSpecialPeriodsByRestaurant(restaurantId: number): Promise<any>;
      createSpecialPeriod(periodData: any): Promise<any>;
      updateSpecialPeriod(id: number, updates: any): Promise<any>;
      deleteSpecialPeriod(id: number): Promise<boolean>;
- 
+
      // Cut-off Times methods
      getCutOffTimesByRestaurant(restaurantId: number): Promise<any>;
      createOrUpdateCutOffTimes(restaurantId: number, tenantId: number, timesData: any[]): Promise<any>;
- 
+
      // Booking validation methods
      isRestaurantOpen(restaurantId: number, bookingDate: Date, bookingTime: string): Promise<boolean>;
      isBookingAllowed(restaurantId: number, bookingDate: Date, bookingTime: string): Promise<boolean>;
+
+  // Combined Tables
+  getCombinedTablesByRestaurant(restaurantId: number): Promise<CombinedTable[]>;
+  getCombinedTableById(id: number): Promise<CombinedTable | undefined>;
+  createCombinedTable(insertCombinedTable: InsertCombinedTable): Promise<CombinedTable>;
+  updateCombinedTable(id: number, updates: Partial<CombinedTable>): Promise<CombinedTable | undefined>;
+  deleteCombinedTable(id: number): Promise<boolean>;
 }
 
 export class MemStorage implements IStorage {
@@ -199,6 +207,8 @@ export class MemStorage implements IStorage {
   private currentTimeSlotsId: number;
   private currentSubscriptionPlanId: number;
   private currentUserSubscriptionId: number;
+  private combinedTables = new Map<number, CombinedTable>();
+  private currentCombinedTableId = 1;
 
   constructor() {
     this.users = new Map();
@@ -770,6 +780,40 @@ export class MemStorage implements IStorage {
     async isBookingAllowed(restaurantId: number, bookingDate: Date, bookingTime: string): Promise<boolean> {
         return true;
     }
+
+  // Combined Tables
+  async getCombinedTablesByRestaurant(restaurantId: number): Promise<CombinedTable[]> {
+    return Array.from(this.combinedTables.values()).filter(ct => ct.restaurantId === restaurantId);
+  }
+
+  async getCombinedTableById(id: number): Promise<CombinedTable | undefined> {
+    return this.combinedTables.get(id);
+  }
+
+  async createCombinedTable(insertCombinedTable: InsertCombinedTable): Promise<CombinedTable> {
+    const combinedTable: CombinedTable = {
+      ...insertCombinedTable,
+      id: this.currentCombinedTableId++,
+      isActive: insertCombinedTable.isActive ?? true,
+      createdAt: new Date(),
+      updatedAt: new Date()
+    };
+    this.combinedTables.set(combinedTable.id, combinedTable);
+    return combinedTable;
+  }
+
+  async updateCombinedTable(id: number, updates: Partial<CombinedTable>): Promise<CombinedTable | undefined> {
+    const combinedTable = this.combinedTables.get(id);
+    if (!combinedTable) return undefined;
+
+    const updatedCombinedTable = { ...combinedTable, ...updates, updatedAt: new Date() };
+    this.combinedTables.set(id, updatedCombinedTable);
+    return updatedCombinedTable;
+  }
+
+  async deleteCombinedTable(id: number): Promise<boolean> {
+    return this.combinedTables.delete(id);
+  }
 }
 
 import { DatabaseStorage } from "./db-storage";

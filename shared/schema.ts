@@ -334,6 +334,21 @@ export const tableLayouts = pgTable('table_layouts', {
   updatedAt: timestamp('updated_at').defaultNow().$onUpdate(() => new Date())
 });
 
+export const combinedTables = pgTable('combined_tables', {
+  id: serial('id').primaryKey(),
+  restaurantId: integer('restaurant_id').notNull().references(() => restaurants.id),
+  tenantId: integer('tenant_id').notNull().references(() => tenants.id),
+  name: varchar('name', { length: 255 }).notNull(),
+  tableIds: json('table_ids').notNull(), // Array of table IDs
+  totalCapacity: integer('total_capacity').notNull(),
+  isActive: boolean('is_active').default(true),
+  createdAt: timestamp('created_at').defaultNow().notNull(),
+  updatedAt: timestamp('updated_at').defaultNow().$onUpdate(() => new Date())
+});
+
+export type CombinedTable = InferSelectModel<typeof combinedTables>;
+export type InsertCombinedTable = InferInsertModel<typeof combinedTables>;
+
 export type TableLayout = InferSelectModel<typeof tableLayouts>;
 export type InsertTableLayout = InferInsertModel<typeof tableLayouts>;
 export type LoginData = z.infer<typeof loginSchema>;

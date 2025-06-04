@@ -229,7 +229,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const restaurantId = parseInt(req.params.restaurantId);
       const tenantId = parseInt(req.params.tenantId);
-      
+
       if (isNaN(restaurantId) || isNaN(tenantId)) {
         return res.status(400).json({ message: "Invalid restaurant ID or tenant ID" });
       }
@@ -239,15 +239,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
       if (!restaurant) {
         return res.status(404).json({ message: "Restaurant not found" });
       }
-      
+
       if (restaurant.tenantId !== tenantId) {
         return res.status(403).json({ message: "Restaurant does not belong to this tenant" });
       }
-      
+
       const rooms = await storage.getRoomsByRestaurant(restaurantId);
       // Filter rooms by tenantId for security
       const tenantRooms = rooms.filter(room => room.tenantId === tenantId);
-      
+
       res.json(tenantRooms);
     } catch (error) {
       console.error("Error fetching rooms:", error);
@@ -292,7 +292,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       if (!room) {
         return res.status(404).json({ message: "Failed to update room" });
       }
-      
+
       res.json(room);
     } catch (error) {
       console.error("Error updating room:", error);
@@ -383,6 +383,86 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.json({ message: "Table deleted successfully" });
     } catch (error) {
       res.status(400).json({ message: "Invalid request" });
+    }
+  });
+
+  // Get all tables for a restaurant
+  app.get("/api/tenants/:tenantId/restaurants/:restaurantId/tables", validateTenant, async (req, res) => {
+    try {
+      const restaurantId = parseInt(req.params.restaurantId);
+      const tables = await storage.getTablesByRestaurant(restaurantId);
+      res.json(tables);
+    } catch (error) {
+      res.status(500).json({ message: "Failed to fetch tables" });
+    }
+  });
+
+  // Combined Tables routes
+  app.get("/api/tenants/:tenantId/restaurants/:restaurantId/combined-tables", validateTenant, async (req, res) => {
+    try {
+      const restaurantId = parseInt(req.params.restaurantId);
+      const combinedTables = await storage.getCombinedTablesByRestaurant(restaurantId);
+      res.json(combinedTables);
+    } catch (error) {
+      res.status(500).json({ message: "Failed to fetch combined tables" });
+    }
+  });
+
+  app.post("/api/tenants/:tenantId/restaurants/:restaurantId/combined-tables", validateTenant, async (req, res) => {
+    try {
+      const restaurantId = parseInt(req.params.restaurantId);
+      const tenantId = parseInt(req.params.tenantId);
+      const combinedTableData = {
+        ...req.body,
+        restaurantId,
+        tenantId,
+      };
+
+      const combinedTable = await storage.createCombinedTable(combinedTableData);
+      res.json(combinedTable);
+    } catch (error) {
+      res.status(400).json({ message: "Invalid combined table data" });
+    }
+  });
+
+  app.put("/api/tenants/:tenantId/combined-tables/:id", validateTenant, async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      const tenantId = parseInt(req.params.tenantId);
+      const updates = req.body;
+
+      // Verify combined table belongs to tenant before updating
+      const existingCombinedTable = await storage.getCombinedTableById(id);
+      if (!existingCombinedTable || existingCombinedTable.tenantId !== tenantId) {
+        return res.status(404).json({ message: "Combined table not found" });
+      }
+
+      const combinedTable = await storage.updateCombinedTable(id, updates);
+      res.json(combinedTable);
+    } catch (error) {
+      res.status(400).json({ message: "Invalid request" });
+    }
+  });
+
+  app.delete("/api/tenants/:tenantId/combined-tables/:id", validateTenant, async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      const tenantId = parseInt(req.params.tenantId);
+
+      // Verify combined table belongs to tenant before deleting
+      const existingCombinedTable = await storage.getCombinedTableById(id);
+      if (!existingCombinedTable || existingCombinedTable.tenantId !== tenantId) {
+        return res.status(404).json({ message: "Combined table not found" });
+      }
+
+      const deleted = await storage.deleteCombinedTable(id);
+      if (deleted) {
+        res.json({ message: "Combined table deleted successfully" });
+      } else {
+        res.status(404).json({ message: "Combined table not found" });
+      }
+    } catch (error) {
+      res.status(500).json({ message: "Failed to delete combined table" });
     }
   });
 
@@ -773,7 +853,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Waiting List routes
   app.get("/api/tenants/:tenantId/restaurants/:restaurantId/waiting-list", validateTenant, async (req, res) => {
     try {
-      const restaurantId = parseInt(req.params.restaurantId);
+      const restaurantId =parseInt(req.params.restaurantId);
       const tenantId = parseInt(req.params.tenantId);
       const waitingList = await storage.getWaitingListByRestaurant(restaurantId);
       // Filter waiting list by tenantId for security
@@ -955,7 +1035,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       // Save the layout to database
       const savedLayout = await storage.saveTableLayout(restaurantId, tenantId, room, positions);
-      
+
       res.json({ 
         message: "Table layout saved successfully",
         room: savedLayout.room,
@@ -1032,7 +1112,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const restaurantId = parseInt(req.params.restaurantId);
       const tenantId = parseInt(req.params.tenantId);
-      
+
       // Verify restaurant belongs to tenant
       const restaurant = await storage.getRestaurantById(restaurantId);
       if (!restaurant || restaurant.tenantId !== tenantId) {
@@ -1072,7 +1152,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const restaurantId = parseInt(req.params.restaurantId);
       const tenantId = parseInt(req.params.tenantId);
-      
+
       // Verify restaurant belongs to tenant
       const restaurant = await storage.getRestaurantById(restaurantId);
       if (!restaurant || restaurant.tenantId !== tenantId) {
@@ -1137,7 +1217,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const restaurantId = parseInt(req.params.restaurantId);
       const tenantId = parseInt(req.params.tenantId);
-      
+
       // Verify restaurant belongs to tenant
       const restaurant = await storage.getRestaurantById(restaurantId);
       if (!restaurant || restaurant.tenantId !== tenantId) {

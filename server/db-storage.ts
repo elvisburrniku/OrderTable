@@ -19,6 +19,7 @@ import {
   openingHours,
   specialPeriods,
   cutOffTimes,
+  combinedTables,
   type User,
   type Tenant,
   type TenantUser,
@@ -50,7 +51,9 @@ import {
   type Room,
   type InsertRoom,
   type TableLayout,
-  type InsertTableLayout
+  type InsertTableLayout,
+  type CombinedTable,
+  type InsertCombinedTable
 } from "@shared/schema";
 import { neon } from "@neondatabase/serverless";
 import { drizzle } from "drizzle-orm/neon-http";
@@ -565,198 +568,31 @@ export class DatabaseStorage implements IStorage {
     return result.rowCount > 0;
   }
 
-  // Table Layouts
-  async getTableLayout(restaurantId: number, room: string): Promise<TableLayout | undefined> {
-    const result = await db.select().from(tableLayouts)
-      .where(and(
-        eq(tableLayouts.restaurantId, restaurantId),
-        eq(tableLayouts.room, room)
-      ));
+  // Combined Tables
+  async getCombinedTablesByRestaurant(restaurantId: number): Promise<CombinedTable[]> {
+    return await db.select().from(combinedTables).where(eq(combinedTables.restaurantId, restaurantId));
+  }
+
+  async getCombinedTableById(id: number): Promise<CombinedTable | undefined> {
+    const result = await db.select().from(combinedTables).where(eq(combinedTables.id, id));
     return result[0];
   }
 
-  async saveTableLayout(restaurantId: number, tenantId: number, room: string, positions: any): Promise<TableLayout> {
-    // Check if layout already exists
-    const existing = await this.getTableLayout(restaurantId, room);
-    
-    if (existing) {
-      // Update existing layout
-      const [updated] = await db.update(tableLayouts)
-        .set({ positions, updatedAt: new Date() })
-        .where(and(
-          eq(tableLayouts.restaurantId, restaurantId),
-          eq(tableLayouts.room, room)
-        ))
-        .returning();
-      return updated;
-    } else {
-      // Create new layout
-      const [newLayout] = await db.insert(tableLayouts).values({
-        restaurantId,
-        tenantId,
-        room,
-        positions
-      }).returning();
-      return newLayout;
-    }
+  async createCombinedTable(combinedTable: InsertCombinedTable): Promise<CombinedTable> {
+    const [newCombinedTable] = await db.insert(combinedTables).values(combinedTable).returning();
+    return newCombinedTable;
   }
 
-  // Opening Hours methods
-  async getOpeningHoursByRestaurant(restaurantId: number): Promise<any> {
-    const { openingHours } = schema;
-    return await db.select().from(openingHours).where(eq(openingHours.restaurantId, restaurantId));
-  }
-
-  async createOrUpdateOpeningHours(restaurantId: number, tenantId: number, hoursData: any[]): Promise<any> {
-    const { openingHours } = schema;
-    
-    // Delete existing hours for this restaurant
-    await db.delete(openingHours).where(eq(openingHours.restaurantId, restaurantId));
-    
-    // Insert new hours
-    const hoursToInsert = hoursData.map((dayHours, index) => ({
-      restaurantId,
-      tenantId,
-      dayOfWeek: index,
-      isOpen: dayHours.isOpen,
-      openTime: dayHours.openTime,
-      closeTime: dayHours.closeTime,
-    }));
-    
-    return await db.insert(openingHours).values(hoursToInsert).returning();
-  }
-
-  // Special Periods methods
-  async getSpecialPeriodsByRestaurant(restaurantId: number): Promise<any> {
-    const { specialPeriods } = schema;
-    return await db.select().from(specialPeriods).where(eq(specialPeriods.restaurantId, restaurantId));
-  }
-
-  async createSpecialPeriod(periodData: any): Promise<any> {
-    const { specialPeriods } = schema;
-    const [newPeriod] = await db.insert(specialPeriods).values(periodData).returning();
-    return newPeriod;
-  }
-
-  async updateSpecialPeriod(id: number, updates: any): Promise<any> {
-    const { specialPeriods } = schema;
-    const [updated] = await db.update(specialPeriods)
+  async updateCombinedTable(id: number, updates: Partial<CombinedTable>): Promise<CombinedTable | undefined> {
+    const [updated] = await db.update(combinedTables)
       .set({ ...updates, updatedAt: new Date() })
-      .where(eq(specialPeriods.id, id))
+      .where(eq(combinedTables.id, id))
       .returning();
     return updated;
   }
 
-  async deleteSpecialPeriod(id: number): Promise<boolean> {
-    const { specialPeriods } = schema;
-    const result = await db.delete(specialPeriods).where(eq(specialPeriods.id, id));
+  async deleteCombinedTable(id: number): Promise<boolean> {
+    const result = await db.delete(combinedTables).where(eq(combinedTables.id, id));
     return result.rowCount > 0;
-  }
-
-  // Cut-off Times methods
-  async getCutOffTimesByRestaurant(restaurantId: number): Promise<any> {
-    const { cutOffTimes } = schema;
-    return await db.select().from(cutOffTimes).where(eq(cutOffTimes.restaurantId, restaurantId));
-  }
-
-  async createOrUpdateCutOffTimes(restaurantId: number, tenantId: number, timesData: any[]): Promise<any> {
-    const { cutOffTimes } = schema;
-    
-    // Delete existing cut-off times for this restaurant
-    await db.delete(cutOffTimes).where(eq(cutOffTimes.restaurantId, restaurantId));
-    
-    // Insert new cut-off times
-    const timesToInsert = timesData.map((dayTime, index) => ({
-      restaurantId,
-      tenantId,
-      dayOfWeek: index,
-      cutOffHours: dayTime.cutOffHours || 0,
-    }));
-    
-    return await db.insert(cutOffTimes).values(timesToInsert).returning();
-  }
-
-  // Booking validation methods
-  async isRestaurantOpen(restaurantId: number, bookingDate: Date, bookingTime: string): Promise<boolean> {
-    const { openingHours, specialPeriods } = schema;
-    
-    const dayOfWeek = bookingDate.getDay();
-    const dateString = bookingDate.toISOString().split('T')[0];
-    
-    try {
-      // Check for special periods first
-      const specialPeriod = await db.select().from(specialPeriods)
-        .where(and(
-          eq(specialPeriods.restaurantId, restaurantId),
-          eq(specialPeriods.startDate, dateString),
-          eq(specialPeriods.endDate, dateString)
-        ));
-      
-      if (specialPeriod.length > 0) {
-        const period = specialPeriod[0];
-        if (!period.isOpen) {
-          console.log(`Restaurant closed due to special period: ${period.name}`);
-          return false;
-        }
-        if (period.openTime && period.closeTime) {
-          const isInTime = bookingTime >= period.openTime && bookingTime <= period.closeTime;
-          console.log(`Special period check: ${bookingTime} between ${period.openTime}-${period.closeTime}: ${isInTime}`);
-          return isInTime;
-        }
-      }
-      
-      // Check regular opening hours
-      const regularHours = await db.select().from(openingHours)
-        .where(and(
-          eq(openingHours.restaurantId, restaurantId),
-          eq(openingHours.dayOfWeek, dayOfWeek)
-        ));
-      
-      if (regularHours.length === 0) {
-        console.log(`No opening hours found for restaurant ${restaurantId}, day ${dayOfWeek}`);
-        return false;
-      }
-      
-      const dayHours = regularHours[0];
-      if (!dayHours.isOpen) {
-        console.log(`Restaurant closed on day ${dayOfWeek} (${['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'][dayOfWeek]})`);
-        return false;
-      }
-      
-      const isInTime = bookingTime >= dayHours.openTime && bookingTime <= dayHours.closeTime;
-      console.log(`Regular hours check for day ${dayOfWeek}: ${bookingTime} between ${dayHours.openTime}-${dayHours.closeTime}: ${isInTime}`);
-      return isInTime;
-      
-    } catch (error) {
-      console.error("Error checking restaurant opening hours:", error);
-      return false; // Default to closed if there's an error
-    }
-  }
-
-  async isBookingAllowed(restaurantId: number, bookingDate: Date, bookingTime: string): Promise<boolean> {
-    const { cutOffTimes } = schema;
-    
-    // First check if restaurant is open
-    const isOpen = await this.isRestaurantOpen(restaurantId, bookingDate, bookingTime);
-    if (!isOpen) return false;
-    
-    // Check cut-off times
-    const dayOfWeek = bookingDate.getDay();
-    const cutOff = await db.select().from(cutOffTimes)
-      .where(and(
-        eq(cutOffTimes.restaurantId, restaurantId),
-        eq(cutOffTimes.dayOfWeek, dayOfWeek)
-      ));
-    
-    if (cutOff.length > 0) {
-      const cutOffHours = cutOff[0].cutOffHours || 0;
-      const now = new Date();
-      const bookingDateTime = new Date(`${bookingDate.toISOString().split('T')[0]}T${bookingTime}:00`);
-      const cutOffTime = new Date(bookingDateTime.getTime() - (cutOffHours * 60 * 60 * 1000));
-      
-      if (now > cutOffTime) return false;
-    }
-    
-    return true;
   }
 }
