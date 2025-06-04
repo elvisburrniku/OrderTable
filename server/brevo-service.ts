@@ -1,8 +1,8 @@
 
-import * as brevo from '@getbrevo/brevo';
+import { ApiClient, TransactionalEmailsApi, SendSmtpEmail } from '@getbrevo/brevo';
 
 export class BrevoEmailService {
-  private apiInstance: brevo.TransactionalEmailsApi;
+  private apiInstance: TransactionalEmailsApi;
 
   constructor() {
     const apiKey = process.env.BREVO_API_KEY;
@@ -10,15 +10,15 @@ export class BrevoEmailService {
       throw new Error('BREVO_API_KEY environment variable is required');
     }
 
-    const defaultClient = brevo.ApiClient.instance;
+    const defaultClient = ApiClient.instance;
     const apiKeyAuth = defaultClient.authentications['api-key'];
     apiKeyAuth.apiKey = apiKey;
 
-    this.apiInstance = new brevo.TransactionalEmailsApi();
+    this.apiInstance = new TransactionalEmailsApi();
   }
 
   async sendBookingConfirmation(customerEmail: string, customerName: string, bookingData: any): Promise<void> {
-    const sendSmtpEmail = new brevo.SendSmtpEmail();
+    const sendSmtpEmail = new SendSmtpEmail();
     sendSmtpEmail.to = [{ email: customerEmail, name: customerName }];
     sendSmtpEmail.sender = { email: 'noreply@restaurant.com', name: 'Restaurant Booking' };
     sendSmtpEmail.subject = 'Booking Confirmation';
@@ -39,7 +39,7 @@ export class BrevoEmailService {
   }
 
   async sendRestaurantNotification(restaurantEmail: string, bookingData: any): Promise<void> {
-    const sendSmtpEmail = new brevo.SendSmtpEmail();
+    const sendSmtpEmail = new SendSmtpEmail();
     sendSmtpEmail.to = [{ email: restaurantEmail }];
     sendSmtpEmail.sender = { email: 'noreply@restaurant.com', name: 'Restaurant Booking System' };
     sendSmtpEmail.subject = 'New Booking Received';
@@ -62,7 +62,7 @@ export class BrevoEmailService {
   }
 
   async sendBookingConfirmation(customerEmail: string, customerName: string, bookingDetails: any) {
-    const sendSmtpEmail = new brevo.SendSmtpEmail();
+    const sendSmtpEmail = new SendSmtpEmail();
     
     sendSmtpEmail.subject = "Booking Confirmation - Your reservation is confirmed";
     sendSmtpEmail.htmlContent = `
@@ -104,7 +104,7 @@ export class BrevoEmailService {
   }
 
   async sendBookingReminder(customerEmail: string, customerName: string, bookingDetails: any, hoursBeforeVisit: number) {
-    const sendSmtpEmail = new brevo.SendSmtpEmail();
+    const sendSmtpEmail = new SendSmtpEmail();
     
     sendSmtpEmail.subject = `Reminder: Your reservation is in ${hoursBeforeVisit} hours`;
     sendSmtpEmail.htmlContent = `
@@ -146,7 +146,7 @@ export class BrevoEmailService {
   }
 
   async sendRestaurantNotification(restaurantEmail: string, bookingDetails: any) {
-    const sendSmtpEmail = new brevo.SendSmtpEmail();
+    const sendSmtpEmail = new SendSmtpEmail();
     
     sendSmtpEmail.subject = "New Booking Received";
     sendSmtpEmail.htmlContent = `
