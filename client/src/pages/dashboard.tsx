@@ -169,25 +169,30 @@ export default function Dashboard() {
       const tableBookings = dateBookings.filter(booking => booking.tableId === table.id);
       
       const isOccupied = tableBookings.some(booking => {
-        const startTime = booking.startTime;
-        const endTime = booking.endTime || "23:59";
+        const existingStartTime = booking.startTime;
+        const existingEndTime = booking.endTime || "23:59";
         
-        // Check if requested time overlaps with existing booking
-        const requestedHour = parseInt(requestedTime.split(':')[0]);
-        const requestedMinute = parseInt(requestedTime.split(':')[1]);
-        const requestedTotalMinutes = requestedHour * 60 + requestedMinute;
+        // For dashboard, we assume a 2-hour booking duration
+        const requestedEndTime = String(parseInt(requestedTime.split(':')[0]) + 2).padStart(2, '0') + ':' + requestedTime.split(':')[1];
         
-        const startHour = parseInt(startTime.split(':')[0]);
-        const startMinute = parseInt(startTime.split(':')[1]);
-        const startTotalMinutes = startHour * 60 + startMinute;
+        // Convert times to minutes for easier comparison
+        const requestedStartMinutes = parseInt(requestedTime.split(':')[0]) * 60 + parseInt(requestedTime.split(':')[1]);
+        const requestedEndMinutes = parseInt(requestedEndTime.split(':')[0]) * 60 + parseInt(requestedEndTime.split(':')[1]);
         
-        const endHour = parseInt(endTime.split(':')[0]);
-        const endMinute = parseInt(endTime.split(':')[1]);
-        const endTotalMinutes = endHour * 60 + endMinute;
+        const existingStartMinutes = parseInt(existingStartTime.split(':')[0]) * 60 + parseInt(existingStartTime.split(':')[1]);
+        const existingEndMinutes = parseInt(existingEndTime.split(':')[0]) * 60 + parseInt(existingEndTime.split(':')[1]);
         
-        // Add 2-hour buffer (120 minutes) for table turnover
-        return requestedTotalMinutes >= (startTotalMinutes - 60) && 
-               requestedTotalMinutes <= (endTotalMinutes + 60);
+        // Add 1-hour buffer (60 minutes) for table turnover
+        const bufferMinutes = 60;
+        
+        // Check for time overlap with buffer
+        // Two time ranges overlap if: start1 < end2 && start2 < end1
+        const requestedStart = requestedStartMinutes - bufferMinutes;
+        const requestedEnd = requestedEndMinutes + bufferMinutes;
+        const existingStart = existingStartMinutes - bufferMinutes;
+        const existingEnd = existingEndMinutes + bufferMinutes;
+        
+        return requestedStart < existingEnd && existingStart < requestedEnd;
       });
 
       return !isOccupied;
@@ -253,24 +258,30 @@ export default function Dashboard() {
       );
 
       const isTableOccupied = tableBookings.some(booking => {
-        const startTime = booking.startTime;
-        const endTime = booking.endTime || "23:59";
+        const existingStartTime = booking.startTime;
+        const existingEndTime = booking.endTime || "23:59";
         
-        const requestedHour = parseInt(newBooking.startTime.split(':')[0]);
-        const requestedMinute = parseInt(newBooking.startTime.split(':')[1]);
-        const requestedTotalMinutes = requestedHour * 60 + requestedMinute;
+        const requestedStartTime = newBooking.startTime;
+        const requestedEndTime = newBooking.endTime;
         
-        const startHour = parseInt(startTime.split(':')[0]);
-        const startMinute = parseInt(startTime.split(':')[1]);
-        const startTotalMinutes = startHour * 60 + startMinute;
+        // Convert times to minutes for easier comparison
+        const requestedStartMinutes = parseInt(requestedStartTime.split(':')[0]) * 60 + parseInt(requestedStartTime.split(':')[1]);
+        const requestedEndMinutes = parseInt(requestedEndTime.split(':')[0]) * 60 + parseInt(requestedEndTime.split(':')[1]);
         
-        const endHour = parseInt(endTime.split(':')[0]);
-        const endMinute = parseInt(endTime.split(':')[1]);
-        const endTotalMinutes = endHour * 60 + endMinute;
+        const existingStartMinutes = parseInt(existingStartTime.split(':')[0]) * 60 + parseInt(existingStartTime.split(':')[1]);
+        const existingEndMinutes = parseInt(existingEndTime.split(':')[0]) * 60 + parseInt(existingEndTime.split(':')[1]);
         
-        // Check for overlap with 1-hour buffer
-        return requestedTotalMinutes >= (startTotalMinutes - 60) && 
-               requestedTotalMinutes <= (endTotalMinutes + 60);
+        // Add 1-hour buffer (60 minutes) for table turnover
+        const bufferMinutes = 60;
+        
+        // Check for time overlap with buffer
+        // Two time ranges overlap if: start1 < end2 && start2 < end1
+        const requestedStart = requestedStartMinutes - bufferMinutes;
+        const requestedEnd = requestedEndMinutes + bufferMinutes;
+        const existingStart = existingStartMinutes - bufferMinutes;
+        const existingEnd = existingEndMinutes + bufferMinutes;
+        
+        return requestedStart < existingEnd && existingStart < requestedEnd;
       });
 
       if (isTableOccupied) {

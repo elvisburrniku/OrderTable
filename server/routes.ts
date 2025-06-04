@@ -560,26 +560,28 @@ export async function registerRoutes(app: Express): Promise<Server> {
         const conflictingBookings = existingBookings.filter(booking => {
           if (booking.tableId !== tableId) return false;
           
-          const startTime = req.body.startTime;
-          const endTime = req.body.endTime || "23:59";
+          const requestedStartTime = req.body.startTime;
+          const requestedEndTime = req.body.endTime || "23:59";
           
-          // Check if times overlap with 1-hour buffer
-          const requestedHour = parseInt(startTime.split(':')[0]);
-          const requestedMinute = parseInt(startTime.split(':')[1]);
-          const requestedTotalMinutes = requestedHour * 60 + requestedMinute;
+          // Convert times to minutes for easier comparison
+          const requestedStartMinutes = parseInt(requestedStartTime.split(':')[0]) * 60 + parseInt(requestedStartTime.split(':')[1]);
+          const requestedEndMinutes = parseInt(requestedEndTime.split(':')[0]) * 60 + parseInt(requestedEndTime.split(':')[1]);
           
-          const bookingStartHour = parseInt(booking.startTime.split(':')[0]);
-          const bookingStartMinute = parseInt(booking.startTime.split(':')[1]);
-          const bookingStartTotalMinutes = bookingStartHour * 60 + bookingStartMinute;
+          const existingStartMinutes = parseInt(booking.startTime.split(':')[0]) * 60 + parseInt(booking.startTime.split(':')[1]);
+          const existingEndTime = booking.endTime || "23:59";
+          const existingEndMinutes = parseInt(existingEndTime.split(':')[0]) * 60 + parseInt(existingEndTime.split(':')[1]);
           
-          const bookingEndTime = booking.endTime || "23:59";
-          const bookingEndHour = parseInt(bookingEndTime.split(':')[0]);
-          const bookingEndMinute = parseInt(bookingEndTime.split(':')[1]);
-          const bookingEndTotalMinutes = bookingEndHour * 60 + bookingEndMinute;
+          // Add 1-hour buffer (60 minutes) for table turnover
+          const bufferMinutes = 60;
           
-          // Check for overlap with 1-hour buffer
-          return requestedTotalMinutes >= (bookingStartTotalMinutes - 60) && 
-                 requestedTotalMinutes <= (bookingEndTotalMinutes + 60);
+          // Check for time overlap with buffer
+          // Two time ranges overlap if: start1 < end2 && start2 < end1
+          const requestedStart = requestedStartMinutes - bufferMinutes;
+          const requestedEnd = requestedEndMinutes + bufferMinutes;
+          const existingStart = existingStartMinutes - bufferMinutes;
+          const existingEnd = existingEndMinutes + bufferMinutes;
+          
+          return requestedStart < existingEnd && existingStart < requestedEnd;
         });
 
         if (conflictingBookings.length > 0) {

@@ -133,24 +133,27 @@ export default function Bookings() {
 
     // Check time conflicts
     const hasTimeConflict = dateBookings.some(booking => {
-      const existingStart = booking.startTime;
-      const existingEnd = booking.endTime || "23:59";
+      const existingStartTime = booking.startTime;
+      const existingEndTime = booking.endTime || "23:59";
       
-      const requestedHour = parseInt(startTime.split(':')[0]);
-      const requestedMinute = parseInt(startTime.split(':')[1]);
-      const requestedTotalMinutes = requestedHour * 60 + requestedMinute;
+      // Convert times to minutes for easier comparison
+      const requestedStartMinutes = parseInt(startTime.split(':')[0]) * 60 + parseInt(startTime.split(':')[1]);
+      const requestedEndMinutes = parseInt(endTime.split(':')[0]) * 60 + parseInt(endTime.split(':')[1]);
       
-      const startHour = parseInt(existingStart.split(':')[0]);
-      const startMinute = parseInt(existingStart.split(':')[1]);
-      const startTotalMinutes = startHour * 60 + startMinute;
+      const existingStartMinutes = parseInt(existingStartTime.split(':')[0]) * 60 + parseInt(existingStartTime.split(':')[1]);
+      const existingEndMinutes = parseInt(existingEndTime.split(':')[0]) * 60 + parseInt(existingEndTime.split(':')[1]);
       
-      const endHour = parseInt(existingEnd.split(':')[0]);
-      const endMinute = parseInt(existingEnd.split(':')[1]);
-      const endTotalMinutes = endHour * 60 + endMinute;
+      // Add 1-hour buffer (60 minutes) for table turnover
+      const bufferMinutes = 60;
       
-      // Check for overlap with 1-hour buffer
-      return requestedTotalMinutes >= (startTotalMinutes - 60) && 
-             requestedTotalMinutes <= (endTotalMinutes + 60);
+      // Check for time overlap with buffer
+      // Two time ranges overlap if: start1 < end2 && start2 < end1
+      const requestedStart = requestedStartMinutes - bufferMinutes;
+      const requestedEnd = requestedEndMinutes + bufferMinutes;
+      const existingStart = existingStartMinutes - bufferMinutes;
+      const existingEnd = existingEndMinutes + bufferMinutes;
+      
+      return requestedStart < existingEnd && existingStart < requestedEnd;
     });
 
     if (hasTimeConflict) {
