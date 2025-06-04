@@ -377,18 +377,6 @@ export default function BookingCalendar({ selectedDate, bookings, allBookings = 
     );
   };
 
-  // Fetch tables
-  const { data: tables = [], isLoading: tablesLoading } = useQuery({
-    queryKey: ["tables", restaurant?.id, restaurant?.tenantId],
-    queryFn: async () => {
-      if (!restaurant?.id || !restaurant?.tenantId) return [];
-      const response = await fetch(`/api/tenants/${restaurant.tenantId}/restaurants/${restaurant.id}/tables`);
-      if (!response.ok) throw new Error("Failed to fetch tables");
-      return response.json();
-    },
-    enabled: !!restaurant?.id && !!restaurant?.tenantId,
-  });
-
   // Fetch combined tables
   const { data: combinedTables = [], isLoading: combinedTablesLoading } = useQuery({
     queryKey: ["combinedTables", restaurant?.id, restaurant?.tenantId],
