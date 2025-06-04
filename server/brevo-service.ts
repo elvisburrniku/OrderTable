@@ -1,5 +1,5 @@
 
-import { TransactionalEmailsApi, SendSmtpEmail } from '@getbrevo/brevo';
+import { TransactionalEmailsApi, SendSmtpEmail, ApiKeyAuth } from '@getbrevo/brevo';
 
 export class BrevoEmailService {
   private apiInstance: TransactionalEmailsApi;
@@ -11,7 +11,7 @@ export class BrevoEmailService {
     }
 
     this.apiInstance = new TransactionalEmailsApi();
-    this.apiInstance.setApiKey(TransactionalEmailsApi.ApiKeyParam.API_KEY, apiKey);
+    this.apiInstance.setApiKey(ApiKeyAuth, apiKey);
   }
 
   async sendBookingConfirmation(customerEmail: string, customerName: string, bookingData: any): Promise<void> {
