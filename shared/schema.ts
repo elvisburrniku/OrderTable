@@ -44,11 +44,26 @@ export const restaurants = pgTable("restaurants", {
 
 export const tables = pgTable("tables", {
   id: serial("id").primaryKey(),
-  restaurantId: integer("restaurant_id").references(() => restaurants.id).notNull(),
-  tenantId: integer("tenant_id").notNull().references(() => tenants.id),
-  tableNumber: text("table_number").notNull(),
+  tableNumber: varchar("table_number", { length: 50 }).notNull(),
   capacity: integer("capacity").notNull(),
-  isActive: boolean("is_active").default(true)
+  isActive: boolean("is_active").default(true),
+  restaurantId: integer("restaurant_id").references(() => restaurants.id),
+  tenantId: integer("tenant_id").references(() => tenants.id),
+  roomId: integer("room_id").references(() => rooms.id),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow()
+});
+
+export const combinedTables = pgTable("combined_tables", {
+  id: serial("id").primaryKey(),
+  name: varchar("name", { length: 255 }).notNull(),
+  tableIds: text("table_ids").notNull(), // JSON array of table IDs
+  totalCapacity: integer("total_capacity").notNull(),
+  isActive: boolean("is_active").default(true),
+  restaurantId: integer("restaurant_id").references(() => restaurants.id),
+  tenantId: integer("tenant_id").references(() => tenants.id),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow()
 });
 
 export const bookings = pgTable("bookings", {
@@ -330,18 +345,6 @@ export const tableLayouts = pgTable('table_layouts', {
   tenantId: integer('tenant_id').notNull().references(() => tenants.id),
   room: varchar('room', { length: 50 }).notNull(),
   positions: json('positions').notNull(),
-  createdAt: timestamp('created_at').defaultNow().notNull(),
-  updatedAt: timestamp('updated_at').defaultNow().$onUpdate(() => new Date())
-});
-
-export const combinedTables = pgTable('combined_tables', {
-  id: serial('id').primaryKey(),
-  restaurantId: integer('restaurant_id').notNull().references(() => restaurants.id),
-  tenantId: integer('tenant_id').notNull().references(() => tenants.id),
-  name: varchar('name', { length: 255 }).notNull(),
-  tableIds: json('table_ids').notNull(), // Array of table IDs
-  totalCapacity: integer('total_capacity').notNull(),
-  isActive: boolean('is_active').default(true),
   createdAt: timestamp('created_at').defaultNow().notNull(),
   updatedAt: timestamp('updated_at').defaultNow().$onUpdate(() => new Date())
 });
