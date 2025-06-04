@@ -189,6 +189,7 @@ export default function EmailNotifications() {
                           <SelectValue />
                         </SelectTrigger>
                         <SelectContent>
+                          <SelectItem value="2">2</SelectItem>
                           <SelectItem value="24">24</SelectItem>
                           <SelectItem value="48">48</SelectItem>
                           <SelectItem value="72">72</SelectItem>
