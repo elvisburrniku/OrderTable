@@ -3,6 +3,7 @@ import { registerRoutes } from "./routes";
 import { setupVite, serveStatic, log } from "./vite";
 import { storage } from "./storage";
 import { DatabaseStorage } from "./db-storage";
+import { ReminderService } from "./reminder-service";
 
 const app = express();
 app.use(express.json());
@@ -43,6 +44,10 @@ app.use((req, res, next) => {
   if (storage instanceof DatabaseStorage) {
     await storage.initialize();
   }
+
+  // Start reminder service for email notifications
+  const reminderService = new ReminderService();
+  reminderService.startReminderScheduler();
 
   const server = await registerRoutes(app);
 

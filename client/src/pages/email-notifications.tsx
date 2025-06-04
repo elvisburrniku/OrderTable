@@ -1,5 +1,7 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useAuth } from "@/lib/auth.tsx";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { useToast } from "@/hooks/use-toast";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Switch } from "@/components/ui/switch";
@@ -9,6 +11,9 @@ import { Textarea } from "@/components/ui/textarea";
 
 export default function EmailNotifications() {
   const { user, restaurant } = useAuth();
+  const { toast } = useToast();
+  const queryClient = useQueryClient();
+
   const [guestSettings, setGuestSettings] = useState({
     emailConfirmation: true,
     sendBookingConfirmation: true,
@@ -20,12 +25,61 @@ export default function EmailNotifications() {
   });
 
   const [placeSettings, setPlaceSettings] = useState({
-    sentTo: "Default office location@gmail.com",
+    sentTo: restaurant?.email || "restaurant@example.com",
     emailBooking: true,
     newBookingsOnly: false,
     satisfactionSurvey: true,
     rating: "3.0"
   });
+
+  // Load settings from restaurant data
+  useEffect(() => {
+    if (restaurant) {
+      setPlaceSettings(prev => ({
+        ...prev,
+        sentTo: restaurant.email || "restaurant@example.com"
+      }));
+    }
+  }, [restaurant]);
+
+  // Save settings mutation
+  const saveSettingsMutation = useMutation({
+    mutationFn: async () => {
+      const response = await fetch(`/api/tenants/${restaurant?.tenantId}/restaurants/${restaurant?.id}/email-settings`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          guestSettings,
+          placeSettings
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to save email settings');
+      }
+
+      return response.json();
+    },
+    onSuccess: () => {
+      toast({
+        title: "Settings saved",
+        description: "Email notification settings have been updated successfully.",
+      });
+    },
+    onError: (error: Error) => {
+      toast({
+        title: "Error",
+        description: error.message,
+        variant: "destructive",
+      });
+    },
+  });
+
+  const handleSave = () => {
+    saveSettingsMutation.mutate();
+  };
 
   if (!user || !restaurant) {
     return null;
@@ -192,7 +246,13 @@ export default function EmailNotifications() {
             </Card>
 
             <div className="pt-6">
-              <Button className="bg-green-600 hover:bg-green-700 text-white">Save</Button>
+              <Button 
+                onClick={handleSave}
+                disabled={saveSettingsMutation.isPending}
+                className="bg-green-600 hover:bg-green-700 text-white"
+              >
+                {saveSettingsMutation.isPending ? "Saving..." : "Save"}
+              </Button>
             </div>
           </div>
         </div>

@@ -9,10 +9,14 @@ import { Request, Response } from "express";
 import bcrypt from 'bcrypt';
 import { users, tenants, tenantUsers, restaurants } from "@shared/schema";
 import { eq } from "drizzle-orm";
+import { EmailService } from "./email-service"; // Import the EmailService
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY || 'sk_test_your_stripe_secret_key', {
   apiVersion: '2023-10-16'
 });
+
+// Initialize email service, passing API key from environment variables
+const emailService = process.env.BREVO_API_KEY ? new EmailService(process.env.BREVO_API_KEY) : null;
 
 export async function registerRoutes(app: Express): Promise<Server> {
   // Middleware to extract and validate tenant ID
@@ -202,6 +206,36 @@ export async function registerRoutes(app: Express): Promise<Server> {
       });
 
       const booking = await storage.createBooking(bookingData);
+
+      // Send email notifications if Brevo is configured
+      if (emailService) {
+        try {
+          // Send confirmation email to customer
+          await emailService.sendBookingConfirmation(
+            req.body.customerEmail,
+            req.body.customerName,
+            {
+              ...bookingData,
+              tableNumber: booking.tableId
+            }
+          );
+
+          // Send notification to restaurant
+          const restaurant = await storage.getRestaurantById(restaurantId);
+          if (restaurant?.email) {
+            await emailService.sendRestaurantNotification(restaurant.email, {
+              customerName: req.body.customerName,
+              customerEmail: req.body.customerEmail,
+              customerPhone: req.body.customerPhone,
+              ...bookingData
+            });
+          }
+        } catch (emailError) {
+          console.error('Error sending email notifications:', emailError);
+          // Don't fail the booking if email fails
+        }
+      }
+
       res.json(booking);
     } catch (error) {
       res.status(400).json({ message: "Invalid booking data" });
@@ -402,7 +436,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  
+
 
   // Combined Tables routes
   app.get("/api/tenants/:tenantId/restaurants/:restaurantId/combined-tables", validateTenant, async (req, res) => {
@@ -535,6 +569,36 @@ export async function registerRoutes(app: Express): Promise<Server> {
       });
 
       const booking = await storage.createBooking(bookingData);
+
+      // Send email notifications if Brevo is configured
+      if (emailService) {
+        try {
+          // Send confirmation email to customer
+          await emailService.sendBookingConfirmation(
+            req.body.customerEmail,
+            req.body.customerName,
+            {
+              ...bookingData,
+              tableNumber: booking.tableId
+            }
+          );
+
+          // Send notification to restaurant
+          const restaurant = await storage.getRestaurantById(restaurantId);
+          if (restaurant?.email) {
+            await emailService.sendRestaurantNotification(restaurant.email, {
+              customerName: req.body.customerName,
+              customerEmail: req.body.customerEmail,
+              customerPhone: req.body.customerPhone,
+              ...bookingData
+            });
+          }
+        } catch (emailError) {
+          console.error('Error sending email notifications:', emailError);
+          // Don't fail the booking if email fails
+        }
+      }
+
       res.json(booking);
     } catch (error) {
       console.error("Booking creation error:", error);
