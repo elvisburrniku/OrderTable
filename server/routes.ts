@@ -323,12 +323,28 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const restaurantId = parseInt(req.params.restaurantId);
       const tenantId = parseInt(req.params.tenantId);
+
+      if (isNaN(restaurantId) || isNaN(tenantId)) {
+        return res.status(400).json({ message: "Invalid restaurant ID or tenant ID" });
+      }
+
+      // Verify restaurant exists and belongs to tenant
+      const restaurant = await storage.getRestaurantById(restaurantId);
+      if (!restaurant) {
+        return res.status(404).json({ message: "Restaurant not found" });
+      }
+
+      if (restaurant.tenantId !== tenantId) {
+        return res.status(403).json({ message: "Restaurant does not belong to this tenant" });
+      }
+
       const tables = await storage.getTablesByRestaurant(restaurantId);
       // Filter tables by tenantId for security
       const tenantTables = tables.filter(table => table.tenantId === tenantId);
       res.json(tenantTables);
     } catch (error) {
-      res.status(400).json({ message: "Invalid request" });
+      console.error("Error fetching tables:", error);
+      res.status(500).json({ message: "Internal server error" });
     }
   });
 
