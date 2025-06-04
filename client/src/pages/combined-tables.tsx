@@ -42,13 +42,13 @@ export default function CombinedTables() {
 
   // Fetch tables
   const { data: tables = [], isLoading: tablesLoading } = useQuery({
-    queryKey: ["tables", restaurant?.id, user?.tenantId],
+    queryKey: ["tables", restaurant?.id, restaurant?.tenantId],
     queryFn: async () => {
-      if (!restaurant?.id || !user?.tenantId) {
-        console.log("Missing restaurant ID or tenant ID:", { restaurantId: restaurant?.id, tenantId: user?.tenantId });
+      if (!restaurant?.id || !restaurant?.tenantId) {
+        console.log("Missing restaurant ID or tenant ID:", { restaurantId: restaurant?.id, tenantId: restaurant?.tenantId });
         return [];
       }
-      const response = await fetch(`/api/tenants/${user.tenantId}/restaurants/${restaurant.id}/tables`);
+      const response = await fetch(`/api/tenants/${restaurant.tenantId}/restaurants/${restaurant.id}/tables`);
       if (!response.ok) {
         console.error("Failed to fetch tables:", response.status, response.statusText);
         throw new Error("Failed to fetch tables");
@@ -57,26 +57,26 @@ export default function CombinedTables() {
       console.log("Fetched tables:", data);
       return data;
     },
-    enabled: !!restaurant?.id && !!user?.tenantId,
+    enabled: !!restaurant?.id && !!restaurant?.tenantId,
   });
 
   // Fetch combined tables
   const { data: combinedTables = [], isLoading: combinedTablesLoading } = useQuery({
     queryKey: ["combinedTables", restaurant?.id],
     queryFn: async () => {
-      if (!restaurant?.id || !user?.tenantId) return [];
-      const response = await fetch(`/api/tenants/${user.tenantId}/restaurants/${restaurant.id}/combined-tables`);
+      if (!restaurant?.id || !restaurant?.tenantId) return [];
+      const response = await fetch(`/api/tenants/${restaurant.tenantId}/restaurants/${restaurant.id}/combined-tables`);
       if (!response.ok) throw new Error("Failed to fetch combined tables");
       return response.json();
     },
-    enabled: !!restaurant?.id && !!user?.tenantId,
+    enabled: !!restaurant?.id && !!restaurant?.tenantId,
   });
 
   // Create combined table mutation
   const createCombinedTableMutation = useMutation({
     mutationFn: async (combinedTableData: any) => {
-      if (!restaurant?.id || !user?.tenantId) throw new Error("Missing restaurant or tenant ID");
-      const response = await fetch(`/api/tenants/${user.tenantId}/restaurants/${restaurant.id}/combined-tables`, {
+      if (!restaurant?.id || !restaurant?.tenantId) throw new Error("Missing restaurant or tenant ID");
+      const response = await fetch(`/api/tenants/${restaurant.tenantId}/restaurants/${restaurant.id}/combined-tables`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(combinedTableData),
@@ -105,8 +105,8 @@ export default function CombinedTables() {
   // Update combined table mutation
   const updateCombinedTableMutation = useMutation({
     mutationFn: async ({ id, updates }: { id: number; updates: any }) => {
-      if (!user?.tenantId) throw new Error("Missing tenant ID");
-      const response = await fetch(`/api/tenants/${user.tenantId}/combined-tables/${id}`, {
+      if (!restaurant?.tenantId) throw new Error("Missing tenant ID");
+      const response = await fetch(`/api/tenants/${restaurant.tenantId}/combined-tables/${id}`, {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(updates),
@@ -135,8 +135,8 @@ export default function CombinedTables() {
   // Delete combined table mutation
   const deleteCombinedTableMutation = useMutation({
     mutationFn: async (id: number) => {
-      if (!user?.tenantId) throw new Error("Missing tenant ID");
-      const response = await fetch(`/api/tenants/${user.tenantId}/combined-tables/${id}`, {
+      if (!restaurant?.tenantId) throw new Error("Missing tenant ID");
+      const response = await fetch(`/api/tenants/${restaurant.tenantId}/combined-tables/${id}`, {
         method: "DELETE",
       });
       if (!response.ok) throw new Error("Failed to delete combined table");
