@@ -32,6 +32,11 @@ export default function BookingDetail() {
 
   const { data: booking, isLoading, error } = useQuery({
     queryKey: [`/api/tenants/${restaurant?.tenantId}/bookings/${id}`],
+    queryFn: async () => {
+      const response = await fetch(`/api/tenants/${restaurant?.tenantId}/bookings/${id}`);
+      if (!response.ok) throw new Error("Failed to fetch booking");
+      return response.json();
+    },
     enabled: !!restaurant && !!restaurant.tenantId && !!id
   });
 

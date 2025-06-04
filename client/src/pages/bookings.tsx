@@ -39,10 +39,10 @@ export default function Bookings() {
       booking.customerName?.toLowerCase().includes(searchTerm.toLowerCase()) ||
       booking.customerEmail?.toLowerCase().includes(searchTerm.toLowerCase()) ||
       booking.customerPhone?.toLowerCase().includes(searchTerm.toLowerCase());
-    
+
     const matchesStatus = statusFilter === "all" || booking.status === statusFilter;
     const matchesSource = sourceFilter === "all" || booking.source === sourceFilter;
-    
+
     return matchesSearch && matchesStatus && matchesSource;
   }) : [];
 
@@ -125,14 +125,14 @@ export default function Bookings() {
             {/* Header */}
             <div className="p-6 border-b">
               <h2 className="text-lg font-semibold mb-4">Bookings</h2>
-              
+
               {/* Filters */}
               <div className="flex items-center space-x-4 mb-4">
                 <Button variant="outline" size="sm" className="flex items-center space-x-1">
                   <Filter className="w-4 h-4" />
                   <span>Show filters</span>
                 </Button>
-                
+
                 <div className="flex items-center space-x-2">
                   <Search className="w-4 h-4 text-gray-400" />
                   <Input
@@ -208,7 +208,7 @@ export default function Bookings() {
                       <tr 
                         key={booking.id} 
                         className="border-b border-gray-100 hover:bg-gray-50 cursor-pointer"
-                        onClick={() => window.location.href = `/booking/${booking.id}`}
+                        onClick={() => window.location.href = `/bookings/${booking.id}`}
                       >
                         <td className="py-3 px-4 text-sm">{booking.id}</td>
                         <td className="py-3 px-4">
@@ -242,7 +242,7 @@ export default function Bookings() {
               <div className="text-sm text-gray-600">
                 {filteredBookings.length} bookings, {filteredBookings.reduce((sum: number, booking: any) => sum + booking.guestCount, 0)} guests
               </div>
-              
+
               <div className="flex items-center space-x-4">
                 <div className="flex items-center space-x-2">
                   <span className="text-sm text-gray-600">1</span>
@@ -251,7 +251,7 @@ export default function Bookings() {
                     <span className="text-sm text-gray-600">results per page</span>
                   </div>
                 </div>
-                
+
                 <Button className="bg-green-600 hover:bg-green-700 text-white flex items-center space-x-2">
                   <Download className="w-4 h-4" />
                   <span>Download as CSV</span>

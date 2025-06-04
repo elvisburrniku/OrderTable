@@ -482,6 +482,22 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  app.get("/api/tenants/:tenantId/bookings/:id", validateTenant, async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      const tenantId = parseInt(req.params.tenantId);
+
+      const booking = await storage.getBookingById(id);
+      if (!booking || booking.tenantId !== tenantId) {
+        return res.status(404).json({ message: "Booking not found" });
+      }
+
+      res.json(booking);
+    } catch (error) {
+      res.status(400).json({ message: "Invalid request" });
+    }
+  });
+
   app.delete("/api/tenants/:tenantId/bookings/:id", validateTenant, async (req, res) => {
     try {
       const id = parseInt(req.params.id);

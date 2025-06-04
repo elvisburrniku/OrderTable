@@ -55,12 +55,12 @@ export default function BookingCalendar({ selectedDate, bookings, allBookings = 
           bookingTime: bookingData.startTime
         })
       });
-      
+
       const validation = await validationResponse.json();
       if (!validation.isAllowed) {
         throw new Error("Restaurant is closed at this time");
       }
-      
+
       return apiRequest("POST", `/api/tenants/1/restaurants/${restaurant?.id}/bookings`, bookingData);
     },
     onSuccess: () => {
@@ -252,7 +252,11 @@ export default function BookingCalendar({ selectedDate, bookings, allBookings = 
         ) : (
           <div className="divide-y divide-gray-200">
             {bookings.map(booking => (
-              <div key={booking.id} className="p-4 hover:bg-gray-50">
+              <div 
+                key={booking.id} 
+                className="p-3 bg-white rounded border cursor-pointer hover:bg-gray-50"
+                onClick={() => window.location.href = `/bookings/${booking.id}`}
+              >
                 <div className="flex items-center justify-between">
                   <div className="flex-1">
                     <div className="flex items-center space-x-4">

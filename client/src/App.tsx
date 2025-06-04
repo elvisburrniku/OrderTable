@@ -8,6 +8,7 @@ import Home from "./pages/home";
 import Login from "./pages/login";
 import Dashboard from "./pages/dashboard";
 import Bookings from "./pages/bookings";
+import BookingDetail from "./pages/booking-detail";
 import Tables from "./pages/tables";
 import Customers from "./pages/customers";
 import Statistics from "./pages/statistics";
@@ -48,6 +49,7 @@ function App() {
             <Route path="/login" component={Login} />
             <Route path="/:tenantId/dashboard" component={Dashboard} />
             <Route path="/:tenantId/bookings" component={Bookings} />
+            <Route path="/:tenantId/bookings/:id" component={BookingDetail} />
             <Route path="/:tenantId/tables" component={Tables} />
             <Route path="/:tenantId/customers" component={Customers} />
             <Route path="/:tenantId/statistics" component={Statistics} />
