@@ -167,8 +167,14 @@ export default function Statistics() {
     );
 
     restaurantBookings.forEach(booking => {
-      const dayOfWeek = new Date(booking.bookingDate).getDay();
-      dailyCounts[dayOfWeek]++;
+      try {
+        const dayOfWeek = new Date(booking.bookingDate).getDay();
+        if (dayOfWeek >= 0 && dayOfWeek <= 6) {
+          dailyCounts[dayOfWeek]++;
+        }
+      } catch (error) {
+        console.error('Error processing booking date:', booking.bookingDate);
+      }
     });
 
     // Calculate average per day over 12 weeks
@@ -391,15 +397,7 @@ export default function Statistics() {
                       <CardTitle>Bookings by Day of Week</CardTitle>
                     </CardHeader>
                     <CardContent>
-                      <ChartContainer
-                        config={{
-                          bookings: {
-                            label: "Bookings",
-                            color: "#F59E0B",
-                          },
-                        }}
-                        className="h-[300px]"
-                      >
+                      <ResponsiveContainer width="100%" height={300}>
                         <BarChart data={dailyBookingsData}>
                           <CartesianGrid strokeDasharray="3 3" />
                           <XAxis 
@@ -411,14 +409,17 @@ export default function Statistics() {
                             tickLine={false}
                             axisLine={false}
                           />
-                          <ChartTooltip content={<ChartTooltipContent />} />
+                          <Tooltip 
+                            formatter={(value, name) => [`${value} bookings`, 'Bookings']}
+                            labelFormatter={(label) => `${label}`}
+                          />
                           <Bar 
                             dataKey="bookings" 
-                            fill="var(--color-bookings)" 
+                            fill="#F59E0B" 
                             radius={[4, 4, 0, 0]}
                           />
                         </BarChart>
-                      </ChartContainer>
+                      </ResponsiveContainer>
                     </CardContent>
                   </Card>
                 </div>
