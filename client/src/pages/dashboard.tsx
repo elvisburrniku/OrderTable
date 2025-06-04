@@ -16,7 +16,7 @@ export default function Dashboard() {
   const [, setLocation] = useLocation();
   const { user, restaurant, logout } = useAuth();
   const [selectedDate, setSelectedDate] = useState(new Date());
-  const [viewMode, setViewMode] = useState<'calendar' | 'layout'>('layout');
+  const [viewMode, setViewMode] = useState<'calendar' | 'layout'>('calendar');
   const [selectedRoom, setSelectedRoom] = useState<string>("");
   const today = format(new Date(), 'yyyy-MM-dd');
 
@@ -282,15 +282,6 @@ export default function Dashboard() {
             </h1>
             <div className="flex items-center bg-gray-100 rounded-lg p-1">
               <Button 
-                variant={viewMode === 'layout' ? 'default' : 'ghost'} 
-                size="sm"
-                onClick={() => setViewMode('layout')}
-                className={viewMode === 'layout' ? 'bg-white shadow-sm' : ''}
-              >
-                <Map className="h-4 w-4 mr-2" />
-                Layout
-              </Button>
-              <Button 
                 variant={viewMode === 'calendar' ? 'default' : 'ghost'} 
                 size="sm"
                 onClick={() => setViewMode('calendar')}
@@ -298,6 +289,15 @@ export default function Dashboard() {
               >
                 <List className="h-4 w-4 mr-2" />
                 Calendar
+              </Button>
+              <Button 
+                variant={viewMode === 'layout' ? 'default' : 'ghost'} 
+                size="sm"
+                onClick={() => setViewMode('layout')}
+                className={viewMode === 'layout' ? 'bg-white shadow-sm' : ''}
+              >
+                <Map className="h-4 w-4 mr-2" />
+                Layout
               </Button>
             </div>
             <Button className="bg-green-600 hover:bg-green-700 text-white">

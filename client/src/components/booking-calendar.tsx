@@ -392,14 +392,6 @@ export default function BookingCalendar({ selectedDate, bookings, allBookings = 
             <List className="h-4 w-4 mr-2" />
             List
           </Button>
-          <Button 
-            variant={activeView === "table" ? "default" : "ghost"}
-            onClick={() => setActiveView("table")}
-            className={activeView === "table" ? "bg-green-600 text-white" : ""}
-          >
-            <Table className="h-4 w-4 mr-2" />
-            Table Plan
-          </Button>
         </div>
 
         {/* New Booking Dialog */}
