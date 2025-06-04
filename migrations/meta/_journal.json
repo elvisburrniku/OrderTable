@@ -15,6 +15,13 @@
       "when": 1749032687322,
       "tag": "0001_true_ironclad",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1749041936776,
+      "tag": "0002_remarkable_micromax",
+      "breakpoints": true
     }
   ]
 }
