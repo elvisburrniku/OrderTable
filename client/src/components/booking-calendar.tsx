@@ -29,29 +29,6 @@ export default function BookingCalendar({ selectedDate, bookings, allBookings = 
   const [activeView, setActiveView] = useState("calendar");
   const [currentMonth, setCurrentMonth] = useState(new Date());
   const [isNewBookingOpen, setIsNewBookingOpen] = useState(false);
-  const getDefaultStartTime = () => {
-    const dayHours = getOpeningHoursForDay(selectedDate);
-    if (dayHours && dayHours.isOpen) {
-      return dayHours.openTime;
-    }
-    return "19:00"; // fallback
-  };
-
-  const getDefaultEndTime = (startTime: string) => {
-    const startHour = parseInt(startTime.split(':')[0]);
-    return `${(startHour + 2).toString().padStart(2, '0')}:00`;
-  };
-
-  const [newBooking, setNewBooking] = useState({
-    customerName: "",
-    customerEmail: "",
-    customerPhone: "",
-    guestCount: 2,
-    startTime: getDefaultStartTime(),
-    endTime: getDefaultEndTime(getDefaultStartTime()),
-    tableId: "",
-    notes: ""
-  });
   const [selectedTable, setSelectedTable] = useState<any>(null);
   const [showTableBookings, setShowTableBookings] = useState(false);
 
@@ -77,6 +54,36 @@ export default function BookingCalendar({ selectedDate, bookings, allBookings = 
       return response.json();
     },
     enabled: !!restaurant?.id && !!restaurant?.tenantId,
+  });
+
+  const getOpeningHoursForDay = (date: Date) => {
+    const dayOfWeek = date.getDay(); // 0 = Sunday, 1 = Monday, etc.
+    const hours = openingHours.find(h => h.dayOfWeek === dayOfWeek);
+    return hours;
+  };
+
+  const getDefaultStartTime = () => {
+    const dayHours = getOpeningHoursForDay(selectedDate);
+    if (dayHours && dayHours.isOpen) {
+      return dayHours.openTime;
+    }
+    return "19:00"; // fallback
+  };
+
+  const getDefaultEndTime = (startTime: string) => {
+    const startHour = parseInt(startTime.split(':')[0]);
+    return `${(startHour + 2).toString().padStart(2, '0')}:00`;
+  };
+
+  const [newBooking, setNewBooking] = useState({
+    customerName: "",
+    customerEmail: "",
+    customerPhone: "",
+    guestCount: 2,
+    startTime: "19:00", // Initialize with fallback value
+    endTime: "21:00", // Initialize with fallback value
+    tableId: "",
+    notes: ""
   });
 
   const createBookingMutation = useMutation({
@@ -111,14 +118,16 @@ export default function BookingCalendar({ selectedDate, bookings, allBookings = 
         queryKey: [`/api/tenants/1/restaurants/${restaurant?.id}/customers`] 
       });
       setIsNewBookingOpen(false);
-      const defaultStartTime = getDefaultStartTime();
+      // Reset to dynamic default times when opening hours are available
+      const defaultStartTime = openingHours.length > 0 ? getDefaultStartTime() : "19:00";
+      const defaultEndTime = openingHours.length > 0 ? getDefaultEndTime(defaultStartTime) : "21:00";
       setNewBooking({
         customerName: "",
         customerEmail: "",
         customerPhone: "",
         guestCount: 2,
         startTime: defaultStartTime,
-        endTime: getDefaultEndTime(defaultStartTime),
+        endTime: defaultEndTime,
         tableId: "",
         notes: ""
       });
@@ -209,12 +218,6 @@ export default function BookingCalendar({ selectedDate, bookings, allBookings = 
     return bookingsToUse.filter(booking => 
       isSameDay(new Date(booking.bookingDate), date)
     );
-  };
-
-  const getOpeningHoursForDay = (date: Date) => {
-    const dayOfWeek = date.getDay(); // 0 = Sunday, 1 = Monday, etc.
-    const hours = openingHours.find(h => h.dayOfWeek === dayOfWeek);
-    return hours;
   };
 
   const getTableDisplayName = (booking: any) => {
