@@ -36,20 +36,13 @@ export default function Statistics() {
 
   // Generate real chart data based on actual bookings for this specific restaurant
   const generateBookingTrends = () => {
-    const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun'];
+    const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
     const currentYear = new Date().getFullYear();
-    const avgBookingValue = 50; // Average booking value in USD
+    const avgBookingValue = 75; // Average booking value in USD
 
-    // If no bookings data, return sample data for demonstration
+    // If no bookings data, return empty data
     if (!bookings || !Array.isArray(bookings) || bookings.length === 0) {
-      return [
-        { month: 'Jan', bookings: 12, revenue: 1800 },
-        { month: 'Feb', bookings: 19, revenue: 2850 },
-        { month: 'Mar', bookings: 15, revenue: 2100 },
-        { month: 'Apr', bookings: 25, revenue: 3750 },
-        { month: 'May', bookings: 8, revenue: 400 },
-        { month: 'Jun', bookings: 6, revenue: 300 }
-      ];
+      return months.map(month => ({ month: month.slice(0, 3), bookings: 0, revenue: 0 }));
     }
 
     // Filter bookings for this specific restaurant
@@ -65,11 +58,11 @@ export default function Statistics() {
 
       // Calculate revenue based on guest count and average price per person
       const totalRevenue = monthBookings.reduce((sum, booking) => {
-        return sum + (booking.guestCount || 2) * (avgBookingValue / 2);
+        return sum + (booking.guestCount || 2) * avgBookingValue;
       }, 0);
 
       return {
-        month,
+        month: month.slice(0, 3),
         bookings: monthBookings.length,
         revenue: Math.round(totalRevenue)
       };
@@ -80,12 +73,10 @@ export default function Statistics() {
 
   // Generate booking status data based on actual bookings for this restaurant
   const generateBookingStatusData = () => {
-    // If no bookings data, return sample data
+    // If no bookings data, return empty data
     if (!bookings || !Array.isArray(bookings) || bookings.length === 0 || !restaurant?.id) {
       return [
-        { name: 'Confirmed', value: 45, color: '#10B981' },
-        { name: 'Pending', value: 8, color: '#F59E0B' },
-        { name: 'Cancelled', value: 3, color: '#EF4444' }
+        { name: 'No Data', value: 1, color: '#9CA3AF' }
       ];
     }
 
@@ -93,6 +84,10 @@ export default function Statistics() {
     const restaurantBookings = bookings.filter(booking => 
       booking.restaurantId === restaurant.id
     );
+
+    if (restaurantBookings.length === 0) {
+      return [{ name: 'No Bookings', value: 1, color: '#9CA3AF' }];
+    }
 
     // Group by status
     const statusCounts = restaurantBookings.reduce((acc: any, booking) => {
@@ -102,14 +97,13 @@ export default function Statistics() {
     }, {});
 
     // Convert to chart format
-    const result = Object.entries(statusCounts).map(([status, count]: [string, any]) => ({
+    return Object.entries(statusCounts).map(([status, count]: [string, any]) => ({
       name: status.charAt(0).toUpperCase() + status.slice(1),
       value: count,
-      color: status === 'confirmed' ? '#10B981' : status === 'pending' ? '#F59E0B' : '#EF4444'
+      color: status === 'confirmed' ? '#10B981' : 
+             status === 'pending' ? '#F59E0B' : 
+             status === 'cancelled' ? '#EF4444' : '#6B7280'
     }));
-
-    // Ensure we always have at least one entry
-    return result.length > 0 ? result : [{ name: 'Confirmed', value: 1, color: '#10B981' }];
   };
 
   const bookingStatusData = generateBookingStatusData();
@@ -117,29 +111,21 @@ export default function Statistics() {
   // Generate table utilization based on actual bookings for this restaurant
   const generateTableUtilization = () => {
     const timeSlots = ['09:00', '11:00', '13:00', '15:00', '17:00', '19:00', '21:00', '23:00'];
-    const totalTables = stats?.totalTables || 2;
+    const totalTables = stats?.totalTables || 1;
 
-    // If no bookings data, return sample data
-    if (!bookings || !Array.isArray(bookings) || bookings.length === 0 || !restaurant?.id) {
-      return [
-        { time: '09:00', utilization: 15.5 },
-        { time: '11:00', utilization: 32.0 },
-        { time: '13:00', utilization: 78.5 },
-        { time: '15:00', utilization: 45.0 },
-        { time: '17:00', utilization: 67.5 },
-        { time: '19:00', utilization: 92.0 },
-        { time: '21:00', utilization: 85.5 },
-        { time: '23:00', utilization: 25.0 }
-      ];
+    // If no bookings data, return zero data
+    if (!bookings || !Array.isArray(bookings) || bookings.length === 0 || !restaurant?.id || totalTables === 0) {
+      return timeSlots.map(time => ({ time, utilization: 0 }));
     }
 
-    // Filter bookings for this specific restaurant and recent dates
-    const recentDate = new Date();
-    recentDate.setDate(recentDate.getDate() - 7); // Last 7 days
+    // Filter bookings for this specific restaurant and last 30 days
+    const thirtyDaysAgo = new Date();
+    thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
 
     const restaurantBookings = bookings.filter(booking => 
       booking.restaurantId === restaurant.id &&
-      new Date(booking.bookingDate) >= recentDate
+      new Date(booking.bookingDate) >= thirtyDaysAgo &&
+      booking.status !== 'cancelled'
     );
 
     return timeSlots.map(time => {
@@ -150,8 +136,8 @@ export default function Statistics() {
         return Math.abs(startHour - hour) <= 1; // Include bookings within 1 hour
       });
 
-      // Calculate average utilization across the week
-      const avgBookingsAtThisTime = bookingsAtTime.length / 7;
+      // Calculate average utilization over the 30-day period
+      const avgBookingsAtThisTime = bookingsAtTime.length / 30;
       const utilization = Math.min((avgBookingsAtThisTime / totalTables) * 100, 100);
       return { time, utilization: Math.round(utilization * 10) / 10 }; // Round to 1 decimal
     });
@@ -161,29 +147,23 @@ export default function Statistics() {
 
   // Generate daily bookings based on actual data for this restaurant
   const generateDailyBookings = () => {
-    const daysOfWeek = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+    const daysOfWeek = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+    const dayLabels = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
     const dailyCounts = new Array(7).fill(0);
 
-    // If no bookings data, return sample data
+    // If no bookings data, return zero data
     if (!bookings || !Array.isArray(bookings) || bookings.length === 0 || !restaurant?.id) {
-      return [
-        { day: 'Sun', bookings: 3 },
-        { day: 'Mon', bookings: 8 },
-        { day: 'Tue', bookings: 12 },
-        { day: 'Wed', bookings: 15 },
-        { day: 'Thu', bookings: 18 },
-        { day: 'Fri', bookings: 25 },
-        { day: 'Sat', bookings: 22 }
-      ];
+      return dayLabels.map(day => ({ day, bookings: 0 }));
     }
 
-    // Filter bookings for this specific restaurant and last 4 weeks for better average
-    const fourWeeksAgo = new Date();
-    fourWeeksAgo.setDate(fourWeeksAgo.getDate() - 28);
+    // Filter bookings for this specific restaurant and last 12 weeks for better average
+    const twelveWeeksAgo = new Date();
+    twelveWeeksAgo.setDate(twelveWeeksAgo.getDate() - 84);
 
     const restaurantBookings = bookings.filter(booking => 
       booking.restaurantId === restaurant.id &&
-      new Date(booking.bookingDate) >= fourWeeksAgo
+      new Date(booking.bookingDate) >= twelveWeeksAgo &&
+      booking.status !== 'cancelled'
     );
 
     restaurantBookings.forEach(booking => {
@@ -191,10 +171,12 @@ export default function Statistics() {
       dailyCounts[dayOfWeek]++;
     });
 
-    // Calculate average per day over 4 weeks
-    return daysOfWeek.map((day, index) => ({
-      day: day.slice(0, 3), // Sun, Mon, etc.
-      bookings: Math.round(dailyCounts[index] / 4) // Average over 4 weeks
+    // Calculate average per day over 12 weeks
+    const weeksCount = Math.max(1, Math.floor((Date.now() - twelveWeeksAgo.getTime()) / (7 * 24 * 60 * 60 * 1000)));
+    
+    return dayLabels.map((day, index) => ({
+      day,
+      bookings: Math.round(dailyCounts[index] / weeksCount) || 0
     }));
   };
 
