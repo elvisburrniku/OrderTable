@@ -161,143 +161,214 @@ export default function BookingCalendar({ selectedDate, bookings, allBookings = 
   }
 
   const renderCalendarView = () => (
-    <Card className="bg-white border border-gray-200">
-      <div className="border-b border-gray-200 p-4 bg-gray-50">
-        <div className="flex items-center justify-between mb-4">
-          <Button variant="ghost" onClick={previousMonth}>
-            <ChevronLeft className="h-4 w-4" />
-          </Button>
-          <h3 className="font-medium text-gray-900">
-            {format(currentMonth, 'MMMM yyyy')}
-          </h3>
-          <Button variant="ghost" onClick={nextMonth}>
-            <ChevronRight className="h-4 w-4" />
-          </Button>
-        </div>
-
-        {/* Days of week header */}
-        <div className="grid grid-cols-7 gap-1 mb-2">
-          {['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].map(day => (
-            <div key={day} className="text-center text-sm font-medium text-gray-600 py-2">
-              {day}
-            </div>
-          ))}
-        </div>
-      </div>
-
-      <CardContent className="p-4">
-        <div className="grid grid-cols-7 gap-1">
-          {daysInMonth.map(day => {
-            const dayBookings = getBookingsForDate(day);
-            const isSelected = isSameDay(day, selectedDate);
-            const isTodayDate = isToday(day);
-
-            return (
-              <div
-                key={day.toISOString()}
-                className={`min-h-[80px] p-2 border rounded cursor-pointer transition-colors ${
-                  isSelected 
-                    ? 'bg-green-100 border-green-300' 
-                    : isTodayDate 
-                    ? 'bg-blue-50 border-blue-200' 
-                    : 'bg-white border-gray-200 hover:bg-gray-50'
-                }`}
-                onClick={() => onDateSelect(day)}
-              >
-                <div className={`text-sm font-medium ${
-                  isTodayDate ? 'text-blue-600' : 'text-gray-900'
-                }`}>
-                  {format(day, 'd')}
-                </div>
-                <div className="mt-1 space-y-1">
-                  {dayBookings.slice(0, 2).map(booking => (
-                    <div
-                      key={booking.id}
-                      className="text-xs bg-blue-200 text-blue-800 px-1 py-0.5 rounded truncate"
-                      title={`${booking.customerName} - ${booking.guestCount} guests at ${booking.startTime}`}
-                    >
-                      {booking.startTime} {booking.customerName}
-                    </div>
-                  ))}
-                  {dayBookings.length > 2 && (
-                    <div className="text-xs text-gray-500">
-                      +{dayBookings.length - 2} more
-                    </div>
-                  )}
-                </div>
-              </div>
-            );
-          })}
-        </div>
-      </CardContent>
-    </Card>
-  );
-
-  const renderListView = () => (
-    <Card className="bg-white border border-gray-200">
-      <div className="border-b border-gray-200 p-4 bg-gray-50">
-        <h3 className="font-medium text-gray-900">
-          Bookings for {format(selectedDate, 'EEEE, MMMM d, yyyy')}
-        </h3>
-        <span className="text-sm text-gray-500">
-          {bookings.length} bookings - {bookings.reduce((sum, b) => sum + b.guestCount, 0)} guests
-        </span>
-      </div>
-
-      <CardContent className="p-0">
-        {bookings.length === 0 ? (
-          <div className="p-8 text-center text-gray-500">
-            No bookings for this date
+    <div className="space-y-6">
+      <Card className="bg-white border border-gray-200">
+        <div className="border-b border-gray-200 p-4 bg-gray-50">
+          <div className="flex items-center justify-between mb-4">
+            <Button variant="ghost" onClick={previousMonth}>
+              <ChevronLeft className="h-4 w-4" />
+            </Button>
+            <h3 className="font-medium text-gray-900">
+              {format(currentMonth, 'MMMM yyyy')}
+            </h3>
+            <Button variant="ghost" onClick={nextMonth}>
+              <ChevronRight className="h-4 w-4" />
+            </Button>
           </div>
-        ) : (
-          <div className="divide-y divide-gray-200">
-            {bookings.map(booking => (
-              <div 
-                key={booking.id} 
-                className="p-3 bg-white rounded border cursor-pointer hover:bg-gray-50"
-                onClick={() => window.location.href = `/${restaurant.tenantId}/bookings/${booking.id}`}
-              >
-                <div className="flex items-center justify-between">
-                  <div className="flex-1">
-                    <div className="flex items-center space-x-4">
-                      <div className="font-medium text-gray-900">
-                        {booking.customerName}
-                      </div>
-                      <div className="text-sm text-gray-500">
-                        {booking.customerEmail}
-                      </div>
-                      {booking.customerPhone && (
-                        <div className="text-sm text-gray-500">
-                          {booking.customerPhone}
-                        </div>
-                      )}
-                    </div>
-                    <div className="mt-1 flex items-center space-x-4 text-sm text-gray-600">
-                      <span>{booking.startTime} - {booking.endTime}</span>
-                      <span>{booking.guestCount} guests</span>
-                      {booking.tableId && (
-                        <span>Table {tables.find(t => t.id === booking.tableId)?.tableNumber}</span>
-                      )}
-                    </div>
-                    {booking.notes && (
-                      <div className="mt-1 text-sm text-gray-500">
-                        Notes: {booking.notes}
-                      </div>
-                    )}
-                  </div>
-                  <div className="flex items-center space-x-2">
-                    <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
-                      {booking.status || 'Confirmed'}
-                    </span>
-                  </div>
-                </div>
+
+          {/* Days of week header */}
+          <div className="grid grid-cols-7 gap-1 mb-2">
+            {['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].map(day => (
+              <div key={day} className="text-center text-sm font-medium text-gray-600 py-2">
+                {day}
               </div>
             ))}
           </div>
-        )}
-      </CardContent>
-    </Card>
+        </div>
+
+        <CardContent className="p-4">
+          <div className="grid grid-cols-7 gap-1">
+            {daysInMonth.map(day => {
+              const dayBookings = getBookingsForDate(day);
+              const isSelected = isSameDay(day, selectedDate);
+              const isTodayDate = isToday(day);
+
+              return (
+                <div
+                  key={day.toISOString()}
+                  className={`min-h-[80px] p-2 border rounded cursor-pointer transition-colors ${
+                    isSelected 
+                      ? 'bg-green-100 border-green-300' 
+                      : isTodayDate 
+                      ? 'bg-blue-50 border-blue-200' 
+                      : 'bg-white border-gray-200 hover:bg-gray-50'
+                  }`}
+                  onClick={() => onDateSelect(day)}
+                >
+                  <div className={`text-sm font-medium ${
+                    isTodayDate ? 'text-blue-600' : 'text-gray-900'
+                  }`}>
+                    {format(day, 'd')}
+                  </div>
+                  <div className="mt-1 space-y-1">
+                    {dayBookings.slice(0, 2).map(booking => (
+                      <div
+                        key={booking.id}
+                        className="text-xs bg-blue-200 text-blue-800 px-1 py-0.5 rounded truncate"
+                        title={`${booking.customerName} - ${booking.guestCount} guests at ${booking.startTime}`}
+                      >
+                        {booking.startTime} {booking.customerName}
+                      </div>
+                    ))}
+                    {dayBookings.length > 2 && (
+                      <div className="text-xs text-gray-500">
+                        +{dayBookings.length - 2} more
+                      </div>
+                    )}
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Show all bookings for selected date */}
+      <Card className="bg-white border border-gray-200">
+        <div className="border-b border-gray-200 p-4 bg-gray-50">
+          <h3 className="font-medium text-gray-900">
+            Bookings for {format(selectedDate, 'EEEE, MMMM d, yyyy')}
+          </h3>
+          <span className="text-sm text-gray-500">
+            {getBookingsForDate(selectedDate).length} bookings - {getBookingsForDate(selectedDate).reduce((sum, b) => sum + b.guestCount, 0)} guests
+          </span>
+        </div>
+
+        <CardContent className="p-0">
+          {getBookingsForDate(selectedDate).length === 0 ? (
+            <div className="p-8 text-center text-gray-500">
+              No bookings for this date
+            </div>
+          ) : (
+            <div className="divide-y divide-gray-200">
+              {getBookingsForDate(selectedDate).map(booking => (
+                <div 
+                  key={booking.id} 
+                  className="p-3 bg-white rounded border cursor-pointer hover:bg-gray-50"
+                  onClick={() => window.location.href = `/${restaurant.tenantId}/bookings/${booking.id}`}
+                >
+                  <div className="flex items-center justify-between">
+                    <div className="flex-1">
+                      <div className="flex items-center space-x-4">
+                        <div className="font-medium text-gray-900">
+                          {booking.customerName}
+                        </div>
+                        <div className="text-sm text-gray-500">
+                          {booking.customerEmail}
+                        </div>
+                        {booking.customerPhone && (
+                          <div className="text-sm text-gray-500">
+                            {booking.customerPhone}
+                          </div>
+                        )}
+                      </div>
+                      <div className="mt-1 flex items-center space-x-4 text-sm text-gray-600">
+                        <span>{booking.startTime} - {booking.endTime}</span>
+                        <span>{booking.guestCount} guests</span>
+                        {booking.tableId && (
+                          <span>Table {tables.find(t => t.id === booking.tableId)?.tableNumber}</span>
+                        )}
+                      </div>
+                      {booking.notes && (
+                        <div className="mt-1 text-sm text-gray-500">
+                          Notes: {booking.notes}
+                        </div>
+                      )}
+                    </div>
+                    <div className="flex items-center space-x-2">
+                      <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                        {booking.status || 'Confirmed'}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </CardContent>
+      </Card>
+    </div>
   );
+
+  const renderListView = () => {
+    const selectedDateBookingsData = getBookingsForDate(selectedDate);
+    
+    return (
+      <Card className="bg-white border border-gray-200">
+        <div className="border-b border-gray-200 p-4 bg-gray-50">
+          <h3 className="font-medium text-gray-900">
+            Bookings for {format(selectedDate, 'EEEE, MMMM d, yyyy')}
+          </h3>
+          <span className="text-sm text-gray-500">
+            {selectedDateBookingsData.length} bookings - {selectedDateBookingsData.reduce((sum, b) => sum + b.guestCount, 0)} guests
+          </span>
+        </div>
+
+        <CardContent className="p-0">
+          {selectedDateBookingsData.length === 0 ? (
+            <div className="p-8 text-center text-gray-500">
+              No bookings for this date
+            </div>
+          ) : (
+            <div className="divide-y divide-gray-200">
+              {selectedDateBookingsData.map(booking => (
+                <div 
+                  key={booking.id} 
+                  className="p-3 bg-white rounded border cursor-pointer hover:bg-gray-50"
+                  onClick={() => window.location.href = `/${restaurant.tenantId}/bookings/${booking.id}`}
+                >
+                  <div className="flex items-center justify-between">
+                    <div className="flex-1">
+                      <div className="flex items-center space-x-4">
+                        <div className="font-medium text-gray-900">
+                          {booking.customerName}
+                        </div>
+                        <div className="text-sm text-gray-500">
+                          {booking.customerEmail}
+                        </div>
+                        {booking.customerPhone && (
+                          <div className="text-sm text-gray-500">
+                            {booking.customerPhone}
+                          </div>
+                        )}
+                      </div>
+                      <div className="mt-1 flex items-center space-x-4 text-sm text-gray-600">
+                        <span>{booking.startTime} - {booking.endTime}</span>
+                        <span>{booking.guestCount} guests</span>
+                        {booking.tableId && (
+                          <span>Table {tables.find(t => t.id === booking.tableId)?.tableNumber}</span>
+                        )}
+                      </div>
+                      {booking.notes && (
+                        <div className="mt-1 text-sm text-gray-500">
+                          Notes: {booking.notes}
+                        </div>
+                      )}
+                    </div>
+                    <div className="flex items-center space-x-2">
+                      <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                        {booking.status || 'Confirmed'}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </CardContent>
+      </Card>
+    );
+  };
 
   const renderTableView = () => {
     const getTableBookingsForDate = (table: TableType) => {
