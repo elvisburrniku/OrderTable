@@ -234,7 +234,6 @@ export default function Bookings() {
     
     if (conflict.hasConflict) {
       // Find alternative table using current booking state
-      const currentBooking = newBooking.tableId === tableId ? newBooking : { ...newBooking, tableId };
       const alternative = findAlternativeTable(
         currentBooking.guestCount, 
         currentBooking.startTime, 
@@ -247,14 +246,14 @@ export default function Bookings() {
       
       if (alternative) {
         toast({
-          title: "Table Conflict Detected",
+          title: "Table Conflict",
           description: `${conflict.message}. Table ${alternative.tableNumber} (${alternative.capacity} seats) is available as an alternative.`,
           variant: "destructive",
         });
       } else {
         toast({
-          title: "Table Conflict Detected",
-          description: `${conflict.message}. No suitable alternative tables available.`,
+          title: "Table Conflict", 
+          description: `${conflict.message}. No suitable alternative tables available for ${currentBooking.guestCount} guests at ${currentBooking.startTime}.`,
           variant: "destructive",
         });
       }
@@ -280,9 +279,10 @@ export default function Bookings() {
       );
       
       if (conflict.hasConflict) {
+        const table = tables?.find(t => t.id === parseInt(newBooking.tableId));
         toast({
-          title: "Cannot Create Booking",
-          description: conflict.message,
+          title: "Table Conflict",
+          description: `Table ${table?.tableNumber || newBooking.tableId} is already booked at ${newBooking.startTime} on ${newBooking.bookingDate}. Please select a different table or time.`,
           variant: "destructive",
         });
         return;
@@ -298,7 +298,7 @@ export default function Bookings() {
       if (!availableTable) {
         toast({
           title: "No Tables Available",
-          description: `No tables available for ${newBooking.guestCount} guests at ${newBooking.startTime} on ${newBooking.bookingDate}`,
+          description: `No tables available for ${newBooking.guestCount} guests at ${newBooking.startTime} on ${newBooking.bookingDate}. Please try a different time or date.`,
           variant: "destructive",
         });
         return;
