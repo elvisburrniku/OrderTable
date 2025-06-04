@@ -11,7 +11,7 @@ export class BrevoEmailService {
     }
 
     this.apiInstance = new TransactionalEmailsApi();
-    this.apiInstance.setApiKey('api-key', apiKey);
+    this.apiInstance.setApiKey(TransactionalEmailsApi.ApiKeyParam.API_KEY, apiKey);
   }
 
   async sendBookingConfirmation(customerEmail: string, customerName: string, bookingData: any): Promise<void> {
