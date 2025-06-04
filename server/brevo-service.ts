@@ -29,7 +29,14 @@ export class BrevoEmailService {
     endDate.setHours(endDate.getHours() + 2); // Assume 2-hour dining duration
     
     const formatDate = (date: Date) => {
-      return date.toISOString().replace(/[-:]/g, '').split('.')[0] + 'Z';
+      // Format as local time without timezone conversion
+      const year = date.getFullYear();
+      const month = String(date.getMonth() + 1).padStart(2, '0');
+      const day = String(date.getDate()).padStart(2, '0');
+      const hour = String(date.getHours()).padStart(2, '0');
+      const minute = String(date.getMinutes()).padStart(2, '0');
+      const second = String(date.getSeconds()).padStart(2, '0');
+      return `${year}${month}${day}T${hour}${minute}${second}`;
     };
     
     const icsContent = [
@@ -78,9 +85,9 @@ export class BrevoEmailService {
       hour12: true 
     });
 
-    // Construct the booking management URL
+    // Construct the booking management URL for customer access
     const baseUrl = process.env.BASE_URL || 'http://localhost:5000';
-    const bookingManageUrl = `${baseUrl}/${bookingDetails.tenantId}/bookings/${bookingDetails.id}`;
+    const bookingManageUrl = `${baseUrl}/booking-manage/${bookingDetails.id}`;
     
     sendSmtpEmail.htmlContent = `
       <!DOCTYPE html>

@@ -1496,6 +1496,77 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Customer booking management routes (public access)
+  app.get("/api/booking-manage/:id", async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      const booking = await storage.getBookingById(id);
+      
+      if (!booking) {
+        return res.status(404).json({ message: "Booking not found" });
+      }
+
+      // Return booking with customer details
+      const customer = await storage.getCustomerById(booking.customerId);
+      const bookingWithCustomer = {
+        ...booking,
+        customerName: customer?.name || booking.customerName,
+        customerEmail: customer?.email || booking.customerEmail,
+        customerPhone: customer?.phone || booking.customerPhone
+      };
+
+      res.json(bookingWithCustomer);
+    } catch (error) {
+      console.error("Error fetching booking for customer:", error);
+      res.status(500).json({ message: "Internal server error" });
+    }
+  });
+
+  app.get("/api/booking-manage/:id/available-tables", async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      const booking = await storage.getBookingById(id);
+      
+      if (!booking) {
+        return res.status(404).json({ message: "Booking not found" });
+      }
+
+      // Get available tables for the restaurant
+      const tables = await storage.getTablesByRestaurant(booking.restaurantId);
+      res.json(tables);
+    } catch (error) {
+      console.error("Error fetching available tables:", error);
+      res.status(500).json({ message: "Internal server error" });
+    }
+  });
+
+  app.put("/api/booking-manage/:id", async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      const updates = req.body;
+      
+      const booking = await storage.getBookingById(id);
+      if (!booking) {
+        return res.status(404).json({ message: "Booking not found" });
+      }
+
+      // Only allow updating table and status
+      const allowedUpdates: any = {};
+      if (updates.tableId !== undefined) {
+        allowedUpdates.tableId = updates.tableId;
+      }
+      if (updates.status !== undefined) {
+        allowedUpdates.status = updates.status;
+      }
+
+      const updatedBooking = await storage.updateBooking(id, allowedUpdates);
+      res.json(updatedBooking);
+    } catch (error) {
+      console.error("Error updating booking:", error);
+      res.status(500).json({ message: "Internal server error" });
+    }
+  });
+
   // Statistics routes (read-only data aggregation)
   app.get("/api/tenants/:tenantId/restaurants/:restaurantId/statistics", validateTenant, async (req, res) => {
     try {

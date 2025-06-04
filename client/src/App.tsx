@@ -17,7 +17,8 @@ import WaitingList from "./pages/waiting-list";
 import Subscription from "./pages/subscription";
 import SmsMessages from "./pages/sms-messages";
 import TenantSettings from "./pages/tenant-settings";
-import NotFound from "./pages/not-found";
+import NotFound from "@/pages/not-found";
+import BookingManage from "@/pages/booking-manage";
 import EmailNotifications from "./pages/email-notifications";
 import SmsNotifications from "./pages/sms-notifications";
 import FeedbackQuestions from "./pages/feedback-questions";
@@ -77,6 +78,7 @@ function App() {
             <Route path="/:tenantId/table-plan" component={TablePlan} />
             <Route path="/:tenantId/rooms" component={Rooms} />
             <Route path="/:tenantId/booking-agents" component={BookingAgents} />
+            <Route path="/booking-manage/:id" component={BookingManage} />
             <Route path="/:tenantId/booking/:id" component={lazy(() => import("./pages/booking-detail"))} />
             <Route component={NotFound} />
           </Switch>
