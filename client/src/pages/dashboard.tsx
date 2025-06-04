@@ -155,9 +155,13 @@ export default function Dashboard() {
     if (!tables || !Array.isArray(tables)) return null;
 
     // Get bookings for the requested date
+    const requestedYear = requestedDate.getFullYear();
+    const requestedMonth = String(requestedDate.getMonth() + 1).padStart(2, '0');
+    const requestedDay = String(requestedDate.getDate()).padStart(2, '0');
+    const requestedDateStr = `${requestedYear}-${requestedMonth}-${requestedDay}`;
+    
     const dateBookings = selectedDateBookings.filter(booking => {
-      const bookingDateStr = new Date(booking.bookingDate).toISOString().split('T')[0];
-      const requestedDateStr = requestedDate.toISOString().split('T')[0];
+      const bookingDateStr = booking.bookingDate.split('T')[0]; // Just get date part from stored value
       return bookingDateStr === requestedDateStr;
     });
 
@@ -253,9 +257,14 @@ export default function Dashboard() {
 
     // Check if selected table is available at the requested time
     if (selectedTableForBooking) {
+      const selectedYear = selectedDate.getFullYear();
+      const selectedMonth = String(selectedDate.getMonth() + 1).padStart(2, '0');
+      const selectedDay = String(selectedDate.getDate()).padStart(2, '0');
+      const selectedDateStr = `${selectedYear}-${selectedMonth}-${selectedDay}`;
+      
       const tableBookings = selectedDateBookings.filter(booking => 
         booking.tableId === selectedTableForBooking.id &&
-        new Date(booking.bookingDate).toISOString().split('T')[0] === selectedDate.toISOString().split('T')[0]
+        booking.bookingDate.split('T')[0] === selectedDateStr
       );
 
       const isTableOccupied = tableBookings.some(booking => {
@@ -314,9 +323,15 @@ export default function Dashboard() {
       }
     }
 
+    // Format date as YYYY-MM-DD without timezone conversion
+    const year = selectedDate.getFullYear();
+    const month = String(selectedDate.getMonth() + 1).padStart(2, '0');
+    const day = String(selectedDate.getDate()).padStart(2, '0');
+    const dateString = `${year}-${month}-${day}`;
+
     createBookingMutation.mutate({
       ...newBooking,
-      bookingDate: selectedDate.toISOString().split('T')[0],
+      bookingDate: dateString,
       tableId: selectedTableForBooking?.id,
       restaurantId: restaurant?.id
     });

@@ -137,9 +137,15 @@ export default function BookingCalendar({ selectedDate, bookings, allBookings = 
       }
     }
 
+    // Format date as YYYY-MM-DD without timezone conversion
+    const year = selectedDate.getFullYear();
+    const month = String(selectedDate.getMonth() + 1).padStart(2, '0');
+    const day = String(selectedDate.getDate()).padStart(2, '0');
+    const dateString = `${year}-${month}-${day}`;
+
     createBookingMutation.mutate({
       ...newBooking,
-      bookingDate: selectedDate.toISOString().split('T')[0],
+      bookingDate: dateString,
       tableId: tableId,
       restaurantId: restaurant?.id
     });
