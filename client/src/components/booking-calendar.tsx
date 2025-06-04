@@ -126,7 +126,7 @@ export default function BookingCalendar({ selectedDate, bookings, allBookings = 
     e.preventDefault();
 
     let tableId = null;
-    
+
     // Handle table assignment
     if (newBooking.tableId && newBooking.tableId !== "auto") {
       if (newBooking.tableId.startsWith("combined-")) {
@@ -135,7 +135,7 @@ export default function BookingCalendar({ selectedDate, bookings, allBookings = 
         tableId = null;
       } else {
         tableId = parseInt(newBooking.tableId);
-        
+
         // Validate guest count against selected table capacity
         const selectedTable = tables.find(t => t.id === tableId);
         if (selectedTable && newBooking.guestCount > selectedTable.capacity) {
@@ -190,17 +190,17 @@ export default function BookingCalendar({ selectedDate, bookings, allBookings = 
 
   const getTableDisplayName = (booking: any) => {
     if (!booking.tableId) return "Auto-assigned";
-    
+
     const table = tables?.find(t => t.id === booking.tableId);
     if (table) {
       return `Table ${table.tableNumber}`;
     }
-    
+
     const combinedTable = combinedTables?.find(ct => ct.id === booking.tableId);
     if (combinedTable) {
       return `Combined Table ${combinedTable.name}`;
     }
-    
+
     return `Table ${booking.tableId}`;
   };
 
@@ -277,7 +277,7 @@ export default function BookingCalendar({ selectedDate, bookings, allBookings = 
                 }`}>
                   {format(day, 'd')}
                 </div>
-                
+
                 {/* Opening Hours */}
                 <div className="mt-1">
                   {isClosed ? (
