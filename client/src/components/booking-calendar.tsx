@@ -255,7 +255,7 @@ export default function BookingCalendar({ selectedDate, bookings, allBookings = 
               <div 
                 key={booking.id} 
                 className="p-3 bg-white rounded border cursor-pointer hover:bg-gray-50"
-                onClick={() => window.location.href = `/bookings/${booking.id}`}
+                onClick={() => window.location.href = `/${restaurant.tenantId}/bookings/${booking.id}`}
               >
                 <div className="flex items-center justify-between">
                   <div className="flex-1">

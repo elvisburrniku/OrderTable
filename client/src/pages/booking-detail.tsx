@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { useParams } from "wouter";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
@@ -71,7 +70,7 @@ export default function BookingDetail() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: [`/api/tenants/${restaurant?.tenantId}/restaurants/${restaurant?.id}/bookings`] });
       toast({ title: "Booking deleted successfully" });
-      window.location.href = "/bookings";
+      window.location.href = `/${restaurant.tenantId}/bookings`;
     },
     onError: () => {
       toast({ title: "Failed to delete booking", variant: "destructive" });
@@ -103,7 +102,7 @@ export default function BookingDetail() {
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
         <div className="text-center">
           <p className="text-gray-600">Booking not found</p>
-          <Button className="mt-4" onClick={() => window.location.href = "/bookings"}>
+          <Button className="mt-4" onClick={() => window.location.href = `/${restaurant.tenantId}/bookings`}>
             <ArrowLeft className="w-4 h-4 mr-2" />
             Back to Bookings
           </Button>
@@ -159,7 +158,7 @@ export default function BookingDetail() {
           <div className="flex items-center space-x-6">
             <Button
               variant="ghost"
-              onClick={() => window.location.href = "/bookings"}
+              onClick={() => window.location.href = `/${restaurant.tenantId}/bookings`}
               className="flex items-center space-x-2"
             >
               <ArrowLeft className="w-4 h-4" />
@@ -210,7 +209,7 @@ export default function BookingDetail() {
                 {/* Customer Information */}
                 <div className="space-y-4">
                   <h3 className="text-lg font-medium">Customer Information</h3>
-                  
+
                   <div>
                     <Label htmlFor="customerName">Name</Label>
                     {isEditing ? (
@@ -255,7 +254,7 @@ export default function BookingDetail() {
                 {/* Booking Information */}
                 <div className="space-y-4">
                   <h3 className="text-lg font-medium">Booking Information</h3>
-                  
+
                   <div>
                     <Label>Date</Label>
                     <p className="mt-1 text-sm text-gray-900">

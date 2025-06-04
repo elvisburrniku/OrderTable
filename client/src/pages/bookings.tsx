@@ -82,7 +82,7 @@ export default function Bookings() {
           <div className="flex items-center space-x-6">
             <h1 className="text-xl font-semibold">Bookings</h1>
             <nav className="flex space-x-6">
-              <a href="/dashboard" className="text-gray-600 hover:text-gray-900">Booking</a>
+              <a href={`/${restaurant.tenantId}/dashboard`} className="text-gray-600 hover:text-gray-900">Booking</a>
               <a href="#" className="text-green-600 font-medium">CRM</a>
               <a href="#" className="text-gray-600 hover:text-gray-900">Archive</a>
             </nav>
@@ -208,7 +208,7 @@ export default function Bookings() {
                       <tr 
                         key={booking.id} 
                         className="border-b border-gray-100 hover:bg-gray-50 cursor-pointer"
-                        onClick={() => window.location.href = `/bookings/${booking.id}`}
+                        onClick={() => window.location.href = `/${restaurant.tenantId}/bookings/${booking.id}`}
                       >
                         <td className="py-3 px-4 text-sm">{booking.id}</td>
                         <td className="py-3 px-4">

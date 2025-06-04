@@ -119,7 +119,7 @@ export default function WaitingList() {
           <div className="flex items-center space-x-6">
             <h1 className="text-xl font-semibold">Waiting List</h1>
             <nav className="flex space-x-6">
-              <a href="/dashboard" className="text-gray-600 hover:text-gray-900">Booking</a>
+              <a href={`/${restaurant.tenantId}/dashboard`} className="text-gray-600 hover:text-gray-900">Booking</a>
               <a href="#" className="text-green-600 font-medium">CRM</a>
               <a href="#" className="text-gray-600 hover:text-gray-900">Archive</a>
             </nav>
@@ -136,7 +136,7 @@ export default function WaitingList() {
         <div className="w-64 bg-white border-r min-h-screen">
           <div className="p-6">
             <div className="space-y-2">
-              <a href={`/${restaurant.id}/bookings`} className="flex items-center space-x-2 text-gray-600 hover:bg-gray-50 px-3 py-2 rounded">
+              <a href={`/${restaurant.tenantId}/bookings`} className="flex items-center space-x-2 text-gray-600 hover:bg-gray-50 px-3 py-2 rounded">
                 <span className="w-2 h-2 bg-gray-400 rounded-full"></span>
                 <span>Bookings</span>
               </a>
@@ -144,11 +144,11 @@ export default function WaitingList() {
                 <span className="w-2 h-2 bg-green-600 rounded-full"></span>
                 <span className="font-medium">Waiting List</span>
               </div>
-              <a href={`/${restaurant.id}/statistics`} className="flex items-center space-x-2 text-gray-600 hover:bg-gray-50 px-3 py-2 rounded">
+              <a href={`/${restaurant.tenantId}/statistics`} className="flex items-center space-x-2 text-gray-600 hover:bg-gray-50 px-3 py-2 rounded">
                 <span className="w-2 h-2 bg-gray-400 rounded-full"></span>
                 <span>Statistics</span>
               </a>
-              <a href={`/${restaurant.id}/activity-log`} className="flex items-center space-x-2 text-gray-600 hover:bg-gray-50 px-3 py-2 rounded">
+              <a href={`/${restaurant.tenantId}/activity-log`} className="flex items-center space-x-2 text-gray-600 hover:bg-gray-50 px-3 py-2 rounded">
                 <span className="w-2 h-2 bg-gray-400 rounded-full"></span>
                 <span>Log</span>
               </a>

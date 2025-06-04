@@ -144,7 +144,7 @@ export default function OpeningHours() {
             <h1 className="text-xl font-semibold">Opening Hours</h1>
             <nav className="flex space-x-6">
               <a
-                href="/dashboard"
+                href={`/${restaurant.tenantId}/dashboard`}
                 className="text-gray-600 hover:text-gray-900"
               >
                 Booking
