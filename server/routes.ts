@@ -210,20 +210,37 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Send email notifications if Brevo is configured
       if (emailService) {
         try {
-          // Send confirmation email to customer
-          await emailService.sendBookingConfirmation(
-            req.body.customerEmail,
-            req.body.customerName,
-            {
-              ...bookingData,
-              tableNumber: booking.tableId
-            }
-          );
-
-          // Send notification to restaurant
           const restaurant = await storage.getRestaurantById(restaurantId);
-          if (restaurant?.email) {
-            await emailService.sendRestaurantNotification(restaurant.email, {
+          let emailSettings = null;
+
+          // Parse email settings if they exist
+          if (restaurant?.emailSettings) {
+            try {
+              emailSettings = JSON.parse(restaurant.emailSettings);
+            } catch (e) {
+              console.warn("Failed to parse email settings, using defaults");
+            }
+          }
+
+          // Send confirmation email to customer if enabled (default: true)
+          const shouldSendGuestConfirmation = emailSettings?.guestSettings?.sendBookingConfirmation !== false;
+          if (shouldSendGuestConfirmation) {
+            await emailService.sendBookingConfirmation(
+              req.body.customerEmail,
+              req.body.customerName,
+              {
+                ...bookingData,
+                tableNumber: booking.tableId
+              }
+            );
+          }
+
+          // Send notification to restaurant if enabled (default: true)
+          const shouldSendRestaurantNotification = emailSettings?.placeSettings?.emailBooking !== false;
+          const restaurantEmail = emailSettings?.placeSettings?.sentTo || restaurant?.email;
+
+          if (shouldSendRestaurantNotification && restaurantEmail) {
+            await emailService.sendRestaurantNotification(restaurantEmail, {
               customerName: req.body.customerName,
               customerEmail: req.body.customerEmail,
               customerPhone: req.body.customerPhone,
@@ -617,23 +634,40 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       const booking = await storage.createBooking(bookingData);
 
-      // Send email notifications if Brevo is configured
+      // Send email notifications if Brevo is configured and enabled in settings
       if (emailService) {
         try {
-          // Send confirmation email to customer
-          await emailService.sendBookingConfirmation(
-            req.body.customerEmail,
-            req.body.customerName,
-            {
-              ...bookingData,
-              tableNumber: booking.tableId
-            }
-          );
-
-          // Send notification to restaurant
           const restaurant = await storage.getRestaurantById(restaurantId);
-          if (restaurant?.email) {
-            await emailService.sendRestaurantNotification(restaurant.email, {
+          let emailSettings = null;
+
+          // Parse email settings if they exist
+          if (restaurant?.emailSettings) {
+            try {
+              emailSettings = JSON.parse(restaurant.emailSettings);
+            } catch (e) {
+              console.warn("Failed to parse email settings, using defaults");
+            }
+          }
+
+          // Send confirmation email to customer if enabled
+          const shouldSendGuestConfirmation = emailSettings?.guestSettings?.sendBookingConfirmation !== false;
+          if (shouldSendGuestConfirmation) {
+            await emailService.sendBookingConfirmation(
+              req.body.customerEmail,
+              req.body.customerName,
+              {
+                ...bookingData,
+                tableNumber: booking.tableId
+              }
+            );
+          }
+
+          // Send notification to restaurant if enabled
+          const shouldSendRestaurantNotification = emailSettings?.placeSettings?.emailBooking !== false;
+          const restaurantEmail = emailSettings?.placeSettings?.sentTo || restaurant?.email;
+
+          if (shouldSendRestaurantNotification && restaurantEmail) {
+            await emailService.sendRestaurantNotification(restaurantEmail, {
               customerName: req.body.customerName,
               customerEmail: req.body.customerEmail,
               customerPhone: req.body.customerPhone,

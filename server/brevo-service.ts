@@ -31,18 +31,23 @@ export class BrevoEmailService {
     sendSmtpEmail.subject = "Booking Confirmation - Your reservation is confirmed";
     sendSmtpEmail.htmlContent = `
       <html>
-        <body>
-          <h2>Booking Confirmation</h2>
-          <p>Dear ${customerName},</p>
-          <p>Your booking has been confirmed with the following details:</p>
-          <ul>
-            <li><strong>Date:</strong> ${new Date(bookingDetails.bookingDate).toLocaleDateString()}</li>
-            <li><strong>Time:</strong> ${bookingDetails.startTime}</li>
-            <li><strong>Party Size:</strong> ${bookingDetails.guestCount} guests</li>
-            <li><strong>Table:</strong> ${bookingDetails.tableNumber || 'To be assigned'}</li>
-          </ul>
-          <p>We look forward to serving you!</p>
-          <p>Best regards,<br>The Restaurant Team</p>
+        <body style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
+          <div style="background-color: #f8f9fa; padding: 20px; border-radius: 8px;">
+            <h2 style="color: #16a34a; margin-bottom: 20px;">Booking Confirmation ✓</h2>
+            <p>Dear ${customerName},</p>
+            <p>Your booking has been <strong>confirmed</strong> with the following details:</p>
+            <div style="background-color: white; padding: 15px; border-radius: 6px; margin: 15px 0;">
+              <ul style="list-style: none; padding: 0;">
+                <li style="padding: 5px 0;"><strong>📅 Date:</strong> ${new Date(bookingDetails.bookingDate).toLocaleDateString()}</li>
+                <li style="padding: 5px 0;"><strong>🕐 Time:</strong> ${bookingDetails.startTime}</li>
+                <li style="padding: 5px 0;"><strong>👥 Party Size:</strong> ${bookingDetails.guestCount} guests</li>
+                <li style="padding: 5px 0;"><strong>🪑 Table:</strong> ${bookingDetails.tableNumber || 'To be assigned'}</li>
+                ${bookingDetails.specialRequests ? `<li style="padding: 5px 0;"><strong>📝 Special Requests:</strong> ${bookingDetails.specialRequests}</li>` : ''}
+              </ul>
+            </div>
+            <p>We look forward to serving you!</p>
+            <p>Best regards,<br><strong>The Restaurant Team</strong></p>
+          </div>
         </body>
       </html>
     `;

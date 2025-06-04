@@ -73,6 +73,26 @@ export class ReminderService {
       
       if (alreadySent) return;
 
+      // Get restaurant email settings
+      const restaurant = await storage.getRestaurantById(booking.restaurantId);
+      let emailSettings = null;
+      
+      if (restaurant?.emailSettings) {
+        try {
+          emailSettings = JSON.parse(restaurant.emailSettings);
+        } catch (e) {
+          console.warn("Failed to parse email settings for reminders");
+        }
+      }
+
+      // Check if reminders are enabled (default: true)
+      const shouldSendReminder = emailSettings?.guestSettings?.sendReminder !== false;
+      if (!shouldSendReminder) return;
+
+      // Check if this is the correct reminder timing
+      const configuredHours = parseInt(emailSettings?.guestSettings?.reminderHours || "24");
+      if (hoursBeforeVisit !== configuredHours) return;
+
       // Get customer details
       const customer = await storage.getCustomerById(booking.customerId);
       if (!customer?.email) return;

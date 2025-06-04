@@ -21,6 +21,7 @@ export default function EmailNotifications() {
     sendReminder: true,
     confirmationLanguage: "english",
     satisfactionSurvey: false,
+    allowRescheduling: false,
     reviewSite: "Google"
   });
 
@@ -171,8 +172,19 @@ export default function EmailNotifications() {
                   <div className="flex items-center justify-between">
                     <label className="text-sm text-gray-700">Reminder</label>
                     <div className="flex items-center space-x-2">
+                      <Switch 
+                        checked={guestSettings.sendReminder}
+                        onCheckedChange={(checked) => 
+                          setGuestSettings(prev => ({ ...prev, sendReminder: checked }))
+                        }
+                      />
                       <span className="text-sm">Send reminder to the guest</span>
-                      <Select value={guestSettings.reminderHours}>
+                      <Select 
+                        value={guestSettings.reminderHours}
+                        onValueChange={(value) => 
+                          setGuestSettings(prev => ({ ...prev, reminderHours: value }))
+                        }
+                      >
                         <SelectTrigger className="w-20">
                           <SelectValue />
                         </SelectTrigger>
@@ -188,18 +200,33 @@ export default function EmailNotifications() {
 
                   <div className="flex items-center justify-between">
                     <label className="text-sm text-gray-700">Rescheduling</label>
-                    <Switch checked={false} />
+                    <Switch 
+                      checked={guestSettings.allowRescheduling || false}
+                      onCheckedChange={(checked) => 
+                        setGuestSettings(prev => ({ ...prev, allowRescheduling: checked }))
+                      }
+                    />
                   </div>
 
                   <div className="flex items-center justify-between">
                     <label className="text-sm text-gray-700">Satisfaction surveys</label>
-                    <Switch checked={false} />
+                    <Switch 
+                      checked={guestSettings.satisfactionSurvey}
+                      onCheckedChange={(checked) => 
+                        setGuestSettings(prev => ({ ...prev, satisfactionSurvey: checked }))
+                      }
+                    />
                   </div>
 
                   <div className="space-y-2">
                     <label className="text-sm text-gray-700">Review Site (Google etc)</label>
                     <div className="text-xs text-gray-500">Request review</div>
-                    <Select value={guestSettings.reviewSite}>
+                    <Select 
+                      value={guestSettings.reviewSite}
+                      onValueChange={(value) => 
+                        setGuestSettings(prev => ({ ...prev, reviewSite: value }))
+                      }
+                    >
                       <SelectTrigger className="w-full">
                         <SelectValue />
                       </SelectTrigger>
@@ -249,7 +276,18 @@ export default function EmailNotifications() {
                       <div className="text-xs text-gray-500">All · Only if overall rating is below</div>
                     </div>
                     <div className="flex items-center space-x-2">
-                      <Select value={placeSettings.rating}>
+                      <Switch 
+                        checked={placeSettings.satisfactionSurvey}
+                        onCheckedChange={(checked) => 
+                          setPlaceSettings(prev => ({ ...prev, satisfactionSurvey: checked }))
+                        }
+                      />
+                      <Select 
+                        value={placeSettings.rating}
+                        onValueChange={(value) => 
+                          setPlaceSettings(prev => ({ ...prev, rating: value }))
+                        }
+                      >
                         <SelectTrigger className="w-20">
                           <SelectValue />
                         </SelectTrigger>
