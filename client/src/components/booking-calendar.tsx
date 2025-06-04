@@ -311,30 +311,39 @@ export default function BookingCalendar({ selectedDate, bookings, allBookings = 
             return (
               <div
                 key={day.toISOString()}
-                className={`min-h-[160px] border rounded transition-colors ${
+                className={`min-h-[160px] border rounded transition-colors cursor-pointer ${
                   isSelected 
                     ? 'bg-green-50 border-green-300 shadow-md' 
                     : isTodayDate 
                     ? 'bg-blue-50 border-blue-200' 
                     : isClosed
                     ? 'bg-gray-50 border-gray-200'
-                    : 'bg-white border-gray-200 hover:shadow-sm'
+                    : 'bg-white border-gray-200 hover:shadow-sm hover:border-green-200'
                 }`}
+                onClick={() => onDateSelect(day)}
               >
                 {/* Day Header */}
-                <div className={`p-2 border-b bg-gradient-to-r ${
-                  isSelected 
-                    ? 'from-green-100 to-green-50 border-green-200' 
-                    : isTodayDate 
-                    ? 'from-blue-100 to-blue-50 border-blue-200' 
-                    : isClosed
-                    ? 'from-gray-100 to-gray-50 border-gray-200'
-                    : 'from-white to-gray-50 border-gray-100'
-                }`}>
+                <div 
+                  className={`p-2 border-b bg-gradient-to-r cursor-pointer hover:from-green-50 hover:to-green-25 ${
+                    isSelected 
+                      ? 'from-green-100 to-green-50 border-green-200' 
+                      : isTodayDate 
+                      ? 'from-blue-100 to-blue-50 border-blue-200' 
+                      : isClosed
+                      ? 'from-gray-100 to-gray-50 border-gray-200'
+                      : 'from-white to-gray-50 border-gray-100'
+                  }`}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    onDateSelect(day);
+                  }}
+                >
                   <div className="flex items-center justify-between">
-                    <div className={`text-sm font-semibold ${
-                      isTodayDate ? 'text-blue-700' : isClosed ? 'text-gray-500' : 'text-gray-900'
-                    }`}>
+                    <div 
+                      className={`text-sm font-semibold hover:text-green-600 transition-colors ${
+                        isSelected ? 'text-green-700' : isTodayDate ? 'text-blue-700' : isClosed ? 'text-gray-500' : 'text-gray-900'
+                      }`}
+                    >
                       {format(day, 'd')}
                     </div>
                     {dayBookings.length > 0 && (
