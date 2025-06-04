@@ -113,23 +113,34 @@ export default function BookingCalendar({ selectedDate, bookings, allBookings = 
   const handleCreateBooking = (e: React.FormEvent) => {
     e.preventDefault();
 
-    // Validate guest count against selected table capacity if a table is selected
-    if (newBooking.tableId && tables) {
-      const selectedTable = tables.find(t => t.id.toString() === newBooking.tableId);
-      if (selectedTable && newBooking.guestCount > selectedTable.capacity) {
-        toast({
-          title: "Error",
-          description: `Selected table can only accommodate ${selectedTable.capacity} guests. You have ${newBooking.guestCount} guests.`,
-          variant: "destructive"
-        });
-        return;
+    let tableId = null;
+    
+    // Handle table assignment
+    if (newBooking.tableId && newBooking.tableId !== "auto") {
+      if (newBooking.tableId.startsWith("combined-")) {
+        // For combined tables, we'll need to handle this differently
+        // For now, let's not assign a specific table ID for combined tables
+        tableId = null;
+      } else {
+        tableId = parseInt(newBooking.tableId);
+        
+        // Validate guest count against selected table capacity
+        const selectedTable = tables.find(t => t.id === tableId);
+        if (selectedTable && newBooking.guestCount > selectedTable.capacity) {
+          toast({
+            title: "Error",
+            description: `Selected table can only accommodate ${selectedTable.capacity} guests. You have ${newBooking.guestCount} guests.`,
+            variant: "destructive"
+          });
+          return;
+        }
       }
     }
 
     createBookingMutation.mutate({
       ...newBooking,
       bookingDate: selectedDate.toISOString(),
-      tableId: newBooking.tableId ? parseInt(newBooking.tableId) : null,
+      tableId: tableId,
       restaurantId: restaurant?.id
     });
   };
@@ -151,6 +162,22 @@ export default function BookingCalendar({ selectedDate, bookings, allBookings = 
     return bookingsToUse.filter(booking => 
       isSameDay(new Date(booking.bookingDate), date)
     );
+  };
+
+  const getTableDisplayName = (booking: any) => {
+    if (!booking.tableId) return "Auto-assigned";
+    
+    const table = tables?.find(t => t.id === booking.tableId);
+    if (table) {
+      return `Table ${table.tableNumber}`;
+    }
+    
+    const combinedTable = combinedTables?.find(ct => ct.id === booking.tableId);
+    if (combinedTable) {
+      return `Combined Table ${combinedTable.name}`;
+    }
+    
+    return `Table ${booking.tableId}`;
   };
 
   const monthStart = startOfMonth(currentMonth);
@@ -227,9 +254,9 @@ export default function BookingCalendar({ selectedDate, bookings, allBookings = 
                     <div
                       key={booking.id}
                       className="text-xs bg-blue-200 text-blue-800 px-1 py-0.5 rounded truncate"
-                      title={`${booking.customerName} - ${booking.guestCount} guests at ${booking.startTime}`}
+                      title={`${booking.customerName} - ${booking.guestCount} guests at ${booking.startTime} - ${getTableDisplayName(booking)}`}
                     >
-                      {booking.startTime} {booking.customerName}
+                      {booking.startTime} {booking.customerName} - {getTableDisplayName(booking)}
                     </div>
                   ))}
                   {dayBookings.length > 2 && (
@@ -291,9 +318,7 @@ export default function BookingCalendar({ selectedDate, bookings, allBookings = 
                       <div className="mt-1 flex items-center space-x-4 text-sm text-gray-600">
                         <span>{booking.startTime} - {booking.endTime}</span>
                         <span>{booking.guestCount} guests</span>
-                        {booking.tableId && (
-                          <span>Table {tables.find(t => t.id === booking.tableId)?.tableNumber}</span>
-                        )}
+                        <span>{getTableDisplayName(booking)}</span>
                       </div>
                       {booking.notes && (
                         <div className="mt-1 text-sm text-gray-500">
@@ -493,26 +518,23 @@ export default function BookingCalendar({ selectedDate, bookings, allBookings = 
               </div>
               <div>
                 <Label htmlFor="tableId">Table (Optional)</Label>
-                <Select value={newBooking.tableId} onValueChange={(value) => setNewBooking({ ...newBooking, tableId: value })}>
+                <Select value={newBooking.tableId} onValueChange={(value) => setNewBooking({ ...newBooking, tableId: value === "auto" ? "" : value })}>
                   <SelectTrigger>
-                    <SelectValue placeholder={tables?.length > 0 ? "Auto-assign" : "No tables available"} />
+                    <SelectValue placeholder="Auto-assign" />
                   </SelectTrigger>
                   <SelectContent>
+                    <SelectItem value="auto">Auto-assign</SelectItem>
                     {tables && tables.length > 0 ? (
                       tables.map((table) => (
-                        <SelectItem key={table.id} value={table.id.toString()}>
+                        <SelectItem key={`table-${table.id}`} value={table.id.toString()}>
                           Table {table.tableNumber} ({table.capacity} seats)
                         </SelectItem>
                       ))
-                    ) : (
-                      <SelectItem value="no-tables" disabled>
-                        No tables configured
-                      </SelectItem>
-                    )}
+                    ) : null}
                     {combinedTables && combinedTables.length > 0 ? (
                       combinedTables.map((combinedTable) => (
-                        <SelectItem key={combinedTable.id} value={combinedTable.id.toString()}>
-                          Combined Table {combinedTable.name} ({combinedTable.capacity} seats)
+                        <SelectItem key={`combined-${combinedTable.id}`} value={`combined-${combinedTable.id}`}>
+                          Combined Table {combinedTable.name} ({combinedTable.totalCapacity} seats)
                         </SelectItem>
                       ))
                     ) : null}
