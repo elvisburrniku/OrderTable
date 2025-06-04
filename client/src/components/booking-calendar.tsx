@@ -72,7 +72,7 @@ export default function BookingCalendar({ selectedDate, bookings, allBookings = 
 
   const getDefaultEndTime = (startTime: string) => {
     const startHour = parseInt(startTime.split(':')[0]);
-    return `${(startHour + 2).toString().padStart(2, '0')}:00`;
+    return `${(startHour + 1).toString().padStart(2, '0')}:00`;
   };
 
   const [newBooking, setNewBooking] = useState({
@@ -81,7 +81,7 @@ export default function BookingCalendar({ selectedDate, bookings, allBookings = 
     customerPhone: "",
     guestCount: 2,
     startTime: "19:00", // Initialize with fallback value
-    endTime: "21:00", // Initialize with fallback value
+    endTime: "20:00", // Initialize with fallback value (1 hour duration)
     tableId: "",
     notes: ""
   });
@@ -120,7 +120,7 @@ export default function BookingCalendar({ selectedDate, bookings, allBookings = 
       setIsNewBookingOpen(false);
       // Reset to dynamic default times when opening hours are available
       const defaultStartTime = openingHours.length > 0 ? getDefaultStartTime() : "19:00";
-      const defaultEndTime = openingHours.length > 0 ? getDefaultEndTime(defaultStartTime) : "21:00";
+      const defaultEndTime = openingHours.length > 0 ? getDefaultEndTime(defaultStartTime) : "20:00";
       setNewBooking({
         customerName: "",
         customerEmail: "",
@@ -384,7 +384,7 @@ export default function BookingCalendar({ selectedDate, bookings, allBookings = 
                               setNewBooking(prev => ({
                                 ...prev,
                                 startTime: time,
-                                endTime: `${(parseInt(time.split(':')[0]) + 2).toString().padStart(2, '0')}:00`
+                                endTime: `${(parseInt(time.split(':')[0]) + 1).toString().padStart(2, '0')}:00`
                               }));
                               setIsNewBookingOpen(true);
                             }

@@ -25,7 +25,7 @@ export default function Bookings() {
     guestCount: 2,
     bookingDate: new Date().toISOString().split('T')[0],
     startTime: "19:00",
-    endTime: "21:00",
+    endTime: "20:00",
     tableId: "",
     notes: ""
   });
@@ -674,7 +674,8 @@ export default function Bookings() {
                 <Select 
                   value={newBooking.startTime} 
                   onValueChange={(value) => {
-                    setNewBooking({ ...newBooking, startTime: value });
+                    const endTime = `${(parseInt(value.split(':')[0]) + 1).toString().padStart(2, '0')}:00`;
+                    setNewBooking({ ...newBooking, startTime: value, endTime: endTime });
                     // Clear any existing conflict info when time changes
                     setConflictInfo(null);
                     setSuggestedTable(null);

@@ -31,7 +31,7 @@ export default function Dashboard() {
     customerPhone: "",
     guestCount: 2,
     startTime: "19:00",
-    endTime: "21:00",
+    endTime: "20:00",
     notes: ""
   });
   const today = format(new Date(), 'yyyy-MM-dd');
