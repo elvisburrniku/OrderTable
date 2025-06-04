@@ -40,13 +40,21 @@ export default function OpeningHours() {
   // Save opening hours mutation
   const saveHoursMutation = useMutation({
     mutationFn: async (hoursData: OpeningHours) => {
+      const daysMap = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'];
+      const hoursArray = daysMap.map((day, index) => ({
+        dayOfWeek: index,
+        isOpen: hoursData[day].isOpen,
+        openTime: hoursData[day].openTime,
+        closeTime: hoursData[day].closeTime,
+      }));
+
       const response = await fetch(`/api/tenants/${restaurant?.tenantId}/restaurants/${restaurant?.id}/opening-hours`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({ 
-          hours: Object.values(hoursData)
+          hours: hoursArray
         }),
       });
 
