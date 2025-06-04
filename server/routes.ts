@@ -1337,6 +1337,84 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Email notification settings routes
+  app.post("/api/tenants/:tenantId/restaurants/:restaurantId/email-settings", validateTenant, async (req, res) => {
+    try {
+      const restaurantId = parseInt(req.params.restaurantId);
+      const tenantId = parseInt(req.params.tenantId);
+      const { guestSettings, placeSettings } = req.body;
+
+      // Verify restaurant belongs to tenant
+      const restaurant = await storage.getRestaurantById(restaurantId);
+      if (!restaurant || restaurant.tenantId !== tenantId) {
+        return res.status(404).json({ message: "Restaurant not found" });
+      }
+
+      // Update restaurant with email settings
+      const updatedRestaurant = await storage.updateRestaurant(restaurantId, {
+        emailSettings: JSON.stringify({
+          guestSettings,
+          placeSettings
+        })
+      });
+
+      res.json({
+        message: "Email settings saved successfully",
+        settings: { guestSettings, placeSettings }
+      });
+    } catch (error) {
+      console.error("Error saving email settings:", error);
+      res.status(500).json({ message: "Failed to save email settings" });
+    }
+  });
+
+  app.get("/api/tenants/:tenantId/restaurants/:restaurantId/email-settings", validateTenant, async (req, res) => {
+    try {
+      const restaurantId = parseInt(req.params.restaurantId);
+      const tenantId = parseInt(req.params.tenantId);
+
+      // Verify restaurant belongs to tenant
+      const restaurant = await storage.getRestaurantById(restaurantId);
+      if (!restaurant || restaurant.tenantId !== tenantId) {
+        return res.status(404).json({ message: "Restaurant not found" });
+      }
+
+      let settings = {
+        guestSettings: {
+          emailConfirmation: true,
+          sendBookingConfirmation: true,
+          reminderHours: "24",
+          sendReminder: true,
+          confirmationLanguage: "english",
+          satisfactionSurvey: false,
+          reviewSite: "Google"
+        },
+        placeSettings: {
+          sentTo: restaurant.email || "restaurant@example.com",
+          emailBooking: true,
+          newBookingsOnly: false,
+          satisfactionSurvey: true,
+          rating: "3.0"
+        }
+      };
+
+      // Parse saved settings if they exist
+      if (restaurant.emailSettings) {
+        try {
+          const savedSettings = JSON.parse(restaurant.emailSettings);
+          settings = { ...settings, ...savedSettings };
+        } catch (e) {
+          console.warn("Failed to parse email settings, using defaults");
+        }
+      }
+
+      res.json(settings);
+    } catch (error) {
+      console.error("Error fetching email settings:", error);
+      res.status(500).json({ message: "Failed to fetch email settings" });
+    }
+  });
+
   // Statistics routes (read-only data aggregation)
   app.get("/api/tenants/:tenantId/restaurants/:restaurantId/statistics", validateTenant, async (req, res) => {
     try {

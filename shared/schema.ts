@@ -64,6 +64,8 @@ export const restaurants = pgTable("restaurants", {
   email: text("email"),
   description: text("description"),
   createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+  emailSettings: text("email_settings"),
 });
 
 export const tables = pgTable("tables", {

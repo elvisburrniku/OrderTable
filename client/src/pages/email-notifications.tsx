@@ -32,20 +32,37 @@ export default function EmailNotifications() {
     rating: "3.0"
   });
 
-  // Load settings from restaurant data
+  // Load email settings
+  const { data: emailSettings, isLoading } = useQuery({
+    queryKey: ['email-settings', restaurant?.tenantId, restaurant?.id],
+    queryFn: async () => {
+      if (!restaurant?.tenantId || !restaurant?.id) return null;
+      
+      const response = await fetch(`/api/tenants/${restaurant.tenantId}/restaurants/${restaurant.id}/email-settings`);
+      if (!response.ok) {
+        throw new Error('Failed to fetch email settings');
+      }
+      return response.json();
+    },
+    enabled: !!restaurant?.tenantId && !!restaurant?.id,
+  });
+
+  // Load settings when data arrives
   useEffect(() => {
-    if (restaurant) {
-      setPlaceSettings(prev => ({
-        ...prev,
-        sentTo: restaurant.email || "restaurant@example.com"
-      }));
+    if (emailSettings) {
+      setGuestSettings(emailSettings.guestSettings);
+      setPlaceSettings(emailSettings.placeSettings);
     }
-  }, [restaurant]);
+  }, [emailSettings]);
 
   // Save settings mutation
   const saveSettingsMutation = useMutation({
     mutationFn: async () => {
-      const response = await fetch(`/api/tenants/${restaurant?.tenantId}/restaurants/${restaurant?.id}/email-settings`, {
+      if (!restaurant?.tenantId || !restaurant?.id) {
+        throw new Error('Restaurant information not available');
+      }
+
+      const response = await fetch(`/api/tenants/${restaurant.tenantId}/restaurants/${restaurant.id}/email-settings`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -66,6 +83,9 @@ export default function EmailNotifications() {
       toast({
         title: "Settings saved",
         description: "Email notification settings have been updated successfully.",
+      });
+      queryClient.invalidateQueries({ 
+        queryKey: ['email-settings', restaurant?.tenantId, restaurant?.id] 
       });
     },
     onError: (error: Error) => {
