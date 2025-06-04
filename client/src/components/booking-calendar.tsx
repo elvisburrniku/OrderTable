@@ -29,13 +29,26 @@ export default function BookingCalendar({ selectedDate, bookings, allBookings = 
   const [activeView, setActiveView] = useState("calendar");
   const [currentMonth, setCurrentMonth] = useState(new Date());
   const [isNewBookingOpen, setIsNewBookingOpen] = useState(false);
+  const getDefaultStartTime = () => {
+    const dayHours = getOpeningHoursForDay(selectedDate);
+    if (dayHours && dayHours.isOpen) {
+      return dayHours.openTime;
+    }
+    return "19:00"; // fallback
+  };
+
+  const getDefaultEndTime = (startTime: string) => {
+    const startHour = parseInt(startTime.split(':')[0]);
+    return `${(startHour + 2).toString().padStart(2, '0')}:00`;
+  };
+
   const [newBooking, setNewBooking] = useState({
     customerName: "",
     customerEmail: "",
     customerPhone: "",
     guestCount: 2,
-    startTime: "19:00",
-    endTime: "21:00",
+    startTime: getDefaultStartTime(),
+    endTime: getDefaultEndTime(getDefaultStartTime()),
     tableId: "",
     notes: ""
   });
@@ -98,13 +111,14 @@ export default function BookingCalendar({ selectedDate, bookings, allBookings = 
         queryKey: [`/api/tenants/1/restaurants/${restaurant?.id}/customers`] 
       });
       setIsNewBookingOpen(false);
+      const defaultStartTime = getDefaultStartTime();
       setNewBooking({
         customerName: "",
         customerEmail: "",
         customerPhone: "",
         guestCount: 2,
-        startTime: "19:00",
-        endTime: "21:00",
+        startTime: defaultStartTime,
+        endTime: getDefaultEndTime(defaultStartTime),
         tableId: "",
         notes: ""
       });
@@ -163,10 +177,25 @@ export default function BookingCalendar({ selectedDate, bookings, allBookings = 
     });
   };
 
-  const timeSlots = [
-    "10:00", "11:00", "12:00", "13:00", "14:00", "15:00",
-    "16:00", "17:00", "18:00", "19:00", "20:00", "21:00"
-  ];
+  const generateTimeSlots = (date?: Date) => {
+    const targetDate = date || selectedDate;
+    const dayHours = getOpeningHoursForDay(targetDate);
+    
+    if (!dayHours || !dayHours.isOpen) {
+      return [];
+    }
+    
+    const slots = [];
+    const openHour = parseInt(dayHours.openTime.split(':')[0]);
+    const closeHour = parseInt(dayHours.closeTime.split(':')[0]);
+    
+    for (let hour = openHour; hour < closeHour; hour++) {
+      slots.push(`${hour.toString().padStart(2, '0')}:00`);
+    }
+    return slots;
+  };
+
+  const timeSlots = generateTimeSlots();
 
   const getBookingForTableAndTime = (tableId: number, time: string) => {
     return bookings.find(booking => 
@@ -613,7 +642,13 @@ export default function BookingCalendar({ selectedDate, bookings, allBookings = 
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <Label htmlFor="startTime">Start Time</Label>
-                  <Select value={newBooking.startTime} onValueChange={(value) => setNewBooking({ ...newBooking, startTime: value })}>
+                  <Select value={newBooking.startTime} onValueChange={(value) => {
+                    setNewBooking({ 
+                      ...newBooking, 
+                      startTime: value,
+                      endTime: getDefaultEndTime(value)
+                    });
+                  }}>
                     <SelectTrigger>
                       <SelectValue />
                     </SelectTrigger>
@@ -631,7 +666,7 @@ export default function BookingCalendar({ selectedDate, bookings, allBookings = 
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
-                      {timeSlots.map((time) => (
+                      {timeSlots.filter(time => time > newBooking.startTime).map((time) => (
                         <SelectItem key={time} value={time}>{time}</SelectItem>
                       ))}
                     </SelectContent>
