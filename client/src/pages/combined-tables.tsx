@@ -16,7 +16,7 @@ import { useToast } from "@/hooks/use-toast";
 interface CombinedTable {
   id: number;
   name: string;
-  tableIds: number[];
+  tableIds: number[] | string;
   totalCapacity: number;
   isActive: boolean;
   createdAt: string;
@@ -205,15 +205,20 @@ export default function CombinedTables() {
 
   const handleEdit = (combination: CombinedTable) => {
     setEditingCombination(combination);
+    const parsedTableIds = typeof combination.tableIds === 'string' 
+      ? JSON.parse(combination.tableIds) 
+      : combination.tableIds;
     setNewCombination({
       name: combination.name,
-      tableIds: combination.tableIds,
+      tableIds: parsedTableIds,
     });
     setIsDialogOpen(true);
   };
 
-  const getTableNumbers = (tableIds: number[]) => {
-    return tableIds.map(id => {
+  const getTableNumbers = (tableIds: number[] | string) => {
+    // Parse tableIds if it's a string (from database)
+    const ids = typeof tableIds === 'string' ? JSON.parse(tableIds) : tableIds;
+    return ids.map((id: number) => {
       const table = tables.find(t => t.id === id);
       return table?.tableNumber || `Table ${id}`;
     }).join(", ");
