@@ -42,12 +42,20 @@ export default function CombinedTables() {
 
   // Fetch tables
   const { data: tables = [], isLoading: tablesLoading } = useQuery({
-    queryKey: ["tables", restaurant?.id],
+    queryKey: ["tables", restaurant?.id, user?.tenantId],
     queryFn: async () => {
-      if (!restaurant?.id || !user?.tenantId) return [];
+      if (!restaurant?.id || !user?.tenantId) {
+        console.log("Missing restaurant ID or tenant ID:", { restaurantId: restaurant?.id, tenantId: user?.tenantId });
+        return [];
+      }
       const response = await fetch(`/api/tenants/${user.tenantId}/restaurants/${restaurant.id}/tables`);
-      if (!response.ok) throw new Error("Failed to fetch tables");
-      return response.json();
+      if (!response.ok) {
+        console.error("Failed to fetch tables:", response.status, response.statusText);
+        throw new Error("Failed to fetch tables");
+      }
+      const data = await response.json();
+      console.log("Fetched tables:", data);
+      return data;
     },
     enabled: !!restaurant?.id && !!user?.tenantId,
   });
@@ -299,22 +307,33 @@ export default function CombinedTables() {
                       </div>
                       <div>
                         <Label>Select Tables</Label>
-                        <div className="grid grid-cols-3 gap-2 mt-2">
-                          {tables
-                            .filter(table => table.isActive)
-                            .map((table) => (
-                              <Button
-                                key={table.id}
-                                variant={newCombination.tableIds.includes(table.id) ? "default" : "outline"}
-                                size="sm"
-                                onClick={() => handleTableToggle(table.id)}
-                                className="h-12 flex flex-col"
-                              >
-                                <span className="text-xs">Table {table.tableNumber}</span>
-                                <span className="text-xs opacity-70">{table.capacity} seats</span>
-                              </Button>
-                            ))}
-                        </div>
+                        {tables.length === 0 ? (
+                          <div className="text-sm text-gray-500 mt-2">
+                            {tablesLoading ? "Loading tables..." : "No tables available. Please create tables first."}
+                          </div>
+                        ) : (
+                          <div className="grid grid-cols-3 gap-2 mt-2">
+                            {tables
+                              .filter(table => table.isActive)
+                              .map((table) => (
+                                <Button
+                                  key={table.id}
+                                  variant={newCombination.tableIds.includes(table.id) ? "default" : "outline"}
+                                  size="sm"
+                                  onClick={() => handleTableToggle(table.id)}
+                                  className="h-12 flex flex-col"
+                                >
+                                  <span className="text-xs">Table {table.tableNumber}</span>
+                                  <span className="text-xs opacity-70">{table.capacity} seats</span>
+                                </Button>
+                              ))}
+                          </div>
+                        )}
+                        {tables.length > 0 && tables.filter(table => table.isActive).length === 0 && (
+                          <div className="text-sm text-gray-500 mt-2">
+                            No active tables available. Please activate tables first.
+                          </div>
+                        )}
                       </div>
                       {newCombination.tableIds.length > 0 && (
                         <div className="text-sm text-gray-600">
