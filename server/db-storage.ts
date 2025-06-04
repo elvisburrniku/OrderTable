@@ -595,4 +595,162 @@ export class DatabaseStorage implements IStorage {
     const result = await db.delete(combinedTables).where(eq(combinedTables.id, id));
     return result.rowCount > 0;
   }
+
+  // Table Layouts
+  async getTableLayout(restaurantId: number, room: string): Promise<TableLayout | undefined> {
+    const result = await db.select().from(tableLayouts)
+      .where(and(
+        eq(tableLayouts.restaurantId, restaurantId),
+        eq(tableLayouts.room, room)
+      ));
+    return result[0];
+  }
+
+  async saveTableLayout(restaurantId: number, tenantId: number, room: string, positions: any): Promise<TableLayout> {
+    // First try to find existing layout
+    const existingLayout = await this.getTableLayout(restaurantId, room);
+    
+    if (existingLayout) {
+      // Update existing layout
+      const [updated] = await db.update(tableLayouts)
+        .set({ 
+          positions, 
+          updatedAt: new Date() 
+        })
+        .where(eq(tableLayouts.id, existingLayout.id))
+        .returning();
+      return updated;
+    } else {
+      // Create new layout
+      const [newLayout] = await db.insert(tableLayouts).values({
+        restaurantId,
+        tenantId,
+        room,
+        positions
+      }).returning();
+      return newLayout;
+    }
+  }
+
+  // Opening Hours methods
+  async getOpeningHoursByRestaurant(restaurantId: number): Promise<any> {
+    return await db.select().from(openingHours).where(eq(openingHours.restaurantId, restaurantId));
+  }
+
+  async createOrUpdateOpeningHours(restaurantId: number, tenantId: number, hoursData: any[]): Promise<any> {
+    // Delete existing hours first
+    await db.delete(openingHours).where(eq(openingHours.restaurantId, restaurantId));
+    
+    // Insert new hours
+    if (hoursData.length > 0) {
+      const insertData = hoursData.map(hours => ({
+        ...hours,
+        restaurantId,
+        tenantId
+      }));
+      return await db.insert(openingHours).values(insertData).returning();
+    }
+    return [];
+  }
+
+  // Special Periods methods
+  async getSpecialPeriodsByRestaurant(restaurantId: number): Promise<any> {
+    return await db.select().from(specialPeriods).where(eq(specialPeriods.restaurantId, restaurantId));
+  }
+
+  async createSpecialPeriod(periodData: any): Promise<any> {
+    const [newPeriod] = await db.insert(specialPeriods).values(periodData).returning();
+    return newPeriod;
+  }
+
+  async updateSpecialPeriod(id: number, updates: any): Promise<any> {
+    const [updated] = await db.update(specialPeriods)
+      .set(updates)
+      .where(eq(specialPeriods.id, id))
+      .returning();
+    return updated;
+  }
+
+  async deleteSpecialPeriod(id: number): Promise<boolean> {
+    const result = await db.delete(specialPeriods).where(eq(specialPeriods.id, id));
+    return result.rowCount > 0;
+  }
+
+  // Cut-off Times methods
+  async getCutOffTimesByRestaurant(restaurantId: number): Promise<any> {
+    return await db.select().from(cutOffTimes).where(eq(cutOffTimes.restaurantId, restaurantId));
+  }
+
+  async createOrUpdateCutOffTimes(restaurantId: number, tenantId: number, timesData: any[]): Promise<any> {
+    // Delete existing cut-off times first
+    await db.delete(cutOffTimes).where(eq(cutOffTimes.restaurantId, restaurantId));
+    
+    // Insert new cut-off times
+    if (timesData.length > 0) {
+      const insertData = timesData.map(time => ({
+        ...time,
+        restaurantId,
+        tenantId
+      }));
+      return await db.insert(cutOffTimes).values(insertData).returning();
+    }
+    return [];
+  }
+
+  // Booking validation methods
+  async isRestaurantOpen(restaurantId: number, bookingDate: Date, bookingTime: string): Promise<boolean> {
+    // Get opening hours for the day of the week
+    const dayOfWeek = bookingDate.getDay(); // 0 = Sunday, 1 = Monday, etc.
+    const hours = await db.select().from(openingHours)
+      .where(and(
+        eq(openingHours.restaurantId, restaurantId),
+        eq(openingHours.dayOfWeek, dayOfWeek)
+      ));
+    
+    if (hours.length === 0) {
+      return false; // No opening hours set for this day
+    }
+    
+    const hour = hours[0];
+    if (!hour.isOpen) {
+      return false; // Restaurant is closed on this day
+    }
+    
+    // Check if booking time is within opening hours
+    const bookingTimeNum = this.timeToMinutes(bookingTime);
+    const openTimeNum = this.timeToMinutes(hour.openTime);
+    const closeTimeNum = this.timeToMinutes(hour.closeTime);
+    
+    return bookingTimeNum >= openTimeNum && bookingTimeNum <= closeTimeNum;
+  }
+
+  async isBookingAllowed(restaurantId: number, bookingDate: Date, bookingTime: string): Promise<boolean> {
+    // First check if restaurant is open
+    const isOpen = await this.isRestaurantOpen(restaurantId, bookingDate, bookingTime);
+    if (!isOpen) {
+      return false;
+    }
+    
+    // Check cut-off times
+    const now = new Date();
+    const cutOffData = await db.select().from(cutOffTimes)
+      .where(eq(cutOffTimes.restaurantId, restaurantId));
+    
+    if (cutOffData.length > 0) {
+      const cutOff = cutOffData[0];
+      const cutOffMinutes = cutOff.cutOffHours * 60 + cutOff.cutOffMinutes;
+      const timeDiffMinutes = (bookingDate.getTime() - now.getTime()) / (1000 * 60);
+      
+      if (timeDiffMinutes < cutOffMinutes) {
+        return false; // Booking is within cut-off time
+      }
+    }
+    
+    return true;
+  }
+
+  private timeToMinutes(timeString: string): number {
+    const [hours, minutes] = timeString.split(':').map(Number);
+    return hours * 60 + minutes;
+  }
 }
