@@ -1,5 +1,6 @@
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useAuth } from "@/lib/auth.tsx";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -7,6 +8,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { Clock, Save } from "lucide-react";
+import { toast } from "@/hooks/use-toast";
 
 interface OpeningHours {
   [key: string]: {
@@ -18,26 +20,91 @@ interface OpeningHours {
 
 export default function OpeningHours() {
   const { user, restaurant } = useAuth();
+  const queryClient = useQueryClient();
   const [hours, setHours] = useState<OpeningHours>({
+    sunday: { isOpen: true, openTime: "10:00", closeTime: "21:00" },
     monday: { isOpen: true, openTime: "09:00", closeTime: "22:00" },
     tuesday: { isOpen: true, openTime: "09:00", closeTime: "22:00" },
     wednesday: { isOpen: true, openTime: "09:00", closeTime: "22:00" },
     thursday: { isOpen: true, openTime: "09:00", closeTime: "22:00" },
     friday: { isOpen: true, openTime: "09:00", closeTime: "23:00" },
     saturday: { isOpen: true, openTime: "10:00", closeTime: "23:00" },
-    sunday: { isOpen: true, openTime: "10:00", closeTime: "21:00" },
   });
 
-  const [isSaving, setIsSaving] = useState(false);
+  // Fetch existing opening hours
+  const { data: existingHours, isLoading } = useQuery({
+    queryKey: [`/api/tenants/${restaurant?.tenantId}/restaurants/${restaurant?.id}/opening-hours`],
+    enabled: !!restaurant?.id && !!restaurant?.tenantId,
+  });
+
+  // Save opening hours mutation
+  const saveHoursMutation = useMutation({
+    mutationFn: async (hoursData: OpeningHours) => {
+      const response = await fetch(`/api/tenants/${restaurant?.tenantId}/restaurants/${restaurant?.id}/opening-hours`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ 
+          hours: Object.values(hoursData)
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to save opening hours');
+      }
+
+      return response.json();
+    },
+    onSuccess: () => {
+      toast({
+        title: "Success",
+        description: "Opening hours saved successfully!",
+      });
+      queryClient.invalidateQueries({
+        queryKey: [`/api/tenants/${restaurant?.tenantId}/restaurants/${restaurant?.id}/opening-hours`]
+      });
+    },
+    onError: (error) => {
+      toast({
+        title: "Error",
+        description: "Failed to save opening hours. Please try again.",
+        variant: "destructive",
+      });
+    },
+  });
+
+  // Load existing hours when data is fetched
+  useEffect(() => {
+    if (existingHours && existingHours.length > 0) {
+      const daysMap = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'];
+      const loadedHours: OpeningHours = {};
+      
+      daysMap.forEach((day, index) => {
+        const dayData = existingHours.find((h: any) => h.dayOfWeek === index);
+        if (dayData) {
+          loadedHours[day] = {
+            isOpen: dayData.isOpen,
+            openTime: dayData.openTime,
+            closeTime: dayData.closeTime,
+          };
+        } else {
+          loadedHours[day] = hours[day]; // fallback to default
+        }
+      });
+      
+      setHours(loadedHours);
+    }
+  }, [existingHours]);
 
   const days = [
+    { key: "sunday", label: "Sunday" },
     { key: "monday", label: "Monday" },
     { key: "tuesday", label: "Tuesday" },
     { key: "wednesday", label: "Wednesday" },
     { key: "thursday", label: "Thursday" },
     { key: "friday", label: "Friday" },
     { key: "saturday", label: "Saturday" },
-    { key: "sunday", label: "Sunday" },
   ];
 
   const handleTimeChange = (day: string, field: string, value: string) => {
@@ -61,11 +128,7 @@ export default function OpeningHours() {
   };
 
   const handleSave = async () => {
-    setIsSaving(true);
-    // Simulate API call
-    await new Promise(resolve => setTimeout(resolve, 1000));
-    setIsSaving(false);
-    alert("Opening hours saved successfully!");
+    saveHoursMutation.mutate(hours);
   };
 
   if (!user || !restaurant) {
@@ -156,11 +219,11 @@ export default function OpeningHours() {
             <div className="flex justify-end pt-4">
               <Button 
                 onClick={handleSave} 
-                disabled={isSaving}
+                disabled={saveHoursMutation.isPending || isLoading}
                 className="bg-green-600 hover:bg-green-700 text-white"
               >
                 <Save className="h-4 w-4 mr-2" />
-                {isSaving ? "Saving..." : "Save Opening Hours"}
+                {saveHoursMutation.isPending ? "Saving..." : "Save Opening Hours"}
               </Button>
             </div>
           </CardContent>

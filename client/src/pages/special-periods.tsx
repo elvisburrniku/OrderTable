@@ -1,19 +1,159 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useAuth } from "@/lib/auth.tsx";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Switch } from "@/components/ui/switch";
+import { Label } from "@/components/ui/label";
+import { Trash2 } from "lucide-react";
+import { toast } from "@/hooks/use-toast";
+
+interface SpecialPeriod {
+  id?: number;
+  name: string;
+  startDate: string;
+  endDate: string;
+  isOpen: boolean;
+  openTime: string;
+  closeTime: string;
+}
 
 export default function SpecialPeriods() {
   const { user, restaurant } = useAuth();
-  const [periods, setPeriods] = useState<Array<{ name: string; period: string }>>([]);
+  const queryClient = useQueryClient();
+  const [periods, setPeriods] = useState<SpecialPeriod[]>([]);
+
+  // Fetch existing special periods
+  const { data: existingPeriods, isLoading } = useQuery({
+    queryKey: [`/api/tenants/${restaurant?.tenantId}/restaurants/${restaurant?.id}/special-periods`],
+    enabled: !!restaurant?.id && !!restaurant?.tenantId,
+  });
+
+  // Create special period mutation
+  const createPeriodMutation = useMutation({
+    mutationFn: async (periodData: SpecialPeriod) => {
+      const response = await fetch(`/api/tenants/${restaurant?.tenantId}/restaurants/${restaurant?.id}/special-periods`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(periodData),
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to create special period');
+      }
+
+      return response.json();
+    },
+    onSuccess: () => {
+      toast({
+        title: "Success",
+        description: "Special period created successfully!",
+      });
+      queryClient.invalidateQueries({
+        queryKey: [`/api/tenants/${restaurant?.tenantId}/restaurants/${restaurant?.id}/special-periods`]
+      });
+    },
+    onError: (error) => {
+      toast({
+        title: "Error",
+        description: "Failed to create special period. Please try again.",
+        variant: "destructive",
+      });
+    },
+  });
+
+  // Delete special period mutation
+  const deletePeriodMutation = useMutation({
+    mutationFn: async (periodId: number) => {
+      const response = await fetch(`/api/tenants/${restaurant?.tenantId}/special-periods/${periodId}`, {
+        method: 'DELETE',
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to delete special period');
+      }
+
+      return response.json();
+    },
+    onSuccess: () => {
+      toast({
+        title: "Success",
+        description: "Special period deleted successfully!",
+      });
+      queryClient.invalidateQueries({
+        queryKey: [`/api/tenants/${restaurant?.tenantId}/restaurants/${restaurant?.id}/special-periods`]
+      });
+    },
+    onError: (error) => {
+      toast({
+        title: "Error",
+        description: "Failed to delete special period. Please try again.",
+        variant: "destructive",
+      });
+    },
+  });
+
+  // Load existing periods when data is fetched
+  useEffect(() => {
+    if (existingPeriods) {
+      setPeriods(existingPeriods.map((period: any) => ({
+        id: period.id,
+        name: period.name,
+        startDate: period.startDate,
+        endDate: period.endDate,
+        isOpen: period.isOpen,
+        openTime: period.openTime || "09:00",
+        closeTime: period.closeTime || "22:00",
+      })));
+    }
+  }, [existingPeriods]);
 
   if (!user || !restaurant) {
     return null;
   }
 
   const addPeriod = () => {
-    setPeriods([...periods, { name: "", period: "" }]);
+    setPeriods([...periods, { 
+      name: "", 
+      startDate: "", 
+      endDate: "", 
+      isOpen: true, 
+      openTime: "09:00", 
+      closeTime: "22:00" 
+    }]);
+  };
+
+  const updatePeriod = (index: number, field: string, value: any) => {
+    const newPeriods = [...periods];
+    newPeriods[index] = { ...newPeriods[index], [field]: value };
+    setPeriods(newPeriods);
+  };
+
+  const savePeriod = async (index: number) => {
+    const period = periods[index];
+    if (!period.name || !period.startDate || !period.endDate) {
+      toast({
+        title: "Error",
+        description: "Please fill in all required fields.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    createPeriodMutation.mutate(period);
+  };
+
+  const deletePeriod = async (index: number, periodId?: number) => {
+    if (periodId) {
+      deletePeriodMutation.mutate(periodId);
+    } else {
+      // Remove from local state if not saved yet
+      const newPeriods = periods.filter((_, i) => i !== index);
+      setPeriods(newPeriods);
+    }
   };
 
   return (
@@ -68,44 +208,102 @@ export default function SpecialPeriods() {
               </p>
             </CardHeader>
             <CardContent className="space-y-6">
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">Name</label>
-                  <div className="text-sm text-gray-500">Name</div>
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">Period</label>
-                  <div className="text-sm text-gray-500">Period</div>
-                </div>
-              </div>
-
               {periods.length === 0 ? (
                 <div className="text-center py-8 text-gray-500">
                   No special periods defined yet
                 </div>
               ) : (
-                periods.map((period, index) => (
-                  <div key={index} className="grid grid-cols-2 gap-4">
-                    <Input
-                      placeholder="Period name"
-                      value={period.name}
-                      onChange={(e) => {
-                        const newPeriods = [...periods];
-                        newPeriods[index].name = e.target.value;
-                        setPeriods(newPeriods);
-                      }}
-                    />
-                    <Input
-                      placeholder="Date range"
-                      value={period.period}
-                      onChange={(e) => {
-                        const newPeriods = [...periods];
-                        newPeriods[index].period = e.target.value;
-                        setPeriods(newPeriods);
-                      }}
-                    />
-                  </div>
-                ))
+                <div className="space-y-4">
+                  {periods.map((period, index) => (
+                    <div key={index} className="border rounded-lg p-4 space-y-4">
+                      <div className="flex justify-between items-center">
+                        <h4 className="font-medium">Special Period #{index + 1}</h4>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => deletePeriod(index, period.id)}
+                          className="text-red-600 hover:text-red-700"
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
+                      </div>
+                      
+                      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                        <div>
+                          <Label htmlFor={`name-${index}`}>Period Name</Label>
+                          <Input
+                            id={`name-${index}`}
+                            placeholder="e.g., Holiday Hours"
+                            value={period.name}
+                            onChange={(e) => updatePeriod(index, 'name', e.target.value)}
+                          />
+                        </div>
+                        <div>
+                          <Label htmlFor={`start-${index}`}>Start Date</Label>
+                          <Input
+                            id={`start-${index}`}
+                            type="date"
+                            value={period.startDate}
+                            onChange={(e) => updatePeriod(index, 'startDate', e.target.value)}
+                          />
+                        </div>
+                        <div>
+                          <Label htmlFor={`end-${index}`}>End Date</Label>
+                          <Input
+                            id={`end-${index}`}
+                            type="date"
+                            value={period.endDate}
+                            onChange={(e) => updatePeriod(index, 'endDate', e.target.value)}
+                          />
+                        </div>
+                      </div>
+
+                      <div className="flex items-center space-x-4">
+                        <div className="flex items-center space-x-2">
+                          <Switch
+                            id={`open-${index}`}
+                            checked={period.isOpen}
+                            onCheckedChange={(checked) => updatePeriod(index, 'isOpen', checked)}
+                          />
+                          <Label htmlFor={`open-${index}`}>Restaurant Open</Label>
+                        </div>
+                      </div>
+
+                      {period.isOpen && (
+                        <div className="grid grid-cols-2 gap-4">
+                          <div>
+                            <Label htmlFor={`open-time-${index}`}>Open Time</Label>
+                            <Input
+                              id={`open-time-${index}`}
+                              type="time"
+                              value={period.openTime}
+                              onChange={(e) => updatePeriod(index, 'openTime', e.target.value)}
+                            />
+                          </div>
+                          <div>
+                            <Label htmlFor={`close-time-${index}`}>Close Time</Label>
+                            <Input
+                              id={`close-time-${index}`}
+                              type="time"
+                              value={period.closeTime}
+                              onChange={(e) => updatePeriod(index, 'closeTime', e.target.value)}
+                            />
+                          </div>
+                        </div>
+                      )}
+
+                      {!period.id && (
+                        <Button 
+                          onClick={() => savePeriod(index)}
+                          disabled={createPeriodMutation.isPending}
+                          className="bg-blue-600 hover:bg-blue-700 text-white"
+                        >
+                          {createPeriodMutation.isPending ? "Saving..." : "Save Period"}
+                        </Button>
+                      )}
+                    </div>
+                  ))}
+                </div>
               )}
 
               <Button 

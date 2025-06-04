@@ -267,55 +267,56 @@ export const insertTenantSubscriptionSchema = createInsertSchema(tenantSubscript
   updatedAt: true
 });
 
-export const insertUserSubscriptionSchema = createInsertSchema(userSubscriptions).omit({
-  id: true,
-  createdAt: true,
-  updatedAt: true
+export const insertUserSubscriptionSchema = createInsertSchema(userSubscriptions);
+export const selectUserSubscriptionSchema = createSelectSchema(userSubscriptions);
+
+// Opening Hours table
+export const openingHours = pgTable("opening_hours", {
+  id: serial("id").primaryKey(),
+  restaurantId: integer("restaurant_id").references(() => restaurants.id).notNull(),
+  tenantId: integer("tenant_id").references(() => tenants.id).notNull(),
+  dayOfWeek: integer("day_of_week").notNull(), // 0 = Sunday, 1 = Monday, etc.
+  isOpen: boolean("is_open").default(true).notNull(),
+  openTime: text("open_time").notNull(),
+  closeTime: text("close_time").notNull(),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
 });
 
-export const insertRoomSchema = createInsertSchema(rooms).omit({
-  id: true,
-  createdAt: true,
-  updatedAt: true
+// Special Periods table
+export const specialPeriods = pgTable("special_periods", {
+  id: serial("id").primaryKey(),
+  restaurantId: integer("restaurant_id").references(() => restaurants.id).notNull(),
+  tenantId: integer("tenant_id").references(() => tenants.id).notNull(),
+  name: text("name").notNull(),
+  startDate: date("start_date").notNull(),
+  endDate: date("end_date").notNull(),
+  isOpen: boolean("is_open").default(true).notNull(),
+  openTime: text("open_time"),
+  closeTime: text("close_time"),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
 });
 
-export const loginSchema = z.object({
-  email: z.string().email(),
-  password: z.string().min(6)
+// Cut-off Times table
+export const cutOffTimes = pgTable("cut_off_times", {
+  id: serial("id").primaryKey(),
+  restaurantId: integer("restaurant_id").references(() => restaurants.id).notNull(),
+  tenantId: integer("tenant_id").notNull().references(() => tenants.id),
+  dayOfWeek: integer("day_of_week").notNull(), // 0 = Sunday, 1 = Monday, etc.
+  cutOffHours: integer("cut_off_hours").default(0).notNull(), // Hours before closing
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
 });
 
-export type Tenant = typeof tenants.$inferSelect;
-export type InsertTenant = z.infer<typeof insertTenantSchema>;
-export type User = typeof users.$inferSelect;
-export type InsertUser = z.infer<typeof insertUserSchema>;
-export type TenantUser = typeof tenantUsers.$inferSelect;
-export type InsertTenantUser = z.infer<typeof insertTenantUserSchema>;
-export type Restaurant = typeof restaurants.$inferSelect;
-export type InsertRestaurant = z.infer<typeof insertRestaurantSchema>;
-export type Table = typeof tables.$inferSelect;
-export type InsertTable = z.infer<typeof insertTableSchema>;
-export type Booking = typeof bookings.$inferSelect;
-export type InsertBooking = z.infer<typeof insertBookingSchema>;
-export type Customer = typeof customers.$inferSelect;
-export type InsertCustomer = z.infer<typeof insertCustomerSchema>;
-export type SmsMessage = typeof smsMessages.$inferSelect;
-export type InsertSmsMessage = z.infer<typeof insertSmsMessageSchema>;
-export type WaitingList = typeof waitingList.$inferSelect;
-export type InsertWaitingList = z.infer<typeof waitingListSchema>;
-export type Feedback = typeof feedback.$inferSelect;
-export type InsertFeedback = z.infer<typeof insertFeedbackSchema>;
-export type ActivityLog = typeof activityLog.$inferSelect;
-export type InsertActivityLog = z.infer<typeof activityLogSchema>;
-export type TimeSlots = typeof timeSlots.$inferSelect;
-export type InsertTimeSlots = z.infer<typeof timeSlotsSchema>;
-export type SubscriptionPlan = typeof subscriptionPlans.$inferSelect;
-export type InsertSubscriptionPlan = z.infer<typeof insertSubscriptionPlanSchema>;
-export type TenantSubscription = typeof tenantSubscriptions.$inferSelect;
-export type InsertTenantSubscription = z.infer<typeof insertTenantSubscriptionSchema>;
-export type UserSubscription = typeof userSubscriptions.$inferSelect;
-export type InsertUserSubscription = z.infer<typeof insertUserSubscriptionSchema>;
-export type Room = typeof rooms.$inferSelect;
-export type InsertRoom = z.infer<typeof insertRoomSchema>;
+export const insertOpeningHoursSchema = createInsertSchema(openingHours);
+export const selectOpeningHoursSchema = createSelectSchema(openingHours);
+
+export const insertSpecialPeriodSchema = createInsertSchema(specialPeriods);
+export const selectSpecialPeriodSchema = createSelectSchema(specialPeriods);
+
+export const insertCutOffTimeSchema = createInsertSchema(cutOffTimes);
+export const selectCutOffTimeSchema = createSelectSchema(cutOffTimes);
 
 export const tableLayouts = pgTable('table_layouts', {
   id: serial('id').primaryKey(),

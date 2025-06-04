@@ -414,6 +414,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ message: "Missing required booking fields" });
       }
 
+      const bookingDate = new Date(req.body.bookingDate);
+      const bookingTime = req.body.startTime;
+
+      // Validate booking against opening hours and cut-off times
+      const isAllowed = await storage.isBookingAllowed(restaurantId, bookingDate, bookingTime);
+      if (!isAllowed) {
+        return res.status(400).json({ 
+          message: "Booking not allowed: Restaurant is closed or past cut-off time" 
+        });
+      }
+
       // Get or create customer first
       const customer = await storage.getOrCreateCustomer(restaurantId, tenantId, {
         name: req.body.customerName,
@@ -426,7 +437,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         restaurantId,
         tenantId,
         customerId: customer.id,
-        bookingDate: new Date(req.body.bookingDate)
+        bookingDate: bookingDate
       });
 
       const booking = await storage.createBooking(bookingData);
@@ -990,6 +1001,165 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error("Activity log fetch error:", error);
       res.status(500).json({ error: "Failed to fetch activity log" });
+    }
+  });
+
+  // Opening Hours routes
+  app.get("/api/tenants/:tenantId/restaurants/:restaurantId/opening-hours", validateTenant, async (req, res) => {
+    try {
+      const restaurantId = parseInt(req.params.restaurantId);
+      const tenantId = parseInt(req.params.tenantId);
+      
+      // Verify restaurant belongs to tenant
+      const restaurant = await storage.getRestaurantById(restaurantId);
+      if (!restaurant || restaurant.tenantId !== tenantId) {
+        return res.status(404).json({ message: "Restaurant not found" });
+      }
+
+      const hours = await storage.getOpeningHoursByRestaurant(restaurantId);
+      res.json(hours);
+    } catch (error) {
+      console.error("Error fetching opening hours:", error);
+      res.status(500).json({ message: "Internal server error" });
+    }
+  });
+
+  app.post("/api/tenants/:tenantId/restaurants/:restaurantId/opening-hours", validateTenant, async (req, res) => {
+    try {
+      const restaurantId = parseInt(req.params.restaurantId);
+      const tenantId = parseInt(req.params.tenantId);
+      const { hours } = req.body;
+
+      // Verify restaurant belongs to tenant
+      const restaurant = await storage.getRestaurantById(restaurantId);
+      if (!restaurant || restaurant.tenantId !== tenantId) {
+        return res.status(404).json({ message: "Restaurant not found" });
+      }
+
+      const savedHours = await storage.createOrUpdateOpeningHours(restaurantId, tenantId, hours);
+      res.json(savedHours);
+    } catch (error) {
+      console.error("Error saving opening hours:", error);
+      res.status(500).json({ message: "Internal server error" });
+    }
+  });
+
+  // Special Periods routes
+  app.get("/api/tenants/:tenantId/restaurants/:restaurantId/special-periods", validateTenant, async (req, res) => {
+    try {
+      const restaurantId = parseInt(req.params.restaurantId);
+      const tenantId = parseInt(req.params.tenantId);
+      
+      // Verify restaurant belongs to tenant
+      const restaurant = await storage.getRestaurantById(restaurantId);
+      if (!restaurant || restaurant.tenantId !== tenantId) {
+        return res.status(404).json({ message: "Restaurant not found" });
+      }
+
+      const periods = await storage.getSpecialPeriodsByRestaurant(restaurantId);
+      res.json(periods);
+    } catch (error) {
+      console.error("Error fetching special periods:", error);
+      res.status(500).json({ message: "Internal server error" });
+    }
+  });
+
+  app.post("/api/tenants/:tenantId/restaurants/:restaurantId/special-periods", validateTenant, async (req, res) => {
+    try {
+      const restaurantId = parseInt(req.params.restaurantId);
+      const tenantId = parseInt(req.params.tenantId);
+      const periodData = {
+        ...req.body,
+        restaurantId,
+        tenantId,
+      };
+
+      const period = await storage.createSpecialPeriod(periodData);
+      res.json(period);
+    } catch (error) {
+      console.error("Error creating special period:", error);
+      res.status(400).json({ message: "Invalid special period data" });
+    }
+  });
+
+  app.put("/api/tenants/:tenantId/special-periods/:id", validateTenant, async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      const tenantId = parseInt(req.params.tenantId);
+      const updates = req.body;
+
+      const period = await storage.updateSpecialPeriod(id, updates);
+      res.json(period);
+    } catch (error) {
+      console.error("Error updating special period:", error);
+      res.status(500).json({ message: "Internal server error" });
+    }
+  });
+
+  app.delete("/api/tenants/:tenantId/special-periods/:id", validateTenant, async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      const tenantId = parseInt(req.params.tenantId);
+
+      const success = await storage.deleteSpecialPeriod(id);
+      res.json({ message: "Special period deleted successfully" });
+    } catch (error) {
+      console.error("Error deleting special period:", error);
+      res.status(500).json({ message: "Internal server error" });
+    }
+  });
+
+  // Cut-off Times routes
+  app.get("/api/tenants/:tenantId/restaurants/:restaurantId/cut-off-times", validateTenant, async (req, res) => {
+    try {
+      const restaurantId = parseInt(req.params.restaurantId);
+      const tenantId = parseInt(req.params.tenantId);
+      
+      // Verify restaurant belongs to tenant
+      const restaurant = await storage.getRestaurantById(restaurantId);
+      if (!restaurant || restaurant.tenantId !== tenantId) {
+        return res.status(404).json({ message: "Restaurant not found" });
+      }
+
+      const cutOffTimes = await storage.getCutOffTimesByRestaurant(restaurantId);
+      res.json(cutOffTimes);
+    } catch (error) {
+      console.error("Error fetching cut-off times:", error);
+      res.status(500).json({ message: "Internal server error" });
+    }
+  });
+
+  app.post("/api/tenants/:tenantId/restaurants/:restaurantId/cut-off-times", validateTenant, async (req, res) => {
+    try {
+      const restaurantId = parseInt(req.params.restaurantId);
+      const tenantId = parseInt(req.params.tenantId);
+      const { cutOffTimes: timesData } = req.body;
+
+      // Verify restaurant belongs to tenant
+      const restaurant = await storage.getRestaurantById(restaurantId);
+      if (!restaurant || restaurant.tenantId !== tenantId) {
+        return res.status(404).json({ message: "Restaurant not found" });
+      }
+
+      const savedTimes = await storage.createOrUpdateCutOffTimes(restaurantId, tenantId, timesData);
+      res.json(savedTimes);
+    } catch (error) {
+      console.error("Error saving cut-off times:", error);
+      res.status(500).json({ message: "Internal server error" });
+    }
+  });
+
+  // Booking validation route
+  app.post("/api/tenants/:tenantId/restaurants/:restaurantId/validate-booking", validateTenant, async (req, res) => {
+    try {
+      const restaurantId = parseInt(req.params.restaurantId);
+      const { bookingDate, bookingTime } = req.body;
+
+      const isAllowed = await storage.isBookingAllowed(restaurantId, new Date(bookingDate), bookingTime);
+      res.json({ isAllowed });
+    } catch (error) {
+      console.error("Error validating booking:", error);
+      res.status(500).json({ message: "Internal server error" });
     }
   });
 

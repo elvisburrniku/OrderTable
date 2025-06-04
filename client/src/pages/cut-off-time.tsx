@@ -1,11 +1,14 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useAuthGuard } from "@/lib/auth.tsx";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { toast } from "@/hooks/use-toast";
 
 export default function CutOffTime() {
   const { isLoading: authLoading, isAuthenticated, user, restaurant } = useAuthGuard();
+  const queryClient = useQueryClient();
 
   if (authLoading) {
     return <div>Loading...</div>;
@@ -16,17 +19,111 @@ export default function CutOffTime() {
   }
 
   const [cutOffTimes, setCutOffTimes] = useState({
+    Sunday: "None",
     Monday: "None",
     Tuesday: "None", 
     Wednesday: "None",
     Thursday: "None",
     Friday: "None",
-    Saturday: "None",
-    Sunday: "None"
+    Saturday: "None"
   });
+
+  // Fetch existing cut-off times
+  const { data: existingCutOffTimes, isLoading } = useQuery({
+    queryKey: [`/api/tenants/${restaurant?.tenantId}/restaurants/${restaurant?.id}/cut-off-times`],
+    enabled: !!restaurant?.id && !!restaurant?.tenantId,
+  });
+
+  // Save cut-off times mutation
+  const saveCutOffTimesMutation = useMutation({
+    mutationFn: async (timesData: any) => {
+      const cutOffHoursMap: { [key: string]: number } = {
+        "None": 0,
+        "1 hour before": 1,
+        "2 hours before": 2,
+        "3 hours before": 3,
+        "4 hours before": 4,
+        "6 hours before": 6,
+        "12 hours before": 12,
+        "1 day before": 24,
+        "2 days before": 48,
+        "3 days before": 72
+      };
+
+      const daysMap = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+      const cutOffTimesArray = daysMap.map(day => ({
+        cutOffHours: cutOffHoursMap[timesData[day]] || 0
+      }));
+
+      const response = await fetch(`/api/tenants/${restaurant?.tenantId}/restaurants/${restaurant?.id}/cut-off-times`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ cutOffTimes: cutOffTimesArray }),
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to save cut-off times');
+      }
+
+      return response.json();
+    },
+    onSuccess: () => {
+      toast({
+        title: "Success",
+        description: "Cut-off times saved successfully!",
+      });
+      queryClient.invalidateQueries({
+        queryKey: [`/api/tenants/${restaurant?.tenantId}/restaurants/${restaurant?.id}/cut-off-times`]
+      });
+    },
+    onError: (error) => {
+      toast({
+        title: "Error",
+        description: "Failed to save cut-off times. Please try again.",
+        variant: "destructive",
+      });
+    },
+  });
+
+  // Load existing cut-off times when data is fetched
+  useEffect(() => {
+    if (existingCutOffTimes && existingCutOffTimes.length > 0) {
+      const daysMap = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+      const hoursToTextMap: { [key: number]: string } = {
+        0: "None",
+        1: "1 hour before",
+        2: "2 hours before",
+        3: "3 hours before",
+        4: "4 hours before",
+        6: "6 hours before",
+        12: "12 hours before",
+        24: "1 day before",
+        48: "2 days before",
+        72: "3 days before"
+      };
+
+      const loadedTimes: any = {};
+      daysMap.forEach((day, index) => {
+        const dayData = existingCutOffTimes.find((t: any) => t.dayOfWeek === index);
+        if (dayData) {
+          loadedTimes[day] = hoursToTextMap[dayData.cutOffHours] || "None";
+        } else {
+          loadedTimes[day] = "None";
+        }
+      });
+      
+      setCutOffTimes(loadedTimes);
+    }
+  }, [existingCutOffTimes]);
 
   const updateCutOffTime = (day: string, time: string) => {
     setCutOffTimes({ ...cutOffTimes, [day]: time });
+  };
+
+  const handleSave = () => {
+    saveCutOffTimesMutation.mutate(cutOffTimes);
   };
 
   const timeOptions = [
@@ -113,7 +210,13 @@ export default function CutOffTime() {
               ))}
 
               <div className="pt-6">
-                <Button className="bg-green-600 hover:bg-green-700 text-white">Save</Button>
+                <Button 
+                  onClick={handleSave}
+                  disabled={saveCutOffTimesMutation.isPending || isLoading}
+                  className="bg-green-600 hover:bg-green-700 text-white"
+                >
+                  {saveCutOffTimesMutation.isPending ? "Saving..." : "Save"}
+                </Button>
               </div>
             </CardContent>
           </Card>

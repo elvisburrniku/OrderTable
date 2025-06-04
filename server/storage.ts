@@ -1,7 +1,24 @@
 // Adds Supabase database connection option using environment variables and conditional drizzle setup.
 import { 
-  users, restaurants, tables, bookings, customers, smsMessages, waitingList,
-  feedback, activityLog, timeSlots, subscriptionPlans, userSubscriptions, rooms, tableLayouts
+  users, 
+  restaurants, 
+  bookings, 
+  customers, 
+  rooms, 
+  tables, 
+  activityLogs, 
+  smsMessages, 
+  waitingList, 
+  feedback, 
+  timeSlots, 
+  tableLayouts,
+  tenants,
+  tenantUsers,
+  subscriptionPlans,
+  userSubscriptions,
+  openingHours,
+  specialPeriods,
+  cutOffTimes
 } from "@shared/schema";
 import type {
   User,
@@ -137,6 +154,24 @@ export interface IStorage {
     createUserSubscription(subscription: InsertUserSubscription): Promise<UserSubscription>;
     updateUserSubscription(id: number, subscription: Partial<UserSubscription>): Promise<UserSubscription | undefined>;
     getUserSubscriptionById(id: number): Promise<UserSubscription | undefined>;
+
+     // Opening Hours methods
+     getOpeningHoursByRestaurant(restaurantId: number): Promise<any>;
+     createOrUpdateOpeningHours(restaurantId: number, tenantId: number, hoursData: any[]): Promise<any>;
+ 
+     // Special Periods methods
+     getSpecialPeriodsByRestaurant(restaurantId: number): Promise<any>;
+     createSpecialPeriod(periodData: any): Promise<any>;
+     updateSpecialPeriod(id: number, updates: any): Promise<any>;
+     deleteSpecialPeriod(id: number): Promise<boolean>;
+ 
+     // Cut-off Times methods
+     getCutOffTimesByRestaurant(restaurantId: number): Promise<any>;
+     createOrUpdateCutOffTimes(restaurantId: number, tenantId: number, timesData: any[]): Promise<any>;
+ 
+     // Booking validation methods
+     isRestaurantOpen(restaurantId: number, bookingDate: Date, bookingTime: string): Promise<boolean>;
+     isBookingAllowed(restaurantId: number, bookingDate: Date, bookingTime: string): Promise<boolean>;
 }
 
 export class MemStorage implements IStorage {
@@ -696,6 +731,44 @@ export class MemStorage implements IStorage {
         createdAt: new Date(),
         updatedAt: new Date()
       };
+    }
+
+    // Opening Hours methods
+    async getOpeningHoursByRestaurant(restaurantId: number): Promise<any> {
+      return [];
+    }
+    async createOrUpdateOpeningHours(restaurantId: number, tenantId: number, hoursData: any[]): Promise<any> {
+        return [];
+    }
+
+    // Special Periods methods
+    async getSpecialPeriodsByRestaurant(restaurantId: number): Promise<any> {
+        return [];
+    }
+    async createSpecialPeriod(periodData: any): Promise<any> {
+        return {};
+    }
+    async updateSpecialPeriod(id: number, updates: any): Promise<any> {
+        return {};
+    }
+    async deleteSpecialPeriod(id: number): Promise<boolean> {
+        return true;
+    }
+
+    // Cut-off Times methods
+    async getCutOffTimesByRestaurant(restaurantId: number): Promise<any>  {
+        return [];
+    }
+    async createOrUpdateCutOffTimes(restaurantId: number, tenantId: number, timesData: any[]): Promise<any> {
+        return [];
+    }
+
+    // Booking validation methods
+    async isRestaurantOpen(restaurantId: number, bookingDate: Date, bookingTime: string): Promise<boolean> {
+        return true;
+    }
+    async isBookingAllowed(restaurantId: number, bookingDate: Date, bookingTime: string): Promise<boolean> {
+        return true;
     }
 }
 
