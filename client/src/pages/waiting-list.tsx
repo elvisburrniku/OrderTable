@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -10,13 +11,15 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Badge } from "@/components/ui/badge";
 import { format } from "date-fns";
 import { useToast } from "@/hooks/use-toast";
-import { Download } from "lucide-react";
+import { Download, Plus, X } from "lucide-react";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 
 export default function WaitingList() {
   const { user, restaurant } = useAuth();
   const queryClient = useQueryClient();
   const { toast } = useToast();
   const [statusFilter, setStatusFilter] = useState("all");
+  const [showForm, setShowForm] = useState(false);
 
   const [formData, setFormData] = useState({
     customerName: "",
@@ -61,11 +64,19 @@ export default function WaitingList() {
         requestedTime: "",
         notes: ""
       });
+      setShowForm(false);
       toast({
         title: "Success",
         description: "Added to waiting list successfully",
       });
     },
+    onError: (error: any) => {
+      toast({
+        title: "Error",
+        description: error.message || "Failed to add to waiting list",
+        variant: "destructive",
+      });
+    }
   });
 
   const updateEntryMutation = useMutation({
@@ -87,6 +98,13 @@ export default function WaitingList() {
         description: "Waiting list entry updated successfully",
       });
     },
+    onError: (error: any) => {
+      toast({
+        title: "Error",
+        description: error.message || "Failed to update waiting list entry",
+        variant: "destructive",
+      });
+    }
   });
 
   if (!user || !restaurant) {
@@ -101,14 +119,38 @@ export default function WaitingList() {
     e.preventDefault();
     if (!restaurant?.id) return;
 
+    if (!formData.customerName || !formData.customerEmail || !formData.guestCount || !formData.requestedDate || !formData.requestedTime) {
+      toast({
+        title: "Error",
+        description: "Please fill in all required fields",
+        variant: "destructive",
+      });
+      return;
+    }
+
     createEntryMutation.mutate({
       ...formData,
-      guestCount: parseInt(formData.guestCount)
+      guestCount: parseInt(formData.guestCount),
+      status: "waiting"
     });
   };
 
   const handleStatusUpdate = (id: number, status: string) => {
     updateEntryMutation.mutate({ id, updates: { status } });
+  };
+
+  const handleInputChange = (field: string, value: string) => {
+    setFormData(prev => ({ ...prev, [field]: value }));
+  };
+
+  const getStatusColor = (status: string) => {
+    switch (status) {
+      case 'waiting': return 'bg-yellow-100 text-yellow-800';
+      case 'contacted': return 'bg-blue-100 text-blue-800';
+      case 'booked': return 'bg-green-100 text-green-800';
+      case 'cancelled': return 'bg-red-100 text-red-800';
+      default: return 'bg-gray-100 text-gray-800';
+    }
   };
 
   return (
@@ -161,12 +203,107 @@ export default function WaitingList() {
           <div className="bg-white rounded-lg shadow">
             {/* Header */}
             <div className="p-6 border-b">
-              <h2 className="text-lg font-semibold mb-4">Waiting List</h2>
+              <div className="flex items-center justify-between mb-4">
+                <h2 className="text-lg font-semibold">Waiting List</h2>
+                <Dialog open={showForm} onOpenChange={setShowForm}>
+                  <DialogTrigger asChild>
+                    <Button className="bg-green-600 hover:bg-green-700 text-white">
+                      <Plus className="w-4 h-4 mr-2" />
+                      Add to Waiting List
+                    </Button>
+                  </DialogTrigger>
+                  <DialogContent className="max-w-md">
+                    <DialogHeader>
+                      <DialogTitle>Add to Waiting List</DialogTitle>
+                    </DialogHeader>
+                    <form onSubmit={handleSubmit} className="space-y-4">
+                      <div>
+                        <Label htmlFor="customerName">Customer Name *</Label>
+                        <Input
+                          id="customerName"
+                          value={formData.customerName}
+                          onChange={(e) => handleInputChange("customerName", e.target.value)}
+                          required
+                        />
+                      </div>
+                      <div>
+                        <Label htmlFor="customerEmail">Email *</Label>
+                        <Input
+                          id="customerEmail"
+                          type="email"
+                          value={formData.customerEmail}
+                          onChange={(e) => handleInputChange("customerEmail", e.target.value)}
+                          required
+                        />
+                      </div>
+                      <div>
+                        <Label htmlFor="customerPhone">Phone</Label>
+                        <Input
+                          id="customerPhone"
+                          value={formData.customerPhone}
+                          onChange={(e) => handleInputChange("customerPhone", e.target.value)}
+                        />
+                      </div>
+                      <div>
+                        <Label htmlFor="guestCount">Number of Guests *</Label>
+                        <Input
+                          id="guestCount"
+                          type="number"
+                          min="1"
+                          value={formData.guestCount}
+                          onChange={(e) => handleInputChange("guestCount", e.target.value)}
+                          required
+                        />
+                      </div>
+                      <div>
+                        <Label htmlFor="requestedDate">Requested Date *</Label>
+                        <Input
+                          id="requestedDate"
+                          type="date"
+                          value={formData.requestedDate}
+                          onChange={(e) => handleInputChange("requestedDate", e.target.value)}
+                          required
+                        />
+                      </div>
+                      <div>
+                        <Label htmlFor="requestedTime">Requested Time *</Label>
+                        <Input
+                          id="requestedTime"
+                          type="time"
+                          value={formData.requestedTime}
+                          onChange={(e) => handleInputChange("requestedTime", e.target.value)}
+                          required
+                        />
+                      </div>
+                      <div>
+                        <Label htmlFor="notes">Notes</Label>
+                        <Textarea
+                          id="notes"
+                          value={formData.notes}
+                          onChange={(e) => handleInputChange("notes", e.target.value)}
+                          rows={3}
+                        />
+                      </div>
+                      <div className="flex justify-end space-x-2">
+                        <Button type="button" variant="outline" onClick={() => setShowForm(false)}>
+                          Cancel
+                        </Button>
+                        <Button 
+                          type="submit" 
+                          className="bg-green-600 hover:bg-green-700"
+                          disabled={createEntryMutation.isPending}
+                        >
+                          {createEntryMutation.isPending ? "Adding..." : "Add to List"}
+                        </Button>
+                      </div>
+                    </form>
+                  </DialogContent>
+                </Dialog>
+              </div>
 
               {/* Filters */}
-              <div className="flex items-center space-x-4 mb-4">
+              <div className="flex items-center space-x-4">
                 <Button variant="outline" size="sm">Show filters</Button>
-
                 <Select value={statusFilter} onValueChange={setStatusFilter}>
                   <SelectTrigger className="w-32">
                     <SelectValue placeholder="Status" />
@@ -189,12 +326,12 @@ export default function WaitingList() {
                   <tr>
                     <th className="text-left py-3 px-4 font-medium text-gray-700">ID</th>
                     <th className="text-left py-3 px-4 font-medium text-gray-700">Name</th>
-                    <th className="text-left py-3 px-4 font-medium text-gray-700">Arrival</th>
+                    <th className="text-left py-3 px-4 font-medium text-gray-700">Contact</th>
+                    <th className="text-left py-3 px-4 font-medium text-gray-700">Requested Time</th>
                     <th className="text-left py-3 px-4 font-medium text-gray-700">Guests</th>
                     <th className="text-left py-3 px-4 font-medium text-gray-700">Status</th>
-                    <th className="text-left py-3 px-4 font-medium text-gray-700">Booking#</th>
                     <th className="text-left py-3 px-4 font-medium text-gray-700">Created</th>
-                    <th className="text-left py-3 px-4 font-medium text-gray-700">Source</th>
+                    <th className="text-left py-3 px-4 font-medium text-gray-700">Actions</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -217,30 +354,59 @@ export default function WaitingList() {
                         <td className="py-3 px-4">
                           <div>
                             <div className="font-medium">{item.customerName}</div>
-                            <div className="text-sm text-gray-500">{item.customerEmail}</div>
+                            {item.notes && (
+                              <div className="text-xs text-gray-500 mt-1">{item.notes}</div>
+                            )}
                           </div>
                         </td>
                         <td className="py-3 px-4">
-                          <div>
-                            <div className="font-medium">{item.requestedDate} at {item.requestedTime}</div>
+                          <div className="text-sm">
+                            <div>{item.customerEmail}</div>
+                            {item.customerPhone && (
+                              <div className="text-gray-500">{item.customerPhone}</div>
+                            )}
                           </div>
                         </td>
-                        <td className="py-3 px-4">{item.guestCount}</td>
                         <td className="py-3 px-4">
-                          <span className={`px-2 py-1 text-xs rounded-full ${
-                            item.status === 'waiting' ? 'bg-yellow-100 text-yellow-800' :
-                            item.status === 'contacted' ? 'bg-blue-100 text-blue-800' :
-                            item.status === 'booked' ? 'bg-green-100 text-green-800' :
-                            'bg-red-100 text-red-800'
-                          }`}>
-                            {item.status}
-                          </span>
+                          <div className="text-sm">
+                            <div className="font-medium">{item.requestedDate}</div>
+                            <div className="text-gray-500">{item.requestedTime}</div>
+                          </div>
                         </td>
-                        <td className="py-3 px-4">-</td>
+                        <td className="py-3 px-4 text-center">{item.guestCount}</td>
                         <td className="py-3 px-4">
-                          {new Date(item.createdAt).toLocaleDateString()}
+                          <Select
+                            value={item.status || "waiting"}
+                            onValueChange={(value) => handleStatusUpdate(item.id, value)}
+                          >
+                            <SelectTrigger className="w-32">
+                              <SelectValue>
+                                <span className={`px-2 py-1 text-xs rounded-full ${getStatusColor(item.status || "waiting")}`}>
+                                  {item.status || "waiting"}
+                                </span>
+                              </SelectValue>
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="waiting">Waiting</SelectItem>
+                              <SelectItem value="contacted">Contacted</SelectItem>
+                              <SelectItem value="booked">Booked</SelectItem>
+                              <SelectItem value="cancelled">Cancelled</SelectItem>
+                            </SelectContent>
+                          </Select>
                         </td>
-                        <td className="py-3 px-4">Manual</td>
+                        <td className="py-3 px-4 text-sm">
+                          {item.createdAt ? new Date(item.createdAt).toLocaleDateString() : '-'}
+                        </td>
+                        <td className="py-3 px-4">
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => handleStatusUpdate(item.id, "cancelled")}
+                            className="text-red-600 hover:text-red-700"
+                          >
+                            <X className="w-4 h-4" />
+                          </Button>
+                        </td>
                       </tr>
                     ))
                   )}
@@ -251,7 +417,7 @@ export default function WaitingList() {
             {/* Footer */}
             <div className="p-4 border-t flex items-center justify-between">
               <div className="text-sm text-gray-600">
-                {filteredWaitingList.length} bookings, {filteredWaitingList.reduce((sum: number, item: any) => sum + item.guestCount, 0)} guests
+                {filteredWaitingList.length} entries, {filteredWaitingList.reduce((sum: number, item: any) => sum + (item.guestCount || 0), 0)} total guests
               </div>
 
               <div className="flex items-center space-x-4">
