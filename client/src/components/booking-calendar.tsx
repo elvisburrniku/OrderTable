@@ -42,6 +42,18 @@ export default function BookingCalendar({ selectedDate, bookings, allBookings = 
   const [selectedTable, setSelectedTable] = useState<any>(null);
   const [showTableBookings, setShowTableBookings] = useState(false);
 
+  // Fetch combined tables
+  const { data: combinedTables = [], isLoading: combinedTablesLoading } = useQuery({
+    queryKey: ["combinedTables", restaurant?.id, restaurant?.tenantId],
+    queryFn: async () => {
+      if (!restaurant?.id || !restaurant?.tenantId) return [];
+      const response = await fetch(`/api/tenants/${restaurant.tenantId}/restaurants/${restaurant.id}/combined-tables`);
+      if (!response.ok) throw new Error("Failed to fetch combined tables");
+      return response.json();
+    },
+    enabled: !!restaurant?.id && !!restaurant?.tenantId,
+  });
+
   const createBookingMutation = useMutation({
     mutationFn: async (bookingData: any) => {
       // First validate the booking time
@@ -376,18 +388,6 @@ export default function BookingCalendar({ selectedDate, bookings, allBookings = 
       </Card>
     );
   };
-
-  // Fetch combined tables
-  const { data: combinedTables = [], isLoading: combinedTablesLoading } = useQuery({
-    queryKey: ["combinedTables", restaurant?.id, restaurant?.tenantId],
-    queryFn: async () => {
-      if (!restaurant?.id || !restaurant?.tenantId) return [];
-      const response = await fetch(`/api/tenants/${restaurant.tenantId}/restaurants/${restaurant.id}/combined-tables`);
-      if (!response.ok) throw new Error("Failed to fetch combined tables");
-      return response.json();
-    },
-    enabled: !!restaurant?.id && !!restaurant?.tenantId,
-  });
 
   return (
     <div>
