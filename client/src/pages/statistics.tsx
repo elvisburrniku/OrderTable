@@ -10,6 +10,7 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { format } from "date-fns";
 import { Calendar as CalendarIcon } from "lucide-react";
 import { PieChart, Pie, Cell, BarChart, Bar, XAxis, YAxis, CartesianGrid, ResponsiveContainer, LineChart, Line, Tooltip, Legend } from "recharts";
+import { ChartContainer, ChartTooltip, ChartTooltipContent } from "@/components/ui/chart";
 import { Badge } from "@/components/ui/badge";
 import { TrendingUp, Users, Calendar as CalendarIcon2, DollarSign } from "lucide-react";
 
@@ -408,15 +409,34 @@ export default function Statistics() {
                       <CardTitle>Bookings by Day of Week</CardTitle>
                     </CardHeader>
                     <CardContent>
-                      <ResponsiveContainer width="100%" height={300}>
+                      <ChartContainer
+                        config={{
+                          bookings: {
+                            label: "Bookings",
+                            color: "#F59E0B",
+                          },
+                        }}
+                        className="h-[300px]"
+                      >
                         <BarChart data={dailyBookingsData}>
                           <CartesianGrid strokeDasharray="3 3" />
-                          <XAxis dataKey="day" />
-                          <YAxis />
-                          <Tooltip />
-                          <Bar dataKey="bookings" fill="#F59E0B" />
+                          <XAxis 
+                            dataKey="day" 
+                            tickLine={false}
+                            axisLine={false}
+                          />
+                          <YAxis 
+                            tickLine={false}
+                            axisLine={false}
+                          />
+                          <ChartTooltip content={<ChartTooltipContent />} />
+                          <Bar 
+                            dataKey="bookings" 
+                            fill="var(--color-bookings)" 
+                            radius={[4, 4, 0, 0]}
+                          />
                         </BarChart>
-                      </ResponsiveContainer>
+                      </ChartContainer>
                     </CardContent>
                   </Card>
                 </div>
