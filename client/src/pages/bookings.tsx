@@ -185,7 +185,8 @@ export default function Bookings() {
 
       return response.json();
     },
-    onSuccess: () => {
+    onSuccess: (data) => {
+      // Only close modal and show success if booking was actually created
       queryClient.invalidateQueries({ 
         queryKey: [`/api/tenants/${restaurant?.tenantId}/restaurants/${restaurant?.id}/bookings`] 
       });
@@ -204,11 +205,12 @@ export default function Bookings() {
       setConflictInfo(null);
       setSuggestedTable(null);
       toast({
-        title: "Success",
-        description: "Booking created successfully",
+        title: "Booking Created",
+        description: "Your booking has been successfully created",
       });
     },
     onError: (error: Error) => {
+      // Don't close modal on error, show error message
       toast({
         title: "Cannot Create Booking",
         description: error.message || "Failed to create booking",
@@ -285,7 +287,7 @@ export default function Bookings() {
           description: `Table ${table?.tableNumber || newBooking.tableId} is already booked at ${newBooking.startTime} on ${newBooking.bookingDate}. Please select a different table or time.`,
           variant: "destructive",
         });
-        return;
+        return; // Don't submit if there's a conflict
       }
     } else {
       // If auto-assigning, check if any table is available
@@ -301,10 +303,11 @@ export default function Bookings() {
           description: `No tables available for ${newBooking.guestCount} guests at ${newBooking.startTime} on ${newBooking.bookingDate}. Please try a different time or date.`,
           variant: "destructive",
         });
-        return;
+        return; // Don't submit if no tables are available
       }
     }
 
+    // Only proceed with mutation if no conflicts detected
     createBookingMutation.mutate({
       ...newBooking,
       tableId: newBooking.tableId ? parseInt(newBooking.tableId) : null,
