@@ -96,6 +96,18 @@ export default function Dashboard() {
     enabled: !!restaurant,
   });
 
+  // Fetch opening hours
+  const { data: openingHours = [] } = useQuery({
+    queryKey: ["openingHours", restaurant?.id, restaurant?.tenantId],
+    queryFn: async () => {
+      if (!restaurant?.id || !restaurant?.tenantId) return [];
+      const response = await fetch(`/api/tenants/${restaurant.tenantId}/restaurants/${restaurant.id}/opening-hours`);
+      if (!response.ok) throw new Error("Failed to fetch opening hours");
+      return response.json();
+    },
+    enabled: !!restaurant?.id && !!restaurant?.tenantId,
+  });
+
   // Load saved table layout
   const { data: savedLayout } = useQuery({
     queryKey: ["/api/tenants", restaurant?.tenantId, "restaurants", restaurant?.id, "table-layout", selectedRoom],
@@ -433,6 +445,17 @@ export default function Dashboard() {
     return tables.filter((table: any) => !bookedTableIds.includes(table.id)).length;
   };
 
+  const getOpeningHoursForDay = (date: Date) => {
+    const dayOfWeek = date.getDay(); // 0 = Sunday, 1 = Monday, etc.
+    const hours = openingHours.find(h => h.dayOfWeek === dayOfWeek);
+    return hours;
+  };
+
+  const getTodayOpeningHours = () => {
+    const today = new Date();
+    return getOpeningHoursForDay(today);
+  };
+
   const isLoading = selectedDateBookingsLoading || allBookingsLoading || tablesLoading;
 
   if (!user || !restaurant) {
@@ -608,9 +631,29 @@ export default function Dashboard() {
         {/* Header */}
         <div className="bg-white border-b border-gray-200 px-6 py-4 flex justify-between items-center">
           <div className="flex items-center space-x-4">
-            <h1 className="text-2xl font-bold text-gray-900">
-              {format(selectedDate, 'EEEE dd MMMM yyyy')}
-            </h1>
+            <div>
+              <h1 className="text-2xl font-bold text-gray-900">
+                {format(selectedDate, 'EEEE dd MMMM yyyy')}
+              </h1>
+              {(() => {
+                const todayHours = getTodayOpeningHours();
+                const isTodaySelected = format(selectedDate, 'yyyy-MM-dd') === format(new Date(), 'yyyy-MM-dd');
+                
+                if (isTodaySelected && todayHours) {
+                  return (
+                    <div className="text-sm text-gray-600 flex items-center mt-1">
+                      <Clock className="h-4 w-4 mr-1" />
+                      {todayHours.isOpen ? (
+                        <span>Open today: {todayHours.openTime} - {todayHours.closeTime}</span>
+                      ) : (
+                        <span className="text-red-600">Closed today</span>
+                      )}
+                    </div>
+                  );
+                }
+                return null;
+              })()}
+            </div>
             <div className="flex items-center bg-gray-100 rounded-lg p-1">
               <Button 
                 variant={viewMode === 'calendar' ? 'default' : 'ghost'} 

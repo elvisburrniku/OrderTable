@@ -54,6 +54,18 @@ export default function BookingCalendar({ selectedDate, bookings, allBookings = 
     enabled: !!restaurant?.id && !!restaurant?.tenantId,
   });
 
+  // Fetch opening hours
+  const { data: openingHours = [] } = useQuery({
+    queryKey: ["openingHours", restaurant?.id, restaurant?.tenantId],
+    queryFn: async () => {
+      if (!restaurant?.id || !restaurant?.tenantId) return [];
+      const response = await fetch(`/api/tenants/${restaurant.tenantId}/restaurants/${restaurant.id}/opening-hours`);
+      if (!response.ok) throw new Error("Failed to fetch opening hours");
+      return response.json();
+    },
+    enabled: !!restaurant?.id && !!restaurant?.tenantId,
+  });
+
   const createBookingMutation = useMutation({
     mutationFn: async (bookingData: any) => {
       // First validate the booking time
@@ -170,6 +182,12 @@ export default function BookingCalendar({ selectedDate, bookings, allBookings = 
     );
   };
 
+  const getOpeningHoursForDay = (date: Date) => {
+    const dayOfWeek = date.getDay(); // 0 = Sunday, 1 = Monday, etc.
+    const hours = openingHours.find(h => h.dayOfWeek === dayOfWeek);
+    return hours;
+  };
+
   const getTableDisplayName = (booking: any) => {
     if (!booking.tableId) return "Auto-assigned";
     
@@ -235,26 +253,43 @@ export default function BookingCalendar({ selectedDate, bookings, allBookings = 
         <div className="grid grid-cols-7 gap-1">
           {daysInMonth.map(day => {
             const dayBookings = getBookingsForDate(day);
+            const dayHours = getOpeningHoursForDay(day);
             const isSelected = isSameDay(day, selectedDate);
             const isTodayDate = isToday(day);
+            const isClosed = !dayHours || !dayHours.isOpen;
 
             return (
               <div
                 key={day.toISOString()}
-                className={`min-h-[80px] p-2 border rounded cursor-pointer transition-colors ${
+                className={`min-h-[100px] p-2 border rounded cursor-pointer transition-colors ${
                   isSelected 
                     ? 'bg-green-100 border-green-300' 
                     : isTodayDate 
                     ? 'bg-blue-50 border-blue-200' 
+                    : isClosed
+                    ? 'bg-gray-100 border-gray-300'
                     : 'bg-white border-gray-200 hover:bg-gray-50'
                 }`}
                 onClick={() => onDateSelect(day)}
               >
                 <div className={`text-sm font-medium ${
-                  isTodayDate ? 'text-blue-600' : 'text-gray-900'
+                  isTodayDate ? 'text-blue-600' : isClosed ? 'text-gray-500' : 'text-gray-900'
                 }`}>
                   {format(day, 'd')}
                 </div>
+                
+                {/* Opening Hours */}
+                <div className="mt-1">
+                  {isClosed ? (
+                    <div className="text-xs text-gray-500 italic">Closed</div>
+                  ) : (
+                    <div className="text-xs text-gray-600">
+                      {dayHours.openTime} - {dayHours.closeTime}
+                    </div>
+                  )}
+                </div>
+
+                {/* Bookings */}
                 <div className="mt-1 space-y-1">
                   {dayBookings.slice(0, 2).map(booking => (
                     <div
@@ -262,7 +297,7 @@ export default function BookingCalendar({ selectedDate, bookings, allBookings = 
                       className="text-xs bg-blue-200 text-blue-800 px-1 py-0.5 rounded truncate"
                       title={`${booking.customerName} - ${booking.guestCount} guests at ${booking.startTime} - ${getTableDisplayName(booking)}`}
                     >
-                      {booking.startTime} {booking.customerName} - {getTableDisplayName(booking)}
+                      {booking.startTime} {booking.customerName}
                     </div>
                   ))}
                   {dayBookings.length > 2 && (
@@ -281,6 +316,8 @@ export default function BookingCalendar({ selectedDate, bookings, allBookings = 
 
   const renderListView = () => {
     const selectedDateBookingsData = getBookingsForDate(selectedDate);
+    const selectedDayHours = getOpeningHoursForDay(selectedDate);
+    const isClosed = !selectedDayHours || !selectedDayHours.isOpen;
 
     return (
       <Card className="bg-white border border-gray-200">
@@ -288,9 +325,18 @@ export default function BookingCalendar({ selectedDate, bookings, allBookings = 
           <h3 className="font-medium text-gray-900">
             Bookings for {format(selectedDate, 'EEEE, MMMM d, yyyy')}
           </h3>
-          <span className="text-sm text-gray-500">
-            {selectedDateBookingsData.length} bookings - {selectedDateBookingsData.reduce((sum, b) => sum + b.guestCount, 0)} guests
-          </span>
+          <div className="mt-1 space-y-1">
+            <div className="text-sm text-gray-600">
+              {isClosed ? (
+                <span className="text-red-600 font-medium">Restaurant Closed</span>
+              ) : (
+                <span>Open: {selectedDayHours.openTime} - {selectedDayHours.closeTime}</span>
+              )}
+            </div>
+            <span className="text-sm text-gray-500">
+              {selectedDateBookingsData.length} bookings - {selectedDateBookingsData.reduce((sum, b) => sum + b.guestCount, 0)} guests
+            </span>
+          </div>
         </div>
 
         <CardContent className="p-0">
@@ -575,8 +621,12 @@ export default function BookingCalendar({ selectedDate, bookings, allBookings = 
           <span>Bookings</span>
         </div>
         <div className="flex items-center">
-          <div className="w-4 h-4 bg-red-500 rounded mr-2" />
-          <span>Fully booked</span>
+          <div className="w-4 h-4 bg-gray-400 rounded mr-2" />
+          <span>Closed</span>
+        </div>
+        <div className="flex items-center">
+          <Clock className="h-4 w-4 mr-2" />
+          <span>Shows opening hours for each day</span>
         </div>
       </div>
     </div>
