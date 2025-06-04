@@ -11,6 +11,11 @@ import { format } from "date-fns";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Calendar, Clock, TrendingUp } from "lucide-react";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Label } from "@/components/ui/label";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { apiRequest } from "@/lib/queryClient";
+import { useToast } from "@/hooks/use-toast";
 
 export default function Dashboard() {
   const [, setLocation] = useLocation();
@@ -18,6 +23,17 @@ export default function Dashboard() {
   const [selectedDate, setSelectedDate] = useState(new Date());
   const [viewMode, setViewMode] = useState<'calendar' | 'layout'>('calendar');
   const [selectedRoom, setSelectedRoom] = useState<string>("");
+  const [isNewBookingOpen, setIsNewBookingOpen] = useState(false);
+  const [selectedTableForBooking, setSelectedTableForBooking] = useState<any>(null);
+  const [newBooking, setNewBooking] = useState({
+    customerName: "",
+    customerEmail: "",
+    customerPhone: "",
+    guestCount: 2,
+    startTime: "19:00",
+    endTime: "21:00",
+    notes: ""
+  });
   const today = format(new Date(), 'yyyy-MM-dd');
 
   useEffect(() => {
@@ -94,6 +110,75 @@ export default function Dashboard() {
       setSelectedRoom(rooms[0].id.toString());
     }
   }, [rooms, selectedRoom]);
+
+  const queryClient = useQueryClient();
+  const { toast } = useToast();
+
+  const createBookingMutation = useMutation({
+    mutationFn: async (bookingData: any) => {
+      return apiRequest("POST", `/api/tenants/${restaurant?.tenantId}/restaurants/${restaurant?.id}/bookings`, bookingData);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ 
+        queryKey: [`/api/tenants/${restaurant?.tenantId}/restaurants/${restaurant?.id}/bookings`] 
+      });
+      setIsNewBookingOpen(false);
+      setSelectedTableForBooking(null);
+      setNewBooking({
+        customerName: "",
+        customerEmail: "",
+        customerPhone: "",
+        guestCount: 2,
+        startTime: "19:00",
+        endTime: "21:00",
+        notes: ""
+      });
+      toast({
+        title: "Success",
+        description: "Booking created successfully",
+      });
+    },
+    onError: (error: Error) => {
+      toast({
+        title: "Error",
+        description: error.message || "Failed to create booking",
+        variant: "destructive",
+      });
+    }
+  });
+
+  const handleCreateBooking = (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    // Validate guest count against table capacity
+    if (selectedTableForBooking && newBooking.guestCount > selectedTableForBooking.capacity) {
+      toast({
+        title: "Error",
+        description: `Selected table can only accommodate ${selectedTableForBooking.capacity} guests. You have ${newBooking.guestCount} guests.`,
+        variant: "destructive"
+      });
+      return;
+    }
+
+    createBookingMutation.mutate({
+      ...newBooking,
+      bookingDate: selectedDate.toISOString(),
+      tableId: selectedTableForBooking?.id,
+      restaurantId: restaurant?.id
+    });
+  };
+
+  const handleTableClick = (table: any, tableBookings: any[]) => {
+    if (tableBookings.length === 0) {
+      // Table is available, open booking dialog
+      setSelectedTableForBooking(table);
+      setNewBooking({
+        ...newBooking,
+        guestCount: Math.min(table.capacity, newBooking.guestCount)
+      });
+      setIsNewBookingOpen(true);
+    }
+  };
 
   const getAvailableTablesCount = () => {
     if (!tables || !Array.isArray(todayBookings)) return 0;
@@ -211,13 +296,17 @@ export default function Dashboard() {
                   return (
                     <div
                       key={`positioned-table-${table.id}`}
-                      style={getTableStyle(table, position)}
-                      className="shadow-lg hover:shadow-xl transition-shadow group"
+                      className={`shadow-lg transition-shadow group ${tableBookings.length === 0 ? 'hover:shadow-xl hover:scale-105' : ''}`}
                       title={
                         tableBookings.length > 0
                           ? `Table ${table.tableNumber} - ${tableBookings.length} booking(s): ${tableBookings.map(b => `${b.customerName} (${b.guestCount} guests)`).join(', ')}`
-                          : `Table ${table.tableNumber} - Available (${table.capacity} seats)`
+                          : `Table ${table.tableNumber} - Available (${table.capacity} seats) - Click to book`
                       }
+                      onClick={() => handleTableClick(table, tableBookings)}
+                      style={{
+                        ...getTableStyle(table, position),
+                        cursor: tableBookings.length > 0 ? 'default' : 'pointer'
+                      }}
                     >
                       <div className="text-center relative">
                         <div className="font-bold">{table.tableNumber}</div>
@@ -399,6 +488,106 @@ export default function Dashboard() {
           )}
         </div>
       </div>
+
+      {/* New Booking Dialog */}
+      <Dialog open={isNewBookingOpen} onOpenChange={setIsNewBookingOpen}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>
+              Create Booking for Table {selectedTableForBooking?.tableNumber}
+            </DialogTitle>
+          </DialogHeader>
+          <form onSubmit={handleCreateBooking} className="space-y-4">
+            <div>
+              <Label htmlFor="customerName">Customer Name</Label>
+              <Input
+                id="customerName"
+                value={newBooking.customerName}
+                onChange={(e) => setNewBooking({ ...newBooking, customerName: e.target.value })}
+                required
+              />
+            </div>
+            <div>
+              <Label htmlFor="customerEmail">Email</Label>
+              <Input
+                id="customerEmail"
+                type="email"
+                value={newBooking.customerEmail}
+                onChange={(e) => setNewBooking({ ...newBooking, customerEmail: e.target.value })}
+                required
+              />
+            </div>
+            <div>
+              <Label htmlFor="customerPhone">Phone</Label>
+              <Input
+                id="customerPhone"
+                value={newBooking.customerPhone}
+                onChange={(e) => setNewBooking({ ...newBooking, customerPhone: e.target.value })}
+              />
+            </div>
+            <div>
+              <Label htmlFor="guestCount">Number of Guests</Label>
+              <Input
+                id="guestCount"
+                type="number"
+                min="1"
+                max={selectedTableForBooking?.capacity || 12}
+                value={newBooking.guestCount}
+                onChange={(e) => setNewBooking({ ...newBooking, guestCount: parseInt(e.target.value) })}
+                required
+              />
+              <p className="text-xs text-gray-500 mt-1">
+                Table capacity: {selectedTableForBooking?.capacity} guests
+              </p>
+            </div>
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <Label htmlFor="startTime">Start Time</Label>
+                <Select value={newBooking.startTime} onValueChange={(value) => setNewBooking({ ...newBooking, startTime: value })}>
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {["10:00", "11:00", "12:00", "13:00", "14:00", "15:00", "16:00", "17:00", "18:00", "19:00", "20:00", "21:00"].map((time) => (
+                      <SelectItem key={time} value={time}>{time}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div>
+                <Label htmlFor="endTime">End Time</Label>
+                <Select value={newBooking.endTime} onValueChange={(value) => setNewBooking({ ...newBooking, endTime: value })}>
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {["10:00", "11:00", "12:00", "13:00", "14:00", "15:00", "16:00", "17:00", "18:00", "19:00", "20:00", "21:00"].map((time) => (
+                      <SelectItem key={time} value={time}>{time}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+            <div>
+              <Label htmlFor="notes">Notes (Optional)</Label>
+              <Input
+                id="notes"
+                value={newBooking.notes}
+                onChange={(e) => setNewBooking({ ...newBooking, notes: e.target.value })}
+                placeholder="Any special requests or notes"
+              />
+            </div>
+            <div className="flex justify-end gap-2 pt-4">
+              <Button type="button" variant="outline" onClick={() => setIsNewBookingOpen(false)}>
+                Cancel
+              </Button>
+              <Button type="submit" className="bg-green-600 hover:bg-green-700" disabled={createBookingMutation.isPending}>
+                {createBookingMutation.isPending ? "Creating..." : "Create Booking"}
+              </Button>
+            </div>
+          </form>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
