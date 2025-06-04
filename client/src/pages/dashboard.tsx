@@ -156,8 +156,9 @@ export default function Dashboard() {
 
     // Get bookings for the requested date
     const dateBookings = selectedDateBookings.filter(booking => {
-      const bookingDate = new Date(booking.bookingDate);
-      return bookingDate.toDateString() === requestedDate.toDateString();
+      const bookingDateStr = new Date(booking.bookingDate).toISOString().split('T')[0];
+      const requestedDateStr = requestedDate.toISOString().split('T')[0];
+      return bookingDateStr === requestedDateStr;
     });
 
     // Find tables that can accommodate the guest count and are available at the requested time
@@ -254,7 +255,7 @@ export default function Dashboard() {
     if (selectedTableForBooking) {
       const tableBookings = selectedDateBookings.filter(booking => 
         booking.tableId === selectedTableForBooking.id &&
-        new Date(booking.bookingDate).toDateString() === selectedDate.toDateString()
+        new Date(booking.bookingDate).toISOString().split('T')[0] === selectedDate.toISOString().split('T')[0]
       );
 
       const isTableOccupied = tableBookings.some(booking => {
@@ -315,7 +316,7 @@ export default function Dashboard() {
 
     createBookingMutation.mutate({
       ...newBooking,
-      bookingDate: selectedDate.toISOString(),
+      bookingDate: selectedDate.toISOString().split('T')[0],
       tableId: selectedTableForBooking?.id,
       restaurantId: restaurant?.id
     });
