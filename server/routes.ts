@@ -537,6 +537,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       const bookingDate = new Date(req.body.bookingDate);
       const bookingTime = req.body.startTime;
+      const tableId = req.body.tableId;
 
       // Validate booking against opening hours and cut-off times
       const isRestaurantOpen = await storage.isRestaurantOpen(restaurantId, bookingDate, bookingTime);
@@ -551,6 +552,50 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ 
           message: "Booking not allowed: Restaurant is closed or past cut-off time" 
         });
+      }
+
+      // If a specific table is requested, check for conflicts
+      if (tableId) {
+        const existingBookings = await storage.getBookingsByDate(restaurantId, bookingDate.toISOString().split('T')[0]);
+        const conflictingBookings = existingBookings.filter(booking => {
+          if (booking.tableId !== tableId) return false;
+          
+          const startTime = req.body.startTime;
+          const endTime = req.body.endTime || "23:59";
+          
+          // Check if times overlap with 1-hour buffer
+          const requestedHour = parseInt(startTime.split(':')[0]);
+          const requestedMinute = parseInt(startTime.split(':')[1]);
+          const requestedTotalMinutes = requestedHour * 60 + requestedMinute;
+          
+          const bookingStartHour = parseInt(booking.startTime.split(':')[0]);
+          const bookingStartMinute = parseInt(booking.startTime.split(':')[1]);
+          const bookingStartTotalMinutes = bookingStartHour * 60 + bookingStartMinute;
+          
+          const bookingEndTime = booking.endTime || "23:59";
+          const bookingEndHour = parseInt(bookingEndTime.split(':')[0]);
+          const bookingEndMinute = parseInt(bookingEndTime.split(':')[1]);
+          const bookingEndTotalMinutes = bookingEndHour * 60 + bookingEndMinute;
+          
+          // Check for overlap with 1-hour buffer
+          return requestedTotalMinutes >= (bookingStartTotalMinutes - 60) && 
+                 requestedTotalMinutes <= (bookingEndTotalMinutes + 60);
+        });
+
+        if (conflictingBookings.length > 0) {
+          return res.status(400).json({ 
+            message: `Table conflict: The selected table is already booked at ${bookingTime} on ${bookingDate.toISOString().split('T')[0]}` 
+          });
+        }
+
+        // Check table capacity
+        const tables = await storage.getTablesByRestaurant(restaurantId);
+        const selectedTable = tables.find(table => table.id === tableId);
+        if (selectedTable && selectedTable.capacity < req.body.guestCount) {
+          return res.status(400).json({ 
+            message: `Table capacity exceeded: Table can accommodate ${selectedTable.capacity} guests, but ${req.body.guestCount} guests requested` 
+          });
+        }
       }
 
       // Get or create customer first

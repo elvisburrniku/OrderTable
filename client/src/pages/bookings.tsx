@@ -254,7 +254,7 @@ export default function Bookings() {
   const handleCreateBooking = (e: React.FormEvent) => {
     e.preventDefault();
 
-    // Final conflict check before creating booking
+    // If a specific table is selected, do final conflict check
     if (newBooking.tableId) {
       const conflict = checkTableConflict(
         parseInt(newBooking.tableId), 
@@ -267,6 +267,22 @@ export default function Bookings() {
         toast({
           title: "Cannot Create Booking",
           description: conflict.message,
+          variant: "destructive",
+        });
+        return;
+      }
+    } else {
+      // If auto-assigning, check if any table is available
+      const availableTable = findAlternativeTable(
+        newBooking.guestCount,
+        newBooking.startTime,
+        newBooking.bookingDate
+      );
+
+      if (!availableTable) {
+        toast({
+          title: "No Tables Available",
+          description: `No tables available for ${newBooking.guestCount} guests at ${newBooking.startTime} on ${newBooking.bookingDate}`,
           variant: "destructive",
         });
         return;
@@ -750,7 +766,7 @@ export default function Bookings() {
               <Button 
                 type="submit" 
                 className="bg-green-600 hover:bg-green-700" 
-                disabled={createBookingMutation.isPending || (conflictInfo && !suggestedTable)}
+                disabled={createBookingMutation.isPending || (conflictInfo && conflictInfo.hasConflict)}
               >
                 {createBookingMutation.isPending ? "Creating..." : "Create Booking"}
               </Button>
