@@ -16,6 +16,9 @@ import {
   timeSlots,
   rooms,
   tableLayouts,
+  openingHours,
+  specialPeriods,
+  cutOffTimes,
   type User,
   type Tenant,
   type TenantUser,
@@ -596,5 +599,142 @@ export class DatabaseStorage implements IStorage {
       }).returning();
       return newLayout;
     }
+  }
+
+  // Opening Hours methods
+  async getOpeningHoursByRestaurant(restaurantId: number): Promise<any> {
+    const { openingHours } = schema;
+    return await db.select().from(openingHours).where(eq(openingHours.restaurantId, restaurantId));
+  }
+
+  async createOrUpdateOpeningHours(restaurantId: number, tenantId: number, hoursData: any[]): Promise<any> {
+    const { openingHours } = schema;
+    
+    // Delete existing hours for this restaurant
+    await db.delete(openingHours).where(eq(openingHours.restaurantId, restaurantId));
+    
+    // Insert new hours
+    const hoursToInsert = hoursData.map((dayHours, index) => ({
+      restaurantId,
+      tenantId,
+      dayOfWeek: index,
+      isOpen: dayHours.isOpen,
+      openTime: dayHours.openTime,
+      closeTime: dayHours.closeTime,
+    }));
+    
+    return await db.insert(openingHours).values(hoursToInsert).returning();
+  }
+
+  // Special Periods methods
+  async getSpecialPeriodsByRestaurant(restaurantId: number): Promise<any> {
+    const { specialPeriods } = schema;
+    return await db.select().from(specialPeriods).where(eq(specialPeriods.restaurantId, restaurantId));
+  }
+
+  async createSpecialPeriod(periodData: any): Promise<any> {
+    const { specialPeriods } = schema;
+    const [newPeriod] = await db.insert(specialPeriods).values(periodData).returning();
+    return newPeriod;
+  }
+
+  async updateSpecialPeriod(id: number, updates: any): Promise<any> {
+    const { specialPeriods } = schema;
+    const [updated] = await db.update(specialPeriods)
+      .set({ ...updates, updatedAt: new Date() })
+      .where(eq(specialPeriods.id, id))
+      .returning();
+    return updated;
+  }
+
+  async deleteSpecialPeriod(id: number): Promise<boolean> {
+    const { specialPeriods } = schema;
+    const result = await db.delete(specialPeriods).where(eq(specialPeriods.id, id));
+    return result.rowCount > 0;
+  }
+
+  // Cut-off Times methods
+  async getCutOffTimesByRestaurant(restaurantId: number): Promise<any> {
+    const { cutOffTimes } = schema;
+    return await db.select().from(cutOffTimes).where(eq(cutOffTimes.restaurantId, restaurantId));
+  }
+
+  async createOrUpdateCutOffTimes(restaurantId: number, tenantId: number, timesData: any[]): Promise<any> {
+    const { cutOffTimes } = schema;
+    
+    // Delete existing cut-off times for this restaurant
+    await db.delete(cutOffTimes).where(eq(cutOffTimes.restaurantId, restaurantId));
+    
+    // Insert new cut-off times
+    const timesToInsert = timesData.map((dayTime, index) => ({
+      restaurantId,
+      tenantId,
+      dayOfWeek: index,
+      cutOffHours: dayTime.cutOffHours || 0,
+    }));
+    
+    return await db.insert(cutOffTimes).values(timesToInsert).returning();
+  }
+
+  // Booking validation methods
+  async isRestaurantOpen(restaurantId: number, bookingDate: Date, bookingTime: string): Promise<boolean> {
+    const { openingHours, specialPeriods } = schema;
+    
+    const dayOfWeek = bookingDate.getDay();
+    const dateString = bookingDate.toISOString().split('T')[0];
+    
+    // Check for special periods first
+    const specialPeriod = await db.select().from(specialPeriods)
+      .where(and(
+        eq(specialPeriods.restaurantId, restaurantId),
+        eq(specialPeriods.startDate, dateString),
+        eq(specialPeriods.endDate, dateString)
+      ));
+    
+    if (specialPeriod.length > 0) {
+      const period = specialPeriod[0];
+      if (!period.isOpen) return false;
+      if (period.openTime && period.closeTime) {
+        return bookingTime >= period.openTime && bookingTime <= period.closeTime;
+      }
+    }
+    
+    // Check regular opening hours
+    const regularHours = await db.select().from(openingHours)
+      .where(and(
+        eq(openingHours.restaurantId, restaurantId),
+        eq(openingHours.dayOfWeek, dayOfWeek)
+      ));
+    
+    if (regularHours.length === 0 || !regularHours[0].isOpen) return false;
+    
+    return bookingTime >= regularHours[0].openTime && bookingTime <= regularHours[0].closeTime;
+  }
+
+  async isBookingAllowed(restaurantId: number, bookingDate: Date, bookingTime: string): Promise<boolean> {
+    const { cutOffTimes } = schema;
+    
+    // First check if restaurant is open
+    const isOpen = await this.isRestaurantOpen(restaurantId, bookingDate, bookingTime);
+    if (!isOpen) return false;
+    
+    // Check cut-off times
+    const dayOfWeek = bookingDate.getDay();
+    const cutOff = await db.select().from(cutOffTimes)
+      .where(and(
+        eq(cutOffTimes.restaurantId, restaurantId),
+        eq(cutOffTimes.dayOfWeek, dayOfWeek)
+      ));
+    
+    if (cutOff.length > 0) {
+      const cutOffHours = cutOff[0].cutOffHours || 0;
+      const now = new Date();
+      const bookingDateTime = new Date(`${bookingDate.toISOString().split('T')[0]}T${bookingTime}:00`);
+      const cutOffTime = new Date(bookingDateTime.getTime() - (cutOffHours * 60 * 60 * 1000));
+      
+      if (now > cutOffTime) return false;
+    }
+    
+    return true;
   }
 }
