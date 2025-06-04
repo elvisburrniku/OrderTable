@@ -150,6 +150,64 @@ export default function Dashboard() {
     }
   });
 
+  // Function to find alternative tables when selected table is occupied
+  const findAlternativeTable = (requestedGuestCount: number, requestedTime: string, requestedDate: Date) => {
+    if (!tables || !Array.isArray(tables)) return null;
+
+    // Get bookings for the requested date
+    const dateBookings = selectedDateBookings.filter(booking => {
+      const bookingDate = new Date(booking.bookingDate);
+      return bookingDate.toDateString() === requestedDate.toDateString();
+    });
+
+    // Find tables that can accommodate the guest count and are available at the requested time
+    const availableTables = tables.filter(table => {
+      // Check capacity
+      if (table.capacity < requestedGuestCount) return false;
+
+      // Check if table is occupied at the requested time
+      const tableBookings = dateBookings.filter(booking => booking.tableId === table.id);
+      
+      const isOccupied = tableBookings.some(booking => {
+        const startTime = booking.startTime;
+        const endTime = booking.endTime || "23:59";
+        
+        // Check if requested time overlaps with existing booking
+        const requestedHour = parseInt(requestedTime.split(':')[0]);
+        const requestedMinute = parseInt(requestedTime.split(':')[1]);
+        const requestedTotalMinutes = requestedHour * 60 + requestedMinute;
+        
+        const startHour = parseInt(startTime.split(':')[0]);
+        const startMinute = parseInt(startTime.split(':')[1]);
+        const startTotalMinutes = startHour * 60 + startMinute;
+        
+        const endHour = parseInt(endTime.split(':')[0]);
+        const endMinute = parseInt(endTime.split(':')[1]);
+        const endTotalMinutes = endHour * 60 + endMinute;
+        
+        // Add 2-hour buffer (120 minutes) for table turnover
+        return requestedTotalMinutes >= (startTotalMinutes - 60) && 
+               requestedTotalMinutes <= (endTotalMinutes + 60);
+      });
+
+      return !isOccupied;
+    });
+
+    // Sort by capacity (prefer tables closer to guest count) and table number
+    availableTables.sort((a, b) => {
+      const capacityDiffA = Math.abs(a.capacity - requestedGuestCount);
+      const capacityDiffB = Math.abs(b.capacity - requestedGuestCount);
+      
+      if (capacityDiffA !== capacityDiffB) {
+        return capacityDiffA - capacityDiffB;
+      }
+      
+      return a.tableNumber - b.tableNumber;
+    });
+
+    return availableTables.length > 0 ? availableTables[0] : null;
+  };
+
   const updateBookingMutation = useMutation({
     mutationFn: async ({ bookingId, updates }: { bookingId: number; updates: any }) => {
       return apiRequest("PUT", `/api/tenants/${restaurant?.tenantId}/restaurants/${restaurant?.id}/bookings/${bookingId}`, updates);
@@ -187,6 +245,63 @@ export default function Dashboard() {
       return;
     }
 
+    // Check if selected table is available at the requested time
+    if (selectedTableForBooking) {
+      const tableBookings = selectedDateBookings.filter(booking => 
+        booking.tableId === selectedTableForBooking.id &&
+        new Date(booking.bookingDate).toDateString() === selectedDate.toDateString()
+      );
+
+      const isTableOccupied = tableBookings.some(booking => {
+        const startTime = booking.startTime;
+        const endTime = booking.endTime || "23:59";
+        
+        const requestedHour = parseInt(newBooking.startTime.split(':')[0]);
+        const requestedMinute = parseInt(newBooking.startTime.split(':')[1]);
+        const requestedTotalMinutes = requestedHour * 60 + requestedMinute;
+        
+        const startHour = parseInt(startTime.split(':')[0]);
+        const startMinute = parseInt(startTime.split(':')[1]);
+        const startTotalMinutes = startHour * 60 + startMinute;
+        
+        const endHour = parseInt(endTime.split(':')[0]);
+        const endMinute = parseInt(endTime.split(':')[1]);
+        const endTotalMinutes = endHour * 60 + endMinute;
+        
+        // Check for overlap with 1-hour buffer
+        return requestedTotalMinutes >= (startTotalMinutes - 60) && 
+               requestedTotalMinutes <= (endTotalMinutes + 60);
+      });
+
+      if (isTableOccupied) {
+        // Find alternative table
+        const alternativeTable = findAlternativeTable(newBooking.guestCount, newBooking.startTime, selectedDate);
+        
+        if (alternativeTable) {
+          toast({
+            title: "Table Conflict",
+            description: `Table ${selectedTableForBooking.tableNumber} is occupied at ${newBooking.startTime}. Would you like to use Table ${alternativeTable.tableNumber} (${alternativeTable.capacity} seats) instead?`,
+            variant: "destructive",
+          });
+          
+          // Automatically suggest the alternative table
+          setSelectedTableForBooking(alternativeTable);
+          setNewBooking({
+            ...newBooking,
+            guestCount: Math.min(alternativeTable.capacity, newBooking.guestCount)
+          });
+          return;
+        } else {
+          toast({
+            title: "No Available Tables",
+            description: `Table ${selectedTableForBooking.tableNumber} is occupied at ${newBooking.startTime} and no suitable alternative tables are available for ${newBooking.guestCount} guests.`,
+            variant: "destructive",
+          });
+          return;
+        }
+      }
+    }
+
     createBookingMutation.mutate({
       ...newBooking,
       bookingDate: selectedDate.toISOString(),
@@ -207,6 +322,44 @@ export default function Dashboard() {
       });
       setIsNewBookingOpen(true);
     } else {
+      // Check if table has current time conflicts
+      const currentTime = format(new Date(), 'HH:mm');
+      const hasCurrentConflict = tableBookings.some(booking => {
+        const startTime = booking.startTime;
+        const endTime = booking.endTime || "23:59";
+        
+        const currentHour = parseInt(currentTime.split(':')[0]);
+        const currentMinute = parseInt(currentTime.split(':')[1]);
+        const currentTotalMinutes = currentHour * 60 + currentMinute;
+        
+        const startHour = parseInt(startTime.split(':')[0]);
+        const startMinute = parseInt(startTime.split(':')[1]);
+        const startTotalMinutes = startHour * 60 + startMinute;
+        
+        const endHour = parseInt(endTime.split(':')[0]);
+        const endMinute = parseInt(endTime.split(':')[1]);
+        const endTotalMinutes = endHour * 60 + endMinute;
+        
+        return currentTotalMinutes >= startTotalMinutes && currentTotalMinutes <= endTotalMinutes;
+      });
+
+      if (hasCurrentConflict) {
+        // Show alternative table suggestion
+        const alternativeTable = findAlternativeTable(2, currentTime, selectedDate);
+        if (alternativeTable) {
+          toast({
+            title: "Table Occupied",
+            description: `Table ${table.tableNumber} is currently occupied. Table ${alternativeTable.tableNumber} (${alternativeTable.capacity} seats) is available.`,
+          });
+        } else {
+          toast({
+            title: "Table Occupied",
+            description: `Table ${table.tableNumber} is currently occupied. No alternative tables available at this time.`,
+            variant: "destructive",
+          });
+        }
+      }
+
       // Has bookings, show booking manager
       setSelectedTableForBooking(table);
       setSelectedTableBookings(tableBookings);
