@@ -1,17 +1,39 @@
 import { useState } from "react";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useAuth } from "@/lib/auth.tsx";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
-import { Download, Search, Filter } from "lucide-react";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Label } from "@/components/ui/label";
+import { Download, Search, Filter, Plus, Users, AlertTriangle } from "lucide-react";
+import { useToast } from "@/hooks/use-toast";
+import { apiRequest } from "@/lib/queryClient";
 
 export default function Bookings() {
   const { user, restaurant } = useAuth();
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
   const [sourceFilter, setSourceFilter] = useState("all");
+  const [isNewBookingOpen, setIsNewBookingOpen] = useState(false);
+  const [selectedTable, setSelectedTable] = useState<any>(null);
+  const [newBooking, setNewBooking] = useState({
+    customerName: "",
+    customerEmail: "",
+    customerPhone: "",
+    guestCount: 2,
+    bookingDate: new Date().toISOString().split('T')[0],
+    startTime: "19:00",
+    endTime: "21:00",
+    tableId: "",
+    notes: ""
+  });
+  const [conflictInfo, setConflictInfo] = useState<any>(null);
+  const [suggestedTable, setSuggestedTable] = useState<any>(null);
+
+  const { toast } = useToast();
+  const queryClient = useQueryClient();
 
   const { data: bookings, isLoading, error } = useQuery({
     queryKey: [`/api/tenants/${restaurant?.tenantId}/restaurants/${restaurant?.id}/bookings`],
@@ -19,6 +41,253 @@ export default function Bookings() {
     retry: 1,
     staleTime: 30000 // 30 seconds
   });
+
+  // Fetch tables for conflict detection
+  const { data: tables = [] } = useQuery({
+    queryKey: [`/api/tenants/${restaurant?.tenantId}/restaurants/${restaurant?.id}/tables`],
+    enabled: !!restaurant && !!restaurant.tenantId && !!restaurant.id
+  });
+
+  // Function to find alternative tables when conflict detected
+  const findAlternativeTable = (requestedGuestCount: number, requestedTime: string, requestedDate: string, excludeTableId?: number) => {
+    if (!tables || !Array.isArray(tables)) return null;
+
+    // Get bookings for the requested date
+    const dateBookings = Array.isArray(bookings) ? bookings.filter(booking => {
+      const bookingDate = new Date(booking.bookingDate).toISOString().split('T')[0];
+      return bookingDate === requestedDate;
+    }) : [];
+
+    // Find tables that can accommodate the guest count and are available at the requested time
+    const availableTables = tables.filter(table => {
+      // Skip the excluded table
+      if (excludeTableId && table.id === excludeTableId) return false;
+      
+      // Check capacity
+      if (table.capacity < requestedGuestCount) return false;
+
+      // Check if table is occupied at the requested time
+      const tableBookings = dateBookings.filter(booking => booking.tableId === table.id);
+      
+      const isOccupied = tableBookings.some(booking => {
+        const startTime = booking.startTime;
+        const endTime = booking.endTime || "23:59";
+        
+        // Check if requested time overlaps with existing booking (with 1-hour buffer)
+        const requestedHour = parseInt(requestedTime.split(':')[0]);
+        const requestedMinute = parseInt(requestedTime.split(':')[1]);
+        const requestedTotalMinutes = requestedHour * 60 + requestedMinute;
+        
+        const startHour = parseInt(startTime.split(':')[0]);
+        const startMinute = parseInt(startTime.split(':')[1]);
+        const startTotalMinutes = startHour * 60 + startMinute;
+        
+        const endHour = parseInt(endTime.split(':')[0]);
+        const endMinute = parseInt(endTime.split(':')[1]);
+        const endTotalMinutes = endHour * 60 + endMinute;
+        
+        // Add 1-hour buffer (60 minutes) for table turnover
+        return requestedTotalMinutes >= (startTotalMinutes - 60) && 
+               requestedTotalMinutes <= (endTotalMinutes + 60);
+      });
+
+      return !isOccupied;
+    });
+
+    // Sort by capacity (prefer tables closer to guest count) and table number
+    availableTables.sort((a, b) => {
+      const capacityDiffA = Math.abs(a.capacity - requestedGuestCount);
+      const capacityDiffB = Math.abs(b.capacity - requestedGuestCount);
+      
+      if (capacityDiffA !== capacityDiffB) {
+        return capacityDiffA - capacityDiffB;
+      }
+      
+      return a.tableNumber - b.tableNumber;
+    });
+
+    return availableTables.length > 0 ? availableTables[0] : null;
+  };
+
+  // Function to check table availability and conflicts
+  const checkTableConflict = (tableId: number, guestCount: number, bookingDate: string, startTime: string) => {
+    if (!tables || !Array.isArray(bookings)) return { hasConflict: false };
+
+    const table = tables.find(t => t.id === tableId);
+    if (!table) return { hasConflict: false };
+
+    // Check capacity
+    if (table.capacity < guestCount) {
+      return {
+        hasConflict: true,
+        reason: 'capacity',
+        message: `Table ${table.tableNumber} can only accommodate ${table.capacity} guests. You have ${guestCount} guests.`
+      };
+    }
+
+    // Get bookings for the requested date and table
+    const dateBookings = bookings.filter(booking => {
+      const bookingDateStr = new Date(booking.bookingDate).toISOString().split('T')[0];
+      return bookingDateStr === bookingDate && booking.tableId === tableId;
+    });
+
+    // Check time conflicts
+    const hasTimeConflict = dateBookings.some(booking => {
+      const existingStart = booking.startTime;
+      const existingEnd = booking.endTime || "23:59";
+      
+      const requestedHour = parseInt(startTime.split(':')[0]);
+      const requestedMinute = parseInt(startTime.split(':')[1]);
+      const requestedTotalMinutes = requestedHour * 60 + requestedMinute;
+      
+      const startHour = parseInt(existingStart.split(':')[0]);
+      const startMinute = parseInt(existingStart.split(':')[1]);
+      const startTotalMinutes = startHour * 60 + startMinute;
+      
+      const endHour = parseInt(existingEnd.split(':')[0]);
+      const endMinute = parseInt(existingEnd.split(':')[1]);
+      const endTotalMinutes = endHour * 60 + endMinute;
+      
+      // Check for overlap with 1-hour buffer
+      return requestedTotalMinutes >= (startTotalMinutes - 60) && 
+             requestedTotalMinutes <= (endTotalMinutes + 60);
+    });
+
+    if (hasTimeConflict) {
+      return {
+        hasConflict: true,
+        reason: 'time',
+        message: `Table ${table.tableNumber} is occupied at ${startTime} on ${bookingDate}`
+      };
+    }
+
+    return { hasConflict: false };
+  };
+
+  // Create booking mutation
+  const createBookingMutation = useMutation({
+    mutationFn: async (bookingData: any) => {
+      return apiRequest("POST", `/api/tenants/${restaurant?.tenantId}/restaurants/${restaurant?.id}/bookings`, bookingData);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ 
+        queryKey: [`/api/tenants/${restaurant?.tenantId}/restaurants/${restaurant?.id}/bookings`] 
+      });
+      setIsNewBookingOpen(false);
+      setNewBooking({
+        customerName: "",
+        customerEmail: "",
+        customerPhone: "",
+        guestCount: 2,
+        bookingDate: new Date().toISOString().split('T')[0],
+        startTime: "19:00",
+        endTime: "21:00",
+        tableId: "",
+        notes: ""
+      });
+      setConflictInfo(null);
+      setSuggestedTable(null);
+      toast({
+        title: "Success",
+        description: "Booking created successfully",
+      });
+    },
+    onError: (error: Error) => {
+      toast({
+        title: "Error",
+        description: error.message || "Failed to create booking",
+        variant: "destructive",
+      });
+    }
+  });
+
+  // Handle table selection with conflict detection
+  const handleTableSelection = (tableId: string) => {
+    if (!tableId) {
+      setNewBooking({ ...newBooking, tableId: "" });
+      setConflictInfo(null);
+      setSuggestedTable(null);
+      return;
+    }
+
+    const tableIdNum = parseInt(tableId);
+    const conflict = checkTableConflict(tableIdNum, newBooking.guestCount, newBooking.bookingDate, newBooking.startTime);
+    
+    if (conflict.hasConflict) {
+      // Find alternative table
+      const alternative = findAlternativeTable(
+        newBooking.guestCount, 
+        newBooking.startTime, 
+        newBooking.bookingDate, 
+        tableIdNum
+      );
+
+      setConflictInfo(conflict);
+      setSuggestedTable(alternative);
+      
+      if (alternative) {
+        toast({
+          title: "Table Conflict Detected",
+          description: `${conflict.message}. Table ${alternative.tableNumber} (${alternative.capacity} seats) is available as an alternative.`,
+          variant: "destructive",
+        });
+      } else {
+        toast({
+          title: "Table Conflict Detected",
+          description: `${conflict.message}. No suitable alternative tables available.`,
+          variant: "destructive",
+        });
+      }
+    } else {
+      setConflictInfo(null);
+      setSuggestedTable(null);
+    }
+
+    setNewBooking({ ...newBooking, tableId });
+  };
+
+  // Handle booking form submission
+  const handleCreateBooking = (e: React.FormEvent) => {
+    e.preventDefault();
+
+    // Final conflict check before creating booking
+    if (newBooking.tableId) {
+      const conflict = checkTableConflict(
+        parseInt(newBooking.tableId), 
+        newBooking.guestCount, 
+        newBooking.bookingDate, 
+        newBooking.startTime
+      );
+      
+      if (conflict.hasConflict) {
+        toast({
+          title: "Cannot Create Booking",
+          description: conflict.message,
+          variant: "destructive",
+        });
+        return;
+      }
+    }
+
+    createBookingMutation.mutate({
+      ...newBooking,
+      tableId: newBooking.tableId ? parseInt(newBooking.tableId) : null,
+      restaurantId: restaurant?.id
+    });
+  };
+
+  // Use suggested table
+  const useSuggestedTable = () => {
+    if (suggestedTable) {
+      setNewBooking({ ...newBooking, tableId: suggestedTable.id.toString() });
+      setConflictInfo(null);
+      setSuggestedTable(null);
+      toast({
+        title: "Table Updated",
+        description: `Switched to Table ${suggestedTable.tableNumber} (${suggestedTable.capacity} seats)`,
+      });
+    }
+  };
 
   if (!user || !restaurant) {
     return (
@@ -88,6 +357,13 @@ export default function Bookings() {
             </nav>
           </div>
           <div className="flex items-center space-x-4">
+            <Button 
+              className="bg-green-600 hover:bg-green-700 text-white"
+              onClick={() => setIsNewBookingOpen(true)}
+            >
+              <Plus className="h-4 w-4 mr-2" />
+              New Booking
+            </Button>
             <span className="text-sm text-gray-600">{restaurant.name}</span>
             <Button variant="outline" size="sm">Profile</Button>
           </div>
@@ -261,6 +537,207 @@ export default function Bookings() {
           </div>
         </div>
       </div>
+
+      {/* New Booking Dialog with Conflict Detection */}
+      <Dialog open={isNewBookingOpen} onOpenChange={setIsNewBookingOpen}>
+        <DialogContent className="max-w-2xl">
+          <DialogHeader>
+            <DialogTitle>Create New Booking</DialogTitle>
+          </DialogHeader>
+          <form onSubmit={handleCreateBooking} className="space-y-4">
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <Label htmlFor="customerName">Customer Name</Label>
+                <Input
+                  id="customerName"
+                  value={newBooking.customerName}
+                  onChange={(e) => setNewBooking({ ...newBooking, customerName: e.target.value })}
+                  required
+                />
+              </div>
+              <div>
+                <Label htmlFor="customerEmail">Email</Label>
+                <Input
+                  id="customerEmail"
+                  type="email"
+                  value={newBooking.customerEmail}
+                  onChange={(e) => setNewBooking({ ...newBooking, customerEmail: e.target.value })}
+                  required
+                />
+              </div>
+            </div>
+
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <Label htmlFor="customerPhone">Phone</Label>
+                <Input
+                  id="customerPhone"
+                  value={newBooking.customerPhone}
+                  onChange={(e) => setNewBooking({ ...newBooking, customerPhone: e.target.value })}
+                />
+              </div>
+              <div>
+                <Label htmlFor="guestCount">Number of Guests</Label>
+                <Select 
+                  value={newBooking.guestCount.toString()} 
+                  onValueChange={(value) => {
+                    const guestCount = parseInt(value);
+                    setNewBooking({ ...newBooking, guestCount });
+                    // Re-check conflicts when guest count changes
+                    if (newBooking.tableId) {
+                      handleTableSelection(newBooking.tableId);
+                    }
+                  }}
+                >
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12].map((num) => (
+                      <SelectItem key={num} value={num.toString()}>{num} guests</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-3 gap-4">
+              <div>
+                <Label htmlFor="bookingDate">Date</Label>
+                <Input
+                  id="bookingDate"
+                  type="date"
+                  value={newBooking.bookingDate}
+                  onChange={(e) => {
+                    setNewBooking({ ...newBooking, bookingDate: e.target.value });
+                    // Re-check conflicts when date changes
+                    if (newBooking.tableId) {
+                      handleTableSelection(newBooking.tableId);
+                    }
+                  }}
+                  required
+                />
+              </div>
+              <div>
+                <Label htmlFor="startTime">Start Time</Label>
+                <Select 
+                  value={newBooking.startTime} 
+                  onValueChange={(value) => {
+                    setNewBooking({ ...newBooking, startTime: value });
+                    // Re-check conflicts when time changes
+                    if (newBooking.tableId) {
+                      handleTableSelection(newBooking.tableId);
+                    }
+                  }}
+                >
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {["10:00", "11:00", "12:00", "13:00", "14:00", "15:00", "16:00", "17:00", "18:00", "19:00", "20:00", "21:00", "22:00"].map((time) => (
+                      <SelectItem key={time} value={time}>{time}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div>
+                <Label htmlFor="endTime">End Time</Label>
+                <Select value={newBooking.endTime} onValueChange={(value) => setNewBooking({ ...newBooking, endTime: value })}>
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {["11:00", "12:00", "13:00", "14:00", "15:00", "16:00", "17:00", "18:00", "19:00", "20:00", "21:00", "22:00", "23:00"].map((time) => (
+                      <SelectItem key={time} value={time}>{time}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+
+            <div>
+              <Label htmlFor="tableId">Table (Optional)</Label>
+              <Select 
+                value={newBooking.tableId} 
+                onValueChange={handleTableSelection}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Auto-assign or select table" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="">Auto-assign</SelectItem>
+                  {tables && tables.length > 0 ? (
+                    tables.map((table) => (
+                      <SelectItem key={`table-${table.id}`} value={table.id.toString()}>
+                        Table {table.tableNumber} ({table.capacity} seats)
+                      </SelectItem>
+                    ))
+                  ) : null}
+                </SelectContent>
+              </Select>
+            </div>
+
+            {/* Conflict Warning */}
+            {conflictInfo && (
+              <div className="border border-red-200 bg-red-50 rounded-lg p-4">
+                <div className="flex items-start space-x-3">
+                  <AlertTriangle className="h-5 w-5 text-red-500 mt-0.5" />
+                  <div className="flex-1">
+                    <h4 className="text-sm font-medium text-red-800">Table Conflict Detected</h4>
+                    <p className="text-sm text-red-700 mt-1">{conflictInfo.message}</p>
+                    {suggestedTable && (
+                      <div className="mt-3">
+                        <p className="text-sm text-red-700 mb-2">
+                          Suggested alternative: Table {suggestedTable.tableNumber} ({suggestedTable.capacity} seats)
+                        </p>
+                        <Button
+                          type="button"
+                          size="sm"
+                          onClick={useSuggestedTable}
+                          className="bg-green-600 hover:bg-green-700 text-white"
+                        >
+                          Use Table {suggestedTable.tableNumber}
+                        </Button>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              </div>
+            )}
+
+            <div>
+              <Label htmlFor="notes">Notes (Optional)</Label>
+              <Input
+                id="notes"
+                value={newBooking.notes}
+                onChange={(e) => setNewBooking({ ...newBooking, notes: e.target.value })}
+                placeholder="Special requests, dietary requirements..."
+              />
+            </div>
+
+            <div className="flex justify-end gap-2 pt-4">
+              <Button 
+                type="button" 
+                variant="outline" 
+                onClick={() => {
+                  setIsNewBookingOpen(false);
+                  setConflictInfo(null);
+                  setSuggestedTable(null);
+                }}
+              >
+                Cancel
+              </Button>
+              <Button 
+                type="submit" 
+                className="bg-green-600 hover:bg-green-700" 
+                disabled={createBookingMutation.isPending || (conflictInfo && !suggestedTable)}
+              >
+                {createBookingMutation.isPending ? "Creating..." : "Create Booking"}
+              </Button>
+            </div>
+          </form>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

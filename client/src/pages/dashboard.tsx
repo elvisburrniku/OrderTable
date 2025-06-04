@@ -322,9 +322,9 @@ export default function Dashboard() {
       });
       setIsNewBookingOpen(true);
     } else {
-      // Check if table has current time conflicts
+      // Real-time availability check for current time
       const currentTime = format(new Date(), 'HH:mm');
-      const hasCurrentConflict = tableBookings.some(booking => {
+      const currentConflicts = tableBookings.filter(booking => {
         const startTime = booking.startTime;
         const endTime = booking.endTime || "23:59";
         
@@ -340,22 +340,48 @@ export default function Dashboard() {
         const endMinute = parseInt(endTime.split(':')[1]);
         const endTotalMinutes = endHour * 60 + endMinute;
         
-        return currentTotalMinutes >= startTotalMinutes && currentTotalMinutes <= endTotalMinutes;
+        // Check if current time is within booking period (with 15-minute buffer)
+        return currentTotalMinutes >= (startTotalMinutes - 15) && 
+               currentTotalMinutes <= (endTotalMinutes + 15);
       });
 
-      if (hasCurrentConflict) {
-        // Show alternative table suggestion
-        const alternativeTable = findAlternativeTable(2, currentTime, selectedDate);
+      if (currentConflicts.length > 0) {
+        // Show detailed conflict information with alternative suggestions
+        const currentBooking = currentConflicts[0];
+        const alternativeTable = findAlternativeTable(currentBooking.guestCount, currentTime, selectedDate);
+        
         if (alternativeTable) {
           toast({
-            title: "Table Occupied",
-            description: `Table ${table.tableNumber} is currently occupied. Table ${alternativeTable.tableNumber} (${alternativeTable.capacity} seats) is available.`,
+            title: "Table Currently Occupied",
+            description: `Table ${table.tableNumber} is occupied by ${currentBooking.customerName} (${currentBooking.guestCount} guests, ${currentBooking.startTime}-${currentBooking.endTime}). Alternative: Table ${alternativeTable.tableNumber} (${alternativeTable.capacity} seats).`,
           });
         } else {
           toast({
-            title: "Table Occupied",
-            description: `Table ${table.tableNumber} is currently occupied. No alternative tables available at this time.`,
+            title: "Table Currently Occupied",
+            description: `Table ${table.tableNumber} is occupied by ${currentBooking.customerName} until ${currentBooking.endTime}. No suitable alternatives available right now.`,
             variant: "destructive",
+          });
+        }
+      } else {
+        // Table has bookings but not currently occupied
+        const nextBooking = tableBookings
+          .filter(booking => {
+            const startHour = parseInt(booking.startTime.split(':')[0]);
+            const startMinute = parseInt(booking.startTime.split(':')[1]);
+            const startTotalMinutes = startHour * 60 + startMinute;
+            
+            const currentHour = parseInt(currentTime.split(':')[0]);
+            const currentMinute = parseInt(currentTime.split(':')[1]);
+            const currentTotalMinutes = currentHour * 60 + currentMinute;
+            
+            return startTotalMinutes > currentTotalMinutes;
+          })
+          .sort((a, b) => a.startTime.localeCompare(b.startTime))[0];
+          
+        if (nextBooking) {
+          toast({
+            title: "Table Available Now",
+            description: `Table ${table.tableNumber} is available until ${nextBooking.startTime} (Next: ${nextBooking.customerName}, ${nextBooking.guestCount} guests).`,
           });
         }
       }
