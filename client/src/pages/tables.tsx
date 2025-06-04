@@ -25,19 +25,22 @@ export default function Tables() {
   });
 
   const { data: tables = [], isLoading } = useQuery({
-    queryKey: ["/api/tenants/1/restaurants", restaurant?.id, "tables"],
+    queryKey: ["/api/tenants", restaurant?.tenantId || 1, "restaurants", restaurant?.id, "tables"],
     queryFn: async () => {
-      const tenantId = 1; // Default tenant ID
+      const tenantId = restaurant?.tenantId || 1;
       const response = await fetch(`/api/tenants/${tenantId}/restaurants/${restaurant?.id}/tables`);
-      if (!response.ok) throw new Error("Failed to fetch tables");
+      if (!response.ok) {
+        console.error("Failed to fetch tables:", response.status, response.statusText);
+        throw new Error("Failed to fetch tables");
+      }
       return response.json();
     },
-    enabled: !!restaurant,
+    enabled: !!restaurant?.id,
   });
 
   const createTableMutation = useMutation({
     mutationFn: async (tableData: any) => {
-      const tenantId = 1; // Default tenant ID
+      const tenantId = restaurant?.tenantId || 1;
       const response = await fetch(`/api/tenants/${tenantId}/restaurants/${restaurant?.id}/tables`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -48,7 +51,7 @@ export default function Tables() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({
-        queryKey: ["/api/tenants/1/restaurants", restaurant?.id, "tables"],
+        queryKey: ["/api/tenants", restaurant?.tenantId || 1, "restaurants", restaurant?.id, "tables"],
       });
       setIsDialogOpen(false);
       setNewTable({ tableNumber: "", capacity: 4, isActive: true });
@@ -57,7 +60,7 @@ export default function Tables() {
 
   const updateTableMutation = useMutation({
     mutationFn: async ({ id, ...updates }: any) => {
-      const tenantId = 1; // Default tenant ID
+      const tenantId = restaurant?.tenantId || 1;
       const response = await fetch(`/api/tenants/${tenantId}/tables/${id}`, {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
@@ -68,14 +71,14 @@ export default function Tables() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({
-        queryKey: ["/api/tenants/1/restaurants", restaurant?.id, "tables"],
+        queryKey: ["/api/tenants", restaurant?.tenantId || 1, "restaurants", restaurant?.id, "tables"],
       });
     },
   });
 
   const deleteTableMutation = useMutation({
     mutationFn: async (id: number) => {
-      const tenantId = 1; // Default tenant ID
+      const tenantId = restaurant?.tenantId || 1;
       const response = await fetch(`/api/tenants/${tenantId}/tables/${id}`, {
         method: "DELETE",
       });
@@ -84,7 +87,7 @@ export default function Tables() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({
-        queryKey: ["/api/tenants/1/restaurants", restaurant?.id, "tables"],
+        queryKey: ["/api/tenants", restaurant?.tenantId || 1, "restaurants", restaurant?.id, "tables"],
       });
     },
   });
