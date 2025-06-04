@@ -77,6 +77,10 @@ export class BrevoEmailService {
       minute: '2-digit',
       hour12: true 
     });
+
+    // Construct the booking management URL
+    const baseUrl = process.env.BASE_URL || 'http://localhost:5000';
+    const bookingManageUrl = `${baseUrl}/${bookingDetails.tenantId}/bookings/${bookingDetails.id}`;
     
     sendSmtpEmail.htmlContent = `
       <!DOCTYPE html>
@@ -95,7 +99,7 @@ export class BrevoEmailService {
             
             <!-- Content -->
             <div style="padding: 30px;">
-              <p style="margin: 0 0 20px; font-size: 16px; color: #333; line-height: 1.5;">Dear ${customerName},</p>
+              <p style="margin: 0 0 20px; font-size: 16px; color: #333; line-height: 1.5;">Dear ${bookingDetails.customerName || customerName},</p>
               
               <p style="margin: 0 0 30px; font-size: 16px; color: #666; line-height: 1.6;">
                 Thank you very much for your booking for <strong>${bookingDetails.guestCount} guests</strong>. 
@@ -122,10 +126,10 @@ export class BrevoEmailService {
                     <span style="color: #666; font-weight: 500;">Table:</span>
                     <span style="color: #333; font-weight: 600;">${bookingDetails.tableNumber || 'To be assigned'}</span>
                   </div>
-                  ${bookingDetails.specialRequests ? `
+                  ${bookingDetails.specialRequests || bookingDetails.notes ? `
                     <div style="display: flex; justify-content: space-between; padding: 8px 0;">
                       <span style="color: #666; font-weight: 500;">Special Requests:</span>
-                      <span style="color: #333; font-weight: 600;">${bookingDetails.specialRequests}</span>
+                      <span style="color: #333; font-weight: 600;">${bookingDetails.specialRequests || bookingDetails.notes}</span>
                     </div>
                   ` : ''}
                 </div>
@@ -133,7 +137,7 @@ export class BrevoEmailService {
               
               <!-- Action Buttons -->
               <div style="text-align: center; margin: 30px 0;">
-                <a href="#" style="display: inline-block; background-color: #007bff; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; font-weight: 600; margin: 0 10px;">Change or cancel booking</a>
+                <a href="${bookingManageUrl}" style="display: inline-block; background-color: #007bff; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; font-weight: 600; margin: 0 10px;">Change or cancel booking</a>
               </div>
               
               <p style="margin: 20px 0; font-size: 16px; color: #666; line-height: 1.6;">
@@ -142,6 +146,13 @@ export class BrevoEmailService {
               
               <p style="margin: 30px 0 10px; font-size: 16px; color: #333;">Best regards,</p>
               <p style="margin: 0; font-size: 16px; color: #333; font-weight: 600;">Trofta</p>
+              
+              <!-- Booking ID at bottom -->
+              <div style="margin-top: 30px; padding-top: 20px; border-top: 1px solid #e5e5e5;">
+                <p style="margin: 0; font-size: 12px; color: #999; text-align: center;">
+                  booking${bookingDetails.id || Date.now()}
+                </p>
+              </div>
             </div>
             
             <!-- Footer -->
