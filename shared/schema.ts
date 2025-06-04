@@ -1,5 +1,5 @@
 import { pgTable, text, serial, integer, boolean, timestamp, varchar, primaryKey, date, time, json } from "drizzle-orm/pg-core";
-import { createInsertSchema } from "drizzle-zod";
+import { createInsertSchema, createSelectSchema } from "drizzle-zod";
 import { z } from "zod";
 import { InferSelectModel, InferInsertModel } from 'drizzle-orm';
 
@@ -269,6 +269,12 @@ export const insertTenantSubscriptionSchema = createInsertSchema(tenantSubscript
 
 export const insertUserSubscriptionSchema = createInsertSchema(userSubscriptions);
 export const selectUserSubscriptionSchema = createSelectSchema(userSubscriptions);
+
+// Login schema
+export const loginSchema = z.object({
+  email: z.string().email(),
+  password: z.string().min(1)
+});
 
 // Opening Hours table
 export const openingHours = pgTable("opening_hours", {
