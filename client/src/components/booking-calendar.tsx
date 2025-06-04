@@ -134,7 +134,8 @@ export default function BookingCalendar({ selectedDate, bookings, allBookings = 
   };
 
   const getBookingsForDate = (date: Date) => {
-    const bookingsToUse = activeView === 'calendar' ? allBookings : bookings;
+    // Always use allBookings to ensure we can show bookings for any date
+    const bookingsToUse = allBookings;
     return bookingsToUse.filter(booking => 
       isSameDay(new Date(booking.bookingDate), date)
     );
