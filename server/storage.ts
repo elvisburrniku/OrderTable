@@ -6,7 +6,7 @@ import {
   customers, 
   rooms, 
   tables, 
-  activityLogs, 
+  activityLog, 
   smsMessages, 
   waitingList, 
   feedback, 
@@ -19,37 +19,6 @@ import {
   openingHours,
   specialPeriods,
   cutOffTimes
-} from "@shared/schema";
-import type { User, InsertUser, Restaurant, InsertRestaurant, Table, InsertTable, Booking, InsertBooking, Customer, InsertCustomer, SmsMessage, InsertSmsMessage, WaitingList, InsertWaitingList, Feedback, InsertFeedback, ActivityLog, InsertActivityLog, TimeSlots, InsertTimeSlots, Room, InsertRoom, OpeningHours, InsertOpeningHours, SpecialPeriod, InsertSpecialPeriod, CutOffTime, InsertCutOffTime, TableLayout, InsertTableLayout, CombinedTable, InsertCombinedTable } from "@shared/schema";
-import type {
-  User,
-  Restaurant,
-  Table,
-  Booking,
-  Customer,
-  WaitingList,
-  Feedback,
-  SmsMessage,
-  ActivityLog,
-  SubscriptionPlan,
-  UserSubscription,
-  TimeSlots,
-  Room,
-  TableLayout,
-  InsertUser,
-  InsertRestaurant,
-  InsertTable,
-  InsertBooking,
-  InsertCustomer,
-  InsertWaitingList,
-  InsertFeedback,
-  InsertSmsMessage,
-  InsertActivityLog,
-  InsertSubscriptionPlan,
-  InsertUserSubscription,
-  InsertTimeSlots,
-  InsertRoom,
-  InsertTableLayout
 } from "@shared/schema";
 import { neon } from "@neondatabase/serverless";
 import { drizzle } from "drizzle-orm/neon-http";
@@ -103,6 +72,7 @@ export interface IStorage {
   // Bookings
   getBookingsByRestaurant(restaurantId: number): Promise<Booking[]>;
   getBookingsByDate(restaurantId: number, date: string): Promise<Booking[]>;
+  getBookingById(id: number): Promise<Booking | undefined>;
   createBooking(booking: InsertBooking): Promise<Booking>;
   updateBooking(id: number, booking: Partial<Booking>): Promise<Booking | undefined>;
   deleteBooking(id: number): Promise<boolean>;
@@ -464,6 +434,10 @@ export class MemStorage implements IStorage {
       booking.restaurantId === restaurantId && 
       booking.bookingDate.toISOString().split('T')[0] === date
     );
+  }
+
+  async getBookingById(id: number): Promise<Booking | undefined> {
+    return this.bookings.get(id);
   }
 
   async createBooking(insertBooking: InsertBooking): Promise<Booking> {

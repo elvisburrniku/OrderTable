@@ -7,16 +7,10 @@ import Stripe from "stripe";
 import * as tenantRoutes from "./tenant-routes";
 import { Request, Response } from "express";
 import bcrypt from 'bcrypt';
-<<<<<<< HEAD
 import { users, tenants, tenantUsers, restaurants, subscriptionPlans } from "@shared/schema";
 import { eq, and } from "drizzle-orm";
 import { BrevoEmailService } from "./brevo-service";
-=======
-import { users, tenants, tenantUsers, restaurants } from "@shared/schema";
-import { eq } from "drizzle-orm";
-import { BrevoEmailService } from "./brevo-service"; // Import the BrevoEmailService
 import { BookingHash } from "./booking-hash";
->>>>>>> fcbc40a (Assistant checkpoint: Add secure hash-based booking management system)
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY || 'sk_test_your_stripe_secret_key', {
   apiVersion: '2025-05-28.basil'
@@ -2306,9 +2300,6 @@ app.put("/api/tenants/:tenantId/bookings/:id", validateTenant, async (req, res) 
     }
   });
 
-<<<<<<< HEAD
-  return createServer(app);
-=======
   // Customer booking management routes (public access)
   app.get("/api/booking-manage/:id", async (req, res) => {
     try {
@@ -2530,5 +2521,4 @@ app.put("/api/tenants/:tenantId/bookings/:id", validateTenant, async (req, res) 
 
   const httpServer = createServer(app);
   return httpServer;
->>>>>>> fcbc40a (Assistant checkpoint: Add secure hash-based booking management system)
 }
