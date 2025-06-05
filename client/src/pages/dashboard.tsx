@@ -6,10 +6,19 @@ import DashboardSidebar from "@/components/dashboard-sidebar";
 import BookingCalendar from "@/components/booking-calendar";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { X, Plus, Users, Map, List } from "lucide-react";
+import { Card, CardContent } from "@/components/ui/card";
+import { Calendar, dateFns } from "@/components/ui/calendar";
+import { 
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger
+} from "@/components/ui/dropdown-menu";
+import { Plus, X, Users, List, Map, ChevronLeft, ChevronRight, Filter, MoreHorizontal, Eye, Edit, Trash2, User, Settings, CreditCard, HelpCircle, LogOut, Palette, RotateCcw } from "lucide-react";
 import { format } from "date-fns";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Calendar, Clock, TrendingUp } from "lucide-react";
+import { CardHeader, CardTitle } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
@@ -171,7 +180,7 @@ export default function Dashboard() {
     const requestedMonth = String(requestedDate.getMonth() + 1).padStart(2, '0');
     const requestedDay = String(requestedDate.getDate()).padStart(2, '0');
     const requestedDateStr = `${requestedYear}-${requestedMonth}-${requestedDay}`;
-    
+
     const dateBookings = selectedDateBookings.filter(booking => {
       const bookingDateStr = booking.bookingDate.split('T')[0]; // Just get date part from stored value
       return bookingDateStr === requestedDateStr;
@@ -184,31 +193,31 @@ export default function Dashboard() {
 
       // Check if table is occupied at the requested time
       const tableBookings = dateBookings.filter(booking => booking.tableId === table.id);
-      
+
       const isOccupied = tableBookings.some(booking => {
         const existingStartTime = booking.startTime;
         const existingEndTime = booking.endTime || "23:59";
-        
+
         // For dashboard, we assume a 2-hour booking duration
         const requestedEndTime = String(parseInt(requestedTime.split(':')[0]) + 2).padStart(2, '0') + ':' + requestedTime.split(':')[1];
-        
+
         // Convert times to minutes for easier comparison
         const requestedStartMinutes = parseInt(requestedTime.split(':')[0]) * 60 + parseInt(requestedTime.split(':')[1]);
         const requestedEndMinutes = parseInt(requestedEndTime.split(':')[0]) * 60 + parseInt(requestedEndTime.split(':')[1]);
-        
+
         const existingStartMinutes = parseInt(existingStartTime.split(':')[0]) * 60 + parseInt(existingStartTime.split(':')[1]);
         const existingEndMinutes = parseInt(existingEndTime.split(':')[0]) * 60 + parseInt(existingEndTime.split(':')[1]);
-        
+
         // Add 1-hour buffer (60 minutes) for table turnover
         const bufferMinutes = 60;
-        
+
         // Check for time overlap with buffer
         // Two time ranges overlap if: start1 < end2 && start2 < end1
         const requestedStart = requestedStartMinutes - bufferMinutes;
         const requestedEnd = requestedEndMinutes + bufferMinutes;
         const existingStart = existingStartMinutes - bufferMinutes;
         const existingEnd = existingEndMinutes + bufferMinutes;
-        
+
         return requestedStart < existingEnd && existingStart < requestedEnd;
       });
 
@@ -219,11 +228,11 @@ export default function Dashboard() {
     availableTables.sort((a, b) => {
       const capacityDiffA = Math.abs(a.capacity - requestedGuestCount);
       const capacityDiffB = Math.abs(b.capacity - requestedGuestCount);
-      
+
       if (capacityDiffA !== capacityDiffB) {
         return capacityDiffA - capacityDiffB;
       }
-      
+
       return a.tableNumber - b.tableNumber;
     });
 
@@ -273,7 +282,7 @@ export default function Dashboard() {
       const selectedMonth = String(selectedDate.getMonth() + 1).padStart(2, '0');
       const selectedDay = String(selectedDate.getDate()).padStart(2, '0');
       const selectedDateStr = `${selectedYear}-${selectedMonth}-${selectedDay}`;
-      
+
       const tableBookings = selectedDateBookings.filter(booking => 
         booking.tableId === selectedTableForBooking.id &&
         booking.bookingDate.split('T')[0] === selectedDateStr
@@ -282,41 +291,41 @@ export default function Dashboard() {
       const isTableOccupied = tableBookings.some(booking => {
         const existingStartTime = booking.startTime;
         const existingEndTime = booking.endTime || "23:59";
-        
+
         const requestedStartTime = newBooking.startTime;
         const requestedEndTime = newBooking.endTime;
-        
+
         // Convert times to minutes for easier comparison
         const requestedStartMinutes = parseInt(requestedStartTime.split(':')[0]) * 60 + parseInt(requestedStartTime.split(':')[1]);
         const requestedEndMinutes = parseInt(requestedEndTime.split(':')[0]) * 60 + parseInt(requestedEndTime.split(':')[1]);
-        
+
         const existingStartMinutes = parseInt(existingStartTime.split(':')[0]) * 60 + parseInt(existingStartTime.split(':')[1]);
         const existingEndMinutes = parseInt(existingEndTime.split(':')[0]) * 60 + parseInt(existingEndTime.split(':')[1]);
-        
+
         // Add 1-hour buffer (60 minutes) for table turnover
         const bufferMinutes = 60;
-        
+
         // Check for time overlap with buffer
         // Two time ranges overlap if: start1 < end2 && start2 < end1
         const requestedStart = requestedStartMinutes - bufferMinutes;
         const requestedEnd = requestedEndMinutes + bufferMinutes;
         const existingStart = existingStartMinutes - bufferMinutes;
         const existingEnd = existingEndMinutes + bufferMinutes;
-        
+
         return requestedStart < existingEnd && existingStart < requestedEnd;
       });
 
       if (isTableOccupied) {
         // Find alternative table
         const alternativeTable = findAlternativeTable(newBooking.guestCount, newBooking.startTime, selectedDate);
-        
+
         if (alternativeTable) {
           toast({
             title: "Table Conflict",
             description: `Table ${selectedTableForBooking.tableNumber} is occupied at ${newBooking.startTime}. Would you like to use Table ${alternativeTable.tableNumber} (${alternativeTable.capacity} seats) instead?`,
             variant: "destructive",
           });
-          
+
           // Automatically suggest the alternative table
           setSelectedTableForBooking(alternativeTable);
           setNewBooking({
@@ -351,7 +360,7 @@ export default function Dashboard() {
 
   const handleTableClick = (table: any, tableBookings: any[]) => {
     console.log('Table clicked:', table.tableNumber, 'Bookings:', tableBookings);
-    
+
     if (tableBookings.length === 0) {
       // Table is available, open booking dialog
       setSelectedTableForBooking(table);
@@ -366,19 +375,19 @@ export default function Dashboard() {
       const currentConflicts = tableBookings.filter(booking => {
         const startTime = booking.startTime;
         const endTime = booking.endTime || "23:59";
-        
+
         const currentHour = parseInt(currentTime.split(':')[0]);
         const currentMinute = parseInt(currentTime.split(':')[1]);
         const currentTotalMinutes = currentHour * 60 + currentMinute;
-        
+
         const startHour = parseInt(startTime.split(':')[0]);
         const startMinute = parseInt(startTime.split(':')[1]);
         const startTotalMinutes = startHour * 60 + startMinute;
-        
+
         const endHour = parseInt(endTime.split(':')[0]);
         const endMinute = parseInt(endTime.split(':')[1]);
         const endTotalMinutes = endHour * 60 + endMinute;
-        
+
         // Check if current time is within booking period (with 15-minute buffer)
         return currentTotalMinutes >= (startTotalMinutes - 15) && 
                currentTotalMinutes <= (endTotalMinutes + 15);
@@ -388,7 +397,7 @@ export default function Dashboard() {
         // Show detailed conflict information with alternative suggestions
         const currentBooking = currentConflicts[0];
         const alternativeTable = findAlternativeTable(currentBooking.guestCount, currentTime, selectedDate);
-        
+
         if (alternativeTable) {
           toast({
             title: "Table Currently Occupied",
@@ -408,15 +417,15 @@ export default function Dashboard() {
             const startHour = parseInt(booking.startTime.split(':')[0]);
             const startMinute = parseInt(booking.startTime.split(':')[1]);
             const startTotalMinutes = startHour * 60 + startMinute;
-            
+
             const currentHour = parseInt(currentTime.split(':')[0]);
             const currentMinute = parseInt(currentTime.split(':')[1]);
             const currentTotalMinutes = currentHour * 60 + currentMinute;
-            
+
             return startTotalMinutes > currentTotalMinutes;
           })
           .sort((a, b) => a.startTime.localeCompare(b.startTime))[0];
-          
+
         if (nextBooking) {
           toast({
             title: "Table Available Now",
@@ -642,7 +651,7 @@ export default function Dashboard() {
               {(() => {
                 const todayHours = getTodayOpeningHours();
                 const isTodaySelected = format(selectedDate, 'yyyy-MM-dd') === format(new Date(), 'yyyy-MM-dd');
-                
+
                 if (isTodaySelected && todayHours) {
                   return (
                     <div className="text-sm text-gray-600 flex items-center mt-1">
@@ -693,13 +702,38 @@ export default function Dashboard() {
               placeholder="Customer search" 
               className="w-64"
             />
-            <Button 
-              variant="ghost" 
-              size="sm"
-              onClick={logout}
-            >
-              <X className="h-5 w-5" />
-            </Button>
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="ghost" className="h-8 w-8 p-0 rounded-full">
+                  <User className="h-5 w-5" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end">
+                <DropdownMenuLabel>{user?.name}</DropdownMenuLabel>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem>
+                  <User className="mr-2 h-4 w-4" />
+                  <span>Profile</span>
+                </DropdownMenuItem>
+                <DropdownMenuItem>
+                  <Settings className="mr-2 h-4 w-4" />
+                  <span>Settings</span>
+                </DropdownMenuItem>
+                <DropdownMenuItem>
+                  <CreditCard className="mr-2 h-4 w-4" />
+                  <span>Billing</span>
+                </DropdownMenuItem>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem>
+                  <HelpCircle className="mr-2 h-4 w-4" />
+                  <span>Help</span>
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={logout}>
+                  <LogOut className="mr-2 h-4 w-4" />
+                  <span>Log out</span>
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
           </div>
         </div>
 

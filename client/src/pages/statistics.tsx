@@ -5,6 +5,14 @@ import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { 
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger
+} from "@/components/ui/dropdown-menu";
 import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { format } from "date-fns";
@@ -12,7 +20,7 @@ import { Calendar as CalendarIcon } from "lucide-react";
 import { PieChart, Pie, Cell, BarChart, Bar, XAxis, YAxis, CartesianGrid, ResponsiveContainer, LineChart, Line, Tooltip, Legend } from "recharts";
 import { ChartContainer, ChartTooltip, ChartTooltipContent } from "@/components/ui/chart";
 import { Badge } from "@/components/ui/badge";
-import { TrendingUp, Users, Calendar as CalendarIcon2, DollarSign } from "lucide-react";
+import { TrendingUp, Users, Calendar as CalendarIcon2, DollarSign, User, Settings, CreditCard, HelpCircle, LogOut, Palette, RotateCcw } from "lucide-react";
 
 
 export default function Statistics() {
@@ -184,7 +192,7 @@ export default function Statistics() {
     });
 
     console.log('Daily counts:', dailyCounts);
-    
+
     return dayLabels.map((day, index) => ({
       day,
       bookings: dailyCounts[index]

@@ -1,13 +1,22 @@
-
 import { useState, useEffect } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useAuth } from "@/lib/auth.tsx";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
+import { 
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger
+} from "@/components/ui/dropdown-menu";
+import { Clock, Edit2, Trash2, Plus, User, Settings, CreditCard, HelpCircle, LogOut, Palette, RotateCcw } from "lucide-react";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
-import { Clock, Save } from "lucide-react";
+import { Save } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
 
 interface OpeningHours {
@@ -87,7 +96,7 @@ export default function OpeningHours() {
     if (existingHours && existingHours.length > 0) {
       const daysMap = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'];
       const loadedHours: OpeningHours = {};
-      
+
       daysMap.forEach((day, index) => {
         const dayData = existingHours.find((h: any) => h.dayOfWeek === index);
         if (dayData) {
@@ -100,7 +109,7 @@ export default function OpeningHours() {
           loadedHours[day] = hours[day]; // fallback to default
         }
       });
-      
+
       setHours(loadedHours);
     }
   }, [existingHours]);
@@ -193,7 +202,7 @@ export default function OpeningHours() {
                     />
                     <Label className="w-24 font-medium">{label}</Label>
                   </div>
-                  
+
                   {hours[key].isOpen ? (
                     <div className="flex items-center space-x-4">
                       <div className="flex items-center space-x-2">

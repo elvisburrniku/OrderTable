@@ -5,9 +5,37 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
+import { 
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger
+} from "@/components/ui/dropdown-menu";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
-import { Download, Search, Filter, Plus, Users, AlertTriangle } from "lucide-react";
+import { 
+  Calendar, 
+  Clock, 
+  Plus, 
+  Search, 
+  Filter, 
+  MoreHorizontal, 
+  Eye, 
+  Edit, 
+  Trash2,
+  Users,
+  Phone,
+  Mail,
+  User,
+  Settings,
+  CreditCard,
+  HelpCircle,
+  LogOut,
+  Palette,
+  RotateCcw
+} from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
 
@@ -295,7 +323,7 @@ export default function Bookings() {
     setNewBooking({ ...newBooking, tableId });
   };
 
-  
+
 
   // Use suggested table
   const useSuggestedTable = () => {
@@ -436,7 +464,39 @@ export default function Bookings() {
               New Booking
             </Button>
             <span className="text-sm text-gray-600">{restaurant.name}</span>
-            <Button variant="outline" size="sm">Profile</Button>
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                  <Button variant="outline" size="sm">
+                      <User className="mr-2 h-4 w-4" />
+                      {user?.firstName}
+                  </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent className="w-56" align="end" forceMount>
+                  <DropdownMenuLabel>My Account</DropdownMenuLabel>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem>
+                      <User className="mr-2 h-4 w-4" />
+                      <span>Profile</span>
+                  </DropdownMenuItem>
+                  <DropdownMenuItem>
+                      <Settings className="mr-2 h-4 w-4" />
+                      <span>Settings</span>
+                  </DropdownMenuItem>
+                  <DropdownMenuItem>
+                      <CreditCard className="mr-2 h-4 w-4" />
+                      <span>Billing</span>
+                  </DropdownMenuItem>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem>
+                      <HelpCircle className="mr-2 h-4 w-4" />
+                      <span>Help</span>
+                  </DropdownMenuItem>
+                  <DropdownMenuItem>
+                      <LogOut className="mr-2 h-4 w-4" />
+                      <span>Logout</span>
+                  </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
           </div>
         </div>
       </div>
@@ -762,7 +822,7 @@ export default function Bookings() {
                     ))
                   ) : null}
                 </SelectContent>
-              </Select>
+                            </Select>
             </div>
 
             {/* Conflict Warning */}
