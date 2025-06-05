@@ -172,9 +172,12 @@ export class BrevoEmailService {
     const icsContent = this.generateICSContent(customerName, bookingDetails);
     const icsBase64 = Buffer.from(icsContent).toString('base64');
 
+    const senderEmail = process.env.BREVO_SENDER_EMAIL || "noreply@restaurant.com";
+    console.log('Using sender email:', senderEmail);
+
     sendSmtpEmail.sender = {
       name: "Trofta",
-      email: process.env.BREVO_SENDER_EMAIL || "noreply@restaurant.com"
+      email: senderEmail
     };
 
     sendSmtpEmail.to = [{
@@ -215,7 +218,7 @@ export class BrevoEmailService {
         </head>
         <body style="margin: 0; padding: 20px; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Arial, sans-serif; background-color: #f5f5f5;">
           <div style="max-width: 600px; margin: 0 auto; background-color: white; border-radius: 8px; overflow: hidden; box-shadow: 0 2px 10px rgba(0,0,0,0.1);">
-            
+
             <!-- Header -->
             <div style="background-color: #fff3cd; padding: 30px 30px 20px; text-align: center; border-bottom: 1px solid #e5e5e5;">
               <h1 style="margin: 0; font-size: 28px; font-weight: 600; color: #856404; letter-spacing: -0.5px;">Booking Change Request</h1>
@@ -297,9 +300,12 @@ export class BrevoEmailService {
       </html>
     `;
 
+    const senderEmail = process.env.BREVO_SENDER_EMAIL || "noreply@restaurant.com";
+    console.log('Using sender email:', senderEmail);
+
     sendSmtpEmail.sender = {
       name: "Restaurant Booking System",
-      email: process.env.BREVO_SENDER_EMAIL || "noreply@restaurant.com"
+      email: senderEmail
     };
 
     sendSmtpEmail.to = [{
@@ -333,7 +339,7 @@ export class BrevoEmailService {
         </head>
         <body style="margin: 0; padding: 20px; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Arial, sans-serif; background-color: #f5f5f5;">
           <div style="max-width: 600px; margin: 0 auto; background-color: white; border-radius: 8px; overflow: hidden; box-shadow: 0 2px 10px rgba(0,0,0,0.1);">
-            
+
             <!-- Header -->
             <div style="background-color: ${approved ? '#d4edda' : '#f8d7da'}; padding: 30px 30px 20px; text-align: center; border-bottom: 1px solid #e5e5e5;">
               <h1 style="margin: 0; font-size: 28px; font-weight: 600; color: ${approved ? '#155724' : '#721c24'}; letter-spacing: -0.5px;">
@@ -412,9 +418,12 @@ export class BrevoEmailService {
       </html>
     `;
 
+    const senderEmail = process.env.BREVO_SENDER_EMAIL || "noreply@restaurant.com";
+    console.log('Using sender email:', senderEmail);
+
     sendSmtpEmail.sender = {
       name: "Trofta",
-      email: process.env.BREVO_SENDER_EMAIL || "noreply@restaurant.com"
+      email: senderEmail
     };
 
     sendSmtpEmail.to = [{

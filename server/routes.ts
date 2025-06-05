@@ -38,9 +38,9 @@ const wsConnections = new Map<string, Set<WebSocket>>();
 function broadcastNotification(restaurantId: number, notification: any) {
   const restaurantKey = `restaurant_${restaurantId}`;
   const connections = wsConnections.get(restaurantKey);
-  
+
   console.log(`Broadcasting notification for restaurant ${restaurantId}, connections found: ${connections ? connections.size : 0}`);
-  
+
   if (connections && connections.size > 0) {
     const message = JSON.stringify(notification);
     let sentCount = 0;
@@ -481,6 +481,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       // Send email notifications if Brevo is configured
       if (emailService) {
+        console.log('Email service available - processing notifications for booking', booking.id);
         try {
           let emailSettings = null;
 
@@ -488,35 +489,53 @@ export async function registerRoutes(app: Express): Promise<Server> {
           if (restaurant?.emailSettings) {
             try {
               emailSettings = JSON.parse(restaurant.emailSettings);
+              console.log('Email settings loaded:', emailSettings);
             } catch (e) {
               console.warn("Failed to parse email settings, using defaults");
             }
+          } else {
+            console.log('No email settings found - using defaults (all notifications enabled)');
           }
 
           // Send confirmation email to customer if enabled (default: true)
           const shouldSendGuestConfirmation = emailSettings?.guestSettings?.sendBookingConfirmation !== false;
+          console.log('Should send guest confirmation:', shouldSendGuestConfirmation);
+
           if (shouldSendGuestConfirmation) {
+            console.log('Sending booking confirmation email to:', req.body.customerEmail);
             await emailService.sendBookingConfirmation(
               req.body.customerEmail,
               req.body.customerName,
               {
                 ...bookingData,
-                tableNumber: booking.tableId
+                tableNumber: booking.tableId,
+                id: booking.id
               }
             );
+            console.log('Guest confirmation email sent successfully');
           }
 
           // Send notification to restaurant if enabled (default: true)
           const shouldSendRestaurantNotification = emailSettings?.placeSettings?.emailBooking !== false;
           const restaurantEmail = emailSettings?.placeSettings?.sentTo || restaurant?.email;
+          console.log('Should send restaurant notification:', shouldSendRestaurantNotification, 'to email:', restaurantEmail);
 
           if (shouldSendRestaurantNotification && restaurantEmail) {
-            await emailService.sendRestaurantNotification(restaurantEmail, bookingData);
+            console.log('Sending restaurant notification email to:', restaurantEmail);
+            await emailService.sendRestaurantNotification(restaurantEmail, {
+              customerName: req.body.customerName,
+              customerEmail: req.body.customerEmail,
+              customerPhone: req.body.customerPhone,
+              ...bookingData
+            });
+            console.log('Restaurant notification email sent successfully');
           }
         } catch (emailError) {
           console.error('Error sending email notifications:', emailError);
           // Don't fail the booking if email fails
         }
+      } else {
+        console.log('Email service not available - skipping email notifications');
       }
 
       res.json(booking);
@@ -1665,7 +1684,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Send real-time notification to all connected clients for this restaurant
       try {
         console.log(`Preparing real-time notification for booking ${booking.id}`);
-        
+
         const notificationData = {
           type: 'new_booking',
           booking: {
@@ -1675,7 +1694,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
             customerPhone: req.body.customerPhone,
             guestCount: booking.guestCount,
             bookingDate: booking.bookingDate,
-            startTime: booking.startTime,
+            startTime```tool_code
+: booking.startTime,
             endTime: booking.endTime,
             tableId: booking.tableId,
             status: booking.status,
@@ -2538,7 +2558,7 @@ app.put("/api/tenants/:tenantId/bookings/:id", validateTenant, async (req, res) 
   // Stripe checkout session creation
   app.post("/api/create-checkout-session", async (req, res) => {
     try {
-      const { planId, userId, successUrl, cancelUrl } = req.body;
+      const { planId, userId, successUrl, cancelUrl } =req.body;
 
       const plan = await storage.getSubscriptionPlan(planId);
       if (!plan) {
@@ -2685,6 +2705,7 @@ app.put("/api/tenants/:tenantId/bookings/:id", validateTenant, async (req, res) 
 
       // Send email notifications if Brevo is configured
       if (emailService) {
+        console.log('Email service available - processing notifications for booking', booking.id);
         try {
           let emailSettings = null;
 
@@ -2692,39 +2713,58 @@ app.put("/api/tenants/:tenantId/bookings/:id", validateTenant, async (req, res) 
           if (restaurant?.emailSettings) {
             try {
               emailSettings = JSON.parse(restaurant.emailSettings);
+              console.log('Email settings loaded:', emailSettings);
             } catch (e) {
               console.warn("Failed to parse email settings, using defaults");
             }
+          } else {
+            console.log('No email settings found - using defaults (all notifications enabled)');
           }
 
-          // Send confirmation email to customer if enabled (default: true)
+          // Send confirmation email to customer if enabled
           const shouldSendGuestConfirmation = emailSettings?.guestSettings?.sendBookingConfirmation !== false;
+          console.log('Should send guest confirmation:', shouldSendGuestConfirmation);
+
           if (shouldSendGuestConfirmation) {
+            console.log('Sending booking confirmation email to:', req.body.customerEmail);
             await emailService.sendBookingConfirmation(
               req.body.customerEmail,
               req.body.customerName,
               {
                 ...bookingData,
-                tableNumber: booking.tableId
+                tableNumber: booking.tableId,
+                id: booking.id
               }
             );
+            console.log('Guest confirmation email sent successfully');
           }
 
-          // Send notification to restaurant if enabled (default: true)
+          // Send notification to restaurant if enabled
           const shouldSendRestaurantNotification = emailSettings?.placeSettings?.emailBooking !== false;
           const restaurantEmail = emailSettings?.placeSettings?.sentTo || restaurant?.email;
+          console.log('Should send restaurant notification:', shouldSendRestaurantNotification, 'to email:', restaurantEmail);
 
           if (shouldSendRestaurantNotification && restaurantEmail) {
-            await emailService.sendRestaurantNotification(restaurantEmail, bookingData);
+            console.log('Sending restaurant notification email to:', restaurantEmail);
+            await emailService.sendRestaurantNotification(restaurantEmail, {
+              customerName: req.body.customerName,
+              customerEmail: req.body.customerEmail,
+              customerPhone: req.body.customerPhone,
+              ...bookingData
+            });
+            console.log('Restaurant notification email sent successfully');
           }
         } catch (emailError) {
           console.error('Error sending email notifications:', emailError);
           // Don't fail the booking if email fails
         }
+      } else {
+        console.log('Email service not available - skipping email notifications');
       }
 
       res.json(booking);
     } catch (error) {
+      console.error("Booking creation error:", error);
       res.status(400).json({ message: "Invalid booking data" });
     }
   });
@@ -2949,27 +2989,27 @@ app.put("/api/tenants/:tenantId/bookings/:id", validateTenant, async (req, res) 
   });
 
   const httpServer = createServer(app);
-  
+
   // Setup WebSocket server for real-time notifications
   const wss = new WebSocketServer({ server: httpServer, path: '/ws' });
-  
+
   wss.on('connection', (ws, req) => {
     console.log('New WebSocket connection established');
-    
+
     ws.on('message', (message) => {
       try {
         const data = JSON.parse(message.toString());
-        
+
         if (data.type === 'subscribe' && data.restaurantId) {
           const restaurantKey = `restaurant_${data.restaurantId}`;
-          
+
           if (!wsConnections.has(restaurantKey)) {
             wsConnections.set(restaurantKey, new Set());
           }
-          
+
           wsConnections.get(restaurantKey)!.add(ws);
           console.log(`Client subscribed to restaurant ${data.restaurantId} notifications`);
-          
+
           ws.send(JSON.stringify({
             type: 'subscription_confirmed',
             restaurantId: data.restaurantId
@@ -2979,7 +3019,7 @@ app.put("/api/tenants/:tenantId/bookings/:id", validateTenant, async (req, res) 
         console.error('Error processing WebSocket message:', error);
       }
     });
-    
+
     ws.on('close', () => {
       // Remove connection from all restaurant subscriptions
       wsConnections.forEach((connections, key) => {
@@ -2990,11 +3030,13 @@ app.put("/api/tenants/:tenantId/bookings/:id", validateTenant, async (req, res) 
       });
       console.log('WebSocket connection closed');
     });
-    
+
     ws.on('error', (error) => {
       console.error('WebSocket error:', error);
     });
   });
-  
+
   return httpServer;
 }
+
+// The code has been modified to improve email confirmation debugging and error handling.
