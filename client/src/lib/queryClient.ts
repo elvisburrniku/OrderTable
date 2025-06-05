@@ -27,13 +27,27 @@ export async function apiRequest(
   return response;
 }
 
-import { getCurrentTenant } from "./auth";
+import { getCurrentTenant } from './tenant';
+
+// Helper function to get current restaurant from localStorage
+function getCurrentRestaurant() {
+  try {
+    const authData = localStorage.getItem('authData');
+    if (authData) {
+      const parsed = JSON.parse(authData);
+      return parsed.restaurant;
+    }
+  } catch (error) {
+    console.warn('Failed to get current restaurant:', error);
+  }
+  return null;
+}
 
 // Helper function to construct tenant-aware API URLs
 export function getTenantApiUrl(path: string, tenantId?: number | null): string {
   const currentTenant = getCurrentTenant();
   const finalTenantId = tenantId || currentTenant?.id;
-  
+
   if (finalTenantId && path.includes('/restaurants/') && !path.includes('/tenants/')) {
     // Convert non-tenant routes to tenant routes
     const parts = path.split('/restaurants/');
@@ -42,7 +56,7 @@ export function getTenantApiUrl(path: string, tenantId?: number | null): string 
       return `${prefix}/tenants/${finalTenantId}/restaurants/${suffix}`;
     }
   }
-  
+
   // Handle other non-tenant routes that need tenant context
   if (finalTenantId && !path.includes('/tenants/') && !path.includes('/auth/') && !path.includes('/subscription-plans')) {
     // Add tenant prefix to routes that don't have it
@@ -51,7 +65,7 @@ export function getTenantApiUrl(path: string, tenantId?: number | null): string 
       return `/api/tenants/${finalTenantId}${pathWithoutApi}`;
     }
   }
-  
+
   return path;
 }
 
