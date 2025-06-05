@@ -171,9 +171,10 @@ export class DatabaseStorage implements IStorage {
   }
 
   private async initializeDemoData() {
-    const existingUsers = await this.db.select().from(users);
-
-    if (existingUsers.length === 0) {
+    // Check if demo tenant already exists
+    const existingTenant = await this.db.select().from(tenants).where(eq(tenants.slug, "demo-restaurant")).limit(1);
+    
+    if (existingTenant.length === 0) {
       // Create demo tenant
       const [tenant] = await this.db.insert(tenants).values({
         name: "Demo Restaurant",
