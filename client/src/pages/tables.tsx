@@ -9,7 +9,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { Badge } from "@/components/ui/badge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Switch } from "@/components/ui/switch";
-import { Plus, Users, Edit, Trash2 } from "lucide-react";
+import { Plus, Users, Edit, Trash2, QrCode, Download } from "lucide-react";
 import { useSubscription } from "@/hooks/use-subscription";
 
 export default function Tables() {
@@ -23,6 +23,75 @@ export default function Tables() {
     capacity: 4,
     isActive: true,
   });
+  const [showQRDialog, setShowQRDialog] = useState(false);
+  const [selectedTableQR, setSelectedTableQR] = useState<any>(null);
+
+  // Function to fetch QR code for a specific table
+  const fetchTableQR = async (tableId: number) => {
+    const tenantId = restaurant?.tenantId || 1;
+    const response = await fetch(`/api/tenants/${tenantId}/restaurants/${restaurant?.id}/tables/${tableId}/qr`);
+    if (!response.ok) throw new Error("Failed to fetch QR code");
+    return response.json();
+  };
+
+  // Function to download all QR codes as PDF
+  const downloadAllQRCodes = async () => {
+    try {
+      const jsPDF = (await import('jspdf')).jsPDF;
+      const html2canvas = (await import('html2canvas')).default;
+      
+      const pdf = new jsPDF('p', 'mm', 'a4');
+      const pageWidth = pdf.internal.pageSize.getWidth();
+      const pageHeight = pdf.internal.pageSize.getHeight();
+      const margin = 20;
+      const qrSize = 60;
+      const spacing = 10;
+      
+      let currentY = margin;
+      let currentX = margin;
+      
+      // Add title
+      pdf.setFontSize(16);
+      pdf.text(`QR Codes - ${restaurant?.name || 'Restaurant'}`, margin, currentY);
+      currentY += 20;
+      
+      for (const table of tables) {
+        try {
+          const qrData = await fetchTableQR(table.id);
+          
+          if (qrData.qrCode) {
+            // Check if we need a new page
+            if (currentY + qrSize + 30 > pageHeight - margin) {
+              pdf.addPage();
+              currentY = margin;
+            }
+            
+            // Add table label
+            pdf.setFontSize(12);
+            pdf.text(`Table ${table.tableNumber}`, currentX, currentY);
+            currentY += 10;
+            
+            // Add QR code
+            pdf.addImage(qrData.qrCode, 'PNG', currentX, currentY, qrSize, qrSize);
+            
+            // Add table info
+            pdf.setFontSize(8);
+            pdf.text(`Capacity: ${table.capacity} people`, currentX, currentY + qrSize + 5);
+            pdf.text(`Status: ${table.isActive ? 'Active' : 'Inactive'}`, currentX, currentY + qrSize + 10);
+            
+            currentY += qrSize + spacing + 20;
+          }
+        } catch (error) {
+          console.error(`Failed to fetch QR for table ${table.tableNumber}:`, error);
+        }
+      }
+      
+      pdf.save(`${restaurant?.name || 'Restaurant'}_QR_Codes.pdf`);
+    } catch (error) {
+      console.error('Failed to generate PDF:', error);
+      alert('Failed to generate PDF. Please try again.');
+    }
+  };
 
   const { data: tables = [], isLoading } = useQuery({
     queryKey: ["/api/tenants", restaurant?.tenantId || 1, "restaurants", restaurant?.id, "tables"],
@@ -158,6 +227,15 @@ export default function Tables() {
                 >
                   View Table Plan
                 </Button>
+                <Button 
+                  variant="outline"
+                  onClick={downloadAllQRCodes}
+                  className="border-blue-600 text-blue-600 hover:bg-blue-50"
+                  disabled={tables.length === 0}
+                >
+                  <Download className="h-4 w-4 mr-2" />
+                  Download All QR Codes
+                </Button>
                 <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
                   <DialogTrigger asChild>
                     <Button 
@@ -235,6 +313,7 @@ export default function Tables() {
                     <TableHead>Table Number</TableHead>
                     <TableHead>Capacity</TableHead>
                     <TableHead>Status</TableHead>
+                    <TableHead>QR Code</TableHead>
                     <TableHead>Actions</TableHead>
                   </TableRow>
                 </TableHeader>
@@ -254,6 +333,24 @@ export default function Tables() {
                         <Badge variant={table.isActive ? "default" : "secondary"}>
                           {table.isActive ? "Active" : "Inactive"}
                         </Badge>
+                      </TableCell>
+                      <TableCell>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={async () => {
+                            try {
+                              const qrData = await fetchTableQR(table.id);
+                              setSelectedTableQR({ ...table, qrCode: qrData.qrCode });
+                              setShowQRDialog(true);
+                            } catch (error) {
+                              console.error('Failed to fetch QR code:', error);
+                            }
+                          }}
+                        >
+                          <QrCode className="h-4 w-4 mr-1" />
+                          View QR
+                        </Button>
                       </TableCell>
                       <TableCell>
                         <div className="flex items-center gap-2">
@@ -283,6 +380,52 @@ export default function Tables() {
             )}
           </CardContent>
         </Card>
+
+        {/* QR Code Display Dialog */}
+        <Dialog open={showQRDialog} onOpenChange={setShowQRDialog}>
+          <DialogContent className="max-w-md">
+            <DialogHeader>
+              <DialogTitle>QR Code - Table {selectedTableQR?.tableNumber}</DialogTitle>
+            </DialogHeader>
+            <div className="space-y-4">
+              {selectedTableQR?.qrCode ? (
+                <div className="text-center">
+                  <div className="bg-white p-4 rounded-lg border inline-block">
+                    <img 
+                      src={selectedTableQR.qrCode} 
+                      alt={`QR Code for Table ${selectedTableQR.tableNumber}`}
+                      className="w-48 h-48 mx-auto"
+                    />
+                  </div>
+                  <p className="text-sm text-gray-600 mt-4">
+                    Customers can scan this QR code to book Table {selectedTableQR.tableNumber}
+                  </p>
+                  <div className="mt-4 p-3 bg-gray-50 rounded text-sm">
+                    <p><strong>Table:</strong> {selectedTableQR.tableNumber}</p>
+                    <p><strong>Capacity:</strong> {selectedTableQR.capacity} people</p>
+                    <p><strong>Status:</strong> {selectedTableQR.isActive ? 'Active' : 'Inactive'}</p>
+                  </div>
+                  <Button
+                    className="mt-4 w-full"
+                    onClick={() => {
+                      const link = document.createElement('a');
+                      link.href = selectedTableQR.qrCode;
+                      link.download = `Table_${selectedTableQR.tableNumber}_QR.png`;
+                      link.click();
+                    }}
+                  >
+                    <Download className="h-4 w-4 mr-2" />
+                    Download QR Code
+                  </Button>
+                </div>
+              ) : (
+                <div className="text-center py-8">
+                  <p>Loading QR code...</p>
+                </div>
+              )}
+            </div>
+          </DialogContent>
+        </Dialog>
       </div>
     </div>
   );
