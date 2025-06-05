@@ -622,9 +622,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(404).json({ message: "Restaurant not found" });
       }
 
-      const openingHours = await storage.createOrUpdateOpeningHours(restaurantId, tenantId, req.body);
+      // Extract hours from request body - frontend sends { hours: [...] }
+      const hoursData = req.body.hours || req.body;
+      const openingHours = await storage.createOrUpdateOpeningHours(restaurantId, tenantId, hoursData);
       res.json(openingHours);
     } catch (error) {
+      console.error("Error saving opening hours:", error);
       res.status(400).json({ message: "Invalid opening hours data" });
     }
   });
