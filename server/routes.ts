@@ -1,5 +1,6 @@
 import type { Express } from "express";
 import { createServer, type Server } from "http";
+import { WebSocketServer, WebSocket } from "ws";
 import { storage } from "./storage";
 import { insertUserSchema, loginSchema, insertBookingSchema, insertCustomerSchema, insertSubscriptionPlanSchema, insertUserSubscriptionSchema, insertCompanyRegistrationSchema } from "@shared/schema";
 import { z } from "zod";
@@ -28,6 +29,24 @@ try {
 } catch (error) {
   console.error('Failed to initialize email service:', error);
   emailService = null;
+}
+
+// WebSocket connections store
+const wsConnections = new Map<string, Set<WebSocket>>();
+
+// Broadcast notification to all connected clients for a restaurant
+function broadcastNotification(restaurantId: number, notification: any) {
+  const restaurantKey = `restaurant_${restaurantId}`;
+  const connections = wsConnections.get(restaurantKey);
+  
+  if (connections) {
+    const message = JSON.stringify(notification);
+    connections.forEach(ws => {
+      if (ws.readyState === WebSocket.OPEN) {
+        ws.send(message);
+      }
+    });
+  }
 }
 
 export async function registerRoutes(app: Express): Promise<Server> {
@@ -1634,6 +1653,33 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       const booking = await storage.createBooking(bookingData);
 
+      // Send real-time notification to all connected clients for this restaurant
+      const notificationData = {
+        type: 'new_booking',
+        booking: {
+          id: booking.id,
+          customerName: req.body.customerName,
+          customerEmail: req.body.customerEmail,
+          customerPhone: req.body.customerPhone,
+          guestCount: booking.guestCount,
+          bookingDate: booking.bookingDate,
+          startTime: booking.startTime,
+          endTime: booking.endTime,
+          tableId: booking.tableId,
+          status: booking.status,
+          notes: booking.notes,
+          createdAt: booking.createdAt
+        },
+        restaurant: {
+          id: restaurantId,
+          name: (await storage.getRestaurantById(restaurantId))?.name
+        },
+        timestamp: new Date().toISOString()
+      };
+
+      broadcastNotification(restaurantId, notificationData);
+      console.log(`Real-time notification sent for new booking ${booking.id} at restaurant ${restaurantId}`);
+
       // Send email notifications if Brevo is configured and enabled in settings
       if (emailService) {
         console.log('Email service available - processing notifications for booking', booking.id);
@@ -2609,5 +2655,52 @@ app.put("/api/tenants/:tenantId/bookings/:id", validateTenant, async (req, res) 
   });
 
   const httpServer = createServer(app);
+  
+  // Setup WebSocket server for real-time notifications
+  const wss = new WebSocketServer({ server: httpServer, path: '/ws' });
+  
+  wss.on('connection', (ws, req) => {
+    console.log('New WebSocket connection established');
+    
+    ws.on('message', (message) => {
+      try {
+        const data = JSON.parse(message.toString());
+        
+        if (data.type === 'subscribe' && data.restaurantId) {
+          const restaurantKey = `restaurant_${data.restaurantId}`;
+          
+          if (!wsConnections.has(restaurantKey)) {
+            wsConnections.set(restaurantKey, new Set());
+          }
+          
+          wsConnections.get(restaurantKey)!.add(ws);
+          console.log(`Client subscribed to restaurant ${data.restaurantId} notifications`);
+          
+          ws.send(JSON.stringify({
+            type: 'subscription_confirmed',
+            restaurantId: data.restaurantId
+          }));
+        }
+      } catch (error) {
+        console.error('Error processing WebSocket message:', error);
+      }
+    });
+    
+    ws.on('close', () => {
+      // Remove connection from all restaurant subscriptions
+      wsConnections.forEach((connections, key) => {
+        connections.delete(ws);
+        if (connections.size === 0) {
+          wsConnections.delete(key);
+        }
+      });
+      console.log('WebSocket connection closed');
+    });
+    
+    ws.on('error', (error) => {
+      console.error('WebSocket error:', error);
+    });
+  });
+  
   return httpServer;
 }
