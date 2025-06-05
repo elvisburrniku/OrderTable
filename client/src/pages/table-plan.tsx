@@ -143,48 +143,50 @@ export default function TablePlan() {
   const planRef = useRef<HTMLDivElement>(null);
 
   const { data: tables = [], isLoading: tablesLoading } = useQuery({
-    queryKey: ["/api/tenants/1/restaurants", restaurant?.id, "tables"],
+    queryKey: ["/api/tenants", restaurant?.tenantId, "restaurants", restaurant?.id, "tables"],
     queryFn: async () => {
-      const tenantId = 1;
+      const tenantId = restaurant?.tenantId;
       const response = await fetch(
         `/api/tenants/${tenantId}/restaurants/${restaurant?.id}/tables`,
       );
       if (!response.ok) throw new Error("Failed to fetch tables");
       return response.json();
     },
-    enabled: !!restaurant,
+    enabled: !!restaurant && !!restaurant.tenantId,
   });
 
   const { data: rooms = [] } = useQuery({
-    queryKey: ["/api/tenants/1/restaurants", restaurant?.id, "rooms"],
+    queryKey: ["/api/tenants", restaurant?.tenantId, "restaurants", restaurant?.id, "rooms"],
     queryFn: async () => {
-      const tenantId = 1;
+      const tenantId = restaurant?.tenantId;
       const response = await fetch(
         `/api/tenants/${tenantId}/restaurants/${restaurant?.id}/rooms`,
       );
       if (!response.ok) throw new Error("Failed to fetch rooms");
       return response.json();
     },
-    enabled: !!restaurant,
+    enabled: !!restaurant && !!restaurant.tenantId,
   });
 
   // Load saved table layout
   const { data: savedLayout } = useQuery({
     queryKey: [
-      "/api/tenants/1/restaurants",
+      "/api/tenants",
+      restaurant?.tenantId,
+      "restaurants",
       restaurant?.id,
       "table-layout",
       selectedRoom,
     ],
     queryFn: async () => {
-      const tenantId = 1;
+      const tenantId = restaurant?.tenantId;
       const response = await fetch(
         `/api/tenants/${tenantId}/restaurants/${restaurant?.id}/table-layout?room=${selectedRoom}`,
       );
       if (!response.ok) throw new Error("Failed to fetch table layout");
       return response.json();
     },
-    enabled: !!restaurant,
+    enabled: !!restaurant && !!restaurant.tenantId,
   });
 
   // Auto-select first room when rooms load
@@ -203,7 +205,7 @@ export default function TablePlan() {
 
   const saveLayoutMutation = useMutation({
     mutationFn: async (positions: Record<number, TablePosition>) => {
-      const tenantId = 1;
+      const tenantId = restaurant?.tenantId;
       const response = await fetch(
         `/api/tenants/${tenantId}/restaurants/${restaurant?.id}/table-layout`,
         {
@@ -345,7 +347,7 @@ export default function TablePlan() {
 
   const createTableMutation = useMutation({
     mutationFn: async (tableData: any) => {
-      const tenantId = 1;
+      const tenantId = restaurant?.tenantId;
       const response = await fetch(
         `/api/tenants/${tenantId}/restaurants/${restaurant?.id}/tables`,
         {
@@ -377,7 +379,7 @@ export default function TablePlan() {
 
       // Refresh tables list
       queryClient.invalidateQueries({
-        queryKey: ["/api/tenants/1/restaurants", restaurant?.id, "tables"],
+        queryKey: ["/api/tenants", restaurant?.tenantId, "restaurants", restaurant?.id, "tables"],
       });
 
       setShowConfigDialog(false);
