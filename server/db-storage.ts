@@ -19,7 +19,8 @@ import {
   tableLayouts, 
   openingHours, 
   specialPeriods, 
-  cutOffTimes 
+  cutOffTimes,
+  bookingChangeRequests
 } from "@shared/schema";
 import { neon } from "@neondatabase/serverless";
 import { drizzle } from "drizzle-orm/neon-http";
@@ -866,5 +867,29 @@ export class DatabaseStorage implements IStorage {
   private timeToMinutes(timeString: string): number {
     const [hours, minutes] = timeString.split(':').map(Number);
     return hours * 60 + minutes;
+  }
+
+  // Booking Change Request methods
+  async getBookingChangeRequestsByBookingId(bookingId: number): Promise<any[]> {
+    return await this.db.select().from(bookingChangeRequests).where(eq(bookingChangeRequests.bookingId, bookingId)).orderBy(desc(bookingChangeRequests.createdAt));
+  }
+
+  async getBookingChangeRequestsByRestaurant(restaurantId: number): Promise<any[]> {
+    return await this.db.select().from(bookingChangeRequests).where(eq(bookingChangeRequests.restaurantId, restaurantId)).orderBy(desc(bookingChangeRequests.createdAt));
+  }
+
+  async createBookingChangeRequest(request: any): Promise<any> {
+    const [newRequest] = await this.db.insert(bookingChangeRequests).values(request).returning();
+    return newRequest;
+  }
+
+  async updateBookingChangeRequest(id: number, updates: any): Promise<any> {
+    const [updatedRequest] = await this.db.update(bookingChangeRequests).set(updates).where(eq(bookingChangeRequests.id, id)).returning();
+    return updatedRequest;
+  }
+
+  async getBookingChangeRequestById(id: number): Promise<any> {
+    const [request] = await this.db.select().from(bookingChangeRequests).where(eq(bookingChangeRequests.id, id));
+    return request;
   }
 }

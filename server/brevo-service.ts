@@ -66,10 +66,16 @@ export class BrevoEmailService {
   async sendBookingConfirmation(customerEmail: string, customerName: string, bookingDetails: any) {
     const sendSmtpEmail = new SendSmtpEmail();
 
+    // Ensure booking ID is properly set
+    const bookingId = bookingDetails.id || bookingDetails.bookingId;
+    if (!bookingId) {
+      throw new Error('Booking ID is required for generating management URLs');
+    }
+
     // Generate secure management URLs
     const baseUrl = process.env.APP_BASE_URL || 'http://localhost:5000';
     const managementUrls = BookingHash.generateManagementUrls(
-      bookingDetails.id,
+      bookingId,
       bookingDetails.tenantId,
       bookingDetails.restaurantId,
       baseUrl
@@ -145,7 +151,7 @@ export class BrevoEmailService {
               <!-- Booking ID at bottom -->
               <div style="margin-top: 30px; padding-top: 20px; border-top: 1px solid #e5e5e5;">
                 <p style="margin: 0; font-size: 12px; color: #999; text-align: center;">
-                  booking${bookingDetails.id || Date.now()}
+                  booking${bookingId}
                 </p>
               </div>
             </div>
@@ -178,7 +184,7 @@ export class BrevoEmailService {
 
     // Add ICS calendar attachment
     sendSmtpEmail.attachment = [{
-      name: `booking${bookingDetails.id || Date.now()}.ics`,
+      name: `booking${bookingId}.ics`,
       content: icsBase64
     }];
 
@@ -188,6 +194,240 @@ export class BrevoEmailService {
       return result;
     } catch (error) {
       console.error('Error sending booking confirmation email:', error);
+      throw error;
+    }
+  }
+
+  async sendBookingChangeRequest(restaurantEmail: string, changeRequestDetails: any, bookingDetails: any) {
+    const sendSmtpEmail = new SendSmtpEmail();
+
+    const baseUrl = process.env.APP_BASE_URL || 'http://localhost:5000';
+    const approveHash = BookingHash.generateHash(changeRequestDetails.id, bookingDetails.tenantId, bookingDetails.restaurantId, 'change');
+    const rejectHash = BookingHash.generateHash(changeRequestDetails.id, bookingDetails.tenantId, bookingDetails.restaurantId, 'cancel');
+
+    sendSmtpEmail.subject = "Booking Change Request";
+    sendSmtpEmail.htmlContent = `
+      <!DOCTYPE html>
+      <html>
+        <head>
+          <meta charset="utf-8">
+          <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        </head>
+        <body style="margin: 0; padding: 20px; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Arial, sans-serif; background-color: #f5f5f5;">
+          <div style="max-width: 600px; margin: 0 auto; background-color: white; border-radius: 8px; overflow: hidden; box-shadow: 0 2px 10px rgba(0,0,0,0.1);">
+            
+            <!-- Header -->
+            <div style="background-color: #fff3cd; padding: 30px 30px 20px; text-align: center; border-bottom: 1px solid #e5e5e5;">
+              <h1 style="margin: 0; font-size: 28px; font-weight: 600; color: #856404; letter-spacing: -0.5px;">Booking Change Request</h1>
+            </div>
+
+            <!-- Content -->
+            <div style="padding: 30px;">
+              <p style="margin: 0 0 20px; font-size: 16px; color: #333; line-height: 1.5;">A customer has requested changes to their booking:</p>
+
+              <!-- Original Booking Details -->
+              <div style="background-color: #f8f9fa; border-radius: 8px; padding: 25px; margin: 25px 0; border-left: 4px solid #6c757d;">
+                <h3 style="margin: 0 0 15px; font-size: 18px; color: #333; font-weight: 600;">Original Booking</h3>
+                <div style="display: grid; gap: 10px;">
+                  <div style="display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid #e9ecef;">
+                    <span style="color: #666; font-weight: 500;">Customer:</span>
+                    <span style="color: #333; font-weight: 600;">${bookingDetails.customerName}</span>
+                  </div>
+                  <div style="display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid #e9ecef;">
+                    <span style="color: #666; font-weight: 500;">Date:</span>
+                    <span style="color: #333; font-weight: 600;">${new Date(bookingDetails.bookingDate).toLocaleDateString()}</span>
+                  </div>
+                  <div style="display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid #e9ecef;">
+                    <span style="color: #666; font-weight: 500;">Time:</span>
+                    <span style="color: #333; font-weight: 600;">${bookingDetails.startTime}</span>
+                  </div>
+                  <div style="display: flex; justify-content: space-between; padding: 8px 0;">
+                    <span style="color: #666; font-weight: 500;">Party Size:</span>
+                    <span style="color: #333; font-weight: 600;">${bookingDetails.guestCount} guests</span>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Requested Changes -->
+              <div style="background-color: #fff3cd; border-radius: 8px; padding: 25px; margin: 25px 0; border-left: 4px solid #ffc107;">
+                <h3 style="margin: 0 0 15px; font-size: 18px; color: #333; font-weight: 600;">Requested Changes</h3>
+                <div style="display: grid; gap: 10px;">
+                  ${changeRequestDetails.requestedDate ? `
+                    <div style="display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid #f0d89e;">
+                      <span style="color: #666; font-weight: 500;">New Date:</span>
+                      <span style="color: #333; font-weight: 600;">${new Date(changeRequestDetails.requestedDate).toLocaleDateString()}</span>
+                    </div>
+                  ` : ''}
+                  ${changeRequestDetails.requestedTime ? `
+                    <div style="display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid #f0d89e;">
+                      <span style="color: #666; font-weight: 500;">New Time:</span>
+                      <span style="color: #333; font-weight: 600;">${changeRequestDetails.requestedTime}</span>
+                    </div>
+                  ` : ''}
+                  ${changeRequestDetails.requestedGuestCount ? `
+                    <div style="display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid #f0d89e;">
+                      <span style="color: #666; font-weight: 500;">New Party Size:</span>
+                      <span style="color: #333; font-weight: 600;">${changeRequestDetails.requestedGuestCount} guests</span>
+                    </div>
+                  ` : ''}
+                  ${changeRequestDetails.requestNotes ? `
+                    <div style="display: flex; justify-content: space-between; padding: 8px 0;">
+                      <span style="color: #666; font-weight: 500;">Notes:</span>
+                      <span style="color: #333; font-weight: 600;">${changeRequestDetails.requestNotes}</span>
+                    </div>
+                  ` : ''}
+                </div>
+              </div>
+
+              <!-- Action Buttons -->
+              <div style="text-align: center; margin: 30px 0;">
+                <a href="${baseUrl}/booking-change-response/${changeRequestDetails.id}?action=approve&hash=${approveHash}" style="background-color: #28a745; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; font-weight: 600; margin: 0 10px;">Approve Changes</a>
+                <a href="${baseUrl}/booking-change-response/${changeRequestDetails.id}?action=reject&hash=${rejectHash}" style="background-color: #dc3545; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; font-weight: 600;">Reject Changes</a>
+              </div>
+
+              <p style="margin: 20px 0; font-size: 14px; color: #666; line-height: 1.6; text-align: center;">
+                Click the buttons above to respond to this change request. The customer will be notified of your decision automatically.
+              </p>
+
+              <p style="margin: 30px 0 10px; font-size: 16px; color: #333;">Best regards,</p>
+              <p style="margin: 0; font-size: 16px; color: #333; font-weight: 600;">Restaurant Booking System</p>
+            </div>
+          </div>
+        </body>
+      </html>
+    `;
+
+    sendSmtpEmail.sender = {
+      name: "Restaurant Booking System",
+      email: process.env.BREVO_SENDER_EMAIL || "noreply@restaurant.com"
+    };
+
+    sendSmtpEmail.to = [{
+      email: restaurantEmail,
+      name: "Restaurant Team"
+    }];
+
+    try {
+      const result = await this.apiInstance.sendTransacEmail(sendSmtpEmail);
+      console.log('Booking change request email sent:', result);
+      return result;
+    } catch (error) {
+      console.error('Error sending booking change request email:', error);
+      throw error;
+    }
+  }
+
+  async sendChangeRequestResponse(customerEmail: string, customerName: string, approved: boolean, bookingDetails: any, changeDetails: any, restaurantResponse?: string) {
+    const sendSmtpEmail = new SendSmtpEmail();
+
+    const baseUrl = process.env.APP_BASE_URL || 'http://localhost:5000';
+    const cancelHash = BookingHash.generateHash(bookingDetails.id, bookingDetails.tenantId, bookingDetails.restaurantId, 'cancel');
+
+    sendSmtpEmail.subject = approved ? "Booking Changes Approved" : "Booking Changes Rejected";
+    sendSmtpEmail.htmlContent = `
+      <!DOCTYPE html>
+      <html>
+        <head>
+          <meta charset="utf-8">
+          <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        </head>
+        <body style="margin: 0; padding: 20px; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Arial, sans-serif; background-color: #f5f5f5;">
+          <div style="max-width: 600px; margin: 0 auto; background-color: white; border-radius: 8px; overflow: hidden; box-shadow: 0 2px 10px rgba(0,0,0,0.1);">
+            
+            <!-- Header -->
+            <div style="background-color: ${approved ? '#d4edda' : '#f8d7da'}; padding: 30px 30px 20px; text-align: center; border-bottom: 1px solid #e5e5e5;">
+              <h1 style="margin: 0; font-size: 28px; font-weight: 600; color: ${approved ? '#155724' : '#721c24'}; letter-spacing: -0.5px;">
+                ${approved ? 'Changes Approved' : 'Changes Rejected'}
+              </h1>
+            </div>
+
+            <!-- Content -->
+            <div style="padding: 30px;">
+              <p style="margin: 0 0 20px; font-size: 16px; color: #333; line-height: 1.5;">Dear ${customerName},</p>
+
+              <p style="margin: 0 0 30px; font-size: 16px; color: #666; line-height: 1.6;">
+                ${approved 
+                  ? 'Great news! Your requested booking changes have been approved by the restaurant.'
+                  : 'We apologize, but your requested booking changes could not be approved at this time.'
+                }
+              </p>
+
+              ${approved ? `
+                <!-- Updated Booking Details -->
+                <div style="background-color: #d4edda; border-radius: 8px; padding: 25px; margin: 25px 0; border-left: 4px solid #28a745;">
+                  <h3 style="margin: 0 0 15px; font-size: 18px; color: #333; font-weight: 600;">Updated Booking Details</h3>
+                  <div style="display: grid; gap: 10px;">
+                    <div style="display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid #c3e6cb;">
+                      <span style="color: #666; font-weight: 500;">Date:</span>
+                      <span style="color: #333; font-weight: 600;">${changeDetails.requestedDate ? new Date(changeDetails.requestedDate).toLocaleDateString() : new Date(bookingDetails.bookingDate).toLocaleDateString()}</span>
+                    </div>
+                    <div style="display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid #c3e6cb;">
+                      <span style="color: #666; font-weight: 500;">Time:</span>
+                      <span style="color: #333; font-weight: 600;">${changeDetails.requestedTime || bookingDetails.startTime}</span>
+                    </div>
+                    <div style="display: flex; justify-content: space-between; padding: 8px 0;">
+                      <span style="color: #666; font-weight: 500;">Party Size:</span>
+                      <span style="color: #333; font-weight: 600;">${changeDetails.requestedGuestCount || bookingDetails.guestCount} guests</span>
+                    </div>
+                  </div>
+                </div>
+              ` : `
+                <!-- Original Booking Remains -->
+                <div style="background-color: #f8f9fa; border-radius: 8px; padding: 25px; margin: 25px 0; border-left: 4px solid #6c757d;">
+                  <h3 style="margin: 0 0 15px; font-size: 18px; color: #333; font-weight: 600;">Your Original Booking Remains</h3>
+                  <div style="display: grid; gap: 10px;">
+                    <div style="display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid #e9ecef;">
+                      <span style="color: #666; font-weight: 500;">Date:</span>
+                      <span style="color: #333; font-weight: 600;">${new Date(bookingDetails.bookingDate).toLocaleDateString()}</span>
+                    </div>
+                    <div style="display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid #e9ecef;">
+                      <span style="color: #666; font-weight: 500;">Time:</span>
+                      <span style="color: #333; font-weight: 600;">${bookingDetails.startTime}</span>
+                    </div>
+                    <div style="display: flex; justify-content: space-between; padding: 8px 0;">
+                      <span style="color: #666; font-weight: 500;">Party Size:</span>
+                      <span style="color: #333; font-weight: 600;">${bookingDetails.guestCount} guests</span>
+                    </div>
+                  </div>
+                </div>
+
+                <!-- Option to Cancel -->
+                <div style="text-align: center; margin: 30px 0;">
+                  <a href="${baseUrl}/booking-manage/${bookingDetails.id}?action=cancel&hash=${cancelHash}" style="background-color: #dc3545; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; font-weight: 600;">Cancel Booking</a>
+                </div>
+              `}
+
+              ${restaurantResponse ? `
+                <div style="background-color: #e9ecef; border-radius: 8px; padding: 20px; margin: 25px 0;">
+                  <h4 style="margin: 0 0 10px; color: #333;">Message from Restaurant:</h4>
+                  <p style="margin: 0; color: #666; font-style: italic;">"${restaurantResponse}"</p>
+                </div>
+              ` : ''}
+
+              <p style="margin: 30px 0 10px; font-size: 16px; color: #333;">Best regards,</p>
+              <p style="margin: 0; font-size: 16px; color: #333; font-weight: 600;">Trofta</p>
+            </div>
+          </div>
+        </body>
+      </html>
+    `;
+
+    sendSmtpEmail.sender = {
+      name: "Trofta",
+      email: process.env.BREVO_SENDER_EMAIL || "noreply@restaurant.com"
+    };
+
+    sendSmtpEmail.to = [{
+      email: customerEmail,
+      name: customerName
+    }];
+
+    try {
+      const result = await this.apiInstance.sendTransacEmail(sendSmtpEmail);
+      console.log('Change request response email sent:', result);
+      return result;
+    } catch (error) {
+      console.error('Error sending change request response email:', error);
       throw error;
     }
   }

@@ -187,6 +187,13 @@ export interface IStorage {
      isRestaurantOpen(restaurantId: number, bookingDate: Date, bookingTime: string): Promise<boolean>;
      isBookingAllowed(restaurantId: number, bookingDate: Date, bookingTime: string): Promise<boolean>;
 
+  // Booking Change Requests
+  getBookingChangeRequestsByBookingId(bookingId: number): Promise<BookingChangeRequest[]>;
+  getBookingChangeRequestsByRestaurant(restaurantId: number): Promise<BookingChangeRequest[]>;
+  createBookingChangeRequest(request: InsertBookingChangeRequest): Promise<BookingChangeRequest>;
+  updateBookingChangeRequest(id: number, updates: Partial<BookingChangeRequest>): Promise<BookingChangeRequest | undefined>;
+  getBookingChangeRequestById(id: number): Promise<BookingChangeRequest | undefined>;
+
   // Combined Tables
   getCombinedTablesByRestaurant(restaurantId: number): Promise<CombinedTable[]>;
   getCombinedTableById(id: number): Promise<CombinedTable | undefined>;
