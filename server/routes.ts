@@ -3085,13 +3085,43 @@ app.put("/api/tenants/:tenantId/bookings/:id", validateTenant, async (req, res) 
       const isPastBooking = now > bookingEndTime;
       const isBookingStarted = now >= bookingDateTime;
 
+      // Get cut-off times for the restaurant
+      const cutOffTimes = await storage.getCutOffTimesByRestaurant(booking.restaurantId);
+      
+      // Determine cut-off deadline based on restaurant policy
+      const dayOfWeek = bookingDateTime.getDay();
+      const dayNames = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'];
+      const dayName = dayNames[dayOfWeek];
+
+      const cutOffTime = cutOffTimes.find((ct: any) => ct.dayOfWeek.toLowerCase() === dayName);
+
+      let canModify = false;
+      let canCancel = false;
+
+      if (!isBookingStarted && !isPastBooking) {
+        if (!cutOffTime || !cutOffTime.isEnabled) {
+          // Default: allow changes up to 2 hours before booking for customer management
+          const twoHoursBefore = new Date(bookingDateTime);
+          twoHoursBefore.setHours(twoHoursBefore.getHours() - 2);
+          canModify = now < twoHoursBefore;
+          canCancel = now < twoHoursBefore;
+        } else {
+          // Use restaurant's cut-off time policy
+          const cutOffDeadline = new Date(bookingDateTime);
+          cutOffDeadline.setHours(cutOffDeadline.getHours() - cutOffTime.hoursBeforeBooking);
+          canModify = now < cutOffDeadline;
+          canCancel = now < cutOffDeadline;
+        }
+      }
+
       // Return booking with action permissions
       const bookingWithPermissions = {
         ...booking,
-        canModify: !isBookingStarted, // Can modify if booking hasn't started
-        canCancel: !isBookingStarted, // Can cancel if booking hasn't started
+        canModify: canModify,
+        canCancel: canCancel,
         isPastBooking: isPastBooking,
-        isBookingStarted: isBookingStarted
+        isBookingStarted: isBookingStarted,
+        cutOffHours: cutOffTime?.hoursBeforeBooking || 2 // Include cut-off info for UI
       };
 
       res.json(bookingWithPermissions);

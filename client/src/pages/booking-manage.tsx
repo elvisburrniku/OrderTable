@@ -156,10 +156,12 @@ export default function BookingManage() {
     }
 
     if (!booking.canModify) {
-      return "Changes are no longer allowed for this booking.";
+      const cutOffHours = booking.cutOffHours || 2;
+      return `Changes are no longer allowed. Modifications must be made at least ${cutOffHours} hour${cutOffHours > 1 ? 's' : ''} before your reservation time.`;
     }
 
-    return "";
+    const cutOffHours = booking.cutOffHours || 2;
+    return `You can modify this booking until ${cutOffHours} hour${cutOffHours > 1 ? 's' : ''} before your reservation time.`;
   };
 
   const generateTimeSlots = () => {
