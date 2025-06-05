@@ -171,24 +171,7 @@ export function setupSupportRoutes(app: any) {
     }
   });
 
-  // Update user profile
-  app.put("/api/users/:userId", async (req: Request, res: Response) => {
-    try {
-      const { userId } = req.params;
-      const { name, email } = req.body;
-
-      // In a real app, you would update the user in your database
-      console.log("Updating user:", { userId, name, email });
-
-      res.json({ 
-        success: true, 
-        message: "User updated successfully" 
-      });
-    } catch (error) {
-      console.error("Error updating user:", error);
-      res.status(500).json({ error: "Failed to update user" });
-    }
-  });
+  
 
   // Update restaurant settings
   app.put("/api/tenants/:tenantId/restaurants/:restaurantId/settings", async (req: Request, res: Response) => {

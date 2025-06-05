@@ -28,6 +28,12 @@ export default function Profile() {
     description: restaurant?.description || "",
   });
 
+  const [passwordForm, setPasswordForm] = useState({
+    currentPassword: "",
+    newPassword: "",
+    confirmPassword: "",
+  });
+
   const updateUserMutation = useMutation({
     mutationFn: async (data: any) => {
       const response = await fetch(`/api/users/${user?.id}`, {
@@ -74,6 +80,32 @@ export default function Profile() {
     },
   });
 
+  const updatePasswordMutation = useMutation({
+    mutationFn: async (data: any) => {
+      const response = await fetch(`/api/users/${user?.id}/change-password`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(data),
+      });
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.message || "Failed to update password");
+      }
+      return response.json();
+    },
+    onSuccess: () => {
+      setPasswordForm({ currentPassword: "", newPassword: "", confirmPassword: "" });
+      toast({ title: "Password updated successfully" });
+    },
+    onError: (error: Error) => {
+      toast({
+        title: "Error",
+        description: error.message,
+        variant: "destructive",
+      });
+    },
+  });
+
   const handleUserSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     updateUserMutation.mutate(userForm);
@@ -82,6 +114,33 @@ export default function Profile() {
   const handleRestaurantSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     updateRestaurantMutation.mutate(restaurantForm);
+  };
+
+  const handlePasswordSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    if (passwordForm.newPassword !== passwordForm.confirmPassword) {
+      toast({
+        title: "Error",
+        description: "New passwords do not match",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    if (passwordForm.newPassword.length < 6) {
+      toast({
+        title: "Error",
+        description: "New password must be at least 6 characters long",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    updatePasswordMutation.mutate({
+      currentPassword: passwordForm.currentPassword,
+      newPassword: passwordForm.newPassword,
+    });
   };
 
   return (
@@ -215,6 +274,58 @@ export default function Profile() {
               <Button type="submit" disabled={updateRestaurantMutation.isPending}>
                 <Save className="h-4 w-4 mr-2" />
                 {updateRestaurantMutation.isPending ? "Saving..." : "Save Restaurant Profile"}
+              </Button>
+            </form>
+          </CardContent>
+        </Card>
+
+        {/* Password Change */}
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center space-x-2">
+              <User className="h-5 w-5" />
+              <span>Change Password</span>
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <form onSubmit={handlePasswordSubmit} className="space-y-4">
+              <div>
+                <Label htmlFor="currentPassword">Current Password</Label>
+                <Input
+                  id="currentPassword"
+                  type="password"
+                  value={passwordForm.currentPassword}
+                  onChange={(e) => setPasswordForm({ ...passwordForm, currentPassword: e.target.value })}
+                  required
+                />
+              </div>
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <Label htmlFor="newPassword">New Password</Label>
+                  <Input
+                    id="newPassword"
+                    type="password"
+                    value={passwordForm.newPassword}
+                    onChange={(e) => setPasswordForm({ ...passwordForm, newPassword: e.target.value })}
+                    required
+                    minLength={6}
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="confirmPassword">Confirm New Password</Label>
+                  <Input
+                    id="confirmPassword"
+                    type="password"
+                    value={passwordForm.confirmPassword}
+                    onChange={(e) => setPasswordForm({ ...passwordForm, confirmPassword: e.target.value })}
+                    required
+                    minLength={6}
+                  />
+                </div>
+              </div>
+              <Button type="submit" disabled={updatePasswordMutation.isPending}>
+                <Save className="h-4 w-4 mr-2" />
+                {updatePasswordMutation.isPending ? "Updating..." : "Update Password"}
               </Button>
             </form>
           </CardContent>
