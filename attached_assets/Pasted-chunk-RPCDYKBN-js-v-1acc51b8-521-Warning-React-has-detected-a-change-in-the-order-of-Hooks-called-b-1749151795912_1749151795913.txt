@@ -1,0 +1,26 @@
+chunk-RPCDYKBN.js?v=1acc51b8:521 Warning: React has detected a change in the order of Hooks called by CutOffTime. This will lead to bugs and errors if not fixed. For more information, read the Rules of Hooks: https://reactjs.org/link/rules-of-hooks
+
+   Previous render            Next render
+   ------------------------------------------------------
+1. useContext                 useContext
+2. useContext                 useContext
+3. undefined                  useState
+   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+    at CutOffTime (https://29f58994-4bff-455a-a927-75ff72bfd855-00-yjyyfitqitfc.riker.replit.dev/src/pages/cut-off-time.tsx:27:73)
+    at Route (https://29f58994-4bff-455a-a927-75ff72bfd855-00-yjyyfitqitfc.riker.replit.d…/home/runner/workspace/node_modules/.vite/deps/wouter.js?v=1acc51b8:323:16)
+    at Switch (https://29f58994-4bff-455a-a927-75ff72bfd855-00-yjyyfitqitfc.riker.replit.d…/home/runner/workspace/node_modules/.vite/deps/wouter.js?v=1acc51b8:379:17)
+    at TenantProvider (https://29f58994-4bff-455a-a927-75ff72bfd855-00-yjyyfitqitfc.riker.replit.dev/src/lib/tenant.tsx:22:34)
+    at AuthProvider (https://29f58994-4bff-455a-a927-75ff72bfd855-00-yjyyfitqitfc.riker.replit.dev/src/lib/auth.tsx:26:32)
+    at QueryClientProvider (https://29f58994-4bff-455a-a927-75ff72bfd855-00-yjyyfitqitfc.riker.replit.d…rkspace/node_modules/.vite/deps/@tanstack_react-query.js?v=1acc51b8:2805:3)
+    at App
+chunk-RPCDYKBN.js?v=1acc51b8:521 Warning: Internal React error: Expected static flag was missing. Please notify the React team.
+    at CutOffTime (https://29f58994-4bff-455a-a927-75ff72bfd855-00-yjyyfitqitfc.riker.replit.dev/src/pages/cut-off-time.tsx:27:73)
+    at Route (https://29f58994-4bff-455a-a927-75ff72bfd855-00-yjyyfitqitfc.riker.replit.d…/home/runner/workspace/node_modules/.vite/deps/wouter.js?v=1acc51b8:323:16)
+    at Switch (https://29f58994-4bff-455a-a927-75ff72bfd855-00-yjyyfitqitfc.riker.replit.d…/home/runner/workspace/node_modules/.vite/deps/wouter.js?v=1acc51b8:379:17)
+    at TenantProvider (https://29f58994-4bff-455a-a927-75ff72bfd855-00-yjyyfitqitfc.riker.replit.dev/src/lib/tenant.tsx:22:34)
+    at AuthProvider (https://29f58994-4bff-455a-a927-75ff72bfd855-00-yjyyfitqitfc.riker.replit.dev/src/lib/auth.tsx:26:32)
+    at QueryClientProvider (https://29f58994-4bff-455a-a927-75ff72bfd855-00-yjyyfitqitfc.riker.replit.d…rkspace/node_modules/.vite/deps/@tanstack_react-query.js?v=1acc51b8:2805:3)
+    at App
+﻿
+
