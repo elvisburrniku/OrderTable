@@ -4,6 +4,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { format } from "date-fns";
 import { Booking } from "@shared/schema";
 import { useTenant } from "@/lib/tenant";
+import { cn } from "@/lib/utils";
 
 interface DashboardSidebarProps {
   selectedDate: Date;
