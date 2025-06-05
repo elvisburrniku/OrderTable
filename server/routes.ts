@@ -2858,6 +2858,7 @@ app.put("/api/tenants/:tenantId/bookings/:id", validateTenant, async (req, res) 
       
       console.log(`Verifying hash for booking ${booking.id}, tenant ${booking.tenantId}, restaurant ${booking.restaurantId}`);
       console.log(`Hash: ${hash}, Action: ${action}`);
+      console.log(`Query params:`, req.query);
       
       // Try verifying with the specific action if provided
       if (action && (action === 'cancel' || action === 'change')) {
