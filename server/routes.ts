@@ -1005,6 +1005,175 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Booking validation route
+  app.post("/api/tenants/:tenantId/restaurants/:restaurantId/validate-booking", validateTenant, async (req, res) => {
+    try {
+      const restaurantId = parseInt(req.params.restaurantId);
+      const tenantId = parseInt(req.params.tenantId);
+      const { bookingDate, bookingTime } = req.body;
+
+      const restaurant = await storage.getRestaurantById(restaurantId);
+      if (!restaurant || restaurant.tenantId !== tenantId) {
+        return res.status(404).json({ message: "Restaurant not found" });
+      }
+
+      const isAllowed = await storage.isBookingAllowed(restaurantId, new Date(bookingDate), bookingTime);
+      res.json({ isAllowed });
+    } catch (error) {
+      console.error("Error validating booking:", error);
+      res.status(500).json({ message: "Internal server error" });
+    }
+  });
+
+  // Email notification settings routes
+  app.post("/api/tenants/:tenantId/restaurants/:restaurantId/email-settings", validateTenant, async (req, res) => {
+    try {
+      const restaurantId = parseInt(req.params.restaurantId);
+      const tenantId = parseInt(req.params.tenantId);
+      const { guestSettings, placeSettings } = req.body;
+
+      const restaurant = await storage.getRestaurantById(restaurantId);
+      if (!restaurant || restaurant.tenantId !== tenantId) {
+        return res.status(404).json({ message: "Restaurant not found" });
+      }
+
+      const updatedRestaurant = await storage.updateRestaurant(restaurantId, {
+        emailSettings: JSON.stringify({
+          guestSettings,
+          placeSettings
+        })
+      });
+
+      res.json({
+        message: "Email settings saved successfully",
+        settings: { guestSettings, placeSettings }
+      });
+    } catch (error) {
+      console.error("Error saving email settings:", error);
+      res.status(500).json({ message: "Failed to save email settings" });
+    }
+  });
+
+  app.get("/api/tenants/:tenantId/restaurants/:restaurantId/email-settings", validateTenant, async (req, res) => {
+    try {
+      const restaurantId = parseInt(req.params.restaurantId);
+      const tenantId = parseInt(req.params.tenantId);
+
+      const restaurant = await storage.getRestaurantById(restaurantId);
+      if (!restaurant || restaurant.tenantId !== tenantId) {
+        return res.status(404).json({ message: "Restaurant not found" });
+      }
+
+      let settings = {
+        guestSettings: {
+          emailConfirmation: true,
+          sendBookingConfirmation: true,
+          reminderHours: "24",
+          sendReminder: true,
+          confirmationLanguage: "english",
+          satisfactionSurvey: false,
+          reviewSite: "Google"
+        },
+        placeSettings: {
+          sentTo: restaurant.email || "restaurant@example.com",
+          emailBooking: true,
+          newBookingsOnly: false,
+          satisfactionSurvey: true,
+          rating: "3.0"
+        }
+      };
+
+      if (restaurant.emailSettings) {
+        try {
+          const savedSettings = JSON.parse(restaurant.emailSettings);
+          settings = { ...settings, ...savedSettings };
+        } catch (e) {
+          console.warn("Failed to parse email settings, using defaults");
+        }
+      }
+
+      res.json(settings);
+    } catch (error) {
+      console.error("Error fetching email settings:", error);
+      res.status(500).json({ message: "Failed to fetch email settings" });
+    }
+  });
+
+  // Restaurant statistics route
+  app.get("/api/tenants/:tenantId/restaurants/:restaurantId/statistics", validateTenant, async (req, res) => {
+    try {
+      const restaurantId = parseInt(req.params.restaurantId);
+      const tenantId = parseInt(req.params.tenantId);
+
+      const restaurant = await storage.getRestaurantById(restaurantId);
+      if (!restaurant || restaurant.tenantId !== tenantId) {
+        return res.status(404).json({ message: "Restaurant not found" });
+      }
+
+      // Get booking statistics
+      const bookings = await storage.getBookingsByRestaurant(restaurantId);
+      const totalBookings = bookings.length;
+      const todayBookings = bookings.filter(b => {
+        const today = new Date().toISOString().split('T')[0];
+        return b.bookingDate.toISOString().split('T')[0] === today;
+      }).length;
+
+      // Get customer count
+      const customers = await storage.getCustomersByRestaurant(restaurantId);
+      const totalCustomers = customers.length;
+
+      // Get table count
+      const tables = await storage.getTablesByRestaurant(restaurantId);
+      const totalTables = tables.length;
+
+      res.json({
+        totalBookings,
+        todayBookings,
+        totalCustomers,
+        totalTables
+      });
+    } catch (error) {
+      console.error("Error fetching statistics:", error);
+      res.status(500).json({ message: "Internal server error" });
+    }
+  });
+
+  // Restaurant management routes
+  app.put("/api/tenants/:tenantId/restaurants/:id", validateTenant, async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      const tenantId = parseInt(req.params.tenantId);
+      const updates = req.body;
+
+      const restaurant = await storage.getRestaurantById(id);
+      if (!restaurant || restaurant.tenantId !== tenantId) {
+        return res.status(404).json({ message: "Restaurant not found" });
+      }
+
+      const updatedRestaurant = await storage.updateRestaurant(id, updates);
+      res.json(updatedRestaurant);
+    } catch (error) {
+      console.error("Error updating restaurant:", error);
+      res.status(500).json({ message: "Internal server error" });
+    }
+  });
+
+  app.get("/api/tenants/:tenantId/restaurants/:userId", validateTenant, async (req, res) => {
+    try {
+      const userId = parseInt(req.params.userId);
+      const tenantId = parseInt(req.params.tenantId);
+      const restaurant = await storage.getRestaurantByUserId(userId);
+
+      if (!restaurant || restaurant.tenantId !== tenantId) {
+        return res.status(404).json({ message: "Restaurant not found" });
+      }
+
+      res.json(restaurant);
+    } catch (error) {
+      res.status(400).json({ message: "Invalid request" });
+    }
+  });
+
   // Additional booking management routes
   app.put("/api/tenants/:tenantId/bookings/:id", validateTenant, async (req, res) => {
     try {

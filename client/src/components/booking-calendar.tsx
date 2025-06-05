@@ -89,7 +89,7 @@ export default function BookingCalendar({ selectedDate, bookings, allBookings = 
   const createBookingMutation = useMutation({
     mutationFn: async (bookingData: any) => {
       // First validate the booking time
-      const validationResponse = await fetch(`/api/tenants/1/restaurants/${restaurant?.id}/validate-booking`, {
+      const validationResponse = await fetch(`/api/tenants/${restaurant?.tenantId}/restaurants/${restaurant?.id}/validate-booking`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -105,17 +105,17 @@ export default function BookingCalendar({ selectedDate, bookings, allBookings = 
         throw new Error("Restaurant is closed at this time");
       }
 
-      return apiRequest("POST", `/api/tenants/1/restaurants/${restaurant?.id}/bookings`, bookingData);
+      return apiRequest("POST", `/api/tenants/${restaurant?.tenantId}/restaurants/${restaurant?.id}/bookings`, bookingData);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ 
         queryKey: [`/api/restaurants/${restaurant?.id}/bookings`] 
       });
       queryClient.invalidateQueries({ 
-        queryKey: [`/api/tenants/1/restaurants/${restaurant?.id}/bookings`] 
+        queryKey: [`/api/tenants/${restaurant?.tenantId}/restaurants/${restaurant?.id}/bookings`] 
       });
       queryClient.invalidateQueries({ 
-        queryKey: [`/api/tenants/1/restaurants/${restaurant?.id}/customers`] 
+        queryKey: [`/api/tenants/${restaurant?.tenantId}/restaurants/${restaurant?.id}/customers`] 
       });
       setIsNewBookingOpen(false);
       // Reset to dynamic default times when opening hours are available

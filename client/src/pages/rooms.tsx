@@ -21,16 +21,15 @@ export default function Rooms() {
 
   // Fetch rooms from API
   const { data: fetchedRooms = [], isLoading } = useQuery({
-    queryKey: ["/api/tenants/1/restaurants", restaurant?.id, "rooms"],
+    queryKey: ["/api/tenants", restaurant?.tenantId, "restaurants", restaurant?.id, "rooms"],
     queryFn: async () => {
-      const tenantId = 1;
       const response = await fetch(
-        `/api/tenants/${tenantId}/restaurants/${restaurant?.id}/rooms`,
+        `/api/tenants/${restaurant?.tenantId}/restaurants/${restaurant?.id}/rooms`,
       );
       if (!response.ok) throw new Error("Failed to fetch rooms");
       return response.json();
     },
-    enabled: !!restaurant,
+    enabled: !!restaurant?.id && !!restaurant?.tenantId,
   });
 
   // Update local state when rooms are fetched
@@ -46,7 +45,6 @@ export default function Rooms() {
   // Save rooms mutation
   const saveRoomsMutation = useMutation({
     mutationFn: async (roomsToSave: Room[]) => {
-      const tenantId = 1;
 
       // Create new rooms and update existing ones
       const results = await Promise.all(
@@ -99,7 +97,7 @@ export default function Rooms() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({
-        queryKey: ["/api/tenants/1/restaurants", restaurant?.id, "rooms"],
+        queryKey: ["/api/tenants", restaurant?.tenantId, "restaurants", restaurant?.id, "rooms"],
       });
     },
     onError: (error) => {
