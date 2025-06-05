@@ -287,6 +287,28 @@ export const userSubscriptions = pgTable("user_subscriptions", {
   updatedAt: timestamp("updated_at").defaultNow(),
 });
 
+export const bookingChangeRequests = pgTable("booking_change_requests", {
+  id: serial("id").primaryKey(),
+  bookingId: integer("booking_id")
+    .references(() => bookings.id)
+    .notNull(),
+  restaurantId: integer("restaurant_id")
+    .references(() => restaurants.id)
+    .notNull(),
+  tenantId: integer("tenant_id")
+    .references(() => tenants.id)
+    .notNull(),
+  requestedDate: timestamp("requested_date"),
+  requestedTime: text("requested_time"),
+  requestedGuestCount: integer("requested_guest_count"),
+  requestedTableId: integer("requested_table_id").references(() => tables.id),
+  requestNotes: text("request_notes"),
+  status: varchar("status", { length: 20 }).default("pending"), // pending, approved, rejected
+  restaurantResponse: text("restaurant_response"),
+  createdAt: timestamp("created_at").defaultNow(),
+  respondedAt: timestamp("responded_at"),
+});
+
 export const insertTenantSchema = createInsertSchema(tenants).omit({
   id: true,
   createdAt: true,
