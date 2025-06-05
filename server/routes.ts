@@ -8,11 +8,11 @@ import * as tenantRoutes from "./tenant-routes";
 import { Request, Response } from "express";
 import bcrypt from 'bcrypt';
 import { users, tenants, tenantUsers, restaurants, subscriptionPlans } from "@shared/schema";
-import { eq } from "drizzle-orm";
+import { eq, and } from "drizzle-orm";
 import { BrevoEmailService } from "./brevo-service";
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY || 'sk_test_your_stripe_secret_key', {
-  apiVersion: '2023-10-16'
+  apiVersion: '2025-05-28.basil'
 });
 
 // Initialize email service, passing API key from environment variables
@@ -169,12 +169,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const hashedPassword = await bcrypt.hash(password, 10);
 
       // Create tenant for the new user
-      const slug = restaurantName.toLowerCase().replace(/[^a-z0-9]/g, '-').replace(/-+/g, '-').substring(0, 50);
+      const slug = (restaurantName || 'restaurant').toLowerCase().replace(/[^a-z0-9]/g, '-').replace(/-+/g, '-').substring(0, 50);
       const trialEndDate = new Date();
       trialEndDate.setDate(trialEndDate.getDate() + (trialPlan.trialDays || 30));
 
       const tenant = await storage.createTenant({
-        name: restaurantName,
+        name: restaurantName || 'New Restaurant',
         slug,
         subscriptionPlanId: trialPlan.id,
         subscriptionStatus: "trial",
@@ -199,7 +199,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       // Create restaurant for the user
       const newRestaurant = await storage.createRestaurant({
-        name: restaurantName,
+        name: restaurantName || 'New Restaurant',
         userId: newUser.id,
         tenantId: tenant.id,
         emailSettings: JSON.stringify({})
@@ -222,11 +222,88 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Restaurant routes
+  // Get all restaurants for a tenant
+  app.get("/api/tenants/:tenantId/restaurants", validateTenant, async (req, res) => {
+    try {
+      const tenantId = parseInt(req.params.tenantId);
+      
+      // Get all restaurants that belong to this tenant
+      const tenantRestaurants = await storage.db
+        .select()
+        .from(restaurants)
+        .where(eq(restaurants.tenantId, tenantId));
+      
+      res.json(tenantRestaurants);
+    } catch (error) {
+      console.error("Error fetching restaurants:", error);
+      res.status(500).json({ message: "Internal server error" });
+    }
+  });
+
+  // Create a new restaurant for a tenant
+  app.post("/api/tenants/:tenantId/restaurants", validateTenant, async (req, res) => {
+    try {
+      const tenantId = parseInt(req.params.tenantId);
+      const { name, userId, email, address, phone, emailSettings } = req.body;
+
+      if (!name || !userId) {
+        return res.status(400).json({ message: "Restaurant name and user ID are required" });
+      }
+
+      // Verify that the tenant exists and user has permission
+      const tenant = await storage.db.select().from(tenants).where(eq(tenants.id, tenantId));
+      if (!tenant.length) {
+        return res.status(404).json({ message: "Tenant not found" });
+      }
+
+      // Check if user belongs to this tenant
+      const tenantUser = await storage.db
+        .select()
+        .from(tenantUsers)
+        .where(
+          and(
+            eq(tenantUsers.tenantId, tenantId),
+            eq(tenantUsers.userId, userId)
+          )
+        );
+
+      if (!tenantUser.length) {
+        return res.status(403).json({ message: "User does not belong to this tenant" });
+      }
+
+      // Check tenant's restaurant limit
+      const existingRestaurants = await storage.db
+        .select()
+        .from(restaurants)
+        .where(eq(restaurants.tenantId, tenantId));
+
+      if (existingRestaurants.length >= (tenant[0].maxRestaurants || 1)) {
+        return res.status(400).json({ 
+          message: `Restaurant limit reached. This tenant can have maximum ${tenant[0].maxRestaurants || 1} restaurants.` 
+        });
+      }
+
+      const restaurant = await storage.createRestaurant({
+        name,
+        userId,
+        tenantId,
+        email: email || null,
+        address: address || null,
+        phone: phone || null,
+        emailSettings: emailSettings ? JSON.stringify(emailSettings) : JSON.stringify({})
+      });
+
+      res.status(201).json(restaurant);
+    } catch (error) {
+      console.error("Error creating restaurant:", error);
+      res.status(500).json({ message: "Internal server error" });
+    }
+  });
+
+  // Legacy route for backward compatibility
   app.get("/api/restaurants", async (req, res) => {
     try {
-      // For frontend compatibility - return current user's restaurant
-      // This is a simplified version that doesn't require tenant validation
+      // For frontend compatibility - return empty array
       res.json([]);
     } catch (error) {
       res.status(400).json({ message: "Invalid request" });
@@ -265,10 +342,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post("/api/restaurants/:restaurantId/waiting-list", async (req, res) => {
     try {
       const restaurantId = parseInt(req.params.restaurantId);
+      // This is a legacy route, we need to get the tenant ID from the restaurant
+      const restaurant = await storage.getRestaurantById(restaurantId);
+      if (!restaurant) {
+        return res.status(404).json({ message: "Restaurant not found" });
+      }
+      
       const entryData = {
         ...req.body,
         restaurantId,
-        tenantId: 1 // Default tenant for non-tenant routes
+        tenantId: restaurant.tenantId
       };
 
       const entry = await storage.createWaitingListEntry(entryData);
@@ -301,8 +384,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const restaurantId = parseInt(req.params.restaurantId);
 
+      // Get the restaurant to determine the tenant ID
+      const restaurant = await storage.getRestaurantById(restaurantId);
+      if (!restaurant) {
+        return res.status(404).json({ message: "Restaurant not found" });
+      }
+
       // Get or create customer first
-      const customer = await storage.getOrCreateCustomer(restaurantId, 1, {
+      const customer = await storage.getOrCreateCustomer(restaurantId, restaurant.tenantId, {
         name: req.body.customerName,
         email: req.body.customerEmail,
         phone: req.body.customerPhone
@@ -311,7 +400,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const bookingData = insertBookingSchema.parse({
         ...req.body,
         restaurantId,
-        tenantId: 1, // Default tenant for non-tenant routes
+        tenantId: restaurant.tenantId,
         customerId: customer.id,
         bookingDate: new Date(req.body.bookingDate)
       });
