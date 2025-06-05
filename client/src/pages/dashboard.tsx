@@ -19,7 +19,7 @@ import { useToast } from "@/hooks/use-toast";
 
 export default function Dashboard() {
   const [, setLocation] = useLocation();
-  const { user, restaurant, logout } = useAuth();
+  const { user, restaurant, logout, isLoading } = useAuth();
   const [selectedDate, setSelectedDate] = useState(new Date());
   const [viewMode, setViewMode] = useState<'calendar' | 'layout'>('calendar');
   const [selectedRoom, setSelectedRoom] = useState<string>("");
@@ -40,10 +40,10 @@ export default function Dashboard() {
   const [editingBooking, setEditingBooking] = useState<any>(null);
 
   useEffect(() => {
-    if (!user || !restaurant) {
+    if (!isLoading && (!user || !restaurant)) {
       setLocation("/login");
     }
-  }, [user, restaurant, setLocation]);
+  }, [isLoading, user, restaurant, setLocation]);
 
   // Fetch today's bookings
   const { data: todayBookings = [] } = useQuery({
@@ -66,7 +66,7 @@ export default function Dashboard() {
   });
 
   // Fetch tables
-  const { data: tables, isLoading: tablesLoading } = useQuery({
+  const { data: tables = [], isLoading: tablesLoading } = useQuery({
     queryKey: [`/api/tenants/${restaurant?.tenantId}/restaurants/${restaurant?.id}/tables`],
     enabled: !!restaurant && !!restaurant.tenantId && !!restaurant.id
   });
@@ -456,7 +456,11 @@ export default function Dashboard() {
     return getOpeningHoursForDay(today);
   };
 
-  const isLoading = selectedDateBookingsLoading || allBookingsLoading || tablesLoading;
+  const isQueryLoading = selectedDateBookingsLoading || allBookingsLoading || tablesLoading;
+
+  if (isLoading) {
+    return <div className="min-h-screen flex items-center justify-center">Loading...</div>;
+  }
 
   if (!user || !restaurant) {
     return null;
