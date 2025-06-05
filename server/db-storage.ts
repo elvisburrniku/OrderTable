@@ -268,7 +268,7 @@ export class DatabaseStorage implements IStorage {
       .leftJoin(tenants, eq(tenantUsers.tenantId, tenants.id))
       .where(eq(tenantUsers.userId, userId))
       .limit(1);
-    
+
     return result[0]?.tenant || null;
   }
 
@@ -277,7 +277,12 @@ export class DatabaseStorage implements IStorage {
     return newTenantUser;
   }
 
-  async getUser(id: number): Promise<any> {
+  async getUser(id: number): Promise<User | undefined> {
+    const result = await this.db.select().from(users).where(eq(users.id, id));
+    return result[0];
+  }
+
+  async getUserById(id: number): Promise<User | undefined> {
     const result = await this.db.select().from(users).where(eq(users.id, id));
     return result[0];
   }
@@ -287,9 +292,18 @@ export class DatabaseStorage implements IStorage {
     return result[0];
   }
 
-  async createUser(user: InsertUser): Promise<User> {
-    const [newUser] = await this.db.insert(users).values(user).returning();
-    return newUser;
+  async createUser(insertUser: InsertUser): Promise<User> {
+    const result = await this.db.insert(users).values(insertUser).returning();
+    return result[0];
+  }
+
+  async updateUser(id: number, updates: Partial<User>): Promise<User | undefined> {
+    const result = await this.db
+      .update(users)
+      .set(updates)
+      .where(eq(users.id, id))
+      .returning();
+    return result[0];
   }
 
   // Restaurants
@@ -317,7 +331,7 @@ export class DatabaseStorage implements IStorage {
     // Remove any undefined updatedAt to avoid column errors
     const cleanUpdates = { ...updates };
     delete cleanUpdates.updatedAt;
-    
+
     const [updated] = await this.db.update(restaurants)
       .set(cleanUpdates)
       .where(eq(restaurants.id, id))
