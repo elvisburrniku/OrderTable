@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useAuthGuard } from "@/lib/auth.tsx";
@@ -19,14 +20,6 @@ export default function CutOffTime() {
     Friday: "None",
     Saturday: "None"
   });
-
-  if (authLoading) {
-    return <div>Loading...</div>;
-  }
-
-  if (!isAuthenticated || !user || !restaurant) {
-    return null;
-  }
 
   // Fetch existing cut-off times
   const { data: existingCutOffTimes, isLoading } = useQuery({
@@ -138,6 +131,14 @@ export default function CutOffTime() {
     "2 days before",
     "3 days before"
   ];
+
+  if (authLoading) {
+    return <div>Loading...</div>;
+  }
+
+  if (!isAuthenticated || !user || !restaurant) {
+    return null;
+  }
 
   return (
     <div className="min-h-screen bg-gray-50">
