@@ -3,6 +3,7 @@ import { Calendar, Settings, Clock, MapPin, Table, Utensils, Grid3x3, FileText, 
 import { Card, CardContent } from "@/components/ui/card";
 import { format } from "date-fns";
 import { Booking } from "@shared/schema";
+import { useTenant } from "@/lib/tenant";
 
 interface DashboardSidebarProps {
   selectedDate: Date;
@@ -14,10 +15,11 @@ export default function DashboardSidebar({ selectedDate, bookings }: DashboardSi
   const [location] = useLocation();
   const params = useParams();
   const tenantId = params.tenantId;
+  const { tenantId: currentTenantId } = useTenant();
 
   const todaysBookings = Array.isArray(bookings) ? bookings.filter(booking => {
     if (!booking.bookingDate) return false;
-    
+
     try {
       const bookingDateStr = booking.bookingDate instanceof Date 
         ? booking.bookingDate.toISOString().split('T')[0]

@@ -42,6 +42,16 @@ export function getTenantApiUrl(path: string, tenantId?: number | null): string 
       return `${prefix}/tenants/${finalTenantId}/restaurants/${suffix}`;
     }
   }
+  
+  // Handle other non-tenant routes that need tenant context
+  if (finalTenantId && !path.includes('/tenants/') && !path.includes('/auth/') && !path.includes('/subscription-plans')) {
+    // Add tenant prefix to routes that don't have it
+    if (path.startsWith('/api/')) {
+      const pathWithoutApi = path.substring(4);
+      return `/api/tenants/${finalTenantId}${pathWithoutApi}`;
+    }
+  }
+  
   return path;
 }
 

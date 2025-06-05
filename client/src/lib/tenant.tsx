@@ -70,8 +70,11 @@ export function useTenant() {
     throw new Error("useTenant must be used within a TenantProvider");
   }
   
+  // Always prioritize URL params over stored tenant
+  const tenantId = params.tenantId ? parseInt(params.tenantId) : (authTenant?.id || null);
+  
   return {
     ...context,
-    tenantId: params.tenantId ? parseInt(params.tenantId) : authTenant?.id || null
+    tenantId
   };
 }

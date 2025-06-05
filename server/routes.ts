@@ -687,28 +687,28 @@ export async function registerRoutes(app: Express): Promise<Server> {
         const existingBookings = await storage.getBookingsByDate(restaurantId, bookingDate.toISOString().split('T')[0]);
         const conflictingBookings = existingBookings.filter(booking => {
           if (booking.tableId !== tableId) return false;
-          
+
           const requestedStartTime = req.body.startTime;
           const requestedEndTime = req.body.endTime || "23:59";
-          
+
           // Convert times to minutes for easier comparison
           const requestedStartMinutes = parseInt(requestedStartTime.split(':')[0]) * 60 + parseInt(requestedStartTime.split(':')[1]);
           const requestedEndMinutes = parseInt(requestedEndTime.split(':')[0]) * 60 + parseInt(requestedEndTime.split(':')[1]);
-          
+
           const existingStartMinutes = parseInt(booking.startTime.split(':')[0]) * 60 + parseInt(booking.startTime.split(':')[1]);
           const existingEndTime = booking.endTime || "23:59";
           const existingEndMinutes = parseInt(existingEndTime.split(':')[0]) * 60 + parseInt(existingEndTime.split(':')[1]);
-          
+
           // Add 1-hour buffer (60 minutes) for table turnover
           const bufferMinutes = 60;
-          
+
           // Check for time overlap with buffer
           // Two time ranges overlap if: start1 < end2 && start2 < end1
           const requestedStart = requestedStartMinutes - bufferMinutes;
           const requestedEnd = requestedEndMinutes + bufferMinutes;
           const existingStart = existingStartMinutes - bufferMinutes;
           const existingEnd = existingEndMinutes + bufferMinutes;
-          
+
           return requestedStart < existingEnd && existingStart < requestedEnd;
         });
 
@@ -854,6 +854,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       const success = await storage.deleteBooking(id);
       res.json({ message: "Booking deleted successfully" });
+    }```python
     } catch (error) {
       res.status(400).json({ message: "Invalid request" });
     }
@@ -1612,7 +1613,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const id = parseInt(req.params.id);
       const booking = await storage.getBookingById(id);
-      
+
       if (!booking) {
         return res.status(404).json({ message: "Booking not found" });
       }
@@ -1637,7 +1638,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const id = parseInt(req.params.id);
       const booking = await storage.getBookingById(id);
-      
+
       if (!booking) {
         return res.status(404).json({ message: "Booking not found" });
       }
@@ -1655,7 +1656,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const id = parseInt(req.params.id);
       const updates = req.body;
-      
+
       const booking = await storage.getBookingById(id);
       if (!booking) {
         return res.status(404).json({ message: "Booking not found" });
