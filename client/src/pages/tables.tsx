@@ -398,7 +398,7 @@ export default function Tables() {
                     />
                   </div>
                   <p className="text-sm text-gray-600 mt-4">
-                    Customers can scan this QR code to book Table {selectedTableQR.tableNumber}
+                    Customers can scan this QR code to leave feedback for Table {selectedTableQR.tableNumber}
                   </p>
                   <div className="mt-4 p-3 bg-gray-50 rounded text-sm">
                     <p><strong>Table:</strong> {selectedTableQR.tableNumber}</p>
