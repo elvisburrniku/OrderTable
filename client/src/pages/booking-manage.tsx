@@ -258,6 +258,8 @@ export default function BookingManage() {
           return;
         }
 
+        // Generate the correct cancel hash using the manage hash
+        // For cancel action, we need to generate a cancel-specific hash
         const response = await fetch(`/api/booking-manage/${id}/cancel`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },

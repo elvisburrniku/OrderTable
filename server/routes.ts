@@ -1978,10 +1978,28 @@ app.put("/api/tenants/:tenantId/bookings/:id", validateTenant, async (req, res) 
   app.get("/api/booking-manage/:id", async (req, res) => {
     try {
       const bookingId = parseInt(req.params.id);
-      const booking = await storage.getBookingById(bookingId);
+      const { hash } = req.query;
 
+      if (!hash) {
+        return res.status(403).json({ message: "Access denied - security token required" });
+      }
+
+      const booking = await storage.getBookingById(bookingId);
       if (!booking) {
         return res.status(404).json({ message: "Booking not found" });
+      }
+
+      // Verify hash for manage action
+      const isValidHash = BookingHash.verifyHash(
+        hash as string,
+        booking.id,
+        booking.tenantId,
+        booking.restaurantId,
+        'manage'
+      );
+
+      if (!isValidHash) {
+        return res.status(403).json({ message: "Access denied - invalid or expired link" });
       }
 
       // Return booking details for customer management
@@ -1998,13 +2016,17 @@ app.put("/api/tenants/:tenantId/bookings/:id", validateTenant, async (req, res) 
       const bookingId = parseInt(req.params.id);
       const { hash } = req.body;
 
+      if (!hash) {
+        return res.status(400).json({ message: "Security token is required" });
+      }
+
       const booking = await storage.getBookingById(bookingId);
       if (!booking) {
         return res.status(404).json({ message: "Booking not found" });
       }
 
-      // Verify cancel hash
-      const isValidHash = BookingHash.verifyHash(
+      // Verify hash - accept both cancel and manage hashes for cancel action
+      const isValidCancelHash = BookingHash.verifyHash(
         hash,
         bookingId,
         booking.tenantId,
@@ -2012,7 +2034,16 @@ app.put("/api/tenants/:tenantId/bookings/:id", validateTenant, async (req, res) 
         'cancel'
       );
 
-      if (!isValidHash) {
+      const isValidManageHash = BookingHash.verifyHash(
+        hash,
+        bookingId,
+        booking.tenantId,
+        booking.restaurantId,
+        'manage'
+      );
+
+      if (!isValidCancelHash && !isValidManageHash) {
+        console.log(`Invalid hash for booking ${bookingId} cancel action.`);
         return res.status(403).json({ message: "Invalid or expired cancellation link" });
       }
 
@@ -2022,6 +2053,13 @@ app.put("/api/tenants/:tenantId/bookings/:id", validateTenant, async (req, res) 
       });
 
       console.log(`Customer cancelled booking ${bookingId} via secure link`);
+
+      // Send real-time notification to restaurant
+      broadcastNotification(booking.restaurantId, {
+        type: 'booking_cancelled',
+        booking: updatedBooking,
+        timestamp: new Date().toISOString()
+      });
 
       res.json({
         message: "Booking cancelled successfully",
@@ -2037,11 +2075,29 @@ app.put("/api/tenants/:tenantId/bookings/:id", validateTenant, async (req, res) 
     try {
       const bookingId = parseInt(req.params.id);
       const updates = req.body;
+      const { hash } = req.query;
+
+      if (!hash) {
+        return res.status(403).json({ message: "Access denied - security token required" });
+      }
 
       // Get the existing booking
       const existingBooking = await storage.getBookingById(bookingId);
       if (!existingBooking) {
         return res.status(404).json({ message: "Booking not found" });
+      }
+
+      // Verify hash for manage action
+      const isValidHash = BookingHash.verifyHash(
+        hash as string,
+        existingBooking.id,
+        existingBooking.tenantId,
+        existingBooking.restaurantId,
+        'manage'
+      );
+
+      if (!isValidHash) {
+        return res.status(403).json({ message: "Access denied - invalid security token" });
       }
 
       // Get restaurant and cut-off times to validate if changes are allowed

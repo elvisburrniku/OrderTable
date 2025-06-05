@@ -82,6 +82,8 @@ export class BrevoEmailService {
     );
     const { cancelUrl, manageUrl } = managementUrls;
 
+    console.log(`Generated management URLs for booking ${bookingId}:`, { cancelUrl, manageUrl });
+
     sendSmtpEmail.subject = "Booking Confirmation";
     sendSmtpEmail.htmlContent = `
       <!DOCTYPE html>
