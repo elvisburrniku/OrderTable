@@ -3039,32 +3039,38 @@ app.put("/api/tenants/:tenantId/bookings/:id", validateTenant, async (req, res) 
       
       console.log(`Verifying hash for booking ${booking.id}, tenant ${booking.tenantId}, restaurant ${booking.restaurantId}`);
       console.log(`Hash: ${hash}, Action: ${action}`);
-      console.log(`Query params:`, req.query);
+      console.log(`Stored management hash: ${booking.managementHash}`);
       
-      // Try verifying with the specific action if provided
-      if (action && (action === 'cancel' || action === 'change')) {
-        console.log(`Trying to verify with action: ${action}`);
-        isValidHash = BookingHash.verifyHash(
-          hash as string,
-          booking.id,
-          booking.tenantId,
-          booking.restaurantId,
-          action as 'cancel' | 'change'
-        );
-        console.log(`Hash verification with action ${action}: ${isValidHash}`);
-      }
-      
-      // If no specific action or verification failed, try with manage hash
-      if (!isValidHash) {
-        console.log(`Trying to verify with manage action`);
-        isValidHash = BookingHash.verifyHash(
-          hash as string,
-          booking.id,
-          booking.tenantId,
-          booking.restaurantId,
-          'manage'
-        );
-        console.log(`Hash verification with manage action: ${isValidHash}`);
+      // First check if the provided hash matches the stored management hash
+      if (booking.managementHash && hash === booking.managementHash) {
+        isValidHash = true;
+        console.log(`Hash matches stored management hash`);
+      } else {
+        // Try verifying with the specific action if provided
+        if (action && (action === 'cancel' || action === 'change')) {
+          console.log(`Trying to verify with action: ${action}`);
+          isValidHash = BookingHash.verifyHash(
+            hash as string,
+            booking.id,
+            booking.tenantId,
+            booking.restaurantId,
+            action as 'cancel' | 'change'
+          );
+          console.log(`Hash verification with action ${action}: ${isValidHash}`);
+        }
+        
+        // If no specific action or verification failed, try with manage hash
+        if (!isValidHash) {
+          console.log(`Trying to verify with manage action`);
+          isValidHash = BookingHash.verifyHash(
+            hash as string,
+            booking.id,
+            booking.tenantId,
+            booking.restaurantId,
+            'manage'
+          );
+          console.log(`Hash verification with manage action: ${isValidHash}`);
+        }
       }
 
       if (!isValidHash) {
@@ -3101,16 +3107,16 @@ app.put("/api/tenants/:tenantId/bookings/:id", validateTenant, async (req, res) 
       if (!isBookingStarted && !isPastBooking) {
         if (!cutOffTime || !cutOffTime.isEnabled) {
           // Default: allow changes up to 2 hours before booking for customer management
-          const twoHoursBefore = new Date(bookingDateTime);
-          twoHoursBefore.setHours(twoHoursBefore.getHours() - 2);
-          canModify = now < twoHoursBefore;
-          canCancel = now < twoHoursBefore;
-        } else {
-          // Use restaurant's cut-off time policy
-          const cutOffDeadline = new Date(bookingDateTime);
-          cutOffDeadline.setHours(cutOffDeadline.getHours() - cutOffTime.hoursBeforeBooking);
+          const cutOffDeadline = new Date(bookingDateTime.getTime() - (2 * 60 * 60 * 1000)); // 2 hours before in milliseconds
           canModify = now < cutOffDeadline;
           canCancel = now < cutOffDeadline;
+          console.log(`Default cut-off: Now ${now.toISOString()}, Deadline ${cutOffDeadline.toISOString()}, Can modify: ${canModify}`);
+        } else {
+          // Use restaurant's cut-off time policy
+          const cutOffDeadline = new Date(bookingDateTime.getTime() - (cutOffTime.hoursBeforeBooking * 60 * 60 * 1000));
+          canModify = now < cutOffDeadline;
+          canCancel = now < cutOffDeadline;
+          console.log(`Restaurant cut-off (${cutOffTime.hoursBeforeBooking}h): Now ${now.toISOString()}, Deadline ${cutOffDeadline.toISOString()}, Can modify: ${canModify}`);
         }
       }
 
