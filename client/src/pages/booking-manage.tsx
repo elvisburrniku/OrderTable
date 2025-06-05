@@ -7,14 +7,20 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
-import { Calendar, Clock, Users, MapPin, CheckCircle, XCircle } from "lucide-react";
+import { Input } from "@/components/ui/input";
+import { Calendar, Clock, Users, MapPin, CheckCircle, XCircle, AlertCircle, Edit3 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import { format, parseISO, addDays, isBefore, isAfter } from "date-fns";
 
 export default function BookingManage() {
   const { id } = useParams();
   const { toast } = useToast();
   const [selectedTable, setSelectedTable] = useState<string>("");
   const [selectedStatus, setSelectedStatus] = useState<string>("");
+  const [isEditing, setIsEditing] = useState(false);
+  const [newDate, setNewDate] = useState<string>("");
+  const [newTime, setNewTime] = useState<string>("");
+  const [newGuestCount, setNewGuestCount] = useState<string>("");
 
   const { data: booking, isLoading, error, refetch } = useQuery({
     queryKey: [`/api/booking-manage/${id}`],
@@ -26,32 +32,63 @@ export default function BookingManage() {
     enabled: !!id
   });
 
-  const { data: availableTables } = useQuery({
-    queryKey: [`/api/booking-manage/${id}/available-tables`],
+  const { data: cutOffTimes } = useQuery({
+    queryKey: [`/api/tenants/${booking?.tenantId}/restaurants/${booking?.restaurantId}/cut-off-times`],
     queryFn: async () => {
-      const response = await fetch(`/api/booking-manage/${id}/available-tables`);
+      const response = await fetch(`/api/tenants/${booking?.tenantId}/restaurants/${booking?.restaurantId}/cut-off-times`);
       if (!response.ok) return [];
       return response.json();
     },
     enabled: !!booking
   });
 
+  const { data: openingHours } = useQuery({
+    queryKey: [`/api/tenants/${booking?.tenantId}/restaurants/${booking?.restaurantId}/opening-hours`],
+    queryFn: async () => {
+      const response = await fetch(`/api/tenants/${booking?.tenantId}/restaurants/${booking?.restaurantId}/opening-hours`);
+      if (!response.ok) return [];
+      return response.json();
+    },
+    enabled: !!booking
+  });
+
+  const { data: availableTables } = useQuery({
+    queryKey: [`/api/booking-manage/${id}/available-tables`, newDate, newTime],
+    queryFn: async () => {
+      if (!newDate || !newTime) return [];
+      const response = await fetch(`/api/tenants/${booking?.tenantId}/restaurants/${booking?.restaurantId}/tables?date=${newDate}&time=${newTime}&guestCount=${newGuestCount || booking?.guestCount}`);
+      if (!response.ok) return [];
+      return response.json();
+    },
+    enabled: !!booking && !!newDate && !!newTime
+  });
+
   const updateMutation = useMutation({
-    mutationFn: async (data: { tableId?: number; status?: string }) => {
-      const response = await fetch(`/api/booking-manage/${id}`, {
+    mutationFn: async (data: { 
+      tableId?: number; 
+      status?: string;
+      bookingDate?: string;
+      startTime?: string;
+      guestCount?: number;
+    }) => {
+      const response = await fetch(`/api/tenants/${booking?.tenantId}/restaurants/${booking?.restaurantId}/bookings/${id}`, {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(data)
       });
-      if (!response.ok) throw new Error("Failed to update booking");
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.message || "Failed to update booking");
+      }
       return response.json();
     },
     onSuccess: () => {
       refetch();
+      setIsEditing(false);
       toast({ title: "Booking updated successfully" });
     },
-    onError: () => {
-      toast({ title: "Failed to update booking", variant: "destructive" });
+    onError: (error: Error) => {
+      toast({ title: error.message, variant: "destructive" });
     }
   });
 
@@ -59,8 +96,94 @@ export default function BookingManage() {
     if (booking) {
       setSelectedTable(booking.tableId?.toString() || "");
       setSelectedStatus(booking.status || "confirmed");
+      setNewDate(format(parseISO(booking.bookingDate), 'yyyy-MM-dd'));
+      setNewTime(booking.startTime);
+      setNewGuestCount(booking.guestCount.toString());
     }
   }, [booking]);
+
+  // Function to check if changes are allowed based on cut-off times
+  const isChangeAllowed = () => {
+    if (!booking || !cutOffTimes) return false;
+    
+    const bookingDateTime = parseISO(booking.bookingDate);
+    const now = new Date();
+    
+    // Get the day of the week (0 = Sunday, 1 = Monday, etc.)
+    const dayOfWeek = bookingDateTime.getDay();
+    const dayNames = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'];
+    const dayName = dayNames[dayOfWeek];
+    
+    // Find cut-off time for this day
+    const cutOffTime = cutOffTimes.find((ct: any) => ct.dayOfWeek.toLowerCase() === dayName);
+    
+    if (!cutOffTime || !cutOffTime.isEnabled) {
+      // If no cut-off time is set for this day, allow changes up to 1 hour before
+      const oneHourBefore = new Date(bookingDateTime);
+      const [hours, minutes] = booking.startTime.split(':');
+      oneHourBefore.setHours(parseInt(hours) - 1, parseInt(minutes));
+      return isBefore(now, oneHourBefore);
+    }
+    
+    // Calculate cut-off deadline
+    const cutOffDeadline = new Date(bookingDateTime);
+    cutOffDeadline.setHours(cutOffDeadline.getHours() - cutOffTime.hoursBeforeBooking);
+    
+    return isBefore(now, cutOffDeadline);
+  };
+
+  const getCutOffMessage = () => {
+    if (!booking || !cutOffTimes) return "";
+    
+    const bookingDateTime = parseISO(booking.bookingDate);
+    const dayOfWeek = bookingDateTime.getDay();
+    const dayNames = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+    const dayName = dayNames[dayOfWeek];
+    
+    const cutOffTime = cutOffTimes.find((ct: any) => ct.dayOfWeek.toLowerCase() === dayName.toLowerCase());
+    
+    if (!cutOffTime || !cutOffTime.isEnabled) {
+      return `Changes are allowed up to 1 hour before your booking time.`;
+    }
+    
+    const hours = cutOffTime.hoursBeforeBooking;
+    return `Changes are allowed up to ${hours} hour${hours > 1 ? 's' : ''} before your booking time (${dayName} policy).`;
+  };
+
+  const generateTimeSlots = () => {
+    if (!openingHours || openingHours.length === 0) return [];
+    
+    const selectedDateObj = new Date(newDate);
+    const dayOfWeek = selectedDateObj.getDay();
+    const dayNames = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'];
+    const dayName = dayNames[dayOfWeek];
+    
+    const dayHours = openingHours.find((oh: any) => oh.dayOfWeek.toLowerCase() === dayName);
+    if (!dayHours || !dayHours.isOpen) return [];
+    
+    const slots = [];
+    const startTime = dayHours.openTime;
+    const endTime = dayHours.closeTime;
+    
+    const [startHour, startMin] = startTime.split(':').map(Number);
+    const [endHour, endMin] = endTime.split(':').map(Number);
+    
+    let currentHour = startHour;
+    let currentMin = startMin;
+    
+    while (currentHour < endHour || (currentHour === endHour && currentMin < endMin)) {
+      const timeStr = `${currentHour.toString().padStart(2, '0')}:${currentMin.toString().padStart(2, '0')}`;
+      slots.push(timeStr);
+      
+      currentMin += 30; // 30-minute intervals
+      if (currentMin >= 60) {
+        currentMin -= 60;
+        currentHour += 1;
+      }
+    }
+    
+    return slots;
+  };
 
   if (isLoading) {
     return (
@@ -93,6 +216,55 @@ export default function BookingManage() {
   const handleCancelBooking = () => {
     if (confirm("Are you sure you want to cancel this booking?")) {
       updateMutation.mutate({ status: "cancelled" });
+    }
+  };
+
+  const handleSaveChanges = () => {
+    const changes: any = {};
+    
+    if (newDate !== format(parseISO(booking.bookingDate), 'yyyy-MM-dd')) {
+      changes.bookingDate = newDate;
+    }
+    
+    if (newTime !== booking.startTime) {
+      changes.startTime = newTime;
+    }
+    
+    if (parseInt(newGuestCount) !== booking.guestCount) {
+      changes.guestCount = parseInt(newGuestCount);
+    }
+    
+    if (selectedTable && selectedTable !== booking.tableId?.toString()) {
+      changes.tableId = parseInt(selectedTable);
+    }
+    
+    if (Object.keys(changes).length > 0) {
+      updateMutation.mutate(changes);
+    } else {
+      setIsEditing(false);
+    }
+  };
+
+  const handleStartEdit = () => {
+    if (!isChangeAllowed()) {
+      toast({ 
+        title: "Changes not allowed", 
+        description: getCutOffMessage(),
+        variant: "destructive" 
+      });
+      return;
+    }
+    setIsEditing(true);
+  };
+
+  const handleCancelEdit = () => {
+    setIsEditing(false);
+    // Reset form to original values
+    if (booking) {
+      setNewDate(format(parseISO(booking.bookingDate), 'yyyy-MM-dd'));
+      setNewTime(booking.startTime);
+      setNewGuestCount(booking.guestCount.toString());
+      setSelectedTable(booking.tableId?.toString() || "");
     }
   };
 
@@ -212,34 +384,151 @@ export default function BookingManage() {
           {booking.status !== "cancelled" && (
             <Card>
               <CardHeader>
-                <CardTitle>Manage Booking</CardTitle>
+                <div className="flex items-center justify-between">
+                  <CardTitle>Manage Booking</CardTitle>
+                  {!isEditing && (
+                    <Button 
+                      onClick={handleStartEdit}
+                      disabled={!isChangeAllowed()}
+                      variant="outline"
+                      size="sm"
+                    >
+                      <Edit3 className="w-4 h-4 mr-2" />
+                      Modify Booking
+                    </Button>
+                  )}
+                </div>
               </CardHeader>
               <CardContent className="space-y-6">
-                {/* Table Selection */}
-                {availableTables && availableTables.length > 0 && (
+                {/* Cut-off time warning */}
+                <div className="flex items-start space-x-3 p-4 bg-blue-50 border border-blue-200 rounded-lg">
+                  <AlertCircle className="w-5 h-5 text-blue-600 mt-0.5" />
                   <div>
-                    <Label htmlFor="table-select">Change Table</Label>
-                    <div className="flex gap-4 mt-2">
-                      <Select value={selectedTable} onValueChange={setSelectedTable}>
-                        <SelectTrigger className="flex-1">
-                          <SelectValue placeholder="Select a table" />
+                    <p className="text-sm font-medium text-blue-900">Modification Policy</p>
+                    <p className="text-sm text-blue-700">{getCutOffMessage()}</p>
+                    {!isChangeAllowed() && (
+                      <p className="text-sm text-red-600 mt-1">Changes are no longer allowed for this booking.</p>
+                    )}
+                  </div>
+                </div>
+
+                {isEditing ? (
+                  <div className="space-y-6">
+                    {/* Date Selection */}
+                    <div>
+                      <Label htmlFor="date-select">Booking Date</Label>
+                      <Input
+                        id="date-select"
+                        type="date"
+                        value={newDate}
+                        onChange={(e) => setNewDate(e.target.value)}
+                        min={format(new Date(), 'yyyy-MM-dd')}
+                        className="mt-2"
+                      />
+                    </div>
+
+                    {/* Time Selection */}
+                    <div>
+                      <Label htmlFor="time-select">Booking Time</Label>
+                      <Select value={newTime} onValueChange={setNewTime}>
+                        <SelectTrigger className="mt-2">
+                          <SelectValue placeholder="Select time" />
                         </SelectTrigger>
                         <SelectContent>
-                          {availableTables.map((table: any) => (
-                            <SelectItem key={table.id} value={table.id.toString()}>
-                              Table {table.id} (Seats {table.capacity})
+                          {generateTimeSlots().map((time) => (
+                            <SelectItem key={time} value={time}>
+                              {formatTime(time)}
                             </SelectItem>
                           ))}
                         </SelectContent>
                       </Select>
+                    </div>
+
+                    {/* Guest Count */}
+                    <div>
+                      <Label htmlFor="guest-count">Party Size</Label>
+                      <Select value={newGuestCount} onValueChange={setNewGuestCount}>
+                        <SelectTrigger className="mt-2">
+                          <SelectValue placeholder="Select party size" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12].map((count) => (
+                            <SelectItem key={count} value={count.toString()}>
+                              {count} {count === 1 ? 'guest' : 'guests'}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+
+                    {/* Table Selection */}
+                    {availableTables && availableTables.length > 0 && (
+                      <div>
+                        <Label htmlFor="table-select">Table Preference</Label>
+                        <Select value={selectedTable} onValueChange={setSelectedTable}>
+                          <SelectTrigger className="mt-2">
+                            <SelectValue placeholder="Select a table" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="">No specific table</SelectItem>
+                            {availableTables.map((table: any) => (
+                              <SelectItem key={table.id} value={table.id.toString()}>
+                                Table {table.tableNumber || table.id} (Seats {table.capacity})
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </div>
+                    )}
+
+                    {/* Action Buttons */}
+                    <div className="flex gap-3 pt-4 border-t">
                       <Button 
-                        onClick={handleUpdateTable}
-                        disabled={!selectedTable || selectedTable === booking.tableId?.toString() || updateMutation.isPending}
+                        onClick={handleSaveChanges}
+                        disabled={updateMutation.isPending}
+                        className="flex-1"
                       >
-                        Update Table
+                        Save Changes
+                      </Button>
+                      <Button 
+                        onClick={handleCancelEdit}
+                        variant="outline"
+                        disabled={updateMutation.isPending}
+                      >
+                        Cancel
                       </Button>
                     </div>
                   </div>
+                ) : (
+                  <>
+                    {/* Quick table change for non-editing mode */}
+                    {availableTables && availableTables.length > 0 && booking.tableId && (
+                      <div>
+                        <Label htmlFor="quick-table-select">Quick Table Change</Label>
+                        <div className="flex gap-4 mt-2">
+                          <Select value={selectedTable} onValueChange={setSelectedTable}>
+                            <SelectTrigger className="flex-1">
+                              <SelectValue placeholder="Select a table" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              {availableTables.map((table: any) => (
+                                <SelectItem key={table.id} value={table.id.toString()}>
+                                  Table {table.tableNumber || table.id} (Seats {table.capacity})
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                          <Button 
+                            onClick={handleUpdateTable}
+                            disabled={!selectedTable || selectedTable === booking.tableId?.toString() || updateMutation.isPending}
+                            size="sm"
+                          >
+                            Update
+                          </Button>
+                        </div>
+                      </div>
+                    )}
+                  </>
                 )}
 
                 {/* Cancel Booking */}
