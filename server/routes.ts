@@ -868,8 +868,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ message: "Room and positions are required" });
       }
 
-      const savedLayout = await storage.saveTableLayout(restaurantId, tenantId, room, positions);```tool_code
-(restaurantId, tenantId, room, positions);
+      const savedLayout = await storage.saveTableLayout(restaurantId, tenantId, room, positions);
 
       res.json({ 
         message: "Table layout saved successfully",
