@@ -7,6 +7,7 @@ import BookingCalendar from "@/components/booking-calendar";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent } from "@/components/ui/card";
+import { Calendar, dateFns } from "@/components/ui/calendar";
 import { 
   DropdownMenu,
   DropdownMenuContent,
@@ -15,7 +16,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger
 } from "@/components/ui/dropdown-menu";
-import { Plus, X, Users, List, Map, ChevronLeft, ChevronRight, Filter, MoreHorizontal, Eye, Edit, Trash2, User, Settings, CreditCard, HelpCircle, LogOut, Palette, RotateCcw, Clock, TrendingUp, Calendar } from "lucide-react";
+import { Plus, X, Users, List, Map, ChevronLeft, ChevronRight, Filter, MoreHorizontal, Eye, Edit, Trash2, User, Settings, CreditCard, HelpCircle, LogOut, Palette, RotateCcw, Clock, TrendingUp } from "lucide-react";
 import { format } from "date-fns";
 import { CardHeader, CardTitle } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -29,6 +30,7 @@ export default function Dashboard() {
   const [, setLocation] = useLocation();
   const { user, restaurant, logout, isLoading } = useAuth();
   const [selectedDate, setSelectedDate] = useState(new Date());
+  const [viewMode, setViewMode] = useState<'calendar' | 'layout'>('calendar');
   const [selectedRoom, setSelectedRoom] = useState<string>("");
   const [isNewBookingOpen, setIsNewBookingOpen] = useState(false);
   const [selectedTableForBooking, setSelectedTableForBooking] = useState<any>(null);
@@ -667,9 +669,19 @@ export default function Dashboard() {
             </div>
             <div className="flex items-center bg-gray-100 rounded-lg p-1">
               <Button 
-                variant='default' 
+                variant={viewMode === 'calendar' ? 'default' : 'ghost'} 
                 size="sm"
-                className='bg-white shadow-sm'
+                onClick={() => setViewMode('calendar')}
+                className={viewMode === 'calendar' ? 'bg-white shadow-sm' : ''}
+              >
+                <List className="h-4 w-4 mr-2" />
+                Calendar
+              </Button>
+              <Button 
+                variant={viewMode === 'layout' ? 'default' : 'ghost'} 
+                size="sm"
+                onClick={() => setViewMode('layout')}
+                className={viewMode === 'layout' ? 'bg-white shadow-sm' : ''}
               >
                 <Map className="h-4 w-4 mr-2" />
                 Layout
@@ -785,7 +797,18 @@ export default function Dashboard() {
 
         {/* Main Interface */}
         <div className="flex-1 p-6">
-          {renderTableLayout()}
+          {viewMode === 'layout' ? (
+            renderTableLayout()
+          ) : (
+            <BookingCalendar 
+              selectedDate={selectedDate}
+              bookings={(selectedDateBookings as any) || []}
+              allBookings={(allBookings as any) || []}
+              tables={(tables as any) || []}
+              isLoading={isLoading}
+              onDateSelect={setSelectedDate}
+            />
+          )}
         </div>
       </div>
 
