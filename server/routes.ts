@@ -2828,7 +2828,7 @@ app.put("/api/tenants/:tenantId/bookings/:id", validateTenant, async (req, res) 
   app.get("/api/booking-manage/:id", async (req, res) => {
     try {
       const id = parseInt(req.params.id);
-      const { hash } = req.query;
+      const { hash, action } = req.query;
 
       if (!hash) {
         return res.status(403).json({ message: "Access denied - security token required" });
@@ -2839,29 +2839,58 @@ app.put("/api/tenants/:tenantId/bookings/:id", validateTenant, async (req, res) 
         return res.status(404).json({ message: "Booking not found" });
       }
 
-      // Verify hash for manage action
-      const isValidHash = BookingHash.verifyHash(
-        hash as string,
-        booking.id,
-        booking.tenantId,
-        booking.restaurantId,
-        'manage'
-      );
-
+      // Verify hash - accept manage, cancel, or change hashes
+      let isValidHash = false;
+      
+      // Try verifying with the specific action if provided
+      if (action && (action === 'cancel' || action === 'change')) {
+        isValidHash = BookingHash.verifyHash(
+          hash as string,
+          booking.id,
+          booking.tenantId,
+          booking.restaurantId,
+          action as 'cancel' | 'change'
+        );
+      }
+      
+      // If no specific action or verification failed, try with manage hash
       if (!isValidHash) {
-        return res.status(403).json({ message: "Access denied - invalid security token" });
+        isValidHash = BookingHash.verifyHash(
+          hash as string,
+          booking.id,
+          booking.tenantId,
+          booking.restaurantId,
+          'manage'
+        );
       }
 
-      // Return booking with customer details
-      const customer = await storage.getCustomerById(booking.customerId);
-      const bookingWithCustomer = {
+      if (!isValidHash) {
+        return res.status(403).json({ message: "Access denied - invalid or expired link" });
+      }
+
+      // Check if booking time has passed to determine allowed actions
+      const now = new Date();
+      const bookingDateTime = new Date(booking.bookingDate);
+      const bookingTimeComponents = booking.startTime.split(':');
+      bookingDateTime.setHours(parseInt(bookingTimeComponents[0]), parseInt(bookingTimeComponents[1]), 0, 0);
+      
+      // Add booking duration (assume 2 hours if not specified)
+      const bookingEndTime = new Date(bookingDateTime);
+      bookingEndTime.setHours(bookingEndTime.getHours() + 2);
+      
+      const isPastBooking = now > bookingEndTime;
+      const isBookingStarted = now >= bookingDateTime;
+
+      // Return booking with action permissions
+      const bookingWithPermissions = {
         ...booking,
-        customerName: customer?.name || booking.customerName,
-        customerEmail: customer?.email || booking.customerEmail,
-        customerPhone: customer?.phone || booking.customerPhone
+        canModify: !isBookingStarted, // Can modify if booking hasn't started
+        canCancel: !isBookingStarted, // Can cancel if booking hasn't started
+        isPastBooking: isPastBooking,
+        isBookingStarted: isBookingStarted
       };
 
-      res.json(bookingWithCustomer);
+      res.json(bookingWithPermissions);
     } catch (error) {
       console.error("Error fetching booking for customer:", error);
       res.status(500).json({ message: "Internal server error" });
@@ -2871,7 +2900,7 @@ app.put("/api/tenants/:tenantId/bookings/:id", validateTenant, async (req, res) 
   app.get("/api/booking-manage/:id/available-tables", async (req, res) => {
     try {
       const id = parseInt(req.params.id);
-      const { hash } = req.query;
+      const { hash, action } = req.query;
 
       if (!hash) {
         return res.status(403).json({ message: "Access denied - security token required" });
@@ -2882,14 +2911,30 @@ app.put("/api/tenants/:tenantId/bookings/:id", validateTenant, async (req, res) 
         return res.status(404).json({ message: "Booking not found" });
       }
 
-      // Verify hash for manage action
-      const isValidHash = BookingHash.verifyHash(
-        hash as string,
-        booking.id,
-        booking.tenantId,
-        booking.restaurantId,
-        'manage'
-      );
+      // Verify hash - accept manage, cancel, or change hashes
+      let isValidHash = false;
+      
+      // Try verifying with the specific action if provided
+      if (action && (action === 'cancel' || action === 'change')) {
+        isValidHash = BookingHash.verifyHash(
+          hash as string,
+          booking.id,
+          booking.tenantId,
+          booking.restaurantId,
+          action as 'cancel' | 'change'
+        );
+      }
+      
+      // If no specific action or verification failed, try with manage hash
+      if (!isValidHash) {
+        isValidHash = BookingHash.verifyHash(
+          hash as string,
+          booking.id,
+          booking.tenantId,
+          booking.restaurantId,
+          'manage'
+        );
+      }
 
       if (!isValidHash) {
         return res.status(403).json({ message: "Access denied - invalid security token" });
@@ -2908,7 +2953,7 @@ app.put("/api/tenants/:tenantId/bookings/:id", validateTenant, async (req, res) 
     try {
       const id = parseInt(req.params.id);
       const updates = req.body;
-      const { hash } = req.query;
+      const { hash, action } = req.query;
 
       if (!hash) {
         return res.status(403).json({ message: "Access denied - security token required" });
@@ -2919,26 +2964,65 @@ app.put("/api/tenants/:tenantId/bookings/:id", validateTenant, async (req, res) 
         return res.status(404).json({ message: "Booking not found" });
       }
 
-      // Verify hash for manage action
-      const isValidHash = BookingHash.verifyHash(
-        hash as string,
-        booking.id,
-        booking.tenantId,
-        booking.restaurantId,
-        'manage'
-      );
+      // Verify hash - accept manage, cancel, or change hashes
+      let isValidHash = false;
+      
+      // Try verifying with the specific action if provided
+      if (action && (action === 'cancel' || action === 'change')) {
+        isValidHash = BookingHash.verifyHash(
+          hash as string,
+          booking.id,
+          booking.tenantId,
+          booking.restaurantId,
+          action as 'cancel' | 'change'
+        );
+      }
+      
+      // If no specific action or verification failed, try with manage hash
+      if (!isValidHash) {
+        isValidHash = BookingHash.verifyHash(
+          hash as string,
+          booking.id,
+          booking.tenantId,
+          booking.restaurantId,
+          'manage'
+        );
+      }
 
       if (!isValidHash) {
         return res.status(403).json({ message: "Access denied - invalid security token" });
       }
 
-      // Only allow updating table and status
+      // Check if booking time has passed to prevent modifications
+      const now = new Date();
+      const bookingDateTime = new Date(booking.bookingDate);
+      const bookingTimeComponents = booking.startTime.split(':');
+      bookingDateTime.setHours(parseInt(bookingTimeComponents[0]), parseInt(bookingTimeComponents[1]), 0, 0);
+      
+      const isBookingStarted = now >= bookingDateTime;
+
+      if (isBookingStarted) {
+        return res.status(403).json({ 
+          message: "Cannot modify booking - the booking time has already started or passed" 
+        });
+      }
+
+      // Only allow updating certain fields for customer management
       const allowedUpdates: any = {};
       if (updates.tableId !== undefined) {
         allowedUpdates.tableId = updates.tableId;
       }
       if (updates.status !== undefined) {
         allowedUpdates.status = updates.status;
+      }
+      if (updates.bookingDate !== undefined) {
+        allowedUpdates.bookingDate = new Date(updates.bookingDate);
+      }
+      if (updates.startTime !== undefined) {
+        allowedUpdates.startTime = updates.startTime;
+      }
+      if (updates.guestCount !== undefined) {
+        allowedUpdates.guestCount = updates.guestCount;
       }
 
       const updatedBooking = await storage.updateBooking(id, allowedUpdates);
