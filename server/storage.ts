@@ -20,6 +20,38 @@ import {
   specialPeriods,
   cutOffTimes
 } from "@shared/schema";
+import type {
+  User,
+  Restaurant,
+  Table,
+  Booking,
+  Customer,
+  WaitingList,
+  Feedback,
+  SmsMessage,
+  ActivityLog,
+  SubscriptionPlan,
+  UserSubscription,
+  TimeSlots,
+  Room,
+  TableLayout,
+  CombinedTable,
+  InsertUser,
+  InsertRestaurant,
+  InsertTable,
+  InsertBooking,
+  InsertCustomer,
+  InsertWaitingList,
+  InsertFeedback,
+  InsertSmsMessage,
+  InsertActivityLog,
+  InsertSubscriptionPlan,
+  InsertUserSubscription,
+  InsertTimeSlots,
+  InsertRoom,
+  InsertTableLayout,
+  InsertCombinedTable
+} from "@shared/schema";
 import { neon } from "@neondatabase/serverless";
 import { drizzle } from "drizzle-orm/neon-http";
 import { drizzle as drizzlePostgres } from "drizzle-orm/postgres-js";
@@ -33,7 +65,7 @@ if (!databaseUrl) {
   throw new Error("No database connection string found. Please set SUPABASE_DATABASE_URL or DATABASE_URL environment variable.");
 }
 
-let db: ReturnType<typeof drizzle>;
+let db: any;
 
 if (process.env.SUPABASE_DATABASE_URL) {
   // Use postgres-js for Supabase connection
@@ -803,6 +835,8 @@ export class MemStorage implements IStorage {
 import { DatabaseStorage } from "./db-storage";
 
 // Use database storage instead of memory storage
+// Use DatabaseStorage for production
+import { DatabaseStorage } from "./db-storage";
 export const storage = new DatabaseStorage();
 
 // Initialize database with default data

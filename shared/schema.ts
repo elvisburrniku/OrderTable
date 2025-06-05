@@ -463,9 +463,50 @@ export const tableLayouts = pgTable("table_layouts", {
     .$onUpdate(() => new Date()),
 });
 
+// Type exports for all tables
+export type User = InferSelectModel<typeof users>;
+export type InsertUser = InferInsertModel<typeof users>;
+
+export type Restaurant = InferSelectModel<typeof restaurants>;
+export type InsertRestaurant = InferInsertModel<typeof restaurants>;
+
+export type Table = InferSelectModel<typeof tables>;
+export type InsertTable = InferInsertModel<typeof tables>;
+
+export type Booking = InferSelectModel<typeof bookings>;
+export type InsertBooking = InferInsertModel<typeof bookings>;
+
+export type Customer = InferSelectModel<typeof customers>;
+export type InsertCustomer = InferInsertModel<typeof customers>;
+
+export type SmsMessage = InferSelectModel<typeof smsMessages>;
+export type InsertSmsMessage = InferInsertModel<typeof smsMessages>;
+
+export type WaitingList = InferSelectModel<typeof waitingList>;
+export type InsertWaitingList = InferInsertModel<typeof waitingList>;
+
+export type Feedback = InferSelectModel<typeof feedback>;
+export type InsertFeedback = InferInsertModel<typeof feedback>;
+
+export type ActivityLog = InferSelectModel<typeof activityLog>;
+export type InsertActivityLog = InferInsertModel<typeof activityLog>;
+
+export type TimeSlots = InferSelectModel<typeof timeSlots>;
+export type InsertTimeSlots = InferInsertModel<typeof timeSlots>;
+
+export type Room = InferSelectModel<typeof rooms>;
+export type InsertRoom = InferInsertModel<typeof rooms>;
+
+export type SubscriptionPlan = InferSelectModel<typeof subscriptionPlans>;
+export type InsertSubscriptionPlan = InferInsertModel<typeof subscriptionPlans>;
+
+export type UserSubscription = InferSelectModel<typeof userSubscriptions>;
+export type InsertUserSubscription = InferInsertModel<typeof userSubscriptions>;
+
 export type CombinedTable = InferSelectModel<typeof combinedTables>;
 export type InsertCombinedTable = InferInsertModel<typeof combinedTables>;
 
 export type TableLayout = InferSelectModel<typeof tableLayouts>;
 export type InsertTableLayout = InferInsertModel<typeof tableLayouts>;
+
 export type LoginData = z.infer<typeof loginSchema>;

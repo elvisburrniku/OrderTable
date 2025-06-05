@@ -1847,7 +1847,7 @@ app.put("/api/tenants/:tenantId/bookings/:id", validateTenant, async (req, res) 
       }
 
       // Update booking status to cancelled
-      constupdatedBooking = await storage.updateBooking(bookingId, {
+      const updatedBooking = await storage.updateBooking(bookingId, {
         status: 'cancelled'
       });
 
