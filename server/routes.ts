@@ -552,15 +552,21 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const restaurantId = parseInt(req.params.restaurantId);
       const tenantId = parseInt(req.params.tenantId);
 
+      console.log(`Fetching tables for restaurant ${restaurantId}, tenant ${tenantId}`);
+
       // Verify restaurant belongs to tenant
       const restaurant = await storage.getRestaurantById(restaurantId);
       if (!restaurant || restaurant.tenantId !== tenantId) {
+        console.log(`Restaurant ${restaurantId} not found or doesn't belong to tenant ${tenantId}`);
         return res.status(404).json({ message: "Restaurant not found" });
       }
 
+      console.log(`Restaurant found: ${restaurant.name}, fetching tables...`);
       const tables = await storage.getTablesByRestaurant(restaurantId);
+      console.log(`Found ${tables.length} tables for restaurant ${restaurantId}`);
       res.json(tables);
     } catch (error) {
+      console.error("Error fetching tables for tenant/restaurant:", error);
       res.status(500).json({ message: "Internal server error" });
     }
   });
