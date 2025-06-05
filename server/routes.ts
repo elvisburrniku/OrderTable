@@ -130,7 +130,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       res.json({ 
         user: { ...user, password: undefined },
-        restaurant: restaurant ? { ...restaurant, tenantId: restaurant.tenantId || 1 } : null
+        tenant: tenantUser,
+        restaurant: restaurant ? { ...restaurant, tenantId: restaurant.tenantId || tenantUser.id } : null
       });
     } catch (error) {
       res.status(400).json({ message: "Invalid request data" });

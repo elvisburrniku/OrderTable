@@ -260,13 +260,16 @@ export class DatabaseStorage implements IStorage {
 
   async getTenantByUserId(userId: number): Promise<any> {
     const result = await this.db
-      .select()
+      .select({
+        tenant: tenants,
+        tenantUser: tenantUsers
+      })
       .from(tenantUsers)
       .leftJoin(tenants, eq(tenantUsers.tenantId, tenants.id))
       .where(eq(tenantUsers.userId, userId))
       .limit(1);
     
-    return result[0]?.tenants || null;
+    return result[0]?.tenant || null;
   }
 
   async createTenantUser(tenantUser: any): Promise<any> {
