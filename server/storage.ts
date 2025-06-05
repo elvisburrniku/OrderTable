@@ -82,6 +82,11 @@ export interface IStorage {
   getUserByEmail(email: string): Promise<User | undefined>;
   createUser(user: InsertUser): Promise<User>;
 
+  // Tenants
+  createTenant(tenant: any): Promise<any>;
+  getTenantByUserId(userId: number): Promise<any>;
+  createTenantUser(tenantUser: any): Promise<any>;
+
   // Restaurants
   getRestaurant(id: number): Promise<Restaurant | undefined>;
   getRestaurantByUserId(userId: number): Promise<Restaurant | undefined>;

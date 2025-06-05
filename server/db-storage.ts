@@ -252,7 +252,29 @@ export class DatabaseStorage implements IStorage {
   }
 
   // Users
-  async getUser(id: number): Promise<User | undefined> {
+  // Tenant methods
+  async createTenant(tenant: any): Promise<any> {
+    const [newTenant] = await this.db.insert(tenants).values(tenant).returning();
+    return newTenant;
+  }
+
+  async getTenantByUserId(userId: number): Promise<any> {
+    const result = await this.db
+      .select()
+      .from(tenantUsers)
+      .leftJoin(tenants, eq(tenantUsers.tenantId, tenants.id))
+      .where(eq(tenantUsers.userId, userId))
+      .limit(1);
+    
+    return result[0]?.tenants || null;
+  }
+
+  async createTenantUser(tenantUser: any): Promise<any> {
+    const [newTenantUser] = await this.db.insert(tenantUsers).values(tenantUser).returning();
+    return newTenantUser;
+  }
+
+  async getUser(id: number): Promise<any> {
     const result = await this.db.select().from(users).where(eq(users.id, id));
     return result[0];
   }

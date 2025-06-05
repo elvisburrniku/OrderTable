@@ -6,6 +6,7 @@ import { AuthProvider } from "./lib/auth.tsx";
 import { TenantProvider } from "./lib/tenant";
 import Home from "./pages/home";
 import Login from "./pages/login";
+import Register from "./pages/register";
 import Dashboard from "./pages/dashboard";
 import Bookings from "./pages/bookings";
 import BookingDetail from "./pages/booking-detail";
@@ -48,6 +49,7 @@ function App() {
           <Switch>
             <Route path="/" component={Home} />
             <Route path="/login" component={Login} />
+            <Route path="/register" component={Register} />
             <Route path="/:tenantId/dashboard" component={Dashboard} />
             <Route path="/:tenantId/bookings" component={Bookings} />
             <Route path="/:tenantId/bookings/:id" component={BookingDetail} />
