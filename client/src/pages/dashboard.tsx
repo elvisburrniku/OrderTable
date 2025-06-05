@@ -749,7 +749,7 @@ export default function Dashboard() {
                       {Array.isArray(todayBookings) ? todayBookings.length : 0}
                     </p>
                   </div>
-                  <Calendar className="h-8 w-8 text-blue-500" />
+
                 </div>
               </CardContent>
             </Card>
