@@ -93,14 +93,22 @@ export default function BookingManage() {
         throw new Error('Access denied - invalid link');
       }
 
-      const response = await fetch(`/api/tenants/${booking?.tenantId}/restaurants/${booking?.restaurantId}/bookings/${id}?hash=${encodeURIComponent(hash)}`, {
+      const response = await fetch(`/api/booking-manage/${id}?hash=${encodeURIComponent(hash)}`, {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(data)
       });
       if (!response.ok) {
-        const error = await response.json();
-        throw new Error(error.message || "Failed to update booking");
+        const errorText = await response.text();
+        let errorMessage = "Failed to update booking";
+        try {
+          const error = JSON.parse(errorText);
+          errorMessage = error.message || errorMessage;
+        } catch {
+          // If response is not JSON, use the status text
+          errorMessage = response.statusText || errorMessage;
+        }
+        throw new Error(errorMessage);
       }
       return response.json();
     },
@@ -239,9 +247,41 @@ export default function BookingManage() {
     }
   };
 
-  const handleCancelBooking = () => {
+  const handleCancelBooking = async () => {
     if (confirm("Are you sure you want to cancel this booking?")) {
-      updateMutation.mutate({ status: "cancelled" });
+      try {
+        const urlParams = new URLSearchParams(window.location.search);
+        const hash = urlParams.get('hash');
+
+        if (!hash) {
+          toast({ title: 'Access denied - invalid link', variant: "destructive" });
+          return;
+        }
+
+        const response = await fetch(`/api/booking-manage/${id}/cancel`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ hash })
+        });
+
+        if (!response.ok) {
+          const errorText = await response.text();
+          let errorMessage = "Failed to cancel booking";
+          try {
+            const error = JSON.parse(errorText);
+            errorMessage = error.message || errorMessage;
+          } catch {
+            errorMessage = response.statusText || errorMessage;
+          }
+          throw new Error(errorMessage);
+        }
+
+        const result = await response.json();
+        refetch();
+        toast({ title: "Booking cancelled successfully" });
+      } catch (error: any) {
+        toast({ title: error.message, variant: "destructive" });
+      }
     }
   };
 
@@ -566,17 +606,7 @@ export default function BookingManage() {
                     </div>
                     <Button 
                       variant="destructive" 
-                      onClick={() => {
-                        const urlParams = new URLSearchParams(window.location.search);
-                        const action = urlParams.get('action');
-                        const hash = urlParams.get('hash');
-
-                        if (action === 'cancel' && hash) {
-                          updateMutation.mutate({ status: "cancelled" });
-                        } else {
-                          toast({ title: 'Invalid cancellation link', variant: "destructive" });
-                        }
-                      }}
+                      onClick={handleCancelBooking}
                       disabled={updateMutation.isPending}
                     >
                       Cancel Booking
