@@ -16,7 +16,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger
 } from "@/components/ui/dropdown-menu";
-import { Plus, X, Users, List, Map, ChevronLeft, ChevronRight, Filter, MoreHorizontal, Eye, Edit, Trash2, User, Settings, CreditCard, HelpCircle, LogOut, Palette, RotateCcw, Clock, TrendingUp, Clock4 } from "lucide-react";
+import { Plus, X, Users, List, Map, ChevronLeft, ChevronRight, Filter, MoreHorizontal, Eye, Edit, Trash2, User, Settings, CreditCard, HelpCircle, LogOut, Palette, RotateCcw, Clock, TrendingUp, Clock4, Calendar as CalendarIcon } from "lucide-react";
 import { format } from "date-fns";
 import { CardHeader, CardTitle } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -749,7 +749,7 @@ export default function Dashboard() {
                       {Array.isArray(todayBookings) ? todayBookings.length : 0}
                     </p>
                   </div>
-                  <Calendar className="h-8 w-8 text-green-500" />
+                  <CalendarIcon className="h-8 w-8 text-green-500" />
                 </div>
               </CardContent>
             </Card>
