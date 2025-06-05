@@ -711,20 +711,20 @@ export default function Dashboard() {
               <DropdownMenuContent align="end">
                 <DropdownMenuLabel>{user?.name}</DropdownMenuLabel>
                 <DropdownMenuSeparator />
-                <DropdownMenuItem>
+                <DropdownMenuItem onClick={() => setLocation(`/${restaurant?.tenantId}/profile`)}>
                   <User className="mr-2 h-4 w-4" />
                   <span>Profile</span>
                 </DropdownMenuItem>
-                <DropdownMenuItem>
+                <DropdownMenuItem onClick={() => setLocation(`/${restaurant?.tenantId}/settings`)}>
                   <Settings className="mr-2 h-4 w-4" />
                   <span>Settings</span>
                 </DropdownMenuItem>
-                <DropdownMenuItem>
+                <DropdownMenuItem onClick={() => setLocation(`/${restaurant?.tenantId}/billing`)}>
                   <CreditCard className="mr-2 h-4 w-4" />
                   <span>Billing</span>
                 </DropdownMenuItem>
                 <DropdownMenuSeparator />
-                <DropdownMenuItem>
+                <DropdownMenuItem onClick={() => setLocation(`/${restaurant?.tenantId}/help`)}>
                   <HelpCircle className="mr-2 h-4 w-4" />
                   <span>Help</span>
                 </DropdownMenuItem>

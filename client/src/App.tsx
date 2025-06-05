@@ -40,6 +40,10 @@ import Rooms from "./pages/rooms";
 import BookingAgents from "./pages/booking-agents";
 import TablePlan from "./pages/table-plan"; //Import the new TablePlan component
 import { lazy } from "react";
+import Profile from "./pages/profile";
+import Settings from "./pages/settings";
+import Billing from "./pages/billing";
+import Help from "./pages/help";
 
 function App() {
   return (
@@ -82,6 +86,10 @@ function App() {
             <Route path="/:tenantId/booking-agents" component={BookingAgents} />
             <Route path="/booking-manage/:id" component={BookingManage} />
             <Route path="/:tenantId/booking/:id" component={lazy(() => import("./pages/booking-detail"))} />
+            <Route path="/:tenantId/profile" component={Profile} />
+            <Route path="/:tenantId/settings" component={Settings} />
+            <Route path="/:tenantId/billing" component={Billing} />
+            <Route path="/:tenantId/help" component={Help} />
             <Route component={NotFound} />
           </Switch>
           <Toaster />

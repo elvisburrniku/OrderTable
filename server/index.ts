@@ -80,3 +80,17 @@ app.use((req, res, next) => {
     log(`serving on port ${port}`);
   });
 })();
+import { setupTenantRoutes } from "./tenant-routes";
+import { setupSupportRoutes } from "./support-routes";
+import { viteDevServer } from "./vite";
+
+const PORT = process.env.PORT || 5000;
+import { setupRoutes } from "./routes";
+
+const setupRoutes = (app: any) => {
+};
+setupRoutes(app);
+setupTenantRoutes(app);
+setupSupportRoutes(app);
+
+// Vite server middleware should be last
