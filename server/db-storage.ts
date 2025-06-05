@@ -66,18 +66,39 @@ export class DatabaseStorage implements IStorage {
     if (existingPlans.length === 0) {
       const plans = [
         {
+          name: "Free Trial",
+          price: 0,
+          interval: "monthly" as const,
+          features: JSON.stringify([
+            "14-day trial",
+            "1 restaurant",
+            "Up to 5 tables",
+            "Up to 20 bookings per month",
+            "Basic customer management",
+            "Email notifications"
+          ]),
+          maxTables: 5,
+          maxBookingsPerMonth: 20,
+          maxRestaurants: 1,
+          trialDays: 14,
+          isActive: true
+        },
+        {
           name: "Starter",
           price: 2900,
           interval: "monthly" as const,
           features: JSON.stringify([
-            "Basic booking management",
+            "1 restaurant",
+            "Up to 10 tables",
+            "Up to 50 bookings per month",
+            "Basic customer management",
             "Email notifications",
-            "Customer database",
-            "Table management",
-            "Booking calendar"
+            "Basic reporting"
           ]),
           maxTables: 10,
-          maxBookingsPerMonth: 100,
+          maxBookingsPerMonth: 50,
+          maxRestaurants: 1,
+          trialDays: 14,
           isActive: true
         },
         {
@@ -85,33 +106,60 @@ export class DatabaseStorage implements IStorage {
           price: 4900,
           interval: "monthly" as const,
           features: JSON.stringify([
+            "3 restaurants",
+            "Up to 25 tables per restaurant",
+            "Up to 200 bookings per month",
             "Advanced booking management",
             "SMS notifications",
             "Custom fields",
             "Feedback system",
             "Analytics",
-            "Waiting list management",
-            "Payment setups"
+            "Waiting list management"
           ]),
           maxTables: 25,
+          maxBookingsPerMonth: 200,
+          maxRestaurants: 3,
+          trialDays: 14,
+          isActive: true
+        },
+        {
+          name: "Business",
+          price: 7900,
+          interval: "monthly" as const,
+          features: JSON.stringify([
+            "10 restaurants",
+            "Up to 50 tables per restaurant",
+            "Up to 500 bookings per month",
+            "All Professional features",
+            "Payment processing",
+            "API access",
+            "Priority support",
+            "Advanced analytics"
+          ]),
+          maxTables: 50,
           maxBookingsPerMonth: 500,
+          maxRestaurants: 10,
+          trialDays: 14,
           isActive: true
         },
         {
           name: "Enterprise",
-          price: 9900,
+          price: 15900,
           interval: "monthly" as const,
           features: JSON.stringify([
-            "All Professional features",
-            "Payment processing",
-            "API access",
+            "Unlimited restaurants",
+            "Up to 100 tables per restaurant",
+            "Unlimited bookings",
+            "All Business features",
             "Custom integrations",
-            "Priority support",
-            "Advanced analytics",
-            "Multi-location support"
+            "Dedicated support",
+            "White-label solutions",
+            "Multi-location management"
           ]),
           maxTables: 100,
-          maxBookingsPerMonth: 2000,
+          maxBookingsPerMonth: 99999,
+          maxRestaurants: 999,
+          trialDays: 14,
           isActive: true
         }
       ];

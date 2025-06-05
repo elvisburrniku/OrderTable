@@ -1,15 +1,15 @@
 import type { Express } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
-import { insertUserSchema, loginSchema, insertBookingSchema, insertCustomerSchema, insertSubscriptionPlanSchema, insertUserSubscriptionSchema } from "@shared/schema";
+import { insertUserSchema, loginSchema, insertBookingSchema, insertCustomerSchema, insertSubscriptionPlanSchema, insertUserSubscriptionSchema, insertCompanyRegistrationSchema } from "@shared/schema";
 import { z } from "zod";
 import Stripe from "stripe";
 import * as tenantRoutes from "./tenant-routes";
 import { Request, Response } from "express";
 import bcrypt from 'bcrypt';
-import { users, tenants, tenantUsers, restaurants } from "@shared/schema";
+import { users, tenants, tenantUsers, restaurants, subscriptionPlans } from "@shared/schema";
 import { eq } from "drizzle-orm";
-import { BrevoEmailService } from "./brevo-service"; // Import the BrevoEmailService
+import { BrevoEmailService } from "./brevo-service";
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY || 'sk_test_your_stripe_secret_key', {
   apiVersion: '2023-10-16'
@@ -31,6 +31,79 @@ export async function registerRoutes(app: Express): Promise<Server> {
     next();
   };
 
+  // Company Registration route
+  app.post("/api/auth/register-company", async (req, res) => {
+    try {
+      const { companyName, email, password, name, restaurantName, planId } = insertCompanyRegistrationSchema.parse(req.body);
+
+      // Check if user already exists
+      const existingUser = await storage.getUserByEmail(email);
+      if (existingUser) {
+        return res.status(400).json({ message: "User already exists" });
+      }
+
+      // Get free trial plan if no plan specified
+      const plan = planId 
+        ? await storage.getSubscriptionPlan(planId)
+        : (await storage.getSubscriptionPlans()).find(p => p.name === "Free Trial");
+
+      if (!plan) {
+        return res.status(400).json({ message: "Invalid subscription plan" });
+      }
+
+      // Hash password
+      const hashedPassword = await bcrypt.hash(password, 10);
+
+      // Create tenant with trial period
+      const slug = companyName.toLowerCase().replace(/[^a-z0-9]/g, '-').replace(/-+/g, '-').substring(0, 50);
+      const trialEndDate = new Date();
+      trialEndDate.setDate(trialEndDate.getDate() + plan.trialDays);
+
+      const tenant = await storage.createTenant({
+        name: companyName,
+        slug,
+        subscriptionPlanId: plan.id,
+        subscriptionStatus: "trial",
+        trialEndDate,
+        maxRestaurants: plan.maxRestaurants
+      });
+
+      // Create user
+      const user = await storage.createUser({
+        email,
+        password: hashedPassword,
+        name,
+        restaurantName
+      });
+
+      // Link user to tenant
+      await storage.createTenantUser({
+        tenantId: tenant.id,
+        userId: user.id,
+        role: "administrator"
+      });
+
+      // Create first restaurant
+      const restaurant = await storage.createRestaurant({
+        tenantId: tenant.id,
+        name: restaurantName,
+        userId: user.id,
+        emailSettings: JSON.stringify({})
+      });
+
+      res.status(201).json({
+        message: "Company created successfully",
+        user: { id: user.id, email: user.email, name: user.name },
+        tenant: { id: tenant.id, name: tenant.name, slug: tenant.slug },
+        restaurant: { id: restaurant.id, name: restaurant.name },
+        trialEndsAt: trialEndDate
+      });
+    } catch (error) {
+      console.error("Registration error:", error);
+      res.status(400).json({ message: "Registration failed" });
+    }
+  });
+
   // Auth routes
   app.post("/api/auth/login", async (req, res) => {
     try {
@@ -45,6 +118,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const isValidPassword = await bcrypt.compare(password, user.password);
       if (!isValidPassword) {
         return res.status(401).json({ message: "Invalid credentials" });
+      }
+
+      // Get user's tenant information
+      const tenantUser = await storage.getTenantByUserId(user.id);
+      if (!tenantUser) {
+        return res.status(401).json({ message: "User not associated with any tenant" });
       }
 
       const restaurant = await storage.getRestaurantByUserId(user.id);
