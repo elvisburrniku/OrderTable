@@ -26,11 +26,18 @@ export default function BookingManage() {
     queryFn: async () => {
       const urlParams = new URLSearchParams(window.location.search);
       const hash = urlParams.get('hash');
+      const action = urlParams.get('action');
 
       if (!hash) {
         throw new Error('Access denied - invalid link');
       }
-      const response = await fetch(`/api/booking-manage/${id}?hash=${encodeURIComponent(hash)}`);
+      
+      let url = `/api/booking-manage/${id}?hash=${encodeURIComponent(hash)}`;
+      if (action) {
+        url += `&action=${encodeURIComponent(action)}`;
+      }
+      
+      const response = await fetch(url);
       if (!response.ok) {
         if (response.status === 403) {
           throw new Error('Access denied - invalid or expired link');
@@ -132,50 +139,27 @@ export default function BookingManage() {
     }
   }, [booking]);
 
-  // Function to check if changes are allowed based on cut-off times
+  // Function to check if changes are allowed based on backend permissions
   const isChangeAllowed = () => {
-    if (!booking || !cutOffTimes) return false;
-
-    const bookingDateTime = parseISO(booking.bookingDate);
-    const now = new Date();
-
-    // Get the day of the week (0 = Sunday, 1 = Monday, etc.)
-    const dayOfWeek = bookingDateTime.getDay();
-
-    // Find cut-off time for this day (dayOfWeek is stored as integer)
-    const cutOffTime = cutOffTimes.find((ct: any) => ct.dayOfWeek === dayOfWeek);
-
-    if (!cutOffTime || cutOffTime.cutOffHours === 0) {
-      // If no cut-off time is set for this day, allow changes up to 1 hour before
-      const oneHourBefore = new Date(bookingDateTime);
-      const [hours, minutes] = booking.startTime.split(':');
-      oneHourBefore.setHours(parseInt(hours) - 1, parseInt(minutes));
-      return isBefore(now, oneHourBefore);
-    }
-
-    // Calculate cut-off deadline
-    const cutOffDeadline = new Date(bookingDateTime);
-    cutOffDeadline.setHours(cutOffDeadline.getHours() - cutOffTime.cutOffHours);
-
-    return isBefore(now, cutOffDeadline);
+    return booking?.canModify ?? false;
   };
 
-  const getCutOffMessage = () => {
-    if (!booking || !cutOffTimes) return "";
+  const getRestrictionMessage = () => {
+    if (!booking) return "";
 
-    const bookingDateTime = parseISO(booking.bookingDate);
-    const dayOfWeek = bookingDateTime.getDay();
-    const dayNames = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
-    const dayName = dayNames[dayOfWeek];
-
-    const cutOffTime = cutOffTimes.find((ct: any) => ct.dayOfWeek === dayOfWeek);
-
-    if (!cutOffTime || cutOffTime.cutOffHours === 0) {
-      return `Changes are allowed up to 1 hour before your booking time.`;
+    if (booking.isPastBooking) {
+      return "This booking has already finished.";
     }
 
-    const hours = cutOffTime.cutOffHours;
-    return `Changes are allowed up to ${hours} hour${hours > 1 ? 's' : ''} before your booking time (${dayName} policy).`;
+    if (booking.isBookingStarted) {
+      return "This booking has already started and cannot be modified.";
+    }
+
+    if (!booking.canModify) {
+      return "Changes are no longer allowed for this booking.";
+    }
+
+    return "";
   };
 
   const generateTimeSlots = () => {
@@ -248,6 +232,15 @@ export default function BookingManage() {
   };
 
   const handleCancelBooking = async () => {
+    if (!booking?.canCancel) {
+      toast({ 
+        title: "Cannot cancel booking", 
+        description: getRestrictionMessage(),
+        variant: "destructive" 
+      });
+      return;
+    }
+
     if (confirm("Are you sure you want to cancel this booking?")) {
       try {
         const urlParams = new URLSearchParams(window.location.search);
@@ -258,8 +251,6 @@ export default function BookingManage() {
           return;
         }
 
-        // Generate the correct cancel hash using the manage hash
-        // For cancel action, we need to generate a cancel-specific hash
         const response = await fetch(`/api/booking-manage/${id}/cancel`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
@@ -317,7 +308,7 @@ export default function BookingManage() {
     if (!isChangeAllowed()) {
       toast({ 
         title: "Changes not allowed", 
-        description: getCutOffMessage(),
+        description: getRestrictionMessage(),
         variant: "destructive" 
       });
       return;
@@ -473,7 +464,7 @@ export default function BookingManage() {
                   <AlertCircle className="w-5 h-5 text-blue-600 mt-0.5" />
                   <div>
                     <p className="text-sm font-medium text-blue-900">Modification Policy</p>
-                    <p className="text-sm text-blue-700">{getCutOffMessage()}</p>
+                    <p className="text-sm text-blue-700">{getRestrictionMessage() || "You can modify this booking until the scheduled time."}</p>
                     {!isChangeAllowed() && (
                       <p className="text-sm text-red-600 mt-1">Changes are no longer allowed for this booking.</p>
                     )}

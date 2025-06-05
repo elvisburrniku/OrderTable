@@ -2047,6 +2047,20 @@ app.put("/api/tenants/:tenantId/bookings/:id", validateTenant, async (req, res) 
         return res.status(403).json({ message: "Invalid or expired cancellation link" });
       }
 
+      // Check if booking time has passed to prevent cancellation
+      const now = new Date();
+      const bookingDateTime = new Date(booking.bookingDate);
+      const bookingTimeComponents = booking.startTime.split(':');
+      bookingDateTime.setHours(parseInt(bookingTimeComponents[0]), parseInt(bookingTimeComponents[1]), 0, 0);
+      
+      const isBookingStarted = now >= bookingDateTime;
+
+      if (isBookingStarted) {
+        return res.status(403).json({ 
+          message: "Cannot cancel booking - the booking time has already started or passed" 
+        });
+      }
+
       // Update booking status to cancelled
       const updatedBooking = await storage.updateBooking(bookingId, {
         status: 'cancelled'
