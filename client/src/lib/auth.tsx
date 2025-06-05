@@ -22,6 +22,7 @@ interface AuthContextType {
     restaurantName: string;
   }) => Promise<any>;
   logout: () => void;
+  refreshUserData: () => Promise<any>;
   isLoading: boolean;
 }
 
@@ -160,6 +161,36 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     localStorage.removeItem("restaurant");
   };
 
+  const refreshUserData = async () => {
+    try {
+      const response = await fetch('/api/auth/validate', {
+        method: 'GET',
+        credentials: 'include',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      });
+      
+      if (response.ok) {
+        const data = await response.json();
+        if (data.user) {
+          setUser(data.user);
+          localStorage.setItem("user", JSON.stringify(data.user));
+        }
+        if (data.restaurant) {
+          setRestaurant(data.restaurant);
+          localStorage.setItem("restaurant", JSON.stringify(data.restaurant));
+        }
+        if (data.tenant) {
+          localStorage.setItem("tenant", JSON.stringify(data.tenant));
+        }
+        return data;
+      }
+    } catch (error) {
+      console.error("Failed to refresh user data:", error);
+    }
+  };
+
   return (
     <AuthContext.Provider
       value={{
@@ -168,6 +199,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         login,
         register,
         logout,
+        refreshUserData,
         isLoading,
       }}
     >

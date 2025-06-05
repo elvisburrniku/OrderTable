@@ -865,8 +865,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const { date } = req.query;
 
       const restaurant = await storage.getRestaurantById(restaurantId);
-      if (!restaurant || restaurant.tenantId !== tenantId) {
-        return res.status(404).json({ message: "Restaurant not found" });
+      if (!restaurant || restaurant.tenantId !== tenantId) {        return res.status(404).json({ message: "Restaurant not found" });
       }
 
       const timeSlots = await storage.getTimeSlotsByRestaurant(restaurantId, date as string);

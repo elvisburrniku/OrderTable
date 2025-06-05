@@ -11,7 +11,7 @@ import { User, Building, Phone, Mail, MapPin, Save } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 
 export default function Profile() {
-  const { user, restaurant } = useAuth();
+  const { user, restaurant, refreshUserData } = useAuth();
   const { toast } = useToast();
   const queryClient = useQueryClient();
   
@@ -34,6 +34,32 @@ export default function Profile() {
     confirmPassword: "",
   });
 
+  // Load fresh data when component mounts and update forms when user/restaurant data changes
+  useEffect(() => {
+    refreshUserData();
+  }, []);
+
+  useEffect(() => {
+    if (user) {
+      setUserForm({
+        name: user.name || "",
+        email: user.email || "",
+      });
+    }
+  }, [user]);
+
+  useEffect(() => {
+    if (restaurant) {
+      setRestaurantForm({
+        name: restaurant.name || "",
+        address: restaurant.address || "",
+        phone: restaurant.phone || "",
+        email: restaurant.email || "",
+        description: restaurant.description || "",
+      });
+    }
+  }, [restaurant]);
+
   const updateUserMutation = useMutation({
     mutationFn: async (data: any) => {
       const response = await fetch(`/api/users/${user?.id}`, {
@@ -44,7 +70,8 @@ export default function Profile() {
       if (!response.ok) throw new Error("Failed to update user");
       return response.json();
     },
-    onSuccess: () => {
+    onSuccess: async () => {
+      await refreshUserData();
       queryClient.invalidateQueries({ queryKey: ["/api/auth/validate"] });
       toast({ title: "User profile updated successfully" });
     },
@@ -67,7 +94,8 @@ export default function Profile() {
       if (!response.ok) throw new Error("Failed to update restaurant");
       return response.json();
     },
-    onSuccess: () => {
+    onSuccess: async () => {
+      await refreshUserData();
       queryClient.invalidateQueries({ queryKey: ["/api/auth/validate"] });
       toast({ title: "Restaurant profile updated successfully" });
     },
