@@ -157,8 +157,30 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ message: "User already exists" });
       }
 
+      // Get free trial plan
+      const plans = await storage.getSubscriptionPlans();
+      const trialPlan = plans.find(p => p.name === "Free Trial") || plans[0];
+
+      if (!trialPlan) {
+        return res.status(400).json({ message: "No subscription plan available" });
+      }
+
       // Hash password
       const hashedPassword = await bcrypt.hash(password, 10);
+
+      // Create tenant for the new user
+      const slug = restaurantName.toLowerCase().replace(/[^a-z0-9]/g, '-').replace(/-+/g, '-').substring(0, 50);
+      const trialEndDate = new Date();
+      trialEndDate.setDate(trialEndDate.getDate() + (trialPlan.trialDays || 30));
+
+      const tenant = await storage.createTenant({
+        name: restaurantName,
+        slug,
+        subscriptionPlanId: trialPlan.id,
+        subscriptionStatus: "trial",
+        trialEndDate,
+        maxRestaurants: trialPlan.maxRestaurants || 1
+      });
 
       // Create user using storage method
       const newUser = await storage.createUser({
@@ -168,11 +190,19 @@ export async function registerRoutes(app: Express): Promise<Server> {
         restaurantName
       });
 
+      // Link user to tenant
+      await storage.createTenantUser({
+        tenantId: tenant.id,
+        userId: newUser.id,
+        role: "administrator"
+      });
+
       // Create restaurant for the user
       const newRestaurant = await storage.createRestaurant({
         name: restaurantName,
         userId: newUser.id,
-        tenantId: 1 // Default tenant for now
+        tenantId: tenant.id,
+        emailSettings: JSON.stringify({})
       });
 
       res.status(201).json({
@@ -183,7 +213,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
           name: newUser.name,
           restaurantName: newUser.restaurantName
         },
-        restaurant: newRestaurant
+        restaurant: newRestaurant,
+        tenant: { id: tenant.id, name: tenant.name, slug: tenant.slug }
       });
     } catch (error) {
       console.error("Registration error:", error);
