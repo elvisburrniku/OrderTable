@@ -15,7 +15,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger
 } from "@/components/ui/dropdown-menu";
-import { Plus, X, Users, List, Map, ChevronLeft, ChevronRight, Filter, MoreHorizontal, Eye, Edit, Trash2, User, Settings, CreditCard, HelpCircle, LogOut, Palette, RotateCcw, Clock, TrendingUp } from "lucide-react";
+import { Plus, X, Users, List, Map, ChevronLeft, ChevronRight, Filter, MoreHorizontal, Eye, Edit, Trash2, User, Settings, CreditCard, HelpCircle, LogOut, Palette, RotateCcw, Clock, TrendingUp, Calendar } from "lucide-react";
 import { format } from "date-fns";
 import { CardHeader, CardTitle } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
