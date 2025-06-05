@@ -14,7 +14,9 @@ export class BookingHash {
    */
   static generateHash(bookingId: number, tenantId: number, restaurantId: number, action: 'cancel' | 'change' | 'manage'): string {
     const data = `${bookingId}-${tenantId}-${restaurantId}-${action}`;
-    return crypto.createHmac('sha256', SECRET_KEY).update(data).digest('hex');
+    const hash = crypto.createHmac('sha256', SECRET_KEY).update(data).digest('hex');
+    console.log(`Generated hash for data: ${data} -> ${hash}`);
+    return hash;
   }
 
   /**
@@ -28,7 +30,15 @@ export class BookingHash {
    */
   static verifyHash(hash: string, bookingId: number, tenantId: number, restaurantId: number, action: 'cancel' | 'change' | 'manage'): boolean {
     const expectedHash = this.generateHash(bookingId, tenantId, restaurantId, action);
-    return crypto.timingSafeEqual(Buffer.from(hash, 'hex'), Buffer.from(expectedHash, 'hex'));
+    console.log(`Verifying hash: ${hash} vs expected: ${expectedHash}`);
+    try {
+      const result = crypto.timingSafeEqual(Buffer.from(hash, 'hex'), Buffer.from(expectedHash, 'hex'));
+      console.log(`Hash verification result: ${result}`);
+      return result;
+    } catch (error) {
+      console.log(`Hash verification error: ${error}`);
+      return false;
+    }
   }
 
   /**

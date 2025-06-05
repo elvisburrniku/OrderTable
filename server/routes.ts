@@ -2856,8 +2856,12 @@ app.put("/api/tenants/:tenantId/bookings/:id", validateTenant, async (req, res) 
       // Verify hash - accept manage, cancel, or change hashes
       let isValidHash = false;
       
+      console.log(`Verifying hash for booking ${booking.id}, tenant ${booking.tenantId}, restaurant ${booking.restaurantId}`);
+      console.log(`Hash: ${hash}, Action: ${action}`);
+      
       // Try verifying with the specific action if provided
       if (action && (action === 'cancel' || action === 'change')) {
+        console.log(`Trying to verify with action: ${action}`);
         isValidHash = BookingHash.verifyHash(
           hash as string,
           booking.id,
@@ -2865,10 +2869,12 @@ app.put("/api/tenants/:tenantId/bookings/:id", validateTenant, async (req, res) 
           booking.restaurantId,
           action as 'cancel' | 'change'
         );
+        console.log(`Hash verification with action ${action}: ${isValidHash}`);
       }
       
       // If no specific action or verification failed, try with manage hash
       if (!isValidHash) {
+        console.log(`Trying to verify with manage action`);
         isValidHash = BookingHash.verifyHash(
           hash as string,
           booking.id,
@@ -2876,9 +2882,11 @@ app.put("/api/tenants/:tenantId/bookings/:id", validateTenant, async (req, res) 
           booking.restaurantId,
           'manage'
         );
+        console.log(`Hash verification with manage action: ${isValidHash}`);
       }
 
       if (!isValidHash) {
+        console.log(`Hash verification failed for booking ${booking.id}`);
         return res.status(403).json({ message: "Access denied - invalid or expired link" });
       }
 
