@@ -12,6 +12,7 @@ import { users, tenants, tenantUsers, restaurants, subscriptionPlans } from "@sh
 import { eq, and } from "drizzle-orm";
 import { BrevoEmailService } from "./brevo-service";
 import { BookingHash } from "./booking-hash";
+import { QRCodeService } from "./qr-service";
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY || 'sk_test_your_stripe_secret_key', {
   apiVersion: '2025-05-28.basil'

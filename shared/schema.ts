@@ -99,6 +99,7 @@ export const tables = pgTable("tables", {
   restaurantId: integer("restaurant_id").references(() => restaurants.id),
   tenantId: integer("tenant_id").references(() => tenants.id),
   roomId: integer("room_id").references(() => rooms.id),
+  qrCode: text("qr_code"), // QR code data URL for the table
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
 });
