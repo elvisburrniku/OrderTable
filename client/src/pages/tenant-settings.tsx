@@ -18,7 +18,7 @@ import { useToast } from "@/hooks/use-toast";
 
 export default function TenantSettings() {
   const { user } = useAuth();
-  const { tenant, tenantUsers, canManageTenant, canManageUsers } = useTenant();
+  const { tenant, tenantUsers, canManageTenant, canManageUsers, tenantId } = useTenant();
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const [isInviteDialogOpen, setIsInviteDialogOpen] = useState(false);
@@ -27,14 +27,22 @@ export default function TenantSettings() {
     role: "member"
   });
 
-  const { data: tenantSettings, isLoading } = useQuery({
-    queryKey: ["/api/tenant", tenant?.id, "settings"],
-    enabled: !!tenant && canManageTenant,
+  // Use tenantId from URL params if available, otherwise from tenant object
+  const currentTenantId = tenantId || tenant?.id;
+
+  const { data: tenantData, isLoading } = useQuery({
+    queryKey: ["/api/tenant", currentTenantId],
+    enabled: !!currentTenantId,
+    queryFn: async () => {
+      const res = await fetch(`/api/tenant/${currentTenantId}`);
+      if (!res.ok) throw new Error("Failed to fetch tenant");
+      return res.json();
+    }
   });
 
   const updateTenantMutation = useMutation({
     mutationFn: async (data: any) => {
-      const res = await fetch(`/api/tenant/${tenant?.id}`, {
+      const res = await fetch(`/api/tenant/${currentTenantId}`, {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(data),
@@ -50,7 +58,7 @@ export default function TenantSettings() {
 
   const inviteUserMutation = useMutation({
     mutationFn: async (data: any) => {
-      const res = await fetch(`/api/tenant/${tenant?.id}/invite`, {
+      const res = await fetch(`/api/tenant/${currentTenantId}/invite`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(data),
@@ -68,7 +76,7 @@ export default function TenantSettings() {
 
   const removeUserMutation = useMutation({
     mutationFn: async (userId: number) => {
-      const res = await fetch(`/api/tenant/${tenant?.id}/users/${userId}`, {
+      const res = await fetch(`/api/tenant/${currentTenantId}/users/${userId}`, {
         method: "DELETE",
       });
       if (!res.ok) throw new Error("Failed to remove user");
@@ -80,7 +88,11 @@ export default function TenantSettings() {
     },
   });
 
-  if (!tenant) {
+  if (isLoading) {
+    return <div className="p-6">Loading tenant settings...</div>;
+  }
+
+  if (!currentTenantId || !tenantData?.tenant) {
     return (
       <div className="p-6">
         <div className="text-center py-12">
@@ -91,6 +103,9 @@ export default function TenantSettings() {
       </div>
     );
   }
+
+  const currentTenant = tenantData.tenant;
+  const currentTenantUsers = tenantData.users || [];
 
   return (
     <div className="p-6 space-y-6">
@@ -115,7 +130,7 @@ export default function TenantSettings() {
               <Label htmlFor="name">Organization Name</Label>
               <Input
                 id="name"
-                value={tenant.name}
+                value={currentTenant.name || ""}
                 disabled={!canManageTenant}
                 className="mt-1"
               />
@@ -124,7 +139,7 @@ export default function TenantSettings() {
               <Label htmlFor="subdomain">Subdomain</Label>
               <Input
                 id="subdomain"
-                value={tenant.subdomain || ""}
+                value={currentTenant.slug || ""}
                 disabled={!canManageTenant}
                 className="mt-1"
                 placeholder="your-company"
@@ -135,7 +150,7 @@ export default function TenantSettings() {
             <Label htmlFor="customDomain">Custom Domain</Label>
             <Input
               id="customDomain"
-              value={tenant.customDomain || ""}
+              value={currentTenant.customDomain || ""}
               disabled={!canManageTenant}
               className="mt-1"
               placeholder="booking.yourcompany.com"
@@ -220,18 +235,18 @@ export default function TenantSettings() {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {tenantUsers.map((tenantUser) => (
-                <TableRow key={tenantUser.id}>
-                  <TableCell className="font-medium">{user?.name}</TableCell>
-                  <TableCell>{user?.email}</TableCell>
+              {currentTenantUsers.map((tenantUser: any) => (
+                <TableRow key={tenantUser.userId}>
+                  <TableCell className="font-medium">{tenantUser.user?.name || "Unknown"}</TableCell>
+                  <TableCell>{tenantUser.user?.email || "Unknown"}</TableCell>
                   <TableCell>
                     <Badge variant={tenantUser.role === "owner" ? "default" : "secondary"}>
                       {tenantUser.role}
                     </Badge>
                   </TableCell>
                   <TableCell>
-                    <Badge variant={tenantUser.isActive ? "default" : "secondary"}>
-                      {tenantUser.isActive ? "Active" : "Inactive"}
+                    <Badge variant="default">
+                      Active
                     </Badge>
                   </TableCell>
                   {canManageUsers && (

@@ -26,10 +26,14 @@ export function TenantProvider({ children }: { children: React.ReactNode }) {
   const canManageUsers = userRole === "owner" || userRole === "admin";
 
   useEffect(() => {
-    // Load tenant data from localStorage or API
+    // Load tenant data from localStorage or getCurrentTenant
     const storedTenant = localStorage.getItem("tenant");
+    const authTenant = getCurrentTenant();
+    
     if (storedTenant) {
       setTenant(JSON.parse(storedTenant));
+    } else if (authTenant) {
+      setTenant(authTenant);
     }
   }, []);
 

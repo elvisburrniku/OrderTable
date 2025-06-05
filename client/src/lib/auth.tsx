@@ -149,5 +149,33 @@ export function useAuthGuard() {
 
 export function getCurrentTenant() {
   const storedTenant = localStorage.getItem("tenant");
-  return storedTenant ? JSON.parse(storedTenant) : null;
+  if (storedTenant && storedTenant !== "undefined") {
+    try {
+      return JSON.parse(storedTenant);
+    } catch (error) {
+      console.error("Error parsing stored tenant:", error);
+      localStorage.removeItem("tenant");
+      return null;
+    }
+  }
+  
+  // Fallback: try to extract tenant from restaurant data
+  const storedRestaurant = localStorage.getItem("restaurant");
+  if (storedRestaurant && storedRestaurant !== "undefined") {
+    try {
+      const restaurant = JSON.parse(storedRestaurant);
+      if (restaurant.tenantId) {
+        // Create a basic tenant object from restaurant data
+        return {
+          id: restaurant.tenantId,
+          name: restaurant.name + " Organization", // Fallback name
+          slug: restaurant.name?.toLowerCase().replace(/[^a-z0-9]/g, '-') || "tenant"
+        };
+      }
+    } catch (error) {
+      console.error("Error parsing stored restaurant:", error);
+    }
+  }
+  
+  return null;
 }
