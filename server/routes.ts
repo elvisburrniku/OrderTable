@@ -480,6 +480,20 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       const booking = await storage.createBooking(bookingData);
 
+      // Generate and store management hash for the booking
+      if (booking.id) {
+        const managementHash = BookingHash.generateHash(
+          booking.id,
+          booking.tenantId,
+          booking.restaurantId,
+          'manage'
+        );
+        
+        await storage.updateBooking(booking.id, { managementHash });
+        booking.managementHash = managementHash;
+        console.log(`Stored management hash for booking ${booking.id}: ${managementHash}`);
+      }
+
       // Send email notifications if Brevo is configured
       if (emailService) {
         console.log('Email service available - processing notifications for booking', booking.id);
@@ -2953,6 +2967,20 @@ app.put("/api/tenants/:tenantId/bookings/:id", validateTenant, async (req, res) 
 
       const booking = await storage.createBooking(bookingData);
 
+      // Generate and store management hash for the booking
+      if (booking.id) {
+        const managementHash = BookingHash.generateHash(
+          booking.id,
+          restaurant.tenantId,
+          booking.restaurantId,
+          'manage'
+        );
+        
+        await storage.updateBooking(booking.id, { managementHash });
+        booking.managementHash = managementHash;
+        console.log(`Stored management hash for booking ${booking.id}: ${managementHash}`);
+      }
+
       // Send email notifications if Brevo is configured
       if (emailService) {
         console.log('Email service available - processing notifications for booking', booking.id);
@@ -3034,7 +3062,7 @@ app.put("/api/tenants/:tenantId/bookings/:id", validateTenant, async (req, res) 
         return res.status(404).json({ message: "Booking not found" });
       }
 
-      // Verify hash - accept manage, cancel, or change hashes
+      // Verify hash - prioritize stored management hash
       let isValidHash = false;
       
       console.log(`Verifying hash for booking ${booking.id}, tenant ${booking.tenantId}, restaurant ${booking.restaurantId}`);
@@ -3045,10 +3073,14 @@ app.put("/api/tenants/:tenantId/bookings/:id", validateTenant, async (req, res) 
       if (booking.managementHash && hash === booking.managementHash) {
         isValidHash = true;
         console.log(`Hash matches stored management hash`);
+      } else if (booking.managementHash) {
+        // If we have a stored hash but it doesn't match, reject
+        console.log(`Hash does not match stored management hash`);
+        isValidHash = false;
       } else {
-        // Try verifying with the specific action if provided
+        // Fallback for old bookings without stored hashes
+        console.log(`No stored management hash, trying action verification`);
         if (action && (action === 'cancel' || action === 'change')) {
-          console.log(`Trying to verify with action: ${action}`);
           isValidHash = BookingHash.verifyHash(
             hash as string,
             booking.id,
@@ -3056,12 +3088,7 @@ app.put("/api/tenants/:tenantId/bookings/:id", validateTenant, async (req, res) 
             booking.restaurantId,
             action as 'cancel' | 'change'
           );
-          console.log(`Hash verification with action ${action}: ${isValidHash}`);
-        }
-        
-        // If no specific action or verification failed, try with manage hash
-        if (!isValidHash) {
-          console.log(`Trying to verify with manage action`);
+        } else {
           isValidHash = BookingHash.verifyHash(
             hash as string,
             booking.id,
@@ -3069,8 +3096,8 @@ app.put("/api/tenants/:tenantId/bookings/:id", validateTenant, async (req, res) 
             booking.restaurantId,
             'manage'
           );
-          console.log(`Hash verification with manage action: ${isValidHash}`);
         }
+        console.log(`Fallback hash verification result: ${isValidHash}`);
       }
 
       if (!isValidHash) {

@@ -72,15 +72,25 @@ export class BrevoEmailService {
       throw new Error('Booking ID is required for generating management URLs');
     }
 
-    // Generate secure management URLs
+    // Use stored management hash or generate if not available
     const baseUrl = process.env.APP_BASE_URL || 'http://localhost:5000';
-    const managementUrls = BookingHash.generateManagementUrls(
-      bookingId,
-      bookingDetails.tenantId,
-      bookingDetails.restaurantId,
-      baseUrl
-    );
-    const { cancelUrl, manageUrl } = managementUrls;
+    let manageUrl, cancelUrl;
+    
+    if (bookingDetails.managementHash) {
+      // Use stored management hash
+      manageUrl = `${baseUrl}/booking-manage/${bookingId}?hash=${bookingDetails.managementHash}`;
+      cancelUrl = `${baseUrl}/booking-manage/${bookingId}?action=cancel&hash=${bookingDetails.managementHash}`;
+    } else {
+      // Fallback to generating new URLs
+      const managementUrls = BookingHash.generateManagementUrls(
+        bookingId,
+        bookingDetails.tenantId,
+        bookingDetails.restaurantId,
+        baseUrl
+      );
+      manageUrl = managementUrls.manageUrl;
+      cancelUrl = managementUrls.cancelUrl;
+    }
 
     console.log(`Generated management URLs for booking ${bookingId}:`, { cancelUrl, manageUrl });
 
@@ -140,8 +150,8 @@ export class BrevoEmailService {
 
               <!-- Action Buttons -->
               <div style="text-align: center; margin: 30px 0;">
-                 <a href="${managementUrls.changeUrl}" style="background-color: #007bff; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; font-weight: 600; margin: 0 10px;">Change booking</a>
-                <a href="${managementUrls.cancelUrl}" style="background-color: #dc3545; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; font-weight: 600;">Cancel booking</a>
+                 <a href="${manageUrl}" style="background-color: #007bff; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; font-weight: 600; margin: 0 10px;">Change booking</a>
+                <a href="${cancelUrl}" style="background-color: #dc3545; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; font-weight: 600;">Cancel booking</a>
               </div>
 
               <p style="margin: 20px 0; font-size: 16px; color: #666; line-height: 1.6;">
