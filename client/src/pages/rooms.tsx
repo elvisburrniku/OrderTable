@@ -45,6 +45,10 @@ export default function Rooms() {
   // Save rooms mutation
   const saveRoomsMutation = useMutation({
     mutationFn: async (roomsToSave: Room[]) => {
+      const currentTenantId = restaurant?.tenantId;
+      if (!currentTenantId || !restaurant?.id) {
+        throw new Error("Missing tenant or restaurant information");
+      }
 
       // Create new rooms and update existing ones
       const results = await Promise.all(
@@ -52,15 +56,15 @@ export default function Rooms() {
           if (room.id) {
             // Update existing room
             const response = await fetch(
-              `/api/tenants/${tenantId}/rooms/${room.id}`,
+              `/api/tenants/${currentTenantId}/rooms/${room.id}`,
               {
                 method: "PUT",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({
                   name: room.name,
                   priority: room.priority,
-                  restaurantId: room.restaurantId,
-                  tenantId: room.tenantId,
+                  restaurantId: restaurant.id,
+                  tenantId: currentTenantId,
                 }),
               },
             );
@@ -72,15 +76,15 @@ export default function Rooms() {
           } else {
             // Create new room
             const response = await fetch(
-              `/api/tenants/${tenantId}/restaurants/${restaurant?.id}/rooms`,
+              `/api/tenants/${currentTenantId}/restaurants/${restaurant.id}/rooms`,
               {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({
                   name: room.name,
                   priority: room.priority,
-                  restaurantId: restaurant?.id,
-                  tenantId,
+                  restaurantId: restaurant.id,
+                  tenantId: currentTenantId,
                 }),
               },
             );
