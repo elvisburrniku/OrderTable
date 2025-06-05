@@ -1660,32 +1660,41 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       const booking = await storage.createBooking(bookingData);
 
-      // Send real-time notification to all connected clients for this restaurant
-      const notificationData = {
-        type: 'new_booking',
-        booking: {
-          id: booking.id,
-          customerName: req.body.customerName,
-          customerEmail: req.body.customerEmail,
-          customerPhone: req.body.customerPhone,
-          guestCount: booking.guestCount,
-          bookingDate: booking.bookingDate,
-          startTime: booking.startTime,
-          endTime: booking.endTime,
-          tableId: booking.tableId,
-          status: booking.status,
-          notes: booking.notes,
-          createdAt: booking.createdAt
-        },
-        restaurant: {
-          id: restaurantId,
-          name: (await storage.getRestaurantById(restaurantId))?.name
-        },
-        timestamp: new Date().toISOString()
-      };
+      console.log(`Booking created successfully: ${booking.id} for restaurant ${restaurantId}`);
 
-      broadcastNotification(restaurantId, notificationData);
-      console.log(`Real-time notification sent for new booking ${booking.id} at restaurant ${restaurantId}`);
+      // Send real-time notification to all connected clients for this restaurant
+      try {
+        console.log(`Preparing real-time notification for booking ${booking.id}`);
+        
+        const notificationData = {
+          type: 'new_booking',
+          booking: {
+            id: booking.id,
+            customerName: req.body.customerName,
+            customerEmail: req.body.customerEmail,
+            customerPhone: req.body.customerPhone,
+            guestCount: booking.guestCount,
+            bookingDate: booking.bookingDate,
+            startTime: booking.startTime,
+            endTime: booking.endTime,
+            tableId: booking.tableId,
+            status: booking.status,
+            notes: booking.notes,
+            createdAt: booking.createdAt
+          },
+          restaurant: {
+            id: restaurantId,
+            name: (await storage.getRestaurantById(restaurantId))?.name
+          },
+          timestamp: new Date().toISOString()
+        };
+
+        console.log(`About to broadcast notification for restaurant ${restaurantId}`);
+        broadcastNotification(restaurantId, notificationData);
+        console.log(`Real-time notification processing completed for booking ${booking.id}`);
+      } catch (notificationError) {
+        console.error('Error sending real-time notification:', notificationError);
+      }
 
       // Send email notifications if Brevo is configured and enabled in settings
       if (emailService) {
