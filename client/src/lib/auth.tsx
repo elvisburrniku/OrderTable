@@ -53,11 +53,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             });
             
             if (response.ok) {
-              const data = await response.json();
-              setUser(data.user || parsedUser);
-              if (data.restaurant) {
-                setRestaurant(data.restaurant);
-                localStorage.setItem("restaurant", JSON.stringify(data.restaurant));
+              // Session is valid, use stored data
+              setUser(parsedUser);
+              if (storedRestaurant && storedRestaurant !== "undefined") {
+                try {
+                  setRestaurant(JSON.parse(storedRestaurant));
+                } catch (restaurantError) {
+                  console.error("Error parsing stored restaurant:", restaurantError);
+                  localStorage.removeItem("restaurant");
+                }
               }
             } else {
               // Session invalid, clear stored data
@@ -105,9 +109,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setUser(data.user);
     setRestaurant(data.restaurant);
 
+    // Store all authentication data
     localStorage.setItem("user", JSON.stringify(data.user));
     if (data.restaurant) {
       localStorage.setItem("restaurant", JSON.stringify(data.restaurant));
+    }
+    if (data.tenant) {
+      localStorage.setItem("tenant", JSON.stringify(data.tenant));
     }
 
     return data;
@@ -135,8 +143,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setUser(data.user);
     setRestaurant(data.restaurant);
 
+    // Store all authentication data
     localStorage.setItem("user", JSON.stringify(data.user));
     localStorage.setItem("restaurant", JSON.stringify(data.restaurant));
+    if (data.tenant) {
+      localStorage.setItem("tenant", JSON.stringify(data.tenant));
+    }
 
     return data;
   };
