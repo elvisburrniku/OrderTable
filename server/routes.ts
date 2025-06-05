@@ -1691,8 +1691,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
             id: booking.id,
             customerName: req.body.customerName,
             customerEmail: req.body.customerEmail,
-```text
-            customerPhone: req.body.customerPhone,
+customerPhone: req.body.customerPhone,
             guestCount: booking.guestCount,
             bookingDate: booking.bookingDate,
             startTime: booking.startTime,
