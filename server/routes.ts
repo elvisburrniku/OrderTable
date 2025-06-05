@@ -854,8 +854,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       const success = await storage.deleteBooking(id);
       res.json({ message: "Booking deleted successfully" });
-    } catch (error)```python
-{
+    } catch (error) {
       res.status(400).json({ message: "Invalid request" });
     }
   });
