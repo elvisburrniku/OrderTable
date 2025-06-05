@@ -153,10 +153,8 @@ export default function BookingManage() {
     
     const selectedDateObj = new Date(newDate);
     const dayOfWeek = selectedDateObj.getDay();
-    const dayNames = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'];
-    const dayName = dayNames[dayOfWeek];
     
-    const dayHours = openingHours.find((oh: any) => oh.dayOfWeek.toLowerCase() === dayName);
+    const dayHours = openingHours.find((oh: any) => oh.dayOfWeek === dayOfWeek);
     if (!dayHours || !dayHours.isOpen) return [];
     
     const slots = [];
