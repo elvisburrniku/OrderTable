@@ -488,7 +488,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           booking.restaurantId,
           'manage'
         );
-        
+
         await storage.updateBooking(booking.id, { managementHash });
         booking.managementHash = managementHash;
         console.log(`Stored management hash for booking ${booking.id}: ${managementHash}`);
@@ -868,7 +868,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ message: "Room and positions are required" });
       }
 
-      const savedLayout = await storage.saveTableLayout(restaurantId, tenantId, room, positions);
+      const savedLayout = await storage.saveTableLayout```tool_code
+(restaurantId, tenantId, room, positions);
 
       res.json({ 
         message: "Table layout saved successfully",
@@ -2173,902 +2174,24 @@ app.put("/api/tenants/:tenantId/bookings/:id", validateTenant, async (req, res) 
   app.get("/api/booking-manage/:id", async (req, res) => {
     try {
       const bookingId = parseInt(req.params.id);
-      const { hash } = req.query;
-
-      if (!hash) {
-        return res.status(403).json({ message: "Access denied - security token required" });
-      }
-
-      const booking = await storage.getBookingById(bookingId);
-      if (!booking) {
-        return res.status(404).json({ message: "Booking not found" });
-      }
-
-      // Verify hash for manage action
-      const isValidHash = BookingHash.verifyHash(
-        hash as string,
-        booking.id,
-        booking.tenantId,
-        booking.restaurantId,
-        'manage'
-      );
-
-      if (!isValidHash) {
-        return res.status(403).json({ message: "Access denied - invalid or expired link" });
-      }
-
-      // Return booking details for customer management
-      res.json(booking);
-    } catch (error) {
-      console.error("Error fetching booking for management:", error);
-      res.status(500).json({ message: "Internal server error" });
-    }
-  });
-
-  // Cancel booking route with hash verification
-  app.post("/api/booking-manage/:id/cancel", async (req, res) => {
-    try {
-      const bookingId = parseInt(req.params.id);
-      const { hash } = req.body;
-
-      if (!hash) {
-        return res.status(400).json({ message: "Security token is required" });
-      }
-
-      const booking = await storage.getBookingById(bookingId);
-      if (!booking) {
-        return res.status(404).json({ message: "Booking not found" });
-      }
-
-      // Verify hash - accept both cancel and manage hashes for cancel action
-      const isValidCancelHash = BookingHash.verifyHash(
-        hash,
-        bookingId,
-        booking.tenantId,
-        booking.restaurantId,
-        'cancel'
-      );
-
-      const isValidManageHash = BookingHash.verifyHash(
-        hash,
-        bookingId,
-        booking.tenantId,
-        booking.restaurantId,
-        'manage'
-      );
-
-      if (!isValidCancelHash && !isValidManageHash) {
-        console.log(`Invalid hash for booking ${bookingId} cancel action.`);
-        return res.status(403).json({ message: "Invalid or expired cancellation link" });
-      }
-
-      // Check if booking time has passed to prevent cancellation
-      const now = new Date();
-      const bookingDateTime = new Date(booking.bookingDate);
-      const bookingTimeComponents = booking.startTime.split(':');
-      bookingDateTime.setHours(parseInt(bookingTimeComponents[0]), parseInt(bookingTimeComponents[1]), 0, 0);
-      
-      const isBookingStarted = now >= bookingDateTime;
-
-      if (isBookingStarted) {
-        return res.status(403).json({ 
-          message: "Cannot cancel booking - the booking time has already started or passed" 
-        });
-      }
-
-      // Update booking status to cancelled
-      const updatedBooking = await storage.updateBooking(bookingId, {
-        status: 'cancelled'
-      });
-
-      console.log(`Customer cancelled booking ${bookingId} via secure link`);
-
-      // Send real-time notification to restaurant
-      broadcastNotification(booking.restaurantId, {
-        type: 'booking_cancelled',
-        booking: updatedBooking,
-        timestamp: new Date().toISOString()
-      });
-
-      res.json({
-        message: "Booking cancelled successfully",
-        booking: updatedBooking
-      });
-    } catch (error) {
-      console.error("Error cancelling booking:", error);
-      res.status(500).json({ message: "Internal server error" });
-    }
-  });
-
-  app.put("/api/booking-manage/:id", async (req, res) => {
-    try {
-      const bookingId = parseInt(req.params.id);
-      const updates = req.body;
-      const { hash } = req.query;
-
-      if (!hash) {
-        return res.status(403).json({ message: "Access denied - security token required" });
-      }
-
-      // Get the existing booking
-      const existingBooking = await storage.getBookingById(bookingId);
-      if (!existingBooking) {
-        return res.status(404).json({ message: "Booking not found" });
-      }
-
-      // Verify hash for manage action
-      const isValidHash = BookingHash.verifyHash(
-        hash as string,
-        existingBooking.id,
-        existingBooking.tenantId,
-        existingBooking.restaurantId,
-        'manage'
-      );
-
-      if (!isValidHash) {
-        return res.status(403).json({ message: "Access denied - invalid security token" });
-      }
-
-      // Get restaurant and cut-off times to validate if changes are allowed
-      const restaurant = await storage.getRestaurantById(existingBooking.restaurantId);
-      if (!restaurant) {
-        return res.status(404).json({ message: "Restaurant not found" });
-      }
-
-      // Get cut-off times for validation
-      const cutOffTimes = await storage.getCutOffTimesByRestaurant(existingBooking.restaurantId);
-
-      // Validate if changes are allowed based on cut-off times
-      const bookingDateTime = new Date(existingBooking.bookingDate);
-      const now = new Date();
-
-      const dayOfWeek = bookingDateTime.getDay();
-      const dayNames = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'];
-      const dayName = dayNames[dayOfWeek];
-
-      const cutOffTime = cutOffTimes.find((ct: any) => ct.dayOfWeek.toLowerCase() === dayName);
-
-      let isChangeAllowed = false;
-      if (!cutOffTime || !cutOffTime.isEnabled) {
-        // Default: allow changes up to 1 hour before booking
-        const oneHourBefore = new Date(bookingDateTime);
-        const [hours, minutes] = existingBooking.startTime.split(':');
-        oneHourBefore.setHours(parseInt(hours) - 1, parseInt(minutes));
-        isChangeAllowed = now < oneHourBefore;
-      } else {
-        // Use restaurant's cut-off time policy
-        const cutOffDeadline = new Date(bookingDateTime);
-        cutOffDeadline.setHours(cutOffDeadline.getHours() - cutOffTime.hoursBeforeBooking);
-        isChangeAllowed = now < cutOffDeadline;
-      }
-
-      if (!isChangeAllowed) {
-        const hours = cutOffTime?.hoursBeforeBooking || 1;
-        return res.status(400).json({ 
-          message: `Changes are no longer allowed. You can only modify bookings up to ${hours} hour${hours > 1 ? 's' : ''} before your reservation time.`
-        });
-      }
-
-      // Validate booking date and time changes
-      if (updates.bookingDate || updates.startTime) {
-        const newDate = updates.bookingDate ? new Date(updates.bookingDate) : new Date(existingBooking.bookingDate);
-        const newTime = updates.startTime || existingBooking.startTime;
-
-        // Check if restaurant is open
-        const isOpen = await storage.isRestaurantOpen(existingBooking.restaurantId, newDate, newTime);
-        if (!isOpen) {
-          return res.status(400).json({ 
-            message: "The restaurant is closed on the selected date and time."
-          });
-        }
-
-        // Check booking cut-off for new date/time
-        const isAllowed = await storage.isBookingAllowed(existingBooking.restaurantId, newDate, newTime);
-        if (!isAllowed) {
-          return res.status(400).json({ 
-            message: "Booking is not allowed for the selected date and time."
-          });
-        }
-
-        // Check for table conflicts if changing date/time
-        if (existingBooking.tableId) {
-          const existingBookings = await storage.getBookingsByDate(
-            existingBooking.restaurantId, 
-            newDate.toISOString().split('T')[0]
-          );
-
-          const conflictingBookings = existingBookings.filter(booking => {
-            if (booking.id === bookingId || booking.tableId !== existingBooking.tableId) return false;
-
-            const requestedStartTime = newTime;
-            const requestedEndTime = existingBooking.endTime || "23:59";
-
-            // Time conflict check logic
-            const requestedStartMinutes = parseInt(requestedStartTime.split(':')[0]) * 60 + parseInt(requestedStartTime.split(':')[1]);
-            const requestedEndMinutes = parseInt(requestedEndTime.split(':')[0]) * 60 + parseInt(requestedEndTime.split(':')[1]);
-
-            const existingStartMinutes = parseInt(booking.startTime.split(':')[0]) * 60 + parseInt(booking.startTime.split(':')[1]);
-            const existingEndTime = booking.endTime || "23:59";
-            const existingEndMinutes = parseInt(existingEndTime.split(':')[0]) * 60 + parseInt(existingEndTime.split(':')[1]);
-
-            const bufferMinutes = 60;
-            const requestedStart = requestedStartMinutes - bufferMinutes;
-            const requestedEnd = requestedEndMinutes + bufferMinutes;
-            const existingStart = existingStartMinutes - bufferMinutes;
-            const existingEnd = existingEndMinutes + bufferMinutes;
-
-            return requestedStart < existingEnd && existingStart < existingEnd;
-          });
-
-          if (conflictingBookings.length > 0) {
-            return res.status(400).json({ 
-              message: "The selected time conflicts with another booking for the same table."
-            });
-          }
-        }
-      }
-
-      // Process the update
-      const updatedBooking = await storage.updateBooking(bookingId, updates);
-
-      if (!updatedBooking) {
-        return res.status(404).json({ message: "Booking not found" });
-      }
-
-      console.log(`Customer modified booking ${bookingId}:`, updates);
-
-      // Send real-time notification to restaurant
-      broadcastNotification(updatedBooking.restaurantId, {
-        type: 'booking_changed',
-        booking: updatedBooking,
-        changes: updates,
-        timestamp: new Date().toISOString()
-      });
-
-      res.json(updatedBooking);
-    } catch (error) {
-      console.error("Error updating booking:", error);
-      res.status(500).json({ message: "Internal server error" });
-    }
-  });
-
-  // Booking change request routes
-  app.post("/api/booking-change-request", async (req, res) => {
-    try {
-      const { bookingId, requestedDate, requestedTime, requestedGuestCount, requestNotes } = req.body;
-
-      const booking = await storage.getBookingById(bookingId);
-      if (!booking) {
-        return res.status(404).json({ message: "Booking not found" });
-      }
-
-      const restaurant = await storage.getRestaurantById(booking.restaurantId);
-      if (!restaurant) {
-        return res.status(404).json({ message: "Restaurant not found" });
-      }
-
-      // Create change request
-      const changeRequest = await storage.createBookingChangeRequest({
-        bookingId,
-        restaurantId: booking.restaurantId,
-        tenantId: booking.tenantId,
-        requestedDate: requestedDate ? new Date(requestedDate) : null,
-        requestedTime,
-        requestedGuestCount,
-        requestNotes,
-        status: 'pending'
-      });
-
-      // Send email notification to restaurant if email service is available
-      if (emailService) {
-        try {
-          let emailSettings = null;
-          if (restaurant.emailSettings) {
-            try {
-              emailSettings = JSON.parse(restaurant.emailSettings);
-            } catch (e) {
-              console.warn("Failed to parse email settings");
-            }
-          }
-
-          const restaurantEmail = emailSettings?.placeSettings?.sentTo || restaurant.email;
-          if (restaurantEmail) {
-            await emailService.sendBookingChangeRequest(restaurantEmail, changeRequest, booking);
-          }
-        } catch (emailError) {
-          console.error('Error sending change request email:', emailError);
-        }
-      }
-
-      // Send real-time notification to restaurant
-      broadcastNotification(booking.restaurantId, {
-        type: 'booking_change_request',
-        changeRequest,
-        booking,
-        timestamp: new Date().toISOString()
-      });
-
-      res.json({ message: "Change request submitted successfully", changeRequest });
-    } catch (error) {
-      console.error("Error creating change request:", error);
-      res.status(500).json({ message: "Internal server error" });
-    }
-  });
-
-  // Handle booking change request responses (approve/reject)
-  app.post("/api/booking-change-response/:requestId", async (req, res) => {
-    try {
-      const requestId = parseInt(req.params.requestId);
-      const { action, response } = req.body; // action: 'approve' or 'reject'
-
-      const changeRequest = await storage.getBookingChangeRequestById(requestId);
-      if (!changeRequest) {
-        return res.status(404).json({ message: "Change request not found" });
-      }
-
-      const booking = await storage.getBookingById(changeRequest.bookingId);
-      if (!booking) {
-        return res.status(404).json({ message: "Booking not found" });
-      }
-
-      const approved = action === 'approve';
-
-      // Update change request status
-      const updatedRequest = await storage.updateBookingChangeRequest(requestId, {
-        status: approved ? 'approved' : 'rejected',
-        restaurantResponse: response,
-        respondedAt: new Date()
-      });
-
-      if (approved) {
-        // Apply changes to the booking
-        const bookingUpdates: any = {};
-        if (changeRequest.requestedDate) bookingUpdates.bookingDate = changeRequest.requestedDate;
-        if (changeRequest.requestedTime) bookingUpdates.startTime = changeRequest.requestedTime;
-        if (changeRequest.requestedGuestCount) bookingUpdates.guestCount = changeRequest.requestedGuestCount;
-
-        if (Object.keys(bookingUpdates).length > 0) {
-          await storage.updateBooking(changeRequest.bookingId, bookingUpdates);
-        }
-      }
-
-      // Send email notification to customer if email service is available
-      if (emailService) {
-        try {
-          await emailService.sendChangeRequestResponse(
-            booking.customerEmail,
-            booking.customerName,
-            approved,
-            booking,
-            changeRequest,
-            response
-          );
-        } catch (emailError) {
-          console.error('Error sending response email:', emailError);
-        }
-      }
-
-      // Send real-time notification to restaurant dashboard
-      broadcastNotification(booking.restaurantId, {
-        type: 'change_request_responded',
-        changeRequest: updatedRequest,
-        booking,
-        approved,
-        timestamp: new Date().toISOString()
-      });
-
-      res.json({ 
-        message: `Change request ${approved ? 'approved' : 'rejected'} successfully`,
-        changeRequest: updatedRequest
-      });
-    } catch (error) {
-      console.error("Error responding to change request:", error);
-      res.status(500).json({ message: "Internal server error" });
-    }
-  });
-
-  // Get booking change requests for a restaurant
-  app.get("/api/tenants/:tenantId/restaurants/:restaurantId/change-requests", validateTenant, async (req, res) => {
-    try {
-      const restaurantId = parseInt(req.params.restaurantId);
-      const tenantId = parseInt(req.params.tenantId);
-
-      const restaurant = await storage.getRestaurantById(restaurantId);
-      if (!restaurant || restaurant.tenantId !== tenantId) {
-        return res.status(404).json({ message: "Restaurant not found" });
-      }
-
-      const changeRequests = await storage.getBookingChangeRequestsByRestaurant(restaurantId);
-      res.json(changeRequests);
-    } catch (error) {
-      console.error("Error fetching change requests:", error);
-      res.status(500).json({ message: "Internal server error" });
-    }
-  });
-
-  // Public route for handling secure booking change responses via email links
-  app.get("/api/booking-change-response/:requestId", async (req, res) => {
-    try {
-      const requestId = parseInt(req.params.requestId);
-      const { action, hash } = req.query;
-
-      if (!action || !hash) {
-        return res.status(400).json({ message: "Invalid request parameters" });
-      }
-
-      const changeRequest = await storage.getBookingChangeRequestById(requestId);
-      if (!changeRequest) {
-        return res.status(404).json({ message: "Change request not found" });
-      }
-
-      const booking = await storage.getBookingById(changeRequest.bookingId);
-      if (!booking) {
-        return res.status(404).json({ message: "Booking not found" });
-      }
-
-      // Verify hash
-      const isValidHash = BookingHash.verifyHash(
-        hash as string,
-        requestId,
-        booking.tenantId,
-        booking.restaurantId,
-        action as 'cancel' | 'change'
-      );
-
-      if (!isValidHash) {
-        return res.status(403).json({ message: "Invalid security token" });
-      }
-
-      const approved = action === 'approve';
-
-      // Update change request status
-      const updatedRequest = await storage.updateBookingChangeRequest(requestId, {
-        status: approved ? 'approved' : 'rejected',
-        respondedAt: new Date()
-      });
-
-      if (approved) {
-        // Apply changes to the booking
-        const bookingUpdates: any = {};
-        if (changeRequest.requestedDate) bookingUpdates.bookingDate = changeRequest.requestedDate;
-        if (changeRequest.requestedTime) bookingUpdates.startTime = changeRequest.requestedTime;
-        if (changeRequest.requestedGuestCount) bookingUpdates.guestCount = changeRequest.requestedGuestCount;
-
-        if (Object.keys(bookingUpdates).length > 0) {
-          await storage.updateBooking(changeRequest.bookingId, bookingUpdates);
-        }
-      }
-
-      // Send email notification to customer if email service is available
-      if (emailService) {
-        try {
-          await emailService.sendChangeRequestResponse(
-            booking.customerEmail,
-            booking.customerName,
-            approved,
-            booking,
-            changeRequest
-          );
-        } catch (emailError) {
-          console.error('Error sending response email:', emailError);
-        }
-      }
-
-      // Send real-time notification to restaurant dashboard
-      broadcastNotification(booking.restaurantId, {
-        type: 'change_request_responded',
-        changeRequest: updatedRequest,
-        booking,
-        approved,
-        timestamp: new Date().toISOString()
-      });
-
-      // Redirect to a success page or send HTML response
-      res.send(`
-        <!DOCTYPE html>
-        <html>
-          <head>
-            <title>Booking Change ${approved ? 'Approved' : 'Rejected'}</title>
-            <meta charset="utf-8">
-            <meta name="viewport" content="width=device-width, initial-scale=1.0">
-            <style>
-              body { font-family: Arial, sans-serif; margin: 0; padding: 20px; background-color: #f5f5f5; }
-              .container { max-width: 600px; margin: 0 auto; background: white; padding: 30px; border-radius: 8px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
-              .success { color: #28a745; } .error { color: #dc3545; }
-              h1 { margin-top: 0; }
-            </style>
-          </head>
-          <body>
-            <div class="container">
-              <h1 class="${approved ? 'success' : 'error'}">
-                Change Request ${approved ? 'Approved' : 'Rejected'}
-              </h1>
-              <p>
-                ${approved 
-                  ? 'The booking changes have been approved. The customer has been notified via email.'
-                  : 'The booking changes have been rejected. The customer has been notified and can still cancel their original booking if needed.'
-                }
-              </p>
-              <p><strong>Customer:</strong> ${booking.customerName}</p>
-              <p><strong>Original Date:</strong> ${new Date(booking.bookingDate).toLocaleDateString()}</p>
-              <p><strong>Original Time:</strong> ${booking.startTime}</p>
-            </div>
-          </body>
-        </html>
-      `);
-    } catch (error) {
-      console.error("Error handling change request response:", error);
-      res.status(500).json({ message: "Internal server error" });
-    }
-  });
-
-  // Tenant routes
-  app.get("/api/tenants/:tenantId", tenantRoutes.getTenant);
-  app.post("/api/tenants", tenantRoutes.createTenant);
-  app.put("/api/tenants/:tenantId", tenantRoutes.updateTenant);
-  app.post("/api/tenants/:tenantId/invite", tenantRoutes.inviteUserToTenant);
-  app.delete("/api/tenants/:tenantId/users/:userId", tenantRoutes.removeUserFromTenant);
-
-  // Subscription Plans
-  app.get("/api/subscription-plans", async (req, res) => {
-    try {
-      const plans = await storage.getSubscriptionPlans();
-      console.log("Fetched subscription plans:", plans.length, "plans");
-      res.json(plans);
-    } catch (error) {
-      console.error("Error fetching subscription plans:", error);
-      res.status(500).json({ error: "Failed to fetch subscription plans" });
-    }
-  });
-
-  app.post("/api/subscription-plans", async (req, res) => {
-    try {
-      const planData = insertSubscriptionPlanSchema.parse(req.body);
-      const plan = await storage.createSubscriptionPlan(planData);
-      res.json(plan);
-    } catch (error) {
-      res.status(400).json({ message: "Invalid plan data" });
-    }
-  });
-
-  // User Subscriptions routes
-  app.get("/api/users/:userId/subscription", async (req, res) => {
-    try {
-      const userId = parseInt(req.params.userId);
-      const subscription = await storage.getUserSubscription(userId);
-
-      if (!subscription) {
-        return res.status(404).json({ message: "No subscription found" });
-      }
-
-      res.json(subscription);
-    } catch (error) {
-      res.status(400).json({ message: "Invalid request" });
-    }
-  });
-
-  app.post("/api/users/:userId/subscription", async (req, res) => {
-    try {
-      const userId = parseInt(req.params.userId);
-      const subscriptionData = insertUserSubscriptionSchema.parse({
-        ...req.body,
-        userId,
-        currentPeriodStart: new Date(req.body.currentPeriodStart),
-        currentPeriodEnd: new Date(req.body.currentPeriodEnd)
-      });
-
-      const subscription = await storage.createUserSubscription(subscriptionData);
-      res.json(subscription);
-    } catch (error) {
-      res.status(400).json({ message: "Invalid subscription data" });
-    }
-  });
-
-  app.put("/api/subscriptions/:id", async (req, res) => {
-    try {
-      const id = parseInt(req.params.id);
-      const updates = req.body;
-
-      if (updates.currentPeriodStart) {
-        updates.currentPeriodStart = new Date(updates.currentPeriodStart);
-      }
-      if (updates.currentPeriodEnd) {
-        updates.currentPeriodEnd = new Date(updates.currentPeriodEnd);
-      }
-
-      const subscription = await storage.updateUserSubscription(id, updates);
-
-      if (!subscription) {
-        return res.status(404).json({ message: "Subscription not found" });
-      }
-
-      res.json(subscription);
-    } catch (error) {
-      res.status(400).json({ message: "Invalid request" });
-    }
-  });
-
-  app.post("/api/subscriptions/:id/cancel", async (req, res) => {
-    try {
-      const id = parseInt(req.params.id);
-
-      const subscription = await storage.getUserSubscriptionById(id);
-      if (!subscription) {
-        return res.status(404).json({ message: "Subscription not found" });
-      }
-
-      // Cancel the subscription in Stripe if it exists
-      if (subscription.stripeSubscriptionId) {
-        try {
-          await stripe.subscriptions.cancel(subscription.stripeSubscriptionId);
-        } catch (stripeError) {
-          console.error("Failed to cancel Stripe subscription:", stripeError);
-          // Continue with local cancellation even if Stripe fails
-        }
-      }
-
-      // Update the subscription status to cancelled
-      const updatedSubscription = await storage.updateUserSubscription(id, {
-        status: 'cancelled'
-      });
-
-      res.json(updatedSubscription);
-    } catch (error) {
-      console.error("Error cancelling subscription:", error);
-      res.status(400).json({ message: "Invalid request" });
-    }
-  });
-
-  // Stripe checkout session creation
-  app.post("/api/create-checkout-session", async (req, res) => {
-    try {
-      const { planId, userId, successUrl, cancelUrl } =req.body;
-
-      const plan = await storage.getSubscriptionPlan(planId);
-      if (!plan) {
-        return res.status(404).json({ message: "Plan not found" });
-      }
-
-      const session = await stripe.checkout.sessions.create({
-        payment_method_types: ['card'],
-        line_items: [
-          {
-            price_data: {
-              currency: 'usd',
-              product_data: {
-                name: `${plan.name} Plan`,
-                description: `Restaurant booking system - ${plan.name} plan`,
-              },
-              unit_amount: plan.price,
-              recurring: {
-                interval: plan.interval === 'monthly' ? 'month' : plan.interval === 'yearly' ? 'year' : 'month',
-              },
-            },
-            quantity: 1,
-          },
-        ],
-        mode: 'subscription',
-        success_url: successUrl,
-        cancel_url: cancelUrl,
-        metadata: {
-          userId: userId.toString(),
-          planId: planId.toString(),
-        },
-      });
-
-      res.json({ sessionId: session.id });
-    } catch (error) {
-      console.error('Error creating checkout session:', error);
-      res.status(500).json({ message: "Failed to create checkout session" });
-    }
-  });
-
-  // Legacy routes for backward compatibility
-  app.get("/api/restaurants", async (req, res) => {
-    res.json([]);
-  });
-
-  app.get("/api/restaurants/:restaurantId/bookings", async (req, res) => {
-    try {
-      const restaurantId = parseInt(req.params.restaurantId);
-      const { date } = req.query;
-
-      let bookings;
-      if (date && typeof date === 'string') {
-        bookings = await storage.getBookingsByDate(restaurantId, date);
-      } else {
-        bookings = await storage.getBookingsByRestaurant(restaurantId);
-      }
-
-      res.json(bookings);
-    } catch (error) {
-      res.status(400).json({ message: "Invalid request" });
-    }
-  });
-
-  // Legacy waiting list routes for backward compatibility
-  app.get("/api/restaurants/:restaurantId/waiting-list", async (req, res) => {
-    try {
-      const restaurantId = parseInt(req.params.restaurantId);
-      const waitingList = await storage.getWaitingListByRestaurant(restaurantId);
-      res.json(waitingList);
-    } catch (error) {
-      res.status(400).json({ message: "Invalid request" });
-    }
-  });
-
-  app.post("/api/restaurants/:restaurantId/waiting-list", async (req, res) => {
-    try {
-      const restaurantId = parseInt(req.params.restaurantId);
-
-      // Get the restaurant to determine the tenant ID
-      const restaurant = await storage.getRestaurantById(restaurantId);
-      if (!restaurant) {
-        return res.status(404).json({ message: "Restaurant not found" });
-      }
-
-      const entryData = {
-        ...req.body,
-        restaurantId,
-        tenantId: restaurant.tenantId
-      };
-
-      const entry = await storage.createWaitingListEntry(entryData);
-      res.json(entry);
-    } catch (error) {
-      res.status(400).json({ message: "Invalid waiting list data" });
-    }
-  });
-
-  app.put("/api/restaurants/:restaurantId/waiting-list/:id", async (req, res) => {
-    try {
-      const id = parseInt(req.params.id);
-      const restaurantId = parseInt(req.params.restaurantId);
-      const updates = req.body;
-
-      // Verify waiting list entry belongs to restaurant before updating
-      const existingEntry = await storage.getWaitingListEntryById(id);
-      if (!existingEntry || existingEntry.restaurantId !== restaurantId) {
-        return res.status(404).json({ message: "Waiting list entry not found" });
-      }
-
-      const entry = await storage.updateWaitingListEntry(id, updates);
-      res.json(entry);
-    } catch (error) {
-      res.status(400).json({ message: "Invalid request" });
-    }
-  });
-
-  // Legacy booking creation route for backward compatibility
-  app.post("/api/restaurants/:restaurantId/bookings", async (req, res) => {
-    try {
-      const restaurantId = parseInt(req.params.restaurantId);
-
-      // Get the restaurant to determine the tenant ID
-      const restaurant = await storage.getRestaurantById(restaurantId);
-      if (!restaurant) {
-        return res.status(404).json({ message: "Restaurant not found" });
-      }
-
-      // Get or create customer first
-      const customer = await storage.getOrCreateCustomer(restaurantId, restaurant.tenantId, {
-        name: req.body.customerName,
-        email: req.body.customerEmail,
-        phone: req.body.customerPhone
-      });
-
-      const bookingData = insertBookingSchema.parse({
-        ...req.body,
-        restaurantId,
-        tenantId: restaurant.tenantId,
-        customerId: customer.id,
-        bookingDate: new Date(req.body.bookingDate)
-      });
-
-      const booking = await storage.createBooking(bookingData);
-
-      // Generate and store management hash for the booking
-      if (booking.id) {
-        const managementHash = BookingHash.generateHash(
-          booking.id,
-          restaurant.tenantId,
-          booking.restaurantId,
-          'manage'
-        );
-        
-        await storage.updateBooking(booking.id, { managementHash });
-        booking.managementHash = managementHash;
-        console.log(`Stored management hash for booking ${booking.id}: ${managementHash}`);
-      }
-
-      // Send email notifications if Brevo is configured
-      if (emailService) {
-        console.log('Email service available - processing notifications for booking', booking.id);
-        try {
-          let emailSettings = null;
-
-          // Parse email settings if they exist
-          if (restaurant?.emailSettings) {
-            try {
-              emailSettings = JSON.parse(restaurant.emailSettings);
-              console.log('Email settings loaded:', emailSettings);
-            } catch (e) {
-              console.warn("Failed to parse email settings, using defaults");
-            }
-          } else {
-            console.log('No email settings found - using defaults (all notifications enabled)');
-          }
-
-          // Send confirmation email to customer if enabled
-          const shouldSendGuestConfirmation = emailSettings?.guestSettings?.sendBookingConfirmation !== false;
-          console.log('Should send guest confirmation:', shouldSendGuestConfirmation);
-
-          if (shouldSendGuestConfirmation) {
-            console.log('Sending booking confirmation email to:', req.body.customerEmail);
-            await emailService.sendBookingConfirmation(
-              req.body.customerEmail,
-              req.body.customerName,
-              {
-                ...bookingData,
-                tableNumber: booking.tableId,
-                id: booking.id
-              }
-            );
-            console.log('Guest confirmation email sent successfully');
-          }
-
-          // Send notification to restaurant if enabled
-          const shouldSendRestaurantNotification = emailSettings?.placeSettings?.emailBooking !== false;
-          const restaurantEmail = emailSettings?.placeSettings?.sentTo || restaurant?.email;
-          console.log('Should send restaurant notification:', shouldSendRestaurantNotification, 'to email:', restaurantEmail);
-
-          if (shouldSendRestaurantNotification && restaurantEmail) {
-            console.log('Sending restaurant notification email to:', restaurantEmail);
-            await emailService.sendRestaurantNotification(restaurantEmail, {
-              customerName: req.body.customerName,
-              customerEmail: req.body.customerEmail,
-              customerPhone: req.body.customerPhone,
-              ...bookingData
-            });
-            console.log('Restaurant notification email sent successfully');
-          }
-        } catch (emailError) {
-          console.error('Error sending email notifications:', emailError);
-          // Don't fail the booking if email fails
-        }
-      } else {
-        console.log('Email service not available - skipping email notifications');
-      }
-
-      res.json(booking);
-    } catch (error) {
-      console.error("Booking creation error:", error);
-      res.status(400).json({ message: "Invalid booking data" });
-    }
-  });
-
-  // Customer booking management routes (public access with hash verification)
-  app.get("/api/booking-manage/:id", async (req, res) => {
-    try {
-      const id = parseInt(req.params.id);
       const { hash, action } = req.query;
 
       if (!hash) {
         return res.status(403).json({ message: "Access denied - security token required" });
       }
 
-      const booking = await storage.getBookingById(id);
+      const booking = await storage.getBookingById(bookingId);
       if (!booking) {
         return res.status(404).json({ message: "Booking not found" });
       }
 
       // Verify hash - prioritize stored management hash
       let isValidHash = false;
-      
+
       console.log(`Verifying hash for booking ${booking.id}, tenant ${booking.tenantId}, restaurant ${booking.restaurantId}`);
       console.log(`Hash: ${hash}, Action: ${action}`);
       console.log(`Stored management hash: ${booking.managementHash}`);
-      
+
       // First check if the provided hash matches the stored management hash
       if (booking.managementHash && hash === booking.managementHash) {
         isValidHash = true;
@@ -3110,17 +2233,17 @@ app.put("/api/tenants/:tenantId/bookings/:id", validateTenant, async (req, res) 
       const bookingDateTime = new Date(booking.bookingDate);
       const bookingTimeComponents = booking.startTime.split(':');
       bookingDateTime.setHours(parseInt(bookingTimeComponents[0]), parseInt(bookingTimeComponents[1]), 0, 0);
-      
+
       // Add booking duration (assume 2 hours if not specified)
       const bookingEndTime = new Date(bookingDateTime);
       bookingEndTime.setHours(bookingEndTime.getHours() + 2);
-      
+
       const isPastBooking = now > bookingEndTime;
       const isBookingStarted = now >= bookingDateTime;
 
       // Get cut-off times for the restaurant
       const cutOffTimes = await storage.getCutOffTimesByRestaurant(booking.restaurantId);
-      
+
       // Determine cut-off deadline based on restaurant policy
       const dayOfWeek = bookingDateTime.getDay();
       const dayNames = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'];
@@ -3164,48 +2287,36 @@ app.put("/api/tenants/:tenantId/bookings/:id", validateTenant, async (req, res) 
     }
   });
 
+  // Available tables route for booking management
   app.get("/api/booking-manage/:id/available-tables", async (req, res) => {
     try {
-      const id = parseInt(req.params.id);
-      const { hash, action } = req.query;
+      const bookingId = parseInt(req.params.id);
+       const { hash } = req.query;
 
-      if (!hash) {
-        return res.status(403).json({ message: "Access denied - security token required" });
-      }
+        if (!hash) {
+            return res.status(403).json({ message: "Access denied - security token required" });
+        }
 
-      const booking = await storage.getBookingById(id);
-      if (!booking) {
-        return res.status(404).json({ message: "Booking not found" });
-      }
+        const booking = await storage.getBookingById(bookingId);
+        if (!booking) {
+            return res.status(404).json({ message: "Booking not found" });
+        }
+      // Verify hash using the stored management hash
+        let isValidHash = false;
+        if (booking.managementHash && hash === booking.managementHash) {
+            isValidHash = true;
+            console.log(`Hash matches stored management hash`);
+        } else {
+             console.log(`Hash does not match stored management hash`);
+            isValidHash = false;
+             return res.status(403).json({ message: "Access denied - invalid or expired link" });
+        }
 
-      // Verify hash - accept manage, cancel, or change hashes
-      let isValidHash = false;
-      
-      // Try verifying with the specific action if provided
-      if (action && (action === 'cancel' || action === 'change')) {
-        isValidHash = BookingHash.verifyHash(
-          hash as string,
-          booking.id,
-          booking.tenantId,
-          booking.restaurantId,
-          action as 'cancel' | 'change'
-        );
-      }
-      
-      // If no specific action or verification failed, try with manage hash
-      if (!isValidHash) {
-        isValidHash = BookingHash.verifyHash(
-          hash as string,
-          booking.id,
-          booking.tenantId,
-          booking.restaurantId,
-          'manage'
-        );
-      }
+        if (!isValidHash) {
+            console.log(`Hash verification failed for booking ${booking.id}`);
+            return res.status(403).json({ message: "Access denied - invalid or expired link" });
+        }
 
-      if (!isValidHash) {
-        return res.status(403).json({ message: "Access denied - invalid security token" });
-      }
 
       // Get available tables for the restaurant
       const tables = await storage.getTablesByRestaurant(booking.restaurantId);
@@ -3233,7 +2344,7 @@ app.put("/api/tenants/:tenantId/bookings/:id", validateTenant, async (req, res) 
 
       // Verify hash - accept manage, cancel, or change hashes
       let isValidHash = false;
-      
+
       // Try verifying with the specific action if provided
       if (action && (action === 'cancel' || action === 'change')) {
         isValidHash = BookingHash.verifyHash(
@@ -3244,7 +2355,7 @@ app.put("/api/tenants/:tenantId/bookings/:id", validateTenant, async (req, res) 
           action as 'cancel' | 'change'
         );
       }
-      
+
       // If no specific action or verification failed, try with manage hash
       if (!isValidHash) {
         isValidHash = BookingHash.verifyHash(
@@ -3265,7 +2376,7 @@ app.put("/api/tenants/:tenantId/bookings/:id", validateTenant, async (req, res) 
       const bookingDateTime = new Date(booking.bookingDate);
       const bookingTimeComponents = booking.startTime.split(':');
       bookingDateTime.setHours(parseInt(bookingTimeComponents[0]), parseInt(bookingTimeComponents[1]), 0, 0);
-      
+
       const isBookingStarted = now >= bookingDateTime;
 
       if (isBookingStarted) {
@@ -3293,7 +2404,7 @@ app.put("/api/tenants/:tenantId/bookings/:id", validateTenant, async (req, res) 
       }
 
       const updatedBooking = await storage.updateBooking(id, allowedUpdates);
-      
+
       // Send real-time notification to restaurant
       broadcastNotification(updatedBooking.restaurantId, {
         type: 'booking_changed',

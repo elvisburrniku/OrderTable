@@ -72,17 +72,17 @@ export default function BookingManage() {
   const { data: availableTables } = useQuery({
     queryKey: [`/api/booking-manage/${id}/available-tables`, newDate, newTime],
     queryFn: async () => {
-      if (!newDate || !newTime) return [];
+      if (!newDate || !newTime || !booking) return [];
       const urlParams = new URLSearchParams(window.location.search);
       const hash = urlParams.get('hash');
 
       if (!hash) return [];
 
-      const response = await fetch(`/api/tenants/${booking?.tenantId}/restaurants/${booking?.restaurantId}/tables?date=${newDate}&time=${newTime}&guestCount=${newGuestCount || booking?.guestCount}&hash=${encodeURIComponent(hash)}`);
+      const response = await fetch(`/api/booking-manage/${id}/available-tables?hash=${encodeURIComponent(hash)}`);
       if (!response.ok) return [];
       return response.json();
     },
-    enabled: !!booking && !!newDate && !!newTime
+    enabled: !!booking && !!newDate && !!newTime && !!isChangeAllowed()
   });
 
   const updateMutation = useMutation({
@@ -546,7 +546,7 @@ export default function BookingManage() {
                     <div className="flex gap-3 pt-4 border-t">
                       <Button 
                         onClick={handleSaveChanges}
-                        disabled={updateMutation.isPending}
+                        disabled={updateMutation.isPending || !isChangeAllowed()}
                         className="flex-1"
                       >
                         Save Changes
@@ -581,7 +581,7 @@ export default function BookingManage() {
                           </Select>
                           <Button 
                             onClick={handleUpdateTable}
-                            disabled={!selectedTable || selectedTable === booking.tableId?.toString() || updateMutation.isPending}
+                            disabled={!selectedTable || selectedTable === booking.tableId?.toString() || updateMutation.isPending || !isChangeAllowed()}
                             size="sm"
                           >
                             Update
@@ -602,7 +602,7 @@ export default function BookingManage() {
                     <Button 
                       variant="destructive" 
                       onClick={handleCancelBooking}
-                      disabled={updateMutation.isPending}
+                      disabled={updateMutation.isPending || !booking?.canCancel}
                     >
                       Cancel Booking
                     </Button>
