@@ -62,30 +62,30 @@ export default function Bookings() {
     const availableTables = tables.filter(table => {
       // Skip the excluded table
       if (excludeTableId && table.id === excludeTableId) return false;
-      
+
       // Check capacity
       if (table.capacity < requestedGuestCount) return false;
 
       // Check if table is occupied at the requested time
       const tableBookings = dateBookings.filter(booking => booking.tableId === table.id);
-      
+
       const isOccupied = tableBookings.some(booking => {
         const startTime = booking.startTime;
         const endTime = booking.endTime || "23:59";
-        
+
         // Check if requested time overlaps with existing booking (with 1-hour buffer)
         const requestedHour = parseInt(requestedTime.split(':')[0]);
         const requestedMinute = parseInt(requestedTime.split(':')[1]);
         const requestedTotalMinutes = requestedHour * 60 + requestedMinute;
-        
+
         const startHour = parseInt(startTime.split(':')[0]);
         const startMinute = parseInt(startTime.split(':')[1]);
         const startTotalMinutes = startHour * 60 + startMinute;
-        
+
         const endHour = parseInt(endTime.split(':')[0]);
         const endMinute = parseInt(endTime.split(':')[1]);
         const endTotalMinutes = endHour * 60 + endMinute;
-        
+
         // Add 1-hour buffer (60 minutes) for table turnover
         return requestedTotalMinutes >= (startTotalMinutes - 60) && 
                requestedTotalMinutes <= (endTotalMinutes + 60);
@@ -98,11 +98,11 @@ export default function Bookings() {
     availableTables.sort((a, b) => {
       const capacityDiffA = Math.abs(a.capacity - requestedGuestCount);
       const capacityDiffB = Math.abs(b.capacity - requestedGuestCount);
-      
+
       if (capacityDiffA !== capacityDiffB) {
         return capacityDiffA - capacityDiffB;
       }
-      
+
       return a.tableNumber - b.tableNumber;
     });
 
@@ -135,24 +135,24 @@ export default function Bookings() {
     const hasTimeConflict = dateBookings.some(booking => {
       const existingStartTime = booking.startTime;
       const existingEndTime = booking.endTime || "23:59";
-      
+
       // Convert times to minutes for easier comparison
       const requestedStartMinutes = parseInt(startTime.split(':')[0]) * 60 + parseInt(startTime.split(':')[1]);
       const requestedEndMinutes = parseInt(endTime.split(':')[0]) * 60 + parseInt(endTime.split(':')[1]);
-      
+
       const existingStartMinutes = parseInt(existingStartTime.split(':')[0]) * 60 + parseInt(existingStartTime.split(':')[1]);
       const existingEndMinutes = parseInt(existingEndTime.split(':')[0]) * 60 + parseInt(existingEndTime.split(':')[1]);
-      
+
       // Add 1-hour buffer (60 minutes) for table turnover
       const bufferMinutes = 60;
-      
+
       // Check for time overlap with buffer
       // Two time ranges overlap if: start1 < end2 && start2 < end1
       const requestedStart = requestedStartMinutes - bufferMinutes;
       const requestedEnd = requestedEndMinutes + bufferMinutes;
       const existingStart = existingStartMinutes - bufferMinutes;
       const existingEnd = existingEndMinutes + bufferMinutes;
-      
+
       return requestedStart < existingEnd && existingStart < requestedEnd;
     });
 
@@ -229,11 +229,11 @@ export default function Bookings() {
     }
 
     const tableIdNum = parseInt(tableId);
-    
+
     // Use current state values for conflict checking
     const currentBooking = newBooking.tableId === tableId ? newBooking : { ...newBooking, tableId };
     const conflict = checkTableConflict(tableIdNum, currentBooking.guestCount, currentBooking.bookingDate, currentBooking.startTime);
-    
+
     if (conflict.hasConflict) {
       // Find alternative table using current booking state
       const alternative = findAlternativeTable(
@@ -245,7 +245,7 @@ export default function Bookings() {
 
       setConflictInfo(conflict);
       setSuggestedTable(alternative);
-      
+
       if (alternative) {
         toast({
           title: "Table Conflict",
@@ -279,7 +279,7 @@ export default function Bookings() {
         newBooking.bookingDate, 
         newBooking.startTime
       );
-      
+
       if (conflict.hasConflict) {
         const table = tables?.find(t => t.id === parseInt(newBooking.tableId));
         toast({
@@ -382,6 +382,34 @@ export default function Bookings() {
         return <Badge variant="outline">{source}</Badge>;
     }
   };
+
+  const deleteBookingMutation = useMutation({
+    mutationFn: async (id: number) => {
+      const response = await fetch(`/api/tenants/${restaurant?.tenantId}/bookings/${id}`, {
+        method: 'DELETE',
+      });
+      if (!response.ok) throw new Error('Failed to delete booking');
+      return response.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: [`/api/tenants/${restaurant?.tenantId}/restaurants/${restaurant?.id}/bookings`] });
+    },
+  });
+
+  const updateBookingMutation = useMutation({
+    mutationFn: async ({ id, updates }: { id: number; updates: Partial<Booking> }) => {
+      const response = await fetch(`/api/tenants/${restaurant?.tenantId}/bookings/${id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(updates),
+      });
+      if (!response.ok) throw new Error('Failed to update booking');
+      return response.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: [`/api/tenants/${restaurant?.tenantId}/restaurants/${restaurant?.id}/bookings`] });
+    },
+  });
 
   return (
     <div className="min-h-screen bg-gray-50">

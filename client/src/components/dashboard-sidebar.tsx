@@ -94,25 +94,73 @@ export default function DashboardSidebar({ selectedDate, bookings }: DashboardSi
           <Settings className="mr-2" size={16} />
           <span className="text-sm font-semibold text-gray-900">Restaurant Settings</span>
         </div>
+        
         <nav className="space-y-1">
-          {settingsItems.map((item) => {
-            const Icon = item.icon;
-            const isActive = location === item.path;
+            <Link
+              to={`/${currentTenantId}/dashboard`}
+              className={cn(
+                "flex items-center px-3 py-2 text-sm font-medium rounded-md transition-colors",
+                location.pathname === `/${currentTenantId}/dashboard`
+                  ? "bg-green-100 text-green-700 border-r-2 border-green-700"
+                  : "text-gray-600 hover:bg-gray-50 hover:text-gray-900"
+              )}
+            >
+              <Calendar className="mr-3 h-4 w-4" />
+              Booking
+            </Link>
 
-            return (
-              <Link key={item.path} href={item.path}>
-                <div className={`flex items-center px-3 py-2 text-sm rounded-lg transition-colors ${
-                  isActive 
-                    ? "text-green-600 bg-green-50" 
-                    : "text-gray-600 hover:text-gray-900 hover:bg-gray-100"
-                }`}>
-                  <Icon className="mr-3" size={14} />
-                  {item.label}
-                </div>
-              </Link>
-            );
-          })}
-        </nav>
+            <Link
+              to={`/${currentTenantId}/bookings`}
+              className={cn(
+                "flex items-center px-3 py-2 text-sm font-medium rounded-md transition-colors",
+                location.pathname === `/${currentTenantId}/bookings`
+                  ? "bg-green-100 text-green-700 border-r-2 border-green-700"
+                  : "text-gray-600 hover:bg-gray-50 hover:text-gray-900"
+              )}
+            >
+              <Users className="mr-3 h-4 w-4" />
+              CRM
+            </Link>
+
+            <Link
+              to={`/${currentTenantId}/waiting-list`}
+              className={cn(
+                "flex items-center px-3 py-2 text-sm font-medium rounded-md transition-colors",
+                location.pathname === `/${currentTenantId}/waiting-list`
+                  ? "bg-green-100 text-green-700 border-r-2 border-green-700"
+                  : "text-gray-600 hover:bg-gray-50 hover:text-gray-900"
+              )}
+            >
+              <Clock className="mr-3 h-4 w-4" />
+              Waiting List
+            </Link>
+
+            <Link
+              to={`/${currentTenantId}/statistics`}
+              className={cn(
+                "flex items-center px-3 py-2 text-sm font-medium rounded-md transition-colors",
+                location.pathname === `/${currentTenantId}/statistics`
+                  ? "bg-green-100 text-green-700 border-r-2 border-green-700"
+                  : "text-gray-600 hover:bg-gray-50 hover:text-gray-900"
+              )}
+            >
+              <BarChart3 className="mr-3 h-4 w-4" />
+              Statistics
+            </Link>
+
+            <Link
+              to={`/${currentTenantId}/activity-log`}
+              className={cn(
+                "flex items-center px-3 py-2 text-sm font-medium rounded-md transition-colors",
+                location.pathname === `/${currentTenantId}/activity-log`
+                  ? "bg-green-100 text-green-700 border-r-2 border-green-700"
+                  : "text-gray-600 hover:bg-gray-50 hover:text-gray-900"
+              )}
+            >
+              <FileText className="mr-3 h-4 w-4" />
+              Log
+            </Link>
+          </nav>
       </div>
 
       <Card className="bg-white border mb-4">

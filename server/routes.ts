@@ -854,7 +854,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       const success = await storage.deleteBooking(id);
       res.json({ message: "Booking deleted successfully" });
-    } catch (error) {
+    } catch (error)```python
+{
       res.status(400).json({ message: "Invalid request" });
     }
   });
@@ -1696,7 +1697,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const tenantTables = tables.filter(table => table.tenantId === tenantId);
 
       // Calculate current month's bookings for monthly revenue
-      const currentMonth = new Date().getMonth();
+      const current_file>
+Date = new Date().getMonth();
       const currentYear = new Date().getFullYear();
       const monthlyBookings = tenantBookings.filter(booking => {
         const bookingDate = new Date(booking.bookingDate);
