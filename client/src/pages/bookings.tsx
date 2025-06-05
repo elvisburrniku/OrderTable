@@ -34,7 +34,8 @@ import {
   HelpCircle,
   LogOut,
   Palette,
-  RotateCcw
+  RotateCcw,
+  Download
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
