@@ -602,6 +602,742 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Table layout routes
+  app.get("/api/tenants/:tenantId/restaurants/:restaurantId/table-layout", validateTenant, async (req, res) => {
+    try {
+      const restaurantId = parseInt(req.params.restaurantId);
+      const tenantId = parseInt(req.params.tenantId);
+      const { room } = req.query;
+
+      const restaurant = await storage.getRestaurantById(restaurantId);
+      if (!restaurant || restaurant.tenantId !== tenantId) {
+        return res.status(404).json({ message: "Restaurant not found" });
+      }
+
+      const roomName = (room as string) || "main";
+      const layout = await storage.getTableLayout(restaurantId, roomName);
+
+      res.json({
+        room: roomName,
+        positions: layout?.positions || {}
+      });
+    } catch (error) {
+      console.error("Error fetching table layout:", error);
+      res.status(500).json({ message: "Internal server error" });
+    }
+  });
+
+  app.post("/api/tenants/:tenantId/restaurants/:restaurantId/table-layout", validateTenant, async (req, res) => {
+    try {
+      const restaurantId = parseInt(req.params.restaurantId);
+      const tenantId = parseInt(req.params.tenantId);
+      const { room, positions } = req.body;
+
+      const restaurant = await storage.getRestaurantById(restaurantId);
+      if (!restaurant || restaurant.tenantId !== tenantId) {
+        return res.status(404).json({ message: "Restaurant not found" });
+      }
+
+      if (!room || !positions) {
+        return res.status(400).json({ message: "Room and positions are required" });
+      }
+
+      const savedLayout = await storage.saveTableLayout(restaurantId, tenantId, room, positions);
+
+      res.json({ 
+        message: "Table layout saved successfully",
+        room: savedLayout.room,
+        positions: savedLayout.positions
+      });
+    } catch (error) {
+      console.error("Error saving table layout:", error);
+      res.status(500).json({ message: "Internal server error" });
+    }
+  });
+
+  // Waiting list routes
+  app.get("/api/tenants/:tenantId/restaurants/:restaurantId/waiting-list", validateTenant, async (req, res) => {
+    try {
+      const restaurantId = parseInt(req.params.restaurantId);
+      const tenantId = parseInt(req.params.tenantId);
+
+      const restaurant = await storage.getRestaurantById(restaurantId);
+      if (!restaurant || restaurant.tenantId !== tenantId) {
+        return res.status(404).json({ message: "Restaurant not found" });
+      }
+
+      const waitingList = await storage.getWaitingListByRestaurant(restaurantId);
+      res.json(waitingList);
+    } catch (error) {
+      res.status(400).json({ message: "Invalid request" });
+    }
+  });
+
+  app.post("/api/tenants/:tenantId/restaurants/:restaurantId/waiting-list", validateTenant, async (req, res) => {
+    try {
+      const restaurantId = parseInt(req.params.restaurantId);
+      const tenantId = parseInt(req.params.tenantId);
+
+      const restaurant = await storage.getRestaurantById(restaurantId);
+      if (!restaurant || restaurant.tenantId !== tenantId) {
+        return res.status(404).json({ message: "Restaurant not found" });
+      }
+
+      const entryData = {
+        ...req.body,
+        restaurantId,
+        tenantId
+      };
+
+      const entry = await storage.createWaitingListEntry(entryData);
+      res.json(entry);
+    } catch (error) {
+      res.status(400).json({ message: "Invalid waiting list data" });
+    }
+  });
+
+  app.put("/api/tenants/:tenantId/waiting-list/:id", validateTenant, async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      const tenantId = parseInt(req.params.tenantId);
+      const updates = req.body;
+
+      const existingEntry = await storage.getWaitingListEntryById(id);
+      if (!existingEntry || existingEntry.tenantId !== tenantId) {
+        return res.status(404).json({ message: "Waiting list entry not found" });
+      }
+
+      const entry = await storage.updateWaitingListEntry(id, updates);
+      res.json(entry);
+    } catch (error) {
+      res.status(400).json({ message: "Invalid request" });
+    }
+  });
+
+  // Feedback routes
+  app.get("/api/tenants/:tenantId/restaurants/:restaurantId/feedback", validateTenant, async (req, res) => {
+    try {
+      const restaurantId = parseInt(req.params.restaurantId);
+      const tenantId = parseInt(req.params.tenantId);
+
+      const restaurant = await storage.getRestaurantById(restaurantId);
+      if (!restaurant || restaurant.tenantId !== tenantId) {
+        return res.status(404).json({ message: "Restaurant not found" });
+      }
+
+      const feedback = await storage.getFeedbackByRestaurant(restaurantId);
+      res.json(feedback);
+    } catch (error) {
+      res.status(400).json({ message: "Invalid request" });
+    }
+  });
+
+  app.post("/api/tenants/:tenantId/restaurants/:restaurantId/feedback", validateTenant, async (req, res) => {
+    try {
+      const restaurantId = parseInt(req.params.restaurantId);
+      const tenantId = parseInt(req.params.tenantId);
+
+      const restaurant = await storage.getRestaurantById(restaurantId);
+      if (!restaurant || restaurant.tenantId !== tenantId) {
+        return res.status(404).json({ message: "Restaurant not found" });
+      }
+
+      const feedbackData = {
+        ...req.body,
+        restaurantId,
+        tenantId
+      };
+
+      const feedback = await storage.createFeedback(feedbackData);
+      res.json(feedback);
+    } catch (error) {
+      res.status(400).json({ message: "Invalid feedback data" });
+    }
+  });
+
+  // Time slots routes
+  app.get("/api/tenants/:tenantId/restaurants/:restaurantId/time-slots", validateTenant, async (req, res) => {
+    try {
+      const restaurantId = parseInt(req.params.restaurantId);
+      const tenantId = parseInt(req.params.tenantId);
+      const { date } = req.query;
+
+      const restaurant = await storage.getRestaurantById(restaurantId);
+      if (!restaurant || restaurant.tenantId !== tenantId) {
+        return res.status(404).json({ message: "Restaurant not found" });
+      }
+
+      const timeSlots = await storage.getTimeSlotsByRestaurant(restaurantId, date as string);
+      res.json(timeSlots);
+    } catch (error) {
+      res.status(400).json({ message: "Invalid request" });
+    }
+  });
+
+  app.post("/api/tenants/:tenantId/restaurants/:restaurantId/time-slots", validateTenant, async (req, res) => {
+    try {
+      const restaurantId = parseInt(req.params.restaurantId);
+      const tenantId = parseInt(req.params.tenantId);
+
+      const restaurant = await storage.getRestaurantById(restaurantId);
+      if (!restaurant || restaurant.tenantId !== tenantId) {
+        return res.status(404).json({ message: "Restaurant not found" });
+      }
+
+      const slotData = {
+        ...req.body,
+        restaurantId,
+        tenantId
+      };
+
+      const slot = await storage.createTimeSlot(slotData);
+      res.json(slot);
+    } catch (error) {
+      res.status(400).json({ message: "Invalid time slot data" });
+    }
+  });
+
+  app.put("/api/tenants/:tenantId/time-slots/:id", validateTenant, async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      const tenantId = parseInt(req.params.tenantId);
+      const updates = req.body;
+
+      const existingSlot = await storage.getTimeSlotById(id);
+      if (!existingSlot || existingSlot.tenantId !== tenantId) {
+        return res.status(404).json({ message: "Time slot not found" });
+      }
+
+      const slot = await storage.updateTimeSlot(id, updates);
+      res.json(slot);
+    } catch (error) {
+      res.status(400).json({ message: "Invalid request" });
+    }
+  });
+
+  // Activity log routes
+  app.get("/api/tenants/:tenantId/restaurants/:restaurantId/activity-log", validateTenant, async (req, res) => {
+    try {
+      const restaurantId = parseInt(req.params.restaurantId);
+      const tenantId = parseInt(req.params.tenantId);
+
+      const restaurant = await storage.getRestaurantById(restaurantId);
+      if (!restaurant || restaurant.tenantId !== tenantId) {
+        return res.status(404).json({ message: "Restaurant not found" });
+      }
+
+      const logs = await storage.getActivityLogByRestaurant(restaurantId);
+      res.json(logs);
+    } catch (error) {
+      res.status(400).json({ message: "Invalid request" });
+    }
+  });
+
+  app.post("/api/tenants/:tenantId/restaurants/:restaurantId/activity-log", validateTenant, async (req, res) => {
+    try {
+      const restaurantId = parseInt(req.params.restaurantId);
+      const tenantId = parseInt(req.params.tenantId);
+
+      const restaurant = await storage.getRestaurantById(restaurantId);
+      if (!restaurant || restaurant.tenantId !== tenantId) {
+        return res.status(404).json({ message: "Restaurant not found" });
+      }
+
+      const logData = {
+        ...req.body,
+        restaurantId,
+        tenantId
+      };
+
+      const log = await storage.createActivityLog(logData);
+      res.json(log);
+    } catch (error) {
+      res.status(400).json({ message: "Invalid log data" });
+    }
+  });
+
+  // SMS messages routes
+  app.get("/api/tenants/:tenantId/restaurants/:restaurantId/sms-messages", validateTenant, async (req, res) => {
+    try {
+      const restaurantId = parseInt(req.params.restaurantId);
+      const tenantId = parseInt(req.params.tenantId);
+
+      const restaurant = await storage.getRestaurantById(restaurantId);
+      if (!restaurant || restaurant.tenantId !== tenantId) {
+        return res.status(404).json({ message: "Restaurant not found" });
+      }
+
+      const messages = await storage.getSmsMessagesByRestaurant(restaurantId);
+      res.json(messages);
+    } catch (error) {
+      res.status(400).json({ message: "Invalid request" });
+    }
+  });
+
+  app.post("/api/tenants/:tenantId/restaurants/:restaurantId/sms-messages", validateTenant, async (req, res) => {
+    try {
+      const restaurantId = parseInt(req.params.restaurantId);
+      const tenantId = parseInt(req.params.tenantId);
+
+      const restaurant = await storage.getRestaurantById(restaurantId);
+      if (!restaurant || restaurant.tenantId !== tenantId) {
+        return res.status(404).json({ message: "Restaurant not found" });
+      }
+
+      const messageData = {
+        ...req.body,
+        restaurantId,
+        tenantId
+      };
+
+      const message = await storage.createSmsMessage(messageData);
+      res.json(message);
+    } catch (error) {
+      res.status(400).json({ message: "Invalid message data" });
+    }
+  });
+
+  // Special periods routes
+  app.get("/api/tenants/:tenantId/restaurants/:restaurantId/special-periods", validateTenant, async (req, res) => {
+    try {
+      const restaurantId = parseInt(req.params.restaurantId);
+      const tenantId = parseInt(req.params.tenantId);
+
+      const restaurant = await storage.getRestaurantById(restaurantId);
+      if (!restaurant || restaurant.tenantId !== tenantId) {
+        return res.status(404).json({ message: "Restaurant not found" });
+      }
+
+      const specialPeriods = await storage.getSpecialPeriodsByRestaurant(restaurantId);
+      res.json(specialPeriods);
+    } catch (error) {
+      res.status(500).json({ message: "Internal server error" });
+    }
+  });
+
+  app.post("/api/tenants/:tenantId/restaurants/:restaurantId/special-periods", validateTenant, async (req, res) => {
+    try {
+      const restaurantId = parseInt(req.params.restaurantId);
+      const tenantId = parseInt(req.params.tenantId);
+
+      const restaurant = await storage.getRestaurantById(restaurantId);
+      if (!restaurant || restaurant.tenantId !== tenantId) {
+        return res.status(404).json({ message: "Restaurant not found" });
+      }
+
+      const periodData = {
+        ...req.body,
+        restaurantId,
+        tenantId
+      };
+
+      const period = await storage.createSpecialPeriod(periodData);
+      res.json(period);
+    } catch (error) {
+      res.status(400).json({ message: "Invalid special period data" });
+    }
+  });
+
+  app.put("/api/tenants/:tenantId/special-periods/:id", validateTenant, async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      const tenantId = parseInt(req.params.tenantId);
+      const updates = req.body;
+
+      const period = await storage.updateSpecialPeriod(id, updates);
+      if (!period) {
+        return res.status(404).json({ message: "Special period not found" });
+      }
+
+      res.json(period);
+    } catch (error) {
+      res.status(400).json({ message: "Invalid request" });
+    }
+  });
+
+  app.delete("/api/tenants/:tenantId/special-periods/:id", validateTenant, async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      const success = await storage.deleteSpecialPeriod(id);
+      
+      if (success) {
+        res.json({ message: "Special period deleted successfully" });
+      } else {
+        res.status(404).json({ message: "Special period not found" });
+      }
+    } catch (error) {
+      res.status(400).json({ message: "Invalid request" });
+    }
+  });
+
+  // Cut-off times routes
+  app.get("/api/tenants/:tenantId/restaurants/:restaurantId/cut-off-times", validateTenant, async (req, res) => {
+    try {
+      const restaurantId = parseInt(req.params.restaurantId);
+      const tenantId = parseInt(req.params.tenantId);
+
+      const restaurant = await storage.getRestaurantById(restaurantId);
+      if (!restaurant || restaurant.tenantId !== tenantId) {
+        return res.status(404).json({ message: "Restaurant not found" });
+      }
+
+      const cutOffTimes = await storage.getCutOffTimesByRestaurant(restaurantId);
+      res.json(cutOffTimes);
+    } catch (error) {
+      res.status(500).json({ message: "Internal server error" });
+    }
+  });
+
+  app.post("/api/tenants/:tenantId/restaurants/:restaurantId/cut-off-times", validateTenant, async (req, res) => {
+    try {
+      const restaurantId = parseInt(req.params.restaurantId);
+      const tenantId = parseInt(req.params.tenantId);
+
+      const restaurant = await storage.getRestaurantById(restaurantId);
+      if (!restaurant || restaurant.tenantId !== tenantId) {
+        return res.status(404).json({ message: "Restaurant not found" });
+      }
+
+      const cutOffTimes = await storage.createOrUpdateCutOffTimes(restaurantId, tenantId, req.body);
+      res.json(cutOffTimes);
+    } catch (error) {
+      res.status(400).json({ message: "Invalid cut-off times data" });
+    }
+  });
+
+  // Additional booking management routes
+  app.put("/api/tenants/:tenantId/bookings/:id", validateTenant, async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      const tenantId = parseInt(req.params.tenantId);
+      const updates = req.body;
+
+      if (updates.bookingDate) {
+        updates.bookingDate = new Date(updates.bookingDate);
+      }
+
+      const existingBooking = await storage.getBookingById(id);
+      if (!existingBooking || existingBooking.tenantId !== tenantId) {
+        return res.status(404).json({ message: "Booking not found" });
+      }
+
+      const booking = await storage.updateBooking(id, updates);
+      res.json(booking);
+    } catch (error) {
+      res.status(400).json({ message: "Invalid request" });
+    }
+  });
+
+  app.get("/api/tenants/:tenantId/bookings/:id", validateTenant, async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      const tenantId = parseInt(req.params.tenantId);
+
+      const booking = await storage.getBookingById(id);
+      if (!booking || booking.tenantId !== tenantId) {
+        return res.status(404).json({ message: "Booking not found" });
+      }
+
+      res.json(booking);
+    } catch (error) {
+      res.status(400).json({ message: "Invalid request" });
+    }
+  });
+
+  app.delete("/api/tenants/:tenantId/bookings/:id", validateTenant, async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      const tenantId = parseInt(req.params.tenantId);
+
+      const existingBooking = await storage.getBookingById(id);
+      if (!existingBooking || existingBooking.tenantId !== tenantId) {
+        return res.status(404).json({ message: "Booking not found" });
+      }
+
+      const success = await storage.deleteBooking(id);
+      res.json({ message: "Booking deleted successfully" });
+    } catch (error) {
+      res.status(400).json({ message: "Invalid request" });
+    }
+  });
+
+  // Table management routes
+  app.put("/api/tenants/:tenantId/tables/:id", validateTenant, async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      const tenantId = parseInt(req.params.tenantId);
+      const updates = req.body;
+
+      const existingTable = await storage.getTableById(id);
+      if (!existingTable || existingTable.tenantId !== tenantId) {
+        return res.status(404).json({ message: "Table not found" });
+      }
+
+      const table = await storage.updateTable(id, updates);
+      res.json(table);
+    } catch (error) {
+      res.status(400).json({ message: "Invalid request" });
+    }
+  });
+
+  app.delete("/api/tenants/:tenantId/tables/:id", validateTenant, async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      const tenantId = parseInt(req.params.tenantId);
+
+      const existingTable = await storage.getTableById(id);
+      if (!existingTable || existingTable.tenantId !== tenantId) {
+        return res.status(404).json({ message: "Table not found" });
+      }
+
+      const success = await storage.deleteTable(id);
+      res.json({ message: "Table deleted successfully" });
+    } catch (error) {
+      res.status(400).json({ message: "Invalid request" });
+    }
+  });
+
+  // Room management routes
+  app.put("/api/tenants/:tenantId/rooms/:id", validateTenant, async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      const tenantId = parseInt(req.params.tenantId);
+      const updates = req.body;
+
+      const existingRoom = await storage.getRoomById(id);
+      if (!existingRoom || existingRoom.tenantId !== tenantId) {
+        return res.status(404).json({ message: "Room not found" });
+      }
+
+      const room = await storage.updateRoom(id, updates);
+      if (!room) {
+        return res.status(404).json({ message: "Failed to update room" });
+      }
+
+      res.json(room);
+    } catch (error) {
+      res.status(500).json({ message: "Internal server error" });
+    }
+  });
+
+  app.delete("/api/tenants/:tenantId/rooms/:id", validateTenant, async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      const tenantId = parseInt(req.params.tenantId);
+
+      const existingRoom = await storage.getRoomById(id);
+      if (!existingRoom || existingRoom.tenantId !== tenantId) {
+        return res.status(404).json({ message: "Room not found" });
+      }
+
+      const success = await storage.deleteRoom(id);
+      res.json({ message: "Room deleted successfully" });
+    } catch (error) {
+      res.status(400).json({ message: "Invalid request" });
+    }
+  });
+
+  // Combined table management routes
+  app.put("/api/tenants/:tenantId/combined-tables/:id", validateTenant, async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      const tenantId = parseInt(req.params.tenantId);
+      const updates = req.body;
+
+      const existingCombinedTable = await storage.getCombinedTableById(id);
+      if (!existingCombinedTable || existingCombinedTable.tenantId !== tenantId) {
+        return res.status(404).json({ message: "Combined table not found" });
+      }
+
+      const combinedTable = await storage.updateCombinedTable(id, updates);
+      res.json(combinedTable);
+    } catch (error) {
+      res.status(400).json({ message: "Invalid request" });
+    }
+  });
+
+  app.delete("/api/tenants/:tenantId/combined-tables/:id", validateTenant, async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      const tenantId = parseInt(req.params.tenantId);
+
+      const existingCombinedTable = await storage.getCombinedTableById(id);
+      if (!existingCombinedTable || existingCombinedTable.tenantId !== tenantId) {
+        return res.status(404).json({ message: "Combined table not found" });
+      }
+
+      const deleted = await storage.deleteCombinedTable(id);
+      if (deleted) {
+        res.json({ message: "Combined table deleted successfully" });
+      } else {
+        res.status(404).json({ message: "Combined table not found" });
+      }
+    } catch (error) {
+      res.status(500).json({ message: "Failed to delete combined table" });
+    }
+  });
+
+  // Tenant routes
+  app.get("/api/tenants/:tenantId", tenantRoutes.getTenant);
+  app.post("/api/tenants", tenantRoutes.createTenant);
+  app.put("/api/tenants/:tenantId", tenantRoutes.updateTenant);
+  app.post("/api/tenants/:tenantId/invite", tenantRoutes.inviteUserToTenant);
+  app.delete("/api/tenants/:tenantId/users/:userId", tenantRoutes.removeUserFromTenant);
+
+  // Subscription Plans
+  app.get("/api/subscription-plans", async (req, res) => {
+    try {
+      const plans = await storage.getSubscriptionPlans();
+      console.log("Fetched subscription plans:", plans.length, "plans");
+      res.json(plans);
+    } catch (error) {
+      console.error("Error fetching subscription plans:", error);
+      res.status(500).json({ error: "Failed to fetch subscription plans" });
+    }
+  });
+
+  app.post("/api/subscription-plans", async (req, res) => {
+    try {
+      const planData = insertSubscriptionPlanSchema.parse(req.body);
+      const plan = await storage.createSubscriptionPlan(planData);
+      res.json(plan);
+    } catch (error) {
+      res.status(400).json({ message: "Invalid plan data" });
+    }
+  });
+
+  // User Subscriptions routes
+  app.get("/api/users/:userId/subscription", async (req, res) => {
+    try {
+      const userId = parseInt(req.params.userId);
+      const subscription = await storage.getUserSubscription(userId);
+
+      if (!subscription) {
+        return res.status(404).json({ message: "No subscription found" });
+      }
+
+      res.json(subscription);
+    } catch (error) {
+      res.status(400).json({ message: "Invalid request" });
+    }
+  });
+
+  app.post("/api/users/:userId/subscription", async (req, res) => {
+    try {
+      const userId = parseInt(req.params.userId);
+      const subscriptionData = insertUserSubscriptionSchema.parse({
+        ...req.body,
+        userId,
+        currentPeriodStart: new Date(req.body.currentPeriodStart),
+        currentPeriodEnd: new Date(req.body.currentPeriodEnd)
+      });
+
+      const subscription = await storage.createUserSubscription(subscriptionData);
+      res.json(subscription);
+    } catch (error) {
+      res.status(400).json({ message: "Invalid subscription data" });
+    }
+  });
+
+  app.put("/api/subscriptions/:id", async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      const updates = req.body;
+
+      if (updates.currentPeriodStart) {
+        updates.currentPeriodStart = new Date(updates.currentPeriodStart);
+      }
+      if (updates.currentPeriodEnd) {
+        updates.currentPeriodEnd = new Date(updates.currentPeriodEnd);
+      }
+
+      const subscription = await storage.updateUserSubscription(id, updates);
+
+      if (!subscription) {
+        return res.status(404).json({ message: "Subscription not found" });
+      }
+
+      res.json(subscription);
+    } catch (error) {
+      res.status(400).json({ message: "Invalid request" });
+    }
+  });
+
+  app.post("/api/subscriptions/:id/cancel", async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+
+      const subscription = await storage.getUserSubscriptionById(id);
+      if (!subscription) {
+        return res.status(404).json({ message: "Subscription not found" });
+      }
+
+      // Cancel the subscription in Stripe if it exists
+      if (subscription.stripeSubscriptionId) {
+        try {
+          await stripe.subscriptions.cancel(subscription.stripeSubscriptionId);
+        } catch (stripeError) {
+          console.error("Failed to cancel Stripe subscription:", stripeError);
+          // Continue with local cancellation even if Stripe fails
+        }
+      }
+
+      // Update the subscription status to cancelled
+      const updatedSubscription = await storage.updateUserSubscription(id, {
+        status: 'cancelled'
+      });
+
+      res.json(updatedSubscription);
+    } catch (error) {
+      console.error("Error cancelling subscription:", error);
+      res.status(400).json({ message: "Invalid request" });
+    }
+  });
+
+  // Stripe checkout session creation
+  app.post("/api/create-checkout-session", async (req, res) => {
+    try {
+      const { planId, userId, successUrl, cancelUrl } = req.body;
+
+      const plan = await storage.getSubscriptionPlan(planId);
+      if (!plan) {
+        return res.status(404).json({ message: "Plan not found" });
+      }
+
+      const session = await stripe.checkout.sessions.create({
+        payment_method_types: ['card'],
+        line_items: [
+          {
+            price_data: {
+              currency: 'usd',
+              product_data: {
+                name: `${plan.name} Plan`,
+                description: `Restaurant booking system - ${plan.name} plan`,
+              },
+              unit_amount: plan.price,
+              recurring: {
+                interval: plan.interval === 'monthly' ? 'month' : plan.interval === 'yearly' ? 'year' : 'month',
+              },
+            },
+            quantity: 1,
+          },
+        ],
+        mode: 'subscription',
+        success_url: successUrl,
+        cancel_url: cancelUrl,
+        metadata: {
+          userId: userId.toString(),
+          planId: planId.toString(),
+        },
+      });
+
+      res.json({ sessionId: session.id });
+    } catch (error) {
+      console.error('Error creating checkout session:', error);
+      res.status(500).json({ message: "Failed to create checkout session" });
+    }
+  });
+
   // Legacy routes for backward compatibility
   app.get("/api/restaurants", async (req, res) => {
     res.json([]);
@@ -625,15 +1361,130 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Subscription Plans
-  app.get("/api/subscription-plans", async (req, res) => {
+  // Legacy waiting list routes for backward compatibility
+  app.get("/api/restaurants/:restaurantId/waiting-list", async (req, res) => {
     try {
-      const plans = await storage.getSubscriptionPlans();
-      console.log("Fetched subscription plans:", plans.length, "plans");
-      res.json(plans);
+      const restaurantId = parseInt(req.params.restaurantId);
+      const waitingList = await storage.getWaitingListByRestaurant(restaurantId);
+      res.json(waitingList);
     } catch (error) {
-      console.error("Error fetching subscription plans:", error);
-      res.status(500).json({ error: "Failed to fetch subscription plans" });
+      res.status(400).json({ message: "Invalid request" });
+    }
+  });
+
+  app.post("/api/restaurants/:restaurantId/waiting-list", async (req, res) => {
+    try {
+      const restaurantId = parseInt(req.params.restaurantId);
+      
+      // Get the restaurant to determine the tenant ID
+      const restaurant = await storage.getRestaurantById(restaurantId);
+      if (!restaurant) {
+        return res.status(404).json({ message: "Restaurant not found" });
+      }
+      
+      const entryData = {
+        ...req.body,
+        restaurantId,
+        tenantId: restaurant.tenantId
+      };
+
+      const entry = await storage.createWaitingListEntry(entryData);
+      res.json(entry);
+    } catch (error) {
+      res.status(400).json({ message: "Invalid waiting list data" });
+    }
+  });
+
+  app.put("/api/restaurants/:restaurantId/waiting-list/:id", async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      const restaurantId = parseInt(req.params.restaurantId);
+      const updates = req.body;
+
+      // Verify waiting list entry belongs to restaurant before updating
+      const existingEntry = await storage.getWaitingListEntryById(id);
+      if (!existingEntry || existingEntry.restaurantId !== restaurantId) {
+        return res.status(404).json({ message: "Waiting list entry not found" });
+      }
+
+      const entry = await storage.updateWaitingListEntry(id, updates);
+      res.json(entry);
+    } catch (error) {
+      res.status(400).json({ message: "Invalid request" });
+    }
+  });
+
+  // Legacy booking creation route for backward compatibility
+  app.post("/api/restaurants/:restaurantId/bookings", async (req, res) => {
+    try {
+      const restaurantId = parseInt(req.params.restaurantId);
+
+      // Get the restaurant to determine the tenant ID
+      const restaurant = await storage.getRestaurantById(restaurantId);
+      if (!restaurant) {
+        return res.status(404).json({ message: "Restaurant not found" });
+      }
+
+      // Get or create customer first
+      const customer = await storage.getOrCreateCustomer(restaurantId, restaurant.tenantId, {
+        name: req.body.customerName,
+        email: req.body.customerEmail,
+        phone: req.body.customerPhone
+      });
+
+      const bookingData = insertBookingSchema.parse({
+        ...req.body,
+        restaurantId,
+        tenantId: restaurant.tenantId,
+        customerId: customer.id,
+        bookingDate: new Date(req.body.bookingDate)
+      });
+
+      const booking = await storage.createBooking(bookingData);
+
+      // Send email notifications if Brevo is configured
+      if (emailService) {
+        try {
+          let emailSettings = null;
+
+          // Parse email settings if they exist
+          if (restaurant?.emailSettings) {
+            try {
+              emailSettings = JSON.parse(restaurant.emailSettings);
+            } catch (e) {
+              console.warn("Failed to parse email settings, using defaults");
+            }
+          }
+
+          // Send confirmation email to customer if enabled (default: true)
+          const shouldSendGuestConfirmation = emailSettings?.guestSettings?.sendBookingConfirmation !== false;
+          if (shouldSendGuestConfirmation) {
+            await emailService.sendBookingConfirmation(
+              req.body.customerEmail,
+              req.body.customerName,
+              {
+                ...bookingData,
+                tableNumber: booking.tableId
+              }
+            );
+          }
+
+          // Send notification to restaurant if enabled (default: true)
+          const shouldSendRestaurantNotification = emailSettings?.placeSettings?.emailBooking !== false;
+          const restaurantEmail = emailSettings?.placeSettings?.sentTo || restaurant?.email;
+
+          if (shouldSendRestaurantNotification && restaurantEmail) {
+            await emailService.sendRestaurantNotification(restaurantEmail, bookingData);
+          }
+        } catch (emailError) {
+          console.error('Error sending email notifications:', emailError);
+          // Don't fail the booking if email fails
+        }
+      }
+
+      res.json(booking);
+    } catch (error) {
+      res.status(400).json({ message: "Invalid booking data" });
     }
   });
 
