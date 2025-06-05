@@ -131,6 +131,22 @@ export function useAuth() {
   return context;
 }
 
+export function useAuthGuard() {
+  const { user, restaurant, isLoading } = useAuth();
+
+  if (isLoading) {
+    return {
+      isLoading: true,
+      isAuthenticated: false,
+      user: null,
+      restaurant: null,
+    };
+  }
+
+  const isAuthenticated = !!(user && restaurant);
+  return { isLoading: false, isAuthenticated, user, restaurant };
+}
+
 export function getCurrentTenant() {
   const storedTenant = localStorage.getItem("tenant");
   return storedTenant ? JSON.parse(storedTenant) : null;
