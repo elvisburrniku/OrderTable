@@ -33,15 +33,16 @@ export default function DashboardSidebar({ selectedDate, bookings }: DashboardSi
   }) : [];
 
   const navigationItems = [
-    { path: `/${tenantId}/dashboard`, icon: Calendar, label: "Booking" },
-    { path: `/${tenantId}/customers`, icon: Users, label: "Customers" },
+    { path: `/${tenantId}/dashboard`, icon: Calendar, label: "Dashboard" },
     { path: `/${tenantId}/bookings`, icon: Calendar, label: "Bookings" },
-    { path: `/${tenantId}/sms-messages`, icon: MessageSquare, label: "SMS Messages" },
+    { path: `/${tenantId}/customers`, icon: Users, label: "Customers" },
     { path: `/${tenantId}/waiting-list`, icon: Clock, label: "Waiting List" },
     { path: `/${tenantId}/statistics`, icon: BarChart3, label: "Statistics" },
-    { path: `/${tenantId}/feedback-responses`, icon: MessageCircle, label: "Feedback" },
     { path: `/${tenantId}/activity-log`, icon: FileText, label: "Activity Log" },
-    { path: `/${tenantId}/subscription`, icon: CreditCard, label: "Subscription" }
+    { path: `/${tenantId}/feedback-responses`, icon: MessageCircle, label: "Feedback" },
+    { path: `/${tenantId}/sms-messages`, icon: MessageSquare, label: "SMS Messages" },
+    { path: `/${tenantId}/subscription`, icon: CreditCard, label: "Subscription" },
+    { path: `/${tenantId}/tenant-settings`, icon: Settings, label: "Tenant Settings" }
   ];
 
   const settingsItems = [
@@ -51,6 +52,7 @@ export default function DashboardSidebar({ selectedDate, bookings }: DashboardSi
     { path: `/${tenantId}/rooms`, icon: MapPin, label: "Rooms" },
     { path: `/${tenantId}/tables`, icon: Table, label: "Tables" },
     { path: `/${tenantId}/combined-tables`, icon: Utensils, label: "Combined Tables" },
+    { path: `/${tenantId}/table-plan`, icon: Grid3x3, label: "Table Plan" },
     { path: `/${tenantId}/seating-configurations`, icon: Grid3x3, label: "Seating Configurations" },
     { path: `/${tenantId}/periodic-criteria`, icon: Calendar, label: "Periodic Criteria" },
     { path: `/${tenantId}/custom-fields`, icon: FileText, label: "Custom Fields" },
@@ -59,8 +61,10 @@ export default function DashboardSidebar({ selectedDate, bookings }: DashboardSi
     { path: `/${tenantId}/sms-notifications`, icon: MessageSquare, label: "SMS Notifications" },
     { path: `/${tenantId}/feedback-questions`, icon: MessageCircle, label: "Questions" },
     { path: `/${tenantId}/events`, icon: Calendar, label: "Events" },
+    { path: `/${tenantId}/products`, icon: Utensils, label: "Products" },
+    { path: `/${tenantId}/product-groups`, icon: Grid3x3, label: "Product Groups" },
     { path: `/${tenantId}/payment-setups`, icon: Settings, label: "Payment Setups" },
-    { path: `/${tenantId}/payment-gateway`, icon: Settings, label: "Payment Gateway" }
+    { path: `/${tenantId}/payment-gateway`, icon: CreditCard, label: "Payment Gateway" }
   ];
 
   return (
@@ -97,71 +101,24 @@ export default function DashboardSidebar({ selectedDate, bookings }: DashboardSi
         </div>
         
         <nav className="space-y-1">
-            <Link
-              to={`/${currentTenantId}/dashboard`}
-              className={cn(
-                "flex items-center px-3 py-2 text-sm font-medium rounded-md transition-colors",
-                location.pathname === `/${currentTenantId}/dashboard`
-                  ? "bg-green-100 text-green-700 border-r-2 border-green-700"
-                  : "text-gray-600 hover:bg-gray-50 hover:text-gray-900"
-              )}
-            >
-              <Calendar className="mr-3 h-4 w-4" />
-              Booking
-            </Link>
+          {settingsItems.map((item) => {
+            const Icon = item.icon;
+            const isActive = location === item.path;
 
-            <Link
-              to={`/${currentTenantId}/bookings`}
-              className={cn(
-                "flex items-center px-3 py-2 text-sm font-medium rounded-md transition-colors",
-                location.pathname === `/${currentTenantId}/bookings`
-                  ? "bg-green-100 text-green-700 border-r-2 border-green-700"
-                  : "text-gray-600 hover:bg-gray-50 hover:text-gray-900"
-              )}
-            >
-              <Users className="mr-3 h-4 w-4" />
-              CRM
-            </Link>
-
-            <Link
-              to={`/${currentTenantId}/waiting-list`}
-              className={cn(
-                "flex items-center px-3 py-2 text-sm font-medium rounded-md transition-colors",
-                location.pathname === `/${currentTenantId}/waiting-list`
-                  ? "bg-green-100 text-green-700 border-r-2 border-green-700"
-                  : "text-gray-600 hover:bg-gray-50 hover:text-gray-900"
-              )}
-            >
-              <Clock className="mr-3 h-4 w-4" />
-              Waiting List
-            </Link>
-
-            <Link
-              to={`/${currentTenantId}/statistics`}
-              className={cn(
-                "flex items-center px-3 py-2 text-sm font-medium rounded-md transition-colors",
-                location.pathname === `/${currentTenantId}/statistics`
-                  ? "bg-green-100 text-green-700 border-r-2 border-green-700"
-                  : "text-gray-600 hover:bg-gray-50 hover:text-gray-900"
-              )}
-            >
-              <BarChart3 className="mr-3 h-4 w-4" />
-              Statistics
-            </Link>
-
-            <Link
-              to={`/${currentTenantId}/activity-log`}
-              className={cn(
-                "flex items-center px-3 py-2 text-sm font-medium rounded-md transition-colors",
-                location.pathname === `/${currentTenantId}/activity-log`
-                  ? "bg-green-100 text-green-700 border-r-2 border-green-700"
-                  : "text-gray-600 hover:bg-gray-50 hover:text-gray-900"
-              )}
-            >
-              <FileText className="mr-3 h-4 w-4" />
-              Log
-            </Link>
-          </nav>
+            return (
+              <Link key={item.path} href={item.path}>
+                <div className={`flex items-center px-3 py-2 text-sm font-medium rounded-lg transition-colors ${
+                  isActive 
+                    ? "text-green-600 bg-green-50" 
+                    : "text-gray-600 hover:text-gray-900 hover:bg-gray-100"
+                }`}>
+                  <Icon className="mr-3" size={16} />
+                  {item.label}
+                </div>
+              </Link>
+            );
+          })}
+        </nav>
       </div>
 
       <Card className="bg-white border mb-4">
