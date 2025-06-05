@@ -10,14 +10,6 @@ export default function CutOffTime() {
   const { isLoading: authLoading, isAuthenticated, user, restaurant } = useAuthGuard();
   const queryClient = useQueryClient();
 
-  if (authLoading) {
-    return <div>Loading...</div>;
-  }
-
-  if (!isAuthenticated || !user || !restaurant) {
-    return null;
-  }
-
   const [cutOffTimes, setCutOffTimes] = useState({
     Sunday: "None",
     Monday: "None",
@@ -27,6 +19,14 @@ export default function CutOffTime() {
     Friday: "None",
     Saturday: "None"
   });
+
+  if (authLoading) {
+    return <div>Loading...</div>;
+  }
+
+  if (!isAuthenticated || !user || !restaurant) {
+    return null;
+  }
 
   // Fetch existing cut-off times
   const { data: existingCutOffTimes, isLoading } = useQuery({
