@@ -111,13 +111,11 @@ export default function BookingManage() {
     
     // Get the day of the week (0 = Sunday, 1 = Monday, etc.)
     const dayOfWeek = bookingDateTime.getDay();
-    const dayNames = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'];
-    const dayName = dayNames[dayOfWeek];
     
-    // Find cut-off time for this day
-    const cutOffTime = cutOffTimes.find((ct: any) => ct.dayOfWeek.toLowerCase() === dayName);
+    // Find cut-off time for this day (dayOfWeek is stored as integer)
+    const cutOffTime = cutOffTimes.find((ct: any) => ct.dayOfWeek === dayOfWeek);
     
-    if (!cutOffTime || !cutOffTime.isEnabled) {
+    if (!cutOffTime || cutOffTime.cutOffHours === 0) {
       // If no cut-off time is set for this day, allow changes up to 1 hour before
       const oneHourBefore = new Date(bookingDateTime);
       const [hours, minutes] = booking.startTime.split(':');
@@ -127,7 +125,7 @@ export default function BookingManage() {
     
     // Calculate cut-off deadline
     const cutOffDeadline = new Date(bookingDateTime);
-    cutOffDeadline.setHours(cutOffDeadline.getHours() - cutOffTime.hoursBeforeBooking);
+    cutOffDeadline.setHours(cutOffDeadline.getHours() - cutOffTime.cutOffHours);
     
     return isBefore(now, cutOffDeadline);
   };
@@ -140,13 +138,13 @@ export default function BookingManage() {
     const dayNames = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
     const dayName = dayNames[dayOfWeek];
     
-    const cutOffTime = cutOffTimes.find((ct: any) => ct.dayOfWeek.toLowerCase() === dayName.toLowerCase());
+    const cutOffTime = cutOffTimes.find((ct: any) => ct.dayOfWeek === dayOfWeek);
     
-    if (!cutOffTime || !cutOffTime.isEnabled) {
+    if (!cutOffTime || cutOffTime.cutOffHours === 0) {
       return `Changes are allowed up to 1 hour before your booking time.`;
     }
     
-    const hours = cutOffTime.hoursBeforeBooking;
+    const hours = cutOffTime.cutOffHours;
     return `Changes are allowed up to ${hours} hour${hours > 1 ? 's' : ''} before your booking time (${dayName} policy).`;
   };
 
