@@ -12,7 +12,7 @@ import { eq, and } from "drizzle-orm";
 import { BrevoEmailService } from "./brevo-service";
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY || 'sk_test_your_stripe_secret_key', {
-  apiVersion: '2025-05-28.basil'
+  apiVersion: '2024-06-20'
 });
 
 // Initialize email service, passing API key from environment variables
