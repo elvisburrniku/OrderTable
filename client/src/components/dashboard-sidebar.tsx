@@ -130,17 +130,7 @@ export default function DashboardSidebar({ selectedDate, bookings }: DashboardSi
               <div key={day} className="text-center p-1 text-gray-500">{day}</div>
             ))}
 
-            {/* Simple calendar display - showing just a few days */}
-            <div className="text-center p-1">1</div>
-            <div className={`text-center p-1 rounded ${
-              format(selectedDate, 'd') === '2' ? 'bg-green-600 text-white' : ''
-            }`}>2</div>
-            <div className="text-center p-1">3</div>
-            <div className="text-center p-1">4</div>
-            <div className="text-center p-1">5</div>
-            <div className="text-center p-1">6</div>
-            <div className="text-center p-1">7</div>
-          </div>
+            </div>
         </CardContent>
       </Card>
 
