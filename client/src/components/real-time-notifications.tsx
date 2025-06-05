@@ -241,7 +241,7 @@ export function RealTimeNotifications() {
         onClick={() => setIsOpen(!isOpen)}
         className="relative"
       >
-        <Bell className="h-4 w-4" />
+        <Bell className={`h-4 w-4 ${pendingChangeRequests.length > 0 ? 'animate-pulse text-yellow-500' : ''}`} />
         {unreadCount > 0 && (
           <Badge 
             variant="destructive" 
@@ -258,10 +258,15 @@ export function RealTimeNotifications() {
 
       {/* Notifications Panel */}
       {isOpen && (
-        <Card className="absolute right-0 top-12 w-96 max-h-96 overflow-hidden z-50 shadow-lg">
+        <Card className="absolute right-0 top-12 w-[450px] max-h-[80vh] overflow-hidden z-50 shadow-lg">
           <CardHeader className="pb-2">
             <div className="flex items-center justify-between">
-              <CardTitle className="text-lg">Live Notifications</CardTitle>
+              <div className="flex items-center gap-2">
+                <CardTitle className="text-lg">Live Notifications</CardTitle>
+                {pendingChangeRequests.length > 0 && (
+                  <Badge variant="destructive">{pendingChangeRequests.length} pending</Badge>
+                )}
+              </div>
               <div className="flex items-center space-x-2">
                 {unreadCount > 0 && (
                   <Button variant="ghost" size="sm" onClick={markAllAsRead}>
@@ -276,94 +281,110 @@ export function RealTimeNotifications() {
           </CardHeader>
           
           <CardContent className="p-0">
-            <div className="max-h-80 overflow-y-auto">
+            <div className="max-h-96 overflow-y-auto">
               {notifications.length === 0 ? (
                 <div className="p-4 text-center text-gray-500">
-                  No new booking notifications
+                  <Bell className="h-8 w-8 mx-auto mb-2 text-gray-300" />
+                  <p>No notifications yet</p>
+                  <p className="text-sm">You'll see booking updates here</p>
                 </div>
               ) : (
                 notifications.map((notification) => (
                   <div
                     key={notification.id}
                     className={`p-4 border-b border-gray-200 hover:bg-gray-50 ${
-                      !notification.read ? 'bg-blue-50' : ''
+                      !notification.read ? 'bg-blue-50 border-l-4 border-l-blue-500' : ''
+                    } ${
+                      notification.type === 'booking_change_request' && notification.changeRequest?.status === 'pending' 
+                        ? 'bg-yellow-50 border-l-4 border-l-yellow-500' : ''
                     }`}
+                    onClick={() => markAsRead(notification.id)}
                   >
-                    <div className="flex items-start justify-between">
-                      <div className="flex-1">
-                        <div className="flex items-center space-x-2 mb-2">
-                          <User className="h-4 w-4 text-blue-500" />
-                          <span className="font-semibold text-sm">
-                            {notification.booking.customerName}
-                          </span>
-                          {!notification.read && (
-                            <div className="w-2 h-2 bg-blue-500 rounded-full" />
-                          )}
-                        </div>
+                    <div className="flex items-start gap-3">
+                      {getNotificationIcon(
+                        notification.type, 
+                        notification.type === 'booking_change_request' && notification.changeRequest?.status === 'pending'
+                      )}
+                      <div className="flex-1 min-w-0">
+                        <p className="text-sm font-medium text-gray-900 mb-1">
+                          {getNotificationMessage(notification)}
+                        </p>
                         
-                        <div className="space-y-1 text-xs text-gray-600">
-                          <div className="flex items-center space-x-2">
-                            <Mail className="h-3 w-3" />
-                            <span>{notification.booking.customerEmail}</span>
+                        {notification.changeRequest?.requestNotes && (
+                          <div className="bg-gray-100 rounded p-2 mb-2">
+                            <p className="text-xs text-gray-600 flex items-center gap-1">
+                              <MessageSquare className="h-3 w-3" />
+                              Customer note:
+                            </p>
+                            <p className="text-sm text-gray-800">{notification.changeRequest.requestNotes}</p>
                           </div>
-                          
-                          {notification.booking.customerPhone && (
-                            <div className="flex items-center space-x-2">
-                              <Phone className="h-3 w-3" />
-                              <span>{notification.booking.customerPhone}</span>
-                            </div>
-                          )}
-                          
-                          <div className="flex items-center space-x-2">
-                            <Users className="h-3 w-3" />
-                            <span>{notification.booking.guestCount} guests</span>
-                          </div>
-                          
-                          <div className="flex items-center space-x-2">
-                            <Calendar className="h-3 w-3" />
-                            <span>{format(new Date(notification.booking.bookingDate), 'MMM dd, yyyy')}</span>
-                          </div>
-                          
-                          <div className="flex items-center space-x-2">
-                            <Clock className="h-3 w-3" />
-                            <span>{notification.booking.startTime}</span>
-                            {notification.booking.endTime && (
-                              <span>- {notification.booking.endTime}</span>
-                            )}
-                          </div>
-                          
-                          {notification.booking.notes && (
-                            <div className="text-xs text-gray-500 mt-1">
-                              Note: {notification.booking.notes}
-                            </div>
-                          )}
-                        </div>
-                        
-                        <div className="text-xs text-gray-400 mt-2">
-                          {format(new Date(notification.timestamp), 'HH:mm:ss')}
-                        </div>
-                      </div>
-                      
-                      <div className="flex flex-col space-y-1">
-                        {!notification.read && (
-                          <Button 
-                            variant="ghost" 
-                            size="sm"
-                            onClick={() => markAsRead(notification.id)}
-                            className="h-6 px-2 text-xs"
-                          >
-                            Mark read
-                          </Button>
                         )}
-                        <Button 
-                          variant="ghost" 
-                          size="sm"
-                          onClick={() => removeNotification(notification.id)}
-                          className="h-6 px-2 text-xs text-red-500 hover:text-red-700"
-                        >
-                          <X className="h-3 w-3" />
-                        </Button>
+                        
+                        {notification.type === 'booking_change_request' && 
+                         notification.changeRequest?.status === 'pending' &&
+                         !processingRequests.has(notification.changeRequest.id) && (
+                          <div className="mt-3 space-y-2">
+                            <div className="text-xs text-gray-600 space-y-1">
+                              {formatChangeDetails(notification.changeRequest).map((change, idx) => (
+                                <div key={idx} className="flex items-center gap-1">
+                                  <Calendar className="h-3 w-3" />
+                                  {change}
+                                </div>
+                              ))}
+                            </div>
+                            <div className="flex gap-2">
+                              <Button
+                                size="sm"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  handleChangeRequest(notification.changeRequest!.id, 'approve');
+                                }}
+                                className="bg-green-600 hover:bg-green-700"
+                              >
+                                Approve
+                              </Button>
+                              <Button
+                                size="sm"
+                                variant="destructive"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  handleChangeRequest(notification.changeRequest!.id, 'reject');
+                                }}
+                              >
+                                Reject
+                              </Button>
+                            </div>
+                          </div>
+                        )}
+                        
+                        {processingRequests.has(notification.changeRequest?.id) && (
+                          <div className="mt-2 text-sm text-gray-500">
+                            Processing...
+                          </div>
+                        )}
+                        
+                        {notification.changeRequest?.status && notification.changeRequest.status !== 'pending' && (
+                          <Badge 
+                            variant={notification.changeRequest.status === 'approved' ? 'default' : 'destructive'}
+                            className="mt-2"
+                          >
+                            {notification.changeRequest.status}
+                          </Badge>
+                        )}
+                        
+                        <p className="text-xs text-gray-500 mt-2">
+                          {format(new Date(notification.timestamp), 'MMM dd, HH:mm:ss')}
+                        </p>
                       </div>
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          removeNotification(notification.id);
+                        }}
+                        className="text-gray-400 hover:text-gray-600 ml-2"
+                      >
+                        <X className="h-4 w-4" />
+                      </button>
                     </div>
                   </div>
                 ))
