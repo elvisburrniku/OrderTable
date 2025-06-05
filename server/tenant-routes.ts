@@ -240,3 +240,12 @@ export async function removeUserFromTenant(req: Request, res: Response) {
     res.status(500).json({ message: "Internal server error" });
   }
 }
+
+// Setup function to register all tenant routes
+export function setupTenantRoutes(app: any) {
+  app.get("/api/tenant/:tenantId", getTenant);
+  app.post("/api/tenant", createTenant);
+  app.put("/api/tenant/:tenantId", updateTenant);
+  app.post("/api/tenant/:tenantId/invite", inviteUserToTenant);
+  app.delete("/api/tenant/:tenantId/users/:userId", removeUserFromTenant);
+}
