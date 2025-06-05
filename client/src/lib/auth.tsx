@@ -6,7 +6,10 @@ import {
   ReactNode,
 } from "react";
 import { apiRequest } from "./queryClient";
-import { User, Restaurant } from "@shared/schema";
+import { users, restaurants } from "@shared/schema";
+
+type User = typeof users.$inferSelect;
+type Restaurant = typeof restaurants.$inferSelect;
 
 interface AuthContextType {
   user: User | null;
@@ -30,28 +33,66 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    // Check for stored user data on app load
-    const storedUser = localStorage.getItem("user");
-    const storedRestaurant = localStorage.getItem("restaurant");
+    // Check for stored user data on app load and validate session
+    const validateSession = async () => {
+      const storedUser = localStorage.getItem("user");
+      const storedRestaurant = localStorage.getItem("restaurant");
 
-    if (storedUser && storedUser !== "undefined") {
-      try {
-        setUser(JSON.parse(storedUser));
-      } catch (error) {
-        console.error("Error parsing stored user:", error);
-        localStorage.removeItem("user");
-      }
-    }
-    if (storedRestaurant && storedRestaurant !== "undefined") {
-      try {
-        setRestaurant(JSON.parse(storedRestaurant));
-      } catch (error) {
-        console.error("Error parsing stored restaurant:", error);
+      if (storedUser && storedUser !== "undefined") {
+        try {
+          const parsedUser = JSON.parse(storedUser);
+          
+          // Validate session with backend
+          try {
+            const response = await fetch('/api/auth/validate', {
+              method: 'GET',
+              credentials: 'include',
+              headers: {
+                'Content-Type': 'application/json',
+              },
+            });
+            
+            if (response.ok) {
+              const data = await response.json();
+              setUser(data.user || parsedUser);
+              if (data.restaurant) {
+                setRestaurant(data.restaurant);
+                localStorage.setItem("restaurant", JSON.stringify(data.restaurant));
+              }
+            } else {
+              // Session invalid, clear stored data
+              localStorage.removeItem("user");
+              localStorage.removeItem("restaurant");
+              localStorage.removeItem("tenant");
+            }
+          } catch (error) {
+            // Network error or server down, use stored data as fallback
+            setUser(parsedUser);
+            if (storedRestaurant && storedRestaurant !== "undefined") {
+              try {
+                setRestaurant(JSON.parse(storedRestaurant));
+              } catch (restaurantError) {
+                console.error("Error parsing stored restaurant:", restaurantError);
+                localStorage.removeItem("restaurant");
+              }
+            }
+          }
+        } catch (error) {
+          console.error("Error parsing stored user:", error);
+          localStorage.removeItem("user");
+          localStorage.removeItem("restaurant");
+          localStorage.removeItem("tenant");
+        }
+      } else if (storedRestaurant) {
+        // Clear orphaned restaurant data
         localStorage.removeItem("restaurant");
+        localStorage.removeItem("tenant");
       }
-    }
 
-    setIsLoading(false);
+      setIsLoading(false);
+    };
+
+    validateSession();
   }, []);
 
   const login = async (email: string, password: string) => {
@@ -125,16 +166,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
 export function useAuth() {
   const context = useContext(AuthContext);
-  if (context === undefined) {
+  if (context === null) {
     throw new Error("useAuth must be used within an AuthProvider");
   }
   return context;
 }
 
 export function useAuthGuard() {
-  const { user, restaurant, isLoading } = useAuth();
+  const auth = useAuth();
 
-  if (isLoading) {
+  if (auth.isLoading) {
     return {
       isLoading: true,
       isAuthenticated: false,
@@ -143,8 +184,8 @@ export function useAuthGuard() {
     };
   }
 
-  const isAuthenticated = !!(user && restaurant);
-  return { isLoading: false, isAuthenticated, user, restaurant };
+  const isAuthenticated = !!(auth.user && auth.restaurant);
+  return { isLoading: false, isAuthenticated, user: auth.user, restaurant: auth.restaurant };
 }
 
 export function getCurrentTenant() {
