@@ -1643,7 +1643,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           const existingStart = existingStartMinutes - bufferMinutes;
           const existingEnd = existingEndMinutes + bufferMinutes;
 
-          return requestedStart < existingEnd && existingStart < requestedEnd;
+          return requestedStart < existingEnd && existingStart < existingEnd;
         });
 
         if (conflictingBookings.length > 0) {
@@ -2132,7 +2132,7 @@ app.put("/api/tenants/:tenantId/bookings/:id", validateTenant, async (req, res) 
             const existingStart = existingStartMinutes - bufferMinutes;
             const existingEnd = existingEndMinutes + bufferMinutes;
 
-            return requestedStart < existingEnd && existingStart < requestedEnd;
+            return requestedStart < existingEnd && existingStart < existingEnd;
           });
 
           if (conflictingBookings.length > 0) {
