@@ -295,6 +295,21 @@ export default function Bookings() {
     setNewBooking({ ...newBooking, tableId });
   };
 
+  
+
+  // Use suggested table
+  const useSuggestedTable = () => {
+    if (suggestedTable) {
+      setNewBooking({ ...newBooking, tableId: suggestedTable.id.toString() });
+      setConflictInfo(null);
+      setSuggestedTable(null);
+      toast({
+        title: "Table Updated",
+        description: `Switched to Table ${suggestedTable.tableNumber} (${suggestedTable.capacity} seats)`,
+      });
+    }
+  };
+
   // Handle booking form submission
   const handleCreateBooking = (e: React.FormEvent) => {
     e.preventDefault();
@@ -342,19 +357,6 @@ export default function Bookings() {
       tableId: newBooking.tableId ? parseInt(newBooking.tableId) : null,
       restaurantId: restaurant?.id
     });
-  };
-
-  // Use suggested table
-  const useSuggestedTable = () => {
-    if (suggestedTable) {
-      setNewBooking({ ...newBooking, tableId: suggestedTable.id.toString() });
-      setConflictInfo(null);
-      setSuggestedTable(null);
-      toast({
-        title: "Table Updated",
-        description: `Switched to Table ${suggestedTable.tableNumber} (${suggestedTable.capacity} seats)`,
-      });
-    }
   };
 
   if (!user || !restaurant) {
