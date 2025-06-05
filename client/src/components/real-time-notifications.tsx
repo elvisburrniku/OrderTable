@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useWebSocket } from '@/hooks/use-websocket';
 import { useAuth } from '@/lib/auth';
-import { Bell, X, User, Calendar, Clock, Users, Phone, Mail } from 'lucide-react';
+import { Bell, X, User, Calendar, Clock, Users, Phone, Mail, AlertTriangle, CheckCircle, XCircle, MessageSquare } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -9,7 +9,7 @@ import { format } from 'date-fns';
 
 interface BookingNotification {
   id: string;
-  type: 'new_booking';
+  type: 'new_booking' | 'booking_changed' | 'booking_cancelled' | 'booking_change_request' | 'change_request_responded';
   booking: {
     id: number;
     customerName: string;
@@ -23,8 +23,20 @@ interface BookingNotification {
     status: string;
     notes?: string;
     createdAt: string;
+    tenantId: number;
+    restaurantId: number;
   };
-  restaurant: {
+  changeRequest?: {
+    id: number;
+    requestedDate?: string;
+    requestedTime?: string;
+    requestedGuestCount?: number;
+    requestNotes?: string;
+    status: string;
+  };
+  changes?: any;
+  approved?: boolean;
+  restaurant?: {
     id: number;
     name?: string;
   };
@@ -38,23 +50,27 @@ export function RealTimeNotifications() {
   const [isOpen, setIsOpen] = useState(false);
   const [unreadCount, setUnreadCount] = useState(0);
 
+  const [processingRequests, setProcessingRequests] = useState<Set<number>>(new Set());
+
   const { isConnected } = useWebSocket({
     restaurantId: restaurant?.id,
     onMessage: (data) => {
-      if (data.type === 'new_booking') {
+      if (data.type === 'notification') {
         const notification: BookingNotification = {
-          ...data,
-          id: `${data.booking.id}-${Date.now()}`,
+          ...data.notification,
+          id: `${data.notification.type}-${data.notification.booking?.id || data.notification.changeRequest?.id}-${Date.now()}`,
           read: false
         };
         
-        setNotifications(prev => [notification, ...prev.slice(0, 19)]); // Keep last 20 notifications
+        setNotifications(prev => [notification, ...prev.slice(0, 29)]); // Keep last 30 notifications
         setUnreadCount(prev => prev + 1);
         
         // Show browser notification if permission granted
         if (Notification.permission === 'granted') {
-          new Notification(`New Booking - ${data.booking.customerName}`, {
-            body: `${data.booking.guestCount} guests for ${data.booking.startTime} on ${format(new Date(data.booking.bookingDate), 'MMM dd, yyyy')}`,
+          const title = getNotificationTitle(notification);
+          const body = getNotificationMessage(notification);
+          new Notification(title, {
+            body,
             icon: '/favicon.ico'
           });
         }
@@ -90,6 +106,131 @@ export function RealTimeNotifications() {
       return notification && !notification.read ? prev - 1 : prev;
     });
   };
+
+  const handleChangeRequest = async (requestId: number, action: 'approve' | 'reject', response?: string) => {
+    setProcessingRequests(prev => new Set(prev).add(requestId));
+    
+    try {
+      const res = await fetch(`/api/booking-change-response/${requestId}`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          action,
+          response
+        })
+      });
+
+      if (res.ok) {
+        // Update notification to show it's been processed
+        setNotifications(prev => 
+          prev.map(n => 
+            n.changeRequest?.id === requestId 
+              ? { ...n, changeRequest: { ...n.changeRequest, status: action === 'approve' ? 'approved' : 'rejected' } }
+              : n
+          )
+        );
+      } else {
+        console.error('Failed to process change request');
+      }
+    } catch (error) {
+      console.error('Error processing change request:', error);
+    } finally {
+      setProcessingRequests(prev => {
+        const next = new Set(prev);
+        next.delete(requestId);
+        return next;
+      });
+    }
+  };
+
+  const getNotificationIcon = (type: string, urgent = false) => {
+    const className = `h-4 w-4 ${urgent ? 'animate-pulse' : ''}`;
+    
+    switch (type) {
+      case 'new_booking':
+        return <CheckCircle className={`${className} text-green-500`} />;
+      case 'booking_changed':
+        return <Clock className={`${className} text-blue-500`} />;
+      case 'booking_cancelled':
+        return <XCircle className={`${className} text-red-500`} />;
+      case 'booking_change_request':
+        return <AlertTriangle className={`${className} text-yellow-500`} />;
+      case 'change_request_responded':
+        return <CheckCircle className={`${className} text-green-500`} />;
+      default:
+        return <Bell className={`${className} text-gray-500`} />;
+    }
+  };
+
+  const getNotificationTitle = (notification: BookingNotification) => {
+    switch (notification.type) {
+      case 'new_booking':
+        return 'New Booking';
+      case 'booking_changed':
+        return 'Booking Updated';
+      case 'booking_cancelled':
+        return 'Booking Cancelled';
+      case 'booking_change_request':
+        return 'Change Request';
+      case 'change_request_responded':
+        return 'Request Processed';
+      default:
+        return 'Notification';
+    }
+  };
+
+  const getNotificationMessage = (notification: BookingNotification) => {
+    const { type, booking, changeRequest, changes, approved } = notification;
+    
+    switch (type) {
+      case 'new_booking':
+        return `${booking?.customerName} - ${booking?.guestCount} guests on ${format(new Date(booking?.bookingDate), 'MMM dd')} at ${booking?.startTime}`;
+      case 'booking_changed':
+        const changedFields = Object.keys(changes || {}).map(key => {
+          switch (key) {
+            case 'bookingDate': return 'date';
+            case 'startTime': return 'time';
+            case 'guestCount': return 'party size';
+            default: return key;
+          }
+        }).join(', ');
+        return `${booking?.customerName} changed ${changedFields}`;
+      case 'booking_cancelled':
+        return `${booking?.customerName} cancelled their ${format(new Date(booking?.bookingDate), 'MMM dd')} booking`;
+      case 'booking_change_request':
+        const requestedChanges = [];
+        if (changeRequest?.requestedDate) requestedChanges.push(`date to ${format(new Date(changeRequest.requestedDate), 'MMM dd')}`);
+        if (changeRequest?.requestedTime) requestedChanges.push(`time to ${changeRequest.requestedTime}`);
+        if (changeRequest?.requestedGuestCount) requestedChanges.push(`party size to ${changeRequest.requestedGuestCount}`);
+        return `${booking?.customerName} wants to change ${requestedChanges.join(', ')}`;
+      case 'change_request_responded':
+        return `Change request ${approved ? 'approved' : 'rejected'} for ${booking?.customerName}`;
+      default:
+        return 'New notification';
+    }
+  };
+
+  const formatChangeDetails = (changeRequest: any) => {
+    const changes = [];
+    if (changeRequest?.requestedDate) {
+      changes.push(`Date: ${format(new Date(changeRequest.requestedDate), 'MMM dd, yyyy')}`);
+    }
+    if (changeRequest?.requestedTime) {
+      changes.push(`Time: ${changeRequest.requestedTime}`);
+    }
+    if (changeRequest?.requestedGuestCount) {
+      changes.push(`Party Size: ${changeRequest.requestedGuestCount} guests`);
+    }
+    return changes;
+  };
+
+  const pendingChangeRequests = notifications.filter(n => 
+    n.type === 'booking_change_request' && 
+    n.changeRequest?.status === 'pending' && 
+    !processingRequests.has(n.changeRequest?.id)
+  );
 
   return (
     <div className="relative">
