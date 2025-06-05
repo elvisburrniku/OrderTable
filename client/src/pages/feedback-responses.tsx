@@ -59,6 +59,10 @@ export default function FeedbackResponses() {
                 <span className="w-2 h-2 bg-green-600 rounded-full"></span>
                 <span className="font-medium">Feedback responses</span>
               </div>
+              <a href="/feedback-responses-popup" className="flex items-center space-x-2 text-gray-600 hover:bg-gray-50 px-3 py-2 rounded ml-4">
+                <span className="w-2 h-2 bg-blue-400 rounded-full"></span>
+                <span>Popup View</span>
+              </a>
               <a href="#" className="flex items-center space-x-2 text-gray-600 hover:bg-gray-50 px-3 py-2 rounded">
                 <span className="w-2 h-2 bg-gray-400 rounded-full"></span>
                 <span>Newsletter</span>

@@ -46,6 +46,7 @@ import Billing from "./pages/billing";
 import Help from "./pages/help";
 import CustomerFeedback from "./pages/customer-feedback";
 import TableFeedback from "./pages/table-feedback";
+import FeedbackResponsesPopup from "./pages/feedback-responses-popup";
 
 function App() {
   return (
@@ -93,6 +94,8 @@ function App() {
             <Route path="/:tenantId/settings" component={Settings} />
             <Route path="/:tenantId/billing" component={Billing} />
             <Route path="/:tenantId/help" component={Help} />
+            <Route path="/feedback-responses" component={FeedbackResponses} />
+            <Route path="/feedback-responses-popup" component={FeedbackResponsesPopup} />
             <Route component={NotFound} />
           </Switch>
           <Toaster />
