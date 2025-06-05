@@ -12,11 +12,22 @@ import { eq, and } from "drizzle-orm";
 import { BrevoEmailService } from "./brevo-service";
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY || 'sk_test_your_stripe_secret_key', {
-  apiVersion: '2023-10-16'
+  apiVersion: '2025-05-28.basil'
 });
 
 // Initialize email service, passing API key from environment variables
-const emailService = process.env.BREVO_API_KEY ? new BrevoEmailService() : null;
+let emailService: BrevoEmailService | null = null;
+try {
+  if (process.env.BREVO_API_KEY) {
+    emailService = new BrevoEmailService();
+    console.log('Email service initialized successfully with Brevo API key');
+  } else {
+    console.log('No BREVO_API_KEY found - email notifications disabled');
+  }
+} catch (error) {
+  console.error('Failed to initialize email service:', error);
+  emailService = null;
+}
 
 export async function registerRoutes(app: Express): Promise<Server> {
   // Middleware to extract and validate tenant ID
@@ -226,13 +237,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get("/api/tenants/:tenantId/restaurants", validateTenant, async (req, res) => {
     try {
       const tenantId = parseInt(req.params.tenantId);
-      
+
       // Get all restaurants that belong to this tenant
       const tenantRestaurants = await storage.db
         .select()
         .from(restaurants)
         .where(eq(restaurants.tenantId, tenantId));
-      
+
       res.json(tenantRestaurants);
     } catch (error) {
       console.error("Error fetching restaurants:", error);
@@ -854,7 +865,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       res.status(400).json({ message: "Invalid log data" });
     }
-  });
+    });
 
   // SMS messages routes
   app.get("/api/tenants/:tenantId/restaurants/:restaurantId/sms-messages", validateTenant, async (req, res) => {
@@ -959,7 +970,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const id = parseInt(req.params.id);
       const success = await storage.deleteSpecialPeriod(id);
-      
+
       if (success) {
         res.json({ message: "Special period deleted successfully" });
       } else {
@@ -1174,7 +1185,440 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+<<<<<<< HEAD
   // Additional booking management routes
+=======
+  // Rooms routes
+  app.get("/api/tenants/:tenantId/restaurants/:restaurantId/rooms", validateTenant, async (req, res) => {
+    try {
+      const restaurantId = parseInt(req.params.restaurantId);
+      const tenantId = parseInt(req.params.tenantId);
+
+      if (isNaN(restaurantId) || isNaN(tenantId)) {
+        return res.status(400).json({ message: "Invalid restaurant ID or tenant ID" });
+      }
+
+      // Verify restaurant exists and belongs to tenant
+      const restaurant = await storage.getRestaurantById(restaurantId);
+      if (!restaurant) {
+        return res.status(404).json({ message: "Restaurant not found" });
+      }
+
+      if (restaurant.tenantId !== tenantId) {
+        return res.status(403).json({ message: "Restaurant does not belong to this tenant" });
+      }
+
+      const rooms = await storage.getRoomsByRestaurant(restaurantId);
+      // Filter rooms by tenantId for security
+      const tenantRooms = rooms.filter(room => room.tenantId === tenantId);
+
+      res.json(tenantRooms);
+    } catch (error) {
+      console.error("Error fetching rooms:", error);
+      res.status(500).json({ message: "Internal server error" });
+    }
+  });
+
+  app.post("/api/tenants/:tenantId/restaurants/:restaurantId/rooms", validateTenant, async (req, res) => {
+    try {
+      const restaurantId = parseInt(req.params.restaurantId);
+      const tenantId = parseInt(req.params.tenantId);
+      const roomData = {
+        ...req.body,
+        restaurantId,
+        tenantId,
+      };
+
+      const room = await storage.createRoom(roomData);
+      res.json(room);
+    } catch (error) {
+      res.status(400).json({ message: "Invalid room data" });
+    }
+  });
+
+  app.put("/api/tenants/:tenantId/rooms/:id", validateTenant, async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      const tenantId = parseInt(req.params.tenantId);
+      const updates = req.body;
+
+      if (isNaN(id) || isNaN(tenantId)) {
+        return res.status(400).json({ message: "Invalid room ID or tenant ID" });
+      }
+
+      // Verify room belongs to tenant before updating
+      const existingRoom = await storage.getRoomById(id);
+      if (!existingRoom || existingRoom.tenantId !== tenantId) {
+        return res.status(404).json({ message: "Room not found" });
+      }
+
+      const room = await storage.updateRoom(id, updates);
+      if (!room) {
+        return res.status(404).json({ message: "Failed to update room" });
+      }
+
+      res.json(room);
+    } catch (error) {
+      console.error("Error updating room:", error);
+      res.status(500).json({ message: "Internal server error" });
+    }
+  });
+
+  app.delete("/api/tenants/:tenantId/rooms/:id", validateTenant, async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      const tenantId = parseInt(req.params.tenantId);
+
+      // Verify room belongs to tenant before deleting
+      const existingRoom = await storage.getRoomById(id);
+      if (!existingRoom || existingRoom.tenantId !== tenantId) {
+        return res.status(404).json({ message: "Room not found" });
+      }
+
+      const success = await storage.deleteRoom(id);
+      res.json({ message: "Room deleted successfully" });
+    } catch (error) {
+      res.status(400).json({ message: "Invalid request" });
+    }
+  });
+
+  // Tables routes
+  app.get("/api/tenants/:tenantId/restaurants/:restaurantId/tables", validateTenant, async (req, res) => {
+    try {
+      const restaurantId = parseInt(req.params.restaurantId);
+      const tenantId = parseInt(req.params.tenantId);
+
+      if (isNaN(restaurantId) || isNaN(tenantId)) {
+        return res.status(400).json({ message: "Invalid restaurant ID or tenant ID" });
+      }
+
+      // Verify restaurant exists and belongs to tenant
+      const restaurant = await storage.getRestaurantById(restaurantId);
+      if (!restaurant) {
+        return res.status(404).json({ message: "Restaurant not found" });
+      }
+
+      if (restaurant.tenantId !== tenantId) {
+        return res.status(403).json({ message: "Restaurant does not belong to this tenant" });
+      }
+
+      const tables = await storage.getTablesByRestaurant(restaurantId);
+      // Filter tables by tenantId for security
+      const tenantTables = tables.filter(table => table.tenantId === tenantId);
+      res.json(tenantTables);
+    } catch (error) {
+      console.error("Error fetching tables:", error);
+      res.status(500).json({ message: "Internal server error" });
+    }
+  });
+
+  app.post("/api/tenants/:tenantId/restaurants/:restaurantId/tables", validateTenant, async (req, res) => {
+    try {
+      const restaurantId = parseInt(req.params.restaurantId);
+      const tenantId = parseInt(req.params.tenantId);
+      const tableData = {
+        ...req.body,
+        restaurantId,
+        tenantId,
+      };
+
+      const table = await storage.createTable(tableData);
+      res.json(table);
+    } catch (error) {
+      res.status(400).json({ message: "Invalid table data" });
+    }
+  });
+
+  app.put("/api/tenants/:tenantId/tables/:id", validateTenant, async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      const tenantId = parseInt(req.params.tenantId);
+      const updates = req.body;
+
+      // Verify table belongs to tenant before updating
+      const existingTable = await storage.getTableById(id);
+      if (!existingTable || existingTable.tenantId !== tenantId) {
+        return res.status(404).json({ message: "Table not found" });
+      }
+
+      const table = await storage.updateTable(id, updates);
+      res.json(table);
+    } catch (error) {
+      res.status(400).json({ message: "Invalid request" });
+    }
+  });
+
+  app.delete("/api/tenants/:tenantId/tables/:id", validateTenant, async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      const tenantId = parseInt(req.params.tenantId);
+
+      // Verify table belongs to tenant before deleting
+      const existingTable = await storage.getTableById(id);
+      if (!existingTable || existingTable.tenantId !== tenantId) {
+        return res.status(404).json({ message: "Table not found" });
+      }
+
+      const success = await storage.deleteTable(id);
+      res.json({ message: "Table deleted successfully" });
+    } catch (error) {
+      res.status(400).json({ message: "Invalid request" });
+    }
+  });
+
+
+
+  // Combined Tables routes
+  app.get("/api/tenants/:tenantId/restaurants/:restaurantId/combined-tables", validateTenant, async (req, res) => {
+    try {
+      const restaurantId = parseInt(req.params.restaurantId);
+      const combinedTables = await storage.getCombinedTablesByRestaurant(restaurantId);
+      res.json(combinedTables);
+    } catch (error) {
+      res.status(500).json({ message: "Failed to fetch combined tables" });
+    }
+  });
+
+  app.post("/api/tenants/:tenantId/restaurants/:restaurantId/combined-tables", validateTenant, async (req, res) => {
+    try {
+      const restaurantId = parseInt(req.params.restaurantId);
+      const tenantId = parseInt(req.params.tenantId);
+      const combinedTableData = {
+        ...req.body,
+        restaurantId,
+        tenantId,
+      };
+
+      const combinedTable = await storage.createCombinedTable(combinedTableData);
+      res.json(combinedTable);
+    } catch (error) {
+      res.status(400).json({ message: "Invalid combined table data" });
+    }
+  });
+
+  app.put("/api/tenants/:tenantId/combined-tables/:id", validateTenant, async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      const tenantId = parseInt(req.params.tenantId);
+      const updates = req.body;
+
+      // Verify combined table belongs to tenant before updating
+      const existingCombinedTable = await storage.getCombinedTableById(id);
+      if (!existingCombinedTable || existingCombinedTable.tenantId !== tenantId) {
+        return res.status(404).json({ message: "Combined table not found" });
+      }
+
+      const combinedTable = await storage.updateCombinedTable(id, updates);
+      res.json(combinedTable);
+    } catch (error) {
+      res.status(400).json({ message: "Invalid request" });
+    }
+  });
+
+  app.delete("/api/tenants/:tenantId/combined-tables/:id", validateTenant, async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      const tenantId = parseInt(req.params.tenantId);
+
+      // Verify combined table belongs to tenant before deleting
+      const existingCombinedTable = await storage.getCombinedTableById(id);
+      if (!existingCombinedTable || existingCombinedTable.tenantId !== tenantId) {
+        return res.status(404).json({ message: "Combined table not found" });
+      }
+
+      const deleted = await storage.deleteCombinedTable(id);
+      if (deleted) {
+        res.json({ message: "Combined table deleted successfully" });
+      } else {
+        res.status(404).json({ message: "Combined table not found" });
+      }
+    } catch (error) {
+      res.status(500).json({ message: "Failed to delete combined table" });
+    }
+  });
+
+  app.get("/api/tenants/:tenantId/restaurants/:restaurantId/bookings", validateTenant, async (req, res) => {
+    try {
+      const restaurantId = parseInt(req.params.restaurantId);
+      const { date } = req.query;
+
+      let bookings;
+      if (date && typeof date === 'string') {
+        bookings = await storage.getBookingsByDate(restaurantId, date);
+      } else {
+        bookings = await storage.getBookingsByRestaurant(restaurantId);
+      }
+
+      res.json(bookings);
+    } catch (error) {
+      res.status(400).json({ message: "Invalid request" });
+    }
+  });
+
+  app.post("/api/tenants/:tenantId/restaurants/:restaurantId/bookings", validateTenant, async (req, res) => {
+    try {
+      const restaurantId = parseInt(req.params.restaurantId);
+      const tenantId = parseInt(req.params.tenantId);
+
+      // Validate required fields
+      if (!req.body.customerName || !req.body.customerEmail || !req.body.bookingDate || !req.body.startTime || !req.body.guestCount) {
+        return res.status(400).json({ message: "Missing required booking fields" });
+      }
+
+      const bookingDate = new Date(req.body.bookingDate);
+      const bookingTime = req.body.startTime;
+      const tableId = req.body.tableId;
+
+      // Validate booking against opening hours and cut-off times
+      const isRestaurantOpen = await storage.isRestaurantOpen(restaurantId, bookingDate, bookingTime);
+      if (!isRestaurantOpen) {
+        return res.status(400).json({ 
+          message: "Booking not allowed: Restaurant is closed on this day and time" 
+        });
+      }
+
+      const isAllowed = await storage.isBookingAllowed(restaurantId, bookingDate, bookingTime);
+      if (!isAllowed) {
+        return res.status(400).json({ 
+          message: "Booking not allowed: Restaurant is closed or past cut-off time" 
+        });
+      }
+
+      // If a specific table is requested, check for conflicts
+      if (tableId) {
+        const existingBookings = await storage.getBookingsByDate(restaurantId, bookingDate.toISOString().split('T')[0]);
+        const conflictingBookings = existingBookings.filter(booking => {
+          if (booking.tableId !== tableId) return false;
+
+          const requestedStartTime = req.body.startTime;
+          const requestedEndTime = req.body.endTime || "23:59";
+
+          // Convert times to minutes for easier comparison
+          const requestedStartMinutes = parseInt(requestedStartTime.split(':')[0]) * 60 + parseInt(requestedStartTime.split(':')[1]);
+          const requestedEndMinutes = parseInt(requestedEndTime.split(':')[0]) * 60 + parseInt(requestedEndTime.split(':')[1]);
+
+          const existingStartMinutes = parseInt(booking.startTime.split(':')[0]) * 60 + parseInt(booking.startTime.split(':')[1]);
+          const existingEndTime = booking.endTime || "23:59";
+          const existingEndMinutes = parseInt(existingEndTime.split(':')[0]) * 60 + parseInt(existingEndTime.split(':')[1]);
+
+          // Add 1-hour buffer (60 minutes) for table turnover
+          const bufferMinutes = 60;
+
+          // Check for time overlap with buffer
+          // Two time ranges overlap if: start1 < end2 && start2 < end1
+          const requestedStart = requestedStartMinutes - bufferMinutes;
+          const requestedEnd = requestedEndMinutes + bufferMinutes;
+          const existingStart = existingStartMinutes - bufferMinutes;
+          const existingEnd = existingEndMinutes + bufferMinutes;
+
+          return requestedStart < existingEnd && existingStart < requestedEnd;
+        });
+
+        if (conflictingBookings.length > 0) {
+          return res.status(400).json({ 
+            message: `Table conflict: The selected table is already booked at ${bookingTime} on ${bookingDate.toISOString().split('T')[0]}` 
+          });
+        }
+
+        // Check table capacity
+        const tables = await storage.getTablesByRestaurant(restaurantId);
+        const selectedTable = tables.find(table => table.id === tableId);
+        if (selectedTable && selectedTable.capacity < req.body.guestCount) {
+          return res.status(400).json({ 
+            message: `Table capacity exceeded: Table can accommodate ${selectedTable.capacity} guests, but ${req.body.guestCount} guests requested` 
+          });
+        }
+      }
+
+      // Get or create customer first
+      const customer = await storage.getOrCreateCustomer(restaurantId, tenantId, {
+        name: req.body.customerName,
+        email: req.body.customerEmail,
+        phone: req.body.customerPhone
+      });
+
+      const bookingData = insertBookingSchema.parse({
+        ...req.body,
+        restaurantId,
+        tenantId,
+        customerId: customer.id,
+        bookingDate: bookingDate
+      });
+
+      const booking = await storage.createBooking(bookingData);
+
+      // Send email notifications if Brevo is configured and enabled in settings
+      if (emailService) {
+        console.log('Email service available - processing notifications for booking', booking.id);
+        try {
+          const restaurant = await storage.getRestaurantById(restaurantId);
+          let emailSettings = null;
+
+          // Parse email settings if they exist
+          if (restaurant?.emailSettings) {
+            try {
+              emailSettings = JSON.parse(restaurant.emailSettings);
+              console.log('Email settings loaded:', emailSettings);
+            } catch (e) {
+              console.warn("Failed to parse email settings, using defaults");
+            }
+          } else {
+            console.log('No email settings found - using defaults (all notifications enabled)');
+          }
+
+          // Send confirmation email to customer if enabled
+          const shouldSendGuestConfirmation = emailSettings?.guestSettings?.sendBookingConfirmation !== false;
+          console.log('Should send guest confirmation:', shouldSendGuestConfirmation);
+
+          if (shouldSendGuestConfirmation) {
+            console.log('Sending booking confirmation email to:', req.body.customerEmail);
+            await emailService.sendBookingConfirmation(
+              req.body.customerEmail,
+              req.body.customerName,
+              {
+                ...bookingData,
+                tableNumber: booking.tableId,
+                id: booking.id
+              }
+            );
+            console.log('Guest confirmation email sent successfully');
+          }
+
+          // Send notification to restaurant if enabled
+          const shouldSendRestaurantNotification = emailSettings?.placeSettings?.emailBooking !== false;
+          const restaurantEmail = emailSettings?.placeSettings?.sentTo || restaurant?.email;
+          console.log('Should send restaurant notification:', shouldSendRestaurantNotification, 'to email:', restaurantEmail);
+
+          if (shouldSendRestaurantNotification && restaurantEmail) {
+            console.log('Sending restaurant notification email to:', restaurantEmail);
+            await emailService.sendRestaurantNotification(restaurantEmail, {
+              customerName: req.body.customerName,
+              customerEmail: req.body.customerEmail,
+              customerPhone: req.body.customerPhone,
+              ...bookingData
+            });
+            console.log('Restaurant notification email sent successfully');
+          }
+        } catch (emailError) {
+          console.error('Error sending email notifications:', emailError);
+          // Don't fail the booking if email fails
+        }
+      } else {
+        console.log('Email service not available - skipping email notifications');
+      }
+
+      res.json(booking);
+    } catch (error) {
+      console.error("Booking creation error:", error);
+      if (error instanceof Error) {
+        res.status(400).json({ message: `Invalid booking data: ${error.message}` });
+      } else {
+        res.status(400).json({ message: "Invalid booking data" });
+      }
+    }
+  });
+
+>>>>>>> 5333659 (Improve booking confirmation emails and notification reliability)
   app.put("/api/tenants/:tenantId/bookings/:id", validateTenant, async (req, res) => {
     try {
       const id = parseInt(req.params.id);
@@ -1189,6 +1633,23 @@ export async function registerRoutes(app: Express): Promise<Server> {
       if (!existingBooking || existingBooking.tenantId !== tenantId) {
         return res.status(404).json({ message: "Booking not found" });
       }
+
+      const bookingDate = updates.bookingDate ? new Date(updates.bookingDate) : existingBooking.bookingDate;
+      const restaurantId = existingBooking.restaurantId;
+
+      // Check if restaurant is open on this day
+        const dayOfWeek = bookingDate.getDay(); // 0 = Sunday, 1 = Monday, etc.
+
+        const openingHours = await storage.getOpeningHoursByRestaurant(restaurantId);
+        const dayHours = openingHours.find(oh => oh.dayOfWeek === dayOfWeek);
+
+        if (!dayHours || !dayHours.isOpen) {
+          const dayNames = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+          const dayName = dayNames[dayOfWeek];
+          return res.status(400).json({ 
+            message: `Restaurant is closed on ${dayName}s` 
+          });
+        }
 
       const booking = await storage.updateBooking(id, updates);
       res.json(booking);
@@ -1544,13 +2005,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post("/api/restaurants/:restaurantId/waiting-list", async (req, res) => {
     try {
       const restaurantId = parseInt(req.params.restaurantId);
-      
+
       // Get the restaurant to determine the tenant ID
       const restaurant = await storage.getRestaurantById(restaurantId);
       if (!restaurant) {
         return res.status(404).json({ message: "Restaurant not found" });
       }
-      
+
       const entryData = {
         ...req.body,
         restaurantId,
