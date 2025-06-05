@@ -7,7 +7,6 @@ import BookingCalendar from "@/components/booking-calendar";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent } from "@/components/ui/card";
-import { Calendar, dateFns } from "@/components/ui/calendar";
 import { 
   DropdownMenu,
   DropdownMenuContent,
@@ -30,7 +29,6 @@ export default function Dashboard() {
   const [, setLocation] = useLocation();
   const { user, restaurant, logout, isLoading } = useAuth();
   const [selectedDate, setSelectedDate] = useState(new Date());
-  const [viewMode, setViewMode] = useState<'calendar' | 'layout'>('calendar');
   const [selectedRoom, setSelectedRoom] = useState<string>("");
   const [isNewBookingOpen, setIsNewBookingOpen] = useState(false);
   const [selectedTableForBooking, setSelectedTableForBooking] = useState<any>(null);
@@ -669,19 +667,9 @@ export default function Dashboard() {
             </div>
             <div className="flex items-center bg-gray-100 rounded-lg p-1">
               <Button 
-                variant={viewMode === 'calendar' ? 'default' : 'ghost'} 
+                variant='default' 
                 size="sm"
-                onClick={() => setViewMode('calendar')}
-                className={viewMode === 'calendar' ? 'bg-white shadow-sm' : ''}
-              >
-                <List className="h-4 w-4 mr-2" />
-                Calendar
-              </Button>
-              <Button 
-                variant={viewMode === 'layout' ? 'default' : 'ghost'} 
-                size="sm"
-                onClick={() => setViewMode('layout')}
-                className={viewMode === 'layout' ? 'bg-white shadow-sm' : ''}
+                className='bg-white shadow-sm'
               >
                 <Map className="h-4 w-4 mr-2" />
                 Layout
@@ -797,18 +785,7 @@ export default function Dashboard() {
 
         {/* Main Interface */}
         <div className="flex-1 p-6">
-          {viewMode === 'layout' ? (
-            renderTableLayout()
-          ) : (
-            <BookingCalendar 
-              selectedDate={selectedDate}
-              bookings={(selectedDateBookings as any) || []}
-              allBookings={(allBookings as any) || []}
-              tables={(tables as any) || []}
-              isLoading={isLoading}
-              onDateSelect={setSelectedDate}
-            />
-          )}
+          {renderTableLayout()}
         </div>
       </div>
 
