@@ -1185,10 +1185,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-<<<<<<< HEAD
   // Additional booking management routes
-=======
-  // Rooms routes
   app.get("/api/tenants/:tenantId/restaurants/:restaurantId/rooms", validateTenant, async (req, res) => {
     try {
       const restaurantId = parseInt(req.params.restaurantId);
@@ -1618,8 +1615,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
->>>>>>> 5333659 (Improve booking confirmation emails and notification reliability)
-  app.put("/api/tenants/:tenantId/bookings/:id", validateTenant, async (req, res) => {
+app.put("/api/tenants/:tenantId/bookings/:id", validateTenant, async (req, res) => {
     try {
       const id = parseInt(req.params.id);
       const tenantId = parseInt(req.params.tenantId);
