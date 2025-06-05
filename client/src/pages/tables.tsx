@@ -9,8 +9,9 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { Badge } from "@/components/ui/badge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Switch } from "@/components/ui/switch";
-import { Plus, Users, Edit, Trash2, QrCode, Download } from "lucide-react";
+import { Plus, Users, Edit, Trash2, QrCode, Download, MessageSquare } from "lucide-react";
 import { useSubscription } from "@/hooks/use-subscription";
+import { FeedbackModal } from "./table-feedback";
 
 export default function Tables() {
   const { isLoading: authLoading, isAuthenticated, user, restaurant } = useAuthGuard();
@@ -25,6 +26,8 @@ export default function Tables() {
   });
   const [showQRDialog, setShowQRDialog] = useState(false);
   const [selectedTableQR, setSelectedTableQR] = useState<any>(null);
+  const [showFeedbackModal, setShowFeedbackModal] = useState(false);
+  const [selectedTableForFeedback, setSelectedTableForFeedback] = useState<any>(null);
 
   // Function to fetch QR code for a specific table
   const fetchTableQR = async (tableId: number) => {
@@ -364,6 +367,18 @@ export default function Tables() {
                           <Button
                             variant="outline"
                             size="sm"
+                            onClick={() => {
+                              setSelectedTableForFeedback(table);
+                              setShowFeedbackModal(true);
+                            }}
+                            className="text-blue-600 hover:text-blue-700"
+                            title="Test Customer Feedback"
+                          >
+                            <MessageSquare className="h-4 w-4" />
+                          </Button>
+                          <Button
+                            variant="outline"
+                            size="sm"
                             onClick={() =>
                               deleteTableMutation.mutate(table.id)
                             }
@@ -426,6 +441,22 @@ export default function Tables() {
             </div>
           </DialogContent>
         </Dialog>
+
+        {/* Customer Feedback Modal */}
+        {selectedTableForFeedback && (
+          <FeedbackModal
+            isOpen={showFeedbackModal}
+            onClose={() => {
+              setShowFeedbackModal(false);
+              setSelectedTableForFeedback(null);
+            }}
+            restaurantId={restaurant?.id || 0}
+            tenantId={restaurant?.tenantId || 0}
+            tableId={selectedTableForFeedback.id}
+            restaurantName={restaurant?.name}
+            tableNumber={selectedTableForFeedback.tableNumber}
+          />
+        )}
       </div>
     </div>
   );
