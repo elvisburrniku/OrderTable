@@ -315,7 +315,7 @@ export default function BookingCalendar({ selectedDate, bookings, allBookings = 
                   isSelected 
                     ? 'bg-green-50 border-green-300 shadow-md' 
                     : isTodayDate 
-                    ? 'bg-blue-50 border-blue-200' 
+                    ? 'bg-green-50 border-green-200' 
                     : isClosed
                     ? 'bg-gray-50 border-gray-200'
                     : 'bg-white border-gray-200 hover:shadow-sm hover:border-green-200'
@@ -328,7 +328,7 @@ export default function BookingCalendar({ selectedDate, bookings, allBookings = 
                     isSelected 
                       ? 'from-green-100 to-green-50 border-green-200' 
                       : isTodayDate 
-                      ? 'from-blue-100 to-blue-50 border-blue-200' 
+                      ? 'from-green-100 to-green-50 border-green-200' 
                       : isClosed
                       ? 'from-gray-100 to-gray-50 border-gray-200'
                       : 'from-white to-gray-50 border-gray-100'
@@ -341,13 +341,13 @@ export default function BookingCalendar({ selectedDate, bookings, allBookings = 
                   <div className="flex items-center justify-between">
                     <div 
                       className={`text-sm font-semibold hover:text-green-600 transition-colors ${
-                        isSelected ? 'text-green-700' : isTodayDate ? 'text-blue-700' : isClosed ? 'text-gray-500' : 'text-gray-900'
+                        isSelected ? 'text-green-700' : isTodayDate ? 'text-green-700' : isClosed ? 'text-gray-500' : 'text-gray-900'
                       }`}
                     >
                       {format(day, 'd')}
                     </div>
                     {dayBookings.length > 0 && (
-                      <div className="text-xs bg-blue-500 text-white px-1.5 py-0.5 rounded-full font-medium">
+                      <div className="text-xs bg-green-500 text-white px-1.5 py-0.5 rounded-full font-medium">
                         {dayBookings.length}
                       </div>
                     )}
