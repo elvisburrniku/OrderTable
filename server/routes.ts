@@ -1803,6 +1803,150 @@ app.put("/api/tenants/:tenantId/bookings/:id", validateTenant, async (req, res) 
     }
   });
 
+  // Booking Management Routes (Public - for customer email links)
+  app.get("/api/booking-manage/:id", async (req, res) => {
+    try {
+      const bookingId = parseInt(req.params.id);
+      const booking = await storage.getBookingById(bookingId);
+      
+      if (!booking) {
+        return res.status(404).json({ message: "Booking not found" });
+      }
+      
+      // Return booking details for customer management
+      res.json(booking);
+    } catch (error) {
+      console.error("Error fetching booking for management:", error);
+      res.status(500).json({ message: "Internal server error" });
+    }
+  });
+
+  app.put("/api/booking-manage/:id", async (req, res) => {
+    try {
+      const bookingId = parseInt(req.params.id);
+      const updates = req.body;
+      
+      // Get the existing booking
+      const existingBooking = await storage.getBookingById(bookingId);
+      if (!existingBooking) {
+        return res.status(404).json({ message: "Booking not found" });
+      }
+      
+      // Get restaurant and cut-off times to validate if changes are allowed
+      const restaurant = await storage.getRestaurantById(existingBooking.restaurantId);
+      if (!restaurant) {
+        return res.status(404).json({ message: "Restaurant not found" });
+      }
+      
+      // Get cut-off times for validation
+      const cutOffTimes = await storage.getCutOffTimesByRestaurant(existingBooking.restaurantId);
+      
+      // Validate if changes are allowed based on cut-off times
+      const bookingDateTime = new Date(existingBooking.bookingDate);
+      const now = new Date();
+      
+      const dayOfWeek = bookingDateTime.getDay();
+      const dayNames = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'];
+      const dayName = dayNames[dayOfWeek];
+      
+      const cutOffTime = cutOffTimes.find((ct: any) => ct.dayOfWeek.toLowerCase() === dayName);
+      
+      let isChangeAllowed = false;
+      if (!cutOffTime || !cutOffTime.isEnabled) {
+        // Default: allow changes up to 1 hour before booking
+        const oneHourBefore = new Date(bookingDateTime);
+        const [hours, minutes] = existingBooking.startTime.split(':');
+        oneHourBefore.setHours(parseInt(hours) - 1, parseInt(minutes));
+        isChangeAllowed = now < oneHourBefore;
+      } else {
+        // Use restaurant's cut-off time policy
+        const cutOffDeadline = new Date(bookingDateTime);
+        cutOffDeadline.setHours(cutOffDeadline.getHours() - cutOffTime.hoursBeforeBooking);
+        isChangeAllowed = now < cutOffDeadline;
+      }
+      
+      if (!isChangeAllowed) {
+        const hours = cutOffTime?.hoursBeforeBooking || 1;
+        return res.status(400).json({ 
+          message: `Changes are no longer allowed. You can only modify bookings up to ${hours} hour${hours > 1 ? 's' : ''} before your reservation time.`
+        });
+      }
+      
+      // Validate booking date and time changes
+      if (updates.bookingDate || updates.startTime) {
+        const newDate = updates.bookingDate ? new Date(updates.bookingDate) : new Date(existingBooking.bookingDate);
+        const newTime = updates.startTime || existingBooking.startTime;
+        
+        // Check if restaurant is open
+        const isOpen = await storage.isRestaurantOpen(existingBooking.restaurantId, newDate, newTime);
+        if (!isOpen) {
+          return res.status(400).json({ 
+            message: "The restaurant is closed on the selected date and time."
+          });
+        }
+        
+        // Check booking cut-off for new date/time
+        const isAllowed = await storage.isBookingAllowed(existingBooking.restaurantId, newDate, newTime);
+        if (!isAllowed) {
+          return res.status(400).json({ 
+            message: "Booking is not allowed for the selected date and time."
+          });
+        }
+        
+        // Check for table conflicts if changing date/time
+        if (existingBooking.tableId) {
+          const existingBookings = await storage.getBookingsByDate(
+            existingBooking.restaurantId, 
+            newDate.toISOString().split('T')[0]
+          );
+          
+          const conflictingBookings = existingBookings.filter(booking => {
+            if (booking.id === bookingId || booking.tableId !== existingBooking.tableId) return false;
+            
+            const requestedStartTime = newTime;
+            const requestedEndTime = existingBooking.endTime || "23:59";
+            
+            // Time conflict check logic
+            const requestedStartMinutes = parseInt(requestedStartTime.split(':')[0]) * 60 + parseInt(requestedStartTime.split(':')[1]);
+            const requestedEndMinutes = parseInt(requestedEndTime.split(':')[0]) * 60 + parseInt(requestedEndTime.split(':')[1]);
+            
+            const existingStartMinutes = parseInt(booking.startTime.split(':')[0]) * 60 + parseInt(booking.startTime.split(':')[1]);
+            const existingEndTime = booking.endTime || "23:59";
+            const existingEndMinutes = parseInt(existingEndTime.split(':')[0]) * 60 + parseInt(existingEndTime.split(':')[1]);
+            
+            const bufferMinutes = 60;
+            const requestedStart = requestedStartMinutes - bufferMinutes;
+            const requestedEnd = requestedEndMinutes + bufferMinutes;
+            const existingStart = existingStartMinutes - bufferMinutes;
+            const existingEnd = existingEndMinutes + bufferMinutes;
+            
+            return requestedStart < existingEnd && existingStart < requestedEnd;
+          });
+          
+          if (conflictingBookings.length > 0) {
+            return res.status(400).json({ 
+              message: "The selected time conflicts with another booking for the same table."
+            });
+          }
+        }
+      }
+      
+      // Process the update
+      const updatedBooking = await storage.updateBooking(bookingId, updates);
+      
+      if (!updatedBooking) {
+        return res.status(404).json({ message: "Booking not found" });
+      }
+      
+      console.log(`Customer modified booking ${bookingId}:`, updates);
+      
+      res.json(updatedBooking);
+    } catch (error) {
+      console.error("Error updating booking:", error);
+      res.status(500).json({ message: "Internal server error" });
+    }
+  });
+
   // Tenant routes
   app.get("/api/tenants/:tenantId", tenantRoutes.getTenant);
   app.post("/api/tenants", tenantRoutes.createTenant);
