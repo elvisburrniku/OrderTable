@@ -9,10 +9,10 @@ export class BookingHash {
    * @param bookingId - The booking ID
    * @param tenantId - The tenant ID
    * @param restaurantId - The restaurant ID
-   * @param action - The action type ('cancel' or 'change')
+   * @param action - The action type ('cancel', 'change', or 'manage')
    * @returns A secure hash string
    */
-  static generateHash(bookingId: number, tenantId: number, restaurantId: number, action: 'cancel' | 'change'): string {
+  static generateHash(bookingId: number, tenantId: number, restaurantId: number, action: 'cancel' | 'change' | 'manage'): string {
     const data = `${bookingId}-${tenantId}-${restaurantId}-${action}`;
     return crypto.createHmac('sha256', SECRET_KEY).update(data).digest('hex');
   }
@@ -23,10 +23,10 @@ export class BookingHash {
    * @param bookingId - The booking ID
    * @param tenantId - The tenant ID
    * @param restaurantId - The restaurant ID
-   * @param action - The action type ('cancel' or 'change')
+   * @param action - The action type ('cancel', 'change', or 'manage')
    * @returns True if hash is valid, false otherwise
    */
-  static verifyHash(hash: string, bookingId: number, tenantId: number, restaurantId: number, action: 'cancel' | 'change'): boolean {
+  static verifyHash(hash: string, bookingId: number, tenantId: number, restaurantId: number, action: 'cancel' | 'change' | 'manage'): boolean {
     const expectedHash = this.generateHash(bookingId, tenantId, restaurantId, action);
     return crypto.timingSafeEqual(Buffer.from(hash, 'hex'), Buffer.from(expectedHash, 'hex'));
   }
@@ -42,10 +42,12 @@ export class BookingHash {
   static generateManagementUrls(bookingId: number, tenantId: number, restaurantId: number, baseUrl: string = 'https://your-domain.com') {
     const cancelHash = this.generateHash(bookingId, tenantId, restaurantId, 'cancel');
     const changeHash = this.generateHash(bookingId, tenantId, restaurantId, 'change');
+    const manageHash = this.generateHash(bookingId, tenantId, restaurantId, 'manage');
 
     return {
       cancelUrl: `${baseUrl}/booking-manage/${bookingId}?action=cancel&hash=${cancelHash}`,
-      changeUrl: `${baseUrl}/booking-manage/${bookingId}?action=change&hash=${changeHash}`
+      changeUrl: `${baseUrl}/booking-manage/${bookingId}?action=change&hash=${changeHash}`,
+      manageUrl: `${baseUrl}/booking-manage/${bookingId}?hash=${manageHash}`
     };
   }
 }
