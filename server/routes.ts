@@ -582,10 +582,68 @@ export async function registerRoutes(app: Express): Promise<Server> {
         tenantId,
       };
 
+      // Create table first
       const table = await storage.createTable(tableData);
-      res.json(table);
+
+      // Generate QR code for the table
+      try {
+        const qrCode = await QRCodeService.generateTableQRCode(
+          table.id,
+          table.tableNumber,
+          restaurantId,
+          tenantId
+        );
+
+        // Update table with QR code
+        const updatedTable = await storage.updateTable(table.id, { qrCode });
+        res.json(updatedTable || table);
+      } catch (qrError) {
+        console.error('Error generating QR code for table:', qrError);
+        // Return table without QR code if generation fails
+        res.json(table);
+      }
     } catch (error) {
       res.status(400).json({ message: "Invalid table data" });
+    }
+  });
+
+  // QR Code route for tables
+  app.get("/api/tenants/:tenantId/restaurants/:restaurantId/tables/:tableId/qr", validateTenant, async (req, res) => {
+    try {
+      const tableId = parseInt(req.params.tableId);
+      const restaurantId = parseInt(req.params.restaurantId);
+      const tenantId = parseInt(req.params.tenantId);
+
+      // Verify table belongs to tenant
+      const table = await storage.getTableById(tableId);
+      if (!table || table.tenantId !== tenantId || table.restaurantId !== restaurantId) {
+        return res.status(404).json({ message: "Table not found" });
+      }
+
+      // If table already has QR code, return it
+      if (table.qrCode) {
+        res.json({ qrCode: table.qrCode });
+        return;
+      }
+
+      // Generate new QR code if it doesn't exist
+      try {
+        const qrCode = await QRCodeService.generateTableQRCode(
+          table.id,
+          table.tableNumber,
+          restaurantId,
+          tenantId
+        );
+
+        // Update table with QR code
+        await storage.updateTable(table.id, { qrCode });
+        res.json({ qrCode });
+      } catch (qrError) {
+        console.error('Error generating QR code:', qrError);
+        res.status(500).json({ message: "Failed to generate QR code" });
+      }
+    } catch (error) {
+      res.status(400).json({ message: "Invalid request" });
     }
   });
 
