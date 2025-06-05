@@ -167,7 +167,6 @@ export default function Bookings() {
     return { hasConflict: false };
   };
 
-  // Create booking mutation
   const createBookingMutation = useMutation({
     mutationFn: async (bookingData: any) => {
       const response = await fetch(`/api/tenants/${restaurant?.tenantId}/restaurants/${restaurant?.id}/bookings`, {
@@ -219,115 +218,34 @@ export default function Bookings() {
     }
   });
 
-  // Handle table selection with conflict detection
-  const handleTableSelection = (tableId: string) => {
-    if (!tableId) {
-      setNewBooking({ ...newBooking, tableId: "" });
-      setConflictInfo(null);
-      setSuggestedTable(null);
-      return;
-    }
-
-    const tableIdNum = parseInt(tableId);
-
-    // Use current state values for conflict checking
-    const currentBooking = newBooking.tableId === tableId ? newBooking : { ...newBooking, tableId };
-    const conflict = checkTableConflict(tableIdNum, currentBooking.guestCount, currentBooking.bookingDate, currentBooking.startTime);
-
-    if (conflict.hasConflict) {
-      // Find alternative table using current booking state
-      const alternative = findAlternativeTable(
-        currentBooking.guestCount, 
-        currentBooking.startTime, 
-        currentBooking.bookingDate, 
-        tableIdNum
-      );
-
-      setConflictInfo(conflict);
-      setSuggestedTable(alternative);
-
-      if (alternative) {
-        toast({
-          title: "Table Conflict",
-          description: `${conflict.message}. Table ${alternative.tableNumber} (${alternative.capacity} seats) is available as an alternative.`,
-          variant: "destructive",
-        });
-      } else {
-        toast({
-          title: "Table Conflict", 
-          description: `${conflict.message}. No suitable alternative tables available for ${currentBooking.guestCount} guests at ${currentBooking.startTime}.`,
-          variant: "destructive",
-        });
-      }
-    } else {
-      setConflictInfo(null);
-      setSuggestedTable(null);
-    }
-
-    setNewBooking({ ...newBooking, tableId });
-  };
-
-  // Handle booking form submission
-  const handleCreateBooking = (e: React.FormEvent) => {
-    e.preventDefault();
-
-    // If a specific table is selected, do final conflict check
-    if (newBooking.tableId) {
-      const conflict = checkTableConflict(
-        parseInt(newBooking.tableId), 
-        newBooking.guestCount, 
-        newBooking.bookingDate, 
-        newBooking.startTime
-      );
-
-      if (conflict.hasConflict) {
-        const table = tables?.find(t => t.id === parseInt(newBooking.tableId));
-        toast({
-          title: "Table Conflict",
-          description: `Table ${table?.tableNumber || newBooking.tableId} is already booked at ${newBooking.startTime} on ${newBooking.bookingDate}. Please select a different table or time.`,
-          variant: "destructive",
-        });
-        return; // Don't submit if there's a conflict
-      }
-    } else {
-      // If auto-assigning, check if any table is available
-      const availableTable = findAlternativeTable(
-        newBooking.guestCount,
-        newBooking.startTime,
-        newBooking.bookingDate
-      );
-
-      if (!availableTable) {
-        toast({
-          title: "No Tables Available",
-          description: `No tables available for ${newBooking.guestCount} guests at ${newBooking.startTime} on ${newBooking.bookingDate}. Please try a different time or date.`,
-          variant: "destructive",
-        });
-        return; // Don't submit if no tables are available
-      }
-    }
-
-    // Only proceed with mutation if no conflicts detected
-    createBookingMutation.mutate({
-      ...newBooking,
-      bookingDate: newBooking.bookingDate, // Already in YYYY-MM-DD format from input
-      tableId: newBooking.tableId ? parseInt(newBooking.tableId) : null,
-      restaurantId: restaurant?.id
-    });
-  };
-
-  // Use suggested table
-  const useSuggestedTable = () => {
-    if (suggestedTable) {
-      setNewBooking({ ...newBooking, tableId: suggestedTable.id.toString() });
-      setConflictInfo(null);
-      setSuggestedTable(null);
-      toast({
-        title: "Table Updated",
-        description: `Switched to Table ${suggestedTable.tableNumber} (${suggestedTable.capacity} seats)`,
+  const deleteBookingMutation = useMutation({
+    mutationFn: async (id: number) => {
+      const response = await fetch(`/api/tenants/${restaurant?.tenantId}/bookings/${id}`, {
+        method: 'DELETE',
       });
-    }
-  };
+      if (!response.ok) throw new Error('Failed to delete booking');
+      return response.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: [`/api/tenants/${restaurant?.tenantId}/restaurants/${restaurant?.id}/bookings`] });
+    },
+  });
+
+  const updateBookingMutation = useMutation({
+    mutationFn: async ({ id, updates }: { id: number; updates: Partial<Booking> }) => {
+      const response = await fetch(`/api/tenants/${restaurant?.tenantId}/bookings/${id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(updates),
+      });
+      if (!response.ok) throw new Error('Failed to update booking');
+      return response.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: [`/api/tenants/${restaurant?.tenantId}/restaurants/${restaurant?.id}/bookings`] });
+    },
+  });
+
 
   if (!user || !restaurant) {
     return (
@@ -383,33 +301,6 @@ export default function Bookings() {
     }
   };
 
-  const deleteBookingMutation = useMutation({
-    mutationFn: async (id: number) => {
-      const response = await fetch(`/api/tenants/${restaurant?.tenantId}/bookings/${id}`, {
-        method: 'DELETE',
-      });
-      if (!response.ok) throw new Error('Failed to delete booking');
-      return response.json();
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: [`/api/tenants/${restaurant?.tenantId}/restaurants/${restaurant?.id}/bookings`] });
-    },
-  });
-
-  const updateBookingMutation = useMutation({
-    mutationFn: async ({ id, updates }: { id: number; updates: Partial<Booking> }) => {
-      const response = await fetch(`/api/tenants/${restaurant?.tenantId}/bookings/${id}`, {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(updates),
-      });
-      if (!response.ok) throw new Error('Failed to update booking');
-      return response.json();
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: [`/api/tenants/${restaurant?.tenantId}/restaurants/${restaurant?.id}/bookings`] });
-    },
-  });
 
   return (
     <div className="min-h-screen bg-gray-50">
