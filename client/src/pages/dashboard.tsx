@@ -25,6 +25,7 @@ import { Label } from "@/components/ui/label";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
+import { RealTimeNotifications } from "@/components/real-time-notifications";
 
 export default function Dashboard() {
   const [, setLocation] = useLocation();
@@ -702,6 +703,7 @@ export default function Dashboard() {
               placeholder="Customer search" 
               className="w-64"
             />
+            <RealTimeNotifications />
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <Button variant="ghost" className="h-8 w-8 p-0 rounded-full">
