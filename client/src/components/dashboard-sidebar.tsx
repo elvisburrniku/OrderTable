@@ -121,28 +121,7 @@ export default function DashboardSidebar({ selectedDate, bookings }: DashboardSi
         </nav>
       </div>
 
-      <Card className="bg-white border mb-4">
-        <CardContent className="p-4">
-          <h4 className="font-semibold text-gray-900 mb-2">Calendar</h4>
-          <div className="text-sm text-gray-600 mb-2">{format(selectedDate, 'MMMM yyyy')}</div>
-          <div className="grid grid-cols-7 gap-1 text-xs">
-            {['Mo', 'Tu', 'We', 'Th', 'Fr', 'Sa', 'Su'].map(day => (
-              <div key={day} className="text-center p-1 text-gray-500">{day}</div>
-            ))}
 
-            {/* Simple calendar display - showing just a few days */}
-            <div className="text-center p-1">1</div>
-            <div className={`text-center p-1 rounded ${
-              format(selectedDate, 'd') === '2' ? 'bg-green-600 text-white' : ''
-            }`}>2</div>
-            <div className="text-center p-1">3</div>
-            <div className="text-center p-1">4</div>
-            <div className="text-center p-1">5</div>
-            <div className="text-center p-1">6</div>
-            <div className="text-center p-1">7</div>
-          </div>
-        </CardContent>
-      </Card>
 
       <div>
         <div className="text-sm font-medium text-gray-900 mb-2">Booking open</div>
