@@ -1,5 +1,5 @@
-
 import React, { createContext, useContext, useEffect, useState } from "react";
+import { getCurrentTenant } from "./auth";
 import { useParams } from "wouter";
 import type { Tenant, TenantUser } from "@db/schema";
 
@@ -59,20 +59,19 @@ export function TenantProvider({ children }: { children: React.ReactNode }) {
   );
 }
 
-import { getCurrentTenant } from "./auth";
 
 export function useTenant() {
   const context = useContext(TenantContext);
   const params = useParams();
   const authTenant = getCurrentTenant();
-  
+
   if (context === undefined) {
     throw new Error("useTenant must be used within a TenantProvider");
   }
-  
+
   // Always prioritize URL params over stored tenant
   const tenantId = params.tenantId ? parseInt(params.tenantId) : (authTenant?.id || null);
-  
+
   return {
     ...context,
     tenantId
