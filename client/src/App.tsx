@@ -45,6 +45,7 @@ import Settings from "./pages/settings";
 import Billing from "./pages/billing";
 import Help from "./pages/help";
 import CustomerFeedback from "./pages/customer-feedback";
+import TableFeedback from "./pages/table-feedback";
 
 function App() {
   return (
@@ -86,7 +87,7 @@ function App() {
             <Route path="/:tenantId/rooms" component={Rooms} />
             <Route path="/:tenantId/booking-agents" component={BookingAgents} />
             <Route path="/booking-manage/:id" component={BookingManage} />
-            <Route path="/feedback/:tenantId/:restaurantId" component={CustomerFeedback} />
+            <Route path="/feedback/:tenantId/:restaurantId" component={TableFeedback} />
             <Route path="/:tenantId/booking/:id" component={lazy(() => import("./pages/booking-detail"))} />
             <Route path="/:tenantId/profile" component={Profile} />
             <Route path="/:tenantId/settings" component={Settings} />

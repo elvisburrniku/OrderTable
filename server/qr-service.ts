@@ -12,7 +12,9 @@ export class QRCodeService {
     baseUrl: string = process.env.REPLIT_DOMAINS || 'localhost:5000'
   ): Promise<string> {
     try {
-      const feedbackUrl = `https://${baseUrl}/feedback/${tenantId}/${restaurantId}?table=${tableId}`;
+      // Use the correct URL format for the Replit environment
+      const domain = baseUrl.includes('localhost') ? `http://${baseUrl}` : `https://${baseUrl}`;
+      const feedbackUrl = `${domain}/feedback/${tenantId}/${restaurantId}?table=${tableId}`;
       const qrCodeDataUrl = await QRCode.toDataURL(feedbackUrl);
       return qrCodeDataUrl;
     } catch (error) {
