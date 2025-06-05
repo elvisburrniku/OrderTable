@@ -137,10 +137,10 @@ export default function Subscription() {
               >
                 Booking
               </a>
-              <a href="#" className="text-green-600 font-medium">
+              <a href={`/${restaurant.tenantId}/bookings`} className="text-green-600 font-medium">
                 CRM
               </a>
-              <a href="#" className="text-gray-600 hover:text-gray-900">
+              <a href={`/${restaurant.tenantId}/activity-log`} className="text-gray-600 hover:text-gray-900">
                 Archive
               </a>
             </nav>

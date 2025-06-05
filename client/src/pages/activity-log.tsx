@@ -96,8 +96,8 @@ export default function ActivityLog() {
             <h1 className="text-xl font-semibold">Log</h1>
             <nav className="flex space-x-6">
               <a href={`/${restaurant.tenantId}/dashboard`} className="text-gray-600 hover:text-gray-900">Booking</a>
-              <a href="#" className="text-green-600 font-medium">CRM</a>
-              <a href="#" className="text-gray-600 hover:text-gray-900">Archive</a>
+              <a href={`/${restaurant.tenantId}/bookings`} className="text-gray-600 hover:text-gray-900">CRM</a>
+              <a href={`/${restaurant.tenantId}/activity-log`} className="text-green-600 font-medium">Archive</a>
             </nav>
           </div>
           <div className="flex items-center space-x-4">
