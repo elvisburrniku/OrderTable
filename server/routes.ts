@@ -1696,8 +1696,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const tenantTables = tables.filter(table => table.tenantId === tenantId);
 
       // Calculate current month's bookings for monthly revenue
-      const current_file>
-Date = new Date().getMonth();
+      const currentMonth = new Date().getMonth();
       const currentYear = new Date().getFullYear();
       const monthlyBookings = tenantBookings.filter(booking => {
         const bookingDate = new Date(booking.bookingDate);
