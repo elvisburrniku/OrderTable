@@ -15,10 +15,34 @@ import { createInsertSchema, createSelectSchema } from "drizzle-zod";
 import { z } from "zod";
 import { InferSelectModel, InferInsertModel } from "drizzle-orm";
 
+// Define subscription plans first since tenants reference it
+export const subscriptionPlans = pgTable("subscription_plans", {
+  id: serial("id").primaryKey(),
+  name: text("name").notNull(),
+  price: integer("price").notNull(), // price in cents
+  interval: varchar("interval", { length: 20 }).default("monthly"), // monthly, yearly
+  features: text("features").notNull(), // JSON string of features
+  maxTables: integer("max_tables").default(10),
+  maxBookingsPerMonth: integer("max_bookings_per_month").default(100),
+  maxRestaurants: integer("max_restaurants").default(1),
+  trialDays: integer("trial_days").default(14),
+  isActive: boolean("is_active").default(true),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
 export const tenants = pgTable("tenants", {
   id: serial("id").primaryKey(),
   name: text("name").notNull(),
   slug: text("slug").notNull().unique(),
+  subscriptionPlanId: integer("subscription_plan_id").references(() => subscriptionPlans.id),
+  subscriptionStatus: varchar("subscription_status", { length: 20 }).default("trial"), // trial, active, expired, cancelled
+  trialStartDate: timestamp("trial_start_date").defaultNow(),
+  trialEndDate: timestamp("trial_end_date"),
+  subscriptionStartDate: timestamp("subscription_start_date"),
+  subscriptionEndDate: timestamp("subscription_end_date"),
+  stripeCustomerId: text("stripe_customer_id"),
+  stripeSubscriptionId: text("stripe_subscription_id"),
+  maxRestaurants: integer("max_restaurants").default(1),
   createdAt: timestamp("created_at").defaultNow(),
 });
 
@@ -227,18 +251,6 @@ export const rooms = pgTable("rooms", {
   createdAt: timestamp("created_at").defaultNow(),
 });
 
-export const subscriptionPlans = pgTable("subscription_plans", {
-  id: serial("id").primaryKey(),
-  name: text("name").notNull(),
-  price: integer("price").notNull(), // price in cents
-  interval: varchar("interval", { length: 20 }).default("monthly"), // monthly, yearly
-  features: text("features").notNull(), // JSON string of features
-  maxTables: integer("max_tables").default(10),
-  maxBookingsPerMonth: integer("max_bookings_per_month").default(100),
-  isActive: boolean("is_active").default(true),
-  createdAt: timestamp("created_at").defaultNow(),
-});
-
 export const tenantSubscriptions = pgTable("tenant_subscriptions", {
   id: serial("id").primaryKey(),
   tenantId: integer("tenant_id")
@@ -278,6 +290,21 @@ export const userSubscriptions = pgTable("user_subscriptions", {
 export const insertTenantSchema = createInsertSchema(tenants).omit({
   id: true,
   createdAt: true,
+  trialStartDate: true,
+  trialEndDate: true,
+  subscriptionStartDate: true,
+  subscriptionEndDate: true,
+  stripeCustomerId: true,
+  stripeSubscriptionId: true,
+});
+
+export const insertCompanyRegistrationSchema = z.object({
+  companyName: z.string().min(1, "Company name is required"),
+  email: z.string().email("Valid email is required"),
+  password: z.string().min(6, "Password must be at least 6 characters"),
+  name: z.string().min(1, "Name is required"),
+  restaurantName: z.string().min(1, "Restaurant name is required"),
+  planId: z.number().optional(),
 });
 
 export const insertUserSchema = createInsertSchema(users).pick({

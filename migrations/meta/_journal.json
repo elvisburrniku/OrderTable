@@ -22,6 +22,13 @@
       "when": 1749041936776,
       "tag": "0002_remarkable_micromax",
       "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "7",
+      "when": 1749129883146,
+      "tag": "0003_add_tenant_subscription_system",
+      "breakpoints": true
     }
   ]
 }
