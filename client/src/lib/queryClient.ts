@@ -27,7 +27,7 @@ export async function apiRequest(
   return response;
 }
 
-import { getCurrentTenant } from './tenant';
+import { getCurrentTenant } from './auth';
 
 // Helper function to get current restaurant from localStorage
 function getCurrentRestaurant() {
