@@ -18,7 +18,8 @@ import {
   userSubscriptions,
   openingHours,
   specialPeriods,
-  cutOffTimes
+  cutOffTimes,
+  bookingChangeRequests
 } from "@shared/schema";
 import type {
   User,
@@ -50,7 +51,9 @@ import type {
   InsertTimeSlots,
   InsertRoom,
   InsertTableLayout,
-  InsertCombinedTable
+  InsertCombinedTable,
+  BookingChangeRequest,
+  InsertBookingChangeRequest
 } from "@shared/schema";
 import { neon } from "@neondatabase/serverless";
 import { drizzle } from "drizzle-orm/neon-http";

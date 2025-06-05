@@ -309,6 +309,12 @@ export const bookingChangeRequests = pgTable("booking_change_requests", {
   respondedAt: timestamp("responded_at"),
 });
 
+export const insertBookingChangeRequestSchema = createInsertSchema(bookingChangeRequests).omit({
+  id: true,
+  createdAt: true,
+  respondedAt: true,
+});
+
 export const insertTenantSchema = createInsertSchema(tenants).omit({
   id: true,
   createdAt: true,
@@ -530,5 +536,8 @@ export type InsertCombinedTable = InferInsertModel<typeof combinedTables>;
 
 export type TableLayout = InferSelectModel<typeof tableLayouts>;
 export type InsertTableLayout = InferInsertModel<typeof tableLayouts>;
+
+export type BookingChangeRequest = InferSelectModel<typeof bookingChangeRequests>;
+export type InsertBookingChangeRequest = InferInsertModel<typeof bookingChangeRequests>;
 
 export type LoginData = z.infer<typeof loginSchema>;
