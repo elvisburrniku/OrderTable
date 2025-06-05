@@ -7,9 +7,16 @@ import Stripe from "stripe";
 import * as tenantRoutes from "./tenant-routes";
 import { Request, Response } from "express";
 import bcrypt from 'bcrypt';
+<<<<<<< HEAD
 import { users, tenants, tenantUsers, restaurants, subscriptionPlans } from "@shared/schema";
 import { eq, and } from "drizzle-orm";
 import { BrevoEmailService } from "./brevo-service";
+=======
+import { users, tenants, tenantUsers, restaurants } from "@shared/schema";
+import { eq } from "drizzle-orm";
+import { BrevoEmailService } from "./brevo-service"; // Import the BrevoEmailService
+import { BookingHash } from "./booking-hash";
+>>>>>>> fcbc40a (Assistant checkpoint: Add secure hash-based booking management system)
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY || 'sk_test_your_stripe_secret_key', {
   apiVersion: '2025-05-28.basil'
@@ -1808,11 +1815,11 @@ app.put("/api/tenants/:tenantId/bookings/:id", validateTenant, async (req, res) 
     try {
       const bookingId = parseInt(req.params.id);
       const booking = await storage.getBookingById(bookingId);
-      
+
       if (!booking) {
         return res.status(404).json({ message: "Booking not found" });
       }
-      
+
       // Return booking details for customer management
       res.json(booking);
     } catch (error) {
@@ -1821,36 +1828,77 @@ app.put("/api/tenants/:tenantId/bookings/:id", validateTenant, async (req, res) 
     }
   });
 
+  // Cancel booking route with hash verification
+  app.post("/api/booking-manage/:id/cancel", async (req, res) => {
+    try {
+      const bookingId = parseInt(req.params.id);
+      const { hash } = req.body;
+
+      const booking = await storage.getBookingById(bookingId);
+      if (!booking) {
+        return res.status(404).json({ message: "Booking not found" });
+      }
+
+      // Verify cancel hash
+      const isValidHash = BookingHash.verifyHash(
+        hash,
+        bookingId,
+        booking.tenantId,
+        booking.restaurantId,
+        'cancel'
+      );
+
+      if (!isValidHash) {
+        return res.status(403).json({ message: "Invalid or expired cancellation link" });
+      }
+
+      // Update booking status to cancelled
+      constupdatedBooking = await storage.updateBooking(bookingId, {
+        status: 'cancelled'
+      });
+
+      console.log(`Customer cancelled booking ${bookingId} via secure link`);
+
+      res.json({
+        message: "Booking cancelled successfully",
+        booking: updatedBooking
+      });
+    } catch (error) {
+      console.error("Error cancelling booking:", error);
+      res.status(500).json({ message: "Internal server error" });
+    }
+  });
+
   app.put("/api/booking-manage/:id", async (req, res) => {
     try {
       const bookingId = parseInt(req.params.id);
       const updates = req.body;
-      
+
       // Get the existing booking
       const existingBooking = await storage.getBookingById(bookingId);
       if (!existingBooking) {
         return res.status(404).json({ message: "Booking not found" });
       }
-      
+
       // Get restaurant and cut-off times to validate if changes are allowed
       const restaurant = await storage.getRestaurantById(existingBooking.restaurantId);
       if (!restaurant) {
         return res.status(404).json({ message: "Restaurant not found" });
       }
-      
+
       // Get cut-off times for validation
       const cutOffTimes = await storage.getCutOffTimesByRestaurant(existingBooking.restaurantId);
-      
+
       // Validate if changes are allowed based on cut-off times
       const bookingDateTime = new Date(existingBooking.bookingDate);
       const now = new Date();
-      
+
       const dayOfWeek = bookingDateTime.getDay();
       const dayNames = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'];
       const dayName = dayNames[dayOfWeek];
-      
+
       const cutOffTime = cutOffTimes.find((ct: any) => ct.dayOfWeek.toLowerCase() === dayName);
-      
+
       let isChangeAllowed = false;
       if (!cutOffTime || !cutOffTime.isEnabled) {
         // Default: allow changes up to 1 hour before booking
@@ -1864,19 +1912,19 @@ app.put("/api/tenants/:tenantId/bookings/:id", validateTenant, async (req, res) 
         cutOffDeadline.setHours(cutOffDeadline.getHours() - cutOffTime.hoursBeforeBooking);
         isChangeAllowed = now < cutOffDeadline;
       }
-      
+
       if (!isChangeAllowed) {
         const hours = cutOffTime?.hoursBeforeBooking || 1;
         return res.status(400).json({ 
           message: `Changes are no longer allowed. You can only modify bookings up to ${hours} hour${hours > 1 ? 's' : ''} before your reservation time.`
         });
       }
-      
+
       // Validate booking date and time changes
       if (updates.bookingDate || updates.startTime) {
         const newDate = updates.bookingDate ? new Date(updates.bookingDate) : new Date(existingBooking.bookingDate);
         const newTime = updates.startTime || existingBooking.startTime;
-        
+
         // Check if restaurant is open
         const isOpen = await storage.isRestaurantOpen(existingBooking.restaurantId, newDate, newTime);
         if (!isOpen) {
@@ -1884,7 +1932,7 @@ app.put("/api/tenants/:tenantId/bookings/:id", validateTenant, async (req, res) 
             message: "The restaurant is closed on the selected date and time."
           });
         }
-        
+
         // Check booking cut-off for new date/time
         const isAllowed = await storage.isBookingAllowed(existingBooking.restaurantId, newDate, newTime);
         if (!isAllowed) {
@@ -1892,37 +1940,37 @@ app.put("/api/tenants/:tenantId/bookings/:id", validateTenant, async (req, res) 
             message: "Booking is not allowed for the selected date and time."
           });
         }
-        
+
         // Check for table conflicts if changing date/time
         if (existingBooking.tableId) {
           const existingBookings = await storage.getBookingsByDate(
             existingBooking.restaurantId, 
             newDate.toISOString().split('T')[0]
           );
-          
+
           const conflictingBookings = existingBookings.filter(booking => {
             if (booking.id === bookingId || booking.tableId !== existingBooking.tableId) return false;
-            
+
             const requestedStartTime = newTime;
             const requestedEndTime = existingBooking.endTime || "23:59";
-            
+
             // Time conflict check logic
             const requestedStartMinutes = parseInt(requestedStartTime.split(':')[0]) * 60 + parseInt(requestedStartTime.split(':')[1]);
             const requestedEndMinutes = parseInt(requestedEndTime.split(':')[0]) * 60 + parseInt(requestedEndTime.split(':')[1]);
-            
+
             const existingStartMinutes = parseInt(booking.startTime.split(':')[0]) * 60 + parseInt(booking.startTime.split(':')[1]);
             const existingEndTime = booking.endTime || "23:59";
             const existingEndMinutes = parseInt(existingEndTime.split(':')[0]) * 60 + parseInt(existingEndTime.split(':')[1]);
-            
+
             const bufferMinutes = 60;
             const requestedStart = requestedStartMinutes - bufferMinutes;
             const requestedEnd = requestedEndMinutes + bufferMinutes;
             const existingStart = existingStartMinutes - bufferMinutes;
             const existingEnd = existingEndMinutes + bufferMinutes;
-            
+
             return requestedStart < existingEnd && existingStart < requestedEnd;
           });
-          
+
           if (conflictingBookings.length > 0) {
             return res.status(400).json({ 
               message: "The selected time conflicts with another booking for the same table."
@@ -1930,16 +1978,16 @@ app.put("/api/tenants/:tenantId/bookings/:id", validateTenant, async (req, res) 
           }
         }
       }
-      
+
       // Process the update
       const updatedBooking = await storage.updateBooking(bookingId, updates);
-      
+
       if (!updatedBooking) {
         return res.status(404).json({ message: "Booking not found" });
       }
-      
+
       console.log(`Customer modified booking ${bookingId}:`, updates);
-      
+
       res.json(updatedBooking);
     } catch (error) {
       console.error("Error updating booking:", error);
@@ -2258,5 +2306,229 @@ app.put("/api/tenants/:tenantId/bookings/:id", validateTenant, async (req, res) 
     }
   });
 
+<<<<<<< HEAD
   return createServer(app);
+=======
+  // Customer booking management routes (public access)
+  app.get("/api/booking-manage/:id", async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      const booking = await storage.getBookingById(id);
+
+      if (!booking) {
+        return res.status(404).json({ message: "Booking not found" });
+      }
+
+      // Return booking with customer details
+      const customer = await storage.getCustomerById(booking.customerId);
+      const bookingWithCustomer = {
+        ...booking,
+        customerName: customer?.name || booking.customerName,
+        customerEmail: customer?.email || booking.customerEmail,
+        customerPhone: customer?.phone || booking.customerPhone
+      };
+
+      res.json(bookingWithCustomer);
+    } catch (error) {
+      console.error("Error fetching booking for customer:", error);
+      res.status(500).json({ message: "Internal server error" });
+    }
+  });
+
+  app.get("/api/booking-manage/:id/available-tables", async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      const booking = await storage.getBookingById(id);
+
+      if (!booking) {
+        return res.status(404).json({ message: "Booking not found" });
+      }
+
+      // Get available tables for the restaurant
+      const tables = await storage.getTablesByRestaurant(booking.restaurantId);
+      res.json(tables);
+    } catch (error) {
+      console.error("Error fetching available tables:", error);
+      res.status(500).json({ message: "Internal server error" });
+    }
+  });
+
+  app.put("/api/booking-manage/:id", async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      const updates = req.body;
+
+      const booking = await storage.getBookingById(id);
+      if (!booking) {
+        return res.status(404).json({ message: "Booking not found" });
+      }
+
+      // Only allow updating table and status
+      const allowedUpdates: any = {};
+      if (updates.tableId !== undefined) {
+        allowedUpdates.tableId = updates.tableId;
+      }
+      if (updates.status !== undefined) {
+        allowedUpdates.status = updates.status;
+      }
+
+      const updatedBooking = await storage.updateBooking(id, allowedUpdates);
+      res.json(updatedBooking);
+    } catch (error) {
+      console.error("Error updating booking:", error);
+      res.status(500).json({ message: "Internal server error" });
+    }
+  });
+
+  // Statistics routes (read-only data aggregation)
+  app.get("/api/tenants/:tenantId/restaurants/:restaurantId/statistics", validateTenant, async (req, res) => {
+    try {
+      const restaurantId = parseInt(req.params.restaurantId);
+      const tenantId = parseInt(req.params.tenantId);
+      const { startDate, endDate } = req.query;
+
+      // Get bookings for the date range
+      const bookings = await storage.getBookingsByRestaurant(restaurantId);
+      const customers = await storage.getCustomersByRestaurant(restaurantId);
+      const tables = await storage.getTablesByRestaurant(restaurantId);
+
+      // Filter by tenantId for security
+      const tenantBookings = bookings.filter(booking => booking.tenantId === tenantId);
+      const tenantCustomers = customers.filter(customer => customer.tenantId === tenantId);
+      const tenantTables = tables.filter(table => table.tenantId === tenantId);
+
+      // Calculate current month's bookings for monthly revenue
+      const currentMonth = new Date().getMonth();
+      const currentYear = new Date().getFullYear();
+      const monthlyBookings = tenantBookings.filter(booking => {
+        const bookingDate = new Date(booking.bookingDate);
+        return bookingDate.getMonth() === currentMonth && bookingDate.getFullYear() === currentYear;
+      });
+
+      // Calculate statistics
+      const totalBookings = tenantBookings.length;
+      const totalCustomers = tenantCustomers.length;
+      const totalTables = tenantTables.length;
+
+      // Group bookings by status
+      const bookingsByStatus = tenantBookings.reduce((acc: any, booking) => {
+        const status = booking.status || 'confirmed';
+        acc[status] = (acc[status] || 0) + 1;
+        return acc;
+      }, {});
+
+      // Calculate table utilization (percentage of tables used in current month)
+      const uniqueTablesUsed = new Set(monthlyBookings.map(booking => booking.tableId).filter(Boolean)).size;
+      const tableUtilization = totalTables > 0 ? (uniqueTablesUsed / totalTables) * 100 : 0;
+
+      // Calculate monthly revenue (assuming average booking value of $50)
+      const avgBookingValue = 50;
+      const monthlyRevenue = monthlyBookings.length * avgBookingValue;
+
+      // Calculate average bookings per day for current month
+      const daysInMonth = new Date(currentYear, currentMonth + 1, 0).getDate();
+      const avgBookingsPerDay = monthlyBookings.length / daysInMonth;
+
+      const statistics = {
+        totalBookings: totalBookings || 0,
+        totalCustomers: totalCustomers || 0,
+        tableUtilization: Math.min(Math.round(tableUtilization * 10) / 10, 100), // Round to 1 decimal, cap at 100%
+        monthlyRevenue: monthlyRevenue || 0,
+        bookingsByStatus: bookingsByStatus || { confirmed: 0, pending: 0, cancelled: 0 },
+        avgBookingsPerDay: Math.round(avgBookingsPerDay * 10) / 10 || 0,
+        monthlyBookings: monthlyBookings.length || 0,
+        totalTables: totalTables || 0
+      };
+
+      res.json(statistics);
+    } catch (error) {
+      console.error("Statistics calculation error:", error);
+      res.status(500).json({ message: "Failed to calculate statistics" });
+    }
+  });
+
+  // Stripe webhook to handle successful payments
+  app.post("/api/stripe-webhook", async (req, res) => {
+    const sig = req.headers['stripe-signature'];
+    let event;
+
+    try {
+      event = stripe.webhooks.constructEvent(
+        req.body,
+        sig!,
+        process.env.STRIPE_WEBHOOK_SECRET || 'whsec_your_webhook_secret'
+      );
+    } catch (err) {
+      console.log(`Webhook signature verification failed.`, err);
+      return res.status(400).send(`Webhook Error: ${err}`);
+    }
+
+    console.log(`Received webhook event: ${event.type}`);
+
+    if (event.type === 'checkout.session.completed') {
+      const session = event.data.object as Stripe.Checkout.Session;
+      const { userId, planId } = session.metadata!;
+
+      console.log(`Processing checkout.session.completed for user ${userId}, plan ${planId}`);
+
+      // Check if user already has a subscription
+      const existingSubscription = await storage.getUserSubscription(parseInt(userId));
+
+      if (existingSubscription) {
+        // Update existing subscription
+        await storage.updateUserSubscription(existingSubscription.id, {
+          planId: parseInt(planId),
+          stripeSubscriptionId: session.subscription as string,
+          currentPeriodStart: new Date(),
+          currentPeriodEnd: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000),
+          status: 'active'
+        });
+        console.log(`Updated existing subscription for user ${userId}`);
+      } else {
+        // Create new subscription
+        await storage.createUserSubscription({
+          userId: parseInt(userId),
+          planId: parseInt(planId),
+          stripeSubscriptionId: session.subscription as string,
+          currentPeriodStart: new Date(),
+          currentPeriodEnd: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000),
+          status: 'active'
+        });
+        console.log(`Created new subscription for user ${userId}`);
+      }
+    }
+
+    if (event.type === 'invoice.payment_succeeded') {
+      const invoice = event.data.object as Stripe.Invoice;
+      const subscriptionId = invoice.subscription as string;
+
+      // Find user subscription by Stripe subscription ID and extend their period
+      const userSubscription = await storage.getUserSubscriptionByStripeId(subscriptionId);
+      if (userSubscription) {
+        await storage.updateUserSubscription(userSubscription.id, {
+          currentPeriodStart: new Date(),
+          currentPeriodEnd: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000),
+          status: 'active'
+        });
+        console.log(`Extended subscription for user ${userSubscription.userId}`);
+      }
+    }
+
+    if (event.type === 'customer.subscription.deleted') {
+      const subscription = event.data.object as Stripe.Subscription;
+      const userSubscription = await storage.getUserSubscriptionByStripeId(subscription.id);
+      if (userSubscription) {
+        await storage.updateUserSubscription(userSubscription.id, {
+          status: 'cancelled'
+        });
+        console.log(`Cancelled subscription for user ${userSubscription.userId}`);
+      }
+    }
+
+    res.json({ received: true });
+  });
+
+  const httpServer = createServer(app);
+  return httpServer;
+>>>>>>> fcbc40a (Assistant checkpoint: Add secure hash-based booking management system)
 }
