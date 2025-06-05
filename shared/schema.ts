@@ -136,6 +136,7 @@ export const bookings = pgTable("bookings", {
   status: varchar("status", { length: 20 }).default("confirmed"),
   source: varchar("source", { length: 20 }).default("manual"), // manual, online, google
   notes: text("notes"),
+  managementHash: text("management_hash"), // Hash for booking management links
   createdAt: timestamp("created_at").defaultNow(),
 });
 

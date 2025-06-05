@@ -28,6 +28,7 @@ import { drizzle as drizzlePostgres } from "drizzle-orm/postgres-js";
 import postgres from "postgres";
 import * as schema from "../shared/schema";
 import type { IStorage } from "./storage";
+import { BookingHash } from "./booking-hash";
 
 // Use Supabase database URL if available, otherwise use the existing DATABASE_URL
 const databaseUrl = process.env.SUPABASE_DATABASE_URL || process.env.DATABASE_URL;
@@ -385,8 +386,37 @@ export class DatabaseStorage implements IStorage {
   }
 
   async createBooking(booking: InsertBooking): Promise<Booking> {
-    const [newBooking] = await this.db.insert(bookings).values(booking).returning();
-    return newBooking;
+    // Import BookingHash at the top of the file if not already imported
+    const { BookingHash } = await import('./booking-hash');
+    
+    // Generate management hash for the booking
+    const managementHash = BookingHash.generateHash(
+      0, // Temporary ID, will be replaced with actual ID after insertion
+      booking.tenantId,
+      booking.restaurantId,
+      'manage'
+    );
+    
+    const [newBooking] = await this.db.insert(bookings).values({
+      ...booking,
+      managementHash
+    }).returning();
+    
+    // Update the hash with the actual booking ID
+    const finalHash = BookingHash.generateHash(
+      newBooking.id,
+      newBooking.tenantId,
+      newBooking.restaurantId,
+      'manage'
+    );
+    
+    // Update the booking with the correct hash
+    const [updatedBooking] = await this.db.update(bookings)
+      .set({ managementHash: finalHash })
+      .where(eq(bookings.id, newBooking.id))
+      .returning();
+    
+    return updatedBooking;
   }
 
   async updateBooking(id: number, updates: Partial<Booking>): Promise<Booking | undefined> {
