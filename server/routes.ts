@@ -39,13 +39,20 @@ function broadcastNotification(restaurantId: number, notification: any) {
   const restaurantKey = `restaurant_${restaurantId}`;
   const connections = wsConnections.get(restaurantKey);
   
-  if (connections) {
+  console.log(`Broadcasting notification for restaurant ${restaurantId}, connections found: ${connections ? connections.size : 0}`);
+  
+  if (connections && connections.size > 0) {
     const message = JSON.stringify(notification);
+    let sentCount = 0;
     connections.forEach(ws => {
       if (ws.readyState === WebSocket.OPEN) {
         ws.send(message);
+        sentCount++;
       }
     });
+    console.log(`Notification sent to ${sentCount} clients for restaurant ${restaurantId}`);
+  } else {
+    console.log(`No active connections found for restaurant ${restaurantId}`);
   }
 }
 
