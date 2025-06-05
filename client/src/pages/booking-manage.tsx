@@ -36,12 +36,12 @@ export default function BookingManage() {
       if (!hash) {
         throw new Error('Access denied - invalid link');
       }
-      
+
       let url = `/api/booking-manage/${id}?hash=${encodeURIComponent(hash)}`;
       if (action) {
         url += `&action=${encodeURIComponent(action)}`;
       }
-      
+
       const response = await fetch(url);
       if (!response.ok) {
         if (response.status === 403) {
@@ -531,7 +531,7 @@ export default function BookingManage() {
                             <SelectValue placeholder="Select a table" />
                           </SelectTrigger>
                           <SelectContent>
-                            <SelectItem value="">No specific table</SelectItem>
+                            <SelectItem value="none">No specific table</SelectItem>
                             {availableTables.map((table: any) => (
                               <SelectItem key={table.id} value={table.id.toString()}>
                                 Table {table.tableNumber || table.id} (Seats {table.capacity})
@@ -581,7 +581,7 @@ export default function BookingManage() {
                           </Select>
                           <Button 
                             onClick={handleUpdateTable}
-                            disabled={!selectedTable || selectedTable === booking.tableId?.toString() || updateMutation.isPending || !isChangeAllowed()}
+                            disabled={!selectedTable || selectedTable === "none" || selectedTable === booking.tableId?.toString() || updateMutation.isPending || !isChangeAllowed()}
                             size="sm"
                           >
                             Update
