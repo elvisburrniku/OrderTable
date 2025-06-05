@@ -97,42 +97,44 @@ export default function FeedbackResponses() {
                 <thead className="bg-gray-50">
                   <tr>
                     <th className="text-left py-3 px-4 font-medium text-gray-700">ID</th>
-                    <th className="text-left py-3 px-4 font-medium text-gray-700">Name</th>
-                    <th className="text-left py-3 px-4 font-medium text-gray-700">Table</th>
-                    <th className="text-left py-3 px-4 font-medium text-gray-700">Guests</th>
+                    <th className="text-left py-3 px-4 font-medium text-gray-700">Customer Name</th>
+                    <th className="text-left py-3 px-4 font-medium text-gray-700">Customer Email</th>
+                    <th className="text-left py-3 px-4 font-medium text-gray-700">Restaurant ID</th>
+                    <th className="text-left py-3 px-4 font-medium text-gray-700">Tenant ID</th>
+                    <th className="text-left py-3 px-4 font-medium text-gray-700">Booking ID</th>
                     <th className="text-left py-3 px-4 font-medium text-gray-700">Rating</th>
                     <th className="text-left py-3 px-4 font-medium text-gray-700">NPS</th>
-                    <th className="text-left py-3 px-4 font-medium text-gray-700">Note</th>
-                    <th className="text-left py-3 px-4 font-medium text-gray-700">Elaborations</th>
-                    <th className="text-left py-3 px-4 font-medium text-gray-700">Visit</th>
-                    <th className="text-left py-3 px-4 font-medium text-gray-700">Completed</th>
+                    <th className="text-left py-3 px-4 font-medium text-gray-700">Comments</th>
+                    <th className="text-left py-3 px-4 font-medium text-gray-700">Visited</th>
+                    <th className="text-left py-3 px-4 font-medium text-gray-700">Created At</th>
                   </tr>
                 </thead>
                 <tbody>
                   {isLoading ? (
                     <tr>
-                      <td colSpan={10} className="py-8 text-center text-gray-500">
+                      <td colSpan={11} className="py-8 text-center text-gray-500">
                         Loading feedback...
                       </td>
                     </tr>
                   ) : filteredFeedback.length === 0 ? (
                     <tr>
-                      <td colSpan={10} className="py-8 text-center text-gray-500">
+                      <td colSpan={11} className="py-8 text-center text-gray-500">
                         No feedback responses found
                       </td>
                     </tr>
                   ) : (
                     filteredFeedback.map((item: any) => (
                       <tr key={item.id} className="border-b border-gray-100 hover:bg-gray-50">
-                        <td className="py-3 px-4 text-sm">{item.id}</td>
+                        <td className="py-3 px-4 text-sm font-medium">{item.id}</td>
                         <td className="py-3 px-4">
-                          <div>
-                            <div className="font-medium">{item.customerName}</div>
-                            <div className="text-sm text-gray-500">{item.customerEmail}</div>
-                          </div>
+                          <div className="font-medium">{item.customerName}</div>
                         </td>
-                        <td className="py-3 px-4">-</td>
-                        <td className="py-3 px-4">-</td>
+                        <td className="py-3 px-4">
+                          <div className="text-sm text-gray-600">{item.customerEmail}</div>
+                        </td>
+                        <td className="py-3 px-4 text-sm">{item.restaurantId}</td>
+                        <td className="py-3 px-4 text-sm">{item.tenantId}</td>
+                        <td className="py-3 px-4 text-sm">{item.bookingId || '-'}</td>
                         <td className="py-3 px-4">
                           {item.rating ? (
                             <div className="flex">
@@ -146,9 +148,12 @@ export default function FeedbackResponses() {
                             '-'
                           )}
                         </td>
-                        <td className="py-3 px-4">{item.nps || '-'}</td>
-                        <td className="py-3 px-4">{item.comments || '-'}</td>
-                        <td className="py-3 px-4">-</td>
+                        <td className="py-3 px-4 text-sm">{item.nps || '-'}</td>
+                        <td className="py-3 px-4">
+                          <div className="max-w-xs truncate" title={item.comments}>
+                            {item.comments || '-'}
+                          </div>
+                        </td>
                         <td className="py-3 px-4">
                           <span className={`px-2 py-1 text-xs rounded-full ${
                             item.visited ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
@@ -156,8 +161,8 @@ export default function FeedbackResponses() {
                             {item.visited ? 'Yes' : 'No'}
                           </span>
                         </td>
-                        <td className="py-3 px-4">
-                          {new Date(item.createdAt).toLocaleDateString()}
+                        <td className="py-3 px-4 text-sm">
+                          {new Date(item.createdAt).toLocaleString()}
                         </td>
                       </tr>
                     ))
