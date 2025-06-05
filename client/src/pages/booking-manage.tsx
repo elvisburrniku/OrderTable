@@ -129,6 +129,11 @@ export default function BookingManage() {
     }
   });
 
+  // Function to check if changes are allowed based on backend permissions
+  const isChangeAllowed = () => {
+    return booking?.canModify ?? false;
+  };
+
   useEffect(() => {
     if (booking) {
       setSelectedTable(booking.tableId?.toString() || "");
@@ -138,11 +143,6 @@ export default function BookingManage() {
       setNewGuestCount(booking.guestCount.toString());
     }
   }, [booking]);
-
-  // Function to check if changes are allowed based on backend permissions
-  const isChangeAllowed = () => {
-    return booking?.canModify ?? false;
-  };
 
   const getRestrictionMessage = () => {
     if (!booking) return "";
