@@ -2,7 +2,7 @@ import QRCode from 'qrcode';
 
 export class QRCodeService {
   /**
-   * Generate a QR code for a table that links to the restaurant's booking page
+   * Generate a QR code for a table that links to the table feedback page
    */
   static async generateTableQRCode(
     tableId: number,
@@ -12,8 +12,8 @@ export class QRCodeService {
     baseUrl: string = process.env.REPLIT_DOMAINS || 'localhost:5000'
   ): Promise<string> {
     try {
-      const bookingUrl = `https://${baseUrl}/book/${tenantId}/${restaurantId}?table=${tableId}`;
-      const qrCodeDataUrl = await QRCode.toDataURL(bookingUrl);
+      const feedbackUrl = `https://${baseUrl}/feedback/${tenantId}/${restaurantId}?table=${tableId}`;
+      const qrCodeDataUrl = await QRCode.toDataURL(feedbackUrl);
       return qrCodeDataUrl;
     } catch (error) {
       console.error('Error generating QR code:', error);

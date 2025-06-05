@@ -938,7 +938,123 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.post("/api/tenants/:tenantId/restaurants/:restaurantId/feedback", validateTenant, async (req, res) => {
+  // Public restaurant info (for customers via QR code)
+  app.get("/api/tenants/:tenantId/restaurants/:restaurantId", async (req, res) => {
+    try {
+      const restaurantId = parseInt(req.params.restaurantId);
+      const tenantId = parseInt(req.params.tenantId);
+
+      const restaurant = await storage.getRestaurantById(restaurantId);
+      if (!restaurant || restaurant.tenantId !== tenantId) {
+        return res.status(404).json({ message: "Restaurant not found" });
+      }
+
+      // Return only public information
+      res.json({
+        id: restaurant.id,
+        name: restaurant.name,
+        address: restaurant.address,
+        phone: restaurant.phone,
+        tenantId: restaurant.tenantId
+      });
+    } catch (error) {
+      res.status(400).json({ message: "Invalid request" });
+    }
+  });
+
+  // Public table info (for customers via QR code)
+  app.get("/api/tenants/:tenantId/restaurants/:restaurantId/tables/:tableId", async (req, res) => {
+    try {
+      const restaurantId = parseInt(req.params.restaurantId);
+      const tenantId = parseInt(req.params.tenantId);
+      const tableId = parseInt(req.params.tableId);
+
+      const restaurant = await storage.getRestaurantById(restaurantId);
+      if (!restaurant || restaurant.tenantId !== tenantId) {
+        return res.status(404).json({ message: "Restaurant not found" });
+      }
+
+      const table = await storage.getTableById(tableId);
+      if (!table || table.restaurantId !== restaurantId) {
+        return res.status(404).json({ message: "Table not found" });
+      }
+
+      // Return only public table information
+      res.json({
+        id: table.id,
+        tableNumber: table.tableNumber,
+        capacity: table.capacity,
+        restaurantId: table.restaurantId
+      });
+    } catch (error) {
+      res.status(400).json({ message: "Invalid request" });
+    }
+  });
+
+  // Public booking info for feedback validation (for customers via QR code)
+  app.get("/api/tenants/:tenantId/restaurants/:restaurantId/bookings", async (req, res) => {
+    try {
+      const restaurantId = parseInt(req.params.restaurantId);
+      const tenantId = parseInt(req.params.tenantId);
+      const { date, table } = req.query;
+
+      const restaurant = await storage.getRestaurantById(restaurantId);
+      if (!restaurant || restaurant.tenantId !== tenantId) {
+        return res.status(404).json({ message: "Restaurant not found" });
+      }
+
+      let bookings = [];
+      
+      if (date && table) {
+        // Get bookings for specific date and table
+        const allBookings = await storage.getBookingsByDate(restaurantId, date as string);
+        bookings = allBookings.filter(booking => 
+          booking.tableId === parseInt(table as string) &&
+          booking.status !== 'cancelled'
+        );
+      }
+
+      // Return only necessary booking information for feedback validation
+      const publicBookings = bookings.map(booking => ({
+        id: booking.id,
+        startTime: booking.startTime,
+        endTime: booking.endTime,
+        tableId: booking.tableId,
+        status: booking.status
+      }));
+
+      res.json(publicBookings);
+    } catch (error) {
+      res.status(400).json({ message: "Invalid request" });
+    }
+  });
+
+  // Public feedback submission (for customers via QR code)
+  app.post("/api/tenants/:tenantId/restaurants/:restaurantId/feedback", async (req, res) => {
+    try {
+      const restaurantId = parseInt(req.params.restaurantId);
+      const tenantId = parseInt(req.params.tenantId);
+
+      const restaurant = await storage.getRestaurantById(restaurantId);
+      if (!restaurant || restaurant.tenantId !== tenantId) {
+        return res.status(404).json({ message: "Restaurant not found" });
+      }
+
+      const feedbackData = {
+        ...req.body,
+        restaurantId,
+        tenantId
+      };
+
+      const feedback = await storage.createFeedback(feedbackData);
+      res.json(feedback);
+    } catch (error) {
+      res.status(400).json({ message: "Invalid feedback data" });
+    }
+  });
+
+  // Admin feedback route (requires authentication)
+  app.post("/api/admin/tenants/:tenantId/restaurants/:restaurantId/feedback", validateTenant, async (req, res) => {
     try {
       const restaurantId = parseInt(req.params.restaurantId);
       const tenantId = parseInt(req.params.tenantId);
