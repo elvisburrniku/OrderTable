@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { useParams } from "wouter";
 import { useQuery, useMutation } from "@tanstack/react-query";
@@ -25,8 +24,19 @@ export default function BookingManage() {
   const { data: booking, isLoading, error, refetch } = useQuery({
     queryKey: [`/api/booking-manage/${id}`],
     queryFn: async () => {
-      const response = await fetch(`/api/booking-manage/${id}`);
-      if (!response.ok) throw new Error("Booking not found");
+      const urlParams = new URLSearchParams(window.location.search);
+      const hash = urlParams.get('hash');
+
+      if (!hash) {
+        throw new Error('Access denied - invalid link');
+      }
+      const response = await fetch(`/api/booking-manage/${id}?hash=${encodeURIComponent(hash)}`);
+      if (!response.ok) {
+        if (response.status === 403) {
+          throw new Error('Access denied - invalid or expired link');
+        }
+        throw new Error("Booking not found");
+      }
       return response.json();
     },
     enabled: !!id
@@ -56,7 +66,12 @@ export default function BookingManage() {
     queryKey: [`/api/booking-manage/${id}/available-tables`, newDate, newTime],
     queryFn: async () => {
       if (!newDate || !newTime) return [];
-      const response = await fetch(`/api/tenants/${booking?.tenantId}/restaurants/${booking?.restaurantId}/tables?date=${newDate}&time=${newTime}&guestCount=${newGuestCount || booking?.guestCount}`);
+      const urlParams = new URLSearchParams(window.location.search);
+      const hash = urlParams.get('hash');
+
+      if (!hash) return [];
+
+      const response = await fetch(`/api/tenants/${booking?.tenantId}/restaurants/${booking?.restaurantId}/tables?date=${newDate}&time=${newTime}&guestCount=${newGuestCount || booking?.guestCount}&hash=${encodeURIComponent(hash)}`);
       if (!response.ok) return [];
       return response.json();
     },
@@ -71,7 +86,14 @@ export default function BookingManage() {
       startTime?: string;
       guestCount?: number;
     }) => {
-      const response = await fetch(`/api/tenants/${booking?.tenantId}/restaurants/${booking?.restaurantId}/bookings/${id}`, {
+      const urlParams = new URLSearchParams(window.location.search);
+      const hash = urlParams.get('hash');
+
+      if (!hash) {
+        throw new Error('Access denied - invalid link');
+      }
+
+      const response = await fetch(`/api/tenants/${booking?.tenantId}/restaurants/${booking?.restaurantId}/bookings/${id}?hash=${encodeURIComponent(hash)}`, {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(data)
@@ -105,16 +127,16 @@ export default function BookingManage() {
   // Function to check if changes are allowed based on cut-off times
   const isChangeAllowed = () => {
     if (!booking || !cutOffTimes) return false;
-    
+
     const bookingDateTime = parseISO(booking.bookingDate);
     const now = new Date();
-    
+
     // Get the day of the week (0 = Sunday, 1 = Monday, etc.)
     const dayOfWeek = bookingDateTime.getDay();
-    
+
     // Find cut-off time for this day (dayOfWeek is stored as integer)
     const cutOffTime = cutOffTimes.find((ct: any) => ct.dayOfWeek === dayOfWeek);
-    
+
     if (!cutOffTime || cutOffTime.cutOffHours === 0) {
       // If no cut-off time is set for this day, allow changes up to 1 hour before
       const oneHourBefore = new Date(bookingDateTime);
@@ -122,62 +144,62 @@ export default function BookingManage() {
       oneHourBefore.setHours(parseInt(hours) - 1, parseInt(minutes));
       return isBefore(now, oneHourBefore);
     }
-    
+
     // Calculate cut-off deadline
     const cutOffDeadline = new Date(bookingDateTime);
     cutOffDeadline.setHours(cutOffDeadline.getHours() - cutOffTime.cutOffHours);
-    
+
     return isBefore(now, cutOffDeadline);
   };
 
   const getCutOffMessage = () => {
     if (!booking || !cutOffTimes) return "";
-    
+
     const bookingDateTime = parseISO(booking.bookingDate);
     const dayOfWeek = bookingDateTime.getDay();
     const dayNames = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
     const dayName = dayNames[dayOfWeek];
-    
+
     const cutOffTime = cutOffTimes.find((ct: any) => ct.dayOfWeek === dayOfWeek);
-    
+
     if (!cutOffTime || cutOffTime.cutOffHours === 0) {
       return `Changes are allowed up to 1 hour before your booking time.`;
     }
-    
+
     const hours = cutOffTime.cutOffHours;
     return `Changes are allowed up to ${hours} hour${hours > 1 ? 's' : ''} before your booking time (${dayName} policy).`;
   };
 
   const generateTimeSlots = () => {
     if (!openingHours || openingHours.length === 0) return [];
-    
+
     const selectedDateObj = new Date(newDate);
     const dayOfWeek = selectedDateObj.getDay();
-    
+
     const dayHours = openingHours.find((oh: any) => oh.dayOfWeek === dayOfWeek);
     if (!dayHours || !dayHours.isOpen) return [];
-    
+
     const slots = [];
     const startTime = dayHours.openTime;
     const endTime = dayHours.closeTime;
-    
+
     const [startHour, startMin] = startTime.split(':').map(Number);
     const [endHour, endMin] = endTime.split(':').map(Number);
-    
+
     let currentHour = startHour;
     let currentMin = startMin;
-    
+
     while (currentHour < endHour || (currentHour === endHour && currentMin < endMin)) {
       const timeStr = `${currentHour.toString().padStart(2, '0')}:${currentMin.toString().padStart(2, '0')}`;
       slots.push(timeStr);
-      
+
       currentMin += 30; // 30-minute intervals
       if (currentMin >= 60) {
         currentMin -= 60;
         currentHour += 1;
       }
     }
-    
+
     return slots;
   };
 
@@ -204,6 +226,14 @@ export default function BookingManage() {
   }
 
   const handleUpdateTable = () => {
+    const urlParams = new URLSearchParams(window.location.search);
+    const hash = urlParams.get('hash');
+
+    if (!hash) {
+      toast({ title: 'Access denied - invalid link', variant: "destructive" });
+      return;
+    }
+
     if (selectedTable && selectedTable !== booking.tableId?.toString()) {
       updateMutation.mutate({ tableId: parseInt(selectedTable) });
     }
@@ -217,23 +247,23 @@ export default function BookingManage() {
 
   const handleSaveChanges = () => {
     const changes: any = {};
-    
+
     if (newDate !== format(parseISO(booking.bookingDate), 'yyyy-MM-dd')) {
       changes.bookingDate = newDate;
     }
-    
+
     if (newTime !== booking.startTime) {
       changes.startTime = newTime;
     }
-    
+
     if (parseInt(newGuestCount) !== booking.guestCount) {
       changes.guestCount = parseInt(newGuestCount);
     }
-    
+
     if (selectedTable && selectedTable !== booking.tableId?.toString()) {
       changes.tableId = parseInt(selectedTable);
     }
-    
+
     if (Object.keys(changes).length > 0) {
       updateMutation.mutate(changes);
     } else {
@@ -327,7 +357,7 @@ export default function BookingManage() {
                       <p className="font-medium">{formatDate(booking.bookingDate)}</p>
                     </div>
                   </div>
-                  
+
                   <div className="flex items-center space-x-3">
                     <Clock className="w-5 h-5 text-blue-600" />
                     <div>
@@ -365,7 +395,7 @@ export default function BookingManage() {
                     <p className="text-sm text-gray-600">{booking.customerPhone}</p>
                   )}
                 </div>
-                
+
                 {booking.notes && (
                   <div className="mt-4">
                     <p className="text-sm text-gray-500">Special Requests</p>
@@ -536,7 +566,17 @@ export default function BookingManage() {
                     </div>
                     <Button 
                       variant="destructive" 
-                      onClick={handleCancelBooking}
+                      onClick={() => {
+                        const urlParams = new URLSearchParams(window.location.search);
+                        const action = urlParams.get('action');
+                        const hash = urlParams.get('hash');
+
+                        if (action === 'cancel' && hash) {
+                          updateMutation.mutate({ status: "cancelled" });
+                        } else {
+                          toast({ title: 'Invalid cancellation link', variant: "destructive" });
+                        }
+                      }}
                       disabled={updateMutation.isPending}
                     >
                       Cancel Booking

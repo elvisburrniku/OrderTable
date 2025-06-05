@@ -2768,14 +2768,32 @@ app.put("/api/tenants/:tenantId/bookings/:id", validateTenant, async (req, res) 
     }
   });
 
-  // Customer booking management routes (public access)
+  // Customer booking management routes (public access with hash verification)
   app.get("/api/booking-manage/:id", async (req, res) => {
     try {
       const id = parseInt(req.params.id);
-      const booking = await storage.getBookingById(id);
+      const { hash } = req.query;
 
+      if (!hash) {
+        return res.status(403).json({ message: "Access denied - security token required" });
+      }
+
+      const booking = await storage.getBookingById(id);
       if (!booking) {
         return res.status(404).json({ message: "Booking not found" });
+      }
+
+      // Verify hash for manage action
+      const isValidHash = BookingHash.verifyHash(
+        hash as string,
+        booking.id,
+        booking.tenantId,
+        booking.restaurantId,
+        'manage'
+      );
+
+      if (!isValidHash) {
+        return res.status(403).json({ message: "Access denied - invalid security token" });
       }
 
       // Return booking with customer details
@@ -2797,10 +2815,28 @@ app.put("/api/tenants/:tenantId/bookings/:id", validateTenant, async (req, res) 
   app.get("/api/booking-manage/:id/available-tables", async (req, res) => {
     try {
       const id = parseInt(req.params.id);
-      const booking = await storage.getBookingById(id);
+      const { hash } = req.query;
 
+      if (!hash) {
+        return res.status(403).json({ message: "Access denied - security token required" });
+      }
+
+      const booking = await storage.getBookingById(id);
       if (!booking) {
         return res.status(404).json({ message: "Booking not found" });
+      }
+
+      // Verify hash for manage action
+      const isValidHash = BookingHash.verifyHash(
+        hash as string,
+        booking.id,
+        booking.tenantId,
+        booking.restaurantId,
+        'manage'
+      );
+
+      if (!isValidHash) {
+        return res.status(403).json({ message: "Access denied - invalid security token" });
       }
 
       // Get available tables for the restaurant
@@ -2816,10 +2852,28 @@ app.put("/api/tenants/:tenantId/bookings/:id", validateTenant, async (req, res) 
     try {
       const id = parseInt(req.params.id);
       const updates = req.body;
+      const { hash } = req.query;
+
+      if (!hash) {
+        return res.status(403).json({ message: "Access denied - security token required" });
+      }
 
       const booking = await storage.getBookingById(id);
       if (!booking) {
         return res.status(404).json({ message: "Booking not found" });
+      }
+
+      // Verify hash for manage action
+      const isValidHash = BookingHash.verifyHash(
+        hash as string,
+        booking.id,
+        booking.tenantId,
+        booking.restaurantId,
+        'manage'
+      );
+
+      if (!isValidHash) {
+        return res.status(403).json({ message: "Access denied - invalid security token" });
       }
 
       // Only allow updating table and status
@@ -2832,6 +2886,15 @@ app.put("/api/tenants/:tenantId/bookings/:id", validateTenant, async (req, res) 
       }
 
       const updatedBooking = await storage.updateBooking(id, allowedUpdates);
+      
+      // Send real-time notification to restaurant
+      broadcastNotification(updatedBooking.restaurantId, {
+        type: 'booking_changed',
+        booking: updatedBooking,
+        changes: allowedUpdates,
+        timestamp: new Date().toISOString()
+      });
+
       res.json(updatedBooking);
     } catch (error) {
       console.error("Error updating booking:", error);

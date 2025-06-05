@@ -80,6 +80,7 @@ export class BrevoEmailService {
       bookingDetails.restaurantId,
       baseUrl
     );
+    const { cancelUrl, manageUrl } = managementUrls;
 
     sendSmtpEmail.subject = "Booking Confirmation";
     sendSmtpEmail.htmlContent = `
