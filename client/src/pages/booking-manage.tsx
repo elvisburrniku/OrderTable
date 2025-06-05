@@ -21,6 +21,11 @@ export default function BookingManage() {
   const [newTime, setNewTime] = useState<string>("");
   const [newGuestCount, setNewGuestCount] = useState<string>("");
 
+  // Function to check if changes are allowed based on backend permissions
+  const isChangeAllowed = () => {
+    return booking?.canModify ?? false;
+  };
+
   const { data: booking, isLoading, error, refetch } = useQuery({
     queryKey: [`/api/booking-manage/${id}`],
     queryFn: async () => {
@@ -128,11 +133,6 @@ export default function BookingManage() {
       toast({ title: error.message, variant: "destructive" });
     }
   });
-
-  // Function to check if changes are allowed based on backend permissions
-  const isChangeAllowed = () => {
-    return booking?.canModify ?? false;
-  };
 
   useEffect(() => {
     if (booking) {
