@@ -116,6 +116,21 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Session validation endpoint
+  app.get("/api/auth/validate", async (req, res) => {
+    try {
+      // Check if user is logged in via session or stored data
+      // For now, we'll accept any request as valid since we're using localStorage
+      // In a real app, you'd check session cookies or JWT tokens here
+      res.json({ 
+        valid: true,
+        message: "Session valid"
+      });
+    } catch (error) {
+      res.status(401).json({ message: "Invalid session" });
+    }
+  });
+
   // Auth routes
   app.post("/api/auth/login", async (req, res) => {
     try {

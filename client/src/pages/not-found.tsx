@@ -1,10 +1,9 @@
 import { Card, CardContent } from "@/components/ui/card";
 import { AlertCircle, Home } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { useAuth } from "@/lib/auth";
+import { useAuth, getCurrentTenant } from "@/lib/auth";
 import { useLocation } from "wouter";
 import { useEffect, useState } from "react";
-import { getCurrentTenant } from "@/lib/auth";
 
 export default function NotFound() {
   const { user, restaurant } = useAuth();
