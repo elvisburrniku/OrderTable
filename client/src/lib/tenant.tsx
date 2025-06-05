@@ -59,9 +59,12 @@ export function TenantProvider({ children }: { children: React.ReactNode }) {
   );
 }
 
+import { getCurrentTenant } from "./auth";
+
 export function useTenant() {
   const context = useContext(TenantContext);
   const params = useParams();
+  const authTenant = getCurrentTenant();
   
   if (context === undefined) {
     throw new Error("useTenant must be used within a TenantProvider");
@@ -69,6 +72,6 @@ export function useTenant() {
   
   return {
     ...context,
-    tenantId: params.tenantId ? parseInt(params.tenantId) : null
+    tenantId: params.tenantId ? parseInt(params.tenantId) : authTenant?.id || null
   };
 }

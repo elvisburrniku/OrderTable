@@ -27,14 +27,19 @@ export async function apiRequest(
   return response;
 }
 
+import { getCurrentTenant } from "./auth";
+
 // Helper function to construct tenant-aware API URLs
 export function getTenantApiUrl(path: string, tenantId?: number | null): string {
-  if (tenantId && path.includes('/restaurants/') && !path.includes('/tenants/')) {
+  const currentTenant = getCurrentTenant();
+  const finalTenantId = tenantId || currentTenant?.id;
+  
+  if (finalTenantId && path.includes('/restaurants/') && !path.includes('/tenants/')) {
     // Convert non-tenant routes to tenant routes
     const parts = path.split('/restaurants/');
     if (parts.length === 2) {
       const [prefix, suffix] = parts;
-      return `${prefix}/tenants/${tenantId}/restaurants/${suffix}`;
+      return `${prefix}/tenants/${finalTenantId}/restaurants/${suffix}`;
     }
   }
   return path;
