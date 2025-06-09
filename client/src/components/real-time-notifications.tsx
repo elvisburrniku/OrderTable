@@ -918,9 +918,9 @@ export function RealTimeNotifications() {
                                                notification.data?.booking?.id ||
                                                notification.data?.bookingId;
                               
-                              if (bookingId) {
-                                // Navigate to booking detail page
-                                setLocation(`/bookings/${bookingId}`);
+                              if (bookingId && restaurant?.tenantId) {
+                                // Navigate to booking detail page with tenant ID
+                                setLocation(`/tenants/${restaurant.tenantId}/bookings/${bookingId}`);
                                 setIsOpen(false); // Close notification panel
                               } else {
                                 // Fallback to dialog if no booking ID found
