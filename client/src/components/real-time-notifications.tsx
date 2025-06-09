@@ -566,9 +566,23 @@ export function RealTimeNotifications() {
                         notification.type === 'booking_change_request' && notification.changeRequest?.status === 'pending'
                       )}
                       <div className="flex-1 min-w-0">
-                        <p className="text-sm font-medium text-gray-900 mb-1">
-                          {getNotificationMessage(notification)}
-                        </p>
+                        <div className="flex items-start justify-between gap-2 mb-2">
+                          <p className="text-sm font-medium text-gray-900 flex-1">
+                            {getNotificationMessage(notification)}
+                          </p>
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setSelectedBooking(notification);
+                            }}
+                            className="text-blue-600 border-blue-300 hover:bg-blue-50 flex items-center gap-1 text-xs px-2 py-1 h-auto"
+                          >
+                            <Eye className="h-3 w-3" />
+                            View Details
+                          </Button>
+                        </div>
                         
                         {notification.changeRequest?.requestNotes && (
                           <div className="bg-gray-100 rounded p-2 mb-2">
