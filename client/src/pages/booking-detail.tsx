@@ -9,7 +9,7 @@ import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { ArrowLeft, Edit, Save, X, Trash2 } from "lucide-react";
+import { ArrowLeft, Edit, Save, X, Trash2, Clock, Calendar, Users, CheckCircle, XCircle, AlertCircle } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 
 export default function BookingDetail() {
@@ -37,6 +37,17 @@ export default function BookingDetail() {
       return response.json();
     },
     enabled: !!restaurant && !!restaurant.tenantId && !!id
+  });
+
+  const { data: changeRequests, refetch: refetchChangeRequests } = useQuery({
+    queryKey: [`/api/tenants/${restaurant?.tenantId}/restaurants/${restaurant?.id}/change-requests`, id],
+    queryFn: async () => {
+      const response = await fetch(`/api/tenants/${restaurant?.tenantId}/restaurants/${restaurant?.id}/change-requests`);
+      if (!response.ok) throw new Error("Failed to fetch change requests");
+      const allRequests = await response.json();
+      return allRequests.filter((req: any) => req.bookingId === parseInt(id));
+    },
+    enabled: !!restaurant && !!restaurant.tenantId && !!restaurant.id && !!id
   });
 
   const updateMutation = useMutation({
@@ -74,6 +85,36 @@ export default function BookingDetail() {
     },
     onError: () => {
       toast({ title: "Failed to delete booking", variant: "destructive" });
+    }
+  });
+
+  const changeRequestMutation = useMutation({
+    mutationFn: async ({ requestId, action, response }: { requestId: number, action: 'approve' | 'reject', response?: string }) => {
+      const res = await fetch(`/api/tenants/${restaurant?.tenantId}/restaurants/${restaurant?.id}/change-requests/${requestId}/${action}`, {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ response: response || `${action === 'approve' ? 'Approved' : 'Rejected'} via booking details` })
+      });
+      if (!res.ok) throw new Error(`Failed to ${action} change request`);
+      return res.json();
+    },
+    onSuccess: (data, variables) => {
+      refetchChangeRequests();
+      queryClient.invalidateQueries({ queryKey: [`/api/tenants/${restaurant?.tenantId}/bookings/${id}`] });
+      queryClient.invalidateQueries({ queryKey: [`/api/tenants/${restaurant?.tenantId}/restaurants/${restaurant?.id}/notifications`] });
+      toast({ 
+        title: `Change request ${variables.action === 'approve' ? 'approved' : 'rejected'} successfully`,
+        description: variables.action === 'approve' ? "The booking has been updated with the new details." : "The customer has been notified of the rejection."
+      });
+    },
+    onError: (error, variables) => {
+      toast({ 
+        title: `Failed to ${variables.action} change request`, 
+        variant: "destructive",
+        description: "Please try again or contact support if the issue persists."
+      });
     }
   });
 
@@ -148,6 +189,37 @@ export default function BookingDetail() {
       default:
         return <Badge>{status}</Badge>;
     }
+  };
+
+  const getChangeRequestStatusBadge = (status: string) => {
+    switch (status) {
+      case "pending":
+        return <Badge variant="outline" className="bg-yellow-50 text-yellow-700 border-yellow-200">Pending</Badge>;
+      case "approved":
+        return <Badge className="bg-green-100 text-green-800">Approved</Badge>;
+      case "rejected":
+        return <Badge variant="destructive">Rejected</Badge>;
+      default:
+        return <Badge variant="outline">{status}</Badge>;
+    }
+  };
+
+  const formatChangeDetails = (changeRequest: any) => {
+    const changes = [];
+    if (changeRequest?.requestedDate) {
+      changes.push(`Date: ${new Date(changeRequest.requestedDate).toLocaleDateString()}`);
+    }
+    if (changeRequest?.requestedTime) {
+      changes.push(`Time: ${changeRequest.requestedTime}`);
+    }
+    if (changeRequest?.requestedGuestCount) {
+      changes.push(`Party Size: ${changeRequest.requestedGuestCount} guests`);
+    }
+    return changes;
+  };
+
+  const handleChangeRequest = (requestId: number, action: 'approve' | 'reject') => {
+    changeRequestMutation.mutate({ requestId, action });
   };
 
   return (
@@ -341,6 +413,97 @@ export default function BookingDetail() {
                   </p>
                 )}
               </div>
+
+              {/* Change Requests */}
+              {changeRequests && changeRequests.length > 0 && (
+                <div className="border-t pt-6">
+                  <h3 className="text-lg font-medium mb-4 flex items-center gap-2">
+                    <Clock className="w-5 h-5" />
+                    Change Requests
+                  </h3>
+                  <div className="space-y-4">
+                    {changeRequests.map((request: any) => (
+                      <Card key={request.id} className="border-l-4 border-l-orange-400">
+                        <CardContent className="p-4">
+                          <div className="flex items-start justify-between mb-3">
+                            <div className="flex items-center gap-2">
+                              <AlertCircle className="w-4 h-4 text-orange-500" />
+                              <span className="font-medium text-sm">Request #{request.id}</span>
+                              {getChangeRequestStatusBadge(request.status)}
+                            </div>
+                            <span className="text-xs text-gray-500">
+                              {new Date(request.createdAt).toLocaleDateString()} at{" "}
+                              {new Date(request.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                            </span>
+                          </div>
+                          
+                          {/* Requested Changes */}
+                          <div className="bg-orange-50 rounded-lg p-3 mb-3">
+                            <h4 className="font-medium text-sm mb-2 flex items-center gap-1">
+                              <Calendar className="w-3 h-3" />
+                              Requested Changes:
+                            </h4>
+                            <div className="space-y-1">
+                              {formatChangeDetails(request).map((change, idx) => (
+                                <div key={idx} className="text-sm text-gray-700 flex items-center gap-2">
+                                  <span className="w-1 h-1 bg-orange-400 rounded-full"></span>
+                                  {change}
+                                </div>
+                              ))}
+                            </div>
+                          </div>
+
+                          {/* Customer Note */}
+                          {request.requestNotes && (
+                            <div className="bg-gray-50 rounded-lg p-3 mb-3">
+                              <h4 className="font-medium text-sm mb-1">Customer Note:</h4>
+                              <p className="text-sm text-gray-700">{request.requestNotes}</p>
+                            </div>
+                          )}
+
+                          {/* Restaurant Response */}
+                          {request.restaurantResponse && (
+                            <div className="bg-blue-50 rounded-lg p-3 mb-3">
+                              <h4 className="font-medium text-sm mb-1">Restaurant Response:</h4>
+                              <p className="text-sm text-gray-700">{request.restaurantResponse}</p>
+                              {request.respondedAt && (
+                                <p className="text-xs text-gray-500 mt-1">
+                                  Responded on {new Date(request.respondedAt).toLocaleDateString()} at{" "}
+                                  {new Date(request.respondedAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                                </p>
+                              )}
+                            </div>
+                          )}
+
+                          {/* Action Buttons for Pending Requests */}
+                          {request.status === 'pending' && (
+                            <div className="flex gap-2 pt-2">
+                              <Button
+                                size="sm"
+                                onClick={() => handleChangeRequest(request.id, 'approve')}
+                                disabled={changeRequestMutation.isPending}
+                                className="bg-green-600 hover:bg-green-700"
+                              >
+                                <CheckCircle className="w-4 h-4 mr-1" />
+                                Approve
+                              </Button>
+                              <Button
+                                size="sm"
+                                variant="destructive"
+                                onClick={() => handleChangeRequest(request.id, 'reject')}
+                                disabled={changeRequestMutation.isPending}
+                              >
+                                <XCircle className="w-4 h-4 mr-1" />
+                                Reject
+                              </Button>
+                            </div>
+                          )}
+                        </CardContent>
+                      </Card>
+                    ))}
+                  </div>
+                </div>
+              )}
 
               {/* Metadata */}
               <div className="border-t pt-4">
