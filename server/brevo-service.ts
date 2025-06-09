@@ -73,7 +73,9 @@ export class BrevoEmailService {
     }
 
     // Use stored management hash or generate if not available
-    const baseUrl = process.env.APP_BASE_URL || 'http://localhost:5000';
+    const baseUrl = process.env.APP_BASE_URL || process.env.REPLIT_DEV_DOMAIN 
+      ? `https://${process.env.REPLIT_DEV_DOMAIN}` 
+      : 'http://localhost:5000';
     let manageUrl, cancelUrl;
     
     if (bookingDetails.managementHash) {
@@ -150,8 +152,12 @@ export class BrevoEmailService {
 
               <!-- Action Buttons -->
               <div style="text-align: center; margin: 30px 0;">
-                 <a href="${manageUrl}" style="background-color: #007bff; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; font-weight: 600; margin: 0 10px;">Change booking</a>
-                <a href="${cancelUrl}" style="background-color: #dc3545; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; font-weight: 600;">Cancel booking</a>
+                <div style="display: inline-block; margin: 5px;">
+                  <a href="${manageUrl}" style="background-color: #007bff; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; font-weight: 600; display: inline-block; min-width: 140px;">Change booking</a>
+                </div>
+                <div style="display: inline-block; margin: 5px;">
+                  <a href="${cancelUrl}" style="background-color: #dc3545; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; font-weight: 600; display: inline-block; min-width: 140px;">Cancel booking</a>
+                </div>
               </div>
 
               <p style="margin: 20px 0; font-size: 16px; color: #666; line-height: 1.6;">
@@ -217,7 +223,9 @@ export class BrevoEmailService {
   async sendBookingChangeRequest(restaurantEmail: string, changeRequestDetails: any, bookingDetails: any) {
     const sendSmtpEmail = new SendSmtpEmail();
 
-    const baseUrl = process.env.APP_BASE_URL || 'http://localhost:5000';
+    const baseUrl = process.env.APP_BASE_URL || process.env.REPLIT_DEV_DOMAIN 
+      ? `https://${process.env.REPLIT_DEV_DOMAIN}` 
+      : 'http://localhost:5000';
     const approveHash = BookingHash.generateHash(changeRequestDetails.id, bookingDetails.tenantId, bookingDetails.restaurantId, 'change');
     const rejectHash = BookingHash.generateHash(changeRequestDetails.id, bookingDetails.tenantId, bookingDetails.restaurantId, 'cancel');
 
@@ -297,8 +305,12 @@ export class BrevoEmailService {
 
               <!-- Action Buttons -->
               <div style="text-align: center; margin: 30px 0;">
-                <a href="${baseUrl}/booking-change-response/${changeRequestDetails.id}?action=approve&hash=${approveHash}" style="background-color: #28a745; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; font-weight: 600; margin: 0 10px;">Approve Changes</a>
-                <a href="${baseUrl}/booking-change-response/${changeRequestDetails.id}?action=reject&hash=${rejectHash}" style="background-color: #dc3545; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; font-weight: 600;">Reject Changes</a>
+                <div style="display: inline-block; margin: 5px;">
+                  <a href="${baseUrl}/booking-change-response/${changeRequestDetails.id}?action=approve&hash=${approveHash}" style="background-color: #28a745; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; font-weight: 600; display: inline-block; min-width: 140px;">Approve Changes</a>
+                </div>
+                <div style="display: inline-block; margin: 5px;">
+                  <a href="${baseUrl}/booking-change-response/${changeRequestDetails.id}?action=reject&hash=${rejectHash}" style="background-color: #dc3545; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; font-weight: 600; display: inline-block; min-width: 140px;">Reject Changes</a>
+                </div>
               </div>
 
               <p style="margin: 20px 0; font-size: 14px; color: #666; line-height: 1.6; text-align: center;">
@@ -339,7 +351,9 @@ export class BrevoEmailService {
   async sendChangeRequestResponse(customerEmail: string, customerName: string, approved: boolean, bookingDetails: any, changeDetails: any, restaurantResponse?: string) {
     const sendSmtpEmail = new SendSmtpEmail();
 
-    const baseUrl = process.env.APP_BASE_URL || 'http://localhost:5000';
+    const baseUrl = process.env.APP_BASE_URL || process.env.REPLIT_DEV_DOMAIN 
+      ? `https://${process.env.REPLIT_DEV_DOMAIN}` 
+      : 'http://localhost:5000';
     const cancelHash = BookingHash.generateHash(bookingDetails.id, bookingDetails.tenantId, bookingDetails.restaurantId, 'cancel');
 
     sendSmtpEmail.subject = approved ? "Booking Changes Approved" : "Booking Changes Rejected";
