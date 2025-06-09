@@ -950,23 +950,28 @@ export function RealTimeNotifications() {
                 <div className="space-y-3">
                   {(() => {
                     // Get all notifications for this booking ID, sorted by timestamp
-                    const bookingId = selectedBooking.booking?.id;
-                    console.log('Debug - selectedBooking:', selectedBooking);
-                    console.log('Debug - bookingId:', bookingId);
-                    console.log('Debug - allNotifications:', allNotifications);
+                    // Check multiple possible locations for booking ID
+                    const bookingId = selectedBooking.bookingId || 
+                                     selectedBooking.booking?.id || 
+                                     selectedBooking.data?.booking?.id ||
+                                     selectedBooking.data?.bookingId;
                     
                     if (!bookingId) {
                       return (
                         <div className="p-3 bg-white rounded border-l-4 border-gray-500">
-                          <p className="text-sm text-gray-700">No booking history available (booking ID: {String(bookingId)})</p>
-                          <p className="text-xs text-gray-500 mt-1">Debug: {JSON.stringify(selectedBooking.booking)}</p>
+                          <p className="text-sm text-gray-700">No booking history available</p>
                         </div>
                       );
                     }
 
                     const allBookingNotifications = allNotifications
-                      .filter(notif => notif.booking?.id === bookingId)
-                      .sort((a, b) => new Date(b.timestamp || 0).getTime() - new Date(a.timestamp || 0).getTime());
+                      .filter(notif => 
+                        notif.bookingId === bookingId || 
+                        notif.booking?.id === bookingId || 
+                        notif.data?.booking?.id === bookingId ||
+                        notif.data?.bookingId === bookingId
+                      )
+                      .sort((a, b) => new Date(b.timestamp || b.createdAt || 0).getTime() - new Date(a.timestamp || a.createdAt || 0).getTime());
 
                     const historyItems = [];
 
@@ -1004,12 +1009,15 @@ export function RealTimeNotifications() {
                               Cancelled by: {notif.cancelledBy}
                             </p>
                           )}
-                          {notif.changeDetails && Object.keys(notif.changeDetails).length > 0 && (
-                            <div className="mt-2 space-y-1">
-                              {Object.entries(notif.changeDetails).map(([key, value]) => {
-                                const change = value as any;
-                                const from = change?.from;
-                                const to = change?.to || change;
+                          {(() => {
+                            // Get change details from multiple possible locations
+                            const changeDetails = notif.changeDetails || notif.data?.changes || notif.changes;
+                            return changeDetails && Object.keys(changeDetails).length > 0 && (
+                              <div className="mt-2 space-y-1">
+                                {Object.entries(changeDetails).map(([key, value]) => {
+                                  const change = value as any;
+                                  const from = change?.from;
+                                  const to = change?.to || change;
                                 
                                 return (
                                   <div key={key} className="text-xs bg-gray-50 p-2 rounded">
@@ -1027,7 +1035,8 @@ export function RealTimeNotifications() {
                                 );
                               })}
                             </div>
-                          )}
+                            );
+                          })()}
                           {notif.reverted && (
                             <div className="mt-2 p-2 bg-yellow-50 rounded text-xs">
                               <span className="text-yellow-700 font-medium">Note:</span>
@@ -1080,7 +1089,7 @@ export function RealTimeNotifications() {
                 
                 <div className="mt-3 pt-3 border-t border-blue-200">
                   <p className="text-xs text-gray-600">
-                    This shows the complete timeline of changes made to booking #{selectedBooking.booking?.id || 'N/A'}
+                    This shows the complete timeline of changes made to booking #{bookingId || 'N/A'}
                   </p>
                 </div>
               </div>
