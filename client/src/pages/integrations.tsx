@@ -6,7 +6,7 @@ import { Switch } from '@/components/ui/switch';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
-import { ChevronDown, ChevronUp, Settings, ExternalLink, Check, X } from 'lucide-react';
+import { ChevronDown, ChevronRight, Settings, ExternalLink, Check, X, Plug } from 'lucide-react';
 
 interface Integration {
   id: string;
@@ -105,7 +105,7 @@ const integrations: Integration[] = [
 export default function Integrations() {
   const { user } = useAuth();
   const { tenant } = useTenant();
-  const [expandedIntegration, setExpandedIntegration] = useState<string | null>(null);
+  const [expandedCategory, setExpandedCategory] = useState<string | null>('Marketing');
   const [integrationStates, setIntegrationStates] = useState<Record<string, boolean>>(
     Object.fromEntries(integrations.map(int => [int.id, int.connected]))
   );
@@ -117,8 +117,8 @@ export default function Integrations() {
     }));
   };
 
-  const toggleExpanded = (integrationId: string) => {
-    setExpandedIntegration(prev => prev === integrationId ? null : integrationId);
+  const toggleCategory = (category: string) => {
+    setExpandedCategory(prev => prev === category ? null : category);
   };
 
   if (!user || !tenant) {
@@ -159,105 +159,104 @@ export default function Integrations() {
       </div>
 
       {/* Main Content */}
-      <div className="flex-1 p-8">
-        <div className="max-w-4xl mx-auto">
+      <div className="flex-1 bg-gray-50">
+        <div className="max-w-2xl mx-auto py-8 px-6">
           <div className="mb-8">
-            <h1 className="text-3xl font-bold text-gray-900 mb-2">Integrations</h1>
-            <p className="text-gray-600">Connect your restaurant with powerful third-party services</p>
+            <div className="flex items-center mb-4">
+              <Plug className="w-8 h-8 text-blue-600 mr-3" />
+              <h1 className="text-3xl font-bold text-gray-900">Integrations</h1>
+            </div>
+            <p className="text-gray-600">Connect your restaurant with powerful third-party services to enhance your operations.</p>
           </div>
 
-          {categories.map(category => (
-            <div key={category} className="mb-8">
-              <h2 className="text-xl font-semibold text-gray-800 mb-4 flex items-center">
-                <span className="w-1 h-6 bg-blue-500 mr-3 rounded"></span>
-                {category}
-              </h2>
-              
-              <div className="space-y-3">
-                {integrations
-                  .filter(integration => integration.category === category)
-                  .map(integration => (
-                    <Card key={integration.id} className="overflow-hidden">
-                      <CardHeader className="pb-4">
-                        <div className="flex items-center justify-between">
-                          <div className="flex items-center space-x-4">
-                            <div className="w-12 h-12 bg-gray-100 rounded-lg flex items-center justify-center text-2xl">
-                              {integration.icon}
-                            </div>
-                            <div>
-                              <CardTitle className="text-lg">{integration.name}</CardTitle>
-                              <p className="text-gray-600 text-sm mt-1">{integration.description}</p>
-                            </div>
-                          </div>
-                          
-                          <div className="flex items-center space-x-3">
-                            {integration.price && (
-                              <Badge variant="outline" className="text-xs">
-                                {integration.price}
-                              </Badge>
-                            )}
-                            
-                            <div className="flex items-center space-x-2">
-                              {integrationStates[integration.id] ? (
-                                <Check className="w-4 h-4 text-green-600" />
-                              ) : (
-                                <X className="w-4 h-4 text-gray-400" />
-                              )}
-                              <Switch
-                                checked={integrationStates[integration.id]}
-                                onCheckedChange={() => toggleIntegration(integration.id)}
-                              />
-                            </div>
-                            
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              onClick={() => toggleExpanded(integration.id)}
-                            >
-                              {expandedIntegration === integration.id ? (
-                                <ChevronUp className="w-4 h-4" />
-                              ) : (
-                                <ChevronDown className="w-4 h-4" />
-                              )}
-                            </Button>
-                          </div>
-                        </div>
-                      </CardHeader>
-                      
-                      {expandedIntegration === integration.id && (
-                        <CardContent className="pt-0">
-                          <Separator className="mb-4" />
-                          <div className="space-y-4">
-                            <div>
-                              <h4 className="font-medium text-gray-900 mb-2">Features</h4>
-                              <ul className="space-y-1">
-                                {integration.features.map((feature, index) => (
-                                  <li key={index} className="flex items-center text-sm text-gray-600">
-                                    <div className="w-1.5 h-1.5 bg-blue-500 rounded-full mr-2"></div>
-                                    {feature}
-                                  </li>
-                                ))}
-                              </ul>
-                            </div>
-                            
-                            <div className="flex space-x-3 pt-2">
-                              <Button size="sm" variant="outline">
-                                <Settings className="w-4 h-4 mr-2" />
-                                Configure
-                              </Button>
-                              <Button size="sm" variant="outline">
-                                <ExternalLink className="w-4 h-4 mr-2" />
-                                Learn More
-                              </Button>
+          <div className="space-y-4">
+            {categories.map(category => (
+              <Card key={category} className="overflow-hidden bg-white shadow-sm">
+                <div 
+                  className="flex items-center justify-between p-4 cursor-pointer hover:bg-gray-50 transition-colors"
+                  onClick={() => toggleCategory(category)}
+                >
+                  <div className="flex items-center space-x-3">
+                    <div className="w-8 h-8 bg-blue-100 rounded-lg flex items-center justify-center">
+                      <Plug className="w-4 h-4 text-blue-600" />
+                    </div>
+                    <div>
+                      <h3 className="font-semibold text-gray-900">{category}</h3>
+                      <p className="text-sm text-gray-500">
+                        {integrations.filter(int => int.category === category).length} integrations available
+                      </p>
+                    </div>
+                  </div>
+                  
+                  <ChevronRight 
+                    className={`w-5 h-5 text-gray-400 transition-transform ${
+                      expandedCategory === category ? 'rotate-90' : ''
+                    }`} 
+                  />
+                </div>
+                
+                {expandedCategory === category && (
+                  <div className="border-t bg-gray-50">
+                    <div className="p-4 space-y-3">
+                      {integrations
+                        .filter(integration => integration.category === category)
+                        .map(integration => (
+                          <div key={integration.id} className="bg-white rounded-lg p-4 border">
+                            <div className="flex items-center justify-between">
+                              <div className="flex items-center space-x-3">
+                                <div className="w-10 h-10 bg-gray-100 rounded-lg flex items-center justify-center text-lg">
+                                  {integration.icon}
+                                </div>
+                                <div className="flex-1">
+                                  <div className="flex items-center space-x-2">
+                                    <h4 className="font-medium text-gray-900">{integration.name}</h4>
+                                    {integration.price && (
+                                      <Badge variant="outline" className="text-xs">
+                                        {integration.price}
+                                      </Badge>
+                                    )}
+                                  </div>
+                                  <p className="text-sm text-gray-600 mt-1">{integration.description}</p>
+                                  <div className="flex flex-wrap gap-1 mt-2">
+                                    {integration.features.slice(0, 2).map((feature, index) => (
+                                      <span key={index} className="text-xs bg-gray-100 text-gray-600 px-2 py-1 rounded">
+                                        {feature}
+                                      </span>
+                                    ))}
+                                    {integration.features.length > 2 && (
+                                      <span className="text-xs text-gray-500">
+                                        +{integration.features.length - 2} more
+                                      </span>
+                                    )}
+                                  </div>
+                                </div>
+                              </div>
+                              
+                              <div className="flex items-center space-x-3">
+                                <div className="flex items-center space-x-2">
+                                  {integrationStates[integration.id] ? (
+                                    <div className="flex items-center space-x-1">
+                                      <Check className="w-4 h-4 text-green-600" />
+                                      <span className="text-sm text-green-600 font-medium">Connected</span>
+                                    </div>
+                                  ) : (
+                                    <span className="text-sm text-gray-500">Disconnected</span>
+                                  )}
+                                </div>
+                                <Switch
+                                  checked={integrationStates[integration.id]}
+                                  onCheckedChange={() => toggleIntegration(integration.id)}
+                                />
+                              </div>
                             </div>
                           </div>
-                        </CardContent>
-                      )}
-                    </Card>
-                  ))}
-              </div>
-            </div>
-          ))}
+                        ))}
+                    </div>
+                  </div>
+                )}
+              </Card>
+            ))}
+          </div>
         </div>
       </div>
     </div>
