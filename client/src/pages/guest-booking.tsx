@@ -23,6 +23,7 @@ import {
   MessageSquare
 } from "lucide-react";
 import { apiRequest } from "@/lib/queryClient";
+import InteractiveBookingCalendar from "@/components/interactive-booking-calendar";
 
 interface BookingStep {
   id: string;
@@ -244,75 +245,31 @@ export default function GuestBooking() {
           </div>
         );
 
-      case 2: // Date
+      case 2: // Date & Time
         return (
           <div className="space-y-6">
             <div className="text-center">
-              <h2 className="text-2xl font-bold text-gray-900 mb-8">Select Date</h2>
+              <h2 className="text-2xl font-bold text-gray-900 mb-8">Select Date & Time</h2>
+              <p className="text-gray-600">
+                Choose your preferred date and time for {guestCount} guest{guestCount !== 1 ? 's' : ''}
+              </p>
             </div>
-            <div className="max-w-lg mx-auto">
-              {openingHours && openingHours.length > 0 && (
-                <div className="mb-6 p-4 bg-blue-50 rounded-lg">
-                  <h3 className="font-medium text-blue-900 mb-2">Opening Hours</h3>
-                  <div className="text-sm text-blue-800 space-y-1">
-                    {['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'].map((dayName, index) => {
-                      const dayHours = openingHours.find((oh: any) => oh.dayOfWeek === index);
-                      return (
-                        <div key={dayName} className="flex justify-between">
-                          <span>{dayName}:</span>
-                          <span>
-                            {dayHours && dayHours.isOpen 
-                              ? `${dayHours.openTime} - ${dayHours.closeTime}`
-                              : 'Closed'
-                            }
-                          </span>
-                        </div>
-                      );
-                    })}
-                  </div>
-                </div>
-              )}
-              
-              <div className="grid grid-cols-7 gap-2 mb-4">
-                {['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'].map((day) => (
-                  <div key={day} className="text-center text-sm font-medium text-gray-500 py-2">
-                    {day}
-                  </div>
-                ))}
-              </div>
-              <div className="grid grid-cols-7 gap-2">
-                {generateCalendarDates().map((date) => {
-                  const isSelected = selectedDate && isSameDay(date, selectedDate);
-                  const isToday = isSameDay(date, new Date());
-                  const dayOfWeek = date.getDay();
-                  
-                  // Check if restaurant is closed on this day
-                  const dayHours = openingHours?.find((oh: any) => oh.dayOfWeek === dayOfWeek);
-                  const isClosed = !dayHours || !dayHours.isOpen;
-
-                  return (
-                    <Button
-                      key={date.toISOString()}
-                      variant={isSelected ? "default" : "outline"}
-                      className={`h-12 ${isToday ? 'ring-2 ring-blue-200' : ''} ${
-                        isSelected ? 'bg-green-500 hover:bg-green-600' : ''
-                      } ${isClosed ? 'opacity-50 cursor-not-allowed' : ''}`}
-                      onClick={() => !isClosed && setSelectedDate(date)}
-                      disabled={isClosed}
-                    >
-                      <div className="text-center">
-                        <div>{format(date, 'd')}</div>
-                        {isClosed && <div className="text-xs text-red-500">Closed</div>}
-                      </div>
-                    </Button>
-                  );
-                })}
-              </div>
+            <div className="max-w-4xl mx-auto">
+              <InteractiveBookingCalendar
+                restaurantId={parseInt(restaurantId!)}
+                guestCount={guestCount}
+                isPublic={true}
+                onTimeSlotSelect={(date: Date, time: string) => {
+                  setSelectedDate(date);
+                  setSelectedTime(time);
+                  setCurrentStep(3); // Skip to confirmation step
+                }}
+              />
             </div>
           </div>
         );
 
-      case 3: // Time
+      case 3: // Confirmation
         return (
           <div className="space-y-6">
             <div className="text-center">
