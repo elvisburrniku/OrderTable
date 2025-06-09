@@ -105,29 +105,88 @@ const integrations: Integration[] = [
 ];
 
 export default function Integrations() {
-  const { user } = useAuth();
+  const { user, restaurant } = useAuth();
   const { tenant } = useTenant();
+  const { toast } = useToast();
+  const queryClient = useQueryClient();
   const [expandedCategory, setExpandedCategory] = useState<string | null>('Marketing');
-  const [integrationStates, setIntegrationStates] = useState<Record<string, boolean>>(
-    Object.fromEntries(integrations.map(int => [int.id, int.connected]))
-  );
+
+  // Fetch integration configurations from database
+  const { data: savedConfigurations = [], isLoading } = useQuery({
+    queryKey: [`/api/tenants/${tenant?.id}/restaurants/${restaurant?.id}/integrations`],
+    enabled: !!(tenant?.id && restaurant?.id),
+  });
+
+  // Create a map of saved configurations for quick lookup
+  const configMap = (savedConfigurations as any[]).reduce((acc: Record<string, any>, config: any) => {
+    acc[config.integrationId] = config;
+    return acc;
+  }, {});
+
+  // Merge static integrations with saved configurations
+  const mergedIntegrations = integrations.map(integration => ({
+    ...integration,
+    connected: configMap[integration.id]?.isEnabled || false,
+    configuration: configMap[integration.id]?.configuration || {}
+  }));
+
+  // Mutation to save integration configuration
+  const saveConfigMutation = useMutation({
+    mutationFn: async ({ integrationId, isEnabled, configuration }: { integrationId: string; isEnabled: boolean; configuration?: any }) => {
+      const response = await fetch(`/api/tenants/${tenant?.id}/restaurants/${restaurant?.id}/integrations/${integrationId}`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ isEnabled, configuration }),
+      });
+      
+      if (!response.ok) {
+        throw new Error('Failed to save integration configuration');
+      }
+      
+      return response.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({
+        queryKey: [`/api/tenants/${tenant?.id}/restaurants/${restaurant?.id}/integrations`]
+      });
+      toast({
+        title: "Integration updated",
+        description: "Your integration settings have been saved successfully.",
+      });
+    },
+    onError: () => {
+      toast({
+        title: "Error",
+        description: "Failed to save integration settings. Please try again.",
+        variant: "destructive",
+      });
+    },
+  });
 
   const toggleIntegration = (integrationId: string) => {
-    setIntegrationStates(prev => ({
-      ...prev,
-      [integrationId]: !prev[integrationId]
-    }));
+    const currentState = configMap[integrationId]?.isEnabled || false;
+    saveConfigMutation.mutate({
+      integrationId,
+      isEnabled: !currentState,
+      configuration: configMap[integrationId]?.configuration || {}
+    });
   };
 
   const toggleCategory = (category: string) => {
     setExpandedCategory(prev => prev === category ? null : category);
   };
 
-  if (!user || !tenant) {
+  if (!user || !tenant || !restaurant) {
     return <div>Loading...</div>;
   }
 
-  const uniqueCategories = integrations.map(int => int.category);
+  if (isLoading) {
+    return <div>Loading integration settings...</div>;
+  }
+
+  const uniqueCategories = mergedIntegrations.map(int => int.category);
   const categories = uniqueCategories.filter((category, index) => uniqueCategories.indexOf(category) === index);
 
   return (
@@ -240,7 +299,7 @@ export default function Integrations() {
                                 
                                 <div className="flex items-center space-x-3">
                                   <div className="flex items-center space-x-2">
-                                    {integrationStates[integration.id] ? (
+                                    {integration.connected ? (
                                       <div className="flex items-center space-x-1">
                                         <Check className="w-4 h-4 text-green-600" />
                                         <span className="text-sm text-green-600 font-medium">Connected</span>
