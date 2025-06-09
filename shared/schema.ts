@@ -149,9 +149,11 @@ export const customers = pgTable("customers", {
   tenantId: integer("tenant_id")
     .notNull()
     .references(() => tenants.id),
-  name: text("name").notNull(),
-  email: text("email").notNull(),
+  name: text("name").default("Walk-in Customer"),
+  email: text("email"),
   phone: text("phone"),
+  isWalkIn: boolean("is_walk_in").default(false),
+  notes: text("notes"),
   totalBookings: integer("total_bookings").default(0),
   lastVisit: timestamp("last_visit"),
   createdAt: timestamp("created_at").defaultNow(),
@@ -397,6 +399,18 @@ export const insertCustomerSchema = createInsertSchema(customers).omit({
   createdAt: true,
   totalBookings: true,
   lastVisit: true,
+});
+
+export const insertWalkInCustomerSchema = createInsertSchema(customers).omit({
+  id: true,
+  createdAt: true,
+  totalBookings: true,
+  lastVisit: true,
+}).extend({
+  name: z.string().optional().default("Walk-in Customer"),
+  email: z.string().optional(),
+  phone: z.string().optional(),
+  isWalkIn: z.boolean().default(true),
 });
 
 export const insertSmsMessageSchema = createInsertSchema(smsMessages).omit({

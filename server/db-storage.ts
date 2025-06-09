@@ -540,6 +540,21 @@ export class DatabaseStorage implements IStorage {
     }
   }
 
+  async createWalkInCustomer(restaurantId: number, tenantId: number, customerData?: { name?: string; phone?: string; notes?: string }): Promise<Customer> {
+    const walkInData = {
+      restaurantId,
+      tenantId,
+      name: customerData?.name || "Walk-in Customer",
+      email: null,
+      phone: customerData?.phone || null,
+      isWalkIn: true,
+      notes: customerData?.notes || null
+    };
+
+    const [newCustomer] = await this.db.insert(customers).values(walkInData).returning();
+    return newCustomer;
+  }
+
   // SMS Messages
   async getSmsMessagesByRestaurant(restaurantId: number): Promise<SmsMessage[]> {
     return await this.db.select().from(smsMessages).where(eq(smsMessages.restaurantId, restaurantId));

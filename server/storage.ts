@@ -222,6 +222,15 @@ export interface IStorage {
   getIntegrationConfiguration(restaurantId: number, integrationId: string): Promise<any>;
   createOrUpdateIntegrationConfiguration(restaurantId: number, tenantId: number, integrationId: string, isEnabled: boolean, configuration?: any): Promise<any>;
   deleteIntegrationConfiguration(restaurantId: number, integrationId: string): Promise<boolean>;
+
+  // Rescheduling Suggestions
+  getReschedulingSuggestionsByRestaurant(restaurantId: number): Promise<any[]>;
+  getReschedulingSuggestionsByBooking(bookingId: number): Promise<any[]>;
+  createReschedulingSuggestion(suggestion: any): Promise<any>;
+  updateReschedulingSuggestion(id: number, updates: any): Promise<any>;
+  getReschedulingSuggestionById(id: number): Promise<any>;
+  deleteReschedulingSuggestion(id: number): Promise<boolean>;
+  deleteExpiredReschedulingSuggestions(): Promise<void>;
 }
 
 import { DatabaseStorage } from "./db-storage";
