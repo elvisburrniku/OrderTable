@@ -2735,6 +2735,118 @@ app.put("/api/tenants/:tenantId/bookings/:id", validateTenant, async (req, res) 
     }
   });
 
+  // Integration Configuration Routes
+  app.get("/api/tenants/:tenantId/restaurants/:restaurantId/integrations", validateTenant, async (req, res) => {
+    try {
+      const restaurantId = parseInt(req.params.restaurantId);
+      const tenantId = parseInt(req.params.tenantId);
+
+      if (isNaN(restaurantId) || isNaN(tenantId)) {
+        return res.status(400).json({ message: "Invalid restaurant ID or tenant ID" });
+      }
+
+      // Verify restaurant belongs to tenant
+      const restaurant = await storage.getRestaurantById(restaurantId);
+      if (!restaurant || restaurant.tenantId !== tenantId) {
+        return res.status(404).json({ message: "Restaurant not found" });
+      }
+
+      const configurations = await storage.getIntegrationConfigurationsByRestaurant(restaurantId);
+      res.json(configurations);
+    } catch (error) {
+      console.error("Error fetching integration configurations:", error);
+      res.status(500).json({ message: "Internal server error" });
+    }
+  });
+
+  app.post("/api/tenants/:tenantId/restaurants/:restaurantId/integrations/:integrationId", validateTenant, async (req, res) => {
+    try {
+      const restaurantId = parseInt(req.params.restaurantId);
+      const tenantId = parseInt(req.params.tenantId);
+      const integrationId = req.params.integrationId;
+      const { isEnabled, configuration } = req.body;
+
+      if (isNaN(restaurantId) || isNaN(tenantId)) {
+        return res.status(400).json({ message: "Invalid restaurant ID or tenant ID" });
+      }
+
+      // Verify restaurant belongs to tenant
+      const restaurant = await storage.getRestaurantById(restaurantId);
+      if (!restaurant || restaurant.tenantId !== tenantId) {
+        return res.status(404).json({ message: "Restaurant not found" });
+      }
+
+      const savedConfiguration = await storage.createOrUpdateIntegrationConfiguration(
+        restaurantId,
+        tenantId,
+        integrationId,
+        isEnabled,
+        configuration || {}
+      );
+
+      res.json(savedConfiguration);
+    } catch (error) {
+      console.error("Error saving integration configuration:", error);
+      res.status(500).json({ message: "Internal server error" });
+    }
+  });
+
+  app.get("/api/tenants/:tenantId/restaurants/:restaurantId/integrations/:integrationId", validateTenant, async (req, res) => {
+    try {
+      const restaurantId = parseInt(req.params.restaurantId);
+      const tenantId = parseInt(req.params.tenantId);
+      const integrationId = req.params.integrationId;
+
+      if (isNaN(restaurantId) || isNaN(tenantId)) {
+        return res.status(400).json({ message: "Invalid restaurant ID or tenant ID" });
+      }
+
+      // Verify restaurant belongs to tenant
+      const restaurant = await storage.getRestaurantById(restaurantId);
+      if (!restaurant || restaurant.tenantId !== tenantId) {
+        return res.status(404).json({ message: "Restaurant not found" });
+      }
+
+      const configuration = await storage.getIntegrationConfiguration(restaurantId, integrationId);
+      if (!configuration) {
+        return res.status(404).json({ message: "Integration configuration not found" });
+      }
+
+      res.json(configuration);
+    } catch (error) {
+      console.error("Error fetching integration configuration:", error);
+      res.status(500).json({ message: "Internal server error" });
+    }
+  });
+
+  app.delete("/api/tenants/:tenantId/restaurants/:restaurantId/integrations/:integrationId", validateTenant, async (req, res) => {
+    try {
+      const restaurantId = parseInt(req.params.restaurantId);
+      const tenantId = parseInt(req.params.tenantId);
+      const integrationId = req.params.integrationId;
+
+      if (isNaN(restaurantId) || isNaN(tenantId)) {
+        return res.status(400).json({ message: "Invalid restaurant ID or tenant ID" });
+      }
+
+      // Verify restaurant belongs to tenant
+      const restaurant = await storage.getRestaurantById(restaurantId);
+      if (!restaurant || restaurant.tenantId !== tenantId) {
+        return res.status(404).json({ message: "Restaurant not found" });
+      }
+
+      const deleted = await storage.deleteIntegrationConfiguration(restaurantId, integrationId);
+      if (!deleted) {
+        return res.status(404).json({ message: "Integration configuration not found" });
+      }
+
+      res.json({ message: "Integration configuration deleted successfully" });
+    } catch (error) {
+      console.error("Error deleting integration configuration:", error);
+      res.status(500).json({ message: "Internal server error" });
+    }
+  });
+
   // Stripe webhook to handle successful payments
   app.post("/api/stripe-webhook", async (req, res) => {
     const sig = req.headers['stripe-signature'];

@@ -20,7 +20,8 @@ import {
   openingHours, 
   specialPeriods, 
   cutOffTimes,
-  bookingChangeRequests
+  bookingChangeRequests,
+  integrationConfigurations
 } from "@shared/schema";
 import { neon } from "@neondatabase/serverless";
 import { drizzle } from "drizzle-orm/neon-http";
@@ -28,6 +29,36 @@ import { drizzle as drizzlePostgres } from "drizzle-orm/postgres-js";
 import postgres from "postgres";
 import * as schema from "../shared/schema";
 import type { IStorage } from "./storage";
+import type { 
+  User, 
+  InsertUser, 
+  Restaurant, 
+  InsertRestaurant, 
+  Table, 
+  InsertTable, 
+  Booking, 
+  InsertBooking, 
+  Customer, 
+  InsertCustomer, 
+  SmsMessage, 
+  InsertSmsMessage, 
+  WaitingList, 
+  InsertWaitingList, 
+  Feedback, 
+  InsertFeedback, 
+  ActivityLog, 
+  InsertActivityLog, 
+  TimeSlots, 
+  InsertTimeSlots, 
+  SubscriptionPlan, 
+  InsertSubscriptionPlan, 
+  UserSubscription, 
+  InsertUserSubscription, 
+  Room, 
+  InsertRoom, 
+  TableLayout, 
+  IntegrationConfiguration 
+} from "@shared/schema";
 import { BookingHash } from "./booking-hash";
 
 // Use Supabase database URL if available, otherwise use the existing DATABASE_URL
@@ -935,5 +966,61 @@ export class DatabaseStorage implements IStorage {
   async getBookingChangeRequestById(id: number): Promise<any> {
     const [request] = await this.db.select().from(bookingChangeRequests).where(eq(bookingChangeRequests.id, id));
     return request;
+  }
+
+  // Integration Configuration methods
+  async getIntegrationConfigurationsByRestaurant(restaurantId: number): Promise<IntegrationConfiguration[]> {
+    return await this.db.select().from(integrationConfigurations).where(eq(integrationConfigurations.restaurantId, restaurantId));
+  }
+
+  async getIntegrationConfiguration(restaurantId: number, integrationId: string): Promise<IntegrationConfiguration | undefined> {
+    const [config] = await this.db.select().from(integrationConfigurations)
+      .where(and(
+        eq(integrationConfigurations.restaurantId, restaurantId),
+        eq(integrationConfigurations.integrationId, integrationId)
+      ));
+    return config;
+  }
+
+  async createOrUpdateIntegrationConfiguration(
+    restaurantId: number, 
+    tenantId: number, 
+    integrationId: string, 
+    isEnabled: boolean, 
+    configuration: any = {}
+  ): Promise<IntegrationConfiguration> {
+    const existing = await this.getIntegrationConfiguration(restaurantId, integrationId);
+    
+    if (existing) {
+      const [updated] = await this.db.update(integrationConfigurations)
+        .set({
+          isEnabled,
+          configuration,
+          updatedAt: new Date()
+        })
+        .where(eq(integrationConfigurations.id, existing.id))
+        .returning();
+      return updated;
+    } else {
+      const [created] = await this.db.insert(integrationConfigurations)
+        .values({
+          restaurantId,
+          tenantId,
+          integrationId,
+          isEnabled,
+          configuration
+        })
+        .returning();
+      return created;
+    }
+  }
+
+  async deleteIntegrationConfiguration(restaurantId: number, integrationId: string): Promise<boolean> {
+    const result = await this.db.delete(integrationConfigurations)
+      .where(and(
+        eq(integrationConfigurations.restaurantId, restaurantId),
+        eq(integrationConfigurations.integrationId, integrationId)
+      ));
+    return result.rowCount !== null && result.rowCount > 0;
   }
 }
