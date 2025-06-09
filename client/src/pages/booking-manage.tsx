@@ -90,6 +90,23 @@ export default function BookingManage() {
     enabled: !!booking && !!newDate && !!newTime && !!isChangeAllowed()
   });
 
+  // Fetch change requests for this booking
+  const { data: changeRequests = [] } = useQuery({
+    queryKey: [`/api/booking-manage/${id}/change-requests`],
+    queryFn: async () => {
+      if (!id) return [];
+      const urlParams = new URLSearchParams(window.location.search);
+      const hash = urlParams.get('hash');
+      
+      if (!hash) return [];
+      
+      const response = await fetch(`/api/booking-manage/${id}/change-requests?hash=${encodeURIComponent(hash)}`);
+      if (!response.ok) return [];
+      return response.json();
+    },
+    enabled: !!id && !!booking
+  });
+
   // Fetch booking change history
   const { data: changeHistory = [] } = useQuery({
     queryKey: [`/api/tenants/${booking?.tenantId}/restaurants/${booking?.restaurantId}/notifications`],

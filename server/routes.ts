@@ -2395,6 +2395,48 @@ app.put("/api/tenants/:tenantId/bookings/:id", validateTenant, async (req, res) 
     }
   });
 
+  // Get change requests for a specific booking (customer view)
+  app.get("/api/booking-manage/:id/change-requests", async (req, res) => {
+    try {
+      const bookingId = parseInt(req.params.id);
+      const { hash } = req.query;
+
+      if (!hash) {
+        return res.status(403).json({ message: "Access denied - security token required" });
+      }
+
+      const booking = await storage.getBookingById(bookingId);
+      if (!booking) {
+        return res.status(404).json({ message: "Booking not found" });
+      }
+
+      // Verify hash using the stored management hash
+      let isValidHash = false;
+      if (booking.managementHash && hash === booking.managementHash) {
+        isValidHash = true;
+      } else {
+        // Try verifying with manage hash for legacy bookings
+        isValidHash = BookingHash.verifyHash(
+          hash as string,
+          booking.id,
+          booking.tenantId,
+          booking.restaurantId,
+          'manage'
+        );
+      }
+
+      if (!isValidHash) {
+        return res.status(403).json({ message: "Access denied - invalid security token" });
+      }
+
+      const changeRequests = await storage.getBookingChangeRequestsByBookingId(bookingId);
+      res.json(changeRequests);
+    } catch (error) {
+      console.error("Error fetching booking change requests:", error);
+      res.status(500).json({ message: "Internal server error" });
+    }
+  });
+
   // Available tables route for booking management
   app.get("/api/booking-manage/:id/available-tables", async (req, res) => {
     try {
@@ -2839,6 +2881,35 @@ app.put("/api/tenants/:tenantId/bookings/:id", validateTenant, async (req, res) 
 
       const updatedBooking = await storage.updateBooking(changeRequest.bookingId, bookingUpdates);
 
+      // Send email notification to customer
+      try {
+        const emailService = new BrevoEmailService();
+        await emailService.sendChangeRequestResponse(
+          booking.customerEmail,
+          booking.customerName,
+          true, // approved
+          {
+            id: booking.id,
+            customerName: booking.customerName,
+            customerEmail: booking.customerEmail,
+            bookingDate: updatedBooking.bookingDate,
+            startTime: updatedBooking.startTime,
+            guestCount: updatedBooking.guestCount,
+            restaurantId: booking.restaurantId,
+            tenantId: booking.tenantId
+          },
+          {
+            requestedDate: changeRequest.requestedDate,
+            requestedTime: changeRequest.requestedTime,
+            requestedGuestCount: changeRequest.requestedGuestCount
+          },
+          response || 'Your booking change request has been approved.'
+        );
+        console.log(`Approval email sent to ${booking.customerEmail}`);
+      } catch (emailError) {
+        console.error("Error sending approval email:", emailError);
+      }
+
       // Send real-time notification
       broadcastNotification(booking.restaurantId, {
         type: 'change_request_approved',
@@ -2879,6 +2950,37 @@ app.put("/api/tenants/:tenantId/bookings/:id", validateTenant, async (req, res) 
         restaurantResponse: response || 'Rejected via admin dashboard',
         respondedAt: new Date()
       });
+
+      const booking = await storage.getBookingById(changeRequest.bookingId);
+      
+      // Send email notification to customer
+      try {
+        const emailService = new BrevoEmailService();
+        await emailService.sendChangeRequestResponse(
+          booking.customerEmail,
+          booking.customerName,
+          false, // rejected
+          {
+            id: booking.id,
+            customerName: booking.customerName,
+            customerEmail: booking.customerEmail,
+            bookingDate: booking.bookingDate,
+            startTime: booking.startTime,
+            guestCount: booking.guestCount,
+            restaurantId: booking.restaurantId,
+            tenantId: booking.tenantId
+          },
+          {
+            requestedDate: changeRequest.requestedDate,
+            requestedTime: changeRequest.requestedTime,
+            requestedGuestCount: changeRequest.requestedGuestCount
+          },
+          response || 'Your booking change request has been rejected.'
+        );
+        console.log(`Rejection email sent to ${booking.customerEmail}`);
+      } catch (emailError) {
+        console.error("Error sending rejection email:", emailError);
+      }
 
       // Send real-time notification
       broadcastNotification(changeRequest.restaurantId, {
