@@ -30,16 +30,8 @@ export default function MetaIntegration() {
   useEffect(() => {
     if (integrationConfig && typeof integrationConfig === 'object' && 'isEnabled' in integrationConfig) {
       setIsActivated(integrationConfig.isEnabled === true);
-      
-      // Generate install link based on restaurant profile data
-      if (integrationConfig.isEnabled && restaurant) {
-        const baseUrl = window.location.origin;
-        const restaurantSlug = restaurant.name.toLowerCase().replace(/[^a-z0-9]/g, '-');
-        const generatedLink = `https://api.mozrest.com/meta-install-link/${btoa(`${restaurant.id}-${tenant?.id}-${restaurantSlug}`)}?callback=${encodeURIComponent(`${baseUrl}/${tenant?.id}/integrations/meta/callback`)}`;
-        setInstallLink(generatedLink);
-      }
     }
-  }, [integrationConfig, restaurant, tenant]);
+  }, [integrationConfig]);
 
   // Mutation to save integration settings
   const saveIntegrationMutation = useMutation({

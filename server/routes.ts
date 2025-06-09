@@ -15,6 +15,7 @@ import { BookingHash } from "./booking-hash";
 import { QRCodeService } from "./qr-service";
 import { WebhookService } from "./webhook-service";
 import { MetaIntegrationService } from "./meta-service";
+import { metaInstallService } from "./meta-install-service";
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY || 'sk_test_your_stripe_secret_key', {
   apiVersion: '2025-05-28.basil'
@@ -2958,6 +2959,217 @@ app.put("/api/tenants/:tenantId/bookings/:id", validateTenant, async (req, res) 
       res.json({ message: "Integration configuration deleted successfully" });
     } catch (error) {
       console.error("Error deleting integration configuration:", error);
+      res.status(500).json({ message: "Internal server error" });
+    }
+  });
+
+  // Generate Meta install link
+  app.post("/api/tenants/:tenantId/restaurants/:restaurantId/meta-install-link", validateTenant, async (req, res) => {
+    try {
+      const restaurantId = parseInt(req.params.restaurantId);
+      const tenantId = parseInt(req.params.tenantId);
+
+      if (isNaN(restaurantId) || isNaN(tenantId)) {
+        return res.status(400).json({ message: "Invalid restaurant ID or tenant ID" });
+      }
+
+      // Verify restaurant belongs to tenant
+      const restaurant = await storage.getRestaurantById(restaurantId);
+      if (!restaurant || restaurant.tenantId !== tenantId) {
+        return res.status(404).json({ message: "Restaurant not found" });
+      }
+
+      const baseUrl = process.env.APP_BASE_URL || process.env.REPLIT_DEV_DOMAIN 
+        ? `https://${process.env.REPLIT_DEV_DOMAIN}` 
+        : req.protocol + '://' + req.get('host');
+
+      const callbackUrl = `${baseUrl}/api/meta-callback`;
+
+      const installLink = metaInstallService.generateInstallLink({
+        restaurantId,
+        tenantId,
+        restaurantName: restaurant.name,
+        callbackUrl
+      });
+
+      res.json({
+        installLinkId: installLink.id,
+        installUrl: metaInstallService.getInstallLinkUrl(installLink.id),
+        facebookAuthUrl: installLink.facebookAuthUrl,
+        expiresAt: installLink.expiresAt
+      });
+
+    } catch (error) {
+      console.error("Error generating Meta install link:", error);
+      res.status(500).json({ message: "Internal server error" });
+    }
+  });
+
+  // Handle Meta install link access
+  app.get("/api/meta-install-link/:linkId", async (req, res) => {
+    try {
+      const linkId = req.params.linkId;
+      const installLink = metaInstallService.getInstallLink(linkId);
+
+      if (!installLink) {
+        return res.status(404).json({ 
+          code: 404,
+          message: "ERROR_MESSAGE_META_INSTALL_LINK_NOT_FOUND",
+          statusCode: 404
+        });
+      }
+
+      // Generate an HTML page that redirects to Facebook OAuth
+      const htmlResponse = `
+        <!DOCTYPE html>
+        <html>
+        <head>
+          <title>Connect to Facebook - ${installLink.restaurantName}</title>
+          <meta charset="utf-8">
+          <meta name="viewport" content="width=device-width, initial-scale=1">
+          <style>
+            body { 
+              font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Arial, sans-serif;
+              background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+              margin: 0;
+              padding: 20px;
+              min-height: 100vh;
+              display: flex;
+              align-items: center;
+              justify-content: center;
+            }
+            .container {
+              background: white;
+              border-radius: 12px;
+              padding: 40px;
+              text-align: center;
+              box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+              max-width: 400px;
+              width: 100%;
+            }
+            .logo {
+              font-size: 24px;
+              font-weight: bold;
+              color: #1877f2;
+              margin-bottom: 20px;
+            }
+            h1 {
+              color: #333;
+              margin: 20px 0;
+              font-size: 24px;
+            }
+            p {
+              color: #666;
+              line-height: 1.5;
+              margin: 15px 0;
+            }
+            .restaurant-name {
+              font-weight: bold;
+              color: #1877f2;
+            }
+            .connect-btn {
+              background: #1877f2;
+              color: white;
+              border: none;
+              padding: 12px 24px;
+              border-radius: 6px;
+              font-size: 16px;
+              font-weight: 600;
+              cursor: pointer;
+              text-decoration: none;
+              display: inline-block;
+              margin: 20px 0;
+              transition: background 0.3s;
+            }
+            .connect-btn:hover {
+              background: #166fe5;
+            }
+            .expires {
+              font-size: 12px;
+              color: #999;
+              margin-top: 20px;
+            }
+          </style>
+        </head>
+        <body>
+          <div class="container">
+            <div class="logo">📱 MozRest</div>
+            <h1>Connect to Facebook</h1>
+            <p>You're about to connect <span class="restaurant-name">${installLink.restaurantName}</span> to Facebook and Instagram for social media integration.</p>
+            <p>This will allow you to:</p>
+            <ul style="text-align: left; color: #666;">
+              <li>Automatically post booking announcements</li>
+              <li>Manage Facebook page posts</li>
+              <li>Share content to Instagram</li>
+              <li>Engage with customers on social media</li>
+            </ul>
+            
+            <a href="${installLink.facebookAuthUrl}" class="connect-btn">
+              Connect with Facebook
+            </a>
+            
+            <div class="expires">
+              This link expires on ${installLink.expiresAt.toLocaleString()}
+            </div>
+          </div>
+          
+          <script>
+            // Auto-redirect after 3 seconds if user doesn't click
+            setTimeout(() => {
+              if (confirm('Ready to connect to Facebook?')) {
+                window.location.href = '${installLink.facebookAuthUrl}';
+              }
+            }, 3000);
+          </script>
+        </body>
+        </html>
+      `;
+
+      res.setHeader('Content-Type', 'text/html');
+      res.send(htmlResponse);
+
+    } catch (error) {
+      console.error("Error accessing Meta install link:", error);
+      res.status(500).json({ message: "Internal server error" });
+    }
+  });
+
+  // Handle Meta OAuth callback
+  app.get("/api/meta-callback", async (req, res) => {
+    try {
+      const { code, state, error } = req.query;
+
+      if (error) {
+        return res.status(400).json({
+          message: "Facebook authentication failed",
+          error: error
+        });
+      }
+
+      if (!code || !state) {
+        return res.status(400).json({
+          message: "Missing required parameters"
+        });
+      }
+
+      const result = await metaInstallService.handleCallback(code as string, state as string);
+
+      if (!result.success) {
+        return res.status(400).json({
+          message: result.error || "Failed to process Meta integration"
+        });
+      }
+
+      // Redirect to success page
+      const baseUrl = process.env.APP_BASE_URL || process.env.REPLIT_DEV_DOMAIN 
+        ? `https://${process.env.REPLIT_DEV_DOMAIN}` 
+        : req.protocol + '://' + req.get('host');
+
+      const successUrl = `${baseUrl}/${result.data.tenantId}/integrations/meta?success=true`;
+      res.redirect(successUrl);
+
+    } catch (error) {
+      console.error("Error handling Meta callback:", error);
       res.status(500).json({ message: "Internal server error" });
     }
   });
