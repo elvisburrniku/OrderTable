@@ -532,7 +532,9 @@ export function RealTimeNotifications() {
                         )}
                         
                         <p className="text-xs text-gray-500 mt-2">
-                          {format(new Date(notification.timestamp), 'MMM dd, HH:mm:ss')}
+                          {(notification.timestamp || notification.createdAt) ? 
+                            format(new Date(notification.timestamp || notification.createdAt), 'MMM dd, HH:mm:ss') : 
+                            'Just now'}
                         </p>
                       </div>
                       <button
