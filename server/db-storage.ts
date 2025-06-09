@@ -21,41 +21,9 @@ import {
   specialPeriods, 
   cutOffTimes,
   bookingChangeRequests,
-<<<<<<< HEAD
   notifications,
-  type User,
-  type Restaurant,
-  type Booking,
-  type Customer,
-  type Table,
-  type Room,
-  type WaitingList,
-  type SmsMessage,
-  type ActivityLog,
-  type Feedback,
-  type TimeSlots,
-  type SubscriptionPlan,
-  type UserSubscription,
-  type TableLayout,
-  type InsertUser,
-  type InsertRestaurant,
-  type InsertBooking,
-  type InsertCustomer,
-  type InsertTable,
-  type InsertRoom,
-  type InsertWaitingList,
-  type InsertSmsMessage,
-  type InsertActivityLog,
-  type InsertFeedback,
-  type InsertTimeSlots,
-  type InsertSubscriptionPlan,
-  type InsertUserSubscription,
-  type Notification,
-  type InsertNotification
-=======
   integrationConfigurations,
   webhooks
->>>>>>> 53b3ab91330f0f81f70d457f3d107944aab70637
 } from "@shared/schema";
 import { neon } from "@neondatabase/serverless";
 import { drizzle } from "drizzle-orm/neon-http";
