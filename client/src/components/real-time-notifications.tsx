@@ -798,23 +798,97 @@ export function RealTimeNotifications() {
                 <div className="bg-yellow-50 rounded-lg p-4">
                   <h3 className="font-semibold mb-3 flex items-center gap-2">
                     <AlertTriangle className="h-4 w-4" />
-                    Changes Made
+                    Changes Made by Customer
                   </h3>
                   <div className="space-y-2">
-                    {Object.entries(selectedBooking.changes).map(([key, { from, to }]) => (
-                      <div key={key} className="flex items-center justify-between p-2 bg-white rounded border">
-                        <span className="font-medium capitalize">
-                          {key === 'bookingDate' ? 'Date' : 
-                           key === 'startTime' ? 'Time' : 
-                           key === 'guestCount' ? 'Party Size' : key}:
-                        </span>
-                        <div className="text-sm">
-                          <span className="text-red-600 line-through">{from}</span>
-                          <span className="mx-2">→</span>
-                          <span className="text-green-600">{to}</span>
+                    {Object.entries(selectedBooking.changes).map(([key, change]) => {
+                      // Handle the actual change data structure from database
+                      const changeObj = change as any;
+                      const from = changeObj?.from || changeObj?.oldValue || changeObj?.old;
+                      const to = changeObj?.to || changeObj?.newValue || changeObj?.new || change;
+                      
+                      const fieldName = key === 'bookingDate' ? 'Date' : 
+                                       key === 'startTime' ? 'Time' : 
+                                       key === 'endTime' ? 'End Time' :
+                                       key === 'guestCount' ? 'Party Size' : 
+                                       key === 'tableId' ? 'Table' :
+                                       key === 'notes' ? 'Special Notes' : key;
+
+                      return (
+                        <div key={key} className="p-3 bg-white rounded border">
+                          <div className="flex items-center justify-between mb-2">
+                            <span className="font-medium text-sm">{fieldName}</span>
+                            <Badge variant="outline" className="text-xs">Modified</Badge>
+                          </div>
+                          
+                          {from !== undefined && to !== undefined && from !== to ? (
+                            // Show before/after comparison when we have both values
+                            <div className="flex items-center gap-2 text-sm">
+                              <div className="flex-1 p-2 bg-red-50 rounded">
+                                <span className="text-xs text-red-600 font-medium">Previous:</span>
+                                <div className="text-red-700">
+                                  {key === 'bookingDate' ? (
+                                    (() => {
+                                      try {
+                                        const date = new Date(from);
+                                        return isNaN(date.getTime()) ? from : format(date, 'MMM dd, yyyy');
+                                      } catch {
+                                        return from;
+                                      }
+                                    })()
+                                  ) : String(from)}
+                                </div>
+                              </div>
+                              <div className="text-gray-400">→</div>
+                              <div className="flex-1 p-2 bg-green-50 rounded">
+                                <span className="text-xs text-green-600 font-medium">New:</span>
+                                <div className="text-green-700">
+                                  {key === 'bookingDate' ? (
+                                    (() => {
+                                      try {
+                                        const date = new Date(to);
+                                        return isNaN(date.getTime()) ? to : format(date, 'MMM dd, yyyy');
+                                      } catch {
+                                        return to;
+                                      }
+                                    })()
+                                  ) : String(to)}
+                                </div>
+                              </div>
+                            </div>
+                          ) : (
+                            // Show only the new value when we don't have both
+                            <div className="text-sm p-2 bg-green-50 rounded">
+                              <span className="text-xs text-green-600 font-medium">Updated to:</span>
+                              <div className="text-green-700">
+                                {key === 'bookingDate' ? (
+                                  (() => {
+                                    try {
+                                      const date = new Date(to || change);
+                                      return isNaN(date.getTime()) ? (to || change) : format(date, 'MMM dd, yyyy');
+                                    } catch {
+                                      return to || change;
+                                    }
+                                  })()
+                                ) : String(to || change)}
+                              </div>
+                            </div>
+                          )}
                         </div>
-                      </div>
-                    ))}
+                      );
+                    })}
+                  </div>
+                  
+                  {/* Timestamp when changes were made */}
+                  <div className="mt-3 pt-3 border-t border-yellow-200">
+                    <div className="flex items-center gap-2 text-xs text-gray-600">
+                      <Clock className="h-3 w-3" />
+                      <span>
+                        Modified {selectedBooking.timestamp ? 
+                          format(new Date(selectedBooking.timestamp), 'MMM dd, yyyy at HH:mm') : 
+                          'recently'}
+                      </span>
+                    </div>
                   </div>
                 </div>
               )}
@@ -851,6 +925,86 @@ export function RealTimeNotifications() {
                   </div>
                 </div>
               )}
+
+              {/* Complete Change History */}
+              <div className="bg-blue-50 rounded-lg p-4">
+                <h3 className="font-semibold mb-3 flex items-center gap-2">
+                  <Clock className="h-4 w-4" />
+                  Complete Change History
+                </h3>
+                <div className="space-y-3">
+                  {/* Current notification change */}
+                  <div className="p-3 bg-white rounded border-l-4 border-blue-500">
+                    <div className="flex items-center justify-between mb-1">
+                      <span className="text-sm font-medium text-blue-700">Current Notification</span>
+                      <span className="text-xs text-gray-500">
+                        {selectedBooking.timestamp ? 
+                          format(new Date(selectedBooking.timestamp), 'MMM dd, HH:mm') : 
+                          'Recently'}
+                      </span>
+                    </div>
+                    <p className="text-sm text-gray-700">{getNotificationMessage(selectedBooking)}</p>
+                    {selectedBooking.type === 'booking_cancelled' && selectedBooking.cancelledBy && (
+                      <p className="text-xs text-gray-500 mt-1">
+                        Cancelled by: {selectedBooking.cancelledBy}
+                      </p>
+                    )}
+                  </div>
+
+                  {/* Original booking creation */}
+                  <div className="p-3 bg-white rounded border-l-4 border-green-500">
+                    <div className="flex items-center justify-between mb-1">
+                      <span className="text-sm font-medium text-green-700">Booking Created</span>
+                      <span className="text-xs text-gray-500">
+                        {(() => {
+                          try {
+                            const createdAt = selectedBooking.booking.createdAt;
+                            if (createdAt) {
+                              return format(new Date(createdAt), 'MMM dd, HH:mm');
+                            }
+                            return 'Initial booking';
+                          } catch {
+                            return 'Initial booking';
+                          }
+                        })()}
+                      </span>
+                    </div>
+                    <p className="text-sm text-gray-700">
+                      {selectedBooking.booking.customerName} made a reservation for {selectedBooking.booking.guestCount} guests
+                      {(() => {
+                        try {
+                          const date = new Date(selectedBooking.booking.bookingDate);
+                          if (!isNaN(date.getTime())) {
+                            return ` on ${format(date, 'MMM dd, yyyy')} at ${selectedBooking.booking.startTime}`;
+                          }
+                          return '';
+                        } catch {
+                          return '';
+                        }
+                      })()}
+                    </p>
+                  </div>
+
+                  {/* Show if booking was reverted */}
+                  {selectedBooking.reverted && (
+                    <div className="p-3 bg-white rounded border-l-4 border-yellow-500">
+                      <div className="flex items-center justify-between mb-1">
+                        <span className="text-sm font-medium text-yellow-700">Changes Reverted</span>
+                        <span className="text-xs text-gray-500">By restaurant staff</span>
+                      </div>
+                      <p className="text-sm text-gray-700">
+                        Previous changes were undone and booking was restored to original state
+                      </p>
+                    </div>
+                  )}
+                </div>
+                
+                <div className="mt-3 pt-3 border-t border-blue-200">
+                  <p className="text-xs text-gray-600">
+                    This shows the complete timeline of changes made to booking #{selectedBooking.booking.id}
+                  </p>
+                </div>
+              </div>
 
               {/* Restaurant Information */}
               {selectedBooking.restaurant && (
