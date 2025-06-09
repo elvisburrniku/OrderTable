@@ -902,8 +902,8 @@ export function RealTimeNotifications() {
 
       {/* Booking Details Dialog */}
       <Dialog open={isBookingDialogOpen} onOpenChange={setIsBookingDialogOpen}>
-        <DialogContent className="max-w-2xl">
-          <DialogHeader>
+        <DialogContent className="max-w-full w-screen h-screen m-0 rounded-none overflow-hidden flex flex-col">
+          <DialogHeader className="flex-shrink-0 border-b border-gray-200 pb-4">
             <DialogTitle className="flex items-center gap-2">
               <Eye className="h-5 w-5" />
               Booking Details
@@ -918,7 +918,8 @@ export function RealTimeNotifications() {
                              selectedBooking.data?.bookingId;
             
             return (
-            <div className="space-y-6">
+            <div className="flex-1 overflow-y-auto px-6 py-4">
+              <div className="space-y-6 max-w-4xl mx-auto">
               {/* Notification Type Badge */}
               <div className="flex items-center gap-2">
                 {getNotificationIcon(selectedBooking.type, false)}
@@ -1307,6 +1308,7 @@ export function RealTimeNotifications() {
                   <p className="text-sm">{selectedBooking.restaurant.name}</p>
                 </div>
               )}
+              </div>
             </div>
             );
           })()}
