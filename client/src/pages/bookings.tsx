@@ -534,17 +534,52 @@ export default function Bookings() {
 
         {/* Main Content */}
         <div className="flex-1 p-6">
-          <div className="bg-white rounded-lg shadow">
+          {viewMode === "calendar" ? (
+            <GoogleCalendar
+              selectedDate={selectedDate}
+              bookings={filteredBookings || []}
+              allBookings={bookings || []}
+              tables={tables || []}
+              isLoading={isLoading}
+              onDateSelect={setSelectedDate}
+            />
+          ) : (
+            <div className="bg-white rounded-lg shadow">
             {/* Header */}
             <div className="p-6 border-b">
-              <h2 className="text-lg font-semibold mb-4">Bookings</h2>
+              <div className="flex items-center justify-between mb-4">
+                <h2 className="text-lg font-semibold">Bookings</h2>
+                
+                {/* View Toggle */}
+                <div className="flex items-center space-x-2">
+                  <Button
+                    variant={viewMode === "list" ? "default" : "outline"}
+                    size="sm"
+                    onClick={() => setViewMode("list")}
+                    className="flex items-center space-x-1"
+                  >
+                    <List className="w-4 h-4" />
+                    <span>List</span>
+                  </Button>
+                  <Button
+                    variant={viewMode === "calendar" ? "default" : "outline"}
+                    size="sm"
+                    onClick={() => setViewMode("calendar")}
+                    className="flex items-center space-x-1"
+                  >
+                    <Calendar className="w-4 h-4" />
+                    <span>Calendar</span>
+                  </Button>
+                </div>
+              </div>
 
-              {/* Filters */}
-              <div className="flex items-center space-x-4 mb-4">
-                <Button variant="outline" size="sm" className="flex items-center space-x-1">
-                  <Filter className="w-4 h-4" />
-                  <span>Show filters</span>
-                </Button>
+              {/* Filters - Only show in list view */}
+              {viewMode === "list" && (
+                <div className="flex items-center space-x-4 mb-4">
+                  <Button variant="outline" size="sm" className="flex items-center space-x-1">
+                    <Filter className="w-4 h-4" />
+                    <span>Show filters</span>
+                  </Button>
 
                 <div className="flex items-center space-x-2">
                   <Search className="w-4 h-4 text-gray-400" />
@@ -581,7 +616,7 @@ export default function Bookings() {
                   </SelectContent>
                 </Select>
               </div>
-            </div>
+            )}
 
             {/* Table */}
             <div className="overflow-x-auto">
@@ -672,6 +707,8 @@ export default function Bookings() {
               </div>
             </div>
           </div>
+            </div>
+            )}
         </div>
       </div>
 
