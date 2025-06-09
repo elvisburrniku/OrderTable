@@ -1573,6 +1573,187 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Smart Rescheduling Assistant routes
+  app.post("/api/tenants/:tenantId/restaurants/:restaurantId/rescheduling-suggestions", validateTenant, async (req, res) => {
+    try {
+      const restaurantId = parseInt(req.params.restaurantId);
+      const tenantId = parseInt(req.params.tenantId);
+      const { originalDate, originalTime, guestCount, reason, options } = req.body;
+
+      const restaurant = await storage.getRestaurantById(restaurantId);
+      if (!restaurant || restaurant.tenantId !== tenantId) {
+        return res.status(404).json({ message: "Restaurant not found" });
+      }
+
+      const { SmartReschedulingAssistant } = await import('./rescheduling-assistant');
+      const assistant = new SmartReschedulingAssistant(storage);
+
+      const suggestions = await assistant.generateReschedulingSuggestions(
+        restaurantId,
+        tenantId,
+        originalDate,
+        originalTime,
+        guestCount,
+        reason,
+        options || {}
+      );
+
+      res.json({
+        suggestions,
+        count: suggestions.length,
+        message: suggestions.length > 0 ? "Alternative suggestions found" : "No alternative times available"
+      });
+    } catch (error) {
+      console.error("Error generating rescheduling suggestions:", error);
+      res.status(500).json({ message: "Failed to generate suggestions" });
+    }
+  });
+
+  app.post("/api/tenants/:tenantId/restaurants/:restaurantId/bookings/:bookingId/rescheduling-suggestions", validateTenant, async (req, res) => {
+    try {
+      const restaurantId = parseInt(req.params.restaurantId);
+      const tenantId = parseInt(req.params.tenantId);
+      const bookingId = parseInt(req.params.bookingId);
+      const { reason, options } = req.body;
+
+      const restaurant = await storage.getRestaurantById(restaurantId);
+      if (!restaurant || restaurant.tenantId !== tenantId) {
+        return res.status(404).json({ message: "Restaurant not found" });
+      }
+
+      const booking = await storage.getBookingById(bookingId);
+      if (!booking || booking.restaurantId !== restaurantId) {
+        return res.status(404).json({ message: "Booking not found" });
+      }
+
+      const { SmartReschedulingAssistant } = await import('./rescheduling-assistant');
+      const assistant = new SmartReschedulingAssistant(storage);
+
+      const suggestions = await assistant.generateSuggestionsForBooking(
+        bookingId,
+        reason || 'booking_conflict',
+        options || {}
+      );
+
+      res.json({
+        suggestions,
+        count: suggestions.length,
+        bookingId,
+        message: "Rescheduling suggestions generated successfully"
+      });
+    } catch (error) {
+      console.error("Error generating booking rescheduling suggestions:", error);
+      res.status(500).json({ message: "Failed to generate suggestions" });
+    }
+  });
+
+  app.get("/api/tenants/:tenantId/restaurants/:restaurantId/rescheduling-suggestions", validateTenant, async (req, res) => {
+    try {
+      const restaurantId = parseInt(req.params.restaurantId);
+      const tenantId = parseInt(req.params.tenantId);
+
+      const restaurant = await storage.getRestaurantById(restaurantId);
+      if (!restaurant || restaurant.tenantId !== tenantId) {
+        return res.status(404).json({ message: "Restaurant not found" });
+      }
+
+      const suggestions = await storage.getReschedulingSuggestionsByRestaurant(restaurantId);
+      res.json(suggestions);
+    } catch (error) {
+      console.error("Error fetching rescheduling suggestions:", error);
+      res.status(500).json({ message: "Failed to fetch suggestions" });
+    }
+  });
+
+  app.post("/api/tenants/:tenantId/rescheduling-suggestions/:suggestionId/accept", validateTenant, async (req, res) => {
+    try {
+      const tenantId = parseInt(req.params.tenantId);
+      const suggestionId = parseInt(req.params.suggestionId);
+      const { userEmail } = req.body;
+
+      const suggestion = await storage.getReschedulingSuggestionById(suggestionId);
+      if (!suggestion || suggestion.tenantId !== tenantId) {
+        return res.status(404).json({ message: "Suggestion not found" });
+      }
+
+      const { SmartReschedulingAssistant } = await import('./rescheduling-assistant');
+      const assistant = new SmartReschedulingAssistant(storage);
+
+      const result = await assistant.acceptReschedulingSuggestion(suggestionId, userEmail || 'system');
+
+      if (result.success) {
+        res.json({
+          success: true,
+          updatedBooking: result.updatedBooking,
+          message: result.message
+        });
+      } else {
+        res.status(400).json({
+          success: false,
+          message: result.message
+        });
+      }
+    } catch (error) {
+      console.error("Error accepting rescheduling suggestion:", error);
+      res.status(500).json({ message: "Failed to accept suggestion" });
+    }
+  });
+
+  app.delete("/api/tenants/:tenantId/rescheduling-suggestions/:suggestionId", validateTenant, async (req, res) => {
+    try {
+      const tenantId = parseInt(req.params.tenantId);
+      const suggestionId = parseInt(req.params.suggestionId);
+
+      const suggestion = await storage.getReschedulingSuggestionById(suggestionId);
+      if (!suggestion || suggestion.tenantId !== tenantId) {
+        return res.status(404).json({ message: "Suggestion not found" });
+      }
+
+      const success = await storage.deleteReschedulingSuggestion(suggestionId);
+      if (success) {
+        res.json({ message: "Suggestion deleted successfully" });
+      } else {
+        res.status(500).json({ message: "Failed to delete suggestion" });
+      }
+    } catch (error) {
+      console.error("Error deleting rescheduling suggestion:", error);
+      res.status(500).json({ message: "Failed to delete suggestion" });
+    }
+  });
+
+  app.post("/api/tenants/:tenantId/restaurants/:restaurantId/alternative-times", validateTenant, async (req, res) => {
+    try {
+      const restaurantId = parseInt(req.params.restaurantId);
+      const tenantId = parseInt(req.params.tenantId);
+      const { date, guestCount, excludeTime } = req.body;
+
+      const restaurant = await storage.getRestaurantById(restaurantId);
+      if (!restaurant || restaurant.tenantId !== tenantId) {
+        return res.status(404).json({ message: "Restaurant not found" });
+      }
+
+      const { SmartReschedulingAssistant } = await import('./rescheduling-assistant');
+      const assistant = new SmartReschedulingAssistant(storage);
+
+      const alternatives = await assistant.findAlternativeTimeSlotsForDay(
+        restaurantId,
+        date,
+        guestCount,
+        excludeTime
+      );
+
+      res.json({
+        alternatives,
+        date,
+        count: alternatives.length,
+        message: alternatives.length > 0 ? "Alternative times found" : "No alternative times available"
+      });
+    } catch (error) {
+      console.error("Error finding alternative times:", error);
+      res.status(500).json({ message: "Failed to find alternative times" });
+    }
+  });
+
   // Email notification settings routes
   app.post("/api/tenants/:tenantId/restaurants/:restaurantId/email-settings", validateTenant, async (req, res) => {
     try {

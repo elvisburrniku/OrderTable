@@ -552,6 +552,29 @@ export const webhooks = pgTable("webhooks", {
   updatedAt: timestamp("updated_at").defaultNow()
 });
 
+// Rescheduling Suggestions table
+export const reschedulingSuggestions = pgTable("rescheduling_suggestions", {
+  id: serial("id").primaryKey(),
+  restaurantId: integer("restaurant_id").notNull().references(() => restaurants.id, { onDelete: "cascade" }),
+  tenantId: integer("tenant_id").notNull().references(() => tenants.id, { onDelete: "cascade" }),
+  originalBookingId: integer("original_booking_id").references(() => bookings.id, { onDelete: "cascade" }),
+  originalDate: text("original_date").notNull(),
+  originalTime: text("original_time").notNull(),
+  suggestedDate: text("suggested_date").notNull(),
+  suggestedTime: text("suggested_time").notNull(),
+  tableId: integer("table_id").references(() => tables.id),
+  guestCount: integer("guest_count").notNull(),
+  reason: text("reason").notNull(), // "table_conflict", "restaurant_closed", "capacity_issue", etc.
+  priority: integer("priority").default(1), // 1-5, higher is more suitable
+  availability: boolean("availability").default(true),
+  customerName: text("customer_name"),
+  customerEmail: text("customer_email"),
+  status: varchar("status", { length: 20 }).default("pending"), // pending, accepted, rejected, expired
+  expiresAt: timestamp("expires_at"),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow()
+});
+
 // Type exports for all tables
 export type User = InferSelectModel<typeof users>;
 export type InsertUser = InferInsertModel<typeof users>;
@@ -604,7 +627,17 @@ export type InsertBookingChangeRequest = InferInsertModel<typeof bookingChangeRe
 export type IntegrationConfiguration = InferSelectModel<typeof integrationConfigurations>;
 export type InsertIntegrationConfiguration = InferInsertModel<typeof integrationConfigurations>;
 
+export type ReschedulingSuggestion = InferSelectModel<typeof reschedulingSuggestions>;
+export type InsertReschedulingSuggestion = InferInsertModel<typeof reschedulingSuggestions>;
+
 export const insertIntegrationConfigurationSchema = createInsertSchema(integrationConfigurations);
 export const selectIntegrationConfigurationSchema = createSelectSchema(integrationConfigurations);
+
+export const insertReschedulingSuggestionSchema = createInsertSchema(reschedulingSuggestions).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+export const selectReschedulingSuggestionSchema = createSelectSchema(reschedulingSuggestions);
 
 export type LoginData = z.infer<typeof loginSchema>;

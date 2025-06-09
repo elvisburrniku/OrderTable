@@ -23,7 +23,8 @@ import {
   bookingChangeRequests,
   notifications,
   integrationConfigurations,
-  webhooks
+  webhooks,
+  reschedulingSuggestions
 } from "@shared/schema";
 import { neon } from "@neondatabase/serverless";
 import { drizzle } from "drizzle-orm/neon-http";
@@ -1142,6 +1143,62 @@ export class DatabaseStorage implements IStorage {
     }
 
     return [];
+  }
+
+  // Rescheduling Suggestions methods
+  async getReschedulingSuggestionsByRestaurant(restaurantId: number): Promise<any[]> {
+    return await this.db.select().from(reschedulingSuggestions)
+      .where(eq(reschedulingSuggestions.restaurantId, restaurantId))
+      .orderBy(desc(reschedulingSuggestions.priority), desc(reschedulingSuggestions.createdAt));
+  }
+
+  async getReschedulingSuggestionsByBooking(bookingId: number): Promise<any[]> {
+    return await this.db.select().from(reschedulingSuggestions)
+      .where(eq(reschedulingSuggestions.originalBookingId, bookingId))
+      .orderBy(desc(reschedulingSuggestions.priority), desc(reschedulingSuggestions.createdAt));
+  }
+
+  async createReschedulingSuggestion(suggestion: any): Promise<any> {
+    // Set expiration time to 24 hours from now if not provided
+    if (!suggestion.expiresAt) {
+      const expiresAt = new Date();
+      expiresAt.setHours(expiresAt.getHours() + 24);
+      suggestion.expiresAt = expiresAt;
+    }
+
+    const [newSuggestion] = await this.db.insert(reschedulingSuggestions).values(suggestion).returning();
+    return newSuggestion;
+  }
+
+  async updateReschedulingSuggestion(id: number, updates: any): Promise<any> {
+    const [updatedSuggestion] = await this.db.update(reschedulingSuggestions)
+      .set({ ...updates, updatedAt: new Date() })
+      .where(eq(reschedulingSuggestions.id, id))
+      .returning();
+    return updatedSuggestion;
+  }
+
+  async getReschedulingSuggestionById(id: number): Promise<any> {
+    const [suggestion] = await this.db.select().from(reschedulingSuggestions)
+      .where(eq(reschedulingSuggestions.id, id));
+    return suggestion;
+  }
+
+  async deleteReschedulingSuggestion(id: number): Promise<boolean> {
+    try {
+      await this.db.delete(reschedulingSuggestions)
+        .where(eq(reschedulingSuggestions.id, id));
+      return true;
+    } catch (error) {
+      console.error('Error deleting rescheduling suggestion:', error);
+      return false;
+    }
+  }
+
+  async deleteExpiredReschedulingSuggestions(): Promise<void> {
+    const now = new Date();
+    await this.db.delete(reschedulingSuggestions)
+      .where(lt(reschedulingSuggestions.expiresAt, now));
   }
 
 }
