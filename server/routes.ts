@@ -4427,11 +4427,16 @@ app.put("/api/tenants/:tenantId/bookings/:id", validateTenant, async (req, res) 
       const tables = await storage.getTablesByRestaurant(restaurantId);
       const combinedTables = await storage.getCombinedTablesByRestaurant(restaurantId);
       
+      console.log(`Restaurant ${restaurantId}: Found ${tables.length} tables and ${combinedTables.length} combined tables for ${guestCount} guests`);
+      
       // Filter tables that can accommodate the guest count
       const suitableTables = tables.filter(table => table.capacity >= guestCount);
       const suitableCombinedTables = combinedTables.filter(table => table.capacity >= guestCount);
       
+      console.log(`Restaurant ${restaurantId}: ${suitableTables.length} suitable tables and ${suitableCombinedTables.length} suitable combined tables`);
+      
       if (suitableTables.length === 0 && suitableCombinedTables.length === 0) {
+        console.log(`Restaurant ${restaurantId}: No tables can accommodate ${guestCount} guests - returning empty time slots`);
         return res.json([]); // No tables can accommodate this party size
       }
 
