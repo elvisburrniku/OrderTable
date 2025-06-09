@@ -192,9 +192,9 @@ export function RealTimeNotifications() {
   };
 
   const removeNotification = (notificationId: string) => {
-    setNotifications(prev => prev.filter(notif => notif.id !== notificationId));
+    setLiveNotifications(prev => prev.filter(notif => notif.id !== notificationId));
     setUnreadCount(prev => {
-      const notification = notifications.find(n => n.id === notificationId);
+      const notification = liveNotifications.find(n => n.id === notificationId);
       return notification && !notification.read ? prev - 1 : prev;
     });
   };
@@ -258,7 +258,7 @@ export function RealTimeNotifications() {
 
       if (res.ok) {
         // Mark notification as processed/reverted
-        setNotifications(prev => 
+        setLiveNotifications(prev => 
           prev.map(n => 
             n.booking?.id === bookingId && n.type === 'booking_changed'
               ? { ...n, reverted: true }
@@ -423,7 +423,7 @@ export function RealTimeNotifications() {
                   <p className="text-sm">You'll see booking updates here</p>
                 </div>
               ) : (
-                allNotifications.map((notification) => (
+                allNotifications.filter(notification => notification && notification.id).map((notification) => (
                   <div
                     key={notification.id}
                     className={`p-4 border-b border-gray-200 hover:bg-gray-50 ${
@@ -516,7 +516,7 @@ export function RealTimeNotifications() {
                           </Badge>
                         )}
                         
-                        {processingRequests.has(notification.changeRequest?.id || notification.booking.id) && (
+                        {processingRequests.has(notification.changeRequest?.id || notification.booking?.id || 0) && (
                           <div className="mt-2 text-sm text-gray-500">
                             Processing...
                           </div>
