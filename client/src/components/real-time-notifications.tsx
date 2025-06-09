@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useWebSocket } from '@/hooks/use-websocket';
 import { useAuth } from '@/lib/auth';
+import { useLocation } from 'wouter';
 import { Bell, X, User, Calendar, Clock, Users, Phone, Mail, AlertTriangle, CheckCircle, XCircle, MessageSquare, Undo2, Eye, MapPin, ChevronDown, ChevronRight } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -67,6 +68,7 @@ interface BookingNotification {
 
 export function RealTimeNotifications() {
   const { restaurant, user } = useAuth();
+  const [, setLocation] = useLocation();
   const [liveNotifications, setLiveNotifications] = useState<BookingNotification[]>([]);
   const [isOpen, setIsOpen] = useState(false);
   const [unreadCount, setUnreadCount] = useState(0);
@@ -909,8 +911,22 @@ export function RealTimeNotifications() {
                             onClick={(e) => {
                               e.stopPropagation();
                               markAsRead(notification);
-                              setSelectedBooking(notification);
-                              setIsBookingDialogOpen(true);
+                              
+                              // Extract booking ID from notification
+                              const bookingId = notification.bookingId || 
+                                               notification.booking?.id || 
+                                               notification.data?.booking?.id ||
+                                               notification.data?.bookingId;
+                              
+                              if (bookingId) {
+                                // Navigate to booking detail page
+                                setLocation(`/bookings/${bookingId}`);
+                                setIsOpen(false); // Close notification panel
+                              } else {
+                                // Fallback to dialog if no booking ID found
+                                setSelectedBooking(notification);
+                                setIsBookingDialogOpen(true);
+                              }
                             }}
                             className="text-blue-600 border-blue-300 hover:bg-blue-50 flex items-center gap-1 text-xs px-2 py-1 h-auto"
                           >
