@@ -33,6 +33,36 @@ export default function MetaIntegration() {
     }
   }, [integrationConfig]);
 
+  // Mutation to generate Meta install link
+  const generateInstallLinkMutation = useMutation({
+    mutationFn: async () => {
+      const response = await fetch(`/api/tenants/${tenant?.id}/restaurants/${restaurant?.id}/meta-install-link`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      });
+      if (!response.ok) {
+        throw new Error('Failed to generate install link');
+      }
+      return response.json();
+    },
+    onSuccess: (data) => {
+      setInstallLink(data.installUrl);
+      toast({
+        title: "Install link generated",
+        description: "You can now share this link or use it to connect Facebook."
+      });
+    },
+    onError: () => {
+      toast({
+        title: "Error generating install link",
+        description: "Please try again later.",
+        variant: "destructive"
+      });
+    }
+  });
+
   // Mutation to save integration settings
   const saveIntegrationMutation = useMutation({
     mutationFn: async (isEnabled: boolean) => {
@@ -97,12 +127,9 @@ export default function MetaIntegration() {
   const handleActivationToggle = (checked: boolean) => {
     setIsActivated(checked);
     
-    if (checked && restaurant && tenant) {
-      // Generate new install link when activating
-      const baseUrl = window.location.origin;
-      const restaurantSlug = restaurant.name.toLowerCase().replace(/[^a-z0-9]/g, '-');
-      const generatedLink = `https://api.mozrest.com/meta-install-link/${btoa(`${restaurant.id}-${tenant.id}-${restaurantSlug}`)}?callback=${encodeURIComponent(`${baseUrl}/${tenant.id}/integrations/meta/callback`)}`;
-      setInstallLink(generatedLink);
+    if (checked) {
+      // Generate install link when enabling
+      generateInstallLinkMutation.mutate();
     } else {
       setInstallLink('');
     }
