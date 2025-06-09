@@ -1,9 +1,10 @@
 import { useState, useEffect } from 'react';
 import { useWebSocket } from '@/hooks/use-websocket';
 import { useAuth } from '@/lib/auth';
-import { Bell, X, User, Calendar, Clock, Users, Phone, Mail, AlertTriangle, CheckCircle, XCircle, MessageSquare, Undo2 } from 'lucide-react';
+import { Bell, X, User, Calendar, Clock, Users, Phone, Mail, AlertTriangle, CheckCircle, XCircle, MessageSquare, Undo2, Eye, MapPin } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Badge } from '@/components/ui/badge';
 import { format } from 'date-fns';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
@@ -55,6 +56,8 @@ export function RealTimeNotifications() {
   const [liveNotifications, setLiveNotifications] = useState<BookingNotification[]>([]);
   const [isOpen, setIsOpen] = useState(false);
   const [unreadCount, setUnreadCount] = useState(0);
+  const [selectedBooking, setSelectedBooking] = useState<BookingNotification | null>(null);
+  const [isBookingDialogOpen, setIsBookingDialogOpen] = useState(false);
   const queryClient = useQueryClient();
   const { toast } = useToast();
 
@@ -215,6 +218,12 @@ export function RealTimeNotifications() {
     });
   };
 
+  const handleNotificationClick = (notification: BookingNotification) => {
+    markAsRead(notification);
+    setSelectedBooking(notification);
+    setIsBookingDialogOpen(true);
+  };
+
   const handleChangeRequest = async (requestId: number, action: 'approve' | 'reject', response?: string) => {
     setProcessingRequests(prev => new Set(prev).add(requestId));
     
@@ -337,17 +346,27 @@ export function RealTimeNotifications() {
     switch (type) {
       case 'new_booking':
         if (!booking?.customerName || !booking?.bookingDate) return 'New booking received';
-        return `${booking.customerName} - ${booking.guestCount || 0} guests on ${format(new Date(booking.bookingDate), 'MMM dd')} at ${booking.startTime || 'TBD'}`;
+        return `${booking.customerName} booked for ${booking.guestCount || 0} guests on ${format(new Date(booking.bookingDate), 'MMM dd')} at ${booking.startTime || 'TBD'}`;
       case 'booking_changed':
-        const changedFields = Object.keys(changes || {}).map(key => {
+        if (!changes || Object.keys(changes).length === 0) {
+          return `${booking?.customerName || 'Customer'} updated their booking`;
+        }
+        const changeDetails = Object.entries(changes).map(([key, { from, to }]) => {
           switch (key) {
-            case 'bookingDate': return 'date';
-            case 'startTime': return 'time';
-            case 'guestCount': return 'party size';
-            default: return key;
+            case 'bookingDate': 
+              return `date from ${format(new Date(from), 'MMM dd')} to ${format(new Date(to), 'MMM dd')}`;
+            case 'startTime': 
+              return `time from ${from} to ${to}`;
+            case 'guestCount': 
+              return `party size from ${from} to ${to} guests`;
+            case 'tableId':
+              return `table assignment`;
+            case 'notes':
+              return `booking notes`;
+            default: return `${key}`;
           }
         }).join(', ');
-        return `${booking?.customerName || 'Customer'} changed ${changedFields || 'booking details'}`;
+        return `${booking?.customerName || 'Customer'} changed ${changeDetails}`;
       case 'booking_cancelled':
         if (!booking?.customerName || !booking?.bookingDate) return 'Booking cancelled';
         return `${booking.customerName} cancelled their ${format(new Date(booking.bookingDate), 'MMM dd')} booking`;
