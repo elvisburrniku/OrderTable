@@ -2952,7 +2952,7 @@ app.put("/api/tenants/:tenantId/bookings/:id", validateTenant, async (req, res) 
     }
   });
 
-  app.patch("/api/notifications/mark-all-read", async (req: Request, res: Response) => {
+  app.patch("/api/notifications/mark-all-read", attachUser, async (req: Request, res: Response) => {
     if (!req.user) {
       return res.status(401).json({ error: "Not authenticated" });
     }
@@ -2971,7 +2971,7 @@ app.put("/api/tenants/:tenantId/bookings/:id", validateTenant, async (req, res) 
     }
   });
 
-  app.post("/api/notifications/:id/revert", async (req: Request, res: Response) => {
+  app.post("/api/notifications/:id/revert", attachUser, async (req: Request, res: Response) => {
     if (!req.user) {
       return res.status(401).json({ error: "Not authenticated" });
     }
