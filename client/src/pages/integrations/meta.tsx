@@ -19,6 +19,8 @@ export default function MetaIntegration() {
   const [isActivated, setIsActivated] = useState(false);
   const [installLink, setInstallLink] = useState('');
   const [copied, setCopied] = useState(false);
+  const [facebookAppId, setFacebookAppId] = useState('');
+  const [facebookAppSecret, setFacebookAppSecret] = useState('');
 
   // Check if Meta integration is enabled
   const { data: integrationConfig, isLoading: configLoading } = useQuery({
@@ -30,6 +32,13 @@ export default function MetaIntegration() {
   useEffect(() => {
     if (integrationConfig && typeof integrationConfig === 'object' && 'isEnabled' in integrationConfig) {
       setIsActivated(integrationConfig.isEnabled === true);
+      
+      // Load Facebook credentials if they exist
+      const config = (integrationConfig as any)?.configuration;
+      if (config && typeof config === 'object') {
+        setFacebookAppId(config.facebookAppId || '');
+        setFacebookAppSecret(config.facebookAppSecret || '');
+      }
     }
   }, [integrationConfig]);
 
@@ -78,6 +87,8 @@ export default function MetaIntegration() {
             restaurantAddress: restaurant?.address,
             restaurantPhone: restaurant?.phone,
             restaurantEmail: restaurant?.email,
+            facebookAppId: facebookAppId,
+            facebookAppSecret: facebookAppSecret,
             installLink: isEnabled ? installLink : null,
             connectedAt: isEnabled ? new Date().toISOString() : null
           }
@@ -196,6 +207,42 @@ export default function MetaIntegration() {
               <CardTitle>Settings</CardTitle>
             </CardHeader>
             <CardContent className="space-y-6">
+              <div className="space-y-4">
+                <div>
+                  <Label htmlFor="facebook-app-id" className="text-gray-700 font-medium">
+                    Facebook App ID
+                  </Label>
+                  <p className="text-sm text-gray-600 mt-1">
+                    Your Facebook App ID from developers.facebook.com
+                  </p>
+                  <Input
+                    id="facebook-app-id"
+                    type="text"
+                    value={facebookAppId}
+                    onChange={(e) => setFacebookAppId(e.target.value)}
+                    placeholder="Enter your Facebook App ID"
+                    className="mt-2"
+                  />
+                </div>
+
+                <div>
+                  <Label htmlFor="facebook-app-secret" className="text-gray-700 font-medium">
+                    Facebook App Secret
+                  </Label>
+                  <p className="text-sm text-gray-600 mt-1">
+                    Your Facebook App Secret from developers.facebook.com
+                  </p>
+                  <Input
+                    id="facebook-app-secret"
+                    type="password"
+                    value={facebookAppSecret}
+                    onChange={(e) => setFacebookAppSecret(e.target.value)}
+                    placeholder="Enter your Facebook App Secret"
+                    className="mt-2"
+                  />
+                </div>
+              </div>
+
               <div className="flex items-center justify-between">
                 <div>
                   <Label htmlFor="activate-meta" className="text-gray-700 font-medium">
@@ -209,7 +256,7 @@ export default function MetaIntegration() {
                   id="activate-meta"
                   checked={isActivated}
                   onCheckedChange={handleActivationToggle}
-                  disabled={saveIntegrationMutation.isPending}
+                  disabled={saveIntegrationMutation.isPending || !facebookAppId || !facebookAppSecret}
                 />
               </div>
 

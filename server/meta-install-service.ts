@@ -25,14 +25,28 @@ class MetaInstallService {
   /**
    * Generate a new Meta install link
    */
-  generateInstallLink(request: MetaInstallRequest): MetaInstallLink {
+  async generateInstallLink(request: MetaInstallRequest): Promise<MetaInstallLink> {
     const linkId = uuidv4();
     const baseUrl = process.env.APP_BASE_URL || process.env.REPLIT_DEV_DOMAIN 
       ? `https://${process.env.REPLIT_DEV_DOMAIN}` 
       : 'http://localhost:5000';
 
+    // Get Facebook credentials from database
+    const metaConfig = await storage.getIntegrationConfiguration(request.restaurantId, 'meta');
+    let facebookAppId = process.env.FACEBOOK_APP_ID || 'YOUR_FACEBOOK_APP_ID';
+    
+    if (metaConfig && metaConfig.configuration) {
+      const config = typeof metaConfig.configuration === 'string' 
+        ? JSON.parse(metaConfig.configuration) 
+        : metaConfig.configuration;
+      
+      if (config.facebookAppId) {
+        facebookAppId = config.facebookAppId;
+      }
+    }
+
     // Facebook OAuth URL with proper scopes for restaurant management
-    const facebookAuthUrl = this.buildFacebookAuthUrl(linkId, request.callbackUrl);
+    const facebookAuthUrl = this.buildFacebookAuthUrl(linkId, request.callbackUrl, facebookAppId);
 
     const installLink: MetaInstallLink = {
       id: linkId,
