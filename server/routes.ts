@@ -1339,9 +1339,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(404).json({ message: "Restaurant not found" });
       }
 
-      const cutOffTimes = await storage.createOrUpdateCutOffTimes(restaurantId, tenantId, req.body);
-      res.json(cutOffTimes);
+      // Extract cutOffTimes array from request body
+      const { cutOffTimes: timesData } = req.body;
+      if (!timesData || !Array.isArray(timesData)) {
+        return res.status(400).json({ message: "cutOffTimes array is required" });
+      }
+
+      const savedTimes = await storage.createOrUpdateCutOffTimes(restaurantId, tenantId, timesData);
+      res.json(savedTimes);
     } catch (error) {
+      console.error("Error saving cut-off times:", error);
       res.status(400).json({ message: "Invalid cut-off times data" });
     }
   });

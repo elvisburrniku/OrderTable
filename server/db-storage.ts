@@ -877,17 +877,30 @@ export class DatabaseStorage implements IStorage {
       return false;
     }
 
-    // Check cut-off times
+    // Check cut-off times for the specific day of the week
     const now = new Date();
+    const dayOfWeek = bookingDate.getDay(); // 0 = Sunday, 1 = Monday, etc.
+    
     const cutOffData = await this.db.select().from(cutOffTimes)
-      .where(eq(cutOffTimes.restaurantId, restaurantId));
+      .where(and(
+        eq(cutOffTimes.restaurantId, restaurantId),
+        eq(cutOffTimes.dayOfWeek, dayOfWeek)
+      ));
 
-    if (cutOffData.length > 0) {
+    if (cutOffData.length > 0 && cutOffData[0].cutOffHours > 0) {
       const cutOff = cutOffData[0];
-      const cutOffMinutes = cutOff.cutOffHours * 60 + cutOff.cutOffMinutes;
-      const timeDiffMinutes = (bookingDate.getTime() - now.getTime()) / (1000 * 60);
-
-      if (timeDiffMinutes < cutOffMinutes) {
+      
+      // Create booking datetime by combining date and time
+      const [hours, minutes] = bookingTime.split(':').map(Number);
+      const bookingDateTime = new Date(bookingDate);
+      bookingDateTime.setHours(hours, minutes, 0, 0);
+      
+      // Calculate cut-off deadline
+      const cutOffMilliseconds = cutOff.cutOffHours * 60 * 60 * 1000; // Convert hours to milliseconds
+      const cutOffDeadline = new Date(bookingDateTime.getTime() - cutOffMilliseconds);
+      
+      // Check if current time is past the cut-off deadline
+      if (now > cutOffDeadline) {
         return false; // Booking is within cut-off time
       }
     }
