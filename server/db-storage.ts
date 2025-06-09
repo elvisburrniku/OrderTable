@@ -1038,4 +1038,16 @@ export class DatabaseStorage implements IStorage {
 
     return true;
   }
+
+  async deleteNotification(id: number): Promise<boolean> {
+    try {
+      const result = await this.db.delete(notifications)
+        .where(eq(notifications.id, id));
+      
+      return result.rowCount > 0;
+    } catch (error) {
+      console.error('Error deleting notification:', error);
+      return false;
+    }
+  }
 }

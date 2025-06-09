@@ -200,6 +200,14 @@ export interface IStorage {
   createCombinedTable(insertCombinedTable: InsertCombinedTable): Promise<CombinedTable>;
   updateCombinedTable(id: number, updates: Partial<CombinedTable>): Promise<CombinedTable | undefined>;
   deleteCombinedTable(id: number): Promise<boolean>;
+
+  // Notifications
+  getNotificationsByRestaurant(restaurantId: number): Promise<Notification[]>;
+  createNotification(notification: InsertNotification): Promise<Notification>;
+  markNotificationAsRead(id: number): Promise<Notification | undefined>;
+  markAllNotificationsAsRead(restaurantId: number): Promise<void>;
+  revertNotification(notificationId: number, userEmail: string): Promise<boolean>;
+  deleteNotification(id: number): Promise<boolean>;
 }
 
 export class MemStorage implements IStorage {

@@ -444,12 +444,59 @@ export function RealTimeNotifications() {
     }
   };
 
-  const removeNotification = (notificationId: string) => {
-    setLiveNotifications(prev => prev.filter(notif => notif.id !== notificationId));
-    setUnreadCount(prev => {
-      const notification = liveNotifications.find(n => n.id === notificationId);
-      return notification && !notification.read ? prev - 1 : prev;
-    });
+  // Delete notification mutation
+  const deleteNotificationMutation = useMutation({
+    mutationFn: (notificationId: number) => apiRequest(
+      'DELETE',
+      `/api/tenants/${restaurant?.tenantId}/restaurants/${restaurant?.id}/notifications/${notificationId}`
+    ),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/tenants', restaurant?.tenantId, 'restaurants', restaurant?.id, 'notifications'] });
+      toast({ 
+        title: "Notification removed", 
+        description: "The notification has been deleted successfully" 
+      });
+    },
+    onError: (error) => {
+      console.error('Delete notification failed:', error);
+      toast({ 
+        title: "Failed to remove notification", 
+        description: "Please try again", 
+        variant: "destructive" 
+      });
+    },
+  });
+
+  const removeNotification = (notificationId: string | number) => {
+    // Check if it's a live notification (string ID) or persistent notification (number ID)
+    const liveNotification = liveNotifications.find(n => n.id === notificationId);
+    const persistentNotification = persistentNotifications.find(n => n.id === notificationId);
+    
+    if (liveNotification) {
+      // Remove live notification locally
+      setLiveNotifications(prev => prev.filter(notif => notif.id !== notificationId));
+      setUnreadCount(prev => {
+        return liveNotification && !liveNotification.read ? prev - 1 : prev;
+      });
+    } else if (persistentNotification && typeof notificationId === 'number') {
+      // Remove persistent notification via API
+      deleteNotificationMutation.mutate(notificationId);
+      
+      // Optimistically update the cache
+      queryClient.setQueryData(
+        ['/api/tenants', restaurant?.tenantId, 'restaurants', restaurant?.id, 'notifications'],
+        (oldData: any) => {
+          if (!oldData) return oldData;
+          const filtered = oldData.filter((notif: any) => notif.id !== notificationId);
+          return filtered;
+        }
+      );
+      
+      // Update unread count if it was unread
+      if (!persistentNotification.isRead) {
+        setUnreadCount(prev => Math.max(0, prev - 1));
+      }
+    }
   };
 
   const handleNotificationClick = (notification: BookingNotification | any) => {
