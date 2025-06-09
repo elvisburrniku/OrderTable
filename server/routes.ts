@@ -14,6 +14,7 @@ import { BrevoEmailService } from "./brevo-service";
 import { BookingHash } from "./booking-hash";
 import { QRCodeService } from "./qr-service";
 import { WebhookService } from "./webhook-service";
+import { MetaIntegrationService } from "./meta-service";
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY || 'sk_test_your_stripe_secret_key', {
   apiVersion: '2025-05-28.basil'
@@ -562,6 +563,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       // Send webhook notifications
       try {
+        const webhookService = new WebhookService(storage);
         await webhookService.notifyBookingCreated(restaurantId, {
           ...booking,
           customerName: req.body.customerName,
@@ -571,6 +573,20 @@ export async function registerRoutes(app: Express): Promise<Server> {
       } catch (webhookError) {
         console.error('Error sending webhook notifications:', webhookError);
         // Don't fail the booking if webhook fails
+      }
+
+      // Send Meta (Facebook/Instagram) notifications if enabled
+      try {
+        const metaService = new MetaIntegrationService(storage);
+        await metaService.notifyBookingCreated(restaurantId, {
+          ...booking,
+          customerName: req.body.customerName,
+          customerEmail: req.body.customerEmail,
+          customerPhone: req.body.customerPhone
+        });
+      } catch (metaError) {
+        console.error('Error sending Meta integration notifications:', metaError);
+        // Don't fail the booking if Meta integration fails
       }
 
       res.json(booking);
@@ -2045,6 +2061,7 @@ app.put("/api/tenants/:tenantId/bookings/:id", validateTenant, async (req, res) 
       // Send webhook notifications for booking update
       if (booking) {
         try {
+          const webhookService = new WebhookService(storage);
           await webhookService.notifyBookingUpdated(restaurantId, booking);
         } catch (webhookError) {
           console.error('Error sending booking update webhook:', webhookError);

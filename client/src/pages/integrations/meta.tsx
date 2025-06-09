@@ -1,12 +1,15 @@
 import { useState, useEffect } from 'react';
 import { useAuth } from '@/lib/auth';
 import { useTenant } from '@/lib/tenant';
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { useToast } from '@/hooks/use-toast';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Switch } from '@/components/ui/switch';
 import { Button } from '@/components/ui/button';
-import { ArrowLeft } from 'lucide-react';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { ArrowLeft, AlertCircle, Copy, CheckCircle } from 'lucide-react';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useToast } from '@/hooks/use-toast';
+import { Alert, AlertDescription } from '@/components/ui/alert';
 
 export default function MetaIntegration() {
   const { user, restaurant } = useAuth();
@@ -14,33 +17,53 @@ export default function MetaIntegration() {
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const [isActivated, setIsActivated] = useState(false);
+  const [installLink, setInstallLink] = useState('');
+  const [copied, setCopied] = useState(false);
 
-  // Fetch existing configuration
-  const { data: config, isLoading } = useQuery({
+  // Check if Meta integration is enabled
+  const { data: integrationConfig, isLoading: configLoading } = useQuery({
     queryKey: [`/api/tenants/${tenant?.id}/restaurants/${restaurant?.id}/integrations/meta`],
     enabled: !!(tenant?.id && restaurant?.id),
   });
 
-  // Load saved configuration on mount
+  // Load current integration state
   useEffect(() => {
-    if (config) {
-      setIsActivated(config.isEnabled || false);
+    if (integrationConfig && typeof integrationConfig === 'object' && 'isEnabled' in integrationConfig) {
+      setIsActivated(integrationConfig.isEnabled === true);
+      
+      // Generate install link based on restaurant profile data
+      if (integrationConfig.isEnabled && restaurant) {
+        const baseUrl = window.location.origin;
+        const restaurantSlug = restaurant.name.toLowerCase().replace(/[^a-z0-9]/g, '-');
+        const generatedLink = `https://api.mozrest.com/meta-install-link/${btoa(`${restaurant.id}-${tenant?.id}-${restaurantSlug}`)}?callback=${encodeURIComponent(`${baseUrl}/${tenant?.id}/integrations/meta/callback`)}`;
+        setInstallLink(generatedLink);
+      }
     }
-  }, [config]);
+  }, [integrationConfig, restaurant, tenant]);
 
-  // Mutation to save configuration
-  const saveConfigMutation = useMutation({
-    mutationFn: async (configData: any) => {
+  // Mutation to save integration settings
+  const saveIntegrationMutation = useMutation({
+    mutationFn: async (isEnabled: boolean) => {
       const response = await fetch(`/api/tenants/${tenant?.id}/restaurants/${restaurant?.id}/integrations/meta`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify(configData),
+        body: JSON.stringify({ 
+          isEnabled,
+          configuration: {
+            restaurantName: restaurant?.name,
+            restaurantAddress: restaurant?.address,
+            restaurantPhone: restaurant?.phone,
+            restaurantEmail: restaurant?.email,
+            installLink: isEnabled ? installLink : null,
+            connectedAt: isEnabled ? new Date().toISOString() : null
+          }
+        }),
       });
       
       if (!response.ok) {
-        throw new Error('Failed to save Meta integration configuration');
+        throw new Error('Failed to save integration settings');
       }
       
       return response.json();
@@ -49,62 +72,74 @@ export default function MetaIntegration() {
       queryClient.invalidateQueries({
         queryKey: [`/api/tenants/${tenant?.id}/restaurants/${restaurant?.id}/integrations/meta`]
       });
-      queryClient.invalidateQueries({
-        queryKey: [`/api/tenants/${tenant?.id}/restaurants/${restaurant?.id}/integrations`]
-      });
       toast({
-        title: "Meta integration updated",
-        description: "Your Meta integration settings have been saved successfully.",
+        title: "Integration updated",
+        description: "Meta (Facebook & Instagram) integration settings have been saved successfully.",
       });
     },
     onError: () => {
       toast({
         title: "Error",
-        description: "Failed to save Meta integration settings. Please try again.",
+        description: "Failed to save integration settings. Please try again.",
         variant: "destructive",
       });
     },
   });
 
   const handleSave = () => {
-    saveConfigMutation.mutate({
-      isEnabled: isActivated,
-      configuration: {}
-    });
+    saveIntegrationMutation.mutate(isActivated);
   };
 
-  if (!user || !tenant) {
+  const handleCopyLink = () => {
+    if (installLink) {
+      navigator.clipboard.writeText(installLink);
+      setCopied(true);
+      toast({
+        title: "Copied!",
+        description: "Installation link copied to clipboard.",
+      });
+      setTimeout(() => setCopied(false), 3000);
+    }
+  };
+
+  const handleActivationToggle = (checked: boolean) => {
+    setIsActivated(checked);
+    
+    if (checked && restaurant && tenant) {
+      // Generate new install link when activating
+      const baseUrl = window.location.origin;
+      const restaurantSlug = restaurant.name.toLowerCase().replace(/[^a-z0-9]/g, '-');
+      const generatedLink = `https://api.mozrest.com/meta-install-link/${btoa(`${restaurant.id}-${tenant.id}-${restaurantSlug}`)}?callback=${encodeURIComponent(`${baseUrl}/${tenant.id}/integrations/meta/callback`)}`;
+      setInstallLink(generatedLink);
+    } else {
+      setInstallLink('');
+    }
+  };
+
+  if (!user || !tenant || !restaurant) {
     return <div>Loading...</div>;
+  }
+
+  if (configLoading) {
+    return <div>Loading integration settings...</div>;
   }
 
   return (
     <div className="flex">
       {/* Sidebar */}
-      <div className="w-64 bg-white border-r min-h-screen">
-        <div className="p-6">
-          <div className="space-y-2">
-            <a href={`/${tenant.id}/bookings`} className="flex items-center space-x-2 text-gray-600 hover:bg-gray-50 px-3 py-2 rounded">
-              <span className="w-2 h-2 bg-gray-400 rounded-full"></span>
-              <span>Bookings</span>
-            </a>
-            <a href={`/${tenant.id}/tables`} className="flex items-center space-x-2 text-gray-600 hover:bg-gray-50 px-3 py-2 rounded">
-              <span className="w-2 h-2 bg-gray-400 rounded-full"></span>
-              <span>Tables</span>
-            </a>
-            <a href={`/${tenant.id}/customers`} className="flex items-center space-x-2 text-gray-600 hover:bg-gray-50 px-3 py-2 rounded">
-              <span className="w-2 h-2 bg-gray-400 rounded-full"></span>
-              <span>Customers</span>
-            </a>
-            <div className="flex items-center space-x-2 text-green-600 bg-green-50 px-3 py-2 rounded">
-              <span className="w-2 h-2 bg-green-600 rounded-full"></span>
-              <span className="font-medium">Integrations</span>
-            </div>
-            <a href={`/${tenant.id}/statistics`} className="flex items-center space-x-2 text-gray-600 hover:bg-gray-50 px-3 py-2 rounded">
-              <span className="w-2 h-2 bg-gray-400 rounded-full"></span>
-              <span>Statistics</span>
-            </a>
+      <div className="w-64 bg-white border-r border-gray-200 p-6">
+        <h2 className="text-lg font-semibold text-gray-900 mb-4">Integration Settings</h2>
+        <nav className="space-y-2">
+          <a 
+            href={`/${tenant.id}/integrations`}
+            className="flex items-center text-gray-600 hover:text-gray-900 px-3 py-2 rounded-md"
+          >
+            All Integrations
+          </a>
+          <div className="flex items-center text-blue-600 px-3 py-2 rounded-md bg-blue-50">
+            Meta (Facebook & Instagram)
           </div>
-        </div>
+        </nav>
       </div>
 
       {/* Main Content */}
@@ -123,11 +158,16 @@ export default function MetaIntegration() {
 
           <Card className="mb-6">
             <CardHeader>
-              <CardTitle className="text-lg text-gray-700">Important:</CardTitle>
+              <CardTitle className="text-lg text-gray-700 flex items-center">
+                <AlertCircle className="w-5 h-5 mr-2 text-blue-600" />
+                Important:
+              </CardTitle>
             </CardHeader>
             <CardContent className="bg-gray-50">
               <p className="text-gray-700">
-                META integration includes MozRest for both Facebook and Instagram. Once you've sent an activation request here in our integration, you will receive an installation link that you must use to complete the integration of Facebook and/or Instagram. Click the link and follow the installation process.
+                META integration includes MozRest for both Facebook and Instagram. Once you've sent an activation 
+                request here in our integration, you will receive an installation link that you must use to complete the 
+                integration of Facebook and/or Instagram. Click the link and follow the installation process.
               </p>
             </CardContent>
           </Card>
@@ -138,19 +178,76 @@ export default function MetaIntegration() {
             </CardHeader>
             <CardContent className="space-y-6">
               <div className="flex items-center justify-between">
-                <label htmlFor="activate-meta" className="text-gray-700">Activate integration</label>
+                <div>
+                  <Label htmlFor="activate-meta" className="text-gray-700 font-medium">
+                    Activate integration
+                  </Label>
+                  <p className="text-sm text-gray-600 mt-1">
+                    Enable Meta integration for {restaurant.name}
+                  </p>
+                </div>
                 <Switch
                   id="activate-meta"
                   checked={isActivated}
-                  onCheckedChange={setIsActivated}
+                  onCheckedChange={handleActivationToggle}
+                  disabled={saveIntegrationMutation.isPending}
                 />
               </div>
+
+              {isActivated && installLink && (
+                <div className="space-y-4 p-4 bg-blue-50 rounded-lg">
+                  <div>
+                    <Label htmlFor="install-link" className="text-gray-700 font-medium">
+                      fb_installlink
+                    </Label>
+                    <div className="flex items-center space-x-2 mt-2">
+                      <Input
+                        id="install-link"
+                        value={installLink}
+                        readOnly
+                        className="flex-1 bg-white"
+                      />
+                      <Button 
+                        variant="outline" 
+                        size="sm"
+                        onClick={handleCopyLink}
+                        className="shrink-0"
+                      >
+                        {copied ? (
+                          <CheckCircle className="w-4 h-4" />
+                        ) : (
+                          <Copy className="w-4 h-4" />
+                        )}
+                        {copied ? '' : 'Copy!'}
+                      </Button>
+                    </div>
+                  </div>
+                  
+                  <Alert className="border-blue-200 bg-blue-50">
+                    <AlertCircle className="h-4 w-4 text-blue-600" />
+                    <AlertDescription className="text-blue-800">
+                      Use this installation link to complete the Meta integration process. 
+                      This link includes your restaurant profile information: <strong>{restaurant.name}</strong>
+                    </AlertDescription>
+                  </Alert>
+                </div>
+              )}
+
+              {!isActivated && (
+                <Alert className="border-gray-200 bg-gray-50">
+                  <AlertCircle className="h-4 w-4 text-gray-600" />
+                  <AlertDescription className="text-gray-700">
+                    Enable the integration above to generate your Meta installation link.
+                  </AlertDescription>
+                </Alert>
+              )}
 
               <Button 
                 onClick={handleSave}
                 className="bg-green-600 hover:bg-green-700 text-white px-8"
+                disabled={saveIntegrationMutation.isPending}
               >
-                Save
+                {saveIntegrationMutation.isPending ? 'Saving...' : 'Save'}
               </Button>
             </CardContent>
           </Card>
