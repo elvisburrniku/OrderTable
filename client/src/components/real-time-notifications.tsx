@@ -73,19 +73,22 @@ export function RealTimeNotifications() {
   const [selectedBooking, setSelectedBooking] = useState<BookingNotification | null>(null);
   const [isBookingDialogOpen, setIsBookingDialogOpen] = useState(false);
   const [collapsedGroups, setCollapsedGroups] = useState<Set<string>>(new Set());
+  const [filterType, setFilterType] = useState<string>('all'); // 'all', 'unread', 'high_priority'
+  const [sortOrder, setSortOrder] = useState<'priority' | 'time'>('priority');
   const queryClient = useQueryClient();
   const { toast } = useToast();
 
   const [processingRequests, setProcessingRequests] = useState<Set<number>>(new Set());
 
-  // Group notifications by type with priority ordering
+  // Group notifications by type with priority ordering and sorting
   const groupNotificationsByType = (notifications: BookingNotification[]) => {
     const groups: Record<string, BookingNotification[]> = {
       'booking_change_request': [], // Highest priority - requires action
       'new_booking': [],
       'booking_changed': [],
       'change_request_responded': [],
-      'booking_cancelled': []
+      'booking_cancelled': [],
+      'other': []
     };
 
     notifications.forEach(notification => {
@@ -93,16 +96,47 @@ export function RealTimeNotifications() {
         if (groups[notification.type]) {
           groups[notification.type].push(notification);
         } else {
-          // Handle any unknown types by adding to a generic category
-          if (!groups['other']) {
-            groups['other'] = [];
-          }
           groups['other'].push(notification);
         }
       }
     });
 
+    // Sort notifications within each group by priority and recency
+    Object.keys(groups).forEach(groupType => {
+      groups[groupType].sort((a, b) => {
+        // First sort by read status (unread first)
+        if (a.isRead !== b.isRead) {
+          return (a.isRead ? 1 : 0) - (b.isRead ? 1 : 0);
+        }
+        
+        // Then sort by creation time (newest first)
+        const aTime = new Date(a.createdAt || a.timestamp || 0).getTime();
+        const bTime = new Date(b.createdAt || b.timestamp || 0).getTime();
+        return bTime - aTime;
+      });
+    });
+
     return groups;
+  };
+
+  // Filter notifications based on selected filter type
+  const filterNotifications = (notifications: BookingNotification[]) => {
+    switch (filterType) {
+      case 'unread':
+        return notifications.filter(n => !n.isRead);
+      case 'high_priority':
+        return notifications.filter(n => {
+          const priority = getGroupPriority(n.type);
+          return priority.level === 'HIGH' || n.type === 'booking_change_request';
+        });
+      case 'urgent':
+        return notifications.filter(n => 
+          n.type === 'booking_change_request' && 
+          n.changeRequest?.status === 'pending'
+        );
+      default:
+        return notifications;
+    }
   };
 
   const getGroupTitle = (type: string) => {
@@ -131,13 +165,34 @@ export function RealTimeNotifications() {
 
   const getGroupColor = (type: string) => {
     switch (type) {
-      case 'booking_change_request': return 'text-yellow-600 bg-yellow-50';
-      case 'new_booking': return 'text-green-600 bg-green-50';
-      case 'booking_changed': return 'text-blue-600 bg-blue-50';
-      case 'change_request_responded': return 'text-purple-600 bg-purple-50';
-      case 'booking_cancelled': return 'text-red-600 bg-red-50';
-      case 'other': return 'text-gray-600 bg-gray-50';
-      default: return 'text-gray-600 bg-gray-50';
+      case 'booking_change_request': return 'text-yellow-600 bg-yellow-50 border-yellow-200';
+      case 'new_booking': return 'text-green-600 bg-green-50 border-green-200';
+      case 'booking_changed': return 'text-blue-600 bg-blue-50 border-blue-200';
+      case 'change_request_responded': return 'text-purple-600 bg-purple-50 border-purple-200';
+      case 'booking_cancelled': return 'text-red-600 bg-red-50 border-red-200';
+      case 'other': return 'text-gray-600 bg-gray-50 border-gray-200';
+      default: return 'text-gray-600 bg-gray-50 border-gray-200';
+    }
+  };
+
+  const getGroupPriority = (type: string) => {
+    switch (type) {
+      case 'booking_change_request': return { level: 'HIGH', badge: 'Urgent' };
+      case 'new_booking': return { level: 'MEDIUM', badge: 'New' };
+      case 'booking_changed': return { level: 'LOW', badge: 'Info' };
+      case 'change_request_responded': return { level: 'LOW', badge: 'Info' };
+      case 'booking_cancelled': return { level: 'MEDIUM', badge: 'Alert' };
+      case 'other': return { level: 'LOW', badge: 'Info' };
+      default: return { level: 'LOW', badge: 'Info' };
+    }
+  };
+
+  const getPriorityBadgeColor = (level: string) => {
+    switch (level) {
+      case 'HIGH': return 'bg-red-500 text-white';
+      case 'MEDIUM': return 'bg-yellow-500 text-white';
+      case 'LOW': return 'bg-blue-500 text-white';
+      default: return 'bg-gray-500 text-white';
     }
   };
 
@@ -720,6 +775,18 @@ export function RealTimeNotifications() {
                 )}
               </div>
               <div className="flex items-center space-x-1">
+                {/* Filter Controls */}
+                <select 
+                  value={filterType} 
+                  onChange={(e) => setFilterType(e.target.value)}
+                  className="text-xs h-7 px-2 border border-gray-300 rounded-md bg-white"
+                >
+                  <option value="all">All</option>
+                  <option value="unread">Unread</option>
+                  <option value="high_priority">High Priority</option>
+                  <option value="urgent">Urgent Actions</option>
+                </select>
+                
                 {unreadCount > 0 && (
                   <Button variant="ghost" size="sm" onClick={markAllAsRead} className="text-xs h-7 px-2">
                     Mark all read
@@ -745,7 +812,7 @@ export function RealTimeNotifications() {
                 </div>
               ) : (
                 Object.entries(groupNotificationsByType(
-                  allNotifications.filter(notification => notification && notification.id)
+                  filterNotifications(allNotifications.filter(notification => notification && notification.id))
                 )).map(([groupType, notifications]) => {
                   if (notifications.length === 0) return null;
                   
@@ -757,7 +824,7 @@ export function RealTimeNotifications() {
                     <div key={groupType} className="border-b border-gray-100">
                       {/* Group Header */}
                       <div
-                        className={`flex items-center justify-between p-3 hover:opacity-80 cursor-pointer border-b border-gray-200 ${getGroupColor(groupType)}`}
+                        className={`flex items-center justify-between p-3 hover:opacity-80 cursor-pointer border-l-4 ${getGroupColor(groupType)}`}
                         onClick={() => toggleGroupCollapse(groupType)}
                       >
                         <div className="flex items-center gap-3">
@@ -769,9 +836,19 @@ export function RealTimeNotifications() {
                             )}
                             <GroupIcon className="h-5 w-5" />
                           </div>
-                          <span className="font-semibold">
-                            {getGroupTitle(groupType)}
-                          </span>
+                          <div className="flex items-center gap-2">
+                            <span className="font-semibold">
+                              {getGroupTitle(groupType)}
+                            </span>
+                            {(() => {
+                              const priority = getGroupPriority(groupType);
+                              return (
+                                <Badge className={`text-xs px-2 py-0.5 ${getPriorityBadgeColor(priority.level)}`}>
+                                  {priority.badge}
+                                </Badge>
+                              );
+                            })()}
+                          </div>
                           <Badge variant="secondary" className="text-xs bg-white/70">
                             {notifications.length}
                           </Badge>
@@ -781,11 +858,25 @@ export function RealTimeNotifications() {
                             </Badge>
                           )}
                         </div>
-                        {groupType === 'booking_change_request' && notifications.some(n => n.changeRequest?.status === 'pending') && (
-                          <Badge variant="outline" className="text-xs border-yellow-300 text-yellow-700 bg-yellow-100">
-                            Action Required
-                          </Badge>
-                        )}
+                        <div className="flex items-center gap-2">
+                          {groupType === 'booking_change_request' && notifications.some(n => n.changeRequest?.status === 'pending') && (
+                            <Badge variant="outline" className="text-xs border-yellow-300 text-yellow-700 bg-yellow-100 animate-pulse">
+                              Action Required
+                            </Badge>
+                          )}
+                          {(() => {
+                            const priority = getGroupPriority(groupType);
+                            if (priority.level === 'HIGH') {
+                              return (
+                                <div className="flex items-center gap-1">
+                                  <div className="w-2 h-2 bg-red-500 rounded-full animate-pulse"></div>
+                                  <span className="text-xs text-red-600 font-medium">High Priority</span>
+                                </div>
+                              );
+                            }
+                            return null;
+                          })()}
+                        </div>
                       </div>
                       
                       {/* Group Content */}
