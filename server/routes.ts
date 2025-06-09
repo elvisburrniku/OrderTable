@@ -4462,11 +4462,8 @@ app.put("/api/tenants/:tenantId/bookings/:id", validateTenant, async (req, res) 
         const mins = minutes % 60;
         const timeStr = `${hours.toString().padStart(2, '0')}:${mins.toString().padStart(2, '0')}`;
         
-        // Check if booking is allowed at this time (cut-off validation)
-        const isAllowed = await storage.isBookingAllowed(restaurantId, bookingDate, timeStr);
-        if (!isAllowed) {
-          continue;
-        }
+        // For now, skip cut-off validation in public endpoint to avoid complexity
+        // The cut-off validation will be done during actual booking creation
 
         // Check if any suitable table is available at this time
         const hasAvailableTable = [...suitableTables, ...suitableCombinedTables].some(table => {

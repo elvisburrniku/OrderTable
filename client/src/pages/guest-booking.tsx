@@ -119,7 +119,7 @@ export default function GuestBooking() {
   const generateCalendarDates = () => {
     const dates = [];
     const today = startOfDay(new Date());
-    
+
     for (let i = 0; i < 30; i++) {
       const date = addDays(today, i);
       dates.push(date);
@@ -272,7 +272,7 @@ export default function GuestBooking() {
                 {generateCalendarDates().map((date) => {
                   const isSelected = selectedDate && isSameDay(date, selectedDate);
                   const isToday = isSameDay(date, new Date());
-                  
+
                   return (
                     <Button
                       key={date.toISOString()}
@@ -331,7 +331,7 @@ export default function GuestBooking() {
             <div className="text-center">
               <h2 className="text-2xl font-bold text-gray-900 mb-8">Confirm booking</h2>
             </div>
-            
+
             {/* Booking Summary */}
             <Card className="max-w-md mx-auto">
               <CardHeader>
@@ -382,7 +382,7 @@ export default function GuestBooking() {
                   required
                 />
               </div>
-              
+
               <div>
                 <Label htmlFor="phone">Mobile</Label>
                 <div className="flex">
@@ -452,7 +452,7 @@ export default function GuestBooking() {
               const StepIcon = step.icon;
               const isActive = index === currentStep;
               const isCompleted = index < currentStep;
-              
+
               return (
                 <div key={step.id} className="flex flex-col items-center">
                   <div className={`
