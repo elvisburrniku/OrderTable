@@ -311,10 +311,41 @@ export const bookingChangeRequests = pgTable("booking_change_requests", {
   respondedAt: timestamp("responded_at"),
 });
 
+export const notifications = pgTable("notifications", {
+  id: serial("id").primaryKey(),
+  restaurantId: integer("restaurant_id")
+    .references(() => restaurants.id)
+    .notNull(),
+  tenantId: integer("tenant_id")
+    .references(() => tenants.id)
+    .notNull(),
+  type: varchar("type", { length: 50 }).notNull(), // new_booking, booking_changed, booking_cancelled, etc.
+  title: text("title").notNull(),
+  message: text("message").notNull(),
+  bookingId: integer("booking_id").references(() => bookings.id),
+  changeRequestId: integer("change_request_id").references(() => bookingChangeRequests.id),
+  data: json("data"), // Additional notification data
+  originalData: json("original_data"), // For revert functionality
+  isRead: boolean("is_read").default(false),
+  isReverted: boolean("is_reverted").default(false),
+  canRevert: boolean("can_revert").default(false),
+  revertedBy: text("reverted_by"), // User email who reverted
+  revertedAt: timestamp("reverted_at"),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
 export const insertBookingChangeRequestSchema = createInsertSchema(bookingChangeRequests).omit({
   id: true,
   createdAt: true,
   respondedAt: true,
+});
+
+export const insertNotificationSchema = createInsertSchema(notifications).omit({
+  id: true,
+  createdAt: true,
+  isRead: true,
+  isReverted: true,
+  revertedAt: true,
 });
 
 export const insertTenantSchema = createInsertSchema(tenants).omit({
@@ -410,6 +441,10 @@ export const insertUserSubscriptionSchema =
   createInsertSchema(userSubscriptions);
 export const selectUserSubscriptionSchema =
   createSelectSchema(userSubscriptions);
+
+// Notification types
+export type InsertNotification = typeof notifications.$inferInsert;
+export type Notification = typeof notifications.$inferSelect;
 
 // Login schema
 export const loginSchema = z.object({
