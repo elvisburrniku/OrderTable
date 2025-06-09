@@ -69,9 +69,16 @@ export default function Dashboard() {
     enabled: !!restaurant && !!restaurant.tenantId,
   });
 
-  // Fetch all bookings for the month
+  // Fetch all bookings for the month (excluding cancelled bookings)
   const { data: allBookings = [], isLoading: allBookingsLoading } = useQuery({
     queryKey: [`/api/tenants/${restaurant?.tenantId}/restaurants/${restaurant?.id}/bookings`],
+    queryFn: async () => {
+      const response = await fetch(`/api/tenants/${restaurant?.tenantId}/restaurants/${restaurant?.id}/bookings`);
+      if (!response.ok) throw new Error('Failed to fetch all bookings');
+      const data = await response.json();
+      // Filter out cancelled bookings from all booking displays
+      return Array.isArray(data) ? data.filter(booking => booking.status !== 'cancelled') : [];
+    },
     enabled: !!restaurant?.id && !!restaurant.tenantId,
   });
 
@@ -81,7 +88,7 @@ export default function Dashboard() {
     enabled: !!restaurant && !!restaurant.tenantId && !!restaurant.id
   });
 
-  // Fetch bookings for selected date
+  // Fetch bookings for selected date (excluding cancelled bookings)
   const { data: selectedDateBookings = [], isLoading: selectedDateBookingsLoading } = useQuery({
     queryKey: [`/api/tenants/${restaurant?.tenantId}/restaurants/${restaurant?.id}/bookings`, format(selectedDate, 'yyyy-MM-dd')],
     queryFn: async () => {
@@ -90,7 +97,9 @@ export default function Dashboard() {
         throw new Error('Failed to fetch bookings');
       }
       const data = await response.json();
-      return Array.isArray(data) ? data : [];
+      // Filter out cancelled bookings from calendar display
+      const filteredData = Array.isArray(data) ? data.filter(booking => booking.status !== 'cancelled') : [];
+      return filteredData;
     },
     enabled: !!restaurant && !!restaurant.tenantId,
   });
