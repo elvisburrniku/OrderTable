@@ -1890,27 +1890,51 @@ export async function registerRoutes(app: Express): Promise<Server> {
       try {
         console.log(`Preparing real-time notification for booking ${booking.id}`);
 
-        const notificationData = {
+        // Create persistent notification
+        const restaurant = await storage.getRestaurantById(restaurantId);
+        const notification = await storage.createNotification({
+          restaurantId: restaurantId,
+          tenantId: booking.tenantId,
           type: 'new_booking',
-          booking: {
-            id: booking.id,
-            customerName: req.body.customerName,
-            customerEmail: req.body.customerEmail,
-customerPhone: req.body.customerPhone,
-            guestCount: booking.guestCount,
-            bookingDate: booking.bookingDate,
-            startTime: booking.startTime,
-            endTime: booking.endTime,
-            tableId: booking.tableId,
-            status: booking.status,
-            notes: booking.notes,
-            createdAt: booking.createdAt
+          title: 'New Booking Created',
+          message: `New booking for ${req.body.customerName} on ${new Date(booking.bookingDate).toLocaleDateString()} at ${booking.startTime}`,
+          bookingId: booking.id,
+          data: {
+            booking: {
+              id: booking.id,
+              customerName: req.body.customerName,
+              customerEmail: req.body.customerEmail,
+              customerPhone: req.body.customerPhone,
+              guestCount: booking.guestCount,
+              bookingDate: booking.bookingDate,
+              startTime: booking.startTime,
+              endTime: booking.endTime,
+              tableId: booking.tableId,
+              status: booking.status,
+              notes: booking.notes,
+              createdAt: booking.createdAt
+            },
+            restaurant: {
+              id: restaurantId,
+              name: restaurant?.name
+            }
           },
-          restaurant: {
-            id: restaurantId,
-            name: (await storage.getRestaurantById(restaurantId))?.name
-          },
-          timestamp: new Date().toISOString()
+          canRevert: false
+        });
+
+        const notificationData = {
+          type: 'notification',
+          notification: {
+            id: notification.id,
+            type: 'new_booking',
+            title: notification.title,
+            message: notification.message,
+            booking: notification.data.booking,
+            restaurant: notification.data.restaurant,
+            timestamp: notification.createdAt,
+            read: false,
+            canRevert: false
+          }
         };
 
         console.log(`About to broadcast notification for restaurant ${restaurantId}`);
@@ -2814,6 +2838,80 @@ app.put("/api/tenants/:tenantId/bookings/:id", validateTenant, async (req, res) 
     }
 
     res.json({ received: true });
+  });
+
+  // Notifications API
+  app.get("/api/notifications", async (req: Request, res: Response) => {
+    if (!req.user) {
+      return res.status(401).json({ error: "Not authenticated" });
+    }
+
+    try {
+      const restaurant = await storage.getRestaurantByUserId(req.user.id);
+      if (!restaurant) {
+        return res.status(404).json({ error: "Restaurant not found" });
+      }
+
+      const notifications = await storage.getNotificationsByRestaurant(restaurant.id);
+      res.json(notifications);
+    } catch (error) {
+      console.error("Error fetching notifications:", error);
+      res.status(500).json({ error: "Failed to fetch notifications" });
+    }
+  });
+
+  app.patch("/api/notifications/:id/read", async (req: Request, res: Response) => {
+    if (!req.user) {
+      return res.status(401).json({ error: "Not authenticated" });
+    }
+
+    try {
+      const notificationId = parseInt(req.params.id);
+      const updatedNotification = await storage.markNotificationAsRead(notificationId);
+      res.json(updatedNotification);
+    } catch (error) {
+      console.error("Error marking notification as read:", error);
+      res.status(500).json({ error: "Failed to update notification" });
+    }
+  });
+
+  app.patch("/api/notifications/mark-all-read", async (req: Request, res: Response) => {
+    if (!req.user) {
+      return res.status(401).json({ error: "Not authenticated" });
+    }
+
+    try {
+      const restaurant = await storage.getRestaurantByUserId(req.user.id);
+      if (!restaurant) {
+        return res.status(404).json({ error: "Restaurant not found" });
+      }
+
+      await storage.markAllNotificationsAsRead(restaurant.id);
+      res.json({ success: true });
+    } catch (error) {
+      console.error("Error marking all notifications as read:", error);
+      res.status(500).json({ error: "Failed to update notifications" });
+    }
+  });
+
+  app.post("/api/notifications/:id/revert", async (req: Request, res: Response) => {
+    if (!req.user) {
+      return res.status(401).json({ error: "Not authenticated" });
+    }
+
+    try {
+      const notificationId = parseInt(req.params.id);
+      const success = await storage.revertNotification(notificationId, req.user.email);
+      
+      if (success) {
+        res.json({ success: true, message: "Changes reverted successfully" });
+      } else {
+        res.status(400).json({ error: "Cannot revert this notification" });
+      }
+    } catch (error) {
+      console.error("Error reverting notification:", error);
+      res.status(500).json({ error: "Failed to revert changes" });
+    }
   });
 
   const httpServer = createServer(app);

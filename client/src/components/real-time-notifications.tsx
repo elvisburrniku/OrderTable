@@ -1,11 +1,14 @@
 import { useState, useEffect } from 'react';
 import { useWebSocket } from '@/hooks/use-websocket';
 import { useAuth } from '@/lib/auth';
-import { Bell, X, User, Calendar, Clock, Users, Phone, Mail, AlertTriangle, CheckCircle, XCircle, MessageSquare } from 'lucide-react';
+import { Bell, X, User, Calendar, Clock, Users, Phone, Mail, AlertTriangle, CheckCircle, XCircle, MessageSquare, Undo2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { format } from 'date-fns';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { apiRequest } from '@/lib/queryClient';
+import { useToast } from '@/hooks/use-toast';
 
 interface BookingNotification {
   id: string;
@@ -48,12 +51,26 @@ interface BookingNotification {
 }
 
 export function RealTimeNotifications() {
-  const { restaurant } = useAuth();
-  const [notifications, setNotifications] = useState<BookingNotification[]>([]);
+  const { restaurant, user } = useAuth();
+  const [liveNotifications, setLiveNotifications] = useState<BookingNotification[]>([]);
   const [isOpen, setIsOpen] = useState(false);
   const [unreadCount, setUnreadCount] = useState(0);
+  const queryClient = useQueryClient();
+  const { toast } = useToast();
 
   const [processingRequests, setProcessingRequests] = useState<Set<number>>(new Set());
+
+  // Fetch persistent notifications from database
+  const { data: persistentNotifications = [] } = useQuery({
+    queryKey: ['/api/notifications'],
+    enabled: !!restaurant?.id,
+    refetchInterval: 30000, // Refetch every 30 seconds
+  });
+
+  // Combine live and persistent notifications
+  const allNotifications = [...liveNotifications, ...persistentNotifications].sort(
+    (a, b) => new Date(b.timestamp || b.createdAt).getTime() - new Date(a.timestamp || a.createdAt).getTime()
+  );
 
   const { isConnected } = useWebSocket({
     restaurantId: restaurant?.id,

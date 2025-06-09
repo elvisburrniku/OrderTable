@@ -48,7 +48,9 @@ import {
   type InsertFeedback,
   type InsertTimeSlots,
   type InsertSubscriptionPlan,
-  type InsertUserSubscription
+  type InsertUserSubscription,
+  type Notification,
+  type InsertNotification
 } from "@shared/schema";
 import { neon } from "@neondatabase/serverless";
 import { drizzle } from "drizzle-orm/neon-http";
@@ -974,5 +976,62 @@ export class DatabaseStorage implements IStorage {
   async getBookingChangeRequestById(id: number): Promise<any> {
     const [request] = await this.db.select().from(bookingChangeRequests).where(eq(bookingChangeRequests.id, id));
     return request;
+  }
+
+  // Notifications
+  async getNotificationsByRestaurant(restaurantId: number): Promise<Notification[]> {
+    return await this.db.select().from(notifications)
+      .where(eq(notifications.restaurantId, restaurantId))
+      .orderBy(desc(notifications.createdAt));
+  }
+
+  async createNotification(notification: InsertNotification): Promise<Notification> {
+    const [newNotification] = await this.db.insert(notifications).values(notification).returning();
+    return newNotification;
+  }
+
+  async markNotificationAsRead(id: number): Promise<Notification | undefined> {
+    const [updated] = await this.db.update(notifications)
+      .set({ isRead: true })
+      .where(eq(notifications.id, id))
+      .returning();
+    return updated;
+  }
+
+  async markAllNotificationsAsRead(restaurantId: number): Promise<void> {
+    await this.db.update(notifications)
+      .set({ isRead: true })
+      .where(and(eq(notifications.restaurantId, restaurantId), eq(notifications.isRead, false)));
+  }
+
+  async revertNotification(notificationId: number, userEmail: string): Promise<boolean> {
+    const notification = await this.db.select().from(notifications)
+      .where(eq(notifications.id, notificationId))
+      .limit(1);
+    
+    if (!notification[0] || !notification[0].canRevert || notification[0].isReverted) {
+      return false;
+    }
+
+    const notif = notification[0];
+    
+    // Revert the booking change if original data exists
+    if (notif.bookingId && notif.originalData) {
+      const originalData = notif.originalData as any;
+      await this.db.update(bookings)
+        .set(originalData)
+        .where(eq(bookings.id, notif.bookingId));
+    }
+
+    // Mark notification as reverted
+    await this.db.update(notifications)
+      .set({ 
+        isReverted: true, 
+        revertedBy: userEmail, 
+        revertedAt: new Date() 
+      })
+      .where(eq(notifications.id, notificationId));
+
+    return true;
   }
 }
