@@ -9,10 +9,10 @@ export class BookingHash {
    * @param bookingId - The booking ID
    * @param tenantId - The tenant ID
    * @param restaurantId - The restaurant ID
-   * @param action - The action type ('cancel', 'change', or 'manage')
+   * @param action - The action type ('cancel', 'change', 'manage', 'approve', or 'reject')
    * @returns A secure hash string
    */
-  static generateHash(bookingId: number, tenantId: number, restaurantId: number, action: 'cancel' | 'change' | 'manage'): string {
+  static generateHash(bookingId: number, tenantId: number, restaurantId: number, action: 'cancel' | 'change' | 'manage' | 'approve' | 'reject'): string {
     const data = `${bookingId}-${tenantId}-${restaurantId}-${action}`;
     const hash = crypto.createHmac('sha256', SECRET_KEY).update(data).digest('hex');
     console.log(`Generated hash for data: ${data} -> ${hash}`);
@@ -25,10 +25,10 @@ export class BookingHash {
    * @param bookingId - The booking ID
    * @param tenantId - The tenant ID
    * @param restaurantId - The restaurant ID
-   * @param action - The action type ('cancel', 'change', or 'manage')
+   * @param action - The action type ('cancel', 'change', 'manage', 'approve', or 'reject')
    * @returns True if hash is valid, false otherwise
    */
-  static verifyHash(hash: string, bookingId: number, tenantId: number, restaurantId: number, action: 'cancel' | 'change' | 'manage'): boolean {
+  static verifyHash(hash: string, bookingId: number, tenantId: number, restaurantId: number, action: 'cancel' | 'change' | 'manage' | 'approve' | 'reject'): boolean {
     const expectedHash = this.generateHash(bookingId, tenantId, restaurantId, action);
     console.log(`Verifying hash: ${hash} vs expected: ${expectedHash}`);
     try {
