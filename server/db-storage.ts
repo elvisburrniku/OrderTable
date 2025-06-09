@@ -205,7 +205,13 @@ export class DatabaseStorage implements IStorage {
         address: "123 Main Street, Copenhagen, Denmark",
         phone: "+45 12 34 56 78",
         email: "info@demorestaurant.com",
-        description: "A modern restaurant with exceptional dining experience"
+        description: "A modern restaurant with exceptional dining experience",
+        emailSettings: JSON.stringify({
+          enabled: true,
+          confirmationTemplate: "default",
+          reminderEnabled: true,
+          reminderHours: 2
+        })
       }).returning();
 
       // Create demo tables
