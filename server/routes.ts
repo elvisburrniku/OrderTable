@@ -175,7 +175,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Auth routes
   app.post("/api/auth/login", async (req, res) => {
     try {
-      const { email, password } = loginSchema.parse(req.body);
+      // Validate input using Zod schema
+      const validationResult = loginSchema.safeParse(req.body);
+      if (!validationResult.success) {
+        return res.status(400).json({ 
+          message: "Invalid input format",
+          errors: validationResult.error.errors
+        });
+      }
+
+      const { email, password } = validationResult.data;
 
       const user = await storage.getUserByEmail(email);
       if (!user) {
@@ -207,7 +216,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
         restaurant: restaurant ? { ...restaurant, tenantId: restaurant.tenantId || tenantUser.id } : null
       });
     } catch (error) {
-      res.status(400).json({ message: "Invalid request data" });
+      console.error("Login error:", error);
+      res.status(500).json({ message: "Server error during login" });
     }
   });
 
