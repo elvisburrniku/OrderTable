@@ -320,7 +320,8 @@ export function RealTimeNotifications() {
     
     switch (type) {
       case 'new_booking':
-        return `${booking?.customerName} - ${booking?.guestCount} guests on ${format(new Date(booking?.bookingDate), 'MMM dd')} at ${booking?.startTime}`;
+        if (!booking?.customerName || !booking?.bookingDate) return 'New booking received';
+        return `${booking.customerName} - ${booking.guestCount || 0} guests on ${format(new Date(booking.bookingDate), 'MMM dd')} at ${booking.startTime || 'TBD'}`;
       case 'booking_changed':
         const changedFields = Object.keys(changes || {}).map(key => {
           switch (key) {
@@ -330,17 +331,18 @@ export function RealTimeNotifications() {
             default: return key;
           }
         }).join(', ');
-        return `${booking?.customerName} changed ${changedFields}`;
+        return `${booking?.customerName || 'Customer'} changed ${changedFields || 'booking details'}`;
       case 'booking_cancelled':
-        return `${booking?.customerName} cancelled their ${format(new Date(booking?.bookingDate), 'MMM dd')} booking`;
+        if (!booking?.customerName || !booking?.bookingDate) return 'Booking cancelled';
+        return `${booking.customerName} cancelled their ${format(new Date(booking.bookingDate), 'MMM dd')} booking`;
       case 'booking_change_request':
         const requestedChanges = [];
         if (changeRequest?.requestedDate) requestedChanges.push(`date to ${format(new Date(changeRequest.requestedDate), 'MMM dd')}`);
         if (changeRequest?.requestedTime) requestedChanges.push(`time to ${changeRequest.requestedTime}`);
         if (changeRequest?.requestedGuestCount) requestedChanges.push(`party size to ${changeRequest.requestedGuestCount}`);
-        return `${booking?.customerName} wants to change ${requestedChanges.join(', ')}`;
+        return `${booking?.customerName || 'Customer'} wants to change ${requestedChanges.join(', ') || 'booking details'}`;
       case 'change_request_responded':
-        return `Change request ${approved ? 'approved' : 'rejected'} for ${booking?.customerName}`;
+        return `Change request ${approved ? 'approved' : 'rejected'} for ${booking?.customerName || 'customer'}`;
       default:
         return 'New notification';
     }
@@ -494,6 +496,7 @@ export function RealTimeNotifications() {
                         {notification.type === 'booking_changed' && 
                          notification.originalData && 
                          !notification.reverted &&
+                         notification.booking?.id &&
                          !processingRequests.has(notification.booking.id) && (
                           <div className="mt-3">
                             <Button
@@ -501,7 +504,7 @@ export function RealTimeNotifications() {
                               variant="outline"
                               onClick={(e) => {
                                 e.stopPropagation();
-                                handleRevertChanges(notification.booking.id, notification.originalData);
+                                handleRevertChanges(notification.booking?.id, notification.originalData);
                               }}
                               className="text-orange-600 border-orange-300 hover:bg-orange-50"
                             >
