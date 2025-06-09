@@ -157,6 +157,15 @@ export function RealTimeNotifications() {
     (a, b) => new Date(b.timestamp || b.createdAt).getTime() - new Date(a.timestamp || a.createdAt).getTime()
   );
 
+  // Update unread count when persistent notifications change
+  useEffect(() => {
+    if (persistentNotifications) {
+      const unreadPersistent = persistentNotifications.filter(n => !n.isRead).length;
+      const unreadLive = liveNotifications.filter(n => !n.read).length;
+      setUnreadCount(unreadPersistent + unreadLive);
+    }
+  }, [persistentNotifications, liveNotifications]);
+
   // Mark notification as read mutation
   const markAsReadMutation = useMutation({
     mutationFn: (notificationId: number) => apiRequest(`/api/tenants/${restaurant?.tenantId}/restaurants/${restaurant?.id}/notifications/${notificationId}/read`, {
@@ -267,7 +276,7 @@ export function RealTimeNotifications() {
       );
       
       // Update unread count
-      if (!notification.read && !notification.isRead) {
+      if (!notification.isRead) {
         setUnreadCount(prev => Math.max(0, prev - 1));
       }
     } else {
@@ -640,7 +649,7 @@ export function RealTimeNotifications() {
                   
                   const isCollapsed = collapsedGroups.has(groupType);
                   const GroupIcon = getGroupIcon(groupType);
-                  const unreadInGroup = notifications.filter(n => !n.read && !n.isRead).length;
+                  const unreadInGroup = notifications.filter(n => !n.isRead).length;
                   
                   return (
                     <div key={groupType} className="border-b border-gray-100">
@@ -679,7 +688,7 @@ export function RealTimeNotifications() {
                   <div
                     key={notification.id}
                     className={`p-4 border-b border-gray-200 hover:bg-gray-50 cursor-pointer ${
-                      (!notification.read && !notification.isRead) ? 'bg-blue-50 border-l-4 border-l-blue-500' : ''
+                      !notification.isRead ? 'bg-blue-50 border-l-4 border-l-blue-500' : ''
                     } ${
                       notification.type === 'booking_change_request' && notification.changeRequest?.status === 'pending' 
                         ? 'bg-yellow-50 border-l-4 border-l-yellow-500' : ''
