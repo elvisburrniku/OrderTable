@@ -2962,6 +2962,57 @@ app.put("/api/tenants/:tenantId/bookings/:id", validateTenant, async (req, res) 
     }
   });
 
+  // Contact form submission endpoint
+  app.post("/api/contact", async (req, res) => {
+    try {
+      const contactSchema = z.object({
+        name: z.string().min(2, "Name must be at least 2 characters"),
+        email: z.string().email("Please enter a valid email address"),
+        company: z.string().optional(),
+        phone: z.string().optional(),
+        subject: z.string().min(5, "Subject must be at least 5 characters"),
+        message: z.string().min(10, "Message must be at least 10 characters"),
+        category: z.enum(["general", "booking-channels", "reservation-software", "restaurants", "products", "partners"])
+      });
+
+      const validatedData = contactSchema.parse(req.body);
+
+      // Log the contact form submission
+      console.log('Contact form submission:', {
+        name: validatedData.name,
+        email: validatedData.email,
+        company: validatedData.company,
+        subject: validatedData.subject,
+        category: validatedData.category,
+        timestamp: new Date().toISOString()
+      });
+
+      // Send email notification if email service is available
+      if (emailService) {
+        try {
+          await emailService.sendContactFormNotification(validatedData);
+        } catch (emailError) {
+          console.error('Failed to send contact form email:', emailError);
+          // Continue with success response even if email fails
+        }
+      }
+
+      res.json({ 
+        success: true, 
+        message: "Contact form submitted successfully" 
+      });
+    } catch (error) {
+      console.error("Error processing contact form:", error);
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({ 
+          message: "Validation error", 
+          errors: error.errors 
+        });
+      }
+      res.status(500).json({ message: "Internal server error" });
+    }
+  });
+
   // Stripe webhook to handle successful payments
   app.post("/api/stripe-webhook", async (req, res) => {
     const sig = req.headers['stripe-signature'];

@@ -510,6 +510,147 @@ export class BrevoEmailService {
     }
   }
 
+  async sendContactFormNotification(contactData: any) {
+    const sendSmtpEmail = new SendSmtpEmail();
+
+    sendSmtpEmail.subject = `New Contact Form Submission: ${contactData.subject}`;
+    sendSmtpEmail.htmlContent = `
+      <!DOCTYPE html>
+      <html>
+        <head>
+          <meta charset="utf-8">
+          <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        </head>
+        <body style="margin: 0; padding: 20px; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Arial, sans-serif; background-color: #f5f5f5;">
+          <div style="max-width: 600px; margin: 0 auto; background-color: white; border-radius: 8px; overflow: hidden; box-shadow: 0 2px 10px rgba(0,0,0,0.1);">
+            
+            <!-- Header -->
+            <div style="background-color: #007bff; padding: 30px 30px 20px; text-align: center;">
+              <h1 style="margin: 0; font-size: 28px; font-weight: 600; color: white; letter-spacing: -0.5px;">New Contact Form Submission</h1>
+            </div>
+
+            <!-- Content -->
+            <div style="padding: 30px;">
+              <div style="background-color: #f8f9fa; border-radius: 8px; padding: 25px; margin: 25px 0;">
+                <h3 style="margin: 0 0 20px; font-size: 18px; color: #333; font-weight: 600;">Contact Details</h3>
+                
+                <div style="display: grid; gap: 15px;">
+                  <div style="display: flex; justify-content: space-between; padding: 10px 0; border-bottom: 1px solid #e9ecef;">
+                    <span style="color: #666; font-weight: 500;">Name:</span>
+                    <span style="color: #333; font-weight: 600;">${contactData.name}</span>
+                  </div>
+                  
+                  <div style="display: flex; justify-content: space-between; padding: 10px 0; border-bottom: 1px solid #e9ecef;">
+                    <span style="color: #666; font-weight: 500;">Email:</span>
+                    <span style="color: #333; font-weight: 600;">${contactData.email}</span>
+                  </div>
+                  
+                  ${contactData.company ? `
+                    <div style="display: flex; justify-content: space-between; padding: 10px 0; border-bottom: 1px solid #e9ecef;">
+                      <span style="color: #666; font-weight: 500;">Company:</span>
+                      <span style="color: #333; font-weight: 600;">${contactData.company}</span>
+                    </div>
+                  ` : ''}
+                  
+                  ${contactData.phone ? `
+                    <div style="display: flex; justify-content: space-between; padding: 10px 0; border-bottom: 1px solid #e9ecef;">
+                      <span style="color: #666; font-weight: 500;">Phone:</span>
+                      <span style="color: #333; font-weight: 600;">${contactData.phone}</span>
+                    </div>
+                  ` : ''}
+                  
+                  <div style="display: flex; justify-content: space-between; padding: 10px 0; border-bottom: 1px solid #e9ecef;">
+                    <span style="color: #666; font-weight: 500;">Category:</span>
+                    <span style="color: #333; font-weight: 600;">${contactData.category}</span>
+                  </div>
+                  
+                  <div style="display: flex; justify-content: space-between; padding: 10px 0; border-bottom: 1px solid #e9ecef;">
+                    <span style="color: #666; font-weight: 500;">Subject:</span>
+                    <span style="color: #333; font-weight: 600;">${contactData.subject}</span>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Message -->
+              <div style="background-color: #e3f2fd; border-radius: 8px; padding: 25px; margin: 25px 0;">
+                <h3 style="margin: 0 0 15px; font-size: 18px; color: #333; font-weight: 600;">Message</h3>
+                <p style="margin: 0; color: #333; line-height: 1.6; white-space: pre-wrap;">${contactData.message}</p>
+              </div>
+
+              <div style="text-align: center; margin-top: 30px; padding-top: 20px; border-top: 1px solid #e5e5e5;">
+                <p style="margin: 0; color: #666; font-size: 14px;">
+                  Please respond to this inquiry within 24 hours for best customer experience.
+                </p>
+              </div>
+            </div>
+          </div>
+        </body>
+      </html>
+    `;
+
+    sendSmtpEmail.sender = {
+      name: "MozRest Contact Form",
+      email: process.env.BREVO_SENDER_EMAIL || "no-reply@mozrest.com"
+    };
+
+    sendSmtpEmail.to = [{
+      email: process.env.CONTACT_NOTIFICATION_EMAIL || "support@mozrest.com",
+      name: "MozRest Support"
+    }];
+
+    // Also send auto-reply to customer
+    const autoReply = new SendSmtpEmail();
+    autoReply.subject = "Thank you for contacting MozRest";
+    autoReply.htmlContent = `
+      <!DOCTYPE html>
+      <html>
+        <body style="margin: 0; padding: 20px; font-family: Arial, sans-serif; background-color: #f5f5f5;">
+          <div style="max-width: 600px; margin: 0 auto; background-color: white; border-radius: 8px; padding: 30px;">
+            <h2 style="color: #007bff; margin-bottom: 20px;">Thank you for contacting us!</h2>
+            
+            <p>Hi ${contactData.name},</p>
+            
+            <p>We've received your message regarding: <strong>${contactData.subject}</strong></p>
+            
+            <p>Our team will review your inquiry and respond within 24 hours. If your matter is urgent, please call us directly.</p>
+            
+            <div style="background-color: #f8f9fa; padding: 20px; border-radius: 8px; margin: 20px 0;">
+              <h3 style="margin: 0 0 10px;">Your message:</h3>
+              <p style="margin: 0; color: #666; font-style: italic;">"${contactData.message}"</p>
+            </div>
+            
+            <p>Best regards,<br>The MozRest Team</p>
+          </div>
+        </body>
+      </html>
+    `;
+
+    autoReply.sender = {
+      name: "MozRest Support",
+      email: process.env.BREVO_SENDER_EMAIL || "no-reply@mozrest.com"
+    };
+
+    autoReply.to = [{
+      email: contactData.email,
+      name: contactData.name
+    }];
+
+    try {
+      // Send notification to support team
+      const supportResult = await this.apiInstance.sendTransacEmail(sendSmtpEmail);
+      console.log('Contact form notification sent to support:', supportResult);
+
+      // Send auto-reply to customer
+      const customerResult = await this.apiInstance.sendTransacEmail(autoReply);
+      console.log('Contact form auto-reply sent to customer:', customerResult);
+
+      return { supportResult, customerResult };
+    } catch (error) {
+      console.error('Error sending contact form emails:', error);
+      throw error;
+    }
+  }
+
   async sendRestaurantNotification(restaurantEmail: string, bookingDetails: any) {
     const sendSmtpEmail = new SendSmtpEmail();
 

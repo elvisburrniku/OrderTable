@@ -56,6 +56,7 @@ import Help from "./pages/help";
 import CustomerFeedback from "./pages/customer-feedback";
 import TableFeedback from "./pages/table-feedback";
 import FeedbackResponsesPopup from "./pages/feedback-responses-popup";
+import Contact from "./pages/contact";
 
 function App() {
   return (
@@ -114,6 +115,7 @@ function App() {
             <Route path="/:tenantId/help" component={Help} />
             <Route path="/feedback-responses" component={FeedbackResponses} />
             <Route path="/feedback-responses-popup" component={FeedbackResponsesPopup} />
+            <Route path="/contact" component={Contact} />
             <Route component={NotFound} />
           </Switch>
           <Toaster />
