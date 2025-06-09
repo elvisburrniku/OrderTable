@@ -354,7 +354,21 @@ export class BrevoEmailService {
     const baseUrl = process.env.APP_BASE_URL || process.env.REPLIT_DEV_DOMAIN 
       ? `https://${process.env.REPLIT_DEV_DOMAIN}` 
       : 'http://localhost:5000';
-    const cancelHash = BookingHash.generateHash(bookingDetails.id, bookingDetails.tenantId, bookingDetails.restaurantId, 'cancel');
+    
+    // Use stored management hash for cancel URL
+    let cancelUrl = '';
+    if (bookingDetails.managementHash) {
+      cancelUrl = `${baseUrl}/booking-manage/${bookingDetails.id}?action=cancel&hash=${bookingDetails.managementHash}`;
+    } else {
+      // Fallback to generating new hash
+      const cancelHash = BookingHash.generateHash(
+        bookingDetails.id,
+        bookingDetails.tenantId,
+        bookingDetails.restaurantId,
+        'cancel'
+      );
+      cancelUrl = `${baseUrl}/booking-manage/${bookingDetails.id}?action=cancel&hash=${cancelHash}`;
+    }
 
     sendSmtpEmail.subject = approved ? "Booking Changes Approved" : "Booking Changes Rejected";
     sendSmtpEmail.htmlContent = `
@@ -426,7 +440,7 @@ export class BrevoEmailService {
 
                 <!-- Option to Cancel -->
                 <div style="text-align: center; margin: 30px 0;">
-                  <a href="${baseUrl}/booking-manage/${bookingDetails.id}?action=cancel&hash=${cancelHash}" style="background-color: #dc3545; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; font-weight: 600;">Cancel Booking</a>
+                  <a href="${cancelUrl}" style="background-color: #dc3545; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; font-weight: 600;">Cancel Booking</a>
                 </div>
               `}
 
