@@ -62,9 +62,8 @@ export function RealTimeNotifications() {
 
   // Fetch persistent notifications from database
   const { data: persistentNotifications = [] } = useQuery({
-    queryKey: ['/api/tenants', restaurant?.tenantId, 'restaurants', restaurant?.id, 'notifications'],
-    queryFn: () => apiRequest(`/api/tenants/${restaurant?.tenantId}/restaurants/${restaurant?.id}/notifications`),
-    enabled: !!restaurant?.id && !!restaurant?.tenantId,
+    queryKey: ['/api/notifications'],
+    enabled: !!restaurant?.id,
     refetchInterval: 30000, // Refetch every 30 seconds
   });
 
@@ -79,7 +78,7 @@ export function RealTimeNotifications() {
       method: 'PATCH',
     }),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['/api/tenants', restaurant?.tenantId, 'restaurants', restaurant?.id, 'notifications'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/notifications'] });
     },
   });
 

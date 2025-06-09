@@ -2974,8 +2974,28 @@ app.put("/api/tenants/:tenantId/bookings/:id", validateTenant, async (req, res) 
     res.json({ received: true });
   });
 
-  // Tenant-scoped Notifications API
-  app.get("/api/tenants/:tenantId/restaurants/:restaurantId/notifications", validateTenant, attachUser, async (req: Request, res: Response) => {
+  // Working Notifications API (temporary fallback)
+  app.get("/api/notifications", attachUser, async (req: Request, res: Response) => {
+    if (!req.user) {
+      return res.status(401).json({ error: "Not authenticated" });
+    }
+
+    try {
+      const restaurant = await storage.getRestaurantByUserId(req.user.id);
+      if (!restaurant) {
+        return res.status(404).json({ error: "Restaurant not found" });
+      }
+
+      const notifications = await storage.getNotificationsByRestaurant(restaurant.id);
+      res.json(notifications);
+    } catch (error) {
+      console.error("Error fetching notifications:", error);
+      res.status(500).json({ error: "Failed to fetch notifications" });
+    }
+  });
+
+  // Tenant-scoped Notifications API (preferred)
+  app.get("/api/tenants/:tenantId/restaurants/:restaurantId/notifications", attachUser, validateTenant, async (req: Request, res: Response) => {
     if (!req.user) {
       return res.status(401).json({ error: "Not authenticated" });
     }
