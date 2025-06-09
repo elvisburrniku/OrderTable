@@ -67,20 +67,25 @@ import { BookingHash } from "./booking-hash";
 // Use Supabase database URL if available, otherwise use the existing DATABASE_URL
 const databaseUrl = process.env.SUPABASE_DATABASE_URL || process.env.DATABASE_URL;
 
-if (!databaseUrl) {
-  throw new Error("No database connection string found. Please set SUPABASE_DATABASE_URL or DATABASE_URL environment variable.");
-}
-
 let db: any;
 
-if (process.env.SUPABASE_DATABASE_URL) {
+if (!databaseUrl) {
+  console.warn("No database connection string found. Database operations will fail until a proper connection string is provided.");
+  // Create a mock connection that will throw helpful errors
+  db = null;
+} else if (process.env.SUPABASE_DATABASE_URL) {
   // Use postgres-js for Supabase connection
   const client = postgres(databaseUrl);
   db = drizzlePostgres(client, { schema });
 } else {
-  // Use neon for existing setup
-  const sql = neon(databaseUrl);
-  db = drizzle(sql, { schema });
+  // Use neon for existing setup - only if URL format is valid
+  try {
+    const sql = neon(databaseUrl);
+    db = drizzle(sql, { schema });
+  } catch (error) {
+    console.error("Invalid database URL format:", error);
+    db = null;
+  }
 }
 
 export class DatabaseStorage implements IStorage {

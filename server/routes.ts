@@ -38,6 +38,12 @@ try {
 // Initialize webhook service
 const webhookService = new WebhookService(storage);
 
+// Utility function to convert time string to minutes
+function timeToMinutes(timeStr: string): number {
+  const [hours, minutes] = timeStr.split(':').map(Number);
+  return hours * 60 + minutes;
+}
+
 // WebSocket connections store
 const wsConnections = new Map<string, Set<WebSocket>>();
 
@@ -4443,11 +4449,6 @@ app.put("/api/tenants/:tenantId/bookings/:id", validateTenant, async (req, res) 
       const existingBookings = await storage.getBookingsByDate(restaurantId, dateStr);
       const activeBookings = existingBookings.filter(booking => booking.status !== 'cancelled');
 
-      // Helper function to convert time to minutes
-      const timeToMinutes = (timeStr: string): number => {
-        const [hours, minutes] = timeStr.split(':').map(Number);
-        return hours * 60 + minutes;
-      };
 
       // Generate time slots based on actual opening hours (considering special periods)
       const openTimeMinutes = timeToMinutes(actualOpenTime);
@@ -4587,10 +4588,6 @@ app.put("/api/tenants/:tenantId/bookings/:id", validateTenant, async (req, res) 
       }
 
       // Validate booking time against actual opening hours (including special periods)
-      const timeToMinutes = (timeStr: string): number => {
-        const [hours, minutes] = timeStr.split(':').map(Number);
-        return hours * 60 + minutes;
-      };
 
       const bookingTimeMinutes = timeToMinutes(bookingData.startTime);
       const openTimeMinutes = timeToMinutes(actualOpenTime);
@@ -4637,11 +4634,6 @@ app.put("/api/tenants/:tenantId/bookings/:id", validateTenant, async (req, res) 
       const existingBookings = await storage.getBookingsByDate(restaurantId, dateStr);
       const activeBookings = existingBookings.filter(booking => booking.status !== 'cancelled');
 
-      // Helper function to convert time to minutes
-      const timeToMinutes = (timeStr: string): number => {
-        const [hours, minutes] = timeStr.split(':').map(Number);
-        return hours * 60 + minutes;
-      };
 
       // Find the first available table
       const bookingStartMinutes = timeToMinutes(bookingData.startTime);
