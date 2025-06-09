@@ -3024,6 +3024,67 @@ app.put("/api/tenants/:tenantId/bookings/:id", validateTenant, async (req, res) 
     }
   });
 
+  // Mark notification as read (tenant-scoped)
+  app.patch("/api/tenants/:tenantId/restaurants/:restaurantId/notifications/:id/read", attachUser, validateTenant, async (req: Request, res: Response) => {
+    if (!req.user) {
+      return res.status(401).json({ error: "Not authenticated" });
+    }
+
+    try {
+      const notificationId = parseInt(req.params.id);
+      const restaurantId = parseInt(req.params.restaurantId);
+      const tenantId = parseInt(req.params.tenantId);
+
+      // Verify user has access to this restaurant
+      const restaurant = await storage.getRestaurantById(restaurantId);
+      if (!restaurant || restaurant.tenantId !== tenantId) {
+        return res.status(404).json({ error: "Restaurant not found" });
+      }
+
+      // Additional security: verify user owns this restaurant
+      const userRestaurant = await storage.getRestaurantByUserId(req.user.id);
+      if (!userRestaurant || userRestaurant.id !== restaurantId) {
+        return res.status(403).json({ error: "Access denied" });
+      }
+
+      const updatedNotification = await storage.markNotificationAsRead(notificationId);
+      res.json(updatedNotification);
+    } catch (error) {
+      console.error("Error marking notification as read:", error);
+      res.status(500).json({ error: "Failed to update notification" });
+    }
+  });
+
+  // Mark all notifications as read (tenant-scoped)
+  app.patch("/api/tenants/:tenantId/restaurants/:restaurantId/notifications/mark-all-read", attachUser, validateTenant, async (req: Request, res: Response) => {
+    if (!req.user) {
+      return res.status(401).json({ error: "Not authenticated" });
+    }
+
+    try {
+      const restaurantId = parseInt(req.params.restaurantId);
+      const tenantId = parseInt(req.params.tenantId);
+
+      // Verify user has access to this restaurant
+      const restaurant = await storage.getRestaurantById(restaurantId);
+      if (!restaurant || restaurant.tenantId !== tenantId) {
+        return res.status(404).json({ error: "Restaurant not found" });
+      }
+
+      // Additional security: verify user owns this restaurant
+      const userRestaurant = await storage.getRestaurantByUserId(req.user.id);
+      if (!userRestaurant || userRestaurant.id !== restaurantId) {
+        return res.status(403).json({ error: "Access denied" });
+      }
+
+      await storage.markAllNotificationsAsRead(restaurantId);
+      res.json({ success: true });
+    } catch (error) {
+      console.error("Error marking all notifications as read:", error);
+      res.status(500).json({ error: "Failed to update notifications" });
+    }
+  });
+
   app.patch("/api/notifications/:id/read", attachUser, async (req: Request, res: Response) => {
     if (!req.user) {
       return res.status(401).json({ error: "Not authenticated" });

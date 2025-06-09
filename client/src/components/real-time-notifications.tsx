@@ -159,7 +159,7 @@ export function RealTimeNotifications() {
 
   // Mark notification as read mutation
   const markAsReadMutation = useMutation({
-    mutationFn: (notificationId: number) => apiRequest(`/api/notifications/${notificationId}/read`, {
+    mutationFn: (notificationId: number) => apiRequest(`/api/tenants/${restaurant?.tenantId}/restaurants/${restaurant?.id}/notifications/${notificationId}/read`, {
       method: 'PATCH',
     }),
     onSuccess: () => {
@@ -169,7 +169,7 @@ export function RealTimeNotifications() {
 
   // Mark all notifications as read mutation
   const markAllAsReadMutation = useMutation({
-    mutationFn: () => apiRequest('/api/notifications/mark-all-read', {
+    mutationFn: () => apiRequest(`/api/tenants/${restaurant?.tenantId}/restaurants/${restaurant?.id}/notifications/mark-all-read`, {
       method: 'PATCH',
     }),
     onSuccess: () => {
