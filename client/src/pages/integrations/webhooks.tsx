@@ -7,8 +7,16 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { ArrowLeft, Plus, Save, AlertCircle } from 'lucide-react';
 import { Alert, AlertDescription } from '@/components/ui/alert';
+
+const WEBHOOK_EVENTS = [
+  { value: 'booking.created', label: 'Booking New' },
+  { value: 'booking.updated', label: 'Booking Updated' },
+  { value: 'booking.deleted', label: 'Booking Deleted' },
+  { value: 'booking.cancelled', label: 'Booking Cancelled' },
+] as const;
 
 interface Webhook {
   id: string;
@@ -249,13 +257,22 @@ export default function WebhooksIntegration() {
                   </div>
                   {webhooks.map((webhook) => (
                     <div key={webhook.id} className="grid grid-cols-2 gap-4 items-center">
-                      <Input
+                      <Select
                         value={webhook.event}
-                        onChange={(e) => updateWebhook(webhook.id, 'event', e.target.value)}
-                        placeholder="booking.created, booking.updated, booking.cancelled"
-                        className="bg-blue-50"
+                        onValueChange={(value) => updateWebhook(webhook.id, 'event', value)}
                         disabled={!isWebhooksEnabled}
-                      />
+                      >
+                        <SelectTrigger className="bg-blue-50">
+                          <SelectValue placeholder="Select an event type" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {WEBHOOK_EVENTS.map((event) => (
+                            <SelectItem key={event.value} value={event.value}>
+                              {event.label}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
                       <div className="flex space-x-2">
                         <Input
                           value={webhook.url}
