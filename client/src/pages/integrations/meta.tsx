@@ -1,18 +1,76 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useAuth } from '@/lib/auth';
 import { useTenant } from '@/lib/tenant';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useToast } from '@/hooks/use-toast';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Switch } from '@/components/ui/switch';
 import { Button } from '@/components/ui/button';
 import { ArrowLeft } from 'lucide-react';
 
 export default function MetaIntegration() {
-  const { user } = useAuth();
+  const { user, restaurant } = useAuth();
   const { tenant } = useTenant();
+  const { toast } = useToast();
+  const queryClient = useQueryClient();
   const [isActivated, setIsActivated] = useState(false);
 
+  // Fetch existing configuration
+  const { data: config, isLoading } = useQuery({
+    queryKey: [`/api/tenants/${tenant?.id}/restaurants/${restaurant?.id}/integrations/meta`],
+    enabled: !!(tenant?.id && restaurant?.id),
+  });
+
+  // Load saved configuration on mount
+  useEffect(() => {
+    if (config) {
+      setIsActivated(config.isEnabled || false);
+    }
+  }, [config]);
+
+  // Mutation to save configuration
+  const saveConfigMutation = useMutation({
+    mutationFn: async (configData: any) => {
+      const response = await fetch(`/api/tenants/${tenant?.id}/restaurants/${restaurant?.id}/integrations/meta`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(configData),
+      });
+      
+      if (!response.ok) {
+        throw new Error('Failed to save Meta integration configuration');
+      }
+      
+      return response.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({
+        queryKey: [`/api/tenants/${tenant?.id}/restaurants/${restaurant?.id}/integrations/meta`]
+      });
+      queryClient.invalidateQueries({
+        queryKey: [`/api/tenants/${tenant?.id}/restaurants/${restaurant?.id}/integrations`]
+      });
+      toast({
+        title: "Meta integration updated",
+        description: "Your Meta integration settings have been saved successfully.",
+      });
+    },
+    onError: () => {
+      toast({
+        title: "Error",
+        description: "Failed to save Meta integration settings. Please try again.",
+        variant: "destructive",
+      });
+    },
+  });
+
   const handleSave = () => {
-    console.log('Saving Meta integration settings:', { isActivated });
+    saveConfigMutation.mutate({
+      isEnabled: isActivated,
+      configuration: {}
+    });
   };
 
   if (!user || !tenant) {

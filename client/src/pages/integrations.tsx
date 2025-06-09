@@ -261,59 +261,69 @@ export default function Integrations() {
                     <div className="p-4 space-y-3">
                       {integrations
                         .filter(integration => integration.category === category)
-                        .map(integration => (
-                          <div key={integration.id} className="bg-white rounded-lg border hover:shadow-md transition-shadow">
-                            <a 
-                              href={`/${tenant.id}/integrations/${integration.id}`}
-                              className="block p-4"
-                            >
-                              <div className="flex items-center justify-between">
-                                <div className="flex items-center space-x-3">
-                                  <div className="w-10 h-10 bg-gray-100 rounded-lg flex items-center justify-center text-lg">
-                                    {integration.icon}
-                                  </div>
-                                  <div className="flex-1">
-                                    <div className="flex items-center space-x-2">
-                                      <h4 className="font-medium text-gray-900 hover:text-blue-600">{integration.name}</h4>
-                                      {integration.price && (
-                                        <Badge variant="outline" className="text-xs">
-                                          {integration.price}
-                                        </Badge>
-                                      )}
+                        .map(integration => {
+                          const mergedIntegration = mergedIntegrations.find(mi => mi.id === integration.id) || integration;
+                          return (
+                            <div key={integration.id} className="bg-white rounded-lg border hover:shadow-md transition-shadow">
+                              <div className="p-4">
+                                <div className="flex items-center justify-between">
+                                  <div className="flex items-center space-x-3">
+                                    <div className="w-10 h-10 bg-gray-100 rounded-lg flex items-center justify-center text-lg">
+                                      {integration.icon}
                                     </div>
-                                    <p className="text-sm text-gray-600 mt-1">{integration.description}</p>
-                                    <div className="flex flex-wrap gap-1 mt-2">
-                                      {integration.features.slice(0, 2).map((feature, index) => (
-                                        <span key={index} className="text-xs bg-gray-100 text-gray-600 px-2 py-1 rounded">
-                                          {feature}
-                                        </span>
-                                      ))}
-                                      {integration.features.length > 2 && (
-                                        <span className="text-xs text-gray-500">
-                                          +{integration.features.length - 2} more
-                                        </span>
-                                      )}
-                                    </div>
-                                  </div>
-                                </div>
-                                
-                                <div className="flex items-center space-x-3">
-                                  <div className="flex items-center space-x-2">
-                                    {integration.connected ? (
-                                      <div className="flex items-center space-x-1">
-                                        <Check className="w-4 h-4 text-green-600" />
-                                        <span className="text-sm text-green-600 font-medium">Connected</span>
+                                    <div className="flex-1">
+                                      <div className="flex items-center space-x-2">
+                                        <h4 className="font-medium text-gray-900">{integration.name}</h4>
+                                        {integration.price && (
+                                          <Badge variant="outline" className="text-xs">
+                                            {integration.price}
+                                          </Badge>
+                                        )}
                                       </div>
-                                    ) : (
-                                      <span className="text-sm text-gray-500">Disconnected</span>
-                                    )}
+                                      <p className="text-sm text-gray-600 mt-1">{integration.description}</p>
+                                      <div className="flex flex-wrap gap-1 mt-2">
+                                        {integration.features.slice(0, 2).map((feature, index) => (
+                                          <span key={index} className="text-xs bg-gray-100 text-gray-600 px-2 py-1 rounded">
+                                            {feature}
+                                          </span>
+                                        ))}
+                                        {integration.features.length > 2 && (
+                                          <span className="text-xs text-gray-500">
+                                            +{integration.features.length - 2} more
+                                          </span>
+                                        )}
+                                      </div>
+                                    </div>
                                   </div>
-                                  <ChevronRight className="w-5 h-5 text-gray-400" />
+                                  
+                                  <div className="flex items-center space-x-3">
+                                    <div className="flex items-center space-x-2">
+                                      {mergedIntegration.connected ? (
+                                        <div className="flex items-center space-x-1">
+                                          <Check className="w-4 h-4 text-green-600" />
+                                          <span className="text-sm text-green-600 font-medium">Connected</span>
+                                        </div>
+                                      ) : (
+                                        <span className="text-sm text-gray-500">Disconnected</span>
+                                      )}
+                                    </div>
+                                    <Switch
+                                      checked={mergedIntegration.connected}
+                                      onCheckedChange={() => toggleIntegration(integration.id)}
+                                      disabled={saveConfigMutation.isPending}
+                                    />
+                                    <a 
+                                      href={`/${tenant.id}/integrations/${integration.id}`}
+                                      className="text-gray-400 hover:text-gray-600"
+                                    >
+                                      <Settings className="w-4 h-4" />
+                                    </a>
+                                  </div>
                                 </div>
                               </div>
-                            </a>
-                          </div>
-                        ))}
+                            </div>
+                          );
+                        })}
                     </div>
                   </div>
                 )}
