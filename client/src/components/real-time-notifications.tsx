@@ -842,7 +842,7 @@ export function RealTimeNotifications() {
                   {getNotificationTitle(selectedBooking)}
                 </Badge>
                 <span className="text-sm text-gray-500">
-                  {format(new Date(selectedBooking.timestamp || selectedBooking.createdAt), 'MMM dd, yyyy HH:mm')}
+                  {format(new Date(selectedBooking.timestamp || selectedBooking.createdAt || new Date()), 'MMM dd, yyyy HH:mm')}
                 </span>
               </div>
 
