@@ -20,7 +20,34 @@ import {
   openingHours, 
   specialPeriods, 
   cutOffTimes,
-  bookingChangeRequests
+  bookingChangeRequests,
+  type User,
+  type Restaurant,
+  type Booking,
+  type Customer,
+  type Table,
+  type Room,
+  type WaitingList,
+  type SmsMessage,
+  type ActivityLog,
+  type Feedback,
+  type TimeSlots,
+  type SubscriptionPlan,
+  type UserSubscription,
+  type TableLayout,
+  type InsertUser,
+  type InsertRestaurant,
+  type InsertBooking,
+  type InsertCustomer,
+  type InsertTable,
+  type InsertRoom,
+  type InsertWaitingList,
+  type InsertSmsMessage,
+  type InsertActivityLog,
+  type InsertFeedback,
+  type InsertTimeSlots,
+  type InsertSubscriptionPlan,
+  type InsertUserSubscription
 } from "@shared/schema";
 import { neon } from "@neondatabase/serverless";
 import { drizzle } from "drizzle-orm/neon-http";
@@ -37,7 +64,7 @@ if (!databaseUrl) {
   throw new Error("No database connection string found. Please set SUPABASE_DATABASE_URL or DATABASE_URL environment variable.");
 }
 
-let db: ReturnType<typeof drizzle>;
+let db: any;
 
 if (process.env.SUPABASE_DATABASE_URL) {
   // Use postgres-js for Supabase connection
@@ -50,7 +77,7 @@ if (process.env.SUPABASE_DATABASE_URL) {
 }
 
 export class DatabaseStorage implements IStorage {
-  db: ReturnType<typeof drizzle>;
+  db: any;
 
   constructor() {
     this.db = db;
@@ -337,9 +364,9 @@ export class DatabaseStorage implements IStorage {
   }
 
   async updateRestaurant(id: number, updates: Partial<Restaurant>): Promise<Restaurant | undefined> {
-    // Remove any undefined updatedAt to avoid column errors
+    // Remove any properties that don't exist on the table
     const cleanUpdates = { ...updates };
-    delete cleanUpdates.updatedAt;
+    delete (cleanUpdates as any).updatedAt;
 
     const [updated] = await this.db.update(restaurants)
       .set(cleanUpdates)
@@ -449,6 +476,11 @@ export class DatabaseStorage implements IStorage {
         eq(customers.restaurantId, restaurantId),
         eq(customers.email, email)
       ));
+    return result[0];
+  }
+
+  async getCustomerById(id: number): Promise<Customer | undefined> {
+    const result = await this.db.select().from(customers).where(eq(customers.id, id)).limit(1);
     return result[0];
   }
 
