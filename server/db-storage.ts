@@ -93,10 +93,17 @@ export class DatabaseStorage implements IStorage {
 
   constructor() {
     this.db = db;
+    if (!this.db) {
+      console.warn("DatabaseStorage initialized without database connection. All operations will throw errors until database is properly configured.");
+    }
   }
 
   // Initialize default data
   async initialize() {
+    if (!this.db) {
+      console.warn("Cannot initialize data without database connection. Please provide DATABASE_URL or SUPABASE_DATABASE_URL environment variable.");
+      return;
+    }
     await this.initializeSubscriptionPlans();
     await this.initializeDemoData();
   }
