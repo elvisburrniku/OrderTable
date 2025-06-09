@@ -194,6 +194,60 @@ export function RealTimeNotifications() {
     }
   };
 
+  // Helper function to get group icon based on notification type
+  const getGroupIcon = (type: string) => {
+    switch (type) {
+      case 'new_booking':
+        return Calendar;
+      case 'booking_changed':
+        return Clock;
+      case 'booking_cancelled':
+        return XCircle;
+      case 'booking_change_request':
+        return MessageSquare;
+      case 'change_request_responded':
+        return CheckCircle;
+      default:
+        return Bell;
+    }
+  };
+
+  // Helper function to get group display name
+  const getGroupDisplayName = (type: string) => {
+    switch (type) {
+      case 'new_booking':
+        return 'New Bookings';
+      case 'booking_changed':
+        return 'Booking Changes';
+      case 'booking_cancelled':
+        return 'Cancellations';
+      case 'booking_change_request':
+        return 'Change Requests';
+      case 'change_request_responded':
+        return 'Request Responses';
+      default:
+        return 'Other Notifications';
+    }
+  };
+
+  // Helper function to get group icon color
+  const getGroupIconColor = (type: string) => {
+    switch (type) {
+      case 'new_booking':
+        return 'text-green-600 border-green-200 bg-green-50';
+      case 'booking_changed':
+        return 'text-blue-600 border-blue-200 bg-blue-50';
+      case 'booking_cancelled':
+        return 'text-red-600 border-red-200 bg-red-50';
+      case 'booking_change_request':
+        return 'text-orange-600 border-orange-200 bg-orange-50';
+      case 'change_request_responded':
+        return 'text-purple-600 border-purple-200 bg-purple-50';
+      default:
+        return 'text-gray-600 border-gray-200 bg-gray-50';
+    }
+  };
+
   // Filter notifications based on selected filter type
   const filterNotifications = (notifications: BookingNotification[]) => {
     switch (filterType) {
@@ -228,17 +282,7 @@ export function RealTimeNotifications() {
     }
   };
 
-  const getGroupIconColor = (type: string) => {
-    switch (type) {
-      case 'booking_change_request': return 'text-red-600';
-      case 'new_booking': return 'text-green-600';
-      case 'booking_changed': return 'text-blue-600';
-      case 'change_request_responded': return 'text-purple-600';
-      case 'booking_cancelled': return 'text-orange-600';
-      case 'other': return 'text-gray-600';
-      default: return 'text-gray-600';
-    }
-  };
+
 
   const getGroupDescription = (type: string, count: number) => {
     switch (type) {
@@ -936,7 +980,7 @@ export function RealTimeNotifications() {
                   if (notifications.length === 0) return null;
                   
                   const isCollapsed = collapsedGroups.has(groupType);
-                  const GroupIcon = getGroupIcon(groupType as any);
+                  const GroupIconComponent = getGroupIcon(groupType);
                   const unreadInGroup = notifications.filter((n: any) => !n.isRead).length;
                   
                   return (
@@ -953,7 +997,7 @@ export function RealTimeNotifications() {
                             ) : (
                               <ChevronDown className="h-4 w-4 text-gray-500" />
                             )}
-                            <GroupIcon className={`h-5 w-5 ${getGroupIconColor(groupType)}`} />
+                            <GroupIconComponent className={`h-5 w-5 ${getGroupIconColor(groupType)}`} />
                           </div>
                           
                           <div className="flex flex-col gap-1 flex-1">
