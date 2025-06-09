@@ -4390,17 +4390,108 @@ app.put("/api/tenants/:tenantId/bookings/:id", validateTenant, async (req, res) 
         return res.json([]); // Return empty array if closed
       }
 
-      // Generate time slots (30-minute intervals from 10:00 to 22:00)
+      // Get opening hours for this specific day
+      const dayOfWeek = bookingDate.getDay();
+      const openingHours = await storage.getOpeningHoursByRestaurant(restaurantId);
+      const dayHours = openingHours.find((oh: any) => oh.dayOfWeek === dayOfWeek);
+      
+      if (!dayHours || !dayHours.isOpen) {
+        return res.json([]);
+      }
+
+      // Check special periods that might override normal hours
+      const specialPeriods = await storage.getSpecialPeriodsByRestaurant(restaurantId);
+      const dateStr = bookingDate.toISOString().split('T')[0];
+      const specialPeriod = specialPeriods.find((sp: any) => 
+        dateStr >= sp.startDate && dateStr <= sp.endDate
+      );
+
+      let actualOpenTime = dayHours.openTime;
+      let actualCloseTime = dayHours.closeTime;
+      let isSpecialDayClosed = false;
+
+      if (specialPeriod) {
+        if (specialPeriod.isClosed) {
+          isSpecialDayClosed = true;
+        } else if (specialPeriod.openTime && specialPeriod.closeTime) {
+          actualOpenTime = specialPeriod.openTime;
+          actualCloseTime = specialPeriod.closeTime;
+        }
+      }
+
+      if (isSpecialDayClosed) {
+        return res.json([]);
+      }
+
+      // Get all tables and check capacity
+      const tables = await storage.getTablesByRestaurant(restaurantId);
+      const combinedTables = await storage.getCombinedTablesByRestaurant(restaurantId);
+      
+      // Filter tables that can accommodate the guest count
+      const suitableTables = tables.filter(table => table.capacity >= guestCount);
+      const suitableCombinedTables = combinedTables.filter(table => table.capacity >= guestCount);
+      
+      if (suitableTables.length === 0 && suitableCombinedTables.length === 0) {
+        return res.json([]); // No tables can accommodate this party size
+      }
+
+      // Get existing bookings for this date
+      const existingBookings = await storage.getBookingsByDate(restaurantId, dateStr);
+      const activeBookings = existingBookings.filter(booking => booking.status !== 'cancelled');
+
+      // Helper function to convert time to minutes
+      const timeToMinutes = (timeStr: string): number => {
+        const [hours, minutes] = timeStr.split(':').map(Number);
+        return hours * 60 + minutes;
+      };
+
+      // Generate time slots based on actual opening hours
+      const openTimeMinutes = timeToMinutes(actualOpenTime);
+      const closeTimeMinutes = timeToMinutes(actualCloseTime);
+      
       const timeSlots = [];
-      for (let hour = 10; hour <= 22; hour++) {
-        for (let minute = 0; minute < 60; minute += 30) {
-          const timeStr = `${hour.toString().padStart(2, '0')}:${minute.toString().padStart(2, '0')}`;
-          
-          // Check if booking is allowed at this time
-          const isAllowed = await storage.isBookingAllowed(restaurantId, bookingDate, timeStr);
-          if (isAllowed) {
-            timeSlots.push(timeStr);
-          }
+      
+      // Generate 30-minute intervals within opening hours
+      for (let minutes = openTimeMinutes; minutes <= closeTimeMinutes - 60; minutes += 30) {
+        const hours = Math.floor(minutes / 60);
+        const mins = minutes % 60;
+        const timeStr = `${hours.toString().padStart(2, '0')}:${mins.toString().padStart(2, '0')}`;
+        
+        // Check if booking is allowed at this time (cut-off validation)
+        const isAllowed = await storage.isBookingAllowed(restaurantId, bookingDate, timeStr);
+        if (!isAllowed) {
+          continue;
+        }
+
+        // Check if any suitable table is available at this time
+        const hasAvailableTable = [...suitableTables, ...suitableCombinedTables].some(table => {
+          // Check for booking conflicts with 2-hour duration + 1-hour buffer
+          const bookingStart = minutes;
+          const bookingEnd = minutes + 120; // 2 hours
+          const bufferMinutes = 60; // 1 hour buffer
+
+          const hasConflict = activeBookings.some(booking => {
+            if (booking.tableId !== table.id) return false;
+            
+            const existingStart = timeToMinutes(booking.startTime);
+            const existingEnd = booking.endTime ? 
+              timeToMinutes(booking.endTime) : 
+              existingStart + 120; // Default 2-hour duration
+
+            // Check overlap with buffer
+            const requestedStart = bookingStart - bufferMinutes;
+            const requestedEnd = bookingEnd + bufferMinutes;
+            const existingStartWithBuffer = existingStart - bufferMinutes;
+            const existingEndWithBuffer = existingEnd + bufferMinutes;
+
+            return requestedStart < existingEndWithBuffer && existingStartWithBuffer < requestedEnd;
+          });
+
+          return !hasConflict;
+        });
+
+        if (hasAvailableTable) {
+          timeSlots.push(timeStr);
         }
       }
 
@@ -4451,6 +4542,81 @@ app.put("/api/tenants/:tenantId/bookings/:id", validateTenant, async (req, res) 
         return res.status(400).json({ message: "Booking is not allowed at the requested time" });
       }
 
+      // Get opening hours and check special periods
+      const dayOfWeek = bookingDate.getDay();
+      const openingHours = await storage.getOpeningHoursByRestaurant(restaurantId);
+      const dayHours = openingHours.find((oh: any) => oh.dayOfWeek === dayOfWeek);
+      
+      if (!dayHours || !dayHours.isOpen) {
+        return res.status(400).json({ message: "Restaurant is closed on this day" });
+      }
+
+      // Check special periods
+      const specialPeriods = await storage.getSpecialPeriodsByRestaurant(restaurantId);
+      const dateStr = bookingDate.toISOString().split('T')[0];
+      const specialPeriod = specialPeriods.find((sp: any) => 
+        dateStr >= sp.startDate && dateStr <= sp.endDate
+      );
+
+      if (specialPeriod && specialPeriod.isClosed) {
+        return res.status(400).json({ message: "Restaurant is closed during this special period" });
+      }
+
+      // Find an available table for this booking
+      const tables = await storage.getTablesByRestaurant(restaurantId);
+      const combinedTables = await storage.getCombinedTablesByRestaurant(restaurantId);
+      
+      // Filter tables that can accommodate the guest count
+      const suitableTables = [...tables, ...combinedTables].filter(table => table.capacity >= bookingData.guestCount);
+      
+      if (suitableTables.length === 0) {
+        return res.status(400).json({ message: "No tables available for this party size" });
+      }
+
+      // Get existing bookings for this date
+      const existingBookings = await storage.getBookingsByDate(restaurantId, dateStr);
+      const activeBookings = existingBookings.filter(booking => booking.status !== 'cancelled');
+
+      // Helper function to convert time to minutes
+      const timeToMinutes = (timeStr: string): number => {
+        const [hours, minutes] = timeStr.split(':').map(Number);
+        return hours * 60 + minutes;
+      };
+
+      // Find the first available table
+      const bookingStartMinutes = timeToMinutes(bookingData.startTime);
+      const bookingEndMinutes = bookingStartMinutes + 120; // 2-hour duration
+      const bufferMinutes = 60; // 1-hour buffer
+
+      let availableTable = null;
+      for (const table of suitableTables) {
+        const hasConflict = activeBookings.some(booking => {
+          if (booking.tableId !== table.id) return false;
+          
+          const existingStart = timeToMinutes(booking.startTime);
+          const existingEnd = booking.endTime ? 
+            timeToMinutes(booking.endTime) : 
+            existingStart + 120; // Default 2-hour duration
+
+          // Check overlap with buffer
+          const requestedStart = bookingStartMinutes - bufferMinutes;
+          const requestedEnd = bookingEndMinutes + bufferMinutes;
+          const existingStartWithBuffer = existingStart - bufferMinutes;
+          const existingEndWithBuffer = existingEnd + bufferMinutes;
+
+          return requestedStart < existingEndWithBuffer && existingStartWithBuffer < requestedEnd;
+        });
+
+        if (!hasConflict) {
+          availableTable = table;
+          break;
+        }
+      }
+
+      if (!availableTable) {
+        return res.status(400).json({ message: "No tables available at the requested time" });
+      }
+
       // Find or create customer
       const customer = await storage.getOrCreateCustomer(restaurantId, restaurant.tenantId, {
         name: bookingData.customerName,
@@ -4465,7 +4631,7 @@ app.put("/api/tenants/:tenantId/bookings/:id", validateTenant, async (req, res) 
       // Generate management hash
       const managementHash = BookingHash.generateHash(0, restaurant.tenantId, restaurantId, 'manage');
 
-      // Create booking
+      // Create booking with assigned table
       const booking = await storage.createBooking({
         restaurantId,
         tenantId: restaurant.tenantId,
@@ -4477,6 +4643,7 @@ app.put("/api/tenants/:tenantId/bookings/:id", validateTenant, async (req, res) 
         bookingDate: bookingDate,
         startTime: bookingData.startTime,
         endTime: endTime,
+        tableId: availableTable.id,
         status: "confirmed",
         source: bookingData.source,
         notes: bookingData.notes,
