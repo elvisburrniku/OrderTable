@@ -252,8 +252,24 @@ export function RealTimeNotifications() {
 
   const markAsRead = (notification: any) => {
     if (typeof notification.id === 'number') {
-      // Persistent notification
+      // Persistent notification - update database and optimistically update UI
       markAsReadMutation.mutate(notification.id);
+      
+      // Optimistically update the local state
+      queryClient.setQueryData(
+        ['/api/tenants', restaurant?.tenantId, 'restaurants', restaurant?.id, 'notifications'],
+        (oldData: any) => {
+          if (!oldData) return oldData;
+          return oldData.map((notif: any) => 
+            notif.id === notification.id ? { ...notif, isRead: true, read: true } : notif
+          );
+        }
+      );
+      
+      // Update unread count
+      if (!notification.read && !notification.isRead) {
+        setUnreadCount(prev => Math.max(0, prev - 1));
+      }
     } else {
       // Live notification
       setLiveNotifications(prev => 
@@ -261,7 +277,9 @@ export function RealTimeNotifications() {
           notif.id === notification.id ? { ...notif, read: true } : notif
         )
       );
-      setUnreadCount(prev => Math.max(0, prev - 1));
+      if (!notification.read) {
+        setUnreadCount(prev => Math.max(0, prev - 1));
+      }
     }
   };
 
@@ -660,8 +678,8 @@ export function RealTimeNotifications() {
                           {notifications.map((notification) => (
                   <div
                     key={notification.id}
-                    className={`p-4 border-b border-gray-200 hover:bg-gray-50 ${
-                      !notification.read ? 'bg-blue-50 border-l-4 border-l-blue-500' : ''
+                    className={`p-4 border-b border-gray-200 hover:bg-gray-50 cursor-pointer ${
+                      (!notification.read && !notification.isRead) ? 'bg-blue-50 border-l-4 border-l-blue-500' : ''
                     } ${
                       notification.type === 'booking_change_request' && notification.changeRequest?.status === 'pending' 
                         ? 'bg-yellow-50 border-l-4 border-l-yellow-500' : ''
