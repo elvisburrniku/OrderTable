@@ -478,12 +478,13 @@ export default function GuestBooking() {
       <div className="max-w-4xl mx-auto px-4 py-8">
         <div className="bg-white rounded-lg shadow-sm min-h-[500px] flex">
           {/* Restaurant Image */}
-          <div className="w-1/3 bg-gradient-to-br from-amber-100 to-orange-200 rounded-l-lg">
-            <img 
-              src="@assets/image_1749485637652.png" 
-              alt="Restaurant interior" 
-              className="w-full h-full object-cover rounded-l-lg"
-            />
+          <div className="w-1/3 bg-gradient-to-br from-amber-100 to-orange-200 rounded-l-lg flex items-center justify-center">
+            <div className="text-center text-gray-600">
+              <div className="w-16 h-16 bg-amber-300 rounded-full mx-auto mb-4 flex items-center justify-center">
+                <span className="text-2xl">🍽️</span>
+              </div>
+              <p className="text-sm font-medium">{restaurant.name}</p>
+            </div>
           </div>
 
           {/* Content */}

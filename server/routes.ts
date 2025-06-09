@@ -4308,6 +4308,289 @@ app.put("/api/tenants/:tenantId/bookings/:id", validateTenant, async (req, res) 
     }
   });
 
+  // Public API endpoints for guest booking
+  
+  // Get public restaurant information
+  app.get("/api/restaurants/:restaurantId/public", async (req, res) => {
+    try {
+      const restaurantId = parseInt(req.params.restaurantId);
+      
+      if (isNaN(restaurantId)) {
+        return res.status(400).json({ message: "Invalid restaurant ID" });
+      }
+
+      const restaurant = await storage.getRestaurantById(restaurantId);
+      if (!restaurant) {
+        return res.status(404).json({ message: "Restaurant not found" });
+      }
+
+      // Return only public information
+      const publicInfo = {
+        id: restaurant.id,
+        name: restaurant.name,
+        address: restaurant.address,
+        phone: restaurant.phone,
+        description: restaurant.description
+      };
+
+      res.json(publicInfo);
+    } catch (error) {
+      console.error("Error fetching public restaurant info:", error);
+      res.status(500).json({ message: "Internal server error" });
+    }
+  });
+
+  // Get public opening hours
+  app.get("/api/restaurants/:restaurantId/opening-hours/public", async (req, res) => {
+    try {
+      const restaurantId = parseInt(req.params.restaurantId);
+      
+      if (isNaN(restaurantId)) {
+        return res.status(400).json({ message: "Invalid restaurant ID" });
+      }
+
+      const restaurant = await storage.getRestaurantById(restaurantId);
+      if (!restaurant) {
+        return res.status(404).json({ message: "Restaurant not found" });
+      }
+
+      const openingHours = await storage.getOpeningHoursByRestaurant(restaurantId);
+      res.json(openingHours);
+    } catch (error) {
+      console.error("Error fetching opening hours:", error);
+      res.status(500).json({ message: "Internal server error" });
+    }
+  });
+
+  // Get available time slots for a specific date
+  app.get("/api/restaurants/:restaurantId/available-times", async (req, res) => {
+    try {
+      const restaurantId = parseInt(req.params.restaurantId);
+      const { date, guests } = req.query;
+      
+      if (isNaN(restaurantId)) {
+        return res.status(400).json({ message: "Invalid restaurant ID" });
+      }
+
+      if (!date || !guests) {
+        return res.status(400).json({ message: "Date and guest count are required" });
+      }
+
+      const restaurant = await storage.getRestaurantById(restaurantId);
+      if (!restaurant) {
+        return res.status(404).json({ message: "Restaurant not found" });
+      }
+
+      const bookingDate = new Date(date as string);
+      const guestCount = parseInt(guests as string);
+
+      // Check if restaurant is open on this date
+      const isOpen = await storage.isRestaurantOpen(restaurantId, bookingDate, "12:00");
+      if (!isOpen) {
+        return res.json([]); // Return empty array if closed
+      }
+
+      // Generate time slots (30-minute intervals from 10:00 to 22:00)
+      const timeSlots = [];
+      for (let hour = 10; hour <= 22; hour++) {
+        for (let minute = 0; minute < 60; minute += 30) {
+          const timeStr = `${hour.toString().padStart(2, '0')}:${minute.toString().padStart(2, '0')}`;
+          
+          // Check if booking is allowed at this time
+          const isAllowed = await storage.isBookingAllowed(restaurantId, bookingDate, timeStr);
+          if (isAllowed) {
+            timeSlots.push(timeStr);
+          }
+        }
+      }
+
+      res.json(timeSlots);
+    } catch (error) {
+      console.error("Error fetching available times:", error);
+      res.status(500).json({ message: "Internal server error" });
+    }
+  });
+
+  // Create a public booking
+  app.post("/api/restaurants/:restaurantId/bookings/public", async (req, res) => {
+    try {
+      const restaurantId = parseInt(req.params.restaurantId);
+      
+      if (isNaN(restaurantId)) {
+        return res.status(400).json({ message: "Invalid restaurant ID" });
+      }
+
+      const restaurant = await storage.getRestaurantById(restaurantId);
+      if (!restaurant) {
+        return res.status(404).json({ message: "Restaurant not found" });
+      }
+
+      // Validate booking data
+      const bookingSchema = z.object({
+        customerName: z.string().min(1, "Customer name is required"),
+        customerEmail: z.string().email("Valid email is required"),
+        customerPhone: z.string().optional(),
+        guestCount: z.number().min(1, "Guest count must be at least 1"),
+        bookingDate: z.string().datetime("Valid booking date is required"),
+        startTime: z.string().min(1, "Start time is required"),
+        notes: z.string().optional(),
+        source: z.string().default("online")
+      });
+
+      const bookingData = bookingSchema.parse(req.body);
+      const bookingDate = new Date(bookingData.bookingDate);
+
+      // Check if restaurant is open and booking is allowed
+      const isOpen = await storage.isRestaurantOpen(restaurantId, bookingDate, bookingData.startTime);
+      if (!isOpen) {
+        return res.status(400).json({ message: "Restaurant is closed at the requested time" });
+      }
+
+      const isAllowed = await storage.isBookingAllowed(restaurantId, bookingDate, bookingData.startTime);
+      if (!isAllowed) {
+        return res.status(400).json({ message: "Booking is not allowed at the requested time" });
+      }
+
+      // Find or create customer
+      const customer = await storage.getOrCreateCustomer(restaurantId, restaurant.tenantId, {
+        name: bookingData.customerName,
+        email: bookingData.customerEmail,
+        phone: bookingData.customerPhone
+      });
+
+      // Calculate end time (2 hours from start time)
+      const [startHour, startMinute] = bookingData.startTime.split(':').map(Number);
+      const endTime = `${(startHour + 2).toString().padStart(2, '0')}:${startMinute.toString().padStart(2, '0')}`;
+
+      // Generate management hash
+      const managementHash = BookingHash.generateHash(0, restaurant.tenantId, restaurantId, 'manage');
+
+      // Create booking
+      const booking = await storage.createBooking({
+        restaurantId,
+        tenantId: restaurant.tenantId,
+        customerId: customer.id,
+        customerName: bookingData.customerName,
+        customerEmail: bookingData.customerEmail,
+        customerPhone: bookingData.customerPhone,
+        guestCount: bookingData.guestCount,
+        bookingDate: bookingDate,
+        startTime: bookingData.startTime,
+        endTime: endTime,
+        status: "confirmed",
+        source: bookingData.source,
+        notes: bookingData.notes,
+        managementHash: managementHash
+      });
+
+      // Update the hash with the actual booking ID
+      const actualHash = BookingHash.generateHash(booking.id, restaurant.tenantId, restaurantId, 'manage');
+      await storage.updateBooking(booking.id, { managementHash: actualHash });
+
+      // Send real-time notification
+      try {
+        const notification = await storage.createNotification({
+          restaurantId: restaurantId,
+          tenantId: restaurant.tenantId,
+          type: 'new_booking',
+          title: 'New Online Booking',
+          message: `New booking from ${bookingData.customerName} for ${bookingDate.toLocaleDateString()} at ${bookingData.startTime}`,
+          bookingId: booking.id,
+          data: {
+            booking: {
+              id: booking.id,
+              customerName: bookingData.customerName,
+              customerEmail: bookingData.customerEmail,
+              customerPhone: bookingData.customerPhone,
+              guestCount: booking.guestCount,
+              bookingDate: booking.bookingDate,
+              startTime: booking.startTime,
+              endTime: booking.endTime,
+              status: booking.status,
+              notes: booking.notes,
+              createdAt: booking.createdAt
+            },
+            restaurant: {
+              id: restaurantId,
+              name: restaurant.name
+            }
+          },
+          canRevert: false
+        });
+
+        broadcastNotification(restaurantId, {
+          type: 'notification',
+          notification: {
+            id: notification.id,
+            type: 'new_booking',
+            title: notification.title,
+            message: notification.message,
+            booking: notification.data.booking,
+            restaurant: notification.data.restaurant,
+            timestamp: notification.createdAt,
+            read: false,
+            canRevert: false
+          }
+        });
+      } catch (notificationError) {
+        console.error('Error sending real-time notification:', notificationError);
+      }
+
+      // Send email notifications if available
+      if (emailService) {
+        try {
+          // Send confirmation email to customer
+          await emailService.sendBookingConfirmation(
+            bookingData.customerEmail,
+            bookingData.customerName,
+            {
+              ...booking,
+              tableNumber: booking.tableId,
+              restaurantName: restaurant.name,
+              restaurantAddress: restaurant.address,
+              restaurantPhone: restaurant.phone
+            }
+          );
+
+          // Send notification to restaurant if email is configured
+          if (restaurant.email) {
+            await emailService.sendRestaurantNotification(
+              restaurant.email,
+              {
+                ...booking,
+                restaurantName: restaurant.name
+              }
+            );
+          }
+        } catch (emailError) {
+          console.error('Error sending emails:', emailError);
+        }
+      }
+
+      res.status(201).json({
+        message: "Booking created successfully",
+        booking: {
+          id: booking.id,
+          customerName: booking.customerName,
+          guestCount: booking.guestCount,
+          bookingDate: booking.bookingDate,
+          startTime: booking.startTime,
+          endTime: booking.endTime,
+          status: booking.status
+        }
+      });
+    } catch (error) {
+      console.error("Error creating public booking:", error);
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({
+          message: "Validation error",
+          errors: error.errors
+        });
+      }
+      res.status(500).json({ message: "Internal server error" });
+    }
+  });
+
   // Contact form submission endpoint
   app.post("/api/contact", async (req, res) => {
     try {
