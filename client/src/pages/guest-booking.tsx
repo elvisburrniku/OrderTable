@@ -127,17 +127,7 @@ export default function GuestBooking() {
     return dates;
   };
 
-  // Generate time slots (30-minute intervals)
-  const generateTimeSlots = () => {
-    const slots = [];
-    for (let hour = 10; hour <= 22; hour++) {
-      for (let minute = 0; minute < 60; minute += 30) {
-        const timeStr = `${hour.toString().padStart(2, '0')}:${minute.toString().padStart(2, '0')}`;
-        slots.push(timeStr);
-      }
-    }
-    return slots;
-  };
+  
 
   const handleNext = () => {
     if (currentStep < steps.length - 1) {
@@ -261,6 +251,28 @@ export default function GuestBooking() {
               <h2 className="text-2xl font-bold text-gray-900 mb-8">Select Date</h2>
             </div>
             <div className="max-w-lg mx-auto">
+              {openingHours && openingHours.length > 0 && (
+                <div className="mb-6 p-4 bg-blue-50 rounded-lg">
+                  <h3 className="font-medium text-blue-900 mb-2">Opening Hours</h3>
+                  <div className="text-sm text-blue-800 space-y-1">
+                    {['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'].map((dayName, index) => {
+                      const dayHours = openingHours.find((oh: any) => oh.dayOfWeek === index);
+                      return (
+                        <div key={dayName} className="flex justify-between">
+                          <span>{dayName}:</span>
+                          <span>
+                            {dayHours && dayHours.isOpen 
+                              ? `${dayHours.openTime} - ${dayHours.closeTime}`
+                              : 'Closed'
+                            }
+                          </span>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              )}
+              
               <div className="grid grid-cols-7 gap-2 mb-4">
                 {['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'].map((day) => (
                   <div key={day} className="text-center text-sm font-medium text-gray-500 py-2">
@@ -272,6 +284,11 @@ export default function GuestBooking() {
                 {generateCalendarDates().map((date) => {
                   const isSelected = selectedDate && isSameDay(date, selectedDate);
                   const isToday = isSameDay(date, new Date());
+                  const dayOfWeek = date.getDay();
+                  
+                  // Check if restaurant is closed on this day
+                  const dayHours = openingHours?.find((oh: any) => oh.dayOfWeek === dayOfWeek);
+                  const isClosed = !dayHours || !dayHours.isOpen;
 
                   return (
                     <Button
@@ -279,10 +296,14 @@ export default function GuestBooking() {
                       variant={isSelected ? "default" : "outline"}
                       className={`h-12 ${isToday ? 'ring-2 ring-blue-200' : ''} ${
                         isSelected ? 'bg-green-500 hover:bg-green-600' : ''
-                      }`}
-                      onClick={() => setSelectedDate(date)}
+                      } ${isClosed ? 'opacity-50 cursor-not-allowed' : ''}`}
+                      onClick={() => !isClosed && setSelectedDate(date)}
+                      disabled={isClosed}
                     >
-                      {format(date, 'd')}
+                      <div className="text-center">
+                        <div>{format(date, 'd')}</div>
+                        {isClosed && <div className="text-xs text-red-500">Closed</div>}
+                      </div>
                     </Button>
                   );
                 })}
@@ -300,28 +321,46 @@ export default function GuestBooking() {
               </h2>
               <p className="text-gray-600 mb-8">Select your preferred time</p>
             </div>
-            <div className="grid grid-cols-3 gap-3 max-w-lg mx-auto">
-              {generateTimeSlots().map((time) => {
-                const isSelected = selectedTime === time;
-                return (
-                  <Button
-                    key={time}
-                    variant={isSelected ? "default" : "outline"}
-                    className={`h-16 ${
-                      isSelected ? 'bg-green-500 hover:bg-green-600' : ''
-                    }`}
-                    onClick={() => setSelectedTime(time)}
-                  >
-                    <div className="text-center">
-                      <div className="font-semibold">{time}</div>
-                      <div className="text-xs opacity-75">
-                        {parseInt(time.split(':')[0]) < 12 ? 'AM' : 'PM'}
+            
+            {timeSlots && timeSlots.length === 0 ? (
+              <div className="text-center py-8">
+                <p className="text-gray-600 mb-4">No available time slots for this date.</p>
+                <p className="text-sm text-gray-500">
+                  Please select a different date or contact the restaurant directly.
+                </p>
+              </div>
+            ) : (
+              <div className="grid grid-cols-3 gap-3 max-w-lg mx-auto">
+                {(timeSlots || []).map((time) => {
+                  const isSelected = selectedTime === time;
+                  return (
+                    <Button
+                      key={time}
+                      variant={isSelected ? "default" : "outline"}
+                      className={`h-16 ${
+                        isSelected ? 'bg-green-500 hover:bg-green-600' : ''
+                      }`}
+                      onClick={() => setSelectedTime(time)}
+                    >
+                      <div className="text-center">
+                        <div className="font-semibold">{time}</div>
+                        <div className="text-xs opacity-75">
+                          {parseInt(time.split(':')[0]) < 12 ? 'AM' : 'PM'}
+                        </div>
                       </div>
-                    </div>
-                  </Button>
-                );
-              })}
-            </div>
+                    </Button>
+                  );
+                })}
+              </div>
+            )}
+            
+            {timeSlots && timeSlots.length > 0 && (
+              <div className="text-center mt-6">
+                <p className="text-xs text-gray-500">
+                  Time slots are based on restaurant availability and booking policies
+                </p>
+              </div>
+            )}
           </div>
         );
 
@@ -518,7 +557,7 @@ export default function GuestBooking() {
                   disabled={
                     (currentStep === 1 && !guestCount) ||
                     (currentStep === 2 && !selectedDate) ||
-                    (currentStep === 3 && !selectedTime)
+                    (currentStep === 3 && (!selectedTime || !timeSlots || timeSlots.length === 0))
                   }
                   className="flex items-center gap-2"
                 >
