@@ -985,20 +985,20 @@ export class DatabaseStorage implements IStorage {
     return request;
   }
 
-<<<<<<< HEAD
+
   // Notifications
-  async getNotificationsByRestaurant(restaurantId: number): Promise<Notification[]> {
+  async getNotificationsByRestaurant(restaurantId: number): Promise<any[]> {
     return await this.db.select().from(notifications)
       .where(eq(notifications.restaurantId, restaurantId))
       .orderBy(desc(notifications.createdAt));
   }
 
-  async createNotification(notification: InsertNotification): Promise<Notification> {
+  async createNotification(notification: any): Promise<any> {
     const [newNotification] = await this.db.insert(notifications).values(notification).returning();
     return newNotification;
   }
 
-  async markNotificationAsRead(id: number): Promise<Notification | undefined> {
+  async markNotificationAsRead(id: number): Promise<any> {
     const [updated] = await this.db.update(notifications)
       .set({ isRead: true })
       .where(eq(notifications.id, id))
@@ -1054,7 +1054,7 @@ export class DatabaseStorage implements IStorage {
       return false;
     }
   }
-=======
+
   // Integration Configuration methods
   async getIntegrationConfigurationsByRestaurant(restaurantId: number): Promise<IntegrationConfiguration[]> {
     return await this.db.select().from(integrationConfigurations).where(eq(integrationConfigurations.restaurantId, restaurantId));
@@ -1143,5 +1143,5 @@ export class DatabaseStorage implements IStorage {
 
     return [];
   }
->>>>>>> 53b3ab91330f0f81f70d457f3d107944aab70637
+
 }

@@ -3969,7 +3969,7 @@ app.put("/api/tenants/:tenantId/bookings/:id", validateTenant, async (req, res) 
     res.json({ received: true });
   });
 
-<<<<<<< HEAD
+
   // Working Notifications API (temporary fallback)
   app.get("/api/notifications", attachUser, async (req: Request, res: Response) => {
     if (!req.user) {
@@ -4178,7 +4178,8 @@ app.put("/api/tenants/:tenantId/bookings/:id", validateTenant, async (req, res) 
       console.error("Error reverting notification:", error);
       res.status(500).json({ error: "Failed to revert changes" });
     }
-=======
+  });
+
   // Test webhook endpoint for debugging
   app.post("/api/webhook-test", async (req, res) => {
     console.log("=== WEBHOOK TEST RECEIVED ===");
@@ -4191,7 +4192,6 @@ app.put("/api/tenants/:tenantId/bookings/:id", validateTenant, async (req, res) 
       timestamp: new Date().toISOString(),
       received_data: req.body
     });
->>>>>>> 53b3ab91330f0f81f70d457f3d107944aab70637
   });
 
   const httpServer = createServer(app);

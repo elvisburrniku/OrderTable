@@ -206,9 +206,9 @@ export interface IStorage {
   getBookingChangeRequestById(id: number): Promise<any>;
 
   // Notifications
-  getNotificationsByRestaurant(restaurantId: number): Promise<Notification[]>;
-  createNotification(notification: InsertNotification): Promise<Notification>;
-  markNotificationAsRead(id: number): Promise<Notification | undefined>;
+  getNotificationsByRestaurant(restaurantId: number): Promise<any[]>;
+  createNotification(notification: any): Promise<any>;
+  markNotificationAsRead(id: number): Promise<any>;
   markAllNotificationsAsRead(restaurantId: number): Promise<void>;
   revertNotification(notificationId: number, userEmail: string): Promise<boolean>;
   deleteNotification(id: number): Promise<boolean>;
