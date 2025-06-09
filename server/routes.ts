@@ -1487,6 +1487,92 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Get available tables for a specific time slot
+  app.post("/api/tenants/:tenantId/restaurants/:restaurantId/available-tables", validateTenant, async (req, res) => {
+    try {
+      const restaurantId = parseInt(req.params.restaurantId);
+      const tenantId = parseInt(req.params.tenantId);
+      const { bookingDate, startTime, endTime, guestCount } = req.body;
+
+      const restaurant = await storage.getRestaurantById(restaurantId);
+      if (!restaurant || restaurant.tenantId !== tenantId) {
+        return res.status(404).json({ message: "Restaurant not found" });
+      }
+
+      const tables = await storage.getTablesByRestaurant(restaurantId);
+      const existingBookings = await storage.getBookingsByDate(restaurantId, bookingDate);
+      
+      const requestedStartTime = startTime;
+      const requestedEndTime = endTime || "23:59";
+      const requestedGuestCount = guestCount;
+
+      // Helper function to check if a table is available at the requested time
+      const isTableAvailable = (tableToCheck: any) => {
+        // Check capacity first
+        if (tableToCheck.capacity < requestedGuestCount) {
+          return false;
+        }
+
+        // Check for time conflicts with this specific table
+        const conflictingBookings = existingBookings.filter((booking: any) => {
+          if (booking.tableId !== tableToCheck.id) return false;
+          if (booking.status === 'cancelled') return false;
+
+          // Convert times to minutes for easier comparison
+          const requestedStartMinutes = parseInt(requestedStartTime.split(':')[0]) * 60 + parseInt(requestedStartTime.split(':')[1]);
+          const requestedEndMinutes = parseInt(requestedEndTime.split(':')[0]) * 60 + parseInt(requestedEndTime.split(':')[1]);
+
+          const existingStartMinutes = parseInt(booking.startTime.split(':')[0]) * 60 + parseInt(booking.startTime.split(':')[1]);
+          const existingEndTime = booking.endTime || "23:59";
+          const existingEndMinutes = parseInt(existingEndTime.split(':')[0]) * 60 + parseInt(existingEndTime.split(':')[1]);
+
+          // Add 1-hour buffer (60 minutes) for table turnover
+          const bufferMinutes = 60;
+
+          // Check for time overlap with buffer
+          const requestedStart = requestedStartMinutes - bufferMinutes;
+          const requestedEnd = requestedEndMinutes + bufferMinutes;
+          const existingStart = existingStartMinutes - bufferMinutes;
+          const existingEnd = existingEndMinutes + bufferMinutes;
+
+          return requestedStart < existingEnd && existingStart < requestedEnd;
+        });
+
+        return conflictingBookings.length === 0;
+      };
+
+      // Get all available tables
+      const availableTables = tables.filter(table => isTableAvailable(table))
+        .map(table => ({
+          id: table.id,
+          tableNumber: table.tableNumber,
+          capacity: table.capacity,
+          roomId: table.roomId,
+          isAvailable: true
+        }));
+
+      // Get all tables with their availability status
+      const allTablesWithStatus = tables.map(table => ({
+        id: table.id,
+        tableNumber: table.tableNumber,
+        capacity: table.capacity,
+        roomId: table.roomId,
+        isAvailable: isTableAvailable(table),
+        suitableForGuestCount: table.capacity >= requestedGuestCount
+      }));
+
+      res.json({
+        availableTables,
+        allTablesWithStatus,
+        totalAvailable: availableTables.length,
+        totalTables: tables.length
+      });
+    } catch (error) {
+      console.error("Error getting available tables:", error);
+      res.status(500).json({ message: "Internal server error" });
+    }
+  });
+
   // Email notification settings routes
   app.post("/api/tenants/:tenantId/restaurants/:restaurantId/email-settings", validateTenant, async (req, res) => {
     try {
@@ -1932,14 +2018,25 @@ export async function registerRoutes(app: Express): Promise<Server> {
         });
       }
 
-      // If a specific table is requested, check for conflicts
-      if (tableId) {
-        const existingBookings = await storage.getBookingsByDate(restaurantId, bookingDate.toISOString().split('T')[0]);
-        const conflictingBookings = existingBookings.filter(booking => {
-          if (booking.tableId !== tableId) return false;
+      // Smart table assignment and conflict checking
+      const tables = await storage.getTablesByRestaurant(restaurantId);
+      const existingBookings = await storage.getBookingsByDate(restaurantId, bookingDate.toISOString().split('T')[0]);
+      
+      const requestedStartTime = req.body.startTime;
+      const requestedEndTime = req.body.endTime || "23:59";
+      const requestedGuestCount = req.body.guestCount;
 
-          const requestedStartTime = req.body.startTime;
-          const requestedEndTime = req.body.endTime || "23:59";
+      // Helper function to check if a table is available at the requested time
+      const isTableAvailable = (tableToCheck: any) => {
+        // Check capacity first
+        if (tableToCheck.capacity < requestedGuestCount) {
+          return false;
+        }
+
+        // Check for time conflicts with this specific table
+        const conflictingBookings = existingBookings.filter(booking => {
+          if (booking.tableId !== tableToCheck.id) return false;
+          if (booking.status === 'cancelled') return false;
 
           // Convert times to minutes for easier comparison
           const requestedStartMinutes = parseInt(requestedStartTime.split(':')[0]) * 60 + parseInt(requestedStartTime.split(':')[1]);
@@ -1959,23 +2056,54 @@ export async function registerRoutes(app: Express): Promise<Server> {
           const existingStart = existingStartMinutes - bufferMinutes;
           const existingEnd = existingEndMinutes + bufferMinutes;
 
-          return requestedStart < existingEnd && existingStart < existingEnd;
+          return requestedStart < existingEnd && existingStart < requestedEnd;
         });
 
-        if (conflictingBookings.length > 0) {
+        return conflictingBookings.length === 0;
+      };
+
+      let assignedTableId = tableId;
+
+      if (tableId) {
+        // Specific table requested - check if it's available
+        const selectedTable = tables.find(table => table.id === tableId);
+        
+        if (!selectedTable) {
           return res.status(400).json({ 
-            message: `Table conflict: The selected table is already booked at ${bookingTime} on ${bookingDate.toISOString().split('T')[0]}` 
+            message: "Selected table not found" 
           });
         }
 
-        // Check table capacity
-        const tables = await storage.getTablesByRestaurant(restaurantId);
-        const selectedTable = tables.find(table => table.id === tableId);
-        if (selectedTable && selectedTable.capacity < req.body.guestCount) {
+        if (!isTableAvailable(selectedTable)) {
+          // Find alternative table suggestions
+          const availableTables = tables.filter(table => isTableAvailable(table))
+            .sort((a, b) => a.capacity - b.capacity); // Sort by capacity (smallest suitable first)
+
+          if (availableTables.length > 0) {
+            const suggestedTable = availableTables[0];
+            return res.status(400).json({ 
+              message: `Table ${selectedTable.tableNumber} is not available at ${bookingTime}. Table ${suggestedTable.tableNumber} (capacity: ${suggestedTable.capacity}) is available as an alternative.`,
+              suggestedTable: suggestedTable
+            });
+          } else {
+            return res.status(400).json({ 
+              message: `Table ${selectedTable.tableNumber} is not available at ${bookingTime} and no alternative tables are available for ${requestedGuestCount} guests.`
+            });
+          }
+        }
+      } else {
+        // No specific table requested - automatically assign the best available table
+        const availableTables = tables.filter(table => isTableAvailable(table))
+          .sort((a, b) => a.capacity - b.capacity); // Sort by capacity (smallest suitable first)
+
+        if (availableTables.length === 0) {
           return res.status(400).json({ 
-            message: `Table capacity exceeded: Table can accommodate ${selectedTable.capacity} guests, but ${req.body.guestCount} guests requested` 
+            message: `No tables available for ${requestedGuestCount} guests at ${bookingTime} on ${bookingDate.toISOString().split('T')[0]}. Please try a different time or date.`
           });
         }
+
+        // Assign the smallest suitable table
+        assignedTableId = availableTables[0].id;
       }
 
       // Get or create customer first
@@ -1990,7 +2118,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
         restaurantId,
         tenantId,
         customerId: customer.id,
-        bookingDate: bookingDate
+        bookingDate: bookingDate,
+        tableId: assignedTableId
       });
 
       const booking = await storage.createBooking(bookingData);
