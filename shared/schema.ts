@@ -10,6 +10,7 @@ import {
   date,
   time,
   json,
+  unique,
 } from "drizzle-orm/pg-core";
 import { createInsertSchema, createSelectSchema } from "drizzle-zod";
 import { z } from "zod";
@@ -493,6 +494,26 @@ export const tableLayouts = pgTable("table_layouts", {
     .$onUpdate(() => new Date()),
 });
 
+// Integration Configurations table
+export const integrationConfigurations = pgTable("integration_configurations", {
+  id: serial("id").primaryKey(),
+  restaurantId: integer("restaurant_id")
+    .notNull()
+    .references(() => restaurants.id),
+  tenantId: integer("tenant_id")
+    .notNull()
+    .references(() => tenants.id),
+  integrationId: varchar("integration_id", { length: 100 }).notNull(),
+  isEnabled: boolean("is_enabled").default(false).notNull(),
+  configuration: json("configuration").default({}).notNull(), // Store API keys, settings, etc.
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at")
+    .defaultNow()
+    .$onUpdate(() => new Date()),
+}, (table) => ({
+  restaurantIntegrationUnique: unique().on(table.restaurantId, table.integrationId),
+}));
+
 // Type exports for all tables
 export type User = InferSelectModel<typeof users>;
 export type InsertUser = InferInsertModel<typeof users>;
@@ -541,5 +562,11 @@ export type InsertTableLayout = InferInsertModel<typeof tableLayouts>;
 
 export type BookingChangeRequest = InferSelectModel<typeof bookingChangeRequests>;
 export type InsertBookingChangeRequest = InferInsertModel<typeof bookingChangeRequests>;
+
+export type IntegrationConfiguration = InferSelectModel<typeof integrationConfigurations>;
+export type InsertIntegrationConfiguration = InferInsertModel<typeof integrationConfigurations>;
+
+export const insertIntegrationConfigurationSchema = createInsertSchema(integrationConfigurations);
+export const selectIntegrationConfigurationSchema = createSelectSchema(integrationConfigurations);
 
 export type LoginData = z.infer<typeof loginSchema>;
