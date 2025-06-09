@@ -369,24 +369,63 @@ export function RealTimeNotifications() {
           return `Booking #${changedBookingId}: ${booking?.customerName || 'Customer'} updated their booking`;
         }
         const changeDetails = Object.entries(changes).map(([key, change]) => {
-          const from = change?.from;
-          const to = change?.to;
+          // Handle various change data structures more comprehensively
+          let from, to;
+          
+          if (change && typeof change === 'object') {
+            // Try multiple possible property names for before/after values
+            from = change.from || change.oldValue || change.old || change.previous;
+            to = change.to || change.newValue || change.new || change.current;
+            
+            // If still no values, try array format [old, new]
+            if (!from && !to && Array.isArray(change) && change.length === 2) {
+              [from, to] = change;
+            }
+          }
+          
+          // Format the change description based on field type
           switch (key) {
             case 'bookingDate': 
-              return `date from ${format(new Date(from), 'MMM dd')} to ${format(new Date(to), 'MMM dd')}`;
+              if (from && to) {
+                try {
+                  return `date from ${format(new Date(from), 'MMM dd')} to ${format(new Date(to), 'MMM dd')}`;
+                } catch {
+                  return `booking date updated`;
+                }
+              }
+              return `booking date updated`;
+              
             case 'startTime': 
-              return `time from ${from} to ${to}`;
+              if (from && to) {
+                return `time from ${from} to ${to}`;
+              }
+              return `booking time updated`;
+              
             case 'guestCount': 
-              return `party size from ${from} to ${to} guests`;
+              if (from && to) {
+                return `party size from ${from} to ${to} guests`;
+              }
+              return `party size updated`;
+              
             case 'tableId':
-              return `table from ${from || 'unassigned'} to ${to || 'unassigned'}`;
+              if (from && to) {
+                return `table from ${from || 'unassigned'} to ${to || 'unassigned'}`;
+              }
+              return `table assignment updated`;
+              
             case 'notes':
-              return `special notes`;
+              return `special notes updated`;
+              
             case 'endTime':
-              return `end time from ${from || 'open'} to ${to || 'open'}`;
-            default: return `${key}`;
+              if (from && to) {
+                return `end time from ${from || 'open'} to ${to || 'open'}`;
+              }
+              return `end time updated`;
+              
+            default: 
+              return `${key} updated`;
           }
-        }).join(', ');
+        }).filter(detail => detail).join(', ');
         return `Booking #${changedBookingId}: ${booking?.customerName || 'Customer'} changed ${changeDetails}`;
       case 'booking_cancelled':
         if (!booking?.customerName || !booking?.bookingDate) return 'Booking cancelled';
