@@ -3017,7 +3017,6 @@ app.put("/api/tenants/:tenantId/bookings/:id", validateTenant, async (req, res) 
       }
 
       const notifications = await storage.getNotificationsByRestaurant(restaurantId);
-      console.log('API returning notifications:', notifications.length, 'items');
       res.json(notifications);
     } catch (error) {
       console.error("Error fetching notifications:", error);
