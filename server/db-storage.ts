@@ -343,11 +343,17 @@ export class DatabaseStorage implements IStorage {
   }
 
   async getUserByEmail(email: string): Promise<User | undefined> {
+    if (!this.db) {
+      throw new Error("Database connection not available. Please configure DATABASE_URL or SUPABASE_DATABASE_URL environment variable.");
+    }
     const result = await this.db.select().from(users).where(eq(users.email, email));
     return result[0];
   }
 
   async createUser(insertUser: InsertUser): Promise<User> {
+    if (!this.db) {
+      throw new Error("Database connection not available. Please configure DATABASE_URL or SUPABASE_DATABASE_URL environment variable.");
+    }
     const result = await this.db.insert(users).values(insertUser).returning();
     return result[0];
   }
