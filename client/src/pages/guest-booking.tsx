@@ -24,6 +24,7 @@ import {
 } from "lucide-react";
 import { apiRequest } from "@/lib/queryClient";
 import InteractiveBookingCalendar from "@/components/interactive-booking-calendar";
+import InternationalPhoneInput from "@/components/international-phone-input";
 
 interface BookingStep {
   id: string;
@@ -145,7 +146,8 @@ export default function GuestBooking() {
         const date = new Date(year, month, day);
 
         // Skip dates in the past
-        if (date < today.setHours(0, 0, 0, 0)) {
+        const todayStart = new Date(today.getFullYear(), today.getMonth(), today.getDate());
+        if (date < todayStart) {
           continue;
         }
 
@@ -357,7 +359,7 @@ export default function GuestBooking() {
               </div>
             ) : (
               <div className="grid grid-cols-3 gap-3 max-w-lg mx-auto">
-                {(timeSlots || []).map((time) => {
+                {(timeSlots as string[] || []).map((time: string) => {
                   const isSelected = selectedTime === time;
                   return (
                     <Button
@@ -450,18 +452,11 @@ export default function GuestBooking() {
 
               <div>
                 <Label htmlFor="phone">Mobile</Label>
-                <div className="flex">
-                  <div className="flex items-center px-3 border border-r-0 rounded-l-md bg-gray-50">
-                    <span className="text-sm">🇬🇧 +44</span>
-                  </div>
-                  <Input
-                    id="phone"
-                    value={customerData.phone}
-                    onChange={(e) => setCustomerData(prev => ({ ...prev, phone: e.target.value }))}
-                    placeholder="Phone number"
-                    className="rounded-l-none"
-                  />
-                </div>
+                <InternationalPhoneInput
+                  value={customerData.phone}
+                  onChange={(phone) => setCustomerData(prev => ({ ...prev, phone }))}
+                  placeholder="Phone number"
+                />
               </div>
 
               <div>

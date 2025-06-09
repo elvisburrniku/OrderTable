@@ -520,10 +520,10 @@ export default function Bookings() {
             <div className="grid grid-cols-2 gap-4">
               <div>
                 <Label htmlFor="customerPhone">Phone</Label>
-                <Input
-                  id="customerPhone"
+                <InternationalPhoneInput
                   value={newBooking.customerPhone}
-                  onChange={(e) => setNewBooking({ ...newBooking, customerPhone: e.target.value })}
+                  onChange={(phone) => setNewBooking({ ...newBooking, customerPhone: phone })}
+                  placeholder="Phone number"
                 />
               </div>
               <div>
