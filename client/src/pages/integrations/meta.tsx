@@ -213,42 +213,55 @@ export default function MetaIntegration() {
                 />
               </div>
 
-              {isActivated && installLink && (
+              {isActivated && (
                 <div className="space-y-4 p-4 bg-blue-50 rounded-lg">
-                  <div>
-                    <Label htmlFor="install-link" className="text-gray-700 font-medium">
-                      fb_installlink
-                    </Label>
-                    <div className="flex items-center space-x-2 mt-2">
-                      <Input
-                        id="install-link"
-                        value={installLink}
-                        readOnly
-                        className="flex-1 bg-white"
-                      />
+                  {installLink ? (
+                    <div>
+                      <Label htmlFor="install-link" className="text-gray-700 font-medium">
+                        fb_installlink
+                      </Label>
+                      <div className="flex items-center space-x-2 mt-2">
+                        <Input
+                          id="install-link"
+                          value={installLink}
+                          readOnly
+                          className="flex-1 bg-white"
+                        />
+                        <Button 
+                          variant="outline" 
+                          size="sm"
+                          onClick={handleCopyLink}
+                          className="shrink-0"
+                        >
+                          {copied ? (
+                            <CheckCircle className="w-4 h-4" />
+                          ) : (
+                            <Copy className="w-4 h-4" />
+                          )}
+                          {copied ? '' : 'Copy!'}
+                        </Button>
+                      </div>
+                      
+                      <Alert className="border-blue-200 bg-blue-50 mt-4">
+                        <AlertCircle className="h-4 w-4 text-blue-600" />
+                        <AlertDescription className="text-blue-800">
+                          Use this installation link to complete the Meta integration process. 
+                          This link includes your restaurant profile information: <strong>{restaurant.name}</strong>
+                        </AlertDescription>
+                      </Alert>
+                    </div>
+                  ) : (
+                    <div className="text-center">
+                      <p className="text-gray-600 mb-4">Generate a new installation link to connect Facebook and Instagram.</p>
                       <Button 
-                        variant="outline" 
-                        size="sm"
-                        onClick={handleCopyLink}
-                        className="shrink-0"
+                        onClick={() => generateInstallLinkMutation.mutate()}
+                        disabled={generateInstallLinkMutation.isPending}
+                        className="bg-blue-600 hover:bg-blue-700 text-white"
                       >
-                        {copied ? (
-                          <CheckCircle className="w-4 h-4" />
-                        ) : (
-                          <Copy className="w-4 h-4" />
-                        )}
-                        {copied ? '' : 'Copy!'}
+                        {generateInstallLinkMutation.isPending ? 'Generating...' : 'Generate Install Link'}
                       </Button>
                     </div>
-                  </div>
-                  
-                  <Alert className="border-blue-200 bg-blue-50">
-                    <AlertCircle className="h-4 w-4 text-blue-600" />
-                    <AlertDescription className="text-blue-800">
-                      Use this installation link to complete the Meta integration process. 
-                      This link includes your restaurant profile information: <strong>{restaurant.name}</strong>
-                    </AlertDescription>
-                  </Alert>
+                  )}
                 </div>
               )}
 
