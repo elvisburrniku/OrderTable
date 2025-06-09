@@ -2534,14 +2534,25 @@ app.put("/api/tenants/:tenantId/bookings/:id", validateTenant, async (req, res) 
 
         res.json(updatedBooking);
       } else {
+        // Store original booking data before making changes
+        const originalBooking = { ...booking };
+
         // For other updates (table changes, etc.), update directly
         const updatedBooking = await storage.updateBooking(id, allowedUpdates);
 
-        // Send real-time notification to restaurant
+        // Send real-time notification to restaurant with original data for reverting
         broadcastNotification(updatedBooking.restaurantId, {
           type: 'booking_changed',
           booking: updatedBooking,
           changes: allowedUpdates,
+          originalData: {
+            bookingDate: originalBooking.bookingDate,
+            startTime: originalBooking.startTime,
+            endTime: originalBooking.endTime,
+            guestCount: originalBooking.guestCount,
+            tableId: originalBooking.tableId,
+            notes: originalBooking.notes
+          },
           timestamp: new Date().toISOString()
         });
 

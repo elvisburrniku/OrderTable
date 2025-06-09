@@ -35,6 +35,7 @@ interface BookingNotification {
     status: string;
   };
   changes?: any;
+  originalData?: any;
   approved?: boolean;
   restaurant?: {
     id: number;
@@ -42,6 +43,8 @@ interface BookingNotification {
   };
   timestamp: string;
   read?: boolean;
+  reverted?: boolean;
+  cancelledBy?: string;
 }
 
 export function RealTimeNotifications() {
@@ -140,6 +143,48 @@ export function RealTimeNotifications() {
       setProcessingRequests(prev => {
         const next = new Set(prev);
         next.delete(requestId);
+        return next;
+      });
+    }
+  };
+
+  const handleRevertChanges = async (bookingId: number, originalData: any) => {
+    setProcessingRequests(prev => new Set(prev).add(bookingId));
+    
+    try {
+      const res = await fetch(`/api/tenants/${restaurant?.tenantId}/restaurants/${restaurant?.id}/bookings/${bookingId}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          bookingDate: originalData.bookingDate,
+          startTime: originalData.startTime,
+          endTime: originalData.endTime,
+          guestCount: originalData.guestCount,
+          tableId: originalData.tableId,
+          notes: originalData.notes
+        })
+      });
+
+      if (res.ok) {
+        // Mark notification as processed/reverted
+        setNotifications(prev => 
+          prev.map(n => 
+            n.booking?.id === bookingId && n.type === 'booking_changed'
+              ? { ...n, reverted: true }
+              : n
+          )
+        );
+      } else {
+        console.error('Failed to revert booking changes');
+      }
+    } catch (error) {
+      console.error('Error reverting booking changes:', error);
+    } finally {
+      setProcessingRequests(prev => {
+        const next = new Set(prev);
+        next.delete(bookingId);
         return next;
       });
     }
@@ -357,7 +402,32 @@ export function RealTimeNotifications() {
                           </div>
                         )}
                         
-                        {processingRequests.has(notification.changeRequest?.id) && (
+                        {notification.type === 'booking_changed' && 
+                         notification.originalData && 
+                         !notification.reverted &&
+                         !processingRequests.has(notification.booking.id) && (
+                          <div className="mt-3">
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                handleRevertChanges(notification.booking.id, notification.originalData);
+                              }}
+                              className="text-orange-600 border-orange-300 hover:bg-orange-50"
+                            >
+                              Revert Changes
+                            </Button>
+                          </div>
+                        )}
+                        
+                        {notification.reverted && (
+                          <Badge variant="secondary" className="mt-2">
+                            Changes Reverted
+                          </Badge>
+                        )}
+                        
+                        {processingRequests.has(notification.changeRequest?.id || notification.booking.id) && (
                           <div className="mt-2 text-sm text-gray-500">
                             Processing...
                           </div>
