@@ -43,7 +43,10 @@ function broadcastNotification(restaurantId: number, notification: any) {
   console.log(`Broadcasting notification for restaurant ${restaurantId}, connections found: ${connections ? connections.size : 0}`);
 
   if (connections && connections.size > 0) {
-    const message = JSON.stringify(notification);
+    const message = JSON.stringify({
+      type: 'notification',
+      notification: notification
+    });
     let sentCount = 0;
     connections.forEach(ws => {
       if (ws.readyState === WebSocket.OPEN) {
@@ -2327,6 +2330,71 @@ app.put("/api/tenants/:tenantId/bookings/:id", validateTenant, async (req, res) 
       res.json(tables);
     } catch (error) {
       console.error("Error fetching available tables:", error);
+      res.status(500).json({ message: "Internal server error" });
+    }
+  });
+
+  // Cancel booking route for booking management
+  app.post("/api/booking-manage/:id/cancel", async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      const { hash } = req.body;
+
+      if (!hash) {
+        return res.status(403).json({ message: "Access denied - security token required" });
+      }
+
+      const booking = await storage.getBookingById(id);
+      if (!booking) {
+        return res.status(404).json({ message: "Booking not found" });
+      }
+
+      // Verify hash using the stored management hash
+      let isValidHash = false;
+      if (booking.managementHash && hash === booking.managementHash) {
+        isValidHash = true;
+      } else {
+        // Try verifying with cancel hash for legacy bookings
+        isValidHash = BookingHash.verifyHash(
+          hash,
+          booking.id,
+          booking.tenantId,
+          booking.restaurantId,
+          'cancel'
+        );
+      }
+
+      if (!isValidHash) {
+        return res.status(403).json({ message: "Access denied - invalid security token" });
+      }
+
+      // Check if booking can still be cancelled
+      const now = new Date();
+      const bookingDateTime = new Date(booking.bookingDate);
+      const bookingTimeComponents = booking.startTime.split(':');
+      bookingDateTime.setHours(parseInt(bookingTimeComponents[0]), parseInt(bookingTimeComponents[1]), 0, 0);
+
+      const isBookingStarted = now >= bookingDateTime;
+      if (isBookingStarted) {
+        return res.status(403).json({ 
+          message: "Cannot cancel booking - the booking time has already started or passed" 
+        });
+      }
+
+      // Cancel the booking
+      const updatedBooking = await storage.updateBooking(id, { status: 'cancelled' });
+
+      // Send real-time notification to restaurant
+      broadcastNotification(updatedBooking.restaurantId, {
+        type: 'booking_cancelled',
+        booking: updatedBooking,
+        cancelledBy: 'customer',
+        timestamp: new Date().toISOString()
+      });
+
+      res.json({ message: "Booking cancelled successfully", booking: updatedBooking });
+    } catch (error) {
+      console.error("Error cancelling booking:", error);
       res.status(500).json({ message: "Internal server error" });
     }
   });
