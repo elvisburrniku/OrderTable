@@ -1795,14 +1795,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
         bookingDate: new Date(bookingDate),
         startTime,
         endTime: endTime || undefined,
-        tableId: tableId ? parseInt(tableId) : undefined,
+        tableId: (tableId && tableId !== "auto") ? parseInt(tableId) : undefined,
         status: "confirmed" as const,
         source: "walk_in" as const,
         notes: specialRequests || undefined
       };
 
-      // If no table specified, try to find an available one
-      if (!tableId) {
+      // If no table specified or auto-assign, try to find an available one
+      if (!tableId || tableId === "auto") {
         const tables = await storage.getTablesByRestaurant(restaurantId);
         const suitableTables = tables.filter(table => 
           table.isActive && table.capacity >= guestCount

@@ -30,7 +30,7 @@ export function WalkInBooking({ restaurantId, tenantId }: WalkInBookingProps) {
     bookingDate: new Date().toISOString().split('T')[0],
     startTime: new Date().toTimeString().slice(0, 5),
     endTime: "",
-    tableId: "",
+    tableId: "auto",
     customerName: "",
     customerPhone: "",
     notes: "",
@@ -98,7 +98,7 @@ export function WalkInBooking({ restaurantId, tenantId }: WalkInBookingProps) {
       bookingDate: new Date().toISOString().split('T')[0],
       startTime: new Date().toTimeString().slice(0, 5),
       endTime: "",
-      tableId: "",
+      tableId: "auto",
       customerName: "",
       customerPhone: "",
       notes: "",
@@ -211,7 +211,7 @@ export function WalkInBooking({ restaurantId, tenantId }: WalkInBookingProps) {
                     <SelectValue placeholder="Auto-assign table" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="">Auto-assign table</SelectItem>
+                    <SelectItem value="auto">Auto-assign table</SelectItem>
                     {suitableTables.map((table) => (
                       <SelectItem key={table.id} value={table.id.toString()}>
                         Table {table.tableNumber} (Capacity: {table.capacity})
