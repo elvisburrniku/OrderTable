@@ -3026,6 +3026,20 @@ app.put("/api/tenants/:tenantId/bookings/:id", validateTenant, async (req, res) 
     res.json({ received: true });
   });
 
+  // Test webhook endpoint for debugging
+  app.post("/api/webhook-test", async (req, res) => {
+    console.log("=== WEBHOOK TEST RECEIVED ===");
+    console.log("Headers:", req.headers);
+    console.log("Body:", JSON.stringify(req.body, null, 2));
+    console.log("=== END WEBHOOK TEST ===");
+    
+    res.status(200).json({ 
+      message: "Webhook received successfully",
+      timestamp: new Date().toISOString(),
+      received_data: req.body
+    });
+  });
+
   const httpServer = createServer(app);
 
   // Setup WebSocket server for real-time notifications
