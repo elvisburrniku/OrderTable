@@ -2409,19 +2409,184 @@ app.put("/api/tenants/:tenantId/bookings/:id", validateTenant, async (req, res) 
         allowedUpdates.guestCount = updates.guestCount;
       }
 
-      const updatedBooking = await storage.updateBooking(id, allowedUpdates);
+      // For direct booking changes, create a change request instead of updating directly
+      if (action === 'change' && (updates.bookingDate || updates.startTime || updates.guestCount)) {
+        // Create a change request that requires admin approval
+        const changeRequest = await storage.createBookingChangeRequest({
+          bookingId: id,
+          restaurantId: booking.restaurantId,
+          tenantId: booking.tenantId,
+          customerName: booking.customerName,
+          customerEmail: booking.customerEmail,
+          customerPhone: booking.customerPhone,
+          currentDate: booking.bookingDate,
+          currentTime: booking.startTime,
+          currentGuestCount: booking.guestCount,
+          requestedDate: updates.bookingDate ? new Date(updates.bookingDate) : booking.bookingDate,
+          requestedTime: updates.startTime || booking.startTime,
+          requestedGuestCount: updates.guestCount || booking.guestCount,
+          reason: updates.reason || 'Customer requested change',
+          status: 'pending'
+        });
 
-      // Send real-time notification to restaurant
-      broadcastNotification(updatedBooking.restaurantId, {
-        type: 'booking_changed',
-        booking: updatedBooking,
-        changes: allowedUpdates,
-        timestamp: new Date().toISOString()
-      });
+        // Send real-time notification to restaurant admin
+        broadcastNotification(booking.restaurantId, {
+          type: 'booking_change_request',
+          changeRequest: changeRequest,
+          booking: booking,
+          timestamp: new Date().toISOString()
+        });
 
-      res.json(updatedBooking);
+        // Send email notification to restaurant if available
+        if (emailService) {
+          try {
+            const restaurant = await storage.getRestaurantById(booking.restaurantId);
+            if (restaurant && restaurant.email) {
+              await emailService.sendBookingChangeRequest(restaurant.email, changeRequest, booking);
+              console.log('Booking change request email sent to restaurant');
+            }
+          } catch (error) {
+            console.error('Failed to send change request email:', error);
+          }
+        }
+
+        res.json({ 
+          message: 'Change request submitted successfully. The restaurant will review your request and notify you of their decision.',
+          changeRequest: changeRequest
+        });
+      } else if (action === 'cancel') {
+        // For cancellations, update the booking status immediately but notify the restaurant
+        const updatedBooking = await storage.updateBooking(id, { status: 'cancelled' });
+
+        // Send real-time notification to restaurant
+        broadcastNotification(updatedBooking.restaurantId, {
+          type: 'booking_cancelled',
+          booking: updatedBooking,
+          cancelledBy: 'customer',
+          timestamp: new Date().toISOString()
+        });
+
+        res.json(updatedBooking);
+      } else {
+        // For other updates (table changes, etc.), update directly
+        const updatedBooking = await storage.updateBooking(id, allowedUpdates);
+
+        // Send real-time notification to restaurant
+        broadcastNotification(updatedBooking.restaurantId, {
+          type: 'booking_changed',
+          booking: updatedBooking,
+          changes: allowedUpdates,
+          timestamp: new Date().toISOString()
+        });
+
+        res.json(updatedBooking);
+      }
     } catch (error) {
       console.error("Error updating booking:", error);
+      res.status(500).json({ message: "Internal server error" });
+    }
+  });
+
+  // Booking Change Request Management Routes
+  app.get("/api/tenants/:tenantId/restaurants/:restaurantId/change-requests", validateTenant, async (req, res) => {
+    try {
+      const restaurantId = parseInt(req.params.restaurantId);
+      const tenantId = parseInt(req.params.tenantId);
+
+      const restaurant = await storage.getRestaurantById(restaurantId);
+      if (!restaurant || restaurant.tenantId !== tenantId) {
+        return res.status(404).json({ message: "Restaurant not found" });
+      }
+
+      const changeRequests = await storage.getBookingChangeRequestsByRestaurant(restaurantId);
+      res.json(changeRequests);
+    } catch (error) {
+      console.error("Error fetching change requests:", error);
+      res.status(500).json({ message: "Internal server error" });
+    }
+  });
+
+  app.post("/api/booking-change-response/:requestId", async (req, res) => {
+    try {
+      const requestId = parseInt(req.params.requestId);
+      const { action, response } = req.body;
+
+      if (!['approve', 'reject'].includes(action)) {
+        return res.status(400).json({ message: "Invalid action. Must be 'approve' or 'reject'" });
+      }
+
+      const changeRequest = await storage.getBookingChangeRequestById(requestId);
+      if (!changeRequest) {
+        return res.status(404).json({ message: "Change request not found" });
+      }
+
+      const booking = await storage.getBookingById(changeRequest.bookingId);
+      if (!booking) {
+        return res.status(404).json({ message: "Booking not found" });
+      }
+
+      // Update change request status
+      const updatedRequest = await storage.updateBookingChangeRequest(requestId, {
+        status: action === 'approve' ? 'approved' : 'rejected',
+        restaurantResponse: response || null,
+        processedAt: new Date()
+      });
+
+      if (action === 'approve') {
+        // Apply the changes to the booking
+        const bookingUpdates: any = {};
+        if (changeRequest.requestedDate) {
+          bookingUpdates.bookingDate = changeRequest.requestedDate;
+        }
+        if (changeRequest.requestedTime) {
+          bookingUpdates.startTime = changeRequest.requestedTime;
+        }
+        if (changeRequest.requestedGuestCount) {
+          bookingUpdates.guestCount = changeRequest.requestedGuestCount;
+        }
+
+        const updatedBooking = await storage.updateBooking(changeRequest.bookingId, bookingUpdates);
+
+        // Send real-time notification to restaurant
+        broadcastNotification(booking.restaurantId, {
+          type: 'booking_change_approved',
+          booking: updatedBooking,
+          changeRequest: updatedRequest,
+          timestamp: new Date().toISOString()
+        });
+      } else {
+        // Send real-time notification for rejection
+        broadcastNotification(booking.restaurantId, {
+          type: 'booking_change_rejected',
+          booking: booking,
+          changeRequest: updatedRequest,
+          timestamp: new Date().toISOString()
+        });
+      }
+
+      // Send email notification to customer
+      if (emailService) {
+        try {
+          await emailService.sendChangeRequestResponse(
+            changeRequest.customerEmail,
+            changeRequest.customerName,
+            action === 'approve',
+            booking,
+            changeRequest,
+            response
+          );
+          console.log(`Change request response email sent to customer: ${action}`);
+        } catch (error) {
+          console.error('Failed to send change request response email:', error);
+        }
+      }
+
+      res.json({
+        message: `Change request ${action}d successfully`,
+        changeRequest: updatedRequest
+      });
+    } catch (error) {
+      console.error("Error processing change request:", error);
       res.status(500).json({ message: "Internal server error" });
     }
   });
