@@ -416,14 +416,14 @@ export function RealTimeNotifications() {
           
           <CardContent className="p-0">
             <div className="max-h-96 overflow-y-auto">
-              {notifications.length === 0 ? (
+              {allNotifications.length === 0 ? (
                 <div className="p-4 text-center text-gray-500">
                   <Bell className="h-8 w-8 mx-auto mb-2 text-gray-300" />
                   <p>No notifications yet</p>
                   <p className="text-sm">You'll see booking updates here</p>
                 </div>
               ) : (
-                notifications.map((notification) => (
+                allNotifications.map((notification) => (
                   <div
                     key={notification.id}
                     className={`p-4 border-b border-gray-200 hover:bg-gray-50 ${

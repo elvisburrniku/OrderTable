@@ -73,6 +73,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
     next();
   };
 
+  // Middleware to attach user from session to request
+  const attachUser = (req: any, res: any, next: any) => {
+    if (req.session && req.session.user) {
+      req.user = req.session.user;
+    }
+    next();
+  };
+
+  // Apply session middleware to all routes
+  app.use(attachUser);
+
   // Company Registration route
   app.post("/api/auth/register-company", async (req, res) => {
     try {
@@ -184,6 +195,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
 
       const restaurant = await storage.getRestaurantByUserId(user.id);
+
+      // Store user in session for persistent authentication
+      (req as any).session.user = { ...user, password: undefined };
+      (req as any).session.tenant = tenantUser;
+      (req as any).session.restaurant = restaurant;
 
       res.json({ 
         user: { ...user, password: undefined },
