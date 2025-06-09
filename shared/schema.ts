@@ -128,7 +128,7 @@ export const bookings = pgTable("bookings", {
   tableId: integer("table_id").references(() => tables.id),
   customerId: integer("customer_id").references(() => customers.id),
   customerName: text("customer_name").notNull(),
-  customerEmail: text("customer_email").notNull(),
+  customerEmail: text("customer_email"),
   customerPhone: text("customer_phone"),
   guestCount: integer("guest_count").notNull(),
   bookingDate: timestamp("booking_date").notNull(),
