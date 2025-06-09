@@ -60,11 +60,27 @@ export function RealTimeNotifications() {
 
   const [processingRequests, setProcessingRequests] = useState<Set<number>>(new Set());
 
-  // Fetch persistent notifications from database
+  // Fetch persistent notifications from database using tenant-scoped endpoint
   const { data: persistentNotifications = [] } = useQuery({
-    queryKey: ['/api/notifications'],
-    enabled: !!restaurant?.id,
+    queryKey: ['/api/tenants', restaurant?.tenantId, 'restaurants', restaurant?.id, 'notifications'],
+    enabled: !!restaurant?.id && !!restaurant?.tenantId,
     refetchInterval: 30000, // Refetch every 30 seconds
+    queryFn: () => {
+      if (!restaurant?.id || !restaurant?.tenantId) {
+        throw new Error('Restaurant ID and Tenant ID are required');
+      }
+      return fetch(`/api/tenants/${restaurant.tenantId}/restaurants/${restaurant.id}/notifications`, {
+        credentials: 'include',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      }).then(res => {
+        if (!res.ok) {
+          throw new Error(`HTTP ${res.status}: ${res.statusText}`);
+        }
+        return res.json();
+      });
+    },
   });
 
   // Combine live and persistent notifications
@@ -78,7 +94,7 @@ export function RealTimeNotifications() {
       method: 'PATCH',
     }),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['/api/notifications'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/tenants', restaurant?.tenantId, 'restaurants', restaurant?.id, 'notifications'] });
     },
   });
 
@@ -88,7 +104,7 @@ export function RealTimeNotifications() {
       method: 'PATCH',
     }),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['/api/notifications'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/tenants', restaurant?.tenantId, 'restaurants', restaurant?.id, 'notifications'] });
       setUnreadCount(0);
     },
   });
@@ -99,8 +115,8 @@ export function RealTimeNotifications() {
       method: 'POST',
     }),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['/api/notifications'] });
-      queryClient.invalidateQueries({ queryKey: ['/api/bookings'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/tenants', restaurant?.tenantId, 'restaurants', restaurant?.id, 'notifications'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/tenants', restaurant?.tenantId, 'restaurants', restaurant?.id, 'bookings'] });
       toast({
         title: "Changes Reverted",
         description: "The booking changes have been successfully reverted.",
@@ -120,7 +136,7 @@ export function RealTimeNotifications() {
     onMessage: (data) => {
       if (data.type === 'notification') {
         // Handle persistent notifications from WebSocket
-        queryClient.invalidateQueries({ queryKey: ['/api/notifications'] });
+        queryClient.invalidateQueries({ queryKey: ['/api/tenants', restaurant?.tenantId, 'restaurants', restaurant?.id, 'notifications'] });
         setUnreadCount(prev => prev + 1);
         
         // Show browser notification if permission granted
