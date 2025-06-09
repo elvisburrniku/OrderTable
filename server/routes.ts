@@ -2249,13 +2249,15 @@ app.put("/api/tenants/:tenantId/bookings/:id", validateTenant, async (req, res) 
 
       // Get cut-off times for the restaurant
       const cutOffTimes = await storage.getCutOffTimesByRestaurant(booking.restaurantId);
+      console.log('Cut-off times data:', cutOffTimes);
 
       // Determine cut-off deadline based on restaurant policy
       const dayOfWeek = bookingDateTime.getDay();
-      const dayNames = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'];
-      const dayName = dayNames[dayOfWeek];
 
-      const cutOffTime = cutOffTimes.find((ct: any) => ct.dayOfWeek.toLowerCase() === dayName);
+      const cutOffTime = cutOffTimes.find((ct: any) => {
+        console.log('Checking cut-off time:', ct, 'dayOfWeek:', ct.dayOfWeek, 'target:', dayOfWeek);
+        return ct.dayOfWeek === dayOfWeek;
+      });
 
       let canModify = false;
       let canCancel = false;
