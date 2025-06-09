@@ -121,6 +121,7 @@ export interface IStorage {
   createCustomer(customer: InsertCustomer): Promise<Customer>;
   updateCustomer(id: number, updates: Partial<Customer>): Promise<Customer | undefined>;
   getOrCreateCustomer(restaurantId: number, tenantId: number, customerData: { name: string; email: string; phone?: string }): Promise<Customer>;
+  createWalkInCustomer(restaurantId: number, tenantId: number, customerData?: { name?: string; phone?: string; notes?: string }): Promise<Customer>;
 
   // SMS Messages
   getSmsMessagesByRestaurant(restaurantId: number): Promise<SmsMessage[]>;

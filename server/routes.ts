@@ -1754,6 +1754,166 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Walk-in booking routes
+  app.post("/api/tenants/:tenantId/restaurants/:restaurantId/walk-in-booking", validateTenant, async (req, res) => {
+    try {
+      const restaurantId = parseInt(req.params.restaurantId);
+      const tenantId = parseInt(req.params.tenantId);
+      const { 
+        guestCount, 
+        bookingDate, 
+        startTime, 
+        endTime, 
+        tableId, 
+        customerName, 
+        customerPhone, 
+        notes,
+        specialRequests 
+      } = req.body;
+
+      const restaurant = await storage.getRestaurantById(restaurantId);
+      if (!restaurant || restaurant.tenantId !== tenantId) {
+        return res.status(404).json({ message: "Restaurant not found" });
+      }
+
+      // Create walk-in customer
+      const walkInCustomer = await storage.createWalkInCustomer(restaurantId, tenantId, {
+        name: customerName || undefined,
+        phone: customerPhone || undefined,
+        notes: notes || undefined
+      });
+
+      // Create booking data
+      const bookingData = {
+        restaurantId,
+        tenantId,
+        customerId: walkInCustomer.id,
+        customerName: walkInCustomer.name || "Walk-in Customer",
+        customerEmail: walkInCustomer.email || "",
+        guestCount: parseInt(guestCount),
+        bookingDate: new Date(bookingDate),
+        startTime,
+        endTime: endTime || undefined,
+        tableId: tableId ? parseInt(tableId) : undefined,
+        status: "confirmed" as const,
+        source: "walk_in" as const,
+        specialRequests: specialRequests || undefined
+      };
+
+      // If no table specified, try to find an available one
+      if (!tableId) {
+        const tables = await storage.getTablesByRestaurant(restaurantId);
+        const suitableTables = tables.filter(table => 
+          table.isActive && table.capacity >= guestCount
+        );
+
+        if (suitableTables.length === 0) {
+          return res.status(400).json({ 
+            message: "No available tables for walk-in at this time",
+            alternatives: [] 
+          });
+        }
+
+        // Check availability for each suitable table
+        let selectedTable = null;
+        for (const table of suitableTables) {
+          const existingBookings = await storage.getBookingsByDate(restaurantId, bookingDate);
+          const isAvailable = !existingBookings.some(booking => 
+            booking.tableId === table.id && 
+            booking.status !== 'cancelled' &&
+            booking.startTime === startTime
+          );
+          
+          if (isAvailable) {
+            selectedTable = table;
+            break;
+          }
+        }
+
+        if (!selectedTable) {
+          return res.status(400).json({ 
+            message: "No available tables for walk-in at this time",
+            alternatives: [] 
+          });
+        }
+
+        bookingData.tableId = selectedTable.id;
+      }
+
+      const newBooking = await storage.createBooking(bookingData);
+
+      // Log the walk-in activity
+      await storage.createActivityLog({
+        restaurantId,
+        tenantId,
+        eventType: "walk_in_booking_created",
+        description: `Walk-in booking created for ${guestCount} guests`,
+        source: "staff",
+        userEmail: "walk-in-system",
+        details: JSON.stringify({
+          bookingId: newBooking.id,
+          customerId: walkInCustomer.id,
+          customerName: walkInCustomer.name,
+          tableId: bookingData.tableId
+        })
+      });
+
+      res.status(201).json({
+        booking: newBooking,
+        customer: walkInCustomer,
+        message: "Walk-in booking created successfully"
+      });
+    } catch (error) {
+      console.error("Error creating walk-in booking:", error);
+      res.status(500).json({ message: "Failed to create walk-in booking" });
+    }
+  });
+
+  app.put("/api/tenants/:tenantId/customers/:customerId", validateTenant, async (req, res) => {
+    try {
+      const tenantId = parseInt(req.params.tenantId);
+      const customerId = parseInt(req.params.customerId);
+      const { name, email, phone, notes } = req.body;
+
+      const customer = await storage.getCustomerById(customerId);
+      if (!customer || customer.tenantId !== tenantId) {
+        return res.status(404).json({ message: "Customer not found" });
+      }
+
+      const updatedCustomer = await storage.updateCustomer(customerId, {
+        name: name || customer.name,
+        email: email || customer.email,
+        phone: phone || customer.phone,
+        notes: notes || customer.notes,
+        isWalkIn: email ? false : customer.isWalkIn // Convert to regular customer if email provided
+      });
+
+      if (!updatedCustomer) {
+        return res.status(500).json({ message: "Failed to update customer" });
+      }
+
+      // Log the customer update
+      await storage.createActivityLog({
+        restaurantId: customer.restaurantId,
+        tenantId,
+        eventType: "customer_updated",
+        description: `Customer information updated: ${updatedCustomer.name}`,
+        source: "staff",
+        userEmail: "system",
+        details: JSON.stringify({
+          customerId,
+          wasWalkIn: customer.isWalkIn,
+          isWalkIn: updatedCustomer.isWalkIn
+        })
+      });
+
+      res.json(updatedCustomer);
+    } catch (error) {
+      console.error("Error updating customer:", error);
+      res.status(500).json({ message: "Failed to update customer" });
+    }
+  });
+
   // Email notification settings routes
   app.post("/api/tenants/:tenantId/restaurants/:restaurantId/email-settings", validateTenant, async (req, res) => {
     try {
