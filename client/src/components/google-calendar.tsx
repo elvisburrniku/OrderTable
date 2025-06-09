@@ -8,6 +8,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { useAuth } from "@/lib/auth.tsx";
 import { useMutation, useQueryClient, useQuery } from "@tanstack/react-query";
 import { apiRequest } from "@/lib/queryClient";
+import InternationalPhoneInput from "@/components/international-phone-input";
 import { useToast } from "@/hooks/use-toast";
 import { 
   format, 
@@ -489,10 +490,10 @@ export default function GoogleCalendar({ selectedDate, bookings, allBookings = [
             <div className="grid grid-cols-2 gap-4">
               <div>
                 <Label htmlFor="customerPhone">Phone</Label>
-                <Input
-                  id="customerPhone"
+                <InternationalPhoneInput
                   value={newBooking.customerPhone}
-                  onChange={(e) => setNewBooking(prev => ({ ...prev, customerPhone: e.target.value }))}
+                  onChange={(phone: string) => setNewBooking(prev => ({ ...prev, customerPhone: phone }))}
+                  placeholder="Phone number"
                 />
               </div>
               <div>

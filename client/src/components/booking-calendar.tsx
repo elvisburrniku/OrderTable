@@ -8,6 +8,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { useAuth } from "@/lib/auth.tsx";
 import { useMutation, useQueryClient, useQuery } from "@tanstack/react-query";
 import { apiRequest } from "@/lib/queryClient";
+import InternationalPhoneInput from "@/components/international-phone-input";
 import { useToast } from "@/hooks/use-toast";
 import { format, startOfMonth, endOfMonth, eachDayOfInterval, isSameDay, isToday, addMonths, subMonths } from "date-fns";
 import { List, Table, Calendar, Users, Plus, ChevronLeft, ChevronRight, Clock } from "lucide-react";
@@ -633,10 +634,10 @@ export default function BookingCalendar({ selectedDate, bookings, allBookings = 
               </div>
               <div>
                 <Label htmlFor="customerPhone">Phone</Label>
-                <Input
-                  id="customerPhone"
+                <InternationalPhoneInput
                   value={newBooking.customerPhone}
-                  onChange={(e) => setNewBooking({ ...newBooking, customerPhone: e.target.value })}
+                  onChange={(phone: string) => setNewBooking({ ...newBooking, customerPhone: phone })}
+                  placeholder="Phone number"
                 />
               </div>
               <div>

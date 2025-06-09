@@ -42,6 +42,7 @@ import {
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
 import GoogleCalendar from "@/components/google-calendar";
+import InternationalPhoneInput from "@/components/international-phone-input";
 
 export default function Bookings() {
   const { user, restaurant } = useAuth();
@@ -522,7 +523,7 @@ export default function Bookings() {
                 <Label htmlFor="customerPhone">Phone</Label>
                 <InternationalPhoneInput
                   value={newBooking.customerPhone}
-                  onChange={(phone) => setNewBooking({ ...newBooking, customerPhone: phone })}
+                  onChange={(phone: string) => setNewBooking({ ...newBooking, customerPhone: phone })}
                   placeholder="Phone number"
                 />
               </div>
