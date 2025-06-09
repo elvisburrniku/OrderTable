@@ -2735,6 +2735,70 @@ app.put("/api/tenants/:tenantId/bookings/:id", validateTenant, async (req, res) 
     }
   });
 
+  // Webhook Management Routes
+  app.get("/api/tenants/:tenantId/restaurants/:restaurantId/webhooks", validateTenant, async (req, res) => {
+    try {
+      const restaurantId = parseInt(req.params.restaurantId);
+      const tenantId = parseInt(req.params.tenantId);
+
+      if (isNaN(restaurantId) || isNaN(tenantId)) {
+        return res.status(400).json({ message: "Invalid restaurant ID or tenant ID" });
+      }
+
+      // Verify restaurant belongs to tenant
+      const restaurant = await storage.getRestaurantById(restaurantId);
+      if (!restaurant || restaurant.tenantId !== tenantId) {
+        return res.status(404).json({ message: "Restaurant not found" });
+      }
+
+      // Check if webhooks integration is enabled
+      const webhooksConfig = await storage.getIntegrationConfiguration(restaurantId, 'webhooks');
+      if (!webhooksConfig?.isEnabled) {
+        return res.status(403).json({ message: "Webhooks integration is not enabled" });
+      }
+
+      const webhooks = await storage.getWebhooksByRestaurant(restaurantId);
+      res.json(webhooks);
+    } catch (error) {
+      console.error("Error fetching webhooks:", error);
+      res.status(500).json({ message: "Internal server error" });
+    }
+  });
+
+  app.post("/api/tenants/:tenantId/restaurants/:restaurantId/webhooks", validateTenant, async (req, res) => {
+    try {
+      const restaurantId = parseInt(req.params.restaurantId);
+      const tenantId = parseInt(req.params.tenantId);
+      const { webhooks } = req.body;
+
+      if (isNaN(restaurantId) || isNaN(tenantId)) {
+        return res.status(400).json({ message: "Invalid restaurant ID or tenant ID" });
+      }
+
+      // Verify restaurant belongs to tenant
+      const restaurant = await storage.getRestaurantById(restaurantId);
+      if (!restaurant || restaurant.tenantId !== tenantId) {
+        return res.status(404).json({ message: "Restaurant not found" });
+      }
+
+      // Check if webhooks integration is enabled
+      const webhooksConfig = await storage.getIntegrationConfiguration(restaurantId, 'webhooks');
+      if (!webhooksConfig?.isEnabled) {
+        return res.status(403).json({ message: "Webhooks integration is not enabled. Please enable it first in the integrations settings." });
+      }
+
+      if (!Array.isArray(webhooks)) {
+        return res.status(400).json({ message: "Webhooks must be an array" });
+      }
+
+      const savedWebhooks = await storage.saveWebhooks(restaurantId, tenantId, webhooks);
+      res.json(savedWebhooks);
+    } catch (error) {
+      console.error("Error saving webhooks:", error);
+      res.status(500).json({ message: "Internal server error" });
+    }
+  });
+
   // Integration Configuration Routes
   app.get("/api/tenants/:tenantId/restaurants/:restaurantId/integrations", validateTenant, async (req, res) => {
     try {

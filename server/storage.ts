@@ -200,6 +200,10 @@ export interface IStorage {
   createCombinedTable(insertCombinedTable: InsertCombinedTable): Promise<CombinedTable>;
   updateCombinedTable(id: number, updates: Partial<CombinedTable>): Promise<CombinedTable | undefined>;
   deleteCombinedTable(id: number): Promise<boolean>;
+
+    // Webhooks
+    getWebhooksByRestaurant(restaurantId: number): Promise<any[]>;
+    saveWebhooks(restaurantId: number, tenantId: number, webhooks: any[]): Promise<any[]>;
 }
 
 export class MemStorage implements IStorage {
@@ -855,6 +859,14 @@ export class MemStorage implements IStorage {
   async deleteCombinedTable(id: number): Promise<boolean> {
     return this.combinedTables.delete(id);
   }
+
+    // Webhooks
+    async getWebhooksByRestaurant(restaurantId: number): Promise<any[]> {
+        return [];
+    }
+    async saveWebhooks(restaurantId: number, tenantId: number, webhooks: any[]): Promise<any[]> {
+        return [];
+    }
 }
 
 import { DatabaseStorage } from "./db-storage";
