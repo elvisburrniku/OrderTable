@@ -226,8 +226,8 @@ export class BrevoEmailService {
     const baseUrl = process.env.APP_BASE_URL || process.env.REPLIT_DEV_DOMAIN 
       ? `https://${process.env.REPLIT_DEV_DOMAIN}` 
       : 'http://localhost:5000';
-    const approveHash = BookingHash.generateHash(changeRequestDetails.id, bookingDetails.tenantId, bookingDetails.restaurantId, 'change');
-    const rejectHash = BookingHash.generateHash(changeRequestDetails.id, bookingDetails.tenantId, bookingDetails.restaurantId, 'cancel');
+    const approveHash = BookingHash.generateHash(changeRequestDetails.id, bookingDetails.tenantId, bookingDetails.restaurantId, 'approve');
+    const rejectHash = BookingHash.generateHash(changeRequestDetails.id, bookingDetails.tenantId, bookingDetails.restaurantId, 'reject');
 
     sendSmtpEmail.subject = "Booking Change Request";
     sendSmtpEmail.htmlContent = `

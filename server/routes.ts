@@ -2576,23 +2576,80 @@ app.put("/api/tenants/:tenantId/bookings/:id", validateTenant, async (req, res) 
         allowedUpdates.guestCount = updates.guestCount;
       }
 
-      // For direct booking changes, create a change request instead of updating directly
-      if (action === 'change' && (updates.bookingDate || updates.startTime || updates.guestCount)) {
+      // For any date/time/guest changes, validate availability and create change request
+      if (updates.bookingDate || updates.startTime || updates.guestCount) {
+        console.log('Processing change request for date/time/guest count changes');
+        
+        // Validate availability for the requested changes
+        const requestedDate = updates.bookingDate ? new Date(updates.bookingDate) : booking.bookingDate;
+        const requestedTime = updates.startTime || booking.startTime;
+        const requestedGuestCount = updates.guestCount || booking.guestCount;
+        
+        // Check if restaurant is open on the requested day
+        const dayOfWeek = requestedDate.getDay();
+        const openingHours = await storage.getOpeningHoursByRestaurant(booking.restaurantId);
+        const dayHours = openingHours.find(oh => oh.dayOfWeek === dayOfWeek);
+        
+        if (!dayHours || !dayHours.isOpen) {
+          const dayNames = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+          const dayName = dayNames[dayOfWeek];
+          return res.status(400).json({ 
+            message: `Restaurant is closed on ${dayName}s. Please choose a different date.` 
+          });
+        }
+        
+        // Check if requested time is within opening hours
+        const timeInMinutes = (time: string) => {
+          const [hours, minutes] = time.split(':').map(Number);
+          return hours * 60 + minutes;
+        };
+        
+        const requestedTimeMinutes = timeInMinutes(requestedTime);
+        const openTimeMinutes = timeInMinutes(dayHours.openTime);
+        const closeTimeMinutes = timeInMinutes(dayHours.closeTime);
+        
+        if (requestedTimeMinutes < openTimeMinutes || requestedTimeMinutes > closeTimeMinutes) {
+          return res.status(400).json({
+            message: `Requested time ${requestedTime} is outside restaurant hours (${dayHours.openTime} - ${dayHours.closeTime})`
+          });
+        }
+        
+        // Check for booking conflicts
+        const existingBookings = await storage.getBookingsByDate(
+          booking.restaurantId, 
+          requestedDate.toISOString().split('T')[0]
+        );
+        
+        const hasConflict = existingBookings.some(existingBooking => {
+          // Skip checking against the current booking
+          if (existingBooking.id === booking.id) return false;
+          if (existingBooking.status === 'cancelled') return false;
+          
+          // Check if booking times overlap
+          const existingStartMinutes = timeInMinutes(existingBooking.startTime);
+          const existingEndMinutes = timeInMinutes(existingBooking.endTime || 
+            `${Math.floor((existingStartMinutes + 120) / 60).toString().padStart(2, '0')}:${((existingStartMinutes + 120) % 60).toString().padStart(2, '0')}`);
+          
+          const requestedEndMinutes = requestedTimeMinutes + 120; // Assume 2-hour duration
+          
+          return (requestedTimeMinutes < existingEndMinutes && requestedEndMinutes > existingStartMinutes);
+        });
+        
+        if (hasConflict) {
+          return res.status(400).json({
+            message: `The requested time ${requestedTime} conflicts with another booking. Please choose a different time.`
+          });
+        }
+        
         // Create a change request that requires admin approval
         const changeRequest = await storage.createBookingChangeRequest({
           bookingId: id,
           restaurantId: booking.restaurantId,
           tenantId: booking.tenantId,
-          customerName: booking.customerName,
-          customerEmail: booking.customerEmail,
-          customerPhone: booking.customerPhone,
-          currentDate: booking.bookingDate,
-          currentTime: booking.startTime,
-          currentGuestCount: booking.guestCount,
-          requestedDate: updates.bookingDate ? new Date(updates.bookingDate) : booking.bookingDate,
-          requestedTime: updates.startTime || booking.startTime,
-          requestedGuestCount: updates.guestCount || booking.guestCount,
-          reason: updates.reason || 'Customer requested change',
+          requestedDate: requestedDate,
+          requestedTime: requestedTime,
+          requestedGuestCount: requestedGuestCount,
+          requestNotes: updates.reason || 'Customer requested booking changes',
           status: 'pending'
         });
 
@@ -2738,6 +2795,191 @@ app.put("/api/tenants/:tenantId/bookings/:id", validateTenant, async (req, res) 
     } catch (error) {
       console.error("Error fetching change requests:", error);
       res.status(500).json({ message: "Internal server error" });
+    }
+  });
+
+  // Email-based approval route (for clicking links in emails)
+  app.get("/booking-change-response/:requestId", async (req, res) => {
+    try {
+      const requestId = parseInt(req.params.requestId);
+      const { action, hash } = req.query;
+
+      if (!['approve', 'reject'].includes(action as string)) {
+        return res.status(400).send(`
+          <html>
+            <body style="font-family: Arial, sans-serif; text-align: center; padding: 50px;">
+              <h2>Invalid Action</h2>
+              <p>The action must be either 'approve' or 'reject'.</p>
+            </body>
+          </html>
+        `);
+      }
+
+      if (!hash) {
+        return res.status(403).send(`
+          <html>
+            <body style="font-family: Arial, sans-serif; text-align: center; padding: 50px;">
+              <h2>Access Denied</h2>
+              <p>Security token is required to process this request.</p>
+            </body>
+          </html>
+        `);
+      }
+
+      const changeRequest = await storage.getBookingChangeRequestById(requestId);
+      if (!changeRequest) {
+        return res.status(404).send(`
+          <html>
+            <body style="font-family: Arial, sans-serif; text-align: center; padding: 50px;">
+              <h2>Change Request Not Found</h2>
+              <p>The requested booking change could not be found.</p>
+            </body>
+          </html>
+        `);
+      }
+
+      const booking = await storage.getBookingById(changeRequest.bookingId);
+      if (!booking) {
+        return res.status(404).send(`
+          <html>
+            <body style="font-family: Arial, sans-serif; text-align: center; padding: 50px;">
+              <h2>Booking Not Found</h2>
+              <p>The associated booking could not be found.</p>
+            </body>
+          </html>
+        `);
+      }
+
+      // Verify hash
+      const expectedHash = BookingHash.generateHash(
+        changeRequest.id,
+        booking.tenantId,
+        booking.restaurantId,
+        action as 'approve' | 'reject'
+      );
+
+      if (hash !== expectedHash) {
+        return res.status(403).send(`
+          <html>
+            <body style="font-family: Arial, sans-serif; text-align: center; padding: 50px;">
+              <h2>Access Denied</h2>
+              <p>Invalid or expired security token.</p>
+            </body>
+          </html>
+        `);
+      }
+
+      // Check if already processed
+      if (changeRequest.status !== 'pending') {
+        return res.status(400).send(`
+          <html>
+            <body style="font-family: Arial, sans-serif; text-align: center; padding: 50px;">
+              <h2>Already Processed</h2>
+              <p>This change request has already been ${changeRequest.status}.</p>
+            </body>
+          </html>
+        `);
+      }
+
+      // Update change request status
+      const updatedRequest = await storage.updateBookingChangeRequest(requestId, {
+        status: action === 'approve' ? 'approved' : 'rejected',
+        restaurantResponse: `Processed via email link on ${new Date().toLocaleString()}`,
+        processedAt: new Date()
+      });
+
+      if (action === 'approve') {
+        // Apply the changes to the booking
+        const bookingUpdates: any = {};
+        if (changeRequest.requestedDate) {
+          bookingUpdates.bookingDate = changeRequest.requestedDate;
+        }
+        if (changeRequest.requestedTime) {
+          bookingUpdates.startTime = changeRequest.requestedTime;
+        }
+        if (changeRequest.requestedGuestCount) {
+          bookingUpdates.guestCount = changeRequest.requestedGuestCount;
+        }
+
+        await storage.updateBooking(changeRequest.bookingId, bookingUpdates);
+
+        // Send real-time notification to restaurant
+        broadcastNotification(booking.restaurantId, {
+          type: 'booking_change_approved',
+          booking: { ...booking, ...bookingUpdates },
+          changeRequest: updatedRequest,
+          timestamp: new Date().toISOString()
+        });
+      } else {
+        // Send real-time notification for rejection
+        broadcastNotification(booking.restaurantId, {
+          type: 'booking_change_rejected',
+          booking: booking,
+          changeRequest: updatedRequest,
+          timestamp: new Date().toISOString()
+        });
+      }
+
+      // Send email notification to customer
+      if (emailService) {
+        try {
+          await emailService.sendChangeRequestResponse(
+            booking.customerEmail,
+            booking.customerName,
+            action === 'approve',
+            booking,
+            changeRequest,
+            `Processed via email link on ${new Date().toLocaleString()}`
+          );
+          console.log(`Change request response email sent to customer: ${action}`);
+        } catch (error) {
+          console.error('Failed to send change request response email:', error);
+        }
+      }
+
+      // Return success page
+      const actionText = action === 'approve' ? 'approved' : 'rejected';
+      const statusColor = action === 'approve' ? '#28a745' : '#dc3545';
+      
+      return res.send(`
+        <html>
+          <head>
+            <title>Booking Change ${actionText.charAt(0).toUpperCase() + actionText.slice(1)}</title>
+          </head>
+          <body style="font-family: Arial, sans-serif; text-align: center; padding: 50px; background-color: #f8f9fa;">
+            <div style="max-width: 600px; margin: 0 auto; background: white; padding: 40px; border-radius: 8px; box-shadow: 0 2px 10px rgba(0,0,0,0.1);">
+              <div style="width: 60px; height: 60px; border-radius: 50%; background-color: ${statusColor}; margin: 0 auto 20px; display: flex; align-items: center; justify-content: center;">
+                <span style="color: white; font-size: 24px; font-weight: bold;">${action === 'approve' ? '✓' : '✗'}</span>
+              </div>
+              <h2 style="color: ${statusColor}; margin-bottom: 20px;">Change Request ${actionText.charAt(0).toUpperCase() + actionText.slice(1)}</h2>
+              <p style="color: #666; font-size: 16px; line-height: 1.5;">
+                The booking change request for <strong>${booking.customerName}</strong> has been successfully ${actionText}.
+              </p>
+              ${action === 'approve' ? `
+                <div style="background-color: #f8f9fa; padding: 20px; border-radius: 6px; margin: 20px 0; text-align: left;">
+                  <h4 style="margin: 0 0 10px 0; color: #333;">Updated Booking Details:</h4>
+                  <p style="margin: 5px 0; color: #666;"><strong>Date:</strong> ${changeRequest.requestedDate ? new Date(changeRequest.requestedDate).toLocaleDateString() : 'No change'}</p>
+                  <p style="margin: 5px 0; color: #666;"><strong>Time:</strong> ${changeRequest.requestedTime || 'No change'}</p>
+                  <p style="margin: 5px 0; color: #666;"><strong>Party Size:</strong> ${changeRequest.requestedGuestCount || 'No change'}</p>
+                </div>
+              ` : ''}
+              <p style="color: #999; font-size: 14px; margin-top: 30px;">
+                The customer has been automatically notified of this decision via email.
+              </p>
+            </div>
+          </body>
+        </html>
+      `);
+    } catch (error) {
+      console.error("Error processing change request via email:", error);
+      return res.status(500).send(`
+        <html>
+          <body style="font-family: Arial, sans-serif; text-align: center; padding: 50px;">
+            <h2>Server Error</h2>
+            <p>An error occurred while processing your request. Please try again later.</p>
+          </body>
+        </html>
+      `);
     }
   });
 
