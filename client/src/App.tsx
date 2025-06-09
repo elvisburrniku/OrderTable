@@ -47,6 +47,7 @@ import Help from "./pages/help";
 import CustomerFeedback from "./pages/customer-feedback";
 import TableFeedback from "./pages/table-feedback";
 import FeedbackResponsesPopup from "./pages/feedback-responses-popup";
+import Integrations from "./pages/integrations";
 
 function App() {
   return (
@@ -62,6 +63,7 @@ function App() {
             <Route path="/:tenantId/bookings/:id" component={BookingDetail} />
             <Route path="/:tenantId/tables" component={Tables} />
             <Route path="/:tenantId/customers" component={Customers} />
+            <Route path="/:tenantId/integrations" component={Integrations} />
             <Route path="/:tenantId/statistics" component={Statistics} />
             <Route path="/:tenantId/activity-log" component={ActivityLog} />
             <Route path="/:tenantId/waiting-list" component={WaitingList} />
