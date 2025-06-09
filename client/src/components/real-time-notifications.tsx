@@ -509,7 +509,7 @@ export function RealTimeNotifications() {
   };
 
   const revertNotification = (notification: any) => {
-    if (typeof notification.id === 'number' && user?.role === 'admin') {
+    if (typeof notification.id === 'number' && (user as any)?.role === 'admin') {
       revertNotificationMutation.mutate(notification.id);
     }
   };
