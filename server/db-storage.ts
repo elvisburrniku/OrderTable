@@ -984,9 +984,16 @@ export class DatabaseStorage implements IStorage {
 
   // Notifications
   async getNotificationsByRestaurant(restaurantId: number): Promise<Notification[]> {
-    return await this.db.select().from(notifications)
+    const results = await this.db.select().from(notifications)
       .where(eq(notifications.restaurantId, restaurantId))
       .orderBy(desc(notifications.createdAt));
+    
+    // Debug: Log the first notification to see the actual structure
+    if (results.length > 0) {
+      console.log('First notification from DB:', JSON.stringify(results[0], null, 2));
+    }
+    
+    return results;
   }
 
   async createNotification(notification: InsertNotification): Promise<Notification> {
