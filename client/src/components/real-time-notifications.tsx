@@ -576,6 +576,7 @@ export function RealTimeNotifications() {
                             onClick={(e) => {
                               e.stopPropagation();
                               setSelectedBooking(notification);
+                              setIsBookingDialogOpen(true);
                             }}
                             className="text-blue-600 border-blue-300 hover:bg-blue-50 flex items-center gap-1 text-xs px-2 py-1 h-auto"
                           >
