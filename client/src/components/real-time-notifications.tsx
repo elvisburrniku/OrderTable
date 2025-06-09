@@ -82,17 +82,27 @@ export function RealTimeNotifications() {
 
   const [processingRequests, setProcessingRequests] = useState<Set<number>>(new Set());
 
-  // Group notifications by type with priority ordering and sorting
+  // Enhanced notification grouping by booking type with sophisticated organization
   const groupNotificationsByType = (notifications: BookingNotification[]) => {
     const groups: Record<string, BookingNotification[]> = {
-      'booking_change_request': [], // Highest priority - requires action
+      // Critical Actions - Requires immediate attention
+      'booking_change_request': [],
+      
+      // Active Operations - Current booking activities
       'new_booking': [],
       'booking_changed': [],
+      
+      // Responses & Follow-ups - Completed actions
       'change_request_responded': [],
+      
+      // Cancellations & Issues - Problem notifications
       'booking_cancelled': [],
+      
+      // General - Other notifications
       'other': []
     };
 
+    // Categorize notifications by booking type
     notifications.forEach(notification => {
       if (notification && notification.type) {
         if (groups[notification.type]) {
@@ -103,15 +113,46 @@ export function RealTimeNotifications() {
       }
     });
 
-    // Sort notifications within each group by priority and recency
+    // Advanced sorting within each group
     Object.keys(groups).forEach(groupType => {
       groups[groupType].sort((a, b) => {
-        // First sort by read status (unread first)
+        // Priority 1: Unread notifications first
         if (a.isRead !== b.isRead) {
           return (a.isRead ? 1 : 0) - (b.isRead ? 1 : 0);
         }
         
-        // Then sort by creation time (newest first)
+        // Priority 2: Special handling for change requests (by urgency)
+        if (groupType === 'booking_change_request') {
+          const aUrgent = isUrgentChangeRequest(a);
+          const bUrgent = isUrgentChangeRequest(b);
+          if (aUrgent !== bUrgent) {
+            return bUrgent ? 1 : -1;
+          }
+        }
+        
+        // Priority 3: Today's bookings first, then by proximity to booking date
+        const aBookingDate = getBookingDate(a);
+        const bBookingDate = getBookingDate(b);
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+        
+        if (aBookingDate && bBookingDate) {
+          const aIsToday = aBookingDate.getTime() === today.getTime();
+          const bIsToday = bBookingDate.getTime() === today.getTime();
+          
+          if (aIsToday !== bIsToday) {
+            return bIsToday ? 1 : -1;
+          }
+          
+          // Sort by booking date proximity
+          const aDiff = Math.abs(aBookingDate.getTime() - today.getTime());
+          const bDiff = Math.abs(bBookingDate.getTime() - today.getTime());
+          if (aDiff !== bDiff) {
+            return aDiff - bDiff;
+          }
+        }
+        
+        // Priority 4: Creation time (newest first)
         const aTime = new Date(a.createdAt || a.timestamp || 0).getTime();
         const bTime = new Date(b.createdAt || b.timestamp || 0).getTime();
         return bTime - aTime;
@@ -119,6 +160,38 @@ export function RealTimeNotifications() {
     });
 
     return groups;
+  };
+
+  // Helper function to determine if a change request is urgent
+  const isUrgentChangeRequest = (notification: BookingNotification) => {
+    const bookingDate = getBookingDate(notification);
+    if (!bookingDate) return false;
+    
+    const now = new Date();
+    const timeDiff = bookingDate.getTime() - now.getTime();
+    const hoursDiff = timeDiff / (1000 * 60 * 60);
+    
+    // Urgent if booking is within 24 hours
+    return hoursDiff <= 24 && hoursDiff >= 0;
+  };
+
+  // Helper function to extract booking date from notification
+  const getBookingDate = (notification: BookingNotification): Date | null => {
+    try {
+      const booking = notification.booking || notification.data?.booking;
+      if (booking?.bookingDate) {
+        return new Date(booking.bookingDate);
+      }
+      
+      const changeRequest = notification.changeRequest || notification.data?.changeRequest;
+      if (changeRequest?.requestedDate) {
+        return new Date(changeRequest.requestedDate);
+      }
+      
+      return null;
+    } catch {
+      return null;
+    }
   };
 
   // Filter notifications based on selected filter type
@@ -141,51 +214,48 @@ export function RealTimeNotifications() {
     }
   };
 
-  const getGroupTitle = (type: string) => {
-    switch (type) {
-      case 'booking_change_request': return 'Pending Change Requests';
-      case 'new_booking': return 'New Bookings';
-      case 'booking_changed': return 'Booking Modifications';
-      case 'change_request_responded': return 'Request Responses';
-      case 'booking_cancelled': return 'Cancellations';
-      case 'other': return 'Other Notifications';
-      default: return 'Notifications';
-    }
-  };
 
-  const getGroupIcon = (type: string) => {
-    switch (type) {
-      case 'booking_change_request': return MessageSquare;
-      case 'new_booking': return CheckCircle;
-      case 'booking_changed': return AlertTriangle;
-      case 'change_request_responded': return CheckCircle;
-      case 'booking_cancelled': return XCircle;
-      case 'other': return Bell;
-      default: return Bell;
-    }
-  };
-
-  const getGroupColor = (type: string) => {
-    switch (type) {
-      case 'booking_change_request': return 'text-yellow-600 bg-yellow-50 border-yellow-200';
-      case 'new_booking': return 'text-green-600 bg-green-50 border-green-200';
-      case 'booking_changed': return 'text-blue-600 bg-blue-50 border-blue-200';
-      case 'change_request_responded': return 'text-purple-600 bg-purple-50 border-purple-200';
-      case 'booking_cancelled': return 'text-red-600 bg-red-50 border-red-200';
-      case 'other': return 'text-gray-600 bg-gray-50 border-gray-200';
-      default: return 'text-gray-600 bg-gray-50 border-gray-200';
-    }
-  };
 
   const getGroupPriority = (type: string) => {
     switch (type) {
-      case 'booking_change_request': return { level: 'HIGH', badge: 'Urgent' };
-      case 'new_booking': return { level: 'MEDIUM', badge: 'New' };
-      case 'booking_changed': return { level: 'LOW', badge: 'Info' };
-      case 'change_request_responded': return { level: 'LOW', badge: 'Info' };
-      case 'booking_cancelled': return { level: 'MEDIUM', badge: 'Alert' };
-      case 'other': return { level: 'LOW', badge: 'Info' };
-      default: return { level: 'LOW', badge: 'Info' };
+      case 'booking_change_request': return { level: 'HIGH', badge: 'Action Required' };
+      case 'new_booking': return { level: 'MEDIUM', badge: 'New Booking' };
+      case 'booking_changed': return { level: 'MEDIUM', badge: 'Updated' };
+      case 'change_request_responded': return { level: 'LOW', badge: 'Resolved' };
+      case 'booking_cancelled': return { level: 'HIGH', badge: 'Cancelled' };
+      case 'other': return { level: 'LOW', badge: 'General' };
+      default: return { level: 'LOW', badge: 'General' };
+    }
+  };
+
+  const getGroupIconColor = (type: string) => {
+    switch (type) {
+      case 'booking_change_request': return 'text-red-600';
+      case 'new_booking': return 'text-green-600';
+      case 'booking_changed': return 'text-blue-600';
+      case 'change_request_responded': return 'text-purple-600';
+      case 'booking_cancelled': return 'text-orange-600';
+      case 'other': return 'text-gray-600';
+      default: return 'text-gray-600';
+    }
+  };
+
+  const getGroupDescription = (type: string, count: number) => {
+    switch (type) {
+      case 'booking_change_request': 
+        return count === 1 ? 'Customer request requiring approval' : `${count} customer requests requiring approval`;
+      case 'new_booking': 
+        return count === 1 ? 'New reservation received' : `${count} new reservations received`;
+      case 'booking_changed': 
+        return count === 1 ? 'Booking modification made' : `${count} booking modifications made`;
+      case 'change_request_responded': 
+        return count === 1 ? 'Request processed and completed' : `${count} requests processed and completed`;
+      case 'booking_cancelled': 
+        return count === 1 ? 'Reservation cancelled' : `${count} reservations cancelled`;
+      case 'other': 
+        return count === 1 ? 'General notification' : `${count} general notifications`;
+      default: 
+        return count === 1 ? 'Notification' : `${count} notifications`;
     }
   };
 
@@ -871,32 +941,68 @@ export function RealTimeNotifications() {
                   
                   return (
                     <div key={groupType} className="border-b border-gray-100">
-                      {/* Group Header */}
+                      {/* Enhanced Group Header */}
                       <div
-                        className={`flex items-center justify-between p-3 hover:opacity-80 cursor-pointer border-l-4 ${getGroupColor(groupType)}`}
+                        className={`flex items-center justify-between p-4 hover:bg-opacity-75 cursor-pointer border-l-4 transition-all duration-200 ${getGroupColor(groupType)}`}
                         onClick={() => toggleGroupCollapse(groupType)}
                       >
-                        <div className="flex items-center gap-3">
+                        <div className="flex items-center gap-3 flex-1">
                           <div className="flex items-center gap-2">
                             {isCollapsed ? (
-                              <ChevronRight className="h-4 w-4" />
+                              <ChevronRight className="h-4 w-4 text-gray-500" />
                             ) : (
-                              <ChevronDown className="h-4 w-4" />
+                              <ChevronDown className="h-4 w-4 text-gray-500" />
                             )}
-                            <GroupIcon className="h-5 w-5" />
+                            <GroupIcon className={`h-5 w-5 ${getGroupIconColor(groupType)}`} />
                           </div>
-                          <div className="flex items-center gap-2">
-                            <span className="font-semibold">
-                              {getGroupTitle(groupType)}
-                            </span>
-                            {(() => {
-                              const priority = getGroupPriority(groupType);
-                              return (
-                                <Badge className={`text-xs px-2 py-0.5 ${getPriorityBadgeColor(priority.level)}`}>
-                                  {priority.badge}
-                                </Badge>
-                              );
-                            })()}
+                          
+                          <div className="flex flex-col gap-1 flex-1">
+                            <div className="flex items-center gap-2">
+                              <span className="font-semibold text-gray-800">
+                                {getGroupTitle(groupType)}
+                              </span>
+                              <span className="text-sm text-gray-500">
+                                ({notifications.length})
+                              </span>
+                              {(() => {
+                                const priority = getGroupPriority(groupType);
+                                return (
+                                  <Badge className={`text-xs px-2 py-0.5 ${getPriorityBadgeColor(priority.level)}`}>
+                                    {priority.badge}
+                                  </Badge>
+                                );
+                              })()}
+                              
+                              {/* Urgency indicator for time-sensitive groups */}
+                              {groupType === 'booking_change_request' && (() => {
+                                const urgentCount = notifications.filter(n => isUrgentChangeRequest(n)).length;
+                                return urgentCount > 0 ? (
+                                  <Badge className="text-xs px-2 py-0.5 bg-red-600 text-white animate-pulse">
+                                    {urgentCount} urgent
+                                  </Badge>
+                                ) : null;
+                              })()}
+                              
+                              {/* Today's bookings indicator */}
+                              {(groupType === 'new_booking' || groupType === 'booking_changed') && (() => {
+                                const todayCount = notifications.filter(n => {
+                                  const bookingDate = getBookingDate(n);
+                                  if (!bookingDate) return false;
+                                  const today = new Date();
+                                  today.setHours(0, 0, 0, 0);
+                                  return bookingDate.getTime() === today.getTime();
+                                }).length;
+                                return todayCount > 0 ? (
+                                  <Badge className="text-xs px-2 py-0.5 bg-blue-600 text-white">
+                                    {todayCount} today
+                                  </Badge>
+                                ) : null;
+                              })()}
+                            </div>
+                            
+                            <p className="text-xs text-gray-600">
+                              {getGroupDescription(groupType, notifications.length)}
+                            </p>
                           </div>
                           <Badge variant="secondary" className="text-xs bg-white/70">
                             {notifications.length}
