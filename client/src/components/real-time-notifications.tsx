@@ -260,7 +260,15 @@ export function RealTimeNotifications() {
   }, []);
 
   const markAsRead = (notification: any) => {
+    console.log('Marking notification as read:', notification.id, 'isRead:', notification.isRead);
+    
     if (typeof notification.id === 'number') {
+      // Skip if already read
+      if (notification.isRead) {
+        console.log('Notification already read, skipping');
+        return;
+      }
+      
       // Persistent notification - update database and optimistically update UI
       markAsReadMutation.mutate(notification.id);
       
@@ -269,16 +277,16 @@ export function RealTimeNotifications() {
         ['/api/tenants', restaurant?.tenantId, 'restaurants', restaurant?.id, 'notifications'],
         (oldData: any) => {
           if (!oldData) return oldData;
-          return oldData.map((notif: any) => 
+          const updated = oldData.map((notif: any) => 
             notif.id === notification.id ? { ...notif, isRead: true, read: true } : notif
           );
+          console.log('Updated local state:', updated.find((n: any) => n.id === notification.id));
+          return updated;
         }
       );
       
       // Update unread count
-      if (!notification.isRead) {
-        setUnreadCount(prev => Math.max(0, prev - 1));
-      }
+      setUnreadCount(prev => Math.max(0, prev - 1));
     } else {
       // Live notification
       setLiveNotifications(prev => 
@@ -611,8 +619,8 @@ export function RealTimeNotifications() {
 
       {/* Notifications Panel */}
       {isOpen && (
-        <Card className="absolute right-0 top-12 w-[450px] max-h-[80vh] overflow-hidden z-50 shadow-lg">
-          <CardHeader className="pb-2">
+        <Card className="absolute right-0 top-12 w-[450px] h-[calc(100vh-5rem)] overflow-hidden z-50 shadow-lg flex flex-col">
+          <CardHeader className="pb-2 flex-shrink-0">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2">
                 <CardTitle className="text-lg">Live Notifications</CardTitle>
@@ -633,8 +641,8 @@ export function RealTimeNotifications() {
             </div>
           </CardHeader>
           
-          <CardContent className="p-0">
-            <div className="max-h-96 overflow-y-auto">
+          <CardContent className="p-0 flex-1 overflow-hidden">
+            <div className="h-full overflow-y-auto">
               {allNotifications.length === 0 ? (
                 <div className="p-4 text-center text-gray-500">
                   <Bell className="h-8 w-8 mx-auto mb-2 text-gray-300" />
