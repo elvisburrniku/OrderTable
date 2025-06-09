@@ -958,7 +958,7 @@ export function RealTimeNotifications() {
                       );
                     }
 
-                    const allBookingNotifications = notifications
+                    const allBookingNotifications = allNotifications
                       .filter(notif => notif.booking?.id === bookingId)
                       .sort((a, b) => new Date(b.timestamp || 0).getTime() - new Date(a.timestamp || 0).getTime());
 
