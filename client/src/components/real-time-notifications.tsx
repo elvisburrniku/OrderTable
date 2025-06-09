@@ -218,9 +218,19 @@ export function RealTimeNotifications() {
     });
   };
 
-  const handleNotificationClick = (notification: BookingNotification) => {
+  const handleNotificationClick = (notification: BookingNotification | any) => {
     markAsRead(notification);
-    setSelectedBooking(notification);
+    
+    // Normalize notification data to handle both new and legacy structures
+    const normalizedNotification = {
+      ...notification,
+      booking: notification.booking || notification.data?.booking,
+      changeRequest: notification.changeRequest || notification.data?.changeRequest,
+      changes: notification.changes || notification.data?.changes,
+      restaurant: notification.restaurant || notification.data?.restaurant
+    };
+    
+    setSelectedBooking(normalizedNotification);
     setIsBookingDialogOpen(true);
   };
 
@@ -323,7 +333,7 @@ export function RealTimeNotifications() {
     }
   };
 
-  const getNotificationTitle = (notification: BookingNotification) => {
+  const getNotificationTitle = (notification: BookingNotification | any) => {
     switch (notification.type) {
       case 'new_booking':
         return 'New Booking';
@@ -340,18 +350,27 @@ export function RealTimeNotifications() {
     }
   };
 
-  const getNotificationMessage = (notification: BookingNotification) => {
-    const { type, booking, changeRequest, changes, approved } = notification;
+  const getNotificationMessage = (notification: BookingNotification | any) => {
+    // Handle both new notification structure and legacy database notifications
+    const type = notification.type;
+    const booking = notification.booking || notification.data?.booking;
+    const changeRequest = notification.changeRequest || notification.data?.changeRequest;
+    const changes = notification.changes || notification.data?.changes;
+    const approved = notification.approved;
     
     switch (type) {
       case 'new_booking':
         if (!booking?.customerName || !booking?.bookingDate) return 'New booking received';
-        return `Booking #${booking.id}: ${booking.customerName} booked for ${booking.guestCount || 0} guests on ${format(new Date(booking.bookingDate), 'MMM dd')} at ${booking.startTime || 'TBD'}`;
+        const newBookingId = booking.id || 'N/A';
+        return `Booking #${newBookingId}: ${booking.customerName} booked for ${booking.guestCount || 0} guests on ${format(new Date(booking.bookingDate), 'MMM dd')} at ${booking.startTime || 'TBD'}`;
       case 'booking_changed':
+        const changedBookingId = booking?.id || 'N/A';
         if (!changes || Object.keys(changes).length === 0) {
-          return `Booking #${booking?.id}: ${booking?.customerName || 'Customer'} updated their booking`;
+          return `Booking #${changedBookingId}: ${booking?.customerName || 'Customer'} updated their booking`;
         }
-        const changeDetails = Object.entries(changes).map(([key, { from, to }]) => {
+        const changeDetails = Object.entries(changes).map(([key, change]) => {
+          const from = change?.from;
+          const to = change?.to;
           switch (key) {
             case 'bookingDate': 
               return `date from ${format(new Date(from), 'MMM dd')} to ${format(new Date(to), 'MMM dd')}`;
@@ -368,18 +387,21 @@ export function RealTimeNotifications() {
             default: return `${key}`;
           }
         }).join(', ');
-        return `Booking #${booking?.id}: ${booking?.customerName || 'Customer'} changed ${changeDetails}`;
+        return `Booking #${changedBookingId}: ${booking?.customerName || 'Customer'} changed ${changeDetails}`;
       case 'booking_cancelled':
         if (!booking?.customerName || !booking?.bookingDate) return 'Booking cancelled';
-        return `Booking #${booking.id}: ${booking.customerName} cancelled their ${format(new Date(booking.bookingDate), 'MMM dd')} reservation at ${booking.startTime}`;
+        const cancelledBookingId = booking.id || 'N/A';
+        return `Booking #${cancelledBookingId}: ${booking.customerName} cancelled their ${format(new Date(booking.bookingDate), 'MMM dd')} reservation at ${booking.startTime}`;
       case 'booking_change_request':
+        const requestBookingId = booking?.id || 'N/A';
         const requestedChanges = [];
         if (changeRequest?.requestedDate) requestedChanges.push(`date to ${format(new Date(changeRequest.requestedDate), 'MMM dd')}`);
         if (changeRequest?.requestedTime) requestedChanges.push(`time to ${changeRequest.requestedTime}`);
         if (changeRequest?.requestedGuestCount) requestedChanges.push(`party size to ${changeRequest.requestedGuestCount} guests`);
-        return `Booking #${booking?.id}: ${booking?.customerName || 'Customer'} requests to change ${requestedChanges.join(', ') || 'booking details'}`;
+        return `Booking #${requestBookingId}: ${booking?.customerName || 'Customer'} requests to change ${requestedChanges.join(', ') || 'booking details'}`;
       case 'change_request_responded':
-        return `Booking #${booking?.id}: Change request ${approved ? 'approved' : 'rejected'} for ${booking?.customerName || 'customer'}`;
+        const responseBookingId = booking?.id || 'N/A';
+        return `Booking #${responseBookingId}: Change request ${approved ? 'approved' : 'rejected'} for ${booking?.customerName || 'customer'}`;
       default:
         return 'New notification';
     }
