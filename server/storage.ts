@@ -19,7 +19,8 @@ import {
   openingHours,
   specialPeriods,
   cutOffTimes,
-  bookingChangeRequests
+  bookingChangeRequests,
+  notifications
 } from "@shared/schema";
 import type {
   User,
@@ -37,6 +38,7 @@ import type {
   Room,
   TableLayout,
   CombinedTable,
+  Notification,
   InsertUser,
   InsertRestaurant,
   InsertTable,
@@ -52,6 +54,7 @@ import type {
   InsertRoom,
   InsertTableLayout,
   InsertCombinedTable,
+  InsertNotification,
   BookingChangeRequest,
   InsertBookingChangeRequest
 } from "@shared/schema";
