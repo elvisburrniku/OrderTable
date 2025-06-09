@@ -72,17 +72,77 @@ export function RealTimeNotifications() {
     (a, b) => new Date(b.timestamp || b.createdAt).getTime() - new Date(a.timestamp || a.createdAt).getTime()
   );
 
+  // Mark notification as read mutation
+  const markAsReadMutation = useMutation({
+    mutationFn: (notificationId: number) => apiRequest(`/api/notifications/${notificationId}/read`, {
+      method: 'PATCH',
+    }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/notifications'] });
+    },
+  });
+
+  // Mark all notifications as read mutation
+  const markAllAsReadMutation = useMutation({
+    mutationFn: () => apiRequest('/api/notifications/mark-all-read', {
+      method: 'PATCH',
+    }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/notifications'] });
+      setUnreadCount(0);
+    },
+  });
+
+  // Revert notification mutation (admin only)
+  const revertNotificationMutation = useMutation({
+    mutationFn: (notificationId: number) => apiRequest(`/api/notifications/${notificationId}/revert`, {
+      method: 'POST',
+    }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/notifications'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/bookings'] });
+      toast({
+        title: "Changes Reverted",
+        description: "The booking changes have been successfully reverted.",
+      });
+    },
+    onError: () => {
+      toast({
+        title: "Error",
+        description: "Failed to revert changes. This action may not be available.",
+        variant: "destructive",
+      });
+    },
+  });
+
   const { isConnected } = useWebSocket({
     restaurantId: restaurant?.id,
     onMessage: (data) => {
       if (data.type === 'notification') {
+        // Handle persistent notifications from WebSocket
+        queryClient.invalidateQueries({ queryKey: ['/api/notifications'] });
+        setUnreadCount(prev => prev + 1);
+        
+        // Show browser notification if permission granted
+        if (Notification.permission === 'granted') {
+          const title = getNotificationTitle(data.notification);
+          const body = getNotificationMessage(data.notification);
+          new Notification(title, {
+            body,
+            icon: '/favicon.ico'
+          });
+        }
+      } else if (data.type === 'new_booking' || data.type === 'booking_changed' || data.type === 'booking_cancelled' || 
+          data.type === 'booking_change_request' || data.type === 'change_request_responded') {
+        // Handle legacy live notifications
         const notification: BookingNotification = {
-          ...data.notification,
-          id: `${data.notification.type}-${data.notification.booking?.id || data.notification.changeRequest?.id}-${Date.now()}`,
+          id: `${data.type}-${data.booking?.id || data.changeRequest?.id}-${Date.now()}`,
+          ...data,
+          timestamp: new Date().toISOString(),
           read: false
         };
         
-        setNotifications(prev => [notification, ...prev.slice(0, 29)]); // Keep last 30 notifications
+        setLiveNotifications(prev => [notification, ...prev.slice(0, 29)]);
         setUnreadCount(prev => prev + 1);
         
         // Show browser notification if permission granted
@@ -105,18 +165,30 @@ export function RealTimeNotifications() {
     }
   }, []);
 
-  const markAsRead = (notificationId: string) => {
-    setNotifications(prev => 
-      prev.map(notif => 
-        notif.id === notificationId ? { ...notif, read: true } : notif
-      )
-    );
-    setUnreadCount(prev => Math.max(0, prev - 1));
+  const markAsRead = (notification: any) => {
+    if (typeof notification.id === 'number') {
+      // Persistent notification
+      markAsReadMutation.mutate(notification.id);
+    } else {
+      // Live notification
+      setLiveNotifications(prev => 
+        prev.map(notif => 
+          notif.id === notification.id ? { ...notif, read: true } : notif
+        )
+      );
+      setUnreadCount(prev => Math.max(0, prev - 1));
+    }
   };
 
   const markAllAsRead = () => {
-    setNotifications(prev => prev.map(notif => ({ ...notif, read: true })));
-    setUnreadCount(0);
+    markAllAsReadMutation.mutate();
+    setLiveNotifications(prev => prev.map(notif => ({ ...notif, read: true })));
+  };
+
+  const revertNotification = (notification: any) => {
+    if (typeof notification.id === 'number' && user?.role === 'admin') {
+      revertNotificationMutation.mutate(notification.id);
+    }
   };
 
   const removeNotification = (notificationId: string) => {
