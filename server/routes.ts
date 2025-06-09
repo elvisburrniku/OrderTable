@@ -2303,13 +2303,32 @@ app.put("/api/tenants/:tenantId/bookings/:id", validateTenant, async (req, res) 
       console.log(`Stored management hash: ${booking.managementHash}`);
 
       // First check if the provided hash matches the stored management hash
+      // The management hash should work for all actions (manage, cancel, change)
       if (booking.managementHash && hash === booking.managementHash) {
         isValidHash = true;
         console.log(`Hash matches stored management hash`);
       } else if (booking.managementHash) {
-        // If we have a stored hash but it doesn't match, reject
-        console.log(`Hash does not match stored management hash`);
-        isValidHash = false;
+        // If we have a stored hash but it doesn't match, still try action-specific verification
+        // for backwards compatibility with old email links
+        console.log(`Hash does not match stored management hash, trying action-specific verification`);
+        if (action && (action === 'cancel' || action === 'change')) {
+          isValidHash = BookingHash.verifyHash(
+            hash as string,
+            booking.id,
+            booking.tenantId,
+            booking.restaurantId,
+            action as 'cancel' | 'change'
+          );
+        } else {
+          isValidHash = BookingHash.verifyHash(
+            hash as string,
+            booking.id,
+            booking.tenantId,
+            booking.restaurantId,
+            'manage'
+          );
+        }
+        console.log(`Action-specific hash verification result: ${isValidHash}`);
       } else {
         // Fallback for old bookings without stored hashes
         console.log(`No stored management hash, trying action verification`);
@@ -2896,7 +2915,8 @@ app.put("/api/tenants/:tenantId/bookings/:id", validateTenant, async (req, res) 
             startTime: updatedBooking.startTime,
             guestCount: updatedBooking.guestCount,
             restaurantId: booking.restaurantId,
-            tenantId: booking.tenantId
+            tenantId: booking.tenantId,
+            managementHash: booking.managementHash
           },
           {
             requestedDate: changeRequest.requestedDate,
@@ -2968,7 +2988,8 @@ app.put("/api/tenants/:tenantId/bookings/:id", validateTenant, async (req, res) 
             startTime: booking.startTime,
             guestCount: booking.guestCount,
             restaurantId: booking.restaurantId,
-            tenantId: booking.tenantId
+            tenantId: booking.tenantId,
+            managementHash: booking.managementHash
           },
           {
             requestedDate: changeRequest.requestedDate,
