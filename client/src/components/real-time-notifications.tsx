@@ -469,7 +469,7 @@ export function RealTimeNotifications() {
                       notification.type === 'booking_change_request' && notification.changeRequest?.status === 'pending' 
                         ? 'bg-yellow-50 border-l-4 border-l-yellow-500' : ''
                     }`}
-                    onClick={() => markAsRead(notification.id)}
+                    onClick={() => handleNotificationClick(notification)}
                   >
                     <div className="flex items-start gap-3">
                       {getNotificationIcon(
@@ -592,6 +592,181 @@ export function RealTimeNotifications() {
           </CardContent>
         </Card>
       )}
+
+      {/* Booking Details Dialog */}
+      <Dialog open={isBookingDialogOpen} onOpenChange={setIsBookingDialogOpen}>
+        <DialogContent className="max-w-2xl">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Eye className="h-5 w-5" />
+              Booking Details
+            </DialogTitle>
+          </DialogHeader>
+          
+          {selectedBooking && (
+            <div className="space-y-6">
+              {/* Notification Type Badge */}
+              <div className="flex items-center gap-2">
+                {getNotificationIcon(selectedBooking.type, false)}
+                <Badge variant={
+                  selectedBooking.type === 'new_booking' ? 'default' :
+                  selectedBooking.type === 'booking_changed' ? 'secondary' :
+                  selectedBooking.type === 'booking_cancelled' ? 'destructive' :
+                  selectedBooking.type === 'booking_change_request' ? 'outline' :
+                  'default'
+                }>
+                  {getNotificationTitle(selectedBooking)}
+                </Badge>
+                <span className="text-sm text-gray-500">
+                  {format(new Date(selectedBooking.timestamp || selectedBooking.createdAt), 'MMM dd, yyyy HH:mm')}
+                </span>
+              </div>
+
+              {/* Customer Information */}
+              {selectedBooking.booking && (
+                <div className="bg-gray-50 rounded-lg p-4">
+                  <h3 className="font-semibold mb-3 flex items-center gap-2">
+                    <User className="h-4 w-4" />
+                    Customer Information
+                  </h3>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div className="flex items-center gap-2">
+                      <User className="h-4 w-4 text-gray-500" />
+                      <span className="font-medium">{selectedBooking.booking.customerName}</span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <Mail className="h-4 w-4 text-gray-500" />
+                      <span className="text-sm">{selectedBooking.booking.customerEmail}</span>
+                    </div>
+                    {selectedBooking.booking.customerPhone && (
+                      <div className="flex items-center gap-2">
+                        <Phone className="h-4 w-4 text-gray-500" />
+                        <span className="text-sm">{selectedBooking.booking.customerPhone}</span>
+                      </div>
+                    )}
+                    <div className="flex items-center gap-2">
+                      <Users className="h-4 w-4 text-gray-500" />
+                      <span className="text-sm">{selectedBooking.booking.guestCount} guests</span>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* Booking Details */}
+              {selectedBooking.booking && (
+                <div className="bg-blue-50 rounded-lg p-4">
+                  <h3 className="font-semibold mb-3 flex items-center gap-2">
+                    <Calendar className="h-4 w-4" />
+                    Booking Details
+                  </h3>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div className="flex items-center gap-2">
+                      <Calendar className="h-4 w-4 text-gray-500" />
+                      <span className="text-sm">
+                        {format(new Date(selectedBooking.booking.bookingDate), 'EEEE, MMM dd, yyyy')}
+                      </span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <Clock className="h-4 w-4 text-gray-500" />
+                      <span className="text-sm">
+                        {selectedBooking.booking.startTime}
+                        {selectedBooking.booking.endTime && ` - ${selectedBooking.booking.endTime}`}
+                      </span>
+                    </div>
+                    {selectedBooking.booking.tableId && (
+                      <div className="flex items-center gap-2">
+                        <MapPin className="h-4 w-4 text-gray-500" />
+                        <span className="text-sm">Table {selectedBooking.booking.tableId}</span>
+                      </div>
+                    )}
+                    <div className="flex items-center gap-2">
+                      <Badge variant="outline">
+                        {selectedBooking.booking.status}
+                      </Badge>
+                    </div>
+                  </div>
+                  {selectedBooking.booking.notes && (
+                    <div className="mt-3 p-3 bg-white rounded border">
+                      <p className="text-sm text-gray-600 mb-1">Notes:</p>
+                      <p className="text-sm">{selectedBooking.booking.notes}</p>
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {/* Change Details (for booking_changed notifications) */}
+              {selectedBooking.type === 'booking_changed' && selectedBooking.changes && (
+                <div className="bg-yellow-50 rounded-lg p-4">
+                  <h3 className="font-semibold mb-3 flex items-center gap-2">
+                    <AlertTriangle className="h-4 w-4" />
+                    Changes Made
+                  </h3>
+                  <div className="space-y-2">
+                    {Object.entries(selectedBooking.changes).map(([key, { from, to }]) => (
+                      <div key={key} className="flex items-center justify-between p-2 bg-white rounded border">
+                        <span className="font-medium capitalize">
+                          {key === 'bookingDate' ? 'Date' : 
+                           key === 'startTime' ? 'Time' : 
+                           key === 'guestCount' ? 'Party Size' : key}:
+                        </span>
+                        <div className="text-sm">
+                          <span className="text-red-600 line-through">{from}</span>
+                          <span className="mx-2">→</span>
+                          <span className="text-green-600">{to}</span>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* Change Request Details */}
+              {selectedBooking.changeRequest && (
+                <div className="bg-orange-50 rounded-lg p-4">
+                  <h3 className="font-semibold mb-3 flex items-center gap-2">
+                    <Clock className="h-4 w-4" />
+                    Change Request
+                  </h3>
+                  <div className="space-y-2">
+                    {formatChangeDetails(selectedBooking.changeRequest).map((change, idx) => (
+                      <div key={idx} className="flex items-center gap-2 p-2 bg-white rounded border">
+                        <Calendar className="h-4 w-4 text-gray-500" />
+                        <span className="text-sm">{change}</span>
+                      </div>
+                    ))}
+                    {selectedBooking.changeRequest.requestNotes && (
+                      <div className="p-3 bg-white rounded border">
+                        <p className="text-sm text-gray-600 mb-1">Customer Note:</p>
+                        <p className="text-sm">{selectedBooking.changeRequest.requestNotes}</p>
+                      </div>
+                    )}
+                    <div className="flex items-center gap-2 mt-2">
+                      <Badge variant={
+                        selectedBooking.changeRequest.status === 'pending' ? 'outline' :
+                        selectedBooking.changeRequest.status === 'approved' ? 'default' :
+                        'destructive'
+                      }>
+                        {selectedBooking.changeRequest.status}
+                      </Badge>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* Restaurant Information */}
+              {selectedBooking.restaurant && (
+                <div className="bg-gray-50 rounded-lg p-4">
+                  <h3 className="font-semibold mb-2 flex items-center gap-2">
+                    <MapPin className="h-4 w-4" />
+                    Restaurant
+                  </h3>
+                  <p className="text-sm">{selectedBooking.restaurant.name}</p>
+                </div>
+              )}
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
