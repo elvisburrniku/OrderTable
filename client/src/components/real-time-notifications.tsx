@@ -583,8 +583,8 @@ export function RealTimeNotifications() {
 
   const removeNotification = (notificationId: string | number) => {
     // Check if it's a live notification (string ID) or persistent notification (number ID)
-    const liveNotification = liveNotifications.find(n => n.id === notificationId);
-    const persistentNotification = persistentNotifications.find(n => n.id === notificationId);
+    const liveNotification = liveNotifications.find((n: any) => n.id === notificationId);
+    const persistentNotification = persistentNotifications.find((n: any) => n.id === notificationId);
     
     if (liveNotification) {
       // Remove live notification locally
@@ -1193,7 +1193,7 @@ export function RealTimeNotifications() {
                               variant="outline"
                               onClick={(e) => {
                                 e.stopPropagation();
-                                handleRevertChanges(notification.booking?.id, notification.originalData);
+                                handleRevertChanges(notification.booking?.id!, notification.originalData);
                               }}
                               className="text-orange-600 border-orange-300 hover:bg-orange-50"
                             >
