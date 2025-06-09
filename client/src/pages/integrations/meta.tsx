@@ -4,19 +4,15 @@ import { useTenant } from '@/lib/tenant';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Switch } from '@/components/ui/switch';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
 import { ArrowLeft } from 'lucide-react';
 
-export default function ActiveCampaignIntegration() {
+export default function MetaIntegration() {
   const { user } = useAuth();
   const { tenant } = useTenant();
   const [isActivated, setIsActivated] = useState(false);
-  const [url, setUrl] = useState('');
-  const [apiKey, setApiKey] = useState('');
 
   const handleSave = () => {
-    console.log('Saving ActiveCampaign settings:', { isActivated, url, apiKey });
+    console.log('Saving Meta integration settings:', { isActivated });
   };
 
   if (!user || !tenant) {
@@ -64,7 +60,7 @@ export default function ActiveCampaignIntegration() {
               <ArrowLeft className="w-4 h-4 mr-2" />
               Back to Integrations
             </a>
-            <h1 className="text-3xl font-bold text-gray-900">ActiveCampaign</h1>
+            <h1 className="text-3xl font-bold text-gray-900">Meta</h1>
           </div>
 
           <Card className="mb-6">
@@ -72,73 +68,24 @@ export default function ActiveCampaignIntegration() {
               <CardTitle className="text-lg text-gray-700">Important:</CardTitle>
             </CardHeader>
             <CardContent className="bg-gray-50">
-              <p className="text-gray-700 mb-4">Our integration currently supports sending the following customer informations to ActiveCampaign:</p>
-              <ul className="list-disc list-inside space-y-1 text-gray-700 mb-4">
-                <li>Email</li>
-                <li>Name</li>
-                <li>Phone</li>
-                <li>ZipCode</li>
-                <li>Restaurant name</li>
-                <li>Number of bookings</li>
-              </ul>
-              <p className="text-gray-700 mb-4">
-                If you would like to the fields <strong>ZipCode</strong>, <strong>Restaurant name</strong>, and/or <strong>Number of bookings</strong>, then it is required that the fields are created at ActiveCampaign before activating the integration.
-              </p>
-              <p className="text-gray-700 mb-4">
-                Before the fields can be filled with data from easyTable, it is important that the fields are created with the following names in ActiveCampaign:
-              </p>
-              <div className="space-y-1 text-gray-700">
-                <p>ZipCode: <strong>ZipCode</strong></p>
-                <p>Restaurant name: <strong>Restaurant</strong></p>
-                <p>Number of bookings: <strong>Bookings</strong></p>
-              </div>
-              <p className="text-gray-700 mt-4">
-                To be able to enable the integration an account with ActiveCampaign is needed. Once logged in at ActiveCampaign the informations required to activate the integration can be found by opening Settings → Developer.
+              <p className="text-gray-700">
+                META integration includes MozRest for both Facebook and Instagram. Once you've sent an activation request here in our integration, you will receive an installation link that you must use to complete the integration of Facebook and/or Instagram. Click the link and follow the installation process.
               </p>
             </CardContent>
           </Card>
 
           <Card>
             <CardHeader>
-              <CardTitle>ActiveCampaign settings</CardTitle>
+              <CardTitle>Settings</CardTitle>
             </CardHeader>
             <CardContent className="space-y-6">
               <div className="flex items-center justify-between">
-                <Label htmlFor="activate-integration">Activate integration</Label>
+                <label htmlFor="activate-meta" className="text-gray-700">Activate integration</label>
                 <Switch
-                  id="activate-integration"
+                  id="activate-meta"
                   checked={isActivated}
                   onCheckedChange={setIsActivated}
                 />
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="url">URL</Label>
-                <Input
-                  id="url"
-                  type="text"
-                  value={url}
-                  onChange={(e) => setUrl(e.target.value)}
-                  placeholder="Enter ActiveCampaign URL"
-                  className="bg-blue-50"
-                />
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="api-key">Key</Label>
-                <Input
-                  id="api-key"
-                  type="text"
-                  value={apiKey}
-                  onChange={(e) => setApiKey(e.target.value)}
-                  placeholder="Enter API Key"
-                  className="bg-blue-50"
-                />
-              </div>
-
-              <div className="flex items-center space-x-4">
-                <Label className="text-gray-600">Last synchronized</Label>
-                <span className="text-gray-500">at</span>
               </div>
 
               <Button 

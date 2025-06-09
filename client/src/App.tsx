@@ -48,6 +48,14 @@ import CustomerFeedback from "./pages/customer-feedback";
 import TableFeedback from "./pages/table-feedback";
 import FeedbackResponsesPopup from "./pages/feedback-responses-popup";
 import Integrations from "./pages/integrations";
+import ActiveCampaignIntegration from "./pages/integrations/activecampaign";
+import GoogleIntegration from "./pages/integrations/google";
+import KlaviyoIntegration from "./pages/integrations/klaviyo";
+import MailchimpIntegration from "./pages/integrations/mailchimp";
+import MetaIntegration from "./pages/integrations/meta";
+import MichelinIntegration from "./pages/integrations/michelin";
+import WebhooksIntegration from "./pages/integrations/webhooks";
+import TripAdvisorIntegration from "./pages/integrations/tripadvisor";
 
 function App() {
   return (
@@ -64,6 +72,14 @@ function App() {
             <Route path="/:tenantId/tables" component={Tables} />
             <Route path="/:tenantId/customers" component={Customers} />
             <Route path="/:tenantId/integrations" component={Integrations} />
+            <Route path="/:tenantId/integrations/activecampaign" component={ActiveCampaignIntegration} />
+            <Route path="/:tenantId/integrations/google" component={GoogleIntegration} />
+            <Route path="/:tenantId/integrations/klaviyo" component={KlaviyoIntegration} />
+            <Route path="/:tenantId/integrations/mailchimp" component={MailchimpIntegration} />
+            <Route path="/:tenantId/integrations/meta" component={MetaIntegration} />
+            <Route path="/:tenantId/integrations/michelin" component={MichelinIntegration} />
+            <Route path="/:tenantId/integrations/webhooks" component={WebhooksIntegration} />
+            <Route path="/:tenantId/integrations/tripadvisor" component={TripAdvisorIntegration} />
             <Route path="/:tenantId/statistics" component={Statistics} />
             <Route path="/:tenantId/activity-log" component={ActivityLog} />
             <Route path="/:tenantId/waiting-list" component={WaitingList} />

@@ -6,17 +6,19 @@ import { Switch } from '@/components/ui/switch';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { ArrowLeft } from 'lucide-react';
 
-export default function ActiveCampaignIntegration() {
+export default function MailchimpIntegration() {
   const { user } = useAuth();
   const { tenant } = useTenant();
   const [isActivated, setIsActivated] = useState(false);
-  const [url, setUrl] = useState('');
+  const [apiUrl, setApiUrl] = useState('');
   const [apiKey, setApiKey] = useState('');
+  const [selectedList, setSelectedList] = useState('');
 
   const handleSave = () => {
-    console.log('Saving ActiveCampaign settings:', { isActivated, url, apiKey });
+    console.log('Saving Mailchimp settings:', { isActivated, apiUrl, apiKey, selectedList });
   };
 
   if (!user || !tenant) {
@@ -64,7 +66,7 @@ export default function ActiveCampaignIntegration() {
               <ArrowLeft className="w-4 h-4 mr-2" />
               Back to Integrations
             </a>
-            <h1 className="text-3xl font-bold text-gray-900">ActiveCampaign</h1>
+            <h1 className="text-3xl font-bold text-gray-900">Mailchimp</h1>
           </div>
 
           <Card className="mb-6">
@@ -72,7 +74,7 @@ export default function ActiveCampaignIntegration() {
               <CardTitle className="text-lg text-gray-700">Important:</CardTitle>
             </CardHeader>
             <CardContent className="bg-gray-50">
-              <p className="text-gray-700 mb-4">Our integration currently supports sending the following customer informations to ActiveCampaign:</p>
+              <p className="text-gray-700 mb-4">Our integration currently supports sending the following customer informations to Mailchimp:</p>
               <ul className="list-disc list-inside space-y-1 text-gray-700 mb-4">
                 <li>Email</li>
                 <li>Name</li>
@@ -80,52 +82,45 @@ export default function ActiveCampaignIntegration() {
                 <li>ZipCode</li>
                 <li>Restaurant name</li>
                 <li>Number of bookings</li>
+                <li>Latest booking</li>
               </ul>
               <p className="text-gray-700 mb-4">
-                If you would like to the fields <strong>ZipCode</strong>, <strong>Restaurant name</strong>, and/or <strong>Number of bookings</strong>, then it is required that the fields are created at ActiveCampaign before activating the integration.
+                Those fields that are not standard in Mailchimp, and/or does not exist already, will be created when the integration is activated.
               </p>
-              <p className="text-gray-700 mb-4">
-                Before the fields can be filled with data from easyTable, it is important that the fields are created with the following names in ActiveCampaign:
-              </p>
-              <div className="space-y-1 text-gray-700">
-                <p>ZipCode: <strong>ZipCode</strong></p>
-                <p>Restaurant name: <strong>Restaurant</strong></p>
-                <p>Number of bookings: <strong>Bookings</strong></p>
-              </div>
-              <p className="text-gray-700 mt-4">
-                To be able to enable the integration an account with ActiveCampaign is needed. Once logged in at ActiveCampaign the informations required to activate the integration can be found by opening Settings → Developer.
+              <p className="text-gray-700">
+                To be able to enable the integration an account with Mailchimp is needed. Once logged in at Mailchimp an API Key can be created by clicking the user icon in the bottom left corner, and go to Account. On the account page click Extras → API keys.
               </p>
             </CardContent>
           </Card>
 
           <Card>
             <CardHeader>
-              <CardTitle>ActiveCampaign settings</CardTitle>
+              <CardTitle>Mailchimp settings</CardTitle>
             </CardHeader>
             <CardContent className="space-y-6">
               <div className="flex items-center justify-between">
-                <Label htmlFor="activate-integration">Activate integration</Label>
+                <Label htmlFor="activate-mailchimp">Activate Mailchimp</Label>
                 <Switch
-                  id="activate-integration"
+                  id="activate-mailchimp"
                   checked={isActivated}
                   onCheckedChange={setIsActivated}
                 />
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="url">URL</Label>
+                <Label htmlFor="api-url">API URL</Label>
                 <Input
-                  id="url"
+                  id="api-url"
                   type="text"
-                  value={url}
-                  onChange={(e) => setUrl(e.target.value)}
-                  placeholder="Enter ActiveCampaign URL"
+                  value={apiUrl}
+                  onChange={(e) => setApiUrl(e.target.value)}
+                  placeholder="Enter API URL"
                   className="bg-blue-50"
                 />
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="api-key">Key</Label>
+                <Label htmlFor="api-key">API Key</Label>
                 <Input
                   id="api-key"
                   type="text"
@@ -136,9 +131,30 @@ export default function ActiveCampaignIntegration() {
                 />
               </div>
 
+              <div className="flex items-center space-x-2">
+                <Button 
+                  variant="outline"
+                  className="bg-blue-50"
+                >
+                  Get lists
+                </Button>
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="mailchimp-list">Mailchimp list:</Label>
+                <Select value={selectedList} onValueChange={setSelectedList}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Choose list" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="list1">Choose list</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+
               <div className="flex items-center space-x-4">
                 <Label className="text-gray-600">Last synchronized</Label>
-                <span className="text-gray-500">at</span>
+                <span className="text-gray-500">Not synchronized yet</span>
               </div>
 
               <Button 
