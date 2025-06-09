@@ -214,12 +214,24 @@ export function RealTimeNotifications() {
 
   // Mark all notifications as read mutation
   const markAllAsReadMutation = useMutation({
-    mutationFn: () => apiRequest(`/api/tenants/${restaurant?.tenantId}/restaurants/${restaurant?.id}/notifications/mark-all-read`, {
-      method: 'PATCH',
-    }),
-    onSuccess: () => {
+    mutationFn: () => {
+      console.log('Making mark all as read request to:', `/api/tenants/${restaurant?.tenantId}/restaurants/${restaurant?.id}/notifications/mark-all-read`);
+      return apiRequest(`/api/tenants/${restaurant?.tenantId}/restaurants/${restaurant?.id}/notifications/mark-all-read`, {
+        method: 'PATCH',
+      });
+    },
+    onSuccess: (data) => {
+      console.log('Mark all as read successful:', data);
       queryClient.invalidateQueries({ queryKey: ['/api/tenants', restaurant?.tenantId, 'restaurants', restaurant?.id, 'notifications'] });
       setUnreadCount(0);
+    },
+    onError: (error) => {
+      console.error('Mark all as read failed:', error);
+      toast({ 
+        title: "Failed to mark notifications as read", 
+        description: "Please try again", 
+        variant: "destructive" 
+      });
     },
   });
 
@@ -332,8 +344,38 @@ export function RealTimeNotifications() {
   };
 
   const markAllAsRead = () => {
+    console.log('markAllAsRead called, unreadCount:', unreadCount);
+    console.log('persistentNotifications:', persistentNotifications?.length || 0);
+    console.log('liveNotifications:', liveNotifications.length);
+    console.log('restaurant:', restaurant?.id, restaurant?.tenantId);
+    
+    if (!restaurant?.id || !restaurant?.tenantId) {
+      console.error('Missing restaurant data');
+      toast({ 
+        title: "Error", 
+        description: "Restaurant information missing", 
+        variant: "destructive" 
+      });
+      return;
+    }
+    
+    // Mark all persistent notifications as read via API
     markAllAsReadMutation.mutate();
+    
+    // Mark all live notifications as read locally
     setLiveNotifications(prev => prev.map(notif => ({ ...notif, read: true })));
+    
+    // Optimistically update persistent notifications in the cache
+    queryClient.setQueryData(
+      ['/api/tenants', restaurant?.tenantId, 'restaurants', restaurant?.id, 'notifications'],
+      (oldData: any) => {
+        if (!oldData) return oldData;
+        return oldData.map((notif: any) => ({ ...notif, isRead: true, read: true }));
+      }
+    );
+    
+    // Immediately update unread count
+    setUnreadCount(0);
   };
 
   const revertNotification = (notification: any) => {
