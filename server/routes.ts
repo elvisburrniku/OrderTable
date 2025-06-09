@@ -4384,12 +4384,14 @@ app.put("/api/tenants/:tenantId/bookings/:id", validateTenant, async (req, res) 
       const bookingDate = new Date(date as string);
       const guestCount = parseInt(guests as string);
 
-      // Get opening hours for this specific day
+      // First check if restaurant is open using the same validation as admin booking
       const dayOfWeek = bookingDate.getDay();
       const openingHours = await storage.getOpeningHoursByRestaurant(restaurantId);
       const dayHours = openingHours.find((oh: any) => oh.dayOfWeek === dayOfWeek);
       
+      // Check basic opening hours
       if (!dayHours || !dayHours.isOpen) {
+        console.log(`Restaurant ${restaurantId}: Closed on day ${dayOfWeek}`);
         return res.json([]);
       }
 
@@ -4404,17 +4406,16 @@ app.put("/api/tenants/:tenantId/bookings/:id", validateTenant, async (req, res) 
       let actualCloseTime = dayHours.closeTime;
       let isSpecialDayClosed = false;
 
+      // Apply special period rules
       if (specialPeriod) {
         if (specialPeriod.isClosed) {
-          isSpecialDayClosed = true;
+          console.log(`Restaurant ${restaurantId}: Closed due to special period on ${dateStr}`);
+          return res.json([]);
         } else if (specialPeriod.openTime && specialPeriod.closeTime) {
           actualOpenTime = specialPeriod.openTime;
           actualCloseTime = specialPeriod.closeTime;
+          console.log(`Restaurant ${restaurantId}: Special period hours ${actualOpenTime} - ${actualCloseTime} on ${dateStr}`);
         }
-      }
-
-      if (isSpecialDayClosed) {
-        return res.json([]);
       }
 
       // Get cut-off times for the restaurant
@@ -4448,7 +4449,7 @@ app.put("/api/tenants/:tenantId/bookings/:id", validateTenant, async (req, res) 
         return hours * 60 + minutes;
       };
 
-      // Generate time slots based on actual opening hours
+      // Generate time slots based on actual opening hours (considering special periods)
       const openTimeMinutes = timeToMinutes(actualOpenTime);
       const closeTimeMinutes = timeToMinutes(actualCloseTime);
       
@@ -4461,7 +4462,7 @@ app.put("/api/tenants/:tenantId/bookings/:id", validateTenant, async (req, res) 
         const mins = minutes % 60;
         const timeStr = `${hours.toString().padStart(2, '0')}:${mins.toString().padStart(2, '0')}`;
         
-        // Apply cut-off time validation
+        // Apply cut-off time validation - same as admin booking system
         if (cutOffTime && cutOffTime.cutOffHours > 0) {
           // Create booking datetime by combining date and time
           const bookingDateTime = new Date(bookingDate);
@@ -4473,8 +4474,17 @@ app.put("/api/tenants/:tenantId/bookings/:id", validateTenant, async (req, res) 
 
           // Skip this time slot if current time is past the cut-off deadline
           if (now > cutOffDeadline) {
+            console.log(`Restaurant ${restaurantId}: Time slot ${timeStr} blocked by cut-off time (${cutOffTime.cutOffHours}h before)`);
             continue;
           }
+        }
+
+        // Additional check: don't allow bookings in the past
+        const bookingDateTime = new Date(bookingDate);
+        bookingDateTime.setHours(hours, mins, 0, 0);
+        if (bookingDateTime <= now) {
+          console.log(`Restaurant ${restaurantId}: Time slot ${timeStr} is in the past`);
+          continue;
         }
 
         // Check if any suitable table is available at this time
@@ -4509,6 +4519,7 @@ app.put("/api/tenants/:tenantId/bookings/:id", validateTenant, async (req, res) 
         }
       }
 
+      console.log(`Restaurant ${restaurantId}: Generated ${timeSlots.length} available time slots for ${dateStr}`);
       res.json(timeSlots);
     } catch (error) {
       console.error("Error fetching available times:", error);
@@ -4545,35 +4556,70 @@ app.put("/api/tenants/:tenantId/bookings/:id", validateTenant, async (req, res) 
       const bookingData = bookingSchema.parse(req.body);
       const bookingDate = new Date(bookingData.bookingDate);
 
-      // Check if restaurant is open and booking is allowed
-      const isOpen = await storage.isRestaurantOpen(restaurantId, bookingDate, bookingData.startTime);
-      if (!isOpen) {
-        return res.status(400).json({ message: "Restaurant is closed at the requested time" });
-      }
-
-      const isAllowed = await storage.isBookingAllowed(restaurantId, bookingDate, bookingData.startTime);
-      if (!isAllowed) {
-        return res.status(400).json({ message: "Booking is not allowed at the requested time" });
-      }
-
-      // Get opening hours and check special periods
+      // Use the same validation logic as admin booking system
       const dayOfWeek = bookingDate.getDay();
       const openingHours = await storage.getOpeningHoursByRestaurant(restaurantId);
       const dayHours = openingHours.find((oh: any) => oh.dayOfWeek === dayOfWeek);
       
+      // Check basic opening hours
       if (!dayHours || !dayHours.isOpen) {
         return res.status(400).json({ message: "Restaurant is closed on this day" });
       }
 
-      // Check special periods
+      // Check special periods that might override normal hours
       const specialPeriods = await storage.getSpecialPeriodsByRestaurant(restaurantId);
       const dateStr = bookingDate.toISOString().split('T')[0];
       const specialPeriod = specialPeriods.find((sp: any) => 
         dateStr >= sp.startDate && dateStr <= sp.endDate
       );
 
-      if (specialPeriod && specialPeriod.isClosed) {
-        return res.status(400).json({ message: "Restaurant is closed during this special period" });
+      let actualOpenTime = dayHours.openTime;
+      let actualCloseTime = dayHours.closeTime;
+
+      // Apply special period rules
+      if (specialPeriod) {
+        if (specialPeriod.isClosed) {
+          return res.status(400).json({ message: "Restaurant is closed during this special period" });
+        } else if (specialPeriod.openTime && specialPeriod.closeTime) {
+          actualOpenTime = specialPeriod.openTime;
+          actualCloseTime = specialPeriod.closeTime;
+        }
+      }
+
+      // Validate booking time against actual opening hours (including special periods)
+      const timeToMinutes = (timeStr: string): number => {
+        const [hours, minutes] = timeStr.split(':').map(Number);
+        return hours * 60 + minutes;
+      };
+
+      const bookingTimeMinutes = timeToMinutes(bookingData.startTime);
+      const openTimeMinutes = timeToMinutes(actualOpenTime);
+      const closeTimeMinutes = timeToMinutes(actualCloseTime);
+
+      if (bookingTimeMinutes < openTimeMinutes || bookingTimeMinutes > closeTimeMinutes) {
+        return res.status(400).json({ 
+          message: `Booking time ${bookingData.startTime} is outside restaurant hours (${actualOpenTime} - ${actualCloseTime})` 
+        });
+      }
+
+      // Apply cut-off time validation
+      const cutOffTimes = await storage.getCutOffTimesByRestaurant(restaurantId);
+      const cutOffTime = cutOffTimes.find((ct: any) => ct.dayOfWeek === dayOfWeek);
+      
+      if (cutOffTime && cutOffTime.cutOffHours > 0) {
+        const [bookingHour, bookingMinute] = bookingData.startTime.split(':').map(Number);
+        const bookingDateTime = new Date(bookingDate);
+        bookingDateTime.setHours(bookingHour, bookingMinute, 0, 0);
+
+        const cutOffMilliseconds = cutOffTime.cutOffHours * 60 * 60 * 1000;
+        const cutOffDeadline = new Date(bookingDateTime.getTime() - cutOffMilliseconds);
+        const now = new Date();
+
+        if (now > cutOffDeadline) {
+          return res.status(400).json({ 
+            message: `Booking must be made at least ${cutOffTime.cutOffHours} hour${cutOffTime.cutOffHours > 1 ? 's' : ''} in advance` 
+          });
+        }
       }
 
       // Find an available table for this booking
