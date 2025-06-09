@@ -13,6 +13,7 @@ import { eq, and } from "drizzle-orm";
 import { BrevoEmailService } from "./brevo-service";
 import { BookingHash } from "./booking-hash";
 import { QRCodeService } from "./qr-service";
+import { WebhookService } from "./webhook-service";
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY || 'sk_test_your_stripe_secret_key', {
   apiVersion: '2025-05-28.basil'
@@ -31,6 +32,9 @@ try {
   console.error('Failed to initialize email service:', error);
   emailService = null;
 }
+
+// Initialize webhook service
+const webhookService = new WebhookService(storage);
 
 // WebSocket connections store
 const wsConnections = new Map<string, Set<WebSocket>>();
@@ -554,6 +558,19 @@ export async function registerRoutes(app: Express): Promise<Server> {
         }
       } else {
         console.log('Email service not available - skipping email notifications');
+      }
+
+      // Send webhook notifications
+      try {
+        await webhookService.notifyBookingCreated(restaurantId, {
+          ...booking,
+          customerName: req.body.customerName,
+          customerEmail: req.body.customerEmail,
+          customerPhone: req.body.customerPhone
+        });
+      } catch (webhookError) {
+        console.error('Error sending webhook notifications:', webhookError);
+        // Don't fail the booking if webhook fails
       }
 
       res.json(booking);
@@ -2024,6 +2041,16 @@ app.put("/api/tenants/:tenantId/bookings/:id", validateTenant, async (req, res) 
         }
 
       const booking = await storage.updateBooking(id, updates);
+      
+      // Send webhook notifications for booking update
+      if (booking) {
+        try {
+          await webhookService.notifyBookingUpdated(restaurantId, booking);
+        } catch (webhookError) {
+          console.error('Error sending booking update webhook:', webhookError);
+        }
+      }
+      
       res.json(booking);
     } catch (error) {
       res.status(400).json({ message: "Invalid request" });
@@ -2054,6 +2081,13 @@ app.put("/api/tenants/:tenantId/bookings/:id", validateTenant, async (req, res) 
       const existingBooking = await storage.getBookingById(id);
       if (!existingBooking || existingBooking.tenantId !== tenantId) {
         return res.status(404).json({ message: "Booking not found" });
+      }
+
+      // Send webhook notifications before deletion
+      try {
+        await webhookService.notifyBookingDeleted(existingBooking.restaurantId, existingBooking);
+      } catch (webhookError) {
+        console.error('Error sending booking deletion webhook:', webhookError);
       }
 
       const success = await storage.deleteBooking(id);
