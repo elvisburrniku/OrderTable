@@ -2596,11 +2596,28 @@ app.put("/api/tenants/:tenantId/bookings/:id", validateTenant, async (req, res) 
           status: 'pending'
         });
 
+        // Create persistent notification
+        const notification = await storage.createNotification({
+          restaurantId: booking.restaurantId,
+          tenantId: booking.tenantId,
+          type: 'booking_change_request',
+          title: 'Booking Change Request',
+          message: `${booking.customerName} requested to change their booking from ${new Date(booking.bookingDate).toLocaleDateString()} ${booking.startTime}`,
+          bookingId: booking.id,
+          changeRequestId: changeRequest.id,
+          data: {
+            changeRequest: changeRequest,
+            booking: booking
+          },
+          canRevert: false
+        });
+
         // Send real-time notification to restaurant admin
         broadcastNotification(booking.restaurantId, {
           type: 'booking_change_request',
           changeRequest: changeRequest,
           booking: booking,
+          notification: notification,
           timestamp: new Date().toISOString()
         });
 
@@ -2625,11 +2642,27 @@ app.put("/api/tenants/:tenantId/bookings/:id", validateTenant, async (req, res) 
         // For cancellations, update the booking status immediately but notify the restaurant
         const updatedBooking = await storage.updateBooking(id, { status: 'cancelled' });
 
+        // Create persistent notification
+        const notification = await storage.createNotification({
+          restaurantId: updatedBooking.restaurantId,
+          tenantId: updatedBooking.tenantId,
+          type: 'booking_cancelled',
+          title: 'Booking Cancelled',
+          message: `${updatedBooking.customerName} cancelled their booking for ${new Date(updatedBooking.bookingDate).toLocaleDateString()} at ${updatedBooking.startTime}`,
+          bookingId: updatedBooking.id,
+          data: {
+            booking: updatedBooking,
+            cancelledBy: 'customer'
+          },
+          canRevert: false
+        });
+
         // Send real-time notification to restaurant
         broadcastNotification(updatedBooking.restaurantId, {
           type: 'booking_cancelled',
           booking: updatedBooking,
           cancelledBy: 'customer',
+          notification: notification,
           timestamp: new Date().toISOString()
         });
 
@@ -2641,11 +2674,35 @@ app.put("/api/tenants/:tenantId/bookings/:id", validateTenant, async (req, res) 
         // For other updates (table changes, etc.), update directly
         const updatedBooking = await storage.updateBooking(id, allowedUpdates);
 
+        // Create persistent notification with revert capability
+        const notification = await storage.createNotification({
+          restaurantId: updatedBooking.restaurantId,
+          tenantId: updatedBooking.tenantId,
+          type: 'booking_changed',
+          title: 'Booking Modified',
+          message: `${updatedBooking.customerName} modified their booking for ${new Date(updatedBooking.bookingDate).toLocaleDateString()} at ${updatedBooking.startTime}`,
+          bookingId: updatedBooking.id,
+          data: {
+            booking: updatedBooking,
+            changes: allowedUpdates
+          },
+          originalData: {
+            bookingDate: originalBooking.bookingDate,
+            startTime: originalBooking.startTime,
+            endTime: originalBooking.endTime,
+            guestCount: originalBooking.guestCount,
+            tableId: originalBooking.tableId,
+            notes: originalBooking.notes
+          },
+          canRevert: true
+        });
+
         // Send real-time notification to restaurant with original data for reverting
         broadcastNotification(updatedBooking.restaurantId, {
           type: 'booking_changed',
           booking: updatedBooking,
           changes: allowedUpdates,
+          notification: notification,
           originalData: {
             bookingDate: originalBooking.bookingDate,
             startTime: originalBooking.startTime,
