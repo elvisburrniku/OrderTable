@@ -323,8 +323,8 @@ export function RealTimeNotifications() {
   // Update unread count when persistent notifications change
   useEffect(() => {
     if (persistentNotifications) {
-      const unreadPersistent = persistentNotifications.filter(n => !n.isRead).length;
-      const unreadLive = liveNotifications.filter(n => !n.read).length;
+      const unreadPersistent = persistentNotifications.filter((n: any) => !n.isRead).length;
+      const unreadLive = liveNotifications.filter((n: any) => !n.read).length;
       setUnreadCount(unreadPersistent + unreadLive);
     }
   }, [persistentNotifications, liveNotifications]);
@@ -936,14 +936,14 @@ export function RealTimeNotifications() {
                   if (notifications.length === 0) return null;
                   
                   const isCollapsed = collapsedGroups.has(groupType);
-                  const GroupIcon = getGroupIcon(groupType);
+                  const GroupIcon = getGroupIcon(groupType as any);
                   const unreadInGroup = notifications.filter((n: any) => !n.isRead).length;
                   
                   return (
                     <div key={groupType} className="border-b border-gray-100">
                       {/* Enhanced Group Header */}
                       <div
-                        className={`flex items-center justify-between p-4 hover:bg-opacity-75 cursor-pointer border-l-4 transition-all duration-200 ${getGroupColor(groupType)}`}
+                        className={`flex items-center justify-between p-4 hover:bg-opacity-75 cursor-pointer border-l-4 transition-all duration-200 ${getGroupIconColor(groupType as any)}`}
                         onClick={() => toggleGroupCollapse(groupType)}
                       >
                         <div className="flex items-center gap-3 flex-1">
@@ -959,7 +959,7 @@ export function RealTimeNotifications() {
                           <div className="flex flex-col gap-1 flex-1">
                             <div className="flex items-center gap-2">
                               <span className="font-semibold text-gray-800">
-                                {getGroupTitle(groupType)}
+                                {getGroupDisplayName(groupType as any)}
                               </span>
                               <span className="text-sm text-gray-500">
                                 ({notifications.length})
