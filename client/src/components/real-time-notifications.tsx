@@ -951,10 +951,15 @@ export function RealTimeNotifications() {
                   {(() => {
                     // Get all notifications for this booking ID, sorted by timestamp
                     const bookingId = selectedBooking.booking?.id;
+                    console.log('Debug - selectedBooking:', selectedBooking);
+                    console.log('Debug - bookingId:', bookingId);
+                    console.log('Debug - allNotifications:', allNotifications);
+                    
                     if (!bookingId) {
                       return (
                         <div className="p-3 bg-white rounded border-l-4 border-gray-500">
-                          <p className="text-sm text-gray-700">No booking history available</p>
+                          <p className="text-sm text-gray-700">No booking history available (booking ID: {String(bookingId)})</p>
+                          <p className="text-xs text-gray-500 mt-1">Debug: {JSON.stringify(selectedBooking.booking)}</p>
                         </div>
                       );
                     }
