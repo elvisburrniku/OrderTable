@@ -480,6 +480,98 @@ export default function BookingManage() {
             </CardContent>
           </Card>
 
+          {/* Change Requests Status Card */}
+          {changeRequests.length > 0 && (
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center space-x-2">
+                  <History className="w-5 h-5" />
+                  <span>Change Request Status</span>
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-4">
+                  {changeRequests.map((request: any) => (
+                    <div key={request.id} className="border rounded-lg p-4 bg-gray-50">
+                      <div className="flex items-center justify-between mb-3">
+                        <div className="flex items-center space-x-2">
+                          {request.status === 'pending' && (
+                            <Badge variant="outline" className="bg-yellow-100 text-yellow-800 border-yellow-300">
+                              <AlertCircle className="w-3 h-3 mr-1" />
+                              Pending Review
+                            </Badge>
+                          )}
+                          {request.status === 'approved' && (
+                            <Badge variant="outline" className="bg-green-100 text-green-800 border-green-300">
+                              <CheckCircle className="w-3 h-3 mr-1" />
+                              Approved
+                            </Badge>
+                          )}
+                          {request.status === 'rejected' && (
+                            <Badge variant="outline" className="bg-red-100 text-red-800 border-red-300">
+                              <XCircle className="w-3 h-3 mr-1" />
+                              Rejected
+                            </Badge>
+                          )}
+                        </div>
+                        <p className="text-sm text-gray-500">
+                          {format(parseISO(request.createdAt), "MMM d, yyyy 'at' h:mm a")}
+                        </p>
+                      </div>
+                      
+                      <div className="space-y-2">
+                        <p className="text-sm font-medium text-gray-700">Requested Changes:</p>
+                        <div className="grid md:grid-cols-3 gap-4 text-sm">
+                          {request.requestedDate && (
+                            <div>
+                              <span className="text-gray-500">Date:</span>
+                              <span className="ml-2 font-medium">
+                                {format(parseISO(request.requestedDate), "MMM d, yyyy")}
+                              </span>
+                            </div>
+                          )}
+                          {request.requestedTime && (
+                            <div>
+                              <span className="text-gray-500">Time:</span>
+                              <span className="ml-2 font-medium">{formatTime(request.requestedTime)}</span>
+                            </div>
+                          )}
+                          {request.requestedGuestCount && (
+                            <div>
+                              <span className="text-gray-500">Guests:</span>
+                              <span className="ml-2 font-medium">{request.requestedGuestCount}</span>
+                            </div>
+                          )}
+                        </div>
+                        
+                        {request.requestNotes && (
+                          <div className="mt-2">
+                            <span className="text-sm text-gray-500">Notes:</span>
+                            <p className="text-sm text-gray-700 mt-1">{request.requestNotes}</p>
+                          </div>
+                        )}
+                        
+                        {request.restaurantResponse && (
+                          <div className="mt-3 p-3 bg-white rounded border">
+                            <span className="text-sm text-gray-500">Restaurant Response:</span>
+                            <p className="text-sm text-gray-700 mt-1">{request.restaurantResponse}</p>
+                          </div>
+                        )}
+                        
+                        {request.status === 'pending' && (
+                          <div className="mt-3 flex items-center space-x-2 text-sm text-blue-600">
+                            <ArrowRight className="w-4 h-4" />
+                            <span>Your request is being reviewed by the restaurant staff</span>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </CardContent>
+            </Card>
+          )}
+
           {/* Actions Card */}
           {booking.status !== "cancelled" && (
             <Card>
