@@ -749,7 +749,7 @@ export function RealTimeNotifications() {
                     )}
                     <div className="flex items-center gap-2">
                       <Users className="h-4 w-4 text-gray-500" />
-                      <span className="text-sm">{selectedBooking.booking.guestCount} guests</span>
+                      <span className="text-sm">{selectedBooking.booking?.guestCount || 1} guests</span>
                     </div>
                   </div>
                 </div>
@@ -768,8 +768,8 @@ export function RealTimeNotifications() {
                       <span className="text-sm">
                         {(() => {
                           try {
-                            const date = new Date(selectedBooking.booking.bookingDate);
-                            if (isNaN(date.getTime())) {
+                            const date = selectedBooking.booking?.bookingDate ? new Date(selectedBooking.booking.bookingDate) : null;
+                            if (!date || isNaN(date.getTime())) {
                               return 'Date not available';
                             }
                             return format(date, 'EEEE, MMM dd, yyyy');
@@ -782,11 +782,11 @@ export function RealTimeNotifications() {
                     <div className="flex items-center gap-2">
                       <Clock className="h-4 w-4 text-gray-500" />
                       <span className="text-sm">
-                        {selectedBooking.booking.startTime || 'Time not specified'}
-                        {selectedBooking.booking.endTime && ` - ${selectedBooking.booking.endTime}`}
+                        {selectedBooking.booking?.startTime || 'Time not specified'}
+                        {selectedBooking.booking?.endTime && ` - ${selectedBooking.booking.endTime}`}
                       </span>
                     </div>
-                    {selectedBooking.booking.tableId && (
+                    {selectedBooking.booking?.tableId && (
                       <div className="flex items-center gap-2">
                         <MapPin className="h-4 w-4 text-gray-500" />
                         <span className="text-sm">Table {selectedBooking.booking.tableId}</span>
@@ -794,11 +794,11 @@ export function RealTimeNotifications() {
                     )}
                     <div className="flex items-center gap-2">
                       <Badge variant="outline">
-                        {selectedBooking.booking.status}
+                        {selectedBooking.booking?.status || 'Pending'}
                       </Badge>
                     </div>
                   </div>
-                  {selectedBooking.booking.notes && (
+                  {selectedBooking.booking?.notes && (
                     <div className="mt-3 p-3 bg-white rounded border">
                       <p className="text-sm text-gray-600 mb-1">Notes:</p>
                       <p className="text-sm">{selectedBooking.booking.notes}</p>
@@ -984,12 +984,12 @@ export function RealTimeNotifications() {
                       </span>
                     </div>
                     <p className="text-sm text-gray-700">
-                      {selectedBooking.booking.customerName} made a reservation for {selectedBooking.booking.guestCount} guests
+                      {selectedBooking.booking?.customerName || 'Customer'} made a reservation for {selectedBooking.booking?.guestCount || 1} guests
                       {(() => {
                         try {
-                          const date = new Date(selectedBooking.booking.bookingDate);
-                          if (!isNaN(date.getTime())) {
-                            return ` on ${format(date, 'MMM dd, yyyy')} at ${selectedBooking.booking.startTime}`;
+                          const date = selectedBooking.booking?.bookingDate ? new Date(selectedBooking.booking.bookingDate) : null;
+                          if (date && !isNaN(date.getTime())) {
+                            return ` on ${format(date, 'MMM dd, yyyy')}${selectedBooking.booking?.startTime ? ` at ${selectedBooking.booking.startTime}` : ''}`;
                           }
                           return '';
                         } catch {
@@ -1015,7 +1015,7 @@ export function RealTimeNotifications() {
                 
                 <div className="mt-3 pt-3 border-t border-blue-200">
                   <p className="text-xs text-gray-600">
-                    This shows the complete timeline of changes made to booking #{selectedBooking.booking.id}
+                    This shows the complete timeline of changes made to booking #{selectedBooking.booking?.id || 'N/A'}
                   </p>
                 </div>
               </div>
