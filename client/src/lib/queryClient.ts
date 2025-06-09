@@ -14,6 +14,7 @@ export async function apiRequest(
 ): Promise<Response> {
   const options: RequestInit = {
     method,
+    credentials: 'include', // Include cookies for session management
     headers: {
       "Content-Type": "application/json",
     },

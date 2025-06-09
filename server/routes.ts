@@ -160,15 +160,20 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Session validation endpoint
   app.get("/api/auth/validate", async (req, res) => {
     try {
-      // Check if user is logged in via session or stored data
-      // For now, we'll accept any request as valid since we're using localStorage
-      // In a real app, you'd check session cookies or JWT tokens here
-      res.json({ 
-        valid: true,
-        message: "Session valid"
-      });
+      const sessionUser = (req as any).session?.user;
+      if (sessionUser) {
+        res.json({ 
+          valid: true,
+          message: "Session valid",
+          user: sessionUser,
+          tenant: (req as any).session.tenant,
+          restaurant: (req as any).session.restaurant
+        });
+      } else {
+        res.status(401).json({ valid: false, message: "No valid session" });
+      }
     } catch (error) {
-      res.status(401).json({ message: "Invalid session" });
+      res.status(401).json({ valid: false, message: "Invalid session" });
     }
   });
 
@@ -2913,7 +2918,7 @@ app.put("/api/tenants/:tenantId/bookings/:id", validateTenant, async (req, res) 
   });
 
   // Notifications API
-  app.get("/api/notifications", async (req: Request, res: Response) => {
+  app.get("/api/notifications", attachUser, async (req: Request, res: Response) => {
     if (!req.user) {
       return res.status(401).json({ error: "Not authenticated" });
     }
@@ -2932,7 +2937,7 @@ app.put("/api/tenants/:tenantId/bookings/:id", validateTenant, async (req, res) 
     }
   });
 
-  app.patch("/api/notifications/:id/read", async (req: Request, res: Response) => {
+  app.patch("/api/notifications/:id/read", attachUser, async (req: Request, res: Response) => {
     if (!req.user) {
       return res.status(401).json({ error: "Not authenticated" });
     }
