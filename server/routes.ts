@@ -4330,13 +4330,18 @@ app.put("/api/tenants/:tenantId/bookings/:id", validateTenant, async (req, res) 
         return res.status(404).json({ message: "Restaurant not found" });
       }
 
+      // Check if Google integration is enabled for guest bookings
+      const googleConfig = await storage.getIntegrationConfiguration(restaurantId, 'google');
+      const guestBookingEnabled = googleConfig?.isEnabled || false;
+
       // Return only public information
       const publicInfo = {
         id: restaurant.id,
         name: restaurant.name,
         address: restaurant.address,
         phone: restaurant.phone,
-        description: restaurant.description
+        description: restaurant.description,
+        guestBookingEnabled
       };
 
       res.json(publicInfo);
@@ -4562,6 +4567,14 @@ app.put("/api/tenants/:tenantId/bookings/:id", validateTenant, async (req, res) 
       const restaurant = await storage.getRestaurantById(restaurantId);
       if (!restaurant) {
         return res.status(404).json({ message: "Restaurant not found" });
+      }
+
+      // Check if Google integration is enabled for guest bookings
+      const googleConfig = await storage.getIntegrationConfiguration(restaurantId, 'google');
+      if (!googleConfig || !googleConfig.isEnabled) {
+        return res.status(403).json({ 
+          message: "Guest bookings are currently disabled. Please contact the restaurant directly." 
+        });
       }
 
       // Validate booking data
