@@ -947,70 +947,129 @@ export function RealTimeNotifications() {
                   Complete Change History
                 </h3>
                 <div className="space-y-3">
-                  {/* Current notification change */}
-                  <div className="p-3 bg-white rounded border-l-4 border-blue-500">
-                    <div className="flex items-center justify-between mb-1">
-                      <span className="text-sm font-medium text-blue-700">Current Notification</span>
-                      <span className="text-xs text-gray-500">
-                        {selectedBooking.timestamp ? 
-                          format(new Date(selectedBooking.timestamp), 'MMM dd, HH:mm') : 
-                          'Recently'}
-                      </span>
-                    </div>
-                    <p className="text-sm text-gray-700">{getNotificationMessage(selectedBooking)}</p>
-                    {selectedBooking.type === 'booking_cancelled' && selectedBooking.cancelledBy && (
-                      <p className="text-xs text-gray-500 mt-1">
-                        Cancelled by: {selectedBooking.cancelledBy}
-                      </p>
-                    )}
-                  </div>
+                  {(() => {
+                    // Get all notifications for this booking ID, sorted by timestamp
+                    const bookingId = selectedBooking.booking?.id;
+                    if (!bookingId) {
+                      return (
+                        <div className="p-3 bg-white rounded border-l-4 border-gray-500">
+                          <p className="text-sm text-gray-700">No booking history available</p>
+                        </div>
+                      );
+                    }
 
-                  {/* Original booking creation */}
-                  <div className="p-3 bg-white rounded border-l-4 border-green-500">
-                    <div className="flex items-center justify-between mb-1">
-                      <span className="text-sm font-medium text-green-700">Booking Created</span>
-                      <span className="text-xs text-gray-500">
-                        {(() => {
-                          try {
-                            const createdAt = selectedBooking.booking.createdAt;
-                            if (createdAt) {
-                              return format(new Date(createdAt), 'MMM dd, HH:mm');
+                    const allBookingNotifications = notifications
+                      .filter(notif => notif.booking?.id === bookingId)
+                      .sort((a, b) => new Date(b.timestamp || 0).getTime() - new Date(a.timestamp || 0).getTime());
+
+                    const historyItems = [];
+
+                    // Add all notification changes in chronological order (newest first)
+                    allBookingNotifications.forEach((notif, index) => {
+                      const isCurrentNotification = notif.id === selectedBooking.id;
+                      const borderColor = isCurrentNotification ? 'border-blue-500' : 
+                                         notif.type === 'booking_cancelled' ? 'border-red-500' :
+                                         notif.type === 'booking_changed' ? 'border-orange-500' :
+                                         'border-gray-500';
+                      const titleColor = isCurrentNotification ? 'text-blue-700' : 
+                                        notif.type === 'booking_cancelled' ? 'text-red-700' :
+                                        notif.type === 'booking_changed' ? 'text-orange-700' :
+                                        'text-gray-700';
+
+                      historyItems.push(
+                        <div key={notif.id} className={`p-3 bg-white rounded border-l-4 ${borderColor}`}>
+                          <div className="flex items-center justify-between mb-1">
+                            <span className={`text-sm font-medium ${titleColor}`}>
+                              {isCurrentNotification ? 'Latest Change' : 
+                               notif.type === 'booking_cancelled' ? 'Booking Cancelled' :
+                               notif.type === 'booking_changed' ? 'Booking Modified' :
+                               'Notification'}
+                              {index === 0 && !isCurrentNotification ? ' (Most Recent)' : ''}
+                            </span>
+                            <span className="text-xs text-gray-500">
+                              {notif.timestamp ? 
+                                format(new Date(notif.timestamp), 'MMM dd, HH:mm') : 
+                                'Recently'}
+                            </span>
+                          </div>
+                          <p className="text-sm text-gray-700">{getNotificationMessage(notif)}</p>
+                          {notif.type === 'booking_cancelled' && notif.cancelledBy && (
+                            <p className="text-xs text-gray-500 mt-1">
+                              Cancelled by: {notif.cancelledBy}
+                            </p>
+                          )}
+                          {notif.changeDetails && Object.keys(notif.changeDetails).length > 0 && (
+                            <div className="mt-2 space-y-1">
+                              {Object.entries(notif.changeDetails).map(([key, value]) => {
+                                const change = value as any;
+                                const from = change?.from;
+                                const to = change?.to || change;
+                                
+                                return (
+                                  <div key={key} className="text-xs bg-gray-50 p-2 rounded">
+                                    <span className="font-medium capitalize">{key.replace(/([A-Z])/g, ' $1').toLowerCase()}:</span>
+                                    {from && to ? (
+                                      <span className="ml-1">
+                                        <span className="text-red-600">{String(from)}</span>
+                                        <span className="mx-1">→</span>
+                                        <span className="text-green-600">{String(to)}</span>
+                                      </span>
+                                    ) : (
+                                      <span className="ml-1 text-green-600">{String(to || change)}</span>
+                                    )}
+                                  </div>
+                                );
+                              })}
+                            </div>
+                          )}
+                          {notif.reverted && (
+                            <div className="mt-2 p-2 bg-yellow-50 rounded text-xs">
+                              <span className="text-yellow-700 font-medium">Note:</span>
+                              <span className="text-yellow-600 ml-1">This change was later reverted</span>
+                            </div>
+                          )}
+                        </div>
+                      );
+                    });
+
+                    // Add original booking creation at the end
+                    historyItems.push(
+                      <div key="creation" className="p-3 bg-white rounded border-l-4 border-green-500">
+                        <div className="flex items-center justify-between mb-1">
+                          <span className="text-sm font-medium text-green-700">Booking Created</span>
+                          <span className="text-xs text-gray-500">
+                            {(() => {
+                              try {
+                                const createdAt = selectedBooking.booking?.createdAt;
+                                if (createdAt) {
+                                  return format(new Date(createdAt), 'MMM dd, HH:mm');
+                                }
+                                return 'Initial booking';
+                              } catch {
+                                return 'Initial booking';
+                              }
+                            })()}
+                          </span>
+                        </div>
+                        <p className="text-sm text-gray-700">
+                          {selectedBooking.booking?.customerName || 'Customer'} made a reservation for {selectedBooking.booking?.guestCount || 1} guests
+                          {(() => {
+                            try {
+                              const date = selectedBooking.booking?.bookingDate ? new Date(selectedBooking.booking.bookingDate) : null;
+                              if (date && !isNaN(date.getTime())) {
+                                return ` on ${format(date, 'MMM dd, yyyy')}${selectedBooking.booking?.startTime ? ` at ${selectedBooking.booking.startTime}` : ''}`;
+                              }
+                              return '';
+                            } catch {
+                              return '';
                             }
-                            return 'Initial booking';
-                          } catch {
-                            return 'Initial booking';
-                          }
-                        })()}
-                      </span>
-                    </div>
-                    <p className="text-sm text-gray-700">
-                      {selectedBooking.booking?.customerName || 'Customer'} made a reservation for {selectedBooking.booking?.guestCount || 1} guests
-                      {(() => {
-                        try {
-                          const date = selectedBooking.booking?.bookingDate ? new Date(selectedBooking.booking.bookingDate) : null;
-                          if (date && !isNaN(date.getTime())) {
-                            return ` on ${format(date, 'MMM dd, yyyy')}${selectedBooking.booking?.startTime ? ` at ${selectedBooking.booking.startTime}` : ''}`;
-                          }
-                          return '';
-                        } catch {
-                          return '';
-                        }
-                      })()}
-                    </p>
-                  </div>
-
-                  {/* Show if booking was reverted */}
-                  {selectedBooking.reverted && (
-                    <div className="p-3 bg-white rounded border-l-4 border-yellow-500">
-                      <div className="flex items-center justify-between mb-1">
-                        <span className="text-sm font-medium text-yellow-700">Changes Reverted</span>
-                        <span className="text-xs text-gray-500">By restaurant staff</span>
+                          })()}
+                        </p>
                       </div>
-                      <p className="text-sm text-gray-700">
-                        Previous changes were undone and booking was restored to original state
-                      </p>
-                    </div>
-                  )}
+                    );
+
+                    return historyItems;
+                  })()}
                 </div>
                 
                 <div className="mt-3 pt-3 border-t border-blue-200">
