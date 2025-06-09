@@ -362,7 +362,11 @@ export class DatabaseStorage implements IStorage {
   }
 
   async createRestaurant(restaurant: InsertRestaurant): Promise<Restaurant> {
-    const [newRestaurant] = await this.db.insert(restaurants).values(restaurant).returning();
+    const restaurantData = {
+      ...restaurant,
+      emailSettings: restaurant.emailSettings || null
+    };
+    const [newRestaurant] = await this.db.insert(restaurants).values(restaurantData).returning();
     return newRestaurant;
   }
 

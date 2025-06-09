@@ -297,19 +297,39 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Hash password
       const hashedPassword = await bcrypt.hash(password, 10);
 
-      // Create tenant for the new user
-      const slug = (restaurantName || 'restaurant').toLowerCase().replace(/[^a-z0-9]/g, '-').replace(/-+/g, '-').substring(0, 50);
+      // Create tenant for the new user with unique slug generation
+      const baseSlug = (restaurantName || 'restaurant').toLowerCase().replace(/[^a-z0-9]/g, '-').replace(/-+/g, '-').substring(0, 50);
       const trialEndDate = new Date();
       trialEndDate.setDate(trialEndDate.getDate() + (trialPlan.trialDays || 30));
 
-      const tenant = await storage.createTenant({
-        name: restaurantName || 'New Restaurant',
-        slug,
-        subscriptionPlanId: trialPlan.id,
-        subscriptionStatus: "trial",
-        trialEndDate,
-        maxRestaurants: trialPlan.maxRestaurants || 1
-      });
+      let slug = baseSlug;
+      let counter = 1;
+      let tenant;
+
+      // Try to create tenant with unique slug
+      while (true) {
+        try {
+          tenant = await storage.createTenant({
+            name: restaurantName || 'New Restaurant',
+            slug,
+            subscriptionPlanId: trialPlan.id,
+            subscriptionStatus: "trial",
+            trialEndDate,
+            maxRestaurants: trialPlan.maxRestaurants || 1
+          });
+          break;
+        } catch (error: any) {
+          if (error.code === '23505' && error.constraint === 'tenants_slug_unique') {
+            slug = `${baseSlug}-${counter}`;
+            counter++;
+            if (counter > 100) {
+              throw new Error('Unable to generate unique slug');
+            }
+          } else {
+            throw error;
+          }
+        }
+      }
 
       // Create user using storage method
       const newUser = await storage.createUser({
@@ -331,7 +351,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
         name: restaurantName || 'New Restaurant',
         userId: newUser.id,
         tenantId: tenant.id,
-        emailSettings: JSON.stringify({})
+        emailSettings: JSON.stringify({}),
+        address: null,
+        phone: null,
+        email: null,
+        description: null
       });
 
       res.status(201).json({
@@ -345,8 +369,30 @@ export async function registerRoutes(app: Express): Promise<Server> {
         restaurant: newRestaurant,
         tenant: { id: tenant.id, name: tenant.name, slug: tenant.slug }
       });
-    } catch (error) {
+    } catch (error: any) {
       console.error("Registration error:", error);
+      
+      if (error.name === 'ZodError') {
+        return res.status(400).json({ 
+          message: "Invalid request data",
+          errors: error.errors
+        });
+      }
+      
+      if (error.code === '23505') {
+        if (error.constraint === 'users_email_unique') {
+          return res.status(400).json({ message: "Email already exists" });
+        }
+        if (error.constraint === 'tenants_slug_unique') {
+          return res.status(400).json({ message: "Restaurant name already exists, please try a different name" });
+        }
+        return res.status(400).json({ message: "Registration data conflict" });
+      }
+      
+      if (error.code === '42703') {
+        return res.status(500).json({ message: "Database configuration error" });
+      }
+      
       res.status(500).json({ message: "Internal server error" });
     }
   });
