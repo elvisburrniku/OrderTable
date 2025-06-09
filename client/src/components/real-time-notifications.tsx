@@ -204,9 +204,10 @@ export function RealTimeNotifications() {
 
   // Mark notification as read mutation
   const markAsReadMutation = useMutation({
-    mutationFn: (notificationId: number) => apiRequest(`/api/tenants/${restaurant?.tenantId}/restaurants/${restaurant?.id}/notifications/${notificationId}/read`, {
-      method: 'PATCH',
-    }),
+    mutationFn: (notificationId: number) => apiRequest(
+      'PATCH',
+      `/api/tenants/${restaurant?.tenantId}/restaurants/${restaurant?.id}/notifications/${notificationId}/read`
+    ),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['/api/tenants', restaurant?.tenantId, 'restaurants', restaurant?.id, 'notifications'] });
     },
@@ -216,9 +217,10 @@ export function RealTimeNotifications() {
   const markAllAsReadMutation = useMutation({
     mutationFn: () => {
       console.log('Making mark all as read request to:', `/api/tenants/${restaurant?.tenantId}/restaurants/${restaurant?.id}/notifications/mark-all-read`);
-      return apiRequest(`/api/tenants/${restaurant?.tenantId}/restaurants/${restaurant?.id}/notifications/mark-all-read`, {
-        method: 'PATCH',
-      });
+      return apiRequest(
+        'PATCH',
+        `/api/tenants/${restaurant?.tenantId}/restaurants/${restaurant?.id}/notifications/mark-all-read`
+      );
     },
     onSuccess: (data) => {
       console.log('Mark all as read successful:', data);
@@ -237,9 +239,10 @@ export function RealTimeNotifications() {
 
   // Revert notification mutation (admin only)
   const revertNotificationMutation = useMutation({
-    mutationFn: (notificationId: number) => apiRequest(`/api/notifications/${notificationId}/revert`, {
-      method: 'POST',
-    }),
+    mutationFn: (notificationId: number) => apiRequest(
+      'POST',
+      `/api/notifications/${notificationId}/revert`
+    ),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['/api/tenants', restaurant?.tenantId, 'restaurants', restaurant?.id, 'notifications'] });
       queryClient.invalidateQueries({ queryKey: ['/api/tenants', restaurant?.tenantId, 'restaurants', restaurant?.id, 'bookings'] });
