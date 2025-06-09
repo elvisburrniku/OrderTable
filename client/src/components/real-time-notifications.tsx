@@ -362,7 +362,14 @@ export function RealTimeNotifications() {
       case 'new_booking':
         if (!booking?.customerName || !booking?.bookingDate) return 'New booking received';
         const newBookingId = booking.id || 'N/A';
-        return `Booking #${newBookingId}: ${booking.customerName} booked for ${booking.guestCount || 0} guests on ${format(new Date(booking.bookingDate), 'MMM dd')} at ${booking.startTime || 'TBD'}`;
+        return `Booking #${newBookingId}: ${booking.customerName} booked for ${booking.guestCount || 0} guests on ${(() => {
+          try {
+            const date = new Date(booking.bookingDate);
+            return isNaN(date.getTime()) ? 'TBD' : format(date, 'MMM dd');
+          } catch {
+            return 'TBD';
+          }
+        })()} at ${booking.startTime || 'TBD'}`;
       case 'booking_changed':
         const changedBookingId = booking?.id || 'N/A';
         if (!changes || Object.keys(changes).length === 0) {
@@ -374,8 +381,9 @@ export function RealTimeNotifications() {
           
           // If change is an object with from/to properties
           if (change && typeof change === 'object' && !Array.isArray(change)) {
-            const from = change.from || change.oldValue || change.old || change.previous;
-            const to = change.to || change.newValue || change.new || change.current;
+            const changeObj = change as any;
+            const from = changeObj.from || changeObj.oldValue || changeObj.old || changeObj.previous;
+            const to = changeObj.to || changeObj.newValue || changeObj.new || changeObj.current;
             
             if (from !== undefined && to !== undefined) {
               // We have before/after values
@@ -408,7 +416,9 @@ export function RealTimeNotifications() {
           switch (key) {
             case 'bookingDate': 
               try {
-                return `date changed to ${format(new Date(changeValue), 'MMM dd')}`;
+                const dateValue = String(changeValue);
+                const date = new Date(dateValue);
+                return isNaN(date.getTime()) ? 'booking date updated' : `date changed to ${format(date, 'MMM dd')}`;
               } catch {
                 return `booking date updated`;
               }
@@ -430,11 +440,27 @@ export function RealTimeNotifications() {
       case 'booking_cancelled':
         if (!booking?.customerName || !booking?.bookingDate) return 'Booking cancelled';
         const cancelledBookingId = booking.id || 'N/A';
-        return `Booking #${cancelledBookingId}: ${booking.customerName} cancelled their ${format(new Date(booking.bookingDate), 'MMM dd')} reservation at ${booking.startTime}`;
+        return `Booking #${cancelledBookingId}: ${booking.customerName} cancelled their ${(() => {
+          try {
+            const date = new Date(booking.bookingDate);
+            return isNaN(date.getTime()) ? '' : format(date, 'MMM dd') + ' ';
+          } catch {
+            return '';
+          }
+        })()}reservation${booking.startTime ? ` at ${booking.startTime}` : ''}`;
       case 'booking_change_request':
         const requestBookingId = booking?.id || 'N/A';
         const requestedChanges = [];
-        if (changeRequest?.requestedDate) requestedChanges.push(`date to ${format(new Date(changeRequest.requestedDate), 'MMM dd')}`);
+        if (changeRequest?.requestedDate) {
+          try {
+            const date = new Date(changeRequest.requestedDate);
+            if (!isNaN(date.getTime())) {
+              requestedChanges.push(`date to ${format(date, 'MMM dd')}`);
+            }
+          } catch {
+            // Skip if date is invalid
+          }
+        }
         if (changeRequest?.requestedTime) requestedChanges.push(`time to ${changeRequest.requestedTime}`);
         if (changeRequest?.requestedGuestCount) requestedChanges.push(`party size to ${changeRequest.requestedGuestCount} guests`);
         return `Booking #${requestBookingId}: ${booking?.customerName || 'Customer'} requests to change ${requestedChanges.join(', ') || 'booking details'}`;
@@ -726,13 +752,23 @@ export function RealTimeNotifications() {
                     <div className="flex items-center gap-2">
                       <Calendar className="h-4 w-4 text-gray-500" />
                       <span className="text-sm">
-                        {format(new Date(selectedBooking.booking.bookingDate), 'EEEE, MMM dd, yyyy')}
+                        {(() => {
+                          try {
+                            const date = new Date(selectedBooking.booking.bookingDate);
+                            if (isNaN(date.getTime())) {
+                              return 'Date not available';
+                            }
+                            return format(date, 'EEEE, MMM dd, yyyy');
+                          } catch {
+                            return 'Date not available';
+                          }
+                        })()}
                       </span>
                     </div>
                     <div className="flex items-center gap-2">
                       <Clock className="h-4 w-4 text-gray-500" />
                       <span className="text-sm">
-                        {selectedBooking.booking.startTime}
+                        {selectedBooking.booking.startTime || 'Time not specified'}
                         {selectedBooking.booking.endTime && ` - ${selectedBooking.booking.endTime}`}
                       </span>
                     </div>
