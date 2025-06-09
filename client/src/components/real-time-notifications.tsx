@@ -14,7 +14,23 @@ import { useToast } from '@/hooks/use-toast';
 interface BookingNotification {
   id: string;
   type: 'new_booking' | 'booking_changed' | 'booking_cancelled' | 'booking_change_request' | 'change_request_responded';
-  booking: {
+  bookingId?: number;
+  restaurantId: number;
+  tenantId: number;
+  title: string;
+  message: string;
+  data?: any; // JSON data containing booking details and changes
+  originalData?: any;
+  isRead?: boolean;
+  isReverted?: boolean;
+  canRevert?: boolean;
+  revertedBy?: string;
+  revertedAt?: string;
+  createdAt?: string;
+  timestamp?: string;
+  
+  // Legacy properties for backwards compatibility
+  booking?: {
     id: number;
     customerName: string;
     customerEmail: string;
@@ -39,13 +55,11 @@ interface BookingNotification {
     status: string;
   };
   changes?: any;
-  originalData?: any;
   approved?: boolean;
   restaurant?: {
     id: number;
     name?: string;
   };
-  timestamp: string;
   read?: boolean;
   reverted?: boolean;
   cancelledBy?: string;
@@ -707,7 +721,14 @@ export function RealTimeNotifications() {
             </DialogTitle>
           </DialogHeader>
           
-          {selectedBooking && (
+          {selectedBooking && (() => {
+            // Extract booking ID for use throughout the dialog
+            const bookingId = selectedBooking.bookingId || 
+                             selectedBooking.booking?.id || 
+                             selectedBooking.data?.booking?.id ||
+                             selectedBooking.data?.bookingId;
+            
+            return (
             <div className="space-y-6">
               {/* Notification Type Badge */}
               <div className="flex items-center gap-2">
@@ -949,13 +970,6 @@ export function RealTimeNotifications() {
                 </h3>
                 <div className="space-y-3">
                   {(() => {
-                    // Get all notifications for this booking ID, sorted by timestamp
-                    // Check multiple possible locations for booking ID
-                    const bookingId = selectedBooking.bookingId || 
-                                     selectedBooking.booking?.id || 
-                                     selectedBooking.data?.booking?.id ||
-                                     selectedBooking.data?.bookingId;
-                    
                     if (!bookingId) {
                       return (
                         <div className="p-3 bg-white rounded border-l-4 border-gray-500">
@@ -1105,7 +1119,8 @@ export function RealTimeNotifications() {
                 </div>
               )}
             </div>
-          )}
+            );
+          })()}
         </DialogContent>
       </Dialog>
     </div>
