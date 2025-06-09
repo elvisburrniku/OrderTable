@@ -9,7 +9,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { ArrowLeft, AlertTriangle } from 'lucide-react';
+import { ArrowLeft, AlertTriangle, Copy, ExternalLink } from 'lucide-react';
 
 export default function GoogleIntegration() {
   const { user, restaurant } = useAuth();
@@ -19,7 +19,15 @@ export default function GoogleIntegration() {
   
   const [isActivated, setIsActivated] = useState(true);
   const [businessType, setBusinessType] = useState('Restaurant');
-  const [bookingUrl, setBookingUrl] = useState('https://book.easytable.com/book?ref=mb&id=c22da&lang=en');
+  
+  // Generate the booking URL dynamically based on the current domain and restaurant ID
+  const generateBookingUrl = () => {
+    if (!restaurant?.id) return '';
+    const currentDomain = window.location.origin;
+    return `${currentDomain}/guest-booking/${restaurant.id}`;
+  };
+  
+  const bookingUrl = generateBookingUrl();
 
   // Fetch existing configuration
   const { data: config, isLoading } = useQuery({
@@ -29,10 +37,9 @@ export default function GoogleIntegration() {
 
   // Load saved configuration on mount
   useEffect(() => {
-    if (config) {
-      setIsActivated(config.isEnabled || false);
-      setBusinessType(config.configuration?.businessType || 'Restaurant');
-      setBookingUrl(config.configuration?.bookingUrl || 'https://book.easytable.com/book?ref=mb&id=c22da&lang=en');
+    if (config && typeof config === 'object') {
+      setIsActivated((config as any).isEnabled || false);
+      setBusinessType((config as any).configuration?.businessType || 'Restaurant');
     }
   }, [config]);
 
@@ -82,6 +89,26 @@ export default function GoogleIntegration() {
         bookingUrl,
       }
     });
+  };
+
+  const handleCopyUrl = async () => {
+    try {
+      await navigator.clipboard.writeText(bookingUrl);
+      toast({
+        title: "URL Copied",
+        description: "Booking URL has been copied to your clipboard.",
+      });
+    } catch (error) {
+      toast({
+        title: "Copy Failed",
+        description: "Could not copy URL to clipboard. Please copy manually.",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const handleTestBooking = () => {
+    window.open(bookingUrl, '_blank');
   };
 
   if (!user || !tenant) {
@@ -217,15 +244,40 @@ export default function GoogleIntegration() {
               <CardTitle>My Business booking link</CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="space-y-2">
-                <Label htmlFor="booking-url">My Business booking URL:</Label>
-                <Input
-                  id="booking-url"
-                  type="text"
-                  value={bookingUrl}
-                  readOnly
-                  className="bg-gray-100"
-                />
+              <div className="space-y-4">
+                <div className="space-y-2">
+                  <Label htmlFor="booking-url">My Business booking URL:</Label>
+                  <div className="flex gap-2">
+                    <Input
+                      id="booking-url"
+                      type="text"
+                      value={bookingUrl}
+                      readOnly
+                      className="bg-gray-100 flex-1"
+                    />
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={handleCopyUrl}
+                      className="flex items-center gap-2"
+                    >
+                      <Copy className="w-4 h-4" />
+                      Copy
+                    </Button>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={handleTestBooking}
+                      className="flex items-center gap-2"
+                    >
+                      <ExternalLink className="w-4 h-4" />
+                      Test
+                    </Button>
+                  </div>
+                </div>
+                <div className="text-sm text-gray-600">
+                  <p>Share this URL with your customers or use it in your marketing materials. Customers can book directly through this link without needing to log in.</p>
+                </div>
               </div>
             </CardContent>
           </Card>
