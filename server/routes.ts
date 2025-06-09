@@ -2974,19 +2974,29 @@ app.put("/api/tenants/:tenantId/bookings/:id", validateTenant, async (req, res) 
     res.json({ received: true });
   });
 
-  // Notifications API
-  app.get("/api/notifications", attachUser, async (req: Request, res: Response) => {
+  // Tenant-scoped Notifications API
+  app.get("/api/tenants/:tenantId/restaurants/:restaurantId/notifications", validateTenant, attachUser, async (req: Request, res: Response) => {
     if (!req.user) {
       return res.status(401).json({ error: "Not authenticated" });
     }
 
     try {
-      const restaurant = await storage.getRestaurantByUserId(req.user.id);
-      if (!restaurant) {
+      const restaurantId = parseInt(req.params.restaurantId);
+      const tenantId = parseInt(req.params.tenantId);
+
+      // Verify user has access to this restaurant
+      const restaurant = await storage.getRestaurantById(restaurantId);
+      if (!restaurant || restaurant.tenantId !== tenantId) {
         return res.status(404).json({ error: "Restaurant not found" });
       }
 
-      const notifications = await storage.getNotificationsByRestaurant(restaurant.id);
+      // Additional security: verify user owns this restaurant
+      const userRestaurant = await storage.getRestaurantByUserId(req.user.id);
+      if (!userRestaurant || userRestaurant.id !== restaurantId) {
+        return res.status(403).json({ error: "Access denied" });
+      }
+
+      const notifications = await storage.getNotificationsByRestaurant(restaurantId);
       res.json(notifications);
     } catch (error) {
       console.error("Error fetching notifications:", error);

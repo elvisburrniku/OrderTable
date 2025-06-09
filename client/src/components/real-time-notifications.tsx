@@ -62,8 +62,9 @@ export function RealTimeNotifications() {
 
   // Fetch persistent notifications from database
   const { data: persistentNotifications = [] } = useQuery({
-    queryKey: ['/api/notifications'],
-    enabled: !!restaurant?.id,
+    queryKey: ['/api/tenants', restaurant?.tenantId, 'restaurants', restaurant?.id, 'notifications'],
+    queryFn: () => apiRequest(`/api/tenants/${restaurant?.tenantId}/restaurants/${restaurant?.id}/notifications`),
+    enabled: !!restaurant?.id && !!restaurant?.tenantId,
     refetchInterval: 30000, // Refetch every 30 seconds
   });
 
@@ -78,7 +79,7 @@ export function RealTimeNotifications() {
       method: 'PATCH',
     }),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['/api/notifications'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/tenants', restaurant?.tenantId, 'restaurants', restaurant?.id, 'notifications'] });
     },
   });
 
@@ -88,7 +89,7 @@ export function RealTimeNotifications() {
       method: 'PATCH',
     }),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['/api/notifications'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/tenants', restaurant?.tenantId, 'restaurants', restaurant?.id, 'notifications'] });
       setUnreadCount(0);
     },
   });
@@ -99,7 +100,7 @@ export function RealTimeNotifications() {
       method: 'POST',
     }),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['/api/notifications'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/tenants', restaurant?.tenantId, 'restaurants', restaurant?.id, 'notifications'] });
       queryClient.invalidateQueries({ queryKey: ['/api/bookings'] });
       toast({
         title: "Changes Reverted",
@@ -120,7 +121,7 @@ export function RealTimeNotifications() {
     onMessage: (data) => {
       if (data.type === 'notification') {
         // Handle persistent notifications from WebSocket
-        queryClient.invalidateQueries({ queryKey: ['/api/notifications'] });
+        queryClient.invalidateQueries({ queryKey: ['/api/tenants', restaurant?.tenantId, 'restaurants', restaurant?.id, 'notifications'] });
         setUnreadCount(prev => prev + 1);
         
         // Show browser notification if permission granted
