@@ -602,8 +602,8 @@ export function RealTimeNotifications() {
 
       if (res.ok) {
         // Update notification to show it's been processed
-        setNotifications(prev => 
-          prev.map(n => 
+        setLiveNotifications(prev => 
+          prev.map((n: any) => 
             n.changeRequest?.id === requestId 
               ? { ...n, changeRequest: { ...n.changeRequest, status: action === 'approve' ? 'approved' : 'rejected' } }
               : n
@@ -645,7 +645,7 @@ export function RealTimeNotifications() {
       if (res.ok) {
         // Mark notification as processed/reverted
         setLiveNotifications(prev => 
-          prev.map(n => 
+          prev.map((n: any) => 
             n.booking?.id === bookingId && n.type === 'booking_changed'
               ? { ...n, reverted: true }
               : n
@@ -937,7 +937,7 @@ export function RealTimeNotifications() {
                   
                   const isCollapsed = collapsedGroups.has(groupType);
                   const GroupIcon = getGroupIcon(groupType);
-                  const unreadInGroup = notifications.filter(n => !n.isRead).length;
+                  const unreadInGroup = notifications.filter((n: any) => !n.isRead).length;
                   
                   return (
                     <div key={groupType} className="border-b border-gray-100">
@@ -975,7 +975,7 @@ export function RealTimeNotifications() {
                               
                               {/* Urgency indicator for time-sensitive groups */}
                               {groupType === 'booking_change_request' && (() => {
-                                const urgentCount = notifications.filter(n => isUrgentChangeRequest(n)).length;
+                                const urgentCount = notifications.filter((n: any) => isUrgentChangeRequest(n)).length;
                                 return urgentCount > 0 ? (
                                   <Badge className="text-xs px-2 py-0.5 bg-red-600 text-white animate-pulse">
                                     {urgentCount} urgent
@@ -985,7 +985,7 @@ export function RealTimeNotifications() {
                               
                               {/* Today's bookings indicator */}
                               {(groupType === 'new_booking' || groupType === 'booking_changed') && (() => {
-                                const todayCount = notifications.filter(n => {
+                                const todayCount = notifications.filter((n: any) => {
                                   const bookingDate = getBookingDate(n);
                                   if (!bookingDate) return false;
                                   const today = new Date();
@@ -1004,6 +1004,9 @@ export function RealTimeNotifications() {
                               {getGroupDescription(groupType, notifications.length)}
                             </p>
                           </div>
+                        </div>
+                        
+                        <div className="flex items-center gap-2">
                           <Badge variant="secondary" className="text-xs bg-white/70">
                             {notifications.length}
                           </Badge>
