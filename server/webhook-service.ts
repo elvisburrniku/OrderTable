@@ -16,6 +16,14 @@ export class WebhookService {
     bookingData: any
   ) {
     try {
+      // First, check if webhook integration is enabled for this restaurant
+      const webhookConfig = await this.storage.getIntegrationConfiguration(restaurantId, 'webhooks');
+      
+      if (!webhookConfig || !webhookConfig.isEnabled) {
+        console.log(`Webhook integration is disabled for restaurant ${restaurantId}`);
+        return;
+      }
+
       // Get configured webhooks for this restaurant
       const webhooks = await this.storage.getWebhooksByRestaurant(restaurantId);
       
