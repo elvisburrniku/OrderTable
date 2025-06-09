@@ -369,59 +369,59 @@ export function RealTimeNotifications() {
           return `Booking #${changedBookingId}: ${booking?.customerName || 'Customer'} updated their booking`;
         }
         const changeDetails = Object.entries(changes).map(([key, change]) => {
-          // Handle various change data structures more comprehensively
-          let from, to;
+          // Handle the actual change data structure from the database
+          let changeValue = change;
           
-          if (change && typeof change === 'object') {
-            // Try multiple possible property names for before/after values
-            from = change.from || change.oldValue || change.old || change.previous;
-            to = change.to || change.newValue || change.new || change.current;
+          // If change is an object with from/to properties
+          if (change && typeof change === 'object' && !Array.isArray(change)) {
+            const from = change.from || change.oldValue || change.old || change.previous;
+            const to = change.to || change.newValue || change.new || change.current;
             
-            // If still no values, try array format [old, new]
-            if (!from && !to && Array.isArray(change) && change.length === 2) {
-              [from, to] = change;
+            if (from !== undefined && to !== undefined) {
+              // We have before/after values
+              switch (key) {
+                case 'bookingDate': 
+                  try {
+                    return `date from ${format(new Date(from), 'MMM dd')} to ${format(new Date(to), 'MMM dd')}`;
+                  } catch {
+                    return `booking date updated`;
+                  }
+                case 'startTime': 
+                  return `time from ${from} to ${to}`;
+                case 'guestCount': 
+                  return `party size from ${from} to ${to} guests`;
+                case 'tableId':
+                  return `table from ${from || 'unassigned'} to ${to || 'unassigned'}`;
+                case 'endTime':
+                  return `end time from ${from || 'open'} to ${to || 'open'}`;
+                case 'notes':
+                  return `special notes updated`;
+                default: 
+                  return `${key} updated`;
+              }
+            } else {
+              changeValue = to || from || change;
             }
           }
           
-          // Format the change description based on field type
+          // Handle simple value changes (current database format)
           switch (key) {
             case 'bookingDate': 
-              if (from && to) {
-                try {
-                  return `date from ${format(new Date(from), 'MMM dd')} to ${format(new Date(to), 'MMM dd')}`;
-                } catch {
-                  return `booking date updated`;
-                }
+              try {
+                return `date changed to ${format(new Date(changeValue), 'MMM dd')}`;
+              } catch {
+                return `booking date updated`;
               }
-              return `booking date updated`;
-              
             case 'startTime': 
-              if (from && to) {
-                return `time from ${from} to ${to}`;
-              }
-              return `booking time updated`;
-              
+              return `time changed to ${changeValue}`;
             case 'guestCount': 
-              if (from && to) {
-                return `party size from ${from} to ${to} guests`;
-              }
-              return `party size updated`;
-              
+              return `party size changed to ${changeValue} guests`;
             case 'tableId':
-              if (from && to) {
-                return `table from ${from || 'unassigned'} to ${to || 'unassigned'}`;
-              }
-              return `table assignment updated`;
-              
+              return `table assigned to ${changeValue || 'unassigned'}`;
             case 'notes':
               return `special notes updated`;
-              
             case 'endTime':
-              if (from && to) {
-                return `end time from ${from || 'open'} to ${to || 'open'}`;
-              }
-              return `end time updated`;
-              
+              return `end time changed to ${changeValue || 'open'}`;
             default: 
               return `${key} updated`;
           }
