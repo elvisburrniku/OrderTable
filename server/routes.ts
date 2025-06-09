@@ -2460,31 +2460,48 @@ app.put("/api/tenants/:tenantId/bookings/:id", validateTenant, async (req, res) 
   app.get("/api/booking-manage/:id/available-tables", async (req, res) => {
     try {
       const bookingId = parseInt(req.params.id);
-       const { hash } = req.query;
+      const { hash } = req.query;
 
-        if (!hash) {
-            return res.status(403).json({ message: "Access denied - security token required" });
-        }
+      if (!hash) {
+        return res.status(403).json({ message: "Access denied - security token required" });
+      }
 
-        const booking = await storage.getBookingById(bookingId);
-        if (!booking) {
-            return res.status(404).json({ message: "Booking not found" });
-        }
-      // Verify hash using the stored management hash
-        let isValidHash = false;
-        if (booking.managementHash && hash === booking.managementHash) {
+      const booking = await storage.getBookingById(bookingId);
+      if (!booking) {
+        return res.status(404).json({ message: "Booking not found" });
+      }
+
+      // Verify hash - accept management, cancel, or change hashes
+      let isValidHash = false;
+
+      // First try stored management hash
+      if (booking.managementHash && hash === booking.managementHash) {
+        isValidHash = true;
+        console.log(`Hash matches stored management hash`);
+      } else {
+        console.log(`Hash does not match stored management hash`);
+        
+        // Try action-specific hashes for backwards compatibility
+        const actions = ['manage', 'cancel', 'change'];
+        for (const action of actions) {
+          if (BookingHash.verifyHash(
+            hash as string,
+            booking.id,
+            booking.tenantId,
+            booking.restaurantId,
+            action as 'manage' | 'cancel' | 'change'
+          )) {
             isValidHash = true;
-            console.log(`Hash matches stored management hash`);
-        } else {
-             console.log(`Hash does not match stored management hash`);
-            isValidHash = false;
-             return res.status(403).json({ message: "Access denied - invalid or expired link" });
+            console.log(`Hash verified with ${action} action`);
+            break;
+          }
         }
+      }
 
-        if (!isValidHash) {
-            console.log(`Hash verification failed for booking ${booking.id}`);
-            return res.status(403).json({ message: "Access denied - invalid or expired link" });
-        }
+      if (!isValidHash) {
+        console.log(`Hash verification failed for booking ${booking.id}`);
+        return res.status(403).json({ message: "Access denied - invalid or expired link" });
+      }
 
 
       // Get available tables for the restaurant
