@@ -90,6 +90,17 @@ export default function GuestBooking() {
     enabled: !!restaurantId && !!selectedDate
   });
 
+    // Fetch special periods
+    const { data: specialPeriods } = useQuery({
+      queryKey: [`/api/restaurants/${restaurantId}/special-periods/public`],
+      queryFn: async () => {
+        const response = await fetch(`/api/restaurants/${restaurantId}/special-periods/public`);
+        if (!response.ok) return [];
+        return response.json();
+      },
+      enabled: !!restaurantId
+    });
+
   // Create booking mutation
   const createBookingMutation = useMutation({
     mutationFn: async (bookingData: any) => {
@@ -119,16 +130,74 @@ export default function GuestBooking() {
   // Generate calendar dates (next 30 days)
   const generateCalendarDates = () => {
     const dates = [];
-    const today = startOfDay(new Date());
+    const today = new Date();
+    const currentYear = today.getFullYear();
+    const currentMonth = today.getMonth();
 
-    for (let i = 0; i < 30; i++) {
-      const date = addDays(today, i);
-      dates.push(date);
+    // Generate dates for current month and next month
+    for (let monthOffset = 0; monthOffset < 2; monthOffset++) {
+      const targetDate = new Date(currentYear, currentMonth + monthOffset, 1);
+      const year = targetDate.getFullYear();
+      const month = targetDate.getMonth();
+      const daysInMonth = new Date(year, month + 1, 0).getDate();
+
+      for (let day = 1; day <= daysInMonth; day++) {
+        const date = new Date(year, month, day);
+
+        // Skip dates in the past
+        if (date < today.setHours(0, 0, 0, 0)) {
+          continue;
+        }
+
+        // Check if restaurant is open on this day based on opening hours
+        const dayOfWeek = date.getDay();
+        const dayHours = openingHours?.find((oh: any) => oh.dayOfWeek === dayOfWeek);
+
+        let isOpen = dayHours?.isOpen || false;
+        let actualOpenTime = dayHours?.openTime;
+        let actualCloseTime = dayHours?.closeTime;
+
+        // Check for special periods that might override normal hours
+        const dateStr = date.toISOString().split('T')[0];
+        const specialPeriod = specialPeriods?.find((sp: any) => 
+          dateStr >= sp.startDate && dateStr <= sp.endDate
+        );
+
+        if (specialPeriod) {
+          if (specialPeriod.isClosed) {
+            isOpen = false;
+          } else if (specialPeriod.openTime && specialPeriod.closeTime) {
+            isOpen = true;
+            actualOpenTime = specialPeriod.openTime;
+            actualCloseTime = specialPeriod.closeTime;
+          }
+        }
+
+        let status = 'closed';
+
+        if (isOpen) {
+          // Basic availability - could be improved by checking actual table availability
+          // For now, mark as available if restaurant is open
+          status = 'available';
+        }
+
+        dates.push({
+          date: date,
+          day: day,
+          month: month,
+          year: year,
+          status: status,
+          isCurrentMonth: month === (currentMonth + monthOffset)
+        });
+      }
     }
+
     return dates;
   };
 
-  
+  const calendarDates = generateCalendarDates();
+
+
 
   const handleNext = () => {
     if (currentStep < steps.length - 1) {
@@ -278,7 +347,7 @@ export default function GuestBooking() {
               </h2>
               <p className="text-gray-600 mb-8">Select your preferred time</p>
             </div>
-            
+
             {timeSlots && timeSlots.length === 0 ? (
               <div className="text-center py-8">
                 <p className="text-gray-600 mb-4">No available time slots for this date.</p>
@@ -310,7 +379,7 @@ export default function GuestBooking() {
                 })}
               </div>
             )}
-            
+
             {timeSlots && timeSlots.length > 0 && (
               <div className="text-center mt-6">
                 <p className="text-xs text-gray-500">

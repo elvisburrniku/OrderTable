@@ -4368,6 +4368,28 @@ app.put("/api/tenants/:tenantId/bookings/:id", validateTenant, async (req, res) 
     }
   });
 
+  // Get public special periods
+  app.get("/api/restaurants/:restaurantId/special-periods/public", async (req, res) => {
+    try {
+      const restaurantId = parseInt(req.params.restaurantId);
+      
+      if (isNaN(restaurantId)) {
+        return res.status(400).json({ message: "Invalid restaurant ID" });
+      }
+
+      const restaurant = await storage.getRestaurantById(restaurantId);
+      if (!restaurant) {
+        return res.status(404).json({ message: "Restaurant not found" });
+      }
+
+      const specialPeriods = await storage.getSpecialPeriodsByRestaurant(restaurantId);
+      res.json(specialPeriods);
+    } catch (error) {
+      console.error("Error fetching special periods:", error);
+      res.status(500).json({ message: "Internal server error" });
+    }
+  });
+
   // Get available time slots for a specific date
   app.get("/api/restaurants/:restaurantId/available-times", async (req, res) => {
     try {
