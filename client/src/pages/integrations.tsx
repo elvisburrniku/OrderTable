@@ -1,6 +1,8 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useAuth } from '@/lib/auth';
 import { useTenant } from '@/lib/tenant';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useToast } from '@/hooks/use-toast';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Switch } from '@/components/ui/switch';
 import { Button } from '@/components/ui/button';
@@ -103,29 +105,88 @@ const integrations: Integration[] = [
 ];
 
 export default function Integrations() {
-  const { user } = useAuth();
+  const { user, restaurant } = useAuth();
   const { tenant } = useTenant();
+  const { toast } = useToast();
+  const queryClient = useQueryClient();
   const [expandedCategory, setExpandedCategory] = useState<string | null>('Marketing');
-  const [integrationStates, setIntegrationStates] = useState<Record<string, boolean>>(
-    Object.fromEntries(integrations.map(int => [int.id, int.connected]))
-  );
+
+  // Fetch integration configurations from database
+  const { data: savedConfigurations = [], isLoading } = useQuery({
+    queryKey: [`/api/tenants/${tenant?.id}/restaurants/${restaurant?.id}/integrations`],
+    enabled: !!(tenant?.id && restaurant?.id),
+  });
+
+  // Create a map of saved configurations for quick lookup
+  const configMap = (savedConfigurations as any[]).reduce((acc: Record<string, any>, config: any) => {
+    acc[config.integrationId] = config;
+    return acc;
+  }, {});
+
+  // Merge static integrations with saved configurations
+  const mergedIntegrations = integrations.map(integration => ({
+    ...integration,
+    connected: configMap[integration.id]?.isEnabled || false,
+    configuration: configMap[integration.id]?.configuration || {}
+  }));
+
+  // Mutation to save integration configuration
+  const saveConfigMutation = useMutation({
+    mutationFn: async ({ integrationId, isEnabled, configuration }: { integrationId: string; isEnabled: boolean; configuration?: any }) => {
+      const response = await fetch(`/api/tenants/${tenant?.id}/restaurants/${restaurant?.id}/integrations/${integrationId}`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ isEnabled, configuration }),
+      });
+      
+      if (!response.ok) {
+        throw new Error('Failed to save integration configuration');
+      }
+      
+      return response.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({
+        queryKey: [`/api/tenants/${tenant?.id}/restaurants/${restaurant?.id}/integrations`]
+      });
+      toast({
+        title: "Integration updated",
+        description: "Your integration settings have been saved successfully.",
+      });
+    },
+    onError: () => {
+      toast({
+        title: "Error",
+        description: "Failed to save integration settings. Please try again.",
+        variant: "destructive",
+      });
+    },
+  });
 
   const toggleIntegration = (integrationId: string) => {
-    setIntegrationStates(prev => ({
-      ...prev,
-      [integrationId]: !prev[integrationId]
-    }));
+    const currentState = configMap[integrationId]?.isEnabled || false;
+    saveConfigMutation.mutate({
+      integrationId,
+      isEnabled: !currentState,
+      configuration: configMap[integrationId]?.configuration || {}
+    });
   };
 
   const toggleCategory = (category: string) => {
     setExpandedCategory(prev => prev === category ? null : category);
   };
 
-  if (!user || !tenant) {
+  if (!user || !tenant || !restaurant) {
     return <div>Loading...</div>;
   }
 
-  const uniqueCategories = integrations.map(int => int.category);
+  if (isLoading) {
+    return <div>Loading integration settings...</div>;
+  }
+
+  const uniqueCategories = mergedIntegrations.map(int => int.category);
   const categories = uniqueCategories.filter((category, index) => uniqueCategories.indexOf(category) === index);
 
   return (
@@ -200,59 +261,69 @@ export default function Integrations() {
                     <div className="p-4 space-y-3">
                       {integrations
                         .filter(integration => integration.category === category)
-                        .map(integration => (
-                          <div key={integration.id} className="bg-white rounded-lg border hover:shadow-md transition-shadow">
-                            <a 
-                              href={`/${tenant.id}/integrations/${integration.id}`}
-                              className="block p-4"
-                            >
-                              <div className="flex items-center justify-between">
-                                <div className="flex items-center space-x-3">
-                                  <div className="w-10 h-10 bg-gray-100 rounded-lg flex items-center justify-center text-lg">
-                                    {integration.icon}
-                                  </div>
-                                  <div className="flex-1">
-                                    <div className="flex items-center space-x-2">
-                                      <h4 className="font-medium text-gray-900 hover:text-blue-600">{integration.name}</h4>
-                                      {integration.price && (
-                                        <Badge variant="outline" className="text-xs">
-                                          {integration.price}
-                                        </Badge>
-                                      )}
+                        .map(integration => {
+                          const mergedIntegration = mergedIntegrations.find(mi => mi.id === integration.id) || integration;
+                          return (
+                            <div key={integration.id} className="bg-white rounded-lg border hover:shadow-md transition-shadow">
+                              <div className="p-4">
+                                <div className="flex items-center justify-between">
+                                  <div className="flex items-center space-x-3">
+                                    <div className="w-10 h-10 bg-gray-100 rounded-lg flex items-center justify-center text-lg">
+                                      {integration.icon}
                                     </div>
-                                    <p className="text-sm text-gray-600 mt-1">{integration.description}</p>
-                                    <div className="flex flex-wrap gap-1 mt-2">
-                                      {integration.features.slice(0, 2).map((feature, index) => (
-                                        <span key={index} className="text-xs bg-gray-100 text-gray-600 px-2 py-1 rounded">
-                                          {feature}
-                                        </span>
-                                      ))}
-                                      {integration.features.length > 2 && (
-                                        <span className="text-xs text-gray-500">
-                                          +{integration.features.length - 2} more
-                                        </span>
-                                      )}
-                                    </div>
-                                  </div>
-                                </div>
-                                
-                                <div className="flex items-center space-x-3">
-                                  <div className="flex items-center space-x-2">
-                                    {integrationStates[integration.id] ? (
-                                      <div className="flex items-center space-x-1">
-                                        <Check className="w-4 h-4 text-green-600" />
-                                        <span className="text-sm text-green-600 font-medium">Connected</span>
+                                    <div className="flex-1">
+                                      <div className="flex items-center space-x-2">
+                                        <h4 className="font-medium text-gray-900">{integration.name}</h4>
+                                        {integration.price && (
+                                          <Badge variant="outline" className="text-xs">
+                                            {integration.price}
+                                          </Badge>
+                                        )}
                                       </div>
-                                    ) : (
-                                      <span className="text-sm text-gray-500">Disconnected</span>
-                                    )}
+                                      <p className="text-sm text-gray-600 mt-1">{integration.description}</p>
+                                      <div className="flex flex-wrap gap-1 mt-2">
+                                        {integration.features.slice(0, 2).map((feature, index) => (
+                                          <span key={index} className="text-xs bg-gray-100 text-gray-600 px-2 py-1 rounded">
+                                            {feature}
+                                          </span>
+                                        ))}
+                                        {integration.features.length > 2 && (
+                                          <span className="text-xs text-gray-500">
+                                            +{integration.features.length - 2} more
+                                          </span>
+                                        )}
+                                      </div>
+                                    </div>
                                   </div>
-                                  <ChevronRight className="w-5 h-5 text-gray-400" />
+                                  
+                                  <div className="flex items-center space-x-3">
+                                    <div className="flex items-center space-x-2">
+                                      {mergedIntegration.connected ? (
+                                        <div className="flex items-center space-x-1">
+                                          <Check className="w-4 h-4 text-green-600" />
+                                          <span className="text-sm text-green-600 font-medium">Connected</span>
+                                        </div>
+                                      ) : (
+                                        <span className="text-sm text-gray-500">Disconnected</span>
+                                      )}
+                                    </div>
+                                    <Switch
+                                      checked={mergedIntegration.connected}
+                                      onCheckedChange={() => toggleIntegration(integration.id)}
+                                      disabled={saveConfigMutation.isPending}
+                                    />
+                                    <a 
+                                      href={`/${tenant.id}/integrations/${integration.id}`}
+                                      className="text-gray-400 hover:text-gray-600"
+                                    >
+                                      <Settings className="w-4 h-4" />
+                                    </a>
+                                  </div>
                                 </div>
                               </div>
-                            </a>
-                          </div>
-                        ))}
+                            </div>
+                          );
+                        })}
                     </div>
                   </div>
                 )}

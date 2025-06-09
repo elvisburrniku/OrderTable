@@ -10,6 +10,7 @@ import {
   date,
   time,
   json,
+  unique,
 } from "drizzle-orm/pg-core";
 import { createInsertSchema, createSelectSchema } from "drizzle-zod";
 import { z } from "zod";
@@ -459,8 +460,8 @@ export const openingHours = pgTable("opening_hours", {
     .references(() => restaurants.id)
     .notNull(),
   tenantId: integer("tenant_id")
-    .references(() => tenants.id)
-    .notNull(),
+    .notNull()
+    .references(() => tenants.id),
   dayOfWeek: integer("day_of_week").notNull(), // 0 = Sunday, 1 = Monday, etc.
   isOpen: boolean("is_open").default(true).notNull(),
   openTime: text("open_time").notNull(),
@@ -476,8 +477,8 @@ export const specialPeriods = pgTable("special_periods", {
     .references(() => restaurants.id)
     .notNull(),
   tenantId: integer("tenant_id")
-    .references(() => tenants.id)
-    .notNull(),
+    .notNull()
+    .references(() => tenants.id),
   name: text("name").notNull(),
   startDate: text("start_date").notNull(),
   endDate: text("end_date").notNull(),
@@ -528,6 +529,29 @@ export const tableLayouts = pgTable("table_layouts", {
     .$onUpdate(() => new Date()),
 });
 
+// Integration Configurations table
+export const integrationConfigurations = pgTable("integration_configurations", {
+  id: serial("id").primaryKey(),
+  restaurantId: integer("restaurant_id").notNull().references(() => restaurants.id, { onDelete: "cascade" }),
+  tenantId: integer("tenant_id").notNull().references(() => tenants.id, { onDelete: "cascade" }),
+  integrationId: text("integration_id").notNull(),
+  isEnabled: boolean("is_enabled").default(false),
+  configuration: json("configuration").default({}),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow()
+});
+
+export const webhooks = pgTable("webhooks", {
+  id: serial("id").primaryKey(),
+  restaurantId: integer("restaurant_id").notNull().references(() => restaurants.id, { onDelete: "cascade" }),
+  tenantId: integer("tenant_id").notNull().references(() => tenants.id, { onDelete: "cascade" }),
+  event: text("event").notNull(),
+  url: text("url").notNull(),
+  isActive: boolean("is_active").default(true),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow()
+});
+
 // Type exports for all tables
 export type User = InferSelectModel<typeof users>;
 export type InsertUser = InferInsertModel<typeof users>;
@@ -576,5 +600,11 @@ export type InsertTableLayout = InferInsertModel<typeof tableLayouts>;
 
 export type BookingChangeRequest = InferSelectModel<typeof bookingChangeRequests>;
 export type InsertBookingChangeRequest = InferInsertModel<typeof bookingChangeRequests>;
+
+export type IntegrationConfiguration = InferSelectModel<typeof integrationConfigurations>;
+export type InsertIntegrationConfiguration = InferInsertModel<typeof integrationConfigurations>;
+
+export const insertIntegrationConfigurationSchema = createInsertSchema(integrationConfigurations);
+export const selectIntegrationConfigurationSchema = createSelectSchema(integrationConfigurations);
 
 export type LoginData = z.infer<typeof loginSchema>;

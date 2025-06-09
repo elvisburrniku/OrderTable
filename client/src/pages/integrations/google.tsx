@@ -1,6 +1,8 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useAuth } from '@/lib/auth';
 import { useTenant } from '@/lib/tenant';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useToast } from '@/hooks/use-toast';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Switch } from '@/components/ui/switch';
 import { Button } from '@/components/ui/button';
@@ -10,14 +12,76 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { ArrowLeft, AlertTriangle } from 'lucide-react';
 
 export default function GoogleIntegration() {
-  const { user } = useAuth();
+  const { user, restaurant } = useAuth();
   const { tenant } = useTenant();
+  const { toast } = useToast();
+  const queryClient = useQueryClient();
+  
   const [isActivated, setIsActivated] = useState(true);
   const [businessType, setBusinessType] = useState('Restaurant');
   const [bookingUrl, setBookingUrl] = useState('https://book.easytable.com/book?ref=mb&id=c22da&lang=en');
 
+  // Fetch existing configuration
+  const { data: config, isLoading } = useQuery({
+    queryKey: [`/api/tenants/${tenant?.id}/restaurants/${restaurant?.id}/integrations/google`],
+    enabled: !!(tenant?.id && restaurant?.id),
+  });
+
+  // Load saved configuration on mount
+  useEffect(() => {
+    if (config) {
+      setIsActivated(config.isEnabled || false);
+      setBusinessType(config.configuration?.businessType || 'Restaurant');
+      setBookingUrl(config.configuration?.bookingUrl || 'https://book.easytable.com/book?ref=mb&id=c22da&lang=en');
+    }
+  }, [config]);
+
+  // Mutation to save configuration
+  const saveConfigMutation = useMutation({
+    mutationFn: async (configData: any) => {
+      const response = await fetch(`/api/tenants/${tenant?.id}/restaurants/${restaurant?.id}/integrations/google`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(configData),
+      });
+      
+      if (!response.ok) {
+        throw new Error('Failed to save Google integration configuration');
+      }
+      
+      return response.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({
+        queryKey: [`/api/tenants/${tenant?.id}/restaurants/${restaurant?.id}/integrations/google`]
+      });
+      queryClient.invalidateQueries({
+        queryKey: [`/api/tenants/${tenant?.id}/restaurants/${restaurant?.id}/integrations`]
+      });
+      toast({
+        title: "Google integration updated",
+        description: "Your Google integration settings have been saved successfully.",
+      });
+    },
+    onError: () => {
+      toast({
+        title: "Error",
+        description: "Failed to save Google integration settings. Please try again.",
+        variant: "destructive",
+      });
+    },
+  });
+
   const handleSave = () => {
-    console.log('Saving Google integration settings:', { isActivated, businessType, bookingUrl });
+    saveConfigMutation.mutate({
+      isEnabled: isActivated,
+      configuration: {
+        businessType,
+        bookingUrl,
+      }
+    });
   };
 
   if (!user || !tenant) {

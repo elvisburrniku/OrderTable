@@ -1,22 +1,94 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useAuth } from '@/lib/auth';
 import { useTenant } from '@/lib/tenant';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Switch } from '@/components/ui/switch';
 import { Button } from '@/components/ui/button';
-import { ArrowLeft } from 'lucide-react';
+import { ArrowLeft, AlertCircle } from 'lucide-react';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useToast } from '@/hooks/use-toast';
+import { Alert, AlertDescription } from '@/components/ui/alert';
 
 export default function MichelinIntegration() {
-  const { user } = useAuth();
+  const { user, restaurant } = useAuth();
   const { tenant } = useTenant();
+  const { toast } = useToast();
+  const queryClient = useQueryClient();
   const [isActivated, setIsActivated] = useState(false);
 
+  // Check if Michelin integration is enabled
+  const { data: integrationConfig, isLoading: configLoading } = useQuery({
+    queryKey: [`/api/tenants/${tenant?.id}/restaurants/${restaurant?.id}/integrations/michelin`],
+    enabled: !!(tenant?.id && restaurant?.id),
+  });
+
+  // Check user subscription status
+  const { data: userSubscription, isLoading: subscriptionLoading } = useQuery({
+    queryKey: [`/api/user-subscription`],
+    enabled: !!user,
+  });
+
+  // Load current integration state
+  useEffect(() => {
+    if (integrationConfig && typeof integrationConfig === 'object' && 'isEnabled' in integrationConfig) {
+      setIsActivated(integrationConfig.isEnabled === true);
+    }
+  }, [integrationConfig]);
+
+  // Mutation to save integration settings
+  const saveIntegrationMutation = useMutation({
+    mutationFn: async (isEnabled: boolean) => {
+      const response = await fetch(`/api/tenants/${tenant?.id}/restaurants/${restaurant?.id}/integrations/michelin`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ 
+          isEnabled,
+          configuration: {
+            feePerGuest: 2.00,
+            currency: 'EUR'
+          }
+        }),
+      });
+      
+      if (!response.ok) {
+        throw new Error('Failed to save integration settings');
+      }
+      
+      return response.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({
+        queryKey: [`/api/tenants/${tenant?.id}/restaurants/${restaurant?.id}/integrations/michelin`]
+      });
+      toast({
+        title: "Integration updated",
+        description: "Michelin Guide integration settings have been saved successfully.",
+      });
+    },
+    onError: () => {
+      toast({
+        title: "Error",
+        description: "Failed to save integration settings. Please try again.",
+        variant: "destructive",
+      });
+    },
+  });
+
   const handleSave = () => {
-    console.log('Saving Michelin Guide integration settings:', { isActivated });
+    saveIntegrationMutation.mutate(isActivated);
   };
 
-  if (!user || !tenant) {
+  const hasActiveSubscription = userSubscription && typeof userSubscription === 'object' && 'status' in userSubscription && userSubscription.status === 'active';
+  const isEnterprisePlan = hasActiveSubscription && userSubscription && typeof userSubscription === 'object' && 'subscriptionPlan' in userSubscription && userSubscription.subscriptionPlan && typeof userSubscription.subscriptionPlan === 'object' && 'name' in userSubscription.subscriptionPlan && userSubscription.subscriptionPlan.name === 'Enterprise';
+
+  if (!user || !tenant || !restaurant) {
     return <div>Loading...</div>;
+  }
+
+  if (configLoading || subscriptionLoading) {
+    return <div>Loading integration settings...</div>;
   }
 
   return (

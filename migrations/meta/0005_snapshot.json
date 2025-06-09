@@ -1,10 +1,6 @@
 {
-<<<<<<< HEAD
-  "id": "69db34e3-dafa-4684-974e-7b27e583e168",
-=======
-  "id": "e5740018-0eb3-4bc0-9a2e-b1d9998d1c2b",
->>>>>>> 53b3ab91330f0f81f70d457f3d107944aab70637
-  "prevId": "6bdec321-6049-4710-870a-6160902c9c0d",
+  "id": "dd20e3f8-06aa-42c1-8679-e4e91b33ca8d",
+  "prevId": "e5740018-0eb3-4bc0-9a2e-b1d9998d1c2b",
   "version": "7",
   "dialect": "postgresql",
   "tables": {
@@ -820,13 +816,8 @@
       "checkConstraints": {},
       "isRLSEnabled": false
     },
-<<<<<<< HEAD
-    "public.notifications": {
-      "name": "notifications",
-=======
     "public.integration_configurations": {
       "name": "integration_configurations",
->>>>>>> 53b3ab91330f0f81f70d457f3d107944aab70637
       "schema": "",
       "columns": {
         "id": {
@@ -847,85 +838,9 @@
           "primaryKey": false,
           "notNull": true
         },
-<<<<<<< HEAD
-        "type": {
-          "name": "type",
-          "type": "varchar(50)",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "title": {
-          "name": "title",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "message": {
-          "name": "message",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "booking_id": {
-          "name": "booking_id",
-          "type": "integer",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "change_request_id": {
-          "name": "change_request_id",
-          "type": "integer",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "data": {
-          "name": "data",
-          "type": "json",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "original_data": {
-          "name": "original_data",
-          "type": "json",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "is_read": {
-          "name": "is_read",
-          "type": "boolean",
-          "primaryKey": false,
-          "notNull": false,
-          "default": false
-        },
-        "is_reverted": {
-          "name": "is_reverted",
-          "type": "boolean",
-          "primaryKey": false,
-          "notNull": false,
-          "default": false
-        },
-        "can_revert": {
-          "name": "can_revert",
-          "type": "boolean",
-          "primaryKey": false,
-          "notNull": false,
-          "default": false
-        },
-        "reverted_by": {
-          "name": "reverted_by",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "reverted_at": {
-          "name": "reverted_at",
-          "type": "timestamp",
-          "primaryKey": false,
-          "notNull": false
-=======
         "integration_id": {
           "name": "integration_id",
-          "type": "varchar(100)",
+          "type": "text",
           "primaryKey": false,
           "notNull": true
         },
@@ -933,46 +848,36 @@
           "name": "is_enabled",
           "type": "boolean",
           "primaryKey": false,
-          "notNull": true,
+          "notNull": false,
           "default": false
         },
         "configuration": {
           "name": "configuration",
           "type": "json",
           "primaryKey": false,
-          "notNull": true,
+          "notNull": false,
           "default": "'{}'::json"
->>>>>>> 53b3ab91330f0f81f70d457f3d107944aab70637
         },
         "created_at": {
           "name": "created_at",
           "type": "timestamp",
           "primaryKey": false,
-<<<<<<< HEAD
-=======
-          "notNull": true,
+          "notNull": false,
           "default": "now()"
         },
         "updated_at": {
           "name": "updated_at",
           "type": "timestamp",
           "primaryKey": false,
->>>>>>> 53b3ab91330f0f81f70d457f3d107944aab70637
           "notNull": false,
           "default": "now()"
         }
       },
       "indexes": {},
       "foreignKeys": {
-<<<<<<< HEAD
-        "notifications_restaurant_id_restaurants_id_fk": {
-          "name": "notifications_restaurant_id_restaurants_id_fk",
-          "tableFrom": "notifications",
-=======
         "integration_configurations_restaurant_id_restaurants_id_fk": {
           "name": "integration_configurations_restaurant_id_restaurants_id_fk",
           "tableFrom": "integration_configurations",
->>>>>>> 53b3ab91330f0f81f70d457f3d107944aab70637
           "tableTo": "restaurants",
           "columnsFrom": [
             "restaurant_id"
@@ -980,18 +885,12 @@
           "columnsTo": [
             "id"
           ],
-          "onDelete": "no action",
+          "onDelete": "cascade",
           "onUpdate": "no action"
         },
-<<<<<<< HEAD
-        "notifications_tenant_id_tenants_id_fk": {
-          "name": "notifications_tenant_id_tenants_id_fk",
-          "tableFrom": "notifications",
-=======
         "integration_configurations_tenant_id_tenants_id_fk": {
           "name": "integration_configurations_tenant_id_tenants_id_fk",
           "tableFrom": "integration_configurations",
->>>>>>> 53b3ab91330f0f81f70d457f3d107944aab70637
           "tableTo": "tenants",
           "columnsFrom": [
             "tenant_id"
@@ -999,54 +898,12 @@
           "columnsTo": [
             "id"
           ],
-          "onDelete": "no action",
-          "onUpdate": "no action"
-<<<<<<< HEAD
-        },
-        "notifications_booking_id_bookings_id_fk": {
-          "name": "notifications_booking_id_bookings_id_fk",
-          "tableFrom": "notifications",
-          "tableTo": "bookings",
-          "columnsFrom": [
-            "booking_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
-          "onDelete": "no action",
-          "onUpdate": "no action"
-        },
-        "notifications_change_request_id_booking_change_requests_id_fk": {
-          "name": "notifications_change_request_id_booking_change_requests_id_fk",
-          "tableFrom": "notifications",
-          "tableTo": "booking_change_requests",
-          "columnsFrom": [
-            "change_request_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
-          "onDelete": "no action",
+          "onDelete": "cascade",
           "onUpdate": "no action"
         }
       },
       "compositePrimaryKeys": {},
       "uniqueConstraints": {},
-=======
-        }
-      },
-      "compositePrimaryKeys": {},
-      "uniqueConstraints": {
-        "integration_configurations_restaurant_id_integration_id_unique": {
-          "name": "integration_configurations_restaurant_id_integration_id_unique",
-          "nullsNotDistinct": false,
-          "columns": [
-            "restaurant_id",
-            "integration_id"
-          ]
-        }
-      },
->>>>>>> 53b3ab91330f0f81f70d457f3d107944aab70637
       "policies": {},
       "checkConstraints": {},
       "isRLSEnabled": false
@@ -2496,6 +2353,97 @@
             "id"
           ],
           "onDelete": "no action",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.webhooks": {
+      "name": "webhooks",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "serial",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "restaurant_id": {
+          "name": "restaurant_id",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "tenant_id": {
+          "name": "tenant_id",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "event": {
+          "name": "event",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "url": {
+          "name": "url",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "is_active": {
+          "name": "is_active",
+          "type": "boolean",
+          "primaryKey": false,
+          "notNull": false,
+          "default": true
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": false,
+          "default": "now()"
+        },
+        "updated_at": {
+          "name": "updated_at",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": false,
+          "default": "now()"
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {
+        "webhooks_restaurant_id_restaurants_id_fk": {
+          "name": "webhooks_restaurant_id_restaurants_id_fk",
+          "tableFrom": "webhooks",
+          "tableTo": "restaurants",
+          "columnsFrom": [
+            "restaurant_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        },
+        "webhooks_tenant_id_tenants_id_fk": {
+          "name": "webhooks_tenant_id_tenants_id_fk",
+          "tableFrom": "webhooks",
+          "tableTo": "tenants",
+          "columnsFrom": [
+            "tenant_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
           "onUpdate": "no action"
         }
       },

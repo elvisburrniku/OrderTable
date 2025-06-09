@@ -204,6 +204,7 @@ export interface IStorage {
   updateCombinedTable(id: number, updates: Partial<CombinedTable>): Promise<CombinedTable | undefined>;
   deleteCombinedTable(id: number): Promise<boolean>;
 
+<<<<<<< HEAD
   // Notifications
   getNotificationsByRestaurant(restaurantId: number): Promise<Notification[]>;
   createNotification(notification: InsertNotification): Promise<Notification>;
@@ -211,6 +212,17 @@ export interface IStorage {
   markAllNotificationsAsRead(restaurantId: number): Promise<void>;
   revertNotification(notificationId: number, userEmail: string): Promise<boolean>;
   deleteNotification(id: number): Promise<boolean>;
+=======
+    // Webhooks
+    getWebhooksByRestaurant(restaurantId: number): Promise<any[]>;
+    saveWebhooks(restaurantId: number, tenantId: number, webhooks: any[]): Promise<any[]>;
+
+    // Integration Configurations
+    getIntegrationConfigurationsByRestaurant(restaurantId: number): Promise<any[]>;
+    getIntegrationConfiguration(restaurantId: number, integrationId: string): Promise<any>;
+    createOrUpdateIntegrationConfiguration(restaurantId: number, tenantId: number, integrationId: string, isEnabled: boolean, configuration?: any): Promise<any>;
+    deleteIntegrationConfiguration(restaurantId: number, integrationId: string): Promise<boolean>;
+>>>>>>> 53b3ab91330f0f81f70d457f3d107944aab70637
 }
 
 export class MemStorage implements IStorage {
@@ -866,13 +878,33 @@ export class MemStorage implements IStorage {
   async deleteCombinedTable(id: number): Promise<boolean> {
     return this.combinedTables.delete(id);
   }
+
+    // Webhooks
+    async getWebhooksByRestaurant(restaurantId: number): Promise<any[]> {
+        return [];
+    }
+    async saveWebhooks(restaurantId: number, tenantId: number, webhooks: any[]): Promise<any[]> {
+        return [];
+    }
+
+    // Integration Configurations
+    async getIntegrationConfigurationsByRestaurant(restaurantId: number): Promise<any[]> {
+        return [];
+    }
+    async getIntegrationConfiguration(restaurantId: number, integrationId: string): Promise<any> {
+        return null;
+    }
+    async createOrUpdateIntegrationConfiguration(restaurantId: number, tenantId: number, integrationId: string, isEnabled: boolean, configuration?: any): Promise<any> {
+        return { id: 1, restaurantId, tenantId, integrationId, isEnabled, configuration: configuration || {} };
+    }
+    async deleteIntegrationConfiguration(restaurantId: number, integrationId: string): Promise<boolean> {
+        return true;
+    }
 }
 
 import { DatabaseStorage } from "./db-storage";
 
 // Use database storage instead of memory storage
-// Use DatabaseStorage for production
-import { DatabaseStorage } from "./db-storage";
 export const storage = new DatabaseStorage();
 
 // Initialize database with default data

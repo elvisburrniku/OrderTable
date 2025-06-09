@@ -21,6 +21,7 @@ import {
   specialPeriods, 
   cutOffTimes,
   bookingChangeRequests,
+<<<<<<< HEAD
   notifications,
   type User,
   type Restaurant,
@@ -51,6 +52,10 @@ import {
   type InsertUserSubscription,
   type Notification,
   type InsertNotification
+=======
+  integrationConfigurations,
+  webhooks
+>>>>>>> 53b3ab91330f0f81f70d457f3d107944aab70637
 } from "@shared/schema";
 import { neon } from "@neondatabase/serverless";
 import { drizzle } from "drizzle-orm/neon-http";
@@ -58,6 +63,36 @@ import { drizzle as drizzlePostgres } from "drizzle-orm/postgres-js";
 import postgres from "postgres";
 import * as schema from "../shared/schema";
 import type { IStorage } from "./storage";
+import type { 
+  User, 
+  InsertUser, 
+  Restaurant, 
+  InsertRestaurant, 
+  Table, 
+  InsertTable, 
+  Booking, 
+  InsertBooking, 
+  Customer, 
+  InsertCustomer, 
+  SmsMessage, 
+  InsertSmsMessage, 
+  WaitingList, 
+  InsertWaitingList, 
+  Feedback, 
+  InsertFeedback, 
+  ActivityLog, 
+  InsertActivityLog, 
+  TimeSlots, 
+  InsertTimeSlots, 
+  SubscriptionPlan, 
+  InsertSubscriptionPlan, 
+  UserSubscription, 
+  InsertUserSubscription, 
+  Room, 
+  InsertRoom, 
+  TableLayout, 
+  IntegrationConfiguration 
+} from "@shared/schema";
 import { BookingHash } from "./booking-hash";
 
 // Use Supabase database URL if available, otherwise use the existing DATABASE_URL
@@ -204,7 +239,7 @@ export class DatabaseStorage implements IStorage {
   private async initializeDemoData() {
     // Check if demo tenant already exists
     const existingTenant = await this.db.select().from(tenants).where(eq(tenants.slug, "demo-restaurant")).limit(1);
-    
+
     if (existingTenant.length === 0) {
       // Create demo tenant
       const [tenant] = await this.db.insert(tenants).values({
@@ -428,7 +463,7 @@ export class DatabaseStorage implements IStorage {
   async createBooking(booking: InsertBooking): Promise<Booking> {
     // Import BookingHash at the top of the file if not already imported
     const { BookingHash } = await import('./booking-hash');
-    
+
     // Generate management hash for the booking
     const managementHash = BookingHash.generateHash(
       0, // Temporary ID, will be replaced with actual ID after insertion
@@ -436,12 +471,12 @@ export class DatabaseStorage implements IStorage {
       booking.restaurantId,
       'manage'
     );
-    
+
     const [newBooking] = await this.db.insert(bookings).values({
       ...booking,
       managementHash
     }).returning();
-    
+
     // Update the hash with the actual booking ID
     const finalHash = BookingHash.generateHash(
       newBooking.id,
@@ -449,13 +484,13 @@ export class DatabaseStorage implements IStorage {
       newBooking.restaurantId,
       'manage'
     );
-    
+
     // Update the booking with the correct hash
     const [updatedBooking] = await this.db.update(bookings)
       .set({ managementHash: finalHash })
       .where(eq(bookings.id, newBooking.id))
       .returning();
-    
+
     return updatedBooking;
   }
 
@@ -925,7 +960,7 @@ export class DatabaseStorage implements IStorage {
     // Check cut-off times for the specific day of the week
     const now = new Date();
     const dayOfWeek = bookingDate.getDay(); // 0 = Sunday, 1 = Monday, etc.
-    
+
     const cutOffData = await this.db.select().from(cutOffTimes)
       .where(and(
         eq(cutOffTimes.restaurantId, restaurantId),
@@ -934,16 +969,16 @@ export class DatabaseStorage implements IStorage {
 
     if (cutOffData.length > 0 && cutOffData[0].cutOffHours > 0) {
       const cutOff = cutOffData[0];
-      
+
       // Create booking datetime by combining date and time
       const [hours, minutes] = bookingTime.split(':').map(Number);
       const bookingDateTime = new Date(bookingDate);
       bookingDateTime.setHours(hours, minutes, 0, 0);
-      
+
       // Calculate cut-off deadline
       const cutOffMilliseconds = cutOff.cutOffHours * 60 * 60 * 1000; // Convert hours to milliseconds
       const cutOffDeadline = new Date(bookingDateTime.getTime() - cutOffMilliseconds);
-      
+
       // Check if current time is past the cut-off deadline
       if (now > cutOffDeadline) {
         return false; // Booking is within cut-off time
@@ -982,6 +1017,7 @@ export class DatabaseStorage implements IStorage {
     return request;
   }
 
+<<<<<<< HEAD
   // Notifications
   async getNotificationsByRestaurant(restaurantId: number): Promise<Notification[]> {
     return await this.db.select().from(notifications)
@@ -1050,4 +1086,94 @@ export class DatabaseStorage implements IStorage {
       return false;
     }
   }
+=======
+  // Integration Configuration methods
+  async getIntegrationConfigurationsByRestaurant(restaurantId: number): Promise<IntegrationConfiguration[]> {
+    return await this.db.select().from(integrationConfigurations).where(eq(integrationConfigurations.restaurantId, restaurantId));
+  }
+
+  async getIntegrationConfiguration(restaurantId: number, integrationId: string): Promise<IntegrationConfiguration | undefined> {
+    const [config] = await this.db.select().from(integrationConfigurations)
+      .where(and(
+        eq(integrationConfigurations.restaurantId, restaurantId),
+        eq(integrationConfigurations.integrationId, integrationId)
+      ));
+    return config;
+  }
+
+  async createOrUpdateIntegrationConfiguration(
+    restaurantId: number, 
+    tenantId: number, 
+    integrationId: string, 
+    isEnabled: boolean, 
+    configuration: any = {}
+  ): Promise<IntegrationConfiguration> {
+    const existing = await this.getIntegrationConfiguration(restaurantId, integrationId);
+
+    if (existing) {
+      const [updated] = await this.db.update(integrationConfigurations)
+        .set({
+          isEnabled,
+          configuration,
+          updatedAt: new Date()
+        })
+        .where(eq(integrationConfigurations.id, existing.id))
+        .returning();
+      return updated;
+    } else {
+      const [created] = await this.db.insert(integrationConfigurations)
+        .values({
+          restaurantId,
+          tenantId,
+          integrationId,
+          isEnabled,
+          configuration
+        })
+        .returning();
+      return created;
+    }
+  }
+
+  async deleteIntegrationConfiguration(restaurantId: number, integrationId: string): Promise<boolean> {
+    const result = await this.db.delete(integrationConfigurations)
+      .where(and(
+        eq(integrationConfigurations.restaurantId, restaurantId),
+        eq(integrationConfigurations.integrationId, integrationId)
+      ));
+    return result.rowCount !== null && result.rowCount > 0;
+  }
+
+  // Webhooks
+  async getWebhooksByRestaurant(restaurantId: number) {
+    return this.db
+      .select()
+      .from(webhooks)
+      .where(eq(webhooks.restaurantId, restaurantId));
+  }
+
+  async saveWebhooks(restaurantId: number, tenantId: number, webhooksData: any[]) {
+    // First, delete existing webhooks for this restaurant
+    await this.db
+      .delete(webhooks)
+      .where(eq(webhooks.restaurantId, restaurantId));
+
+    // Then insert new webhooks
+    if (webhooksData.length > 0) {
+      const insertData = webhooksData.map(webhook => ({
+        restaurantId,
+        tenantId,
+        event: webhook.event,
+        url: webhook.url,
+        isActive: true
+      }));
+
+      return this.db
+        .insert(webhooks)
+        .values(insertData)
+        .returning();
+    }
+
+    return [];
+  }
+>>>>>>> 53b3ab91330f0f81f70d457f3d107944aab70637
 }

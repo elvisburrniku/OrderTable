@@ -13,6 +13,9 @@ import { eq, and } from "drizzle-orm";
 import { BrevoEmailService } from "./brevo-service";
 import { BookingHash } from "./booking-hash";
 import { QRCodeService } from "./qr-service";
+import { WebhookService } from "./webhook-service";
+import { MetaIntegrationService } from "./meta-service";
+import { metaInstallService } from "./meta-install-service";
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY || 'sk_test_your_stripe_secret_key', {
   apiVersion: '2025-05-28.basil'
@@ -31,6 +34,9 @@ try {
   console.error('Failed to initialize email service:', error);
   emailService = null;
 }
+
+// Initialize webhook service
+const webhookService = new WebhookService(storage);
 
 // WebSocket connections store
 const wsConnections = new Map<string, Set<WebSocket>>();
@@ -631,6 +637,34 @@ export async function registerRoutes(app: Express): Promise<Server> {
         }
       } else {
         console.log('Email service not available - skipping email notifications');
+      }
+
+      // Send webhook notifications
+      try {
+        const webhookService = new WebhookService(storage);
+        await webhookService.notifyBookingCreated(restaurantId, {
+          ...booking,
+          customerName: req.body.customerName,
+          customerEmail: req.body.customerEmail,
+          customerPhone: req.body.customerPhone
+        });
+      } catch (webhookError) {
+        console.error('Error sending webhook notifications:', webhookError);
+        // Don't fail the booking if webhook fails
+      }
+
+      // Send Meta (Facebook/Instagram) notifications if enabled
+      try {
+        const metaService = new MetaIntegrationService(storage);
+        await metaService.notifyBookingCreated(restaurantId, {
+          ...booking,
+          customerName: req.body.customerName,
+          customerEmail: req.body.customerEmail,
+          customerPhone: req.body.customerPhone
+        });
+      } catch (metaError) {
+        console.error('Error sending Meta integration notifications:', metaError);
+        // Don't fail the booking if Meta integration fails
       }
 
       res.json(booking);
@@ -2125,6 +2159,17 @@ app.put("/api/tenants/:tenantId/bookings/:id", validateTenant, async (req, res) 
         }
 
       const booking = await storage.updateBooking(id, updates);
+      
+      // Send webhook notifications for booking update
+      if (booking) {
+        try {
+          const webhookService = new WebhookService(storage);
+          await webhookService.notifyBookingUpdated(restaurantId, booking);
+        } catch (webhookError) {
+          console.error('Error sending booking update webhook:', webhookError);
+        }
+      }
+      
       res.json(booking);
     } catch (error) {
       res.status(400).json({ message: "Invalid request" });
@@ -2155,6 +2200,13 @@ app.put("/api/tenants/:tenantId/bookings/:id", validateTenant, async (req, res) 
       const existingBooking = await storage.getBookingById(id);
       if (!existingBooking || existingBooking.tenantId !== tenantId) {
         return res.status(404).json({ message: "Booking not found" });
+      }
+
+      // Send webhook notifications before deletion
+      try {
+        await webhookService.notifyBookingDeleted(existingBooking.restaurantId, existingBooking);
+      } catch (webhookError) {
+        console.error('Error sending booking deletion webhook:', webhookError);
       }
 
       const success = await storage.deleteBooking(id);
@@ -3374,6 +3426,468 @@ app.put("/api/tenants/:tenantId/bookings/:id", validateTenant, async (req, res) 
     }
   });
 
+  // Webhook Management Routes
+  app.get("/api/tenants/:tenantId/restaurants/:restaurantId/webhooks", validateTenant, async (req, res) => {
+    try {
+      const restaurantId = parseInt(req.params.restaurantId);
+      const tenantId = parseInt(req.params.tenantId);
+
+      if (isNaN(restaurantId) || isNaN(tenantId)) {
+        return res.status(400).json({ message: "Invalid restaurant ID or tenant ID" });
+      }
+
+      // Verify restaurant belongs to tenant
+      const restaurant = await storage.getRestaurantById(restaurantId);
+      if (!restaurant || restaurant.tenantId !== tenantId) {
+        return res.status(404).json({ message: "Restaurant not found" });
+      }
+
+      // Check if webhooks integration is enabled
+      const webhooksConfig = await storage.getIntegrationConfiguration(restaurantId, 'webhooks');
+      if (!webhooksConfig?.isEnabled) {
+        return res.status(403).json({ message: "Webhooks integration is not enabled" });
+      }
+
+      const webhooks = await storage.getWebhooksByRestaurant(restaurantId);
+      res.json(webhooks);
+    } catch (error) {
+      console.error("Error fetching webhooks:", error);
+      res.status(500).json({ message: "Internal server error" });
+    }
+  });
+
+  app.post("/api/tenants/:tenantId/restaurants/:restaurantId/webhooks", validateTenant, async (req, res) => {
+    try {
+      const restaurantId = parseInt(req.params.restaurantId);
+      const tenantId = parseInt(req.params.tenantId);
+      const { webhooks } = req.body;
+
+      if (isNaN(restaurantId) || isNaN(tenantId)) {
+        return res.status(400).json({ message: "Invalid restaurant ID or tenant ID" });
+      }
+
+      // Verify restaurant belongs to tenant
+      const restaurant = await storage.getRestaurantById(restaurantId);
+      if (!restaurant || restaurant.tenantId !== tenantId) {
+        return res.status(404).json({ message: "Restaurant not found" });
+      }
+
+      // Check if webhooks integration is enabled
+      const webhooksConfig = await storage.getIntegrationConfiguration(restaurantId, 'webhooks');
+      if (!webhooksConfig?.isEnabled) {
+        return res.status(403).json({ message: "Webhooks integration is not enabled. Please enable it first in the integrations settings." });
+      }
+
+      if (!Array.isArray(webhooks)) {
+        return res.status(400).json({ message: "Webhooks must be an array" });
+      }
+
+      const savedWebhooks = await storage.saveWebhooks(restaurantId, tenantId, webhooks);
+      res.json(savedWebhooks);
+    } catch (error) {
+      console.error("Error saving webhooks:", error);
+      res.status(500).json({ message: "Internal server error" });
+    }
+  });
+
+  // Integration Configuration Routes
+  app.get("/api/tenants/:tenantId/restaurants/:restaurantId/integrations", validateTenant, async (req, res) => {
+    try {
+      const restaurantId = parseInt(req.params.restaurantId);
+      const tenantId = parseInt(req.params.tenantId);
+
+      if (isNaN(restaurantId) || isNaN(tenantId)) {
+        return res.status(400).json({ message: "Invalid restaurant ID or tenant ID" });
+      }
+
+      // Verify restaurant belongs to tenant
+      const restaurant = await storage.getRestaurantById(restaurantId);
+      if (!restaurant || restaurant.tenantId !== tenantId) {
+        return res.status(404).json({ message: "Restaurant not found" });
+      }
+
+      const configurations = await storage.getIntegrationConfigurationsByRestaurant(restaurantId);
+      res.json(configurations);
+    } catch (error) {
+      console.error("Error fetching integration configurations:", error);
+      res.status(500).json({ message: "Internal server error" });
+    }
+  });
+
+  app.post("/api/tenants/:tenantId/restaurants/:restaurantId/integrations/:integrationId", validateTenant, async (req, res) => {
+    try {
+      const restaurantId = parseInt(req.params.restaurantId);
+      const tenantId = parseInt(req.params.tenantId);
+      const integrationId = req.params.integrationId;
+      const { isEnabled, configuration } = req.body;
+
+      if (isNaN(restaurantId) || isNaN(tenantId)) {
+        return res.status(400).json({ message: "Invalid restaurant ID or tenant ID" });
+      }
+
+      // Verify restaurant belongs to tenant
+      const restaurant = await storage.getRestaurantById(restaurantId);
+      if (!restaurant || restaurant.tenantId !== tenantId) {
+        return res.status(404).json({ message: "Restaurant not found" });
+      }
+
+      const savedConfiguration = await storage.createOrUpdateIntegrationConfiguration(
+        restaurantId,
+        tenantId,
+        integrationId,
+        isEnabled,
+        configuration || {}
+      );
+
+      res.json(savedConfiguration);
+    } catch (error) {
+      console.error("Error saving integration configuration:", error);
+      res.status(500).json({ message: "Internal server error" });
+    }
+  });
+
+  app.get("/api/tenants/:tenantId/restaurants/:restaurantId/integrations/:integrationId", validateTenant, async (req, res) => {
+    try {
+      const restaurantId = parseInt(req.params.restaurantId);
+      const tenantId = parseInt(req.params.tenantId);
+      const integrationId = req.params.integrationId;
+
+      if (isNaN(restaurantId) || isNaN(tenantId)) {
+        return res.status(400).json({ message: "Invalid restaurant ID or tenant ID" });
+      }
+
+      // Verify restaurant belongs to tenant
+      const restaurant = await storage.getRestaurantById(restaurantId);
+      if (!restaurant || restaurant.tenantId !== tenantId) {
+        return res.status(404).json({ message: "Restaurant not found" });
+      }
+
+      const configuration = await storage.getIntegrationConfiguration(restaurantId, integrationId);
+      if (!configuration) {
+        return res.status(404).json({ message: "Integration configuration not found" });
+      }
+
+      res.json(configuration);
+    } catch (error) {
+      console.error("Error fetching integration configuration:", error);
+      res.status(500).json({ message: "Internal server error" });
+    }
+  });
+
+  app.delete("/api/tenants/:tenantId/restaurants/:restaurantId/integrations/:integrationId", validateTenant, async (req, res) => {
+    try {
+      const restaurantId = parseInt(req.params.restaurantId);
+      const tenantId = parseInt(req.params.tenantId);
+      const integrationId = req.params.integrationId;
+
+      if (isNaN(restaurantId) || isNaN(tenantId)) {
+        return res.status(400).json({ message: "Invalid restaurant ID or tenant ID" });
+      }
+
+      // Verify restaurant belongs to tenant
+      const restaurant = await storage.getRestaurantById(restaurantId);
+      if (!restaurant || restaurant.tenantId !== tenantId) {
+        return res.status(404).json({ message: "Restaurant not found" });
+      }
+
+      const deleted = await storage.deleteIntegrationConfiguration(restaurantId, integrationId);
+      if (!deleted) {
+        return res.status(404).json({ message: "Integration configuration not found" });
+      }
+
+      res.json({ message: "Integration configuration deleted successfully" });
+    } catch (error) {
+      console.error("Error deleting integration configuration:", error);
+      res.status(500).json({ message: "Internal server error" });
+    }
+  });
+
+  // Generate Meta install link
+  app.post("/api/tenants/:tenantId/restaurants/:restaurantId/meta-install-link", validateTenant, async (req, res) => {
+    try {
+      const restaurantId = parseInt(req.params.restaurantId);
+      const tenantId = parseInt(req.params.tenantId);
+
+      if (isNaN(restaurantId) || isNaN(tenantId)) {
+        return res.status(400).json({ message: "Invalid restaurant ID or tenant ID" });
+      }
+
+      // Verify restaurant belongs to tenant
+      const restaurant = await storage.getRestaurantById(restaurantId);
+      if (!restaurant || restaurant.tenantId !== tenantId) {
+        return res.status(404).json({ message: "Restaurant not found" });
+      }
+
+      // Check if Facebook credentials are configured
+      const metaConfig = await storage.getIntegrationConfiguration(restaurantId, 'meta');
+      let facebookAppId = process.env.FACEBOOK_APP_ID;
+      let facebookAppSecret = process.env.FACEBOOK_APP_SECRET;
+      
+      if (metaConfig && metaConfig.configuration) {
+        const config = typeof metaConfig.configuration === 'string' 
+          ? JSON.parse(metaConfig.configuration) 
+          : metaConfig.configuration;
+        
+        if (config.facebookAppId) {
+          facebookAppId = config.facebookAppId;
+        }
+        if (config.facebookAppSecret) {
+          facebookAppSecret = config.facebookAppSecret;
+        }
+      }
+
+      if (!facebookAppId || !facebookAppSecret || facebookAppId === 'YOUR_FACEBOOK_APP_ID') {
+        return res.status(400).json({ 
+          message: "Facebook App ID and App Secret are required to generate install link. Please configure them in the integration settings." 
+        });
+      }
+
+      const baseUrl = process.env.APP_BASE_URL || process.env.REPLIT_DEV_DOMAIN 
+        ? `https://${process.env.REPLIT_DEV_DOMAIN}` 
+        : req.protocol + '://' + req.get('host');
+
+      const callbackUrl = `${baseUrl}/api/meta-callback`;
+
+      const installLink = await metaInstallService.generateInstallLink({
+        restaurantId,
+        tenantId,
+        restaurantName: restaurant.name,
+        callbackUrl
+      });
+
+      res.json({
+        installLinkId: installLink.id,
+        installUrl: metaInstallService.getInstallLinkUrl(installLink.id),
+        facebookAuthUrl: installLink.facebookAuthUrl,
+        expiresAt: installLink.expiresAt
+      });
+
+    } catch (error) {
+      console.error("Error generating Meta install link:", error);
+      res.status(500).json({ message: "Internal server error" });
+    }
+  });
+
+  // Handle Meta install link access
+  app.get("/api/meta-install-link/:linkId", async (req, res) => {
+    try {
+      const linkId = req.params.linkId;
+      const installLink = metaInstallService.getInstallLink(linkId);
+
+      if (!installLink) {
+        return res.status(404).json({ 
+          code: 404,
+          message: "ERROR_MESSAGE_META_INSTALL_LINK_NOT_FOUND",
+          statusCode: 404
+        });
+      }
+
+      // Generate an HTML page that redirects to Facebook OAuth
+      const htmlResponse = `
+        <!DOCTYPE html>
+        <html>
+        <head>
+          <title>Connect to Facebook - ${installLink.restaurantName}</title>
+          <meta charset="utf-8">
+          <meta name="viewport" content="width=device-width, initial-scale=1">
+          <style>
+            body { 
+              font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Arial, sans-serif;
+              background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+              margin: 0;
+              padding: 20px;
+              min-height: 100vh;
+              display: flex;
+              align-items: center;
+              justify-content: center;
+            }
+            .container {
+              background: white;
+              border-radius: 12px;
+              padding: 40px;
+              text-align: center;
+              box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+              max-width: 400px;
+              width: 100%;
+            }
+            .logo {
+              font-size: 24px;
+              font-weight: bold;
+              color: #1877f2;
+              margin-bottom: 20px;
+            }
+            h1 {
+              color: #333;
+              margin: 20px 0;
+              font-size: 24px;
+            }
+            p {
+              color: #666;
+              line-height: 1.5;
+              margin: 15px 0;
+            }
+            .restaurant-name {
+              font-weight: bold;
+              color: #1877f2;
+            }
+            .connect-btn {
+              background: #1877f2;
+              color: white;
+              border: none;
+              padding: 12px 24px;
+              border-radius: 6px;
+              font-size: 16px;
+              font-weight: 600;
+              cursor: pointer;
+              text-decoration: none;
+              display: inline-block;
+              margin: 20px 0;
+              transition: background 0.3s;
+            }
+            .connect-btn:hover {
+              background: #166fe5;
+            }
+            .expires {
+              font-size: 12px;
+              color: #999;
+              margin-top: 20px;
+            }
+          </style>
+        </head>
+        <body>
+          <div class="container">
+            <div class="logo">📱 MozRest</div>
+            <h1>Connect to Facebook</h1>
+            <p>You're about to connect <span class="restaurant-name">${installLink.restaurantName}</span> to Facebook and Instagram for social media integration.</p>
+            <p>This will allow you to:</p>
+            <ul style="text-align: left; color: #666;">
+              <li>Automatically post booking announcements</li>
+              <li>Manage Facebook page posts</li>
+              <li>Share content to Instagram</li>
+              <li>Engage with customers on social media</li>
+            </ul>
+            
+            <a href="${installLink.facebookAuthUrl}" class="connect-btn">
+              Connect with Facebook
+            </a>
+            
+            <div class="expires">
+              This link expires on ${installLink.expiresAt.toLocaleString()}
+            </div>
+          </div>
+          
+          <script>
+            // Auto-redirect after 3 seconds if user doesn't click
+            setTimeout(() => {
+              if (confirm('Ready to connect to Facebook?')) {
+                window.location.href = '${installLink.facebookAuthUrl}';
+              }
+            }, 3000);
+          </script>
+        </body>
+        </html>
+      `;
+
+      res.setHeader('Content-Type', 'text/html');
+      res.send(htmlResponse);
+
+    } catch (error) {
+      console.error("Error accessing Meta install link:", error);
+      res.status(500).json({ message: "Internal server error" });
+    }
+  });
+
+  // Handle Meta OAuth callback
+  app.get("/api/meta-callback", async (req, res) => {
+    try {
+      const { code, state, error } = req.query;
+
+      if (error) {
+        return res.status(400).json({
+          message: "Facebook authentication failed",
+          error: error
+        });
+      }
+
+      if (!code || !state) {
+        return res.status(400).json({
+          message: "Missing required parameters"
+        });
+      }
+
+      const result = await metaInstallService.handleCallback(code as string, state as string);
+
+      if (!result.success) {
+        return res.status(400).json({
+          message: result.error || "Failed to process Meta integration"
+        });
+      }
+
+      // Redirect to success page
+      const baseUrl = process.env.APP_BASE_URL || process.env.REPLIT_DEV_DOMAIN 
+        ? `https://${process.env.REPLIT_DEV_DOMAIN}` 
+        : req.protocol + '://' + req.get('host');
+
+      const successUrl = `${baseUrl}/${result.data.tenantId}/integrations/meta?success=true`;
+      res.redirect(successUrl);
+
+    } catch (error) {
+      console.error("Error handling Meta callback:", error);
+      res.status(500).json({ message: "Internal server error" });
+    }
+  });
+
+  // Contact form submission endpoint
+  app.post("/api/contact", async (req, res) => {
+    try {
+      const contactSchema = z.object({
+        name: z.string().min(2, "Name must be at least 2 characters"),
+        email: z.string().email("Please enter a valid email address"),
+        company: z.string().optional(),
+        phone: z.string().optional(),
+        subject: z.string().min(5, "Subject must be at least 5 characters"),
+        message: z.string().min(10, "Message must be at least 10 characters"),
+        category: z.enum(["general", "booking-channels", "reservation-software", "restaurants", "products", "partners"])
+      });
+
+      const validatedData = contactSchema.parse(req.body);
+
+      // Log the contact form submission
+      console.log('Contact form submission:', {
+        name: validatedData.name,
+        email: validatedData.email,
+        company: validatedData.company,
+        subject: validatedData.subject,
+        category: validatedData.category,
+        timestamp: new Date().toISOString()
+      });
+
+      // Send email notification if email service is available
+      if (emailService) {
+        try {
+          await emailService.sendContactFormNotification(validatedData);
+        } catch (emailError) {
+          console.error('Failed to send contact form email:', emailError);
+          // Continue with success response even if email fails
+        }
+      }
+
+      res.json({ 
+        success: true, 
+        message: "Contact form submitted successfully" 
+      });
+    } catch (error) {
+      console.error("Error processing contact form:", error);
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({ 
+          message: "Validation error", 
+          errors: error.errors 
+        });
+      }
+      res.status(500).json({ message: "Internal server error" });
+    }
+  });
+
   // Stripe webhook to handle successful payments
   app.post("/api/stripe-webhook", async (req, res) => {
     const sig = req.headers['stripe-signature'];
@@ -3455,6 +3969,7 @@ app.put("/api/tenants/:tenantId/bookings/:id", validateTenant, async (req, res) 
     res.json({ received: true });
   });
 
+<<<<<<< HEAD
   // Working Notifications API (temporary fallback)
   app.get("/api/notifications", attachUser, async (req: Request, res: Response) => {
     if (!req.user) {
@@ -3663,6 +4178,20 @@ app.put("/api/tenants/:tenantId/bookings/:id", validateTenant, async (req, res) 
       console.error("Error reverting notification:", error);
       res.status(500).json({ error: "Failed to revert changes" });
     }
+=======
+  // Test webhook endpoint for debugging
+  app.post("/api/webhook-test", async (req, res) => {
+    console.log("=== WEBHOOK TEST RECEIVED ===");
+    console.log("Headers:", req.headers);
+    console.log("Body:", JSON.stringify(req.body, null, 2));
+    console.log("=== END WEBHOOK TEST ===");
+    
+    res.status(200).json({ 
+      message: "Webhook received successfully",
+      timestamp: new Date().toISOString(),
+      received_data: req.body
+    });
+>>>>>>> 53b3ab91330f0f81f70d457f3d107944aab70637
   });
 
   const httpServer = createServer(app);
