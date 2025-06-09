@@ -90,9 +90,9 @@ class MetaInstallService {
   /**
    * Build Facebook OAuth URL
    */
-  private buildFacebookAuthUrl(linkId: string, callbackUrl: string): string {
+  private buildFacebookAuthUrl(linkId: string, callbackUrl: string, facebookAppId: string): string {
     const params = new URLSearchParams({
-      client_id: process.env.FACEBOOK_APP_ID || 'YOUR_FACEBOOK_APP_ID',
+      client_id: facebookAppId,
       redirect_uri: callbackUrl,
       state: linkId,
       response_type: 'code',
@@ -127,8 +127,26 @@ class MetaInstallService {
         };
       }
 
+      // Get Facebook credentials from database for this restaurant
+      const metaConfig = await storage.getIntegrationConfiguration(installLink.restaurantId, 'meta');
+      let facebookAppId = process.env.FACEBOOK_APP_ID || 'YOUR_FACEBOOK_APP_ID';
+      let facebookAppSecret = process.env.FACEBOOK_APP_SECRET || '';
+      
+      if (metaConfig && metaConfig.configuration) {
+        const config = typeof metaConfig.configuration === 'string' 
+          ? JSON.parse(metaConfig.configuration) 
+          : metaConfig.configuration;
+        
+        if (config.facebookAppId) {
+          facebookAppId = config.facebookAppId;
+        }
+        if (config.facebookAppSecret) {
+          facebookAppSecret = config.facebookAppSecret;
+        }
+      }
+
       // Exchange code for access token
-      const tokenResponse = await this.exchangeCodeForToken(code, installLink.callbackUrl);
+      const tokenResponse = await this.exchangeCodeForToken(code, installLink.callbackUrl, facebookAppId, facebookAppSecret);
       
       if (!tokenResponse.success) {
         return {
@@ -185,15 +203,15 @@ class MetaInstallService {
   /**
    * Exchange authorization code for access token
    */
-  private async exchangeCodeForToken(code: string, redirectUri: string): Promise<{
+  private async exchangeCodeForToken(code: string, redirectUri: string, facebookAppId: string, facebookAppSecret: string): Promise<{
     success: boolean;
     data?: any;
     error?: string;
   }> {
     try {
       const params = new URLSearchParams({
-        client_id: process.env.FACEBOOK_APP_ID || 'YOUR_FACEBOOK_APP_ID',
-        client_secret: process.env.FACEBOOK_APP_SECRET || 'YOUR_FACEBOOK_APP_SECRET',
+        client_id: facebookAppId,
+        client_secret: facebookAppSecret,
         redirect_uri: redirectUri,
         code: code
       });

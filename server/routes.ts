@@ -2985,7 +2985,7 @@ app.put("/api/tenants/:tenantId/bookings/:id", validateTenant, async (req, res) 
 
       const callbackUrl = `${baseUrl}/api/meta-callback`;
 
-      const installLink = metaInstallService.generateInstallLink({
+      const installLink = await metaInstallService.generateInstallLink({
         restaurantId,
         tenantId,
         restaurantName: restaurant.name,
