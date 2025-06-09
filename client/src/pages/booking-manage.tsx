@@ -7,7 +7,7 @@ import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
-import { Calendar, Clock, Users, MapPin, CheckCircle, XCircle, AlertCircle, Edit3 } from "lucide-react";
+import { Calendar, Clock, Users, MapPin, CheckCircle, XCircle, AlertCircle, Edit3, History, ArrowRight } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { format, parseISO, addDays, isBefore, isAfter } from "date-fns";
 
@@ -88,6 +88,28 @@ export default function BookingManage() {
       return response.json();
     },
     enabled: !!booking && !!newDate && !!newTime && !!isChangeAllowed()
+  });
+
+  // Fetch booking change history
+  const { data: changeHistory = [] } = useQuery({
+    queryKey: [`/api/tenants/${booking?.tenantId}/restaurants/${booking?.restaurantId}/notifications`],
+    queryFn: async () => {
+      if (!booking?.tenantId || !booking?.restaurantId) return [];
+      const response = await fetch(`/api/tenants/${booking.tenantId}/restaurants/${booking.restaurantId}/notifications`);
+      if (!response.ok) return [];
+      const allNotifications = await response.json();
+      
+      // Filter notifications for this specific booking
+      return allNotifications.filter((notif: any) => 
+        notif.bookingId === parseInt(id!) || 
+        notif.booking?.id === parseInt(id!) || 
+        notif.data?.booking?.id === parseInt(id!) ||
+        notif.data?.bookingId === parseInt(id!)
+      ).sort((a: any, b: any) => 
+        new Date(b.createdAt || b.timestamp || 0).getTime() - new Date(a.createdAt || a.timestamp || 0).getTime()
+      );
+    },
+    enabled: !!booking?.tenantId && !!booking?.restaurantId
   });
 
   const updateMutation = useMutation({
@@ -607,6 +629,131 @@ export default function BookingManage() {
                       Cancel Booking
                     </Button>
                   </div>
+                </div>
+              </CardContent>
+            </Card>
+          )}
+
+          {/* Change History */}
+          {changeHistory.length > 0 && (
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <History className="w-5 h-5" />
+                  Change History
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-4">
+                  {changeHistory.map((change: any, index: number) => {
+                    const getChangeTypeInfo = (type: string) => {
+                      switch (type) {
+                        case 'new_booking':
+                          return { icon: Calendar, color: 'text-green-600', bgColor: 'bg-green-50', label: 'Booking Created' };
+                        case 'booking_changed':
+                          return { icon: Edit3, color: 'text-blue-600', bgColor: 'bg-blue-50', label: 'Booking Modified' };
+                        case 'booking_cancelled':
+                          return { icon: XCircle, color: 'text-red-600', bgColor: 'bg-red-50', label: 'Booking Cancelled' };
+                        case 'booking_change_request':
+                          return { icon: AlertCircle, color: 'text-orange-600', bgColor: 'bg-orange-50', label: 'Change Request' };
+                        case 'change_request_responded':
+                          return { icon: CheckCircle, color: 'text-purple-600', bgColor: 'bg-purple-50', label: 'Change Request Response' };
+                        default:
+                          return { icon: Clock, color: 'text-gray-600', bgColor: 'bg-gray-50', label: 'Update' };
+                      }
+                    };
+
+                    const typeInfo = getChangeTypeInfo(change.type);
+                    const IconComponent = typeInfo.icon;
+
+                    return (
+                      <div key={change.id || index} className={`flex gap-4 p-4 rounded-lg ${typeInfo.bgColor}`}>
+                        <div className={`p-2 rounded-full ${typeInfo.color}`}>
+                          <IconComponent className="w-4 h-4" />
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center justify-between">
+                            <p className={`font-medium ${typeInfo.color}`}>{typeInfo.label}</p>
+                            <p className="text-xs text-gray-500">
+                              {format(new Date(change.createdAt || change.timestamp), 'MMM dd, yyyy HH:mm')}
+                            </p>
+                          </div>
+                          
+                          <p className="text-sm text-gray-700 mt-1">{change.message}</p>
+                          
+                          {/* Show change details if available */}
+                          {change.changes && Object.keys(change.changes).length > 0 && (
+                            <div className="mt-3 space-y-2">
+                              <p className="text-xs font-medium text-gray-600">Changes made:</p>
+                              {Object.entries(change.changes).map(([key, changeObj]: [string, any]) => {
+                                const from = changeObj?.from || changeObj?.oldValue || changeObj?.old;
+                                const to = changeObj?.to || changeObj?.newValue || changeObj?.new || changeObj;
+                                
+                                const fieldName = key === 'bookingDate' ? 'Date' : 
+                                               key === 'startTime' ? 'Time' : 
+                                               key === 'endTime' ? 'End Time' :
+                                               key === 'guestCount' ? 'Party Size' : 
+                                               key === 'tableId' ? 'Table' :
+                                               key === 'notes' ? 'Special Notes' : key;
+
+                                return (
+                                  <div key={key} className="flex items-center gap-2 text-xs">
+                                    <span className="font-medium">{fieldName}:</span>
+                                    {from && (
+                                      <>
+                                        <span className="px-2 py-1 bg-red-100 text-red-700 rounded">
+                                          {key === 'bookingDate' ? format(new Date(from), 'MMM dd, yyyy') : String(from)}
+                                        </span>
+                                        <ArrowRight className="w-3 h-3 text-gray-400" />
+                                      </>
+                                    )}
+                                    <span className="px-2 py-1 bg-green-100 text-green-700 rounded">
+                                      {key === 'bookingDate' ? format(new Date(to), 'MMM dd, yyyy') : String(to)}
+                                    </span>
+                                  </div>
+                                );
+                              })}
+                            </div>
+                          )}
+
+                          {/* Show change request details if available */}
+                          {change.changeRequest && (
+                            <div className="mt-3 p-3 bg-white rounded border">
+                              <p className="text-xs font-medium text-gray-600 mb-2">Request Details:</p>
+                              <div className="space-y-1 text-xs">
+                                {change.changeRequest.newDate && (
+                                  <p><span className="font-medium">New Date:</span> {format(new Date(change.changeRequest.newDate), 'MMM dd, yyyy')}</p>
+                                )}
+                                {change.changeRequest.newTime && (
+                                  <p><span className="font-medium">New Time:</span> {change.changeRequest.newTime}</p>
+                                )}
+                                {change.changeRequest.newGuestCount && (
+                                  <p><span className="font-medium">New Party Size:</span> {change.changeRequest.newGuestCount}</p>
+                                )}
+                                {change.changeRequest.requestNotes && (
+                                  <p><span className="font-medium">Note:</span> {change.changeRequest.requestNotes}</p>
+                                )}
+                                <p><span className="font-medium">Status:</span> 
+                                  <Badge variant={
+                                    change.changeRequest.status === 'pending' ? 'outline' :
+                                    change.changeRequest.status === 'approved' ? 'default' : 'destructive'
+                                  } className="ml-1 text-xs">
+                                    {change.changeRequest.status}
+                                  </Badge>
+                                </p>
+                              </div>
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+                
+                <div className="mt-4 pt-4 border-t text-center">
+                  <p className="text-xs text-gray-500">
+                    Complete timeline showing all changes made to booking #{booking.id}
+                  </p>
                 </div>
               </CardContent>
             </Card>
