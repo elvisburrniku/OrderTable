@@ -78,19 +78,27 @@ export function RealTimeNotifications() {
 
   const [processingRequests, setProcessingRequests] = useState<Set<number>>(new Set());
 
-  // Group notifications by type
+  // Group notifications by type with priority ordering
   const groupNotificationsByType = (notifications: BookingNotification[]) => {
     const groups: Record<string, BookingNotification[]> = {
+      'booking_change_request': [], // Highest priority - requires action
       'new_booking': [],
       'booking_changed': [],
-      'booking_cancelled': [],
-      'booking_change_request': [],
-      'change_request_responded': []
+      'change_request_responded': [],
+      'booking_cancelled': []
     };
 
     notifications.forEach(notification => {
-      if (notification && notification.type && groups[notification.type]) {
-        groups[notification.type].push(notification);
+      if (notification && notification.type) {
+        if (groups[notification.type]) {
+          groups[notification.type].push(notification);
+        } else {
+          // Handle any unknown types by adding to a generic category
+          if (!groups['other']) {
+            groups['other'] = [];
+          }
+          groups['other'].push(notification);
+        }
       }
     });
 
@@ -99,23 +107,37 @@ export function RealTimeNotifications() {
 
   const getGroupTitle = (type: string) => {
     switch (type) {
+      case 'booking_change_request': return 'Pending Change Requests';
       case 'new_booking': return 'New Bookings';
-      case 'booking_changed': return 'Booking Changes';
-      case 'booking_cancelled': return 'Cancellations';
-      case 'booking_change_request': return 'Change Requests';
+      case 'booking_changed': return 'Booking Modifications';
       case 'change_request_responded': return 'Request Responses';
-      default: return 'Other';
+      case 'booking_cancelled': return 'Cancellations';
+      case 'other': return 'Other Notifications';
+      default: return 'Notifications';
     }
   };
 
   const getGroupIcon = (type: string) => {
     switch (type) {
+      case 'booking_change_request': return MessageSquare;
       case 'new_booking': return CheckCircle;
       case 'booking_changed': return AlertTriangle;
-      case 'booking_cancelled': return XCircle;
-      case 'booking_change_request': return MessageSquare;
       case 'change_request_responded': return CheckCircle;
+      case 'booking_cancelled': return XCircle;
+      case 'other': return Bell;
       default: return Bell;
+    }
+  };
+
+  const getGroupColor = (type: string) => {
+    switch (type) {
+      case 'booking_change_request': return 'text-yellow-600 bg-yellow-50';
+      case 'new_booking': return 'text-green-600 bg-green-50';
+      case 'booking_changed': return 'text-blue-600 bg-blue-50';
+      case 'change_request_responded': return 'text-purple-600 bg-purple-50';
+      case 'booking_cancelled': return 'text-red-600 bg-red-50';
+      case 'other': return 'text-gray-600 bg-gray-50';
+      default: return 'text-gray-600 bg-gray-50';
     }
   };
 
@@ -127,6 +149,20 @@ export function RealTimeNotifications() {
       newCollapsed.add(groupType);
     }
     setCollapsedGroups(newCollapsed);
+  };
+
+  const collapseAllGroups = () => {
+    const groupedNotifications = groupNotificationsByType(
+      allNotifications.filter(notification => notification && notification.id)
+    );
+    const allGroupTypes = Object.keys(groupedNotifications).filter(
+      type => groupedNotifications[type].length > 0
+    );
+    setCollapsedGroups(new Set(allGroupTypes));
+  };
+
+  const expandAllGroups = () => {
+    setCollapsedGroups(new Set());
   };
 
   // Fetch persistent notifications from database using tenant-scoped endpoint
@@ -260,12 +296,9 @@ export function RealTimeNotifications() {
   }, []);
 
   const markAsRead = (notification: any) => {
-    console.log('Marking notification as read:', notification.id, 'isRead:', notification.isRead);
-    
     if (typeof notification.id === 'number') {
       // Skip if already read
       if (notification.isRead) {
-        console.log('Notification already read, skipping');
         return;
       }
       
@@ -277,11 +310,9 @@ export function RealTimeNotifications() {
         ['/api/tenants', restaurant?.tenantId, 'restaurants', restaurant?.id, 'notifications'],
         (oldData: any) => {
           if (!oldData) return oldData;
-          const updated = oldData.map((notif: any) => 
+          return oldData.map((notif: any) => 
             notif.id === notification.id ? { ...notif, isRead: true, read: true } : notif
           );
-          console.log('Updated local state:', updated.find((n: any) => n.id === notification.id));
-          return updated;
         }
       );
       
@@ -621,21 +652,39 @@ export function RealTimeNotifications() {
       {isOpen && (
         <Card className="absolute right-0 top-12 w-[450px] h-[calc(100vh-5rem)] overflow-hidden z-50 shadow-lg flex flex-col">
           <CardHeader className="pb-2 flex-shrink-0">
-            <div className="flex items-center justify-between">
+            <div className="flex items-center justify-between mb-2">
               <div className="flex items-center gap-2">
-                <CardTitle className="text-lg">Live Notifications</CardTitle>
+                <CardTitle className="text-lg">Notifications</CardTitle>
                 {pendingChangeRequests.length > 0 && (
-                  <Badge variant="destructive">{pendingChangeRequests.length} pending</Badge>
+                  <Badge variant="destructive" className="animate-pulse">{pendingChangeRequests.length} pending</Badge>
                 )}
               </div>
               <div className="flex items-center space-x-2">
+                <Button variant="ghost" size="sm" onClick={() => setIsOpen(false)}>
+                  <X className="h-4 w-4" />
+                </Button>
+              </div>
+            </div>
+            
+            {/* Summary and Controls */}
+            <div className="flex items-center justify-between text-sm text-gray-600 border-b border-gray-200 pb-2">
+              <div className="flex items-center gap-4">
+                <span>{allNotifications.length} total</span>
                 {unreadCount > 0 && (
-                  <Button variant="ghost" size="sm" onClick={markAllAsRead}>
+                  <span className="text-red-600 font-medium">{unreadCount} unread</span>
+                )}
+              </div>
+              <div className="flex items-center space-x-1">
+                {unreadCount > 0 && (
+                  <Button variant="ghost" size="sm" onClick={markAllAsRead} className="text-xs h-7 px-2">
                     Mark all read
                   </Button>
                 )}
-                <Button variant="ghost" size="sm" onClick={() => setIsOpen(false)}>
-                  <X className="h-4 w-4" />
+                <Button variant="ghost" size="sm" onClick={expandAllGroups} className="text-xs h-7 px-2">
+                  Expand all
+                </Button>
+                <Button variant="ghost" size="sm" onClick={collapseAllGroups} className="text-xs h-7 px-2">
+                  Collapse all
                 </Button>
               </div>
             </div>
@@ -663,30 +712,35 @@ export function RealTimeNotifications() {
                     <div key={groupType} className="border-b border-gray-100">
                       {/* Group Header */}
                       <div
-                        className="flex items-center justify-between p-3 bg-gray-50 hover:bg-gray-100 cursor-pointer border-b border-gray-200"
+                        className={`flex items-center justify-between p-3 hover:opacity-80 cursor-pointer border-b border-gray-200 ${getGroupColor(groupType)}`}
                         onClick={() => toggleGroupCollapse(groupType)}
                       >
                         <div className="flex items-center gap-3">
                           <div className="flex items-center gap-2">
                             {isCollapsed ? (
-                              <ChevronRight className="h-4 w-4 text-gray-500" />
+                              <ChevronRight className="h-4 w-4" />
                             ) : (
-                              <ChevronDown className="h-4 w-4 text-gray-500" />
+                              <ChevronDown className="h-4 w-4" />
                             )}
-                            <GroupIcon className="h-4 w-4 text-gray-600" />
+                            <GroupIcon className="h-5 w-5" />
                           </div>
-                          <span className="font-medium text-gray-900">
+                          <span className="font-semibold">
                             {getGroupTitle(groupType)}
                           </span>
-                          <Badge variant="secondary" className="text-xs">
+                          <Badge variant="secondary" className="text-xs bg-white/70">
                             {notifications.length}
                           </Badge>
                           {unreadInGroup > 0 && (
-                            <Badge variant="destructive" className="text-xs">
+                            <Badge variant="destructive" className="text-xs animate-pulse">
                               {unreadInGroup} new
                             </Badge>
                           )}
                         </div>
+                        {groupType === 'booking_change_request' && notifications.some(n => n.changeRequest?.status === 'pending') && (
+                          <Badge variant="outline" className="text-xs border-yellow-300 text-yellow-700 bg-yellow-100">
+                            Action Required
+                          </Badge>
+                        )}
                       </div>
                       
                       {/* Group Content */}
