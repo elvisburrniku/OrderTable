@@ -35,10 +35,13 @@ import {
   LogOut,
   Palette,
   RotateCcw,
-  Download
+  Download,
+  List,
+  Grid
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
+import GoogleCalendar from "@/components/google-calendar";
 
 export default function Bookings() {
   const { user, restaurant } = useAuth();
@@ -47,6 +50,8 @@ export default function Bookings() {
   const [sourceFilter, setSourceFilter] = useState("all");
   const [isNewBookingOpen, setIsNewBookingOpen] = useState(false);
   const [selectedTable, setSelectedTable] = useState<any>(null);
+  const [viewMode, setViewMode] = useState<"list" | "calendar">("list");
+  const [selectedDate, setSelectedDate] = useState(new Date());
   const [newBooking, setNewBooking] = useState({
     customerName: "",
     customerEmail: "",
