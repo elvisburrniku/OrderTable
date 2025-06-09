@@ -30,6 +30,15 @@ import Products from "./pages/products";
 import ProductGroups from "./pages/product-groups";
 import FeedbackResponses from "./pages/feedback-responses";
 import OpeningHours from "./pages/opening-hours";
+import Integrations from "./pages/integrations";
+import ActiveCampaignIntegration from "./pages/integrations/activecampaign";
+import GoogleIntegration from "./pages/integrations/google";
+import KlaviyoIntegration from "./pages/integrations/klaviyo";
+import MailchimpIntegration from "./pages/integrations/mailchimp";
+import MetaIntegration from "./pages/integrations/meta";
+import MichelinIntegration from "./pages/integrations/michelin";
+import WebhooksIntegration from "./pages/integrations/webhooks";
+import TripAdvisorIntegration from "./pages/integrations/tripadvisor";
 import SpecialPeriods from "./pages/special-periods";
 import CutOffTime from "./pages/cut-off-time";
 import PeriodicCriteria from "./pages/periodic-criteria";
@@ -47,15 +56,6 @@ import Help from "./pages/help";
 import CustomerFeedback from "./pages/customer-feedback";
 import TableFeedback from "./pages/table-feedback";
 import FeedbackResponsesPopup from "./pages/feedback-responses-popup";
-import Integrations from "./pages/integrations";
-import ActiveCampaignIntegration from "./pages/integrations/activecampaign";
-import GoogleIntegration from "./pages/integrations/google";
-import KlaviyoIntegration from "./pages/integrations/klaviyo";
-import MailchimpIntegration from "./pages/integrations/mailchimp";
-import MetaIntegration from "./pages/integrations/meta";
-import MichelinIntegration from "./pages/integrations/michelin";
-import WebhooksIntegration from "./pages/integrations/webhooks";
-import TripAdvisorIntegration from "./pages/integrations/tripadvisor";
 
 function App() {
   return (
