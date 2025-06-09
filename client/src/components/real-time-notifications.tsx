@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useWebSocket } from '@/hooks/use-websocket';
 import { useAuth } from '@/lib/auth';
-import { Bell, X, User, Calendar, Clock, Users, Phone, Mail, AlertTriangle, CheckCircle, XCircle, MessageSquare, Undo2, Eye, MapPin } from 'lucide-react';
+import { Bell, X, User, Calendar, Clock, Users, Phone, Mail, AlertTriangle, CheckCircle, XCircle, MessageSquare, Undo2, Eye, MapPin, ChevronDown, ChevronRight } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
@@ -72,10 +72,62 @@ export function RealTimeNotifications() {
   const [unreadCount, setUnreadCount] = useState(0);
   const [selectedBooking, setSelectedBooking] = useState<BookingNotification | null>(null);
   const [isBookingDialogOpen, setIsBookingDialogOpen] = useState(false);
+  const [collapsedGroups, setCollapsedGroups] = useState<Set<string>>(new Set());
   const queryClient = useQueryClient();
   const { toast } = useToast();
 
   const [processingRequests, setProcessingRequests] = useState<Set<number>>(new Set());
+
+  // Group notifications by type
+  const groupNotificationsByType = (notifications: BookingNotification[]) => {
+    const groups: Record<string, BookingNotification[]> = {
+      'new_booking': [],
+      'booking_changed': [],
+      'booking_cancelled': [],
+      'booking_change_request': [],
+      'change_request_responded': []
+    };
+
+    notifications.forEach(notification => {
+      if (notification && notification.type && groups[notification.type]) {
+        groups[notification.type].push(notification);
+      }
+    });
+
+    return groups;
+  };
+
+  const getGroupTitle = (type: string) => {
+    switch (type) {
+      case 'new_booking': return 'New Bookings';
+      case 'booking_changed': return 'Booking Changes';
+      case 'booking_cancelled': return 'Cancellations';
+      case 'booking_change_request': return 'Change Requests';
+      case 'change_request_responded': return 'Request Responses';
+      default: return 'Other';
+    }
+  };
+
+  const getGroupIcon = (type: string) => {
+    switch (type) {
+      case 'new_booking': return CheckCircle;
+      case 'booking_changed': return AlertTriangle;
+      case 'booking_cancelled': return XCircle;
+      case 'booking_change_request': return MessageSquare;
+      case 'change_request_responded': return CheckCircle;
+      default: return Bell;
+    }
+  };
+
+  const toggleGroupCollapse = (groupType: string) => {
+    const newCollapsed = new Set(collapsedGroups);
+    if (newCollapsed.has(groupType)) {
+      newCollapsed.delete(groupType);
+    } else {
+      newCollapsed.add(groupType);
+    }
+    setCollapsedGroups(newCollapsed);
+  };
 
   // Fetch persistent notifications from database using tenant-scoped endpoint
   const { data: persistentNotifications = [] } = useQuery({
@@ -563,7 +615,49 @@ export function RealTimeNotifications() {
                   <p className="text-sm">You'll see booking updates here</p>
                 </div>
               ) : (
-                allNotifications.filter(notification => notification && notification.id).map((notification) => (
+                Object.entries(groupNotificationsByType(
+                  allNotifications.filter(notification => notification && notification.id)
+                )).map(([groupType, notifications]) => {
+                  if (notifications.length === 0) return null;
+                  
+                  const isCollapsed = collapsedGroups.has(groupType);
+                  const GroupIcon = getGroupIcon(groupType);
+                  const unreadInGroup = notifications.filter(n => !n.read && !n.isRead).length;
+                  
+                  return (
+                    <div key={groupType} className="border-b border-gray-100">
+                      {/* Group Header */}
+                      <div
+                        className="flex items-center justify-between p-3 bg-gray-50 hover:bg-gray-100 cursor-pointer border-b border-gray-200"
+                        onClick={() => toggleGroupCollapse(groupType)}
+                      >
+                        <div className="flex items-center gap-3">
+                          <div className="flex items-center gap-2">
+                            {isCollapsed ? (
+                              <ChevronRight className="h-4 w-4 text-gray-500" />
+                            ) : (
+                              <ChevronDown className="h-4 w-4 text-gray-500" />
+                            )}
+                            <GroupIcon className="h-4 w-4 text-gray-600" />
+                          </div>
+                          <span className="font-medium text-gray-900">
+                            {getGroupTitle(groupType)}
+                          </span>
+                          <Badge variant="secondary" className="text-xs">
+                            {notifications.length}
+                          </Badge>
+                          {unreadInGroup > 0 && (
+                            <Badge variant="destructive" className="text-xs">
+                              {unreadInGroup} new
+                            </Badge>
+                          )}
+                        </div>
+                      </div>
+                      
+                      {/* Group Content */}
+                      {!isCollapsed && (
+                        <div>
+                          {notifications.map((notification) => (
                   <div
                     key={notification.id}
                     className={`p-4 border-b border-gray-200 hover:bg-gray-50 ${
@@ -689,7 +783,7 @@ export function RealTimeNotifications() {
                         
                         <p className="text-xs text-gray-500 mt-2">
                           {(notification.timestamp || notification.createdAt) ? 
-                            format(new Date(notification.timestamp || notification.createdAt), 'MMM dd, HH:mm:ss') : 
+                            format(new Date(notification.timestamp || notification.createdAt || new Date()), 'MMM dd, HH:mm:ss') : 
                             'Just now'}
                         </p>
                       </div>
@@ -704,7 +798,12 @@ export function RealTimeNotifications() {
                       </button>
                     </div>
                   </div>
-                ))
+                            ))}
+                          </div>
+                        )}
+                      </div>
+                    );
+                  }).filter(Boolean)
               )}
             </div>
           </CardContent>
