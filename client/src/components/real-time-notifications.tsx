@@ -710,6 +710,7 @@ export function RealTimeNotifications() {
                             variant="outline"
                             onClick={(e) => {
                               e.stopPropagation();
+                              markAsRead(notification);
                               setSelectedBooking(notification);
                               setIsBookingDialogOpen(true);
                             }}
