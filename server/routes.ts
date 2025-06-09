@@ -2979,6 +2979,30 @@ app.put("/api/tenants/:tenantId/bookings/:id", validateTenant, async (req, res) 
         return res.status(404).json({ message: "Restaurant not found" });
       }
 
+      // Check if Facebook credentials are configured
+      const metaConfig = await storage.getIntegrationConfiguration(restaurantId, 'meta');
+      let facebookAppId = process.env.FACEBOOK_APP_ID;
+      let facebookAppSecret = process.env.FACEBOOK_APP_SECRET;
+      
+      if (metaConfig && metaConfig.configuration) {
+        const config = typeof metaConfig.configuration === 'string' 
+          ? JSON.parse(metaConfig.configuration) 
+          : metaConfig.configuration;
+        
+        if (config.facebookAppId) {
+          facebookAppId = config.facebookAppId;
+        }
+        if (config.facebookAppSecret) {
+          facebookAppSecret = config.facebookAppSecret;
+        }
+      }
+
+      if (!facebookAppId || !facebookAppSecret || facebookAppId === 'YOUR_FACEBOOK_APP_ID') {
+        return res.status(400).json({ 
+          message: "Facebook App ID and App Secret are required to generate install link. Please configure them in the integration settings." 
+        });
+      }
+
       const baseUrl = process.env.APP_BASE_URL || process.env.REPLIT_DEV_DOMAIN 
         ? `https://${process.env.REPLIT_DEV_DOMAIN}` 
         : req.protocol + '://' + req.get('host');

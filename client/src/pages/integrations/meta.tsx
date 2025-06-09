@@ -136,6 +136,15 @@ export default function MetaIntegration() {
   };
 
   const handleActivationToggle = (checked: boolean) => {
+    if (checked && (!facebookAppId || !facebookAppSecret)) {
+      toast({
+        title: "Missing credentials",
+        description: "Please enter both Facebook App ID and App Secret before activating the integration.",
+        variant: "destructive"
+      });
+      return;
+    }
+    
     setIsActivated(checked);
     
     if (checked) {
@@ -251,6 +260,11 @@ export default function MetaIntegration() {
                   <p className="text-sm text-gray-600 mt-1">
                     Enable Meta integration for {restaurant.name}
                   </p>
+                  {(!facebookAppId || !facebookAppSecret) && (
+                    <p className="text-sm text-red-600 mt-1">
+                      Facebook App ID and App Secret are required to activate integration
+                    </p>
+                  )}
                 </div>
                 <Switch
                   id="activate-meta"
