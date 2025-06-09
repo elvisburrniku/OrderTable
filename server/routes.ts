@@ -1789,7 +1789,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
         tenantId,
         customerId: walkInCustomer.id,
         customerName: walkInCustomer.name || "Walk-in Customer",
-        customerEmail: walkInCustomer.email || "",
+        customerEmail: walkInCustomer.email || null,
+        customerPhone: walkInCustomer.phone || null,
         guestCount: parseInt(guestCount),
         bookingDate: new Date(bookingDate),
         startTime,
@@ -1797,7 +1798,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         tableId: tableId ? parseInt(tableId) : undefined,
         status: "confirmed" as const,
         source: "walk_in" as const,
-        specialRequests: specialRequests || undefined
+        notes: specialRequests || undefined
       };
 
       // If no table specified, try to find an available one

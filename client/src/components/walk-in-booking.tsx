@@ -63,10 +63,10 @@ export function WalkInBooking({ restaurantId, tenantId }: WalkInBookingProps) {
       
       return response.json();
     },
-    onSuccess: (data) => {
+    onSuccess: (data: any) => {
       toast({
         title: "Walk-in booking created",
-        description: `Booking for ${formData.guestCount} guests has been confirmed`
+        description: `Booking for ${formData.guestCount} guests has been confirmed${data.booking?.tableId ? ` at table ${data.booking.tableId}` : ''}`
       });
       
       // Invalidate relevant queries
@@ -75,6 +75,9 @@ export function WalkInBooking({ restaurantId, tenantId }: WalkInBookingProps) {
       });
       queryClient.invalidateQueries({ 
         queryKey: [`/api/tenants/${tenantId}/restaurants/${restaurantId}/customers`] 
+      });
+      queryClient.invalidateQueries({
+        queryKey: [`/api/tenants/${tenantId}/restaurants/${restaurantId}/notifications`]
       });
       
       setOpen(false);
