@@ -21,7 +21,8 @@ import {
   specialPeriods, 
   cutOffTimes,
   bookingChangeRequests,
-  integrationConfigurations
+  integrationConfigurations,
+  webhooks
 } from "@shared/schema";
 import { neon } from "@neondatabase/serverless";
 import { drizzle } from "drizzle-orm/neon-http";
