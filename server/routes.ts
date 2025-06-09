@@ -4384,12 +4384,6 @@ app.put("/api/tenants/:tenantId/bookings/:id", validateTenant, async (req, res) 
       const bookingDate = new Date(date as string);
       const guestCount = parseInt(guests as string);
 
-      // Check if restaurant is open on this date
-      const isOpen = await storage.isRestaurantOpen(restaurantId, bookingDate, "12:00");
-      if (!isOpen) {
-        return res.json([]); // Return empty array if closed
-      }
-
       // Get opening hours for this specific day
       const dayOfWeek = bookingDate.getDay();
       const openingHours = await storage.getOpeningHoursByRestaurant(restaurantId);
@@ -4423,6 +4417,10 @@ app.put("/api/tenants/:tenantId/bookings/:id", validateTenant, async (req, res) 
         return res.json([]);
       }
 
+      // Get cut-off times for the restaurant
+      const cutOffTimes = await storage.getCutOffTimesByRestaurant(restaurantId);
+      const cutOffTime = cutOffTimes.find((ct: any) => ct.dayOfWeek === dayOfWeek);
+
       // Get all tables and check capacity
       const tables = await storage.getTablesByRestaurant(restaurantId);
       const combinedTables = await storage.getCombinedTablesByRestaurant(restaurantId);
@@ -4455,6 +4453,7 @@ app.put("/api/tenants/:tenantId/bookings/:id", validateTenant, async (req, res) 
       const closeTimeMinutes = timeToMinutes(actualCloseTime);
       
       const timeSlots = [];
+      const now = new Date();
       
       // Generate 30-minute intervals within opening hours
       for (let minutes = openTimeMinutes; minutes <= closeTimeMinutes - 60; minutes += 30) {
@@ -4462,8 +4461,21 @@ app.put("/api/tenants/:tenantId/bookings/:id", validateTenant, async (req, res) 
         const mins = minutes % 60;
         const timeStr = `${hours.toString().padStart(2, '0')}:${mins.toString().padStart(2, '0')}`;
         
-        // For now, skip cut-off validation in public endpoint to avoid complexity
-        // The cut-off validation will be done during actual booking creation
+        // Apply cut-off time validation
+        if (cutOffTime && cutOffTime.cutOffHours > 0) {
+          // Create booking datetime by combining date and time
+          const bookingDateTime = new Date(bookingDate);
+          bookingDateTime.setHours(hours, mins, 0, 0);
+
+          // Calculate cut-off deadline
+          const cutOffMilliseconds = cutOffTime.cutOffHours * 60 * 60 * 1000; // Convert hours to milliseconds
+          const cutOffDeadline = new Date(bookingDateTime.getTime() - cutOffMilliseconds);
+
+          // Skip this time slot if current time is past the cut-off deadline
+          if (now > cutOffDeadline) {
+            continue;
+          }
+        }
 
         // Check if any suitable table is available at this time
         const hasAvailableTable = [...suitableTables, ...suitableCombinedTables].some(table => {

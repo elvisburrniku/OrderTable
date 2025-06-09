@@ -897,10 +897,11 @@ export class DatabaseStorage implements IStorage {
     // Insert new cut-off times
     if (timesData.length > 0) {
       const insertData = timesData.map((time, index) => ({
-        ...time,
         restaurantId,
         tenantId,
-        dayOfWeek: index // 0 = Sunday, 1 = Monday, etc.
+        dayOfWeek: index, // 0 = Sunday, 1 = Monday, etc.
+        cutOffHours: time.cutOffHours || 0,
+        isEnabled: time.cutOffHours > 0
       }));
       return await this.db.insert(cutOffTimes).values(insertData).returning();
     }
