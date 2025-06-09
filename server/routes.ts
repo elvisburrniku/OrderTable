@@ -2798,6 +2798,105 @@ app.put("/api/tenants/:tenantId/bookings/:id", validateTenant, async (req, res) 
     }
   });
 
+  // Approve change request
+  app.patch("/api/tenants/:tenantId/restaurants/:restaurantId/change-requests/:requestId/approve", attachUser, validateTenant, async (req: Request, res: Response) => {
+    try {
+      const requestId = parseInt(req.params.requestId);
+      const { response } = req.body;
+
+      const changeRequest = await storage.getBookingChangeRequestById(requestId);
+      if (!changeRequest) {
+        return res.status(404).json({ message: "Change request not found" });
+      }
+
+      if (changeRequest.status !== 'pending') {
+        return res.status(400).json({ message: "Change request has already been processed" });
+      }
+
+      const booking = await storage.getBookingById(changeRequest.bookingId);
+      if (!booking) {
+        return res.status(404).json({ message: "Booking not found" });
+      }
+
+      // Update change request status
+      await storage.updateBookingChangeRequest(requestId, {
+        status: 'approved',
+        restaurantResponse: response || 'Approved via admin dashboard',
+        respondedAt: new Date()
+      });
+
+      // Apply the changes to the booking
+      const bookingUpdates: any = {};
+      if (changeRequest.requestedDate) {
+        bookingUpdates.bookingDate = changeRequest.requestedDate;
+      }
+      if (changeRequest.requestedTime) {
+        bookingUpdates.startTime = changeRequest.requestedTime;
+      }
+      if (changeRequest.requestedGuestCount) {
+        bookingUpdates.guestCount = changeRequest.requestedGuestCount;
+      }
+
+      const updatedBooking = await storage.updateBooking(changeRequest.bookingId, bookingUpdates);
+
+      // Send real-time notification
+      broadcastNotification(booking.restaurantId, {
+        type: 'change_request_approved',
+        changeRequest: { ...changeRequest, status: 'approved' },
+        booking: updatedBooking,
+        timestamp: new Date().toISOString()
+      });
+
+      res.json({ 
+        message: "Change request approved successfully", 
+        changeRequest: { ...changeRequest, status: 'approved' },
+        booking: updatedBooking
+      });
+    } catch (error) {
+      console.error("Error approving change request:", error);
+      res.status(500).json({ message: "Internal server error" });
+    }
+  });
+
+  // Reject change request
+  app.patch("/api/tenants/:tenantId/restaurants/:restaurantId/change-requests/:requestId/reject", attachUser, validateTenant, async (req: Request, res: Response) => {
+    try {
+      const requestId = parseInt(req.params.requestId);
+      const { response } = req.body;
+
+      const changeRequest = await storage.getBookingChangeRequestById(requestId);
+      if (!changeRequest) {
+        return res.status(404).json({ message: "Change request not found" });
+      }
+
+      if (changeRequest.status !== 'pending') {
+        return res.status(400).json({ message: "Change request has already been processed" });
+      }
+
+      // Update change request status
+      await storage.updateBookingChangeRequest(requestId, {
+        status: 'rejected',
+        restaurantResponse: response || 'Rejected via admin dashboard',
+        respondedAt: new Date()
+      });
+
+      // Send real-time notification
+      broadcastNotification(changeRequest.restaurantId, {
+        type: 'change_request_rejected',
+        changeRequest: { ...changeRequest, status: 'rejected' },
+        timestamp: new Date().toISOString()
+      });
+
+      res.json({ 
+        message: "Change request rejected successfully", 
+        changeRequest: { ...changeRequest, status: 'rejected' }
+      });
+    } catch (error) {
+      console.error("Error rejecting change request:", error);
+      res.status(500).json({ message: "Internal server error" });
+    }
+  });
+
   // Email-based approval route (for clicking links in emails)
   app.get("/booking-change-response/:requestId", async (req, res) => {
     try {
