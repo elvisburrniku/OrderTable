@@ -360,7 +360,7 @@ export function RealTimeNotifications() {
     return changes;
   };
 
-  const pendingChangeRequests = notifications.filter(n => 
+  const pendingChangeRequests = allNotifications.filter(n => 
     n.type === 'booking_change_request' && 
     n.changeRequest?.status === 'pending' && 
     !processingRequests.has(n.changeRequest?.id)
