@@ -460,6 +460,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
         description: null
       });
 
+      // Create session for the new user
+      (req as any).session.user = { ...newUser, password: undefined };
+      (req as any).session.tenant = tenant;
+      (req as any).session.restaurant = newRestaurant;
+
       res.status(201).json({
         message: "User registered successfully",
         user: {
