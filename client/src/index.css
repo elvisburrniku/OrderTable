@@ -24,10 +24,10 @@
   --ring: 20 14.3% 4.1%;
   --radius: 0.5rem;
   
-  /* Custom EasyTable colors */
-  --easytable-green: 142 76% 36%; /* #10b981 */
-  --easytable-green-hover: 142 76% 32%; /* #059669 */
-  --easytable-green-dark: 142 76% 28%; /* #047857 */
+  /* Custom ReadyTable colors */
+  --readytable-green: 142 76% 36%; /* #10b981 */
+  --readytable-green-hover: 142 76% 32%; /* #059669 */
+  --readytable-green-dark: 142 76% 28%; /* #047857 */
 }
 
 .dark {

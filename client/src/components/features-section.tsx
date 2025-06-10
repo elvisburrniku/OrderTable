@@ -50,7 +50,7 @@ export default function FeaturesSection() {
                 More than 2500 restaurants have joined the family
               </h2>
               <p className="text-lg text-gray-600 mb-8 leading-relaxed">
-                The easyTable family is growing – and fast. With now over 2500 restaurants in 43 different countries, we have helped our clients serve over 140 million guests worldwide – that's quite a lot.
+                The ReadyTable family is growing – and fast. With now over 2500 restaurants in 43 different countries, we have helped our clients serve over 140 million guests worldwide – that's quite a lot.
               </p>
             </div>
             <div className="grid grid-cols-3 gap-8 items-center">
@@ -96,10 +96,10 @@ export default function FeaturesSection() {
                 With you every step of the way
               </h2>
               <p className="text-lg text-gray-600 mb-8 leading-relaxed">
-                From installation to troubleshooting and training, our very human team will ensure you get the most out of your easyTable online table booking system. We provide comprehensive human support to assure you get the help you need.
+                From installation to troubleshooting and training, our very human team will ensure you get the most out of your ReadyTable online table booking system. We provide comprehensive human support to assure you get the help you need.
               </p>
               <Button className="bg-black hover:bg-gray-800 text-white">
-                Meet the people behind easyTable
+                Meet the people behind ReadyTable
               </Button>
             </div>
             <div>
@@ -133,10 +133,10 @@ export default function FeaturesSection() {
                 Simplifying bookings one table at a time
               </h2>
               <p className="text-lg text-gray-600 mb-6 leading-relaxed">
-                easyTable is designed to be intuitive, affordable, and easy to use. The online table booking system lets guests book directly from your site and social media platforms, as well as Google, TripAdvisor, Michelin Guide, and more, automating everything on your end.
+                ReadyTable is designed to be intuitive, affordable, and easy to use. The online table booking system lets guests book directly from your site and social media platforms, as well as Google, TripAdvisor, Michelin Guide, and more, automating everything on your end.
               </p>
               <p className="text-lg text-gray-600 mb-8 leading-relaxed">
-                A tailored and comprehensive approach makes integration into your business seamless and simple. easyTable is compatible with any device or platform with an internet connection and has no limits to the number of users. Making it always possible to access any reservation at any time.
+                A tailored and comprehensive approach makes integration into your business seamless and simple. ReadyTable is compatible with any device or platform with an internet connection and has no limits to the number of users. Making it always possible to access any reservation at any time.
               </p>
               <p className="text-lg text-gray-600 mb-8 leading-relaxed">
                 So, start getting your team back to what they do best and start using a restaurant reservation system that can better your business one table at a time.

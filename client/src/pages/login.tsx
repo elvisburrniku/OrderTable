@@ -8,10 +8,11 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Link } from "wouter";
 import { useAuth } from "@/lib/auth.tsx";
 import { useToast } from "@/hooks/use-toast";
-import { Grid3x3, X, Check } from "lucide-react";
+import { X, Check } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
 import { AuthLoadingOverlay } from "@/components/ui/auth-loading-overlay";
 import { LoadingSpinner } from "@/components/ui/loading-spinner";
+import { ReadyTableLogo } from "@/components/ui/ready-table-logo";
 
 // Define subscription plan type
 type SubscriptionPlan = {
@@ -239,12 +240,11 @@ export default function Login() {
                 <div className="absolute inset-0 flex items-center justify-center">
                   <div className="text-center text-white p-8">
                     <div className="flex items-center justify-center mb-6 animate-fade-in">
-                      <div className="p-3 bg-white/20 rounded-full backdrop-blur-md mr-4">
-                        <Grid3x3 className="text-emerald-400 text-3xl" size={40} />
-                      </div>
-                      <span className="text-4xl font-bold bg-gradient-to-r from-white to-emerald-300 bg-clip-text text-transparent">
-                        easyTable
-                      </span>
+                      <ReadyTableLogo 
+                        size={40} 
+                        textClassName="text-4xl font-bold bg-gradient-to-r from-white to-emerald-300 bg-clip-text text-transparent"
+                        className="p-3 bg-white/20 rounded-full backdrop-blur-md"
+                      />
                     </div>
                     <h2 className="text-3xl md:text-5xl font-bold leading-tight mb-4 animate-slide-up">
                       <span className="block bg-gradient-to-r from-white via-emerald-200 to-white bg-clip-text text-transparent">
