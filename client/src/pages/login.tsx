@@ -184,51 +184,93 @@ export default function Login() {
         isVisible={loadingState.isLoading} 
         type={loadingState.type || "login"} 
       />
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
-        <Card className="w-full max-w-5xl overflow-hidden">
-          <div className="grid md:grid-cols-2">
-            {/* Left side - Restaurant image */}
-            <div className="relative h-96 md:h-auto">
-              <div
-                className="absolute inset-0 bg-cover bg-center"
-                style={{
-                  backgroundImage: `url('https://images.unsplash.com/photo-1556909114-f6e7ad7d3136?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&h=600')`,
-                }}
-              />
-              <div className="absolute inset-0 bg-black bg-opacity-60 flex items-center justify-center">
-                <div className="text-center text-white">
-                  <div className="flex items-center justify-center mb-4">
-                    <Grid3x3 className="text-green-500 text-3xl mr-3" size={32} />
-                    <span className="text-3xl font-bold">easyTable</span>
-                  </div>
-                  <h2 className="text-3xl md:text-4xl font-bold leading-tight">
-                    BETTER BOOKING.
-                    <br />
-                    BETTER BUSINESS.
-                  </h2>
-                </div>
-              </div>
-            </div>
+      <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900 flex items-center justify-center p-4 relative overflow-hidden">
+        {/* Animated background elements */}
+        <div className="absolute inset-0 overflow-hidden">
+          <div className="absolute -top-40 -right-40 w-80 h-80 bg-purple-500 rounded-full mix-blend-multiply filter blur-xl opacity-70 animate-blob"></div>
+          <div className="absolute -bottom-40 -left-40 w-80 h-80 bg-yellow-500 rounded-full mix-blend-multiply filter blur-xl opacity-70 animate-blob animation-delay-2000"></div>
+          <div className="absolute top-40 left-40 w-80 h-80 bg-pink-500 rounded-full mix-blend-multiply filter blur-xl opacity-70 animate-blob animation-delay-4000"></div>
+        </div>
 
-            {/* Right side - Login form */}
-            <div className="p-8">
-              <div className="flex justify-between items-center mb-8">
-                <h3 className="text-2xl font-bold text-gray-900">
-                  {isLogin ? "Login" : "Sign Up"}
-                </h3>
-                <Link href="/">
-                  <Button variant="ghost" size="sm">
-                    <X className="h-5 w-5" />
-                  </Button>
-                </Link>
-              </div>
-              
-              {showRememberNotice && (
-                <div className="bg-green-50 border border-green-200 rounded-lg p-3 mb-6 flex items-center gap-2">
-                  <div className="h-2 w-2 bg-green-500 rounded-full"></div>
-                  <span className="text-sm text-green-700">Welcome back! Your login details have been remembered.</span>
+        {/* Glassy card container */}
+        <div className="w-full max-w-6xl relative">
+          <div className="backdrop-blur-xl bg-white/10 rounded-3xl border border-white/20 shadow-2xl overflow-hidden">
+            <div className="grid md:grid-cols-2 min-h-[700px]">
+              {/* Left side - Restaurant image with glass effect */}
+              <div className="relative h-96 md:h-auto overflow-hidden">
+                {/* Multiple restaurant images with parallax effect */}
+                <div className="absolute inset-0 bg-gradient-to-br from-orange-400 via-red-500 to-pink-600"></div>
+                <div
+                  className="absolute inset-0 bg-cover bg-center transition-transform duration-700 hover:scale-110"
+                  style={{
+                    backgroundImage: `url('https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?ixlib=rb-4.0.3&auto=format&fit=crop&w=1200&h=800')`,
+                    mixBlendMode: 'overlay'
+                  }}
+                />
+                <div
+                  className="absolute inset-0 bg-cover bg-center opacity-60 transition-opacity duration-1000 hover:opacity-80"
+                  style={{
+                    backgroundImage: `url('https://images.unsplash.com/photo-1555396273-367ea4eb4db5?ixlib=rb-4.0.3&auto=format&fit=crop&w=1200&h=800')`,
+                  }}
+                />
+                
+                {/* Animated glass overlay */}
+                <div className="absolute inset-0 bg-gradient-to-t from-black/50 via-transparent to-transparent"></div>
+                <div className="absolute inset-0 backdrop-blur-[1px] bg-white/5"></div>
+                
+                {/* Floating elements */}
+                <div className="absolute top-10 left-10 w-20 h-20 bg-white/10 rounded-full backdrop-blur-md animate-float"></div>
+                <div className="absolute bottom-20 right-10 w-16 h-16 bg-white/5 rounded-full backdrop-blur-md animate-float-delay"></div>
+                
+                {/* Content */}
+                <div className="absolute inset-0 flex items-center justify-center">
+                  <div className="text-center text-white p-8">
+                    <div className="flex items-center justify-center mb-6 animate-fade-in">
+                      <div className="p-3 bg-white/20 rounded-full backdrop-blur-md mr-4">
+                        <Grid3x3 className="text-emerald-400 text-3xl" size={40} />
+                      </div>
+                      <span className="text-4xl font-bold bg-gradient-to-r from-white to-emerald-300 bg-clip-text text-transparent">
+                        easyTable
+                      </span>
+                    </div>
+                    <h2 className="text-3xl md:text-5xl font-bold leading-tight mb-4 animate-slide-up">
+                      <span className="block bg-gradient-to-r from-white via-emerald-200 to-white bg-clip-text text-transparent">
+                        BETTER BOOKING.
+                      </span>
+                      <span className="block bg-gradient-to-r from-emerald-300 via-white to-emerald-300 bg-clip-text text-transparent">
+                        BETTER BUSINESS.
+                      </span>
+                    </h2>
+                    <p className="text-lg text-white/80 animate-fade-in-delay">
+                      Streamline your restaurant operations with our comprehensive booking platform
+                    </p>
+                  </div>
                 </div>
-              )}
+              </div>
+
+              {/* Right side - Glassy login form */}
+              <div className="p-8 md:p-12 backdrop-blur-md bg-white/5 relative">
+                {/* Decorative glass elements */}
+                <div className="absolute top-0 right-0 w-32 h-32 bg-gradient-to-br from-white/10 to-transparent rounded-full blur-3xl"></div>
+                <div className="absolute bottom-0 left-0 w-24 h-24 bg-gradient-to-tr from-emerald-500/20 to-transparent rounded-full blur-2xl"></div>
+                
+                <div className="flex justify-between items-center mb-8 relative z-10">
+                  <h3 className="text-3xl font-bold bg-gradient-to-r from-white to-emerald-200 bg-clip-text text-transparent">
+                    {isLogin ? "Welcome Back" : "Join easyTable"}
+                  </h3>
+                  <Link href="/">
+                    <Button variant="ghost" size="sm" className="text-white/70 hover:text-white hover:bg-white/10 backdrop-blur-sm">
+                      <X className="h-5 w-5" />
+                    </Button>
+                  </Link>
+                </div>
+              
+                {showRememberNotice && (
+                  <div className="bg-emerald-500/20 border border-emerald-400/30 rounded-xl p-4 mb-6 flex items-center gap-3 backdrop-blur-sm animate-fade-in">
+                    <div className="h-3 w-3 bg-emerald-400 rounded-full animate-pulse"></div>
+                    <span className="text-sm text-emerald-200">Welcome back! Your login details have been remembered.</span>
+                  </div>
+                )}
 
               <form onSubmit={handleSubmit} className="space-y-6">
                 {!isLogin && (
@@ -507,10 +549,11 @@ export default function Login() {
                     {isLogin ? "Sign up" : "Log in"}
                   </Button>
                 </div>
-              </form>
+                </form>
+              </div>
             </div>
           </div>
-        </Card>
+        </div>
       </div>
     </>
   );
