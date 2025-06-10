@@ -230,8 +230,13 @@ export class DatabaseStorage implements IStorage {
 
   async getBookingsByDate(restaurantId: number, date: string): Promise<any[]> {
     if (!this.db) return [];
+    
+    // Use SQL date function to compare dates
     const result = await this.db.select().from(bookings)
-      .where(and(eq(bookings.restaurantId, restaurantId), eq(bookings.date, date)));
+      .where(and(
+        eq(bookings.restaurantId, restaurantId),
+        sql`DATE(${bookings.bookingDate}) = ${date}`
+      ));
     return result;
   }
 
