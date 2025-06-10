@@ -76,8 +76,8 @@ export default function Register() {
           title: "Company created successfully!",
           description: `Welcome to your 14-day trial. Trial ends: ${new Date(data.trialEndsAt).toLocaleDateString()}`,
         });
-        // Redirect to login for free plans
-        setLocation('/login');
+        // Redirect to setup wizard for free plans
+        setLocation('/setup');
       }
     },
     onError: (error: any) => {

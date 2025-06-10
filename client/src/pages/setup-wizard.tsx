@@ -112,8 +112,8 @@ export default function SetupWizard() {
     retry: false,
   });
 
-  const tenantId = session?.tenant?.id;
-  const restaurantId = session?.restaurant?.id;
+  const tenantId = (session as any)?.tenant?.id;
+  const restaurantId = (session as any)?.restaurant?.id;
 
   // Form configurations
   const restaurantForm = useForm<RestaurantDetails>({
@@ -196,7 +196,7 @@ export default function SetupWizard() {
   const saveTablesMutation = useMutation({
     mutationFn: async (data: Tables) => {
       // First create rooms if they don't exist
-      const uniqueRooms = [...new Set(data.tables.map(t => t.room).filter(Boolean))];
+      const uniqueRooms = Array.from(new Set(data.tables.map(t => t.room).filter(Boolean)));
       
       for (const roomName of uniqueRooms) {
         try {

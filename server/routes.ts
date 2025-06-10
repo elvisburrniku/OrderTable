@@ -203,7 +203,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
         }
       }
 
-      // For free plans, complete registration immediately
+      // For free plans, complete registration immediately and create session
+      (req as any).session.user = {
+        id: user.id,
+        email: user.email,
+        name: user.name,
+        restaurantName: user.restaurantName,
+        createdAt: user.createdAt
+      };
+      (req as any).session.tenant = tenant;
+      (req as any).session.restaurant = restaurant;
+
       res.status(201).json({
         message: "Company created successfully",
         user: { id: user.id, email: user.email, name: user.name },
