@@ -8,6 +8,23 @@ import { Check, X, CreditCard, Calendar, ExternalLink, CheckCircle, AlertCircle 
 import { format } from "date-fns";
 import { loadStripe } from "@stripe/stripe-js";
 
+interface SubscriptionPlan {
+  id: number;
+  name: string;
+  price: number;
+  interval: string;
+  features: string;
+  maxTables: number;
+  maxBookingsPerMonth: number;
+}
+
+interface UserSubscription {
+  id: number;
+  planId: number;
+  status: string;
+  currentPeriodEnd: string;
+}
+
 export default function Subscription() {
   const { user, restaurant, isLoading } = useAuth();
   const queryClient = useQueryClient();
@@ -65,12 +82,12 @@ export default function Subscription() {
     }
   }, [queryClient, user?.id]);
 
-  const { data: plans = [], isLoading: plansLoading } = useQuery({
+  const { data: plans = [], isLoading: plansLoading } = useQuery<SubscriptionPlan[]>({
     queryKey: ["/api/subscription-plans"],
     enabled: !!user,
   });
 
-  const { data: currentSubscription, isLoading: subscriptionLoading } = useQuery({
+  const { data: currentSubscription, isLoading: subscriptionLoading } = useQuery<UserSubscription | null>({
     queryKey: ["/api/users", user?.id, "subscription"],
     enabled: !!user,
   });
@@ -150,7 +167,7 @@ export default function Subscription() {
 
   const getCurrentPlanName = () => {
     if (!currentSubscription) return null;
-    const plan = plans.find((p: any) => p.id === currentSubscription.planId);
+    const plan = plans.find((p) => p.id === currentSubscription.planId);
     return plan?.name || "Unknown Plan";
   };
 
@@ -264,7 +281,7 @@ export default function Subscription() {
         <div className="mb-6">
           <h2 className="text-lg font-semibold mb-4">Choose Your Plan</h2>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            {plans.map((plan: any) => (
+            {plans.map((plan) => (
               <Card key={plan.id} className="relative">
                 <CardHeader>
                   <CardTitle className="text-center">{plan.name}</CardTitle>
