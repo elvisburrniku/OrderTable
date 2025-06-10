@@ -25,6 +25,7 @@ export default function Login() {
     rememberMe: false,
     selectedPlanId: null as number | null,
   });
+  const [showRememberNotice, setShowRememberNotice] = useState(false);
 
   // Initialize form with remembered data
   useEffect(() => {
@@ -37,6 +38,9 @@ export default function Login() {
         email: lastLoginEmail,
         rememberMe: true
       }));
+      setShowRememberNotice(true);
+      // Hide notice after 3 seconds
+      setTimeout(() => setShowRememberNotice(false), 3000);
     }
   }, []);
 
@@ -195,6 +199,13 @@ export default function Login() {
                 </Button>
               </Link>
             </div>
+            
+            {showRememberNotice && (
+              <div className="bg-green-50 border border-green-200 rounded-lg p-3 mb-6 flex items-center gap-2">
+                <div className="h-2 w-2 bg-green-500 rounded-full"></div>
+                <span className="text-sm text-green-700">Welcome back! Your login details have been remembered.</span>
+              </div>
+            )}
 
             <form onSubmit={handleSubmit} className="space-y-6">
               {!isLogin && (
