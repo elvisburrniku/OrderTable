@@ -466,6 +466,9 @@ export default function Dashboard() {
   };
 
   const getOpeningHoursForDay = (date: Date) => {
+    if (!openingHours || !Array.isArray(openingHours)) {
+      return null;
+    }
     const dayOfWeek = date.getDay(); // 0 = Sunday, 1 = Monday, etc.
     const hours = openingHours.find(h => h.dayOfWeek === dayOfWeek);
     return hours;
