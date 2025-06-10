@@ -1,6 +1,6 @@
 import passport from "passport";
 import { Strategy as GoogleStrategy } from "passport-google-oauth20";
-import { Strategy as GitHubStrategy } from "passport-github2";
+import { Strategy as AppleStrategy } from "passport-apple";
 import type { Express, Request, Response, NextFunction } from "express";
 import { storage } from "./storage";
 // Simple slug generator function
@@ -19,10 +19,12 @@ const SSO_CONFIG = {
     clientSecret: process.env.GOOGLE_CLIENT_SECRET!,
     callbackURL: "/api/auth/google/callback"
   },
-  github: {
-    clientID: process.env.GITHUB_CLIENT_ID!,
-    clientSecret: process.env.GITHUB_CLIENT_SECRET!,
-    callbackURL: "/api/auth/github/callback"
+  apple: {
+    clientID: process.env.APPLE_CLIENT_ID!,
+    teamID: process.env.APPLE_TEAM_ID!,
+    keyID: process.env.APPLE_KEY_ID!,
+    privateKeyLocation: process.env.APPLE_PRIVATE_KEY_PATH!,
+    callbackURL: "/api/auth/apple/callback"
   }
 };
 
@@ -75,15 +77,18 @@ export function setupSSO(app: Express) {
     }));
   }
 
-  // GitHub OAuth Strategy
-  if (process.env.GITHUB_CLIENT_ID && process.env.GITHUB_CLIENT_SECRET) {
-    passport.use(new GitHubStrategy({
-      clientID: process.env.GITHUB_CLIENT_ID,
-      clientSecret: process.env.GITHUB_CLIENT_SECRET,
-      callbackURL: "/api/auth/github/callback"
-    }, async (accessToken: string, refreshToken: string, profile: any, done: any) => {
+  // Apple OAuth Strategy
+  if (process.env.APPLE_CLIENT_ID && process.env.APPLE_TEAM_ID && process.env.APPLE_KEY_ID) {
+    passport.use(new AppleStrategy({
+      clientID: process.env.APPLE_CLIENT_ID,
+      teamID: process.env.APPLE_TEAM_ID,
+      keyID: process.env.APPLE_KEY_ID,
+      privateKeyLocation: process.env.APPLE_PRIVATE_KEY_PATH || './apple-key.p8',
+      callbackURL: "/api/auth/apple/callback",
+      passReqToCallback: false
+    }, async (accessToken: string, refreshToken: string, idToken: any, profile: any, done: any) => {
       try {
-        const result = await handleSSOLogin(profile, 'github');
+        const result = await handleSSOLogin(profile, 'apple');
         done(null, result);
       } catch (error) {
         done(error, null);
@@ -190,13 +195,13 @@ function setupSSORoutes(app: Express) {
     }
   );
 
-  // GitHub OAuth routes
-  app.get('/api/auth/github', 
-    passport.authenticate('github', { scope: ['user:email'] })
+  // Apple OAuth routes
+  app.get('/api/auth/apple', 
+    passport.authenticate('apple', { scope: ['name', 'email'] })
   );
 
-  app.get('/api/auth/github/callback',
-    passport.authenticate('github', { failureRedirect: '/login?error=sso_failed' }),
+  app.post('/api/auth/apple/callback',
+    passport.authenticate('apple', { failureRedirect: '/login?error=sso_failed' }),
     async (req: Request, res: Response) => {
       const sessionData = req.user as any;
       
