@@ -44,9 +44,15 @@ export default function Login() {
             title: "Welcome back!",
             description: "You have successfully logged in.",
           });
-          // Use restaurant ID as tenant ID
-          const tenantId = result.restaurant.id;
-          setLocation(`/${tenantId}/dashboard`);
+          
+          // Check if setup is completed
+          if (!result.restaurant.setupCompleted) {
+            setLocation('/setup');
+          } else {
+            // Use restaurant ID as tenant ID
+            const tenantId = result.restaurant.id;
+            setLocation(`/${tenantId}/dashboard`);
+          }
         } else {
           toast({
             title: "Error",

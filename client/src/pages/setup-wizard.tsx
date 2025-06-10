@@ -245,7 +245,7 @@ export default function SetupWizard() {
         title: "Setup completed successfully!",
         description: "Your restaurant is ready to accept bookings.",
       });
-      setLocation("/dashboard");
+      setLocation(`/${tenantId}/dashboard`);
     },
     onError: (error: any) => {
       toast({
