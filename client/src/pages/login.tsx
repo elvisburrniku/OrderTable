@@ -74,6 +74,19 @@ export default function Login() {
     enabled: !isLogin, // Only fetch when in registration mode
   });
 
+  // Auto-select free plan when plans are loaded and no plan is selected
+  useEffect(() => {
+    if (plans && plans.length > 0 && !formData.selectedPlanId) {
+      const freePlan = plans.find(plan => plan.price === 0);
+      if (freePlan) {
+        setFormData(prev => ({
+          ...prev,
+          selectedPlanId: freePlan.id
+        }));
+      }
+    }
+  }, [plans, formData.selectedPlanId]);
+
   // Redirect if already authenticated
   useEffect(() => {
     if (session && !sessionLoading && session.valid) {
@@ -276,7 +289,7 @@ export default function Login() {
                 {!isLogin && (
                   <>
                     <div>
-                      <Label htmlFor="name" className="text-sm font-medium text-gray-700">
+                      <Label htmlFor="name" className="text-sm font-medium text-white/90">
                         Full Name
                       </Label>
                       <Input
@@ -286,13 +299,13 @@ export default function Login() {
                         onChange={(e) =>
                           setFormData({ ...formData, name: e.target.value })
                         }
-                        className="mt-1"
+                        className="mt-1 bg-white/10 border-white/20 text-white placeholder:text-white/50 focus:border-emerald-400 focus:ring-emerald-400/20 backdrop-blur-sm transition-all duration-300"
                         required
                       />
                     </div>
 
                     <div>
-                      <Label htmlFor="restaurantName" className="text-sm font-medium text-gray-700">
+                      <Label htmlFor="restaurantName" className="text-sm font-medium text-white/90">
                         Restaurant Name
                       </Label>
                       <Input
@@ -302,30 +315,30 @@ export default function Login() {
                         onChange={(e) =>
                           setFormData({ ...formData, restaurantName: e.target.value })
                         }
-                        className="mt-1"
+                        className="mt-1 bg-white/10 border-white/20 text-white placeholder:text-white/50 focus:border-emerald-400 focus:ring-emerald-400/20 backdrop-blur-sm transition-all duration-300"
                         required
                       />
                     </div>
 
                     {/* Subscription Plan Selection */}
                     <div>
-                      <Label className="text-sm font-medium text-gray-700 mb-4 block">
+                      <Label className="text-sm font-medium text-white/90 mb-4 block">
                         Choose Your Plan
                       </Label>
                       {plansLoading ? (
                         <div className="flex items-center justify-center p-4">
-                          <div className="animate-spin w-6 h-6 border-2 border-green-500 border-t-transparent rounded-full" />
-                          <span className="ml-2 text-sm text-gray-600">Loading plans...</span>
+                          <div className="animate-spin w-6 h-6 border-2 border-emerald-400 border-t-transparent rounded-full" />
+                          <span className="ml-2 text-sm text-white/70">Loading plans...</span>
                         </div>
                       ) : (
                         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                           {plans?.map((plan: any) => (
                             <div
                               key={plan.id}
-                              className={`border-2 rounded-lg p-4 cursor-pointer transition-all ${
+                              className={`border-2 rounded-lg p-4 cursor-pointer transition-all backdrop-blur-sm ${
                                 formData.selectedPlanId === plan.id
-                                  ? 'border-green-500 bg-green-50'
-                                  : 'border-gray-200 hover:border-gray-300'
+                                  ? 'border-emerald-400 bg-emerald-500/20 shadow-lg shadow-emerald-500/25'
+                                  : 'border-white/20 bg-white/5 hover:border-white/30 hover:bg-white/10'
                               }`}
                               onClick={() =>
                                 setFormData({
@@ -335,17 +348,17 @@ export default function Login() {
                               }
                             >
                               <div className="flex items-center justify-between mb-2">
-                                <h4 className="font-semibold text-gray-900">{plan.name}</h4>
+                                <h4 className="font-semibold text-white">{plan.name}</h4>
                                 <div className="flex items-center">
-                                  <span className="text-lg font-bold text-green-600">
+                                  <span className="text-lg font-bold text-emerald-400">
                                     {plan.price === 0 ? 'Free' : `$${plan.price}`}
                                   </span>
                                   {plan.price > 0 && (
-                                    <span className="text-sm text-gray-500 ml-1">/month</span>
+                                    <span className="text-sm text-white/60 ml-1">/month</span>
                                   )}
                                 </div>
                               </div>
-                              <p className="text-sm text-gray-600 mb-3">{plan.description}</p>
+                              <p className="text-sm text-white/70 mb-3">{plan.description}</p>
                               <div className="space-y-1">
                                 {(() => {
                                   try {
@@ -353,8 +366,8 @@ export default function Login() {
                                       ? JSON.parse(plan.features) 
                                       : plan.features || [];
                                     return features.slice(0, 3).map((feature: string, index: number) => (
-                                      <div key={index} className="flex items-center text-xs text-gray-600">
-                                        <Check className="h-3 w-3 text-green-500 mr-2 flex-shrink-0" />
+                                      <div key={index} className="flex items-center text-xs text-white/80">
+                                        <Check className="h-3 w-3 text-emerald-400 mr-2 flex-shrink-0" />
                                         {feature}
                                       </div>
                                     ));
@@ -368,7 +381,7 @@ export default function Login() {
                                       ? JSON.parse(plan.features) 
                                       : plan.features || [];
                                     return features.length > 3 && (
-                                      <div className="text-xs text-gray-500">
+                                      <div className="text-xs text-white/60">
                                         +{features.length - 3} more features
                                       </div>
                                     );
@@ -382,7 +395,7 @@ export default function Login() {
                         </div>
                       )}
                       {!formData.selectedPlanId && (
-                        <p className="text-xs text-red-600 mt-2">Please select a subscription plan to continue</p>
+                        <p className="text-xs text-emerald-400 mt-2">Please select a subscription plan to continue</p>
                       )}
                     </div>
                   </>
@@ -469,10 +482,10 @@ export default function Login() {
                   <>
                     <div className="relative">
                       <div className="absolute inset-0 flex items-center">
-                        <span className="w-full border-t" />
+                        <span className="w-full border-t border-white/20" />
                       </div>
                       <div className="relative flex justify-center text-xs uppercase">
-                        <span className="bg-white px-2 text-gray-500">
+                        <span className="bg-white/10 backdrop-blur-sm px-2 text-white/70">
                           Or continue with
                         </span>
                       </div>
@@ -486,7 +499,7 @@ export default function Login() {
                           setLoadingState({ isLoading: true, type: "google" });
                           window.location.href = '/api/auth/google';
                         }}
-                        className="w-full"
+                        className="w-full bg-white/10 border-white/20 text-white hover:bg-white/20 backdrop-blur-sm transition-all duration-300"
                         disabled={loadingState.isLoading}
                       >
                         {loadingState.isLoading && loadingState.type === "google" ? (
@@ -521,7 +534,7 @@ export default function Login() {
                           setLoadingState({ isLoading: true, type: "apple" });
                           window.location.href = '/api/auth/apple';
                         }}
-                        className="w-full"
+                        className="w-full bg-white/10 border-white/20 text-white hover:bg-white/20 backdrop-blur-sm transition-all duration-300"
                         disabled={loadingState.isLoading}
                       >
                         {loadingState.isLoading && loadingState.type === "apple" ? (
@@ -538,13 +551,13 @@ export default function Login() {
                 )}
 
                 <div className="text-center">
-                  <span className="text-gray-600">
+                  <span className="text-[#09a171]">
                     {isLogin ? "New user? " : "Already have an account? "}
                   </span>
                   <Button
                     type="button"
                     variant="link"
-                    className="text-green-600 hover:text-green-700 p-0"
+                    className="text-emerald-300 hover:text-emerald-200 p-0"
                     onClick={() => setIsLogin(!isLogin)}
                   >
                     {isLogin ? "Sign up" : "Log in"}
