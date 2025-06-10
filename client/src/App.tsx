@@ -58,6 +58,7 @@ import TableFeedback from "./pages/table-feedback";
 import FeedbackResponsesPopup from "./pages/feedback-responses-popup";
 import Contact from "./pages/contact";
 import GuestBooking from "./pages/guest-booking";
+import SetupWizard from "./pages/setup-wizard";
 
 function App() {
   return (
@@ -68,6 +69,7 @@ function App() {
             <Route path="/" component={Home} />
             <Route path="/login" component={Login} />
             <Route path="/register" component={Register} />
+            <Route path="/setup" component={SetupWizard} />
             <Route path="/:tenantId/dashboard" component={Dashboard} />
             <Route path="/:tenantId/bookings" component={Bookings} />
             <Route path="/:tenantId/bookings/:id" component={BookingDetail} />
