@@ -617,4 +617,16 @@ export class DatabaseStorage implements IStorage {
   async deleteExpiredReschedulingSuggestions(): Promise<void> {
     // Simplified implementation
   }
+
+  async getAllUsers(): Promise<any[]> {
+    if (!this.db) return [];
+    const result = await this.db.select({
+      id: users.id,
+      email: users.email,
+      name: users.name,
+      restaurantName: users.restaurantName,
+      createdAt: users.createdAt
+    }).from(users);
+    return result;
+  }
 }

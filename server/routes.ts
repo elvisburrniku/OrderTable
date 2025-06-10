@@ -5202,6 +5202,41 @@ app.put("/api/tenants/:tenantId/bookings/:id", validateTenant, async (req, res) 
     });
   });
 
+  // Subscription Plans API endpoints
+  app.get("/api/subscription-plans", async (req, res) => {
+    try {
+      const plans = await storage.getSubscriptionPlans();
+      console.log("Fetched subscription plans:", plans.length, "plans");
+      res.json(plans);
+    } catch (error) {
+      console.error("Error fetching subscription plans:", error);
+      res.status(500).json({ error: "Failed to fetch subscription plans" });
+    }
+  });
+
+  app.post("/api/subscription-plans", async (req, res) => {
+    try {
+      const planData = insertSubscriptionPlanSchema.parse(req.body);
+      const plan = await storage.createSubscriptionPlan(planData);
+      res.json(plan);
+    } catch (error) {
+      res.status(400).json({ message: "Invalid plan data" });
+    }
+  });
+
+  // User Management API endpoint
+  app.get("/api/users", async (req, res) => {
+    try {
+      // This endpoint returns basic user info for admin purposes
+      // In a production environment, this would need proper authorization
+      const users = await storage.getAllUsers();
+      res.json(users);
+    } catch (error) {
+      console.error("Error fetching users:", error);
+      res.status(500).json({ error: "Failed to fetch users" });
+    }
+  });
+
   const httpServer = createServer(app);
 
   // Setup WebSocket server for real-time notifications
