@@ -207,6 +207,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     localStorage.removeItem("user");
     localStorage.removeItem("restaurant");
     localStorage.removeItem("tenant");
+    localStorage.removeItem("rememberMe");
+    localStorage.removeItem("lastLoginEmail");
     
     // Redirect to login page
     window.location.href = "/login";
