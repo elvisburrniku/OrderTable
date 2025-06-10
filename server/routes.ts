@@ -265,6 +265,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
 
       const { email, password } = validationResult.data;
+      const { rememberMe } = req.body;
 
       const user = await storage.getUserByEmail(email);
       if (!user) {
@@ -285,10 +286,20 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       const restaurant = await storage.getRestaurantByUserId(user.id);
 
+      // Handle "Remember me" functionality
+      if (rememberMe) {
+        // Extend session to 30 days for remembered users
+        (req as any).session.cookie.maxAge = 30 * 24 * 60 * 60 * 1000; // 30 days
+      } else {
+        // Standard session duration (24 hours)
+        (req as any).session.cookie.maxAge = 24 * 60 * 60 * 1000; // 24 hours
+      }
+
       // Store user in session for persistent authentication
       (req as any).session.user = { ...user, password: undefined };
       (req as any).session.tenant = tenantUser;
       (req as any).session.restaurant = restaurant;
+      (req as any).session.rememberMe = rememberMe;
 
       res.json({ 
         user: { ...user, password: undefined },

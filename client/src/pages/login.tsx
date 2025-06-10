@@ -26,6 +26,20 @@ export default function Login() {
     selectedPlanId: null as number | null,
   });
 
+  // Initialize form with remembered data
+  useEffect(() => {
+    const rememberMe = localStorage.getItem("rememberMe") === "true";
+    const lastLoginEmail = localStorage.getItem("lastLoginEmail");
+    
+    if (rememberMe && lastLoginEmail) {
+      setFormData(prev => ({
+        ...prev,
+        email: lastLoginEmail,
+        rememberMe: true
+      }));
+    }
+  }, []);
+
   // Check if user is already authenticated
   const { data: session, isLoading: sessionLoading } = useQuery({
     queryKey: ["/api/auth/validate"],
@@ -70,7 +84,7 @@ export default function Login() {
 
     try {
       if (isLogin) {
-        const result = await login(formData.email, formData.password);
+        const result = await login(formData.email, formData.password, formData.rememberMe);
         if(result) {
           console.log(result);
           toast({

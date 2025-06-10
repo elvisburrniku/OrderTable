@@ -14,7 +14,7 @@ type Restaurant = typeof restaurants.$inferSelect;
 interface AuthContextType {
   user: User | null;
   restaurant: Restaurant | null;
-  login: (email: string, password: string) => Promise<any>;
+  login: (email: string, password: string, rememberMe?: boolean) => Promise<any>;
   register: (userData: {
     username: string;
     password: string;
@@ -102,7 +102,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     validateSession();
   }, []);
 
-  const login = async (email: string, password: string) => {
+  const login = async (email: string, password: string, rememberMe?: boolean) => {
     const res = await fetch("/api/auth/login", {
       method: "POST",
       headers: {
@@ -112,6 +112,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       body: JSON.stringify({
         email,
         password,
+        rememberMe,
       }),
     });
 
@@ -131,6 +132,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
     if (data.tenant) {
       localStorage.setItem("tenant", JSON.stringify(data.tenant));
+    }
+    
+    // Store remember me preference and login credentials if enabled
+    if (rememberMe) {
+      localStorage.setItem("rememberMe", "true");
+      localStorage.setItem("lastLoginEmail", email);
+    } else {
+      localStorage.removeItem("rememberMe");
+      localStorage.removeItem("lastLoginEmail");
     }
 
     return data;
