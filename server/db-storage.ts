@@ -218,10 +218,17 @@ export class DatabaseStorage implements IStorage {
   }
 
   private async initializeDemoData() {
-    // Check if demo tenant already exists
-    const existingTenant = await this.db.select().from(tenants).where(eq(tenants.slug, "demo-restaurant")).limit(1);
+    try {
+      // Check if demo tenant already exists
+      const existingTenant = await this.db.select().from(tenants).where(eq(tenants.slug, "demo-restaurant")).limit(1);
 
-    if (existingTenant.length === 0) {
+      if (existingTenant.length > 0) {
+        console.log("Demo data already initialized, skipping...");
+        return;
+      }
+
+      console.log("Initializing demo data...");
+      
       // Create demo tenant
       const [tenant] = await this.db.insert(tenants).values({
         name: "Demo Restaurant",
@@ -302,11 +309,13 @@ export class DatabaseStorage implements IStorage {
       ];
       await this.db.insert(customers).values(customerData);
 
-      console.log("Initialized demo data in database");
+        console.log("Initialized demo data in database");
+      }
+    } catch (error) {
+      console.error("Error initializing demo data:", error);
     }
   }
 
-  // Users
   // Tenant methods
   async createTenant(tenant: any): Promise<any> {
     const [newTenant] = await this.db.insert(tenants).values(tenant).returning();
