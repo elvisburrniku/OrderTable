@@ -202,14 +202,20 @@ export default function SetupWizard() {
   // Mutations
   const updateRestaurantMutation = useMutation({
     mutationFn: async (data: RestaurantDetails) => {
-      return apiRequest("PUT", `/api/tenants/${tenantId}/restaurants/${restaurantId}`, data);
+      console.log("Submitting restaurant data:", data);
+      const response = await apiRequest("PUT", `/api/tenants/${tenantId}/restaurants/${restaurantId}`, data);
+      const result = await response.json();
+      console.log("Restaurant update response:", result);
+      return result;
     },
-    onSuccess: () => {
+    onSuccess: (data) => {
+      console.log("Restaurant details saved successfully:", data);
       setCompletedSteps(prev => [...prev, 1]);
       toast({ title: "Restaurant details saved!" });
       setCurrentStep(2);
     },
     onError: (error: any) => {
+      console.error("Error saving restaurant details:", error);
       toast({
         title: "Error saving restaurant details",
         description: error.message,
@@ -220,20 +226,27 @@ export default function SetupWizard() {
 
   const saveOpeningHoursMutation = useMutation({
     mutationFn: async (data: OpeningHours) => {
+      console.log("Submitting opening hours data:", data);
       const hoursArray = Object.entries(data).map(([day, hours], index) => ({
         dayOfWeek: index,
         isOpen: hours.isOpen,
         openTime: hours.openTime,
         closeTime: hours.closeTime,
       }));
-      return apiRequest("POST", `/api/tenants/${tenantId}/restaurants/${restaurantId}/opening-hours`, hoursArray);
+      console.log("Formatted hours array:", hoursArray);
+      const response = await apiRequest("POST", `/api/tenants/${tenantId}/restaurants/${restaurantId}/opening-hours`, hoursArray);
+      const result = await response.json();
+      console.log("Opening hours response:", result);
+      return result;
     },
-    onSuccess: () => {
+    onSuccess: (data) => {
+      console.log("Opening hours saved successfully:", data);
       setCompletedSteps(prev => [...prev, 2]);
       toast({ title: "Opening hours saved!" });
       setCurrentStep(3);
     },
     onError: (error: any) => {
+      console.error("Error saving opening hours:", error);
       toast({
         title: "Error saving opening hours",
         description: error.message,
@@ -386,7 +399,20 @@ export default function SetupWizard() {
     switch (currentStep) {
       case 1:
         return (
-          <form onSubmit={restaurantForm.handleSubmit((data) => updateRestaurantMutation.mutate(data))} className="space-y-4">
+          <form onSubmit={restaurantForm.handleSubmit(
+            (data) => {
+              console.log("Form data being submitted:", data);
+              updateRestaurantMutation.mutate(data);
+            },
+            (errors) => {
+              console.log("Form validation errors:", errors);
+              toast({
+                title: "Please fill in all required fields",
+                description: "Address, phone number, and email are required",
+                variant: "destructive",
+              });
+            }
+          )} className="space-y-4">
             <div>
               <Label htmlFor="address">Restaurant Address</Label>
               <Textarea
