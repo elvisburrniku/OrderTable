@@ -102,6 +102,7 @@ const steps = [
 export default function SetupWizard() {
   const [currentStep, setCurrentStep] = useState(1);
   const [completedSteps, setCompletedSteps] = useState<number[]>([]);
+  const totalSteps = 6; // Expanded from 4 to 6 steps
   const [, setLocation] = useLocation();
   const { toast } = useToast();
   const queryClient = useQueryClient();
@@ -147,6 +148,54 @@ export default function SetupWizard() {
         { tableNumber: "2", capacity: 4, room: "Main Dining" },
         { tableNumber: "3", capacity: 6, room: "Main Dining" },
       ],
+    },
+  });
+
+  // Booking Settings Form (Step 4)
+  const bookingSettingsSchema = z.object({
+    maxAdvanceBookingDays: z.number().min(1).max(365),
+    minBookingNotice: z.number().min(0).max(72),
+    maxPartySize: z.number().min(1).max(50),
+    requirePhoneNumber: z.boolean(),
+    requireSpecialRequests: z.boolean(),
+    autoConfirmBookings: z.boolean(),
+  });
+
+  type BookingSettings = z.infer<typeof bookingSettingsSchema>;
+
+  const bookingForm = useForm<BookingSettings>({
+    resolver: zodResolver(bookingSettingsSchema),
+    defaultValues: {
+      maxAdvanceBookingDays: 60,
+      minBookingNotice: 2,
+      maxPartySize: 12,
+      requirePhoneNumber: true,
+      requireSpecialRequests: false,
+      autoConfirmBookings: true,
+    },
+  });
+
+  // Notification Settings Form (Step 5)
+  const notificationSettingsSchema = z.object({
+    emailNotifications: z.boolean(),
+    smsNotifications: z.boolean(),
+    newBookingAlert: z.boolean(),
+    cancellationAlert: z.boolean(),
+    reminderEmails: z.boolean(),
+    reminderHours: z.number().min(1).max(72),
+  });
+
+  type NotificationSettings = z.infer<typeof notificationSettingsSchema>;
+
+  const notificationForm = useForm<NotificationSettings>({
+    resolver: zodResolver(notificationSettingsSchema),
+    defaultValues: {
+      emailNotifications: true,
+      smsNotifications: false,
+      newBookingAlert: true,
+      cancellationAlert: true,
+      reminderEmails: true,
+      reminderHours: 24,
     },
   });
 
@@ -233,19 +282,76 @@ export default function SetupWizard() {
     },
   });
 
-  const completeSetupMutation = useMutation({
-    mutationFn: async () => {
-      // Mark setup as complete in user preferences or tenant settings
+  const saveBookingSettingsMutation = useMutation({
+    mutationFn: async (data: BookingSettings) => {
+      // Save booking settings to restaurant configuration
       return apiRequest("PUT", `/api/tenants/${tenantId}/restaurants/${restaurantId}`, {
-        setupCompleted: true,
+        bookingSettings: JSON.stringify(data),
       });
     },
     onSuccess: () => {
+      setCompletedSteps(prev => [...prev, 4]);
+      toast({ title: "Booking settings saved!" });
+      setCurrentStep(5);
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Error saving booking settings",
+        description: error.message,
+        variant: "destructive",
+      });
+    },
+  });
+
+  const saveNotificationSettingsMutation = useMutation({
+    mutationFn: async (data: NotificationSettings) => {
+      // Save notification settings to restaurant configuration
+      return apiRequest("PUT", `/api/tenants/${tenantId}/restaurants/${restaurantId}`, {
+        notificationSettings: JSON.stringify(data),
+      });
+    },
+    onSuccess: () => {
+      setCompletedSteps(prev => [...prev, 5]);
+      toast({ title: "Notification settings saved!" });
+      setCurrentStep(6);
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Error saving notification settings",
+        description: error.message,
+        variant: "destructive",
+      });
+    },
+  });
+
+  const completeSetupMutation = useMutation({
+    mutationFn: async () => {
+      // Mark setup as complete in restaurant settings
+      const response = await apiRequest("PUT", `/api/tenants/${tenantId}/restaurants/${restaurantId}`, {
+        setupCompleted: true,
+      });
+      return response.json();
+    },
+    onSuccess: (data) => {
+      // Update local storage to reflect setup completion
+      const storedRestaurant = localStorage.getItem("restaurant");
+      if (storedRestaurant) {
+        try {
+          const restaurant = JSON.parse(storedRestaurant);
+          restaurant.setupCompleted = true;
+          localStorage.setItem("restaurant", JSON.stringify(restaurant));
+        } catch (error) {
+          console.error("Error updating restaurant in localStorage:", error);
+        }
+      }
+      
       toast({
         title: "Setup completed successfully!",
         description: "Your restaurant is ready to accept bookings.",
       });
-      setLocation(`/${tenantId}/dashboard`);
+      
+      // Force a page reload to ensure the SetupGuard recognizes completion
+      window.location.href = `/${tenantId}/dashboard`;
     },
     onError: (error: any) => {
       toast({
