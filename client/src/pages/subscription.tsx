@@ -9,17 +9,37 @@ import { format } from "date-fns";
 import { loadStripe } from "@stripe/stripe-js";
 
 export default function Subscription() {
-  const { user, restaurant, isAuthenticated, authLoading } = useAuth();
+  const { user, restaurant, isLoading } = useAuth();
   const queryClient = useQueryClient();
   const [showSuccessMessage, setShowSuccessMessage] = useState(false);
   const [showCancelMessage, setShowCancelMessage] = useState(false);
 
-  if (authLoading) {
-    return <div>Loading...</div>;
+  if (isLoading) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
+          <p className="text-gray-600">Loading subscription information...</p>
+        </div>
+      </div>
+    );
   }
 
-  if (!isAuthenticated || !user || !restaurant) {
-    return null;
+  if (!user || !restaurant) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="text-center">
+          <h1 className="text-2xl font-bold text-gray-800 mb-4">Access Required</h1>
+          <p className="text-gray-600 mb-6">Please log in to view your subscription.</p>
+          <a 
+            href="/login" 
+            className="inline-flex items-center px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
+          >
+            Go to Login
+          </a>
+        </div>
+      </div>
+    );
   }
 
   // Handle success/cancel from Stripe redirect
@@ -50,10 +70,21 @@ export default function Subscription() {
     enabled: !!user,
   });
 
-  const { data: currentSubscription } = useQuery({
+  const { data: currentSubscription, isLoading: subscriptionLoading } = useQuery({
     queryKey: ["/api/users", user?.id, "subscription"],
     enabled: !!user,
   });
+
+  if (plansLoading || subscriptionLoading) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
+          <p className="text-gray-600">Loading subscription plans...</p>
+        </div>
+      </div>
+    );
+  }
 
   const subscribeMutation = useMutation({
     mutationFn: async ({ planId, action }: { planId: number; action?: 'cancel' }) => {
