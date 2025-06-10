@@ -16,10 +16,11 @@ interface AuthContextType {
   restaurant: Restaurant | null;
   login: (email: string, password: string, rememberMe?: boolean) => Promise<any>;
   register: (userData: {
-    username: string;
+    name: string;
     password: string;
     email: string;
     restaurantName: string;
+    subscriptionPlanId: number;
   }) => Promise<any>;
   logout: () => Promise<void>;
   refreshUserData: () => Promise<any>;
@@ -147,10 +148,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   };
 
   const register = async (userData: {
-    username: string;
+    name: string;
     password: string;
     email: string;
     restaurantName: string;
+    subscriptionPlanId: number;
   }) => {
     const res = await fetch("/api/auth/register", {
       method: "POST",
@@ -163,7 +165,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         email: userData.email,
         password: userData.password,
         restaurantName: userData.restaurantName,
-        name: userData.username, // Map username to name field
+        name: userData.name,
+        subscriptionPlanId: userData.subscriptionPlanId,
       }),
     });
 

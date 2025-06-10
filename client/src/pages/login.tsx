@@ -13,6 +13,15 @@ import { useQuery } from "@tanstack/react-query";
 import { AuthLoadingOverlay } from "@/components/ui/auth-loading-overlay";
 import { LoadingSpinner } from "@/components/ui/loading-spinner";
 
+// Define subscription plan type
+type SubscriptionPlan = {
+  id: number;
+  name: string;
+  price: number;
+  description: string;
+  features: string[];
+};
+
 export default function Login() {
   const [, setLocation] = useLocation();
   const { login, register } = useAuth();
@@ -54,9 +63,15 @@ export default function Login() {
   }, []);
 
   // Check if user is already authenticated
-  const { data: session, isLoading: sessionLoading } = useQuery({
+  const { data: session, isLoading: sessionLoading } = useQuery<any>({
     queryKey: ["/api/auth/validate"],
     retry: false,
+  });
+
+  // Fetch subscription plans for registration
+  const { data: plans, isLoading: plansLoading } = useQuery<SubscriptionPlan[]>({
+    queryKey: ["/api/subscription-plans"],
+    enabled: !isLogin, // Only fetch when in registration mode
   });
 
   // Redirect if already authenticated
@@ -248,6 +263,67 @@ export default function Login() {
                         className="mt-1"
                         required
                       />
+                    </div>
+
+                    {/* Subscription Plan Selection */}
+                    <div>
+                      <Label className="text-sm font-medium text-gray-700 mb-4 block">
+                        Choose Your Plan
+                      </Label>
+                      {plansLoading ? (
+                        <div className="flex items-center justify-center p-4">
+                          <div className="animate-spin w-6 h-6 border-2 border-green-500 border-t-transparent rounded-full" />
+                          <span className="ml-2 text-sm text-gray-600">Loading plans...</span>
+                        </div>
+                      ) : (
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                          {plans?.map((plan: any) => (
+                            <div
+                              key={plan.id}
+                              className={`border-2 rounded-lg p-4 cursor-pointer transition-all ${
+                                formData.selectedPlanId === plan.id
+                                  ? 'border-green-500 bg-green-50'
+                                  : 'border-gray-200 hover:border-gray-300'
+                              }`}
+                              onClick={() =>
+                                setFormData({
+                                  ...formData,
+                                  selectedPlanId: plan.id,
+                                })
+                              }
+                            >
+                              <div className="flex items-center justify-between mb-2">
+                                <h4 className="font-semibold text-gray-900">{plan.name}</h4>
+                                <div className="flex items-center">
+                                  <span className="text-lg font-bold text-green-600">
+                                    {plan.price === 0 ? 'Free' : `$${plan.price}`}
+                                  </span>
+                                  {plan.price > 0 && (
+                                    <span className="text-sm text-gray-500 ml-1">/month</span>
+                                  )}
+                                </div>
+                              </div>
+                              <p className="text-sm text-gray-600 mb-3">{plan.description}</p>
+                              <div className="space-y-1">
+                                {plan.features?.slice(0, 3).map((feature: string, index: number) => (
+                                  <div key={index} className="flex items-center text-xs text-gray-600">
+                                    <Check className="h-3 w-3 text-green-500 mr-2 flex-shrink-0" />
+                                    {feature}
+                                  </div>
+                                ))}
+                                {plan.features?.length > 3 && (
+                                  <div className="text-xs text-gray-500">
+                                    +{plan.features.length - 3} more features
+                                  </div>
+                                )}
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                      {!formData.selectedPlanId && (
+                        <p className="text-xs text-red-600 mt-2">Please select a subscription plan to continue</p>
+                      )}
                     </div>
                   </>
                 )}
