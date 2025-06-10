@@ -92,6 +92,7 @@ export interface IStorage {
   getUser(id: number): Promise<User | undefined>;
   getUserById(id: number): Promise<User | undefined>;
   getUserByEmail(email: string): Promise<User | undefined>;
+  getUserBySSOId(ssoProvider: string, ssoId: string): Promise<User | undefined>;
   createUser(user: InsertUser): Promise<User>;
   updateUser(id: number, updates: Partial<User>): Promise<User | undefined>;
 

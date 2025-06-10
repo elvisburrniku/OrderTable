@@ -16,6 +16,7 @@ import { QRCodeService } from "./qr-service";
 import { WebhookService } from "./webhook-service";
 import { MetaIntegrationService } from "./meta-service";
 import { metaInstallService } from "./meta-install-service";
+import { setupSSO } from "./sso-auth";
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY || 'sk_test_your_stripe_secret_key', {
   apiVersion: '2025-05-28.basil'

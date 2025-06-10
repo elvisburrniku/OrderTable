@@ -3,7 +3,14 @@ import { Strategy as GoogleStrategy } from "passport-google-oauth20";
 import { Strategy as GitHubStrategy } from "passport-github2";
 import type { Express, Request, Response, NextFunction } from "express";
 import { storage } from "./storage";
-import { generateSlug } from "./utils/slug-generator.js";
+// Simple slug generator function
+function generateSlug(text: string): string {
+  return text
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/(^-|-$)/g, '')
+    .substring(0, 50);
+}
 
 // SSO Configuration
 const SSO_CONFIG = {
@@ -53,13 +60,12 @@ export function setupSSO(app: Express) {
   });
 
   // Google OAuth Strategy
-  if (SSO_CONFIG.google.clientID && SSO_CONFIG.google.clientSecret) {
+  if (process.env.GOOGLE_CLIENT_ID && process.env.GOOGLE_CLIENT_SECRET) {
     passport.use(new GoogleStrategy({
-      clientID: SSO_CONFIG.google.clientID,
-      clientSecret: SSO_CONFIG.google.clientSecret,
-      callbackURL: SSO_CONFIG.google.callbackURL,
-      scope: ['profile', 'email']
-    }, async (accessToken: string, refreshToken: string, profile: SSOProfile, done: any) => {
+      clientID: process.env.GOOGLE_CLIENT_ID,
+      clientSecret: process.env.GOOGLE_CLIENT_SECRET,
+      callbackURL: "/api/auth/google/callback"
+    }, async (accessToken: string, refreshToken: string, profile: any, done: any) => {
       try {
         const result = await handleSSOLogin(profile, 'google');
         done(null, result);
@@ -70,13 +76,12 @@ export function setupSSO(app: Express) {
   }
 
   // GitHub OAuth Strategy
-  if (SSO_CONFIG.github.clientID && SSO_CONFIG.github.clientSecret) {
+  if (process.env.GITHUB_CLIENT_ID && process.env.GITHUB_CLIENT_SECRET) {
     passport.use(new GitHubStrategy({
-      clientID: SSO_CONFIG.github.clientID,
-      clientSecret: SSO_CONFIG.github.clientSecret,
-      callbackURL: SSO_CONFIG.github.callbackURL,
-      scope: ['user:email']
-    }, async (accessToken: string, refreshToken: string, profile: SSOProfile, done: any) => {
+      clientID: process.env.GITHUB_CLIENT_ID,
+      clientSecret: process.env.GITHUB_CLIENT_SECRET,
+      callbackURL: "/api/auth/github/callback"
+    }, async (accessToken: string, refreshToken: string, profile: any, done: any) => {
       try {
         const result = await handleSSOLogin(profile, 'github');
         done(null, result);

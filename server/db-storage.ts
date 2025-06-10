@@ -162,6 +162,17 @@ export class DatabaseStorage implements IStorage {
     return result[0];
   }
 
+  async getUserBySSOId(ssoProvider: string, ssoId: string): Promise<any> {
+    if (!this.db) {
+      throw new Error("Database connection not available. Please configure DATABASE_URL or SUPABASE_DATABASE_URL environment variable.");
+    }
+    const result = await this.db
+      .select()
+      .from(users)
+      .where(and(eq(users.ssoProvider, ssoProvider), eq(users.ssoId, ssoId)));
+    return result[0];
+  }
+
   async createUser(insertUser: any): Promise<any> {
     if (!this.db) {
       throw new Error("Database connection not available. Please configure DATABASE_URL or SUPABASE_DATABASE_URL environment variable.");
