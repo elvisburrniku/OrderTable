@@ -27,6 +27,7 @@ const {
   specialPeriods,
   cutOffTimes,
   tableLayouts,
+  integrationConfigurations,
 } = schema;
 
 export class DatabaseStorage implements IStorage {
@@ -650,11 +651,47 @@ export class DatabaseStorage implements IStorage {
   }
 
   async getCutOffTimesByRestaurant(restaurantId: number): Promise<any> {
-    return null;
+    try {
+      const cutOffData = await this.db
+        .select()
+        .from(cutOffTimes)
+        .where(eq(cutOffTimes.restaurantId, restaurantId))
+        .orderBy(cutOffTimes.dayOfWeek);
+      
+      return cutOffData || [];
+    } catch (error) {
+      console.error("Error fetching cut-off times:", error);
+      return [];
+    }
   }
 
   async createOrUpdateCutOffTimes(restaurantId: number, tenantId: number, timesData: any[]): Promise<any> {
-    return { success: true };
+    try {
+      // Delete existing cut-off times for this restaurant
+      await this.db
+        .delete(cutOffTimes)
+        .where(eq(cutOffTimes.restaurantId, restaurantId));
+
+      // Insert new cut-off times
+      if (timesData && timesData.length > 0) {
+        const timesToInsert = timesData.map(time => ({
+          restaurantId,
+          tenantId,
+          dayOfWeek: time.dayOfWeek,
+          isEnabled: time.isEnabled,
+          cutOffHours: time.cutOffHours,
+          createdAt: new Date(),
+          updatedAt: new Date()
+        }));
+
+        await this.db.insert(cutOffTimes).values(timesToInsert);
+      }
+
+      return { success: true, message: "Cut-off times updated successfully" };
+    } catch (error) {
+      console.error("Error updating cut-off times:", error);
+      return { success: false, message: "Failed to update cut-off times" };
+    }
   }
 
   async isRestaurantOpen(restaurantId: number, bookingDate: Date, bookingTime: string): Promise<boolean> {
@@ -694,19 +731,94 @@ export class DatabaseStorage implements IStorage {
   }
 
   async getIntegrationConfigurationsByRestaurant(restaurantId: number): Promise<any[]> {
-    return [];
+    try {
+      const integrationData = await this.db
+        .select()
+        .from(integrationConfigurations)
+        .where(eq(integrationConfigurations.restaurantId, restaurantId));
+      
+      return integrationData || [];
+    } catch (error) {
+      console.error("Error fetching integration configurations:", error);
+      return [];
+    }
   }
 
   async getIntegrationConfiguration(restaurantId: number, integrationId: string): Promise<any> {
-    return null;
+    try {
+      const result = await this.db
+        .select()
+        .from(integrationConfigurations)
+        .where(and(
+          eq(integrationConfigurations.restaurantId, restaurantId),
+          eq(integrationConfigurations.integrationId, integrationId)
+        ));
+      
+      return result[0] || null;
+    } catch (error) {
+      console.error("Error fetching integration configuration:", error);
+      return null;
+    }
   }
 
   async createOrUpdateIntegrationConfiguration(restaurantId: number, tenantId: number, integrationId: string, configuration: any): Promise<any> {
-    throw new Error("Method not implemented");
+    try {
+      // Check if configuration already exists
+      const existing = await this.getIntegrationConfiguration(restaurantId, integrationId);
+      
+      if (existing) {
+        // Update existing configuration
+        const [updated] = await this.db
+          .update(integrationConfigurations)
+          .set({
+            configuration: JSON.stringify(configuration),
+            isEnabled: configuration.isEnabled || false,
+            updatedAt: new Date()
+          })
+          .where(and(
+            eq(integrationConfigurations.restaurantId, restaurantId),
+            eq(integrationConfigurations.integrationId, integrationId)
+          ))
+          .returning();
+        
+        return updated;
+      } else {
+        // Create new configuration
+        const [created] = await this.db
+          .insert(integrationConfigurations)
+          .values({
+            restaurantId,
+            tenantId,
+            integrationId,
+            configuration: JSON.stringify(configuration),
+            isEnabled: configuration.isEnabled || false,
+            createdAt: new Date(),
+            updatedAt: new Date()
+          })
+          .returning();
+        
+        return created;
+      }
+    } catch (error) {
+      console.error("Error saving integration configuration:", error);
+      throw error;
+    }
   }
 
   async deleteIntegrationConfiguration(restaurantId: number, integrationId: string): Promise<boolean> {
-    return false;
+    try {
+      await this.db
+        .delete(integrationConfigurations)
+        .where(and(
+          eq(integrationConfigurations.restaurantId, restaurantId),
+          eq(integrationConfigurations.integrationId, integrationId)
+        ));
+      
+      return true;
+    } catch (error) {
+      console.error("Error deleting integration configuration:", error);
+      return false;
+    }
   }
 
   async getWebhooksByRestaurant(restaurantId: number) {
