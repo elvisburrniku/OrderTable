@@ -85,7 +85,9 @@ export default function InteractiveBookingCalendar({
         try {
           // Get opening hours for this day
           const dayOfWeek = day.getDay();
-          const dayHours = openingHours.find((h: any) => h.dayOfWeek === dayOfWeek);
+          const dayHours = openingHours && Array.isArray(openingHours) 
+            ? openingHours.find((h: any) => h.dayOfWeek === dayOfWeek)
+            : null;
           
           if (!dayHours || !dayHours.isOpen) {
             return [dateStr, {

@@ -118,6 +118,9 @@ export default function GoogleCalendar({ selectedDate, bookings, allBookings = [
   });
 
   const getOpeningHoursForDay = (date: Date) => {
+    if (!openingHours || !Array.isArray(openingHours)) {
+      return null;
+    }
     const dayOfWeek = date.getDay();
     return openingHours.find(h => h.dayOfWeek === dayOfWeek);
   };
