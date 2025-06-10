@@ -305,17 +305,35 @@ export default function Login() {
                               </div>
                               <p className="text-sm text-gray-600 mb-3">{plan.description}</p>
                               <div className="space-y-1">
-                                {plan.features?.slice(0, 3).map((feature: string, index: number) => (
-                                  <div key={index} className="flex items-center text-xs text-gray-600">
-                                    <Check className="h-3 w-3 text-green-500 mr-2 flex-shrink-0" />
-                                    {feature}
-                                  </div>
-                                ))}
-                                {plan.features?.length > 3 && (
-                                  <div className="text-xs text-gray-500">
-                                    +{plan.features.length - 3} more features
-                                  </div>
-                                )}
+                                {(() => {
+                                  try {
+                                    const features = typeof plan.features === 'string' 
+                                      ? JSON.parse(plan.features) 
+                                      : plan.features || [];
+                                    return features.slice(0, 3).map((feature: string, index: number) => (
+                                      <div key={index} className="flex items-center text-xs text-gray-600">
+                                        <Check className="h-3 w-3 text-green-500 mr-2 flex-shrink-0" />
+                                        {feature}
+                                      </div>
+                                    ));
+                                  } catch (error) {
+                                    return null;
+                                  }
+                                })()}
+                                {(() => {
+                                  try {
+                                    const features = typeof plan.features === 'string' 
+                                      ? JSON.parse(plan.features) 
+                                      : plan.features || [];
+                                    return features.length > 3 && (
+                                      <div className="text-xs text-gray-500">
+                                        +{features.length - 3} more features
+                                      </div>
+                                    );
+                                  } catch (error) {
+                                    return null;
+                                  }
+                                })()}
                               </div>
                             </div>
                           ))}
