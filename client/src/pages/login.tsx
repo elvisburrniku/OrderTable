@@ -388,81 +388,82 @@ export default function Login() {
                   </>
                 )}
 
-                <div>
-                  <Label htmlFor="email" className="text-sm font-medium text-gray-700">
-                    Email
-                  </Label>
-                  <Input
-                    id="email"
-                    type="email"
-                    value={formData.email}
-                    onChange={(e) =>
-                      setFormData({ ...formData, email: e.target.value })
-                    }
-                    className="mt-1"
-                    required
-                  />
-                </div>
-
-                <div>
-                  <Label htmlFor="password" className="text-sm font-medium text-gray-700">
-                    Password
-                  </Label>
-                  <Input
-                    id="password"
-                    type="password"
-                    value={formData.password}
-                    onChange={(e) =>
-                      setFormData({ ...formData, password: e.target.value })
-                    }
-                    className="mt-1"
-                    required
-                  />
-                </div>
-
-                {isLogin && (
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center space-x-2">
-                      <Checkbox
-                        id="rememberMe"
-                        checked={formData.rememberMe}
-                        onCheckedChange={(checked) =>
-                          setFormData({
-                            ...formData,
-                            rememberMe: Boolean(checked),
-                          })
-                        }
-                      />
-                      <Label
-                        htmlFor="rememberMe"
-                        className="text-sm text-gray-600"
-                      >
-                        Log in automatically from this computer
-                      </Label>
-                    </div>
-                    <Button
-                      variant="link"
-                      className="text-sm text-green-600 hover:text-green-700 p-0"
-                    >
-                      Forgot password?
-                    </Button>
+                  <div className="space-y-2">
+                    <Label htmlFor="email" className="text-sm font-medium text-white/90">
+                      Email
+                    </Label>
+                    <Input
+                      id="email"
+                      type="email"
+                      value={formData.email}
+                      onChange={(e) =>
+                        setFormData({ ...formData, email: e.target.value })
+                      }
+                      className="bg-white/10 border-white/20 text-white placeholder:text-white/50 focus:border-emerald-400 focus:ring-emerald-400/20 backdrop-blur-sm transition-all duration-300"
+                      required
+                    />
                   </div>
-                )}
 
-                <Button
-                  type="submit"
-                  className="w-full bg-green-600 hover:bg-green-700 text-white"
-                  disabled={isLoading || loadingState.isLoading}
-                >
-                  {loadingState.isLoading ? (
-                    <div className="flex items-center gap-2">
-                      <LoadingSpinner size="sm" />
-                      {loadingState.type === "login" ? "Signing in..." : "Creating account..."}
+                  <div className="space-y-2">
+                    <Label htmlFor="password" className="text-sm font-medium text-white/90">
+                      Password
+                    </Label>
+                    <Input
+                      id="password"
+                      type="password"
+                      value={formData.password}
+                      onChange={(e) =>
+                        setFormData({ ...formData, password: e.target.value })
+                      }
+                      className="bg-white/10 border-white/20 text-white placeholder:text-white/50 focus:border-emerald-400 focus:ring-emerald-400/20 backdrop-blur-sm transition-all duration-300"
+                      required
+                    />
+                  </div>
+
+                  {isLogin && (
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center space-x-3">
+                        <Checkbox
+                          id="rememberMe"
+                          checked={formData.rememberMe}
+                          onCheckedChange={(checked) =>
+                            setFormData({
+                              ...formData,
+                              rememberMe: Boolean(checked),
+                            })
+                          }
+                          className="border-white/30 data-[state=checked]:bg-emerald-500 data-[state=checked]:border-emerald-500"
+                        />
+                        <Label
+                          htmlFor="rememberMe"
+                          className="text-sm text-white/80"
+                        >
+                          Remember me
+                        </Label>
+                      </div>
+                      <Button
+                        variant="link"
+                        className="text-sm text-emerald-300 hover:text-emerald-200 p-0"
+                      >
+                        Forgot password?
+                      </Button>
                     </div>
-                  ) : (
-                    isLogin ? "Log in" : "Create Account"
                   )}
-                </Button>
+
+                  <Button
+                    type="submit"
+                    className="w-full bg-gradient-to-r from-emerald-500 to-emerald-600 hover:from-emerald-600 hover:to-emerald-700 text-white shadow-lg backdrop-blur-sm border border-emerald-400/20 transition-all duration-300 transform hover:scale-[1.02]"
+                    disabled={isLoading || loadingState.isLoading}
+                  >
+                    {loadingState.isLoading ? (
+                      <div className="flex items-center gap-2">
+                        <LoadingSpinner size="sm" />
+                        {loadingState.type === "login" ? "Signing in..." : "Creating account..."}
+                      </div>
+                    ) : (
+                      isLogin ? "Sign In" : "Create Account"
+                    )}
+                  </Button>
 
                 {isLogin && (
                   <>
