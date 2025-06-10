@@ -153,6 +153,34 @@ export default function SetupWizard() {
     },
   });
 
+  // Load existing opening hours
+  const { data: existingHours } = useQuery({
+    queryKey: [`/api/tenants/${tenantId}/restaurants/${restaurantId}/opening-hours`],
+    enabled: !!tenantId && !!restaurantId,
+    retry: false,
+  });
+
+  // Update hours form with existing data
+  useEffect(() => {
+    if (existingHours && Array.isArray(existingHours) && existingHours.length > 0) {
+      const daysMap = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'];
+      const hoursData: Partial<OpeningHours> = {};
+      
+      existingHours.forEach((hour: any) => {
+        const dayName = daysMap[hour.dayOfWeek] as keyof OpeningHours;
+        if (dayName) {
+          hoursData[dayName] = {
+            isOpen: hour.isOpen,
+            openTime: hour.openTime || "09:00",
+            closeTime: hour.closeTime || "22:00",
+          };
+        }
+      });
+      
+      hoursForm.reset(hoursData as OpeningHours);
+    }
+  }, [existingHours, hoursForm]);
+
   const tablesForm = useForm<Tables>({
     resolver: zodResolver(tablesSchema),
     defaultValues: {
@@ -163,6 +191,38 @@ export default function SetupWizard() {
       ],
     },
   });
+
+  // Load existing tables
+  const { data: existingTables } = useQuery({
+    queryKey: [`/api/tenants/${tenantId}/restaurants/${restaurantId}/tables`],
+    enabled: !!tenantId && !!restaurantId,
+    retry: false,
+  });
+
+  // Load existing rooms for table room names
+  const { data: existingRooms } = useQuery({
+    queryKey: [`/api/tenants/${tenantId}/restaurants/${restaurantId}/rooms`],
+    enabled: !!tenantId && !!restaurantId,
+    retry: false,
+  });
+
+  // Update tables form with existing data
+  useEffect(() => {
+    if (existingTables && Array.isArray(existingTables) && existingTables.length > 0) {
+      const roomsMap = existingRooms?.reduce((acc: any, room: any) => {
+        acc[room.id] = room.name;
+        return acc;
+      }, {}) || {};
+
+      const tablesData = existingTables.map((table: any) => ({
+        tableNumber: table.tableNumber,
+        capacity: table.capacity,
+        room: roomsMap[table.roomId] || "Main Dining",
+      }));
+      
+      tablesForm.reset({ tables: tablesData });
+    }
+  }, [existingTables, existingRooms, tablesForm]);
 
   // Booking Settings Form (Step 4)
   const bookingSettingsSchema = z.object({
