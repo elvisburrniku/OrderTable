@@ -50,9 +50,11 @@ export const tenants = pgTable("tenants", {
 export const users = pgTable("users", {
   id: serial("id").primaryKey(),
   email: text("email").notNull().unique(),
-  password: text("password").notNull(),
+  password: text("password"),
   name: text("name").notNull(),
   restaurantName: text("restaurant_name"),
+  ssoProvider: varchar("sso_provider", { length: 50 }), // google, github, etc.
+  ssoId: text("sso_id"), // Provider's user ID
   createdAt: timestamp("created_at").defaultNow(),
 });
 
