@@ -13,6 +13,20 @@ const {
   bookings,
   customers,
   subscriptionPlans,
+  userSubscriptions,
+  smsMessages,
+  waitingList,
+  feedback,
+  activityLog,
+  timeSlots,
+  rooms,
+  combinedTables,
+  bookingChangeRequests,
+  notifications,
+  openingHours,
+  specialPeriods,
+  cutOffTimes,
+  tableLayouts,
 } = schema;
 
 export class DatabaseStorage implements IStorage {
@@ -434,12 +448,48 @@ export class DatabaseStorage implements IStorage {
   }
 
   async getOpeningHoursByRestaurant(restaurantId: number): Promise<any> {
-    return null; // Simplified - opening hours not implemented yet
+    try {
+      const hours = await this.db
+        .select()
+        .from(openingHours)
+        .where(eq(openingHours.restaurantId, restaurantId))
+        .orderBy(openingHours.dayOfWeek);
+      
+      return hours;
+    } catch (error) {
+      console.error("Error fetching opening hours:", error);
+      return [];
+    }
   }
 
   async createOrUpdateOpeningHours(restaurantId: number, tenantId: number, hoursData: any[]): Promise<any> {
-    // Simplified implementation - just return success
-    return { success: true, message: "Opening hours updated" };
+    try {
+      // Delete existing opening hours for this restaurant
+      await this.db
+        .delete(openingHours)
+        .where(eq(openingHours.restaurantId, restaurantId));
+
+      // Insert new opening hours
+      if (hoursData && hoursData.length > 0) {
+        const hoursToInsert = hoursData.map(hour => ({
+          restaurantId,
+          tenantId,
+          dayOfWeek: hour.dayOfWeek,
+          isOpen: hour.isOpen,
+          openTime: hour.openTime,
+          closeTime: hour.closeTime,
+          createdAt: new Date(),
+          updatedAt: new Date()
+        }));
+
+        await this.db.insert(openingHours).values(hoursToInsert);
+      }
+
+      return { success: true, message: "Opening hours updated successfully" };
+    } catch (error) {
+      console.error("Error updating opening hours:", error);
+      return { success: false, message: "Failed to update opening hours" };
+    }
   }
 
   async getSpecialPeriodsByRestaurant(restaurantId: number): Promise<any> {
