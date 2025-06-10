@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
@@ -28,6 +28,12 @@ export default function Register() {
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
+  // Check if user is already authenticated
+  const { data: session, isLoading: sessionLoading } = useQuery({
+    queryKey: ["/api/auth/validate"],
+    retry: false,
+  });
+
   const form = useForm<RegistrationForm>({
     resolver: zodResolver(registrationSchema),
     defaultValues: {
@@ -45,6 +51,33 @@ export default function Register() {
     queryKey: ['/api/subscription-plans'],
     queryFn: () => fetch('/api/subscription-plans').then(res => res.json()),
   });
+
+  // Redirect authenticated users
+  useEffect(() => {
+    if (!sessionLoading && session) {
+      const restaurant = (session as any)?.restaurant;
+      
+      if (restaurant) {
+        if (restaurant.setupCompleted) {
+          // Redirect to dashboard if setup is complete
+          const tenantId = (session as any)?.tenant?.id;
+          setLocation(`/${tenantId}/dashboard`);
+        } else {
+          // Redirect to setup if setup is not complete
+          setLocation('/setup');
+        }
+      }
+    }
+  }, [session, sessionLoading, setLocation]);
+
+  // Show loading while checking authentication
+  if (sessionLoading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="animate-spin w-8 h-8 border-4 border-primary border-t-transparent rounded-full" />
+      </div>
+    );
+  }
 
   const registerMutation = useMutation({
     mutationFn: async (data: RegistrationForm) => {

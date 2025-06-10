@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useLocation } from "wouter";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -26,10 +26,43 @@ export default function Login() {
     selectedPlanId: null as number | null,
   });
 
+  // Check if user is already authenticated
+  const { data: session, isLoading: sessionLoading } = useQuery({
+    queryKey: ["/api/auth/validate"],
+    retry: false,
+  });
+
   const { data: plans = [] } = useQuery({
     queryKey: ["/api/subscription-plans"],
     enabled: !isLogin,
   });
+
+  // Redirect authenticated users
+  useEffect(() => {
+    if (!sessionLoading && session) {
+      const restaurant = (session as any)?.restaurant;
+      
+      if (restaurant) {
+        if (restaurant.setupCompleted) {
+          // Redirect to dashboard if setup is complete
+          const tenantId = (session as any)?.tenant?.id;
+          setLocation(`/${tenantId}/dashboard`);
+        } else {
+          // Redirect to setup if setup is not complete
+          setLocation('/setup');
+        }
+      }
+    }
+  }, [session, sessionLoading, setLocation]);
+
+  // Show loading while checking authentication
+  if (sessionLoading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="animate-spin w-8 h-8 border-4 border-primary border-t-transparent rounded-full" />
+      </div>
+    );
+  }
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
