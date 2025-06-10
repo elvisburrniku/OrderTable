@@ -1,0 +1,69 @@
+chunk-RPCDYKBN.js?v=354ba443:14032 The above error occurred in the <Presence> component:
+
+    at Presence (https://bd35e12f-4cc7-4619-9f19-8e776fcdc616-00-1z4r2c4zdvz0q.worf.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/chunk-D563HK5P.js?v=354ba443:24:11)
+    at https://bd35e12f-4cc7-4619-9f19-8e776fcdc616-00-1z4r2c4zdvz0q.worf.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/@radix-ui_react-checkbox.js?v=354ba443:119:13
+    at button
+    at https://bd35e12f-4cc7-4619-9f19-8e776fcdc616-00-1z4r2c4zdvz0q.worf.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/chunk-AXMZZQ2X.js?v=354ba443:42:13
+    at Provider (https://bd35e12f-4cc7-4619-9f19-8e776fcdc616-00-1z4r2c4zdvz0q.worf.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/chunk-MV53PHM7.js?v=354ba443:48:15)
+    at https://bd35e12f-4cc7-4619-9f19-8e776fcdc616-00-1z4r2c4zdvz0q.worf.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/@radix-ui_react-checkbox.js?v=354ba443:42:7
+    at _c (https://bd35e12f-4cc7-4619-9f19-8e776fcdc616-00-1z4r2c4zdvz0q.worf.replit.dev/src/components/ui/checkbox.tsx:22:11)
+    at div
+    at div
+    at form
+    at div
+    at div
+    at div
+    at _c (https://bd35e12f-4cc7-4619-9f19-8e776fcdc616-00-1z4r2c4zdvz0q.worf.replit.dev/src/components/ui/card.tsx:20:11)
+    at div
+    at Login (https://bd35e12f-4cc7-4619-9f19-8e776fcdc616-00-1z4r2c4zdvz0q.worf.replit.dev/src/pages/login.tsx?t=1749564511947:32:27)
+    at Route (https://bd35e12f-4cc7-4619-9f19-8e776fcdc616-00-1z4r2c4zdvz0q.worf.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/wouter.js?v=354ba443:323:16)
+    at Switch (https://bd35e12f-4cc7-4619-9f19-8e776fcdc616-00-1z4r2c4zdvz0q.worf.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/wouter.js?v=354ba443:379:17)
+    at TenantProvider (https://bd35e12f-4cc7-4619-9f19-8e776fcdc616-00-1z4r2c4zdvz0q.worf.replit.dev/src/lib/tenant.tsx:22:34)
+    at AuthProvider (https://bd35e12f-4cc7-4619-9f19-8e776fcdc616-00-1z4r2c4zdvz0q.worf.replit.dev/src/lib/auth.tsx:25:32)
+    at QueryClientProvider (https://bd35e12f-4cc7-4619-9f19-8e776fcdc616-00-1z4r2c4zdvz0q.worf.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/@tanstack_react-query.js?v=354ba443:2805:3)
+    at App
+
+Consider adding an error boundary to your tree to customize error handling behavior.
+Visit https://reactjs.org/link/error-boundaries to learn more about error boundaries.
+logCapturedError @ chunk-RPCDYKBN.js?v=354ba443:14032
+update.callback @ chunk-RPCDYKBN.js?v=354ba443:14052
+callCallback @ chunk-RPCDYKBN.js?v=354ba443:11248
+commitUpdateQueue @ chunk-RPCDYKBN.js?v=354ba443:11265
+commitLayoutEffectOnFiber @ chunk-RPCDYKBN.js?v=354ba443:17093
+commitLayoutMountEffects_complete @ chunk-RPCDYKBN.js?v=354ba443:17980
+commitLayoutEffects_begin @ chunk-RPCDYKBN.js?v=354ba443:17969
+commitLayoutEffects @ chunk-RPCDYKBN.js?v=354ba443:17920
+commitRootImpl @ chunk-RPCDYKBN.js?v=354ba443:19353
+commitRoot @ chunk-RPCDYKBN.js?v=354ba443:19277
+performSyncWorkOnRoot @ chunk-RPCDYKBN.js?v=354ba443:18895
+flushSyncCallbacks @ chunk-RPCDYKBN.js?v=354ba443:9119
+flushSync @ chunk-RPCDYKBN.js?v=354ba443:18959
+flushSync$1 @ chunk-RPCDYKBN.js?v=354ba443:21538
+dispatchDiscreteCustomEvent @ chunk-AXMZZQ2X.js?v=354ba443:53
+handleSelect @ @radix-ui_react-dropdown-menu.js?v=354ba443:426
+handleEvent @ chunk-MV53PHM7.js?v=354ba443:16
+callCallback2 @ chunk-RPCDYKBN.js?v=354ba443:3674
+invokeGuardedCallbackDev @ chunk-RPCDYKBN.js?v=354ba443:3699
+invokeGuardedCallback @ chunk-RPCDYKBN.js?v=354ba443:3733
+invokeGuardedCallbackAndCatchFirstError @ chunk-RPCDYKBN.js?v=354ba443:3736
+executeDispatch @ chunk-RPCDYKBN.js?v=354ba443:7014
+processDispatchQueueItemsInOrder @ chunk-RPCDYKBN.js?v=354ba443:7034
+processDispatchQueue @ chunk-RPCDYKBN.js?v=354ba443:7043
+dispatchEventsForPlugins @ chunk-RPCDYKBN.js?v=354ba443:7051
+(anonymous) @ chunk-RPCDYKBN.js?v=354ba443:7174
+batchedUpdates$1 @ chunk-RPCDYKBN.js?v=354ba443:18913
+batchedUpdates @ chunk-RPCDYKBN.js?v=354ba443:3579
+dispatchEventForPluginEventSystem @ chunk-RPCDYKBN.js?v=354ba443:7173
+dispatchEventWithEnableCapturePhaseSelectiveHydrationWithoutDiscreteEventReplay @ chunk-RPCDYKBN.js?v=354ba443:5478
+dispatchEvent @ chunk-RPCDYKBN.js?v=354ba443:5472
+dispatchDiscreteEvent @ chunk-RPCDYKBN.js?v=354ba443:5449
+2chunk-RPCDYKBN.js?v=354ba443:19659 Uncaught Error: Maximum update depth exceeded. This can happen when a component repeatedly calls setState inside componentWillUpdate or componentDidUpdate. React limits the number of nested updates to prevent infinite loops.
+    at checkForNestedUpdates (chunk-RPCDYKBN.js?v=354ba443:19659:19)
+    at scheduleUpdateOnFiber (chunk-RPCDYKBN.js?v=354ba443:18533:11)
+    at dispatchReducerAction (chunk-RPCDYKBN.js?v=354ba443:12351:15)
+    at chunk-D563HK5P.js?v=354ba443:112:7
+    at commitHookEffectListMount (chunk-RPCDYKBN.js?v=354ba443:16915:34)
+    at commitLayoutEffectOnFiber (chunk-RPCDYKBN.js?v=354ba443:17002:23)
+    at commitLayoutMountEffects_complete (chunk-RPCDYKBN.js?v=354ba443:17980:17)
+    at commitLayoutEffects_begin (chunk-RPCDYKBN.js?v=354ba443:17969:15)
+    at commitLayoutEffects (chunk-RPCDYKBN.js?v=354ba443:17920:11)

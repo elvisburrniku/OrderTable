@@ -21,7 +21,7 @@ interface AuthContextType {
     email: string;
     restaurantName: string;
   }) => Promise<any>;
-  logout: () => void;
+  logout: () => Promise<void>;
   refreshUserData: () => Promise<any>;
   isLoading: boolean;
   isAuthenticated: boolean;
@@ -180,11 +180,26 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     return data;
   };
 
-  const logout = () => {
+  const logout = async () => {
+    try {
+      // Call server-side logout if SSO is enabled
+      await fetch("/api/auth/logout", {
+        method: "POST",
+        credentials: "include",
+      });
+    } catch (error) {
+      console.warn("Server logout failed, proceeding with client logout");
+    }
+    
+    // Clear client state
     setUser(null);
     setRestaurant(null);
     localStorage.removeItem("user");
     localStorage.removeItem("restaurant");
+    localStorage.removeItem("tenant");
+    
+    // Redirect to login page
+    window.location.href = "/login";
   };
 
   const refreshUserData = async () => {

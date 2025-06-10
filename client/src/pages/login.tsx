@@ -348,7 +348,7 @@ export default function Login() {
                       onCheckedChange={(checked) =>
                         setFormData({
                           ...formData,
-                          rememberMe: checked as boolean,
+                          rememberMe: Boolean(checked),
                         })
                       }
                     />
