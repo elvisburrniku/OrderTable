@@ -1,5 +1,6 @@
 import { Link, useLocation, useParams } from "wouter";
 import { Calendar, Settings, Clock, MapPin, Table, Utensils, Grid3x3, FileText, Users, MessageSquare, MessageCircle, CreditCard, BarChart3, Clock4, Plug } from "lucide-react";
+import { ReadyTableLogo } from "@/components/ui/ready-table-logo";
 import { Card, CardContent } from "@/components/ui/card";
 import { format } from "date-fns";
 import { Booking } from "@shared/schema";
@@ -71,8 +72,7 @@ export default function DashboardSidebar({ selectedDate, bookings }: DashboardSi
   return (
     <div className="w-64 bg-gray-50 border-r border-gray-200 p-4">
       <div className="flex items-center mb-8">
-        <Grid3x3 className="text-green-600 text-xl mr-2" size={20} />
-        <span className="text-xl font-bold text-gray-900">easyTable</span>
+        <ReadyTableLogo size={20} textClassName="text-xl font-bold text-gray-900" />
       </div>
 
       <nav className="space-y-2 mb-8">

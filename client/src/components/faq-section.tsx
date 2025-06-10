@@ -5,8 +5,8 @@ import { Plus, Minus } from "lucide-react";
 
 const faqData = [
   {
-    question: "What is easyTable?",
-    answer: "easyTable is a comprehensive restaurant reservation system that helps you manage bookings, reduce no-shows, and streamline your restaurant operations."
+    question: "What is ReadyTable?",
+    answer: "ReadyTable is a comprehensive restaurant reservation system that helps you manage bookings, reduce no-shows, and streamline your restaurant operations."
   },
   {
     question: "What are the benefits of an online table booking system?",
@@ -18,23 +18,23 @@ const faqData = [
   },
   {
     question: "Can I manage multiple restaurant locations?",
-    answer: "Yes, easyTable supports multi-location management with centralized dashboard and location-specific settings for each restaurant."
+    answer: "Yes, ReadyTable supports multi-location management with centralized dashboard and location-specific settings for each restaurant."
   },
   {
-    question: "How do I get started with the easyTable system?",
+    question: "How do I get started with the ReadyTable system?",
     answer: "Simply sign up for a free trial, and our team will help you set up and configure the system for your restaurant's specific needs."
   },
   {
-    question: "Can I integrate the easyTable online table booking system with my existing systems?",
-    answer: "Yes, easyTable integrates with most POS systems, payment processors, and marketing tools to ensure seamless operations."
+    question: "Can I integrate the ReadyTable online table booking system with my existing systems?",
+    answer: "Yes, ReadyTable integrates with most POS systems, payment processors, and marketing tools to ensure seamless operations."
   },
   {
-    question: "On which devices can easyTable's online table booking system be used?",
-    answer: "easyTable works on any device with an internet connection - computers, tablets, smartphones, and mobile devices with full responsive design."
+    question: "On which devices can ReadyTable's online table booking system be used?",
+    answer: "ReadyTable works on any device with an internet connection - computers, tablets, smartphones, and mobile devices with full responsive design."
   },
   {
-    question: "How does easyTable secure customer data and GDPR?",
-    answer: "easyTable is fully GDPR compliant with enterprise-grade security, encrypted data storage, and you maintain 100% ownership of your customer data."
+    question: "How does ReadyTable secure customer data and GDPR?",
+    answer: "ReadyTable is fully GDPR compliant with enterprise-grade security, encrypted data storage, and you maintain 100% ownership of your customer data."
   }
 ];
 

@@ -57,7 +57,7 @@ export class WebhookService {
             method: 'POST',
             headers: {
               'Content-Type': 'application/json',
-              'User-Agent': 'EasyTable-Webhook/1.0'
+              'User-Agent': 'ReadyTable-Webhook/1.0'
             },
             body: JSON.stringify(payload),
             // Set a reasonable timeout
