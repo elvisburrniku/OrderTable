@@ -76,7 +76,7 @@ export default function Login() {
 
   // Redirect if already authenticated
   useEffect(() => {
-    if (session && !sessionLoading) {
+    if (session && !sessionLoading && session.valid) {
       if (session.user && session.restaurant) {
         if (session.restaurant.setupCompleted) {
           const tenantId = session.tenant?.id || session.restaurant.id;
