@@ -1,4 +1,4 @@
-import { Grid3x3 } from "lucide-react";
+import { ReadyTableLogo } from "@/components/ui/ready-table-logo";
 
 export default function Footer() {
   const languages = [
@@ -17,8 +17,7 @@ export default function Footer() {
         <div className="grid md:grid-cols-2 gap-12 items-center mb-12">
           <div>
             <div className="flex items-center mb-6">
-              <Grid3x3 className="text-green-600 text-2xl mr-3" size={32} />
-              <span className="text-2xl font-bold">easyTable</span>
+              <ReadyTableLogo size={32} textClassName="text-2xl font-bold text-white" />
             </div>
             <h2 className="text-4xl md:text-5xl font-bold mb-6 leading-tight">
               BETTER BOOKING.<br />
@@ -30,7 +29,7 @@ export default function Footer() {
               <div className="text-lg font-semibold">+44 330 808 1717</div>
             </div>
             <div className="mb-4">
-              <div className="text-lg">info@easytable.com</div>
+              <div className="text-lg">info@readytable.com</div>
             </div>
             <div className="text-sm text-gray-400">
               <div>Oerstads Boulevard 67</div>

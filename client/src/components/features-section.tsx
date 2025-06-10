@@ -25,7 +25,7 @@ export default function FeaturesSection() {
                 Meet a part of the family – Grillen Burgerbar
               </h2>
               <p className="text-lg text-gray-600 mb-8 leading-relaxed">
-                Since opening its doors in 2013, Grillen Burgerbar has become one of Denmark's most popular burger joints. See how easyTable has revolutionized their reservation and booking system.
+                Since opening its doors in 2013, Grillen Burgerbar has become one of Denmark's most popular burger joints. See how ReadyTable has revolutionized their reservation and booking system.
               </p>
               <div className="flex flex-col sm:flex-row gap-4">
                 <Button className="bg-green-600 hover:bg-green-700 text-white">

@@ -1,7 +1,8 @@
 import { useState } from "react";
 import { Link } from "wouter";
 import { Button } from "@/components/ui/button";
-import { Grid3x3, Menu, X } from "lucide-react";
+import { Menu, X } from "lucide-react";
+import { ReadyTableLogo } from "@/components/ui/ready-table-logo";
 
 export default function Navigation() {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
@@ -12,8 +13,7 @@ export default function Navigation() {
         <div className="flex justify-between items-center h-16">
           <div className="flex items-center">
             <Link href="/" className="flex items-center">
-              <Grid3x3 className="text-green-600 text-xl mr-2" size={24} />
-              <span className="text-xl font-bold text-gray-900">easyTable</span>
+              <ReadyTableLogo textClassName="text-xl font-bold text-gray-900" />
             </Link>
           </div>
           

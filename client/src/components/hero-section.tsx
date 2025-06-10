@@ -23,7 +23,7 @@ export default function HeroSection() {
           </div>
         </div>
         <p className="text-lg text-gray-200 max-w-3xl mx-auto leading-relaxed">
-          You own 100% of your data—no exceptions. With easyTable, the choice of what your guests receive is your decision, not ours. Get accurate booking data from our restaurant reservation system so you can tailor marketing campaigns. And with no account creation requirements, we ensure your customers aren't flooded with competitor-promoting emails.
+          You own 100% of your data—no exceptions. With ReadyTable, the choice of what your guests receive is your decision, not ours. Get accurate booking data from our restaurant reservation system so you can tailor marketing campaigns. And with no account creation requirements, we ensure your customers aren't flooded with competitor-promoting emails.
         </p>
       </div>
     </section>
