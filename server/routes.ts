@@ -2905,7 +2905,9 @@ app.put("/api/tenants/:tenantId/bookings/:id", validateTenant, async (req, res) 
       // Determine cut-off deadline based on restaurant policy
       const dayOfWeek = bookingDateTime.getDay();
 
-      const cutOffTime = cutOffTimes.find((ct: any) => ct.dayOfWeek === dayOfWeek);
+      const cutOffTime = cutOffTimes && Array.isArray(cutOffTimes) 
+        ? cutOffTimes.find((ct: any) => ct.dayOfWeek === dayOfWeek)
+        : null;
 
       let canModify = false;
       let canCancel = false;
