@@ -21,21 +21,6 @@ export function ReadyTableLogo({
         xmlns="http://www.w3.org/2000/svg"
         className="mr-2"
       >
-        {/* Table surface */}
-        <rect
-          x="6"
-          y="18"
-          width="36"
-          height="24"
-          rx="3"
-          fill="currentColor"
-          className="text-emerald-600"
-        />
-        
-        {/* Table legs */}
-        <rect x="10" y="36" width="3" height="8" fill="currentColor" className="text-emerald-700" />
-        <rect x="35" y="36" width="3" height="8" fill="currentColor" className="text-emerald-700" />
-        
         {/* Reservation indicator - stylized "R" */}
         <circle cx="24" cy="30" r="8" fill="white" />
         <path
