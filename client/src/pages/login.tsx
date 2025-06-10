@@ -86,7 +86,6 @@ export default function Login() {
       if (isLogin) {
         const result = await login(formData.email, formData.password, formData.rememberMe);
         if(result) {
-          console.log(result);
           toast({
             title: "Welcome back!",
             description: "You have successfully logged in.",
