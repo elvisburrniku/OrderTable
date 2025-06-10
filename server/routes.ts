@@ -74,6 +74,9 @@ function broadcastNotification(restaurantId: number, notification: any) {
 }
 
 export async function registerRoutes(app: Express): Promise<Server> {
+  // Setup SSO authentication first
+  setupSSO(app);
+
   // Middleware to extract and validate tenant ID
   const validateTenant = async (req: any, res: any, next: any) => {
     const tenantId = req.params.tenantId || req.headers['x-tenant-id'] || req.query.tenantId || req.body.tenantId;
