@@ -703,23 +703,93 @@ export class DatabaseStorage implements IStorage {
   }
 
   async getBookingChangeRequestsByBookingId(bookingId: number): Promise<any[]> {
-    return [];
+    try {
+      const requests = await this.db
+        .select()
+        .from(bookingChangeRequests)
+        .where(eq(bookingChangeRequests.bookingId, bookingId))
+        .orderBy(desc(bookingChangeRequests.createdAt));
+      
+      return requests || [];
+    } catch (error) {
+      console.error("Error fetching booking change requests by booking ID:", error);
+      return [];
+    }
   }
 
   async getBookingChangeRequestsByRestaurant(restaurantId: number): Promise<any[]> {
-    return [];
+    try {
+      const requests = await this.db
+        .select()
+        .from(bookingChangeRequests)
+        .where(eq(bookingChangeRequests.restaurantId, restaurantId))
+        .orderBy(desc(bookingChangeRequests.createdAt));
+      
+      return requests || [];
+    } catch (error) {
+      console.error("Error fetching booking change requests by restaurant:", error);
+      return [];
+    }
   }
 
   async createBookingChangeRequest(request: any): Promise<any> {
-    throw new Error("Method not implemented");
+    try {
+      const [newRequest] = await this.db
+        .insert(bookingChangeRequests)
+        .values({
+          bookingId: request.bookingId,
+          restaurantId: request.restaurantId,
+          tenantId: request.tenantId,
+          requestType: request.requestType,
+          requestedDate: request.requestedDate,
+          requestedStartTime: request.requestedStartTime,
+          requestedEndTime: request.requestedEndTime,
+          requestedGuestCount: request.requestedGuestCount,
+          requestedTableId: request.requestedTableId,
+          customerMessage: request.customerMessage,
+          status: request.status || 'pending',
+          createdAt: new Date(),
+          updatedAt: new Date()
+        })
+        .returning();
+      
+      return newRequest;
+    } catch (error) {
+      console.error("Error creating booking change request:", error);
+      throw error;
+    }
   }
 
   async updateBookingChangeRequest(id: number, updates: any): Promise<any> {
-    throw new Error("Method not implemented");
+    try {
+      const [updatedRequest] = await this.db
+        .update(bookingChangeRequests)
+        .set({
+          ...updates,
+          updatedAt: new Date()
+        })
+        .where(eq(bookingChangeRequests.id, id))
+        .returning();
+      
+      return updatedRequest;
+    } catch (error) {
+      console.error("Error updating booking change request:", error);
+      return null;
+    }
   }
 
   async getBookingChangeRequestById(id: number): Promise<any> {
-    return null;
+    try {
+      const result = await this.db
+        .select()
+        .from(bookingChangeRequests)
+        .where(eq(bookingChangeRequests.id, id));
+      
+      return result[0] || null;
+    } catch (error) {
+      console.error("Error fetching booking change request by ID:", error);
+      return null;
+    }
   }
 
   async revertNotification(notificationId: number, userEmail: string): Promise<boolean> {

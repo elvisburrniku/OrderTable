@@ -3186,13 +3186,13 @@ app.put("/api/tenants/:tenantId/bookings/:id", validateTenant, async (req, res) 
       }
 
       // For any date/time/guest changes, validate availability and create change request
-      if (updates.bookingDate || updates.startTime || updates.guestCount) {
+      if (updates.newDate || updates.newTime || updates.newGuestCount) {
         console.log('Processing change request for date/time/guest count changes');
         
         // Validate availability for the requested changes
-        const requestedDate = updates.bookingDate ? new Date(updates.bookingDate) : booking.bookingDate;
-        const requestedTime = updates.startTime || booking.startTime;
-        const requestedGuestCount = updates.guestCount || booking.guestCount;
+        const requestedDate = updates.newDate ? new Date(updates.newDate) : booking.bookingDate;
+        const requestedTime = updates.newTime || booking.startTime;
+        const requestedGuestCount = updates.newGuestCount || booking.guestCount;
         
         // Check if restaurant is open on the requested day
         const dayOfWeek = requestedDate.getDay();
