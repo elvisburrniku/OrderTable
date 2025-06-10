@@ -156,12 +156,61 @@ export async function registerRoutes(app: Express): Promise<Server> {
         emailSettings: JSON.stringify({})
       });
 
+      // If this is a paid plan, create Stripe checkout session
+      if (plan.price > 0) {
+        try {
+          const session = await stripe.checkout.sessions.create({
+            payment_method_types: ['card'],
+            line_items: [
+              {
+                price_data: {
+                  currency: 'usd',
+                  product_data: {
+                    name: plan.name,
+                    description: `${plan.name} subscription plan`,
+                  },
+                  unit_amount: plan.price,
+                  recurring: {
+                    interval: 'month',
+                  },
+                },
+                quantity: 1,
+              },
+            ],
+            mode: 'subscription',
+            success_url: `${req.protocol}://${req.get('host')}/dashboard?payment=success`,
+            cancel_url: `${req.protocol}://${req.get('host')}/register?payment=cancelled`,
+            metadata: {
+              userId: user.id.toString(),
+              planId: plan.id.toString(),
+              tenantId: tenant.id.toString(),
+            },
+            customer_email: email,
+          });
+
+          return res.status(201).json({
+            message: "Company created successfully",
+            user: { id: user.id, email: user.email, name: user.name },
+            tenant: { id: tenant.id, name: tenant.name, slug: tenant.slug },
+            restaurant: { id: restaurant.id, name: restaurant.name },
+            trialEndsAt: trialEndDate,
+            requiresPayment: true,
+            checkoutUrl: session.url
+          });
+        } catch (stripeError) {
+          console.error("Stripe error:", stripeError);
+          return res.status(500).json({ message: "Payment processing error" });
+        }
+      }
+
+      // For free plans, complete registration immediately
       res.status(201).json({
         message: "Company created successfully",
         user: { id: user.id, email: user.email, name: user.name },
         tenant: { id: tenant.id, name: tenant.name, slug: tenant.slug },
         restaurant: { id: restaurant.id, name: restaurant.name },
-        trialEndsAt: trialEndDate
+        trialEndsAt: trialEndDate,
+        requiresPayment: false
       });
     } catch (error) {
       console.error("Registration error:", error);

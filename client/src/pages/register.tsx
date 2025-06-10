@@ -64,12 +64,21 @@ export default function Register() {
       return response.json();
     },
     onSuccess: (data) => {
-      toast({
-        title: "Company created successfully!",
-        description: `Welcome to your 14-day trial. Trial ends: ${new Date(data.trialEndsAt).toLocaleDateString()}`,
-      });
-      // Redirect to login or dashboard
-      setLocation('/login');
+      if (data.requiresPayment && data.checkoutUrl) {
+        toast({
+          title: "Account created!",
+          description: "Redirecting to payment...",
+        });
+        // Redirect to Stripe checkout for paid plans
+        window.location.href = data.checkoutUrl;
+      } else {
+        toast({
+          title: "Company created successfully!",
+          description: `Welcome to your 14-day trial. Trial ends: ${new Date(data.trialEndsAt).toLocaleDateString()}`,
+        });
+        // Redirect to login for free plans
+        setLocation('/login');
+      }
     },
     onError: (error: any) => {
       toast({
