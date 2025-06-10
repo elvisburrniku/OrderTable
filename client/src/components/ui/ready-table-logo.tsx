@@ -22,11 +22,10 @@ export function ReadyTableLogo({
         className="mr-2"
       >
         {/* Reservation indicator - stylized "R" */}
-        <circle cx="24" cy="30" r="8" fill="white" />
+        <circle cx="24" cy="30" r="8" fill="currentColor" className="text-emerald-600" />
         <path
           d="M20 26h4c1.1 0 2 .9 2 2s-.9 2-2 2h-2l2.5 4h-2l-2.5-4V26z"
-          fill="currentColor"
-          className="text-emerald-600"
+          fill="white"
         />
         
         {/* Ready indicator - checkmark */}
