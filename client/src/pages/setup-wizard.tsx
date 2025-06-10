@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
@@ -115,6 +115,7 @@ export default function SetupWizard() {
 
   const tenantId = (session as any)?.tenant?.id;
   const restaurantId = (session as any)?.restaurant?.id;
+  const restaurant = (session as any)?.restaurant;
 
   // Form configurations
   const restaurantForm = useForm<RestaurantDetails>({
@@ -126,6 +127,18 @@ export default function SetupWizard() {
       description: "",
     },
   });
+
+  // Update form values when session data becomes available
+  useEffect(() => {
+    if (restaurant) {
+      restaurantForm.reset({
+        address: restaurant.address || "",
+        phone: restaurant.phone || "",
+        email: restaurant.email || "",
+        description: restaurant.description || "",
+      });
+    }
+  }, [restaurant, restaurantForm]);
 
   const hoursForm = useForm<OpeningHours>({
     resolver: zodResolver(openingHoursSchema),
@@ -257,36 +270,43 @@ export default function SetupWizard() {
 
   const saveTablesMutation = useMutation({
     mutationFn: async (data: Tables) => {
+      console.log("Submitting tables data:", data);
       // First create rooms if they don't exist
       const uniqueRooms = Array.from(new Set(data.tables.map(t => t.room).filter(Boolean)));
+      console.log("Creating rooms:", uniqueRooms);
       
       for (const roomName of uniqueRooms) {
         try {
-          await apiRequest("POST", `/api/tenants/${tenantId}/restaurants/${restaurantId}/rooms`, {
+          const roomResponse = await apiRequest("POST", `/api/tenants/${tenantId}/restaurants/${restaurantId}/rooms`, {
             name: roomName,
             description: `${roomName} seating area`,
           });
+          console.log("Room created:", await roomResponse.json());
         } catch (error) {
-          // Room might already exist, continue
+          console.log("Room creation error (might already exist):", error);
         }
       }
 
       // Then create tables
+      console.log("Creating tables:", data.tables);
       for (const table of data.tables) {
-        await apiRequest("POST", `/api/tenants/${tenantId}/restaurants/${restaurantId}/tables`, {
+        const tableResponse = await apiRequest("POST", `/api/tenants/${tenantId}/restaurants/${restaurantId}/tables`, {
           tableNumber: table.tableNumber,
           capacity: table.capacity,
           room: table.room || "Main Dining",
         });
+        console.log("Table created:", await tableResponse.json());
       }
       return true;
     },
-    onSuccess: () => {
+    onSuccess: (data) => {
+      console.log("Tables configured successfully:", data);
       setCompletedSteps(prev => [...prev, 3]);
       toast({ title: "Tables configured successfully!" });
       setCurrentStep(4);
     },
     onError: (error: any) => {
+      console.error("Error saving tables:", error);
       toast({
         title: "Error saving tables",
         description: error.message,
