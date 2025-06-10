@@ -10,6 +10,8 @@ import { useAuth } from "@/lib/auth.tsx";
 import { useToast } from "@/hooks/use-toast";
 import { Grid3x3, X, Check } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
+import { AuthLoadingOverlay } from "@/components/ui/auth-loading-overlay";
+import { LoadingSpinner } from "@/components/ui/loading-spinner";
 
 export default function Login() {
   const [, setLocation] = useLocation();
@@ -26,6 +28,13 @@ export default function Login() {
     selectedPlanId: null as number | null,
   });
   const [showRememberNotice, setShowRememberNotice] = useState(false);
+  const [loadingState, setLoadingState] = useState<{
+    isLoading: boolean;
+    type: "login" | "register" | "google" | "apple" | "logout" | null;
+  }>({
+    isLoading: false,
+    type: null
+  });
 
   // Initialize form with remembered data
   useEffect(() => {
@@ -85,6 +94,10 @@ export default function Login() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
+    setLoadingState({
+      isLoading: true,
+      type: isLogin ? "login" : "register"
+    });
 
     try {
       if (isLogin) {
