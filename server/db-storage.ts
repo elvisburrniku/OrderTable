@@ -392,59 +392,200 @@ export class DatabaseStorage implements IStorage {
 
   // Additional required methods for the application
   async getNotificationsByRestaurant(restaurantId: number): Promise<any[]> {
-    return []; // Simplified - notifications not implemented yet
+    try {
+      const notificationData = await this.db
+        .select()
+        .from(notifications)
+        .where(eq(notifications.restaurantId, restaurantId))
+        .orderBy(desc(notifications.createdAt));
+      
+      return notificationData;
+    } catch (error) {
+      console.error("Error fetching notifications:", error);
+      return [];
+    }
   }
 
   async createNotification(notification: any): Promise<any> {
-    throw new Error("Method not implemented");
+    try {
+      const [newNotification] = await this.db
+        .insert(notifications)
+        .values(notification)
+        .returning();
+      
+      return newNotification;
+    } catch (error) {
+      console.error("Error creating notification:", error);
+      throw error;
+    }
   }
 
   async markNotificationAsRead(id: number): Promise<any> {
-    throw new Error("Method not implemented");
+    try {
+      const [updatedNotification] = await this.db
+        .update(notifications)
+        .set({ isRead: true })
+        .where(eq(notifications.id, id))
+        .returning();
+      
+      return updatedNotification;
+    } catch (error) {
+      console.error("Error marking notification as read:", error);
+      return null;
+    }
   }
 
   async markAllNotificationsAsRead(restaurantId: number): Promise<void> {
-    // Simplified implementation
+    try {
+      await this.db
+        .update(notifications)
+        .set({ isRead: true })
+        .where(eq(notifications.restaurantId, restaurantId));
+    } catch (error) {
+      console.error("Error marking all notifications as read:", error);
+    }
   }
 
   async getRoomsByRestaurant(restaurantId: number): Promise<any[]> {
-    return []; // Simplified - rooms not implemented yet
+    try {
+      const roomData = await this.db
+        .select()
+        .from(rooms)
+        .where(eq(rooms.restaurantId, restaurantId))
+        .orderBy(rooms.id);
+      
+      return roomData;
+    } catch (error) {
+      console.error("Error fetching rooms:", error);
+      return [];
+    }
   }
 
   async getRoomById(id: number): Promise<any> {
-    return null;
+    try {
+      const result = await this.db
+        .select()
+        .from(rooms)
+        .where(eq(rooms.id, id));
+      
+      return result[0] || null;
+    } catch (error) {
+      console.error("Error fetching room:", error);
+      return null;
+    }
   }
 
   async createRoom(room: any): Promise<any> {
-    throw new Error("Method not implemented");
+    try {
+      const [newRoom] = await this.db
+        .insert(rooms)
+        .values(room)
+        .returning();
+      
+      return newRoom;
+    } catch (error) {
+      console.error("Error creating room:", error);
+      throw error;
+    }
   }
 
   async updateRoom(id: number, updates: any): Promise<any> {
-    throw new Error("Method not implemented");
+    try {
+      const [updatedRoom] = await this.db
+        .update(rooms)
+        .set(updates)
+        .where(eq(rooms.id, id))
+        .returning();
+      
+      return updatedRoom;
+    } catch (error) {
+      console.error("Error updating room:", error);
+      return null;
+    }
   }
 
   async deleteRoom(id: number): Promise<boolean> {
-    return false;
+    try {
+      await this.db
+        .delete(rooms)
+        .where(eq(rooms.id, id));
+      
+      return true;
+    } catch (error) {
+      console.error("Error deleting room:", error);
+      return false;
+    }
   }
 
   async getCombinedTablesByRestaurant(restaurantId: number): Promise<any[]> {
-    return []; // Simplified - combined tables not implemented yet
+    try {
+      const combinedTableData = await this.db
+        .select()
+        .from(combinedTables)
+        .where(eq(combinedTables.restaurantId, restaurantId))
+        .orderBy(combinedTables.id);
+      
+      return combinedTableData;
+    } catch (error) {
+      console.error("Error fetching combined tables:", error);
+      return [];
+    }
   }
 
   async createCombinedTable(data: any): Promise<any> {
-    throw new Error("Method not implemented");
+    try {
+      const [newCombinedTable] = await this.db
+        .insert(combinedTables)
+        .values(data)
+        .returning();
+      
+      return newCombinedTable;
+    } catch (error) {
+      console.error("Error creating combined table:", error);
+      throw error;
+    }
   }
 
   async updateCombinedTable(id: number, updates: any): Promise<any> {
-    throw new Error("Method not implemented");
+    try {
+      const [updatedCombinedTable] = await this.db
+        .update(combinedTables)
+        .set(updates)
+        .where(eq(combinedTables.id, id))
+        .returning();
+      
+      return updatedCombinedTable;
+    } catch (error) {
+      console.error("Error updating combined table:", error);
+      return null;
+    }
   }
 
   async deleteCombinedTable(id: number): Promise<boolean> {
-    return false;
+    try {
+      await this.db
+        .delete(combinedTables)
+        .where(eq(combinedTables.id, id));
+      
+      return true;
+    } catch (error) {
+      console.error("Error deleting combined table:", error);
+      return false;
+    }
   }
 
   async getCombinedTableById(id: number): Promise<any> {
-    return null;
+    try {
+      const result = await this.db
+        .select()
+        .from(combinedTables)
+        .where(eq(combinedTables.id, id));
+      
+      return result[0] || null;
+    } catch (error) {
+      console.error("Error fetching combined table:", error);
+      return null;
+    }
   }
 
   async getOpeningHoursByRestaurant(restaurantId: number): Promise<any> {
@@ -572,8 +713,10 @@ export class DatabaseStorage implements IStorage {
     return [];
   }
 
-  async saveWebhooks(restaurantId: number, tenantId: number, webhooksData: any[]) {
-    return { success: true };
+  async saveWebhooks(restaurantId: number, tenantId: number, webhooksData: any[]): Promise<any[]> {
+    // For now, return the webhooks data as-is since webhooks table may not exist
+    // This maintains interface compatibility while allowing the application to work
+    return webhooksData || [];
   }
 
   async getSmsMessagesByRestaurant(restaurantId: number): Promise<any[]> {
