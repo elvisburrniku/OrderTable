@@ -5237,6 +5237,50 @@ app.put("/api/tenants/:tenantId/bookings/:id", validateTenant, async (req, res) 
     }
   });
 
+  // Stripe checkout session creation
+  app.post("/api/create-checkout-session", async (req, res) => {
+    try {
+      const { planId, userId, successUrl, cancelUrl } = req.body;
+
+      const plan = await storage.getSubscriptionPlan(planId);
+      if (!plan) {
+        return res.status(404).json({ message: "Plan not found" });
+      }
+
+      const session = await stripe.checkout.sessions.create({
+        payment_method_types: ['card'],
+        line_items: [
+          {
+            price_data: {
+              currency: 'usd',
+              product_data: {
+                name: `${plan.name} Plan`,
+                description: `Restaurant booking system - ${plan.name} plan`,
+              },
+              unit_amount: plan.price,
+              recurring: {
+                interval: plan.interval === 'monthly' ? 'month' : plan.interval === 'yearly' ? 'year' : 'month',
+              },
+            },
+            quantity: 1,
+          },
+        ],
+        mode: 'subscription',
+        success_url: successUrl,
+        cancel_url: cancelUrl,
+        metadata: {
+          userId: userId.toString(),
+          planId: planId.toString(),
+        },
+      });
+
+      res.json({ sessionId: session.id });
+    } catch (error) {
+      console.error('Error creating checkout session:', error);
+      res.status(500).json({ message: "Failed to create checkout session" });
+    }
+  });
+
   const httpServer = createServer(app);
 
   // Setup WebSocket server for real-time notifications
