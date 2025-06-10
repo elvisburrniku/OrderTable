@@ -88,6 +88,7 @@ export const restaurants = pgTable("restaurants", {
   phone: text("phone"),
   email: text("email"),
   description: text("description"),
+  setupCompleted: boolean("setup_completed").default(false),
   createdAt: timestamp("created_at").defaultNow(),
   emailSettings: text("email_settings"),
 });
