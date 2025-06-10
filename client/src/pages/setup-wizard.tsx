@@ -332,7 +332,7 @@ export default function SetupWizard() {
       });
       return response.json();
     },
-    onSuccess: (data) => {
+    onSuccess: async (data) => {
       // Update local storage to reflect setup completion
       const storedRestaurant = localStorage.getItem("restaurant");
       if (storedRestaurant) {
@@ -345,13 +345,18 @@ export default function SetupWizard() {
         }
       }
       
+      // Invalidate and refetch the session query to get updated data
+      await queryClient.invalidateQueries({ queryKey: ["/api/auth/validate"] });
+      
       toast({
         title: "Setup completed successfully!",
         description: "Your restaurant is ready to accept bookings.",
       });
       
-      // Force a page reload to ensure the SetupGuard recognizes completion
-      window.location.href = `/${tenantId}/dashboard`;
+      // Wait a moment for the cache to update, then redirect
+      setTimeout(() => {
+        window.location.href = `/${tenantId}/dashboard`;
+      }, 1000);
     },
     onError: (error: any) => {
       toast({

@@ -2111,6 +2111,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
 
       const updatedRestaurant = await storage.updateRestaurant(id, updates);
+      
+      // If setupCompleted was updated, refresh the session data
+      if ('setupCompleted' in updates && (req as any).session) {
+        const session = (req as any).session;
+        if (session.restaurant && session.restaurant.id === id) {
+          session.restaurant = { ...session.restaurant, ...updatedRestaurant };
+        }
+      }
+      
       res.json(updatedRestaurant);
     } catch (error) {
       console.error("Error updating restaurant:", error);
