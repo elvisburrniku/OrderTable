@@ -663,7 +663,7 @@ export default function SetupWizard() {
           </div>
           <div className="flex justify-between mt-2">
             {steps.map((step) => (
-              <div key={step.id} className="text-center" style={{ width: "calc(100% / 4)" }}>
+              <div key={step.id} className="text-center" style={{ width: `calc(100% / ${totalSteps})` }}>
                 <p className="text-sm font-medium text-gray-900 dark:text-white">
                   {step.title}
                 </p>
