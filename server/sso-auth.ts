@@ -78,12 +78,12 @@ export function setupSSO(app: Express) {
   }
 
   // Apple OAuth Strategy
-  if (process.env.APPLE_CLIENT_ID && process.env.APPLE_TEAM_ID && process.env.APPLE_KEY_ID) {
+  if (process.env.APPLE_CLIENT_ID && process.env.APPLE_TEAM_ID && process.env.APPLE_KEY_ID && process.env.APPLE_PRIVATE_KEY_PATH) {
     passport.use(new AppleStrategy({
       clientID: process.env.APPLE_CLIENT_ID,
       teamID: process.env.APPLE_TEAM_ID,
       keyID: process.env.APPLE_KEY_ID,
-      privateKeyLocation: process.env.APPLE_PRIVATE_KEY_PATH || './apple-key.p8',
+      privateKeyLocation: process.env.APPLE_PRIVATE_KEY_PATH,
       callbackURL: "/api/auth/apple/callback",
       passReqToCallback: false
     }, async (accessToken: string, refreshToken: string, idToken: any, profile: any, done: any) => {
@@ -94,6 +94,9 @@ export function setupSSO(app: Express) {
         done(error, null);
       }
     }));
+    console.log('Apple SSO: Configured successfully');
+  } else {
+    console.log('Apple SSO: Missing required environment variables');
   }
 
   // SSO Routes
