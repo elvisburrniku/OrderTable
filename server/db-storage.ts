@@ -969,11 +969,65 @@ export class DatabaseStorage implements IStorage {
   }
 
   async getTableLayout(restaurantId: number, room: string): Promise<any> {
-    return null;
+    try {
+      const result = await this.db
+        .select()
+        .from(tableLayouts)
+        .where(
+          and(
+            eq(tableLayouts.restaurantId, restaurantId),
+            eq(tableLayouts.room, room)
+          )
+        )
+        .limit(1);
+
+      return result[0] || null;
+    } catch (error) {
+      console.error("Error fetching table layout:", error);
+      return null;
+    }
   }
 
   async saveTableLayout(restaurantId: number, tenantId: number, room: string, positions: any): Promise<any> {
-    throw new Error("Method not implemented");
+    try {
+      // Check if layout already exists
+      const existingLayout = await this.getTableLayout(restaurantId, room);
+
+      if (existingLayout) {
+        // Update existing layout
+        const updated = await this.db
+          .update(tableLayouts)
+          .set({
+            positions,
+            updatedAt: new Date(),
+          })
+          .where(
+            and(
+              eq(tableLayouts.restaurantId, restaurantId),
+              eq(tableLayouts.room, room)
+            )
+          )
+          .returning();
+
+        return updated[0];
+      } else {
+        // Create new layout
+        const inserted = await this.db
+          .insert(tableLayouts)
+          .values({
+            restaurantId,
+            tenantId,
+            room,
+            positions,
+          })
+          .returning();
+
+        return inserted[0];
+      }
+    } catch (error) {
+      console.error("Error saving table layout:", error);
+      throw error;
+    }
   }
 
   async getReschedulingSuggestionsByRestaurant(restaurantId: number): Promise<any[]> {
