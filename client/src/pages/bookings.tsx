@@ -34,7 +34,7 @@ import {
   Download,
   List
 } from "lucide-react";
-import { InternationalPhoneInput } from "@/components/international-phone-input";
+// import { InternationalPhoneInput } from "@/components/international-phone-input";
 
 export default function Bookings() {
   const { user } = useAuth();
@@ -382,9 +382,11 @@ export default function Bookings() {
             <div className="grid grid-cols-2 gap-4">
               <div>
                 <Label htmlFor="customerPhone">Phone</Label>
-                <InternationalPhoneInput
+                <Input
+                  id="customerPhone"
+                  type="tel"
                   value={newBooking.customerPhone}
-                  onChange={(phone: string) => setNewBooking({ ...newBooking, customerPhone: phone })}
+                  onChange={(e) => setNewBooking({ ...newBooking, customerPhone: e.target.value })}
                   placeholder="Phone number"
                 />
               </div>

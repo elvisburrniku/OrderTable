@@ -1,5 +1,4 @@
-import { Calendar, Users, Clock, Zap, BarChart3, FileText, MessageSquare, CreditCard, Settings, Cog } from "lucide-react";
-import { useLocation } from "wouter";
+import { Calendar, Users, BarChart3 } from "lucide-react";
 
 interface SidebarProps {
   tenantId: number;
@@ -7,87 +6,6 @@ interface SidebarProps {
 }
 
 export function DashboardSidebar({ tenantId, restaurantId }: SidebarProps) {
-  const [location] = useLocation();
-
-  const menuItems = [
-    {
-      name: "Dashboard",
-      icon: BarChart3,
-      href: `/${tenantId}/dashboard`,
-      color: "text-green-600"
-    },
-    {
-      name: "Bookings",
-      icon: Calendar,
-      href: `/${tenantId}/bookings`,
-      color: "text-blue-600"
-    },
-    {
-      name: "Customers",
-      icon: Users,
-      href: `/${tenantId}/customers`,
-      color: "text-purple-600"
-    },
-    {
-      name: "Waiting List",
-      icon: Clock,
-      href: `/${tenantId}/waiting-list`,
-      color: "text-orange-600"
-    },
-    {
-      name: "Integrations",
-      icon: Zap,
-      href: `/${tenantId}/integrations`,
-      color: "text-yellow-600"
-    },
-    {
-      name: "Statistics",
-      icon: BarChart3,
-      href: `/${tenantId}/statistics`,
-      color: "text-indigo-600"
-    },
-    {
-      name: "Activity Log",
-      icon: FileText,
-      href: `/${tenantId}/activity-log`,
-      color: "text-gray-600"
-    },
-    {
-      name: "Feedback",
-      icon: MessageSquare,
-      href: `/${tenantId}/feedback`,
-      color: "text-pink-600"
-    },
-    {
-      name: "SMS Messages",
-      icon: MessageSquare,
-      href: `/${tenantId}/sms-messages`,
-      color: "text-teal-600"
-    },
-    {
-      name: "Subscription",
-      icon: CreditCard,
-      href: `/${tenantId}/subscription`,
-      color: "text-emerald-600"
-    },
-    {
-      name: "Tenant Settings",
-      icon: Settings,
-      href: `/${tenantId}/tenant-settings`,
-      color: "text-slate-600"
-    },
-    {
-      name: "Restaurant Settings",
-      icon: Cog,
-      href: `/${tenantId}/restaurant-settings`,
-      color: "text-stone-600"
-    }
-  ];
-
-  const isActive = (href: string) => {
-    return location === href || location.startsWith(href + '/');
-  };
-
   return (
     <div className="w-64 bg-white border-r border-gray-200 min-h-screen">
       <div className="p-6">
@@ -101,25 +19,29 @@ export function DashboardSidebar({ tenantId, restaurantId }: SidebarProps) {
 
         {/* Navigation */}
         <nav className="space-y-1">
-          {menuItems.map((item) => {
-            const Icon = item.icon;
-            const active = isActive(item.href);
-            
-            return (
-              <a
-                key={item.name}
-                href={item.href}
-                className={`flex items-center space-x-3 px-3 py-2 rounded-lg text-sm font-medium transition-colors ${
-                  active
-                    ? 'bg-gray-100 text-gray-900'
-                    : 'text-gray-600 hover:text-gray-900 hover:bg-gray-50'
-                }`}
-              >
-                <Icon className={`w-5 h-5 ${active ? 'text-gray-900' : item.color}`} />
-                <span>{item.name}</span>
-              </a>
-            );
-          })}
+          <a
+            href={`/${tenantId}/dashboard`}
+            className="flex items-center space-x-3 px-3 py-2 rounded-lg text-sm font-medium text-gray-600 hover:text-gray-900 hover:bg-gray-50"
+          >
+            <BarChart3 className="w-5 h-5 text-green-600" />
+            <span>Dashboard</span>
+          </a>
+          
+          <a
+            href={`/${tenantId}/bookings`}
+            className="flex items-center space-x-3 px-3 py-2 rounded-lg text-sm font-medium text-gray-600 hover:text-gray-900 hover:bg-gray-50"
+          >
+            <Calendar className="w-5 h-5 text-blue-600" />
+            <span>Bookings</span>
+          </a>
+          
+          <a
+            href={`/${tenantId}/customers`}
+            className="flex items-center space-x-3 px-3 py-2 rounded-lg text-sm font-medium text-gray-600 hover:text-gray-900 hover:bg-gray-50"
+          >
+            <Users className="w-5 h-5 text-purple-600" />
+            <span>Customers</span>
+          </a>
         </nav>
       </div>
     </div>

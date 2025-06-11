@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import { useLocation } from "wouter";
 import { useAuth } from "@/lib/auth.tsx";
 import { useQuery } from "@tanstack/react-query";
-import DashboardSidebar from "@/components/dashboard-sidebar";
+import { DashboardSidebar } from "@/components/dashboard-sidebar";
 import BookingCalendar from "@/components/booking-calendar";
 import { WalkInBooking } from "@/components/walk-in-booking";
 import { Button } from "@/components/ui/button";
