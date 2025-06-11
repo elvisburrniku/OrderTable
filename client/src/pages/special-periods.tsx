@@ -52,8 +52,15 @@ export default function SpecialPeriods() {
         title: "Success",
         description: "Special period created successfully!",
       });
+      // Invalidate both API path and any nested query patterns
       queryClient.invalidateQueries({
-        queryKey: [`/api/tenants/${restaurant?.tenantId}/restaurants/${restaurant?.id}/special-periods`]
+        predicate: (query) => {
+          const queryKey = query.queryKey;
+          return Array.isArray(queryKey) && (
+            queryKey.includes('special-periods') ||
+            (queryKey.length >= 3 && queryKey[0] === 'specialPeriods')
+          );
+        }
       });
     },
     onError: (error) => {
@@ -68,7 +75,7 @@ export default function SpecialPeriods() {
   // Delete special period mutation
   const deletePeriodMutation = useMutation({
     mutationFn: async (periodId: number) => {
-      const response = await fetch(`/api/tenants/${restaurant?.tenantId}/special-periods/${periodId}`, {
+      const response = await fetch(`/api/tenants/${restaurant?.tenantId}/restaurants/${restaurant?.id}/special-periods/${periodId}`, {
         method: 'DELETE',
       });
 
@@ -83,8 +90,15 @@ export default function SpecialPeriods() {
         title: "Success",
         description: "Special period deleted successfully!",
       });
+      // Invalidate both API path and any nested query patterns
       queryClient.invalidateQueries({
-        queryKey: [`/api/tenants/${restaurant?.tenantId}/restaurants/${restaurant?.id}/special-periods`]
+        predicate: (query) => {
+          const queryKey = query.queryKey;
+          return Array.isArray(queryKey) && (
+            queryKey.includes('special-periods') ||
+            (queryKey.length >= 3 && queryKey[0] === 'specialPeriods')
+          );
+        }
       });
     },
     onError: (error) => {
