@@ -108,8 +108,8 @@ export default function InteractiveBookingCalendar({
             // Use special period settings
             dayHours = {
               isOpen: specialPeriod.isOpen,
-              openTime: specialPeriod.openTime || "09:00",
-              closeTime: specialPeriod.closeTime || "22:00",
+              openTime: specialPeriod.isOpen ? (specialPeriod.openTime || "09:00") : "00:00",
+              closeTime: specialPeriod.isOpen ? (specialPeriod.closeTime || "22:00") : "00:00",
               dayOfWeek: day.getDay()
             };
           } else {
