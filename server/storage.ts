@@ -130,6 +130,7 @@ export interface IStorage {
   // Bookings
   getBookingsByRestaurant(restaurantId: number): Promise<Booking[]>;
   getBookingsByDate(restaurantId: number, date: string): Promise<Booking[]>;
+  getBookingsByDateRange(restaurantId: number, startDate: string, endDate: string): Promise<Booking[]>;
   getBookingById(id: number): Promise<Booking | undefined>;
   createBooking(booking: InsertBooking): Promise<Booking>;
   updateBooking(id: number, booking: Partial<Booking>): Promise<Booking | undefined>;

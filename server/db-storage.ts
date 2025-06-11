@@ -288,6 +288,28 @@ export class DatabaseStorage implements IStorage {
     }));
   }
 
+  async getBookingsByDateRange(restaurantId: number, startDate: string, endDate: string): Promise<any[]> {
+    if (!this.db) return [];
+    
+    // Use SQL date function to compare dates within range
+    const result = await this.db.select().from(bookings)
+      .where(and(
+        eq(bookings.restaurantId, restaurantId),
+        sql`DATE(${bookings.bookingDate}) >= ${startDate}`,
+        sql`DATE(${bookings.bookingDate}) <= ${endDate}`
+      ));
+    
+    // Transform the data to ensure proper date format for frontend
+    return result.map(booking => ({
+      ...booking,
+      bookingDate: booking.bookingDate instanceof Date 
+        ? booking.bookingDate.toISOString().split('T')[0] 
+        : typeof booking.bookingDate === 'string' 
+        ? booking.bookingDate.split('T')[0]
+        : booking.bookingDate
+    }));
+  }
+
   async createBooking(booking: any): Promise<any> {
     if (!this.db) throw new Error("Database connection not available");
     const result = await this.db.insert(bookings).values(booking).returning();

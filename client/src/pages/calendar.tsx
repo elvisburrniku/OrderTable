@@ -90,7 +90,18 @@ export default function CalendarPage() {
   });
 
   const { data: bookings = [], isLoading: bookingsLoading } = useQuery<Booking[]>({
-    queryKey: [`/api/tenants/${tenantId}/restaurants/22/bookings`],
+    queryKey: [`/api/tenants/${tenantId}/restaurants/22/bookings`, currentDate, viewMode],
+    queryFn: async () => {
+      const dateRange = getDateRange();
+      const startDate = format(dateRange[0], 'yyyy-MM-dd');
+      const endDate = format(dateRange[dateRange.length - 1], 'yyyy-MM-dd');
+      
+      const response = await apiRequest(`/api/tenants/${tenantId}/restaurants/22/bookings?startDate=${startDate}&endDate=${endDate}`, "GET");
+      if (!response.ok) {
+        throw new Error('Failed to fetch bookings');
+      }
+      return response.json();
+    },
     enabled: !!tenantId,
   });
 
