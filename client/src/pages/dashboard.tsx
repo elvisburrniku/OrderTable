@@ -4,7 +4,7 @@ import { useAuth } from "@/lib/auth.tsx";
 import { useQuery } from "@tanstack/react-query";
 
 import BookingCalendar from "@/components/booking-calendar";
-import { WalkInBooking } from "@/components/walk-in-booking";
+import WalkInBookingButton from "@/components/walk-in-booking";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent } from "@/components/ui/card";
@@ -699,10 +699,7 @@ export default function Dashboard() {
               <Plus className="h-4 w-4 mr-2" />
               New booking
             </Button>
-            <WalkInBooking 
-              restaurantId={restaurant?.id!} 
-              tenantId={restaurant?.tenantId!} 
-            />
+            <WalkInBookingButton />
           </div>
           <div className="flex items-center space-x-4">
             <Input 

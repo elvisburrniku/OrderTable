@@ -50,12 +50,26 @@ function WalkInBookingButton() {
 
   const walkInMutation = useMutation({
     mutationFn: async (data: typeof formData) => {
+      const bookingData = {
+        customerName: data.customerName || "Walk-in Customer",
+        customerEmail: "",
+        customerPhone: data.customerPhone,
+        guestCount: data.guestCount,
+        bookingDate: data.bookingDate,
+        startTime: data.startTime,
+        endTime: data.endTime,
+        tableId: data.tableId === "auto" ? null : parseInt(data.tableId),
+        notes: data.notes,
+        specialRequests: data.specialRequests,
+        isWalkIn: true
+      };
+
       const response = await fetch(`/api/tenants/${restaurant?.tenantId}/restaurants/${restaurant?.id}/bookings`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify(data),
+        body: JSON.stringify(bookingData),
       });
       
       if (!response.ok) {
@@ -73,13 +87,13 @@ function WalkInBookingButton() {
       
       // Invalidate relevant queries
       queryClient.invalidateQueries({ 
-        queryKey: [`/api/tenants/${tenantId}/restaurants/${restaurantId}/bookings`] 
+        queryKey: [`/api/tenants/${restaurant?.tenantId}/restaurants/${restaurant?.id}/bookings`] 
       });
       queryClient.invalidateQueries({ 
-        queryKey: [`/api/tenants/${tenantId}/restaurants/${restaurantId}/customers`] 
+        queryKey: [`/api/tenants/${restaurant?.tenantId}/restaurants/${restaurant?.id}/customers`] 
       });
       queryClient.invalidateQueries({
-        queryKey: [`/api/tenants/${tenantId}/restaurants/${restaurantId}/notifications`]
+        queryKey: [`/api/tenants/${restaurant?.tenantId}/restaurants/${restaurant?.id}/notifications`]
       });
       
       setOpen(false);
