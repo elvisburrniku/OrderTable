@@ -7,7 +7,7 @@ interface SidebarProps {
   restaurantId?: number;
 }
 
-export default function DashboardSidebar({ tenantId, restaurantId }: SidebarProps) {
+export function DashboardSidebar({ tenantId, restaurantId }: SidebarProps) {
   const [location] = useLocation();
   const [isRestaurantSettingsOpen, setIsRestaurantSettingsOpen] = useState(false);
 

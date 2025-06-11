@@ -154,8 +154,33 @@ export default function SmsMessages() {
           </div>
         </div>
 
-        {/* Main Content */}
-        <div className="p-6 max-w-4xl mx-auto">
+        <div className="flex">
+          {/* Sidebar */}
+          <div className="w-64 bg-white border-r min-h-screen">
+            <div className="p-6">
+              <div className="space-y-2">
+                <a href="/customers" className="flex items-center space-x-2 text-gray-600 hover:bg-gray-50 px-3 py-2 rounded">
+                  <span className="w-2 h-2 bg-gray-400 rounded-full"></span>
+                  <span>Customers</span>
+                </a>
+                <div className="flex items-center space-x-2 text-green-600 bg-green-50 px-3 py-2 rounded">
+                  <span className="w-2 h-2 bg-green-600 rounded-full"></span>
+                  <span className="font-medium">SMS messages</span>
+                </div>
+                <a href="/feedback-responses" className="flex items-center space-x-2 text-gray-600 hover:bg-gray-50 px-3 py-2 rounded">
+                  <span className="w-2 h-2 bg-gray-400 rounded-full"></span>
+                  <span>Feedback responses</span>
+                </a>
+                <a href="#" className="flex items-center space-x-2 text-gray-600 hover:bg-gray-50 px-3 py-2 rounded">
+                  <span className="w-2 h-2 bg-gray-400 rounded-full"></span>
+                  <span>Newsletter</span>
+                </a>
+              </div>
+            </div>
+          </div>
+
+          {/* Main Content */}
+          <div className="flex-1 p-6 max-w-4xl">
             <Card>
               <CardHeader>
                 <CardTitle>New Message</CardTitle>
@@ -282,6 +307,7 @@ export default function SmsMessages() {
                 </div>
               </CardContent>
             </Card>
+          </div>
         </div>
       </div>
     );
@@ -307,8 +333,33 @@ export default function SmsMessages() {
         </div>
       </div>
 
-      {/* Main Content */}
-      <div className="p-6 max-w-6xl mx-auto">
+      <div className="flex">
+        {/* Sidebar */}
+        <div className="w-64 bg-white border-r min-h-screen">
+          <div className="p-6">
+            <div className="space-y-2">
+              <a href="/customers" className="flex items-center space-x-2 text-gray-600 hover:bg-gray-50 px-3 py-2 rounded">
+                <span className="w-2 h-2 bg-gray-400 rounded-full"></span>
+                <span>Customers</span>
+              </a>
+              <div className="flex items-center space-x-2 text-green-600 bg-green-50 px-3 py-2 rounded">
+                <span className="w-2 h-2 bg-green-600 rounded-full"></span>
+                <span className="font-medium">SMS messages</span>
+              </div>
+              <a href="/feedback-responses" className="flex items-center space-x-2 text-gray-600 hover:bg-gray-50 px-3 py-2 rounded">
+                <span className="w-2 h-2 bg-gray-400 rounded-full"></span>
+                <span>Feedback responses</span>
+              </a>
+              <a href="#" className="flex items-center space-x-2 text-gray-600 hover:bg-gray-50 px-3 py-2 rounded">
+                <span className="w-2 h-2 bg-gray-400 rounded-full"></span>
+                <span>Newsletter</span>
+              </a>
+            </div>
+          </div>
+        </div>
+
+        {/* Main Content */}
+        <div className="flex-1 p-6">
           <div className="bg-white rounded-lg shadow">
             <div className="p-6 border-b flex items-center justify-between">
               <h2 className="text-lg font-semibold">SMS Messages</h2>

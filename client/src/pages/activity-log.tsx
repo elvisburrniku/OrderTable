@@ -107,8 +107,33 @@ export default function ActivityLog() {
         </div>
       </div>
 
-      {/* Main Content */}
-      <div className="p-6">
+      <div className="flex">
+        {/* Sidebar */}
+        <div className="w-64 bg-white border-r min-h-screen">
+          <div className="p-6">
+            <div className="space-y-2">
+              <a href={`/${restaurant.tenantId}/bookings`} className="flex items-center space-x-2 text-gray-600 hover:bg-gray-50 px-3 py-2 rounded">
+                <span className="w-2 h-2 bg-gray-400 rounded-full"></span>
+                <span>Bookings</span>
+              </a>
+              <a href={`/${restaurant.tenantId}/waiting-list`} className="flex items-center space-x-2 text-gray-600 hover:bg-gray-50 px-3 py-2 rounded">
+                <span className="w-2 h-2 bg-gray-400 rounded-full"></span>
+                <span>Waiting List</span>
+              </a>
+              <a href={`/${restaurant.tenantId}/statistics`} className="flex items-center space-x-2 text-gray-600 hover:bg-gray-50 px-3 py-2 rounded">
+                <span className="w-2 h-2 bg-gray-400 rounded-full"></span>
+                <span>Statistics</span>
+              </a>
+              <div className="flex items-center space-x-2 text-green-600 bg-green-50 px-3 py-2 rounded">
+                <span className="w-2 h-2 bg-green-600 rounded-full"></span>
+                <span className="font-medium">Log</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Main Content */}
+        <div className="flex-1 p-6">
           <div className="bg-white rounded-lg shadow">
             {/* Header */}
             <div className="p-6 border-b">
