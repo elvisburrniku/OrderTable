@@ -6078,9 +6078,10 @@ app.put("/api/tenants/:tenantId/bookings/:id", validateTenant, async (req, res) 
       await storage.createActivityLog({
         restaurantId,
         tenantId,
-        action: 'conflict_resolved',
-        details: `Manually resolved conflict ${conflictId} using resolution ${resolutionId}`,
-        timestamp: new Date().toISOString()
+        eventType: 'conflict_resolved',
+        description: `Manually resolved conflict ${conflictId} using resolution ${resolutionId}`,
+        source: 'manual',
+        createdAt: new Date()
       });
 
       res.json({ 
