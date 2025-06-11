@@ -51,33 +51,8 @@ export default function SeatingConfigurations() {
         </div>
       </div>
 
-      <div className="flex">
-        {/* Sidebar */}
-        <div className="w-64 bg-white border-r min-h-screen">
-          <div className="p-6">
-            <div className="space-y-1">
-              <div className="text-sm font-medium text-gray-900 mb-3">General</div>
-              <a href="#" className="block text-sm text-gray-600 hover:text-gray-900 py-1">The place</a>
-              <a href="/opening-hours" className="block text-sm text-gray-600 hover:text-gray-900 py-1">Opening hours</a>
-              <a href="/special-periods" className="block text-sm text-gray-600 hover:text-gray-900 py-1">Special periods</a>
-              <a href="/cut-off-time" className="block text-sm text-gray-600 hover:text-gray-900 py-1">Cut-off time</a>
-              
-              <div className="text-sm font-medium text-gray-900 mb-3 mt-6">Tables and rooms</div>
-              <a href="/rooms" className="block text-sm text-gray-600 hover:text-gray-900 py-1">Rooms</a>
-              <a href="/tables" className="block text-sm text-gray-600 hover:text-gray-900 py-1">Tables</a>
-              <a href="/combined-tables" className="block text-sm text-gray-600 hover:text-gray-900 py-1">Combined tables</a>
-              
-              <div className="text-sm font-medium text-gray-900 mb-3 mt-6">Booking settings</div>
-              <div className="block text-sm text-green-600 font-medium py-1 bg-green-50 px-2 rounded">Seating configurations</div>
-              <a href="/periodic-criteria" className="block text-sm text-gray-600 hover:text-gray-900 py-1">Periodic criteria</a>
-              <a href="/custom-fields" className="block text-sm text-gray-600 hover:text-gray-900 py-1">Custom Fields</a>
-              <a href="/booking-agents" className="block text-sm text-gray-600 hover:text-gray-900 py-1">Booking agents</a>
-            </div>
-          </div>
-        </div>
-
-        {/* Main Content */}
-        <div className="flex-1 p-6">
+      {/* Main Content */}
+      <div className="p-6">
           <Card>
             <CardHeader>
               <CardTitle>Seating configurations</CardTitle>
@@ -155,7 +130,6 @@ export default function SeatingConfigurations() {
               </div>
             </CardContent>
           </Card>
-        </div>
       </div>
     </div>
   );
