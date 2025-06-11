@@ -35,6 +35,11 @@ export function NavigationSidebar() {
         isActive: location === `${basePath}/change-requests`
       },
       {
+        href: `${basePath}/calendar`,
+        label: "Calendar",
+        isActive: location === `${basePath}/calendar`
+      },
+      {
         href: `${basePath}/tables`,
         label: "Tables",
         isActive: location === `${basePath}/tables`
