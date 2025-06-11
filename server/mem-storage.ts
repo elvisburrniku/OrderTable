@@ -676,7 +676,14 @@ export class MemoryStorage implements IStorage {
     this.specialPeriods.push(newPeriod);
     return newPeriod;
   }
-  async updateSpecialPeriod(id: number, updates: any): Promise<any> { return undefined; }
+  async updateSpecialPeriod(id: number, updates: any): Promise<any> { 
+    const index = this.specialPeriods.findIndex(period => period.id === id);
+    if (index !== -1) {
+      this.specialPeriods[index] = { ...this.specialPeriods[index], ...updates };
+      return this.specialPeriods[index];
+    }
+    return null;
+  }
   async deleteSpecialPeriod(id: number): Promise<boolean> { 
     const index = this.specialPeriods.findIndex(period => period.id === id);
     if (index !== -1) {

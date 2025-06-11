@@ -1619,6 +1619,29 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  app.put("/api/tenants/:tenantId/restaurants/:restaurantId/special-periods/:id", validateTenant, async (req, res) => {
+    try {
+      const restaurantId = parseInt(req.params.restaurantId);
+      const tenantId = parseInt(req.params.tenantId);
+      const id = parseInt(req.params.id);
+
+      const restaurant = await storage.getRestaurantById(restaurantId);
+      if (!restaurant || restaurant.tenantId !== tenantId) {
+        return res.status(404).json({ message: "Restaurant not found" });
+      }
+
+      const updates = req.body;
+      const period = await storage.updateSpecialPeriod(id, updates);
+      if (!period) {
+        return res.status(404).json({ message: "Special period not found" });
+      }
+
+      res.json(period);
+    } catch (error) {
+      res.status(400).json({ message: "Invalid request" });
+    }
+  });
+
   app.delete("/api/tenants/:tenantId/restaurants/:restaurantId/special-periods/:id", validateTenant, async (req, res) => {
     try {
       const restaurantId = parseInt(req.params.restaurantId);

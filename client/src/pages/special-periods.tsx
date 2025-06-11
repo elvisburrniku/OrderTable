@@ -72,6 +72,48 @@ export default function SpecialPeriods() {
     },
   });
 
+  // Update special period mutation
+  const updatePeriodMutation = useMutation({
+    mutationFn: async ({ periodId, periodData }: { periodId: number, periodData: SpecialPeriod }) => {
+      const response = await fetch(`/api/tenants/${restaurant?.tenantId}/restaurants/${restaurant?.id}/special-periods/${periodId}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(periodData),
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to update special period');
+      }
+
+      return response.json();
+    },
+    onSuccess: () => {
+      toast({
+        title: "Success",
+        description: "Special period updated successfully!",
+      });
+      // Invalidate both API path and any nested query patterns
+      queryClient.invalidateQueries({
+        predicate: (query) => {
+          const queryKey = query.queryKey;
+          return Array.isArray(queryKey) && (
+            queryKey.includes('special-periods') ||
+            (queryKey.length >= 3 && queryKey[0] === 'specialPeriods')
+          );
+        }
+      });
+    },
+    onError: (error) => {
+      toast({
+        title: "Error",
+        description: "Failed to update special period. Please try again.",
+        variant: "destructive",
+      });
+    },
+  });
+
   // Delete special period mutation
   const deletePeriodMutation = useMutation({
     mutationFn: async (periodId: number) => {
@@ -112,7 +154,7 @@ export default function SpecialPeriods() {
 
   // Load existing periods when data is fetched
   useEffect(() => {
-    if (existingPeriods) {
+    if (existingPeriods && Array.isArray(existingPeriods)) {
       setPeriods(existingPeriods.map((period: any) => ({
         id: period.id,
         name: period.name,
@@ -157,17 +199,32 @@ export default function SpecialPeriods() {
       return;
     }
 
-    createPeriodMutation.mutate(period);
+    if (period.id) {
+      // Update existing period
+      updatePeriodMutation.mutate({ periodId: period.id, periodData: period });
+    } else {
+      // Create new period
+      createPeriodMutation.mutate(period);
+    }
   };
 
   const deletePeriod = async (index: number, periodId?: number) => {
     if (periodId) {
+      // Delete from server and update local state immediately
       deletePeriodMutation.mutate(periodId);
+      // Remove from local state immediately for real-time update
+      const newPeriods = periods.filter((_, i) => i !== index);
+      setPeriods(newPeriods);
     } else {
       // Remove from local state if not saved yet
       const newPeriods = periods.filter((_, i) => i !== index);
       setPeriods(newPeriods);
     }
+  };
+
+  // Helper function to determine if period is existing or new
+  const isExistingPeriod = (period: SpecialPeriod) => {
+    return period.id !== undefined;
   };
 
   return (
@@ -283,15 +340,14 @@ export default function SpecialPeriods() {
                       </div>
                     )}
 
-                    {!period.id && (
-                      <Button 
-                        onClick={() => savePeriod(index)}
-                        disabled={createPeriodMutation.isPending}
-                        className="bg-blue-600 hover:bg-blue-700 text-white"
-                      >
-                        {createPeriodMutation.isPending ? "Saving..." : "Save Period"}
-                      </Button>
-                    )}
+                    <Button 
+                      onClick={() => savePeriod(index)}
+                      disabled={createPeriodMutation.isPending || updatePeriodMutation.isPending}
+                      className="bg-blue-600 hover:bg-blue-700 text-white"
+                    >
+                      {(createPeriodMutation.isPending || updatePeriodMutation.isPending) ? "Saving..." : 
+                       (period.id ? "Update Period" : "Create Period")}
+                    </Button>
                   </div>
                 ))}
               </div>
