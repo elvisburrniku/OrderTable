@@ -435,15 +435,22 @@ export default function CalendarPage() {
     setDraggedOverSlot(null);
   };
 
-  const handleDrop = (e: React.DragEvent, date: Date, time: string) => {
+  const handleDrop = (e: React.DragEvent, date: Date, time: string, tableId?: number) => {
     e.preventDefault();
     if (draggedBooking) {
+      const updateData: any = {
+        bookingDate: format(date, 'yyyy-MM-dd'),
+        startTime: time,
+      };
+      
+      // If dropping in week view with table assignment
+      if (tableId !== undefined) {
+        updateData.tableId = tableId;
+      }
+      
       updateBookingMutation.mutate({
         id: draggedBooking.id,
-        data: {
-          bookingDate: format(date, 'yyyy-MM-dd'),
-          startTime: time,
-        },
+        data: updateData,
       });
     }
     setDraggedBooking(null);
@@ -869,34 +876,101 @@ export default function CalendarPage() {
       <div className="flex-1 overflow-hidden">
         {viewMode === 'week' && (
           <div className="h-full flex flex-col">
-            {/* Week header */}
-            <div className="grid grid-cols-8 border-b">
-              <div className="p-2 border-r bg-gray-50"></div>
-              {dateRange.map((date) => (
-                <div key={date.toISOString()} className="p-2 border-r text-center">
-                  <div className="text-sm text-muted-foreground">
-                    {format(date, 'EEE')}
+            {/* Week header with tables */}
+            <div className="border-b bg-gray-50">
+              <div className="grid grid-cols-8 border-b">
+                <div className="p-2 border-r"></div>
+                {dateRange.map((date) => (
+                  <div key={date.toISOString()} className="p-2 border-r text-center">
+                    <div className="text-sm text-muted-foreground">
+                      {format(date, 'EEE')}
+                    </div>
+                    <div className={cn(
+                      "text-lg font-medium",
+                      isToday(date) && "text-primary"
+                    )}>
+                      {format(date, 'd')}
+                    </div>
                   </div>
-                  <div className={cn(
-                    "text-lg font-medium",
-                    isToday(date) && "text-primary"
-                  )}>
-                    {format(date, 'd')}
+                ))}
+              </div>
+              
+              {/* Table headers */}
+              <div className="grid grid-cols-8 text-xs">
+                <div className="p-1 border-r text-center font-medium">Tables</div>
+                {dateRange.map((date) => (
+                  <div key={`tables-${date.toISOString()}`} className="border-r">
+                    <div className="grid grid-cols-3 gap-px p-1">
+                      {tables.slice(0, 3).map((table) => (
+                        <div key={table.id} className="text-center text-xs bg-white rounded px-1 py-0.5">
+                          T{table.tableNumber}
+                        </div>
+                      ))}
+                    </div>
                   </div>
-                </div>
-              ))}
+                ))}
+              </div>
             </div>
             
-            {/* Time slots */}
+            {/* Time slots with table columns */}
             <div className="flex-1 overflow-y-auto">
               {timeSlots.map((timeSlot) => (
                 <div key={timeSlot} className="grid grid-cols-8 border-b min-h-[60px]">
-                  <div className="p-2 border-r bg-gray-50 text-sm text-muted-foreground">
+                  <div className="p-2 border-r bg-gray-50 text-sm text-muted-foreground text-center">
                     {timeSlot}
                   </div>
                   {dateRange.map((date) => (
                     <div key={`${date.toISOString()}-${timeSlot}`} className="border-r">
-                      {renderTimeSlot(date, timeSlot)}
+                      <div className="grid grid-cols-3 gap-px h-full p-1">
+                        {tables.slice(0, 3).map((table) => {
+                          const tableBookings = displayBookings.filter(booking => 
+                            booking.bookingDate === format(date, 'yyyy-MM-dd') &&
+                            isTimeInRange(booking.startTime, timeSlot, addMinutesToTime(timeSlot, 60)) &&
+                            booking.tableId === table.id
+                          );
+                          
+                          return (
+                            <div
+                              key={`${table.id}-${timeSlot}`}
+                              className="bg-white border border-gray-200 rounded p-1 cursor-pointer hover:bg-gray-50 min-h-[50px] relative"
+                              onDragOver={(e) => handleDragOver(e, date, timeSlot)}
+                              onDragLeave={handleDragLeave}
+                              onDrop={(e) => handleDrop(e, date, timeSlot, table.id)}
+                              onClick={() => handleCreateBooking(date, timeSlot)}
+                            >
+                              {tableBookings.map((booking) => {
+                                const BookingTypeIcon = getBookingTypeIcon(booking.bookingType);
+                                return (
+                                  <div
+                                    key={booking.id}
+                                    className={cn(
+                                      "text-xs p-1 rounded mb-1 cursor-pointer border-l-2",
+                                      getBookingTypeColor(booking.bookingType),
+                                      booking.status === 'confirmed' && "border-l-green-500",
+                                      booking.status === 'pending' && "border-l-yellow-500",
+                                      booking.status === 'cancelled' && "border-l-red-500"
+                                    )}
+                                    draggable
+                                    onDragStart={() => handleDragStart(booking)}
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      handleEditBooking(booking);
+                                    }}
+                                  >
+                                    <div className="flex items-center gap-1">
+                                      <BookingTypeIcon className="w-2 h-2" />
+                                      <span className="truncate font-medium">{booking.customerName}</span>
+                                    </div>
+                                    <div className="text-xs text-muted-foreground truncate">
+                                      {booking.startTime} • {booking.guestCount}p
+                                    </div>
+                                  </div>
+                                );
+                              })}
+                            </div>
+                          );
+                        })}
+                      </div>
                     </div>
                   ))}
                 </div>
