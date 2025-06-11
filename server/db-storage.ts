@@ -28,6 +28,10 @@ const {
   cutOffTimes,
   tableLayouts,
   integrationConfigurations,
+  menuCategories,
+  menuItems,
+  qrMenus,
+  menuOrders,
 } = schema;
 
 export class DatabaseStorage implements IStorage {

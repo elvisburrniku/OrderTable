@@ -248,6 +248,34 @@ export interface IStorage {
   // Rescheduling Suggestions
   getReschedulingSuggestionsByRestaurant(restaurantId: number): Promise<any[]>;
   getReschedulingSuggestionsByBooking(bookingId: number): Promise<any[]>;
+
+  // Menu Management
+  getMenuCategoriesByRestaurant(restaurantId: number): Promise<MenuCategory[]>;
+  getMenuCategoryById(id: number): Promise<MenuCategory | undefined>;
+  createMenuCategory(category: InsertMenuCategory): Promise<MenuCategory>;
+  updateMenuCategory(id: number, updates: Partial<MenuCategory>): Promise<MenuCategory | undefined>;
+  deleteMenuCategory(id: number): Promise<boolean>;
+
+  getMenuItemsByRestaurant(restaurantId: number): Promise<MenuItem[]>;
+  getMenuItemsByCategory(categoryId: number): Promise<MenuItem[]>;
+  getMenuItemById(id: number): Promise<MenuItem | undefined>;
+  createMenuItem(item: InsertMenuItem): Promise<MenuItem>;
+  updateMenuItem(id: number, updates: Partial<MenuItem>): Promise<MenuItem | undefined>;
+  deleteMenuItem(id: number): Promise<boolean>;
+
+  getQrMenusByRestaurant(restaurantId: number): Promise<QrMenu[]>;
+  getQrMenuById(id: number): Promise<QrMenu | undefined>;
+  getQrMenuByCode(qrCode: string): Promise<QrMenu | undefined>;
+  createQrMenu(menu: InsertQrMenu): Promise<QrMenu>;
+  updateQrMenu(id: number, updates: Partial<QrMenu>): Promise<QrMenu | undefined>;
+  deleteQrMenu(id: number): Promise<boolean>;
+  incrementQrMenuScan(qrCode: string): Promise<void>;
+
+  getMenuOrdersByRestaurant(restaurantId: number): Promise<MenuOrder[]>;
+  getMenuOrdersByQrMenu(qrMenuId: number): Promise<MenuOrder[]>;
+  getMenuOrderById(id: number): Promise<MenuOrder | undefined>;
+  createMenuOrder(order: InsertMenuOrder): Promise<MenuOrder>;
+  updateMenuOrder(id: number, updates: Partial<MenuOrder>): Promise<MenuOrder | undefined>;
   createReschedulingSuggestion(suggestion: any): Promise<any>;
   updateReschedulingSuggestion(id: number, updates: any): Promise<any>;
   getReschedulingSuggestionById(id: number): Promise<any>;

@@ -45,6 +45,11 @@ export function NavigationSidebar() {
         isActive: location === `${basePath}/tables`
       },
       {
+        href: `${basePath}/qr-menu`,
+        label: "QR Menus",
+        isActive: location === `${basePath}/qr-menu`
+      },
+      {
         href: `${basePath}/customers`,
         label: "Customers",
         isActive: location === `${basePath}/customers`
