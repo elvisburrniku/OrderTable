@@ -307,7 +307,7 @@ export default function SetupWizard() {
         closeTime: hours.closeTime,
       }));
       console.log("Formatted hours array:", hoursArray);
-      const response = await apiRequest("POST", `/api/tenants/${tenantId}/restaurants/${restaurantId}/opening-hours`, hoursArray);
+      const response = await apiRequest(`/api/tenants/${tenantId}/restaurants/${restaurantId}/opening-hours`, "POST", hoursArray);
       const result = await response.json();
       console.log("Opening hours response:", result);
       return result;
