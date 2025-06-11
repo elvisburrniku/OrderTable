@@ -21,11 +21,11 @@ export default function GoogleIntegration() {
   const [isActivated, setIsActivated] = useState(true);
   const [businessType, setBusinessType] = useState('Restaurant');
   
-  // Generate the booking URL dynamically based on the current domain and restaurant ID
+  // Generate the booking URL dynamically based on the current domain, tenant ID, and restaurant ID
   const generateBookingUrl = () => {
-    if (!restaurant?.id) return '';
+    if (!restaurant?.id || !tenant?.id) return '';
     const currentDomain = window.location.origin;
-    return `${currentDomain}/guest-booking/${restaurant.id}`;
+    return `${currentDomain}/guest-booking/${tenant.id}/${restaurant.id}`;
   };
   
   const bookingUrl = generateBookingUrl();

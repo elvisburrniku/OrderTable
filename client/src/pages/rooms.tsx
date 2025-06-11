@@ -100,8 +100,26 @@ export default function Rooms() {
       return results;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({
-        queryKey: ["/api/tenants", restaurant?.tenantId, "restaurants", restaurant?.id, "rooms"],
+      // Comprehensive cache invalidation to ensure all components refresh
+      queryClient.invalidateQueries({ 
+        predicate: (query) => {
+          const queryKey = query.queryKey as string[];
+          return queryKey.some(key => 
+            typeof key === 'string' && (
+              key.includes('rooms') ||
+              key.includes('statistics') ||
+              key.includes('dashboard') ||
+              key.includes('restaurant') ||
+              key.includes('tables') ||
+              key.includes(`tenants/${restaurant?.tenantId}`)
+            )
+          );
+        }
+      });
+      
+      // Force refetch of current page data
+      queryClient.refetchQueries({ 
+        queryKey: ["/api/tenants", restaurant?.tenantId, "restaurants", restaurant?.id, "rooms"] 
       });
     },
     onError: (error) => {

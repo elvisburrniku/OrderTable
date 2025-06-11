@@ -51,91 +51,99 @@ export default function DashboardSidebar({ selectedDate, bookings }: DashboardSi
   const settingsItems = [
     { path: `/${tenantId}/opening-hours`, icon: Clock4, label: "Opening Hours" },
     { path: `/${tenantId}/special-periods`, icon: Calendar, label: "Special Periods" },
-    { path: `/${tenantId}/cut-off-time`, icon: Clock, label: "Cut-off Time" },
+    { path: `/${tenantId}/cut-off-time`, icon: Clock4, label: "Cut-off Time" },
     { path: `/${tenantId}/rooms`, icon: MapPin, label: "Rooms" },
     { path: `/${tenantId}/tables`, icon: Table, label: "Tables" },
-    { path: `/${tenantId}/combined-tables`, icon: Utensils, label: "Combined Tables" },
-    { path: `/${tenantId}/table-plan`, icon: Grid3x3, label: "Table Plan" },
-    { path: `/${tenantId}/seating-configurations`, icon: Grid3x3, label: "Seating Configurations" },
-    { path: `/${tenantId}/periodic-criteria`, icon: Calendar, label: "Periodic Criteria" },
-    { path: `/${tenantId}/custom-fields`, icon: FileText, label: "Custom Fields" },
-    { path: `/${tenantId}/booking-agents`, icon: Users, label: "Booking Agents" },
-    { path: `/${tenantId}/email-notifications`, icon: MessageSquare, label: "E-mail Notifications" },
-    { path: `/${tenantId}/sms-notifications`, icon: MessageSquare, label: "SMS Notifications" },
-    { path: `/${tenantId}/feedback-questions`, icon: MessageCircle, label: "Questions" },
-    { path: `/${tenantId}/events`, icon: Calendar, label: "Events" },
-    { path: `/${tenantId}/products`, icon: Utensils, label: "Products" },
-    { path: `/${tenantId}/product-groups`, icon: Grid3x3, label: "Product Groups" },
-    { path: `/${tenantId}/payment-setups`, icon: Settings, label: "Payment Setups" },
-    { path: `/${tenantId}/payment-gateway`, icon: CreditCard, label: "Payment Gateway" }
+    { path: `/${tenantId}/combined-tables`, icon: Grid3x3, label: "Combined Tables" },
   ];
 
   return (
-    <div className="w-64 bg-gray-50 border-r border-gray-200 p-4">
-      <div className="flex items-center mb-8">
-        <ReadyTableLogo size={20} textClassName="text-xl font-bold text-gray-900" />
+    <div className="hidden md:flex h-full w-64 flex-col fixed inset-y-0 z-50 bg-white border-r border-gray-200">
+      <div className="flex items-center h-16 px-4 border-b border-gray-200">
+        <ReadyTableLogo />
       </div>
-
-      <nav className="space-y-2 mb-8">
-        {navigationItems.map((item) => {
-          const Icon = item.icon;
-          const isActive = location === item.path;
-
-          return (
-            <Link key={item.path} href={item.path}>
-              <div className={`flex items-center px-3 py-2 text-sm font-medium rounded-lg transition-colors ${
-                isActive 
-                  ? "text-green-600 bg-green-50" 
-                  : "text-gray-600 hover:text-gray-900 hover:bg-gray-100"
-              }`}>
-                <Icon className="mr-3" size={16} />
-                {item.label}
-              </div>
-            </Link>
-          );
-        })}
-      </nav>
-
-      <div className="mb-8">
-        <div className="flex items-center mb-4">
-          <Settings className="mr-2" size={16} />
-          <span className="text-sm font-semibold text-gray-900">Restaurant Settings</span>
-        </div>
-        
-        <nav className="space-y-1">
-          {settingsItems.map((item) => {
+      
+      <div className="flex-1 flex flex-col overflow-y-auto">
+        {/* Navigation */}
+        <nav className="flex-1 px-2 py-4 space-y-1">
+          {navigationItems.map((item) => {
             const Icon = item.icon;
             const isActive = location === item.path;
-
+            
             return (
-              <Link key={item.path} href={item.path}>
-                <div className={`flex items-center px-3 py-2 text-sm font-medium rounded-lg transition-colors ${
-                  isActive 
-                    ? "text-green-600 bg-green-50" 
-                    : "text-gray-600 hover:text-gray-900 hover:bg-gray-100"
-                }`}>
-                  <Icon className="mr-3" size={16} />
-                  {item.label}
-                </div>
+              <Link
+                key={item.path}
+                href={item.path}
+                className={cn(
+                  "group flex items-center px-2 py-2 text-sm font-medium rounded-md transition-colors",
+                  isActive
+                    ? "bg-blue-100 text-blue-900 border-r-2 border-blue-600"
+                    : "text-gray-600 hover:bg-gray-50 hover:text-gray-900"
+                )}
+              >
+                <Icon
+                  className={cn(
+                    "mr-3 h-5 w-5 flex-shrink-0",
+                    isActive ? "text-blue-500" : "text-gray-400 group-hover:text-gray-500"
+                  )}
+                />
+                {item.label}
               </Link>
             );
           })}
         </nav>
-      </div>
 
+        {/* Settings Section */}
+        <div className="px-2 py-4 border-t border-gray-200">
+          <h3 className="px-2 text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">
+            Restaurant Settings
+          </h3>
+          <nav className="space-y-1">
+            {settingsItems.map((item) => {
+              const Icon = item.icon;
+              const isActive = location === item.path;
+              
+              return (
+                <Link
+                  key={item.path}
+                  href={item.path}
+                  className={cn(
+                    "group flex items-center px-2 py-2 text-sm font-medium rounded-md transition-colors",
+                    isActive
+                      ? "bg-blue-100 text-blue-900 border-r-2 border-blue-600"
+                      : "text-gray-600 hover:bg-gray-50 hover:text-gray-900"
+                  )}
+                >
+                  <Icon
+                    className={cn(
+                      "mr-3 h-4 w-4 flex-shrink-0",
+                      isActive ? "text-blue-500" : "text-gray-400 group-hover:text-gray-500"
+                    )}
+                  />
+                  {item.label}
+                </Link>
+              );
+            })}
+          </nav>
+        </div>
 
-
-      <div>
-        <div className="text-sm font-medium text-gray-900 mb-2">Booking open</div>
-        <div className="space-y-2 text-sm">
-          <div className="flex items-center">
-            <div className="w-2 h-2 bg-green-600 rounded-full mr-2" />
-            <span>All</span>
-          </div>
-          <div className="text-gray-600 ml-4">
-            <div>Bookings today: {todaysBookings.length}</div>
-            <div>Remaining today: {20 - todaysBookings.length}</div>
-          </div>
+        {/* Today's Bookings Summary */}
+        <div className="px-2 py-4 border-t border-gray-200">
+          <Card>
+            <CardContent className="p-4">
+              <h3 className="text-sm font-medium text-gray-900 mb-2">Today's Summary</h3>
+              <div className="space-y-2">
+                <div className="flex items-center justify-between text-sm">
+                  <span className="text-gray-500">Total Bookings</span>
+                  <span className="font-medium">{todaysBookings.length}</span>
+                </div>
+                <div className="flex items-center justify-between text-sm">
+                  <span className="text-gray-500">Selected Date</span>
+                  <span className="font-medium">{format(selectedDate, 'MMM d')}</span>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
         </div>
       </div>
     </div>

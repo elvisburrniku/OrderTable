@@ -50,7 +50,7 @@ import SeatingConfigurations from "./pages/seating-configurations";
 import CombinedTables from "./pages/combined-tables";
 import Rooms from "./pages/rooms";
 import BookingAgents from "./pages/booking-agents";
-import TablePlan from "./pages/table-plan"; //Import the new TablePlan component
+import TablePlan from "./pages/table-plan";
 import { lazy } from "react";
 import Profile from "./pages/profile";
 import Settings from "./pages/settings";
@@ -127,25 +127,25 @@ function App() {
               <Route path="/:tenantId/table-plan" component={TablePlan} />
               <Route path="/:tenantId/rooms" component={Rooms} />
               <Route path="/:tenantId/booking-agents" component={BookingAgents} />
-              <Route path="/booking-manage/:id" component={BookingManage} />
-              <Route path="/feedback/:tenantId/:restaurantId" component={TableFeedback} />
-              <Route path="/:tenantId/booking/:id" component={lazy(() => import("./pages/booking-detail"))} />
               <Route path="/:tenantId/profile" component={Profile} />
               <Route path="/:tenantId/settings" component={Settings} />
               <Route path="/:tenantId/billing" component={Billing} />
               <Route path="/:tenantId/help" component={Help} />
+              <Route path="/:tenantId/customer-feedback" component={CustomerFeedback} />
+              <Route path="/:tenantId/table-feedback" component={TableFeedback} />
+              <Route path="/:tenantId/feedback-responses-popup" component={FeedbackResponsesPopup} />
             </SetupGuard>
-            <Route path="/feedback-responses" component={FeedbackResponses} />
-            <Route path="/feedback-responses-popup" component={FeedbackResponsesPopup} />
-            <Route path="/contact" component={Contact} />
-            <Route path="/guest-booking/:restaurantId" component={GuestBooking} />
-            <Route component={NotFound} />
+              <Route path="/contact" component={Contact} />
+              <Route path="/guest-booking/:id" component={GuestBooking} />
+              <Route path="/booking-manage/:id" component={BookingManage} />
+              <Route path="/feedback/:restaurantId/:bookingId" component={CustomerFeedback} />
+              <Route path="*" component={NotFound} />
             </Switch>
             </RouteGuard>
-            <Toaster />
           </TutorialProviderWrapper>
         </TenantProvider>
       </AuthProvider>
+      <Toaster />
     </QueryClientProvider>
   );
 }

@@ -207,8 +207,9 @@ export interface IStorage {
   saveTableLayout(restaurantId: number, tenantId: number, room: string, positions: any): Promise<TableLayout>;
 
   // Opening Hours
-  getOpeningHoursByRestaurant(restaurantId: number): Promise<any>;
-  createOrUpdateOpeningHours(restaurantId: number, tenantId: number, hoursData: any[]): Promise<any>;
+  getOpeningHours(tenantId: number, restaurantId: number): Promise<any[]>;
+  createOpeningHour(hourData: any): Promise<any>;
+  clearOpeningHours(tenantId: number, restaurantId: number): Promise<void>;
 
   // Special Periods
   getSpecialPeriodsByRestaurant(restaurantId: number): Promise<any>;

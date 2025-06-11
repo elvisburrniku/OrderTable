@@ -39,45 +39,46 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     // Check for stored user data on app load and validate session
     const validateSession = async () => {
-      const storedUser = localStorage.getItem("user");
-      const storedRestaurant = localStorage.getItem("restaurant");
+      try {
+        const storedUser = localStorage.getItem("user");
+        const storedRestaurant = localStorage.getItem("restaurant");
 
-      if (storedUser && storedUser !== "undefined") {
-        try {
-          const parsedUser = JSON.parse(storedUser);
-          
-          // Validate session with backend
+        if (storedUser && storedUser !== "undefined") {
           try {
-            const response = await fetch('/api/auth/validate', {
-              method: 'GET',
-              credentials: 'include',
-              headers: {
-                'Content-Type': 'application/json',
-              },
-            });
+            const parsedUser = JSON.parse(storedUser);
             
-            if (response.ok) {
-              // Session is valid, use stored data
+            // Validate session with backend
+            try {
+              const response = await fetch('/api/auth/validate', {
+                method: 'GET',
+                credentials: 'include',
+                headers: {
+                  'Content-Type': 'application/json',
+                },
+              });
+              
+              if (response.ok) {
+                // Session is valid, use stored data
+                setUser(parsedUser);
+                if (storedRestaurant && storedRestaurant !== "undefined") {
+                  try {
+                    setRestaurant(JSON.parse(storedRestaurant));
+                  } catch (restaurantError) {
+                    console.error("Error parsing stored restaurant:", restaurantError);
+                    localStorage.removeItem("restaurant");
+                  }
+                }
+              } else {
+                // Session invalid, clear stored data
+                localStorage.removeItem("user");
+                localStorage.removeItem("restaurant");
+                localStorage.removeItem("tenant");
+              }
+            } catch (error) {
+              // Network error or server down, use stored data as fallback
               setUser(parsedUser);
               if (storedRestaurant && storedRestaurant !== "undefined") {
                 try {
-                  setRestaurant(JSON.parse(storedRestaurant));
-                } catch (restaurantError) {
-                  console.error("Error parsing stored restaurant:", restaurantError);
-                  localStorage.removeItem("restaurant");
-                }
-              }
-            } else {
-              // Session invalid, clear stored data
-              localStorage.removeItem("user");
-              localStorage.removeItem("restaurant");
-              localStorage.removeItem("tenant");
-            }
-          } catch (error) {
-            // Network error or server down, use stored data as fallback
-            setUser(parsedUser);
-            if (storedRestaurant && storedRestaurant !== "undefined") {
-              try {
                 setRestaurant(JSON.parse(storedRestaurant));
               } catch (restaurantError) {
                 console.error("Error parsing stored restaurant:", restaurantError);
@@ -98,9 +99,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       }
 
       setIsLoading(false);
+      } catch (error) {
+        console.error("Session validation error:", error);
+        setIsLoading(false);
+      }
     };
 
-    validateSession();
+    validateSession().catch(error => {
+      console.error("Unhandled validation error:", error);
+      setIsLoading(false);
+    });
   }, []);
 
   const login = async (email: string, password: string, rememberMe?: boolean) => {

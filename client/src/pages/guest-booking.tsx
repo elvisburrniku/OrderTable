@@ -41,8 +41,9 @@ const steps: BookingStep[] = [
 ];
 
 export default function GuestBooking() {
-  const [match, params] = useRoute("/guest-booking/:restaurantId");
+  const [match, params] = useRoute("/guest-booking/:tenantId/:restaurantId");
   const restaurantId = params?.restaurantId;
+  const tenantId = params?.tenantId;
   const { toast } = useToast();
 
   const [currentStep, setCurrentStep] = useState(0);
@@ -236,6 +237,18 @@ export default function GuestBooking() {
 
     createBookingMutation.mutate(bookingData);
   };
+
+  // Early return for missing parameters
+  if (!restaurantId || !tenantId) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="text-center">
+          <h1 className="text-2xl font-bold text-gray-900 mb-4">Invalid Booking URL</h1>
+          <p className="text-gray-600">Please check the booking URL and try again.</p>
+        </div>
+      </div>
+    );
+  }
 
   if (restaurantLoading) {
     return (

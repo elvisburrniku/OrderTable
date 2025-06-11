@@ -85,7 +85,24 @@ export default function EmailNotifications() {
         title: "Settings saved",
         description: "Email notification settings have been updated successfully.",
       });
+      // Comprehensive cache invalidation to ensure all components refresh
       queryClient.invalidateQueries({ 
+        predicate: (query) => {
+          const queryKey = query.queryKey as string[];
+          return queryKey.some(key => 
+            typeof key === 'string' && (
+              key.includes('email-settings') ||
+              key.includes('statistics') ||
+              key.includes('dashboard') ||
+              key.includes('restaurant') ||
+              key.includes(`tenants/${restaurant?.tenantId}`)
+            )
+          );
+        }
+      });
+      
+      // Force refetch of current page data
+      queryClient.refetchQueries({ 
         queryKey: ['email-settings', restaurant?.tenantId, restaurant?.id] 
       });
     },

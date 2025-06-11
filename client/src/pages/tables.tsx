@@ -122,8 +122,26 @@ export default function Tables() {
       return response.json();
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({
-        queryKey: ["/api/tenants", restaurant?.tenantId || 1, "restaurants", restaurant?.id, "tables"],
+      // Comprehensive cache invalidation to ensure all components refresh
+      queryClient.invalidateQueries({ 
+        predicate: (query) => {
+          const queryKey = query.queryKey as string[];
+          return queryKey.some(key => 
+            typeof key === 'string' && (
+              key.includes('tables') ||
+              key.includes('statistics') ||
+              key.includes('dashboard') ||
+              key.includes('restaurant') ||
+              key.includes('rooms') ||
+              key.includes(`tenants/${restaurant?.tenantId}`)
+            )
+          );
+        }
+      });
+      
+      // Force refetch of current page data
+      queryClient.refetchQueries({ 
+        queryKey: ["/api/tenants", restaurant?.tenantId || 1, "restaurants", restaurant?.id, "tables"] 
       });
       setIsDialogOpen(false);
       setNewTable({ tableNumber: "", capacity: 4, isActive: true });
@@ -142,8 +160,26 @@ export default function Tables() {
       return response.json();
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({
-        queryKey: ["/api/tenants", restaurant?.tenantId || 1, "restaurants", restaurant?.id, "tables"],
+      // Comprehensive cache invalidation to ensure all components refresh
+      queryClient.invalidateQueries({ 
+        predicate: (query) => {
+          const queryKey = query.queryKey as string[];
+          return queryKey.some(key => 
+            typeof key === 'string' && (
+              key.includes('tables') ||
+              key.includes('statistics') ||
+              key.includes('dashboard') ||
+              key.includes('restaurant') ||
+              key.includes('rooms') ||
+              key.includes(`tenants/${restaurant?.tenantId}`)
+            )
+          );
+        }
+      });
+      
+      // Force refetch of current page data
+      queryClient.refetchQueries({ 
+        queryKey: ["/api/tenants", restaurant?.tenantId || 1, "restaurants", restaurant?.id, "tables"] 
       });
     },
   });
@@ -158,8 +194,26 @@ export default function Tables() {
       return response.json();
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({
-        queryKey: ["/api/tenants", restaurant?.tenantId || 1, "restaurants", restaurant?.id, "tables"],
+      // Comprehensive cache invalidation to ensure all components refresh
+      queryClient.invalidateQueries({ 
+        predicate: (query) => {
+          const queryKey = query.queryKey as string[];
+          return queryKey.some(key => 
+            typeof key === 'string' && (
+              key.includes('tables') ||
+              key.includes('statistics') ||
+              key.includes('dashboard') ||
+              key.includes('restaurant') ||
+              key.includes('rooms') ||
+              key.includes(`tenants/${restaurant?.tenantId}`)
+            )
+          );
+        }
+      });
+      
+      // Force refetch of current page data
+      queryClient.refetchQueries({ 
+        queryKey: ["/api/tenants", restaurant?.tenantId || 1, "restaurants", restaurant?.id, "tables"] 
       });
     },
   });
