@@ -1,0 +1,32 @@
+chunk-RPCDYKBN.js?v=003d14dc:3750 Uncaught TypeError: Cannot read properties of undefined (reading 'length')
+    at handleAutoResolve (conflict-resolution-system.tsx:231:39)
+    at onClick (conflict-resolution-system.tsx:592:38)
+    at HTMLUnknownElement.callCallback2 (chunk-RPCDYKBN.js?v=003d14dc:3674:22)
+    at Object.invokeGuardedCallbackDev (chunk-RPCDYKBN.js?v=003d14dc:3699:24)
+    at invokeGuardedCallback (chunk-RPCDYKBN.js?v=003d14dc:3733:39)
+    at invokeGuardedCallbackAndCatchFirstError (chunk-RPCDYKBN.js?v=003d14dc:3736:33)
+    at executeDispatch (chunk-RPCDYKBN.js?v=003d14dc:7014:11)
+    at processDispatchQueueItemsInOrder (chunk-RPCDYKBN.js?v=003d14dc:7034:15)
+    at processDispatchQueue (chunk-RPCDYKBN.js?v=003d14dc:7043:13)
+    at dispatchEventsForPlugins (chunk-RPCDYKBN.js?v=003d14dc:7051:11)
+handleAutoResolve @ conflict-resolution-system.tsx:231
+onClick @ conflict-resolution-system.tsx:592
+callCallback2 @ chunk-RPCDYKBN.js?v=003d14dc:3674
+invokeGuardedCallbackDev @ chunk-RPCDYKBN.js?v=003d14dc:3699
+invokeGuardedCallback @ chunk-RPCDYKBN.js?v=003d14dc:3733
+invokeGuardedCallbackAndCatchFirstError @ chunk-RPCDYKBN.js?v=003d14dc:3736
+executeDispatch @ chunk-RPCDYKBN.js?v=003d14dc:7014
+processDispatchQueueItemsInOrder @ chunk-RPCDYKBN.js?v=003d14dc:7034
+processDispatchQueue @ chunk-RPCDYKBN.js?v=003d14dc:7043
+dispatchEventsForPlugins @ chunk-RPCDYKBN.js?v=003d14dc:7051
+(anonymous) @ chunk-RPCDYKBN.js?v=003d14dc:7174
+batchedUpdates$1 @ chunk-RPCDYKBN.js?v=003d14dc:18913
+batchedUpdates @ chunk-RPCDYKBN.js?v=003d14dc:3579
+dispatchEventForPluginEventSystem @ chunk-RPCDYKBN.js?v=003d14dc:7173
+dispatchEventWithEnableCapturePhaseSelectiveHydrationWithoutDiscreteEventReplay @ chunk-RPCDYKBN.js?v=003d14dc:5478
+dispatchEvent @ chunk-RPCDYKBN.js?v=003d14dc:5472
+dispatchDiscreteEvent @ chunk-RPCDYKBN.js?v=003d14dc:5449
+queryClient.ts:27 
+            
+            
+           POST https://bd35e12f-4cc7-4619-9f19-8e776fcdc616-00-1z4r2c4zdvz0q.worf.replit.dev/api/tenants/48/restaurants/22/conflicts/conflict-1749656520812-56-2025-06-11-19:30/resolve 404 (Not Found)

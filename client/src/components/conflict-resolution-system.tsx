@@ -228,10 +228,10 @@ export default function ConflictResolutionSystem({
   };
 
   const handleAutoResolve = (conflict: ConflictType) => {
-    if (conflict.suggestedResolutions.length === 0) return;
+    if (!conflict.suggestedResolutions || conflict.suggestedResolutions.length === 0) return;
     
     const resolution = conflict.suggestedResolutions.find(r => r.autoExecutable);
-    if (!resolution) return;
+    if (!resolution || !resolution.bookingId || !resolution.newTableId) return;
 
     setIsResolving(true);
     autoResolveMutation.mutate({
@@ -414,7 +414,7 @@ export default function ConflictResolutionSystem({
                       </div>
 
                       {/* Top resolution preview */}
-                      {conflict.suggestedResolutions.length > 0 && (
+                      {conflict.suggestedResolutions && conflict.suggestedResolutions.length > 0 && (
                         <div>
                           <h4 className="font-medium mb-2">Recommended Resolution:</h4>
                           <div className="bg-green-50 border border-green-200 rounded-lg p-3">
@@ -531,7 +531,7 @@ export default function ConflictResolutionSystem({
               <div>
                 <h3 className="font-medium mb-4">Resolution Options</h3>
                 <div className="space-y-3">
-                  {selectedConflict.suggestedResolutions.map((resolution) => (
+                  {(selectedConflict.suggestedResolutions || []).map((resolution) => (
                     <div
                       key={resolution.id}
                       className={`border rounded-lg p-4 cursor-pointer transition-colors ${
