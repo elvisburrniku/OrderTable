@@ -85,9 +85,14 @@ export default function EmailNotifications() {
         title: "Settings saved",
         description: "Email notification settings have been updated successfully.",
       });
+      // Invalidate all queries that might show email settings data
       queryClient.invalidateQueries({ 
         queryKey: ['email-settings', restaurant?.tenantId, restaurant?.id] 
       });
+      queryClient.invalidateQueries({ queryKey: [`/api/tenants/${restaurant?.tenantId}/restaurants/${restaurant?.id}/statistics`] });
+      queryClient.invalidateQueries({ queryKey: [`/api/tenants/${restaurant?.tenantId}/restaurants/${restaurant?.id}`] });
+      queryClient.invalidateQueries({ queryKey: ["dashboard"] });
+      queryClient.invalidateQueries({ queryKey: ["restaurant-settings"] });
     },
     onError: (error: Error) => {
       toast({

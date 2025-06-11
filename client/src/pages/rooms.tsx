@@ -100,9 +100,15 @@ export default function Rooms() {
       return results;
     },
     onSuccess: () => {
+      // Invalidate all queries that might show rooms data
       queryClient.invalidateQueries({
         queryKey: ["/api/tenants", restaurant?.tenantId, "restaurants", restaurant?.id, "rooms"],
       });
+      queryClient.invalidateQueries({ queryKey: [`/api/tenants/${restaurant?.tenantId}/restaurants/${restaurant?.id}/statistics`] });
+      queryClient.invalidateQueries({ queryKey: [`/api/tenants/${restaurant?.tenantId}/restaurants/${restaurant?.id}`] });
+      queryClient.invalidateQueries({ queryKey: ["dashboard"] });
+      queryClient.invalidateQueries({ queryKey: ["restaurant-settings"] });
+      queryClient.invalidateQueries({ queryKey: ["tables"] });
     },
     onError: (error) => {
       console.error("Room save error:", error);

@@ -122,9 +122,15 @@ export default function Tables() {
       return response.json();
     },
     onSuccess: () => {
+      // Invalidate all queries that might show tables data
       queryClient.invalidateQueries({
         queryKey: ["/api/tenants", restaurant?.tenantId || 1, "restaurants", restaurant?.id, "tables"],
       });
+      queryClient.invalidateQueries({ queryKey: ["tables"] });
+      queryClient.invalidateQueries({ queryKey: [`/api/tenants/${restaurant?.tenantId}/restaurants/${restaurant?.id}/statistics`] });
+      queryClient.invalidateQueries({ queryKey: [`/api/tenants/${restaurant?.tenantId}/restaurants/${restaurant?.id}`] });
+      queryClient.invalidateQueries({ queryKey: ["dashboard"] });
+      queryClient.invalidateQueries({ queryKey: ["restaurant-settings"] });
       setIsDialogOpen(false);
       setNewTable({ tableNumber: "", capacity: 4, isActive: true });
     },
@@ -142,9 +148,15 @@ export default function Tables() {
       return response.json();
     },
     onSuccess: () => {
+      // Invalidate all queries that might show tables data
       queryClient.invalidateQueries({
         queryKey: ["/api/tenants", restaurant?.tenantId || 1, "restaurants", restaurant?.id, "tables"],
       });
+      queryClient.invalidateQueries({ queryKey: ["tables"] });
+      queryClient.invalidateQueries({ queryKey: [`/api/tenants/${restaurant?.tenantId}/restaurants/${restaurant?.id}/statistics`] });
+      queryClient.invalidateQueries({ queryKey: [`/api/tenants/${restaurant?.tenantId}/restaurants/${restaurant?.id}`] });
+      queryClient.invalidateQueries({ queryKey: ["dashboard"] });
+      queryClient.invalidateQueries({ queryKey: ["restaurant-settings"] });
     },
   });
 
@@ -158,9 +170,15 @@ export default function Tables() {
       return response.json();
     },
     onSuccess: () => {
+      // Invalidate all queries that might show tables data
       queryClient.invalidateQueries({
         queryKey: ["/api/tenants", restaurant?.tenantId || 1, "restaurants", restaurant?.id, "tables"],
       });
+      queryClient.invalidateQueries({ queryKey: ["tables"] });
+      queryClient.invalidateQueries({ queryKey: [`/api/tenants/${restaurant?.tenantId}/restaurants/${restaurant?.id}/statistics`] });
+      queryClient.invalidateQueries({ queryKey: [`/api/tenants/${restaurant?.tenantId}/restaurants/${restaurant?.id}`] });
+      queryClient.invalidateQueries({ queryKey: ["dashboard"] });
+      queryClient.invalidateQueries({ queryKey: ["restaurant-settings"] });
     },
   });
 

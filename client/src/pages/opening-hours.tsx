@@ -60,7 +60,12 @@ export default function OpeningHours() {
     },
     onSuccess: () => {
       toast({ title: "Opening hours saved successfully!" });
+      // Invalidate all queries that might show opening hours data
       queryClient.invalidateQueries({ queryKey: [`/api/tenants/${tenantId}/restaurants/${restaurantId}/opening-hours`] });
+      queryClient.invalidateQueries({ queryKey: [`/api/tenants/${tenantId}/restaurants/${restaurantId}/statistics`] });
+      queryClient.invalidateQueries({ queryKey: [`/api/tenants/${tenantId}/restaurants/${restaurantId}`] });
+      queryClient.invalidateQueries({ queryKey: ["dashboard"] });
+      queryClient.invalidateQueries({ queryKey: ["restaurant-settings"] });
     },
     onError: (error: any) => {
       toast({
