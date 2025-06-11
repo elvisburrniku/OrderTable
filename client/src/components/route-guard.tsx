@@ -82,7 +82,7 @@ export function RouteGuard({ children }: RouteGuardProps) {
         /^\/\d+\/table-feedback$/,
         /^\/\d+\/feedback-responses-popup$/,
         /^\/contact$/,
-        /^\/guest-booking$/,
+        /^\/guest-booking\/\d+\/\d+$/,
         /^\/booking-manage$/
       ];
 
