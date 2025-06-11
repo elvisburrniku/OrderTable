@@ -5757,16 +5757,59 @@ app.put("/api/tenants/:tenantId/bookings/:id", validateTenant, async (req, res) 
         return res.status(400).json({ message: "Conflict is not auto-resolvable" });
       }
 
-      // Generate auto-resolution
-      const bestResolution = {
-        id: `split-party-${conflict.bookings[0].id}`,
-        type: 'split_party',
-        description: 'Split large party across adjacent tables',
-        impact: 'moderate',
-        confidence: 70,
-        estimatedCustomerSatisfaction: 75,
-        details: { splitSuggested: true, tablesNeeded: 2, compensationSuggested: true }
-      };
+      // Actually resolve the conflict by applying changes
+      let bestResolution;
+      
+      if (conflict.type === 'capacity_exceeded' && conflict.bookings.length > 0) {
+        const booking = conflict.bookings[0];
+        
+        // Find a suitable larger table
+        const suitableTables = tables.filter(t => 
+          t.capacity >= booking.guestCount && 
+          t.id !== booking.tableId
+        );
+
+        if (suitableTables.length > 0) {
+          const newTable = suitableTables[0];
+          await storage.updateBooking(booking.id, {
+            tableId: newTable.id
+          });
+          
+          bestResolution = {
+            id: `reassign-${booking.id}`,
+            type: 'reassign_table',
+            description: `Moved to ${newTable.name || `Table ${newTable.table_number}`} (capacity: ${newTable.capacity})`,
+            impact: 'low',
+            confidence: 90,
+            estimatedCustomerSatisfaction: 85,
+            details: { 
+              newTableId: newTable.id, 
+              newTableName: newTable.name || `Table ${newTable.table_number}`,
+              actuallyApplied: true
+            }
+          };
+        } else {
+          bestResolution = {
+            id: `split-party-${booking.id}`,
+            type: 'split_party',
+            description: 'Split large party across adjacent tables',
+            impact: 'moderate',
+            confidence: 70,
+            estimatedCustomerSatisfaction: 75,
+            details: { splitSuggested: true, tablesNeeded: 2, compensationSuggested: true }
+          };
+        }
+      } else {
+        bestResolution = {
+          id: `resolve-${conflict.bookings[0]?.id || Date.now()}`,
+          type: 'manual_review',
+          description: 'Conflict marked for manual review',
+          impact: 'minimal',
+          confidence: 100,
+          estimatedCustomerSatisfaction: 90,
+          details: { requiresStaffReview: true }
+        };
+      }
 
       res.json({ 
         message: "Conflict auto-resolved successfully",
@@ -5792,15 +5835,51 @@ app.put("/api/tenants/:tenantId/bookings/:id", validateTenant, async (req, res) 
         return res.status(404).json({ message: "Restaurant not found" });
       }
 
-      // Generate mock resolution for demo
-      const resolution = {
-        id: resolutionId,
-        type: 'reassign_table',
-        description: 'Table reassignment completed',
-        impact: 'low',
-        confidence: 85,
-        estimatedCustomerSatisfaction: 90
-      };
+      // Get the actual conflict to understand what needs to be resolved
+      const bookings = await storage.getBookingsByRestaurant(restaurantId);
+      const tables = await storage.getTablesByRestaurant(restaurantId);
+      
+      const allConflicts = [
+        ...ConflictDetector.detectTableDoubleBookings(bookings),
+        ...ConflictDetector.detectCapacityExceeded(bookings, tables),
+        ...ConflictDetector.detectTimeOverlaps(bookings)
+      ];
+
+      const conflict = allConflicts.find(c => c.id === conflictId);
+      if (!conflict) {
+        return res.status(404).json({ message: "Conflict not found" });
+      }
+
+      // Find the resolution in the conflict's suggested resolutions
+      const resolution = conflict.suggestedResolutions?.find((r: any) => r.id === resolutionId);
+      if (!resolution) {
+        return res.status(404).json({ message: "Resolution not found" });
+      }
+
+      // Actually apply the resolution to fix the conflict
+      if (conflict.type === 'capacity_exceeded' && conflict.bookings.length > 0) {
+        const booking = conflict.bookings[0];
+        
+        // Find a suitable larger table
+        const suitableTables = tables.filter(t => 
+          t.capacity >= booking.guestCount && 
+          t.id !== booking.tableId
+        );
+
+        if (suitableTables.length > 0) {
+          const newTable = suitableTables[0];
+          await storage.updateBooking(booking.id, {
+            tableId: newTable.id
+          });
+          
+          resolution.description = `Moved to ${newTable.name || `Table ${newTable.table_number}`} (capacity: ${newTable.capacity})`;
+          resolution.details = {
+            ...resolution.details,
+            newTableId: newTable.id,
+            newTableName: newTable.name || `Table ${newTable.table_number}`
+          };
+        }
+      }
 
       // Log the manual resolution
       await storage.createActivityLog({
