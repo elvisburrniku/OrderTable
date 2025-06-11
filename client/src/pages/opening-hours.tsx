@@ -51,6 +51,14 @@ export default function OpeningHours() {
   // Save opening hours mutation
   const saveHoursMutation = useMutation({
     mutationFn: async () => {
+      console.log('Starting save hours mutation...');
+      console.log('tenantId:', tenantId);
+      console.log('restaurantId:', restaurantId);
+      
+      if (!tenantId || !restaurantId) {
+        throw new Error('Missing tenant ID or restaurant ID');
+      }
+      
       const hoursData = hours.map((hour, index) => ({
         dayOfWeek: index,
         isOpen: hour.enabled,
@@ -58,7 +66,17 @@ export default function OpeningHours() {
         closeTime: hour.close,
       }));
       
+      console.log('Hours data to save:', hoursData);
+      console.log('API URL:', `/api/tenants/${tenantId}/restaurants/${restaurantId}/opening-hours`);
+      
       const response = await apiRequest(`/api/tenants/${tenantId}/restaurants/${restaurantId}/opening-hours`, "POST", hoursData);
+      
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.error('API response not ok:', response.status, errorText);
+        throw new Error(`API error: ${response.status} - ${errorText}`);
+      }
+      
       return response.json();
     },
     onSuccess: () => {
