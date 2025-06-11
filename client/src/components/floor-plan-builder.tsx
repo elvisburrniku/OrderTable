@@ -95,6 +95,69 @@ export default function FloorPlanBuilder({
   initialLayout = [],
   onSave
 }: FloorPlanBuilderProps) {
+  // Add custom CSS animations
+  React.useEffect(() => {
+    const style = document.createElement('style');
+    style.textContent = `
+      @keyframes pulseRing {
+        0% { box-shadow: 0 0 0 0 rgba(59, 130, 246, 0.7); }
+        70% { box-shadow: 0 0 0 10px rgba(59, 130, 246, 0); }
+        100% { box-shadow: 0 0 0 0 rgba(59, 130, 246, 0); }
+      }
+      
+      @keyframes slideInFromLeft {
+        0% { transform: translateX(-100%); opacity: 0; }
+        100% { transform: translateX(0); opacity: 1; }
+      }
+      
+      @keyframes fadeInUp {
+        0% { transform: translateY(20px); opacity: 0; }
+        100% { transform: translateY(0); opacity: 1; }
+      }
+      
+      @keyframes itemPop {
+        0% { transform: scale(0) rotate(0deg); opacity: 0; }
+        50% { transform: scale(1.2) rotate(5deg); opacity: 0.8; }
+        100% { transform: scale(1) rotate(0deg); opacity: 1; }
+      }
+      
+      .animate-pulse-ring {
+        animation: pulseRing 2s infinite;
+      }
+      
+      .animate-slide-in {
+        animation: slideInFromLeft 0.5s ease-out;
+      }
+      
+      .animate-fade-in-up {
+        animation: fadeInUp 0.6s ease-out;
+      }
+      
+      .animate-item-pop {
+        animation: itemPop 0.4s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+      }
+      
+      .floor-plan-item {
+        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+      }
+      
+      .floor-plan-item:hover {
+        transform: scale(1.05) !important;
+        box-shadow: 0 10px 25px rgba(0, 0, 0, 0.15);
+      }
+      
+      .drag-ghost {
+        opacity: 0.5;
+        transform: scale(1.1);
+        z-index: 1000;
+      }
+    `;
+    document.head.appendChild(style);
+    
+    return () => {
+      document.head.removeChild(style);
+    };
+  }, []);
   const [items, setItems] = useState<FloorPlanItem[]>(initialLayout);
   const [selectedItems, setSelectedItems] = useState<string[]>([]);
   const [isDragging, setIsDragging] = useState(false);
@@ -356,7 +419,7 @@ export default function FloorPlanBuilder({
   return (
     <div className="flex h-full bg-gray-50">
       {/* Toolbar */}
-      <div className="w-64 bg-white border-r border-gray-200 p-4 space-y-4">
+      <div className="w-64 bg-white border-r border-gray-200 p-4 space-y-4 animate-slide-in">
         <div>
           <h3 className="font-semibold mb-2">Tools</h3>
           <div className="grid grid-cols-2 gap-2">
@@ -552,11 +615,11 @@ export default function FloorPlanBuilder({
             <div
               key={item.id}
               className={cn(
-                "absolute border-2 transition-all duration-300 cursor-move group",
-                "hover:scale-105 hover:shadow-md",
+                "absolute border-2 floor-plan-item cursor-move group animate-item-pop",
                 selectedItems.includes(item.id) 
                   ? "border-blue-500 shadow-xl z-10 animate-pulse-ring" 
-                  : "border-gray-300 hover:border-blue-400"
+                  : "border-gray-300 hover:border-blue-400",
+                isDragging && selectedItems.includes(item.id) ? "drag-ghost" : ""
               )}
               style={{
                 left: item.x,
@@ -568,6 +631,9 @@ export default function FloorPlanBuilder({
                 borderRadius: item.shape === 'circle' ? '50%' : '0',
                 animationDelay: `${index * 0.1}s`,
                 filter: selectedItems.includes(item.id) ? 'brightness(1.1)' : 'brightness(1)',
+                boxShadow: selectedItems.includes(item.id) 
+                  ? '0 0 20px rgba(59, 130, 246, 0.4)' 
+                  : 'none',
               }}
               onMouseDown={(e) => {
                 e.stopPropagation();
