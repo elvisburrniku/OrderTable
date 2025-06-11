@@ -44,8 +44,10 @@ export default function CutOffTime() {
       };
 
       const daysMap = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
-      const cutOffTimesArray = daysMap.map(day => ({
-        cutOffHours: cutOffHoursMap[timesData[day]] || 0
+      const cutOffTimesArray = daysMap.map((day, index) => ({
+        dayOfWeek: index, // 0 = Sunday, 1 = Monday, etc.
+        cutOffHours: cutOffHoursMap[timesData[day]] || 0,
+        isEnabled: true
       }));
 
       const response = await fetch(`/api/tenants/${restaurant?.tenantId}/restaurants/${restaurant?.id}/cut-off-times`, {
@@ -82,7 +84,7 @@ export default function CutOffTime() {
 
   // Load existing cut-off times when data is fetched
   useEffect(() => {
-    if (existingCutOffTimes && existingCutOffTimes.length > 0) {
+    if (existingCutOffTimes && Array.isArray(existingCutOffTimes) && existingCutOffTimes.length > 0) {
       const daysMap = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
       const hoursToTextMap: { [key: number]: string } = {
         0: "None",

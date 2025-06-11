@@ -692,8 +692,28 @@ export class MemoryStorage implements IStorage {
     }
     return false;
   }
-  async getCutOffTimesByRestaurant(restaurantId: number): Promise<any> { return []; }
-  async createOrUpdateCutOffTimes(restaurantId: number, tenantId: number, timesData: any[]): Promise<any> { return []; }
+  async getCutOffTimesByRestaurant(restaurantId: number): Promise<any> { 
+    return this.cutOffTimes.filter(time => time.restaurantId === restaurantId);
+  }
+  async createOrUpdateCutOffTimes(restaurantId: number, tenantId: number, timesData: any[]): Promise<any> { 
+    // Remove existing cut-off times for this restaurant
+    this.cutOffTimes = this.cutOffTimes.filter(time => time.restaurantId !== restaurantId);
+    
+    // Add new cut-off times
+    const newCutOffTimes = timesData.map((timeData) => ({
+      id: this.nextId++,
+      restaurantId,
+      tenantId,
+      dayOfWeek: timeData.dayOfWeek,
+      cutOffHours: timeData.cutOffHours,
+      isEnabled: timeData.isEnabled !== undefined ? timeData.isEnabled : true,
+      createdAt: new Date(),
+      updatedAt: new Date()
+    }));
+    
+    this.cutOffTimes.push(...newCutOffTimes);
+    return { success: true, data: newCutOffTimes };
+  }
   async isRestaurantOpen(restaurantId: number, bookingDate: Date, bookingTime: string): Promise<boolean> { return true; }
   async isBookingAllowed(restaurantId: number, bookingDate: Date, bookingTime: string): Promise<boolean> { return true; }
   async getBookingChangeRequestsByBookingId(bookingId: number): Promise<any[]> { return []; }
