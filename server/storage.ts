@@ -99,7 +99,10 @@ export interface IStorage {
 
   // Tenants
   createTenant(tenant: any): Promise<any>;
+  getTenantById(id: number): Promise<any>;
   getTenantByUserId(userId: number): Promise<any>;
+  getTenantByStripeCustomerId(stripeCustomerId: string): Promise<any>;
+  updateTenant(id: number, updates: any): Promise<any>;
   createTenantUser(tenantUser: any): Promise<any>;
 
   // Restaurants
@@ -157,6 +160,8 @@ export interface IStorage {
   // Subscription Plans
   getSubscriptionPlans(): Promise<SubscriptionPlan[]>;
   getSubscriptionPlan(id: number): Promise<SubscriptionPlan | undefined>;
+  getSubscriptionPlanById(id: number): Promise<SubscriptionPlan | undefined>;
+  getFreePlan(): Promise<SubscriptionPlan | undefined>;
   createSubscriptionPlan(plan: InsertSubscriptionPlan): Promise<SubscriptionPlan>;
 
   // User Subscriptions

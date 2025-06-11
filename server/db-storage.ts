@@ -134,6 +134,28 @@ export class DatabaseStorage implements IStorage {
     return result[0]?.tenant;
   }
 
+  async getTenantById(id: number): Promise<any> {
+    if (!this.db) throw new Error("Database connection not available");
+    const result = await this.db.select().from(tenants).where(eq(tenants.id, id));
+    return result[0];
+  }
+
+  async getTenantByStripeCustomerId(stripeCustomerId: string): Promise<any> {
+    if (!this.db) throw new Error("Database connection not available");
+    const result = await this.db.select().from(tenants).where(eq(tenants.stripeCustomerId, stripeCustomerId));
+    return result[0];
+  }
+
+  async updateTenant(id: number, updates: any): Promise<any> {
+    if (!this.db) throw new Error("Database connection not available");
+    const result = await this.db
+      .update(tenants)
+      .set(updates)
+      .where(eq(tenants.id, id))
+      .returning();
+    return result[0];
+  }
+
   async createTenantUser(tenantUser: any): Promise<any> {
     if (!this.db) throw new Error("Database connection not available");
     const [newTenantUser] = await this.db.insert(tenantUsers).values(tenantUser).returning();
