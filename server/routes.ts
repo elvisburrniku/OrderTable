@@ -5768,10 +5768,15 @@ app.put("/api/tenants/:tenantId/bookings/:id", validateTenant, async (req, res) 
         // Calculate occupancy rate
         const totalTimeSlots = timeRange === 'today' ? 14 : (timeRange === 'week' ? 98 : 420); // slots per day
         const occupiedSlots = tableBookings.reduce((sum, booking) => {
-          const startTime = new Date(`${booking.bookingDate} ${booking.startTime}`);
-          const endTime = new Date(`${booking.bookingDate} ${booking.endTime}`);
-          const duration = (endTime.getTime() - startTime.getTime()) / (1000 * 60 * 60); // hours
-          return sum + Math.ceil(duration * 2); // 30-minute slots
+          if (!booking.endTime) return sum; // Skip bookings without end time
+          try {
+            const startTime = new Date(`${booking.bookingDate} ${booking.startTime}`);
+            const endTime = new Date(`${booking.bookingDate} ${booking.endTime}`);
+            const duration = (endTime.getTime() - startTime.getTime()) / (1000 * 60 * 60); // hours
+            return sum + Math.ceil(Math.max(duration, 0) * 2); // 30-minute slots, ensure positive
+          } catch (error) {
+            return sum; // Skip invalid dates
+          }
         }, 0);
         const occupancyRate = Math.min((occupiedSlots / totalTimeSlots) * 100, 100);
 
@@ -5781,13 +5786,21 @@ app.put("/api/tenants/:tenantId/bookings/:id", validateTenant, async (req, res) 
         const heatScore = (occupancyRate * 0.4) + (bookingScore * 0.3) + (revenueScore * 0.3);
 
         // Calculate average stay duration
-        const avgStayDuration = tableBookings.length > 0 ? 
-          tableBookings.reduce((sum, booking) => {
-            const startTime = new Date(`${booking.bookingDate} ${booking.startTime}`);
-            const endTime = new Date(`${booking.bookingDate} ${booking.endTime}`);
-            const duration = (endTime.getTime() - startTime.getTime()) / (1000 * 60); // minutes
-            return sum + duration;
-          }, 0) / tableBookings.length : 90; // default 90 minutes
+        const validDurations = tableBookings
+          .filter(booking => booking.endTime)
+          .map(booking => {
+            try {
+              const startTime = new Date(`${booking.bookingDate} ${booking.startTime}`);
+              const endTime = new Date(`${booking.bookingDate} ${booking.endTime}`);
+              const duration = (endTime.getTime() - startTime.getTime()) / (1000 * 60); // minutes
+              return Math.max(duration, 0); // Ensure positive duration
+            } catch (error) {
+              return 90; // Default duration for invalid dates
+            }
+          });
+        
+        const avgStayDuration = validDurations.length > 0 ? 
+          validDurations.reduce((sum, duration) => sum + duration, 0) / validDurations.length : 90;
 
         // Identify peak hours
         const hourCounts: { [hour: string]: number } = {};
@@ -5835,17 +5848,17 @@ app.put("/api/tenants/:tenantId/bookings/:id", validateTenant, async (req, res) 
         return {
           tableId: table.id,
           tableName: table.table_number,
-          capacity: table.capacity,
+          capacity: table.capacity || 0,
           position: { 
             x: ((table.id - 56) % 4) * 120 + 60, 
             y: Math.floor((table.id - 56) / 4) * 100 + 50 
           },
-          heatScore: Math.round(heatScore),
-          bookingCount,
-          occupancyRate: Math.round(occupancyRate),
-          revenueGenerated: Math.round(totalRevenue),
-          averageStayDuration: Math.round(avgStayDuration),
-          peakHours,
+          heatScore: Math.round(heatScore || 0),
+          bookingCount: bookingCount || 0,
+          occupancyRate: Math.round(occupancyRate || 0),
+          revenueGenerated: Math.round(totalRevenue || 0),
+          averageStayDuration: Math.round(avgStayDuration || 90),
+          peakHours: peakHours || [],
           status
         };
       });

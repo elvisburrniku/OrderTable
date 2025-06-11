@@ -45,19 +45,19 @@ export default function HeatMapTooltip({ table, viewMode, position, visible }: H
     switch (viewMode) {
       case 'occupancy':
         return {
-          value: `${table.occupancyRate}%`,
+          value: `${table.occupancyRate || 0}%`,
           label: 'Occupancy Rate',
           icon: <Users className="w-4 h-4" />
         };
       case 'revenue':
         return {
-          value: `$${table.revenueGenerated}`,
+          value: `$${table.revenueGenerated || 0}`,
           label: 'Revenue Generated',
           icon: <DollarSign className="w-4 h-4" />
         };
       default:
         return {
-          value: table.heatScore.toString(),
+          value: (table.heatScore || 0).toString(),
           label: 'Heat Score',
           icon: <TrendingUp className="w-4 h-4" />
         };
@@ -103,27 +103,27 @@ export default function HeatMapTooltip({ table, viewMode, position, visible }: H
             <div className="flex items-center space-x-1">
               <Users className="w-3 h-3 text-gray-500" />
               <span className="text-gray-600">Capacity:</span>
-              <span className="font-medium">{table.capacity}</span>
+              <span className="font-medium">{table.capacity || 0}</span>
             </div>
             <div className="flex items-center space-x-1">
               <Calendar className="w-3 h-3 text-gray-500" />
               <span className="text-gray-600">Bookings:</span>
-              <span className="font-medium">{table.bookingCount}</span>
+              <span className="font-medium">{table.bookingCount || 0}</span>
             </div>
             <div className="flex items-center space-x-1">
               <Clock className="w-3 h-3 text-gray-500" />
               <span className="text-gray-600">Avg Stay:</span>
-              <span className="font-medium">{table.averageStayDuration}m</span>
+              <span className="font-medium">{table.averageStayDuration || 0}m</span>
             </div>
             <div className="flex items-center space-x-1">
               <DollarSign className="w-3 h-3 text-gray-500" />
               <span className="text-gray-600">Revenue:</span>
-              <span className="font-medium">${table.revenueGenerated}</span>
+              <span className="font-medium">${table.revenueGenerated || 0}</span>
             </div>
           </div>
 
           {/* Peak Hours */}
-          {table.peakHours.length > 0 && (
+          {table.peakHours && table.peakHours.length > 0 && (
             <div>
               <div className="text-xs font-medium text-gray-600 mb-1">Peak Hours:</div>
               <div className="flex flex-wrap gap-1">
