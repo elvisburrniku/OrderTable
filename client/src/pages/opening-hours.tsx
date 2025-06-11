@@ -69,7 +69,7 @@ export default function OpeningHours() {
       console.log('Hours data to save:', hoursData);
       console.log('API URL:', `/api/tenants/${tenantId}/restaurants/${restaurantId}/opening-hours`);
       
-      const response = await apiRequest(`/api/tenants/${tenantId}/restaurants/${restaurantId}/opening-hours`, "POST", hoursData);
+      const response = await apiRequest("POST", `/api/tenants/${tenantId}/restaurants/${restaurantId}/opening-hours`, hoursData);
       
       if (!response.ok) {
         const errorText = await response.text();
