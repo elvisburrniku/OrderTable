@@ -5770,34 +5770,59 @@ app.put("/api/tenants/:tenantId/bookings/:id", validateTenant, async (req, res) 
         );
 
         if (suitableTables.length > 0) {
-          const newTable = suitableTables[0];
+          // Move to the largest available table
+          const bestTable = suitableTables.sort((a, b) => b.capacity - a.capacity)[0];
           await storage.updateBooking(booking.id, {
-            tableId: newTable.id
+            tableId: bestTable.id
           });
           
           bestResolution = {
             id: `reassign-${booking.id}`,
             type: 'reassign_table',
-            description: `Moved to ${newTable.name || `Table ${newTable.table_number}`} (capacity: ${newTable.capacity})`,
+            description: `Moved to ${bestTable.name || `Table ${bestTable.table_number}`} (capacity: ${bestTable.capacity})`,
             impact: 'low',
             confidence: 90,
             estimatedCustomerSatisfaction: 85,
             details: { 
-              newTableId: newTable.id, 
-              newTableName: newTable.name || `Table ${newTable.table_number}`,
+              newTableId: bestTable.id, 
+              newTableName: bestTable.name || `Table ${bestTable.table_number}`,
               actuallyApplied: true
             }
           };
         } else {
-          bestResolution = {
-            id: `split-party-${booking.id}`,
-            type: 'split_party',
-            description: 'Split large party across adjacent tables',
-            impact: 'moderate',
-            confidence: 70,
-            estimatedCustomerSatisfaction: 75,
-            details: { splitSuggested: true, tablesNeeded: 2, compensationSuggested: true }
-          };
+          // No single table can accommodate - move to largest available and note the issue
+          const largestTable = tables.sort((a, b) => b.capacity - a.capacity)[0];
+          if (largestTable && largestTable.id !== booking.tableId) {
+            await storage.updateBooking(booking.id, {
+              tableId: largestTable.id
+            });
+            
+            bestResolution = {
+              id: `partial-resolve-${booking.id}`,
+              type: 'partial_solution',
+              description: `Moved to largest available table ${largestTable.name || `Table ${largestTable.table_number}`} (capacity: ${largestTable.capacity}). Party size exceeds table capacity - staff attention required.`,
+              impact: 'moderate',
+              confidence: 60,
+              estimatedCustomerSatisfaction: 70,
+              details: { 
+                newTableId: largestTable.id, 
+                newTableName: largestTable.name || `Table ${largestTable.table_number}`,
+                actuallyApplied: true,
+                requiresStaffAttention: true,
+                capacityShortfall: booking.guestCount - largestTable.capacity
+              }
+            };
+          } else {
+            bestResolution = {
+              id: `split-party-${booking.id}`,
+              type: 'split_party',
+              description: 'Split large party across adjacent tables',
+              impact: 'moderate',
+              confidence: 70,
+              estimatedCustomerSatisfaction: 75,
+              details: { splitSuggested: true, tablesNeeded: 2, compensationSuggested: true }
+            };
+          }
         }
       } else {
         bestResolution = {
@@ -5867,17 +5892,36 @@ app.put("/api/tenants/:tenantId/bookings/:id", validateTenant, async (req, res) 
         );
 
         if (suitableTables.length > 0) {
-          const newTable = suitableTables[0];
+          const bestTable = suitableTables.sort((a, b) => b.capacity - a.capacity)[0];
           await storage.updateBooking(booking.id, {
-            tableId: newTable.id
+            tableId: bestTable.id
           });
           
-          resolution.description = `Moved to ${newTable.name || `Table ${newTable.table_number}`} (capacity: ${newTable.capacity})`;
+          resolution.description = `Moved to ${bestTable.name || `Table ${bestTable.table_number}`} (capacity: ${bestTable.capacity})`;
           resolution.details = {
             ...resolution.details,
-            newTableId: newTable.id,
-            newTableName: newTable.name || `Table ${newTable.table_number}`
+            newTableId: bestTable.id,
+            newTableName: bestTable.name || `Table ${bestTable.table_number}`,
+            actuallyApplied: true
           };
+        } else {
+          // No single table can accommodate - move to largest available
+          const largestTable = tables.sort((a, b) => b.capacity - a.capacity)[0];
+          if (largestTable && largestTable.id !== booking.tableId) {
+            await storage.updateBooking(booking.id, {
+              tableId: largestTable.id
+            });
+            
+            resolution.description = `Moved to largest available table ${largestTable.name || `Table ${largestTable.table_number}`} (capacity: ${largestTable.capacity}). Requires staff attention for ${booking.guestCount - largestTable.capacity} excess guests.`;
+            resolution.details = {
+              ...resolution.details,
+              newTableId: largestTable.id,
+              newTableName: largestTable.name || `Table ${largestTable.table_number}`,
+              actuallyApplied: true,
+              requiresStaffAttention: true,
+              capacityShortfall: booking.guestCount - largestTable.capacity
+            };
+          }
         }
       }
 
