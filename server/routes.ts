@@ -4153,17 +4153,20 @@ app.put("/api/tenants/:tenantId/bookings/:id", validateTenant, async (req, res) 
           const suggestedResolutions = [];
 
           conflictedBookings.slice(1).forEach(booking => {
-            // Find available tables with suitable capacity
+            // Find available tables with suitable capacity (excluding current table)
             const suitableTables = tenantTables.filter(table => {
               if (table.capacity < booking.guestCount) return false;
+              if (table.id === booking.tableId) return false; // Exclude current table
               
               // Check if table is available at this time
-              const tableConflicts = tenantBookings.filter(b => 
-                b.tableId === table.id && 
-                b.bookingDate === booking.bookingDate && 
-                b.startTime === booking.startTime &&
-                b.id !== booking.id
-              );
+              const bookingDate = new Date(booking.bookingDate).toISOString().split('T')[0];
+              const tableConflicts = tenantBookings.filter(b => {
+                const bDate = new Date(b.bookingDate).toISOString().split('T')[0];
+                return b.tableId === table.id && 
+                       bDate === bookingDate && 
+                       b.startTime === booking.startTime &&
+                       b.id !== booking.id;
+              });
               return tableConflicts.length === 0;
             });
 
@@ -4177,6 +4180,7 @@ app.put("/api/tenants/:tenantId/bookings/:id", validateTenant, async (req, res) 
                 bookingId: booking.id,
                 originalTableId: booking.tableId,
                 newTableId: recommendedTable.id,
+                newTableNumber: recommendedTable.table_number,
                 estimatedCustomerSatisfaction: 85,
                 autoExecutable: true,
                 cost: { timeMinutes: 1, staffEffort: 'minimal' }
@@ -4228,15 +4232,21 @@ app.put("/api/tenants/:tenantId/bookings/:id", validateTenant, async (req, res) 
         const table = tenantTables.find(t => t.id === booking.tableId);
         if (table && booking.guestCount > table.capacity) {
           // Find larger tables
-          const largerTables = tenantTables.filter(t => 
-            t.capacity >= booking.guestCount &&
-            !tenantBookings.some(b => 
-              b.tableId === t.id && 
-              b.bookingDate === booking.bookingDate && 
-              b.startTime === booking.startTime &&
-              b.id !== booking.id
-            )
-          );
+          const largerTables = tenantTables.filter(t => {
+            if (t.capacity < booking.guestCount) return false;
+            if (t.id === booking.tableId) return false; // Exclude current table
+            
+            // Check availability at booking time
+            const bookingDate = new Date(booking.bookingDate).toISOString().split('T')[0];
+            const hasConflict = tenantBookings.some(b => {
+              const bDate = new Date(b.bookingDate).toISOString().split('T')[0];
+              return b.tableId === t.id && 
+                     bDate === bookingDate && 
+                     b.startTime === booking.startTime &&
+                     b.id !== booking.id;
+            });
+            return !hasConflict;
+          });
 
           const suggestedResolutions = [];
           if (largerTables.length > 0) {
@@ -4249,6 +4259,7 @@ app.put("/api/tenants/:tenantId/bookings/:id", validateTenant, async (req, res) 
               bookingId: booking.id,
               originalTableId: booking.tableId,
               newTableId: recommendedTable.id,
+              newTableNumber: recommendedTable.table_number,
               estimatedCustomerSatisfaction: 95,
               autoExecutable: true,
               cost: { timeMinutes: 1, staffEffort: 'minimal' }
