@@ -7,12 +7,14 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Clock } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
+import { useAuth } from "@/lib/auth";
 
 export default function OpeningHours() {
   const { tenantId } = useParams();
   const { toast } = useToast();
   const queryClient = useQueryClient();
-  const restaurantId = 12; // Assuming restaurant ID 12 based on logs
+  const { restaurant } = useAuth();
+  const restaurantId = restaurant?.id;
 
   const [hours, setHours] = useState([
     { day: "Sunday", enabled: true, open: "09:00", close: "10:00" },

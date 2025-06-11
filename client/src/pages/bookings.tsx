@@ -37,13 +37,12 @@ import {
 // import { InternationalPhoneInput } from "@/components/international-phone-input";
 
 export default function Bookings() {
-  const { user } = useAuth();
+  const { user, restaurant } = useAuth();
   const queryClient = useQueryClient();
   
-  // Get restaurant info from URL
-  const pathParts = window.location.pathname.split('/');
-  const tenantId = parseInt(pathParts[1]);
-  const restaurantId = parseInt(pathParts[3]) || 12; // Default to 12 for demo
+  // Get restaurant info from authentication context
+  const tenantId = restaurant?.tenantId;
+  const restaurantId = restaurant?.id;
 
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");

@@ -37,13 +37,12 @@ import {
 } from "lucide-react";
 
 export default function RestaurantSettings() {
-  const { user } = useAuth();
+  const { user, restaurant } = useAuth();
   const queryClient = useQueryClient();
   
-  // Get restaurant info from URL
-  const pathParts = window.location.pathname.split('/');
-  const tenantId = parseInt(pathParts[1]);
-  const restaurantId = parseInt(pathParts[3]) || 12;
+  // Get restaurant info from authentication context
+  const tenantId = restaurant?.tenantId;
+  const restaurantId = restaurant?.id;
 
   const [activeSection, setActiveSection] = useState("opening-hours");
 
