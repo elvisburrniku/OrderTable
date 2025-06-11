@@ -1,4 +1,5 @@
-import { Calendar, Users, Clock, Zap, BarChart3, FileText, MessageSquare, CreditCard, Settings, Cog } from "lucide-react";
+import { useState } from "react";
+import { Calendar, Users, Clock, Zap, BarChart3, FileText, MessageSquare, CreditCard, Settings, Cog, ChevronDown, ChevronRight, MapPin, Table, Grid3X3, Layout, Armchair, Filter, Mail, HelpCircle, CalendarDays, Package, Layers, Scissors } from "lucide-react";
 import { useLocation, Link } from "wouter";
 
 interface SidebarProps {
@@ -8,6 +9,29 @@ interface SidebarProps {
 
 export function DashboardSidebar({ tenantId, restaurantId }: SidebarProps) {
   const [location] = useLocation();
+  const [isRestaurantSettingsOpen, setIsRestaurantSettingsOpen] = useState(false);
+
+  const restaurantSettingsItems = [
+    { name: "Opening Hours", icon: Clock, href: `/${tenantId}/opening-hours` },
+    { name: "Special Periods", icon: CalendarDays, href: `/${tenantId}/special-periods` },
+    { name: "Cut-off Time", icon: Scissors, href: `/${tenantId}/cut-off-time` },
+    { name: "Rooms", icon: MapPin, href: `/${tenantId}/rooms` },
+    { name: "Tables", icon: Table, href: `/${tenantId}/tables` },
+    { name: "Combined Tables", icon: Grid3X3, href: `/${tenantId}/combined-tables` },
+    { name: "Table Plan", icon: Layout, href: `/${tenantId}/table-plan` },
+    { name: "Seating Configurations", icon: Armchair, href: `/${tenantId}/seating-configurations` },
+    { name: "Periodic Criteria", icon: Filter, href: `/${tenantId}/periodic-criteria` },
+    { name: "Custom Fields", icon: FileText, href: `/${tenantId}/custom-fields` },
+    { name: "Booking Agents", icon: Users, href: `/${tenantId}/booking-agents` },
+    { name: "E-mail Notifications", icon: Mail, href: `/${tenantId}/email-notifications` },
+    { name: "SMS Notifications", icon: MessageSquare, href: `/${tenantId}/sms-notifications` },
+    { name: "Questions", icon: HelpCircle, href: `/${tenantId}/feedback-questions` },
+    { name: "Events", icon: CalendarDays, href: `/${tenantId}/events` },
+    { name: "Products", icon: Package, href: `/${tenantId}/products` },
+    { name: "Product Groups", icon: Layers, href: `/${tenantId}/product-groups` },
+    { name: "Payment Setups", icon: Settings, href: `/${tenantId}/payment-setups` },
+    { name: "Payment Gateway", icon: CreditCard, href: `/${tenantId}/payment-gateway` }
+  ];
 
   const menuItems = [
     {
@@ -76,12 +100,7 @@ export function DashboardSidebar({ tenantId, restaurantId }: SidebarProps) {
       href: `/${tenantId}/tenant-settings`,
       color: "text-slate-600"
     },
-    {
-      name: "Restaurant Settings",
-      icon: Cog,
-      href: `/${tenantId}/restaurants/12/settings`,
-      color: "text-stone-600"
-    }
+
   ];
 
   const isActive = (href: string) => {
@@ -120,6 +139,48 @@ export function DashboardSidebar({ tenantId, restaurantId }: SidebarProps) {
               </Link>
             );
           })}
+          
+          {/* Restaurant Settings Dropdown */}
+          <div className="space-y-1">
+            <button
+              onClick={() => setIsRestaurantSettingsOpen(!isRestaurantSettingsOpen)}
+              className="w-full flex items-center justify-between px-3 py-2 rounded-lg text-sm font-medium text-gray-600 hover:text-gray-900 hover:bg-gray-50 transition-colors"
+            >
+              <div className="flex items-center space-x-3">
+                <Cog className="w-5 h-5 text-stone-600" />
+                <span>Restaurant Settings</span>
+              </div>
+              {isRestaurantSettingsOpen ? (
+                <ChevronDown className="w-4 h-4" />
+              ) : (
+                <ChevronRight className="w-4 h-4" />
+              )}
+            </button>
+            
+            {isRestaurantSettingsOpen && (
+              <div className="ml-6 space-y-1 border-l border-gray-200 pl-4">
+                {restaurantSettingsItems.map((subItem) => {
+                  const SubIcon = subItem.icon;
+                  const subActive = isActive(subItem.href);
+                  
+                  return (
+                    <Link
+                      key={subItem.name}
+                      href={subItem.href}
+                      className={`flex items-center space-x-3 px-2 py-1.5 rounded text-xs transition-colors ${
+                        subActive
+                          ? 'bg-blue-50 text-blue-700'
+                          : 'text-gray-600 hover:text-gray-900 hover:bg-gray-50'
+                      }`}
+                    >
+                      <SubIcon className="w-4 h-4" />
+                      <span>{subItem.name}</span>
+                    </Link>
+                  );
+                })}
+              </div>
+            )}
+          </div>
         </nav>
       </div>
     </div>
