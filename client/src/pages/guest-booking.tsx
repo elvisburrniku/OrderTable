@@ -239,7 +239,7 @@ export default function GuestBooking() {
   };
 
   // Early return for missing parameters
-  if (!match || !restaurantId || !tenantId) {
+  if (!restaurantId || !tenantId) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
         <div className="text-center">
