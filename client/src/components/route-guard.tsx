@@ -60,6 +60,7 @@ export function RouteGuard({ children }: RouteGuardProps) {
         /^\/\d+\/dashboard$/,
         /^\/\d+\/bookings$/,
         /^\/\d+\/calendar$/,
+        /^\/\d+\/conflicts$/,
         /^\/\d+\/bookings\/\d+$/,
         /^\/\d+\/tables$/,
         /^\/\d+\/customers$/,

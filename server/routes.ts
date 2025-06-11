@@ -5616,7 +5616,7 @@ app.put("/api/tenants/:tenantId/bookings/:id", validateTenant, async (req, res) 
         estimatedCustomerSatisfaction: 80,
         details: {
           bookingToAdjust: booking2.id,
-          newTime: this.calculateAdjustedTime(booking2.startTime, 30),
+          newTime: ConflictResolver.calculateAdjustedTime(booking2.startTime, 30),
           compensationSuggested: true
         }
       });
