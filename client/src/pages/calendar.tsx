@@ -472,7 +472,7 @@ export default function CalendarPage() {
       {/* Header */}
       <div className="flex items-center justify-between p-4 border-b">
         <div className="flex items-center gap-4">
-          <h1 className="text-2xl font-bold">Calendar</h1>
+          <h1 className="text-2xl font-bold">Restaurant Calendar</h1>
           <div className="flex items-center gap-2">
             <Button variant="outline" size="sm" onClick={navigatePrevious}>
               <ChevronLeft className="w-4 h-4" />
