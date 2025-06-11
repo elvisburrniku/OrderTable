@@ -966,6 +966,138 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Real-time table status route
+  app.get("/api/tenants/:tenantId/restaurants/:restaurantId/tables/real-time-status", validateTenant, async (req, res) => {
+    try {
+      const restaurantId = parseInt(req.params.restaurantId);
+      const tenantId = parseInt(req.params.tenantId);
+
+      const restaurant = await storage.getRestaurantById(restaurantId);
+      if (!restaurant || restaurant.tenantId !== tenantId) {
+        return res.status(404).json({ message: "Restaurant not found" });
+      }
+
+      // Get all tables, bookings, and rooms
+      const tables = await storage.getTablesByRestaurant(restaurantId);
+      const bookings = await storage.getBookingsByRestaurant(restaurantId);
+      const rooms = await storage.getRoomsByRestaurant(restaurantId);
+
+      const now = new Date();
+      const currentTime = now.getHours() * 60 + now.getMinutes(); // Current time in minutes
+      const today = now.toISOString().split('T')[0]; // Today's date
+
+      // Create a map of room names
+      const roomMap = new Map();
+      rooms.forEach(room => {
+        roomMap.set(room.id, room.name);
+      });
+
+      // Process each table to determine its real-time status
+      const tableStatuses = tables.map(table => {
+        // Filter bookings for this table today
+        const todayBookings = bookings.filter(booking => {
+          const bookingDate = new Date(booking.bookingDate).toISOString().split('T')[0];
+          return booking.tableId === table.id && 
+                 bookingDate === today && 
+                 booking.status === 'confirmed';
+        }).sort((a, b) => a.startTime.localeCompare(b.startTime));
+
+        // Convert time strings to minutes for comparison
+        const timeToMinutes = (timeStr) => {
+          const [hours, minutes] = timeStr.split(':').map(Number);
+          return hours * 60 + minutes;
+        };
+
+        // Find current booking (if any)
+        let currentBooking = null;
+        let nextBooking = null;
+        let status = 'available';
+
+        for (const booking of todayBookings) {
+          const startMinutes = timeToMinutes(booking.startTime);
+          const endMinutes = booking.endTime ? timeToMinutes(booking.endTime) : startMinutes + 120; // Default 2 hours
+
+          if (currentTime >= startMinutes && currentTime <= endMinutes) {
+            // Table is currently occupied
+            status = 'occupied';
+            currentBooking = {
+              id: booking.id,
+              customerName: booking.customerName,
+              customerEmail: booking.customerEmail,
+              guestCount: booking.guestCount,
+              startTime: booking.startTime,
+              endTime: booking.endTime || `${Math.floor((startMinutes + 120) / 60).toString().padStart(2, '0')}:${((startMinutes + 120) % 60).toString().padStart(2, '0')}`,
+              status: booking.status,
+              timeRemaining: endMinutes - currentTime,
+              isOvertime: currentTime > endMinutes
+            };
+            break;
+          } else if (currentTime < startMinutes) {
+            // This is the next booking
+            if (!nextBooking) {
+              // Check if table is reserved (within 30 minutes of start time)
+              if (startMinutes - currentTime <= 30) {
+                status = 'reserved';
+              }
+              
+              nextBooking = {
+                id: booking.id,
+                customerName: booking.customerName,
+                startTime: booking.startTime,
+                guestCount: booking.guestCount,
+                timeUntilNext: startMinutes - currentTime
+              };
+            }
+            break;
+          }
+        }
+
+        // If no current booking found, check if we need to find next booking
+        if (!currentBooking && !nextBooking) {
+          const futureBookings = todayBookings.filter(booking => {
+            const startMinutes = timeToMinutes(booking.startTime);
+            return startMinutes > currentTime;
+          });
+
+          if (futureBookings.length > 0) {
+            const nextBookingData = futureBookings[0];
+            const startMinutes = timeToMinutes(nextBookingData.startTime);
+            
+            // Check if table should be marked as reserved
+            if (startMinutes - currentTime <= 30) {
+              status = 'reserved';
+            }
+
+            nextBooking = {
+              id: nextBookingData.id,
+              customerName: nextBookingData.customerName,
+              startTime: nextBookingData.startTime,
+              guestCount: nextBookingData.guestCount,
+              timeUntilNext: startMinutes - currentTime
+            };
+          }
+        }
+
+        return {
+          id: table.id,
+          tableNumber: table.tableNumber,
+          capacity: table.capacity,
+          roomId: table.roomId,
+          roomName: roomMap.get(table.roomId),
+          status,
+          currentBooking,
+          nextBooking,
+          lastUpdated: now.toISOString()
+        };
+      });
+
+      res.json(tableStatuses);
+    } catch (error) {
+      console.error("Error fetching real-time table status:", error);
+      res.status(500).json({ message: "Failed to fetch table status" });
+    }
+  });
+
   // Customers routes
   app.get("/api/tenants/:tenantId/restaurants/:restaurantId/customers", validateTenant, async (req, res) => {
     try {

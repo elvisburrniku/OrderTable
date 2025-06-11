@@ -5,6 +5,7 @@ import { useQuery } from "@tanstack/react-query";
 
 import BookingCalendar from "@/components/booking-calendar";
 import WalkInBookingButton from "@/components/walk-in-booking";
+import RealTimeTableStatus from "@/components/real-time-table-status";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent } from "@/components/ui/card";
@@ -32,7 +33,7 @@ export default function Dashboard() {
   const [, setLocation] = useLocation();
   const { user, restaurant, logout, isLoading } = useAuth();
   const [selectedDate, setSelectedDate] = useState(new Date());
-  const [viewMode, setViewMode] = useState<'calendar' | 'layout'>('calendar');
+  const [viewMode, setViewMode] = useState<'calendar' | 'layout' | 'status'>('calendar');
   const [selectedRoom, setSelectedRoom] = useState<string>("");
   const [isNewBookingOpen, setIsNewBookingOpen] = useState(false);
   const [selectedTableForBooking, setSelectedTableForBooking] = useState<any>(null);
@@ -693,6 +694,15 @@ export default function Dashboard() {
               >
                 <Map className="h-4 w-4 mr-2" />
                 Layout
+              </Button>
+              <Button 
+                variant={viewMode === 'status' ? 'default' : 'ghost'} 
+                size="sm"
+                onClick={() => setViewMode('status')}
+                className={viewMode === 'status' ? 'bg-white shadow-sm' : ''}
+              >
+                <Clock4 className="h-4 w-4 mr-2" />
+                Live Status
               </Button>
             </div>
             <Button className="bg-green-600 hover:bg-green-700 text-white">
