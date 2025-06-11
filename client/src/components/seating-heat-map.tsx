@@ -5,6 +5,8 @@ import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useQuery } from "@tanstack/react-query";
 import { useAuth } from "@/lib/auth";
+import HeatMapTooltip from "@/components/heat-map-tooltip";
+import HeatMapAnalytics from "@/components/heat-map-analytics";
 import { 
   Thermometer, 
   Calendar, 
@@ -13,7 +15,10 @@ import {
   TrendingUp,
   Eye,
   RotateCcw,
-  Info
+  Info,
+  Activity,
+  Filter,
+  BarChart3
 } from "lucide-react";
 
 interface TableHeatData {
@@ -41,11 +46,14 @@ export default function SeatingHeatMap({ restaurantId, tenantId }: SeatingHeatMa
   const [viewMode, setViewMode] = useState<"heat" | "occupancy" | "revenue">("heat");
   const [selectedTable, setSelectedTable] = useState<TableHeatData | null>(null);
   const [autoRefresh, setAutoRefresh] = useState(true);
+  const [hoveredTable, setHoveredTable] = useState<TableHeatData | null>(null);
+  const [mousePosition, setMousePosition] = useState({ x: 0, y: 0 });
 
   // Fetch table heat map data
-  const { data: heatMapData, isLoading, refetch } = useQuery({
+  const { data: heatMapData, isLoading, refetch, error } = useQuery({
     queryKey: [`/api/tenants/${tenantId}/restaurants/${restaurantId}/heat-map`, timeRange],
     enabled: !!tenantId && !!restaurantId,
+    refetchInterval: autoRefresh ? 30000 : false,
   });
 
   // Auto-refresh every 30 seconds when enabled
@@ -233,7 +241,18 @@ export default function SeatingHeatMap({ restaurantId, tenantId }: SeatingHeatMa
               </CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="relative bg-gray-50 rounded-lg p-4" style={{ height: '480px' }}>
+              <div 
+                className="relative bg-gray-50 rounded-lg p-4" 
+                style={{ height: '480px' }}
+                onMouseMove={(e) => {
+                  const rect = e.currentTarget.getBoundingClientRect();
+                  setMousePosition({
+                    x: e.clientX - rect.left,
+                    y: e.clientY - rect.top
+                  });
+                }}
+                onMouseLeave={() => setHoveredTable(null)}
+              >
                 {/* Restaurant Layout */}
                 <svg width="100%" height="100%" viewBox="0 0 500 400">
                   {/* Background elements */}
@@ -260,10 +279,11 @@ export default function SeatingHeatMap({ restaurantId, tenantId }: SeatingHeatMa
                           cy={table.position.y}
                           r="25"
                           fill={color}
-                          stroke="#374151"
-                          strokeWidth="2"
-                          className="cursor-pointer hover:stroke-blue-500 transition-all"
+                          stroke={hoveredTable?.tableId === table.tableId ? "#3b82f6" : "#374151"}
+                          strokeWidth={hoveredTable?.tableId === table.tableId ? "3" : "2"}
+                          className="cursor-pointer transition-all"
                           onClick={() => setSelectedTable(table)}
+                          onMouseEnter={() => setHoveredTable(table)}
                         />
                         
                         {/* Table number */}
@@ -299,6 +319,14 @@ export default function SeatingHeatMap({ restaurantId, tenantId }: SeatingHeatMa
                     );
                   })}
                 </svg>
+
+                {/* Interactive Tooltip */}
+                <HeatMapTooltip
+                  table={hoveredTable}
+                  viewMode={viewMode}
+                  position={mousePosition}
+                  visible={!!hoveredTable}
+                />
               </div>
             </CardContent>
           </Card>
