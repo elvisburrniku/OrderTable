@@ -5834,7 +5834,7 @@ app.put("/api/tenants/:tenantId/bookings/:id", validateTenant, async (req, res) 
 
         return {
           tableId: table.id,
-          tableName: table.tableNumber,
+          tableName: table.table_number,
           capacity: table.capacity,
           position: { 
             x: ((table.id - 56) % 4) * 120 + 60, 
