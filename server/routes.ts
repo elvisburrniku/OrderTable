@@ -4350,13 +4350,16 @@ app.put("/api/tenants/:tenantId/bookings/:id", validateTenant, async (req, res) 
       
       await storage.updateBooking(bookingId, updatedBooking);
       
+      // Get original table info for notification
+      const originalTable = tables.find(t => t.id === booking.tableId);
+      
       // Create notification for staff
       const notification = {
         restaurantId,
         tenantId,
         type: 'conflict_resolved',
         title: 'Conflict Auto-Resolved',
-        message: `${booking.customerName}'s booking moved from Table ${newTable.table_number} to Table ${newTable.table_number}`,
+        message: `${booking.customerName}'s booking moved from Table ${originalTable?.table_number || booking.tableId} to Table ${newTable.table_number}`,
         isRead: false,
         priority: 'medium',
         createdAt: new Date(),

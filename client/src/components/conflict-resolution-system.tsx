@@ -70,6 +70,9 @@ interface Resolution {
     compensationSuggested?: boolean;
   };
   estimatedCustomerSatisfaction: number; // 0-100%
+  autoExecutable?: boolean;
+  bookingId?: number;
+  newTableId?: number;
 }
 
 interface ConflictResolutionSystemProps {
@@ -121,13 +124,13 @@ export default function ConflictResolutionSystem({
       );
       return response;
     },
-    onSuccess: (data, conflictId) => {
+    onSuccess: (data) => {
       toast({
         title: "Conflict Auto-Resolved",
-        description: `Conflict has been automatically resolved using AI suggestions.`,
+        description: data.resolutionApplied || "Conflict has been automatically resolved.",
       });
       refetchConflicts();
-      onConflictResolved?.(conflictId);
+      onConflictResolved?.(data.bookingId?.toString());
     },
     onError: (error: any) => {
       toast({
