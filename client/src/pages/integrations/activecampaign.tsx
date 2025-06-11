@@ -7,6 +7,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { ArrowLeft } from 'lucide-react';
+import { DashboardLayout } from '@/components/dashboard-layout';
 
 export default function ActiveCampaignIntegration() {
   const { user } = useAuth();
