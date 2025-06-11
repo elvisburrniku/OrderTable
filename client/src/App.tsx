@@ -4,6 +4,7 @@ import { queryClient } from "./lib/queryClient";
 import { Toaster } from "@/components/ui/toaster";
 import { AuthProvider } from "./lib/auth.tsx";
 import { TenantProvider } from "./lib/tenant";
+import { TutorialProviderWrapper } from "./components/onboarding/TutorialProviderWrapper";
 import { RouteGuard } from "./components/route-guard";
 import { LayoutWrapper } from "./components/layout-wrapper";
 import { SessionTimeoutHandler } from "./components/session-timeout-handler";
@@ -70,10 +71,11 @@ function App() {
     <QueryClientProvider client={queryClient}>
       <AuthProvider>
         <TenantProvider>
-          <RouteGuard>
-            <LayoutWrapper>
-              <SessionTimeoutHandler />
-              <Switch>
+          <TutorialProviderWrapper>
+            <RouteGuard>
+              <LayoutWrapper>
+                <SessionTimeoutHandler />
+                <Switch>
             <Route path="/" component={Home} />
             <Route path="/login" component={Login} />
             <Route path="/register" component={Register} />
@@ -136,6 +138,7 @@ function App() {
         </LayoutWrapper>
       </RouteGuard>
       <Toaster />
+    </TutorialProviderWrapper>
     </TenantProvider>
     </AuthProvider>
     </QueryClientProvider>
