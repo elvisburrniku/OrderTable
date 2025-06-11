@@ -9,6 +9,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
 import { ChevronDown, ChevronRight, Settings, ExternalLink, Check, X, Plug } from 'lucide-react';
+import { DashboardLayout } from '@/components/dashboard-layout';
 
 interface Integration {
   id: string;

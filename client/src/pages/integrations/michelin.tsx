@@ -93,37 +93,8 @@ export default function MichelinIntegration() {
   }
 
   return (
-    <div className="flex">
-      {/* Sidebar */}
-      <div className="w-64 bg-white border-r min-h-screen">
-        <div className="p-6">
-          <div className="space-y-2">
-            <a href={`/${tenant.id}/bookings`} className="flex items-center space-x-2 text-gray-600 hover:bg-gray-50 px-3 py-2 rounded">
-              <span className="w-2 h-2 bg-gray-400 rounded-full"></span>
-              <span>Bookings</span>
-            </a>
-            <a href={`/${tenant.id}/tables`} className="flex items-center space-x-2 text-gray-600 hover:bg-gray-50 px-3 py-2 rounded">
-              <span className="w-2 h-2 bg-gray-400 rounded-full"></span>
-              <span>Tables</span>
-            </a>
-            <a href={`/${tenant.id}/customers`} className="flex items-center space-x-2 text-gray-600 hover:bg-gray-50 px-3 py-2 rounded">
-              <span className="w-2 h-2 bg-gray-400 rounded-full"></span>
-              <span>Customers</span>
-            </a>
-            <div className="flex items-center space-x-2 text-green-600 bg-green-50 px-3 py-2 rounded">
-              <span className="w-2 h-2 bg-green-600 rounded-full"></span>
-              <span className="font-medium">Integrations</span>
-            </div>
-            <a href={`/${tenant.id}/statistics`} className="flex items-center space-x-2 text-gray-600 hover:bg-gray-50 px-3 py-2 rounded">
-              <span className="w-2 h-2 bg-gray-400 rounded-full"></span>
-              <span>Statistics</span>
-            </a>
-          </div>
-        </div>
-      </div>
-
-      {/* Main Content */}
-      <div className="flex-1 bg-gray-50 p-8">
+    <DashboardLayout>
+      <div className="p-8">
         <div className="max-w-4xl mx-auto">
           <div className="mb-6">
             <a 
@@ -186,6 +157,6 @@ export default function MichelinIntegration() {
           </Card>
         </div>
       </div>
-    </div>
+    </DashboardLayout>
   );
 }
