@@ -86,7 +86,7 @@ export default function GoogleCalendar({ selectedDate, bookings, allBookings = [
         throw new Error("Restaurant is closed at this time");
       }
 
-      return apiRequest("POST", `/api/tenants/${restaurant?.tenantId}/restaurants/${restaurant?.id}/bookings`, bookingData);
+      return apiRequest(`/api/tenants/${restaurant?.tenantId}/restaurants/${restaurant?.id}/bookings`, "POST", bookingData);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ 

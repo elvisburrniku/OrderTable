@@ -124,7 +124,7 @@ export default function Bookings() {
 
   const createBookingMutation = useMutation({
     mutationFn: async (bookingData: any) => {
-      return apiRequest("POST", `/api/tenants/${restaurant?.tenantId}/restaurants/${restaurant?.id}/bookings`, bookingData);
+      return apiRequest(`/api/tenants/${restaurant?.tenantId}/restaurants/${restaurant?.id}/bookings`, "POST", bookingData);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ 

@@ -151,7 +151,7 @@ export default function Dashboard() {
 
   const createBookingMutation = useMutation({
     mutationFn: async (bookingData: any) => {
-      return apiRequest("POST", `/api/tenants/${restaurant?.tenantId}/restaurants/${restaurant?.id}/bookings`, bookingData);
+      return apiRequest(`/api/tenants/${restaurant?.tenantId}/restaurants/${restaurant?.id}/bookings`, "POST", bookingData);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ 
@@ -252,7 +252,7 @@ export default function Dashboard() {
 
   const updateBookingMutation = useMutation({
     mutationFn: async ({ bookingId, updates }: { bookingId: number; updates: any }) => {
-      return apiRequest("PUT", `/api/tenants/${restaurant?.tenantId}/restaurants/${restaurant?.id}/bookings/${bookingId}`, updates);
+      return apiRequest(`/api/tenants/${restaurant?.tenantId}/restaurants/${restaurant?.id}/bookings/${bookingId}`, "PUT", updates);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({
