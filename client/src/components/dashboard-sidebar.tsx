@@ -79,7 +79,7 @@ export function DashboardSidebar({ tenantId, restaurantId }: SidebarProps) {
     {
       name: "Restaurant Settings",
       icon: Cog,
-      href: `/${tenantId}/restaurant-settings`,
+      href: `/${tenantId}/restaurants/12/settings`,
       color: "text-stone-600"
     }
   ];

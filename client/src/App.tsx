@@ -51,6 +51,7 @@ import CombinedTables from "./pages/combined-tables";
 import Rooms from "./pages/rooms";
 import BookingAgents from "./pages/booking-agents";
 import TablePlan from "./pages/table-plan"; //Import the new TablePlan component
+import RestaurantSettings from "./pages/restaurant-settings";
 import { lazy } from "react";
 import Profile from "./pages/profile";
 import Settings from "./pages/settings";
@@ -117,6 +118,7 @@ function App() {
               <Route path="/:tenantId/table-plan" component={TablePlan} />
               <Route path="/:tenantId/rooms" component={Rooms} />
               <Route path="/:tenantId/booking-agents" component={BookingAgents} />
+              <Route path="/:tenantId/restaurants/:restaurantId/settings" component={RestaurantSettings} />
               <Route path="/booking-manage/:id" component={BookingManage} />
               <Route path="/feedback/:tenantId/:restaurantId" component={TableFeedback} />
               <Route path="/:tenantId/booking/:id" component={lazy(() => import("./pages/booking-detail"))} />
