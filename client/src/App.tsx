@@ -61,6 +61,7 @@ import FeedbackResponsesPopup from "./pages/feedback-responses-popup";
 import Contact from "./pages/contact";
 import GuestBooking from "./pages/guest-booking";
 import SetupWizard from "./pages/setup-wizard";
+import ChangeRequests from "./pages/change-requests";
 import { SetupGuard } from "./components/setup-guard";
 
 function App() {

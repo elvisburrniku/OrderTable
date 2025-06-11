@@ -751,16 +751,12 @@ export class DatabaseStorage implements IStorage {
           bookingId: request.bookingId,
           restaurantId: request.restaurantId,
           tenantId: request.tenantId,
-          requestType: request.requestType,
           requestedDate: request.requestedDate,
-          requestedStartTime: request.requestedStartTime,
-          requestedEndTime: request.requestedEndTime,
+          requestedTime: request.requestedTime,
           requestedGuestCount: request.requestedGuestCount,
           requestedTableId: request.requestedTableId,
-          customerMessage: request.customerMessage,
-          status: request.status || 'pending',
-          createdAt: new Date(),
-          updatedAt: new Date()
+          requestNotes: request.requestNotes,
+          status: request.status || 'pending'
         })
         .returning();
       
