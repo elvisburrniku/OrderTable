@@ -5,6 +5,7 @@ import { Toaster } from "@/components/ui/toaster";
 import { AuthProvider } from "./lib/auth.tsx";
 import { TenantProvider } from "./lib/tenant";
 import { RouteGuard } from "./components/route-guard";
+import { LayoutWrapper } from "./components/layout-wrapper";
 import { SessionTimeoutHandler } from "./components/session-timeout-handler";
 import Home from "./pages/home";
 import Login from "./pages/login";
@@ -69,8 +70,9 @@ function App() {
       <AuthProvider>
         <TenantProvider>
           <RouteGuard>
-            <SessionTimeoutHandler />
-            <Switch>
+            <LayoutWrapper>
+              <SessionTimeoutHandler />
+              <Switch>
             <Route path="/" component={Home} />
             <Route path="/login" component={Login} />
             <Route path="/register" component={Register} />
@@ -127,8 +129,9 @@ function App() {
             <Route path="/feedback-responses-popup" component={FeedbackResponsesPopup} />
             <Route path="/contact" component={Contact} />
             <Route path="/guest-booking/:tenantId/:restaurantId" component={TestGuest} />
-            <Route component={NotFound} />
-            </Switch>
+              <Route component={NotFound} />
+              </Switch>
+            </LayoutWrapper>
           </RouteGuard>
           <Toaster />
         </TenantProvider>

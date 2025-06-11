@@ -1,11 +1,22 @@
 import { useState, useEffect } from "react";
 import { useRoute } from "wouter";
 
+interface Restaurant {
+  id: number;
+  name: string;
+  address: string;
+  phone: string;
+  cuisine: string;
+  priceRange: string;
+  websiteUrl: string;
+  guestBookingEnabled: boolean;
+}
+
 export default function TestGuest() {
   const [match, params] = useRoute("/guest-booking/:tenantId/:restaurantId");
-  const [restaurant, setRestaurant] = useState(null);
+  const [restaurant, setRestaurant] = useState<Restaurant | null>(null);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
+  const [error, setError] = useState<string | null>(null);
 
   const tenantId = params?.tenantId;
   const restaurantId = params?.restaurantId;
