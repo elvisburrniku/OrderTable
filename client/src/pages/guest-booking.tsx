@@ -41,8 +41,9 @@ const steps: BookingStep[] = [
 ];
 
 export default function GuestBooking() {
-  const [match, params] = useRoute("/guest-booking/:restaurantId");
+  const [match, params] = useRoute("/guest-booking/:tenantId/:restaurantId");
   const restaurantId = params?.restaurantId;
+  const tenantId = params?.tenantId;
   const { toast } = useToast();
 
   const [currentStep, setCurrentStep] = useState(0);
