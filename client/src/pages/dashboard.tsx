@@ -809,12 +809,33 @@ export default function Dashboard() {
               </CardContent>
             </Card>
           </div>
+
+          {/* Compact Real-Time Status Widget */}
+          {viewMode !== 'status' && (
+            <div className="mb-8">
+              <RealTimeTableStatus 
+                restaurantId={restaurant?.id || 0}
+                tenantId={restaurant?.tenantId || 0}
+                showCompactView={true}
+                autoRefresh={true}
+                refreshInterval={60000}
+              />
+            </div>
+          )}
         </div>
 
         {/* Main Interface */}
         <div className="flex-1 p-6">
           {viewMode === 'layout' ? (
             renderTableLayout()
+          ) : viewMode === 'status' ? (
+            <RealTimeTableStatus 
+              restaurantId={restaurant?.id || 0}
+              tenantId={restaurant?.tenantId || 0}
+              showCompactView={false}
+              autoRefresh={true}
+              refreshInterval={30000}
+            />
           ) : (
             <BookingCalendar 
               selectedDate={selectedDate}
