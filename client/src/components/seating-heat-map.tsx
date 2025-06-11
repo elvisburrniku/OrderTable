@@ -3,6 +3,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useQuery } from "@tanstack/react-query";
 import { useAuth } from "@/lib/auth";
 import HeatMapTooltip from "@/components/heat-map-tooltip";
@@ -48,6 +49,7 @@ export default function SeatingHeatMap({ restaurantId, tenantId }: SeatingHeatMa
   const [autoRefresh, setAutoRefresh] = useState(true);
   const [hoveredTable, setHoveredTable] = useState<TableHeatData | null>(null);
   const [mousePosition, setMousePosition] = useState({ x: 0, y: 0 });
+  const [activeTab, setActiveTab] = useState("visualization");
 
   // Fetch table heat map data
   const { data: heatMapData, isLoading, refetch, error } = useQuery({
@@ -190,22 +192,6 @@ export default function SeatingHeatMap({ restaurantId, tenantId }: SeatingHeatMa
             </SelectContent>
           </Select>
           
-          <Select value={viewMode} onValueChange={(value: any) => setViewMode(value)}>
-            <SelectTrigger className="w-48">
-              <SelectValue placeholder="View Mode" />
-            </SelectTrigger>
-            <SelectContent>
-              {viewModeOptions.map((option) => (
-                <SelectItem key={option.value} value={option.value}>
-                  <div className="flex items-center space-x-2">
-                    <option.icon className="w-4 h-4" />
-                    <span>{option.label}</span>
-                  </div>
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-          
           <Button
             variant="outline"
             size="sm"
@@ -216,6 +202,44 @@ export default function SeatingHeatMap({ restaurantId, tenantId }: SeatingHeatMa
           </Button>
         </div>
       </div>
+
+      {/* Tabbed Interface */}
+      <Tabs value={activeTab} onValueChange={setActiveTab}>
+        <TabsList className="grid w-full grid-cols-2">
+          <TabsTrigger value="visualization" className="flex items-center space-x-2">
+            <Thermometer className="w-4 h-4" />
+            <span>Heat Map Visualization</span>
+          </TabsTrigger>
+          <TabsTrigger value="analytics" className="flex items-center space-x-2">
+            <BarChart3 className="w-4 h-4" />
+            <span>Analytics Dashboard</span>
+          </TabsTrigger>
+        </TabsList>
+
+        <TabsContent value="visualization" className="space-y-6">
+          {/* View Mode Selection */}
+          <Card>
+            <CardContent className="p-4">
+              <div className="flex items-center justify-between">
+                <span className="text-sm font-medium">View Mode:</span>
+                <Select value={viewMode} onValueChange={(value: any) => setViewMode(value)}>
+                  <SelectTrigger className="w-48">
+                    <SelectValue placeholder="View Mode" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {viewModeOptions.map((option) => (
+                      <SelectItem key={option.value} value={option.value}>
+                        <div className="flex items-center space-x-2">
+                          <option.icon className="w-4 h-4" />
+                          <span>{option.label}</span>
+                        </div>
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            </CardContent>
+          </Card>
 
       {/* Heat Map Visualization */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
@@ -445,6 +469,12 @@ export default function SeatingHeatMap({ restaurantId, tenantId }: SeatingHeatMa
           </Card>
         </div>
       </div>
+        </TabsContent>
+
+        <TabsContent value="analytics" className="space-y-6">
+          <HeatMapAnalytics heatData={heatData} timeRange={timeRange} />
+        </TabsContent>
+      </Tabs>
     </div>
   );
 }

@@ -211,7 +211,7 @@ export default function HeatMapAnalytics({ heatData, timeRange }: HeatMapAnalyti
             <div className="text-center">
               <div className="text-2xl font-bold text-red-600">{lowPerformers.length}</div>
               <div className="text-sm text-muted-foreground mb-2">Low Performers</div>
-              <div className="text-xs text-red-600">Heat Score < 40</div>
+              <div className="text-xs text-red-600">Heat Score &lt; 40</div>
               <Progress value={(lowPerformers.length / totalTables) * 100} className="mt-2 h-2" />
             </div>
           </div>
