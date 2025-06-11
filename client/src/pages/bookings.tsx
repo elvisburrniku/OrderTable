@@ -63,7 +63,7 @@ export default function Bookings() {
   });
 
   // Fetch restaurant data
-  const { data: restaurant } = useQuery({
+  const { data: restaurantData } = useQuery({
     queryKey: [`/api/tenants/${tenantId}/restaurants/${restaurantId}`],
     enabled: !!tenantId && !!restaurantId
   });
@@ -303,7 +303,7 @@ export default function Bookings() {
                       <tr 
                         key={booking.id} 
                         className="border-b border-gray-100 hover:bg-gray-50 cursor-pointer"
-                        onClick={() => window.location.href = `/${restaurant.tenantId}/bookings/${booking.id}`}
+                        onClick={() => window.location.href = `/${tenantId}/bookings/${booking.id}`}
                       >
                         <td className="py-3 px-4 text-blue-600 font-medium">#{booking.id}</td>
                         <td className="py-3 px-4">{booking.customerName}</td>
