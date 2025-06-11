@@ -176,145 +176,121 @@ export default function SpecialPeriods() {
         </div>
       </div>
 
-      <div className="flex">
-        {/* Sidebar */}
-        <div className="w-64 bg-white border-r min-h-screen">
-          <div className="p-6">
-            <div className="space-y-1">
-              <div className="text-sm font-medium text-gray-900 mb-3">General</div>
-              <a href="#" className="block text-sm text-gray-600 hover:text-gray-900 py-1">The place</a>
-              <a href="/opening-hours" className="block text-sm text-gray-600 hover:text-gray-900 py-1">Opening hours</a>
-              <a href="#" className="block text-sm text-gray-600 hover:text-gray-900 py-1">General opening hours</a>
-              <div className="block text-sm text-green-600 font-medium py-1 bg-green-50 px-2 rounded">Special periods</div>
-              <a href="/cut-off-time" className="block text-sm text-gray-600 hover:text-gray-900 py-1">Cut-off time</a>
-              
-              <div className="text-sm font-medium text-gray-900 mb-3 mt-6">Tables and rooms</div>
-              <a href="/rooms" className="block text-sm text-gray-600 hover:text-gray-900 py-1">Rooms</a>
-              <a href="#" className="block text-sm text-gray-600 hover:text-gray-900 py-1">Booking settings</a>
-              <a href="/tags" className="block text-sm text-gray-600 hover:text-gray-900 py-1">Tags</a>
-              <a href="/booking-types" className="block text-sm text-gray-600 hover:text-gray-900 py-1">Booking types</a>
-              <a href="#" className="block text-sm text-gray-600 hover:text-gray-900 py-1">Logics</a>
-            </div>
-          </div>
-        </div>
-
-        {/* Main Content */}
-        <div className="flex-1 p-6">
-          <Card>
-            <CardHeader>
-              <CardTitle>Special periods</CardTitle>
-              <p className="text-sm text-gray-600">
-                Here you can define periods with different opening hours and closing.
-              </p>
-            </CardHeader>
-            <CardContent className="space-y-6">
-              {periods.length === 0 ? (
-                <div className="text-center py-8 text-gray-500">
-                  No special periods defined yet
-                </div>
-              ) : (
-                <div className="space-y-4">
-                  {periods.map((period, index) => (
-                    <div key={index} className="border rounded-lg p-4 space-y-4">
-                      <div className="flex justify-between items-center">
-                        <h4 className="font-medium">Special Period #{index + 1}</h4>
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => deletePeriod(index, period.id)}
-                          className="text-red-600 hover:text-red-700"
-                        >
-                          <Trash2 className="h-4 w-4" />
-                        </Button>
-                      </div>
-                      
-                      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                        <div>
-                          <Label htmlFor={`name-${index}`}>Period Name</Label>
-                          <Input
-                            id={`name-${index}`}
-                            placeholder="e.g., Holiday Hours"
-                            value={period.name}
-                            onChange={(e) => updatePeriod(index, 'name', e.target.value)}
-                          />
-                        </div>
-                        <div>
-                          <Label htmlFor={`start-${index}`}>Start Date</Label>
-                          <Input
-                            id={`start-${index}`}
-                            type="date"
-                            value={period.startDate}
-                            onChange={(e) => updatePeriod(index, 'startDate', e.target.value)}
-                          />
-                        </div>
-                        <div>
-                          <Label htmlFor={`end-${index}`}>End Date</Label>
-                          <Input
-                            id={`end-${index}`}
-                            type="date"
-                            value={period.endDate}
-                            onChange={(e) => updatePeriod(index, 'endDate', e.target.value)}
-                          />
-                        </div>
-                      </div>
-
-                      <div className="flex items-center space-x-4">
-                        <div className="flex items-center space-x-2">
-                          <Switch
-                            id={`open-${index}`}
-                            checked={period.isOpen}
-                            onCheckedChange={(checked) => updatePeriod(index, 'isOpen', checked)}
-                          />
-                          <Label htmlFor={`open-${index}`}>Restaurant Open</Label>
-                        </div>
-                      </div>
-
-                      {period.isOpen && (
-                        <div className="grid grid-cols-2 gap-4">
-                          <div>
-                            <Label htmlFor={`open-time-${index}`}>Open Time</Label>
-                            <Input
-                              id={`open-time-${index}`}
-                              type="time"
-                              value={period.openTime}
-                              onChange={(e) => updatePeriod(index, 'openTime', e.target.value)}
-                            />
-                          </div>
-                          <div>
-                            <Label htmlFor={`close-time-${index}`}>Close Time</Label>
-                            <Input
-                              id={`close-time-${index}`}
-                              type="time"
-                              value={period.closeTime}
-                              onChange={(e) => updatePeriod(index, 'closeTime', e.target.value)}
-                            />
-                          </div>
-                        </div>
-                      )}
-
-                      {!period.id && (
-                        <Button 
-                          onClick={() => savePeriod(index)}
-                          disabled={createPeriodMutation.isPending}
-                          className="bg-blue-600 hover:bg-blue-700 text-white"
-                        >
-                          {createPeriodMutation.isPending ? "Saving..." : "Save Period"}
-                        </Button>
-                      )}
+      <div className="p-6">
+        <Card>
+          <CardHeader>
+            <CardTitle>Special periods</CardTitle>
+            <p className="text-sm text-gray-600">
+              Here you can define periods with different opening hours and closing.
+            </p>
+          </CardHeader>
+          <CardContent className="space-y-6">
+            {periods.length === 0 ? (
+              <div className="text-center py-8 text-gray-500">
+                No special periods defined yet
+              </div>
+            ) : (
+              <div className="space-y-4">
+                {periods.map((period, index) => (
+                  <div key={index} className="border rounded-lg p-4 space-y-4">
+                    <div className="flex justify-between items-center">
+                      <h4 className="font-medium">Special Period #{index + 1}</h4>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => deletePeriod(index, period.id)}
+                        className="text-red-600 hover:text-red-700"
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
                     </div>
-                  ))}
-                </div>
-              )}
+                    
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                      <div>
+                        <Label htmlFor={`name-${index}`}>Period Name</Label>
+                        <Input
+                          id={`name-${index}`}
+                          placeholder="e.g., Holiday Hours"
+                          value={period.name}
+                          onChange={(e) => updatePeriod(index, 'name', e.target.value)}
+                        />
+                      </div>
+                      <div>
+                        <Label htmlFor={`start-${index}`}>Start Date</Label>
+                        <Input
+                          id={`start-${index}`}
+                          type="date"
+                          value={period.startDate}
+                          onChange={(e) => updatePeriod(index, 'startDate', e.target.value)}
+                        />
+                      </div>
+                      <div>
+                        <Label htmlFor={`end-${index}`}>End Date</Label>
+                        <Input
+                          id={`end-${index}`}
+                          type="date"
+                          value={period.endDate}
+                          onChange={(e) => updatePeriod(index, 'endDate', e.target.value)}
+                        />
+                      </div>
+                    </div>
 
-              <Button 
-                onClick={addPeriod}
-                className="bg-green-600 hover:bg-green-700 text-white"
-              >
-                Add period
-              </Button>
-            </CardContent>
-          </Card>
-        </div>
+                    <div className="flex items-center space-x-4">
+                      <div className="flex items-center space-x-2">
+                        <Switch
+                          id={`open-${index}`}
+                          checked={period.isOpen}
+                          onCheckedChange={(checked) => updatePeriod(index, 'isOpen', checked)}
+                        />
+                        <Label htmlFor={`open-${index}`}>Restaurant Open</Label>
+                      </div>
+                    </div>
+
+                    {period.isOpen && (
+                      <div className="grid grid-cols-2 gap-4">
+                        <div>
+                          <Label htmlFor={`open-time-${index}`}>Open Time</Label>
+                          <Input
+                            id={`open-time-${index}`}
+                            type="time"
+                            value={period.openTime}
+                            onChange={(e) => updatePeriod(index, 'openTime', e.target.value)}
+                          />
+                        </div>
+                        <div>
+                          <Label htmlFor={`close-time-${index}`}>Close Time</Label>
+                          <Input
+                            id={`close-time-${index}`}
+                            type="time"
+                            value={period.closeTime}
+                            onChange={(e) => updatePeriod(index, 'closeTime', e.target.value)}
+                          />
+                        </div>
+                      </div>
+                    )}
+
+                    {!period.id && (
+                      <Button 
+                        onClick={() => savePeriod(index)}
+                        disabled={createPeriodMutation.isPending}
+                        className="bg-blue-600 hover:bg-blue-700 text-white"
+                      >
+                        {createPeriodMutation.isPending ? "Saving..." : "Save Period"}
+                      </Button>
+                    )}
+                  </div>
+                ))}
+              </div>
+            )}
+
+            <Button 
+              onClick={addPeriod}
+              className="bg-green-600 hover:bg-green-700 text-white"
+            >
+              Add period
+            </Button>
+          </CardContent>
+        </Card>
       </div>
     </div>
   );
