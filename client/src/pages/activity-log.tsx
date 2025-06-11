@@ -109,69 +109,69 @@ export default function ActivityLog() {
 
       {/* Main Content */}
       <div className="p-6">
-          <div className="bg-white rounded-lg shadow">
-            {/* Header */}
-            <div className="p-6 border-b">
-              <h2 className="text-lg font-semibold mb-4">Log</h2>
+        <div className="bg-white rounded-lg shadow">
+          {/* Header */}
+          <div className="p-6 border-b">
+            <h2 className="text-lg font-semibold mb-4">Log</h2>
 
-              {/* Filters */}
-              <div className="flex items-center space-x-4 mb-4">
-                <div>
-                  <label className="block text-sm text-gray-600 mb-1">Event:</label>
-                  <Select value={eventFilter} onValueChange={setEventFilter}>
-                    <SelectTrigger className="w-32">
-                      <SelectValue placeholder="All" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="all">All</SelectItem>
-                      <SelectItem value="login">Login</SelectItem>
-                      <SelectItem value="booking_created">New booking</SelectItem>
-                      <SelectItem value="booking_confirmed">Booking confirmed</SelectItem>
-                      <SelectItem value="password_changed">Password changed</SelectItem>
-                      <SelectItem value="invalid_login">Invalid login</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
+            {/* Filters */}
+            <div className="flex items-center space-x-4 mb-4">
+              <div>
+                <label className="block text-sm text-gray-600 mb-1">Event:</label>
+                <Select value={eventFilter} onValueChange={setEventFilter}>
+                  <SelectTrigger className="w-32">
+                    <SelectValue placeholder="All" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">All</SelectItem>
+                    <SelectItem value="login">Login</SelectItem>
+                    <SelectItem value="booking_created">New booking</SelectItem>
+                    <SelectItem value="booking_confirmed">Booking confirmed</SelectItem>
+                    <SelectItem value="password_changed">Password changed</SelectItem>
+                    <SelectItem value="invalid_login">Invalid login</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
 
-                <div>
-                  <label className="block text-sm text-gray-600 mb-1">Booking#:</label>
-                  <Select>
-                    <SelectTrigger className="w-32">
-                      <SelectValue placeholder="All" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="all">All</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
+              <div>
+                <label className="block text-sm text-gray-600 mb-1">Booking#:</label>
+                <Select>
+                  <SelectTrigger className="w-32">
+                    <SelectValue placeholder="All" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">All</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
 
-                <div>
-                  <label className="block text-sm text-gray-600 mb-1">Login:</label>
-                  <Select value={loginFilter} onValueChange={setLoginFilter}>
-                    <SelectTrigger className="w-32">
-                      <SelectValue placeholder="All" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="all">All</SelectItem>
-                      <SelectItem value="manual">Manual</SelectItem>
-                      <SelectItem value="online">Online</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
+              <div>
+                <label className="block text-sm text-gray-600 mb-1">Login:</label>
+                <Select value={loginFilter} onValueChange={setLoginFilter}>
+                  <SelectTrigger className="w-32">
+                    <SelectValue placeholder="All" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">All</SelectItem>
+                    <SelectItem value="manual">Manual</SelectItem>
+                    <SelectItem value="online">Online</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
 
-                <div className="flex items-end space-x-2">
-                  <Button className="bg-green-600 hover:bg-green-700 text-white">Update</Button>
-                  <Button variant="outline" className="flex items-center space-x-1">
-                    <span>📄</span>
-                    <span>Print</span>
-                  </Button>
-                </div>
+              <div className="flex items-end space-x-2">
+                <Button className="bg-green-600 hover:bg-green-700 text-white">Update</Button>
+                <Button variant="outline" className="flex items-center space-x-1">
+                  <span>📄</span>
+                  <span>Print</span>
+                </Button>
               </div>
             </div>
+          </div>
 
-            {/* Table */}
-            <div className="overflow-x-auto">
-              <table className="w-full">
+          {/* Table */}
+          <div className="overflow-x-auto">
+            <table className="w-full">
                 <thead className="bg-gray-50">
                   <tr>
                     <th className="text-left py-3 px-4 font-medium text-gray-700">Event#</th>
