@@ -66,6 +66,7 @@ import ChangeRequests from "./pages/change-requests";
 import Calendar from "./pages/calendar";
 import EnhancedCalendar from "./pages/enhanced-calendar";
 import QrMenu from "./pages/qr-menu";
+import FloorPlan from "./pages/floor-plan";
 import { SetupGuard } from "./components/setup-guard";
 
 function App() {
@@ -89,6 +90,7 @@ function App() {
               <Route path="/:tenantId/calendar" component={EnhancedCalendar} />
               <Route path="/:tenantId/calendar-legacy" component={Calendar} />
               <Route path="/:tenantId/qr-menu" component={QrMenu} />
+              <Route path="/:tenantId/floor-plan" component={FloorPlan} />
               <Route path="/:tenantId/tables" component={Tables} />
               <Route path="/:tenantId/customers" component={Customers} />
               <Route path="/:tenantId/integrations" component={Integrations} />
