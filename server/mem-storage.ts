@@ -65,6 +65,8 @@ export class MemoryStorage implements IStorage {
   async initialize() {
     // Initialize with default subscription plans
     await this.initializeSubscriptionPlans();
+    // Initialize demo data for testing
+    await this.initializeDemoData();
   }
 
   private async initializeSubscriptionPlans() {
@@ -103,6 +105,69 @@ export class MemoryStorage implements IStorage {
       }
     }
     this.nextId = Math.max(this.nextId, ...this.subscriptionPlans.map(p => p.id), 0) + 1;
+  }
+
+  private async initializeDemoData() {
+    // Create demo tenant
+    if (this.tenants.length === 0) {
+      const demoTenant = {
+        id: 1,
+        name: "Demo Restaurant Group",
+        slug: "demo",
+        subscriptionPlanId: 1,
+        subscriptionStatus: "active",
+        trialStartDate: new Date(),
+        trialEndDate: new Date(Date.now() + 14 * 24 * 60 * 60 * 1000),
+        maxRestaurants: 1,
+        createdAt: new Date()
+      };
+      this.tenants.push(demoTenant);
+    }
+
+    // Create demo user
+    if (this.users.length === 0) {
+      const demoUser = {
+        id: 1,
+        email: "demo@restaurant.com",
+        password: "$2b$10$demohashedpassword",
+        name: "Demo User",
+        restaurantName: "Demo Restaurant",
+        ssoProvider: null,
+        ssoId: null,
+        createdAt: new Date()
+      };
+      this.users.push(demoUser);
+
+      // Create tenant user relationship
+      this.tenantUsers.push({
+        id: 1,
+        tenantId: 1,
+        userId: 1,
+        role: "admin",
+        createdAt: new Date()
+      });
+    }
+
+    // Create demo restaurant
+    if (this.restaurants.length === 0) {
+      const demoRestaurant = {
+        id: 1,
+        tenantId: 1,
+        name: "Demo Restaurant",
+        address: "123 Main St, City, Country",
+        phone: "+1234567890",
+        email: "contact@demorestaurant.com",
+        cuisine: "International",
+        priceRange: "$$",
+        capacity: 50,
+        timezone: "UTC",
+        websiteUrl: "https://demorestaurant.com",
+        createdAt: new Date()
+      };
+      this.restaurants.push(demoRestaurant);
+    }
+
+    this.nextId = Math.max(this.nextId, 5);
   }
 
   // Users
@@ -538,12 +603,75 @@ export class MemoryStorage implements IStorage {
   async markAllNotificationsAsRead(restaurantId: number): Promise<void> { }
   async revertNotification(notificationId: number, userEmail: string): Promise<boolean> { return false; }
   async deleteNotification(id: number): Promise<boolean> { return false; }
-  async getIntegrationConfigurationsByRestaurant(restaurantId: number): Promise<any[]> { return []; }
-  async getIntegrationConfiguration(restaurantId: number, integrationId: string): Promise<any> { return undefined; }
-  async createOrUpdateIntegrationConfiguration(restaurantId: number, tenantId: number, integrationId: string, isEnabled: boolean, configuration?: any): Promise<any> { return { id: this.nextId++ }; }
-  async deleteIntegrationConfiguration(restaurantId: number, integrationId: string): Promise<boolean> { return false; }
-  async getWebhooksByRestaurant(restaurantId: number): Promise<any[]> { return []; }
-  async saveWebhooks(restaurantId: number, tenantId: number, webhooksData: any[]): Promise<any[]> { return []; }
+  async getIntegrationConfigurationsByRestaurant(restaurantId: number): Promise<any[]> { 
+    return this.integrationConfigurations.filter(config => config.restaurantId === restaurantId);
+  }
+  
+  async getIntegrationConfiguration(restaurantId: number, integrationId: string): Promise<any> { 
+    return this.integrationConfigurations.find(config => 
+      config.restaurantId === restaurantId && config.integrationId === integrationId
+    );
+  }
+  
+  async createOrUpdateIntegrationConfiguration(restaurantId: number, tenantId: number, integrationId: string, isEnabled: boolean, configuration?: any): Promise<any> { 
+    const existingIndex = this.integrationConfigurations.findIndex(config => 
+      config.restaurantId === restaurantId && config.integrationId === integrationId
+    );
+    
+    const configData = {
+      id: existingIndex >= 0 ? this.integrationConfigurations[existingIndex].id : this.nextId++,
+      restaurantId,
+      tenantId,
+      integrationId,
+      isEnabled,
+      configuration: configuration || {},
+      createdAt: existingIndex >= 0 ? this.integrationConfigurations[existingIndex].createdAt : new Date(),
+      updatedAt: new Date()
+    };
+    
+    if (existingIndex >= 0) {
+      this.integrationConfigurations[existingIndex] = configData;
+    } else {
+      this.integrationConfigurations.push(configData);
+    }
+    
+    return configData;
+  }
+  
+  async deleteIntegrationConfiguration(restaurantId: number, integrationId: string): Promise<boolean> { 
+    const index = this.integrationConfigurations.findIndex(config => 
+      config.restaurantId === restaurantId && config.integrationId === integrationId
+    );
+    
+    if (index >= 0) {
+      this.integrationConfigurations.splice(index, 1);
+      return true;
+    }
+    return false;
+  }
+  
+  async getWebhooksByRestaurant(restaurantId: number): Promise<any[]> { 
+    return this.webhooks.filter(webhook => webhook.restaurantId === restaurantId);
+  }
+  
+  async saveWebhooks(restaurantId: number, tenantId: number, webhooksData: any[]): Promise<any[]> { 
+    // Remove existing webhooks for this restaurant
+    this.webhooks = this.webhooks.filter(webhook => webhook.restaurantId !== restaurantId);
+    
+    // Add new webhooks
+    const savedWebhooks = webhooksData.map(webhook => ({
+      id: this.nextId++,
+      restaurantId,
+      tenantId,
+      event: webhook.event,
+      url: webhook.url,
+      createdAt: new Date(),
+      updatedAt: new Date()
+    }));
+    
+    this.webhooks.push(...savedWebhooks);
+    return savedWebhooks;
+  }
   async getReschedulingSuggestionsByRestaurant(restaurantId: number): Promise<any[]> { return []; }
   async getReschedulingSuggestionsByBooking(bookingId: number): Promise<any[]> { return []; }
   async createReschedulingSuggestion(suggestion: any): Promise<any> { return { id: this.nextId++, ...suggestion }; }
