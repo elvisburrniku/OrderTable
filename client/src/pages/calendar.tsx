@@ -18,6 +18,7 @@ import { cn } from "@/lib/utils";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
+import { EnhancedCalendarFeatures, CalendarToolbar, BookingConflictDetector } from "@/components/enhanced-calendar-features";
 
 interface Booking {
   id: number;
@@ -68,6 +69,14 @@ export default function CalendarPage() {
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [draggedBooking, setDraggedBooking] = useState<Booking | null>(null);
   const [draggedOverSlot, setDraggedOverSlot] = useState<{ date: Date; time: string } | null>(null);
+  const [filteredBookings, setFilteredBookings] = useState<Booking[]>([]);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [filters, setFilters] = useState({
+    status: "all",
+    guestCount: "all",
+    timeRange: "all",
+    table: "all"
+  });
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
@@ -313,7 +322,7 @@ export default function CalendarPage() {
 
   // Render booking card
   const renderBooking = (booking: Booking) => {
-    const table = tables.find((t: Table) => t.id === booking.tableId);
+    const table = tables.find((t) => t.id === booking.tableId);
     
     return (
       <Card
@@ -575,7 +584,7 @@ export default function CalendarPage() {
                             </SelectTrigger>
                           </FormControl>
                           <SelectContent>
-                            {tables.map((table: Table) => (
+                            {tables.map((table) => (
                               <SelectItem key={table.id} value={table.id.toString()}>
                                 Table {table.tableNumber} (Capacity: {table.capacity})
                               </SelectItem>
@@ -684,7 +693,7 @@ export default function CalendarPage() {
             </div>
             <div className="grid grid-cols-7 gap-1">
               {dateRange.map((date) => {
-                const dayBookings = bookings.filter((booking: Booking) => 
+                const dayBookings = bookings.filter((booking) => 
                   booking.bookingDate === format(date, 'yyyy-MM-dd')
                 );
                 
@@ -856,7 +865,7 @@ export default function CalendarPage() {
                         </SelectTrigger>
                       </FormControl>
                       <SelectContent>
-                        {tables.map((table: Table) => (
+                        {tables.map((table) => (
                           <SelectItem key={table.id} value={table.id.toString()}>
                             Table {table.tableNumber} (Capacity: {table.capacity})
                           </SelectItem>
