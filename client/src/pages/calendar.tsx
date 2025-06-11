@@ -50,12 +50,10 @@ export default function Calendar() {
       case 'enhanced':
         return (
           <InteractiveBookingCalendar 
-            selectedDate={selectedDate}
-            bookings={selectedDateBookings}
-            allBookings={bookings}
-            tables={tables}
-            isLoading={bookingsLoading || tablesLoading}
-            onDateSelect={setSelectedDate}
+            restaurantId={restaurantId || 0}
+            tenantId={tenantId}
+            guestCount={2}
+            isPublic={false}
           />
         );
       case 'google':
