@@ -6,7 +6,7 @@ import { AuthProvider } from "./lib/auth.tsx";
 import { TenantProvider } from "./lib/tenant";
 import { RouteGuard } from "./components/route-guard";
 import { SessionTimeoutHandler } from "./components/session-timeout-handler";
-import { TutorialProvider } from "./components/onboarding/TutorialProvider";
+import { TutorialProviderWrapper } from "./components/onboarding/TutorialProviderWrapper";
 import Home from "./pages/home";
 import Login from "./pages/login";
 import Register from "./pages/register";
@@ -73,7 +73,7 @@ function App() {
     <QueryClientProvider client={queryClient}>
       <AuthProvider>
         <TenantProvider>
-          <TutorialProvider>
+          <TutorialProviderWrapper>
             <RouteGuard>
               <SessionTimeoutHandler />
             <Switch>
@@ -141,7 +141,7 @@ function App() {
             </Switch>
             </RouteGuard>
             <Toaster />
-          </TutorialProvider>
+          </TutorialProviderWrapper>
         </TenantProvider>
       </AuthProvider>
     </QueryClientProvider>

@@ -240,7 +240,15 @@ export function useOnboardingTutorial(tenantId?: number, restaurantId?: number) 
 
   // Auto-start tutorial for new users in a separate effect
   useEffect(() => {
+    console.log('Tutorial auto-start check:', {
+      userProgress: userProgress?.length,
+      isActive: tutorialState.isActive,
+      tenantId,
+      restaurantId
+    });
+    
     if (userProgress && userProgress.length === 0 && !tutorialState.isActive && tenantId) {
+      console.log('Starting tutorial automatically');
       const firstStep = TUTORIAL_STEPS[0];
       setTutorialState(prev => ({
         ...prev,
@@ -251,7 +259,7 @@ export function useOnboardingTutorial(tenantId?: number, restaurantId?: number) 
         canGoPrevious: false
       }));
     }
-  }, [userProgress, tutorialState.isActive, tenantId]);
+  }, [userProgress, tutorialState.isActive, tenantId, restaurantId]);
 
   const startTutorial = useCallback(() => {
     const firstStep = TUTORIAL_STEPS[0];
