@@ -160,31 +160,9 @@ export default function CutOffTime() {
         </div>
       </div>
 
-      <div className="flex">
-        {/* Sidebar */}
-        <div className="w-64 bg-white border-r min-h-screen">
-          <div className="p-6">
-            <div className="space-y-1">
-              <div className="text-sm font-medium text-gray-900 mb-3">General</div>
-              <a href="#" className="block text-sm text-gray-600 hover:text-gray-900 py-1">The place</a>
-              <a href="/opening-hours" className="block text-sm text-gray-600 hover:text-gray-900 py-1">Opening hours</a>
-              <a href="#" className="block text-sm text-gray-600 hover:text-gray-900 py-1">General opening hours</a>
-              <a href="/special-periods" className="block text-sm text-gray-600 hover:text-gray-900 py-1">Special periods</a>
-              <div className="block text-sm text-green-600 font-medium py-1 bg-green-50 px-2 rounded">Cut-off time</div>
-
-              <div className="text-sm font-medium text-gray-900 mb-3 mt-6">Tables and rooms</div>
-              <a href="/rooms" className="block text-sm text-gray-600 hover:text-gray-900 py-1">Rooms</a>
-              <a href="#" className="block text-sm text-gray-600 hover:text-gray-900 py-1">Booking settings</a>
-              <a href="/tags" className="block text-sm text-gray-600 hover:text-gray-900 py-1">Tags</a>
-              <a href="/booking-types" className="block text-sm text-gray-600 hover:text-gray-900 py-1">Booking types</a>
-              <a href="#" className="block text-sm text-gray-600 hover:text-gray-900 py-1">Logics</a>
-            </div>
-          </div>
-        </div>
-
-        {/* Main Content */}
-        <div className="flex-1 p-6">
-          <Card>
+      {/* Main Content */}
+      <div className="p-6">
+        <Card>
             <CardHeader>
               <CardTitle>Cut-off time</CardTitle>
               <p className="text-sm text-gray-600">
@@ -221,7 +199,6 @@ export default function CutOffTime() {
               </div>
             </CardContent>
           </Card>
-        </div>
       </div>
     </div>
   );
