@@ -13,6 +13,7 @@ import { useToast } from "@/hooks/use-toast";
 import { format, startOfMonth, endOfMonth, eachDayOfInterval, isSameDay, isToday, addMonths, subMonths } from "date-fns";
 import { List, Table, Calendar, Users, Plus, ChevronLeft, ChevronRight, Clock } from "lucide-react";
 import { Booking, Table as TableType } from "@shared/schema";
+import WalkInBookingButton from "@/components/walk-in-booking";
 
 interface BookingCalendarProps {
   selectedDate: Date;
@@ -603,46 +604,50 @@ export default function BookingCalendar({ selectedDate, bookings, allBookings = 
           </Button>
         </div>
 
-        {/* New Booking Dialog */}
-        <Dialog open={isNewBookingOpen} onOpenChange={setIsNewBookingOpen}>
-          <DialogTrigger asChild>
-            <Button className="bg-green-600 hover:bg-green-700 text-white">
-              <Plus className="h-4 w-4 mr-2" />
-              New Booking
-            </Button>
-          </DialogTrigger>
-          <DialogContent className="max-w-md">
-            <DialogHeader>
-              <DialogTitle>Create New Booking</DialogTitle>
-            </DialogHeader>
-            <form onSubmit={handleCreateBooking} className="space-y-4">
-              <div>
-                <Label htmlFor="customerName">Customer Name</Label>
-                <Input
-                  id="customerName"
-                  value={newBooking.customerName}
-                  onChange={(e) => setNewBooking({ ...newBooking, customerName: e.target.value })}
-                  required
-                />
-              </div>
-              <div>
-                <Label htmlFor="customerEmail">Email</Label>
-                <Input
-                  id="customerEmail"
-                  type="email"
-                  value={newBooking.customerEmail}
-                  onChange={(e) => setNewBooking({ ...newBooking, customerEmail: e.target.value })}
-                  required
-                />
-              </div>
-              <div>
-                <Label htmlFor="customerPhone">Phone</Label>
-                <InternationalPhoneInput
-                  value={newBooking.customerPhone}
-                  onChange={(phone: string) => setNewBooking({ ...newBooking, customerPhone: phone })}
-                  placeholder="Phone number"
-                />
-              </div>
+        {/* Booking Action Buttons */}
+        <div className="flex items-center space-x-2">
+          <WalkInBookingButton />
+          
+          {/* New Booking Dialog */}
+          <Dialog open={isNewBookingOpen} onOpenChange={setIsNewBookingOpen}>
+            <DialogTrigger asChild>
+              <Button className="bg-green-600 hover:bg-green-700 text-white">
+                <Plus className="h-4 w-4 mr-2" />
+                New Booking
+              </Button>
+            </DialogTrigger>
+            <DialogContent className="max-w-md">
+              <DialogHeader>
+                <DialogTitle>Create New Booking</DialogTitle>
+              </DialogHeader>
+              <form onSubmit={handleCreateBooking} className="space-y-4">
+                <div>
+                  <Label htmlFor="customerName">Customer Name</Label>
+                  <Input
+                    id="customerName"
+                    value={newBooking.customerName}
+                    onChange={(e) => setNewBooking({ ...newBooking, customerName: e.target.value })}
+                    required
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="customerEmail">Email</Label>
+                  <Input
+                    id="customerEmail"
+                    type="email"
+                    value={newBooking.customerEmail}
+                    onChange={(e) => setNewBooking({ ...newBooking, customerEmail: e.target.value })}
+                    required
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="customerPhone">Phone</Label>
+                  <InternationalPhoneInput
+                    value={newBooking.customerPhone}
+                    onChange={(phone: string) => setNewBooking({ ...newBooking, customerPhone: phone })}
+                    placeholder="Phone number"
+                  />
+                </div>
               <div>
                 <Label htmlFor="guestCount">Number of Guests</Label>
                 <Input
