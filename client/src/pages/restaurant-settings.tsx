@@ -47,7 +47,7 @@ export default function RestaurantSettings() {
   const [activeSection, setActiveSection] = useState("opening-hours");
 
   // Fetch restaurant data
-  const { data: restaurant } = useQuery({
+  const { data: restaurantData } = useQuery({
     queryKey: [`/api/tenants/${tenantId}/restaurants/${restaurantId}`],
     enabled: !!tenantId && !!restaurantId
   });
