@@ -70,6 +70,18 @@ export default function BookingCalendar({ selectedDate, bookings, allBookings = 
     enabled: !!restaurant?.id && !!restaurant?.tenantId,
   });
 
+  // Fetch cut-off times
+  const { data: cutOffTimes = [] } = useQuery({
+    queryKey: ["cutOffTimes", restaurant?.id, restaurant?.tenantId],
+    queryFn: async () => {
+      if (!restaurant?.id || !restaurant?.tenantId) return [];
+      const response = await fetch(`/api/tenants/${restaurant.tenantId}/restaurants/${restaurant.id}/cut-off-times`);
+      if (!response.ok) throw new Error("Failed to fetch cut-off times");
+      return response.json();
+    },
+    enabled: !!restaurant?.id && !!restaurant?.tenantId,
+  });
+
   const getOpeningHoursForDay = (date: Date) => {
     // Check if there's a special period that affects this date
     const dateStr = format(date, 'yyyy-MM-dd');
