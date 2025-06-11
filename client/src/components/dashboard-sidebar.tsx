@@ -113,6 +113,12 @@ export default function DashboardSidebar({ tenantId, restaurantId }: SidebarProp
       color: "text-emerald-600"
     },
     {
+      name: "Billing",
+      icon: CreditCard,
+      href: `/${tenantId}/billing`,
+      color: "text-purple-600"
+    },
+    {
       name: "Tenant Settings",
       icon: Settings,
       href: `/${tenantId}/tenant-settings`,

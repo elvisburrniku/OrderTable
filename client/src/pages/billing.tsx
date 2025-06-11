@@ -1,380 +1,539 @@
+import { useState, useEffect } from 'react';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { loadStripe } from '@stripe/stripe-js';
+import { Elements, CardElement, useStripe, useElements } from '@stripe/react-stripe-js';
+import { apiRequest } from '@/lib/queryClient';
+import { useToast } from '@/hooks/use-toast';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
+import { Separator } from '@/components/ui/separator';
+import { Alert, AlertDescription } from '@/components/ui/alert';
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { CreditCard, Download, Plus, Trash2, Star, AlertCircle, CheckCircle, Clock } from 'lucide-react';
+import { format } from 'date-fns';
 
-import { useState } from "react";
-import { useAuth } from "@/lib/auth.tsx";
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { CreditCard, Calendar, DollarSign, Plus, Trash2, CheckCircle, AlertCircle } from "lucide-react";
-import { format } from "date-fns";
-import { useToast } from "@/hooks/use-toast";
-import { loadStripe } from "@stripe/stripe-js";
+const stripePromise = loadStripe(import.meta.env.VITE_STRIPE_PUBLIC_KEY || 'pk_test_your_publishable_key');
 
-export default function Billing() {
-  const { user, restaurant } = useAuth();
+interface PaymentMethod {
+  id: string;
+  card: {
+    brand: string;
+    last4: string;
+    exp_month: number;
+    exp_year: number;
+  };
+}
+
+interface Invoice {
+  id: string;
+  amount_paid: number;
+  amount_due: number;
+  currency: string;
+  status: string;
+  created: number;
+  period_start: number;
+  period_end: number;
+  hosted_invoice_url: string;
+  invoice_pdf: string;
+  number: string;
+  description: string;
+}
+
+interface BillingInfo {
+  customer: any;
+  paymentMethods: PaymentMethod[];
+  upcomingInvoice: any;
+  subscriptionStatus: string;
+  stripeSubscriptionId: string;
+}
+
+const AddPaymentMethodForm = ({ onSuccess }: { onSuccess: () => void }) => {
+  const stripe = useStripe();
+  const elements = useElements();
   const { toast } = useToast();
-  const queryClient = useQueryClient();
-  const [isAddCardOpen, setIsAddCardOpen] = useState(false);
-  const [cardForm, setCardForm] = useState({
-    cardNumber: "",
-    expiryMonth: "",
-    expiryYear: "",
-    cvv: "",
-    name: "",
-  });
+  const [isLoading, setIsLoading] = useState(false);
 
-  // Fetch current subscription
-  const { data: subscription } = useQuery({
-    queryKey: ["/api/users", user?.id, "subscription"],
-    enabled: !!user,
-  });
+  const setupIntentMutation = useMutation({
+    mutationFn: () => apiRequest('POST', '/api/billing/setup-intent'),
+    onSuccess: async (data) => {
+      if (!stripe || !elements) return;
 
-  // Fetch payment methods
-  const { data: paymentMethods = [] } = useQuery({
-    queryKey: ["/api/users", user?.id, "payment-methods"],
-    enabled: !!user,
-  });
+      const cardElement = elements.getElement(CardElement);
+      if (!cardElement) return;
 
-  // Fetch billing history
-  const { data: billingHistory = [] } = useQuery({
-    queryKey: ["/api/users", user?.id, "billing-history"],
-    enabled: !!user,
-  });
-
-  const addPaymentMethodMutation = useMutation({
-    mutationFn: async (cardData: any) => {
-      const response = await fetch("/api/payment-methods", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(cardData),
+      setIsLoading(true);
+      
+      const { error } = await stripe.confirmCardSetup(data.clientSecret, {
+        payment_method: {
+          card: cardElement,
+        }
       });
-      if (!response.ok) throw new Error("Failed to add payment method");
-      return response.json();
+
+      setIsLoading(false);
+
+      if (error) {
+        toast({
+          title: "Error",
+          description: error.message,
+          variant: "destructive",
+        });
+      } else {
+        toast({
+          title: "Success",
+          description: "Payment method added successfully",
+        });
+        onSuccess();
+      }
     },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["/api/users", user?.id, "payment-methods"] });
-      setIsAddCardOpen(false);
-      setCardForm({
-        cardNumber: "",
-        expiryMonth: "",
-        expiryYear: "",
-        cvv: "",
-        name: "",
-      });
-      toast({ title: "Payment method added successfully" });
-    },
-    onError: (error: Error) => {
+    onError: (error: any) => {
       toast({
         title: "Error",
-        description: error.message,
+        description: error.message || "Failed to add payment method",
         variant: "destructive",
       });
-    },
+    }
   });
 
-  const removePaymentMethodMutation = useMutation({
-    mutationFn: async (methodId: string) => {
-      const response = await fetch(`/api/payment-methods/${methodId}`, {
-        method: "DELETE",
-      });
-      if (!response.ok) throw new Error("Failed to remove payment method");
-      return response.json();
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["/api/users", user?.id, "payment-methods"] });
-      toast({ title: "Payment method removed successfully" });
-    },
-    onError: (error: Error) => {
-      toast({
-        title: "Error",
-        description: error.message,
-        variant: "destructive",
-      });
-    },
-  });
-
-  const handleAddCard = async (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    addPaymentMethodMutation.mutate(cardForm);
+    setupIntentMutation.mutate();
   };
 
-  const handleManageSubscription = async () => {
-    try {
-      const response = await fetch("/api/create-billing-portal-session", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          returnUrl: `${window.location.origin}/billing`,
-        }),
-      });
+  return (
+    <form onSubmit={handleSubmit} className="space-y-4">
+      <div className="p-3 border rounded-md">
+        <CardElement
+          options={{
+            style: {
+              base: {
+                fontSize: '16px',
+                color: '#424770',
+                '::placeholder': {
+                  color: '#aab7c4',
+                },
+              },
+            },
+          }}
+        />
+      </div>
+      <Button 
+        type="submit" 
+        disabled={!stripe || isLoading || setupIntentMutation.isPending}
+        className="w-full"
+      >
+        {isLoading || setupIntentMutation.isPending ? 'Adding...' : 'Add Payment Method'}
+      </Button>
+    </form>
+  );
+};
 
-      if (!response.ok) throw new Error("Failed to create billing portal session");
+const PaymentMethodCard = ({ 
+  paymentMethod, 
+  isDefault, 
+  onSetDefault, 
+  onDelete 
+}: { 
+  paymentMethod: PaymentMethod;
+  isDefault: boolean;
+  onSetDefault: () => void;
+  onDelete: () => void;
+}) => {
+  const brandIcon = paymentMethod.card.brand.toUpperCase();
+  
+  return (
+    <Card className="relative">
+      <CardContent className="p-4">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center space-x-3">
+            <CreditCard className="h-8 w-8 text-muted-foreground" />
+            <div>
+              <div className="font-medium">
+                {brandIcon} •••• {paymentMethod.card.last4}
+              </div>
+              <div className="text-sm text-muted-foreground">
+                Expires {paymentMethod.card.exp_month}/{paymentMethod.card.exp_year}
+              </div>
+            </div>
+          </div>
+          <div className="flex items-center space-x-2">
+            {isDefault && (
+              <Badge variant="secondary" className="flex items-center space-x-1">
+                <Star className="h-3 w-3" />
+                <span>Default</span>
+              </Badge>
+            )}
+            {!isDefault && (
+              <Button variant="outline" size="sm" onClick={onSetDefault}>
+                Set Default
+              </Button>
+            )}
+            <Button variant="outline" size="sm" onClick={onDelete}>
+              <Trash2 className="h-4 w-4" />
+            </Button>
+          </div>
+        </div>
+      </CardContent>
+    </Card>
+  );
+};
 
-      const { url } = await response.json();
-      window.location.href = url;
-    } catch (error) {
-      toast({
-        title: "Error",
-        description: "Failed to open billing portal",
-        variant: "destructive",
-      });
+const InvoiceRow = ({ invoice }: { invoice: Invoice }) => {
+  const getStatusBadge = (status: string) => {
+    switch (status) {
+      case 'paid':
+        return <Badge variant="default" className="bg-green-100 text-green-800 border-green-200"><CheckCircle className="h-3 w-3 mr-1" />Paid</Badge>;
+      case 'open':
+        return <Badge variant="default" className="bg-yellow-100 text-yellow-800 border-yellow-200"><Clock className="h-3 w-3 mr-1" />Open</Badge>;
+      case 'void':
+        return <Badge variant="secondary">Void</Badge>;
+      default:
+        return <Badge variant="outline">{status}</Badge>;
     }
   };
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      {/* Navigation */}
-      <div className="bg-white border-b">
-        <div className="flex items-center justify-between px-6 py-4">
-          <div className="flex items-center space-x-6">
-            <h1 className="text-xl font-semibold">Billing</h1>
-            <nav className="flex space-x-6">
-              <a href={`/${restaurant?.tenantId}/dashboard`} className="text-gray-600 hover:text-gray-900">
-                Booking
-              </a>
-              <a href={`/${restaurant?.tenantId}/bookings`} className="text-gray-600 hover:text-gray-900">
-                CRM
-              </a>
-              <a href={`/${restaurant?.tenantId}/activity-log`} className="text-gray-600 hover:text-gray-900">
-                Archive
-              </a>
-            </nav>
+    <div className="flex items-center justify-between p-4 border rounded-lg">
+      <div className="flex-1">
+        <div className="font-medium">#{invoice.number}</div>
+        <div className="text-sm text-muted-foreground">
+          {format(new Date(invoice.created * 1000), 'MMM dd, yyyy')}
+        </div>
+        {invoice.period_start && invoice.period_end && (
+          <div className="text-xs text-muted-foreground">
+            Service period: {format(new Date(invoice.period_start * 1000), 'MMM dd')} - {format(new Date(invoice.period_end * 1000), 'MMM dd, yyyy')}
           </div>
-          <div className="flex items-center space-x-4">
-            <span className="text-sm text-gray-600">{restaurant?.name}</span>
-            <Button variant="outline" size="sm">
-              Profile
-            </Button>
+        )}
+      </div>
+      <div className="text-right space-y-1">
+        <div className="font-medium">
+          ${(invoice.amount_paid / 100).toFixed(2)} {invoice.currency.toUpperCase()}
+        </div>
+        {getStatusBadge(invoice.status)}
+      </div>
+      <div className="ml-4 space-x-2">
+        {invoice.hosted_invoice_url && (
+          <Button variant="outline" size="sm" asChild>
+            <a href={invoice.hosted_invoice_url} target="_blank" rel="noopener noreferrer">
+              View
+            </a>
+          </Button>
+        )}
+        {invoice.invoice_pdf && (
+          <Button variant="outline" size="sm" asChild>
+            <a href={invoice.invoice_pdf} target="_blank" rel="noopener noreferrer">
+              <Download className="h-4 w-4" />
+            </a>
+          </Button>
+        )}
+      </div>
+    </div>
+  );
+};
+
+export default function BillingPage() {
+  const { toast } = useToast();
+  const queryClient = useQueryClient();
+  const [addPaymentDialogOpen, setAddPaymentDialogOpen] = useState(false);
+
+  const { data: billingInfo, isLoading: billingLoading } = useQuery<BillingInfo>({
+    queryKey: ['/api/billing/info'],
+  });
+
+  const { data: invoicesData, isLoading: invoicesLoading } = useQuery<{ invoices: Invoice[] }>({
+    queryKey: ['/api/billing/invoices'],
+  });
+
+  const { data: subscriptionDetails } = useQuery({
+    queryKey: ['/api/subscription/details'],
+  });
+
+  const deletePaymentMethodMutation = useMutation({
+    mutationFn: (paymentMethodId: string) => 
+      apiRequest('DELETE', `/api/billing/payment-method/${paymentMethodId}`),
+    onSuccess: () => {
+      toast({
+        title: "Success",
+        description: "Payment method removed successfully",
+      });
+      queryClient.invalidateQueries({ queryKey: ['/api/billing/info'] });
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Error",
+        description: error.message || "Failed to remove payment method",
+        variant: "destructive",
+      });
+    }
+  });
+
+  const setDefaultPaymentMethodMutation = useMutation({
+    mutationFn: (paymentMethodId: string) => 
+      apiRequest('PUT', '/api/billing/default-payment-method', { paymentMethodId }),
+    onSuccess: () => {
+      toast({
+        title: "Success",
+        description: "Default payment method updated",
+      });
+      queryClient.invalidateQueries({ queryKey: ['/api/billing/info'] });
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Error",
+        description: error.message || "Failed to update default payment method",
+        variant: "destructive",
+      });
+    }
+  });
+
+  const cancelSubscriptionMutation = useMutation({
+    mutationFn: () => apiRequest('POST', '/api/billing/cancel-subscription'),
+    onSuccess: (data) => {
+      toast({
+        title: "Subscription Cancelled",
+        description: data.message,
+      });
+      queryClient.invalidateQueries({ queryKey: ['/api/billing/info'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/subscription/details'] });
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Error",
+        description: error.message || "Failed to cancel subscription",
+        variant: "destructive",
+      });
+    }
+  });
+
+  const reactivateSubscriptionMutation = useMutation({
+    mutationFn: () => apiRequest('POST', '/api/billing/reactivate-subscription'),
+    onSuccess: (data) => {
+      toast({
+        title: "Subscription Reactivated",
+        description: data.message,
+      });
+      queryClient.invalidateQueries({ queryKey: ['/api/billing/info'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/subscription/details'] });
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Error",
+        description: error.message || "Failed to reactivate subscription",
+        variant: "destructive",
+      });
+    }
+  });
+
+  const handlePaymentMethodSuccess = () => {
+    setAddPaymentDialogOpen(false);
+    queryClient.invalidateQueries({ queryKey: ['/api/billing/info'] });
+  };
+
+  if (billingLoading) {
+    return (
+      <div className="container mx-auto py-6">
+        <div className="animate-pulse space-y-4">
+          <div className="h-8 bg-gray-200 rounded w-1/4"></div>
+          <div className="grid gap-6">
+            <div className="h-64 bg-gray-200 rounded"></div>
+            <div className="h-64 bg-gray-200 rounded"></div>
           </div>
         </div>
       </div>
+    );
+  }
 
-      <div className="p-6 space-y-6">
-        {/* Current Subscription */}
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center space-x-2">
-              <DollarSign className="h-5 w-5" />
-              <span>Current Subscription</span>
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            {subscription ? (
-              <div className="space-y-4">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <h3 className="text-lg font-semibold">
-                      {subscription.planName || "Premium Plan"}
-                    </h3>
-                    <p className="text-gray-600">
-                      ${(subscription.amount / 100).toFixed(2)}/{subscription.interval}
-                    </p>
-                  </div>
-                  <div className="text-right">
-                    <Badge variant={subscription.status === "active" ? "default" : "secondary"}>
-                      {subscription.status}
-                    </Badge>
-                    {subscription.currentPeriodEnd && (
-                      <p className="text-sm text-gray-600 mt-1">
-                        Next billing: {format(new Date(subscription.currentPeriodEnd), "MMM dd, yyyy")}
-                      </p>
-                    )}
-                  </div>
-                </div>
-                <Button onClick={handleManageSubscription} variant="outline">
-                  Manage Subscription
-                </Button>
-              </div>
-            ) : (
-              <div className="text-center py-8">
-                <p className="text-gray-600 mb-4">No active subscription</p>
-                <Button onClick={() => window.location.href = "/subscription"}>
-                  View Plans
-                </Button>
-              </div>
-            )}
-          </CardContent>
-        </Card>
+  const defaultPaymentMethod = billingInfo?.customer?.invoice_settings?.default_payment_method;
 
-        {/* Payment Methods */}
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center justify-between">
-              <div className="flex items-center space-x-2">
-                <CreditCard className="h-5 w-5" />
-                <span>Payment Methods</span>
-              </div>
-              <Dialog open={isAddCardOpen} onOpenChange={setIsAddCardOpen}>
-                <DialogTrigger asChild>
-                  <Button size="sm">
-                    <Plus className="h-4 w-4 mr-2" />
-                    Add Card
-                  </Button>
-                </DialogTrigger>
-                <DialogContent>
-                  <DialogHeader>
-                    <DialogTitle>Add Payment Method</DialogTitle>
-                  </DialogHeader>
-                  <form onSubmit={handleAddCard} className="space-y-4">
-                    <div>
-                      <Label htmlFor="cardNumber">Card Number</Label>
-                      <Input
-                        id="cardNumber"
-                        value={cardForm.cardNumber}
-                        onChange={(e) => setCardForm({ ...cardForm, cardNumber: e.target.value })}
-                        placeholder="1234 5678 9012 3456"
-                        required
-                      />
-                    </div>
-                    <div className="grid grid-cols-3 gap-4">
-                      <div>
-                        <Label htmlFor="expiryMonth">Month</Label>
-                        <Input
-                          id="expiryMonth"
-                          value={cardForm.expiryMonth}
-                          onChange={(e) => setCardForm({ ...cardForm, expiryMonth: e.target.value })}
-                          placeholder="MM"
-                          maxLength={2}
-                          required
-                        />
-                      </div>
-                      <div>
-                        <Label htmlFor="expiryYear">Year</Label>
-                        <Input
-                          id="expiryYear"
-                          value={cardForm.expiryYear}
-                          onChange={(e) => setCardForm({ ...cardForm, expiryYear: e.target.value })}
-                          placeholder="YY"
-                          maxLength={2}
-                          required
-                        />
-                      </div>
-                      <div>
-                        <Label htmlFor="cvv">CVV</Label>
-                        <Input
-                          id="cvv"
-                          value={cardForm.cvv}
-                          onChange={(e) => setCardForm({ ...cardForm, cvv: e.target.value })}
-                          placeholder="123"
-                          maxLength={4}
-                          required
-                        />
-                      </div>
-                    </div>
-                    <div>
-                      <Label htmlFor="name">Cardholder Name</Label>
-                      <Input
-                        id="name"
-                        value={cardForm.name}
-                        onChange={(e) => setCardForm({ ...cardForm, name: e.target.value })}
-                        required
-                      />
-                    </div>
-                    <Button type="submit" className="w-full" disabled={addPaymentMethodMutation.isPending}>
-                      {addPaymentMethodMutation.isPending ? "Adding..." : "Add Payment Method"}
-                    </Button>
-                  </form>
-                </DialogContent>
-              </Dialog>
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            {paymentMethods.length > 0 ? (
-              <div className="space-y-3">
-                {paymentMethods.map((method: any) => (
-                  <div key={method.id} className="flex items-center justify-between p-4 border rounded-lg">
-                    <div className="flex items-center space-x-3">
-                      <CreditCard className="h-5 w-5 text-gray-400" />
-                      <div>
-                        <p className="font-medium">
-                          **** **** **** {method.last4}
-                        </p>
-                        <p className="text-sm text-gray-600">
-                          {method.brand.toUpperCase()} • Expires {method.expMonth}/{method.expYear}
-                        </p>
-                      </div>
-                    </div>
-                    <div className="flex items-center space-x-2">
-                      {method.isDefault && (
-                        <Badge variant="secondary">Default</Badge>
-                      )}
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => removePaymentMethodMutation.mutate(method.id)}
-                      >
-                        <Trash2 className="h-4 w-4" />
-                      </Button>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            ) : (
-              <div className="text-center py-8">
-                <CreditCard className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-                <p className="text-gray-600 mb-4">No payment methods added</p>
-                <p className="text-sm text-gray-500">Add a credit card to manage your subscription</p>
-              </div>
-            )}
-          </CardContent>
-        </Card>
-
-        {/* Billing History */}
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center space-x-2">
-              <Calendar className="h-5 w-5" />
-              <span>Billing History</span>
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            {billingHistory.length > 0 ? (
-              <div className="space-y-3">
-                {billingHistory.map((invoice: any) => (
-                  <div key={invoice.id} className="flex items-center justify-between p-4 border rounded-lg">
-                    <div className="flex items-center space-x-3">
-                      {invoice.status === "paid" ? (
-                        <CheckCircle className="h-5 w-5 text-green-500" />
-                      ) : (
-                        <AlertCircle className="h-5 w-5 text-red-500" />
-                      )}
-                      <div>
-                        <p className="font-medium">
-                          ${(invoice.amount / 100).toFixed(2)}
-                        </p>
-                        <p className="text-sm text-gray-600">
-                          {format(new Date(invoice.date), "MMM dd, yyyy")}
-                        </p>
-                      </div>
-                    </div>
-                    <div className="text-right">
-                      <Badge variant={invoice.status === "paid" ? "default" : "destructive"}>
-                        {invoice.status}
-                      </Badge>
-                      {invoice.invoiceUrl && (
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => window.open(invoice.invoiceUrl, '_blank')}
-                        >
-                          Download
-                        </Button>
-                      )}
-                    </div>
-                  </div>
-                ))}
-              </div>
-            ) : (
-              <div className="text-center py-8">
-                <p className="text-gray-600">No billing history available</p>
-              </div>
-            )}
-          </CardContent>
-        </Card>
+  return (
+    <div className="container mx-auto py-6 space-y-6">
+      <div className="flex items-center justify-between">
+        <h1 className="text-3xl font-bold">Billing & Subscription</h1>
       </div>
+
+      {/* Subscription Status */}
+      {subscriptionDetails && (
+        <Card>
+          <CardHeader>
+            <CardTitle>Current Subscription</CardTitle>
+            <CardDescription>Manage your subscription plan and billing</CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="flex items-center justify-between">
+              <div>
+                <div className="font-medium text-lg">
+                  {subscriptionDetails.plan?.name || 'Free Trial'}
+                </div>
+                <div className="text-sm text-muted-foreground">
+                  {subscriptionDetails.plan ? 
+                    `$${(subscriptionDetails.plan.price / 100).toFixed(2)}/${subscriptionDetails.plan.interval}` :
+                    'No active subscription'
+                  }
+                </div>
+              </div>
+              <div className="text-right">
+                <Badge 
+                  variant={subscriptionDetails.tenant.subscriptionStatus === 'active' ? 'default' : 'secondary'}
+                  className={
+                    subscriptionDetails.tenant.subscriptionStatus === 'active' 
+                      ? 'bg-green-100 text-green-800 border-green-200' 
+                      : subscriptionDetails.tenant.subscriptionStatus === 'trial'
+                      ? 'bg-blue-100 text-blue-800 border-blue-200'
+                      : 'bg-red-100 text-red-800 border-red-200'
+                  }
+                >
+                  {subscriptionDetails.tenant.subscriptionStatus}
+                </Badge>
+              </div>
+            </div>
+
+            {subscriptionDetails.tenant.subscriptionStartDate && (
+              <div className="text-sm text-muted-foreground">
+                {subscriptionDetails.tenant.subscriptionStatus === 'cancelled' ? 'Expires' : 'Next billing'}: {' '}
+                {format(new Date(subscriptionDetails.tenant.subscriptionEndDate), 'MMM dd, yyyy')}
+              </div>
+            )}
+
+            {subscriptionDetails.tenant.subscriptionStatus === 'active' && (
+              <div className="flex space-x-2">
+                <Button
+                  variant="outline"
+                  onClick={() => cancelSubscriptionMutation.mutate()}
+                  disabled={cancelSubscriptionMutation.isPending}
+                >
+                  {cancelSubscriptionMutation.isPending ? 'Cancelling...' : 'Cancel Subscription'}
+                </Button>
+              </div>
+            )}
+
+            {subscriptionDetails.tenant.subscriptionStatus === 'cancelled' && (
+              <div className="space-y-2">
+                <Alert>
+                  <AlertCircle className="h-4 w-4" />
+                  <AlertDescription>
+                    Your subscription will end on {format(new Date(subscriptionDetails.tenant.subscriptionEndDate), 'MMM dd, yyyy')}
+                  </AlertDescription>
+                </Alert>
+                <Button
+                  onClick={() => reactivateSubscriptionMutation.mutate()}
+                  disabled={reactivateSubscriptionMutation.isPending}
+                >
+                  {reactivateSubscriptionMutation.isPending ? 'Reactivating...' : 'Reactivate Subscription'}
+                </Button>
+              </div>
+            )}
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Payment Methods */}
+      <Card>
+        <CardHeader>
+          <div className="flex items-center justify-between">
+            <div>
+              <CardTitle>Payment Methods</CardTitle>
+              <CardDescription>Manage your saved payment methods</CardDescription>
+            </div>
+            <Dialog open={addPaymentDialogOpen} onOpenChange={setAddPaymentDialogOpen}>
+              <DialogTrigger asChild>
+                <Button>
+                  <Plus className="h-4 w-4 mr-2" />
+                  Add Payment Method
+                </Button>
+              </DialogTrigger>
+              <DialogContent>
+                <DialogHeader>
+                  <DialogTitle>Add Payment Method</DialogTitle>
+                  <DialogDescription>
+                    Add a new payment method to your account
+                  </DialogDescription>
+                </DialogHeader>
+                <Elements stripe={stripePromise}>
+                  <AddPaymentMethodForm onSuccess={handlePaymentMethodSuccess} />
+                </Elements>
+              </DialogContent>
+            </Dialog>
+          </div>
+        </CardHeader>
+        <CardContent>
+          {billingInfo?.paymentMethods?.length ? (
+            <div className="space-y-3">
+              {billingInfo.paymentMethods.map((pm) => (
+                <PaymentMethodCard
+                  key={pm.id}
+                  paymentMethod={pm}
+                  isDefault={pm.id === defaultPaymentMethod}
+                  onSetDefault={() => setDefaultPaymentMethodMutation.mutate(pm.id)}
+                  onDelete={() => deletePaymentMethodMutation.mutate(pm.id)}
+                />
+              ))}
+            </div>
+          ) : (
+            <div className="text-center py-8 text-muted-foreground">
+              <CreditCard className="h-12 w-12 mx-auto mb-4 opacity-50" />
+              <p>No payment methods added yet</p>
+              <p className="text-sm">Add a payment method to manage your subscription</p>
+            </div>
+          )}
+        </CardContent>
+      </Card>
+
+      {/* Upcoming Invoice */}
+      {billingInfo?.upcomingInvoice && (
+        <Card>
+          <CardHeader>
+            <CardTitle>Upcoming Invoice</CardTitle>
+            <CardDescription>Your next billing cycle</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="flex items-center justify-between">
+              <div>
+                <div className="font-medium">
+                  Next charge: ${(billingInfo.upcomingInvoice.amount_due / 100).toFixed(2)} {billingInfo.upcomingInvoice.currency.toUpperCase()}
+                </div>
+                <div className="text-sm text-muted-foreground">
+                  Due: {format(new Date(billingInfo.upcomingInvoice.period_end * 1000), 'MMM dd, yyyy')}
+                </div>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Invoice History */}
+      <Card>
+        <CardHeader>
+          <CardTitle>Invoice History</CardTitle>
+          <CardDescription>View and download your past invoices</CardDescription>
+        </CardHeader>
+        <CardContent>
+          {invoicesLoading ? (
+            <div className="space-y-3">
+              {[1, 2, 3].map((i) => (
+                <div key={i} className="animate-pulse flex items-center justify-between p-4 border rounded">
+                  <div className="space-y-2">
+                    <div className="h-4 bg-gray-200 rounded w-24"></div>
+                    <div className="h-3 bg-gray-200 rounded w-32"></div>
+                  </div>
+                  <div className="h-4 bg-gray-200 rounded w-16"></div>
+                </div>
+              ))}
+            </div>
+          ) : invoicesData?.invoices?.length ? (
+            <div className="space-y-3">
+              {invoicesData.invoices.map((invoice) => (
+                <InvoiceRow key={invoice.id} invoice={invoice} />
+              ))}
+            </div>
+          ) : (
+            <div className="text-center py-8 text-muted-foreground">
+              <div className="h-12 w-12 mx-auto mb-4 opacity-50">📄</div>
+              <p>No invoices found</p>
+              <p className="text-sm">Your billing history will appear here</p>
+            </div>
+          )}
+        </CardContent>
+      </Card>
     </div>
   );
 }

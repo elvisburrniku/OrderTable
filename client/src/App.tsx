@@ -22,6 +22,7 @@ import Statistics from "./pages/statistics";
 import ActivityLog from "./pages/activity-log";
 import WaitingList from "./pages/waiting-list";
 import Subscription from "./pages/subscription";
+import Billing from "./pages/billing";
 import SmsMessages from "./pages/sms-messages";
 import TenantSettings from "./pages/tenant-settings";
 import NotFound from "@/pages/not-found";
@@ -58,7 +59,6 @@ import RestaurantSettings from "./pages/restaurant-settings";
 import { lazy } from "react";
 import Profile from "./pages/profile";
 import Settings from "./pages/settings";
-import Billing from "./pages/billing";
 import Help from "./pages/help";
 import CustomerFeedback from "./pages/customer-feedback";
 import TableFeedback from "./pages/table-feedback";
@@ -103,6 +103,7 @@ function App() {
               <Route path="/:tenantId/activity-log" component={ActivityLog} />
               <Route path="/:tenantId/waiting-list" component={WaitingList} />
               <Route path="/:tenantId/subscription" component={Subscription} />
+              <Route path="/:tenantId/billing" component={Billing} />
               <Route path="/:tenantId/sms-messages" component={SmsMessages} />
               <Route path="/:tenantId/tenant-settings" component={TenantSettings} />
               <Route path="/:tenantId/email-notifications" component={EmailNotifications} />

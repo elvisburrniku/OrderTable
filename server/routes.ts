@@ -6957,6 +6957,294 @@ app.put("/api/tenants/:tenantId/bookings/:id", validateTenant, async (req, res) 
     }
   });
 
+  // Billing Management Routes
+  
+  // Get billing information
+  app.get("/api/billing/info", attachUser, async (req: Request, res: Response) => {
+    if (!req.user) {
+      return res.status(401).json({ error: "Not authenticated" });
+    }
+
+    try {
+      const tenantUser = await storage.getTenantByUserId(req.user.id);
+      if (!tenantUser) {
+        return res.status(404).json({ error: "Tenant not found" });
+      }
+
+      const tenant = await storage.getTenantById(tenantUser.id);
+      
+      let stripeCustomer = null;
+      let paymentMethods = [];
+      let upcomingInvoice = null;
+
+      if (tenant?.stripeCustomerId) {
+        try {
+          // Get Stripe customer
+          stripeCustomer = await stripe.customers.retrieve(tenant.stripeCustomerId);
+          
+          // Get payment methods
+          const paymentMethodsList = await stripe.paymentMethods.list({
+            customer: tenant.stripeCustomerId,
+            type: 'card',
+          });
+          paymentMethods = paymentMethodsList.data;
+
+          // Get upcoming invoice if there's an active subscription
+          if (tenant.stripeSubscriptionId) {
+            try {
+              upcomingInvoice = await stripe.invoices.retrieveUpcoming({
+                customer: tenant.stripeCustomerId,
+              });
+            } catch (error) {
+              console.log("No upcoming invoice found");
+            }
+          }
+        } catch (error) {
+          console.error("Error fetching Stripe data:", error);
+        }
+      }
+
+      res.json({
+        customer: stripeCustomer,
+        paymentMethods,
+        upcomingInvoice,
+        subscriptionStatus: tenant?.subscriptionStatus,
+        stripeSubscriptionId: tenant?.stripeSubscriptionId
+      });
+    } catch (error) {
+      console.error("Error getting billing info:", error);
+      res.status(500).json({ error: "Failed to get billing information" });
+    }
+  });
+
+  // Create setup intent for adding payment method
+  app.post("/api/billing/setup-intent", attachUser, async (req: Request, res: Response) => {
+    if (!req.user) {
+      return res.status(401).json({ error: "Not authenticated" });
+    }
+
+    try {
+      const tenantUser = await storage.getTenantByUserId(req.user.id);
+      if (!tenantUser) {
+        return res.status(404).json({ error: "Tenant not found" });
+      }
+
+      const tenant = await storage.getTenantById(tenantUser.id);
+      let customerId = tenant?.stripeCustomerId;
+
+      // Create Stripe customer if doesn't exist
+      if (!customerId) {
+        const customer = await stripe.customers.create({
+          email: req.user.email,
+          name: req.user.name,
+          metadata: {
+            tenantId: tenantUser.id.toString()
+          }
+        });
+        
+        await storage.updateTenant(tenantUser.id, {
+          stripeCustomerId: customer.id
+        });
+        
+        customerId = customer.id;
+      }
+
+      // Create setup intent
+      const setupIntent = await stripe.setupIntents.create({
+        customer: customerId,
+        payment_method_types: ['card'],
+        usage: 'off_session'
+      });
+
+      res.json({
+        clientSecret: setupIntent.client_secret,
+        customerId
+      });
+    } catch (error) {
+      console.error("Error creating setup intent:", error);
+      res.status(500).json({ error: "Failed to create setup intent" });
+    }
+  });
+
+  // Get invoices
+  app.get("/api/billing/invoices", attachUser, async (req: Request, res: Response) => {
+    if (!req.user) {
+      return res.status(401).json({ error: "Not authenticated" });
+    }
+
+    try {
+      const tenantUser = await storage.getTenantByUserId(req.user.id);
+      if (!tenantUser) {
+        return res.status(404).json({ error: "Tenant not found" });
+      }
+
+      const tenant = await storage.getTenantById(tenantUser.id);
+      
+      if (!tenant?.stripeCustomerId) {
+        return res.json({ invoices: [] });
+      }
+
+      const invoices = await stripe.invoices.list({
+        customer: tenant.stripeCustomerId,
+        limit: 100,
+      });
+
+      res.json({ 
+        invoices: invoices.data.map(invoice => ({
+          id: invoice.id,
+          amount_paid: invoice.amount_paid,
+          amount_due: invoice.amount_due,
+          currency: invoice.currency,
+          status: invoice.status,
+          created: invoice.created,
+          period_start: invoice.period_start,
+          period_end: invoice.period_end,
+          hosted_invoice_url: invoice.hosted_invoice_url,
+          invoice_pdf: invoice.invoice_pdf,
+          number: invoice.number,
+          description: invoice.description
+        }))
+      });
+    } catch (error) {
+      console.error("Error getting invoices:", error);
+      res.status(500).json({ error: "Failed to get invoices" });
+    }
+  });
+
+  // Delete payment method
+  app.delete("/api/billing/payment-method/:id", attachUser, async (req: Request, res: Response) => {
+    if (!req.user) {
+      return res.status(401).json({ error: "Not authenticated" });
+    }
+
+    try {
+      const paymentMethodId = req.params.id;
+      
+      await stripe.paymentMethods.detach(paymentMethodId);
+      
+      res.json({ success: true, message: "Payment method removed" });
+    } catch (error) {
+      console.error("Error removing payment method:", error);
+      res.status(500).json({ error: "Failed to remove payment method" });
+    }
+  });
+
+  // Update default payment method
+  app.put("/api/billing/default-payment-method", attachUser, async (req: Request, res: Response) => {
+    if (!req.user) {
+      return res.status(401).json({ error: "Not authenticated" });
+    }
+
+    try {
+      const { paymentMethodId } = req.body;
+      
+      const tenantUser = await storage.getTenantByUserId(req.user.id);
+      if (!tenantUser) {
+        return res.status(404).json({ error: "Tenant not found" });
+      }
+
+      const tenant = await storage.getTenantById(tenantUser.id);
+      
+      if (!tenant?.stripeCustomerId) {
+        return res.status(400).json({ error: "No Stripe customer found" });
+      }
+
+      // Update customer's default payment method
+      await stripe.customers.update(tenant.stripeCustomerId, {
+        invoice_settings: {
+          default_payment_method: paymentMethodId,
+        },
+      });
+
+      // If there's an active subscription, update its default payment method
+      if (tenant.stripeSubscriptionId) {
+        await stripe.subscriptions.update(tenant.stripeSubscriptionId, {
+          default_payment_method: paymentMethodId,
+        });
+      }
+
+      res.json({ success: true, message: "Default payment method updated" });
+    } catch (error) {
+      console.error("Error updating default payment method:", error);
+      res.status(500).json({ error: "Failed to update default payment method" });
+    }
+  });
+
+  // Cancel subscription
+  app.post("/api/billing/cancel-subscription", attachUser, async (req: Request, res: Response) => {
+    if (!req.user) {
+      return res.status(401).json({ error: "Not authenticated" });
+    }
+
+    try {
+      const tenantUser = await storage.getTenantByUserId(req.user.id);
+      if (!tenantUser) {
+        return res.status(404).json({ error: "Tenant not found" });
+      }
+
+      const tenant = await storage.getTenantById(tenantUser.id);
+      
+      if (!tenant?.stripeSubscriptionId) {
+        return res.status(400).json({ error: "No active subscription found" });
+      }
+
+      // Cancel subscription at period end
+      const subscription = await stripe.subscriptions.update(tenant.stripeSubscriptionId, {
+        cancel_at_period_end: true
+      });
+
+      await storage.updateTenant(tenantUser.id, {
+        subscriptionStatus: 'cancelled'
+      });
+
+      res.json({ 
+        success: true, 
+        message: "Subscription will be cancelled at the end of the billing period",
+        cancelAt: subscription.cancel_at
+      });
+    } catch (error) {
+      console.error("Error cancelling subscription:", error);
+      res.status(500).json({ error: "Failed to cancel subscription" });
+    }
+  });
+
+  // Reactivate subscription
+  app.post("/api/billing/reactivate-subscription", attachUser, async (req: Request, res: Response) => {
+    if (!req.user) {
+      return res.status(401).json({ error: "Not authenticated" });
+    }
+
+    try {
+      const tenantUser = await storage.getTenantByUserId(req.user.id);
+      if (!tenantUser) {
+        return res.status(404).json({ error: "Tenant not found" });
+      }
+
+      const tenant = await storage.getTenantById(tenantUser.id);
+      
+      if (!tenant?.stripeSubscriptionId) {
+        return res.status(400).json({ error: "No subscription found" });
+      }
+
+      // Reactivate subscription
+      await stripe.subscriptions.update(tenant.stripeSubscriptionId, {
+        cancel_at_period_end: false
+      });
+
+      await storage.updateTenant(tenantUser.id, {
+        subscriptionStatus: 'active'
+      });
+
+      res.json({ 
+        success: true, 
+        message: "Subscription reactivated successfully"
+      });
+    } catch (error) {
+      console.error("Error reactivating subscription:", error);
+      res.status(500).json({ error: "Failed to reactivate subscription" });
+    }
+  });
+
   return httpServer;
 }
 
