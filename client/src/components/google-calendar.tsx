@@ -134,9 +134,9 @@ export default function GoogleCalendar({ selectedDate, bookings, allBookings = [
     // Check if there's a special period that affects this date
     const dateStr = format(date, 'yyyy-MM-dd');
     const specialPeriod = specialPeriods.find((period: any) => {
-      const startDate = new Date(period.startDate);
-      const endDate = new Date(period.endDate);
-      return date >= startDate && date <= endDate;
+      const startDateStr = period.startDate;
+      const endDateStr = period.endDate;
+      return dateStr >= startDateStr && dateStr <= endDateStr;
     });
 
     // If there's a special period, use its settings

@@ -98,9 +98,9 @@ export default function InteractiveBookingCalendar({
         try {
           // Check if there's a special period that affects this date
           const specialPeriod = specialPeriods.find((period: any) => {
-            const startDate = new Date(period.startDate);
-            const endDate = new Date(period.endDate);
-            return day >= startDate && day <= endDate;
+            const startDateStr = period.startDate;
+            const endDateStr = period.endDate;
+            return dateStr >= startDateStr && dateStr <= endDateStr;
           });
 
           let dayHours;
