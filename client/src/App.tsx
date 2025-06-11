@@ -12,6 +12,7 @@ import Login from "./pages/login";
 import Register from "./pages/register";
 import Dashboard from "./pages/dashboard";
 import Bookings from "./pages/bookings";
+import Calendar from "./pages/calendar";
 import BookingDetail from "./pages/booking-detail";
 import Tables from "./pages/tables";
 import Customers from "./pages/customers";
@@ -81,6 +82,7 @@ function App() {
             <SetupGuard>
               <Route path="/:tenantId/dashboard" component={Dashboard} />
               <Route path="/:tenantId/bookings" component={Bookings} />
+              <Route path="/:tenantId/calendar" component={Calendar} />
               <Route path="/:tenantId/bookings/:id" component={BookingDetail} />
               <Route path="/:tenantId/tables" component={Tables} />
               <Route path="/:tenantId/customers" component={Customers} />

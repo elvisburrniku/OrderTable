@@ -47,6 +47,12 @@ export default function DashboardSidebar({ tenantId, restaurantId }: SidebarProp
       color: "text-blue-600"
     },
     {
+      name: "Calendar",
+      icon: CalendarDays,
+      href: `/${tenantId}/calendar`,
+      color: "text-teal-600"
+    },
+    {
       name: "Customers",
       icon: Users,
       href: `/${tenantId}/customers`,
