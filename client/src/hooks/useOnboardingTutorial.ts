@@ -237,10 +237,10 @@ export function useOnboardingTutorial(tenantId?: number, restaurantId?: number) 
     }));
 
     // Auto-start tutorial for new users
-    if (userProgress.length === 0 && !prev.isActive && tenantId) {
+    if (userProgress.length === 0 && !tutorialState.isActive && tenantId) {
       startTutorial();
     }
-  }, [userProgress, isLoading, tenantId]);
+  }, [userProgress, isLoading, tenantId, tutorialState.isActive]);
 
   const startTutorial = useCallback(() => {
     const firstStep = TUTORIAL_STEPS[0];

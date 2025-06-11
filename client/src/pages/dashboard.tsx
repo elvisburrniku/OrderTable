@@ -701,20 +701,23 @@ export default function Dashboard() {
                 Layout
               </Button>
             </div>
-            <Button className="bg-green-600 hover:bg-green-700 text-white">
+            <Button className="bg-green-600 hover:bg-green-700 text-white" data-tutorial="new-booking">
               <Plus className="h-4 w-4 mr-2" />
               New booking
             </Button>
-            <WalkInBooking 
-              restaurantId={restaurant?.id!} 
-              tenantId={restaurant?.tenantId!} 
-            />
+            <div data-tutorial="walk-in-booking">
+              <WalkInBooking 
+                restaurantId={restaurant?.id!} 
+                tenantId={restaurant?.tenantId!} 
+              />
+            </div>
           </div>
           <div className="flex items-center space-x-4">
             <Input 
               type="text" 
               placeholder="Customer search" 
               className="w-64"
+              data-tutorial="customer-search"
             />
             <RealTimeNotifications />
             <DropdownMenu>
@@ -813,16 +816,20 @@ export default function Dashboard() {
         {/* Main Interface */}
         <div className="flex-1 p-6">
           {viewMode === 'layout' ? (
-            renderTableLayout()
+            <div data-tutorial="table-layout">
+              {renderTableLayout()}
+            </div>
           ) : (
-            <BookingCalendar 
-              selectedDate={selectedDate}
-              bookings={(selectedDateBookings as any) || []}
-              allBookings={(allBookings as any) || []}
-              tables={(tables as any) || []}
-              isLoading={isLoading}
-              onDateSelect={setSelectedDate}
-            />
+            <div data-tutorial="booking-calendar">
+              <BookingCalendar 
+                selectedDate={selectedDate}
+                bookings={(selectedDateBookings as any) || []}
+                allBookings={(allBookings as any) || []}
+                tables={(tables as any) || []}
+                isLoading={isLoading}
+                onDateSelect={setSelectedDate}
+              />
+            </div>
           )}
         </div>
       </div>
