@@ -5834,11 +5834,11 @@ app.put("/api/tenants/:tenantId/bookings/:id", validateTenant, async (req, res) 
 
         return {
           tableId: table.id,
-          tableName: table.tableNumber,
+          tableName: table.table_number,
           capacity: table.capacity,
           position: { 
-            x: ((table.id - 1) % 4) * 120 + 60, 
-            y: Math.floor((table.id - 1) / 4) * 100 + 50 
+            x: ((table.id - 56) % 4) * 120 + 60, 
+            y: Math.floor((table.id - 56) / 4) * 100 + 50 
           },
           heatScore: Math.round(heatScore),
           bookingCount,

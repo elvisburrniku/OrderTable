@@ -33,7 +33,23 @@ export default function ConflictDemo() {
         throw new Error('Missing tenant or restaurant ID');
       }
 
-      // Create some demo bookings that will cause conflicts
+      // First, get the available tables for this restaurant
+      const tablesResponse = await apiRequest(
+        "GET",
+        `/api/tenants/${tenantId}/restaurants/${restaurantId}/tables`
+      );
+      
+      if (!tablesResponse.ok) {
+        throw new Error('Failed to fetch tables');
+      }
+      
+      const tables = await tablesResponse.json();
+      
+      if (tables.length < 2) {
+        throw new Error('Need at least 2 tables to create demo conflicts');
+      }
+
+      // Create some demo bookings that will cause conflicts using real table IDs
       const demoBookings = [
         {
           customerName: "John Smith",
@@ -43,7 +59,7 @@ export default function ConflictDemo() {
           bookingDate: new Date().toISOString().split('T')[0],
           startTime: "19:00",
           endTime: "21:00",
-          tableId: 1,
+          tableId: tables[0].id, // Use first available table
           status: "confirmed",
           notes: "Anniversary dinner"
         },
@@ -55,7 +71,7 @@ export default function ConflictDemo() {
           bookingDate: new Date().toISOString().split('T')[0],
           startTime: "19:30",
           endTime: "21:30",
-          tableId: 1, // Same table - will create conflict
+          tableId: tables[0].id, // Same table - will create conflict
           status: "confirmed",
           notes: "Date night"
         },
@@ -67,7 +83,7 @@ export default function ConflictDemo() {
           bookingDate: new Date().toISOString().split('T')[0],
           startTime: "18:00",
           endTime: "20:00",
-          tableId: 2, // Assuming this table has capacity < 12
+          tableId: tables[1].id, // Use second table (capacity will likely be exceeded)
           status: "confirmed",
           notes: "Corporate dinner"
         }
