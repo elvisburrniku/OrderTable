@@ -60,12 +60,26 @@ export default function OpeningHours() {
     },
     onSuccess: () => {
       toast({ title: "Opening hours saved successfully!" });
-      // Invalidate all queries that might show opening hours data
-      queryClient.invalidateQueries({ queryKey: [`/api/tenants/${tenantId}/restaurants/${restaurantId}/opening-hours`] });
-      queryClient.invalidateQueries({ queryKey: [`/api/tenants/${tenantId}/restaurants/${restaurantId}/statistics`] });
-      queryClient.invalidateQueries({ queryKey: [`/api/tenants/${tenantId}/restaurants/${restaurantId}`] });
-      queryClient.invalidateQueries({ queryKey: ["dashboard"] });
-      queryClient.invalidateQueries({ queryKey: ["restaurant-settings"] });
+      // Comprehensive cache invalidation to ensure all components refresh
+      queryClient.invalidateQueries({ 
+        predicate: (query) => {
+          const queryKey = query.queryKey as string[];
+          return queryKey.some(key => 
+            typeof key === 'string' && (
+              key.includes('opening-hours') ||
+              key.includes('statistics') ||
+              key.includes('dashboard') ||
+              key.includes('restaurant') ||
+              key.includes(`tenants/${tenantId}`)
+            )
+          );
+        }
+      });
+      
+      // Force refetch of current page data
+      queryClient.refetchQueries({ 
+        queryKey: [`/api/tenants/${tenantId}/restaurants/${restaurantId}/opening-hours`] 
+      });
     },
     onError: (error: any) => {
       toast({

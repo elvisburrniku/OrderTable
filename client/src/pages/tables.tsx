@@ -122,15 +122,27 @@ export default function Tables() {
       return response.json();
     },
     onSuccess: () => {
-      // Invalidate all queries that might show tables data
-      queryClient.invalidateQueries({
-        queryKey: ["/api/tenants", restaurant?.tenantId || 1, "restaurants", restaurant?.id, "tables"],
+      // Comprehensive cache invalidation to ensure all components refresh
+      queryClient.invalidateQueries({ 
+        predicate: (query) => {
+          const queryKey = query.queryKey as string[];
+          return queryKey.some(key => 
+            typeof key === 'string' && (
+              key.includes('tables') ||
+              key.includes('statistics') ||
+              key.includes('dashboard') ||
+              key.includes('restaurant') ||
+              key.includes('rooms') ||
+              key.includes(`tenants/${restaurant?.tenantId}`)
+            )
+          );
+        }
       });
-      queryClient.invalidateQueries({ queryKey: ["tables"] });
-      queryClient.invalidateQueries({ queryKey: [`/api/tenants/${restaurant?.tenantId}/restaurants/${restaurant?.id}/statistics`] });
-      queryClient.invalidateQueries({ queryKey: [`/api/tenants/${restaurant?.tenantId}/restaurants/${restaurant?.id}`] });
-      queryClient.invalidateQueries({ queryKey: ["dashboard"] });
-      queryClient.invalidateQueries({ queryKey: ["restaurant-settings"] });
+      
+      // Force refetch of current page data
+      queryClient.refetchQueries({ 
+        queryKey: ["/api/tenants", restaurant?.tenantId || 1, "restaurants", restaurant?.id, "tables"] 
+      });
       setIsDialogOpen(false);
       setNewTable({ tableNumber: "", capacity: 4, isActive: true });
     },
@@ -148,15 +160,27 @@ export default function Tables() {
       return response.json();
     },
     onSuccess: () => {
-      // Invalidate all queries that might show tables data
-      queryClient.invalidateQueries({
-        queryKey: ["/api/tenants", restaurant?.tenantId || 1, "restaurants", restaurant?.id, "tables"],
+      // Comprehensive cache invalidation to ensure all components refresh
+      queryClient.invalidateQueries({ 
+        predicate: (query) => {
+          const queryKey = query.queryKey as string[];
+          return queryKey.some(key => 
+            typeof key === 'string' && (
+              key.includes('tables') ||
+              key.includes('statistics') ||
+              key.includes('dashboard') ||
+              key.includes('restaurant') ||
+              key.includes('rooms') ||
+              key.includes(`tenants/${restaurant?.tenantId}`)
+            )
+          );
+        }
       });
-      queryClient.invalidateQueries({ queryKey: ["tables"] });
-      queryClient.invalidateQueries({ queryKey: [`/api/tenants/${restaurant?.tenantId}/restaurants/${restaurant?.id}/statistics`] });
-      queryClient.invalidateQueries({ queryKey: [`/api/tenants/${restaurant?.tenantId}/restaurants/${restaurant?.id}`] });
-      queryClient.invalidateQueries({ queryKey: ["dashboard"] });
-      queryClient.invalidateQueries({ queryKey: ["restaurant-settings"] });
+      
+      // Force refetch of current page data
+      queryClient.refetchQueries({ 
+        queryKey: ["/api/tenants", restaurant?.tenantId || 1, "restaurants", restaurant?.id, "tables"] 
+      });
     },
   });
 
@@ -170,15 +194,27 @@ export default function Tables() {
       return response.json();
     },
     onSuccess: () => {
-      // Invalidate all queries that might show tables data
-      queryClient.invalidateQueries({
-        queryKey: ["/api/tenants", restaurant?.tenantId || 1, "restaurants", restaurant?.id, "tables"],
+      // Comprehensive cache invalidation to ensure all components refresh
+      queryClient.invalidateQueries({ 
+        predicate: (query) => {
+          const queryKey = query.queryKey as string[];
+          return queryKey.some(key => 
+            typeof key === 'string' && (
+              key.includes('tables') ||
+              key.includes('statistics') ||
+              key.includes('dashboard') ||
+              key.includes('restaurant') ||
+              key.includes('rooms') ||
+              key.includes(`tenants/${restaurant?.tenantId}`)
+            )
+          );
+        }
       });
-      queryClient.invalidateQueries({ queryKey: ["tables"] });
-      queryClient.invalidateQueries({ queryKey: [`/api/tenants/${restaurant?.tenantId}/restaurants/${restaurant?.id}/statistics`] });
-      queryClient.invalidateQueries({ queryKey: [`/api/tenants/${restaurant?.tenantId}/restaurants/${restaurant?.id}`] });
-      queryClient.invalidateQueries({ queryKey: ["dashboard"] });
-      queryClient.invalidateQueries({ queryKey: ["restaurant-settings"] });
+      
+      // Force refetch of current page data
+      queryClient.refetchQueries({ 
+        queryKey: ["/api/tenants", restaurant?.tenantId || 1, "restaurants", restaurant?.id, "tables"] 
+      });
     },
   });
 

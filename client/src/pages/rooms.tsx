@@ -100,15 +100,27 @@ export default function Rooms() {
       return results;
     },
     onSuccess: () => {
-      // Invalidate all queries that might show rooms data
-      queryClient.invalidateQueries({
-        queryKey: ["/api/tenants", restaurant?.tenantId, "restaurants", restaurant?.id, "rooms"],
+      // Comprehensive cache invalidation to ensure all components refresh
+      queryClient.invalidateQueries({ 
+        predicate: (query) => {
+          const queryKey = query.queryKey as string[];
+          return queryKey.some(key => 
+            typeof key === 'string' && (
+              key.includes('rooms') ||
+              key.includes('statistics') ||
+              key.includes('dashboard') ||
+              key.includes('restaurant') ||
+              key.includes('tables') ||
+              key.includes(`tenants/${restaurant?.tenantId}`)
+            )
+          );
+        }
       });
-      queryClient.invalidateQueries({ queryKey: [`/api/tenants/${restaurant?.tenantId}/restaurants/${restaurant?.id}/statistics`] });
-      queryClient.invalidateQueries({ queryKey: [`/api/tenants/${restaurant?.tenantId}/restaurants/${restaurant?.id}`] });
-      queryClient.invalidateQueries({ queryKey: ["dashboard"] });
-      queryClient.invalidateQueries({ queryKey: ["restaurant-settings"] });
-      queryClient.invalidateQueries({ queryKey: ["tables"] });
+      
+      // Force refetch of current page data
+      queryClient.refetchQueries({ 
+        queryKey: ["/api/tenants", restaurant?.tenantId, "restaurants", restaurant?.id, "rooms"] 
+      });
     },
     onError: (error) => {
       console.error("Room save error:", error);

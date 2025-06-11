@@ -85,14 +85,26 @@ export default function EmailNotifications() {
         title: "Settings saved",
         description: "Email notification settings have been updated successfully.",
       });
-      // Invalidate all queries that might show email settings data
+      // Comprehensive cache invalidation to ensure all components refresh
       queryClient.invalidateQueries({ 
+        predicate: (query) => {
+          const queryKey = query.queryKey as string[];
+          return queryKey.some(key => 
+            typeof key === 'string' && (
+              key.includes('email-settings') ||
+              key.includes('statistics') ||
+              key.includes('dashboard') ||
+              key.includes('restaurant') ||
+              key.includes(`tenants/${restaurant?.tenantId}`)
+            )
+          );
+        }
+      });
+      
+      // Force refetch of current page data
+      queryClient.refetchQueries({ 
         queryKey: ['email-settings', restaurant?.tenantId, restaurant?.id] 
       });
-      queryClient.invalidateQueries({ queryKey: [`/api/tenants/${restaurant?.tenantId}/restaurants/${restaurant?.id}/statistics`] });
-      queryClient.invalidateQueries({ queryKey: [`/api/tenants/${restaurant?.tenantId}/restaurants/${restaurant?.id}`] });
-      queryClient.invalidateQueries({ queryKey: ["dashboard"] });
-      queryClient.invalidateQueries({ queryKey: ["restaurant-settings"] });
     },
     onError: (error: Error) => {
       toast({
