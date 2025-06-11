@@ -462,6 +462,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
         restaurantName
       });
 
+      // Initialize free trial subscription
+      await SubscriptionService.initializeFreeTrialForTenant(tenant.id);
+
       // Link user to tenant
       await storage.createTenantUser({
         tenantId: tenant.id,
@@ -6791,6 +6794,167 @@ app.put("/api/tenants/:tenantId/bookings/:id", validateTenant, async (req, res) 
     ws.on('error', (error) => {
       console.error('WebSocket error:', error);
     });
+  });
+
+  // Subscription Management Routes
+  
+  // Get subscription status for current tenant
+  app.get("/api/subscription/status", attachUser, async (req: Request, res: Response) => {
+    if (!req.user) {
+      return res.status(401).json({ error: "Not authenticated" });
+    }
+
+    try {
+      const tenantUser = await storage.getTenantByUserId(req.user.id);
+      if (!tenantUser) {
+        return res.status(404).json({ error: "Tenant not found" });
+      }
+
+      const subscriptionStatus = await SubscriptionService.checkSubscriptionStatus(tenantUser.id);
+      res.json(subscriptionStatus);
+    } catch (error) {
+      console.error("Error checking subscription status:", error);
+      res.status(500).json({ error: "Failed to check subscription status" });
+    }
+  });
+
+  // Create Stripe checkout session for subscription upgrade
+  app.post("/api/subscription/checkout", attachUser, async (req: Request, res: Response) => {
+    if (!req.user) {
+      return res.status(401).json({ error: "Not authenticated" });
+    }
+
+    try {
+      const { planId } = req.body;
+      if (!planId) {
+        return res.status(400).json({ error: "Plan ID is required" });
+      }
+
+      const tenantUser = await storage.getTenantByUserId(req.user.id);
+      if (!tenantUser) {
+        return res.status(404).json({ error: "Tenant not found" });
+      }
+
+      const baseUrl = process.env.NODE_ENV === 'production' 
+        ? `https://${req.get('host')}` 
+        : `http://${req.get('host')}`;
+
+      const successUrl = `${baseUrl}/subscription/success`;
+      const cancelUrl = `${baseUrl}/subscription/cancel`;
+
+      const session = await SubscriptionService.createCheckoutSession(
+        tenantUser.id,
+        planId,
+        successUrl,
+        cancelUrl
+      );
+
+      res.json(session);
+    } catch (error) {
+      console.error("Error creating checkout session:", error);
+      res.status(500).json({ error: "Failed to create checkout session" });
+    }
+  });
+
+  // Stripe webhook handler
+  app.post("/api/stripe/webhook", async (req: Request, res: Response) => {
+    const sig = req.headers['stripe-signature'];
+    let event;
+
+    try {
+      event = stripe.webhooks.constructEvent(
+        req.body,
+        sig!,
+        process.env.STRIPE_WEBHOOK_SECRET || 'whsec_test_webhook_secret'
+      );
+    } catch (err: any) {
+      console.log(`Webhook signature verification failed:`, err.message);
+      return res.status(400).send(`Webhook Error: ${err.message}`);
+    }
+
+    try {
+      await SubscriptionService.handleStripeWebhook(event);
+      res.json({ received: true });
+    } catch (error) {
+      console.error("Error handling webhook:", error);
+      res.status(500).json({ error: "Webhook processing failed" });
+    }
+  });
+
+  // Simulate successful payment (for testing)
+  app.post("/api/subscription/simulate-payment", attachUser, async (req: Request, res: Response) => {
+    if (!req.user) {
+      return res.status(401).json({ error: "Not authenticated" });
+    }
+
+    try {
+      const { planId } = req.body;
+      if (!planId) {
+        return res.status(400).json({ error: "Plan ID is required" });
+      }
+
+      const tenantUser = await storage.getTenantByUserId(req.user.id);
+      if (!tenantUser) {
+        return res.status(404).json({ error: "Tenant not found" });
+      }
+
+      // Simulate successful payment
+      const result = await SubscriptionService.simulateSuccessfulPayment(tenantUser.id, planId);
+      
+      console.log(`Simulated successful payment for tenant ${tenantUser.id}, plan ${planId}`);
+      res.json({
+        success: true,
+        message: "Payment simulation successful",
+        subscription: result
+      });
+    } catch (error) {
+      console.error("Error simulating payment:", error);
+      res.status(500).json({ error: "Failed to simulate payment" });
+    }
+  });
+
+  // Get current subscription details
+  app.get("/api/subscription/details", attachUser, async (req: Request, res: Response) => {
+    if (!req.user) {
+      return res.status(401).json({ error: "Not authenticated" });
+    }
+
+    try {
+      const tenantUser = await storage.getTenantByUserId(req.user.id);
+      if (!tenantUser) {
+        return res.status(404).json({ error: "Tenant not found" });
+      }
+
+      const tenant = await storage.getTenantById(tenantUser.id);
+      const plan = tenant?.subscriptionPlanId 
+        ? await storage.getSubscriptionPlanById(tenant.subscriptionPlanId)
+        : null;
+
+      res.json({
+        tenant: {
+          id: tenant?.id,
+          name: tenant?.name,
+          subscriptionStatus: tenant?.subscriptionStatus,
+          trialStartDate: tenant?.trialStartDate,
+          trialEndDate: tenant?.trialEndDate,
+          subscriptionStartDate: tenant?.subscriptionStartDate,
+          subscriptionEndDate: tenant?.subscriptionEndDate,
+        },
+        plan: plan ? {
+          id: plan.id,
+          name: plan.name,
+          price: plan.price,
+          interval: plan.interval,
+          features: JSON.parse(plan.features || '[]'),
+          maxTables: plan.maxTables,
+          maxBookingsPerMonth: plan.maxBookingsPerMonth,
+          maxRestaurants: plan.maxRestaurants,
+        } : null
+      });
+    } catch (error) {
+      console.error("Error getting subscription details:", error);
+      res.status(500).json({ error: "Failed to get subscription details" });
+    }
   });
 
   return httpServer;
