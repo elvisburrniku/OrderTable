@@ -20,7 +20,11 @@ import {
   specialPeriods,
   cutOffTimes,
   bookingChangeRequests,
-  notifications
+  notifications,
+  menuCategories,
+  menuItems,
+  qrMenus,
+  menuOrders
 } from "@shared/schema";
 import type {
   User,
@@ -39,6 +43,10 @@ import type {
   TableLayout,
   CombinedTable,
   Notification,
+  MenuCategory,
+  MenuItem,
+  QrMenu,
+  MenuOrder,
   InsertUser,
   InsertRestaurant,
   InsertTable,
@@ -48,6 +56,10 @@ import type {
   InsertFeedback,
   InsertSmsMessage,
   InsertActivityLog,
+  InsertMenuCategory,
+  InsertMenuItem,
+  InsertQrMenu,
+  InsertMenuOrder,
   InsertTimeSlots,
   InsertSubscriptionPlan,
   InsertUserSubscription,
