@@ -110,6 +110,32 @@ export default function BookingCalendar({ selectedDate, bookings, allBookings = 
     return hours;
   };
 
+  // Check if a time slot is blocked by cut-off time restrictions
+  const isTimeSlotBlocked = (date: Date, timeSlot: string) => {
+    if (!Array.isArray(cutOffTimes) || cutOffTimes.length === 0) {
+      return false;
+    }
+
+    const dayOfWeek = date.getDay();
+    const cutOffTime = cutOffTimes.find((ct: any) => ct.dayOfWeek === dayOfWeek && ct.isEnabled);
+    
+    if (!cutOffTime || cutOffTime.cutOffHours === 0) {
+      return false;
+    }
+
+    // Create booking datetime by combining date and time
+    const [hours, minutes] = timeSlot.split(':').map(Number);
+    const bookingDateTime = new Date(date);
+    bookingDateTime.setHours(hours, minutes, 0, 0);
+    
+    // Calculate cut-off datetime (current time + cut-off hours)
+    const now = new Date();
+    const cutOffDateTime = new Date(now.getTime() + (cutOffTime.cutOffHours * 60 * 60 * 1000));
+    
+    // Check if booking time is before the cut-off time (should be blocked)
+    return bookingDateTime <= cutOffDateTime;
+  };
+
   const getDefaultStartTime = () => {
     const dayHours = getOpeningHoursForDay(selectedDate);
     if (dayHours && dayHours.isOpen) {
