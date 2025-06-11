@@ -93,10 +93,23 @@ export default function CalendarPage() {
     queryKey: [`/api/tenants/${tenantId}/restaurants/22/bookings`, currentDate, viewMode],
     queryFn: async () => {
       const dateRange = getDateRange();
-      const startDate = format(dateRange[0], 'yyyy-MM-dd');
-      const endDate = format(dateRange[dateRange.length - 1], 'yyyy-MM-dd');
+      const queryParams = new URLSearchParams();
       
-      const response = await apiRequest(`/api/tenants/${tenantId}/restaurants/22/bookings?startDate=${startDate}&endDate=${endDate}`, "GET");
+      if (viewMode === 'day') {
+        // For day view, only fetch bookings for the current day
+        queryParams.append('date', format(currentDate, 'yyyy-MM-dd'));
+      } else {
+        // For week/month views, use date range
+        const startDate = format(dateRange[0], 'yyyy-MM-dd');
+        const endDate = format(dateRange[dateRange.length - 1], 'yyyy-MM-dd');
+        queryParams.append('startDate', startDate);
+        queryParams.append('endDate', endDate);
+      }
+      
+      const url = `/api/tenants/${tenantId}/restaurants/22/bookings?${queryParams.toString()}`;
+      console.log(`🔗 Fetching bookings with URL: ${url}`);
+      
+      const response = await apiRequest(url, "GET");
       if (!response.ok) {
         throw new Error('Failed to fetch bookings');
       }
