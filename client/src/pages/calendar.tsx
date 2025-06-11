@@ -98,11 +98,15 @@ export default function CalendarPage() {
 
   const createBookingMutation = useMutation({
     mutationFn: async (data: BookingFormData) => {
-      return apiRequest(`/api/tenants/${tenantId}/restaurants/22/bookings`, "POST", {
+      const response = await apiRequest(`/api/tenants/${tenantId}/restaurants/22/bookings`, "POST", {
         ...data,
         restaurantId: 22,
         tenantId: parseInt(tenantId!),
       });
+      if (!response.ok) {
+        throw new Error(`Failed to create booking: ${response.status}`);
+      }
+      return response.json();
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: [`/api/tenants/${tenantId}/restaurants/22/bookings`] });
@@ -117,7 +121,11 @@ export default function CalendarPage() {
 
   const updateBookingMutation = useMutation({
     mutationFn: async ({ id, data }: { id: number; data: Partial<BookingFormData> }) => {
-      return apiRequest(`/api/tenants/${tenantId}/restaurants/22/bookings/${id}`, "PATCH", data);
+      const response = await apiRequest(`/api/tenants/${tenantId}/restaurants/22/bookings/${id}`, "PATCH", data);
+      if (!response.ok) {
+        throw new Error(`Failed to update booking: ${response.status}`);
+      }
+      return response.json();
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: [`/api/tenants/${tenantId}/restaurants/22/bookings`] });
@@ -148,8 +156,8 @@ export default function CalendarPage() {
       customerName: "",
       customerEmail: "",
       customerPhone: "",
-      bookingDate: selectedDate ? format(selectedDate, 'yyyy-MM-dd') : format(new Date(), 'yyyy-MM-dd'),
-      startTime: selectedTimeSlot || "19:00",
+      bookingDate: format(new Date(), 'yyyy-MM-dd'),
+      startTime: "19:00",
       endTime: "",
       guestCount: 2,
       tableId: undefined,
