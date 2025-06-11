@@ -640,10 +640,27 @@ export class MemoryStorage implements IStorage {
       !(hour.restaurantId === restaurantId && hour.tenantId === tenantId)
     );
   }
-  async getSpecialPeriodsByRestaurant(restaurantId: number): Promise<any> { return []; }
-  async createSpecialPeriod(periodData: any): Promise<any> { return { id: this.nextId++, ...periodData }; }
+  async getSpecialPeriodsByRestaurant(restaurantId: number): Promise<any> { 
+    return this.specialPeriods.filter(period => period.restaurantId === restaurantId);
+  }
+  async createSpecialPeriod(periodData: any): Promise<any> { 
+    const newPeriod = { 
+      id: this.nextId++, 
+      ...periodData,
+      createdAt: new Date()
+    };
+    this.specialPeriods.push(newPeriod);
+    return newPeriod;
+  }
   async updateSpecialPeriod(id: number, updates: any): Promise<any> { return undefined; }
-  async deleteSpecialPeriod(id: number): Promise<boolean> { return false; }
+  async deleteSpecialPeriod(id: number): Promise<boolean> { 
+    const index = this.specialPeriods.findIndex(period => period.id === id);
+    if (index !== -1) {
+      this.specialPeriods.splice(index, 1);
+      return true;
+    }
+    return false;
+  }
   async getCutOffTimesByRestaurant(restaurantId: number): Promise<any> { return []; }
   async createOrUpdateCutOffTimes(restaurantId: number, tenantId: number, timesData: any[]): Promise<any> { return []; }
   async isRestaurantOpen(restaurantId: number, bookingDate: Date, bookingTime: string): Promise<boolean> { return true; }
