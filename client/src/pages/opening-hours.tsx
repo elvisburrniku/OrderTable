@@ -58,7 +58,7 @@ export default function OpeningHours() {
         closeTime: hour.close,
       }));
       
-      const response = await apiRequest("POST", `/api/tenants/${tenantId}/restaurants/${restaurantId}/opening-hours`, hoursData);
+      const response = await apiRequest(`/api/tenants/${tenantId}/restaurants/${restaurantId}/opening-hours`, "POST", hoursData);
       return response.json();
     },
     onSuccess: () => {

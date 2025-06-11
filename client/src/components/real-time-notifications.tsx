@@ -376,8 +376,8 @@ export function RealTimeNotifications() {
   // Mark notification as read mutation
   const markAsReadMutation = useMutation({
     mutationFn: (notificationId: number) => apiRequest(
-      'PATCH',
-      `/api/tenants/${restaurant?.tenantId}/restaurants/${restaurant?.id}/notifications/${notificationId}/read`
+      `/api/tenants/${restaurant?.tenantId}/restaurants/${restaurant?.id}/notifications/${notificationId}/read`,
+      'PATCH'
     ),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['/api/tenants', restaurant?.tenantId, 'restaurants', restaurant?.id, 'notifications'] });
@@ -389,8 +389,8 @@ export function RealTimeNotifications() {
     mutationFn: () => {
       console.log('Making mark all as read request to:', `/api/tenants/${restaurant?.tenantId}/restaurants/${restaurant?.id}/notifications/mark-all-read`);
       return apiRequest(
-        'PATCH',
-        `/api/tenants/${restaurant?.tenantId}/restaurants/${restaurant?.id}/notifications/mark-all-read`
+        `/api/tenants/${restaurant?.tenantId}/restaurants/${restaurant?.id}/notifications/mark-all-read`,
+        'PATCH'
       );
     },
     onSuccess: (data) => {
@@ -411,8 +411,8 @@ export function RealTimeNotifications() {
   // Revert notification mutation (admin only)
   const revertNotificationMutation = useMutation({
     mutationFn: (notificationId: number) => apiRequest(
-      'POST',
-      `/api/notifications/${notificationId}/revert`
+      `/api/notifications/${notificationId}/revert`,
+      'POST'
     ),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['/api/tenants', restaurant?.tenantId, 'restaurants', restaurant?.id, 'notifications'] });
@@ -561,8 +561,8 @@ export function RealTimeNotifications() {
   // Delete notification mutation
   const deleteNotificationMutation = useMutation({
     mutationFn: (notificationId: number) => apiRequest(
-      'DELETE',
-      `/api/tenants/${restaurant?.tenantId}/restaurants/${restaurant?.id}/notifications/${notificationId}`
+      `/api/tenants/${restaurant?.tenantId}/restaurants/${restaurant?.id}/notifications/${notificationId}`,
+      'DELETE'
     ),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['/api/tenants', restaurant?.tenantId, 'restaurants', restaurant?.id, 'notifications'] });
