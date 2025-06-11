@@ -172,29 +172,8 @@ export default function Rooms() {
         </div>
       </div>
 
-      <div className="flex">
-        {/* Sidebar */}
-        <div className="w-64 bg-white border-r min-h-screen">
-          <div className="p-6">
-            <div className="space-y-1">
-              <div className="text-sm font-medium text-gray-900 mb-3">General</div>
-              <a href="#" className="block text-sm text-gray-600 hover:text-gray-900 py-1">The place</a>
-              <a href="/opening-hours" className="block text-sm text-gray-600 hover:text-gray-900 py-1">Opening hours</a>
-              <a href="#" className="block text-sm text-gray-600 hover:text-gray-900 py-1">General opening hours</a>
-              <a href="/special-periods" className="block text-sm text-gray-600 hover:text-gray-900 py-1">Special periods</a>
-              <a href="/cut-off-time" className="block text-sm text-gray-600 hover:text-gray-900 py-1">Cut-off time</a>
-
-              <div className="text-sm font-medium text-gray-900 mb-3 mt-6">Tables and rooms</div>
-              <div className="block text-sm text-green-600 font-medium py-1 bg-green-50 px-2 rounded">Rooms</div>
-              <a href="/tables" className="block text-sm text-gray-600 hover:text-gray-900 py-1">Tables</a>
-              <a href="/combined-tables" className="block text-sm text-gray-600 hover:text-gray-900 py-1">Combined tables</a>
-              <a href="/table-plan" className="block text-sm text-gray-600 hover:text-gray-900 py-1">Table plan</a>
-            </div>
-          </div>
-        </div>
-
-        {/* Main Content */}
-        <div className="flex-1 p-6">
+      {/* Main Content */}
+      <div className="p-6">
           <Card>
             <CardHeader>
               <CardTitle>Rooms</CardTitle>
@@ -262,7 +241,6 @@ export default function Rooms() {
               </div>
             </CardContent>
           </Card>
-        </div>
       </div>
     </div>
   );
