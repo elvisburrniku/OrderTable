@@ -1,5 +1,5 @@
 import { Calendar, Users, Clock, Zap, BarChart3, FileText, MessageSquare, CreditCard, Settings, Cog } from "lucide-react";
-import { useLocation } from "wouter";
+import { useLocation, Link } from "wouter";
 
 interface SidebarProps {
   tenantId: number;
@@ -106,7 +106,7 @@ export function DashboardSidebar({ tenantId, restaurantId }: SidebarProps) {
             const active = isActive(item.href);
             
             return (
-              <a
+              <Link
                 key={item.name}
                 href={item.href}
                 className={`flex items-center space-x-3 px-3 py-2 rounded-lg text-sm font-medium transition-colors ${
@@ -117,7 +117,7 @@ export function DashboardSidebar({ tenantId, restaurantId }: SidebarProps) {
               >
                 <Icon className={`w-5 h-5 ${active ? 'text-gray-900' : item.color}`} />
                 <span>{item.name}</span>
-              </a>
+              </Link>
             );
           })}
         </nav>

@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import { useLocation } from "wouter";
 import { useAuth } from "@/lib/auth.tsx";
 import { useQuery } from "@tanstack/react-query";
-import { DashboardSidebar } from "@/components/dashboard-sidebar";
+
 import BookingCalendar from "@/components/booking-calendar";
 import { WalkInBooking } from "@/components/walk-in-booking";
 import { Button } from "@/components/ui/button";
@@ -646,13 +646,7 @@ export default function Dashboard() {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 flex">
-      <DashboardSidebar 
-        selectedDate={selectedDate}
-        onDateChange={setSelectedDate}
-        bookings={(allBookings as any) || []}
-      />
-
+    <div className="min-h-screen bg-gray-50">
       {/* Main Content */}
       <div className="flex-1 flex flex-col">
         {/* Header */}
