@@ -122,6 +122,20 @@ export class MemoryStorage implements IStorage {
         createdAt: new Date()
       };
       this.tenants.push(demoTenant);
+
+      // Add test tenant for guest booking
+      const testTenant = {
+        id: 5,
+        name: "TROFTA Restaurant Group",
+        slug: "trofta",
+        subscriptionPlanId: 1,
+        subscriptionStatus: "active",
+        trialStartDate: new Date(),
+        trialEndDate: new Date(Date.now() + 14 * 24 * 60 * 60 * 1000),
+        maxRestaurants: 3,
+        createdAt: new Date()
+      };
+      this.tenants.push(testTenant);
     }
 
     // Create demo user
@@ -162,12 +176,31 @@ export class MemoryStorage implements IStorage {
         capacity: 50,
         timezone: "UTC",
         websiteUrl: "https://demorestaurant.com",
+        guestBookingEnabled: true,
         createdAt: new Date()
       };
       this.restaurants.push(demoRestaurant);
+
+      // Add TROFTA restaurant for guest booking testing
+      const troftaRestaurant = {
+        id: 7,
+        tenantId: 5,
+        name: "TROFTA",
+        address: "456 Fine Dining Ave, Gourmet District",
+        phone: "+1-555-TROFTA",
+        email: "reservations@trofta.com",
+        cuisine: "Modern European",
+        priceRange: "$$$",
+        capacity: 120,
+        timezone: "America/New_York",
+        websiteUrl: "https://trofta.com",
+        guestBookingEnabled: true,
+        createdAt: new Date()
+      };
+      this.restaurants.push(troftaRestaurant);
     }
 
-    this.nextId = Math.max(this.nextId, 5);
+    this.nextId = Math.max(this.nextId, 10);
   }
 
   // Users

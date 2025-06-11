@@ -4438,9 +4438,8 @@ app.put("/api/tenants/:tenantId/bookings/:id", validateTenant, async (req, res) 
         return res.status(404).json({ message: "Restaurant not found" });
       }
 
-      // Check if Google integration is enabled for guest bookings
-      const googleConfig = await storage.getIntegrationConfiguration(restaurantId, 'google');
-      const guestBookingEnabled = googleConfig?.isEnabled || false;
+      // Use restaurant's direct guestBookingEnabled property
+      const guestBookingEnabled = restaurant.guestBookingEnabled || false;
 
       // Return only public information
       const publicInfo = {
@@ -4449,6 +4448,9 @@ app.put("/api/tenants/:tenantId/bookings/:id", validateTenant, async (req, res) 
         address: restaurant.address,
         phone: restaurant.phone,
         description: restaurant.description,
+        cuisine: restaurant.cuisine,
+        priceRange: restaurant.priceRange,
+        websiteUrl: restaurant.websiteUrl,
         guestBookingEnabled
       };
 
