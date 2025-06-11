@@ -1092,4 +1092,156 @@ export class DatabaseStorage implements IStorage {
     }).from(users);
     return result;
   }
+
+  // Menu Categories
+  async getMenuCategoriesByRestaurant(restaurantId: number) {
+    const result = await this.db.select().from(menuCategories)
+      .where(eq(menuCategories.restaurantId, restaurantId))
+      .orderBy(asc(menuCategories.displayOrder));
+    return result;
+  }
+
+  async getMenuCategoryById(id: number) {
+    const result = await this.db.select().from(menuCategories)
+      .where(eq(menuCategories.id, id));
+    return result[0];
+  }
+
+  async createMenuCategory(category: any) {
+    const result = await this.db.insert(menuCategories).values(category).returning();
+    return result[0];
+  }
+
+  async updateMenuCategory(id: number, updates: any) {
+    const result = await this.db.update(menuCategories)
+      .set({ ...updates, updatedAt: new Date() })
+      .where(eq(menuCategories.id, id))
+      .returning();
+    return result[0];
+  }
+
+  async deleteMenuCategory(id: number) {
+    await this.db.delete(menuCategories).where(eq(menuCategories.id, id));
+    return true;
+  }
+
+  // Menu Items
+  async getMenuItemsByRestaurant(restaurantId: number) {
+    const result = await this.db.select().from(menuItems)
+      .where(eq(menuItems.restaurantId, restaurantId))
+      .orderBy(asc(menuItems.categoryId), asc(menuItems.displayOrder));
+    return result;
+  }
+
+  async getMenuItemsByCategory(categoryId: number) {
+    const result = await this.db.select().from(menuItems)
+      .where(eq(menuItems.categoryId, categoryId))
+      .orderBy(asc(menuItems.displayOrder));
+    return result;
+  }
+
+  async getMenuItemById(id: number) {
+    const result = await this.db.select().from(menuItems)
+      .where(eq(menuItems.id, id));
+    return result[0];
+  }
+
+  async createMenuItem(item: any) {
+    const result = await this.db.insert(menuItems).values(item).returning();
+    return result[0];
+  }
+
+  async updateMenuItem(id: number, updates: any) {
+    const result = await this.db.update(menuItems)
+      .set({ ...updates, updatedAt: new Date() })
+      .where(eq(menuItems.id, id))
+      .returning();
+    return result[0];
+  }
+
+  async deleteMenuItem(id: number) {
+    await this.db.delete(menuItems).where(eq(menuItems.id, id));
+    return true;
+  }
+
+  // QR Menus
+  async getQrMenusByRestaurant(restaurantId: number) {
+    const result = await this.db.select().from(qrMenus)
+      .where(eq(qrMenus.restaurantId, restaurantId))
+      .orderBy(desc(qrMenus.createdAt));
+    return result;
+  }
+
+  async getQrMenuById(id: number) {
+    const result = await this.db.select().from(qrMenus)
+      .where(eq(qrMenus.id, id));
+    return result[0];
+  }
+
+  async getQrMenuByCode(qrCode: string) {
+    const result = await this.db.select().from(qrMenus)
+      .where(eq(qrMenus.qrCode, qrCode));
+    return result[0];
+  }
+
+  async createQrMenu(menu: any) {
+    const result = await this.db.insert(qrMenus).values(menu).returning();
+    return result[0];
+  }
+
+  async updateQrMenu(id: number, updates: any) {
+    const result = await this.db.update(qrMenus)
+      .set({ ...updates, updatedAt: new Date() })
+      .where(eq(qrMenus.id, id))
+      .returning();
+    return result[0];
+  }
+
+  async deleteQrMenu(id: number) {
+    await this.db.delete(qrMenus).where(eq(qrMenus.id, id));
+    return true;
+  }
+
+  async incrementQrMenuScan(qrCode: string) {
+    await this.db.update(qrMenus)
+      .set({ 
+        scanCount: sql`${qrMenus.scanCount} + 1`,
+        lastScanned: new Date()
+      })
+      .where(eq(qrMenus.qrCode, qrCode));
+  }
+
+  // Menu Orders
+  async getMenuOrdersByRestaurant(restaurantId: number) {
+    const result = await this.db.select().from(menuOrders)
+      .where(eq(menuOrders.restaurantId, restaurantId))
+      .orderBy(desc(menuOrders.createdAt));
+    return result;
+  }
+
+  async getMenuOrdersByQrMenu(qrMenuId: number) {
+    const result = await this.db.select().from(menuOrders)
+      .where(eq(menuOrders.qrMenuId, qrMenuId))
+      .orderBy(desc(menuOrders.createdAt));
+    return result;
+  }
+
+  async getMenuOrderById(id: number) {
+    const result = await this.db.select().from(menuOrders)
+      .where(eq(menuOrders.id, id));
+    return result[0];
+  }
+
+  async createMenuOrder(order: any) {
+    const result = await this.db.insert(menuOrders).values(order).returning();
+    return result[0];
+  }
+
+  async updateMenuOrder(id: number, updates: any) {
+    const result = await this.db.update(menuOrders)
+      .set({ ...updates, updatedAt: new Date() })
+      .where(eq(menuOrders.id, id))
+      .returning();
+    return result[0];
+  }
 }
