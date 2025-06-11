@@ -84,7 +84,13 @@ const AddPaymentMethodForm = ({ onSuccess }: { onSuccess: () => void }) => {
   const [isLoading, setIsLoading] = useState(false);
 
   const setupIntentMutation = useMutation({
-    mutationFn: () => apiRequest("POST", "/api/billing/setup-intent"),
+    mutationFn: async () => {
+      const response = await apiRequest("POST", "/api/billing/setup-intent");
+      if (!response.ok) {
+        throw new Error("Failed to create setup intent");
+      }
+      return response.json();
+    },
     onSuccess: async (data) => {
       if (!stripe || !elements) return;
 
@@ -92,7 +98,7 @@ const AddPaymentMethodForm = ({ onSuccess }: { onSuccess: () => void }) => {
       if (!cardElement) return;
 
       setIsLoading(true);
-
+      
       const { error } = await stripe.confirmCardSetup(data.clientSecret, {
         payment_method: {
           card: cardElement,
