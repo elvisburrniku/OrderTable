@@ -30,30 +30,7 @@ export default function Events() {
         </div>
       </div>
 
-      <div className="flex">
-        {/* Sidebar */}
-        <div className="w-64 bg-white border-r min-h-screen">
-          <div className="p-6">
-            <div className="space-y-1">
-              <div className="text-sm font-medium text-gray-900 mb-3">E-mail notifications</div>
-              <a href="/email-notifications" className="block text-sm text-gray-600 hover:text-gray-900 py-1">E-mail notifications</a>
-              <a href="/sms-notifications" className="block text-sm text-gray-600 hover:text-gray-900 py-1">SMS notifications</a>
-              <a href="/feedback-questions" className="block text-sm text-gray-600 hover:text-gray-900 py-1">Feedback questions</a>
-              <div className="block text-sm text-green-600 font-medium py-1 bg-green-50 px-2 rounded">Events</div>
-              
-              <div className="text-sm font-medium text-gray-900 mb-3 mt-6">Guest payments</div>
-              <a href="/payment-setups" className="block text-sm text-gray-600 hover:text-gray-900 py-1">Payment setups</a>
-              <a href="/payment-gateway" className="block text-sm text-gray-600 hover:text-gray-900 py-1">Payment Gateway</a>
-              
-              <div className="text-sm font-medium text-gray-900 mb-3 mt-6">Products</div>
-              <a href="/products" className="block text-sm text-gray-600 hover:text-gray-900 py-1">Products</a>
-              <a href="/product-groups" className="block text-sm text-gray-600 hover:text-gray-900 py-1">Groups</a>
-            </div>
-          </div>
-        </div>
-
-        {/* Main Content */}
-        <div className="flex-1 p-6">
+      <div className="p-6">
           <Card>
             <CardHeader>
               <CardTitle>Events</CardTitle>
@@ -79,7 +56,6 @@ export default function Events() {
               </div>
             </CardContent>
           </Card>
-        </div>
       </div>
     </div>
   );
