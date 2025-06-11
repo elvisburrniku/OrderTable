@@ -107,8 +107,6 @@ export default function CalendarPage() {
       }
       
       const url = `/api/tenants/${tenantId}/restaurants/22/bookings?${queryParams.toString()}`;
-      console.log(`🔗 Fetching bookings with URL: ${url}`);
-      
       const response = await apiRequest(url, "GET");
       if (!response.ok) {
         throw new Error('Failed to fetch bookings');

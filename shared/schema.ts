@@ -795,4 +795,26 @@ export const insertReschedulingSuggestionSchema = createInsertSchema(reschedulin
 });
 export const selectReschedulingSuggestionSchema = createSelectSchema(reschedulingSuggestions);
 
+// Onboarding tutorial progress tracking
+export const onboardingProgress = pgTable("onboarding_progress", {
+  id: serial("id").primaryKey(),
+  userId: integer("user_id").references(() => users.id).notNull(),
+  tenantId: integer("tenant_id").references(() => tenants.id).notNull(),
+  restaurantId: integer("restaurant_id").references(() => restaurants.id),
+  stepId: text("step_id").notNull(), // e.g., 'welcome', 'create-booking', 'view-calendar'
+  stepCategory: text("step_category").notNull(), // e.g., 'basics', 'bookings', 'tables'
+  isCompleted: boolean("is_completed").default(false),
+  completedAt: timestamp("completed_at"),
+  skipped: boolean("skipped").default(false),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+export type OnboardingProgress = InferSelectModel<typeof onboardingProgress>;
+export type InsertOnboardingProgress = InferInsertModel<typeof onboardingProgress>;
+
+export const insertOnboardingProgressSchema = createInsertSchema(onboardingProgress).omit({
+  id: true,
+  createdAt: true,
+});
+
 export type LoginData = z.infer<typeof loginSchema>;

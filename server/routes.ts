@@ -622,8 +622,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const tenantId = parseInt(req.params.tenantId);
       const { date, startDate, endDate } = req.query;
 
-      console.log(`📅 Booking query for restaurant ${restaurantId}:`, { date, startDate, endDate });
-
       // Verify restaurant belongs to tenant
       const restaurant = await storage.getRestaurantById(restaurantId);
       if (!restaurant || restaurant.tenantId !== tenantId) {
@@ -632,17 +630,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       let bookings;
       if (startDate && endDate && typeof startDate === 'string' && typeof endDate === 'string') {
-        console.log(`📊 Using date range query: ${startDate} to ${endDate}`);
         bookings = await storage.getBookingsByDateRange(restaurantId, startDate, endDate);
       } else if (date && typeof date === 'string') {
-        console.log(`📅 Using single date query: ${date}`);
         bookings = await storage.getBookingsByDate(restaurantId, date);
       } else {
-        console.log('📋 Using all bookings query');
         bookings = await storage.getBookingsByRestaurant(restaurantId);
       }
-
-      console.log(`✅ Found ${bookings.length} bookings`);
       res.json(bookings);
     } catch (error) {
       console.error("Error fetching bookings:", error);
