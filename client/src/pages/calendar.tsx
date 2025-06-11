@@ -13,7 +13,7 @@ import { Badge } from "@/components/ui/badge";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
-import { ChevronLeft, ChevronRight, Plus, Calendar as CalendarIcon, Clock, Users, MapPin, Edit, Trash2, MoreVertical } from "lucide-react";
+import { ChevronLeft, ChevronRight, Plus, Calendar as CalendarIcon, Clock, Users, MapPin, Edit, Trash2, MoreVertical, Coffee, Utensils, Star, PartyPopper } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
@@ -350,6 +350,41 @@ export default function CalendarPage() {
     return hours * 60 + minutes;
   };
 
+  // Get booking type icon and color
+  const getBookingTypeIcon = (bookingType?: string) => {
+    switch (bookingType) {
+      case 'lunch':
+        return Coffee;
+      case 'dinner':
+        return Utensils;
+      case 'brunch':
+        return Coffee;
+      case 'private_event':
+        return PartyPopper;
+      case 'special_occasion':
+        return Star;
+      default:
+        return CalendarIcon;
+    }
+  };
+
+  const getBookingTypeColor = (bookingType?: string) => {
+    switch (bookingType) {
+      case 'lunch':
+        return 'bg-orange-100 border-orange-300 text-orange-800';
+      case 'dinner':
+        return 'bg-purple-100 border-purple-300 text-purple-800';
+      case 'brunch':
+        return 'bg-yellow-100 border-yellow-300 text-yellow-800';
+      case 'private_event':
+        return 'bg-pink-100 border-pink-300 text-pink-800';
+      case 'special_occasion':
+        return 'bg-blue-100 border-blue-300 text-blue-800';
+      default:
+        return 'bg-gray-100 border-gray-300 text-gray-800';
+    }
+  };
+
   // Handle creating a new booking
   const handleCreateBooking = (date: Date, time: string) => {
     setSelectedDate(date);
@@ -418,6 +453,8 @@ export default function CalendarPage() {
   // Render booking card
   const renderBooking = (booking: Booking) => {
     const table = tables.find((t) => t.id === booking.tableId);
+    const BookingTypeIcon = getBookingTypeIcon(booking.bookingType);
+    const bookingTypeColor = getBookingTypeColor(booking.bookingType);
     
     return (
       <Card
@@ -429,15 +466,19 @@ export default function CalendarPage() {
           handleEditBooking(booking);
         }}
         className={cn(
-          "mb-1 p-2 cursor-pointer hover:shadow-md transition-shadow",
-          booking.status === 'confirmed' && "border-green-200 bg-green-50",
-          booking.status === 'pending' && "border-yellow-200 bg-yellow-50",
-          booking.status === 'cancelled' && "border-red-200 bg-red-50"
+          "mb-1 p-2 cursor-pointer hover:shadow-md transition-shadow border-l-4",
+          bookingTypeColor,
+          booking.status === 'confirmed' && "border-l-green-500",
+          booking.status === 'pending' && "border-l-yellow-500",
+          booking.status === 'cancelled' && "border-l-red-500"
         )}
       >
         <div className="flex items-center justify-between">
           <div className="flex-1 min-w-0">
-            <p className="text-sm font-medium truncate">{booking.customerName}</p>
+            <div className="flex items-center gap-2 mb-1">
+              <BookingTypeIcon className="w-3 h-3" />
+              <p className="text-sm font-medium truncate">{booking.customerName}</p>
+            </div>
             <div className="flex items-center gap-1 text-xs text-muted-foreground">
               <Clock className="w-3 h-3" />
               <span>{booking.startTime}</span>
@@ -574,12 +615,42 @@ export default function CalendarPage() {
             </SelectTrigger>
             <SelectContent>
               <SelectItem value="all">All Types</SelectItem>
-              <SelectItem value="regular">Regular</SelectItem>
-              <SelectItem value="lunch">Lunch</SelectItem>
-              <SelectItem value="dinner">Dinner</SelectItem>
-              <SelectItem value="brunch">Brunch</SelectItem>
-              <SelectItem value="private_event">Private Event</SelectItem>
-              <SelectItem value="special_occasion">Special Occasion</SelectItem>
+              <SelectItem value="regular">
+                <div className="flex items-center gap-2">
+                  <CalendarIcon className="w-4 h-4" />
+                  Regular
+                </div>
+              </SelectItem>
+              <SelectItem value="lunch">
+                <div className="flex items-center gap-2">
+                  <Coffee className="w-4 h-4" />
+                  Lunch
+                </div>
+              </SelectItem>
+              <SelectItem value="dinner">
+                <div className="flex items-center gap-2">
+                  <Utensils className="w-4 h-4" />
+                  Dinner
+                </div>
+              </SelectItem>
+              <SelectItem value="brunch">
+                <div className="flex items-center gap-2">
+                  <Coffee className="w-4 h-4" />
+                  Brunch
+                </div>
+              </SelectItem>
+              <SelectItem value="private_event">
+                <div className="flex items-center gap-2">
+                  <PartyPopper className="w-4 h-4" />
+                  Private Event
+                </div>
+              </SelectItem>
+              <SelectItem value="special_occasion">
+                <div className="flex items-center gap-2">
+                  <Star className="w-4 h-4" />
+                  Special Occasion
+                </div>
+              </SelectItem>
             </SelectContent>
           </Select>
           
