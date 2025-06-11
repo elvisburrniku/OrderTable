@@ -32,6 +32,7 @@ interface Booking {
   tableId?: number;
   notes?: string;
   status: 'confirmed' | 'pending' | 'cancelled';
+  bookingType?: string;
   createdAt: string;
 }
 
@@ -51,6 +52,7 @@ const bookingFormSchema = z.object({
   endTime: z.string().optional(),
   guestCount: z.number().min(1, "Guest count must be at least 1"),
   tableId: z.number().optional(),
+  bookingType: z.string().optional(),
   notes: z.string().optional(),
 });
 
@@ -74,7 +76,8 @@ export default function CalendarPage() {
     status: "all",
     guestCount: "all",
     timeRange: "all",
-    table: "all"
+    table: "all",
+    bookingType: "all"
   });
   const { toast } = useToast();
   const queryClient = useQueryClient();

@@ -139,6 +139,7 @@ export const bookings = pgTable("bookings", {
   endTime: text("end_time"),
   status: varchar("status", { length: 20 }).default("confirmed"),
   source: varchar("source", { length: 20 }).default("manual"), // manual, online, google
+  bookingType: varchar("booking_type", { length: 30 }).default("regular"), // regular, lunch, dinner, private_event, brunch, special_occasion
   notes: text("notes"),
   managementHash: text("management_hash"), // Hash for booking management links
   createdAt: timestamp("created_at").defaultNow(),
