@@ -126,7 +126,7 @@ function App() {
             <Route path="/feedback-responses" component={FeedbackResponses} />
             <Route path="/feedback-responses-popup" component={FeedbackResponsesPopup} />
             <Route path="/contact" component={Contact} />
-            <Route path="/guest-booking/:restaurantId" component={GuestBooking} />
+            <Route path="/guest-booking/:tenantId/:restaurantId" component={GuestBooking} />
             <Route component={NotFound} />
             </Switch>
           </RouteGuard>
