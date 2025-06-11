@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef, useCallback } from "react";
+import { useState, useEffect, useRef, useCallback, useMemo } from "react";
 import { useParams } from "wouter";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { format, startOfWeek, addDays, isSameDay, startOfDay, endOfDay, addWeeks, subWeeks, startOfMonth, endOfMonth, eachDayOfInterval, isToday, parseISO, addMinutes, isWithinInterval } from "date-fns";
@@ -69,7 +69,6 @@ export default function CalendarPage() {
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [draggedBooking, setDraggedBooking] = useState<Booking | null>(null);
   const [draggedOverSlot, setDraggedOverSlot] = useState<{ date: Date; time: string } | null>(null);
-  const [filteredBookings, setFilteredBookings] = useState<Booking[]>([]);
   const [searchQuery, setSearchQuery] = useState("");
   const [filters, setFilters] = useState({
     status: "all",
@@ -189,8 +188,10 @@ export default function CalendarPage() {
 
   const dateRange = getDateRange();
 
-  // Filter and search bookings
-  useEffect(() => {
+  // Filter and search bookings using useMemo to prevent infinite re-renders
+  const displayBookings = useMemo(() => {
+    if (!bookings) return [];
+    
     let filtered = [...bookings];
 
     // Apply search filter
@@ -231,10 +232,8 @@ export default function CalendarPage() {
       });
     }
 
-    setFilteredBookings(filtered);
-  }, [bookings, searchQuery, filters]);
-
-  const displayBookings = filteredBookings.length > 0 ? filteredBookings : bookings;
+    return filtered;
+  }, [bookings, searchQuery, filters.status, filters.guestCount, filters.timeRange, filters.table]);
 
   // Navigation functions
   const navigatePrevious = () => {
