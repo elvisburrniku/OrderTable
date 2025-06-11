@@ -1041,4 +1041,19 @@ export class DatabaseStorage implements IStorage {
     }).from(users);
     return result;
   }
+
+  // Additional subscription-related methods
+  async getSubscriptionPlanById(id: number): Promise<any> {
+    if (!this.db) return null;
+    const result = await this.db.select().from(subscriptionPlans).where(eq(subscriptionPlans.id, id));
+    return result[0];
+  }
+
+  async getFreePlan(): Promise<any> {
+    if (!this.db) return null;
+    const result = await this.db.select().from(subscriptionPlans)
+      .where(and(eq(subscriptionPlans.price, 0), eq(subscriptionPlans.isActive, true)))
+      .limit(1);
+    return result[0];
+  }
 }

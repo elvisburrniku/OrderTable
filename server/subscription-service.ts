@@ -196,8 +196,8 @@ export class SubscriptionService {
     const subscription = await stripe.subscriptions.retrieve(session.subscription as string);
     
     // Calculate subscription period
-    const currentPeriodStart = new Date(subscription.current_period_start * 1000);
-    const currentPeriodEnd = new Date(subscription.current_period_end * 1000);
+    const currentPeriodStart = new Date((subscription as any).current_period_start * 1000);
+    const currentPeriodEnd = new Date((subscription as any).current_period_end * 1000);
 
     // Update tenant subscription
     await storage.updateTenant(tenantId, {
@@ -217,8 +217,8 @@ export class SubscriptionService {
    * Handle payment succeeded
    */
   private static async handlePaymentSucceeded(invoice: Stripe.Invoice) {
-    if (invoice.subscription) {
-      const subscription = await stripe.subscriptions.retrieve(invoice.subscription as string);
+    if ((invoice as any).subscription) {
+      const subscription = await stripe.subscriptions.retrieve((invoice as any).subscription as string);
       const customerId = subscription.customer as string;
       
       // Find tenant by Stripe customer ID
@@ -229,8 +229,8 @@ export class SubscriptionService {
       }
 
       // Update subscription period
-      const currentPeriodStart = new Date(subscription.current_period_start * 1000);
-      const currentPeriodEnd = new Date(subscription.current_period_end * 1000);
+      const currentPeriodStart = new Date((subscription as any).current_period_start * 1000);
+      const currentPeriodEnd = new Date((subscription as any).current_period_end * 1000);
 
       await storage.updateTenant(tenant.id, {
         subscriptionStatus: 'active',
@@ -254,8 +254,8 @@ export class SubscriptionService {
       return;
     }
 
-    const currentPeriodStart = new Date(subscription.current_period_start * 1000);
-    const currentPeriodEnd = new Date(subscription.current_period_end * 1000);
+    const currentPeriodStart = new Date((subscription as any).current_period_start * 1000);
+    const currentPeriodEnd = new Date((subscription as any).current_period_end * 1000);
 
     await storage.updateTenant(tenant.id, {
       subscriptionStatus: subscription.status === 'active' ? 'active' : 'cancelled',

@@ -17,6 +17,7 @@ import { WebhookService } from "./webhook-service";
 import { MetaIntegrationService } from "./meta-service";
 import { metaInstallService } from "./meta-install-service";
 import { setupSSO } from "./sso-auth";
+import { SubscriptionService } from "./subscription-service";
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY || 'sk_test_your_stripe_secret_key', {
   apiVersion: '2025-05-28.basil'
@@ -421,21 +422,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ message: "User already exists" });
       }
 
-      // Get free trial plan
-      const plans = await storage.getSubscriptionPlans();
-      const trialPlan = plans.find(p => p.name === "Free Trial") || plans[0];
-
-      if (!trialPlan) {
-        return res.status(400).json({ message: "No subscription plan available" });
-      }
-
       // Hash password
       const hashedPassword = await bcrypt.hash(password, 10);
 
       // Create tenant for the new user with unique slug generation
       const baseSlug = (restaurantName || 'restaurant').toLowerCase().replace(/[^a-z0-9]/g, '-').replace(/-+/g, '-').substring(0, 50);
-      const trialEndDate = new Date();
-      trialEndDate.setDate(trialEndDate.getDate() + (trialPlan.trialDays || 30));
 
       let slug = baseSlug;
       let counter = 1;
@@ -447,10 +438,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           tenant = await storage.createTenant({
             name: restaurantName || 'New Restaurant',
             slug,
-            subscriptionPlanId: trialPlan.id,
-            subscriptionStatus: "trial",
-            trialEndDate,
-            maxRestaurants: trialPlan.maxRestaurants || 1
+            subscriptionStatus: "trial"
           });
           break;
         } catch (error: any) {
