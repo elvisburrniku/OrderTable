@@ -2092,6 +2092,57 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Opening hours routes
+  app.get("/api/tenants/:tenantId/restaurants/:restaurantId/opening-hours", validateTenant, async (req, res) => {
+    try {
+      const restaurantId = parseInt(req.params.restaurantId);
+      const tenantId = parseInt(req.params.tenantId);
+
+      const openingHours = await storage.getOpeningHours(tenantId, restaurantId);
+      res.json(openingHours);
+    } catch (error) {
+      console.error("Error fetching opening hours:", error);
+      res.status(500).json({ message: "Failed to fetch opening hours" });
+    }
+  });
+
+  app.post("/api/tenants/:tenantId/restaurants/:restaurantId/opening-hours", validateTenant, async (req, res) => {
+    try {
+      const restaurantId = parseInt(req.params.restaurantId);
+      const tenantId = parseInt(req.params.tenantId);
+      const hoursData = req.body;
+
+      if (!Array.isArray(hoursData)) {
+        return res.status(400).json({ message: "Invalid opening hours data format" });
+      }
+
+      // Clear existing opening hours for this restaurant
+      await storage.clearOpeningHours(tenantId, restaurantId);
+
+      // Save new opening hours
+      const savedHours = [];
+      for (const hour of hoursData) {
+        const savedHour = await storage.createOpeningHour({
+          tenantId,
+          restaurantId,
+          dayOfWeek: hour.dayOfWeek,
+          isOpen: hour.isOpen,
+          openTime: hour.openTime,
+          closeTime: hour.closeTime,
+        });
+        savedHours.push(savedHour);
+      }
+
+      res.json({
+        message: "Opening hours saved successfully",
+        hours: savedHours
+      });
+    } catch (error) {
+      console.error("Error saving opening hours:", error);
+      res.status(500).json({ message: "Failed to save opening hours" });
+    }
+  });
+
   // Restaurant statistics route
   app.get("/api/tenants/:tenantId/restaurants/:restaurantId/statistics", validateTenant, async (req, res) => {
     try {

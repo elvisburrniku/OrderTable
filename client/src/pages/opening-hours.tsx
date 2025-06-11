@@ -1,11 +1,17 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useParams } from "wouter";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
 import { Clock } from "lucide-react";
+import { useToast } from "@/hooks/use-toast";
+import { apiRequest } from "@/lib/queryClient";
 
 export default function OpeningHours() {
   const { tenantId } = useParams();
+  const { toast } = useToast();
+  const queryClient = useQueryClient();
+  const restaurantId = 12; // Assuming restaurant ID 12 based on logs
 
   const [hours, setHours] = useState([
     { day: "Sunday", enabled: true, open: "09:00", close: "10:00" },
@@ -16,6 +22,54 @@ export default function OpeningHours() {
     { day: "Friday", enabled: true, open: "09:00", close: "11:00" },
     { day: "Saturday", enabled: true, open: "05:00", close: "09:00" }
   ]);
+
+  // Load existing opening hours
+  const { data: existingHours } = useQuery({
+    queryKey: [`/api/tenants/${tenantId}/restaurants/${restaurantId}/opening-hours`],
+    enabled: !!tenantId,
+  });
+
+  // Load existing hours into state when data is available
+  useEffect(() => {
+    if (existingHours && Array.isArray(existingHours) && existingHours.length > 0) {
+      const formattedHours = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"].map((day, index) => {
+        const existingHour = existingHours.find((h: any) => h.dayOfWeek === index);
+        return {
+          day,
+          enabled: existingHour ? existingHour.isOpen : true,
+          open: existingHour ? existingHour.openTime : "09:00",
+          close: existingHour ? existingHour.closeTime : "17:00"
+        };
+      });
+      setHours(formattedHours);
+    }
+  }, [existingHours]);
+
+  // Save opening hours mutation
+  const saveHoursMutation = useMutation({
+    mutationFn: async () => {
+      const hoursData = hours.map((hour, index) => ({
+        dayOfWeek: index,
+        isOpen: hour.enabled,
+        openTime: hour.open,
+        closeTime: hour.close,
+      }));
+      
+      const response = await apiRequest("POST", `/api/tenants/${tenantId}/restaurants/${restaurantId}/opening-hours`, hoursData);
+      return response.json();
+    },
+    onSuccess: () => {
+      toast({ title: "Opening hours saved successfully!" });
+      queryClient.invalidateQueries({ queryKey: [`/api/tenants/${tenantId}/restaurants/${restaurantId}/opening-hours`] });
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Error saving opening hours",
+        description: error.message,
+        variant: "destructive",
+      });
+    },
+  });
 
   const toggleDay = (index: number) => {
     setHours(prev => prev.map((hour, i) => 
@@ -86,8 +140,12 @@ export default function OpeningHours() {
       </div>
 
       <div className="mt-6 flex justify-end">
-        <Button className="bg-green-600 hover:bg-green-700 text-white px-6 py-2">
-          Save Opening Hours
+        <Button 
+          onClick={() => saveHoursMutation.mutate()}
+          disabled={saveHoursMutation.isPending}
+          className="bg-green-600 hover:bg-green-700 text-white px-6 py-2"
+        >
+          {saveHoursMutation.isPending ? "Saving..." : "Save Opening Hours"}
         </Button>
       </div>
     </div>
