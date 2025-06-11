@@ -307,72 +307,46 @@ export default function SmsMessages() {
         </div>
       </div>
 
-      <div className="flex">
-        {/* Sidebar */}
-        <div className="w-64 bg-white border-r min-h-screen">
-          <div className="p-6">
-            <div className="space-y-2">
-              <a href="/customers" className="flex items-center space-x-2 text-gray-600 hover:bg-gray-50 px-3 py-2 rounded">
-                <span className="w-2 h-2 bg-gray-400 rounded-full"></span>
-                <span>Customers</span>
-              </a>
-              <div className="flex items-center space-x-2 text-green-600 bg-green-50 px-3 py-2 rounded">
-                <span className="w-2 h-2 bg-green-600 rounded-full"></span>
-                <span className="font-medium">SMS messages</span>
-              </div>
-              <a href="/feedback-responses" className="flex items-center space-x-2 text-gray-600 hover:bg-gray-50 px-3 py-2 rounded">
-                <span className="w-2 h-2 bg-gray-400 rounded-full"></span>
-                <span>Feedback responses</span>
-              </a>
-              <a href="#" className="flex items-center space-x-2 text-gray-600 hover:bg-gray-50 px-3 py-2 rounded">
-                <span className="w-2 h-2 bg-gray-400 rounded-full"></span>
-                <span>Newsletter</span>
-              </a>
-            </div>
+      {/* Main Content */}
+      <div className="p-6">
+        <div className="bg-white rounded-lg shadow">
+          <div className="p-6 border-b flex items-center justify-between">
+            <h2 className="text-lg font-semibold">SMS Messages</h2>
+            <Button 
+              onClick={() => setShowCompose(true)}
+              className="bg-green-600 hover:bg-green-700 text-white flex items-center space-x-2"
+            >
+              <Plus className="w-4 h-4" />
+              <span>New Message</span>
+            </Button>
           </div>
-        </div>
 
-        {/* Main Content */}
-        <div className="flex-1 p-6">
-          <div className="bg-white rounded-lg shadow">
-            <div className="p-6 border-b flex items-center justify-between">
-              <h2 className="text-lg font-semibold">SMS Messages</h2>
-              <Button 
-                onClick={() => setShowCompose(true)}
-                className="bg-green-600 hover:bg-green-700 text-white flex items-center space-x-2"
-              >
-                <Plus className="w-4 h-4" />
-                <span>New Message</span>
-              </Button>
-            </div>
-
-            <div className="p-6">
-              <div className="bg-gray-50 rounded-lg p-6">
-                {isLoading ? (
-                  <div className="text-center text-gray-500">Loading...</div>
-                ) : messages.length === 0 ? (
-                  <div className="text-center text-gray-500">
-                    No SMS messages sent yet
-                  </div>
-                ) : (
-                  <div className="space-y-4">
-                    {messages.map((message: any) => (
-                      <div key={message.id} className="bg-white p-4 rounded-lg border">
-                        <div className="flex items-center justify-between mb-2">
-                          <h3 className="font-medium">{message.name}</h3>
-                          <Badge variant="secondary">{message.messageType}</Badge>
-                        </div>
-                        <p className="text-sm text-gray-600 mb-2">{message.content}</p>
-                        <div className="text-xs text-gray-500">
-                          Sent: {format(new Date(message.createdAt), "MMM dd, yyyy HH:mm")} | 
-                          Language: {message.language} | 
-                          Recipients: {JSON.parse(message.receivers).length}
-                        </div>
+          <div className="p-6">
+            <div className="bg-gray-50 rounded-lg p-6">
+              {isLoading ? (
+                <div className="text-center text-gray-500">Loading...</div>
+              ) : messages.length === 0 ? (
+                <div className="text-center text-gray-500">
+                  No SMS messages sent yet
+                </div>
+              ) : (
+                <div className="space-y-4">
+                  {messages.map((message: any) => (
+                    <div key={message.id} className="bg-white p-4 rounded-lg border">
+                      <div className="flex items-center justify-between mb-2">
+                        <h3 className="font-medium">{message.name}</h3>
+                        <Badge variant="secondary">{message.messageType}</Badge>
                       </div>
-                    ))}
-                  </div>
-                )}
-              </div>
+                      <p className="text-sm text-gray-600 mb-2">{message.content}</p>
+                      <div className="text-xs text-gray-500">
+                        Sent: {format(new Date(message.createdAt), "MMM dd, yyyy HH:mm")} | 
+                        Language: {message.language} | 
+                        Recipients: {JSON.parse(message.receivers).length}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
             </div>
           </div>
         </div>
