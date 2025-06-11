@@ -951,7 +951,9 @@ export class DatabaseStorage implements IStorage {
   }
 
   async createActivityLog(log: any): Promise<any> {
-    throw new Error("Method not implemented");
+    if (!this.db) throw new Error("Database connection not available");
+    const result = await this.db.insert(activityLog).values(log).returning();
+    return result[0];
   }
 
   async getTimeSlotsByRestaurant(restaurantId: number, date?: string): Promise<any[]> {
