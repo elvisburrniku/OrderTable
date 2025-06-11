@@ -9,6 +9,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
+import { useAuth } from "@/lib/auth.tsx";
 import { UserPlus, Calendar, Clock, Users, Phone, FileText } from "lucide-react";
 
 interface WalkInBookingProps {
@@ -23,7 +24,8 @@ interface Table {
   isActive: boolean;
 }
 
-export function WalkInBooking({ restaurantId, tenantId }: WalkInBookingProps) {
+function WalkInBookingButton() {
+  const { restaurant } = useAuth();
   const [open, setOpen] = useState(false);
   const [formData, setFormData] = useState({
     guestCount: 2,
@@ -42,13 +44,13 @@ export function WalkInBooking({ restaurantId, tenantId }: WalkInBookingProps) {
 
   // Fetch available tables
   const { data: tables = [] } = useQuery<Table[]>({
-    queryKey: [`/api/tenants/${tenantId}/restaurants/${restaurantId}/tables`],
-    enabled: open
+    queryKey: [`/api/tenants/${restaurant?.tenantId}/restaurants/${restaurant?.id}/tables`],
+    enabled: open && !!restaurant?.id && !!restaurant?.tenantId
   });
 
   const walkInMutation = useMutation({
     mutationFn: async (data: typeof formData) => {
-      const response = await fetch(`/api/tenants/${tenantId}/restaurants/${restaurantId}/walk-in-booking`, {
+      const response = await fetch(`/api/tenants/${restaurant?.tenantId}/restaurants/${restaurant?.id}/bookings`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -313,3 +315,5 @@ export function WalkInBooking({ restaurantId, tenantId }: WalkInBookingProps) {
     </Dialog>
   );
 }
+
+export default WalkInBookingButton;
