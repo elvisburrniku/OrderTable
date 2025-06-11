@@ -4019,11 +4019,19 @@ app.put("/api/tenants/:tenantId/bookings/:id", validateTenant, async (req, res) 
       const currentTime = currentHour * 60 + currentMinute;
 
       const currentOccupancy = todayBookings.filter(booking => {
+        if (!booking.startTime) return false;
+        // If no end time, assume 2 hour duration
+        const endTime = booking.endTime || (() => {
+          const [hours, minutes] = booking.startTime.split(':');
+          const endHours = (parseInt(hours) + 2) % 24;
+          return `${endHours.toString().padStart(2, '0')}:${minutes}`;
+        })();
+        
         const startParts = booking.startTime.split(':');
-        const endParts = booking.endTime.split(':');
-        const startTime = parseInt(startParts[0]) * 60 + parseInt(startParts[1]);
-        const endTime = parseInt(endParts[0]) * 60 + parseInt(endParts[1]);
-        return currentTime >= startTime && currentTime <= endTime && booking.status === 'confirmed';
+        const endParts = endTime.split(':');
+        const startTimeMinutes = parseInt(startParts[0]) * 60 + parseInt(startParts[1]);
+        const endTimeMinutes = parseInt(endParts[0]) * 60 + parseInt(endParts[1]);
+        return currentTime >= startTimeMinutes && currentTime <= endTimeMinutes && booking.status === 'confirmed';
       }).length;
 
       // Calculate statistics
@@ -4040,8 +4048,16 @@ app.put("/api/tenants/:tenantId/bookings/:id", validateTenant, async (req, res) 
 
       // Calculate no-shows (past bookings with pending status)
       const noShows = tenantBookings.filter(booking => {
+        if (!booking.startTime) return false;
+        // If no end time, assume 2 hour duration
+        const endTime = booking.endTime || (() => {
+          const [hours, minutes] = booking.startTime.split(':');
+          const endHours = (parseInt(hours) + 2) % 24;
+          return `${endHours.toString().padStart(2, '0')}:${minutes}`;
+        })();
+        
         const bookingDate = new Date(booking.bookingDate);
-        const endTimeParts = booking.endTime.split(':');
+        const endTimeParts = endTime.split(':');
         const bookingEndTime = new Date(bookingDate);
         bookingEndTime.setHours(parseInt(endTimeParts[0]), parseInt(endTimeParts[1]));
         return bookingEndTime < now && booking.status === 'pending';
@@ -4063,6 +4079,7 @@ app.put("/api/tenants/:tenantId/bookings/:id", validateTenant, async (req, res) 
 
       // Calculate peak hours analysis
       const hourlyBookings = tenantBookings.reduce((acc: any, booking) => {
+        if (!booking.startTime) return acc;
         const hour = parseInt(booking.startTime.split(':')[0]);
         acc[hour] = (acc[hour] || 0) + 1;
         return acc;
