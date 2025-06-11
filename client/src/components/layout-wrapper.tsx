@@ -31,9 +31,6 @@ export function LayoutWrapper({ children }: LayoutWrapperProps) {
   // Render with sidebar for authenticated routes
   return (
     <div className="flex min-h-screen bg-gray-50">
-      <div className="w-64 bg-gray-50 border-r border-gray-200 p-4">
-        <div className="text-sm text-gray-600">Dashboard Navigation</div>
-      </div>
       <main className="flex-1 overflow-auto">
         {children}
       </main>
