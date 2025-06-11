@@ -63,6 +63,7 @@ import GuestBooking from "./pages/guest-booking";
 import SetupWizard from "./pages/setup-wizard";
 import ChangeRequests from "./pages/change-requests";
 import Calendar from "./pages/calendar";
+import EnhancedCalendar from "./pages/enhanced-calendar";
 import { SetupGuard } from "./components/setup-guard";
 
 function App() {
@@ -82,7 +83,8 @@ function App() {
               <Route path="/:tenantId/bookings" component={Bookings} />
               <Route path="/:tenantId/bookings/:id" component={BookingDetail} />
               <Route path="/:tenantId/change-requests" component={ChangeRequests} />
-              <Route path="/:tenantId/calendar" component={Calendar} />
+              <Route path="/:tenantId/calendar" component={EnhancedCalendar} />
+              <Route path="/:tenantId/calendar-legacy" component={Calendar} />
               <Route path="/:tenantId/tables" component={Tables} />
               <Route path="/:tenantId/customers" component={Customers} />
               <Route path="/:tenantId/integrations" component={Integrations} />
