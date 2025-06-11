@@ -2165,44 +2165,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Restaurant statistics route
-  app.get("/api/tenants/:tenantId/restaurants/:restaurantId/statistics", validateTenant, async (req, res) => {
-    try {
-      const restaurantId = parseInt(req.params.restaurantId);
-      const tenantId = parseInt(req.params.tenantId);
-
-      const restaurant = await storage.getRestaurantById(restaurantId);
-      if (!restaurant || restaurant.tenantId !== tenantId) {
-        return res.status(404).json({ message: "Restaurant not found" });
-      }
-
-      // Get booking statistics
-      const bookings = await storage.getBookingsByRestaurant(restaurantId);
-      const totalBookings = bookings.length;
-      const todayBookings = bookings.filter(b => {
-        const today = new Date().toISOString().split('T')[0];
-        return b.bookingDate.toISOString().split('T')[0] === today;
-      }).length;
-
-      // Get customer count
-      const customers = await storage.getCustomersByRestaurant(restaurantId);
-      const totalCustomers = customers.length;
-
-      // Get table count
-      const tables = await storage.getTablesByRestaurant(restaurantId);
-      const totalTables = tables.length;
-
-      res.json({
-        totalBookings,
-        todayBookings,
-        totalCustomers,
-        totalTables
-      });
-    } catch (error) {
-      console.error("Error fetching statistics:", error);
-      res.status(500).json({ message: "Internal server error" });
-    }
-  });
+  // Statistics endpoint moved to comprehensive implementation below
 
   // Restaurant management routes
   app.put("/api/tenants/:tenantId/restaurants/:id", validateTenant, async (req, res) => {
