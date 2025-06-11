@@ -1,6 +1,6 @@
 import { useEffect, useState, useRef } from 'react';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader } from '@/components/ui/card';
+import { Card, CardContent } from '@/components/ui/card';
 import { Progress } from '@/components/ui/progress';
 import { X, ArrowLeft, ArrowRight, SkipForward } from 'lucide-react';
 import { TutorialStep } from '@/hooks/useOnboardingTutorial';
