@@ -479,6 +479,25 @@ export default function Dashboard() {
   };
 
   const getOpeningHoursForDay = (date: Date) => {
+    // Check if there's a special period that affects this date
+    const dateStr = format(date, 'yyyy-MM-dd');
+    const specialPeriod = specialPeriods.find((period: any) => {
+      const startDate = new Date(period.startDate);
+      const endDate = new Date(period.endDate);
+      return date >= startDate && date <= endDate;
+    });
+
+    // If there's a special period, use its settings
+    if (specialPeriod) {
+      return {
+        isOpen: specialPeriod.isOpen,
+        openTime: specialPeriod.openTime || "09:00",
+        closeTime: specialPeriod.closeTime || "22:00",
+        dayOfWeek: date.getDay()
+      };
+    }
+
+    // Otherwise, use regular opening hours
     if (!openingHours || !Array.isArray(openingHours)) {
       return null;
     }
