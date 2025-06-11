@@ -13,6 +13,7 @@ import Register from "./pages/register";
 import Dashboard from "./pages/dashboard";
 import Bookings from "./pages/bookings";
 import Calendar from "./pages/calendar";
+import Conflicts from "./pages/conflicts";
 import BookingDetail from "./pages/booking-detail";
 import Tables from "./pages/tables";
 import Customers from "./pages/customers";

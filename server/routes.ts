@@ -5464,6 +5464,478 @@ app.put("/api/tenants/:tenantId/bookings/:id", validateTenant, async (req, res) 
     }
   });
 
+  // ===============================
+  // CONFLICT RESOLUTION SYSTEM API
+  // ===============================
+
+  // Conflict detection and analysis algorithms
+  const ConflictDetector = {
+    // Detect table double bookings
+    detectTableDoubleBookings: (bookings: any[]) => {
+      const conflicts: any[] = [];
+      const tableBookings = new Map<number, any[]>();
+
+      // Group bookings by table
+      bookings.forEach(booking => {
+        if (booking.tableId) {
+          if (!tableBookings.has(booking.tableId)) {
+            tableBookings.set(booking.tableId, []);
+          }
+          tableBookings.get(booking.tableId)!.push(booking);
+        }
+      });
+
+      // Check for overlaps within each table
+      tableBookings.forEach((tableBookingList, tableId) => {
+        for (let i = 0; i < tableBookingList.length; i++) {
+          for (let j = i + 1; j < tableBookingList.length; j++) {
+            const booking1 = tableBookingList[i];
+            const booking2 = tableBookingList[j];
+
+            if (booking1.bookingDate === booking2.bookingDate) {
+              const start1 = timeToMinutes(booking1.startTime);
+              const end1 = timeToMinutes(booking1.endTime || booking1.startTime) + 120; // Default 2h duration
+              const start2 = timeToMinutes(booking2.startTime);
+              const end2 = timeToMinutes(booking2.endTime || booking2.startTime) + 120;
+
+              if (start1 < end2 && start2 < end1) {
+                conflicts.push({
+                  id: `table-conflict-${tableId}-${Date.now()}`,
+                  type: 'table_double_booking',
+                  severity: 'high',
+                  bookings: [booking1, booking2],
+                  autoResolvable: true,
+                  createdAt: new Date().toISOString(),
+                  suggestedResolutions: ConflictResolver.generateTableResolutions(booking1, booking2, tableId)
+                });
+              }
+            }
+          }
+        }
+      });
+
+      return conflicts;
+    },
+
+    // Detect capacity exceeded situations
+    detectCapacityExceeded: (bookings: any[], tables: any[]) => {
+      const conflicts: any[] = [];
+      const tableCapacities = new Map(tables.map(t => [t.id, t.capacity]));
+
+      bookings.forEach(booking => {
+        if (booking.tableId && tableCapacities.has(booking.tableId)) {
+          const tableCapacity = tableCapacities.get(booking.tableId);
+          if (booking.guestCount > tableCapacity) {
+            conflicts.push({
+              id: `capacity-conflict-${booking.id}-${Date.now()}`,
+              type: 'capacity_exceeded',
+              severity: 'medium',
+              bookings: [booking],
+              autoResolvable: true,
+              createdAt: new Date().toISOString(),
+              suggestedResolutions: ConflictResolver.generateCapacityResolutions(booking, tables)
+            });
+          }
+        }
+      });
+
+      return conflicts;
+    },
+
+    // Detect time overlaps across restaurant
+    detectTimeOverlaps: (bookings: any[]) => {
+      const conflicts: any[] = [];
+      const dateGroups = new Map<string, any[]>();
+
+      // Group by date
+      bookings.forEach(booking => {
+        if (!dateGroups.has(booking.bookingDate)) {
+          dateGroups.set(booking.bookingDate, []);
+        }
+        dateGroups.get(booking.bookingDate)!.push(booking);
+      });
+
+      // Check for problematic overlaps (too many concurrent bookings)
+      dateGroups.forEach((dayBookings, date) => {
+        const timeSlots = new Map<string, any[]>();
+        
+        dayBookings.forEach(booking => {
+          const startTime = booking.startTime;
+          if (!timeSlots.has(startTime)) {
+            timeSlots.set(startTime, []);
+          }
+          timeSlots.get(startTime)!.push(booking);
+        });
+
+        timeSlots.forEach((slotBookings, time) => {
+          if (slotBookings.length > 3) { // More than 3 bookings at same time might be problematic
+            conflicts.push({
+              id: `time-overlap-${date}-${time}-${Date.now()}`,
+              type: 'time_overlap',
+              severity: 'low',
+              bookings: slotBookings,
+              autoResolvable: true,
+              createdAt: new Date().toISOString(),
+              suggestedResolutions: ConflictResolver.generateTimeResolutions(slotBookings)
+            });
+          }
+        });
+      });
+
+      return conflicts;
+    }
+  };
+
+  // Conflict resolution algorithm
+  const ConflictResolver = {
+    generateTableResolutions: (booking1: any, booking2: any, tableId: number) => {
+      const resolutions: any[] = [];
+
+      // Resolution 1: Move booking2 to different table
+      resolutions.push({
+        id: `reassign-${booking2.id}`,
+        type: 'reassign_table',
+        description: `Move ${booking2.customerName}'s booking to a different table`,
+        impact: 'minimal',
+        confidence: 85,
+        estimatedCustomerSatisfaction: 90,
+        details: {
+          bookingToMove: booking2.id,
+          originalTableId: tableId,
+          compensationSuggested: false
+        }
+      });
+
+      // Resolution 2: Adjust time for one booking
+      resolutions.push({
+        id: `adjust-time-${booking2.id}`,
+        type: 'adjust_time',
+        description: `Adjust ${booking2.customerName}'s booking time by 30 minutes`,
+        impact: 'moderate',
+        confidence: 75,
+        estimatedCustomerSatisfaction: 80,
+        details: {
+          bookingToAdjust: booking2.id,
+          newTime: this.calculateAdjustedTime(booking2.startTime, 30),
+          compensationSuggested: true
+        }
+      });
+
+      // Resolution 3: Contact customers for preference
+      resolutions.push({
+        id: `contact-customers-${tableId}`,
+        type: 'contact_customers',
+        description: 'Contact both customers to resolve conflict manually',
+        impact: 'significant',
+        confidence: 95,
+        estimatedCustomerSatisfaction: 85,
+        details: {
+          contactBoth: true,
+          compensationSuggested: true
+        }
+      });
+
+      return resolutions;
+    },
+
+    generateCapacityResolutions: (booking: any, tables: any[]) => {
+      const resolutions: any[] = [];
+      const suitableTables = tables.filter(t => t.capacity >= booking.guestCount);
+
+      if (suitableTables.length > 0) {
+        // Resolution 1: Upgrade to larger table
+        const bestTable = suitableTables.reduce((best, current) => 
+          current.capacity < best.capacity ? current : best
+        );
+
+        resolutions.push({
+          id: `upgrade-table-${booking.id}`,
+          type: 'upgrade_table',
+          description: `Upgrade to ${bestTable.name} (capacity: ${bestTable.capacity})`,
+          impact: 'minimal',
+          confidence: 90,
+          estimatedCustomerSatisfaction: 95,
+          details: {
+            newTableId: bestTable.id,
+            upgrade: true,
+            compensationSuggested: false
+          }
+        });
+      }
+
+      // Resolution 2: Split party across multiple tables
+      if (booking.guestCount > 8) {
+        resolutions.push({
+          id: `split-party-${booking.id}`,
+          type: 'split_party',
+          description: 'Split large party across adjacent tables',
+          impact: 'moderate',
+          confidence: 70,
+          estimatedCustomerSatisfaction: 75,
+          details: {
+            splitSuggested: true,
+            tablesNeeded: Math.ceil(booking.guestCount / 6),
+            compensationSuggested: true
+          }
+        });
+      }
+
+      return resolutions;
+    },
+
+    generateTimeResolutions: (bookings: any[]) => {
+      const resolutions: any[] = [];
+
+      // Resolution 1: Stagger booking times
+      resolutions.push({
+        id: `stagger-times-${Date.now()}`,
+        type: 'adjust_time',
+        description: 'Stagger booking times by 15-minute intervals',
+        impact: 'minimal',
+        confidence: 80,
+        estimatedCustomerSatisfaction: 85,
+        details: {
+          staggerInterval: 15,
+          affectedBookings: bookings.map(b => b.id)
+        }
+      });
+
+      return resolutions;
+    },
+
+    calculateAdjustedTime: (originalTime: string, minutesOffset: number) => {
+      const [hours, minutes] = originalTime.split(':').map(Number);
+      const totalMinutes = hours * 60 + minutes + minutesOffset;
+      const newHours = Math.floor(totalMinutes / 60) % 24;
+      const newMinutes = totalMinutes % 60;
+      return `${newHours.toString().padStart(2, '0')}:${newMinutes.toString().padStart(2, '0')}`;
+    }
+  };
+
+  // Get all conflicts for a restaurant
+  app.get("/api/tenants/:tenantId/restaurants/:restaurantId/conflicts", validateTenant, async (req, res) => {
+    try {
+      const restaurantId = parseInt(req.params.restaurantId);
+      const tenantId = parseInt(req.params.tenantId);
+
+      const restaurant = await storage.getRestaurantById(restaurantId);
+      if (!restaurant || restaurant.tenantId !== tenantId) {
+        return res.status(404).json({ message: "Restaurant not found" });
+      }
+
+      // Get all current bookings
+      const bookings = await storage.getBookingsByRestaurant(restaurantId);
+      const tables = await storage.getTablesByRestaurant(restaurantId);
+
+      // Detect various types of conflicts
+      const tableConflicts = ConflictDetector.detectTableDoubleBookings(bookings);
+      const capacityConflicts = ConflictDetector.detectCapacityExceeded(bookings, tables);
+      const timeConflicts = ConflictDetector.detectTimeOverlaps(bookings);
+
+      const allConflicts = [...tableConflicts, ...capacityConflicts, ...timeConflicts];
+
+      res.json(allConflicts);
+    } catch (error) {
+      console.error("Error fetching conflicts:", error);
+      res.status(500).json({ message: "Internal server error" });
+    }
+  });
+
+  // Scan for new conflicts
+  app.post("/api/tenants/:tenantId/restaurants/:restaurantId/conflicts/scan", validateTenant, async (req, res) => {
+    try {
+      const restaurantId = parseInt(req.params.restaurantId);
+      const tenantId = parseInt(req.params.tenantId);
+
+      const restaurant = await storage.getRestaurantById(restaurantId);
+      if (!restaurant || restaurant.tenantId !== tenantId) {
+        return res.status(404).json({ message: "Restaurant not found" });
+      }
+
+      // Force refresh and scan for conflicts
+      const bookings = await storage.getBookingsByRestaurant(restaurantId);
+      const tables = await storage.getTablesByRestaurant(restaurantId);
+
+      const conflicts = [
+        ...ConflictDetector.detectTableDoubleBookings(bookings),
+        ...ConflictDetector.detectCapacityExceeded(bookings, tables),
+        ...ConflictDetector.detectTimeOverlaps(bookings)
+      ];
+
+      res.json({ 
+        message: "Conflict scan completed", 
+        conflictsFound: conflicts.length,
+        conflicts 
+      });
+    } catch (error) {
+      console.error("Error scanning for conflicts:", error);
+      res.status(500).json({ message: "Internal server error" });
+    }
+  });
+
+  // Auto-resolve a conflict
+  app.post("/api/tenants/:tenantId/restaurants/:restaurantId/conflicts/:conflictId/auto-resolve", validateTenant, async (req, res) => {
+    try {
+      const restaurantId = parseInt(req.params.restaurantId);
+      const tenantId = parseInt(req.params.tenantId);
+      const conflictId = req.params.conflictId;
+
+      const restaurant = await storage.getRestaurantById(restaurantId);
+      if (!restaurant || restaurant.tenantId !== tenantId) {
+        return res.status(404).json({ message: "Restaurant not found" });
+      }
+
+      // Get current conflicts to find the specific one
+      const bookings = await storage.getBookingsByRestaurant(restaurantId);
+      const tables = await storage.getTablesByRestaurant(restaurantId);
+      
+      const allConflicts = [
+        ...ConflictDetector.detectTableDoubleBookings(bookings),
+        ...ConflictDetector.detectCapacityExceeded(bookings, tables),
+        ...ConflictDetector.detectTimeOverlaps(bookings)
+      ];
+
+      const conflict = allConflicts.find(c => c.id === conflictId);
+      if (!conflict) {
+        return res.status(404).json({ message: "Conflict not found" });
+      }
+
+      if (!conflict.autoResolvable) {
+        return res.status(400).json({ message: "Conflict is not auto-resolvable" });
+      }
+
+      // Apply the best resolution automatically
+      const bestResolution = conflict.suggestedResolutions[0];
+      
+      if (bestResolution.type === 'reassign_table') {
+        // Find available table and reassign
+        const availableTables = tables.filter(t => 
+          t.capacity >= conflict.bookings[0].guestCount && 
+          t.id !== conflict.bookings[0].tableId
+        );
+        
+        if (availableTables.length > 0) {
+          const newTable = availableTables[0];
+          await storage.updateBooking(conflict.bookings[0].id, {
+            tableId: newTable.id
+          });
+
+          // Send notification to customer about table change
+          if (emailService) {
+            try {
+              await emailService.sendBookingChangeNotification(
+                conflict.bookings[0].customerEmail,
+                conflict.bookings[0].customerName,
+                {
+                  ...conflict.bookings[0],
+                  tableName: newTable.name,
+                  changeReason: 'Table conflict resolved automatically'
+                }
+              );
+            } catch (emailError) {
+              console.error('Failed to send change notification:', emailError);
+            }
+          }
+        }
+      } else if (bestResolution.type === 'adjust_time') {
+        // Adjust booking time
+        await storage.updateBooking(conflict.bookings[0].id, {
+          startTime: bestResolution.details.newTime
+        });
+
+        // Send notification about time change
+        if (emailService) {
+          try {
+            await emailService.sendBookingChangeNotification(
+              conflict.bookings[0].customerEmail,
+              conflict.bookings[0].customerName,
+              {
+                ...conflict.bookings[0],
+                startTime: bestResolution.details.newTime,
+                changeReason: 'Scheduling conflict resolved automatically'
+              }
+            );
+          } catch (emailError) {
+            console.error('Failed to send change notification:', emailError);
+          }
+        }
+      }
+
+      res.json({ 
+        message: "Conflict auto-resolved successfully",
+        resolution: bestResolution,
+        conflictId 
+      });
+    } catch (error) {
+      console.error("Error auto-resolving conflict:", error);
+      res.status(500).json({ message: "Internal server error" });
+    }
+  });
+
+  // Manually resolve a conflict
+  app.post("/api/tenants/:tenantId/restaurants/:restaurantId/conflicts/:conflictId/resolve", validateTenant, async (req, res) => {
+    try {
+      const restaurantId = parseInt(req.params.restaurantId);
+      const tenantId = parseInt(req.params.tenantId);
+      const conflictId = req.params.conflictId;
+      const { resolutionId } = req.body;
+
+      const restaurant = await storage.getRestaurantById(restaurantId);
+      if (!restaurant || restaurant.tenantId !== tenantId) {
+        return res.status(404).json({ message: "Restaurant not found" });
+      }
+
+      // Get the conflict and apply the selected resolution
+      const bookings = await storage.getBookingsByRestaurant(restaurantId);
+      const tables = await storage.getTablesByRestaurant(restaurantId);
+      
+      const allConflicts = [
+        ...ConflictDetector.detectTableDoubleBookings(bookings),
+        ...ConflictDetector.detectCapacityExceeded(bookings, tables),
+        ...ConflictDetector.detectTimeOverlaps(bookings)
+      ];
+
+      const conflict = allConflicts.find(c => c.id === conflictId);
+      if (!conflict) {
+        return res.status(404).json({ message: "Conflict not found" });
+      }
+
+      const resolution = conflict.suggestedResolutions.find((r: any) => r.id === resolutionId);
+      if (!resolution) {
+        return res.status(404).json({ message: "Resolution not found" });
+      }
+
+      // Apply the selected resolution
+      if (resolution.type === 'reassign_table' && resolution.details.newTableId) {
+        await storage.updateBooking(conflict.bookings[0].id, {
+          tableId: resolution.details.newTableId
+        });
+      } else if (resolution.type === 'adjust_time' && resolution.details.newTime) {
+        await storage.updateBooking(conflict.bookings[0].id, {
+          startTime: resolution.details.newTime
+        });
+      }
+
+      // Log the manual resolution
+      await storage.createActivityLog({
+        restaurantId,
+        tenantId,
+        action: 'conflict_resolved',
+        details: `Manually resolved conflict ${conflictId} using resolution ${resolutionId}`,
+        timestamp: new Date().toISOString()
+      });
+
+      res.json({ 
+        message: "Conflict resolved successfully",
+        resolution,
+        conflictId 
+      });
+    } catch (error) {
+      console.error("Error resolving conflict:", error);
+      res.status(500).json({ message: "Internal server error" });
+    }
+  });
+
   const httpServer = createServer(app);
 
   // Setup WebSocket server for real-time notifications
