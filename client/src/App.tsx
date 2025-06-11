@@ -60,7 +60,7 @@ import CustomerFeedback from "./pages/customer-feedback";
 import TableFeedback from "./pages/table-feedback";
 import FeedbackResponsesPopup from "./pages/feedback-responses-popup";
 import Contact from "./pages/contact";
-import SimpleGuest from "./pages/simple-guest";
+import MinimalGuest from "./pages/minimal-guest";
 import SetupWizard from "./pages/setup-wizard";
 import { SetupGuard } from "./components/setup-guard";
 
@@ -128,7 +128,7 @@ function App() {
             <Route path="/feedback-responses" component={FeedbackResponses} />
             <Route path="/feedback-responses-popup" component={FeedbackResponsesPopup} />
             <Route path="/contact" component={Contact} />
-            <Route path="/guest-booking/:tenantId/:restaurantId" component={SimpleGuest} />
+            <Route path="/guest-booking/:tenantId/:restaurantId" component={MinimalGuest} />
             <Route component={NotFound} />
           </Switch>
         </LayoutWrapper>
