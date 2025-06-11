@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Calendar, Users, Clock, Zap, BarChart3, FileText, MessageSquare, CreditCard, Settings, Cog, ChevronDown, ChevronRight, MapPin, Table, Grid3X3, Layout, Armchair, Filter, Mail, HelpCircle, CalendarDays, Package, Layers, Scissors, AlertTriangle } from "lucide-react";
+import { Calendar, Users, Clock, Zap, BarChart3, FileText, MessageSquare, CreditCard, Settings, Cog, ChevronDown, ChevronRight, MapPin, Table, Grid3X3, Layout, Armchair, Filter, Mail, HelpCircle, CalendarDays, Package, Layers, Scissors, AlertTriangle, Thermometer } from "lucide-react";
 import { useLocation, Link } from "wouter";
 
 interface SidebarProps {
@@ -51,6 +51,12 @@ export default function DashboardSidebar({ tenantId, restaurantId }: SidebarProp
       icon: CalendarDays,
       href: `/${tenantId}/calendar`,
       color: "text-teal-600"
+    },
+    {
+      name: "Heat Map",
+      icon: Thermometer,
+      href: `/${tenantId}/heat-map`,
+      color: "text-orange-600"
     },
     {
       name: "Conflicts",

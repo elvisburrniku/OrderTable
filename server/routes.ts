@@ -5712,6 +5712,151 @@ app.put("/api/tenants/:tenantId/bookings/:id", validateTenant, async (req, res) 
     }
   };
 
+  // Get heat map data for restaurant seating analytics
+  app.get("/api/tenants/:tenantId/restaurants/:restaurantId/heat-map", validateTenant, async (req, res) => {
+    try {
+      const tenantId = parseInt(req.params.tenantId);
+      const restaurantId = parseInt(req.params.restaurantId);
+      const timeRange = req.query.timeRange as string || 'today';
+
+      const restaurant = await storage.getRestaurantById(restaurantId);
+      if (!restaurant || restaurant.tenantId !== tenantId) {
+        return res.status(404).json({ message: "Restaurant not found" });
+      }
+
+      // Calculate date range based on timeRange parameter
+      const now = new Date();
+      let startDate: Date;
+      let endDate: Date = new Date(now);
+
+      switch (timeRange) {
+        case 'today':
+          startDate = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+          break;
+        case 'week':
+          startDate = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+          break;
+        case 'month':
+          startDate = new Date(now.getFullYear(), now.getMonth(), 1);
+          break;
+        default:
+          startDate = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+      }
+
+      // Get all tables for this restaurant
+      const tables = await storage.getTablesByRestaurant(restaurantId);
+      
+      // Get bookings within the time range
+      const allBookings = await storage.getBookingsByRestaurant(restaurantId);
+      const filteredBookings = allBookings.filter(booking => {
+        const bookingDate = new Date(booking.bookingDate);
+        return bookingDate >= startDate && bookingDate <= endDate;
+      });
+
+      // Calculate heat map data for each table
+      const heatMapData = tables.map(table => {
+        const tableBookings = filteredBookings.filter(booking => booking.tableId === table.id);
+        
+        // Calculate metrics
+        const bookingCount = tableBookings.length;
+        const totalRevenue = tableBookings.reduce((sum, booking) => {
+          // Estimate revenue based on guest count and average price per person
+          const estimatedRevenue = booking.guestCount * 45; // $45 average per person
+          return sum + estimatedRevenue;
+        }, 0);
+
+        // Calculate occupancy rate
+        const totalTimeSlots = timeRange === 'today' ? 14 : (timeRange === 'week' ? 98 : 420); // slots per day
+        const occupiedSlots = tableBookings.reduce((sum, booking) => {
+          const startTime = new Date(`${booking.bookingDate} ${booking.startTime}`);
+          const endTime = new Date(`${booking.bookingDate} ${booking.endTime}`);
+          const duration = (endTime.getTime() - startTime.getTime()) / (1000 * 60 * 60); // hours
+          return sum + Math.ceil(duration * 2); // 30-minute slots
+        }, 0);
+        const occupancyRate = Math.min((occupiedSlots / totalTimeSlots) * 100, 100);
+
+        // Calculate heat score (composite metric)
+        const bookingScore = Math.min((bookingCount / 10) * 100, 100); // normalize to 0-100
+        const revenueScore = Math.min((totalRevenue / 1000) * 100, 100); // normalize to 0-100
+        const heatScore = (occupancyRate * 0.4) + (bookingScore * 0.3) + (revenueScore * 0.3);
+
+        // Calculate average stay duration
+        const avgStayDuration = tableBookings.length > 0 ? 
+          tableBookings.reduce((sum, booking) => {
+            const startTime = new Date(`${booking.bookingDate} ${booking.startTime}`);
+            const endTime = new Date(`${booking.bookingDate} ${booking.endTime}`);
+            const duration = (endTime.getTime() - startTime.getTime()) / (1000 * 60); // minutes
+            return sum + duration;
+          }, 0) / tableBookings.length : 90; // default 90 minutes
+
+        // Identify peak hours
+        const hourCounts: { [hour: string]: number } = {};
+        tableBookings.forEach(booking => {
+          const hour = booking.startTime.substring(0, 5); // HH:MM format
+          hourCounts[hour] = (hourCounts[hour] || 0) + 1;
+        });
+        const peakHours = Object.entries(hourCounts)
+          .sort(([,a], [,b]) => b - a)
+          .slice(0, 3)
+          .map(([hour]) => hour);
+
+        // Determine current status based on real booking data
+        const currentHour = now.getHours();
+        const currentMinutes = now.getMinutes();
+        const currentTimeStr = `${currentHour.toString().padStart(2, '0')}:${currentMinutes.toString().padStart(2, '0')}`;
+        
+        const hasCurrentBooking = tableBookings.some(booking => {
+          const bookingDate = new Date(booking.bookingDate);
+          const isToday = bookingDate.toDateString() === now.toDateString();
+          if (!isToday) return false;
+          
+          return booking.startTime <= currentTimeStr && booking.endTime > currentTimeStr;
+        });
+
+        const hasUpcomingBooking = tableBookings.some(booking => {
+          const bookingDate = new Date(booking.bookingDate);
+          const isToday = bookingDate.toDateString() === now.toDateString();
+          if (!isToday) return false;
+          
+          const bookingStartTime = booking.startTime;
+          const nextHour = new Date(now.getTime() + 60 * 60 * 1000);
+          const nextHourStr = `${nextHour.getHours().toString().padStart(2, '0')}:${nextHour.getMinutes().toString().padStart(2, '0')}`;
+          
+          return bookingStartTime > currentTimeStr && bookingStartTime <= nextHourStr;
+        });
+
+        let status: 'available' | 'occupied' | 'reserved' | 'maintenance' = 'available';
+        if (hasCurrentBooking) {
+          status = 'occupied';
+        } else if (hasUpcomingBooking) {
+          status = 'reserved';
+        }
+
+        return {
+          tableId: table.id,
+          tableName: table.tableNumber,
+          capacity: table.capacity,
+          position: { 
+            x: ((table.id - 1) % 4) * 120 + 60, 
+            y: Math.floor((table.id - 1) / 4) * 100 + 50 
+          },
+          heatScore: Math.round(heatScore),
+          bookingCount,
+          occupancyRate: Math.round(occupancyRate),
+          revenueGenerated: Math.round(totalRevenue),
+          averageStayDuration: Math.round(avgStayDuration),
+          peakHours,
+          status
+        };
+      });
+
+      res.json(heatMapData);
+    } catch (error) {
+      console.error('Heat map data error:', error);
+      res.status(500).json({ message: 'Failed to fetch heat map data' });
+    }
+  });
+
   // Get all conflicts for a restaurant
   app.get("/api/tenants/:tenantId/restaurants/:restaurantId/conflicts", validateTenant, async (req, res) => {
     try {

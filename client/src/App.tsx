@@ -13,6 +13,7 @@ import Register from "./pages/register";
 import Dashboard from "./pages/dashboard";
 import Bookings from "./pages/bookings";
 import Calendar from "./pages/calendar";
+import HeatMap from "./pages/heat-map";
 import Conflicts from "./pages/conflicts";
 import BookingDetail from "./pages/booking-detail";
 import Tables from "./pages/tables";
@@ -84,6 +85,7 @@ function App() {
               <Route path="/:tenantId/dashboard" component={Dashboard} />
               <Route path="/:tenantId/bookings" component={Bookings} />
               <Route path="/:tenantId/calendar" component={Calendar} />
+              <Route path="/:tenantId/heat-map" component={HeatMap} />
               <Route path="/:tenantId/conflicts" component={Conflicts} />
               <Route path="/:tenantId/bookings/:id" component={BookingDetail} />
               <Route path="/:tenantId/tables" component={Tables} />

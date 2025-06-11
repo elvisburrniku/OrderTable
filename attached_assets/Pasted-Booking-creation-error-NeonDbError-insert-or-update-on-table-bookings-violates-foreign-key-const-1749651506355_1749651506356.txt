@@ -1,0 +1,34 @@
+Booking creation error: NeonDbError: insert or update on table "bookings" violates foreign key constraint "bookings_table_id_tables_id_fk"
+    at execute (file:///home/runner/workspace/node_modules/@neondatabase/serverless/index.mjs:1556:55)
+    at process.processTicksAndRejections (node:internal/process/task_queues:95:5)
+    at async NeonHttpPreparedQuery.execute (/home/runner/workspace/node_modules/src/neon-http/session.ts:68:18)
+    at async DatabaseStorage.createBooking (/home/runner/workspace/server/db-storage.ts:271:20)
+    at async <anonymous> (/home/runner/workspace/server/routes.ts:670:23) {
+  severity: 'ERROR',
+  code: '23503',
+  detail: 'Key (table_id)=(1) is not present in table "tables".',
+  hint: undefined,
+  position: undefined,
+  internalPosition: undefined,
+  internalQuery: undefined,
+  where: undefined,
+  schema: 'public',
+  table: 'bookings',
+  column: undefined,
+  dataType: undefined,
+  constraint: 'bookings_table_id_tables_id_fk',
+  file: 'ri_triggers.c',
+  line: '2608',
+  routine: 'ri_ReportViolation',
+  sourceError: undefined
+}
+2:16:06 PM [express] POST /api/tenants/48/restaurants/22/bookings 400 in 896ms :: {"message":"Invali…
+2:16:24 PM [express] POST /api/tenants/48/restaurants/22/conflicts/capacity-conflict-10-174965135677…
+2:16:45 PM [express] GET /api/tenants/48/restaurants/22/conflicts 200 in 823ms :: [{"id":"capacity-c…
+2:16:46 PM [express] POST /api/tenants/48/restaurants/22/conflicts/capacity-conflict-10-174965135677…
+2:17:22 PM [vite] hmr update /src/components/dashboard-sidebar.tsx, /src/index.css?v=rWJYWVQzUnTescj5jh8H7
+2:17:34 PM [vite] hmr update /src/components/dashboard-sidebar.tsx, /src/index.css?v=rWJYWVQzUnTescj5jh8H7 (x2)
+2:17:42 PM [vite] hmr update /src/App.tsx?v=rWJYWVQzUnTescj5jh8H7, /src/index.css?v=rWJYWVQzUnTescj5jh8H7
+2:17:50 PM [vite] hmr update /src/App.tsx?v=rWJYWVQzUnTescj5jh8H7, /src/index.css?v=rWJYWVQzUnTescj5jh8H7 (x2)
+2:17:59 PM [vite] hmr update /src/components/route-guard.tsx, /src/index.css?v=rWJYWVQzUnTescj5jh8H7
+2:18:05 PM [express] GET /api/tenants/48/restaurants/22/customers 200 in 818ms :: [{"id":3,"restaura…
