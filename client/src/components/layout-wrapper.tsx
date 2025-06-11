@@ -1,5 +1,5 @@
 import { useLocation } from "wouter";
-import { DashboardSidebar } from "./dashboard-sidebar";
+import DashboardSidebar from "./dashboard-sidebar";
 import { useAuth } from "@/lib/auth";
 
 interface LayoutWrapperProps {

@@ -172,62 +172,61 @@ export default function ActivityLog() {
           {/* Table */}
           <div className="overflow-x-auto">
             <table className="w-full">
-                <thead className="bg-gray-50">
+              <thead className="bg-gray-50">
+                <tr>
+                  <th className="text-left py-3 px-4 font-medium text-gray-700">Event#</th>
+                  <th className="text-left py-3 px-4 font-medium text-gray-700">Created</th>
+                  <th className="text-left py-3 px-4 font-medium text-gray-700">Source</th>
+                  <th className="text-left py-3 px-4 font-medium text-gray-700">Event</th>
+                  <th className="text-left py-3 px-4 font-medium text-gray-700">Login</th>
+                  <th className="text-left py-3 px-4 font-medium text-gray-700">Details</th>
+                </tr>
+              </thead>
+              <tbody>
+                {isLoading ? (
                   <tr>
-                    <th className="text-left py-3 px-4 font-medium text-gray-700">Event#</th>
-                    <th className="text-left py-3 px-4 font-medium text-gray-700">Created</th>
-                    <th className="text-left py-3 px-4 font-medium text-gray-700">Source</th>
-                    <th className="text-left py-3 px-4 font-medium text-gray-700">Event</th>
-                    <th className="text-left py-3 px-4 font-medium text-gray-700">Login</th>
-                    <th className="text-left py-3 px-4 font-medium text-gray-700">Details</th>
+                    <td colSpan={6} className="py-8 text-center text-gray-500">
+                      Loading activity log...
+                    </td>
                   </tr>
-                </thead>
-                <tbody>
-                  {isLoading ? (
-                    <tr>
-                      <td colSpan={6} className="py-8 text-center text-gray-500">
-                        Loading activity log...
+                ) : displayLogs.length === 0 ? (
+                  <tr>
+                    <td colSpan={6} className="py-8 text-center text-gray-500">
+                      No activity found
+                    </td>
+                  </tr>
+                ) : (
+                  displayLogs.map((log: any) => (
+                    <tr key={log.id} className="border-b border-gray-100 hover:bg-gray-50">
+                      <td className="py-3 px-4 text-sm">{log.id}</td>
+                      <td className="py-3 px-4 text-sm">{log.createdAt}</td>
+                      <td className="py-3 px-4">
+                        <span className="px-2 py-1 text-xs rounded bg-gray-100 text-gray-800">
+                          {log.source}
+                        </span>
                       </td>
+                      <td className="py-3 px-4">{getEventBadge(log.eventType)}</td>
+                      <td className="py-3 px-4">{log.userEmail}</td>
+                      <td className="py-3 px-4 text-sm text-gray-600">{log.details}</td>
                     </tr>
-                  ) : displayLogs.length === 0 ? (
-                    <tr>
-                      <td colSpan={6} className="py-8 text-center text-gray-500">
-                        No activity found
-                      </td>
-                    </tr>
-                  ) : (
-                    displayLogs.map((log: any) => (
-                      <tr key={log.id} className="border-b border-gray-100 hover:bg-gray-50">
-                        <td className="py-3 px-4 text-sm">{log.id}</td>
-                        <td className="py-3 px-4 text-sm">{log.createdAt}</td>
-                        <td className="py-3 px-4">
-                          <span className="px-2 py-1 text-xs rounded bg-gray-100 text-gray-800">
-                            {log.source}
-                          </span>
-                        </td>
-                        <td className="py-3 px-4">{getEventBadge(log.eventType)}</td>
-                        <td className="py-3 px-4">{log.userEmail}</td>
-                        <td className="py-3 px-4 text-sm text-gray-600">{log.details}</td>
-                      </tr>
-                    ))
-                  )}
-                </tbody>
-              </table>
+                  ))
+                )}
+              </tbody>
+            </table>
+          </div>
+
+          {/* Footer */}
+          <div className="p-4 border-t flex items-center justify-between">
+            <div className="text-sm text-gray-600">
+              {displayLogs.length} events
             </div>
 
-            {/* Footer */}
-            <div className="p-4 border-t flex items-center justify-between">
-              <div className="text-sm text-gray-600">
-                {displayLogs.length} events
-              </div>
-
-              <div className="flex items-center space-x-4">
-                <div className="flex items-center space-x-2">
-                  <span className="text-sm text-gray-600">1</span>
-                  <div className="flex space-x-1">
-                    <Button variant="outline" size="sm">20</Button>
-                    <span className="text-sm text-gray-600">results per page</span>
-                  </div>
+            <div className="flex items-center space-x-4">
+              <div className="flex items-center space-x-2">
+                <span className="text-sm text-gray-600">1</span>
+                <div className="flex space-x-1">
+                  <Button variant="outline" size="sm">20</Button>
+                  <span className="text-sm text-gray-600">results per page</span>
                 </div>
               </div>
             </div>
