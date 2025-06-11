@@ -777,6 +777,59 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // PATCH endpoint for updating bookings with restaurant in path (for drag and drop)
+  app.patch("/api/tenants/:tenantId/restaurants/:restaurantId/bookings/:id", validateTenant, async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      const restaurantId = parseInt(req.params.restaurantId);
+      const tenantId = parseInt(req.params.tenantId);
+      const updates = req.body;
+
+      // Verify restaurant belongs to tenant
+      const restaurant = await storage.getRestaurantById(restaurantId);
+      if (!restaurant || restaurant.tenantId !== tenantId) {
+        return res.status(404).json({ message: "Restaurant not found" });
+      }
+
+      // Verify booking exists and belongs to the restaurant and tenant
+      const existingBooking = await storage.getBookingById(id);
+      if (!existingBooking || existingBooking.tenantId !== tenantId || existingBooking.restaurantId !== restaurantId) {
+        return res.status(404).json({ message: "Booking not found" });
+      }
+
+      // Process date field if provided
+      if (updates.bookingDate) {
+        try {
+          updates.bookingDate = new Date(updates.bookingDate);
+          if (isNaN(updates.bookingDate.getTime())) {
+            return res.status(400).json({ message: "Invalid booking date format" });
+          }
+        } catch (dateError) {
+          return res.status(400).json({ message: "Invalid booking date format" });
+        }
+      }
+
+      const booking = await storage.updateBooking(id, updates);
+      
+      if (!booking) {
+        return res.status(404).json({ message: "Booking not found after update" });
+      }
+
+      // Send webhook notifications for booking update
+      try {
+        const webhookService = new WebhookService(storage);
+        await webhookService.notifyBookingUpdated(restaurantId, booking);
+      } catch (webhookError) {
+        console.error('Error sending booking update webhook:', webhookError);
+      }
+      
+      res.json(booking);
+    } catch (error) {
+      console.error("Error updating booking:", error);
+      res.status(500).json({ message: "Internal server error" });
+    }
+  });
+
   // PUT endpoint for updating bookings with restaurant in path
   app.put("/api/tenants/:tenantId/restaurants/:restaurantId/bookings/:id", validateTenant, async (req, res) => {
     try {
