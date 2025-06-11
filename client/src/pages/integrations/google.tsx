@@ -10,6 +10,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { ArrowLeft, AlertTriangle, Copy, ExternalLink } from 'lucide-react';
+import { DashboardLayout } from '@/components/dashboard-layout';
 
 export default function GoogleIntegration() {
   const { user, restaurant } = useAuth();

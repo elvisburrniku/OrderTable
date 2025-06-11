@@ -8,6 +8,7 @@ import { ArrowLeft, AlertCircle } from 'lucide-react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useToast } from '@/hooks/use-toast';
 import { Alert, AlertDescription } from '@/components/ui/alert';
+import { DashboardLayout } from '@/components/dashboard-layout';
 
 export default function MichelinIntegration() {
   const { user, restaurant } = useAuth();

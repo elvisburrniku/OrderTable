@@ -10,6 +10,7 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { ArrowLeft, Plus, Save, AlertCircle } from 'lucide-react';
 import { Alert, AlertDescription } from '@/components/ui/alert';
+import { DashboardLayout } from '@/components/dashboard-layout';
 
 const WEBHOOK_EVENTS = [
   { value: 'booking.created', label: 'Booking New' },
