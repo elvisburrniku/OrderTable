@@ -61,7 +61,7 @@ type ViewMode = 'week' | 'month' | 'day';
 export default function CalendarPage() {
   const { tenantId } = useParams();
   const [currentDate, setCurrentDate] = useState(new Date());
-  const [viewMode, setViewMode] = useState<ViewMode>('week');
+  const [viewMode, setViewMode] = useState<ViewMode>('day');
   const [selectedDate, setSelectedDate] = useState<Date | null>(null);
   const [selectedTimeSlot, setSelectedTimeSlot] = useState<string | null>(null);
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
@@ -414,8 +414,12 @@ export default function CalendarPage() {
         key={booking.id}
         draggable
         onDragStart={() => handleDragStart(booking)}
+        onClick={(e) => {
+          e.stopPropagation();
+          handleEditBooking(booking);
+        }}
         className={cn(
-          "mb-1 p-2 cursor-move hover:shadow-md transition-shadow",
+          "mb-1 p-2 cursor-pointer hover:shadow-md transition-shadow",
           booking.status === 'confirmed' && "border-green-200 bg-green-50",
           booking.status === 'pending' && "border-yellow-200 bg-yellow-50",
           booking.status === 'cancelled' && "border-red-200 bg-red-50"
@@ -442,17 +446,28 @@ export default function CalendarPage() {
           </div>
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
-              <Button variant="ghost" size="sm" className="h-6 w-6 p-0">
+              <Button 
+                variant="ghost" 
+                size="sm" 
+                className="h-6 w-6 p-0"
+                onClick={(e) => e.stopPropagation()}
+              >
                 <MoreVertical className="w-3 h-3" />
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end">
-              <DropdownMenuItem onClick={() => handleEditBooking(booking)}>
+              <DropdownMenuItem onClick={(e) => {
+                e.stopPropagation();
+                handleEditBooking(booking);
+              }}>
                 <Edit className="w-4 h-4 mr-2" />
                 Edit
               </DropdownMenuItem>
               <DropdownMenuItem 
-                onClick={() => deleteBookingMutation.mutate(booking.id)}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  deleteBookingMutation.mutate(booking.id);
+                }}
                 className="text-destructive"
               >
                 <Trash2 className="w-4 h-4 mr-2" />
@@ -476,7 +491,8 @@ export default function CalendarPage() {
       <div
         key={`${format(date, 'yyyy-MM-dd')}-${timeSlot}`}
         className={cn(
-          "min-h-[60px] border-b border-gray-100 p-1 hover:bg-gray-50 cursor-pointer transition-colors",
+          "min-h-[80px] p-2 cursor-pointer transition-colors",
+          slotBookings.length === 0 && "hover:bg-blue-50",
           isDraggedOver && "bg-blue-100 border-blue-300"
         )}
         onClick={() => slotBookings.length === 0 && handleCreateBooking(date, timeSlot)}
@@ -484,7 +500,14 @@ export default function CalendarPage() {
         onDragLeave={handleDragLeave}
         onDrop={(e) => handleDrop(e, date, timeSlot)}
       >
-        {slotBookings.map(renderBooking)}
+        <div className="space-y-1">
+          {slotBookings.map(renderBooking)}
+        </div>
+        {slotBookings.length === 0 && (
+          <div className="h-full flex items-center justify-center text-xs text-gray-400">
+            Click to add booking
+          </div>
+        )}
       </div>
     );
   };
@@ -761,13 +784,30 @@ export default function CalendarPage() {
 
         {viewMode === 'day' && (
           <div className="h-full flex flex-col">
+            {/* Day header */}
+            <div className="grid grid-cols-[120px_1fr] border-b bg-gray-50">
+              <div className="p-3 border-r"></div>
+              <div className="p-3 text-center">
+                <div className="text-sm text-muted-foreground">
+                  {format(currentDate, 'EEEE')}
+                </div>
+                <div className={cn(
+                  "text-lg font-medium",
+                  isToday(currentDate) && "text-primary"
+                )}>
+                  {format(currentDate, 'MMMM d, yyyy')}
+                </div>
+              </div>
+            </div>
+            
+            {/* Time slots */}
             <div className="flex-1 overflow-y-auto">
               {timeSlots.map((timeSlot) => (
-                <div key={timeSlot} className="flex border-b min-h-[60px]">
-                  <div className="w-20 p-2 border-r bg-gray-50 text-sm text-muted-foreground">
+                <div key={timeSlot} className="grid grid-cols-[120px_1fr] border-b min-h-[80px] hover:bg-gray-25">
+                  <div className="p-3 border-r bg-gray-50 text-sm text-muted-foreground text-center flex items-center justify-center">
                     {timeSlot}
                   </div>
-                  <div className="flex-1">
+                  <div className="relative">
                     {renderTimeSlot(currentDate, timeSlot)}
                   </div>
                 </div>
