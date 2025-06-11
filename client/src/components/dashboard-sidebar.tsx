@@ -1,141 +1,126 @@
-import { Link, useLocation, useParams } from "wouter";
-import { Calendar, Settings, Clock, MapPin, Table, Utensils, Grid3x3, FileText, Users, MessageSquare, MessageCircle, CreditCard, BarChart3, Clock4, Plug } from "lucide-react";
-import { ReadyTableLogo } from "@/components/ui/ready-table-logo";
-import { Card, CardContent } from "@/components/ui/card";
-import { format } from "date-fns";
-import { Booking } from "@shared/schema";
-import { useTenant } from "@/lib/tenant";
-import { cn } from "@/lib/utils";
+import { Calendar, Users, Clock, Zap, BarChart3, FileText, MessageSquare, CreditCard, Settings, Cog } from "lucide-react";
+import { useLocation } from "wouter";
 
-interface DashboardSidebarProps {
-  selectedDate: Date;
-  onDateChange: (date: Date) => void;
-  bookings: Booking[];
+interface SidebarProps {
+  tenantId: number;
+  restaurantId?: number;
 }
 
-export default function DashboardSidebar({ selectedDate, bookings }: DashboardSidebarProps) {
+export function DashboardSidebar({ tenantId, restaurantId }: SidebarProps) {
   const [location] = useLocation();
-  const params = useParams();
-  const tenantId = params.tenantId;
-  const { tenantId: currentTenantId } = useTenant();
 
-  const todaysBookings = Array.isArray(bookings) ? bookings.filter(booking => {
-    if (!booking.bookingDate) return false;
-
-    try {
-      const bookingDateStr = booking.bookingDate instanceof Date 
-        ? booking.bookingDate.toISOString().split('T')[0]
-        : String(booking.bookingDate).split('T')[0];
-      return bookingDateStr === format(new Date(), 'yyyy-MM-dd');
-    } catch (error) {
-      console.error('Error processing booking date:', booking.bookingDate, error);
-      return false;
+  const menuItems = [
+    {
+      name: "Dashboard",
+      icon: BarChart3,
+      href: `/${tenantId}/dashboard`,
+      color: "text-green-600"
+    },
+    {
+      name: "Bookings",
+      icon: Calendar,
+      href: `/${tenantId}/bookings`,
+      color: "text-blue-600"
+    },
+    {
+      name: "Customers",
+      icon: Users,
+      href: `/${tenantId}/customers`,
+      color: "text-purple-600"
+    },
+    {
+      name: "Waiting List",
+      icon: Clock,
+      href: `/${tenantId}/waiting-list`,
+      color: "text-orange-600"
+    },
+    {
+      name: "Integrations",
+      icon: Zap,
+      href: `/${tenantId}/integrations`,
+      color: "text-yellow-600"
+    },
+    {
+      name: "Statistics",
+      icon: BarChart3,
+      href: `/${tenantId}/statistics`,
+      color: "text-indigo-600"
+    },
+    {
+      name: "Activity Log",
+      icon: FileText,
+      href: `/${tenantId}/activity-log`,
+      color: "text-gray-600"
+    },
+    {
+      name: "Feedback",
+      icon: MessageSquare,
+      href: `/${tenantId}/feedback`,
+      color: "text-pink-600"
+    },
+    {
+      name: "SMS Messages",
+      icon: MessageSquare,
+      href: `/${tenantId}/sms-messages`,
+      color: "text-teal-600"
+    },
+    {
+      name: "Subscription",
+      icon: CreditCard,
+      href: `/${tenantId}/subscription`,
+      color: "text-emerald-600"
+    },
+    {
+      name: "Tenant Settings",
+      icon: Settings,
+      href: `/${tenantId}/tenant-settings`,
+      color: "text-slate-600"
+    },
+    {
+      name: "Restaurant Settings",
+      icon: Cog,
+      href: `/${tenantId}/restaurant-settings`,
+      color: "text-stone-600"
     }
-  }) : [];
-
-  const navigationItems = [
-    { path: `/${tenantId}/dashboard`, icon: Calendar, label: "Dashboard" },
-    { path: `/${tenantId}/bookings`, icon: Calendar, label: "Bookings" },
-    { path: `/${tenantId}/customers`, icon: Users, label: "Customers" },
-    { path: `/${tenantId}/waiting-list`, icon: Clock, label: "Waiting List" },
-    { path: `/${tenantId}/integrations`, icon: Plug, label: "Integrations" },
-    { path: `/${tenantId}/statistics`, icon: BarChart3, label: "Statistics" },
-    { path: `/${tenantId}/activity-log`, icon: FileText, label: "Activity Log" },
-    { path: `/${tenantId}/feedback-responses`, icon: MessageCircle, label: "Feedback" },
-    { path: `/${tenantId}/sms-messages`, icon: MessageSquare, label: "SMS Messages" },
-    { path: `/${tenantId}/subscription`, icon: CreditCard, label: "Subscription" },
-    { path: `/${tenantId}/tenant-settings`, icon: Settings, label: "Tenant Settings" }
   ];
 
-  const settingsItems = [
-    { path: `/${tenantId}/opening-hours`, icon: Clock4, label: "Opening Hours" },
-    { path: `/${tenantId}/special-periods`, icon: Calendar, label: "Special Periods" },
-    { path: `/${tenantId}/cut-off-time`, icon: Clock, label: "Cut-off Time" },
-    { path: `/${tenantId}/rooms`, icon: MapPin, label: "Rooms" },
-    { path: `/${tenantId}/tables`, icon: Table, label: "Tables" },
-    { path: `/${tenantId}/combined-tables`, icon: Utensils, label: "Combined Tables" },
-    { path: `/${tenantId}/table-plan`, icon: Grid3x3, label: "Table Plan" },
-    { path: `/${tenantId}/seating-configurations`, icon: Grid3x3, label: "Seating Configurations" },
-    { path: `/${tenantId}/periodic-criteria`, icon: Calendar, label: "Periodic Criteria" },
-    { path: `/${tenantId}/custom-fields`, icon: FileText, label: "Custom Fields" },
-    { path: `/${tenantId}/booking-agents`, icon: Users, label: "Booking Agents" },
-    { path: `/${tenantId}/email-notifications`, icon: MessageSquare, label: "E-mail Notifications" },
-    { path: `/${tenantId}/sms-notifications`, icon: MessageSquare, label: "SMS Notifications" },
-    { path: `/${tenantId}/feedback-questions`, icon: MessageCircle, label: "Questions" },
-    { path: `/${tenantId}/events`, icon: Calendar, label: "Events" },
-    { path: `/${tenantId}/products`, icon: Utensils, label: "Products" },
-    { path: `/${tenantId}/product-groups`, icon: Grid3x3, label: "Product Groups" },
-    { path: `/${tenantId}/payment-setups`, icon: Settings, label: "Payment Setups" },
-    { path: `/${tenantId}/payment-gateway`, icon: CreditCard, label: "Payment Gateway" }
-  ];
+  const isActive = (href: string) => {
+    return location === href || location.startsWith(href + '/');
+  };
 
   return (
-    <div className="w-64 bg-gray-50 border-r border-gray-200 p-4">
-      <div className="flex items-center mb-8">
-        <ReadyTableLogo size={20} textClassName="text-xl font-bold text-gray-900" />
-      </div>
-
-      <nav className="space-y-2 mb-8">
-        {navigationItems.map((item) => {
-          const Icon = item.icon;
-          const isActive = location === item.path;
-
-          return (
-            <Link key={item.path} href={item.path}>
-              <div className={`flex items-center px-3 py-2 text-sm font-medium rounded-lg transition-colors ${
-                isActive 
-                  ? "text-green-600 bg-green-50" 
-                  : "text-gray-600 hover:text-gray-900 hover:bg-gray-100"
-              }`}>
-                <Icon className="mr-3" size={16} />
-                {item.label}
-              </div>
-            </Link>
-          );
-        })}
-      </nav>
-
-      <div className="mb-8">
-        <div className="flex items-center mb-4">
-          <Settings className="mr-2" size={16} />
-          <span className="text-sm font-semibold text-gray-900">Restaurant Settings</span>
+    <div className="w-64 bg-white border-r border-gray-200 min-h-screen">
+      <div className="p-6">
+        {/* Logo */}
+        <div className="flex items-center space-x-2 mb-8">
+          <div className="w-8 h-8 bg-green-600 rounded flex items-center justify-center">
+            <div className="w-4 h-4 bg-white rounded-full"></div>
+          </div>
+          <span className="text-xl font-semibold text-gray-900">ReadyTable</span>
         </div>
-        
-        <nav className="space-y-1">
-          {settingsItems.map((item) => {
-            const Icon = item.icon;
-            const isActive = location === item.path;
 
+        {/* Navigation */}
+        <nav className="space-y-1">
+          {menuItems.map((item) => {
+            const Icon = item.icon;
+            const active = isActive(item.href);
+            
             return (
-              <Link key={item.path} href={item.path}>
-                <div className={`flex items-center px-3 py-2 text-sm font-medium rounded-lg transition-colors ${
-                  isActive 
-                    ? "text-green-600 bg-green-50" 
-                    : "text-gray-600 hover:text-gray-900 hover:bg-gray-100"
-                }`}>
-                  <Icon className="mr-3" size={16} />
-                  {item.label}
-                </div>
-              </Link>
+              <a
+                key={item.name}
+                href={item.href}
+                className={`flex items-center space-x-3 px-3 py-2 rounded-lg text-sm font-medium transition-colors ${
+                  active
+                    ? 'bg-gray-100 text-gray-900'
+                    : 'text-gray-600 hover:text-gray-900 hover:bg-gray-50'
+                }`}
+              >
+                <Icon className={`w-5 h-5 ${active ? 'text-gray-900' : item.color}`} />
+                <span>{item.name}</span>
+              </a>
             );
           })}
         </nav>
-      </div>
-
-
-
-      <div>
-        <div className="text-sm font-medium text-gray-900 mb-2">Booking open</div>
-        <div className="space-y-2 text-sm">
-          <div className="flex items-center">
-            <div className="w-2 h-2 bg-green-600 rounded-full mr-2" />
-            <span>All</span>
-          </div>
-          <div className="text-gray-600 ml-4">
-            <div>Bookings today: {todaysBookings.length}</div>
-            <div>Remaining today: {20 - todaysBookings.length}</div>
-          </div>
-        </div>
       </div>
     </div>
   );

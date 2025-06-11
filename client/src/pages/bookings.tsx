@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useAuth } from "@/lib/auth.tsx";
+import { DashboardSidebar } from "@/components/dashboard-sidebar";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -299,33 +300,8 @@ export default function Bookings() {
         </div>
       </div>
 
-      <div className="flex">
-        {/* Sidebar */}
-        <div className="w-64 bg-white border-r min-h-screen">
-          <div className="p-6">
-            <div className="space-y-2">
-              <div className="flex items-center space-x-2 text-green-600 bg-green-50 px-3 py-2 rounded">
-                <span className="w-2 h-2 bg-green-600 rounded-full"></span>
-                <span className="font-medium">Bookings</span>
-              </div>
-              <a href={`/${restaurant.tenantId}/waiting-list`} className="flex items-center space-x-2 text-gray-600 hover:bg-gray-50 px-3 py-2 rounded">
-                <span className="w-2 h-2 bg-gray-400 rounded-full"></span>
-                <span>Waiting List</span>
-              </a>
-              <a href={`/${restaurant.tenantId}/statistics`} className="flex items-center space-x-2 text-gray-600 hover:bg-gray-50 px-3 py-2 rounded">
-                <span className="w-2 h-2 bg-gray-400 rounded-full"></span>
-                <span>Statistics</span>
-              </a>
-              <a href={`/${restaurant.tenantId}/activity-log`} className="flex items-center space-x-2 text-gray-600 hover:bg-gray-50 px-3 py-2 rounded">
-                <span className="w-2 h-2 bg-gray-400 rounded-full"></span>
-                <span>Log</span>
-              </a>
-            </div>
-          </div>
-        </div>
-
-        {/* Main Content */}
-        <div className="flex-1 p-6">
+      {/* Main Content */}
+      <div className="p-6">
           {viewMode === "calendar" ? (
             <GoogleCalendar
               selectedDate={selectedDate}
