@@ -254,10 +254,26 @@ export class MemoryStorage implements IStorage {
     return newTenant;
   }
 
+  async getTenantById(id: number): Promise<any> {
+    return this.tenants.find(t => t.id === id);
+  }
+
   async getTenantByUserId(userId: number): Promise<any> {
     const tenantUser = this.tenantUsers.find(tu => tu.userId === userId);
     if (!tenantUser) return undefined;
     return this.tenants.find(t => t.id === tenantUser.tenantId);
+  }
+
+  async getTenantByStripeCustomerId(stripeCustomerId: string): Promise<any> {
+    return this.tenants.find(t => t.stripeCustomerId === stripeCustomerId);
+  }
+
+  async updateTenant(id: number, updates: any): Promise<any> {
+    const index = this.tenants.findIndex(t => t.id === id);
+    if (index === -1) return undefined;
+    
+    this.tenants[index] = { ...this.tenants[index], ...updates };
+    return this.tenants[index];
   }
 
   async createTenantUser(tenantUser: any): Promise<any> {
@@ -314,6 +330,10 @@ export class MemoryStorage implements IStorage {
   }
 
   async getSubscriptionPlan(id: number): Promise<SubscriptionPlan | undefined> {
+    return this.subscriptionPlans.find(p => p.id === id);
+  }
+
+  async getSubscriptionPlanById(id: number): Promise<SubscriptionPlan | undefined> {
     return this.subscriptionPlans.find(p => p.id === id);
   }
 
