@@ -4124,9 +4124,20 @@ app.put("/api/tenants/:tenantId/bookings/:id", validateTenant, async (req, res) 
       const tables = await storage.getTablesByRestaurant(restaurantId);
       const bookings = await storage.getBookingsByRestaurant(restaurantId);
       
-      // Filter by tenant
-      const tenantTables = tables.filter(table => table.tenantId === tenantId);
+      console.log(`Heat map debug: Found ${tables.length} tables, ${bookings.length} bookings`);
+      console.log(`Heat map debug: First table:`, tables[0]);
+      
+      // Filter by tenant and normalize table data structure
+      const tenantTables = tables.filter(table => table.tenant_id === tenantId).map(table => ({
+        id: table.id,
+        tableNumber: table.table_number,
+        capacity: table.capacity,
+        tenantId: table.tenant_id,
+        restaurantId: table.restaurant_id
+      }));
       const tenantBookings = bookings.filter(booking => booking.tenantId === tenantId);
+      
+      console.log(`Heat map debug: ${tenantTables.length} tenant tables, ${tenantBookings.length} tenant bookings`);
 
       // Filter bookings by time range
       let filteredBookings = tenantBookings;
@@ -4203,7 +4214,7 @@ app.put("/api/tenants/:tenantId/bookings/:id", validateTenant, async (req, res) 
 
         return {
           tableId: table.id,
-          tableName: table.name || `Table ${table.id}`,
+          tableName: `Table ${table.tableNumber}`,
           capacity: table.capacity || 4,
           position: { 
             x: col * 120 + 60, 
