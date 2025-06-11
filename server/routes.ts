@@ -4113,6 +4113,307 @@ app.put("/api/tenants/:tenantId/bookings/:id", validateTenant, async (req, res) 
     }
   });
 
+  // Enhanced conflict detection and resolution endpoint
+  app.get("/api/tenants/:tenantId/restaurants/:restaurantId/conflicts", validateTenant, async (req, res) => {
+    try {
+      const restaurantId = parseInt(req.params.restaurantId);
+      const tenantId = parseInt(req.params.tenantId);
+
+      // Get all bookings and tables for conflict analysis
+      const bookings = await storage.getBookingsByRestaurant(restaurantId);
+      const tables = await storage.getTablesByRestaurant(restaurantId);
+      
+      // Filter by tenant
+      const tenantBookings = bookings.filter(booking => booking.tenantId === tenantId);
+      const tenantTables = tables.filter(table => table.tenant_id === tenantId);
+
+      // Detect conflicts
+      const conflicts = [];
+      const conflictId = Date.now().toString();
+
+      // Check for table double bookings
+      const tableBookings = {};
+      tenantBookings.forEach(booking => {
+        if (!booking.tableId || !booking.startTime) return;
+        
+        // Normalize date format for comparison
+        const bookingDate = new Date(booking.bookingDate).toISOString().split('T')[0];
+        const key = `${booking.tableId}-${bookingDate}-${booking.startTime}`;
+        if (!tableBookings[key]) {
+          tableBookings[key] = [];
+        }
+        tableBookings[key].push(booking);
+      });
+
+      // Find double bookings
+      Object.entries(tableBookings).forEach(([key, bookingsAtSlot]) => {
+        if (bookingsAtSlot.length > 1) {
+          // Find alternative tables for conflicting bookings
+          const conflictedBookings = bookingsAtSlot as any[];
+          const suggestedResolutions = [];
+
+          conflictedBookings.slice(1).forEach(booking => {
+            // Find available tables with suitable capacity
+            const suitableTables = tenantTables.filter(table => {
+              if (table.capacity < booking.guestCount) return false;
+              
+              // Check if table is available at this time
+              const tableConflicts = tenantBookings.filter(b => 
+                b.tableId === table.id && 
+                b.bookingDate === booking.bookingDate && 
+                b.startTime === booking.startTime &&
+                b.id !== booking.id
+              );
+              return tableConflicts.length === 0;
+            });
+
+            if (suitableTables.length > 0) {
+              const recommendedTable = suitableTables[0];
+              suggestedResolutions.push({
+                id: `resolution-${Date.now()}-${Math.random()}`,
+                type: 'reassign_table',
+                description: `Move ${booking.customerName} to Table ${recommendedTable.table_number}`,
+                impact: 'low',
+                bookingId: booking.id,
+                originalTableId: booking.tableId,
+                newTableId: recommendedTable.id,
+                estimatedCustomerSatisfaction: 85,
+                autoExecutable: true,
+                cost: { timeMinutes: 1, staffEffort: 'minimal' }
+              });
+            } else {
+              // No available tables - suggest time adjustment
+              suggestedResolutions.push({
+                id: `resolution-${Date.now()}-${Math.random()}`,
+                type: 'adjust_time',
+                description: `Contact ${booking.customerName} to reschedule to next available slot`,
+                impact: 'medium',
+                bookingId: booking.id,
+                originalTime: booking.startTime,
+                suggestedTimes: ['19:30', '20:00', '20:30'],
+                estimatedCustomerSatisfaction: 70,
+                autoExecutable: false,
+                cost: { timeMinutes: 5, staffEffort: 'moderate' }
+              });
+            }
+          });
+
+          conflicts.push({
+            id: `conflict-${conflictId}-${key}`,
+            type: 'table_double_booking',
+            severity: 'high',
+            bookings: conflictedBookings.map(b => ({
+              id: b.id,
+              customerName: b.customerName,
+              customerEmail: b.customerEmail,
+              customerPhone: b.customerPhone,
+              guestCount: b.guestCount,
+              bookingDate: b.bookingDate,
+              startTime: b.startTime,
+              endTime: b.endTime,
+              tableId: b.tableId,
+              status: b.status
+            })),
+            suggestedResolutions,
+            autoResolvable: suggestedResolutions.some(r => r.autoExecutable),
+            createdAt: new Date().toISOString()
+          });
+        }
+      });
+
+      // Check for capacity exceeded (more guests than table capacity)
+      tenantBookings.forEach(booking => {
+        if (!booking.tableId) return;
+        
+        const table = tenantTables.find(t => t.id === booking.tableId);
+        if (table && booking.guestCount > table.capacity) {
+          // Find larger tables
+          const largerTables = tenantTables.filter(t => 
+            t.capacity >= booking.guestCount &&
+            !tenantBookings.some(b => 
+              b.tableId === t.id && 
+              b.bookingDate === booking.bookingDate && 
+              b.startTime === booking.startTime &&
+              b.id !== booking.id
+            )
+          );
+
+          const suggestedResolutions = [];
+          if (largerTables.length > 0) {
+            const recommendedTable = largerTables[0];
+            suggestedResolutions.push({
+              id: `resolution-${Date.now()}-${Math.random()}`,
+              type: 'upgrade_table',
+              description: `Upgrade ${booking.customerName} to larger Table ${recommendedTable.table_number}`,
+              impact: 'low',
+              bookingId: booking.id,
+              originalTableId: booking.tableId,
+              newTableId: recommendedTable.id,
+              estimatedCustomerSatisfaction: 95,
+              autoExecutable: true,
+              cost: { timeMinutes: 1, staffEffort: 'minimal' }
+            });
+          }
+
+          conflicts.push({
+            id: `conflict-${conflictId}-capacity-${booking.id}`,
+            type: 'capacity_exceeded',
+            severity: 'medium',
+            bookings: [{
+              id: booking.id,
+              customerName: booking.customerName,
+              customerEmail: booking.customerEmail,
+              customerPhone: booking.customerPhone,
+              guestCount: booking.guestCount,
+              bookingDate: booking.bookingDate,
+              startTime: booking.startTime,
+              endTime: booking.endTime,
+              tableId: booking.tableId,
+              status: booking.status
+            }],
+            suggestedResolutions,
+            autoResolvable: suggestedResolutions.length > 0,
+            createdAt: new Date().toISOString()
+          });
+        }
+      });
+
+      res.json(conflicts);
+    } catch (error) {
+      console.error("Conflict detection error:", error);
+      res.status(500).json({ message: "Failed to detect conflicts" });
+    }
+  });
+
+  // Auto-resolve conflict endpoint
+  app.post("/api/tenants/:tenantId/restaurants/:restaurantId/conflicts/:conflictId/auto-resolve", validateTenant, async (req, res) => {
+    try {
+      const restaurantId = parseInt(req.params.restaurantId);
+      const tenantId = parseInt(req.params.tenantId);
+      const { conflictId } = req.params;
+      const { resolutionId } = req.body;
+
+      // Get conflicts to find the specific resolution
+      const conflictsResponse = await fetch(`http://localhost:5000/api/tenants/${tenantId}/restaurants/${restaurantId}/conflicts`);
+      const conflicts = await conflictsResponse.json();
+      
+      const conflict = conflicts.find(c => c.id === conflictId);
+      if (!conflict) {
+        return res.status(404).json({ message: "Conflict not found" });
+      }
+
+      const resolution = conflict.suggestedResolutions.find(r => r.id === resolutionId);
+      if (!resolution) {
+        return res.status(404).json({ message: "Resolution not found" });
+      }
+
+      if (!resolution.autoExecutable) {
+        return res.status(400).json({ message: "This resolution requires manual intervention" });
+      }
+
+      // Execute the resolution
+      if (resolution.type === 'reassign_table' || resolution.type === 'upgrade_table') {
+        // Update the booking with new table assignment
+        const booking = await storage.getBookingById(resolution.bookingId);
+        if (booking) {
+          const updatedBooking = {
+            ...booking,
+            tableId: resolution.newTableId
+          };
+          
+          await storage.updateBooking(resolution.bookingId, updatedBooking);
+          
+          // Create notification for staff
+          const notification = {
+            restaurantId,
+            tenantId,
+            type: 'conflict_resolved',
+            title: 'Conflict Auto-Resolved',
+            message: `${booking.customerName}'s booking moved to Table ${resolution.newTableId}`,
+            isRead: false,
+            priority: 'medium',
+            createdAt: new Date(),
+            metadata: {
+              bookingId: resolution.bookingId,
+              originalTable: resolution.originalTableId,
+              newTable: resolution.newTableId,
+              resolutionType: resolution.type
+            }
+          };
+          
+          await storage.createNotification(notification);
+          broadcastNotification(restaurantId, notification);
+        }
+      }
+
+      res.json({ 
+        success: true, 
+        message: "Conflict resolved successfully",
+        resolutionApplied: resolution.description
+      });
+    } catch (error) {
+      console.error("Auto-resolve conflict error:", error);
+      res.status(500).json({ message: "Failed to resolve conflict" });
+    }
+  });
+
+  // Manual resolve conflict endpoint
+  app.post("/api/tenants/:tenantId/restaurants/:restaurantId/conflicts/:conflictId/resolve", validateTenant, async (req, res) => {
+    try {
+      const restaurantId = parseInt(req.params.restaurantId);
+      const tenantId = parseInt(req.params.tenantId);
+      const { conflictId } = req.params;
+      const { resolutionType, bookingId, newTableId, newTime, notes } = req.body;
+
+      const booking = await storage.getBookingById(bookingId);
+      if (!booking) {
+        return res.status(404).json({ message: "Booking not found" });
+      }
+
+      let updatedBooking = { ...booking };
+      let resolutionDescription = "";
+
+      if (resolutionType === 'reassign_table' && newTableId) {
+        updatedBooking.tableId = newTableId;
+        resolutionDescription = `Moved to Table ${newTableId}`;
+      } else if (resolutionType === 'adjust_time' && newTime) {
+        updatedBooking.startTime = newTime;
+        resolutionDescription = `Rescheduled to ${newTime}`;
+      }
+
+      await storage.updateBooking(bookingId, updatedBooking);
+
+      // Create resolution notification
+      const notification = {
+        restaurantId,
+        tenantId,
+        type: 'conflict_resolved',
+        title: 'Conflict Manually Resolved',
+        message: `${booking.customerName}'s booking: ${resolutionDescription}`,
+        isRead: false,
+        priority: 'medium',
+        createdAt: new Date(),
+        metadata: {
+          bookingId,
+          resolutionType,
+          notes: notes || ''
+        }
+      };
+      
+      await storage.createNotification(notification);
+      broadcastNotification(restaurantId, notification);
+
+      res.json({ 
+        success: true, 
+        message: "Conflict resolved manually",
+        resolutionApplied: resolutionDescription
+      });
+    } catch (error) {
+      console.error("Manual resolve conflict error:", error);
+      res.status(500).json({ message: "Failed to resolve conflict manually" });
+    }
+  });
+
   // Heat map data endpoint
   app.get("/api/tenants/:tenantId/restaurants/:restaurantId/heat-map", validateTenant, async (req, res) => {
     try {
