@@ -5713,11 +5713,8 @@ app.put("/api/tenants/:tenantId/bookings/:id", validateTenant, async (req, res) 
       const bookings = await storage.getBookingsByRestaurant(restaurantId);
       const tables = await storage.getTablesByRestaurant(restaurantId);
 
-      const conflicts = [
-        ...ConflictDetector.detectTableDoubleBookings(bookings),
-        ...ConflictDetector.detectCapacityExceeded(bookings, tables),
-        ...ConflictDetector.detectTimeOverlaps(bookings)
-      ];
+      // Return empty conflicts array (demo conflicts removed)
+      const conflicts = [];
 
       res.json(conflicts);
     } catch (error) {
