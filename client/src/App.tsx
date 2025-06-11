@@ -73,8 +73,9 @@ function App() {
     <QueryClientProvider client={queryClient}>
       <AuthProvider>
         <TenantProvider>
-          <RouteGuard>
-            <SessionTimeoutHandler />
+          <TutorialProvider>
+            <RouteGuard>
+              <SessionTimeoutHandler />
             <Switch>
             <Route path="/" component={Home} />
             <Route path="/login" component={Login} />
@@ -138,8 +139,9 @@ function App() {
             <Route path="/guest-booking/:restaurantId" component={GuestBooking} />
             <Route component={NotFound} />
             </Switch>
-          </RouteGuard>
-          <Toaster />
+            </RouteGuard>
+            <Toaster />
+          </TutorialProvider>
         </TenantProvider>
       </AuthProvider>
     </QueryClientProvider>
