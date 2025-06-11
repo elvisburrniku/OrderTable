@@ -12,6 +12,20 @@ export function RouteGuard({ children }: RouteGuardProps) {
 
   useEffect(() => {
     if (!isLoading) {
+      // Skip authentication checks for public routes like guest booking
+      const publicRoutes = [
+        /^\/guest-booking\/\d+\/\d+$/,
+        /^\/contact$/,
+        /^\/feedback-responses$/,
+        /^\/feedback-responses-popup$/,
+        /^\/booking-manage$/
+      ];
+      
+      const isPublicRoute = publicRoutes.some(pattern => pattern.test(location));
+      if (isPublicRoute) {
+        return; // Skip authentication for public routes
+      }
+
       // Check if user is authenticated
       if (!user) {
         // Not authenticated, redirect to login
