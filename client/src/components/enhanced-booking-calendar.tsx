@@ -99,6 +99,7 @@ export default function EnhancedBookingCalendar({
   tenantId,
   restaurantId
 }: EnhancedBookingCalendarProps) {
+  console.log('EnhancedBookingCalendar props:', { selectedDate, bookings, tables, isLoading, tenantId, restaurantId });
   const [currentDate, setCurrentDate] = useState(selectedDate);
   const [viewMode, setViewMode] = useState<ViewMode>('timeline');
   const [resourceView, setResourceView] = useState<ResourceView>('table');

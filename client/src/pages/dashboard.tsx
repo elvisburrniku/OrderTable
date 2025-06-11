@@ -818,15 +818,21 @@ export default function Dashboard() {
             </div>
           ) : (
             <div data-tutorial="booking-calendar">
-              <EnhancedBookingCalendar 
-                selectedDate={selectedDate}
-                bookings={(allBookings as any) || []}
-                tables={(tables as any) || []}
-                isLoading={isLoading}
-                onDateSelect={setSelectedDate}
-                tenantId={restaurant?.tenantId!}
-                restaurantId={restaurant?.id!}
-              />
+              {restaurant?.tenantId && restaurant?.id ? (
+                <EnhancedBookingCalendar 
+                  selectedDate={selectedDate}
+                  bookings={allBookings || []}
+                  tables={tables || []}
+                  isLoading={allBookingsLoading || tablesLoading}
+                  onDateSelect={setSelectedDate}
+                  tenantId={restaurant.tenantId}
+                  restaurantId={restaurant.id}
+                />
+              ) : (
+                <div className="p-8 text-center text-gray-500">
+                  Loading calendar...
+                </div>
+              )}
             </div>
           )}
         </div>
