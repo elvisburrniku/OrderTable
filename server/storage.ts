@@ -24,7 +24,8 @@ import {
   menuCategories,
   menuItems,
   qrMenus,
-  menuOrders
+  menuOrders,
+  onboardingProgress
 } from "@shared/schema";
 import type {
   User,
@@ -47,6 +48,7 @@ import type {
   MenuItem,
   QrMenu,
   MenuOrder,
+  OnboardingProgress,
   InsertUser,
   InsertRestaurant,
   InsertTable,
@@ -65,7 +67,8 @@ import type {
   InsertUserSubscription,
   InsertRoom,
   InsertCombinedTable,
-  InsertNotification
+  InsertNotification,
+  InsertOnboardingProgress
 } from "@shared/schema";
 import { neon } from "@neondatabase/serverless";
 import { drizzle } from "drizzle-orm/neon-http";
@@ -282,6 +285,11 @@ export interface IStorage {
   getReschedulingSuggestionById(id: number): Promise<any>;
   deleteReschedulingSuggestion(id: number): Promise<boolean>;
   deleteExpiredReschedulingSuggestions(): Promise<void>;
+
+  // Onboarding Progress
+  getOnboardingProgressByUser(userId: number, tenantId: number): Promise<OnboardingProgress[]>;
+  createOrUpdateOnboardingProgress(progress: InsertOnboardingProgress): Promise<OnboardingProgress>;
+  getOnboardingProgressByStep(userId: number, tenantId: number, stepId: string): Promise<OnboardingProgress | undefined>;
 }
 
 import { DatabaseStorage } from "./db-storage";
