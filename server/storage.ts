@@ -253,6 +253,7 @@ if (!databaseUrl) {
   console.log("No database configured, using in-memory storage for development");
   storage = new MemoryStorage();
 } else {
+  console.log("Database configured, using database storage");
   storage = new DatabaseStorage();
 }
 
