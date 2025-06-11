@@ -63,22 +63,27 @@ export default function OpeningHours() {
       // Comprehensive cache invalidation to ensure all components refresh
       queryClient.invalidateQueries({ 
         predicate: (query) => {
-          const queryKey = query.queryKey as string[];
+          const queryKey = query.queryKey as (string | number)[];
           return queryKey.some(key => 
-            typeof key === 'string' && (
+            (typeof key === 'string' && (
               key.includes('opening-hours') ||
+              key.includes('openingHours') ||
               key.includes('statistics') ||
               key.includes('dashboard') ||
               key.includes('restaurant') ||
               key.includes(`tenants/${tenantId}`)
-            )
+            )) ||
+            (typeof key === 'number' && key === restaurantId)
           );
         }
       });
       
-      // Force refetch of current page data
+      // Force refetch specific query keys used by different components
       queryClient.refetchQueries({ 
         queryKey: [`/api/tenants/${tenantId}/restaurants/${restaurantId}/opening-hours`] 
+      });
+      queryClient.refetchQueries({ 
+        queryKey: ["openingHours", restaurantId, parseInt(tenantId)] 
       });
     },
     onError: (error: any) => {
