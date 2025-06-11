@@ -4321,6 +4321,56 @@ app.put("/api/tenants/:tenantId/bookings/:id", validateTenant, async (req, res) 
     }
   });
 
+  // Onboarding Progress Routes
+  app.get("/api/tenants/:tenantId/onboarding-progress", attachUser, validateTenant, async (req: Request, res: Response) => {
+    try {
+      const tenantId = parseInt(req.params.tenantId);
+      const user = (req as any).user;
+
+      if (!user) {
+        return res.status(401).json({ message: "Authentication required" });
+      }
+
+      const progress = await storage.getOnboardingProgressByUser(user.id, tenantId);
+      res.json(progress);
+    } catch (error) {
+      console.error("Error fetching onboarding progress:", error);
+      res.status(500).json({ message: "Internal server error" });
+    }
+  });
+
+  app.post("/api/tenants/:tenantId/onboarding-progress", attachUser, validateTenant, async (req: Request, res: Response) => {
+    try {
+      const tenantId = parseInt(req.params.tenantId);
+      const user = (req as any).user;
+      const { stepId, stepCategory, isCompleted, skipped, restaurantId } = req.body;
+
+      if (!user) {
+        return res.status(401).json({ message: "Authentication required" });
+      }
+
+      if (!stepId || !stepCategory) {
+        return res.status(400).json({ message: "Step ID and category are required" });
+      }
+
+      const progressData = {
+        userId: user.id,
+        tenantId,
+        restaurantId: restaurantId || null,
+        stepId,
+        stepCategory,
+        isCompleted: isCompleted || false,
+        skipped: skipped || false
+      };
+
+      const progress = await storage.createOrUpdateOnboardingProgress(progressData);
+      res.json(progress);
+    } catch (error) {
+      console.error("Error updating onboarding progress:", error);
+      res.status(500).json({ message: "Internal server error" });
+    }
+  });
+
   // Generate Meta install link
   app.post("/api/tenants/:tenantId/restaurants/:restaurantId/meta-install-link", validateTenant, async (req, res) => {
     try {

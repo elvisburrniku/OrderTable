@@ -28,6 +28,7 @@ const {
   cutOffTimes,
   tableLayouts,
   integrationConfigurations,
+  onboardingProgress,
   menuCategories,
   menuItems,
   qrMenus,
@@ -1282,6 +1283,59 @@ export class DatabaseStorage implements IStorage {
       .set({ ...updates, updatedAt: new Date() })
       .where(eq(menuOrders.id, id))
       .returning();
+    return result[0];
+  }
+
+  // Onboarding Progress
+  async getOnboardingProgressByUser(userId: number, tenantId: number): Promise<any[]> {
+    if (!this.db) return [];
+    const result = await this.db.select().from(onboardingProgress)
+      .where(and(eq(onboardingProgress.userId, userId), eq(onboardingProgress.tenantId, tenantId)))
+      .orderBy(onboardingProgress.createdAt);
+    return result;
+  }
+
+  async createOrUpdateOnboardingProgress(progress: any): Promise<any> {
+    if (!this.db) throw new Error("Database connection not available");
+    
+    // Check if progress already exists for this step
+    const existing = await this.db.select().from(onboardingProgress)
+      .where(and(
+        eq(onboardingProgress.userId, progress.userId),
+        eq(onboardingProgress.tenantId, progress.tenantId),
+        eq(onboardingProgress.stepId, progress.stepId)
+      ));
+
+    if (existing.length > 0) {
+      // Update existing progress
+      const result = await this.db.update(onboardingProgress)
+        .set({
+          ...progress,
+          completedAt: progress.isCompleted ? new Date() : null
+        })
+        .where(eq(onboardingProgress.id, existing[0].id))
+        .returning();
+      return result[0];
+    } else {
+      // Create new progress
+      const result = await this.db.insert(onboardingProgress)
+        .values({
+          ...progress,
+          completedAt: progress.isCompleted ? new Date() : null
+        })
+        .returning();
+      return result[0];
+    }
+  }
+
+  async getOnboardingProgressByStep(userId: number, tenantId: number, stepId: string): Promise<any> {
+    if (!this.db) return null;
+    const result = await this.db.select().from(onboardingProgress)
+      .where(and(
+        eq(onboardingProgress.userId, userId),
+        eq(onboardingProgress.tenantId, tenantId),
+        eq(onboardingProgress.stepId, stepId)
+      ));
     return result[0];
   }
 }

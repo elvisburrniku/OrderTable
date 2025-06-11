@@ -6,6 +6,7 @@ import { AuthProvider } from "./lib/auth.tsx";
 import { TenantProvider } from "./lib/tenant";
 import { RouteGuard } from "./components/route-guard";
 import { SessionTimeoutHandler } from "./components/session-timeout-handler";
+import { TutorialProvider } from "./components/onboarding/TutorialProvider";
 import Home from "./pages/home";
 import Login from "./pages/login";
 import Register from "./pages/register";
