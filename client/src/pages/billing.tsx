@@ -1,19 +1,48 @@
-import { useState, useEffect } from 'react';
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { loadStripe } from '@stripe/stripe-js';
-import { Elements, CardElement, useStripe, useElements } from '@stripe/react-stripe-js';
-import { apiRequest } from '@/lib/queryClient';
-import { useToast } from '@/hooks/use-toast';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
-import { Separator } from '@/components/ui/separator';
-import { Alert, AlertDescription } from '@/components/ui/alert';
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
-import { CreditCard, Download, Plus, Trash2, Star, AlertCircle, CheckCircle, Clock } from 'lucide-react';
-import { format } from 'date-fns';
+import { useState, useEffect } from "react";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { loadStripe } from "@stripe/stripe-js";
+import {
+  Elements,
+  CardElement,
+  useStripe,
+  useElements,
+} from "@stripe/react-stripe-js";
+import { apiRequest } from "@/lib/queryClient";
+import { useToast } from "@/hooks/use-toast";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import { Separator } from "@/components/ui/separator";
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
+import {
+  CreditCard,
+  Download,
+  Plus,
+  Trash2,
+  Star,
+  AlertCircle,
+  CheckCircle,
+  Clock,
+} from "lucide-react";
+import { format } from "date-fns";
 
-const stripePromise = loadStripe(import.meta.env.VITE_STRIPE_PUBLIC_KEY || 'pk_test_your_publishable_key');
+const stripePromise = loadStripe(
+  import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY || "pk_test_your_publishable_key",
+);
 
 interface PaymentMethod {
   id: string;
@@ -55,7 +84,7 @@ const AddPaymentMethodForm = ({ onSuccess }: { onSuccess: () => void }) => {
   const [isLoading, setIsLoading] = useState(false);
 
   const setupIntentMutation = useMutation({
-    mutationFn: () => apiRequest('POST', '/api/billing/setup-intent'),
+    mutationFn: () => apiRequest("POST", "/api/billing/setup-intent"),
     onSuccess: async (data) => {
       if (!stripe || !elements) return;
 
@@ -63,11 +92,11 @@ const AddPaymentMethodForm = ({ onSuccess }: { onSuccess: () => void }) => {
       if (!cardElement) return;
 
       setIsLoading(true);
-      
+
       const { error } = await stripe.confirmCardSetup(data.clientSecret, {
         payment_method: {
           card: cardElement,
-        }
+        },
       });
 
       setIsLoading(false);
@@ -92,7 +121,7 @@ const AddPaymentMethodForm = ({ onSuccess }: { onSuccess: () => void }) => {
         description: error.message || "Failed to add payment method",
         variant: "destructive",
       });
-    }
+    },
   });
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -107,40 +136,42 @@ const AddPaymentMethodForm = ({ onSuccess }: { onSuccess: () => void }) => {
           options={{
             style: {
               base: {
-                fontSize: '16px',
-                color: '#424770',
-                '::placeholder': {
-                  color: '#aab7c4',
+                fontSize: "16px",
+                color: "#424770",
+                "::placeholder": {
+                  color: "#aab7c4",
                 },
               },
             },
           }}
         />
       </div>
-      <Button 
-        type="submit" 
+      <Button
+        type="submit"
         disabled={!stripe || isLoading || setupIntentMutation.isPending}
         className="w-full"
       >
-        {isLoading || setupIntentMutation.isPending ? 'Adding...' : 'Add Payment Method'}
+        {isLoading || setupIntentMutation.isPending
+          ? "Adding..."
+          : "Add Payment Method"}
       </Button>
     </form>
   );
 };
 
-const PaymentMethodCard = ({ 
-  paymentMethod, 
-  isDefault, 
-  onSetDefault, 
-  onDelete 
-}: { 
+const PaymentMethodCard = ({
+  paymentMethod,
+  isDefault,
+  onSetDefault,
+  onDelete,
+}: {
   paymentMethod: PaymentMethod;
   isDefault: boolean;
   onSetDefault: () => void;
   onDelete: () => void;
 }) => {
   const brandIcon = paymentMethod.card.brand.toUpperCase();
-  
+
   return (
     <Card className="relative">
       <CardContent className="p-4">
@@ -152,13 +183,17 @@ const PaymentMethodCard = ({
                 {brandIcon} •••• {paymentMethod.card.last4}
               </div>
               <div className="text-sm text-muted-foreground">
-                Expires {paymentMethod.card.exp_month}/{paymentMethod.card.exp_year}
+                Expires {paymentMethod.card.exp_month}/
+                {paymentMethod.card.exp_year}
               </div>
             </div>
           </div>
           <div className="flex items-center space-x-2">
             {isDefault && (
-              <Badge variant="secondary" className="flex items-center space-x-1">
+              <Badge
+                variant="secondary"
+                className="flex items-center space-x-1"
+              >
                 <Star className="h-3 w-3" />
                 <span>Default</span>
               </Badge>
@@ -181,11 +216,27 @@ const PaymentMethodCard = ({
 const InvoiceRow = ({ invoice }: { invoice: Invoice }) => {
   const getStatusBadge = (status: string) => {
     switch (status) {
-      case 'paid':
-        return <Badge variant="default" className="bg-green-100 text-green-800 border-green-200"><CheckCircle className="h-3 w-3 mr-1" />Paid</Badge>;
-      case 'open':
-        return <Badge variant="default" className="bg-yellow-100 text-yellow-800 border-yellow-200"><Clock className="h-3 w-3 mr-1" />Open</Badge>;
-      case 'void':
+      case "paid":
+        return (
+          <Badge
+            variant="default"
+            className="bg-green-100 text-green-800 border-green-200"
+          >
+            <CheckCircle className="h-3 w-3 mr-1" />
+            Paid
+          </Badge>
+        );
+      case "open":
+        return (
+          <Badge
+            variant="default"
+            className="bg-yellow-100 text-yellow-800 border-yellow-200"
+          >
+            <Clock className="h-3 w-3 mr-1" />
+            Open
+          </Badge>
+        );
+      case "void":
         return <Badge variant="secondary">Void</Badge>;
       default:
         return <Badge variant="outline">{status}</Badge>;
@@ -197,31 +248,42 @@ const InvoiceRow = ({ invoice }: { invoice: Invoice }) => {
       <div className="flex-1">
         <div className="font-medium">#{invoice.number}</div>
         <div className="text-sm text-muted-foreground">
-          {format(new Date(invoice.created * 1000), 'MMM dd, yyyy')}
+          {format(new Date(invoice.created * 1000), "MMM dd, yyyy")}
         </div>
         {invoice.period_start && invoice.period_end && (
           <div className="text-xs text-muted-foreground">
-            Service period: {format(new Date(invoice.period_start * 1000), 'MMM dd')} - {format(new Date(invoice.period_end * 1000), 'MMM dd, yyyy')}
+            Service period:{" "}
+            {format(new Date(invoice.period_start * 1000), "MMM dd")} -{" "}
+            {format(new Date(invoice.period_end * 1000), "MMM dd, yyyy")}
           </div>
         )}
       </div>
       <div className="text-right space-y-1">
         <div className="font-medium">
-          ${(invoice.amount_paid / 100).toFixed(2)} {invoice.currency.toUpperCase()}
+          ${(invoice.amount_paid / 100).toFixed(2)}{" "}
+          {invoice.currency.toUpperCase()}
         </div>
         {getStatusBadge(invoice.status)}
       </div>
       <div className="ml-4 space-x-2">
         {invoice.hosted_invoice_url && (
           <Button variant="outline" size="sm" asChild>
-            <a href={invoice.hosted_invoice_url} target="_blank" rel="noopener noreferrer">
+            <a
+              href={invoice.hosted_invoice_url}
+              target="_blank"
+              rel="noopener noreferrer"
+            >
               View
             </a>
           </Button>
         )}
         {invoice.invoice_pdf && (
           <Button variant="outline" size="sm" asChild>
-            <a href={invoice.invoice_pdf} target="_blank" rel="noopener noreferrer">
+            <a
+              href={invoice.invoice_pdf}
+              target="_blank"
+              rel="noopener noreferrer"
+            >
               <Download className="h-4 w-4" />
             </a>
           </Button>
@@ -236,27 +298,30 @@ export default function BillingPage() {
   const queryClient = useQueryClient();
   const [addPaymentDialogOpen, setAddPaymentDialogOpen] = useState(false);
 
-  const { data: billingInfo, isLoading: billingLoading } = useQuery<BillingInfo>({
-    queryKey: ['/api/billing/info'],
-  });
+  const { data: billingInfo, isLoading: billingLoading } =
+    useQuery<BillingInfo>({
+      queryKey: ["/api/billing/info"],
+    });
 
-  const { data: invoicesData, isLoading: invoicesLoading } = useQuery<{ invoices: Invoice[] }>({
-    queryKey: ['/api/billing/invoices'],
+  const { data: invoicesData, isLoading: invoicesLoading } = useQuery<{
+    invoices: Invoice[];
+  }>({
+    queryKey: ["/api/billing/invoices"],
   });
 
   const { data: subscriptionDetails } = useQuery({
-    queryKey: ['/api/subscription/details'],
+    queryKey: ["/api/subscription/details"],
   });
 
   const deletePaymentMethodMutation = useMutation({
-    mutationFn: (paymentMethodId: string) => 
-      apiRequest('DELETE', `/api/billing/payment-method/${paymentMethodId}`),
+    mutationFn: (paymentMethodId: string) =>
+      apiRequest("DELETE", `/api/billing/payment-method/${paymentMethodId}`),
     onSuccess: () => {
       toast({
         title: "Success",
         description: "Payment method removed successfully",
       });
-      queryClient.invalidateQueries({ queryKey: ['/api/billing/info'] });
+      queryClient.invalidateQueries({ queryKey: ["/api/billing/info"] });
     },
     onError: (error: any) => {
       toast({
@@ -264,18 +329,20 @@ export default function BillingPage() {
         description: error.message || "Failed to remove payment method",
         variant: "destructive",
       });
-    }
+    },
   });
 
   const setDefaultPaymentMethodMutation = useMutation({
-    mutationFn: (paymentMethodId: string) => 
-      apiRequest('PUT', '/api/billing/default-payment-method', { paymentMethodId }),
+    mutationFn: (paymentMethodId: string) =>
+      apiRequest("PUT", "/api/billing/default-payment-method", {
+        paymentMethodId,
+      }),
     onSuccess: () => {
       toast({
         title: "Success",
         description: "Default payment method updated",
       });
-      queryClient.invalidateQueries({ queryKey: ['/api/billing/info'] });
+      queryClient.invalidateQueries({ queryKey: ["/api/billing/info"] });
     },
     onError: (error: any) => {
       toast({
@@ -283,18 +350,20 @@ export default function BillingPage() {
         description: error.message || "Failed to update default payment method",
         variant: "destructive",
       });
-    }
+    },
   });
 
   const cancelSubscriptionMutation = useMutation({
-    mutationFn: () => apiRequest('POST', '/api/billing/cancel-subscription'),
+    mutationFn: () => apiRequest("POST", "/api/billing/cancel-subscription"),
     onSuccess: (data) => {
       toast({
         title: "Subscription Cancelled",
         description: data.message,
       });
-      queryClient.invalidateQueries({ queryKey: ['/api/billing/info'] });
-      queryClient.invalidateQueries({ queryKey: ['/api/subscription/details'] });
+      queryClient.invalidateQueries({ queryKey: ["/api/billing/info"] });
+      queryClient.invalidateQueries({
+        queryKey: ["/api/subscription/details"],
+      });
     },
     onError: (error: any) => {
       toast({
@@ -302,18 +371,21 @@ export default function BillingPage() {
         description: error.message || "Failed to cancel subscription",
         variant: "destructive",
       });
-    }
+    },
   });
 
   const reactivateSubscriptionMutation = useMutation({
-    mutationFn: () => apiRequest('POST', '/api/billing/reactivate-subscription'),
+    mutationFn: () =>
+      apiRequest("POST", "/api/billing/reactivate-subscription"),
     onSuccess: (data) => {
       toast({
         title: "Subscription Reactivated",
         description: data.message,
       });
-      queryClient.invalidateQueries({ queryKey: ['/api/billing/info'] });
-      queryClient.invalidateQueries({ queryKey: ['/api/subscription/details'] });
+      queryClient.invalidateQueries({ queryKey: ["/api/billing/info"] });
+      queryClient.invalidateQueries({
+        queryKey: ["/api/subscription/details"],
+      });
     },
     onError: (error: any) => {
       toast({
@@ -321,12 +393,12 @@ export default function BillingPage() {
         description: error.message || "Failed to reactivate subscription",
         variant: "destructive",
       });
-    }
+    },
   });
 
   const handlePaymentMethodSuccess = () => {
     setAddPaymentDialogOpen(false);
-    queryClient.invalidateQueries({ queryKey: ['/api/billing/info'] });
+    queryClient.invalidateQueries({ queryKey: ["/api/billing/info"] });
   };
 
   if (billingLoading) {
@@ -343,7 +415,8 @@ export default function BillingPage() {
     );
   }
 
-  const defaultPaymentMethod = billingInfo?.customer?.invoice_settings?.default_payment_method;
+  const defaultPaymentMethod =
+    billingInfo?.customer?.invoice_settings?.default_payment_method;
 
   return (
     <div className="container mx-auto py-6 space-y-6">
@@ -356,30 +429,36 @@ export default function BillingPage() {
         <Card>
           <CardHeader>
             <CardTitle>Current Subscription</CardTitle>
-            <CardDescription>Manage your subscription plan and billing</CardDescription>
+            <CardDescription>
+              Manage your subscription plan and billing
+            </CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
             <div className="flex items-center justify-between">
               <div>
                 <div className="font-medium text-lg">
-                  {subscriptionDetails.plan?.name || 'Free Trial'}
+                  {subscriptionDetails.plan?.name || "Free Trial"}
                 </div>
                 <div className="text-sm text-muted-foreground">
-                  {subscriptionDetails.plan ? 
-                    `$${(subscriptionDetails.plan.price / 100).toFixed(2)}/${subscriptionDetails.plan.interval}` :
-                    'No active subscription'
-                  }
+                  {subscriptionDetails.plan
+                    ? `$${(subscriptionDetails.plan.price / 100).toFixed(2)}/${subscriptionDetails.plan.interval}`
+                    : "No active subscription"}
                 </div>
               </div>
               <div className="text-right">
-                <Badge 
-                  variant={subscriptionDetails.tenant.subscriptionStatus === 'active' ? 'default' : 'secondary'}
+                <Badge
+                  variant={
+                    subscriptionDetails.tenant.subscriptionStatus === "active"
+                      ? "default"
+                      : "secondary"
+                  }
                   className={
-                    subscriptionDetails.tenant.subscriptionStatus === 'active' 
-                      ? 'bg-green-100 text-green-800 border-green-200' 
-                      : subscriptionDetails.tenant.subscriptionStatus === 'trial'
-                      ? 'bg-blue-100 text-blue-800 border-blue-200'
-                      : 'bg-red-100 text-red-800 border-red-200'
+                    subscriptionDetails.tenant.subscriptionStatus === "active"
+                      ? "bg-green-100 text-green-800 border-green-200"
+                      : subscriptionDetails.tenant.subscriptionStatus ===
+                          "trial"
+                        ? "bg-blue-100 text-blue-800 border-blue-200"
+                        : "bg-red-100 text-red-800 border-red-200"
                   }
                 >
                   {subscriptionDetails.tenant.subscriptionStatus}
@@ -389,36 +468,50 @@ export default function BillingPage() {
 
             {subscriptionDetails.tenant.subscriptionStartDate && (
               <div className="text-sm text-muted-foreground">
-                {subscriptionDetails.tenant.subscriptionStatus === 'cancelled' ? 'Expires' : 'Next billing'}: {' '}
-                {format(new Date(subscriptionDetails.tenant.subscriptionEndDate), 'MMM dd, yyyy')}
+                {subscriptionDetails.tenant.subscriptionStatus === "cancelled"
+                  ? "Expires"
+                  : "Next billing"}
+                :{" "}
+                {format(
+                  new Date(subscriptionDetails.tenant.subscriptionEndDate),
+                  "MMM dd, yyyy",
+                )}
               </div>
             )}
 
-            {subscriptionDetails.tenant.subscriptionStatus === 'active' && (
+            {subscriptionDetails.tenant.subscriptionStatus === "active" && (
               <div className="flex space-x-2">
                 <Button
                   variant="outline"
                   onClick={() => cancelSubscriptionMutation.mutate()}
                   disabled={cancelSubscriptionMutation.isPending}
                 >
-                  {cancelSubscriptionMutation.isPending ? 'Cancelling...' : 'Cancel Subscription'}
+                  {cancelSubscriptionMutation.isPending
+                    ? "Cancelling..."
+                    : "Cancel Subscription"}
                 </Button>
               </div>
             )}
 
-            {subscriptionDetails.tenant.subscriptionStatus === 'cancelled' && (
+            {subscriptionDetails.tenant.subscriptionStatus === "cancelled" && (
               <div className="space-y-2">
                 <Alert>
                   <AlertCircle className="h-4 w-4" />
                   <AlertDescription>
-                    Your subscription will end on {format(new Date(subscriptionDetails.tenant.subscriptionEndDate), 'MMM dd, yyyy')}
+                    Your subscription will end on{" "}
+                    {format(
+                      new Date(subscriptionDetails.tenant.subscriptionEndDate),
+                      "MMM dd, yyyy",
+                    )}
                   </AlertDescription>
                 </Alert>
                 <Button
                   onClick={() => reactivateSubscriptionMutation.mutate()}
                   disabled={reactivateSubscriptionMutation.isPending}
                 >
-                  {reactivateSubscriptionMutation.isPending ? 'Reactivating...' : 'Reactivate Subscription'}
+                  {reactivateSubscriptionMutation.isPending
+                    ? "Reactivating..."
+                    : "Reactivate Subscription"}
                 </Button>
               </div>
             )}
@@ -432,9 +525,14 @@ export default function BillingPage() {
           <div className="flex items-center justify-between">
             <div>
               <CardTitle>Payment Methods</CardTitle>
-              <CardDescription>Manage your saved payment methods</CardDescription>
+              <CardDescription>
+                Manage your saved payment methods
+              </CardDescription>
             </div>
-            <Dialog open={addPaymentDialogOpen} onOpenChange={setAddPaymentDialogOpen}>
+            <Dialog
+              open={addPaymentDialogOpen}
+              onOpenChange={setAddPaymentDialogOpen}
+            >
               <DialogTrigger asChild>
                 <Button>
                   <Plus className="h-4 w-4 mr-2" />
@@ -449,7 +547,9 @@ export default function BillingPage() {
                   </DialogDescription>
                 </DialogHeader>
                 <Elements stripe={stripePromise}>
-                  <AddPaymentMethodForm onSuccess={handlePaymentMethodSuccess} />
+                  <AddPaymentMethodForm
+                    onSuccess={handlePaymentMethodSuccess}
+                  />
                 </Elements>
               </DialogContent>
             </Dialog>
@@ -463,7 +563,9 @@ export default function BillingPage() {
                   key={pm.id}
                   paymentMethod={pm}
                   isDefault={pm.id === defaultPaymentMethod}
-                  onSetDefault={() => setDefaultPaymentMethodMutation.mutate(pm.id)}
+                  onSetDefault={() =>
+                    setDefaultPaymentMethodMutation.mutate(pm.id)
+                  }
                   onDelete={() => deletePaymentMethodMutation.mutate(pm.id)}
                 />
               ))}
@@ -472,7 +574,9 @@ export default function BillingPage() {
             <div className="text-center py-8 text-muted-foreground">
               <CreditCard className="h-12 w-12 mx-auto mb-4 opacity-50" />
               <p>No payment methods added yet</p>
-              <p className="text-sm">Add a payment method to manage your subscription</p>
+              <p className="text-sm">
+                Add a payment method to manage your subscription
+              </p>
             </div>
           )}
         </CardContent>
@@ -489,10 +593,16 @@ export default function BillingPage() {
             <div className="flex items-center justify-between">
               <div>
                 <div className="font-medium">
-                  Next charge: ${(billingInfo.upcomingInvoice.amount_due / 100).toFixed(2)} {billingInfo.upcomingInvoice.currency.toUpperCase()}
+                  Next charge: $
+                  {(billingInfo.upcomingInvoice.amount_due / 100).toFixed(2)}{" "}
+                  {billingInfo.upcomingInvoice.currency.toUpperCase()}
                 </div>
                 <div className="text-sm text-muted-foreground">
-                  Due: {format(new Date(billingInfo.upcomingInvoice.period_end * 1000), 'MMM dd, yyyy')}
+                  Due:{" "}
+                  {format(
+                    new Date(billingInfo.upcomingInvoice.period_end * 1000),
+                    "MMM dd, yyyy",
+                  )}
                 </div>
               </div>
             </div>
@@ -504,13 +614,18 @@ export default function BillingPage() {
       <Card>
         <CardHeader>
           <CardTitle>Invoice History</CardTitle>
-          <CardDescription>View and download your past invoices</CardDescription>
+          <CardDescription>
+            View and download your past invoices
+          </CardDescription>
         </CardHeader>
         <CardContent>
           {invoicesLoading ? (
             <div className="space-y-3">
               {[1, 2, 3].map((i) => (
-                <div key={i} className="animate-pulse flex items-center justify-between p-4 border rounded">
+                <div
+                  key={i}
+                  className="animate-pulse flex items-center justify-between p-4 border rounded"
+                >
                   <div className="space-y-2">
                     <div className="h-4 bg-gray-200 rounded w-24"></div>
                     <div className="h-3 bg-gray-200 rounded w-32"></div>
