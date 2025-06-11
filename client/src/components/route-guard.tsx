@@ -46,6 +46,8 @@ export function RouteGuard({ children }: RouteGuardProps) {
         /^\/\d+\/dashboard$/,
         /^\/\d+\/bookings$/,
         /^\/\d+\/bookings\/\d+$/,
+        /^\/\d+\/change-requests$/,
+        /^\/\d+\/calendar$/,
         /^\/\d+\/tables$/,
         /^\/\d+\/customers$/,
         /^\/\d+\/statistics$/,
@@ -82,8 +84,9 @@ export function RouteGuard({ children }: RouteGuardProps) {
         /^\/\d+\/table-feedback$/,
         /^\/\d+\/feedback-responses-popup$/,
         /^\/contact$/,
-        /^\/guest-booking$/,
-        /^\/booking-manage$/
+        /^\/guest-booking\/\d+$/,
+        /^\/booking-manage\/\w+$/,
+        /^\/feedback\/\d+\/\d+$/
       ];
 
       const isKnownRoute = knownRoutes.some(pattern => pattern.test(location));
