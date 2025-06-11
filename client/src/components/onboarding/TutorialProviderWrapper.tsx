@@ -11,6 +11,13 @@ export function TutorialProviderWrapper({ children }: TutorialProviderWrapperPro
   const { restaurant } = useAuth();
   const { tenant } = useTenant();
 
+  console.log('TutorialProviderWrapper context:', {
+    tenantId: tenant?.id || restaurant?.tenantId,
+    restaurantId: restaurant?.id,
+    tenant,
+    restaurant
+  });
+
   return (
     <TutorialProvider 
       tenantId={tenant?.id || restaurant?.tenantId} 

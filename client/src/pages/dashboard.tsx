@@ -32,6 +32,7 @@ import { useTutorial } from "@/components/onboarding/TutorialProvider";
 export default function Dashboard() {
   const [, setLocation] = useLocation();
   const { user, restaurant, logout, isLoading } = useAuth();
+  const { startTutorial, tutorialState } = useTutorial();
   const [selectedDate, setSelectedDate] = useState(new Date());
   const [viewMode, setViewMode] = useState<'calendar' | 'layout'>('calendar');
   const [selectedRoom, setSelectedRoom] = useState<string>("");
@@ -712,6 +713,17 @@ export default function Dashboard() {
                 tenantId={restaurant?.tenantId!} 
               />
             </div>
+            {/* Debug Tutorial Button */}
+            <Button 
+              onClick={() => {
+                console.log('Manual tutorial start clicked', { tutorialState });
+                startTutorial();
+              }}
+              variant="outline"
+              className="bg-blue-50 border-blue-200 text-blue-700 hover:bg-blue-100"
+            >
+              Start Tutorial
+            </Button>
           </div>
           <div className="flex items-center space-x-4">
             <Input 
