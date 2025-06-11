@@ -5468,6 +5468,77 @@ app.put("/api/tenants/:tenantId/bookings/:id", validateTenant, async (req, res) 
   // CONFLICT RESOLUTION SYSTEM API
   // ===============================
 
+  // Conflict resolution generator
+  const ConflictResolver = {
+    generateTableResolutions: (booking1: any, booking2: any, tableId: number) => {
+      return [
+        {
+          id: `reassign-${booking1.id}`,
+          type: 'reassign_table',
+          description: `Move ${booking1.customerName} to another table`,
+          impact: 'low',
+          confidence: 85,
+          estimatedCustomerSatisfaction: 80,
+          details: { bookingToMove: booking1.id, originalTableId: tableId }
+        },
+        {
+          id: `adjust-time-${booking2.id}`,
+          type: 'adjust_time',
+          description: `Adjust ${booking2.customerName}'s time by 30 minutes`,
+          impact: 'low',
+          confidence: 75,
+          estimatedCustomerSatisfaction: 70,
+          details: { bookingToAdjust: booking2.id, timeAdjustment: 30 }
+        }
+      ];
+    },
+
+    generateCapacityResolutions: (booking: any, tables: any[]) => {
+      const suitableTables = tables.filter(t => t.capacity >= booking.guestCount && t.id !== booking.tableId);
+      const resolutions = [];
+
+      if (suitableTables.length > 0) {
+        resolutions.push({
+          id: `reassign-${booking.id}`,
+          type: 'reassign_table',
+          description: `Move to larger table (${suitableTables[0].name || `Table ${suitableTables[0].table_number}`})`,
+          impact: 'low',
+          confidence: 90,
+          estimatedCustomerSatisfaction: 85,
+          details: { newTableId: suitableTables[0].id, newTableName: suitableTables[0].name }
+        });
+      }
+
+      if (booking.guestCount > 6) {
+        resolutions.push({
+          id: `split-party-${booking.id}`,
+          type: 'split_party',
+          description: 'Split large party across adjacent tables',
+          impact: 'moderate',
+          confidence: 70,
+          estimatedCustomerSatisfaction: 75,
+          details: { splitSuggested: true, tablesNeeded: 2, compensationSuggested: true }
+        });
+      }
+
+      return resolutions;
+    },
+
+    generateTimeResolutions: (conflictingBookings: any[]) => {
+      return [
+        {
+          id: `stagger-times-${conflictingBookings[0].id}`,
+          type: 'stagger_times',
+          description: 'Stagger booking times to reduce overlap',
+          impact: 'moderate',
+          confidence: 80,
+          estimatedCustomerSatisfaction: 75,
+          details: { suggestedTimeAdjustments: conflictingBookings.map((b, i) => ({ bookingId: b.id, newTime: `${parseInt(b.startTime.split(':')[0]) + i}:${b.startTime.split(':')[1]}` })) }
+        }
+      ];
+    }
+  };
+
   // Conflict detection and analysis algorithms
   const ConflictDetector = {
     // Detect table double bookings
@@ -5586,122 +5657,47 @@ app.put("/api/tenants/:tenantId/bookings/:id", validateTenant, async (req, res) 
     }
   };
 
-  // Conflict resolution algorithm
-  const ConflictResolver = {
-    generateTableResolutions: (booking1: any, booking2: any, tableId: number) => {
-      const resolutions: any[] = [];
 
-      // Resolution 1: Move booking2 to different table
-      resolutions.push({
-        id: `reassign-${booking2.id}`,
-        type: 'reassign_table',
-        description: `Move ${booking2.customerName}'s booking to a different table`,
-        impact: 'minimal',
-        confidence: 85,
-        estimatedCustomerSatisfaction: 90,
-        details: {
-          bookingToMove: booking2.id,
-          originalTableId: tableId,
-          compensationSuggested: false
-        }
-      });
+  // Get heat map data for restaurant seating analytics
+  app.get("/api/tenants/:tenantId/restaurants/:restaurantId/heat-map", validateTenant, async (req, res) => {
+    try {
+      const tenantId = parseInt(req.params.tenantId);
+      const restaurantId = parseInt(req.params.restaurantId);
 
-      // Resolution 2: Adjust time for one booking
-      resolutions.push({
-        id: `adjust-time-${booking2.id}`,
-        type: 'adjust_time',
-        description: `Adjust ${booking2.customerName}'s booking time by 30 minutes`,
-        impact: 'moderate',
-        confidence: 75,
-        estimatedCustomerSatisfaction: 80,
-        details: {
-          bookingToAdjust: booking2.id,
-          newTime: ConflictResolver.calculateAdjustedTime(booking2.startTime, 30),
-          compensationSuggested: true
-        }
-      });
-
-      // Resolution 3: Contact customers for preference
-      resolutions.push({
-        id: `contact-customers-${tableId}`,
-        type: 'contact_customers',
-        description: 'Contact both customers to resolve conflict manually',
-        impact: 'significant',
-        confidence: 95,
-        estimatedCustomerSatisfaction: 85,
-        details: {
-          contactBoth: true,
-          compensationSuggested: true
-        }
-      });
-
-      return resolutions;
-    },
-
-    generateCapacityResolutions: (booking: any, tables: any[]) => {
-      const resolutions: any[] = [];
-      const suitableTables = tables.filter(t => t.capacity >= booking.guestCount);
-
-      if (suitableTables.length > 0) {
-        // Resolution 1: Upgrade to larger table
-        const bestTable = suitableTables.reduce((best, current) => 
-          current.capacity < best.capacity ? current : best
-        );
-
-        resolutions.push({
-          id: `upgrade-table-${booking.id}`,
-          type: 'upgrade_table',
-          description: `Upgrade to ${bestTable.name} (capacity: ${bestTable.capacity})`,
-          impact: 'minimal',
-          confidence: 90,
-          estimatedCustomerSatisfaction: 95,
-          details: {
-            newTableId: bestTable.id,
-            upgrade: true,
-            compensationSuggested: false
-          }
-        });
+      const restaurant = await storage.getRestaurantById(restaurantId);
+      if (!restaurant || restaurant.tenantId !== tenantId) {
+        return res.status(404).json({ message: "Restaurant not found" });
       }
 
-      // Resolution 2: Split party across multiple tables
-      if (booking.guestCount > 8) {
-        resolutions.push({
-          id: `split-party-${booking.id}`,
-          type: 'split_party',
-          description: 'Split large party across adjacent tables',
-          impact: 'moderate',
-          confidence: 70,
-          estimatedCustomerSatisfaction: 75,
-          details: {
-            splitSuggested: true,
-            tablesNeeded: Math.ceil(booking.guestCount / 6),
-            compensationSuggested: true
-          }
-        });
-      }
+      const tables = await storage.getTablesByRestaurant(restaurantId);
+      const bookings = await storage.getBookingsByRestaurant(restaurantId);
 
-      return resolutions;
-    },
+      // Calculate heat map data for each table
+      const heatMapData = tables.map(table => {
+        const tableBookings = bookings.filter(b => b.tableId === table.id);
+        const totalBookings = tableBookings.length;
+        const totalRevenue = tableBookings.reduce((sum, booking) => sum + (booking.totalAmount || 0), 0);
+        const avgGuestCount = totalBookings > 0 ? tableBookings.reduce((sum, b) => sum + b.guestCount, 0) / totalBookings : 0;
 
-    generateTimeResolutions: (bookings: any[]) => {
-      const resolutions: any[] = [];
-
-      // Resolution 1: Stagger booking times
-      resolutions.push({
-        id: `stagger-times-${Date.now()}`,
-        type: 'adjust_time',
-        description: 'Stagger booking times by 15-minute intervals',
-        impact: 'minimal',
-        confidence: 80,
-        estimatedCustomerSatisfaction: 85,
-        details: {
-          staggerInterval: 15,
-          affectedBookings: bookings.map(b => b.id)
-        }
+        return {
+          tableId: table.id,
+          tableName: table.name || `Table ${table.table_number}`,
+          tableNumber: table.table_number,
+          capacity: table.capacity,
+          totalBookings,
+          totalRevenue: totalRevenue || 0,
+          averageGuestCount: Math.round(avgGuestCount * 10) / 10,
+          utilizationRate: table.capacity > 0 ? Math.round((avgGuestCount / table.capacity) * 100) : 0,
+          revenuePerSeat: table.capacity > 0 ? Math.round((totalRevenue || 0) / table.capacity * 100) / 100 : 0
+        };
       });
 
-      return resolutions;
-    },
+      res.json(heatMapData);
+    } catch (error) {
+      console.error("Error generating heat map data:", error);
+      res.status(500).json({ message: "Internal server error" });
+    }
+  });
 
     calculateAdjustedTime: (originalTime: string, minutesOffset: number) => {
       const [hours, minutes] = originalTime.split(':').map(Number);
