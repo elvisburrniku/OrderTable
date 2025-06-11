@@ -274,8 +274,13 @@ export default function CalendarPage() {
       });
     }
 
+    // Apply booking type filter
+    if (filters.bookingType !== "all") {
+      filtered = filtered.filter(booking => booking.bookingType === filters.bookingType);
+    }
+
     return filtered;
-  }, [bookings, searchQuery, filters.status, filters.guestCount, filters.timeRange, filters.table]);
+  }, [bookings, searchQuery, filters.status, filters.guestCount, filters.timeRange, filters.table, filters.bookingType]);
 
   // Navigation functions
   const navigatePrevious = () => {
@@ -357,6 +362,7 @@ export default function CalendarPage() {
       startTime: time,
       endTime: addMinutesToTime(time, 120),
       guestCount: 2,
+      bookingType: "regular",
       notes: "",
     });
     setIsCreateDialogOpen(true);
@@ -374,6 +380,7 @@ export default function CalendarPage() {
       endTime: booking.endTime || "",
       guestCount: booking.guestCount,
       tableId: booking.tableId,
+      bookingType: booking.bookingType || "regular",
       notes: booking.notes || "",
     });
     setIsEditDialogOpen(true);
@@ -560,6 +567,22 @@ export default function CalendarPage() {
         </div>
         
         <div className="flex items-center gap-2">
+          {/* Booking Type Filter */}
+          <Select value={filters.bookingType} onValueChange={(value) => setFilters(prev => ({ ...prev, bookingType: value }))}>
+            <SelectTrigger className="w-32">
+              <SelectValue placeholder="All Types" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All Types</SelectItem>
+              <SelectItem value="regular">Regular</SelectItem>
+              <SelectItem value="lunch">Lunch</SelectItem>
+              <SelectItem value="dinner">Dinner</SelectItem>
+              <SelectItem value="brunch">Brunch</SelectItem>
+              <SelectItem value="private_event">Private Event</SelectItem>
+              <SelectItem value="special_occasion">Special Occasion</SelectItem>
+            </SelectContent>
+          </Select>
+          
           <Select value={viewMode} onValueChange={(value: ViewMode) => setViewMode(value)}>
             <SelectTrigger className="w-24">
               <SelectValue />
@@ -690,6 +713,32 @@ export default function CalendarPage() {
                       )}
                     />
                   </div>
+                  
+                  <FormField
+                    control={form.control}
+                    name="bookingType"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Booking Type</FormLabel>
+                        <Select onValueChange={field.onChange} defaultValue="regular">
+                          <FormControl>
+                            <SelectTrigger>
+                              <SelectValue placeholder="Select booking type" />
+                            </SelectTrigger>
+                          </FormControl>
+                          <SelectContent>
+                            <SelectItem value="regular">Regular</SelectItem>
+                            <SelectItem value="lunch">Lunch</SelectItem>
+                            <SelectItem value="dinner">Dinner</SelectItem>
+                            <SelectItem value="brunch">Brunch</SelectItem>
+                            <SelectItem value="private_event">Private Event</SelectItem>
+                            <SelectItem value="special_occasion">Special Occasion</SelectItem>
+                          </SelectContent>
+                        </Select>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
                   
                   <FormField
                     control={form.control}
@@ -988,6 +1037,32 @@ export default function CalendarPage() {
                   )}
                 />
               </div>
+              
+              <FormField
+                control={editForm.control}
+                name="bookingType"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Booking Type</FormLabel>
+                    <Select onValueChange={field.onChange} value={field.value}>
+                      <FormControl>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Select booking type" />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        <SelectItem value="regular">Regular</SelectItem>
+                        <SelectItem value="lunch">Lunch</SelectItem>
+                        <SelectItem value="dinner">Dinner</SelectItem>
+                        <SelectItem value="brunch">Brunch</SelectItem>
+                        <SelectItem value="private_event">Private Event</SelectItem>
+                        <SelectItem value="special_occasion">Special Occasion</SelectItem>
+                      </SelectContent>
+                    </Select>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
               
               <FormField
                 control={editForm.control}
