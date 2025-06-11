@@ -58,6 +58,18 @@ export default function GoogleCalendar({ selectedDate, bookings, allBookings = [
     enabled: !!restaurant?.id && !!restaurant?.tenantId,
   });
 
+  // Fetch special periods
+  const { data: specialPeriods = [] } = useQuery({
+    queryKey: ["specialPeriods", restaurant?.id, restaurant?.tenantId],
+    queryFn: async () => {
+      if (!restaurant?.id || !restaurant?.tenantId) return [];
+      const response = await fetch(`/api/tenants/${restaurant.tenantId}/restaurants/${restaurant.id}/special-periods`);
+      if (!response.ok) throw new Error("Failed to fetch special periods");
+      return response.json();
+    },
+    enabled: !!restaurant?.id && !!restaurant?.tenantId,
+  });
+
   const [newBooking, setNewBooking] = useState({
     customerName: "",
     customerEmail: "",
@@ -119,6 +131,25 @@ export default function GoogleCalendar({ selectedDate, bookings, allBookings = [
   });
 
   const getOpeningHoursForDay = (date: Date) => {
+    // Check if there's a special period that affects this date
+    const dateStr = format(date, 'yyyy-MM-dd');
+    const specialPeriod = specialPeriods.find((period: any) => {
+      const startDate = new Date(period.startDate);
+      const endDate = new Date(period.endDate);
+      return date >= startDate && date <= endDate;
+    });
+
+    // If there's a special period, use its settings
+    if (specialPeriod) {
+      return {
+        isOpen: specialPeriod.isOpen,
+        openTime: specialPeriod.openTime || "09:00",
+        closeTime: specialPeriod.closeTime || "22:00",
+        dayOfWeek: date.getDay()
+      };
+    }
+
+    // Otherwise, use regular opening hours
     if (!openingHours || !Array.isArray(openingHours)) {
       return null;
     }

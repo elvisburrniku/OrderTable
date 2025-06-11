@@ -129,6 +129,18 @@ export default function Dashboard() {
     enabled: !!restaurant?.id && !!restaurant?.tenantId,
   });
 
+  // Fetch special periods
+  const { data: specialPeriods = [] } = useQuery({
+    queryKey: ["specialPeriods", restaurant?.id, restaurant?.tenantId],
+    queryFn: async () => {
+      if (!restaurant?.id || !restaurant?.tenantId) return [];
+      const response = await fetch(`/api/tenants/${restaurant.tenantId}/restaurants/${restaurant.id}/special-periods`);
+      if (!response.ok) throw new Error("Failed to fetch special periods");
+      return response.json();
+    },
+    enabled: !!restaurant?.id && !!restaurant?.tenantId,
+  });
+
   // Load saved table layout
   const { data: savedLayout } = useQuery({
     queryKey: ["/api/tenants", restaurant?.tenantId, "restaurants", restaurant?.id, "table-layout", selectedRoom],

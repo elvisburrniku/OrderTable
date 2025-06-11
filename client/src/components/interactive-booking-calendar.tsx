@@ -76,6 +76,19 @@ export default function InteractiveBookingCalendar({
     enabled: !!restaurantId && (!isPublic ? !!tenantId : true),
   });
 
+  // Fetch special periods
+  const { data: specialPeriods = [] } = useQuery({
+    queryKey: [isPublic ? "public-special-periods" : "special-periods", restaurantId, tenantId],
+    queryFn: async () => {
+      if (isPublic) return []; // Special periods not exposed for public booking
+      const url = `/api/tenants/${tenantId}/restaurants/${restaurantId}/special-periods`;
+      const response = await fetch(url);
+      if (!response.ok) throw new Error("Failed to fetch special periods");
+      return response.json();
+    },
+    enabled: !!restaurantId && !isPublic && !!tenantId,
+  });
+
   // Fetch availability data for visible date range
   useEffect(() => {
     const fetchAvailabilityData = async () => {
@@ -83,11 +96,29 @@ export default function InteractiveBookingCalendar({
         const dateStr = format(day, 'yyyy-MM-dd');
         
         try {
-          // Get opening hours for this day
-          const dayOfWeek = day.getDay();
-          const dayHours = openingHours && Array.isArray(openingHours) 
-            ? openingHours.find((h: any) => h.dayOfWeek === dayOfWeek)
-            : null;
+          // Check if there's a special period that affects this date
+          const specialPeriod = specialPeriods.find((period: any) => {
+            const startDate = new Date(period.startDate);
+            const endDate = new Date(period.endDate);
+            return day >= startDate && day <= endDate;
+          });
+
+          let dayHours;
+          if (specialPeriod) {
+            // Use special period settings
+            dayHours = {
+              isOpen: specialPeriod.isOpen,
+              openTime: specialPeriod.openTime || "09:00",
+              closeTime: specialPeriod.closeTime || "22:00",
+              dayOfWeek: day.getDay()
+            };
+          } else {
+            // Use regular opening hours
+            const dayOfWeek = day.getDay();
+            dayHours = openingHours && Array.isArray(openingHours) 
+              ? openingHours.find((h: any) => h.dayOfWeek === dayOfWeek)
+              : null;
+          }
           
           if (!dayHours || !dayHours.isOpen) {
             return [dateStr, {
