@@ -165,7 +165,42 @@ export default function GoogleCalendar({ selectedDate, bookings, allBookings = [
   const handleCreateBooking = (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (!selectedTimeSlot) return;
+    // Validation checks with clear error messages
+    if (!selectedTimeSlot) {
+      toast({
+        title: "Error",
+        description: "Please select a time slot first",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    if (!newBooking.customerName.trim()) {
+      toast({
+        title: "Error",
+        description: "Customer name is required",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    if (!newBooking.customerEmail.trim()) {
+      toast({
+        title: "Error",
+        description: "Customer email is required",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    if (newBooking.guestCount < 1) {
+      toast({
+        title: "Error",
+        description: "Guest count must be at least 1",
+        variant: "destructive"
+      });
+      return;
+    }
 
     let tableId = null;
     if (newBooking.tableId && newBooking.tableId !== "auto") {
@@ -185,6 +220,12 @@ export default function GoogleCalendar({ selectedDate, bookings, allBookings = [
     const month = String(selectedTimeSlot.date.getMonth() + 1).padStart(2, '0');
     const day = String(selectedTimeSlot.date.getDate()).padStart(2, '0');
     const dateString = `${year}-${month}-${day}`;
+
+    // Show loading feedback
+    toast({
+      title: "Creating Booking",
+      description: "Please wait while we process your booking...",
+    });
 
     createBookingMutation.mutate({
       ...newBooking,
@@ -592,8 +633,19 @@ export default function GoogleCalendar({ selectedDate, bookings, allBookings = [
               <Button type="button" variant="outline" onClick={() => setIsNewBookingOpen(false)}>
                 Cancel
               </Button>
-              <Button type="submit" disabled={createBookingMutation.isPending}>
-                {createBookingMutation.isPending ? "Creating..." : "Create Booking"}
+              <Button 
+                type="submit" 
+                disabled={createBookingMutation.isPending || !selectedTimeSlot}
+                className="min-w-[120px]"
+              >
+                {createBookingMutation.isPending ? (
+                  <div className="flex items-center">
+                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                    Creating...
+                  </div>
+                ) : (
+                  "Create Booking"
+                )}
               </Button>
             </div>
           </form>
