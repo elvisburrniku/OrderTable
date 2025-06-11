@@ -113,13 +113,13 @@ export default function ConflictResolutionSystem({
 
   // Auto-resolve conflicts mutation
   const autoResolveMutation = useMutation({
-    mutationFn: async (conflictId: string) => {
+    mutationFn: async ({ bookingId, newTableId, resolutionType }: { bookingId: number, newTableId: number, resolutionType: string }) => {
       const response = await apiRequest(
         "POST",
-        `/api/tenants/${tenantId}/restaurants/${restaurantId}/conflicts/${conflictId}/auto-resolve`
+        `/api/tenants/${tenantId}/restaurants/${restaurantId}/conflicts/auto-resolve`,
+        { bookingId, newTableId, resolutionType }
       );
-      if (!response.ok) throw new Error("Failed to auto-resolve conflict");
-      return response.json();
+      return response;
     },
     onSuccess: (data, conflictId) => {
       toast({
@@ -224,9 +224,18 @@ export default function ConflictResolutionSystem({
     }
   };
 
-  const handleAutoResolve = (conflictId: string) => {
+  const handleAutoResolve = (conflict: ConflictType) => {
+    if (conflict.suggestedResolutions.length === 0) return;
+    
+    const resolution = conflict.suggestedResolutions.find(r => r.autoExecutable);
+    if (!resolution) return;
+
     setIsResolving(true);
-    autoResolveMutation.mutate(conflictId);
+    autoResolveMutation.mutate({
+      bookingId: resolution.bookingId,
+      newTableId: resolution.newTableId,
+      resolutionType: resolution.type
+    });
     setTimeout(() => setIsResolving(false), 2000);
   };
 
@@ -342,7 +351,7 @@ export default function ConflictResolutionSystem({
                         {conflict.autoResolvable && autoResolveEnabled && (
                           <Button
                             size="sm"
-                            onClick={() => handleAutoResolve(conflict.id)}
+                            onClick={() => handleAutoResolve(conflict)}
                             disabled={isResolving}
                           >
                             <Shuffle className="w-4 h-4 mr-2" />
@@ -412,11 +421,11 @@ export default function ConflictResolutionSystem({
                               </span>
                               <div className="flex items-center space-x-2">
                                 <Progress 
-                                  value={conflict.suggestedResolutions[0].confidence} 
+                                  value={conflict.suggestedResolutions[0].estimatedCustomerSatisfaction} 
                                   className="w-20 h-2"
                                 />
                                 <span className="text-sm text-green-700">
-                                  {conflict.suggestedResolutions[0].confidence}%
+                                  {conflict.suggestedResolutions[0].estimatedCustomerSatisfaction}%
                                 </span>
                               </div>
                             </div>
