@@ -215,10 +215,13 @@ export default function CalendarPage() {
   const getDateRange = useCallback(() => {
     switch (viewMode) {
       case 'day':
+        console.log('Day view - returning single date:', format(currentDate, 'yyyy-MM-dd'));
         return [currentDate];
       case 'week':
         const weekStart = startOfWeek(currentDate, { weekStartsOn: 0 });
-        return Array.from({ length: 7 }, (_, i) => addDays(weekStart, i));
+        const weekRange = Array.from({ length: 7 }, (_, i) => addDays(weekStart, i));
+        console.log('Week view - returning range:', weekRange.map(d => format(d, 'yyyy-MM-dd')));
+        return weekRange;
       case 'month':
         const monthStart = startOfMonth(currentDate);
         const monthEnd = endOfMonth(currentDate);
