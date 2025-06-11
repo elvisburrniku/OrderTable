@@ -88,6 +88,7 @@ if (!databaseUrl) {
 }
 
 export interface IStorage {
+  initialize(): Promise<void>;
   // Users
   getUser(id: number): Promise<User | undefined>;
   getUserById(id: number): Promise<User | undefined>;
@@ -243,9 +244,19 @@ export interface IStorage {
 }
 
 import { DatabaseStorage } from "./db-storage";
+import { MemoryStorage } from "./mem-storage";
 
-// Use database storage instead of memory storage
-export const storage = new DatabaseStorage();
+// Use database storage if available, otherwise use memory storage
+let storage: IStorage;
 
-// Initialize database with default data
+if (!databaseUrl) {
+  console.log("No database configured, using in-memory storage for development");
+  storage = new MemoryStorage();
+} else {
+  storage = new DatabaseStorage();
+}
+
+// Initialize storage with default data
 storage.initialize().catch(console.error);
+
+export { storage };
