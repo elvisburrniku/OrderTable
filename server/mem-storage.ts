@@ -715,7 +715,36 @@ export class MemoryStorage implements IStorage {
     return { success: true, data: newCutOffTimes };
   }
   async isRestaurantOpen(restaurantId: number, bookingDate: Date, bookingTime: string): Promise<boolean> { return true; }
-  async isBookingAllowed(restaurantId: number, bookingDate: Date, bookingTime: string): Promise<boolean> { return true; }
+  async isBookingAllowed(restaurantId: number, bookingDate: Date, bookingTime: string): Promise<boolean> { 
+    // Get cut-off times for this restaurant
+    const cutOffTimes = this.cutOffTimes.filter(time => time.restaurantId === restaurantId && time.isEnabled);
+    
+    if (cutOffTimes.length === 0) {
+      return true; // No cut-off times configured, allow booking
+    }
+    
+    // Get the day of week for the booking date (0 = Sunday, 1 = Monday, etc.)
+    const bookingDayOfWeek = bookingDate.getDay();
+    
+    // Find cut-off time for this day
+    const cutOffTime = cutOffTimes.find(time => time.dayOfWeek === bookingDayOfWeek);
+    
+    if (!cutOffTime || cutOffTime.cutOffHours === 0) {
+      return true; // No cut-off time for this day or set to "None"
+    }
+    
+    // Create booking datetime by combining date and time
+    const [hours, minutes] = bookingTime.split(':').map(Number);
+    const bookingDateTime = new Date(bookingDate);
+    bookingDateTime.setHours(hours, minutes, 0, 0);
+    
+    // Calculate cut-off datetime (current time + cut-off hours)
+    const now = new Date();
+    const cutOffDateTime = new Date(now.getTime() + (cutOffTime.cutOffHours * 60 * 60 * 1000));
+    
+    // Check if booking time is after the cut-off time
+    return bookingDateTime > cutOffDateTime;
+  }
   async getBookingChangeRequestsByBookingId(bookingId: number): Promise<any[]> { return []; }
   async getBookingChangeRequestsByRestaurant(restaurantId: number): Promise<any[]> { return []; }
   async createBookingChangeRequest(request: any): Promise<any> { return { id: this.nextId++, ...request }; }

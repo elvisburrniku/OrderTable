@@ -658,6 +658,19 @@ export async function registerRoutes(app: Express): Promise<Server> {
         bookingDate: new Date(req.body.bookingDate)
       });
 
+      // Check if booking is allowed based on cut-off times
+      const isAllowed = await storage.isBookingAllowed(
+        restaurantId, 
+        new Date(req.body.bookingDate), 
+        req.body.startTime
+      );
+
+      if (!isAllowed) {
+        return res.status(400).json({ 
+          message: "Booking not allowed due to cut-off time restrictions. Please select a different time slot." 
+        });
+      }
+
       const booking = await storage.createBooking(bookingData);
 
       // Generate and store management hash for the booking
