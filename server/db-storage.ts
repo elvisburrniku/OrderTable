@@ -255,7 +255,16 @@ export class DatabaseStorage implements IStorage {
   async getBookingsByRestaurant(restaurantId: number): Promise<any[]> {
     if (!this.db) return [];
     const result = await this.db.select().from(bookings).where(eq(bookings.restaurantId, restaurantId));
-    return result;
+    
+    // Transform the data to ensure proper date format for frontend
+    return result.map(booking => ({
+      ...booking,
+      bookingDate: booking.bookingDate instanceof Date 
+        ? booking.bookingDate.toISOString().split('T')[0] 
+        : typeof booking.bookingDate === 'string' 
+        ? booking.bookingDate.split('T')[0]
+        : booking.bookingDate
+    }));
   }
 
   async getBookingsByDate(restaurantId: number, date: string): Promise<any[]> {
@@ -267,7 +276,16 @@ export class DatabaseStorage implements IStorage {
         eq(bookings.restaurantId, restaurantId),
         sql`DATE(${bookings.bookingDate}) = ${date}`
       ));
-    return result;
+    
+    // Transform the data to ensure proper date format for frontend
+    return result.map(booking => ({
+      ...booking,
+      bookingDate: booking.bookingDate instanceof Date 
+        ? booking.bookingDate.toISOString().split('T')[0] 
+        : typeof booking.bookingDate === 'string' 
+        ? booking.bookingDate.split('T')[0]
+        : booking.bookingDate
+    }));
   }
 
   async createBooking(booking: any): Promise<any> {

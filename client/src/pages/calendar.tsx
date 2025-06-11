@@ -231,7 +231,6 @@ export default function CalendarPage() {
   const displayBookings = useMemo(() => {
     if (!bookings) return [];
     
-    console.log("Raw bookings data:", bookings);
     let filtered = [...bookings];
 
     // Apply search filter
@@ -272,7 +271,6 @@ export default function CalendarPage() {
       });
     }
 
-    console.log("Filtered bookings:", filtered);
     return filtered;
   }, [bookings, searchQuery, filters.status, filters.guestCount, filters.timeRange, filters.table]);
 
@@ -312,7 +310,7 @@ export default function CalendarPage() {
   // Get bookings for a specific date and time
   const getBookingsForSlot = (date: Date, timeSlot: string) => {
     const dateStr = format(date, 'yyyy-MM-dd');
-    const slotBookings = displayBookings.filter((booking) => {
+    return displayBookings.filter((booking) => {
       if (booking.bookingDate !== dateStr) return false;
       
       const bookingStart = booking.startTime;
@@ -320,12 +318,6 @@ export default function CalendarPage() {
       
       return isTimeInRange(timeSlot, bookingStart, bookingEnd);
     });
-    
-    if (slotBookings.length > 0) {
-      console.log(`Found ${slotBookings.length} bookings for ${dateStr} at ${timeSlot}:`, slotBookings);
-    }
-    
-    return slotBookings;
   };
 
   // Utility function to add minutes to a time string
