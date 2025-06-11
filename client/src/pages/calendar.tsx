@@ -139,7 +139,11 @@ export default function CalendarPage() {
 
   const deleteBookingMutation = useMutation({
     mutationFn: async (id: number) => {
-      return apiRequest(`/api/tenants/${tenantId}/restaurants/22/bookings/${id}`, "DELETE");
+      const response = await apiRequest(`/api/tenants/${tenantId}/restaurants/22/bookings/${id}`, "DELETE");
+      if (!response.ok) {
+        throw new Error(`Failed to delete booking: ${response.status}`);
+      }
+      return response.json();
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: [`/api/tenants/${tenantId}/restaurants/22/bookings`] });
@@ -178,6 +182,31 @@ export default function CalendarPage() {
       notes: "",
     },
   });
+
+  // Update form values when dialog opens
+  useEffect(() => {
+    if (isCreateDialogOpen && selectedDate && selectedTimeSlot) {
+      form.setValue('bookingDate', format(selectedDate, 'yyyy-MM-dd'));
+      form.setValue('startTime', selectedTimeSlot);
+    }
+  }, [isCreateDialogOpen, selectedDate, selectedTimeSlot, form]);
+
+  // Update edit form when selectedBooking changes
+  useEffect(() => {
+    if (selectedBooking && isEditDialogOpen) {
+      editForm.reset({
+        customerName: selectedBooking.customerName,
+        customerEmail: selectedBooking.customerEmail,
+        customerPhone: selectedBooking.customerPhone || "",
+        bookingDate: selectedBooking.bookingDate,
+        startTime: selectedBooking.startTime,
+        endTime: selectedBooking.endTime || "",
+        guestCount: selectedBooking.guestCount,
+        tableId: selectedBooking.tableId || undefined,
+        notes: selectedBooking.notes || "",
+      });
+    }
+  }, [selectedBooking, isEditDialogOpen, editForm]);
 
   // Get the date range for the current view
   const getDateRange = useCallback(() => {
