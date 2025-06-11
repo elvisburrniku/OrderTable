@@ -25,7 +25,7 @@ export function SetupGuard({ children }: SetupGuardProps) {
         setLocation('/setup');
       }
     }
-  }, [session, isLoading, setLocation]);
+  }, [session, isLoading]);
 
   // Show loading while checking setup status
   if (isLoading) {

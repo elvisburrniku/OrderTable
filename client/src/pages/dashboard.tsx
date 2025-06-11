@@ -54,7 +54,7 @@ export default function Dashboard() {
     if (!isLoading && (!user || !restaurant)) {
       setLocation("/login");
     }
-  }, [isLoading, user, restaurant, setLocation]);
+  }, [isLoading, user, restaurant]);
 
   // Fetch today's bookings
   const { data: todayBookings = [] } = useQuery({

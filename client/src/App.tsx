@@ -4,6 +4,8 @@ import { queryClient } from "./lib/queryClient";
 import { Toaster } from "@/components/ui/toaster";
 import { AuthProvider } from "./lib/auth.tsx";
 import { TenantProvider } from "./lib/tenant";
+import { RouteGuard } from "./components/route-guard";
+import { SessionTimeoutHandler } from "./components/session-timeout-handler";
 import Home from "./pages/home";
 import Login from "./pages/login";
 import Register from "./pages/register";
@@ -66,7 +68,9 @@ function App() {
     <QueryClientProvider client={queryClient}>
       <AuthProvider>
         <TenantProvider>
-          <Switch>
+          <RouteGuard>
+            <SessionTimeoutHandler />
+            <Switch>
             <Route path="/" component={Home} />
             <Route path="/login" component={Login} />
             <Route path="/register" component={Register} />
@@ -124,7 +128,8 @@ function App() {
             <Route path="/contact" component={Contact} />
             <Route path="/guest-booking/:restaurantId" component={GuestBooking} />
             <Route component={NotFound} />
-          </Switch>
+            </Switch>
+          </RouteGuard>
           <Toaster />
         </TenantProvider>
       </AuthProvider>
