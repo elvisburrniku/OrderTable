@@ -617,6 +617,29 @@ export class MemoryStorage implements IStorage {
     
     return [];
   }
+
+  async getOpeningHours(tenantId: number, restaurantId: number): Promise<any[]> {
+    return this.openingHours.filter(hour => 
+      hour.restaurantId === restaurantId && hour.tenantId === tenantId
+    ).sort((a, b) => a.dayOfWeek - b.dayOfWeek);
+  }
+
+  async createOpeningHour(hourData: any): Promise<any> {
+    const newHour = {
+      id: this.nextId++,
+      ...hourData,
+      createdAt: new Date(),
+      updatedAt: new Date()
+    };
+    this.openingHours.push(newHour);
+    return newHour;
+  }
+
+  async clearOpeningHours(tenantId: number, restaurantId: number): Promise<void> {
+    this.openingHours = this.openingHours.filter(hour => 
+      !(hour.restaurantId === restaurantId && hour.tenantId === tenantId)
+    );
+  }
   async getSpecialPeriodsByRestaurant(restaurantId: number): Promise<any> { return []; }
   async createSpecialPeriod(periodData: any): Promise<any> { return { id: this.nextId++, ...periodData }; }
   async updateSpecialPeriod(id: number, updates: any): Promise<any> { return undefined; }
