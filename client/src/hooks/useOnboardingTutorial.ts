@@ -240,15 +240,16 @@ export function useOnboardingTutorial(tenantId?: number, restaurantId?: number) 
 
   // Auto-start tutorial for new users in a separate effect
   useEffect(() => {
-    console.log('Tutorial auto-start check:', {
-      userProgress: userProgress?.length,
-      isActive: tutorialState.isActive,
-      tenantId,
-      restaurantId
-    });
+    if (!userProgress || !tenantId) return;
     
-    if (userProgress && userProgress.length === 0 && !tutorialState.isActive && tenantId) {
-      console.log('Starting tutorial automatically');
+
+    
+    // Check if user has completed the tutorial (all steps completed or skipped)
+    const completedSteps = userProgress.filter((p: any) => p.isCompleted || p.skipped);
+    const hasCompletedTutorial = completedSteps.length >= TUTORIAL_STEPS.length;
+    
+    // Only auto-start tutorial for completely new users (no progress at all)
+    if (userProgress.length === 0 && !tutorialState.isActive && !hasCompletedTutorial) {
       const firstStep = TUTORIAL_STEPS[0];
       setTutorialState(prev => ({
         ...prev,
@@ -257,6 +258,13 @@ export function useOnboardingTutorial(tenantId?: number, restaurantId?: number) 
         currentStepIndex: 0,
         canGoNext: true,
         canGoPrevious: false
+      }));
+    } else if (hasCompletedTutorial && tutorialState.isActive) {
+      setTutorialState(prev => ({
+        ...prev,
+        isActive: false,
+        currentStepId: null,
+        currentStepIndex: -1
       }));
     }
   }, [userProgress, tutorialState.isActive, tenantId, restaurantId]);

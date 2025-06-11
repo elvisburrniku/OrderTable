@@ -713,17 +713,7 @@ export default function Dashboard() {
                 tenantId={restaurant?.tenantId!} 
               />
             </div>
-            {/* Debug Tutorial Button */}
-            <Button 
-              onClick={() => {
-                console.log('Manual tutorial start clicked', { tutorialState });
-                startTutorial();
-              }}
-              variant="outline"
-              className="bg-blue-50 border-blue-200 text-blue-700 hover:bg-blue-100"
-            >
-              Start Tutorial
-            </Button>
+
           </div>
           <div className="flex items-center space-x-4">
             <Input 
@@ -758,6 +748,10 @@ export default function Dashboard() {
                 <DropdownMenuItem onClick={() => setLocation(`/${restaurant?.tenantId}/help`)}>
                   <HelpCircle className="mr-2 h-4 w-4" />
                   <span>Help</span>
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={startTutorial}>
+                  <Palette className="mr-2 h-4 w-4" />
+                  <span>Tutorial</span>
                 </DropdownMenuItem>
                 <DropdownMenuItem onClick={logout}>
                   <LogOut className="mr-2 h-4 w-4" />
