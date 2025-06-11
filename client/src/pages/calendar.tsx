@@ -109,7 +109,8 @@ export default function CalendarPage() {
       setIsCreateDialogOpen(false);
       toast({ title: "Booking created successfully" });
     },
-    onError: () => {
+    onError: (error) => {
+      console.error("Booking creation error:", error);
       toast({ title: "Failed to create booking", variant: "destructive" });
     },
   });
@@ -147,10 +148,11 @@ export default function CalendarPage() {
       customerName: "",
       customerEmail: "",
       customerPhone: "",
-      bookingDate: "",
-      startTime: "",
+      bookingDate: selectedDate ? format(selectedDate, 'yyyy-MM-dd') : format(new Date(), 'yyyy-MM-dd'),
+      startTime: selectedTimeSlot || "19:00",
       endTime: "",
       guestCount: 2,
+      tableId: undefined,
       notes: "",
     },
   });
