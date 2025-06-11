@@ -189,6 +189,53 @@ export default function CalendarPage() {
 
   const dateRange = getDateRange();
 
+  // Filter and search bookings
+  useEffect(() => {
+    let filtered = [...bookings];
+
+    // Apply search filter
+    if (searchQuery) {
+      filtered = filtered.filter(booking =>
+        booking.customerName.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        booking.customerEmail.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        (booking.notes && booking.notes.toLowerCase().includes(searchQuery.toLowerCase()))
+      );
+    }
+
+    // Apply status filter
+    if (filters.status !== "all") {
+      filtered = filtered.filter(booking => booking.status === filters.status);
+    }
+
+    // Apply guest count filter
+    if (filters.guestCount !== "all") {
+      const range = filters.guestCount;
+      filtered = filtered.filter(booking => {
+        if (range === "1-2") return booking.guestCount >= 1 && booking.guestCount <= 2;
+        if (range === "3-4") return booking.guestCount >= 3 && booking.guestCount <= 4;
+        if (range === "5-6") return booking.guestCount >= 5 && booking.guestCount <= 6;
+        if (range === "7+") return booking.guestCount >= 7;
+        return true;
+      });
+    }
+
+    // Apply time range filter
+    if (filters.timeRange !== "all") {
+      filtered = filtered.filter(booking => {
+        const hour = parseInt(booking.startTime.split(':')[0]);
+        if (filters.timeRange === "morning") return hour >= 9 && hour < 12;
+        if (filters.timeRange === "afternoon") return hour >= 12 && hour < 17;
+        if (filters.timeRange === "evening") return hour >= 17 && hour < 22;
+        if (filters.timeRange === "late") return hour >= 22;
+        return true;
+      });
+    }
+
+    setFilteredBookings(filtered);
+  }, [bookings, searchQuery, filters]);
+
+  const displayBookings = filteredBookings.length > 0 ? filteredBookings : bookings;
+
   // Navigation functions
   const navigatePrevious = () => {
     switch (viewMode) {
@@ -225,7 +272,7 @@ export default function CalendarPage() {
   // Get bookings for a specific date and time
   const getBookingsForSlot = (date: Date, timeSlot: string) => {
     const dateStr = format(date, 'yyyy-MM-dd');
-    return bookings.filter((booking) => {
+    return displayBookings.filter((booking) => {
       if (booking.bookingDate !== dateStr) return false;
       
       const bookingStart = booking.startTime;
@@ -414,6 +461,15 @@ export default function CalendarPage() {
 
   return (
     <div className="h-full flex flex-col">
+      {/* Enhanced Features */}
+      <div className="p-4 border-b">
+        <EnhancedCalendarFeatures
+          bookings={bookings}
+          onFilterChange={setFilters}
+          onSearch={setSearchQuery}
+        />
+      </div>
+
       {/* Header */}
       <div className="flex items-center justify-between p-4 border-b">
         <div className="flex items-center gap-4">
@@ -693,7 +749,7 @@ export default function CalendarPage() {
             </div>
             <div className="grid grid-cols-7 gap-1">
               {dateRange.map((date) => {
-                const dayBookings = bookings.filter((booking) => 
+                const dayBookings = displayBookings.filter((booking) => 
                   booking.bookingDate === format(date, 'yyyy-MM-dd')
                 );
                 
