@@ -108,8 +108,8 @@ export default function OpeningHours() {
   };
 
   return (
-    <div className="p-6 max-w-4xl mx-auto">
-      <div className="mb-8">
+    <div className="p-4 max-w-5xl mx-auto">
+      <div className="mb-4">
         <h1 className="text-2xl font-semibold text-gray-900 flex items-center mb-2">
           <Clock className="w-6 h-6 mr-2" />
           Restaurant Opening Hours
@@ -119,7 +119,7 @@ export default function OpeningHours() {
       <div className="bg-white rounded-lg border border-gray-200">
         <div className="space-y-0">
           {hours.map((hour, index) => (
-            <div key={hour.day} className="flex items-center justify-between p-4 border-b border-gray-100 last:border-b-0">
+            <div key={hour.day} className="flex items-center justify-between p-3 border-b border-gray-100 last:border-b-0">
               <div className="flex items-center space-x-4">
                 <Switch
                   checked={hour.enabled}
@@ -129,32 +129,32 @@ export default function OpeningHours() {
                 <span className="font-medium text-gray-900 w-20">{hour.day}</span>
               </div>
               
-              <div className="flex items-center space-x-6">
+              <div className="flex items-center space-x-4">
                 <div className="flex items-center space-x-2">
-                  <span className="text-sm text-gray-600">Open:</span>
-                  <div className="relative">
+                  <span className="text-sm text-gray-600 w-12">Open:</span>
+                  <div className="flex items-center">
                     <input
                       type="time"
                       value={hour.open}
                       onChange={(e) => updateTime(index, 'open', e.target.value)}
                       disabled={!hour.enabled}
-                      className="border border-gray-300 rounded px-3 py-1 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:bg-gray-100 disabled:text-gray-400"
+                      className="border border-gray-300 rounded px-2 py-1 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:bg-gray-100 disabled:text-gray-400 w-20"
                     />
-                    <span className="ml-2 text-xs text-gray-500">AM</span>
+                    <span className="ml-1 text-xs text-gray-500 w-6">AM</span>
                   </div>
                 </div>
                 
                 <div className="flex items-center space-x-2">
-                  <span className="text-sm text-gray-600">Close:</span>
-                  <div className="relative">
+                  <span className="text-sm text-gray-600 w-12">Close:</span>
+                  <div className="flex items-center">
                     <input
                       type="time"
                       value={hour.close}
                       onChange={(e) => updateTime(index, 'close', e.target.value)}
                       disabled={!hour.enabled}
-                      className="border border-gray-300 rounded px-3 py-1 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:bg-gray-100 disabled:text-gray-400"
+                      className="border border-gray-300 rounded px-2 py-1 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:bg-gray-100 disabled:text-gray-400 w-20"
                     />
-                    <span className="ml-2 text-xs text-gray-500">PM</span>
+                    <span className="ml-1 text-xs text-gray-500 w-6">PM</span>
                   </div>
                 </div>
               </div>
@@ -163,11 +163,11 @@ export default function OpeningHours() {
         </div>
       </div>
 
-      <div className="mt-6 flex justify-end">
+      <div className="mt-4 flex justify-end">
         <Button 
           onClick={() => saveHoursMutation.mutate()}
           disabled={saveHoursMutation.isPending}
-          className="bg-green-600 hover:bg-green-700 text-white px-6 py-2"
+          className="bg-green-600 hover:bg-green-700 text-white px-4 py-2"
         >
           {saveHoursMutation.isPending ? "Saving..." : "Save Opening Hours"}
         </Button>
