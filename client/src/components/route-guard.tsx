@@ -12,6 +12,20 @@ export function RouteGuard({ children }: RouteGuardProps) {
 
   useEffect(() => {
     if (!isLoading) {
+      // Skip authentication checks for public routes like guest booking
+      const publicRoutes = [
+        /^\/guest-booking\/\d+\/\d+$/,
+        /^\/contact$/,
+        /^\/feedback-responses$/,
+        /^\/feedback-responses-popup$/,
+        /^\/booking-manage$/
+      ];
+      
+      const isPublicRoute = publicRoutes.some(pattern => pattern.test(location));
+      if (isPublicRoute) {
+        return; // Skip authentication for public routes
+      }
+
       // Check if user is authenticated
       if (!user) {
         // Not authenticated, redirect to login
@@ -46,11 +60,6 @@ export function RouteGuard({ children }: RouteGuardProps) {
         /^\/\d+\/dashboard$/,
         /^\/\d+\/bookings$/,
         /^\/\d+\/bookings\/\d+$/,
-        /^\/\d+\/change-requests$/,
-        /^\/\d+\/calendar$/,
-        /^\/\d+\/calendar-legacy$/,
-        /^\/\d+\/qr-menu$/,
-        /^\/\d+\/floor-plan$/,
         /^\/\d+\/tables$/,
         /^\/\d+\/customers$/,
         /^\/\d+\/statistics$/,
@@ -87,9 +96,8 @@ export function RouteGuard({ children }: RouteGuardProps) {
         /^\/\d+\/table-feedback$/,
         /^\/\d+\/feedback-responses-popup$/,
         /^\/contact$/,
-        /^\/guest-booking\/\d+$/,
-        /^\/booking-manage\/\w+$/,
-        /^\/feedback\/\d+\/\d+$/
+        /^\/guest-booking\/\d+\/\d+$/,
+        /^\/booking-manage$/
       ];
 
       const isKnownRoute = knownRoutes.some(pattern => pattern.test(location));

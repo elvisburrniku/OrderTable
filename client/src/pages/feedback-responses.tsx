@@ -4,7 +4,6 @@ import { useAuth } from "@/lib/auth.tsx";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Download } from "lucide-react";
-import { DashboardLayout } from "@/components/dashboard-layout";
 
 export default function FeedbackResponses() {
   const { user, restaurant } = useAuth();
@@ -24,9 +23,56 @@ export default function FeedbackResponses() {
   }) || [];
 
   return (
-    <DashboardLayout>
-      <div className="min-h-screen bg-gray-50">
-        <div className="p-6">
+    <div className="min-h-screen bg-gray-50">
+      {/* Navigation */}
+      <div className="bg-white border-b">
+        <div className="flex items-center justify-between px-6 py-4">
+          <div className="flex items-center space-x-6">
+            <h1 className="text-xl font-semibold">Responses</h1>
+            <nav className="flex space-x-6">
+              <a href="/dashboard" className="text-gray-600 hover:text-gray-900">Booking</a>
+              <a href="#" className="text-green-600 font-medium">CRM</a>
+              <a href="#" className="text-gray-600 hover:text-gray-900">Archive</a>
+            </nav>
+          </div>
+          <div className="flex items-center space-x-4">
+            <span className="text-sm text-gray-600">{restaurant.name}</span>
+            <Button variant="outline" size="sm">Profile</Button>
+          </div>
+        </div>
+      </div>
+
+      <div className="flex">
+        {/* Sidebar */}
+        <div className="w-64 bg-white border-r min-h-screen">
+          <div className="p-6">
+            <div className="space-y-2">
+              <a href="/customers" className="flex items-center space-x-2 text-gray-600 hover:bg-gray-50 px-3 py-2 rounded">
+                <span className="w-2 h-2 bg-gray-400 rounded-full"></span>
+                <span>Customers</span>
+              </a>
+              <a href="/sms-messages" className="flex items-center space-x-2 text-gray-600 hover:bg-gray-50 px-3 py-2 rounded">
+                <span className="w-2 h-2 bg-gray-400 rounded-full"></span>
+                <span>SMS messages</span>
+              </a>
+              <div className="flex items-center space-x-2 text-green-600 bg-green-50 px-3 py-2 rounded">
+                <span className="w-2 h-2 bg-green-600 rounded-full"></span>
+                <span className="font-medium">Feedback responses</span>
+              </div>
+              <a href="/feedback-responses-popup" className="flex items-center space-x-2 text-gray-600 hover:bg-gray-50 px-3 py-2 rounded ml-4">
+                <span className="w-2 h-2 bg-blue-400 rounded-full"></span>
+                <span>Popup View</span>
+              </a>
+              <a href="#" className="flex items-center space-x-2 text-gray-600 hover:bg-gray-50 px-3 py-2 rounded">
+                <span className="w-2 h-2 bg-gray-400 rounded-full"></span>
+                <span>Newsletter</span>
+              </a>
+            </div>
+          </div>
+        </div>
+
+        {/* Main Content */}
+        <div className="flex-1 p-6">
           <div className="bg-white rounded-lg shadow">
             {/* Header */}
             <div className="p-6 border-b">
@@ -153,6 +199,6 @@ export default function FeedbackResponses() {
           </div>
         </div>
       </div>
-    </DashboardLayout>
+    </div>
   );
 }

@@ -96,7 +96,13 @@ export default function Bookings() {
   // Create booking mutation
   const createBookingMutation = useMutation({
     mutationFn: async (bookingData: any) => {
-      return apiRequest(`/api/tenants/${restaurant?.tenantId}/restaurants/${restaurant?.id}/bookings`, "POST", bookingData);
+      const response = await fetch(`/api/tenants/${tenantId}/restaurants/${restaurantId}/bookings`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(bookingData)
+      });
+      if (!response.ok) throw new Error('Failed to create booking');
+      return response.json();
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: [`/api/tenants/${tenantId}/restaurants/${restaurantId}/bookings`] });

@@ -20,12 +20,7 @@ import {
   specialPeriods,
   cutOffTimes,
   bookingChangeRequests,
-  notifications,
-  menuCategories,
-  menuItems,
-  qrMenus,
-  menuOrders,
-  onboardingProgress
+  notifications
 } from "@shared/schema";
 import type {
   User,
@@ -44,11 +39,6 @@ import type {
   TableLayout,
   CombinedTable,
   Notification,
-  MenuCategory,
-  MenuItem,
-  QrMenu,
-  MenuOrder,
-  OnboardingProgress,
   InsertUser,
   InsertRestaurant,
   InsertTable,
@@ -58,17 +48,12 @@ import type {
   InsertFeedback,
   InsertSmsMessage,
   InsertActivityLog,
-  InsertMenuCategory,
-  InsertMenuItem,
-  InsertQrMenu,
-  InsertMenuOrder,
   InsertTimeSlots,
   InsertSubscriptionPlan,
   InsertUserSubscription,
   InsertRoom,
   InsertCombinedTable,
-  InsertNotification,
-  InsertOnboardingProgress
+  InsertNotification
 } from "@shared/schema";
 import { neon } from "@neondatabase/serverless";
 import { drizzle } from "drizzle-orm/neon-http";
@@ -133,7 +118,6 @@ export interface IStorage {
   // Bookings
   getBookingsByRestaurant(restaurantId: number): Promise<Booking[]>;
   getBookingsByDate(restaurantId: number, date: string): Promise<Booking[]>;
-  getBookingsByDateRange(restaurantId: number, startDate: string, endDate: string): Promise<Booking[]>;
   getBookingById(id: number): Promise<Booking | undefined>;
   createBooking(booking: InsertBooking): Promise<Booking>;
   updateBooking(id: number, booking: Partial<Booking>): Promise<Booking | undefined>;
@@ -253,44 +237,11 @@ export interface IStorage {
   // Rescheduling Suggestions
   getReschedulingSuggestionsByRestaurant(restaurantId: number): Promise<any[]>;
   getReschedulingSuggestionsByBooking(bookingId: number): Promise<any[]>;
-
-  // Menu Management
-  getMenuCategoriesByRestaurant(restaurantId: number): Promise<MenuCategory[]>;
-  getMenuCategoryById(id: number): Promise<MenuCategory | undefined>;
-  createMenuCategory(category: InsertMenuCategory): Promise<MenuCategory>;
-  updateMenuCategory(id: number, updates: Partial<MenuCategory>): Promise<MenuCategory | undefined>;
-  deleteMenuCategory(id: number): Promise<boolean>;
-
-  getMenuItemsByRestaurant(restaurantId: number): Promise<MenuItem[]>;
-  getMenuItemsByCategory(categoryId: number): Promise<MenuItem[]>;
-  getMenuItemById(id: number): Promise<MenuItem | undefined>;
-  createMenuItem(item: InsertMenuItem): Promise<MenuItem>;
-  updateMenuItem(id: number, updates: Partial<MenuItem>): Promise<MenuItem | undefined>;
-  deleteMenuItem(id: number): Promise<boolean>;
-
-  getQrMenusByRestaurant(restaurantId: number): Promise<QrMenu[]>;
-  getQrMenuById(id: number): Promise<QrMenu | undefined>;
-  getQrMenuByCode(qrCode: string): Promise<QrMenu | undefined>;
-  createQrMenu(menu: InsertQrMenu): Promise<QrMenu>;
-  updateQrMenu(id: number, updates: Partial<QrMenu>): Promise<QrMenu | undefined>;
-  deleteQrMenu(id: number): Promise<boolean>;
-  incrementQrMenuScan(qrCode: string): Promise<void>;
-
-  getMenuOrdersByRestaurant(restaurantId: number): Promise<MenuOrder[]>;
-  getMenuOrdersByQrMenu(qrMenuId: number): Promise<MenuOrder[]>;
-  getMenuOrderById(id: number): Promise<MenuOrder | undefined>;
-  createMenuOrder(order: InsertMenuOrder): Promise<MenuOrder>;
-  updateMenuOrder(id: number, updates: Partial<MenuOrder>): Promise<MenuOrder | undefined>;
   createReschedulingSuggestion(suggestion: any): Promise<any>;
   updateReschedulingSuggestion(id: number, updates: any): Promise<any>;
   getReschedulingSuggestionById(id: number): Promise<any>;
   deleteReschedulingSuggestion(id: number): Promise<boolean>;
   deleteExpiredReschedulingSuggestions(): Promise<void>;
-
-  // Onboarding Progress
-  getOnboardingProgressByUser(userId: number, tenantId: number): Promise<OnboardingProgress[]>;
-  createOrUpdateOnboardingProgress(progress: InsertOnboardingProgress): Promise<OnboardingProgress>;
-  getOnboardingProgressByStep(userId: number, tenantId: number, stepId: string): Promise<OnboardingProgress | undefined>;
 }
 
 import { DatabaseStorage } from "./db-storage";

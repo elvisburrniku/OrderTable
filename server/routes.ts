@@ -620,7 +620,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const restaurantId = parseInt(req.params.restaurantId);
       const tenantId = parseInt(req.params.tenantId);
-      const { date, startDate, endDate } = req.query;
+      const { date } = req.query;
 
       // Verify restaurant belongs to tenant
       const restaurant = await storage.getRestaurantById(restaurantId);
@@ -629,16 +629,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
 
       let bookings;
-      if (startDate && endDate && typeof startDate === 'string' && typeof endDate === 'string') {
-        bookings = await storage.getBookingsByDateRange(restaurantId, startDate, endDate);
-      } else if (date && typeof date === 'string') {
+      if (date && typeof date === 'string') {
         bookings = await storage.getBookingsByDate(restaurantId, date);
       } else {
         bookings = await storage.getBookingsByRestaurant(restaurantId);
       }
+
       res.json(bookings);
     } catch (error) {
-      console.error("Error fetching bookings:", error);
       res.status(400).json({ message: "Invalid request" });
     }
   });
@@ -776,138 +774,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error("Booking creation error:", error);
       res.status(400).json({ message: "Invalid booking data" });
-    }
-  });
-
-  // PATCH endpoint for updating bookings with restaurant in path (for drag and drop)
-  app.patch("/api/tenants/:tenantId/restaurants/:restaurantId/bookings/:id", validateTenant, async (req, res) => {
-    try {
-      const id = parseInt(req.params.id);
-      const restaurantId = parseInt(req.params.restaurantId);
-      const tenantId = parseInt(req.params.tenantId);
-      const updates = req.body;
-
-      // Verify restaurant belongs to tenant
-      const restaurant = await storage.getRestaurantById(restaurantId);
-      if (!restaurant || restaurant.tenantId !== tenantId) {
-        return res.status(404).json({ message: "Restaurant not found" });
-      }
-
-      // Verify booking exists and belongs to the restaurant and tenant
-      const existingBooking = await storage.getBookingById(id);
-      if (!existingBooking || existingBooking.tenantId !== tenantId || existingBooking.restaurantId !== restaurantId) {
-        return res.status(404).json({ message: "Booking not found" });
-      }
-
-      // Process date field if provided
-      if (updates.bookingDate) {
-        try {
-          updates.bookingDate = new Date(updates.bookingDate);
-          if (isNaN(updates.bookingDate.getTime())) {
-            return res.status(400).json({ message: "Invalid booking date format" });
-          }
-        } catch (dateError) {
-          return res.status(400).json({ message: "Invalid booking date format" });
-        }
-      }
-
-      const booking = await storage.updateBooking(id, updates);
-      
-      if (!booking) {
-        return res.status(404).json({ message: "Booking not found after update" });
-      }
-
-      // Send webhook notifications for booking update
-      try {
-        const webhookService = new WebhookService(storage);
-        await webhookService.notifyBookingUpdated(restaurantId, booking);
-      } catch (webhookError) {
-        console.error('Error sending booking update webhook:', webhookError);
-      }
-      
-      res.json(booking);
-    } catch (error) {
-      console.error("Error updating booking:", error);
-      res.status(500).json({ message: "Internal server error" });
-    }
-  });
-
-  // PUT endpoint for updating bookings with restaurant in path
-  app.put("/api/tenants/:tenantId/restaurants/:restaurantId/bookings/:id", validateTenant, async (req, res) => {
-    try {
-      const id = parseInt(req.params.id);
-      const restaurantId = parseInt(req.params.restaurantId);
-      const tenantId = parseInt(req.params.tenantId);
-      const updates = req.body;
-
-      if (isNaN(id) || isNaN(restaurantId) || isNaN(tenantId)) {
-        return res.status(400).json({ message: "Invalid booking ID, restaurant ID, or tenant ID" });
-      }
-
-      // Verify restaurant belongs to tenant
-      const restaurant = await storage.getRestaurantById(restaurantId);
-      if (!restaurant || restaurant.tenantId !== tenantId) {
-        return res.status(404).json({ message: "Restaurant not found" });
-      }
-
-      // Verify booking exists and belongs to the restaurant and tenant
-      const existingBooking = await storage.getBookingById(id);
-      if (!existingBooking || existingBooking.tenantId !== tenantId || existingBooking.restaurantId !== restaurantId) {
-        return res.status(404).json({ message: "Booking not found" });
-      }
-
-      // Process date field if provided
-      if (updates.bookingDate) {
-        try {
-          updates.bookingDate = new Date(updates.bookingDate);
-          if (isNaN(updates.bookingDate.getTime())) {
-            return res.status(400).json({ message: "Invalid booking date format" });
-          }
-        } catch (dateError) {
-          return res.status(400).json({ message: "Invalid booking date format" });
-        }
-      }
-
-      // Validate numeric fields
-      if (updates.guestCount !== undefined) {
-        const guestCount = parseInt(updates.guestCount);
-        if (isNaN(guestCount) || guestCount < 1) {
-          return res.status(400).json({ message: "Guest count must be a positive number" });
-        }
-        updates.guestCount = guestCount;
-      }
-
-      if (updates.tableId !== undefined && updates.tableId !== null) {
-        const tableId = parseInt(updates.tableId);
-        if (isNaN(tableId)) {
-          return res.status(400).json({ message: "Invalid table ID" });
-        }
-        updates.tableId = tableId;
-      }
-
-      // Validate status if provided
-      if (updates.status && !['pending', 'confirmed', 'cancelled', 'completed'].includes(updates.status)) {
-        return res.status(400).json({ message: "Invalid booking status" });
-      }
-
-      const booking = await storage.updateBooking(id, updates);
-      
-      if (!booking) {
-        return res.status(404).json({ message: "Booking not found after update" });
-      }
-
-      // Send webhook notifications for booking update
-      try {
-        const webhookService = new WebhookService(storage);
-        await webhookService.notifyBookingUpdated(restaurantId, booking);
-      } catch (webhookError) {
-        console.error('Error sending booking update webhook:', webhookError);
-      }
-      
-      res.json(booking);
-    } catch (error) {
-      console.error("Error updating booking:", error);
-      res.status(500).json({ message: "Internal server error" });
     }
   });
 
@@ -3499,13 +3365,13 @@ app.put("/api/tenants/:tenantId/bookings/:id", validateTenant, async (req, res) 
       }
 
       // For any date/time/guest changes, validate availability and create change request
-      if (updates.bookingDate || updates.startTime || updates.guestCount || updates.newDate || updates.newTime || updates.newGuestCount) {
+      if (updates.newDate || updates.newTime || updates.newGuestCount) {
         console.log('Processing change request for date/time/guest count changes');
         
         // Validate availability for the requested changes
-        const requestedDate = updates.bookingDate || (updates.newDate ? new Date(updates.newDate) : booking.bookingDate);
-        const requestedTime = updates.startTime || updates.newTime || booking.startTime;
-        const requestedGuestCount = updates.guestCount || updates.newGuestCount || booking.guestCount;
+        const requestedDate = updates.newDate ? new Date(updates.newDate) : booking.bookingDate;
+        const requestedTime = updates.newTime || booking.startTime;
+        const requestedGuestCount = updates.newGuestCount || booking.guestCount;
         
         // Check if restaurant is open on the requested day
         const dayOfWeek = requestedDate.getDay();
@@ -4390,56 +4256,6 @@ app.put("/api/tenants/:tenantId/bookings/:id", validateTenant, async (req, res) 
       res.json({ message: "Integration configuration deleted successfully" });
     } catch (error) {
       console.error("Error deleting integration configuration:", error);
-      res.status(500).json({ message: "Internal server error" });
-    }
-  });
-
-  // Onboarding Progress Routes
-  app.get("/api/tenants/:tenantId/onboarding-progress", attachUser, validateTenant, async (req: Request, res: Response) => {
-    try {
-      const tenantId = parseInt(req.params.tenantId);
-      const user = (req as any).user;
-
-      if (!user) {
-        return res.status(401).json({ message: "Authentication required" });
-      }
-
-      const progress = await storage.getOnboardingProgressByUser(user.id, tenantId);
-      res.json(progress);
-    } catch (error) {
-      console.error("Error fetching onboarding progress:", error);
-      res.status(500).json({ message: "Internal server error" });
-    }
-  });
-
-  app.post("/api/tenants/:tenantId/onboarding-progress", attachUser, validateTenant, async (req: Request, res: Response) => {
-    try {
-      const tenantId = parseInt(req.params.tenantId);
-      const user = (req as any).user;
-      const { stepId, stepCategory, isCompleted, skipped, restaurantId } = req.body;
-
-      if (!user) {
-        return res.status(401).json({ message: "Authentication required" });
-      }
-
-      if (!stepId || !stepCategory) {
-        return res.status(400).json({ message: "Step ID and category are required" });
-      }
-
-      const progressData = {
-        userId: user.id,
-        tenantId,
-        restaurantId: restaurantId || null,
-        stepId,
-        stepCategory,
-        isCompleted: isCompleted || false,
-        skipped: skipped || false
-      };
-
-      const progress = await storage.createOrUpdateOnboardingProgress(progressData);
-      res.json(progress);
-    } catch (error) {
-      console.error("Error updating onboarding progress:", error);
       res.status(500).json({ message: "Internal server error" });
     }
   });
@@ -5696,337 +5512,7 @@ app.put("/api/tenants/:tenantId/bookings/:id", validateTenant, async (req, res) 
     });
   });
 
-  // QR Menu Management Routes
-
-  // Menu Categories
-  app.get('/api/tenants/:tenantId/restaurants/:restaurantId/menu-categories', async (req, res) => {
-    try {
-      const restaurantId = parseInt(req.params.restaurantId);
-      const categories = await storage.getMenuCategoriesByRestaurant(restaurantId);
-      res.json(categories);
-    } catch (error) {
-      console.error('Error fetching menu categories:', error);
-      res.status(500).json({ error: 'Failed to fetch menu categories' });
-    }
-  });
-
-  app.post('/api/tenants/:tenantId/restaurants/:restaurantId/menu-categories', async (req, res) => {
-    try {
-      const category = await storage.createMenuCategory(req.body);
-      res.json(category);
-    } catch (error) {
-      console.error('Error creating menu category:', error);
-      res.status(500).json({ error: 'Failed to create menu category' });
-    }
-  });
-
-  // Menu Items
-  app.get('/api/tenants/:tenantId/restaurants/:restaurantId/menu-items', async (req, res) => {
-    try {
-      const restaurantId = parseInt(req.params.restaurantId);
-      const items = await storage.getMenuItemsByRestaurant(restaurantId);
-      res.json(items);
-    } catch (error) {
-      console.error('Error fetching menu items:', error);
-      res.status(500).json({ error: 'Failed to fetch menu items' });
-    }
-  });
-
-  app.post('/api/tenants/:tenantId/restaurants/:restaurantId/menu-items', async (req, res) => {
-    try {
-      const item = await storage.createMenuItem(req.body);
-      res.json(item);
-    } catch (error) {
-      console.error('Error creating menu item:', error);
-      res.status(500).json({ error: 'Failed to create menu item' });
-    }
-  });
-
-  // QR Menus
-  app.get('/api/tenants/:tenantId/restaurants/:restaurantId/qr-menus', async (req, res) => {
-    try {
-      const restaurantId = parseInt(req.params.restaurantId);
-      const qrMenus = await storage.getQrMenusByRestaurant(restaurantId);
-      res.json(qrMenus);
-    } catch (error) {
-      console.error('Error fetching QR menus:', error);
-      res.status(500).json({ error: 'Failed to fetch QR menus' });
-    }
-  });
-
-  app.post('/api/tenants/:tenantId/restaurants/:restaurantId/qr-menus', async (req, res) => {
-    try {
-      const { name, description, tableId, roomId, restaurantId, tenantId } = req.body;
-      
-      // Generate unique QR code identifier
-      const qrCode = `qr_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
-      
-      // Generate menu URL
-      const baseUrl = process.env.NODE_ENV === 'production' 
-        ? 'https://your-domain.com' 
-        : `http://localhost:5000`;
-      const menuUrl = `${baseUrl}/menu/${qrCode}`;
-      
-      const qrMenu = await storage.createQrMenu({
-        name,
-        description,
-        qrCode,
-        menuUrl,
-        tableId,
-        roomId,
-        restaurantId,
-        tenantId,
-        isActive: true
-      });
-      
-      res.json(qrMenu);
-    } catch (error) {
-      console.error('Error creating QR menu:', error);
-      res.status(500).json({ error: 'Failed to create QR menu' });
-    }
-  });
-
-  // Public QR Menu Viewer
-  app.get('/menu/:qrCode', async (req, res) => {
-    try {
-      const { qrCode } = req.params;
-      
-      // Increment scan count
-      await storage.incrementQrMenuScan(qrCode);
-      
-      // Get QR menu details
-      const qrMenu = await storage.getQrMenuByCode(qrCode);
-      if (!qrMenu) {
-        return res.status(404).send('Menu not found');
-      }
-      
-      // Get menu categories and items
-      const categories = await storage.getMenuCategoriesByRestaurant(qrMenu.restaurantId);
-      const items = await storage.getMenuItemsByRestaurant(qrMenu.restaurantId);
-      
-      // Render a simple HTML menu page
-      const html = generateMenuHTML(qrMenu, categories, items);
-      res.send(html);
-    } catch (error) {
-      console.error('Error serving QR menu:', error);
-      res.status(500).send('Error loading menu');
-    }
-  });
-
-  // Menu Orders
-  app.get('/api/tenants/:tenantId/restaurants/:restaurantId/menu-orders', async (req, res) => {
-    try {
-      const restaurantId = parseInt(req.params.restaurantId);
-      const orders = await storage.getMenuOrdersByRestaurant(restaurantId);
-      res.json(orders);
-    } catch (error) {
-      console.error('Error fetching menu orders:', error);
-      res.status(500).json({ error: 'Failed to fetch menu orders' });
-    }
-  });
-
-  app.post('/api/tenants/:tenantId/restaurants/:restaurantId/menu-orders', async (req, res) => {
-    try {
-      const order = await storage.createMenuOrder(req.body);
-      res.json(order);
-    } catch (error) {
-      console.error('Error creating menu order:', error);
-      res.status(500).json({ error: 'Failed to create menu order' });
-    }
-  });
-
   return httpServer;
-}
-
-// Generate HTML for QR menu display
-function generateMenuHTML(qrMenu: any, categories: any[], items: any[]) {
-  const formatPrice = (price: number) => {
-    return new Intl.NumberFormat('en-US', {
-      style: 'currency',
-      currency: 'USD',
-    }).format(price / 100);
-  };
-
-  const itemsByCategory = items.reduce((acc, item) => {
-    if (!acc[item.categoryId]) {
-      acc[item.categoryId] = [];
-    }
-    acc[item.categoryId].push(item);
-    return acc;
-  }, {});
-
-  return `
-    <!DOCTYPE html>
-    <html lang="en">
-    <head>
-      <meta charset="UTF-8">
-      <meta name="viewport" content="width=device-width, initial-scale=1.0">
-      <title>${qrMenu.name}</title>
-      <style>
-        body {
-          font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-          margin: 0;
-          padding: 20px;
-          background-color: #f9fafb;
-          color: #374151;
-        }
-        .container {
-          max-width: 600px;
-          margin: 0 auto;
-          background: white;
-          border-radius: 12px;
-          box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-          overflow: hidden;
-        }
-        .header {
-          background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-          color: white;
-          padding: 30px 20px;
-          text-align: center;
-        }
-        .header h1 {
-          margin: 0;
-          font-size: 28px;
-          font-weight: 600;
-        }
-        .header p {
-          margin: 10px 0 0;
-          opacity: 0.9;
-        }
-        .content {
-          padding: 20px;
-        }
-        .category {
-          margin-bottom: 40px;
-        }
-        .category h2 {
-          font-size: 24px;
-          font-weight: 600;
-          margin-bottom: 15px;
-          color: #1f2937;
-          border-bottom: 2px solid #e5e7eb;
-          padding-bottom: 10px;
-        }
-        .menu-item {
-          display: flex;
-          justify-content: between;
-          align-items: flex-start;
-          padding: 15px 0;
-          border-bottom: 1px solid #f3f4f6;
-        }
-        .menu-item:last-child {
-          border-bottom: none;
-        }
-        .item-info {
-          flex: 1;
-        }
-        .item-name {
-          font-size: 18px;
-          font-weight: 500;
-          color: #1f2937;
-          margin-bottom: 5px;
-        }
-        .item-description {
-          color: #6b7280;
-          font-size: 14px;
-          line-height: 1.5;
-          margin-bottom: 8px;
-        }
-        .item-details {
-          display: flex;
-          gap: 10px;
-          flex-wrap: wrap;
-        }
-        .badge {
-          background: #f3f4f6;
-          color: #374151;
-          padding: 2px 8px;
-          border-radius: 12px;
-          font-size: 12px;
-          font-weight: 500;
-        }
-        .badge.dietary {
-          background: #dcfce7;
-          color: #166534;
-        }
-        .badge.allergen {
-          background: #fee2e2;
-          color: #991b1b;
-        }
-        .item-price {
-          font-size: 18px;
-          font-weight: 600;
-          color: #059669;
-          margin-left: 15px;
-        }
-        .footer {
-          background: #f9fafb;
-          padding: 20px;
-          text-align: center;
-          color: #6b7280;
-          font-size: 14px;
-        }
-        .order-button {
-          background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-          color: white;
-          border: none;
-          padding: 15px 30px;
-          border-radius: 25px;
-          font-size: 16px;
-          font-weight: 600;
-          cursor: pointer;
-          margin: 20px 0;
-          transition: transform 0.2s;
-        }
-        .order-button:hover {
-          transform: translateY(-2px);
-        }
-      </style>
-    </head>
-    <body>
-      <div class="container">
-        <div class="header">
-          <h1>${qrMenu.name}</h1>
-          ${qrMenu.description ? `<p>${qrMenu.description}</p>` : ''}
-        </div>
-        
-        <div class="content">
-          ${categories.map(category => `
-            <div class="category">
-              <h2>${category.name}</h2>
-              ${category.description ? `<p style="color: #6b7280; margin-bottom: 20px;">${category.description}</p>` : ''}
-              
-              ${(itemsByCategory[category.id] || []).map(item => `
-                <div class="menu-item">
-                  <div class="item-info">
-                    <div class="item-name">${item.name}</div>
-                    ${item.description ? `<div class="item-description">${item.description}</div>` : ''}
-                    <div class="item-details">
-                      ${item.preparationTime ? `<span class="badge">${item.preparationTime} min</span>` : ''}
-                      ${item.dietary?.map(diet => `<span class="badge dietary">${diet}</span>`).join('') || ''}
-                      ${item.allergens?.map(allergen => `<span class="badge allergen">${allergen}</span>`).join('') || ''}
-                    </div>
-                  </div>
-                  <div class="item-price">${formatPrice(item.price)}</div>
-                </div>
-              `).join('')}
-            </div>
-          `).join('')}
-          
-          <div style="text-align: center;">
-            <button class="order-button" onclick="alert('Order functionality coming soon!')">
-              Place Order
-            </button>
-          </div>
-        </div>
-        
-        <div class="footer">
-          <p>Scan QR code to view this menu • Powered by Restaurant Management System</p>
-        </div>
-      </div>
-    </body>
-    </html>
-  `;
 }
 
 // The code has been modified to improve email confirmation debugging and error handling.

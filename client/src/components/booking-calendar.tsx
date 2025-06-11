@@ -109,7 +109,7 @@ export default function BookingCalendar({ selectedDate, bookings, allBookings = 
         throw new Error("Restaurant is closed at this time");
       }
 
-      return apiRequest(`/api/tenants/${restaurant?.tenantId}/restaurants/${restaurant?.id}/bookings`, "POST", bookingData);
+      return apiRequest("POST", `/api/tenants/${restaurant?.tenantId}/restaurants/${restaurant?.id}/bookings`, bookingData);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ 

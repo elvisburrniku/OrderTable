@@ -2,8 +2,8 @@ import { useState, useEffect } from "react";
 import { useLocation } from "wouter";
 import { useAuth } from "@/lib/auth.tsx";
 import { useQuery } from "@tanstack/react-query";
-import DashboardSidebar from "@/components/dashboard-sidebar";
-import EnhancedBookingCalendar from "@/components/enhanced-booking-calendar";
+
+import BookingCalendar from "@/components/booking-calendar";
 import { WalkInBooking } from "@/components/walk-in-booking";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -27,16 +27,24 @@ import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import { RealTimeNotifications } from "@/components/real-time-notifications";
-import { useTutorial } from "@/components/onboarding/TutorialProvider";
 
 export default function Dashboard() {
   const [, setLocation] = useLocation();
   const { user, restaurant, logout, isLoading } = useAuth();
-  const { startTutorial, tutorialState } = useTutorial();
   const [selectedDate, setSelectedDate] = useState(new Date());
   const [viewMode, setViewMode] = useState<'calendar' | 'layout'>('calendar');
   const [selectedRoom, setSelectedRoom] = useState<string>("");
-
+  const [isNewBookingOpen, setIsNewBookingOpen] = useState(false);
+  const [selectedTableForBooking, setSelectedTableForBooking] = useState<any>(null);
+  const [newBooking, setNewBooking] = useState({
+    customerName: "",
+    customerEmail: "",
+    customerPhone: "",
+    guestCount: 2,
+    startTime: "19:00",
+    endTime: "20:00",
+    notes: ""
+  });
   const today = format(new Date(), 'yyyy-MM-dd');
   const [showBookingManager, setShowBookingManager] = useState(false);
   const [selectedTableBookings, setSelectedTableBookings] = useState<any[]>([]);
@@ -143,7 +151,7 @@ export default function Dashboard() {
 
   const createBookingMutation = useMutation({
     mutationFn: async (bookingData: any) => {
-      return apiRequest(`/api/tenants/${restaurant?.tenantId}/restaurants/${restaurant?.id}/bookings`, "POST", bookingData);
+      return apiRequest("POST", `/api/tenants/${restaurant?.tenantId}/restaurants/${restaurant?.id}/bookings`, bookingData);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ 
@@ -244,7 +252,7 @@ export default function Dashboard() {
 
   const updateBookingMutation = useMutation({
     mutationFn: async ({ bookingId, updates }: { bookingId: number; updates: any }) => {
-      return apiRequest(`/api/tenants/${restaurant?.tenantId}/restaurants/${restaurant?.id}/bookings/${bookingId}`, "PUT", updates);
+      return apiRequest("PUT", `/api/tenants/${restaurant?.tenantId}/restaurants/${restaurant?.id}/bookings/${bookingId}`, updates);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({
@@ -638,16 +646,9 @@ export default function Dashboard() {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 flex">
-      {/* Sidebar */}
-      <DashboardSidebar 
-        selectedDate={selectedDate}
-        onDateChange={setSelectedDate}
-        bookings={allBookings || []}
-      />
-      
+    <div className="min-h-screen bg-gray-50">
       {/* Main Content */}
-      <div className="flex-1 flex flex-col ml-64">
+      <div className="flex-1 flex flex-col">
         {/* Header */}
         <div className="bg-white border-b border-gray-200 px-6 py-4 flex justify-between items-center">
           <div className="flex items-center space-x-4">
@@ -694,24 +695,20 @@ export default function Dashboard() {
                 Layout
               </Button>
             </div>
-            <Button className="bg-green-600 hover:bg-green-700 text-white" data-tutorial="new-booking">
+            <Button className="bg-green-600 hover:bg-green-700 text-white">
               <Plus className="h-4 w-4 mr-2" />
               New booking
             </Button>
-            <div data-tutorial="walk-in-booking">
-              <WalkInBooking 
-                restaurantId={restaurant?.id!} 
-                tenantId={restaurant?.tenantId!} 
-              />
-            </div>
-
+            <WalkInBooking 
+              restaurantId={restaurant?.id!} 
+              tenantId={restaurant?.tenantId!} 
+            />
           </div>
           <div className="flex items-center space-x-4">
             <Input 
               type="text" 
               placeholder="Customer search" 
               className="w-64"
-              data-tutorial="customer-search"
             />
             <RealTimeNotifications />
             <DropdownMenu>
@@ -740,10 +737,6 @@ export default function Dashboard() {
                   <HelpCircle className="mr-2 h-4 w-4" />
                   <span>Help</span>
                 </DropdownMenuItem>
-                <DropdownMenuItem onClick={startTutorial}>
-                  <Palette className="mr-2 h-4 w-4" />
-                  <span>Tutorial</span>
-                </DropdownMenuItem>
                 <DropdownMenuItem onClick={logout}>
                   <LogOut className="mr-2 h-4 w-4" />
                   <span>Log out</span>
@@ -755,7 +748,7 @@ export default function Dashboard() {
 
         {/* Stats Overview */}
         <div className="p-6">
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8" data-tutorial="quick-stats">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
             <Card>
               <CardContent className="p-6">
                 <div className="flex items-center justify-between">
@@ -814,30 +807,321 @@ export default function Dashboard() {
         {/* Main Interface */}
         <div className="flex-1 p-6">
           {viewMode === 'layout' ? (
-            <div data-tutorial="table-layout">
-              {renderTableLayout()}
-            </div>
+            renderTableLayout()
           ) : (
-            <div data-tutorial="booking-calendar">
-              {restaurant?.tenantId && restaurant?.id ? (
-                <EnhancedBookingCalendar 
-                  selectedDate={selectedDate}
-                  bookings={allBookings || []}
-                  tables={tables || []}
-                  isLoading={allBookingsLoading || tablesLoading}
-                  onDateSelect={setSelectedDate}
-                  tenantId={restaurant.tenantId}
-                  restaurantId={restaurant.id}
-                />
-              ) : (
-                <div className="p-8 text-center text-gray-500">
-                  Loading calendar...
-                </div>
-              )}
-            </div>
+            <BookingCalendar 
+              selectedDate={selectedDate}
+              bookings={(selectedDateBookings as any) || []}
+              allBookings={(allBookings as any) || []}
+              tables={(tables as any) || []}
+              isLoading={isLoading}
+              onDateSelect={setSelectedDate}
+            />
           )}
         </div>
       </div>
+
+      {/* New Booking Dialog */}
+      <Dialog open={isNewBookingOpen} onOpenChange={setIsNewBookingOpen}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>
+              Create Booking for Table {selectedTableForBooking?.tableNumber}
+            </DialogTitle>
+          </DialogHeader>
+          <form onSubmit={handleCreateBooking} className="space-y-4">
+            <div>
+              <Label htmlFor="customerName">Customer Name</Label>
+              <Input
+                id="customerName"
+                value={newBooking.customerName}
+                onChange={(e) => setNewBooking({ ...newBooking, customerName: e.target.value })}
+                required
+              />
+            </div>
+            <div>
+              <Label htmlFor="customerEmail">Email</Label>
+              <Input
+                id="customerEmail"
+                type="email"
+                value={newBooking.customerEmail}
+                onChange={(e) => setNewBooking({ ...newBooking, customerEmail: e.target.value })}
+                required
+              />
+            </div>
+            <div>
+              <Label htmlFor="customerPhone">Phone</Label>
+              <Input
+                id="customerPhone"
+                value={newBooking.customerPhone}
+                onChange={(e) => setNewBooking({ ...newBooking, customerPhone: e.target.value })}
+              />
+            </div>
+            <div>
+              <Label htmlFor="guestCount">Number of Guests</Label>
+              <Input
+                id="guestCount"
+                type="number"
+                min="1"
+                max={selectedTableForBooking?.capacity || 12}
+                value={newBooking.guestCount}
+                onChange={(e) => setNewBooking({ ...newBooking, guestCount: parseInt(e.target.value) })}
+                required
+              />
+              <p className="text-xs text-gray-500 mt-1">
+                Table capacity: {selectedTableForBooking?.capacity} guests
+              </p>
+            </div>
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <Label htmlFor="startTime">Start Time</Label>
+                <Select value={newBooking.startTime} onValueChange={(value) => setNewBooking({ ...newBooking, startTime: value })}>
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {["10:00", "11:00", "12:00", "13:00", "14:00", "15:00", "16:00", "17:00", "18:00", "19:00", "20:00", "21:00"].map((time) => (
+                      <SelectItem key={time} value={time}>{time}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div>
+                <Label htmlFor="endTime">End Time</Label>
+                <Select value={newBooking.endTime} onValueChange={(value) => setNewBooking({ ...newBooking, endTime: value })}>
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {["10:00", "11:00", "12:00", "13:00", "14:00", "15:00", "16:00", "17:00", "18:00", "19:00", "20:00", "21:00"].map((time) => (
+                      <SelectItem key={time} value={time}>{time}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+            <div>
+              <Label htmlFor="notes">Notes (Optional)</Label>
+              <Input
+                id="notes"
+                value={newBooking.notes}
+                onChange={(e) => setNewBooking({ ...newBooking, notes: e.target.value })}
+                placeholder="Any special requests or notes"
+              />
+            </div>
+            <div className="flex justify-end gap-2 pt-4">
+              <Button type="button" variant="outline" onClick={() => setIsNewBookingOpen(false)}>
+                Cancel
+              </Button>
+              <Button type="submit" className="bg-green-600 hover:bg-green-700" disabled={createBookingMutation.isPending}>
+                {createBookingMutation.isPending ? "Creating..." : "Create Booking"}
+              </Button>
+            </div>
+          </form>
+        </DialogContent>
+      </Dialog>
+
+      {/* Booking Management Dialog */}
+      <Dialog open={showBookingManager} onOpenChange={setShowBookingManager}>
+        <DialogContent className="max-w-2xl">
+          <DialogHeader>
+            <DialogTitle>
+              Manage Bookings - Table {selectedTableForBooking?.tableNumber}
+            </DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            {selectedTableBookings.length === 0 ? (
+              <p className="text-gray-500 text-center py-8">No bookings for this table today.</p>
+            ) : (
+              <div className="space-y-3">
+                {selectedTableBookings.map((booking) => (
+                  <div key={booking.id} className="border rounded-lg p-4">
+                    {editingBooking?.id === booking.id ? (
+                      <div className="space-y-3">
+                        <div className="grid grid-cols-2 gap-4">
+                          <div>
+                            <Label>Customer Name</Label>
+                            <Input
+                              value={editingBooking.customerName}
+                              onChange={(e) =>
+                                setEditingBooking({ ...editingBooking, customerName: e.target.value })
+                              }
+                            />
+                          </div>
+                          <div>
+                            <Label>Status</Label>
+                            <Select
+                              value={editingBooking.status}
+                              onValueChange={(value) =>
+                                setEditingBooking({ ...editingBooking, status: value })
+                              }
+                            >
+                              <SelectTrigger>
+                                <SelectValue />
+                              </SelectTrigger>
+                              <SelectContent>
+                                <SelectItem value="confirmed">Confirmed</SelectItem>
+                                <SelectItem value="pending">Pending</SelectItem>
+                                <SelectItem value="cancelled">Cancelled</SelectItem>
+                                <SelectItem value="no-show">No Show</SelectItem>
+                                <SelectItem value="completed">Completed</SelectItem>
+                              </SelectContent>
+                            </Select>
+                          </div>
+                        </div>
+                        <div className="grid grid-cols-3 gap-4">
+                          <div>
+                            <Label>Guests</Label>
+                            <Select
+                              value={editingBooking.guestCount.toString()}
+                              onValueChange={(value) =>
+                                setEditingBooking({ ...editingBooking, guestCount: parseInt(value) })
+                              }
+                            >
+                              <SelectTrigger>
+                                <SelectValue />
+                              </SelectTrigger>
+                              <SelectContent>
+                                {[1, 2, 3, 4, 5, 6, 7, 8].map((num) => (
+                                  <SelectItem key={num} value={num.toString()}>
+                                    {num}
+                                  </SelectItem>
+                                ))}
+                              </SelectContent>
+                            </Select>
+                          </div>
+                          <div>
+                            <Label>Start Time</Label>
+                            <Input
+                              type="time"
+                              value={editingBooking.startTime}
+                              onChange={(e) =>
+                                setEditingBooking({ ...editingBooking, startTime: e.target.value })
+                              }
+                            />
+                          </div>
+                          <div>
+                            <Label>End Time</Label>
+                            <Input
+                              type="time"
+                              value={editingBooking.endTime}
+                              onChange={(e) =>
+                                setEditingBooking({ ...editingBooking, endTime: e.target.value })
+                              }
+                            />
+                          </div>
+                        </div>
+                        <div>
+                          <Label>Notes</Label>
+                          <Input
+                            value={editingBooking.notes || ""}
+                            onChange={(e) =>
+                              setEditingBooking({ ...editingBooking, notes: e.target.value })
+                            }
+                            placeholder="Special requests, dietary requirements..."
+                          />
+                        </div>
+                        <div className="flex gap-2">
+                          <Button
+                            size="sm"
+                            onClick={() => {
+                              updateBookingMutation.mutate({
+                                bookingId: booking.id,
+                                updates: {
+                                  customerName: editingBooking.customerName,
+                                  status: editingBooking.status,
+                                  guestCount: editingBooking.guestCount,
+                                  startTime: editingBooking.startTime,
+                                  endTime: editingBooking.endTime,
+                                  notes: editingBooking.notes,
+                                },
+                              });
+                            }}
+                            disabled={updateBookingMutation.isPending}
+                          >
+                            {updateBookingMutation.isPending ? "Saving..." : "Save"}
+                          </Button>
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            onClick={() => setEditingBooking(null)}
+                          >
+                            Cancel
+                          </Button>
+                        </div>
+                      </div>
+                    ) : (
+                      <div className="flex justify-between items-start">
+                        <div className="space-y-1">
+                          <div className="flex items-center gap-3">
+                            <h4 className="font-medium">{booking.customerName}</h4>
+                            <span className={`px-2 py-1 rounded-full text-xs font-medium ${
+                              booking.status === 'confirmed' ? 'bg-green-100 text-green-800' :
+                              booking.status === 'cancelled' ? 'bg-red-100 text-red-800' :
+                              booking.status === 'completed' ? 'bg-blue-100 text-blue-800' :
+                              'bg-yellow-100 text-yellow-800'
+                            }`}>
+                              {booking.status || 'Confirmed'}
+                            </span>
+                          </div>
+                          <div className="text-sm text-gray-600">
+                            <span>{booking.startTime} - {booking.endTime}</span>
+                            <span className="mx-2">•</span>
+                            <span>{booking.guestCount} guests</span>
+                          </div>
+                          <div className="text-sm text-gray-500">
+                            {booking.customerEmail} {booking.customerPhone && `• ${booking.customerPhone}`}
+                          </div>
+                          {booking.notes && (
+                            <div className="text-sm text-gray-500">
+                              Notes: {booking.notes}
+                            </div>
+                          )}
+                        </div>
+                        <div className="flex gap-2">
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            onClick={() => setEditingBooking({ ...booking })}
+                          >
+                            Edit
+                          </Button>
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            onClick={() => {
+                              if (confirm('Are you sure you want to cancel this booking?')) {
+                                updateBookingMutation.mutate({
+                                  bookingId: booking.id,
+                                  updates: { status: 'cancelled' },
+                                });
+                              }
+                            }}
+                            className="text-red-600 hover:text-red-700"
+                          >
+                            Cancel
+                          </Button>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                ))}
+              </div>
+            )}
+            <div className="flex justify-end pt-4">
+              <Button
+                variant="outline"
+                onClick={() => {
+                  setShowBookingManager(false);
+                  setEditingBooking(null);
+                }}
+              >
+                Close
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

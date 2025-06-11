@@ -1,150 +1,187 @@
-import { Link, useLocation, useParams } from "wouter";
-import { Calendar, Settings, Clock, MapPin, Table, Utensils, Grid3x3, FileText, Users, MessageSquare, MessageCircle, CreditCard, BarChart3, Clock4, Plug, Layout } from "lucide-react";
-import { ReadyTableLogo } from "@/components/ui/ready-table-logo";
-import { Card, CardContent } from "@/components/ui/card";
-import { format } from "date-fns";
-import { Booking } from "@shared/schema";
-import { useTenant } from "@/lib/tenant";
-import { cn } from "@/lib/utils";
+import { useState } from "react";
+import { Calendar, Users, Clock, Zap, BarChart3, FileText, MessageSquare, CreditCard, Settings, Cog, ChevronDown, ChevronRight, MapPin, Table, Grid3X3, Layout, Armchair, Filter, Mail, HelpCircle, CalendarDays, Package, Layers, Scissors } from "lucide-react";
+import { useLocation, Link } from "wouter";
 
-interface DashboardSidebarProps {
-  selectedDate: Date;
-  onDateChange: (date: Date) => void;
-  bookings: Booking[];
+interface SidebarProps {
+  tenantId: number;
+  restaurantId?: number;
 }
 
-export default function DashboardSidebar({ selectedDate, bookings }: DashboardSidebarProps) {
+export function DashboardSidebar({ tenantId, restaurantId }: SidebarProps) {
   const [location] = useLocation();
-  const params = useParams();
-  const tenantId = params.tenantId;
-  const { tenantId: currentTenantId } = useTenant();
+  const [isRestaurantSettingsOpen, setIsRestaurantSettingsOpen] = useState(false);
 
-  const todaysBookings = Array.isArray(bookings) ? bookings.filter(booking => {
-    if (!booking.bookingDate) return false;
-
-    try {
-      const bookingDateStr = booking.bookingDate instanceof Date 
-        ? booking.bookingDate.toISOString().split('T')[0]
-        : String(booking.bookingDate).split('T')[0];
-      return bookingDateStr === format(new Date(), 'yyyy-MM-dd');
-    } catch (error) {
-      console.error('Error processing booking date:', booking.bookingDate, error);
-      return false;
-    }
-  }) : [];
-
-  const navigationItems = [
-    { path: `/${tenantId}/dashboard`, icon: Calendar, label: "Dashboard" },
-    { path: `/${tenantId}/bookings`, icon: Calendar, label: "Bookings" },
-    { path: `/${tenantId}/floor-plan`, icon: Layout, label: "Floor Plan" },
-    { path: `/${tenantId}/customers`, icon: Users, label: "Customers" },
-    { path: `/${tenantId}/waiting-list`, icon: Clock, label: "Waiting List" },
-    { path: `/${tenantId}/integrations`, icon: Plug, label: "Integrations" },
-    { path: `/${tenantId}/statistics`, icon: BarChart3, label: "Statistics" },
-    { path: `/${tenantId}/activity-log`, icon: FileText, label: "Activity Log" },
-    { path: `/${tenantId}/feedback-responses`, icon: MessageCircle, label: "Feedback" },
-    { path: `/${tenantId}/sms-messages`, icon: MessageSquare, label: "SMS Messages" },
-    { path: `/${tenantId}/subscription`, icon: CreditCard, label: "Subscription" },
-    { path: `/${tenantId}/tenant-settings`, icon: Settings, label: "Tenant Settings" }
+  const restaurantSettingsItems = [
+    { name: "Opening Hours", icon: Clock, href: `/${tenantId}/opening-hours` },
+    { name: "Special Periods", icon: CalendarDays, href: `/${tenantId}/special-periods` },
+    { name: "Cut-off Time", icon: Scissors, href: `/${tenantId}/cut-off-time` },
+    { name: "Rooms", icon: MapPin, href: `/${tenantId}/rooms` },
+    { name: "Tables", icon: Table, href: `/${tenantId}/tables` },
+    { name: "Combined Tables", icon: Grid3X3, href: `/${tenantId}/combined-tables` },
+    { name: "Table Plan", icon: Layout, href: `/${tenantId}/table-plan` },
+    { name: "Seating Configurations", icon: Armchair, href: `/${tenantId}/seating-configurations` },
+    { name: "Periodic Criteria", icon: Filter, href: `/${tenantId}/periodic-criteria` },
+    { name: "Custom Fields", icon: FileText, href: `/${tenantId}/custom-fields` },
+    { name: "Booking Agents", icon: Users, href: `/${tenantId}/booking-agents` },
+    { name: "E-mail Notifications", icon: Mail, href: `/${tenantId}/email-notifications` },
+    { name: "SMS Notifications", icon: MessageSquare, href: `/${tenantId}/sms-notifications` },
+    { name: "Questions", icon: HelpCircle, href: `/${tenantId}/feedback-questions` },
+    { name: "Events", icon: CalendarDays, href: `/${tenantId}/events` },
+    { name: "Products", icon: Package, href: `/${tenantId}/products` },
+    { name: "Product Groups", icon: Layers, href: `/${tenantId}/product-groups` },
+    { name: "Payment Setups", icon: Settings, href: `/${tenantId}/payment-setups` },
+    { name: "Payment Gateway", icon: CreditCard, href: `/${tenantId}/payment-gateway` }
   ];
 
-  const settingsItems = [
-    { path: `/${tenantId}/opening-hours`, icon: Clock4, label: "Opening Hours" },
-    { path: `/${tenantId}/special-periods`, icon: Calendar, label: "Special Periods" },
-    { path: `/${tenantId}/cut-off-time`, icon: Clock4, label: "Cut-off Time" },
-    { path: `/${tenantId}/rooms`, icon: MapPin, label: "Rooms" },
-    { path: `/${tenantId}/tables`, icon: Table, label: "Tables" },
-    { path: `/${tenantId}/combined-tables`, icon: Grid3x3, label: "Combined Tables" },
+  const menuItems = [
+    {
+      name: "Dashboard",
+      icon: BarChart3,
+      href: `/${tenantId}/dashboard`,
+      color: "text-green-600"
+    },
+    {
+      name: "Bookings",
+      icon: Calendar,
+      href: `/${tenantId}/bookings`,
+      color: "text-blue-600"
+    },
+    {
+      name: "Customers",
+      icon: Users,
+      href: `/${tenantId}/customers`,
+      color: "text-purple-600"
+    },
+    {
+      name: "Waiting List",
+      icon: Clock,
+      href: `/${tenantId}/waiting-list`,
+      color: "text-orange-600"
+    },
+    {
+      name: "Integrations",
+      icon: Zap,
+      href: `/${tenantId}/integrations`,
+      color: "text-yellow-600"
+    },
+    {
+      name: "Statistics",
+      icon: BarChart3,
+      href: `/${tenantId}/statistics`,
+      color: "text-indigo-600"
+    },
+    {
+      name: "Activity Log",
+      icon: FileText,
+      href: `/${tenantId}/activity-log`,
+      color: "text-gray-600"
+    },
+    {
+      name: "Feedback",
+      icon: MessageSquare,
+      href: `/${tenantId}/feedback`,
+      color: "text-pink-600"
+    },
+    {
+      name: "SMS Messages",
+      icon: MessageSquare,
+      href: `/${tenantId}/sms-messages`,
+      color: "text-teal-600"
+    },
+    {
+      name: "Subscription",
+      icon: CreditCard,
+      href: `/${tenantId}/subscription`,
+      color: "text-emerald-600"
+    },
+    {
+      name: "Tenant Settings",
+      icon: Settings,
+      href: `/${tenantId}/tenant-settings`,
+      color: "text-slate-600"
+    },
+
   ];
+
+  const isActive = (href: string) => {
+    return location === href || location.startsWith(href + '/');
+  };
 
   return (
-    <div className="hidden md:flex h-full w-64 flex-col fixed inset-y-0 z-50 bg-white border-r border-gray-200">
-      <div className="flex items-center h-16 px-4 border-b border-gray-200">
-        <ReadyTableLogo />
-      </div>
-      
-      <div className="flex-1 flex flex-col overflow-y-auto">
+    <div className="w-64 bg-white border-r border-gray-200 min-h-screen">
+      <div className="p-6">
+        {/* Logo */}
+        <div className="flex items-center space-x-2 mb-8">
+          <div className="w-8 h-8 bg-green-600 rounded flex items-center justify-center">
+            <div className="w-4 h-4 bg-white rounded-full"></div>
+          </div>
+          <span className="text-xl font-semibold text-gray-900">ReadyTable</span>
+        </div>
+
         {/* Navigation */}
-        <nav className="flex-1 px-2 py-4 space-y-1">
-          {navigationItems.map((item) => {
+        <nav className="space-y-1">
+          {menuItems.map((item) => {
             const Icon = item.icon;
-            const isActive = location === item.path;
+            const active = isActive(item.href);
             
             return (
               <Link
-                key={item.path}
-                href={item.path}
-                className={cn(
-                  "group flex items-center px-2 py-2 text-sm font-medium rounded-md transition-colors",
-                  isActive
-                    ? "bg-blue-100 text-blue-900 border-r-2 border-blue-600"
-                    : "text-gray-600 hover:bg-gray-50 hover:text-gray-900"
-                )}
+                key={item.name}
+                href={item.href}
+                className={`flex items-center space-x-3 px-3 py-2 rounded-lg text-sm font-medium transition-colors ${
+                  active
+                    ? 'bg-gray-100 text-gray-900'
+                    : 'text-gray-600 hover:text-gray-900 hover:bg-gray-50'
+                }`}
               >
-                <Icon
-                  className={cn(
-                    "mr-3 h-5 w-5 flex-shrink-0",
-                    isActive ? "text-blue-500" : "text-gray-400 group-hover:text-gray-500"
-                  )}
-                />
-                {item.label}
+                <Icon className={`w-5 h-5 ${active ? 'text-gray-900' : item.color}`} />
+                <span>{item.name}</span>
               </Link>
             );
           })}
-        </nav>
-
-        {/* Settings Section */}
-        <div className="px-2 py-4 border-t border-gray-200">
-          <h3 className="px-2 text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">
-            Restaurant Settings
-          </h3>
-          <nav className="space-y-1">
-            {settingsItems.map((item) => {
-              const Icon = item.icon;
-              const isActive = location === item.path;
-              
-              return (
-                <Link
-                  key={item.path}
-                  href={item.path}
-                  className={cn(
-                    "group flex items-center px-2 py-2 text-sm font-medium rounded-md transition-colors",
-                    isActive
-                      ? "bg-blue-100 text-blue-900 border-r-2 border-blue-600"
-                      : "text-gray-600 hover:bg-gray-50 hover:text-gray-900"
-                  )}
-                >
-                  <Icon
-                    className={cn(
-                      "mr-3 h-4 w-4 flex-shrink-0",
-                      isActive ? "text-blue-500" : "text-gray-400 group-hover:text-gray-500"
-                    )}
-                  />
-                  {item.label}
-                </Link>
-              );
-            })}
-          </nav>
-        </div>
-
-        {/* Today's Bookings Summary */}
-        <div className="px-2 py-4 border-t border-gray-200">
-          <Card>
-            <CardContent className="p-4">
-              <h3 className="text-sm font-medium text-gray-900 mb-2">Today's Summary</h3>
-              <div className="space-y-2">
-                <div className="flex items-center justify-between text-sm">
-                  <span className="text-gray-500">Total Bookings</span>
-                  <span className="font-medium">{todaysBookings.length}</span>
-                </div>
-                <div className="flex items-center justify-between text-sm">
-                  <span className="text-gray-500">Selected Date</span>
-                  <span className="font-medium">{format(selectedDate, 'MMM d')}</span>
-                </div>
+          
+          {/* Restaurant Settings Dropdown */}
+          <div className="space-y-1">
+            <button
+              onClick={() => setIsRestaurantSettingsOpen(!isRestaurantSettingsOpen)}
+              className="w-full flex items-center justify-between px-3 py-2 rounded-lg text-sm font-medium text-gray-600 hover:text-gray-900 hover:bg-gray-50 transition-colors"
+            >
+              <div className="flex items-center space-x-3">
+                <Cog className="w-5 h-5 text-stone-600" />
+                <span>Restaurant Settings</span>
               </div>
-            </CardContent>
-          </Card>
-        </div>
+              {isRestaurantSettingsOpen ? (
+                <ChevronDown className="w-4 h-4" />
+              ) : (
+                <ChevronRight className="w-4 h-4" />
+              )}
+            </button>
+            
+            {isRestaurantSettingsOpen && (
+              <div className="ml-6 space-y-1 border-l border-gray-200 pl-4">
+                {restaurantSettingsItems.map((subItem) => {
+                  const SubIcon = subItem.icon;
+                  const subActive = isActive(subItem.href);
+                  
+                  return (
+                    <Link
+                      key={subItem.name}
+                      href={subItem.href}
+                      className={`flex items-center space-x-3 px-2 py-1.5 rounded text-xs transition-colors ${
+                        subActive
+                          ? 'bg-blue-50 text-blue-700'
+                          : 'text-gray-600 hover:text-gray-900 hover:bg-gray-50'
+                      }`}
+                    >
+                      <SubIcon className="w-4 h-4" />
+                      <span>{subItem.name}</span>
+                    </Link>
+                  );
+                })}
+              </div>
+            )}
+          </div>
+        </nav>
       </div>
     </div>
   );

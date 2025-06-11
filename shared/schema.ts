@@ -139,7 +139,6 @@ export const bookings = pgTable("bookings", {
   endTime: text("end_time"),
   status: varchar("status", { length: 20 }).default("confirmed"),
   source: varchar("source", { length: 20 }).default("manual"), // manual, online, google
-  bookingType: varchar("booking_type", { length: 30 }).default("regular"), // regular, lunch, dinner, private_event, brunch, special_occasion
   notes: text("notes"),
   managementHash: text("management_hash"), // Hash for booking management links
   createdAt: timestamp("created_at").defaultNow(),
@@ -341,105 +340,6 @@ export const notifications = pgTable("notifications", {
   createdAt: timestamp("created_at").defaultNow(),
 });
 
-// Menu Categories
-export const menuCategories = pgTable("menu_categories", {
-  id: serial("id").primaryKey(),
-  restaurantId: integer("restaurant_id")
-    .references(() => restaurants.id)
-    .notNull(),
-  tenantId: integer("tenant_id")
-    .references(() => tenants.id)
-    .notNull(),
-  name: text("name").notNull(),
-  description: text("description"),
-  displayOrder: integer("display_order").default(0),
-  isActive: boolean("is_active").default(true),
-  createdAt: timestamp("created_at").defaultNow(),
-  updatedAt: timestamp("updated_at").defaultNow(),
-});
-
-// Menu Items
-export const menuItems = pgTable("menu_items", {
-  id: serial("id").primaryKey(),
-  restaurantId: integer("restaurant_id")
-    .references(() => restaurants.id)
-    .notNull(),
-  tenantId: integer("tenant_id")
-    .references(() => tenants.id)
-    .notNull(),
-  categoryId: integer("category_id")
-    .references(() => menuCategories.id)
-    .notNull(),
-  name: text("name").notNull(),
-  description: text("description"),
-  price: integer("price").notNull(), // price in cents
-  currency: varchar("currency", { length: 3 }).default("USD"),
-  imageUrl: text("image_url"),
-  isAvailable: boolean("is_available").default(true),
-  allergens: text("allergens").array(), // Array of allergen strings
-  dietary: text("dietary").array(), // vegetarian, vegan, gluten-free, etc.
-  preparationTime: integer("preparation_time"), // in minutes
-  ingredients: text("ingredients"),
-  nutritionalInfo: json("nutritional_info"), // calories, protein, etc.
-  displayOrder: integer("display_order").default(0),
-  isActive: boolean("is_active").default(true),
-  createdAt: timestamp("created_at").defaultNow(),
-  updatedAt: timestamp("updated_at").defaultNow(),
-});
-
-// QR Code Menus
-export const qrMenus = pgTable("qr_menus", {
-  id: serial("id").primaryKey(),
-  restaurantId: integer("restaurant_id")
-    .references(() => restaurants.id)
-    .notNull(),
-  tenantId: integer("tenant_id")
-    .references(() => tenants.id)
-    .notNull(),
-  name: text("name").notNull(),
-  description: text("description"),
-  qrCode: text("qr_code").notNull().unique(), // Generated QR code identifier
-  menuUrl: text("menu_url").notNull(), // Full URL to the menu
-  tableId: integer("table_id").references(() => tables.id), // Optional table assignment
-  roomId: integer("room_id").references(() => rooms.id), // Optional room assignment
-  customization: json("customization"), // Theme, colors, layout preferences
-  isActive: boolean("is_active").default(true),
-  viewCount: integer("view_count").default(0),
-  scanCount: integer("scan_count").default(0),
-  lastScanned: timestamp("last_scanned"),
-  createdAt: timestamp("created_at").defaultNow(),
-  updatedAt: timestamp("updated_at").defaultNow(),
-});
-
-// Menu Orders (for ordering through QR menu)
-export const menuOrders = pgTable("menu_orders", {
-  id: serial("id").primaryKey(),
-  restaurantId: integer("restaurant_id")
-    .references(() => restaurants.id)
-    .notNull(),
-  tenantId: integer("tenant_id")
-    .references(() => tenants.id)
-    .notNull(),
-  qrMenuId: integer("qr_menu_id")
-    .references(() => qrMenus.id)
-    .notNull(),
-  tableId: integer("table_id").references(() => tables.id),
-  customerName: text("customer_name"),
-  customerPhone: text("customer_phone"),
-  customerEmail: text("customer_email"),
-  items: json("items").notNull(), // Array of ordered items with quantities
-  totalAmount: integer("total_amount").notNull(), // Total in cents
-  currency: varchar("currency", { length: 3 }).default("USD"),
-  status: varchar("status", { length: 20 }).default("pending"), // pending, confirmed, preparing, ready, completed, cancelled
-  specialInstructions: text("special_instructions"),
-  estimatedReadyTime: timestamp("estimated_ready_time"),
-  orderNumber: text("order_number"), // Human-readable order number
-  paymentStatus: varchar("payment_status", { length: 20 }).default("pending"), // pending, paid, failed
-  paymentIntentId: text("payment_intent_id"), // Stripe payment intent ID
-  createdAt: timestamp("created_at").defaultNow(),
-  updatedAt: timestamp("updated_at").defaultNow(),
-});
-
 export const insertBookingChangeRequestSchema = createInsertSchema(bookingChangeRequests).omit({
   id: true,
   createdAt: true,
@@ -559,44 +459,6 @@ export const insertUserSubscriptionSchema =
   createInsertSchema(userSubscriptions);
 export const selectUserSubscriptionSchema =
   createSelectSchema(userSubscriptions);
-
-// Menu schemas
-export const insertMenuCategorySchema = createInsertSchema(menuCategories).omit({
-  id: true,
-  createdAt: true,
-  updatedAt: true,
-});
-
-export const insertMenuItemSchema = createInsertSchema(menuItems).omit({
-  id: true,
-  createdAt: true,
-  updatedAt: true,
-});
-
-export const insertQrMenuSchema = createInsertSchema(qrMenus).omit({
-  id: true,
-  createdAt: true,
-  updatedAt: true,
-  viewCount: true,
-  scanCount: true,
-  lastScanned: true,
-});
-
-export const insertMenuOrderSchema = createInsertSchema(menuOrders).omit({
-  id: true,
-  createdAt: true,
-  updatedAt: true,
-});
-
-// Menu types
-export type MenuCategory = typeof menuCategories.$inferSelect;
-export type InsertMenuCategory = typeof menuCategories.$inferInsert;
-export type MenuItem = typeof menuItems.$inferSelect;
-export type InsertMenuItem = typeof menuItems.$inferInsert;
-export type QrMenu = typeof qrMenus.$inferSelect;
-export type InsertQrMenu = typeof qrMenus.$inferInsert;
-export type MenuOrder = typeof menuOrders.$inferSelect;
-export type InsertMenuOrder = typeof menuOrders.$inferInsert;
 
 // Notification types
 export type InsertNotification = typeof notifications.$inferInsert;
@@ -794,27 +656,5 @@ export const insertReschedulingSuggestionSchema = createInsertSchema(reschedulin
   updatedAt: true,
 });
 export const selectReschedulingSuggestionSchema = createSelectSchema(reschedulingSuggestions);
-
-// Onboarding tutorial progress tracking
-export const onboardingProgress = pgTable("onboarding_progress", {
-  id: serial("id").primaryKey(),
-  userId: integer("user_id").references(() => users.id).notNull(),
-  tenantId: integer("tenant_id").references(() => tenants.id).notNull(),
-  restaurantId: integer("restaurant_id").references(() => restaurants.id),
-  stepId: text("step_id").notNull(), // e.g., 'welcome', 'create-booking', 'view-calendar'
-  stepCategory: text("step_category").notNull(), // e.g., 'basics', 'bookings', 'tables'
-  isCompleted: boolean("is_completed").default(false),
-  completedAt: timestamp("completed_at"),
-  skipped: boolean("skipped").default(false),
-  createdAt: timestamp("created_at").defaultNow(),
-});
-
-export type OnboardingProgress = InferSelectModel<typeof onboardingProgress>;
-export type InsertOnboardingProgress = InferInsertModel<typeof onboardingProgress>;
-
-export const insertOnboardingProgressSchema = createInsertSchema(onboardingProgress).omit({
-  id: true,
-  createdAt: true,
-});
 
 export type LoginData = z.infer<typeof loginSchema>;

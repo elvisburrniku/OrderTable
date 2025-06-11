@@ -5,8 +5,8 @@ import { Toaster } from "@/components/ui/toaster";
 import { AuthProvider } from "./lib/auth.tsx";
 import { TenantProvider } from "./lib/tenant";
 import { RouteGuard } from "./components/route-guard";
+import { LayoutWrapper } from "./components/layout-wrapper";
 import { SessionTimeoutHandler } from "./components/session-timeout-handler";
-import { TutorialProviderWrapper } from "./components/onboarding/TutorialProviderWrapper";
 import Home from "./pages/home";
 import Login from "./pages/login";
 import Register from "./pages/register";
@@ -50,7 +50,8 @@ import SeatingConfigurations from "./pages/seating-configurations";
 import CombinedTables from "./pages/combined-tables";
 import Rooms from "./pages/rooms";
 import BookingAgents from "./pages/booking-agents";
-import TablePlan from "./pages/table-plan";
+import TablePlan from "./pages/table-plan"; //Import the new TablePlan component
+import RestaurantSettings from "./pages/restaurant-settings";
 import { lazy } from "react";
 import Profile from "./pages/profile";
 import Settings from "./pages/settings";
@@ -60,13 +61,8 @@ import CustomerFeedback from "./pages/customer-feedback";
 import TableFeedback from "./pages/table-feedback";
 import FeedbackResponsesPopup from "./pages/feedback-responses-popup";
 import Contact from "./pages/contact";
-import GuestBooking from "./pages/guest-booking";
+import MinimalGuest from "./pages/minimal-guest";
 import SetupWizard from "./pages/setup-wizard";
-import ChangeRequests from "./pages/change-requests";
-import Calendar from "./pages/calendar";
-import EnhancedCalendar from "./pages/enhanced-calendar";
-import QrMenu from "./pages/qr-menu";
-import FloorPlan from "./pages/floor-plan";
 import { SetupGuard } from "./components/setup-guard";
 
 function App() {
@@ -74,10 +70,10 @@ function App() {
     <QueryClientProvider client={queryClient}>
       <AuthProvider>
         <TenantProvider>
-          <TutorialProviderWrapper>
-            <RouteGuard>
+          <RouteGuard>
+            <LayoutWrapper>
               <SessionTimeoutHandler />
-            <Switch>
+              <Switch>
             <Route path="/" component={Home} />
             <Route path="/login" component={Login} />
             <Route path="/register" component={Register} />
@@ -86,11 +82,6 @@ function App() {
               <Route path="/:tenantId/dashboard" component={Dashboard} />
               <Route path="/:tenantId/bookings" component={Bookings} />
               <Route path="/:tenantId/bookings/:id" component={BookingDetail} />
-              <Route path="/:tenantId/change-requests" component={ChangeRequests} />
-              <Route path="/:tenantId/calendar" component={EnhancedCalendar} />
-              <Route path="/:tenantId/calendar-legacy" component={Calendar} />
-              <Route path="/:tenantId/qr-menu" component={QrMenu} />
-              <Route path="/:tenantId/floor-plan" component={FloorPlan} />
               <Route path="/:tenantId/tables" component={Tables} />
               <Route path="/:tenantId/customers" component={Customers} />
               <Route path="/:tenantId/integrations" component={Integrations} />
@@ -127,25 +118,26 @@ function App() {
               <Route path="/:tenantId/table-plan" component={TablePlan} />
               <Route path="/:tenantId/rooms" component={Rooms} />
               <Route path="/:tenantId/booking-agents" component={BookingAgents} />
+              <Route path="/:tenantId/restaurants/:restaurantId/settings" component={RestaurantSettings} />
+              <Route path="/booking-manage/:id" component={BookingManage} />
+              <Route path="/feedback/:tenantId/:restaurantId" component={TableFeedback} />
+              <Route path="/:tenantId/booking/:id" component={lazy(() => import("./pages/booking-detail"))} />
               <Route path="/:tenantId/profile" component={Profile} />
               <Route path="/:tenantId/settings" component={Settings} />
               <Route path="/:tenantId/billing" component={Billing} />
               <Route path="/:tenantId/help" component={Help} />
-              <Route path="/:tenantId/customer-feedback" component={CustomerFeedback} />
-              <Route path="/:tenantId/table-feedback" component={TableFeedback} />
-              <Route path="/:tenantId/feedback-responses-popup" component={FeedbackResponsesPopup} />
             </SetupGuard>
-              <Route path="/contact" component={Contact} />
-              <Route path="/guest-booking/:id" component={GuestBooking} />
-              <Route path="/booking-manage/:id" component={BookingManage} />
-              <Route path="/feedback/:restaurantId/:bookingId" component={CustomerFeedback} />
-              <Route path="*" component={NotFound} />
-            </Switch>
-            </RouteGuard>
-          </TutorialProviderWrapper>
-        </TenantProvider>
-      </AuthProvider>
+            <Route path="/feedback-responses" component={FeedbackResponses} />
+            <Route path="/feedback-responses-popup" component={FeedbackResponsesPopup} />
+            <Route path="/contact" component={Contact} />
+            <Route path="/guest-booking/:tenantId/:restaurantId" component={MinimalGuest} />
+            <Route component={NotFound} />
+          </Switch>
+        </LayoutWrapper>
+      </RouteGuard>
       <Toaster />
+    </TenantProvider>
+    </AuthProvider>
     </QueryClientProvider>
   );
 }

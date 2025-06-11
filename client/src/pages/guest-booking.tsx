@@ -106,7 +106,7 @@ export default function GuestBooking() {
   // Create booking mutation
   const createBookingMutation = useMutation({
     mutationFn: async (bookingData: any) => {
-      return apiRequest(`/api/restaurants/${restaurantId}/bookings/public`, "POST", bookingData);
+      return apiRequest("POST", `/api/restaurants/${restaurantId}/bookings/public`, bookingData);
     },
     onSuccess: (data) => {
       toast({

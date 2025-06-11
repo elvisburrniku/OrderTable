@@ -112,9 +112,7 @@ export default function SpecialPeriods() {
 
   // Load existing periods when data is fetched
   useEffect(() => {
-    console.log('Special periods data:', existingPeriods);
-    if (existingPeriods && Array.isArray(existingPeriods)) {
-      console.log('Processing periods:', existingPeriods.length);
+    if (existingPeriods) {
       setPeriods(existingPeriods.map((period: any) => ({
         id: period.id,
         name: period.name,

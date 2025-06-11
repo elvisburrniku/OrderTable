@@ -28,11 +28,6 @@ const {
   cutOffTimes,
   tableLayouts,
   integrationConfigurations,
-  onboardingProgress,
-  menuCategories,
-  menuItems,
-  qrMenus,
-  menuOrders,
 } = schema;
 
 export class DatabaseStorage implements IStorage {
@@ -256,16 +251,7 @@ export class DatabaseStorage implements IStorage {
   async getBookingsByRestaurant(restaurantId: number): Promise<any[]> {
     if (!this.db) return [];
     const result = await this.db.select().from(bookings).where(eq(bookings.restaurantId, restaurantId));
-    
-    // Transform the data to ensure proper date format for frontend
-    return result.map(booking => ({
-      ...booking,
-      bookingDate: booking.bookingDate instanceof Date 
-        ? booking.bookingDate.toISOString().split('T')[0] 
-        : typeof booking.bookingDate === 'string' 
-        ? booking.bookingDate.split('T')[0]
-        : booking.bookingDate
-    }));
+    return result;
   }
 
   async getBookingsByDate(restaurantId: number, date: string): Promise<any[]> {
@@ -277,38 +263,7 @@ export class DatabaseStorage implements IStorage {
         eq(bookings.restaurantId, restaurantId),
         sql`DATE(${bookings.bookingDate}) = ${date}`
       ));
-    
-    // Transform the data to ensure proper date format for frontend
-    return result.map(booking => ({
-      ...booking,
-      bookingDate: booking.bookingDate instanceof Date 
-        ? booking.bookingDate.toISOString().split('T')[0] 
-        : typeof booking.bookingDate === 'string' 
-        ? booking.bookingDate.split('T')[0]
-        : booking.bookingDate
-    }));
-  }
-
-  async getBookingsByDateRange(restaurantId: number, startDate: string, endDate: string): Promise<any[]> {
-    if (!this.db) return [];
-    
-    // Use SQL date function to compare dates within range
-    const result = await this.db.select().from(bookings)
-      .where(and(
-        eq(bookings.restaurantId, restaurantId),
-        sql`DATE(${bookings.bookingDate}) >= ${startDate}`,
-        sql`DATE(${bookings.bookingDate}) <= ${endDate}`
-      ));
-    
-    // Transform the data to ensure proper date format for frontend
-    return result.map(booking => ({
-      ...booking,
-      bookingDate: booking.bookingDate instanceof Date 
-        ? booking.bookingDate.toISOString().split('T')[0] 
-        : typeof booking.bookingDate === 'string' 
-        ? booking.bookingDate.split('T')[0]
-        : booking.bookingDate
-    }));
+    return result;
   }
 
   async createBooking(booking: any): Promise<any> {
@@ -776,31 +731,8 @@ export class DatabaseStorage implements IStorage {
   async getBookingChangeRequestsByRestaurant(restaurantId: number): Promise<any[]> {
     try {
       const requests = await this.db
-        .select({
-          id: bookingChangeRequests.id,
-          bookingId: bookingChangeRequests.bookingId,
-          restaurantId: bookingChangeRequests.restaurantId,
-          tenantId: bookingChangeRequests.tenantId,
-          requestedDate: bookingChangeRequests.requestedDate,
-          requestedTime: bookingChangeRequests.requestedTime,
-          requestedGuestCount: bookingChangeRequests.requestedGuestCount,
-          requestedTableId: bookingChangeRequests.requestedTableId,
-          requestNotes: bookingChangeRequests.requestNotes,
-          status: bookingChangeRequests.status,
-          restaurantResponse: bookingChangeRequests.restaurantResponse,
-          createdAt: bookingChangeRequests.createdAt,
-          respondedAt: bookingChangeRequests.respondedAt,
-          booking: {
-            id: bookings.id,
-            customerName: bookings.customerName,
-            customerEmail: bookings.customerEmail,
-            bookingDate: bookings.bookingDate,
-            startTime: bookings.startTime,
-            guestCount: bookings.guestCount
-          }
-        })
+        .select()
         .from(bookingChangeRequests)
-        .leftJoin(bookings, eq(bookingChangeRequests.bookingId, bookings.id))
         .where(eq(bookingChangeRequests.restaurantId, restaurantId))
         .orderBy(desc(bookingChangeRequests.createdAt));
       
@@ -819,12 +751,16 @@ export class DatabaseStorage implements IStorage {
           bookingId: request.bookingId,
           restaurantId: request.restaurantId,
           tenantId: request.tenantId,
+          requestType: request.requestType,
           requestedDate: request.requestedDate,
-          requestedTime: request.requestedTime,
+          requestedStartTime: request.requestedStartTime,
+          requestedEndTime: request.requestedEndTime,
           requestedGuestCount: request.requestedGuestCount,
           requestedTableId: request.requestedTableId,
-          requestNotes: request.requestNotes,
-          status: request.status || 'pending'
+          customerMessage: request.customerMessage,
+          status: request.status || 'pending',
+          createdAt: new Date(),
+          updatedAt: new Date()
         })
         .returning();
       
@@ -1033,65 +969,11 @@ export class DatabaseStorage implements IStorage {
   }
 
   async getTableLayout(restaurantId: number, room: string): Promise<any> {
-    try {
-      const result = await this.db
-        .select()
-        .from(tableLayouts)
-        .where(
-          and(
-            eq(tableLayouts.restaurantId, restaurantId),
-            eq(tableLayouts.room, room)
-          )
-        )
-        .limit(1);
-
-      return result[0] || null;
-    } catch (error) {
-      console.error("Error fetching table layout:", error);
-      return null;
-    }
+    return null;
   }
 
   async saveTableLayout(restaurantId: number, tenantId: number, room: string, positions: any): Promise<any> {
-    try {
-      // Check if layout already exists
-      const existingLayout = await this.getTableLayout(restaurantId, room);
-
-      if (existingLayout) {
-        // Update existing layout
-        const updated = await this.db
-          .update(tableLayouts)
-          .set({
-            positions,
-            updatedAt: new Date(),
-          })
-          .where(
-            and(
-              eq(tableLayouts.restaurantId, restaurantId),
-              eq(tableLayouts.room, room)
-            )
-          )
-          .returning();
-
-        return updated[0];
-      } else {
-        // Create new layout
-        const inserted = await this.db
-          .insert(tableLayouts)
-          .values({
-            restaurantId,
-            tenantId,
-            room,
-            positions,
-          })
-          .returning();
-
-        return inserted[0];
-      }
-    } catch (error) {
-      console.error("Error saving table layout:", error);
-      throw error;
-    }
+    throw new Error("Method not implemented");
   }
 
   async getReschedulingSuggestionsByRestaurant(restaurantId: number): Promise<any[]> {
@@ -1132,210 +1014,5 @@ export class DatabaseStorage implements IStorage {
       createdAt: users.createdAt
     }).from(users);
     return result;
-  }
-
-  // Menu Categories
-  async getMenuCategoriesByRestaurant(restaurantId: number) {
-    const result = await this.db.select().from(menuCategories)
-      .where(eq(menuCategories.restaurantId, restaurantId))
-      .orderBy(asc(menuCategories.displayOrder));
-    return result;
-  }
-
-  async getMenuCategoryById(id: number) {
-    const result = await this.db.select().from(menuCategories)
-      .where(eq(menuCategories.id, id));
-    return result[0];
-  }
-
-  async createMenuCategory(category: any) {
-    const result = await this.db.insert(menuCategories).values(category).returning();
-    return result[0];
-  }
-
-  async updateMenuCategory(id: number, updates: any) {
-    const result = await this.db.update(menuCategories)
-      .set({ ...updates, updatedAt: new Date() })
-      .where(eq(menuCategories.id, id))
-      .returning();
-    return result[0];
-  }
-
-  async deleteMenuCategory(id: number) {
-    await this.db.delete(menuCategories).where(eq(menuCategories.id, id));
-    return true;
-  }
-
-  // Menu Items
-  async getMenuItemsByRestaurant(restaurantId: number) {
-    const result = await this.db.select().from(menuItems)
-      .where(eq(menuItems.restaurantId, restaurantId))
-      .orderBy(asc(menuItems.categoryId), asc(menuItems.displayOrder));
-    return result;
-  }
-
-  async getMenuItemsByCategory(categoryId: number) {
-    const result = await this.db.select().from(menuItems)
-      .where(eq(menuItems.categoryId, categoryId))
-      .orderBy(asc(menuItems.displayOrder));
-    return result;
-  }
-
-  async getMenuItemById(id: number) {
-    const result = await this.db.select().from(menuItems)
-      .where(eq(menuItems.id, id));
-    return result[0];
-  }
-
-  async createMenuItem(item: any) {
-    const result = await this.db.insert(menuItems).values(item).returning();
-    return result[0];
-  }
-
-  async updateMenuItem(id: number, updates: any) {
-    const result = await this.db.update(menuItems)
-      .set({ ...updates, updatedAt: new Date() })
-      .where(eq(menuItems.id, id))
-      .returning();
-    return result[0];
-  }
-
-  async deleteMenuItem(id: number) {
-    await this.db.delete(menuItems).where(eq(menuItems.id, id));
-    return true;
-  }
-
-  // QR Menus
-  async getQrMenusByRestaurant(restaurantId: number) {
-    const result = await this.db.select().from(qrMenus)
-      .where(eq(qrMenus.restaurantId, restaurantId))
-      .orderBy(desc(qrMenus.createdAt));
-    return result;
-  }
-
-  async getQrMenuById(id: number) {
-    const result = await this.db.select().from(qrMenus)
-      .where(eq(qrMenus.id, id));
-    return result[0];
-  }
-
-  async getQrMenuByCode(qrCode: string) {
-    const result = await this.db.select().from(qrMenus)
-      .where(eq(qrMenus.qrCode, qrCode));
-    return result[0];
-  }
-
-  async createQrMenu(menu: any) {
-    const result = await this.db.insert(qrMenus).values(menu).returning();
-    return result[0];
-  }
-
-  async updateQrMenu(id: number, updates: any) {
-    const result = await this.db.update(qrMenus)
-      .set({ ...updates, updatedAt: new Date() })
-      .where(eq(qrMenus.id, id))
-      .returning();
-    return result[0];
-  }
-
-  async deleteQrMenu(id: number) {
-    await this.db.delete(qrMenus).where(eq(qrMenus.id, id));
-    return true;
-  }
-
-  async incrementQrMenuScan(qrCode: string) {
-    await this.db.update(qrMenus)
-      .set({ 
-        scanCount: sql`${qrMenus.scanCount} + 1`,
-        lastScanned: new Date()
-      })
-      .where(eq(qrMenus.qrCode, qrCode));
-  }
-
-  // Menu Orders
-  async getMenuOrdersByRestaurant(restaurantId: number) {
-    const result = await this.db.select().from(menuOrders)
-      .where(eq(menuOrders.restaurantId, restaurantId))
-      .orderBy(desc(menuOrders.createdAt));
-    return result;
-  }
-
-  async getMenuOrdersByQrMenu(qrMenuId: number) {
-    const result = await this.db.select().from(menuOrders)
-      .where(eq(menuOrders.qrMenuId, qrMenuId))
-      .orderBy(desc(menuOrders.createdAt));
-    return result;
-  }
-
-  async getMenuOrderById(id: number) {
-    const result = await this.db.select().from(menuOrders)
-      .where(eq(menuOrders.id, id));
-    return result[0];
-  }
-
-  async createMenuOrder(order: any) {
-    const result = await this.db.insert(menuOrders).values(order).returning();
-    return result[0];
-  }
-
-  async updateMenuOrder(id: number, updates: any) {
-    const result = await this.db.update(menuOrders)
-      .set({ ...updates, updatedAt: new Date() })
-      .where(eq(menuOrders.id, id))
-      .returning();
-    return result[0];
-  }
-
-  // Onboarding Progress
-  async getOnboardingProgressByUser(userId: number, tenantId: number): Promise<any[]> {
-    if (!this.db) return [];
-    const result = await this.db.select().from(onboardingProgress)
-      .where(and(eq(onboardingProgress.userId, userId), eq(onboardingProgress.tenantId, tenantId)))
-      .orderBy(onboardingProgress.createdAt);
-    return result;
-  }
-
-  async createOrUpdateOnboardingProgress(progress: any): Promise<any> {
-    if (!this.db) throw new Error("Database connection not available");
-    
-    // Check if progress already exists for this step
-    const existing = await this.db.select().from(onboardingProgress)
-      .where(and(
-        eq(onboardingProgress.userId, progress.userId),
-        eq(onboardingProgress.tenantId, progress.tenantId),
-        eq(onboardingProgress.stepId, progress.stepId)
-      ));
-
-    if (existing.length > 0) {
-      // Update existing progress
-      const result = await this.db.update(onboardingProgress)
-        .set({
-          ...progress,
-          completedAt: progress.isCompleted ? new Date() : null
-        })
-        .where(eq(onboardingProgress.id, existing[0].id))
-        .returning();
-      return result[0];
-    } else {
-      // Create new progress
-      const result = await this.db.insert(onboardingProgress)
-        .values({
-          ...progress,
-          completedAt: progress.isCompleted ? new Date() : null
-        })
-        .returning();
-      return result[0];
-    }
-  }
-
-  async getOnboardingProgressByStep(userId: number, tenantId: number, stepId: string): Promise<any> {
-    if (!this.db) return null;
-    const result = await this.db.select().from(onboardingProgress)
-      .where(and(
-        eq(onboardingProgress.userId, userId),
-        eq(onboardingProgress.tenantId, tenantId),
-        eq(onboardingProgress.stepId, stepId)
-      ));
-    return result[0];
   }
 }

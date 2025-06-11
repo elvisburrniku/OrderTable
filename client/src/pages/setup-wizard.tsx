@@ -276,7 +276,7 @@ export default function SetupWizard() {
   const updateRestaurantMutation = useMutation({
     mutationFn: async (data: RestaurantDetails) => {
       console.log("Submitting restaurant data:", data);
-      const response = await apiRequest(`/api/tenants/${tenantId}/restaurants/${restaurantId}`, "PUT", data);
+      const response = await apiRequest("PUT", `/api/tenants/${tenantId}/restaurants/${restaurantId}`, data);
       const result = await response.json();
       console.log("Restaurant update response:", result);
       return result;
@@ -307,7 +307,7 @@ export default function SetupWizard() {
         closeTime: hours.closeTime,
       }));
       console.log("Formatted hours array:", hoursArray);
-      const response = await apiRequest(`/api/tenants/${tenantId}/restaurants/${restaurantId}/opening-hours`, "POST", hoursArray);
+      const response = await apiRequest("POST", `/api/tenants/${tenantId}/restaurants/${restaurantId}/opening-hours`, hoursArray);
       const result = await response.json();
       console.log("Opening hours response:", result);
       return result;
@@ -337,7 +337,7 @@ export default function SetupWizard() {
       
       for (const roomName of uniqueRooms) {
         try {
-          const roomResponse = await apiRequest(`/api/tenants/${tenantId}/restaurants/${restaurantId}/rooms`, "POST", {
+          const roomResponse = await apiRequest("POST", `/api/tenants/${tenantId}/restaurants/${restaurantId}/rooms`, {
             name: roomName,
             description: `${roomName} seating area`,
           });
@@ -350,7 +350,7 @@ export default function SetupWizard() {
       // Then create tables
       console.log("Creating tables:", data.tables);
       for (const table of data.tables) {
-        const tableResponse = await apiRequest(`/api/tenants/${tenantId}/restaurants/${restaurantId}/tables`, "POST", {
+        const tableResponse = await apiRequest("POST", `/api/tenants/${tenantId}/restaurants/${restaurantId}/tables`, {
           tableNumber: table.tableNumber,
           capacity: table.capacity,
           room: table.room || "Main Dining",
