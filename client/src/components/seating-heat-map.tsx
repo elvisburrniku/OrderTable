@@ -69,42 +69,8 @@ export default function SeatingHeatMap({ restaurantId, tenantId }: SeatingHeatMa
     return () => clearInterval(interval);
   }, [autoRefresh, refetch]);
 
-  // Generate mock heat map data for demonstration
-  const generateMockHeatData = (): TableHeatData[] => {
-    const tables: TableHeatData[] = [];
-    const tableCount = 16;
-    
-    for (let i = 1; i <= tableCount; i++) {
-      // Create a 4x4 grid layout
-      const row = Math.floor((i - 1) / 4);
-      const col = (i - 1) % 4;
-      
-      const baseHeat = Math.random() * 100;
-      const occupancyRate = Math.random() * 100;
-      const bookingCount = Math.floor(Math.random() * 15) + 1;
-      
-      tables.push({
-        tableId: i,
-        tableName: `Table ${i}`,
-        capacity: [2, 4, 6, 8][Math.floor(Math.random() * 4)],
-        position: { 
-          x: col * 120 + 60, 
-          y: row * 100 + 50 
-        },
-        heatScore: baseHeat,
-        bookingCount,
-        occupancyRate,
-        revenueGenerated: Math.floor(Math.random() * 1000) + 200,
-        averageStayDuration: Math.floor(Math.random() * 60) + 45, // minutes
-        peakHours: ['7:00 PM', '8:00 PM', '8:30 PM'].slice(0, Math.floor(Math.random() * 3) + 1),
-        status: ['available', 'occupied', 'reserved'][Math.floor(Math.random() * 3)] as any
-      });
-    }
-    
-    return tables;
-  };
-
-  const heatData = heatMapData || generateMockHeatData();
+  // Use real data from API
+  const heatData = heatMapData || [];
 
   const getHeatColor = (score: number, mode: string) => {
     const intensity = score / 100;
