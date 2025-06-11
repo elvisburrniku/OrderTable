@@ -731,8 +731,31 @@ export class DatabaseStorage implements IStorage {
   async getBookingChangeRequestsByRestaurant(restaurantId: number): Promise<any[]> {
     try {
       const requests = await this.db
-        .select()
+        .select({
+          id: bookingChangeRequests.id,
+          bookingId: bookingChangeRequests.bookingId,
+          restaurantId: bookingChangeRequests.restaurantId,
+          tenantId: bookingChangeRequests.tenantId,
+          requestedDate: bookingChangeRequests.requestedDate,
+          requestedTime: bookingChangeRequests.requestedTime,
+          requestedGuestCount: bookingChangeRequests.requestedGuestCount,
+          requestedTableId: bookingChangeRequests.requestedTableId,
+          requestNotes: bookingChangeRequests.requestNotes,
+          status: bookingChangeRequests.status,
+          restaurantResponse: bookingChangeRequests.restaurantResponse,
+          createdAt: bookingChangeRequests.createdAt,
+          respondedAt: bookingChangeRequests.respondedAt,
+          booking: {
+            id: bookings.id,
+            customerName: bookings.customerName,
+            customerEmail: bookings.customerEmail,
+            bookingDate: bookings.bookingDate,
+            startTime: bookings.startTime,
+            guestCount: bookings.guestCount
+          }
+        })
         .from(bookingChangeRequests)
+        .leftJoin(bookings, eq(bookingChangeRequests.bookingId, bookings.id))
         .where(eq(bookingChangeRequests.restaurantId, restaurantId))
         .orderBy(desc(bookingChangeRequests.createdAt));
       

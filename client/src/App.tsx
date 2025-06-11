@@ -80,6 +80,7 @@ function App() {
               <Route path="/:tenantId/dashboard" component={Dashboard} />
               <Route path="/:tenantId/bookings" component={Bookings} />
               <Route path="/:tenantId/bookings/:id" component={BookingDetail} />
+              <Route path="/:tenantId/change-requests" component={ChangeRequests} />
               <Route path="/:tenantId/tables" component={Tables} />
               <Route path="/:tenantId/customers" component={Customers} />
               <Route path="/:tenantId/integrations" component={Integrations} />

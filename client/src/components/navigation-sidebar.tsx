@@ -30,6 +30,11 @@ export function NavigationSidebar() {
         isActive: location.startsWith(`${basePath}/bookings`)
       },
       {
+        href: `${basePath}/change-requests`,
+        label: "Change Requests",
+        isActive: location === `${basePath}/change-requests`
+      },
+      {
         href: `${basePath}/tables`,
         label: "Tables",
         isActive: location === `${basePath}/tables`
