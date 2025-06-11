@@ -226,8 +226,10 @@ export class DatabaseStorage implements IStorage {
 
   async getTablesByRestaurant(restaurantId: number): Promise<any[]> {
     if (!this.db) return [];
-    const result = await this.db.select().from(tables).where(eq(tables.restaurant_id, restaurantId));
-    return result;
+    const result = await this.db.execute(
+      sql`SELECT * FROM tables WHERE restaurant_id = ${restaurantId}`
+    );
+    return result.rows;
   }
 
   async createTable(table: any): Promise<any> {
