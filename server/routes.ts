@@ -4155,19 +4155,21 @@ app.put("/api/tenants/:tenantId/bookings/:id", validateTenant, async (req, res) 
           conflictedBookings.slice(1).forEach(booking => {
             // Find available tables with suitable capacity (excluding current table)
             const suitableTables = tenantTables.filter(table => {
+              // Must have sufficient capacity
               if (table.capacity < booking.guestCount) return false;
-              if (table.id === booking.tableId) return false; // Exclude current table
+              // Don't reassign to same table
+              if (table.id === booking.tableId) return false;
               
-              // Check if table is available at this time
+              // Check if table is available at this time slot
               const bookingDate = new Date(booking.bookingDate).toISOString().split('T')[0];
-              const tableConflicts = tenantBookings.filter(b => {
+              const isTableOccupied = tenantBookings.some(b => {
                 const bDate = new Date(b.bookingDate).toISOString().split('T')[0];
                 return b.tableId === table.id && 
                        bDate === bookingDate && 
                        b.startTime === booking.startTime &&
-                       b.id !== booking.id;
+                       b.status === 'confirmed';
               });
-              return tableConflicts.length === 0;
+              return !isTableOccupied;
             });
 
             if (suitableTables.length > 0) {
@@ -4296,71 +4298,86 @@ app.put("/api/tenants/:tenantId/bookings/:id", validateTenant, async (req, res) 
     }
   });
 
-  // Auto-resolve conflict endpoint
-  app.post("/api/tenants/:tenantId/restaurants/:restaurantId/conflicts/:conflictId/auto-resolve", validateTenant, async (req, res) => {
+  // Auto-resolve conflict endpoint (simplified approach)
+  app.post("/api/tenants/:tenantId/restaurants/:restaurantId/conflicts/auto-resolve", validateTenant, async (req, res) => {
     try {
       const restaurantId = parseInt(req.params.restaurantId);
       const tenantId = parseInt(req.params.tenantId);
-      const { conflictId } = req.params;
-      const { resolutionId } = req.body;
+      const { bookingId, newTableId, resolutionType } = req.body;
 
-      // Get conflicts to find the specific resolution
-      const conflictsResponse = await fetch(`http://localhost:5000/api/tenants/${tenantId}/restaurants/${restaurantId}/conflicts`);
-      const conflicts = await conflictsResponse.json();
+      if (!bookingId || !newTableId || !resolutionType) {
+        return res.status(400).json({ message: "Missing required fields: bookingId, newTableId, resolutionType" });
+      }
+
+      // Get the booking to be moved
+      const booking = await storage.getBookingById(bookingId);
+      if (!booking) {
+        return res.status(404).json({ message: "Booking not found" });
+      }
+
+      // Verify the new table exists and has capacity
+      const tables = await storage.getTablesByRestaurant(restaurantId);
+      const newTable = tables.find(t => t.id === newTableId && t.tenant_id === tenantId);
+      if (!newTable) {
+        return res.status(404).json({ message: "Target table not found" });
+      }
+
+      if (newTable.capacity < booking.guestCount) {
+        return res.status(400).json({ message: "Target table capacity insufficient" });
+      }
+
+      // Check if target table is available at the booking time
+      const bookings = await storage.getBookingsByRestaurant(restaurantId);
+      const bookingDate = new Date(booking.bookingDate).toISOString().split('T')[0];
+      const conflictingBookings = bookings.filter(b => {
+        const bDate = new Date(b.bookingDate).toISOString().split('T')[0];
+        return b.tableId === newTableId && 
+               bDate === bookingDate && 
+               b.startTime === booking.startTime &&
+               b.id !== bookingId &&
+               b.status === 'confirmed';
+      });
+
+      if (conflictingBookings.length > 0) {
+        return res.status(400).json({ message: "Target table is not available at the requested time" });
+      }
+
+      // Update the booking with new table assignment
+      const updatedBooking = {
+        ...booking,
+        tableId: newTableId
+      };
       
-      const conflict = conflicts.find(c => c.id === conflictId);
-      if (!conflict) {
-        return res.status(404).json({ message: "Conflict not found" });
-      }
-
-      const resolution = conflict.suggestedResolutions.find(r => r.id === resolutionId);
-      if (!resolution) {
-        return res.status(404).json({ message: "Resolution not found" });
-      }
-
-      if (!resolution.autoExecutable) {
-        return res.status(400).json({ message: "This resolution requires manual intervention" });
-      }
-
-      // Execute the resolution
-      if (resolution.type === 'reassign_table' || resolution.type === 'upgrade_table') {
-        // Update the booking with new table assignment
-        const booking = await storage.getBookingById(resolution.bookingId);
-        if (booking) {
-          const updatedBooking = {
-            ...booking,
-            tableId: resolution.newTableId
-          };
-          
-          await storage.updateBooking(resolution.bookingId, updatedBooking);
-          
-          // Create notification for staff
-          const notification = {
-            restaurantId,
-            tenantId,
-            type: 'conflict_resolved',
-            title: 'Conflict Auto-Resolved',
-            message: `${booking.customerName}'s booking moved to Table ${resolution.newTableId}`,
-            isRead: false,
-            priority: 'medium',
-            createdAt: new Date(),
-            metadata: {
-              bookingId: resolution.bookingId,
-              originalTable: resolution.originalTableId,
-              newTable: resolution.newTableId,
-              resolutionType: resolution.type
-            }
-          };
-          
-          await storage.createNotification(notification);
-          broadcastNotification(restaurantId, notification);
+      await storage.updateBooking(bookingId, updatedBooking);
+      
+      // Create notification for staff
+      const notification = {
+        restaurantId,
+        tenantId,
+        type: 'conflict_resolved',
+        title: 'Conflict Auto-Resolved',
+        message: `${booking.customerName}'s booking moved from Table ${newTable.table_number} to Table ${newTable.table_number}`,
+        isRead: false,
+        priority: 'medium',
+        createdAt: new Date(),
+        metadata: {
+          bookingId,
+          originalTable: booking.tableId,
+          newTable: newTableId,
+          resolutionType
         }
-      }
+      };
+      
+      await storage.createNotification(notification);
+      broadcastNotification(restaurantId, notification);
 
       res.json({ 
         success: true, 
         message: "Conflict resolved successfully",
-        resolutionApplied: resolution.description
+        resolutionApplied: `Moved ${booking.customerName} to Table ${newTable.table_number}`,
+        bookingId,
+        newTableId,
+        newTableNumber: newTable.table_number
       });
     } catch (error) {
       console.error("Auto-resolve conflict error:", error);
