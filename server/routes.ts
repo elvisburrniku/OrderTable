@@ -5500,7 +5500,7 @@ app.put("/api/tenants/:tenantId/bookings/:id", validateTenant, async (req, res) 
 
               if (start1 < end2 && start2 < end1) {
                 conflicts.push({
-                  id: `table-conflict-${tableId}-${Date.now()}`,
+                  id: `table-conflict-${tableId}-${Math.min(booking1.id, booking2.id)}-${Math.max(booking1.id, booking2.id)}`,
                   type: 'table_double_booking',
                   severity: 'high',
                   bookings: [booking1, booking2],
@@ -5527,7 +5527,7 @@ app.put("/api/tenants/:tenantId/bookings/:id", validateTenant, async (req, res) 
           const tableCapacity = tableCapacities.get(booking.tableId);
           if (booking.guestCount > tableCapacity) {
             conflicts.push({
-              id: `capacity-conflict-${booking.id}-${Date.now()}`,
+              id: `capacity-conflict-${booking.id}`,
               type: 'capacity_exceeded',
               severity: 'medium',
               bookings: [booking],
@@ -5570,7 +5570,7 @@ app.put("/api/tenants/:tenantId/bookings/:id", validateTenant, async (req, res) 
         timeSlots.forEach((slotBookings, time) => {
           if (slotBookings.length > 3) { // More than 3 bookings at same time might be problematic
             conflicts.push({
-              id: `time-overlap-${date}-${time}-${Date.now()}`,
+              id: `time-overlap-${date}-${time}`,
               type: 'time_overlap',
               severity: 'low',
               bookings: slotBookings,
