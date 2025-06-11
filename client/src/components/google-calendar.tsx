@@ -5,6 +5,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Textarea } from "@/components/ui/textarea";
 import { useAuth } from "@/lib/auth.tsx";
 import { useMutation, useQueryClient, useQuery } from "@tanstack/react-query";
 import { apiRequest } from "@/lib/queryClient";
@@ -283,7 +284,21 @@ export default function GoogleCalendar({ selectedDate, bookings, allBookings = [
           </div>
           
           <Button 
-            onClick={() => setIsNewBookingOpen(true)}
+            onClick={() => {
+              // Initialize with current date and default time if no time slot selected
+              if (!selectedTimeSlot) {
+                setSelectedTimeSlot({
+                  date: selectedDate,
+                  time: "19:00" // Default to 7 PM
+                });
+                setNewBooking(prev => ({
+                  ...prev,
+                  startTime: "19:00",
+                  endTime: "20:00"
+                }));
+              }
+              setIsNewBookingOpen(true);
+            }}
             className="w-full bg-blue-600 hover:bg-blue-700 text-white"
           >
             <Plus className="h-4 w-4 mr-2" />
@@ -509,6 +524,50 @@ export default function GoogleCalendar({ selectedDate, bookings, allBookings = [
           </DialogHeader>
           
           <form onSubmit={handleCreateBooking} className="space-y-4">
+            {/* Date and Time Selection */}
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <Label htmlFor="bookingDate">Date</Label>
+                <Input
+                  id="bookingDate"
+                  type="date"
+                  value={selectedTimeSlot ? format(selectedTimeSlot.date, 'yyyy-MM-dd') : format(selectedDate, 'yyyy-MM-dd')}
+                  onChange={(e) => {
+                    const newDate = new Date(e.target.value + 'T12:00:00');
+                    setSelectedTimeSlot(prev => ({ 
+                      date: newDate, 
+                      time: prev?.time || newBooking.startTime 
+                    }));
+                  }}
+                  required
+                />
+              </div>
+              <div>
+                <Label htmlFor="bookingTime">Time</Label>
+                <Select 
+                  value={selectedTimeSlot?.time || newBooking.startTime} 
+                  onValueChange={(time) => {
+                    setSelectedTimeSlot(prev => ({ 
+                      date: prev?.date || selectedDate, 
+                      time 
+                    }));
+                    setNewBooking(prev => ({ ...prev, startTime: time }));
+                  }}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select time" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {timeSlots.map(time => (
+                      <SelectItem key={time} value={time}>
+                        {format(new Date(`2000-01-01T${time}`), 'h:mm a')}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+
             <div className="grid grid-cols-2 gap-4">
               <div>
                 <Label htmlFor="customerName">Customer Name</Label>
