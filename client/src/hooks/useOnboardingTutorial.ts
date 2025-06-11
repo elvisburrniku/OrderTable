@@ -236,11 +236,22 @@ export function useOnboardingTutorial(tenantId?: number, restaurantId?: number) 
       progress: (allCompletedOrSkipped.size / TUTORIAL_STEPS.length) * 100
     }));
 
-    // Auto-start tutorial for new users
-    if (userProgress.length === 0 && !tutorialState.isActive && tenantId) {
-      startTutorial();
+  }, [userProgress, isLoading]);
+
+  // Auto-start tutorial for new users in a separate effect
+  useEffect(() => {
+    if (userProgress && userProgress.length === 0 && !tutorialState.isActive && tenantId) {
+      const firstStep = TUTORIAL_STEPS[0];
+      setTutorialState(prev => ({
+        ...prev,
+        isActive: true,
+        currentStepId: firstStep.id,
+        currentStepIndex: 0,
+        canGoNext: true,
+        canGoPrevious: false
+      }));
     }
-  }, [userProgress, isLoading, tenantId, tutorialState.isActive]);
+  }, [userProgress, tutorialState.isActive, tenantId]);
 
   const startTutorial = useCallback(() => {
     const firstStep = TUTORIAL_STEPS[0];
