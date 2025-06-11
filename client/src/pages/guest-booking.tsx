@@ -238,20 +238,38 @@ export default function GuestBooking() {
     createBookingMutation.mutate(bookingData);
   };
 
-  // Add debug info for development
+  // Debug: Always show what we're getting from the route
+  if (!match) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="text-center max-w-md mx-auto p-6">
+          <h1 className="text-2xl font-bold text-gray-900 mb-4">Route Not Matching</h1>
+          <p className="text-gray-600 mb-4">
+            The URL pattern doesn't match the expected route.
+          </p>
+          <div className="text-left bg-white p-4 rounded border space-y-2">
+            <p><strong>Current URL:</strong> {window.location.pathname}</p>
+            <p><strong>Expected Pattern:</strong> /guest-booking/:tenantId/:restaurantId</p>
+            <p><strong>Match:</strong> false</p>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   if (!restaurantId || !tenantId) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
         <div className="text-center max-w-md mx-auto p-6">
           <h1 className="text-2xl font-bold text-gray-900 mb-4">URL Parameters Missing</h1>
           <p className="text-gray-600 mb-4">
-            Expected URL format: /guest-booking/tenant_id/restaurant_id
+            Some required parameters are missing from the URL.
           </p>
-          <div className="text-left bg-white p-4 rounded border">
+          <div className="text-left bg-white p-4 rounded border space-y-2">
             <p><strong>Current URL:</strong> {window.location.pathname}</p>
             <p><strong>Tenant ID:</strong> {tenantId || 'missing'}</p>
             <p><strong>Restaurant ID:</strong> {restaurantId || 'missing'}</p>
-            <p><strong>Match:</strong> {match ? 'true' : 'false'}</p>
+            <p><strong>All Params:</strong> {JSON.stringify(params)}</p>
           </div>
         </div>
       </div>
