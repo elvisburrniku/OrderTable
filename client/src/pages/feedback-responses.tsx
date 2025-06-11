@@ -24,26 +24,9 @@ export default function FeedbackResponses() {
   }) || [];
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      {/* Navigation */}
-      <div className="bg-white border-b">
-        <div className="flex items-center justify-between px-6 py-4">
-          <div className="flex items-center space-x-6">
-            <h1 className="text-xl font-semibold">Responses</h1>
-            <nav className="flex space-x-6">
-              <a href="/dashboard" className="text-gray-600 hover:text-gray-900">Booking</a>
-              <a href="#" className="text-green-600 font-medium">CRM</a>
-              <a href="#" className="text-gray-600 hover:text-gray-900">Archive</a>
-            </nav>
-          </div>
-          <div className="flex items-center space-x-4">
-            <span className="text-sm text-gray-600">{restaurant.name}</span>
-            <Button variant="outline" size="sm">Profile</Button>
-          </div>
-        </div>
-      </div>
-
-      <div className="p-6">
+    <DashboardLayout>
+      <div className="min-h-screen bg-gray-50">
+        <div className="p-6">
           <div className="bg-white rounded-lg shadow">
             {/* Header */}
             <div className="p-6 border-b">
@@ -170,6 +153,6 @@ export default function FeedbackResponses() {
           </div>
         </div>
       </div>
-    </div>
+    </DashboardLayout>
   );
 }
