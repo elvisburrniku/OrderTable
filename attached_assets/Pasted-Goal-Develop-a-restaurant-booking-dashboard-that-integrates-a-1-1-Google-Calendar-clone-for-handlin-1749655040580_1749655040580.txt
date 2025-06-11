@@ -1,0 +1,286 @@
+Goal:
+Develop a restaurant booking dashboard that integrates a 1:1 Google Calendar clone for handling reservations, along with full restaurant-specific features. The system should be modular, scalable, and production-ready, supporting real restaurant operations such as table planning, multi-room support, customer communication, payment handling, and analytics.
+
+All core components must work together seamlessly, with consistent UI/UX across the platform. Focus on data integrity, real-time updates, and user experience for both internal staff and external integrations.
+
+🧩 MODULES & FUNCTIONALITY (With Insights):
+📊 Dashboard
+Acts as the entry point for managers.
+
+Show key KPIs: today's reservations, current occupancy, no-shows, revenue, pending tasks.
+
+Insights:
+
+Use charts/cards for rapid insights.
+
+Integrate heatmap & conflicts summary.
+
+Quick link to most-used views (today’s schedule, waiting list, etc.).
+
+📅 Bookings
+Full list and management of all reservations.
+
+CRUD operations, filters (status, time, guest count, etc.).
+
+Insights:
+
+Searchable by customer name, phone, booking ID.
+
+Highlight overbooked or edge-case reservations (e.g., after cut-off).
+
+📆 Calendar
+Google Calendar-style interactive schedule view.
+
+Tables shown as resources (like Google Calendar’s multiple calendars).
+
+Insights:
+
+Color-coded by table, status, or room.
+
+Drag-to-book, resize, move reservations.
+
+Real-time sync across all devices/admins.
+
+🌡️ Heat Map
+Visual heatmap of peak vs. low traffic times per day/week/month.
+
+Insights:
+
+Used for staffing, menu optimization, or promotions.
+
+Connect with statistics and periodic patterns.
+
+⚠️ Conflicts
+Detect overlapping bookings, double-assignments, or layout breaches.
+
+Insights:
+
+Auto-resolve suggestions (e.g., table swap, time shift).
+
+Highlight conflicting events in red on calendar and list views.
+
+👤 Customers
+Customer CRM: profiles, booking history, tags, preferences.
+
+Insights:
+
+VIP flag, allergens, preferred seating.
+
+Link with SMS/email history and feedback.
+
+🕐 Waiting List
+Track customers waiting for a slot.
+
+Add to calendar automatically if slot frees up.
+
+Insights:
+
+Prioritize by arrival time or loyalty level.
+
+🔌 Integrations
+Connect with POS, Google Maps, CRM, Meta Ads, delivery platforms.
+
+Insights:
+
+API configuration panel.
+
+Webhooks for third-party updates.
+
+📈 Statistics
+In-depth analytics for:
+
+Bookings, revenue, table utilization, no-show rate.
+
+Insights:
+
+Exportable reports.
+
+Compare by day/week/month/room.
+
+🧾 Activity Log
+Full audit trail: bookings created/edited/canceled.
+
+Insights:
+
+Show staff name or API origin.
+
+Useful for support or accountability.
+
+💬 Feedback
+Customer post-dining feedback.
+
+Insights:
+
+Auto-send feedback forms via email/SMS.
+
+Tag negative feedback for follow-up.
+
+📲 SMS Messages
+History of all sent messages (reminders, confirmations, waitlist updates).
+
+Insights:
+
+Retry failed messages.
+
+Templates & personalization fields.
+
+💼 Subscription
+SaaS model: manage billing, limits, active tenants.
+
+Insights:
+
+Include trial days left, over-usage warnings.
+
+🏢 Tenant Settings
+White-label config per restaurant/client.
+
+Insights:
+
+Logo, branding, SMTP setup, currency, timezone.
+
+🍽️ RESTAURANT SETTINGS (CORE TO FUNCTIONALITY)
+⏰ Opening Hours
+Define daily open/close times per room/area.
+
+Insights:
+
+Sync with booking availability engine.
+
+Overrideable by special periods.
+
+📅 Special Periods
+Define exceptions (holidays, closures, seasonal).
+
+Insights:
+
+Visually shown in calendar as greyed/unavailable zones.
+
+⏳ Cut-off Time
+Prevent bookings X minutes/hours before actual reservation.
+
+Insights:
+
+Enforced both on backend and frontend UI.
+
+🏬 Rooms
+Define dining areas (e.g., Terrace, Main Hall, VIP Room).
+
+Insights:
+
+Rooms act as calendar layers or filters.
+
+Can have separate opening hours.
+
+🍽️ Tables
+Manage individual tables, seats per table.
+
+Insights:
+
+Table ID, QR code, availability status.
+
+🔗 Combined Tables
+Merge tables for group bookings.
+
+Insights:
+
+Only combine if layouts permit.
+
+Show combined status in calendar.
+
+🗺️ Table Plan
+Visual layout editor.
+
+Insights:
+
+Drag & drop tables in room layout.
+
+Integrates with booking UI (clickable plan).
+
+🪑 Seating Configurations
+Define max guests, table types (standard, booth, bar stool).
+
+Insights:
+
+Auto-match group size to suitable config.
+
+🔁 Periodic Criteria
+Automate availability or rules (e.g., “no walk-ins after 9 PM Fridays”).
+
+Insights:
+
+Rule-based logic engine, override-able.
+
+🧩 Custom Fields
+Add extra data to bookings (e.g., birthday, language preference).
+
+Insights:
+
+Used in reports, search filters, customer profiles.
+
+👨‍🍳 Booking Agents
+Track which staff/admin created the reservation.
+
+Insights:
+
+Useful for performance or audit.
+
+📧 Email Notifications
+Configure email templates and triggers.
+
+Insights:
+
+Confirmation, reminder, cancelation notices.
+
+📲 SMS Notifications
+Sync with SMS panel, configurable per event.
+
+Insights:
+
+Enable/disable per tenant or event type.
+
+❓ Questions
+Custom booking questions (e.g., “Do you need a high chair?”).
+
+Insights:
+
+Attach to reservation logic or filters.
+
+🎉 Events
+Internal or public events (e.g., wine tasting nights).
+
+Insights:
+
+Shown in calendar, capacity-based RSVP.
+
+🛍️ Products & Product Groups
+Add-ons for bookings (e.g., cake, decorations).
+
+Insights:
+
+Group into categories, upsell on confirmation page.
+
+💳 Payment Setups
+Define pricing, taxes, deposit rules.
+
+Insights:
+
+Booking fee %, refund policy, multi-currency.
+
+🌐 Payment Gateway
+Stripe, PayPal, Mollie, custom providers.
+
+Insights:
+
+Use webhooks for status sync.
+
+Support pre-authorizations, deposits, cancellations.
+
+✅ Final Notes
+Everything must work out of the box without bugs or logic gaps.
+
+Calendar is the heart: all booking, table, and timing logic must reflect in real-time.
+
+Prioritize modular code structure and API-first design.
+
+Focus on scalability for multi-location restaurants or franchises.
+

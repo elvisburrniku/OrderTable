@@ -4042,6 +4042,27 @@ app.put("/api/tenants/:tenantId/bookings/:id", validateTenant, async (req, res) 
         return bookingDate.getMonth() === currentMonth && bookingDate.getFullYear() === currentYear;
       });
 
+      // Calculate today's bookings
+      const today = new Date().toISOString().split('T')[0];
+      const todayBookings = tenantBookings.filter(booking => {
+        const bookingDate = new Date(booking.bookingDate).toISOString().split('T')[0];
+        return bookingDate === today;
+      });
+
+      // Calculate current occupancy (bookings currently in progress)
+      const now = new Date();
+      const currentHour = now.getHours();
+      const currentMinute = now.getMinutes();
+      const currentTime = currentHour * 60 + currentMinute;
+
+      const currentOccupancy = todayBookings.filter(booking => {
+        const startParts = booking.startTime.split(':');
+        const endParts = booking.endTime.split(':');
+        const startTime = parseInt(startParts[0]) * 60 + parseInt(startParts[1]);
+        const endTime = parseInt(endParts[0]) * 60 + parseInt(endParts[1]);
+        return currentTime >= startTime && currentTime <= endTime && booking.status === 'confirmed';
+      }).length;
+
       // Calculate statistics
       const totalBookings = tenantBookings.length;
       const totalCustomers = tenantCustomers.length;
@@ -4054,27 +4075,55 @@ app.put("/api/tenants/:tenantId/bookings/:id", validateTenant, async (req, res) 
         return acc;
       }, {});
 
+      // Calculate no-shows (past bookings with pending status)
+      const noShows = tenantBookings.filter(booking => {
+        const bookingDate = new Date(booking.bookingDate);
+        const endTimeParts = booking.endTime.split(':');
+        const bookingEndTime = new Date(bookingDate);
+        bookingEndTime.setHours(parseInt(endTimeParts[0]), parseInt(endTimeParts[1]));
+        return bookingEndTime < now && booking.status === 'pending';
+      }).length;
+
       // Calculate table utilization (percentage of tables used in current month)
       const uniqueTablesUsed = new Set(monthlyBookings.map(booking => booking.tableId).filter(Boolean)).size;
       const tableUtilization = totalTables > 0 ? (uniqueTablesUsed / totalTables) * 100 : 0;
 
-      // Calculate monthly revenue (assuming average booking value of $50)
-      const avgBookingValue = 50;
-      const monthlyRevenue = monthlyBookings.length * avgBookingValue;
+      // Calculate revenue based on guest count (estimate $25 per guest)
+      const avgPerGuest = 25;
+      const monthlyRevenue = monthlyBookings.reduce((total, booking) => {
+        return total + (booking.guestCount * avgPerGuest);
+      }, 0);
 
       // Calculate average bookings per day for current month
       const daysInMonth = new Date(currentYear, currentMonth + 1, 0).getDate();
       const avgBookingsPerDay = monthlyBookings.length / daysInMonth;
 
+      // Calculate peak hours analysis
+      const hourlyBookings = tenantBookings.reduce((acc: any, booking) => {
+        const hour = parseInt(booking.startTime.split(':')[0]);
+        acc[hour] = (acc[hour] || 0) + 1;
+        return acc;
+      }, {});
+
+      const peakHour = Object.entries(hourlyBookings).reduce((peak: any, [hour, count]: [string, any]) => {
+        return count > (peak.count || 0) ? { hour: parseInt(hour), count } : peak;
+      }, {});
+
       const statistics = {
         totalBookings: totalBookings || 0,
+        todayBookings: todayBookings.length || 0,
+        currentOccupancy: currentOccupancy || 0,
         totalCustomers: totalCustomers || 0,
-        tableUtilization: Math.min(Math.round(tableUtilization * 10) / 10, 100), // Round to 1 decimal, cap at 100%
+        noShows: noShows || 0,
+        tableUtilization: Math.min(Math.round(tableUtilization * 10) / 10, 100),
         monthlyRevenue: monthlyRevenue || 0,
         bookingsByStatus: bookingsByStatus || { confirmed: 0, pending: 0, cancelled: 0 },
         avgBookingsPerDay: Math.round(avgBookingsPerDay * 10) / 10 || 0,
         monthlyBookings: monthlyBookings.length || 0,
-        totalTables: totalTables || 0
+        totalTables: totalTables || 0,
+        peakHour: peakHour.hour || 19,
+        peakHourBookings: peakHour.count || 0,
+        occupancyRate: totalTables > 0 ? Math.round((currentOccupancy / totalTables) * 100) : 0
       };
 
       res.json(statistics);
