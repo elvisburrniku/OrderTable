@@ -3,7 +3,7 @@ import { useLocation } from "wouter";
 import { useAuth } from "@/lib/auth.tsx";
 import { useQuery } from "@tanstack/react-query";
 import DashboardSidebar from "@/components/dashboard-sidebar";
-import BookingCalendar from "@/components/booking-calendar";
+import EnhancedBookingCalendar from "@/components/enhanced-booking-calendar";
 import { WalkInBooking } from "@/components/walk-in-booking";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -36,17 +36,7 @@ export default function Dashboard() {
   const [selectedDate, setSelectedDate] = useState(new Date());
   const [viewMode, setViewMode] = useState<'calendar' | 'layout'>('calendar');
   const [selectedRoom, setSelectedRoom] = useState<string>("");
-  const [isNewBookingOpen, setIsNewBookingOpen] = useState(false);
-  const [selectedTableForBooking, setSelectedTableForBooking] = useState<any>(null);
-  const [newBooking, setNewBooking] = useState({
-    customerName: "",
-    customerEmail: "",
-    customerPhone: "",
-    guestCount: 2,
-    startTime: "19:00",
-    endTime: "20:00",
-    notes: ""
-  });
+
   const today = format(new Date(), 'yyyy-MM-dd');
   const [showBookingManager, setShowBookingManager] = useState(false);
   const [selectedTableBookings, setSelectedTableBookings] = useState<any[]>([]);
@@ -828,118 +818,21 @@ export default function Dashboard() {
             </div>
           ) : (
             <div data-tutorial="booking-calendar">
-              <BookingCalendar 
+              <EnhancedBookingCalendar 
                 selectedDate={selectedDate}
-                bookings={(selectedDateBookings as any) || []}
-                allBookings={(allBookings as any) || []}
+                bookings={(allBookings as any) || []}
                 tables={(tables as any) || []}
                 isLoading={isLoading}
                 onDateSelect={setSelectedDate}
+                tenantId={restaurant?.tenantId!}
+                restaurantId={restaurant?.id!}
               />
             </div>
           )}
         </div>
       </div>
 
-      {/* New Booking Dialog */}
-      <Dialog open={isNewBookingOpen} onOpenChange={setIsNewBookingOpen}>
-        <DialogContent className="max-w-md">
-          <DialogHeader>
-            <DialogTitle>
-              Create Booking for Table {selectedTableForBooking?.tableNumber}
-            </DialogTitle>
-          </DialogHeader>
-          <form onSubmit={handleCreateBooking} className="space-y-4">
-            <div>
-              <Label htmlFor="customerName">Customer Name</Label>
-              <Input
-                id="customerName"
-                value={newBooking.customerName}
-                onChange={(e) => setNewBooking({ ...newBooking, customerName: e.target.value })}
-                required
-              />
-            </div>
-            <div>
-              <Label htmlFor="customerEmail">Email</Label>
-              <Input
-                id="customerEmail"
-                type="email"
-                value={newBooking.customerEmail}
-                onChange={(e) => setNewBooking({ ...newBooking, customerEmail: e.target.value })}
-                required
-              />
-            </div>
-            <div>
-              <Label htmlFor="customerPhone">Phone</Label>
-              <Input
-                id="customerPhone"
-                value={newBooking.customerPhone}
-                onChange={(e) => setNewBooking({ ...newBooking, customerPhone: e.target.value })}
-              />
-            </div>
-            <div>
-              <Label htmlFor="guestCount">Number of Guests</Label>
-              <Input
-                id="guestCount"
-                type="number"
-                min="1"
-                max={selectedTableForBooking?.capacity || 12}
-                value={newBooking.guestCount}
-                onChange={(e) => setNewBooking({ ...newBooking, guestCount: parseInt(e.target.value) })}
-                required
-              />
-              <p className="text-xs text-gray-500 mt-1">
-                Table capacity: {selectedTableForBooking?.capacity} guests
-              </p>
-            </div>
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <Label htmlFor="startTime">Start Time</Label>
-                <Select value={newBooking.startTime} onValueChange={(value) => setNewBooking({ ...newBooking, startTime: value })}>
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {["10:00", "11:00", "12:00", "13:00", "14:00", "15:00", "16:00", "17:00", "18:00", "19:00", "20:00", "21:00"].map((time) => (
-                      <SelectItem key={time} value={time}>{time}</SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-              <div>
-                <Label htmlFor="endTime">End Time</Label>
-                <Select value={newBooking.endTime} onValueChange={(value) => setNewBooking({ ...newBooking, endTime: value })}>
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {["10:00", "11:00", "12:00", "13:00", "14:00", "15:00", "16:00", "17:00", "18:00", "19:00", "20:00", "21:00"].map((time) => (
-                      <SelectItem key={time} value={time}>{time}</SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-            </div>
-            <div>
-              <Label htmlFor="notes">Notes (Optional)</Label>
-              <Input
-                id="notes"
-                value={newBooking.notes}
-                onChange={(e) => setNewBooking({ ...newBooking, notes: e.target.value })}
-                placeholder="Any special requests or notes"
-              />
-            </div>
-            <div className="flex justify-end gap-2 pt-4">
-              <Button type="button" variant="outline" onClick={() => setIsNewBookingOpen(false)}>
-                Cancel
-              </Button>
-              <Button type="submit" className="bg-green-600 hover:bg-green-700" disabled={createBookingMutation.isPending}>
-                {createBookingMutation.isPending ? "Creating..." : "Create Booking"}
-              </Button>
-            </div>
-          </form>
-        </DialogContent>
-      </Dialog>
+
 
       {/* Booking Management Dialog */}
       <Dialog open={showBookingManager} onOpenChange={setShowBookingManager}>
