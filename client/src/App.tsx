@@ -133,7 +133,6 @@ function App() {
                 <Route path="/:tenantId/booking/:id" component={lazy(() => import("./pages/booking-detail"))} />
                 <Route path="/:tenantId/profile" component={Profile} />
                 <Route path="/:tenantId/settings" component={Settings} />
-                <Route path="/:tenantId/billing" component={Billing} />
                 <Route path="/:tenantId/help" component={Help} />
               </OverduePaymentGuard>
             </SetupGuard>
