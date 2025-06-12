@@ -7078,20 +7078,25 @@ app.put("/api/tenants/:tenantId/bookings/:id", validateTenant, async (req, res) 
         // Update existing subscription
         const subscription = await stripe.subscriptions.retrieve(tenant.stripeSubscriptionId);
         
+        // First create a Stripe product and price
+        const product = await stripe.products.create({
+          name: plan.name,
+          description: `${plan.name} subscription plan`,
+        });
+
+        const price = await stripe.prices.create({
+          currency: 'usd',
+          unit_amount: plan.price,
+          recurring: {
+            interval: 'month',
+          },
+          product: product.id,
+        });
+
         await stripe.subscriptions.update(tenant.stripeSubscriptionId, {
           items: [{
             id: subscription.items.data[0].id,
-            price_data: {
-              currency: 'usd',
-              product_data: {
-                name: plan.name,
-                description: `${plan.name} subscription plan`,
-              },
-              unit_amount: plan.price,
-              recurring: {
-                interval: 'month',
-              },
-            },
+            price: price.id,
           }],
           proration_behavior: 'always_invoice',
         });
@@ -7112,21 +7117,25 @@ app.put("/api/tenants/:tenantId/bookings/:id", validateTenant, async (req, res) 
           }
         });
       } else {
-        // Create new subscription
+        // Create new subscription with existing product and price
+        const product = await stripe.products.create({
+          name: plan.name,
+          description: `${plan.name} subscription plan`,
+        });
+
+        const price = await stripe.prices.create({
+          currency: 'usd',
+          unit_amount: plan.price,
+          recurring: {
+            interval: 'month',
+          },
+          product: product.id,
+        });
+
         const subscription = await stripe.subscriptions.create({
           customer: customerId,
           items: [{
-            price_data: {
-              currency: 'usd',
-              product_data: {
-                name: plan.name,
-                description: `${plan.name} subscription plan`,
-              },
-              unit_amount: plan.price,
-              recurring: {
-                interval: 'month',
-              },
-            },
+            price: price.id,
           }],
           default_payment_method: paymentMethods.data[0].id,
           expand: ['latest_invoice.payment_intent'],
@@ -7138,7 +7147,7 @@ app.put("/api/tenants/:tenantId/bookings/:id", validateTenant, async (req, res) 
           subscriptionStatus: 'active',
           stripeSubscriptionId: subscription.id,
           subscriptionStartDate: new Date(),
-          subscriptionEndDate: new Date(subscription.current_period_end * 1000),
+          subscriptionEndDate: new Date((subscription as any).current_period_end * 1000),
         });
 
         return res.json({
