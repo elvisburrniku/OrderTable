@@ -563,9 +563,10 @@ export default function BillingPage() {
               </div>
             )}
 
-            {/* Show reactivate button for any non-active status with subscription */}
+            {/* Show reactivate button for any non-active status with subscription (excluding cancelled which has its own section) */}
             {subscriptionDetails.tenant.subscriptionStatus !== "active" && 
              subscriptionDetails.tenant.subscriptionStatus !== "trial" && 
+             subscriptionDetails.tenant.subscriptionStatus !== "cancelled" && 
              subscriptionDetails.plan && (
               <div className="space-y-2">
                 <Button
