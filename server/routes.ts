@@ -7196,10 +7196,20 @@ app.put("/api/tenants/:tenantId/bookings/:id", validateTenant, async (req, res) 
       
       if (tenant?.stripeSubscriptionId) {
         try {
-          const stripeSubscription = await stripe.subscriptions.retrieve(tenant.stripeSubscriptionId);
+          const stripeSubscription = await stripe.subscriptions.retrieve(tenant.stripeSubscriptionId, {
+            expand: ['items.data.plan']
+          });
+          
+          // Get billing period from subscription items (where the actual periods are stored)
+          let endTimestamp = stripeSubscription.current_period_end;
+          
+          // If not found in main subscription, check the subscription items
+          if (!endTimestamp && stripeSubscription.items && stripeSubscription.items.data.length > 0) {
+            const firstItem = stripeSubscription.items.data[0];
+            endTimestamp = firstItem.current_period_end;
+          }
           
           // Validate and convert Stripe timestamp to Date
-          const endTimestamp = stripeSubscription.current_period_end;
           if (endTimestamp && typeof endTimestamp === 'number' && endTimestamp > 0) {
             stripeSubscriptionEndDate = new Date(endTimestamp * 1000);
             
@@ -7221,7 +7231,7 @@ app.put("/api/tenants/:tenantId/bookings/:id", validateTenant, async (req, res) 
           
           // Only update database if we have valid data and it's different from current
           if (stripeSubscriptionStatus !== tenant?.subscriptionStatus || 
-              (stripeSubscriptionEndDate && stripeSubscriptionEndDate !== tenant?.subscriptionEndDate)) {
+              (stripeSubscriptionEndDate && stripeSubscriptionEndDate.getTime() !== tenant?.subscriptionEndDate?.getTime())) {
             
             const updateData: any = {
               subscriptionStatus: stripeSubscriptionStatus,
