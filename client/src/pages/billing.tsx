@@ -434,11 +434,34 @@ export default function BillingPage() {
       }
     },
     onError: (error: any) => {
-      toast({
-        title: "Error",
-        description: error.message || "Failed to update subscription",
-        variant: "destructive",
-      });
+      // Handle detailed downgrade validation errors
+      if (error.validationFailures) {
+        const failures = error.validationFailures;
+        const tableFailure = failures.find((f: any) => f.type === "table_limit");
+        const bookingFailure = failures.find((f: any) => f.type === "booking_limit");
+        
+        let detailedMessage = error.message;
+        
+        if (tableFailure && bookingFailure) {
+          detailedMessage += `\n\nActions required:\n• ${tableFailure.action}\n• ${bookingFailure.action}`;
+        } else if (tableFailure) {
+          detailedMessage += `\n\nAction required: ${tableFailure.action}`;
+        } else if (bookingFailure) {
+          detailedMessage += `\n\nAction required: ${bookingFailure.action}`;
+        }
+        
+        toast({
+          title: "Downgrade Blocked",
+          description: detailedMessage,
+          variant: "destructive",
+        });
+      } else {
+        toast({
+          title: "Error",
+          description: error.message || "Failed to update subscription",
+          variant: "destructive",
+        });
+      }
     },
   });
 
