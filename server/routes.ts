@@ -7099,7 +7099,13 @@ app.put("/api/tenants/:tenantId/bookings/:id", validateTenant, async (req, res) 
 
   // Create setup intent for adding payment method
   app.post("/api/billing/setup-intent", attachUser, async (req: Request, res: Response) => {
+    console.log("Setup intent endpoint called, user:", req.user?.id);
+    
+    // Set proper response headers
+    res.setHeader('Content-Type', 'application/json');
+    
     if (!req.user) {
+      console.log("No user found in request");
       return res.status(401).json({ error: "Not authenticated" });
     }
 
@@ -7136,13 +7142,15 @@ app.put("/api/tenants/:tenantId/bookings/:id", validateTenant, async (req, res) 
         usage: 'off_session'
       });
 
-      res.json({
+      console.log("Setup intent created successfully for customer:", customerId);
+      
+      return res.json({
         clientSecret: setupIntent.client_secret,
         customerId
       });
     } catch (error) {
       console.error("Error creating setup intent:", error);
-      res.status(500).json({ error: "Failed to create setup intent" });
+      return res.status(500).json({ error: "Failed to create setup intent" });
     }
   });
 
