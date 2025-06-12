@@ -4,7 +4,9 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { HelpCircle, Info, Plus, Save, Edit, Trash2 } from "lucide-react";
 
 interface Room {
   id?: number;
@@ -291,41 +293,86 @@ export default function Rooms() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      {/* Navigation */}
-      <div className="bg-white border-b">
-        <div className="flex items-center justify-between px-6 py-4">
-          <div className="flex items-center space-x-6">
-            <h1 className="text-xl font-semibold">Rooms</h1>
-            <nav className="flex space-x-6">
-              <a href={`/${restaurant.tenantId}/dashboard`} className="text-gray-600 hover:text-gray-900">Booking</a>
-              <a href={`/${restaurant.tenantId}/bookings`} className="text-green-600 font-medium">CRM</a>
-              <a href={`/${restaurant.tenantId}/activity-log`} className="text-gray-600 hover:text-gray-900">Archive</a>
-            </nav>
-          </div>
-          <div className="flex items-center space-x-4">
-            <span className="text-sm text-gray-600">{restaurant.name}</span>
-            <Button variant="outline" size="sm">Profile</Button>
+    <TooltipProvider>
+      <div className="min-h-screen bg-gray-50">
+        {/* Navigation */}
+        <div className="bg-white border-b">
+          <div className="flex items-center justify-between px-6 py-4">
+            <div className="flex items-center space-x-6">
+              <div className="flex items-center space-x-2">
+                <h1 className="text-xl font-semibold">Rooms</h1>
+                <Tooltip>
+                  <TooltipTrigger>
+                    <HelpCircle className="h-4 w-4 text-gray-400 hover:text-gray-600" />
+                  </TooltipTrigger>
+                  <TooltipContent>
+                    <p>Manage your restaurant's seating areas and dining rooms</p>
+                  </TooltipContent>
+                </Tooltip>
+              </div>
+              <nav className="flex space-x-6">
+                <a href={`/${restaurant.tenantId}/dashboard`} className="text-gray-600 hover:text-gray-900">Booking</a>
+                <a href={`/${restaurant.tenantId}/bookings`} className="text-green-600 font-medium">CRM</a>
+                <a href={`/${restaurant.tenantId}/activity-log`} className="text-gray-600 hover:text-gray-900">Archive</a>
+              </nav>
+            </div>
+            <div className="flex items-center space-x-4">
+              <span className="text-sm text-gray-600">{restaurant.name}</span>
+              <Button variant="outline" size="sm">Profile</Button>
+            </div>
           </div>
         </div>
-      </div>
 
       {/* Main Content */}
       <div className="p-6">
           <Card>
             <CardHeader>
-              <CardTitle>Rooms</CardTitle>
+              <CardTitle className="flex items-center space-x-2">
+                <span>Rooms</span>
+                <Tooltip>
+                  <TooltipTrigger>
+                    <Info className="h-4 w-4 text-gray-400 hover:text-gray-600" />
+                  </TooltipTrigger>
+                  <TooltipContent>
+                    <p>Configure dining areas and seating sections for your restaurant</p>
+                  </TooltipContent>
+                </Tooltip>
+              </CardTitle>
             </CardHeader>
             <CardContent className="space-y-6">
               <div className="grid grid-cols-3 gap-4">
-                <div>
+                <div className="flex items-center space-x-2">
                   <label className="block text-sm font-medium text-gray-700 mb-2">Name</label>
+                  <Tooltip>
+                    <TooltipTrigger>
+                      <HelpCircle className="h-3 w-3 text-gray-400 hover:text-gray-600" />
+                    </TooltipTrigger>
+                    <TooltipContent>
+                      <p>Enter a descriptive name for this dining area (e.g., "Main Dining", "Patio", "Private Room")</p>
+                    </TooltipContent>
+                  </Tooltip>
                 </div>
-                <div>
+                <div className="flex items-center space-x-2">
                   <label className="block text-sm font-medium text-gray-700 mb-2">Priority</label>
+                  <Tooltip>
+                    <TooltipTrigger>
+                      <HelpCircle className="h-3 w-3 text-gray-400 hover:text-gray-600" />
+                    </TooltipTrigger>
+                    <TooltipContent>
+                      <p>Set booking priority: High = preferred seating, Medium = standard, Low = overflow area</p>
+                    </TooltipContent>
+                  </Tooltip>
                 </div>
-                <div>
+                <div className="flex items-center space-x-2">
                   <label className="block text-sm font-medium text-gray-700 mb-2">Actions</label>
+                  <Tooltip>
+                    <TooltipTrigger>
+                      <HelpCircle className="h-3 w-3 text-gray-400 hover:text-gray-600" />
+                    </TooltipTrigger>
+                    <TooltipContent>
+                      <p>Save new rooms, update existing ones, or delete unwanted areas</p>
+                    </TooltipContent>
+                  </Tooltip>
                 </div>
               </div>
 
@@ -351,49 +398,81 @@ export default function Rooms() {
                   </Select>
                   <div className="flex items-center space-x-2">
                     {room.isNew && room.name.trim() !== "" && (
-                      <Button 
-                        onClick={() => saveIndividualRoomMutation.mutate(room)}
-                        className="bg-green-600 hover:bg-green-700 text-white"
-                        size="sm"
-                        disabled={saveIndividualRoomMutation.isPending}
-                      >
-                        {saveIndividualRoomMutation.isPending ? "Saving..." : "Save"}
-                      </Button>
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <Button 
+                            onClick={() => saveIndividualRoomMutation.mutate(room)}
+                            className="bg-green-600 hover:bg-green-700 text-white"
+                            size="sm"
+                            disabled={saveIndividualRoomMutation.isPending}
+                          >
+                            <Save className="h-3 w-3 mr-1" />
+                            {saveIndividualRoomMutation.isPending ? "Saving..." : "Save"}
+                          </Button>
+                        </TooltipTrigger>
+                        <TooltipContent>
+                          <p>Save this new room to your restaurant configuration</p>
+                        </TooltipContent>
+                      </Tooltip>
                     )}
                     {!room.isNew && hasRoomChanges(room, index) && room.name.trim() !== "" && (
-                      <Button 
-                        onClick={() => saveIndividualRoomMutation.mutate(room)}
-                        className="bg-blue-600 hover:bg-blue-700 text-white"
-                        size="sm"
-                        disabled={saveIndividualRoomMutation.isPending}
-                      >
-                        {saveIndividualRoomMutation.isPending ? "Updating..." : "Update"}
-                      </Button>
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <Button 
+                            onClick={() => saveIndividualRoomMutation.mutate(room)}
+                            className="bg-blue-600 hover:bg-blue-700 text-white"
+                            size="sm"
+                            disabled={saveIndividualRoomMutation.isPending}
+                          >
+                            <Edit className="h-3 w-3 mr-1" />
+                            {saveIndividualRoomMutation.isPending ? "Updating..." : "Update"}
+                          </Button>
+                        </TooltipTrigger>
+                        <TooltipContent>
+                          <p>Update the changes made to this existing room</p>
+                        </TooltipContent>
+                      </Tooltip>
                     )}
-                    <Button 
-                      variant="ghost" 
-                      size="sm" 
-                      onClick={() => removeRoom(index)}
-                      className="text-red-600 hover:bg-red-50"
-                      disabled={deleteRoomMutation.isPending}
-                    >
-                      {deleteRoomMutation.isPending ? "..." : "🗑"}
-                    </Button>
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <Button 
+                          variant="ghost" 
+                          size="sm" 
+                          onClick={() => removeRoom(index)}
+                          className="text-red-600 hover:bg-red-50"
+                          disabled={deleteRoomMutation.isPending}
+                        >
+                          <Trash2 className="h-3 w-3" />
+                        </Button>
+                      </TooltipTrigger>
+                      <TooltipContent>
+                        <p>Delete this room from your restaurant</p>
+                      </TooltipContent>
+                    </Tooltip>
                   </div>
                 </div>
               ))}
 
               <div className="flex space-x-4">
-                <Button 
-                  variant="outline"
-                  onClick={addRoom}
-                >
-                  Add area
-                </Button>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button 
+                      variant="outline"
+                      onClick={addRoom}
+                    >
+                      <Plus className="h-4 w-4 mr-2" />
+                      Add area
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent>
+                    <p>Create a new dining area or seating section for your restaurant</p>
+                  </TooltipContent>
+                </Tooltip>
               </div>
             </CardContent>
           </Card>
+        </div>
       </div>
-    </div>
+    </TooltipProvider>
   );
 }
