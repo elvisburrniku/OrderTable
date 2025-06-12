@@ -12,12 +12,15 @@ interface Room {
   priority: string;
   restaurantId?: number;
   tenantId?: number;
+  isNew?: boolean;
+  hasChanges?: boolean;
 }
 
 export default function Rooms() {
   const { user, restaurant } = useAuth();
   const queryClient = useQueryClient();
   const [rooms, setRooms] = useState<Room[]>([]);
+  const [originalRooms, setOriginalRooms] = useState<Room[]>([]);
 
   // Fetch rooms from API
   const { data: fetchedRooms = [], isLoading } = useQuery({
@@ -36,9 +39,11 @@ export default function Rooms() {
   useEffect(() => {
     if (fetchedRooms.length > 0) {
       setRooms(fetchedRooms);
+      setOriginalRooms(fetchedRooms);
     } else if (!isLoading && fetchedRooms.length === 0) {
       // If no rooms exist, start with default room
-      setRooms([{ name: "The restaurant", priority: "Medium" }]);
+      setRooms([{ name: "The restaurant", priority: "Medium", isNew: true }]);
+      setOriginalRooms([]);
     }
   }, [fetchedRooms, isLoading]);
 
@@ -131,8 +136,36 @@ export default function Rooms() {
     return null;
   }
 
+  // Check if room has changes compared to original
+  const hasRoomChanges = (room: Room, index: number): boolean => {
+    if (room.isNew) return true;
+    const original = originalRooms.find(orig => orig.id === room.id);
+    if (!original) return true;
+    return room.name !== original.name || room.priority !== original.priority;
+  };
+
+  // Delete room mutation
+  const deleteRoomMutation = useMutation({
+    mutationFn: async (roomId: number) => {
+      const response = await fetch(
+        `/api/tenants/${restaurant?.tenantId}/restaurants/${restaurant?.id}/rooms/${roomId}`,
+        { method: "DELETE" }
+      );
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(`Failed to delete room: ${errorData.message || response.statusText}`);
+      }
+      return response.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ 
+        queryKey: ["/api/tenants", restaurant?.tenantId, "restaurants", restaurant?.id, "rooms"] 
+      });
+    },
+  });
+
   const addRoom = () => {
-    setRooms([...rooms, { name: "", priority: "Medium" }]);
+    setRooms([...rooms, { name: "", priority: "Medium", isNew: true }]);
   };
 
   const updateRoom = (index: number, field: keyof Room, value: string) => {
@@ -142,9 +175,67 @@ export default function Rooms() {
   };
 
   const removeRoom = (index: number) => {
+    const room = rooms[index];
+    if (room.id && !room.isNew) {
+      // Delete from server if it's an existing room
+      deleteRoomMutation.mutate(room.id);
+    }
+    // Remove from local state
     const newRooms = rooms.filter((_, i) => i !== index);
     setRooms(newRooms);
   };
+
+  // Save individual room
+  const saveRoom = async (room: Room) => {
+    const currentTenantId = restaurant?.tenantId;
+    if (!currentTenantId || !restaurant?.id) return;
+
+    if (room.id && !room.isNew) {
+      // Update existing room
+      const response = await fetch(
+        `/api/tenants/${currentTenantId}/restaurants/${restaurant.id}/rooms/${room.id}`,
+        {
+          method: "PUT",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            name: room.name,
+            priority: room.priority,
+            restaurantId: restaurant.id,
+            tenantId: currentTenantId,
+          }),
+        },
+      );
+      if (!response.ok) throw new Error("Failed to update room");
+      return response.json();
+    } else {
+      // Create new room
+      const response = await fetch(
+        `/api/tenants/${currentTenantId}/restaurants/${restaurant.id}/rooms`,
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            name: room.name,
+            priority: room.priority,
+            restaurantId: restaurant.id,
+            tenantId: currentTenantId,
+          }),
+        },
+      );
+      if (!response.ok) throw new Error("Failed to create room");
+      return response.json();
+    }
+  };
+
+  // Individual room save mutation
+  const saveIndividualRoomMutation = useMutation({
+    mutationFn: saveRoom,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ 
+        queryKey: ["/api/tenants", restaurant?.tenantId, "restaurants", restaurant?.id, "rooms"] 
+      });
+    },
+  });
 
   const saveRooms = () => {
     // Filter out rooms with empty names
@@ -179,59 +270,73 @@ export default function Rooms() {
               <CardTitle>Rooms</CardTitle>
             </CardHeader>
             <CardContent className="space-y-6">
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-3 gap-4">
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">Name</label>
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">Priority</label>
                 </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Actions</label>
+                </div>
               </div>
 
               {rooms.map((room, index) => (
-                <div key={index} className="grid grid-cols-2 gap-4 items-center">
+                <div key={index} className="grid grid-cols-3 gap-4 items-center">
                   <Input
                     placeholder="Room name"
                     value={room.name}
                     onChange={(e) => updateRoom(index, 'name', e.target.value)}
                   />
+                  <Select 
+                    value={room.priority} 
+                    onValueChange={(value) => updateRoom(index, 'priority', value)}
+                  >
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="High">High</SelectItem>
+                      <SelectItem value="Medium">Medium</SelectItem>
+                      <SelectItem value="Low">Low</SelectItem>
+                    </SelectContent>
+                  </Select>
                   <div className="flex items-center space-x-2">
-                    <Select 
-                      value={room.priority} 
-                      onValueChange={(value) => updateRoom(index, 'priority', value)}
-                    >
-                      <SelectTrigger>
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="High">High</SelectItem>
-                        <SelectItem value="Medium">Medium</SelectItem>
-                        <SelectItem value="Low">Low</SelectItem>
-                      </SelectContent>
-                    </Select>
+                    {room.isNew && room.name.trim() !== "" && (
+                      <Button 
+                        onClick={() => saveIndividualRoomMutation.mutate(room)}
+                        className="bg-green-600 hover:bg-green-700 text-white"
+                        size="sm"
+                        disabled={saveIndividualRoomMutation.isPending}
+                      >
+                        {saveIndividualRoomMutation.isPending ? "Saving..." : "Save"}
+                      </Button>
+                    )}
+                    {!room.isNew && hasRoomChanges(room, index) && room.name.trim() !== "" && (
+                      <Button 
+                        onClick={() => saveIndividualRoomMutation.mutate(room)}
+                        className="bg-blue-600 hover:bg-blue-700 text-white"
+                        size="sm"
+                        disabled={saveIndividualRoomMutation.isPending}
+                      >
+                        {saveIndividualRoomMutation.isPending ? "Updating..." : "Update"}
+                      </Button>
+                    )}
                     <Button 
                       variant="ghost" 
                       size="sm" 
                       onClick={() => removeRoom(index)}
-                      className="text-red-600"
+                      className="text-red-600 hover:bg-red-50"
+                      disabled={deleteRoomMutation.isPending}
                     >
-                      🗑
-                    </Button>
-                    <Button variant="ghost" size="sm">
-                      ⚙
+                      {deleteRoomMutation.isPending ? "..." : "🗑"}
                     </Button>
                   </div>
                 </div>
               ))}
 
               <div className="flex space-x-4">
-                <Button 
-                  onClick={saveRooms}
-                  className="bg-green-600 hover:bg-green-700 text-white"
-                  disabled={saveRoomsMutation.isPending}
-                >
-                  {saveRoomsMutation.isPending ? "Saving..." : "Save"}
-                </Button>
                 <Button 
                   variant="outline"
                   onClick={addRoom}

@@ -613,7 +613,15 @@ export class MemoryStorage implements IStorage {
     this.rooms[roomIndex] = { ...this.rooms[roomIndex], ...updates };
     return this.rooms[roomIndex];
   }
-  async deleteRoom(id: number): Promise<boolean> { return false; }
+  async deleteRoom(id: number): Promise<boolean> { 
+    const roomIndex = this.rooms.findIndex(room => room.id === id);
+    if (roomIndex === -1) {
+      return false;
+    }
+    
+    this.rooms.splice(roomIndex, 1);
+    return true;
+  }
   async getCombinedTablesByRestaurant(restaurantId: number): Promise<any[]> { return []; }
   async createCombinedTable(data: any): Promise<any> { return { id: this.nextId++, ...data }; }
   async updateCombinedTable(id: number, updates: any): Promise<any> { return undefined; }

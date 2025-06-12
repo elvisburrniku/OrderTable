@@ -2452,6 +2452,38 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  app.delete("/api/tenants/:tenantId/restaurants/:restaurantId/rooms/:id", validateTenant, async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      const restaurantId = parseInt(req.params.restaurantId);
+      const tenantId = parseInt(req.params.tenantId);
+
+      if (isNaN(id) || isNaN(restaurantId) || isNaN(tenantId)) {
+        return res.status(400).json({ message: "Invalid parameters" });
+      }
+
+      const restaurant = await storage.getRestaurantById(restaurantId);
+      if (!restaurant || restaurant.tenantId !== tenantId) {
+        return res.status(404).json({ message: "Restaurant not found" });
+      }
+
+      const existingRoom = await storage.getRoomById(id);
+      if (!existingRoom || existingRoom.tenantId !== tenantId || existingRoom.restaurantId !== restaurantId) {
+        return res.status(404).json({ message: "Room not found" });
+      }
+
+      const deleted = await storage.deleteRoom(id);
+      if (!deleted) {
+        return res.status(404).json({ message: "Failed to delete room" });
+      }
+
+      res.json({ message: "Room deleted successfully" });
+    } catch (error) {
+      console.error("Error deleting room:", error);
+      res.status(500).json({ message: "Internal server error" });
+    }
+  });
+
   app.put("/api/tenants/:tenantId/rooms/:id", validateTenant, async (req, res) => {
     try {
       const id = parseInt(req.params.id);
