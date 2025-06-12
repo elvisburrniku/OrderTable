@@ -538,11 +538,7 @@ export default function BillingPage() {
               </div>
             )}
 
-            {/* Debug info */}
-            <div className="text-xs text-muted-foreground p-2 bg-gray-50 rounded mb-2">
-              Status: {subscriptionDetails.tenant.subscriptionStatus} | 
-              End Date: {subscriptionDetails.tenant.subscriptionEndDate || 'None'}
-            </div>
+
 
             {subscriptionDetails.tenant.subscriptionStatus === "cancelled" && subscriptionDetails.tenant.subscriptionEndDate && (
               <div className="space-y-2">

@@ -7190,15 +7190,45 @@ app.put("/api/tenants/:tenantId/bookings/:id", validateTenant, async (req, res) 
         ? await storage.getSubscriptionPlanById(tenant.subscriptionPlanId)
         : null;
 
+      // Get real-time subscription data from Stripe if subscription exists
+      let stripeSubscriptionEndDate = tenant?.subscriptionEndDate;
+      let stripeSubscriptionStatus = tenant?.subscriptionStatus;
+      
+      if (tenant?.stripeSubscriptionId) {
+        try {
+          const stripeSubscription = await stripe.subscriptions.retrieve(tenant.stripeSubscriptionId);
+          // Convert Stripe timestamp to Date
+          stripeSubscriptionEndDate = new Date(stripeSubscription.current_period_end * 1000);
+          
+          // Map Stripe status to our internal status
+          if (stripeSubscription.status === 'active') {
+            stripeSubscriptionStatus = 'active';
+          } else if (stripeSubscription.cancel_at_period_end) {
+            stripeSubscriptionStatus = 'cancelled';
+          } else {
+            stripeSubscriptionStatus = stripeSubscription.status;
+          }
+          
+          // Update local database with current Stripe data
+          await storage.updateTenant(tenantUser.id, {
+            subscriptionStatus: stripeSubscriptionStatus,
+            subscriptionEndDate: stripeSubscriptionEndDate,
+          });
+        } catch (stripeError) {
+          console.error("Error fetching Stripe subscription:", stripeError);
+          // Fall back to local data if Stripe call fails
+        }
+      }
+
       res.json({
         tenant: {
           id: tenant?.id,
           name: tenant?.name,
-          subscriptionStatus: tenant?.subscriptionStatus,
+          subscriptionStatus: stripeSubscriptionStatus,
           trialStartDate: tenant?.trialStartDate,
           trialEndDate: tenant?.trialEndDate,
           subscriptionStartDate: tenant?.subscriptionStartDate,
-          subscriptionEndDate: tenant?.subscriptionEndDate,
+          subscriptionEndDate: stripeSubscriptionEndDate,
         },
         plan: plan ? {
           id: plan.id,
