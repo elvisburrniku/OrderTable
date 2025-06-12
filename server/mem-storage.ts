@@ -593,7 +593,9 @@ export class MemoryStorage implements IStorage {
     return newSlot;
   }
   async updateTimeSlot(id: number, updates: Partial<TimeSlots>): Promise<TimeSlots | undefined> { return undefined; }
-  async getRoomsByRestaurant(restaurantId: number): Promise<Room[]> { return []; }
+  async getRoomsByRestaurant(restaurantId: number): Promise<Room[]> { 
+    return this.rooms.filter(room => room.restaurantId === restaurantId);
+  }
   async getRoomById(id: number): Promise<Room | undefined> { return undefined; }
   async createRoom(room: InsertRoom): Promise<Room> { 
     const newRoom: Room = { id: this.nextId++, ...room, createdAt: new Date() };
