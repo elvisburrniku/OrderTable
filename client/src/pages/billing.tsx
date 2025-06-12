@@ -319,6 +319,10 @@ export default function BillingPage() {
     queryKey: ["/api/subscription/details"],
   });
 
+  const { data: subscriptionPlans = [] } = useQuery({
+    queryKey: ["/api/subscription-plans"],
+  });
+
   const deletePaymentMethodMutation = useMutation({
     mutationFn: (paymentMethodId: string) =>
       apiRequest("DELETE", `/api/billing/payment-method/${paymentMethodId}`),
@@ -397,6 +401,28 @@ export default function BillingPage() {
       toast({
         title: "Error",
         description: error.message || "Failed to reactivate subscription",
+        variant: "destructive",
+      });
+    },
+  });
+
+  const upgradeSubscriptionMutation = useMutation({
+    mutationFn: (planId: number) =>
+      apiRequest("POST", "/api/subscription/subscribe", { planId }),
+    onSuccess: (data) => {
+      toast({
+        title: "Subscription Updated",
+        description: data.message || "Your subscription has been updated successfully",
+      });
+      queryClient.invalidateQueries({ queryKey: ["/api/billing/info"] });
+      queryClient.invalidateQueries({
+        queryKey: ["/api/subscription/details"],
+      });
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Error",
+        description: error.message || "Failed to update subscription",
         variant: "destructive",
       });
     },
@@ -521,6 +547,91 @@ export default function BillingPage() {
                 </Button>
               </div>
             )}
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Available Subscription Plans */}
+      {subscriptionPlans.length > 0 && (
+        <Card>
+          <CardHeader>
+            <CardTitle>Subscription Plans</CardTitle>
+            <CardDescription>
+              Choose the plan that fits your restaurant's needs
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+              {subscriptionPlans.map((plan: any) => {
+                const isCurrentPlan = subscriptionDetails?.plan?.id === plan.id;
+                const features = JSON.parse(plan.features || '[]');
+                
+                return (
+                  <div 
+                    key={plan.id}
+                    className={`border rounded-lg p-4 ${
+                      isCurrentPlan ? 'border-blue-500 bg-blue-50' : 'border-gray-200'
+                    }`}
+                  >
+                    <div className="flex items-center justify-between mb-3">
+                      <h3 className="font-semibold text-lg">{plan.name}</h3>
+                      {isCurrentPlan && (
+                        <Badge className="bg-blue-100 text-blue-800 border-blue-200">
+                          Current Plan
+                        </Badge>
+                      )}
+                    </div>
+                    
+                    <div className="mb-4">
+                      <div className="text-2xl font-bold">
+                        ${(plan.price / 100).toFixed(0)}
+                        <span className="text-sm font-normal text-muted-foreground">
+                          /{plan.interval}
+                        </span>
+                      </div>
+                    </div>
+
+                    <div className="space-y-2 mb-4">
+                      <div className="text-sm text-muted-foreground">
+                        Up to {plan.maxTables} tables
+                      </div>
+                      <div className="text-sm text-muted-foreground">
+                        {plan.maxBookingsPerMonth} bookings/month
+                      </div>
+                    </div>
+
+                    {features.length > 0 && (
+                      <div className="mb-4">
+                        <div className="text-sm font-medium mb-2">Features:</div>
+                        <ul className="space-y-1">
+                          {features.slice(0, 3).map((feature: string, index: number) => (
+                            <li key={index} className="text-sm text-muted-foreground flex items-center">
+                              <Check className="h-3 w-3 text-green-500 mr-2" />
+                              {feature}
+                            </li>
+                          ))}
+                          {features.length > 3 && (
+                            <li className="text-xs text-muted-foreground">
+                              +{features.length - 3} more features
+                            </li>
+                          )}
+                        </ul>
+                      </div>
+                    )}
+
+                    {!isCurrentPlan && (
+                      <Button 
+                        className="w-full"
+                        onClick={() => upgradeSubscriptionMutation.mutate(plan.id)}
+                        disabled={upgradeSubscriptionMutation.isPending}
+                      >
+                        {upgradeSubscriptionMutation.isPending ? "Updating..." : "Upgrade to this Plan"}
+                      </Button>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
           </CardContent>
         </Card>
       )}
