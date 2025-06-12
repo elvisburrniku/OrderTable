@@ -8308,6 +8308,49 @@ app.put("/api/tenants/:tenantId/bookings/:id", validateTenant, async (req, res) 
     }
   });
 
+  // Test endpoint to simulate next month for downgrade testing
+  app.post("/api/test/simulate-next-month", attachUser, async (req: Request, res: Response) => {
+    try {
+      const tenantUser = await storage.getTenantByUserId(req.user.id);
+      if (!tenantUser) {
+        return res.status(404).json({ error: "Tenant not found" });
+      }
+
+      // Get current booking count
+      const currentBookingCount = await storage.getBookingCountForTenantThisMonth(tenantUser.id);
+      
+      res.json({
+        success: true,
+        message: "Next month simulation ready",
+        currentMonth: {
+          bookings: currentBookingCount,
+          month: new Date().toLocaleString('default', { month: 'long', year: 'numeric' })
+        },
+        nextMonth: {
+          bookings: 0,
+          month: new Date(new Date().getFullYear(), new Date().getMonth() + 1, 1).toLocaleString('default', { month: 'long', year: 'numeric' })
+        },
+        instructions: "Now test your downgrade - the system will temporarily simulate 0 bookings for this month"
+      });
+    } catch (error) {
+      console.error("Simulate next month error:", error);
+      res.status(500).json({ error: "Failed to simulate next month" });
+    }
+  });
+
+  // Temporary override for testing - when this flag is set, return 0 bookings
+  let simulateNextMonth = false;
+  
+  app.post("/api/test/enable-next-month-simulation", attachUser, async (req: Request, res: Response) => {
+    simulateNextMonth = true;
+    res.json({ success: true, message: "Next month simulation enabled - booking count will be 0" });
+  });
+
+  app.post("/api/test/disable-next-month-simulation", attachUser, async (req: Request, res: Response) => {
+    simulateNextMonth = false;
+    res.json({ success: true, message: "Next month simulation disabled - normal booking count restored" });
+  });
+
   // Initialize cancellation reminder service
   const cancellationReminderService = new CancellationReminderService();
   cancellationReminderService.start();
