@@ -46,7 +46,10 @@ export const OverduePaymentGuard = ({ children }: { children: React.ReactNode })
   const isOverdue = subscriptionDetails?.tenant?.subscriptionStatus === 'past_due';
   const isEnded = subscriptionDetails?.tenant?.subscriptionStatus === 'ended' || 
                   subscriptionDetails?.tenant?.subscriptionStatus === 'canceled';
-  const isBlocked = isOverdue || isEnded;
+  const isTrialExpired = subscriptionDetails?.tenant?.subscriptionStatus === 'trialing' && 
+                         subscriptionDetails?.tenant?.subscriptionEndDate && 
+                         new Date(subscriptionDetails.tenant.subscriptionEndDate) < new Date();
+  const isBlocked = isOverdue || isEnded || isTrialExpired;
   const isBillingPage = location.includes('/billing');
 
   useEffect(() => {
@@ -56,12 +59,16 @@ export const OverduePaymentGuard = ({ children }: { children: React.ReactNode })
     }
   }, [isBlocked, isBillingPage, setLocation, subscriptionDetails?.tenant?.id]);
 
-  // If blocked (overdue or ended), show appropriate warning on billing page or block other pages
+  // If blocked (overdue, ended, or trial expired), show appropriate warning on billing page or block other pages
   if (isBlocked) {
     if (isBillingPage) {
       return (
         <div className="container mx-auto p-6 space-y-6">
-          <OverduePaymentBanner subscriptionDetails={subscriptionDetails} isEnded={isEnded} />
+          <OverduePaymentBanner 
+            subscriptionDetails={subscriptionDetails} 
+            isEnded={isEnded}
+            isTrialExpired={Boolean(isTrialExpired)}
+          />
           {children}
         </div>
       );
@@ -76,7 +83,7 @@ export const OverduePaymentGuard = ({ children }: { children: React.ReactNode })
   return <>{children}</>;
 };
 
-const OverduePaymentBanner = ({ subscriptionDetails, isEnded }: { subscriptionDetails?: SubscriptionDetails; isEnded?: boolean }) => {
+const OverduePaymentBanner = ({ subscriptionDetails, isEnded, isTrialExpired }: { subscriptionDetails?: SubscriptionDetails; isEnded?: boolean; isTrialExpired?: boolean }) => {
   const { data: invoicesData } = useQuery<{
     invoices: Array<{
       id: string;
@@ -141,21 +148,55 @@ const OverduePaymentBanner = ({ subscriptionDetails, isEnded }: { subscriptionDe
     }
   };
 
+  const getCardStyle = () => {
+    if (isTrialExpired) return "border-orange-400 bg-orange-50 dark:bg-orange-950 dark:border-orange-600";
+    if (isEnded) return "border-gray-400 bg-gray-50 dark:bg-gray-950 dark:border-gray-600";
+    return "border-red-200 bg-red-50 dark:bg-red-950 dark:border-red-800";
+  };
+
+  const getIconColor = () => {
+    if (isTrialExpired) return 'text-orange-600';
+    if (isEnded) return 'text-gray-600';
+    return 'text-red-600';
+  };
+
+  const getTitleColor = () => {
+    if (isTrialExpired) return 'text-orange-800 dark:text-orange-200';
+    if (isEnded) return 'text-gray-800 dark:text-gray-200';
+    return 'text-red-800 dark:text-red-200';
+  };
+
+  const getDescriptionColor = () => {
+    if (isTrialExpired) return 'text-orange-600 dark:text-orange-400';
+    if (isEnded) return 'text-gray-600 dark:text-gray-400';
+    return 'text-red-600 dark:text-red-400';
+  };
+
+  const getTitle = () => {
+    if (isTrialExpired) return "Trial Period Expired";
+    if (isEnded) return "Subscription Ended";
+    if (willBeSuspended) return "Account Suspended";
+    return "Payment Overdue";
+  };
+
+  const getDescription = () => {
+    if (isTrialExpired) return "Your free trial has ended. Subscribe to continue using the service.";
+    if (isEnded) return "Your subscription has ended. Choose to reactivate or delete your account.";
+    if (willBeSuspended) return "Your account has been suspended due to non-payment";
+    return "Your subscription payment is past due";
+  };
+
   return (
-    <Card className={isEnded ? "border-gray-400 bg-gray-50 dark:bg-gray-950 dark:border-gray-600" : "border-red-200 bg-red-50 dark:bg-red-950 dark:border-red-800"}>
+    <Card className={getCardStyle()}>
       <CardHeader>
         <div className="flex items-center space-x-3">
-          <AlertTriangle className={`h-8 w-8 ${isEnded ? 'text-gray-600' : 'text-red-600'}`} />
+          <AlertTriangle className={`h-8 w-8 ${getIconColor()}`} />
           <div>
-            <CardTitle className={isEnded ? 'text-gray-800 dark:text-gray-200' : 'text-red-800 dark:text-red-200'}>
-              {isEnded ? "Subscription Ended" : (willBeSuspended ? "Account Suspended" : "Payment Overdue")}
+            <CardTitle className={getTitleColor()}>
+              {getTitle()}
             </CardTitle>
-            <CardDescription className={isEnded ? 'text-gray-600 dark:text-gray-400' : 'text-red-600 dark:text-red-400'}>
-              {isEnded 
-                ? "Your subscription has ended. Choose to reactivate or delete your account."
-                : (willBeSuspended 
-                  ? "Your account has been suspended due to non-payment"
-                  : "Your subscription payment is past due")}
+            <CardDescription className={getDescriptionColor()}>
+              {getDescription()}
             </CardDescription>
           </div>
         </div>

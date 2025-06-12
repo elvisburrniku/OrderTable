@@ -44,9 +44,13 @@ export function LayoutWrapper({ children }: LayoutWrapperProps) {
   
   const isPublicRoute = publicRoutes.some(pattern => pattern.test(location));
   
-  // Check if subscription has ended or is canceled
+  // Check if subscription has ended, is canceled, or trial has expired
   const isSubscriptionEnded = subscriptionDetails?.tenant?.subscriptionStatus === 'ended' || 
                               subscriptionDetails?.tenant?.subscriptionStatus === 'canceled';
+  const isTrialExpired = subscriptionDetails?.tenant?.subscriptionStatus === 'trialing' && 
+                         subscriptionDetails?.tenant?.subscriptionEndDate && 
+                         new Date(subscriptionDetails.tenant.subscriptionEndDate) < new Date();
+  const isBlocked = isSubscriptionEnded || isTrialExpired;
   
   if (isPublicRoute) {
     // Render without sidebar for public routes
