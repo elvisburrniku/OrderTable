@@ -67,6 +67,7 @@ import Contact from "./pages/contact";
 import MinimalGuest from "./pages/minimal-guest";
 import SetupWizard from "./pages/setup-wizard";
 import { SetupGuard } from "./components/setup-guard";
+import { OverduePaymentGuard } from "./components/overdue-payment-guard";
 
 function App() {
   return (
@@ -82,57 +83,59 @@ function App() {
             <Route path="/register" component={Register} />
             <Route path="/setup" component={SetupWizard} />
             <SetupGuard>
-              <Route path="/:tenantId/dashboard" component={Dashboard} />
-              <Route path="/:tenantId/bookings" component={Bookings} />
-              <Route path="/:tenantId/calendar" component={Calendar} />
-              <Route path="/:tenantId/heat-map" component={HeatMap} />
-              <Route path="/:tenantId/conflicts" component={Conflicts} />
-              <Route path="/:tenantId/bookings/:id" component={BookingDetail} />
-              <Route path="/:tenantId/tables" component={Tables} />
-              <Route path="/:tenantId/customers" component={Customers} />
-              <Route path="/:tenantId/integrations" component={Integrations} />
-              <Route path="/:tenantId/integrations/activecampaign" component={ActiveCampaignIntegration} />
-              <Route path="/:tenantId/integrations/google" component={GoogleIntegration} />
-              <Route path="/:tenantId/integrations/klaviyo" component={KlaviyoIntegration} />
-              <Route path="/:tenantId/integrations/mailchimp" component={MailchimpIntegration} />
-              <Route path="/:tenantId/integrations/meta" component={MetaIntegration} />
-              <Route path="/:tenantId/integrations/michelin" component={MichelinIntegration} />
-              <Route path="/:tenantId/integrations/webhooks" component={WebhooksIntegration} />
-              <Route path="/:tenantId/integrations/tripadvisor" component={TripAdvisorIntegration} />
-              <Route path="/:tenantId/statistics" component={Statistics} />
-              <Route path="/:tenantId/activity-log" component={ActivityLog} />
-              <Route path="/:tenantId/waiting-list" component={WaitingList} />
-              <Route path="/:tenantId/subscription" component={Subscription} />
-              <Route path="/:tenantId/billing" component={Billing} />
-              <Route path="/:tenantId/sms-messages" component={SmsMessages} />
-              <Route path="/:tenantId/tenant-settings" component={TenantSettings} />
-              <Route path="/:tenantId/email-notifications" component={EmailNotifications} />
-              <Route path="/:tenantId/sms-notifications" component={SmsNotifications} />
-              <Route path="/:tenantId/feedback-questions" component={FeedbackQuestions} />
-              <Route path="/:tenantId/events" component={Events} />
-              <Route path="/:tenantId/payment-setups" component={PaymentSetups} />
-              <Route path="/:tenantId/payment-gateway" component={PaymentGateway} />
-              <Route path="/:tenantId/products" component={Products} />
-              <Route path="/:tenantId/product-groups" component={ProductGroups} />
-              <Route path="/:tenantId/feedback-responses" component={FeedbackResponses} />
-              <Route path="/:tenantId/opening-hours" component={OpeningHours} />
-              <Route path="/:tenantId/special-periods" component={SpecialPeriods} />
-              <Route path="/:tenantId/cut-off-time" component={CutOffTime} />
-              <Route path="/:tenantId/periodic-criteria" component={PeriodicCriteria} />
-              <Route path="/:tenantId/custom-fields" component={CustomFields} />
-              <Route path="/:tenantId/seating-configurations" component={SeatingConfigurations} />
-              <Route path="/:tenantId/combined-tables" component={CombinedTables} />
-              <Route path="/:tenantId/table-plan" component={TablePlan} />
-              <Route path="/:tenantId/rooms" component={Rooms} />
-              <Route path="/:tenantId/booking-agents" component={BookingAgents} />
-              <Route path="/:tenantId/restaurants/:restaurantId/settings" component={RestaurantSettings} />
-              <Route path="/booking-manage/:id" component={BookingManage} />
-              <Route path="/feedback/:tenantId/:restaurantId" component={TableFeedback} />
-              <Route path="/:tenantId/booking/:id" component={lazy(() => import("./pages/booking-detail"))} />
-              <Route path="/:tenantId/profile" component={Profile} />
-              <Route path="/:tenantId/settings" component={Settings} />
-              <Route path="/:tenantId/billing" component={Billing} />
-              <Route path="/:tenantId/help" component={Help} />
+              <OverduePaymentGuard>
+                <Route path="/:tenantId/dashboard" component={Dashboard} />
+                <Route path="/:tenantId/bookings" component={Bookings} />
+                <Route path="/:tenantId/calendar" component={Calendar} />
+                <Route path="/:tenantId/heat-map" component={HeatMap} />
+                <Route path="/:tenantId/conflicts" component={Conflicts} />
+                <Route path="/:tenantId/bookings/:id" component={BookingDetail} />
+                <Route path="/:tenantId/tables" component={Tables} />
+                <Route path="/:tenantId/customers" component={Customers} />
+                <Route path="/:tenantId/integrations" component={Integrations} />
+                <Route path="/:tenantId/integrations/activecampaign" component={ActiveCampaignIntegration} />
+                <Route path="/:tenantId/integrations/google" component={GoogleIntegration} />
+                <Route path="/:tenantId/integrations/klaviyo" component={KlaviyoIntegration} />
+                <Route path="/:tenantId/integrations/mailchimp" component={MailchimpIntegration} />
+                <Route path="/:tenantId/integrations/meta" component={MetaIntegration} />
+                <Route path="/:tenantId/integrations/michelin" component={MichelinIntegration} />
+                <Route path="/:tenantId/integrations/webhooks" component={WebhooksIntegration} />
+                <Route path="/:tenantId/integrations/tripadvisor" component={TripAdvisorIntegration} />
+                <Route path="/:tenantId/statistics" component={Statistics} />
+                <Route path="/:tenantId/activity-log" component={ActivityLog} />
+                <Route path="/:tenantId/waiting-list" component={WaitingList} />
+                <Route path="/:tenantId/subscription" component={Subscription} />
+                <Route path="/:tenantId/billing" component={Billing} />
+                <Route path="/:tenantId/sms-messages" component={SmsMessages} />
+                <Route path="/:tenantId/tenant-settings" component={TenantSettings} />
+                <Route path="/:tenantId/email-notifications" component={EmailNotifications} />
+                <Route path="/:tenantId/sms-notifications" component={SmsNotifications} />
+                <Route path="/:tenantId/feedback-questions" component={FeedbackQuestions} />
+                <Route path="/:tenantId/events" component={Events} />
+                <Route path="/:tenantId/payment-setups" component={PaymentSetups} />
+                <Route path="/:tenantId/payment-gateway" component={PaymentGateway} />
+                <Route path="/:tenantId/products" component={Products} />
+                <Route path="/:tenantId/product-groups" component={ProductGroups} />
+                <Route path="/:tenantId/feedback-responses" component={FeedbackResponses} />
+                <Route path="/:tenantId/opening-hours" component={OpeningHours} />
+                <Route path="/:tenantId/special-periods" component={SpecialPeriods} />
+                <Route path="/:tenantId/cut-off-time" component={CutOffTime} />
+                <Route path="/:tenantId/periodic-criteria" component={PeriodicCriteria} />
+                <Route path="/:tenantId/custom-fields" component={CustomFields} />
+                <Route path="/:tenantId/seating-configurations" component={SeatingConfigurations} />
+                <Route path="/:tenantId/combined-tables" component={CombinedTables} />
+                <Route path="/:tenantId/table-plan" component={TablePlan} />
+                <Route path="/:tenantId/rooms" component={Rooms} />
+                <Route path="/:tenantId/booking-agents" component={BookingAgents} />
+                <Route path="/:tenantId/restaurants/:restaurantId/settings" component={RestaurantSettings} />
+                <Route path="/booking-manage/:id" component={BookingManage} />
+                <Route path="/feedback/:tenantId/:restaurantId" component={TableFeedback} />
+                <Route path="/:tenantId/booking/:id" component={lazy(() => import("./pages/booking-detail"))} />
+                <Route path="/:tenantId/profile" component={Profile} />
+                <Route path="/:tenantId/settings" component={Settings} />
+                <Route path="/:tenantId/billing" component={Billing} />
+                <Route path="/:tenantId/help" component={Help} />
+              </OverduePaymentGuard>
             </SetupGuard>
             <Route path="/feedback-responses" component={FeedbackResponses} />
             <Route path="/feedback-responses-popup" component={FeedbackResponsesPopup} />
