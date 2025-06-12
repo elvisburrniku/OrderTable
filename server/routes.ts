@@ -18,6 +18,7 @@ import { MetaIntegrationService } from "./meta-service";
 import { metaInstallService } from "./meta-install-service";
 import { setupSSO } from "./sso-auth";
 import { SubscriptionService } from "./subscription-service";
+import { CancellationReminderService } from "./cancellation-reminder-service";
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY || 'sk_test_your_stripe_secret_key', {
   apiVersion: '2025-05-28.basil'
@@ -7511,6 +7512,10 @@ app.put("/api/tenants/:tenantId/bookings/:id", validateTenant, async (req, res) 
       res.status(500).json({ error: "Failed to reactivate subscription" });
     }
   });
+
+  // Initialize cancellation reminder service
+  const cancellationReminderService = new CancellationReminderService();
+  cancellationReminderService.start();
 
   return httpServer;
 }
