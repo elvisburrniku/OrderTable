@@ -214,7 +214,37 @@ const OverduePaymentBanner = ({ subscriptionDetails, isEnded }: { subscriptionDe
           </Alert>
         )}
 
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        {/* Account Deletion Section for Ended Subscriptions */}
+        {isEnded && (
+          <div className="bg-red-50 dark:bg-red-950 border border-red-200 dark:border-red-800 rounded-lg p-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <h3 className="text-lg font-semibold text-red-900 dark:text-red-100">
+                  Delete Account
+                </h3>
+                <p className="text-red-700 dark:text-red-300">
+                  If you no longer need our services, you can permanently delete your account.
+                </p>
+                <p className="text-sm text-red-600 dark:text-red-400 mt-1">
+                  Warning: This action cannot be undone and will delete all your data.
+                </p>
+              </div>
+              <Button 
+                onClick={handleDeleteAccount}
+                variant="destructive"
+                size="lg"
+                disabled={deleteAccountMutation.isPending}
+                className="px-8 py-3 font-semibold"
+              >
+                <Trash2 className="h-5 w-5 mr-2" />
+                {deleteAccountMutation.isPending ? 'Deleting...' : 'Delete Account'}
+              </Button>
+            </div>
+          </div>
+        )}
+
+        {!isEnded && (
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           <div className="flex items-center space-x-3 p-3 bg-white dark:bg-gray-800 rounded-lg border">
             <Calendar className="h-5 w-5 text-red-500" />
             <div>
@@ -248,9 +278,10 @@ const OverduePaymentBanner = ({ subscriptionDetails, isEnded }: { subscriptionDe
             </div>
           </div>
         </div>
+        )}
 
         {/* Payment Action Section */}
-        {unpaidInvoice && (
+        {unpaidInvoice && !isEnded && (
           <div className="bg-blue-50 dark:bg-blue-950 border border-blue-200 dark:border-blue-800 rounded-lg p-6">
             <div className="flex items-center justify-between">
               <div>
