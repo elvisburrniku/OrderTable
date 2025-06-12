@@ -511,7 +511,7 @@ export default function BillingPage() {
               </div>
             </div>
 
-            {subscriptionDetails.tenant.subscriptionStartDate && subscriptionDetails.tenant.subscriptionEndDate && (
+            {subscriptionDetails.tenant.subscriptionEndDate && (
               <div className="text-sm text-muted-foreground">
                 {subscriptionDetails.tenant.subscriptionStatus === "cancelled"
                   ? "Expires"
