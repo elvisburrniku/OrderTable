@@ -781,12 +781,24 @@ export class BrevoEmailService {
       name: "Restaurant Owner"
     }];
 
+    console.log(`Sending subscription notification email:`, {
+      to: restaurantOwnerEmail,
+      from: senderEmail,
+      action: subscriptionData.action,
+      restaurant: subscriptionData.tenantName,
+      subject: sendSmtpEmail.subject
+    });
+
     try {
       const result = await this.apiInstance.sendTransacEmail(sendSmtpEmail);
-      console.log('Subscription change notification sent to admin:', result);
+      console.log(`Subscription change notification sent successfully to ${restaurantOwnerEmail}:`, {
+        messageId: result.body?.messageId,
+        action: subscriptionData.action,
+        restaurant: subscriptionData.tenantName
+      });
       return result;
     } catch (error) {
-      console.error('Error sending subscription change notification:', error);
+      console.error(`Error sending subscription change notification to ${restaurantOwnerEmail}:`, error);
       throw error;
     }
   }

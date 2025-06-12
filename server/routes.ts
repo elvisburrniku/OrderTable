@@ -7772,6 +7772,48 @@ app.put("/api/tenants/:tenantId/bookings/:id", validateTenant, async (req, res) 
     }
   });
 
+  // Test email endpoint for debugging
+  app.post("/api/test-email", attachUser, async (req: Request, res: Response) => {
+    if (!req.user) {
+      return res.status(401).json({ error: "Not authenticated" });
+    }
+
+    if (!emailService) {
+      return res.status(500).json({ error: "Email service not available" });
+    }
+
+    try {
+      const { testEmail } = req.body;
+      const emailToTest = testEmail || req.user.email;
+      
+      if (!emailToTest) {
+        return res.status(400).json({ error: "No email address provided" });
+      }
+
+      console.log(`Testing email delivery to: ${emailToTest}`);
+      
+      await emailService.sendSubscriptionChangeNotification({
+        tenantName: "Test Restaurant",
+        customerEmail: emailToTest,
+        customerName: req.user.name || "Test User",
+        action: 'upgrade',
+        fromPlan: 'Free',
+        toPlan: 'Professional',
+        amount: 29,
+        currency: '$'
+      }, emailToTest);
+
+      res.json({ 
+        success: true, 
+        message: `Test email sent to ${emailToTest}. Check your inbox and spam folder.`,
+        emailAddress: emailToTest
+      });
+    } catch (error) {
+      console.error("Error sending test email:", error);
+      res.status(500).json({ error: "Failed to send test email", details: error.message });
+    }
+  });
+
   // Initialize cancellation reminder service
   const cancellationReminderService = new CancellationReminderService();
   cancellationReminderService.start();

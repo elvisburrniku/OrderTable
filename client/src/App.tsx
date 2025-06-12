@@ -66,6 +66,7 @@ import FeedbackResponsesPopup from "./pages/feedback-responses-popup";
 import Contact from "./pages/contact";
 import MinimalGuest from "./pages/minimal-guest";
 import SetupWizard from "./pages/setup-wizard";
+import EmailTest from "./pages/email-test";
 import { SetupGuard } from "./components/setup-guard";
 import { OverduePaymentGuard } from "./components/overdue-payment-guard";
 
@@ -134,6 +135,7 @@ function App() {
                 <Route path="/:tenantId/profile" component={Profile} />
                 <Route path="/:tenantId/settings" component={Settings} />
                 <Route path="/:tenantId/help" component={Help} />
+                <Route path="/:tenantId/email-test" component={EmailTest} />
               </OverduePaymentGuard>
             </SetupGuard>
             <Route path="/feedback-responses" component={FeedbackResponses} />
