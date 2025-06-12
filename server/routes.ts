@@ -2565,6 +2565,39 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const restaurantId = parseInt(req.params.restaurantId);
       const tenantId = parseInt(req.params.tenantId);
+
+      // Verify restaurant belongs to tenant
+      const restaurant = await storage.getRestaurantById(restaurantId);
+      if (!restaurant || restaurant.tenantId !== tenantId) {
+        return res.status(404).json({ message: "Restaurant not found" });
+      }
+
+      // Check table limits before creating
+      const tenant = await storage.getTenantById(tenantId);
+      if (tenant?.subscriptionPlanId) {
+        const plan = await storage.getSubscriptionPlanById(tenant.subscriptionPlanId);
+        if (plan?.maxTables) {
+          // Count existing tables across all restaurants for this tenant
+          const restaurants = await storage.getRestaurantsByTenantId(tenantId);
+          let totalTables = 0;
+          
+          for (const rest of restaurants) {
+            const restTables = await storage.getTablesByRestaurant(rest.id);
+            totalTables += restTables.length;
+          }
+          
+          if (totalTables >= plan.maxTables) {
+            return res.status(400).json({
+              error: "Table limit exceeded",
+              message: `Your ${plan.name} plan allows a maximum of ${plan.maxTables} tables. You currently have ${totalTables} tables. Please upgrade your subscription to add more tables.`,
+              currentTables: totalTables,
+              maxTablesAllowed: plan.maxTables,
+              requiresUpgrade: true
+            });
+          }
+        }
+      }
+
       const tableData = {
         ...req.body,
         restaurantId,
@@ -2574,6 +2607,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const table = await storage.createTable(tableData);
       res.json(table);
     } catch (error) {
+      console.error("Error creating table:", error);
       res.status(400).json({ message: "Invalid table data" });
     }
   });
@@ -7163,6 +7197,34 @@ app.put("/api/tenants/:tenantId/bookings/:id", validateTenant, async (req, res) 
           }
         }
 
+        // Check for downgrade scenario and enforce table limits
+        const currentPlan = await storage.getSubscriptionPlanById(tenant.subscriptionPlanId || 1);
+        const isDowngrade = currentPlan && plan.maxTables && currentPlan.maxTables && plan.maxTables < currentPlan.maxTables;
+        
+        if (isDowngrade) {
+          // Get all restaurants for this tenant
+          const restaurants = await storage.getRestaurantsByTenantId(tenantUser.id);
+          let totalTables = 0;
+          
+          // Count total tables across all restaurants
+          for (const restaurant of restaurants) {
+            const restaurantTables = await storage.getTablesByRestaurant(restaurant.id);
+            totalTables += restaurantTables.length;
+          }
+          
+          // Check if current table count exceeds new plan limit
+          if (totalTables > plan.maxTables) {
+            return res.status(400).json({
+              error: "Table limit exceeded",
+              message: `You currently have ${totalTables} tables, but the ${plan.name} plan allows only ${plan.maxTables} tables. Please reduce your table count before downgrading.`,
+              currentTables: totalTables,
+              maxTablesAllowed: plan.maxTables,
+              excessTables: totalTables - plan.maxTables,
+              requiresTableReduction: true
+            });
+          }
+        }
+
         // Update tenant with new plan and reactivate if needed
         const tenantUpdateData: any = {
           subscriptionPlanId: plan.id,
@@ -7181,11 +7243,12 @@ app.put("/api/tenants/:tenantId/bookings/:id", validateTenant, async (req, res) 
         if (emailService && req.user.email) {
           try {
             const currentPlan = await storage.getSubscriptionPlanById(tenant.subscriptionPlanId || 1);
+            const action = isCancelled ? 'reactivate' : (isDowngrade ? 'downgrade' : 'upgrade');
             await emailService.sendSubscriptionChangeNotification({
               tenantName: tenant.name,
               customerEmail: req.user.email || '',
               customerName: req.user.name || '',
-              action: isCancelled ? 'reactivate' : 'upgrade',
+              action: action,
               fromPlan: currentPlan?.name || 'Free',
               toPlan: plan.name,
               amount: plan.price / 100,

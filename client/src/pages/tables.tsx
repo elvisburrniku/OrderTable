@@ -118,7 +118,14 @@ export default function Tables() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ ...tableData, restaurantId: restaurant?.id }),
       });
-      if (!response.ok) throw new Error("Failed to create table");
+      
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => null);
+        if (errorData?.requiresUpgrade) {
+          throw new Error(`Table Limit Exceeded: ${errorData.message}`);
+        }
+        throw new Error(errorData?.message || "Failed to create table");
+      }
       return response.json();
     },
     onSuccess: () => {
