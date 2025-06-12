@@ -7178,7 +7178,7 @@ app.put("/api/tenants/:tenantId/bookings/:id", validateTenant, async (req, res) 
         await storage.updateTenant(tenantUser.id, tenantUpdateData);
 
         // Send admin notification for subscription change
-        if (emailService) {
+        if (emailService && req.user.email) {
           try {
             const currentPlan = await storage.getSubscriptionPlanById(tenant.subscriptionPlanId || 1);
             await emailService.sendSubscriptionChangeNotification({
@@ -7190,7 +7190,7 @@ app.put("/api/tenants/:tenantId/bookings/:id", validateTenant, async (req, res) 
               toPlan: plan.name,
               amount: plan.price / 100,
               currency: '$'
-            });
+            }, req.user.email);
           } catch (error) {
             console.error('Failed to send admin notification:', error);
           }
@@ -7672,7 +7672,7 @@ app.put("/api/tenants/:tenantId/bookings/:id", validateTenant, async (req, res) 
       await storage.updateTenant(tenantUser.id, updateData);
 
       // Send admin notification for subscription cancellation
-      if (emailService) {
+      if (emailService && req.user.email) {
         try {
           const currentPlan = await storage.getSubscriptionPlanById(tenant.subscriptionPlanId || 1);
           await emailService.sendSubscriptionChangeNotification({
@@ -7681,7 +7681,7 @@ app.put("/api/tenants/:tenantId/bookings/:id", validateTenant, async (req, res) 
             customerName: req.user.name || '',
             action: 'cancel',
             fromPlan: currentPlan?.name || 'Free'
-          });
+          }, req.user.email);
         } catch (error) {
           console.error('Failed to send admin notification:', error);
         }
@@ -7746,7 +7746,7 @@ app.put("/api/tenants/:tenantId/bookings/:id", validateTenant, async (req, res) 
       await storage.updateTenant(tenantUser.id, updateData);
 
       // Send admin notification for subscription reactivation
-      if (emailService) {
+      if (emailService && req.user.email) {
         try {
           const currentPlan = await storage.getSubscriptionPlanById(tenant.subscriptionPlanId || 1);
           await emailService.sendSubscriptionChangeNotification({
@@ -7755,7 +7755,7 @@ app.put("/api/tenants/:tenantId/bookings/:id", validateTenant, async (req, res) 
             customerName: req.user.name || '',
             action: 'reactivate',
             fromPlan: currentPlan?.name || 'Free'
-          });
+          }, req.user.email);
         } catch (error) {
           console.error('Failed to send admin notification:', error);
         }

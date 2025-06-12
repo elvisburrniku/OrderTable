@@ -717,7 +717,8 @@ export class BrevoEmailService {
       toPlan?: string;
       amount?: number;
       currency?: string;
-    }
+    },
+    restaurantOwnerEmail: string
   ) {
     const sendSmtpEmail = new SendSmtpEmail();
     
@@ -769,7 +770,6 @@ export class BrevoEmailService {
     `;
 
     const senderEmail = process.env.BREVO_SENDER_EMAIL || "noreply@restaurant.com";
-    const adminEmail = process.env.ADMIN_EMAIL || "admin@restaurant.com";
 
     sendSmtpEmail.sender = {
       name: "Restaurant Management System",
@@ -777,8 +777,8 @@ export class BrevoEmailService {
     };
 
     sendSmtpEmail.to = [{
-      email: adminEmail,
-      name: "Admin Team"
+      email: restaurantOwnerEmail,
+      name: "Restaurant Owner"
     }];
 
     try {
