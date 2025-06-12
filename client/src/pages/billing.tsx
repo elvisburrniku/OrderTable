@@ -434,13 +434,18 @@ export default function BillingPage() {
       }
     },
     onError: (error: any) => {
+      console.log("Subscription error:", error);
+      
       // Handle detailed downgrade validation errors
-      if (error.validationFailures) {
-        const failures = error.validationFailures;
+      // The error might be nested in the response
+      const errorData = error.response?.data || error;
+      
+      if (errorData.validationFailures) {
+        const failures = errorData.validationFailures;
         const tableFailure = failures.find((f: any) => f.type === "table_limit");
         const bookingFailure = failures.find((f: any) => f.type === "booking_limit");
         
-        let detailedMessage = error.message;
+        let detailedMessage = errorData.message || error.message;
         
         if (tableFailure && bookingFailure) {
           detailedMessage += `\n\nActions required:\n• ${tableFailure.action}\n• ${bookingFailure.action}`;
@@ -456,9 +461,11 @@ export default function BillingPage() {
           variant: "destructive",
         });
       } else {
+        // Show the server error message if available
+        const message = errorData.message || error.message || "Failed to update subscription";
         toast({
           title: "Error",
-          description: error.message || "Failed to update subscription",
+          description: message,
           variant: "destructive",
         });
       }
