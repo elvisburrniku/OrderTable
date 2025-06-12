@@ -582,6 +582,63 @@ export default function BillingPage() {
               </div>
             )}
 
+            {/* Subscription Usage Statistics */}
+            {subscriptionDetails.plan && (
+              <div className="space-y-4 border-t pt-4">
+                <h4 className="font-medium">Current Usage</h4>
+                <div className="grid gap-4 md:grid-cols-2">
+                  <div className="space-y-2">
+                    <div className="flex justify-between text-sm">
+                      <span>Tables</span>
+                      <span>{subscriptionDetails.usage?.totalTables || 0} / {subscriptionDetails.plan.maxTables}</span>
+                    </div>
+                    <div className="w-full bg-gray-200 rounded-full h-2">
+                      <div 
+                        className={`h-2 rounded-full ${
+                          (subscriptionDetails.usage?.totalTables || 0) >= subscriptionDetails.plan.maxTables 
+                            ? 'bg-red-500' 
+                            : (subscriptionDetails.usage?.totalTables || 0) >= subscriptionDetails.plan.maxTables * 0.8 
+                              ? 'bg-yellow-500' 
+                              : 'bg-green-500'
+                        }`}
+                        style={{ 
+                          width: `${Math.min(((subscriptionDetails.usage?.totalTables || 0) / subscriptionDetails.plan.maxTables) * 100, 100)}%` 
+                        }}
+                      />
+                    </div>
+                  </div>
+                  <div className="space-y-2">
+                    <div className="flex justify-between text-sm">
+                      <span>Bookings This Month</span>
+                      <span>{subscriptionDetails.usage?.bookingsThisMonth || 0} / {subscriptionDetails.plan.maxBookingsPerMonth}</span>
+                    </div>
+                    <div className="w-full bg-gray-200 rounded-full h-2">
+                      <div 
+                        className={`h-2 rounded-full ${
+                          (subscriptionDetails.usage?.bookingsThisMonth || 0) >= subscriptionDetails.plan.maxBookingsPerMonth 
+                            ? 'bg-red-500' 
+                            : (subscriptionDetails.usage?.bookingsThisMonth || 0) >= subscriptionDetails.plan.maxBookingsPerMonth * 0.8 
+                              ? 'bg-yellow-500' 
+                              : 'bg-green-500'
+                        }`}
+                        style={{ 
+                          width: `${Math.min(((subscriptionDetails.usage?.bookingsThisMonth || 0) / subscriptionDetails.plan.maxBookingsPerMonth) * 100, 100)}%` 
+                        }}
+                      />
+                    </div>
+                  </div>
+                </div>
+                {((subscriptionDetails.usage?.totalTables || 0) >= subscriptionDetails.plan.maxTables || 
+                  (subscriptionDetails.usage?.bookingsThisMonth || 0) >= subscriptionDetails.plan.maxBookingsPerMonth) && (
+                  <Alert>
+                    <AlertCircle className="h-4 w-4" />
+                    <AlertDescription>
+                      You've reached your plan limits. Consider upgrading to continue using all features.
+                    </AlertDescription>
+                  </Alert>
+                )}
+              </div>
+            )}
 
           </CardContent>
         </Card>

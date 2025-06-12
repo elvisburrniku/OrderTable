@@ -7501,6 +7501,27 @@ app.put("/api/tenants/:tenantId/bookings/:id", validateTenant, async (req, res) 
         }
       }
 
+      // Calculate current usage statistics
+      let usage = null;
+      if (tenant) {
+        // Count total tables across all restaurants for this tenant
+        const restaurants = await storage.getRestaurantsByTenantId(tenant.id);
+        let totalTables = 0;
+        for (const restaurant of restaurants) {
+          const restaurantTables = await storage.getTablesByRestaurant(restaurant.id);
+          totalTables += restaurantTables.length;
+        }
+
+        // Count bookings for this month
+        const bookingsThisMonth = await storage.getBookingCountForTenantThisMonth(tenant.id);
+
+        usage = {
+          totalTables,
+          bookingsThisMonth,
+          totalRestaurants: restaurants.length
+        };
+      }
+
       res.json({
         tenant: {
           id: tenant?.id,
@@ -7520,7 +7541,8 @@ app.put("/api/tenants/:tenantId/bookings/:id", validateTenant, async (req, res) 
           maxTables: plan.maxTables,
           maxBookingsPerMonth: plan.maxBookingsPerMonth,
           maxRestaurants: plan.maxRestaurants,
-        } : null
+        } : null,
+        usage
       });
     } catch (error) {
       console.error("Error getting subscription details:", error);
