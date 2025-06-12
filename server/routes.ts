@@ -7142,14 +7142,16 @@ app.put("/api/tenants/:tenantId/bookings/:id", validateTenant, async (req, res) 
         });
 
         // Update tenant with subscription details
+        const currentPeriodStart = (subscription as any).current_period_start;
         const currentPeriodEnd = (subscription as any).current_period_end;
+        const subscriptionStartDate = currentPeriodStart ? new Date(currentPeriodStart * 1000) : new Date();
         const subscriptionEndDate = currentPeriodEnd ? new Date(currentPeriodEnd * 1000) : null;
         
         await storage.updateTenant(tenantUser.id, {
           subscriptionPlanId: plan.id,
           subscriptionStatus: 'active',
           stripeSubscriptionId: subscription.id,
-          subscriptionStartDate: new Date(),
+          subscriptionStartDate,
           ...(subscriptionEndDate && { subscriptionEndDate }),
         });
 

@@ -94,6 +94,7 @@ export interface IStorage {
   getUserById(id: number): Promise<User | undefined>;
   getUserByEmail(email: string): Promise<User | undefined>;
   getUserBySSOId(ssoProvider: string, ssoId: string): Promise<User | undefined>;
+  getAllUsers(): Promise<User[]>;
   createUser(user: InsertUser): Promise<User>;
   updateUser(id: number, updates: Partial<User>): Promise<User | undefined>;
 
@@ -102,6 +103,7 @@ export interface IStorage {
   getTenantById(id: number): Promise<any>;
   getTenantByUserId(userId: number): Promise<any>;
   getTenantByStripeCustomerId(stripeCustomerId: string): Promise<any>;
+  getAllTenants(): Promise<any[]>;
   updateTenant(id: number, updates: any): Promise<any>;
   createTenantUser(tenantUser: any): Promise<any>;
 

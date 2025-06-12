@@ -203,6 +203,16 @@ export class DatabaseStorage implements IStorage {
     return result[0];
   }
 
+  async getAllUsers(): Promise<any[]> {
+    if (!this.db) throw new Error("Database connection not available");
+    return await this.db.select().from(users);
+  }
+
+  async getAllTenants(): Promise<any[]> {
+    if (!this.db) throw new Error("Database connection not available");
+    return await this.db.select().from(tenants);
+  }
+
   async updateUser(id: number, updates: any): Promise<any> {
     const result = await this.db
       .update(users)
