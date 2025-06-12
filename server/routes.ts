@@ -7190,7 +7190,7 @@ app.put("/api/tenants/:tenantId/bookings/:id", validateTenant, async (req, res) 
               toPlan: plan.name,
               amount: plan.price / 100,
               currency: '$'
-            }, req.user.email);
+            });
           } catch (error) {
             console.error('Failed to send admin notification:', error);
           }
@@ -7755,7 +7755,7 @@ app.put("/api/tenants/:tenantId/bookings/:id", validateTenant, async (req, res) 
             customerName: req.user.name || '',
             action: 'reactivate',
             fromPlan: currentPlan?.name || 'Free'
-          }, req.user.email);
+          });
         } catch (error) {
           console.error('Failed to send admin notification:', error);
         }

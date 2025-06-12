@@ -717,8 +717,7 @@ export class BrevoEmailService {
       toPlan?: string;
       amount?: number;
       currency?: string;
-    },
-    restaurantOwnerEmail: string
+    }
   ) {
     const sendSmtpEmail = new SendSmtpEmail();
     
@@ -776,13 +775,15 @@ export class BrevoEmailService {
       email: senderEmail
     };
 
+    const adminEmail = process.env.ADMIN_EMAIL || "admin@restaurant.com";
+
     sendSmtpEmail.to = [{
-      email: restaurantOwnerEmail,
-      name: "Restaurant Owner"
+      email: adminEmail,
+      name: "System Administrator"
     }];
 
     console.log(`Sending subscription notification email:`, {
-      to: restaurantOwnerEmail,
+      to: adminEmail,
       from: senderEmail,
       action: subscriptionData.action,
       restaurant: subscriptionData.tenantName,
@@ -791,7 +792,7 @@ export class BrevoEmailService {
 
     try {
       const result = await this.apiInstance.sendTransacEmail(sendSmtpEmail);
-      console.log(`Subscription change notification sent successfully to ${restaurantOwnerEmail}:`, {
+      console.log(`Subscription change notification sent successfully to ${adminEmail}:`, {
         messageId: result.body?.messageId,
         action: subscriptionData.action,
         restaurant: subscriptionData.tenantName,
@@ -801,7 +802,7 @@ export class BrevoEmailService {
       });
       return result;
     } catch (error) {
-      console.error(`Error sending subscription change notification to ${restaurantOwnerEmail}:`, error);
+      console.error(`Error sending subscription change notification to ${adminEmail}:`, error);
       throw error;
     }
   }
