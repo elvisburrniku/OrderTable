@@ -706,4 +706,88 @@ export class BrevoEmailService {
       throw error;
     }
   }
+
+  async sendSubscriptionChangeNotification(
+    subscriptionData: {
+      tenantName: string;
+      customerEmail: string;
+      customerName: string;
+      action: 'upgrade' | 'downgrade' | 'cancel' | 'reactivate';
+      fromPlan: string;
+      toPlan?: string;
+      amount?: number;
+      currency?: string;
+    }
+  ) {
+    const sendSmtpEmail = new SendSmtpEmail();
+    
+    const actionText = {
+      upgrade: 'upgraded',
+      downgrade: 'downgraded', 
+      cancel: 'cancelled',
+      reactivate: 'reactivated'
+    }[subscriptionData.action];
+
+    const planChangeText = subscriptionData.toPlan 
+      ? `from ${subscriptionData.fromPlan} to ${subscriptionData.toPlan}`
+      : `their ${subscriptionData.fromPlan} subscription`;
+
+    sendSmtpEmail.subject = `Subscription ${actionText} - ${subscriptionData.tenantName}`;
+    sendSmtpEmail.htmlContent = `
+      <!DOCTYPE html>
+      <html>
+        <head>
+          <meta charset="utf-8">
+          <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        </head>
+        <body style="margin: 0; padding: 20px; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Arial, sans-serif; background-color: #f5f5f5;">
+          <div style="max-width: 600px; margin: 0 auto; background-color: white; border-radius: 8px; overflow: hidden; box-shadow: 0 2px 10px rgba(0,0,0,0.1);">
+            
+            <!-- Header -->
+            <div style="background-color: #e3f2fd; padding: 30px 30px 20px; text-align: center; border-bottom: 1px solid #e5e5e5;">
+              <h1 style="margin: 0; font-size: 28px; font-weight: 600; color: #1976d2; letter-spacing: -0.5px;">Subscription ${actionText}</h1>
+            </div>
+
+            <!-- Content -->
+            <div style="padding: 30px;">
+              <p style="margin: 0 0 20px; font-size: 16px; color: #333; line-height: 1.5;">A customer has ${actionText} their subscription:</p>
+              
+              <div style="background-color: #f8f9fa; border-radius: 8px; padding: 20px; margin: 20px 0;">
+                <h3 style="margin: 0 0 15px; font-size: 18px; color: #1976d2;">Customer Details</h3>
+                <p style="margin: 0 0 8px; color: #333;"><strong>Restaurant:</strong> ${subscriptionData.tenantName}</p>
+                <p style="margin: 0 0 8px; color: #333;"><strong>Customer:</strong> ${subscriptionData.customerName}</p>
+                <p style="margin: 0 0 8px; color: #333;"><strong>Email:</strong> ${subscriptionData.customerEmail}</p>
+                <p style="margin: 0 0 8px; color: #333;"><strong>Action:</strong> ${planChangeText}</p>
+                ${subscriptionData.amount ? `<p style="margin: 0; color: #333;"><strong>Amount:</strong> ${subscriptionData.currency || '$'}${subscriptionData.amount}</p>` : ''}
+              </div>
+
+              <p style="margin: 30px 0 10px; font-size: 16px; color: #333;">This notification was sent automatically from the subscription management system.</p>
+            </div>
+          </div>
+        </body>
+      </html>
+    `;
+
+    const senderEmail = process.env.BREVO_SENDER_EMAIL || "noreply@restaurant.com";
+    const adminEmail = process.env.ADMIN_EMAIL || "admin@restaurant.com";
+
+    sendSmtpEmail.sender = {
+      name: "Restaurant Management System",
+      email: senderEmail
+    };
+
+    sendSmtpEmail.to = [{
+      email: adminEmail,
+      name: "Admin Team"
+    }];
+
+    try {
+      const result = await this.apiInstance.sendTransacEmail(sendSmtpEmail);
+      console.log('Subscription change notification sent to admin:', result);
+      return result;
+    } catch (error) {
+      console.error('Error sending subscription change notification:', error);
+      throw error;
+    }
+  }
 }

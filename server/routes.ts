@@ -7177,6 +7177,25 @@ app.put("/api/tenants/:tenantId/bookings/:id", validateTenant, async (req, res) 
 
         await storage.updateTenant(tenantUser.id, tenantUpdateData);
 
+        // Send admin notification for subscription change
+        if (emailService) {
+          try {
+            const currentPlan = await storage.getSubscriptionPlanById(tenant.subscriptionPlanId || 1);
+            await emailService.sendSubscriptionChangeNotification({
+              tenantName: tenant.name,
+              customerEmail: req.user.email || '',
+              customerName: req.user.name || '',
+              action: isCancelled ? 'reactivate' : 'upgrade',
+              fromPlan: currentPlan?.name || 'Free',
+              toPlan: plan.name,
+              amount: plan.price / 100,
+              currency: '$'
+            });
+          } catch (error) {
+            console.error('Failed to send admin notification:', error);
+          }
+        }
+
         const message = isCancelled 
           ? `Successfully upgraded to ${plan.name} plan and reactivated your subscription!`
           : `Successfully upgraded to ${plan.name} plan. Changes are effective immediately with prorated billing.`;
@@ -7652,6 +7671,22 @@ app.put("/api/tenants/:tenantId/bookings/:id", validateTenant, async (req, res) 
 
       await storage.updateTenant(tenantUser.id, updateData);
 
+      // Send admin notification for subscription cancellation
+      if (emailService) {
+        try {
+          const currentPlan = await storage.getSubscriptionPlanById(tenant.subscriptionPlanId || 1);
+          await emailService.sendSubscriptionChangeNotification({
+            tenantName: tenant.name,
+            customerEmail: req.user.email || '',
+            customerName: req.user.name || '',
+            action: 'cancel',
+            fromPlan: currentPlan?.name || 'Free'
+          });
+        } catch (error) {
+          console.error('Failed to send admin notification:', error);
+        }
+      }
+
       res.json({ 
         success: true, 
         message: "Subscription will be cancelled at the end of the billing period",
@@ -7709,6 +7744,22 @@ app.put("/api/tenants/:tenantId/bookings/:id", validateTenant, async (req, res) 
       }
 
       await storage.updateTenant(tenantUser.id, updateData);
+
+      // Send admin notification for subscription reactivation
+      if (emailService) {
+        try {
+          const currentPlan = await storage.getSubscriptionPlanById(tenant.subscriptionPlanId || 1);
+          await emailService.sendSubscriptionChangeNotification({
+            tenantName: tenant.name,
+            customerEmail: req.user.email || '',
+            customerName: req.user.name || '',
+            action: 'reactivate',
+            fromPlan: currentPlan?.name || 'Free'
+          });
+        } catch (error) {
+          console.error('Failed to send admin notification:', error);
+        }
+      }
 
       res.json({ 
         success: true, 
