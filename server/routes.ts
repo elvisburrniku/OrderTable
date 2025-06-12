@@ -7417,21 +7417,55 @@ app.put("/api/tenants/:tenantId/bookings/:id", validateTenant, async (req, res) 
         limit: 100,
       });
 
+      // Get current subscription data to use for correcting period dates
+      let currentPeriodStart = null;
+      let currentPeriodEnd = null;
+      
+      if (tenant.stripeSubscriptionId) {
+        try {
+          const subscription = await stripe.subscriptions.retrieve(tenant.stripeSubscriptionId, {
+            expand: ['items.data.plan']
+          });
+          
+          // Get current billing period from subscription items
+          if (subscription.items && subscription.items.data.length > 0) {
+            const firstItem = subscription.items.data[0];
+            currentPeriodStart = firstItem.current_period_start;
+            currentPeriodEnd = firstItem.current_period_end;
+          }
+        } catch (error) {
+          console.log("Could not fetch current subscription data for period correction");
+        }
+      }
+
       res.json({ 
-        invoices: invoices.data.map(invoice => ({
-          id: invoice.id,
-          amount_paid: invoice.amount_paid,
-          amount_due: invoice.amount_due,
-          currency: invoice.currency,
-          status: invoice.status,
-          created: invoice.created,
-          period_start: invoice.period_start,
-          period_end: invoice.period_end,
-          hosted_invoice_url: invoice.hosted_invoice_url,
-          invoice_pdf: invoice.invoice_pdf,
-          number: invoice.number,
-          description: invoice.description
-        }))
+        invoices: invoices.data.map(invoice => {
+          // Use current subscription periods for the most recent invoice if available
+          let periodStart = invoice.period_start;
+          let periodEnd = invoice.period_end;
+          
+          // If this is the most recent invoice and we have current subscription data, use it
+          if (currentPeriodStart && currentPeriodEnd && 
+              invoices.data.indexOf(invoice) === 0) { // Most recent invoice
+            periodStart = currentPeriodStart;
+            periodEnd = currentPeriodEnd;
+          }
+          
+          return {
+            id: invoice.id,
+            amount_paid: invoice.amount_paid,
+            amount_due: invoice.amount_due,
+            currency: invoice.currency,
+            status: invoice.status,
+            created: invoice.created,
+            period_start: periodStart,
+            period_end: periodEnd,
+            hosted_invoice_url: invoice.hosted_invoice_url,
+            invoice_pdf: invoice.invoice_pdf,
+            number: invoice.number,
+            description: invoice.description
+          };
+        })
       });
     } catch (error) {
       console.error("Error getting invoices:", error);
