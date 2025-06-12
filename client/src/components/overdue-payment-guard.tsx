@@ -63,14 +63,14 @@ export const OverduePaymentGuard = ({ children }: { children: React.ReactNode })
   if (isBlocked) {
     if (isBillingPage) {
       return (
-        <div className="container mx-auto p-6 space-y-6">
+        <>
           <OverduePaymentBanner 
             subscriptionDetails={subscriptionDetails} 
             isEnded={isEnded}
             isTrialExpired={Boolean(isTrialExpired)}
           />
           {children}
-        </div>
+        </>
       );
     } else {
       // Block access to other pages
