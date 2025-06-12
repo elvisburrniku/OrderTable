@@ -1,0 +1,47 @@
+rooms.tsx:43 Warning: React has detected a change in the order of Hooks called by Rooms. This will lead to bugs and errors if not fixed. For more information, read the Rules of Hooks: https://reactjs.org/link/rules-of-hooks
+
+   Previous render            Next render
+   ------------------------------------------------------
+1. useContext                 useContext
+2. useContext                 useContext
+3. useState                   useState
+4. useState                   useState
+5. undefined                  useContext
+   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+    at Rooms (https://6104ec83-77e5-4f25-bcd7-70a0cedf4dc5-00-bhg3yfc5cnnv.riker.replit.dev/src/pages/rooms.tsx:29:32)
+    at Route (https://6104ec83-77e5-4f25-bcd7-70a0cedf4dc5-00-bhg3yfc5cnnv.riker.replit.d…/home/runner/workspace/node_modules/.vite/deps/wouter.js?v=16a3daef:323:16)
+    at SetupGuard (https://6104ec83-77e5-4f25-bcd7-70a0cedf4dc5-00-bhg3yfc5cnnv.riker.replit.dev/src/components/setup-guard.tsx:21:30)
+    at Switch (https://6104ec83-77e5-4f25-bcd7-70a0cedf4dc5-00-bhg3yfc5cnnv.riker.replit.d…/home/runner/workspace/node_modules/.vite/deps/wouter.js?v=16a3daef:379:17)
+    at main
+    at div
+    at LayoutWrapper (https://6104ec83-77e5-4f25-bcd7-70a0cedf4dc5-00-bhg3yfc5cnnv.riker.replit.dev/src/components/layout-wrapper.tsx:21:33)
+    at RouteGuard (https://6104ec83-77e5-4f25-bcd7-70a0cedf4dc5-00-bhg3yfc5cnnv.riker.replit.dev/src/components/route-guard.tsx:21:30)
+    at TenantProvider (https://6104ec83-77e5-4f25-bcd7-70a0cedf4dc5-00-bhg3yfc5cnnv.riker.replit.dev/src/lib/tenant.tsx:22:34)
+    at AuthProvider (https://6104ec83-77e5-4f25-bcd7-70a0cedf4dc5-00-bhg3yfc5cnnv.riker.replit.dev/src/lib/auth.tsx:25:32)
+    at QueryClientProvider (https://6104ec83-77e5-4f25-bcd7-70a0cedf4dc5-00-bhg3yfc5cnnv.riker.replit.d…rkspace/node_modules/.vite/deps/@tanstack_react-query.js?v=16a3daef:2805:3)
+    at App
+
+chunk-RPCDYKBN.js?v=16a3daef:11678 Uncaught Error: Rendered more hooks than during the previous render.
+    at Rooms (rooms.tsx:43:57)
+chunk-RPCDYKBN.js?v=16a3daef:11678 Uncaught Error: Rendered more hooks than during the previous render.
+    at Rooms (rooms.tsx:43:57)
+chunk-RPCDYKBN.js?v=16a3daef:14032 The above error occurred in the <Rooms> component:
+
+    at Rooms (https://6104ec83-77e5-4f25-bcd7-70a0cedf4dc5-00-bhg3yfc5cnnv.riker.replit.dev/src/pages/rooms.tsx:29:32)
+    at Route (https://6104ec83-77e5-4f25-bcd7-70a0cedf4dc5-00-bhg3yfc5cnnv.riker.replit.d…/home/runner/workspace/node_modules/.vite/deps/wouter.js?v=16a3daef:323:16)
+    at SetupGuard (https://6104ec83-77e5-4f25-bcd7-70a0cedf4dc5-00-bhg3yfc5cnnv.riker.replit.dev/src/components/setup-guard.tsx:21:30)
+    at Switch (https://6104ec83-77e5-4f25-bcd7-70a0cedf4dc5-00-bhg3yfc5cnnv.riker.replit.d…/home/runner/workspace/node_modules/.vite/deps/wouter.js?v=16a3daef:379:17)
+    at main
+    at div
+    at LayoutWrapper (https://6104ec83-77e5-4f25-bcd7-70a0cedf4dc5-00-bhg3yfc5cnnv.riker.replit.dev/src/components/layout-wrapper.tsx:21:33)
+    at RouteGuard (https://6104ec83-77e5-4f25-bcd7-70a0cedf4dc5-00-bhg3yfc5cnnv.riker.replit.dev/src/components/route-guard.tsx:21:30)
+    at TenantProvider (https://6104ec83-77e5-4f25-bcd7-70a0cedf4dc5-00-bhg3yfc5cnnv.riker.replit.dev/src/lib/tenant.tsx:22:34)
+    at AuthProvider (https://6104ec83-77e5-4f25-bcd7-70a0cedf4dc5-00-bhg3yfc5cnnv.riker.replit.dev/src/lib/auth.tsx:25:32)
+    at QueryClientProvider (https://6104ec83-77e5-4f25-bcd7-70a0cedf4dc5-00-bhg3yfc5cnnv.riker.replit.d…rkspace/node_modules/.vite/deps/@tanstack_react-query.js?v=16a3daef:2805:3)
+    at App
+
+Consider adding an error boundary to your tree to customize error handling behavior.
+Visit https://reactjs.org/link/error-boundaries to learn more about error boundaries.
+chunk-RPCDYKBN.js?v=16a3daef:11678 Uncaught Error: Rendered more hooks than during the previous render.
+    at Rooms (rooms.tsx:43:57)

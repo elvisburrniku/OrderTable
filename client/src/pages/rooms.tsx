@@ -1,12 +1,13 @@
 import { useState, useEffect } from "react";
-import { useAuth } from "@/lib/auth.tsx";
+import { useAuth } from "@/lib/auth";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Trash2, Plus, HelpCircle } from "lucide-react";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { HelpCircle, Info, Plus, Save, Edit, Trash2 } from "lucide-react";
 
 interface Room {
   id?: number;
@@ -24,22 +25,7 @@ export default function Rooms() {
   const [rooms, setRooms] = useState<Room[]>([]);
   const [originalRooms, setOriginalRooms] = useState<Room[]>([]);
 
-  // Early return if restaurant data is not available
-  if (!restaurant?.id || !restaurant?.tenantId) {
-    return (
-      <div className="min-h-screen bg-gray-50">
-        <div className="max-w-7xl mx-auto py-6 px-4 sm:px-6 lg:px-8">
-          <div className="bg-white shadow rounded-lg p-6">
-            <div className="text-center">
-              <p className="text-gray-500">Loading restaurant data...</p>
-            </div>
-          </div>
-        </div>
-      </div>
-    );
-  }
-
-  // Fetch rooms from API
+  // Fetch rooms from API - all hooks must be called before any conditional returns
   const { data: fetchedRooms = [], isLoading, error } = useQuery({
     queryKey: ["/api/tenants", restaurant?.tenantId, "restaurants", restaurant?.id, "rooms"],
     queryFn: async () => {
@@ -56,17 +42,25 @@ export default function Rooms() {
     retry: false,
   });
 
-  // Update local state when rooms are fetched
-  useEffect(() => {
-    if (fetchedRooms.length > 0) {
-      setRooms(fetchedRooms);
-      setOriginalRooms(fetchedRooms);
-    } else if (!isLoading && fetchedRooms.length === 0) {
-      // If no rooms exist, start with default room
-      setRooms([{ name: "The restaurant", priority: "Medium", isNew: true }]);
-      setOriginalRooms([]);
-    }
-  }, [fetchedRooms, isLoading]);
+  // Delete room mutation
+  const deleteRoomMutation = useMutation({
+    mutationFn: async (roomId: number) => {
+      if (!restaurant?.tenantId || !restaurant?.id) {
+        throw new Error("Missing tenant or restaurant information");
+      }
+      const response = await fetch(
+        `/api/tenants/${restaurant.tenantId}/restaurants/${restaurant.id}/rooms/${roomId}`,
+        { method: "DELETE" }
+      );
+      if (!response.ok) throw new Error("Failed to delete room");
+      return response.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ 
+        queryKey: ["/api/tenants", restaurant?.tenantId, "restaurants", restaurant?.id, "rooms"] 
+      });
+    },
+  });
 
   // Save rooms mutation
   const saveRoomsMutation = useMutation({
@@ -122,28 +116,9 @@ export default function Rooms() {
           }
         }),
       );
-
       return results;
     },
     onSuccess: () => {
-      // Comprehensive cache invalidation to ensure all components refresh
-      queryClient.invalidateQueries({ 
-        predicate: (query) => {
-          const queryKey = query.queryKey as string[];
-          return queryKey.some(key => 
-            typeof key === 'string' && (
-              key.includes('rooms') ||
-              key.includes('statistics') ||
-              key.includes('dashboard') ||
-              key.includes('restaurant') ||
-              key.includes('tables') ||
-              key.includes(`tenants/${restaurant?.tenantId}`)
-            )
-          );
-        }
-      });
-      
-      // Force refetch of current page data
       queryClient.refetchQueries({ 
         queryKey: ["/api/tenants", restaurant?.tenantId, "restaurants", restaurant?.id, "rooms"] 
       });
@@ -153,104 +128,50 @@ export default function Rooms() {
     },
   });
 
-  if (!user || !restaurant) {
-    return null;
-  }
-
-  // Check if room has changes compared to original
-  const hasRoomChanges = (room: Room, index: number): boolean => {
-    if (room.isNew) return true;
-    const original = originalRooms.find(orig => orig.id === room.id);
-    if (!original) return true;
-    return room.name !== original.name || room.priority !== original.priority;
-  };
-
-  // Delete room mutation
-  const deleteRoomMutation = useMutation({
-    mutationFn: async (roomId: number) => {
-      const response = await fetch(
-        `/api/tenants/${restaurant?.tenantId}/restaurants/${restaurant?.id}/rooms/${roomId}`,
-        { method: "DELETE" }
-      );
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(`Failed to delete room: ${errorData.message || response.statusText}`);
-      }
-      return response.json();
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ 
-        queryKey: ["/api/tenants", restaurant?.tenantId, "restaurants", restaurant?.id, "rooms"] 
-      });
-    },
-  });
-
-  const addRoom = () => {
-    setRooms([...rooms, { name: "", priority: "Medium", isNew: true }]);
-  };
-
-  const updateRoom = (index: number, field: keyof Room, value: string) => {
-    const newRooms = [...rooms];
-    newRooms[index] = { ...newRooms[index], [field]: value };
-    setRooms(newRooms);
-  };
-
-  const removeRoom = (index: number) => {
-    const room = rooms[index];
-    if (room.id && !room.isNew) {
-      // Delete from server if it's an existing room
-      deleteRoomMutation.mutate(room.id);
-    }
-    // Remove from local state
-    const newRooms = rooms.filter((_, i) => i !== index);
-    setRooms(newRooms);
-  };
-
-  // Save individual room
-  const saveRoom = async (room: Room) => {
-    const currentTenantId = restaurant?.tenantId;
-    if (!currentTenantId || !restaurant?.id) return;
-
-    if (room.id && !room.isNew) {
-      // Update existing room
-      const response = await fetch(
-        `/api/tenants/${currentTenantId}/restaurants/${restaurant.id}/rooms/${room.id}`,
-        {
-          method: "PUT",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            name: room.name,
-            priority: room.priority,
-            restaurantId: restaurant.id,
-            tenantId: currentTenantId,
-          }),
-        },
-      );
-      if (!response.ok) throw new Error("Failed to update room");
-      return response.json();
-    } else {
-      // Create new room
-      const response = await fetch(
-        `/api/tenants/${currentTenantId}/restaurants/${restaurant.id}/rooms`,
-        {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            name: room.name,
-            priority: room.priority,
-            restaurantId: restaurant.id,
-            tenantId: currentTenantId,
-          }),
-        },
-      );
-      if (!response.ok) throw new Error("Failed to create room");
-      return response.json();
-    }
-  };
-
   // Individual room save mutation
   const saveIndividualRoomMutation = useMutation({
-    mutationFn: saveRoom,
+    mutationFn: async (room: Room) => {
+      const currentTenantId = restaurant?.tenantId;
+      if (!currentTenantId || !restaurant?.id) {
+        throw new Error("Missing tenant or restaurant information");
+      }
+
+      if (room.id) {
+        // Update existing room
+        const response = await fetch(
+          `/api/tenants/${currentTenantId}/restaurants/${restaurant.id}/rooms/${room.id}`,
+          {
+            method: "PUT",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              name: room.name,
+              priority: room.priority,
+              restaurantId: restaurant.id,
+              tenantId: currentTenantId,
+            }),
+          },
+        );
+        if (!response.ok) throw new Error("Failed to update room");
+        return response.json();
+      } else {
+        // Create new room
+        const response = await fetch(
+          `/api/tenants/${currentTenantId}/restaurants/${restaurant.id}/rooms`,
+          {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              name: room.name,
+              priority: room.priority,
+              restaurantId: restaurant.id,
+              tenantId: currentTenantId,
+            }),
+          },
+        );
+        if (!response.ok) throw new Error("Failed to create room");
+        return response.json();
+      }
+    },
     onSuccess: () => {
       queryClient.invalidateQueries({ 
         queryKey: ["/api/tenants", restaurant?.tenantId, "restaurants", restaurant?.id, "rooms"] 
@@ -258,11 +179,32 @@ export default function Rooms() {
     },
   });
 
-  const saveRooms = () => {
-    // Filter out rooms with empty names
-    const validRooms = rooms.filter(room => room.name.trim() !== "");
-    saveRoomsMutation.mutate(validRooms);
-  };
+  // Update local state when rooms are fetched
+  useEffect(() => {
+    if (fetchedRooms.length > 0) {
+      setRooms(fetchedRooms);
+      setOriginalRooms(fetchedRooms);
+    } else if (!isLoading && fetchedRooms.length === 0) {
+      // If no rooms exist, start with default room
+      setRooms([{ name: "The restaurant", priority: "Medium", isNew: true }]);
+      setOriginalRooms([]);
+    }
+  }, [fetchedRooms, isLoading]);
+
+  // Early return if restaurant data is not available
+  if (!restaurant?.id || !restaurant?.tenantId) {
+    return (
+      <div className="min-h-screen bg-gray-50">
+        <div className="max-w-7xl mx-auto py-6 px-4 sm:px-6 lg:px-8">
+          <div className="bg-white shadow rounded-lg p-6">
+            <div className="text-center">
+              <p className="text-gray-500">Loading restaurant data...</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   if (isLoading) {
     return (
@@ -292,185 +234,193 @@ export default function Rooms() {
     );
   }
 
+  // Check if room has changes compared to original
+  const hasRoomChanges = (room: Room, index: number): boolean => {
+    if (room.isNew) return true;
+    const original = originalRooms.find(orig => orig.id === room.id);
+    if (!original) return true;
+    return room.name !== original.name || room.priority !== original.priority;
+  };
+
+  const addRoom = () => {
+    setRooms([...rooms, { name: "", priority: "Medium", isNew: true }]);
+  };
+
+  const updateRoom = (index: number, field: keyof Room, value: string) => {
+    const newRooms = [...rooms];
+    newRooms[index] = { ...newRooms[index], [field]: value };
+    setRooms(newRooms);
+  };
+
+  const removeRoom = (index: number) => {
+    const room = rooms[index];
+    if (room.id && !room.isNew) {
+      // Delete from server if it's an existing room
+      deleteRoomMutation.mutate(room.id);
+    }
+    // Remove from local state
+    const newRooms = rooms.filter((_, i) => i !== index);
+    setRooms(newRooms);
+  };
+
+  const saveRoom = (room: Room) => {
+    saveIndividualRoomMutation.mutate(room);
+  };
+
+  const saveRooms = () => {
+    // Filter out rooms with empty names
+    const validRooms = rooms.filter(room => room.name.trim() !== "");
+    saveRoomsMutation.mutate(validRooms);
+  };
+
   return (
     <TooltipProvider>
       <div className="min-h-screen bg-gray-50">
-        {/* Navigation */}
-        <div className="bg-white border-b">
-          <div className="flex items-center justify-between px-6 py-4">
-            <div className="flex items-center space-x-6">
-              <div className="flex items-center space-x-2">
-                <h1 className="text-xl font-semibold">Rooms</h1>
-                <Tooltip>
-                  <TooltipTrigger>
-                    <HelpCircle className="h-4 w-4 text-gray-400 hover:text-gray-600" />
-                  </TooltipTrigger>
-                  <TooltipContent>
-                    <p>Manage your restaurant's seating areas and dining rooms</p>
-                  </TooltipContent>
-                </Tooltip>
-              </div>
-              <nav className="flex space-x-6">
-                <a href={`/${restaurant.tenantId}/dashboard`} className="text-gray-600 hover:text-gray-900">Booking</a>
-                <a href={`/${restaurant.tenantId}/bookings`} className="text-green-600 font-medium">CRM</a>
-                <a href={`/${restaurant.tenantId}/activity-log`} className="text-gray-600 hover:text-gray-900">Archive</a>
-              </nav>
-            </div>
-            <div className="flex items-center space-x-4">
-              <span className="text-sm text-gray-600">{restaurant.name}</span>
-              <Button variant="outline" size="sm">Profile</Button>
-            </div>
-          </div>
-        </div>
+        <div className="max-w-7xl mx-auto py-6 px-4 sm:px-6 lg:px-8">
+          <div className="space-y-6">
+            <Card>
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                <div className="flex items-center space-x-2">
+                  <CardTitle className="text-2xl font-bold">Room Management</CardTitle>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <HelpCircle className="h-4 w-4 text-gray-400" />
+                    </TooltipTrigger>
+                    <TooltipContent>
+                      <p>Organize your restaurant into different dining areas or rooms. Each room can have tables assigned to it for better management.</p>
+                    </TooltipContent>
+                  </Tooltip>
+                </div>
+                <Button onClick={addRoom} className="flex items-center space-x-2">
+                  <Plus className="h-4 w-4" />
+                  <span>Add Room</span>
+                </Button>
+              </CardHeader>
+              <CardContent>
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                  {rooms.map((room, index) => (
+                    <Card key={index} className="relative">
+                      <CardContent className="p-4 space-y-4">
+                        <div className="flex items-center justify-between">
+                          <div className="flex items-center space-x-2">
+                            <Label htmlFor={`room-${index}`} className="text-sm font-medium">
+                              Room Name
+                            </Label>
+                            <Tooltip>
+                              <TooltipTrigger asChild>
+                                <HelpCircle className="h-3 w-3 text-gray-400" />
+                              </TooltipTrigger>
+                              <TooltipContent>
+                                <p>Give each room a descriptive name like "Main Dining", "Patio", "Private Room", etc.</p>
+                              </TooltipContent>
+                            </Tooltip>
+                          </div>
+                          <Tooltip>
+                            <TooltipTrigger asChild>
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => removeRoom(index)}
+                                className="text-red-600 hover:text-red-700 hover:bg-red-50"
+                              >
+                                <Trash2 className="h-4 w-4" />
+                              </Button>
+                            </TooltipTrigger>
+                            <TooltipContent>
+                              <p>Delete this room. This will also remove any tables assigned to it.</p>
+                            </TooltipContent>
+                          </Tooltip>
+                        </div>
+                        
+                        <Input
+                          id={`room-${index}`}
+                          value={room.name}
+                          onChange={(e) => updateRoom(index, "name", e.target.value)}
+                          placeholder="Enter room name"
+                          className="w-full"
+                        />
 
-      {/* Main Content */}
-      <div className="p-6">
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center space-x-2">
-                <span>Rooms</span>
-                <Tooltip>
-                  <TooltipTrigger>
-                    <Info className="h-4 w-4 text-gray-400 hover:text-gray-600" />
-                  </TooltipTrigger>
-                  <TooltipContent>
-                    <p>Configure dining areas and seating sections for your restaurant</p>
-                  </TooltipContent>
-                </Tooltip>
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-6">
-              <div className="grid grid-cols-3 gap-4">
-                <div className="flex items-center space-x-2">
-                  <label className="block text-sm font-medium text-gray-700 mb-2">Name</label>
-                  <Tooltip>
-                    <TooltipTrigger>
-                      <HelpCircle className="h-3 w-3 text-gray-400 hover:text-gray-600" />
-                    </TooltipTrigger>
-                    <TooltipContent>
-                      <p>Enter a descriptive name for this dining area (e.g., "Main Dining", "Patio", "Private Room")</p>
-                    </TooltipContent>
-                  </Tooltip>
-                </div>
-                <div className="flex items-center space-x-2">
-                  <label className="block text-sm font-medium text-gray-700 mb-2">Priority</label>
-                  <Tooltip>
-                    <TooltipTrigger>
-                      <HelpCircle className="h-3 w-3 text-gray-400 hover:text-gray-600" />
-                    </TooltipTrigger>
-                    <TooltipContent>
-                      <p>Set booking priority: High = preferred seating, Medium = standard, Low = overflow area</p>
-                    </TooltipContent>
-                  </Tooltip>
-                </div>
-                <div className="flex items-center space-x-2">
-                  <label className="block text-sm font-medium text-gray-700 mb-2">Actions</label>
-                  <Tooltip>
-                    <TooltipTrigger>
-                      <HelpCircle className="h-3 w-3 text-gray-400 hover:text-gray-600" />
-                    </TooltipTrigger>
-                    <TooltipContent>
-                      <p>Save new rooms, update existing ones, or delete unwanted areas</p>
-                    </TooltipContent>
-                  </Tooltip>
-                </div>
-              </div>
-
-              {rooms.map((room, index) => (
-                <div key={index} className="grid grid-cols-3 gap-4 items-center">
-                  <Input
-                    placeholder="Room name"
-                    value={room.name}
-                    onChange={(e) => updateRoom(index, 'name', e.target.value)}
-                  />
-                  <Select 
-                    value={room.priority} 
-                    onValueChange={(value) => updateRoom(index, 'priority', value)}
-                  >
-                    <SelectTrigger>
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="High">High</SelectItem>
-                      <SelectItem value="Medium">Medium</SelectItem>
-                      <SelectItem value="Low">Low</SelectItem>
-                    </SelectContent>
-                  </Select>
-                  <div className="flex items-center space-x-2">
-                    {room.isNew && room.name.trim() !== "" && (
-                      <Tooltip>
-                        <TooltipTrigger asChild>
-                          <Button 
-                            onClick={() => saveIndividualRoomMutation.mutate(room)}
-                            className="bg-green-600 hover:bg-green-700 text-white"
-                            size="sm"
-                            disabled={saveIndividualRoomMutation.isPending}
+                        <div className="space-y-2">
+                          <div className="flex items-center space-x-2">
+                            <Label htmlFor={`priority-${index}`} className="text-sm font-medium">
+                              Priority Level
+                            </Label>
+                            <Tooltip>
+                              <TooltipTrigger asChild>
+                                <HelpCircle className="h-3 w-3 text-gray-400" />
+                              </TooltipTrigger>
+                              <TooltipContent>
+                                <p>Set booking priority: High priority rooms get filled first, Low priority rooms are used when others are full.</p>
+                              </TooltipContent>
+                            </Tooltip>
+                          </div>
+                          <Select
+                            value={room.priority}
+                            onValueChange={(value) => updateRoom(index, "priority", value)}
                           >
-                            <Save className="h-3 w-3 mr-1" />
-                            {saveIndividualRoomMutation.isPending ? "Saving..." : "Save"}
-                          </Button>
-                        </TooltipTrigger>
-                        <TooltipContent>
-                          <p>Save this new room to your restaurant configuration</p>
-                        </TooltipContent>
-                      </Tooltip>
-                    )}
-                    {!room.isNew && hasRoomChanges(room, index) && room.name.trim() !== "" && (
-                      <Tooltip>
-                        <TooltipTrigger asChild>
-                          <Button 
-                            onClick={() => saveIndividualRoomMutation.mutate(room)}
-                            className="bg-blue-600 hover:bg-blue-700 text-white"
-                            size="sm"
-                            disabled={saveIndividualRoomMutation.isPending}
-                          >
-                            <Edit className="h-3 w-3 mr-1" />
-                            {saveIndividualRoomMutation.isPending ? "Updating..." : "Update"}
-                          </Button>
-                        </TooltipTrigger>
-                        <TooltipContent>
-                          <p>Update the changes made to this existing room</p>
-                        </TooltipContent>
-                      </Tooltip>
-                    )}
-                    <Tooltip>
-                      <TooltipTrigger asChild>
-                        <Button 
-                          variant="ghost" 
-                          size="sm" 
-                          onClick={() => removeRoom(index)}
-                          className="text-red-600 hover:bg-red-50"
-                          disabled={deleteRoomMutation.isPending}
-                        >
-                          <Trash2 className="h-3 w-3" />
-                        </Button>
-                      </TooltipTrigger>
-                      <TooltipContent>
-                        <p>Delete this room from your restaurant</p>
-                      </TooltipContent>
-                    </Tooltip>
-                  </div>
-                </div>
-              ))}
+                            <SelectTrigger>
+                              <SelectValue placeholder="Select priority" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="High">High Priority</SelectItem>
+                              <SelectItem value="Medium">Medium Priority</SelectItem>
+                              <SelectItem value="Low">Low Priority</SelectItem>
+                            </SelectContent>
+                          </Select>
+                        </div>
 
-              <div className="flex space-x-4">
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <Button 
-                      variant="outline"
-                      onClick={addRoom}
-                    >
-                      <Plus className="h-4 w-4 mr-2" />
-                      Add area
+                        {hasRoomChanges(room, index) && (
+                          <div className="flex justify-end">
+                            {room.isNew ? (
+                              <Tooltip>
+                                <TooltipTrigger asChild>
+                                  <Button
+                                    onClick={() => saveRoom(room)}
+                                    disabled={!room.name.trim() || saveIndividualRoomMutation.isPending}
+                                    className="bg-green-600 hover:bg-green-700 text-white"
+                                  >
+                                    {saveIndividualRoomMutation.isPending ? "Saving..." : "Save"}
+                                  </Button>
+                                </TooltipTrigger>
+                                <TooltipContent>
+                                  <p>Save this new room to your restaurant</p>
+                                </TooltipContent>
+                              </Tooltip>
+                            ) : (
+                              <Tooltip>
+                                <TooltipTrigger asChild>
+                                  <Button
+                                    onClick={() => saveRoom(room)}
+                                    disabled={!room.name.trim() || saveIndividualRoomMutation.isPending}
+                                    className="bg-blue-600 hover:bg-blue-700 text-white"
+                                  >
+                                    {saveIndividualRoomMutation.isPending ? "Updating..." : "Update"}
+                                  </Button>
+                                </TooltipTrigger>
+                                <TooltipContent>
+                                  <p>Save changes to this existing room</p>
+                                </TooltipContent>
+                              </Tooltip>
+                            )}
+                          </div>
+                        )}
+                      </CardContent>
+                    </Card>
+                  ))}
+                </div>
+
+                {rooms.length === 0 && (
+                  <div className="text-center py-8">
+                    <p className="text-gray-500 mb-4">No rooms configured yet.</p>
+                    <Button onClick={addRoom} className="flex items-center space-x-2">
+                      <Plus className="h-4 w-4" />
+                      <span>Add Your First Room</span>
                     </Button>
-                  </TooltipTrigger>
-                  <TooltipContent>
-                    <p>Create a new dining area or seating section for your restaurant</p>
-                  </TooltipContent>
-                </Tooltip>
-              </div>
-            </CardContent>
-          </Card>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          </div>
         </div>
       </div>
     </TooltipProvider>
