@@ -689,6 +689,15 @@ export default function BillingPage() {
                 const isCurrentPlan = subscriptionDetails?.plan?.id === plan.id;
                 const features = JSON.parse(plan.features || '[]');
                 
+                // Determine if this is an upgrade or downgrade
+                const currentPlan = subscriptionDetails?.plan;
+                const isUpgrade = currentPlan && (plan.price > currentPlan.price || 
+                  (plan.maxTables > currentPlan.maxTables) || 
+                  (plan.maxBookingsPerMonth > currentPlan.maxBookingsPerMonth));
+                const isDowngrade = currentPlan && (plan.price < currentPlan.price || 
+                  (plan.maxTables < currentPlan.maxTables) || 
+                  (plan.maxBookingsPerMonth < currentPlan.maxBookingsPerMonth));
+                
                 return (
                   <div 
                     key={plan.id}
@@ -747,8 +756,12 @@ export default function BillingPage() {
                         className="w-full"
                         onClick={() => upgradeSubscriptionMutation.mutate(plan.id)}
                         disabled={upgradeSubscriptionMutation.isPending}
+                        variant={isDowngrade ? "destructive" : "default"}
                       >
-                        {upgradeSubscriptionMutation.isPending ? "Updating..." : "Upgrade to this Plan"}
+                        {upgradeSubscriptionMutation.isPending ? "Updating..." : 
+                         isDowngrade ? `Downgrade to ${plan.name}` : 
+                         isUpgrade ? `Upgrade to ${plan.name}` : 
+                         `Switch to ${plan.name}`}
                       </Button>
                     )}
                   </div>
