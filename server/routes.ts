@@ -6829,6 +6829,45 @@ app.put("/api/tenants/:tenantId/bookings/:id", validateTenant, async (req, res) 
     }
   });
 
+  // Account deletion endpoint
+  app.delete("/api/account/delete", async (req, res) => {
+    if (!req.isAuthenticated()) {
+      return res.status(401).json({ message: "Unauthorized" });
+    }
+
+    try {
+      const user = req.user;
+      
+      // Get user's tenant to check subscription status
+      const tenant = await storage.getTenantById(user.tenantId);
+      if (!tenant) {
+        return res.status(404).json({ message: "Tenant not found" });
+      }
+
+      // Only allow deletion if subscription has ended or is canceled
+      if (tenant.subscriptionStatus !== 'ended' && tenant.subscriptionStatus !== 'canceled') {
+        return res.status(403).json({ 
+          message: "Account deletion is only allowed for ended or canceled subscriptions" 
+        });
+      }
+
+      // Delete user account and all associated data
+      await storage.deleteUserAccount(user.id);
+      
+      // Destroy session
+      req.logout((err) => {
+        if (err) {
+          console.error('Error logging out during account deletion:', err);
+        }
+      });
+
+      res.json({ success: true, message: "Account deleted successfully" });
+    } catch (error) {
+      console.error("Error deleting account:", error);
+      res.status(500).json({ message: "Failed to delete account" });
+    }
+  });
+
   const httpServer = createServer(app);
 
   // Setup WebSocket server for real-time notifications

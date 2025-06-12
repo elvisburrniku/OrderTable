@@ -16,7 +16,15 @@ export function LayoutWrapper({ children }: LayoutWrapperProps) {
   const tenantId = tenantMatch ? parseInt(tenantMatch[1]) : 0;
   
   // Fetch subscription details to check if subscription has ended
-  const { data: subscriptionDetails } = useQuery({
+  const { data: subscriptionDetails } = useQuery<{
+    tenant: {
+      id: number;
+      name: string;
+      subscriptionStatus: string;
+      subscriptionEndDate: string;
+    };
+    plan: any;
+  }>({
     queryKey: ["/api/subscription/details"],
     enabled: !!user && !!tenantId,
   });

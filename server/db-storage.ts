@@ -222,6 +222,121 @@ export class DatabaseStorage implements IStorage {
     return result[0];
   }
 
+  async deleteUserAccount(userId: number): Promise<void> {
+    if (!this.db) throw new Error("Database connection not available");
+    
+    // Get user's tenant to cascade delete tenant data
+    const user = await this.getUserById(userId);
+    if (!user) return;
+
+    const tenantId = user.tenantId;
+
+    try {
+      // Delete in reverse dependency order to avoid foreign key constraints
+      
+      // Delete notifications for all restaurants owned by this tenant
+      if (tenantId) {
+        await this.db.execute(
+          sql`DELETE FROM notifications WHERE restaurant_id IN (SELECT id FROM restaurants WHERE tenant_id = ${tenantId})`
+        );
+        
+        // Delete booking change requests
+        await this.db.execute(
+          sql`DELETE FROM booking_change_requests WHERE booking_id IN (SELECT id FROM bookings WHERE restaurant_id IN (SELECT id FROM restaurants WHERE tenant_id = ${tenantId}))`
+        );
+        
+        // Delete activity logs
+        await this.db.execute(
+          sql`DELETE FROM activity_log WHERE restaurant_id IN (SELECT id FROM restaurants WHERE tenant_id = ${tenantId})`
+        );
+        
+        // Delete feedback
+        await this.db.execute(
+          sql`DELETE FROM feedback WHERE restaurant_id IN (SELECT id FROM restaurants WHERE tenant_id = ${tenantId})`
+        );
+        
+        // Delete SMS messages
+        await this.db.execute(
+          sql`DELETE FROM sms_messages WHERE restaurant_id IN (SELECT id FROM restaurants WHERE tenant_id = ${tenantId})`
+        );
+        
+        // Delete waiting list entries
+        await this.db.execute(
+          sql`DELETE FROM waiting_list WHERE restaurant_id IN (SELECT id FROM restaurants WHERE tenant_id = ${tenantId})`
+        );
+        
+        // Delete customers
+        await this.db.execute(
+          sql`DELETE FROM customers WHERE restaurant_id IN (SELECT id FROM restaurants WHERE tenant_id = ${tenantId})`
+        );
+        
+        // Delete bookings
+        await this.db.execute(
+          sql`DELETE FROM bookings WHERE restaurant_id IN (SELECT id FROM restaurants WHERE tenant_id = ${tenantId})`
+        );
+        
+        // Delete table layouts
+        await this.db.execute(
+          sql`DELETE FROM table_layouts WHERE restaurant_id IN (SELECT id FROM restaurants WHERE tenant_id = ${tenantId})`
+        );
+        
+        // Delete combined tables
+        await this.db.execute(
+          sql`DELETE FROM combined_tables WHERE restaurant_id IN (SELECT id FROM restaurants WHERE tenant_id = ${tenantId})`
+        );
+        
+        // Delete tables
+        await this.db.execute(
+          sql`DELETE FROM tables WHERE restaurant_id IN (SELECT id FROM restaurants WHERE tenant_id = ${tenantId})`
+        );
+        
+        // Delete rooms
+        await this.db.execute(
+          sql`DELETE FROM rooms WHERE restaurant_id IN (SELECT id FROM restaurants WHERE tenant_id = ${tenantId})`
+        );
+        
+        // Delete cut-off times
+        await this.db.execute(
+          sql`DELETE FROM cut_off_times WHERE restaurant_id IN (SELECT id FROM restaurants WHERE tenant_id = ${tenantId})`
+        );
+        
+        // Delete special periods
+        await this.db.execute(
+          sql`DELETE FROM special_periods WHERE restaurant_id IN (SELECT id FROM restaurants WHERE tenant_id = ${tenantId})`
+        );
+        
+        // Delete opening hours
+        await this.db.execute(
+          sql`DELETE FROM opening_hours WHERE restaurant_id IN (SELECT id FROM restaurants WHERE tenant_id = ${tenantId})`
+        );
+        
+        // Delete integration configurations
+        await this.db.execute(
+          sql`DELETE FROM integration_configurations WHERE restaurant_id IN (SELECT id FROM restaurants WHERE tenant_id = ${tenantId})`
+        );
+        
+        // Delete restaurants
+        await this.db.delete(restaurants).where(eq(restaurants.tenantId, tenantId));
+        
+        // Delete tenant
+        await this.db.delete(tenants).where(eq(tenants.id, tenantId));
+      }
+      
+      // Delete user subscriptions
+      await this.db.delete(userSubscriptions).where(eq(userSubscriptions.userId, userId));
+      
+      // Delete tenant user associations
+      await this.db.delete(tenantUsers).where(eq(tenantUsers.userId, userId));
+      
+      // Finally delete the user
+      await this.db.delete(users).where(eq(users.id, userId));
+      
+    } catch (error) {
+      console.error("Error deleting user account:", error);
+      throw new Error("Failed to delete user account");
+    }
+  }
+
   async getRestaurant(id: number): Promise<any> {
     if (!this.db) throw new Error("Database connection not available");
     const result = await this.db.select().from(restaurants).where(eq(restaurants.id, id));

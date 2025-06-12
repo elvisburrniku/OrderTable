@@ -97,6 +97,7 @@ export interface IStorage {
   getAllUsers(): Promise<User[]>;
   createUser(user: InsertUser): Promise<User>;
   updateUser(id: number, updates: Partial<User>): Promise<User | undefined>;
+  deleteUserAccount(userId: number): Promise<void>;
 
   // Tenants
   createTenant(tenant: any): Promise<any>;
