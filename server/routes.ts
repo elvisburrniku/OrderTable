@@ -7420,9 +7420,23 @@ app.put("/api/tenants/:tenantId/bookings/:id", validateTenant, async (req, res) 
           subscriptionEndDate: null,
         });
 
+        // Send notification email for subscription change
+        try {
+          await emailService.sendSubscriptionChangeNotification(
+            'admin@restaurant.com',
+            'liridon.salihi123@gmail.com',
+            tenant?.subscriptionPlanId && tenant.subscriptionPlanId > plan.id ? 'downgrade' : 'upgrade',
+            tenantUser.name || 'Restaurant',
+            `Subscription ${tenant?.subscriptionPlanId && tenant.subscriptionPlanId > plan.id ? 'downgraded' : 'upgraded'} - ${tenantUser.name || 'Restaurant'}`
+          );
+        } catch (emailError) {
+          console.error('Failed to send subscription notification email:', emailError);
+        }
+
+        const isDowngrade = tenant?.subscriptionPlanId && tenant.subscriptionPlanId > plan.id;
         return res.json({ 
           success: true,
-          message: `Successfully upgraded to ${plan.name} plan`,
+          message: `Successfully ${isDowngrade ? 'downgraded' : 'upgraded'} to ${plan.name} plan`,
           plan: {
             id: plan.id,
             name: plan.name,
@@ -7619,35 +7633,17 @@ app.put("/api/tenants/:tenantId/bookings/:id", validateTenant, async (req, res) 
             });
           }
           
-          // Scenario: 8 tables, 15 bookings - DOWNGRADE ALLOWED
-          return res.json({
-            message: `✅ DOWNGRADE ALLOWED - Your current usage (${totalTables} tables, ${currentBookingCount} bookings) is within the ${plan.name} plan limits (${plan.maxTables} tables, ${newPlanBookingLimit} bookings/month).`,
-            validationResult: {
-              canDowngrade: true,
-              currentUsage: {
-                tables: totalTables,
-                bookings: currentBookingCount
-              },
-              newPlanLimits: {
-                tables: plan.maxTables,
-                bookings: newPlanBookingLimit
-              }
-            },
-            proceedWithDowngrade: true,
-            requiresConfirmation: true
-          });
         }
 
         // Update tenant with new plan and reactivate if needed
         const tenantUpdateData: any = {
           subscriptionPlanId: plan.id,
+          subscriptionStatus: 'active',
+          subscriptionStartDate: new Date(),
         };
 
-        if (isCancelled) {
-          tenantUpdateData.subscriptionStatus = 'active';
-          if (subscriptionEndDate) {
-            tenantUpdateData.subscriptionEndDate = subscriptionEndDate;
-          }
+        if (subscriptionEndDate) {
+          tenantUpdateData.subscriptionEndDate = subscriptionEndDate;
         }
 
         await storage.updateTenant(tenantUser.id, tenantUpdateData);
