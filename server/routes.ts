@@ -2081,6 +2081,26 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(404).json({ message: "Restaurant not found" });
       }
 
+      // Check subscription booking limits
+      const tenant = await storage.getTenantById(tenantId);
+      if (!tenant) {
+        return res.status(404).json({ message: "Tenant not found" });
+      }
+
+      const subscriptionPlan = await storage.getSubscriptionPlanById(tenant.subscriptionPlanId);
+      if (!subscriptionPlan) {
+        return res.status(400).json({ message: "Invalid subscription plan" });
+      }
+
+      const currentBookingCount = await storage.getBookingCountForTenantThisMonth(tenantId);
+      const maxBookingsPerMonth = subscriptionPlan.maxBookingsPerMonth || 100;
+
+      if (currentBookingCount >= maxBookingsPerMonth) {
+        return res.status(400).json({ 
+          message: `You have reached your monthly booking limit of ${maxBookingsPerMonth} bookings for your ${subscriptionPlan.name} plan. Please upgrade your subscription to create more bookings.`
+        });
+      }
+
       // Create walk-in customer
       const walkInCustomer = await storage.createWalkInCustomer(restaurantId, tenantId, {
         name: customerName || undefined,
@@ -2873,6 +2893,26 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
         // Assign the smallest suitable table
         assignedTableId = availableTables[0].id;
+      }
+
+      // Check subscription booking limits
+      const tenant = await storage.getTenantById(tenantId);
+      if (!tenant) {
+        return res.status(404).json({ message: "Tenant not found" });
+      }
+
+      const subscriptionPlan = await storage.getSubscriptionPlanById(tenant.subscriptionPlanId);
+      if (!subscriptionPlan) {
+        return res.status(400).json({ message: "Invalid subscription plan" });
+      }
+
+      const currentBookingCount = await storage.getBookingCountForTenantThisMonth(tenantId);
+      const maxBookingsPerMonth = subscriptionPlan.maxBookingsPerMonth || 100;
+
+      if (currentBookingCount >= maxBookingsPerMonth) {
+        return res.status(400).json({ 
+          message: `You have reached your monthly booking limit of ${maxBookingsPerMonth} bookings for your ${subscriptionPlan.name} plan. Please upgrade your subscription to create more bookings.`
+        });
       }
 
       // Get or create customer first
@@ -5575,6 +5615,26 @@ app.put("/api/tenants/:tenantId/bookings/:id", validateTenant, async (req, res) 
         }
       }
 
+      // Check subscription booking limits
+      const tenant = await storage.getTenantById(tenantId);
+      if (!tenant) {
+        return res.status(404).json({ message: "Tenant not found" });
+      }
+
+      const subscriptionPlan = await storage.getSubscriptionPlanById(tenant.subscriptionPlanId);
+      if (!subscriptionPlan) {
+        return res.status(400).json({ message: "Invalid subscription plan" });
+      }
+
+      const currentBookingCount = await storage.getBookingCountForTenantThisMonth(tenantId);
+      const maxBookingsPerMonth = subscriptionPlan.maxBookingsPerMonth || 100;
+
+      if (currentBookingCount >= maxBookingsPerMonth) {
+        return res.status(400).json({ 
+          message: `You have reached your monthly booking limit of ${maxBookingsPerMonth} bookings for your ${subscriptionPlan.name} plan. Please upgrade your subscription to create more bookings.`
+        });
+      }
+
       // Find an available table for this booking
       const tables = await storage.getTablesByRestaurant(restaurantId);
       const combinedTables = await storage.getCombinedTablesByRestaurant(restaurantId);
@@ -7241,6 +7301,21 @@ app.put("/api/tenants/:tenantId/bookings/:id", validateTenant, async (req, res) 
               maxTablesAllowed: plan.maxTables,
               excessTables: totalTables - plan.maxTables,
               requiresTableReduction: true
+            });
+          }
+
+          // Check booking limits for downgrade
+          const currentBookingCount = await storage.getBookingCountForTenantThisMonth(tenantUser.id);
+          const newPlanBookingLimit = plan.maxBookingsPerMonth || 100;
+          
+          if (currentBookingCount > newPlanBookingLimit) {
+            return res.status(400).json({
+              error: "Booking limit exceeded",
+              message: `You currently have ${currentBookingCount} bookings this month, but the ${plan.name} plan allows only ${newPlanBookingLimit} bookings per month. Please wait until next month or upgrade to maintain your current usage.`,
+              currentBookings: currentBookingCount,
+              maxBookingsAllowed: newPlanBookingLimit,
+              excessBookings: currentBookingCount - newPlanBookingLimit,
+              requiresBookingReduction: true
             });
           }
         }
