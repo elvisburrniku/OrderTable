@@ -7118,6 +7118,9 @@ app.put("/api/tenants/:tenantId/bookings/:id", validateTenant, async (req, res) 
         // Update existing subscription
         const subscription = await stripe.subscriptions.retrieve(tenant.stripeSubscriptionId);
         
+        // Check if subscription is cancelled and reactivate it
+        const isCancelled = tenant.subscriptionStatus === 'cancelled' || subscription.cancel_at_period_end;
+        
         // First create a Stripe product and price
         const product = await stripe.products.create({
           name: plan.name,
@@ -7133,22 +7136,54 @@ app.put("/api/tenants/:tenantId/bookings/:id", validateTenant, async (req, res) 
           product: product.id,
         });
 
-        await stripe.subscriptions.update(tenant.stripeSubscriptionId, {
+        const updateData: any = {
           items: [{
             id: subscription.items.data[0].id,
             price: price.id,
           }],
           proration_behavior: 'always_invoice',
-        });
+        };
 
-        // Update tenant with new plan (effective immediately with proration)
-        await storage.updateTenant(tenantUser.id, {
+        // If subscription is cancelled, reactivate it
+        if (isCancelled) {
+          updateData.cancel_at_period_end = false;
+        }
+
+        const updatedSubscription = await stripe.subscriptions.update(tenant.stripeSubscriptionId, updateData);
+
+        // Get the subscription end date from Stripe
+        let subscriptionEndDate = null;
+        if (updatedSubscription.current_period_end && typeof updatedSubscription.current_period_end === 'number' && updatedSubscription.current_period_end > 0) {
+          subscriptionEndDate = new Date(updatedSubscription.current_period_end * 1000);
+          
+          // Validate the date is valid
+          if (isNaN(subscriptionEndDate.getTime())) {
+            console.error("Invalid date created from Stripe timestamp:", updatedSubscription.current_period_end);
+            subscriptionEndDate = null;
+          }
+        }
+
+        // Update tenant with new plan and reactivate if needed
+        const tenantUpdateData: any = {
           subscriptionPlanId: plan.id,
-        });
+        };
+
+        if (isCancelled) {
+          tenantUpdateData.subscriptionStatus = 'active';
+          if (subscriptionEndDate) {
+            tenantUpdateData.subscriptionEndDate = subscriptionEndDate;
+          }
+        }
+
+        await storage.updateTenant(tenantUser.id, tenantUpdateData);
+
+        const message = isCancelled 
+          ? `Successfully upgraded to ${plan.name} plan and reactivated your subscription!`
+          : `Successfully upgraded to ${plan.name} plan. Changes are effective immediately with prorated billing.`;
 
         return res.json({
           success: true,
-          message: `Successfully upgraded to ${plan.name} plan. Changes are effective immediately with prorated billing.`,
+          message,
           plan: {
             id: plan.id,
             name: plan.name,
