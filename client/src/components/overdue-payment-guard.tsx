@@ -4,7 +4,10 @@ import { useEffect } from "react";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { AlertTriangle, CreditCard, Calendar, Clock, ExternalLink } from "lucide-react";
+import { AlertTriangle, CreditCard, Calendar, Clock, ExternalLink, Trash2 } from "lucide-react";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { apiRequest } from "@/lib/queryClient";
+import { useToast } from "@/hooks/use-toast";
 
 interface SubscriptionDetails {
   tenant: {
@@ -41,21 +44,24 @@ export const OverduePaymentGuard = ({ children }: { children: React.ReactNode })
   });
 
   const isOverdue = subscriptionDetails?.tenant?.subscriptionStatus === 'past_due';
+  const isEnded = subscriptionDetails?.tenant?.subscriptionStatus === 'ended' || 
+                  subscriptionDetails?.tenant?.subscriptionStatus === 'canceled';
+  const isBlocked = isOverdue || isEnded;
   const isBillingPage = location.includes('/billing');
 
   useEffect(() => {
-    // Redirect to billing if overdue and not already on billing page
-    if (isOverdue && !isBillingPage && subscriptionDetails?.tenant?.id) {
+    // Redirect to billing if blocked (overdue or ended) and not already on billing page
+    if (isBlocked && !isBillingPage && subscriptionDetails?.tenant?.id) {
       setLocation(`/${subscriptionDetails.tenant.id}/billing`);
     }
-  }, [isOverdue, isBillingPage, setLocation, subscriptionDetails?.tenant?.id]);
+  }, [isBlocked, isBillingPage, setLocation, subscriptionDetails?.tenant?.id]);
 
-  // If overdue, show the overdue warning on billing page or block other pages
-  if (isOverdue) {
+  // If blocked (overdue or ended), show appropriate warning on billing page or block other pages
+  if (isBlocked) {
     if (isBillingPage) {
       return (
         <div className="container mx-auto p-6 space-y-6">
-          <OverduePaymentBanner subscriptionDetails={subscriptionDetails} />
+          <OverduePaymentBanner subscriptionDetails={subscriptionDetails} isEnded={isEnded} />
           {children}
         </div>
       );
@@ -70,7 +76,7 @@ export const OverduePaymentGuard = ({ children }: { children: React.ReactNode })
   return <>{children}</>;
 };
 
-const OverduePaymentBanner = ({ subscriptionDetails }: { subscriptionDetails?: SubscriptionDetails }) => {
+const OverduePaymentBanner = ({ subscriptionDetails, isEnded }: { subscriptionDetails?: SubscriptionDetails; isEnded?: boolean }) => {
   const { data: invoicesData } = useQuery<{
     invoices: Array<{
       id: string;
@@ -82,6 +88,28 @@ const OverduePaymentBanner = ({ subscriptionDetails }: { subscriptionDetails?: S
     }>;
   }>({
     queryKey: ["/api/billing/invoices"],
+  });
+
+  const { toast } = useToast();
+  const queryClient = useQueryClient();
+
+  const deleteAccountMutation = useMutation({
+    mutationFn: () => apiRequest("DELETE", "/api/account/delete"),
+    onSuccess: () => {
+      toast({
+        title: "Account Deleted",
+        description: "Your account has been successfully deleted.",
+      });
+      // Redirect to home/login page
+      window.location.href = '/';
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Error",
+        description: error.message || "Failed to delete account",
+        variant: "destructive",
+      });
+    },
   });
 
   const calculateDaysOverdue = () => {
@@ -107,57 +135,84 @@ const OverduePaymentBanner = ({ subscriptionDetails }: { subscriptionDetails?: S
     }
   };
 
+  const handleDeleteAccount = () => {
+    if (window.confirm('Are you sure you want to delete your account? This action cannot be undone.')) {
+      deleteAccountMutation.mutate();
+    }
+  };
+
   return (
-    <Card className="border-red-200 bg-red-50 dark:bg-red-950 dark:border-red-800">
+    <Card className={isEnded ? "border-gray-400 bg-gray-50 dark:bg-gray-950 dark:border-gray-600" : "border-red-200 bg-red-50 dark:bg-red-950 dark:border-red-800"}>
       <CardHeader>
         <div className="flex items-center space-x-3">
-          <AlertTriangle className="h-8 w-8 text-red-600" />
+          <AlertTriangle className={`h-8 w-8 ${isEnded ? 'text-gray-600' : 'text-red-600'}`} />
           <div>
-            <CardTitle className="text-red-800 dark:text-red-200">
-              {willBeSuspended ? "Account Suspended" : "Payment Overdue"}
+            <CardTitle className={isEnded ? 'text-gray-800 dark:text-gray-200' : 'text-red-800 dark:text-red-200'}>
+              {isEnded ? "Subscription Ended" : (willBeSuspended ? "Account Suspended" : "Payment Overdue")}
             </CardTitle>
-            <CardDescription className="text-red-600 dark:text-red-400">
-              {willBeSuspended 
-                ? "Your account has been suspended due to non-payment"
-                : "Your subscription payment is past due"}
+            <CardDescription className={isEnded ? 'text-gray-600 dark:text-gray-400' : 'text-red-600 dark:text-red-400'}>
+              {isEnded 
+                ? "Your subscription has ended. Choose to reactivate or delete your account."
+                : (willBeSuspended 
+                  ? "Your account has been suspended due to non-payment"
+                  : "Your subscription payment is past due")}
             </CardDescription>
           </div>
         </div>
       </CardHeader>
       <CardContent className="space-y-4">
-        <Alert className="border-red-300 bg-red-100 dark:bg-red-900">
-          <AlertTriangle className="h-4 w-4" />
-          <AlertDescription className="text-red-800 dark:text-red-200">
-            <div className="space-y-2">
-              <div className="font-semibold">
-                {willBeSuspended 
-                  ? "Your account has been suspended"
-                  : `Payment overdue by ${daysOverdue} day${daysOverdue !== 1 ? 's' : ''}`}
+        {isEnded ? (
+          <Alert className="border-gray-300 bg-gray-100 dark:bg-gray-900">
+            <AlertTriangle className="h-4 w-4" />
+            <AlertDescription className="text-gray-800 dark:text-gray-200">
+              <div className="space-y-2">
+                <div className="font-semibold">
+                  Your subscription has ended
+                </div>
+                <div>
+                  Your subscription ended on{" "}
+                  {subscriptionDetails?.tenant?.subscriptionEndDate && 
+                    new Date(subscriptionDetails.tenant.subscriptionEndDate).toLocaleDateString()}.
+                  You can reactivate your subscription below or delete your account if you no longer need our services.
+                </div>
               </div>
-              <div>
-                {willBeSuspended ? (
-                  "Access to your restaurant management system has been suspended. Please pay your outstanding invoice to restore access."
-                ) : (
-                  <>
-                    Your subscription payment was due on{" "}
-                    {subscriptionDetails?.tenant?.subscriptionEndDate && 
-                      new Date(subscriptionDetails.tenant.subscriptionEndDate).toLocaleDateString()}.
-                    {daysUntilSuspension > 0 && (
-                      <> You have <strong>{daysUntilSuspension} day{daysUntilSuspension !== 1 ? 's' : ''}</strong> remaining before your account is suspended.</>
-                    )}
-                  </>
+            </AlertDescription>
+          </Alert>
+        ) : (
+          <Alert className="border-red-300 bg-red-100 dark:bg-red-900">
+            <AlertTriangle className="h-4 w-4" />
+            <AlertDescription className="text-red-800 dark:text-red-200">
+              <div className="space-y-2">
+                <div className="font-semibold">
+                  {willBeSuspended 
+                    ? "Your account has been suspended"
+                    : `Payment overdue by ${daysOverdue} day${daysOverdue !== 1 ? 's' : ''}`}
+                </div>
+                <div>
+                  {willBeSuspended ? (
+                    "Access to your restaurant management system has been suspended. Please pay your outstanding invoice to restore access."
+                  ) : (
+                    <>
+                      Your subscription payment was due on{" "}
+                      {subscriptionDetails?.tenant?.subscriptionEndDate && 
+                        new Date(subscriptionDetails.tenant.subscriptionEndDate).toLocaleDateString()}.
+                      {daysUntilSuspension > 0 && (
+                        <> You have <strong>{daysUntilSuspension} day{daysUntilSuspension !== 1 ? 's' : ''}</strong> remaining before your account is suspended.</>
+                      )}
+                    </>
+                  )}
+                </div>
+                {!willBeSuspended && (
+                  <div className="text-sm">
+                    <strong>Important:</strong> If payment is not received within 15 days of the due date, 
+                    your account will be automatically suspended and access to all restaurant management 
+                    features will be blocked.
+                  </div>
                 )}
               </div>
-              {!willBeSuspended && (
-                <div className="text-sm">
-                  <strong>Important:</strong> If payment is not received within 15 days of the due date, 
-                  your account will be automatically suspended and access to all restaurant management 
-                  features will be blocked.
-                </div>
-              )}
-            </div>
-          </AlertDescription>
-        </Alert>
+            </AlertDescription>
+          </Alert>
+        )}
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           <div className="flex items-center space-x-3 p-3 bg-white dark:bg-gray-800 rounded-lg border">
