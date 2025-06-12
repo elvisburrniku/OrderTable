@@ -794,7 +794,10 @@ export class BrevoEmailService {
       console.log(`Subscription change notification sent successfully to ${restaurantOwnerEmail}:`, {
         messageId: result.body?.messageId,
         action: subscriptionData.action,
-        restaurant: subscriptionData.tenantName
+        restaurant: subscriptionData.tenantName,
+        from: senderEmail,
+        subject: sendSmtpEmail.subject,
+        brevoResponse: result.response?.statusCode
       });
       return result;
     } catch (error) {
