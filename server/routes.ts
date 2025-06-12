@@ -7565,17 +7565,37 @@ app.put("/api/tenants/:tenantId/bookings/:id", validateTenant, async (req, res) 
       }
 
       // Reactivate subscription
-      await stripe.subscriptions.update(tenant.stripeSubscriptionId, {
+      const subscription = await stripe.subscriptions.update(tenant.stripeSubscriptionId, {
         cancel_at_period_end: false
       });
 
-      await storage.updateTenant(tenantUser.id, {
+      // Get the current subscription end date from Stripe
+      let subscriptionEndDate = null;
+      if (subscription.current_period_end && typeof subscription.current_period_end === 'number' && subscription.current_period_end > 0) {
+        subscriptionEndDate = new Date(subscription.current_period_end * 1000);
+        
+        // Validate the date is valid
+        if (isNaN(subscriptionEndDate.getTime())) {
+          console.error("Invalid date created from Stripe timestamp:", subscription.current_period_end);
+          subscriptionEndDate = null;
+        }
+      }
+
+      const updateData: any = {
         subscriptionStatus: 'active'
-      });
+      };
+
+      // Update with current billing period end date
+      if (subscriptionEndDate) {
+        updateData.subscriptionEndDate = subscriptionEndDate;
+      }
+
+      await storage.updateTenant(tenantUser.id, updateData);
 
       res.json({ 
         success: true, 
-        message: "Subscription reactivated successfully"
+        message: "Subscription reactivated successfully",
+        endDate: subscriptionEndDate
       });
     } catch (error) {
       console.error("Error reactivating subscription:", error);
