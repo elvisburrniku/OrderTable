@@ -4,7 +4,7 @@ import { useEffect } from "react";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { AlertTriangle, CreditCard, Calendar, Clock } from "lucide-react";
+import { AlertTriangle, CreditCard, Calendar, Clock, ExternalLink } from "lucide-react";
 
 interface SubscriptionDetails {
   tenant: {
@@ -25,6 +25,19 @@ export const OverduePaymentGuard = ({ children }: { children: React.ReactNode })
 
   const { data: billingInfo } = useQuery({
     queryKey: ["/api/billing/info"],
+  });
+
+  const { data: invoicesData } = useQuery<{
+    invoices: Array<{
+      id: string;
+      amount_due: number;
+      currency: string;
+      status: string;
+      hosted_invoice_url: string;
+      created: number;
+    }>;
+  }>({
+    queryKey: ["/api/billing/invoices"],
   });
 
   const isOverdue = subscriptionDetails?.tenant?.subscriptionStatus === 'past_due';
@@ -58,6 +71,19 @@ export const OverduePaymentGuard = ({ children }: { children: React.ReactNode })
 };
 
 const OverduePaymentBanner = ({ subscriptionDetails }: { subscriptionDetails?: SubscriptionDetails }) => {
+  const { data: invoicesData } = useQuery<{
+    invoices: Array<{
+      id: string;
+      amount_due: number;
+      currency: string;
+      status: string;
+      hosted_invoice_url: string;
+      created: number;
+    }>;
+  }>({
+    queryKey: ["/api/billing/invoices"],
+  });
+
   const calculateDaysOverdue = () => {
     if (!subscriptionDetails?.tenant?.subscriptionEndDate) return 0;
     const endDate = new Date(subscriptionDetails.tenant.subscriptionEndDate);
@@ -69,6 +95,17 @@ const OverduePaymentBanner = ({ subscriptionDetails }: { subscriptionDetails?: S
   const daysOverdue = calculateDaysOverdue();
   const daysUntilSuspension = Math.max(0, 15 - daysOverdue);
   const willBeSuspended = daysUntilSuspension === 0;
+
+  // Find the most recent unpaid invoice
+  const unpaidInvoice = invoicesData?.invoices?.find(invoice => 
+    invoice.status === 'open' && invoice.amount_due > 0
+  );
+
+  const handlePayNow = () => {
+    if (unpaidInvoice?.hosted_invoice_url) {
+      window.open(unpaidInvoice.hosted_invoice_url, '_blank');
+    }
+  };
 
   return (
     <Card className="border-red-200 bg-red-50 dark:bg-red-950 dark:border-red-800">
@@ -157,12 +194,42 @@ const OverduePaymentBanner = ({ subscriptionDetails }: { subscriptionDetails?: S
           </div>
         </div>
 
+        {/* Payment Action Section */}
+        {unpaidInvoice && (
+          <div className="bg-blue-50 dark:bg-blue-950 border border-blue-200 dark:border-blue-800 rounded-lg p-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <h3 className="text-lg font-semibold text-blue-900 dark:text-blue-100">
+                  Outstanding Invoice
+                </h3>
+                <p className="text-blue-700 dark:text-blue-300">
+                  Amount Due: <span className="font-bold">
+                    ${(unpaidInvoice.amount_due / 100).toFixed(2)} {unpaidInvoice.currency.toUpperCase()}
+                  </span>
+                </p>
+                <p className="text-sm text-blue-600 dark:text-blue-400 mt-1">
+                  Pay now to restore full access to your account
+                </p>
+              </div>
+              <Button 
+                onClick={handlePayNow}
+                size="lg"
+                className="bg-blue-600 hover:bg-blue-700 text-white px-8 py-3 font-semibold"
+              >
+                <CreditCard className="h-5 w-5 mr-2" />
+                Pay Now
+                <ExternalLink className="h-4 w-4 ml-2" />
+              </Button>
+            </div>
+          </div>
+        )}
+
         {!willBeSuspended && (
           <div className="bg-yellow-50 dark:bg-yellow-950 border border-yellow-200 dark:border-yellow-800 rounded-lg p-4">
             <div className="text-sm text-yellow-800 dark:text-yellow-200">
               <strong>What happens next?</strong>
               <ul className="mt-2 space-y-1 list-disc list-inside">
-                <li>Pay your outstanding invoice below to restore normal access</li>
+                <li>Pay your outstanding invoice above to restore normal access</li>
                 <li>Your account remains functional during the 15-day grace period</li>
                 <li>After 15 days, all restaurant management features will be suspended</li>
                 <li>Contact support if you need assistance with payment</li>
