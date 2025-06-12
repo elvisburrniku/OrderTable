@@ -7328,8 +7328,9 @@ app.put("/api/tenants/:tenantId/bookings/:id", validateTenant, async (req, res) 
             });
           }
           
-          // Get current booking count for this month
-          const currentBookingCount = await storage.getBookingCountForTenantThisMonth(tenantUser.id);
+          // Get current booking count for this month (with simulation override)
+          const actualBookingCount = await storage.getBookingCountForTenantThisMonth(tenantUser.id);
+          const currentBookingCount = simulateNextMonth ? 0 : actualBookingCount;
           const newPlanTableLimit = plan.maxTables || 10;
           const newPlanBookingLimit = plan.maxBookingsPerMonth || 100;
           

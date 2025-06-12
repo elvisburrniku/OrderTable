@@ -67,6 +67,7 @@ import Contact from "./pages/contact";
 import MinimalGuest from "./pages/minimal-guest";
 import SetupWizard from "./pages/setup-wizard";
 import EmailTest from "./pages/email-test";
+import TestTools from "./pages/test-tools";
 import { SetupGuard } from "./components/setup-guard";
 import { OverduePaymentGuard } from "./components/overdue-payment-guard";
 
@@ -136,6 +137,7 @@ function App() {
                 <Route path="/:tenantId/settings" component={Settings} />
                 <Route path="/:tenantId/help" component={Help} />
                 <Route path="/:tenantId/email-test" component={EmailTest} />
+                <Route path="/:tenantId/test-tools" component={TestTools} />
               </OverduePaymentGuard>
             </SetupGuard>
             <Route path="/feedback-responses" component={FeedbackResponses} />
