@@ -7306,6 +7306,111 @@ app.put("/api/tenants/:tenantId/bookings/:id", validateTenant, async (req, res) 
 
       const tenant = await storage.getTenantById(tenantUser.id);
 
+      // Check for downgrade validation
+      if (tenant?.subscriptionPlanId) {
+        const currentPlan = await storage.getSubscriptionPlanById(tenant.subscriptionPlanId);
+        const isDowngrade = currentPlan && plan.maxTables && currentPlan.maxTables && 
+                           (plan.maxTables < currentPlan.maxTables || plan.maxBookingsPerMonth < currentPlan.maxBookingsPerMonth);
+        
+        if (isDowngrade) {
+          // Get all restaurants for this tenant
+          const restaurants = await storage.getRestaurantsByTenantId(tenantUser.id);
+          let totalTables = 0;
+          const restaurantTableBreakdown = [];
+          
+          // Count total tables across all restaurants
+          for (const restaurant of restaurants) {
+            const restaurantTables = await storage.getTablesByRestaurant(restaurant.id);
+            totalTables += restaurantTables.length;
+            restaurantTableBreakdown.push({
+              restaurantName: restaurant.name,
+              tableCount: restaurantTables.length
+            });
+          }
+          
+          // Get current booking count for this month
+          const currentBookingCount = await storage.getBookingCountForTenantThisMonth(tenantUser.id);
+          const newPlanTableLimit = plan.maxTables || 10;
+          const newPlanBookingLimit = plan.maxBookingsPerMonth || 100;
+          
+          const tableExceeded = totalTables > newPlanTableLimit;
+          const bookingExceeded = currentBookingCount > newPlanBookingLimit;
+          
+          if (tableExceeded && bookingExceeded) {
+            // Both limits exceeded - comprehensive blocking
+            return res.status(400).json({
+              error: "Multiple limits exceeded",
+              message: `❌ DOWNGRADE BLOCKED - You currently have ${totalTables} tables (${plan.name} allows ${newPlanTableLimit}) and ${currentBookingCount} bookings this month (${plan.name} allows ${newPlanBookingLimit}). You must remove ${totalTables - newPlanTableLimit} tables and wait until next month before downgrading.`,
+              validationFailures: [
+                {
+                  type: "table_limit",
+                  current: totalTables,
+                  allowed: newPlanTableLimit,
+                  excess: totalTables - newPlanTableLimit,
+                  action: `Must remove ${totalTables - newPlanTableLimit} tables first`
+                },
+                {
+                  type: "booking_limit", 
+                  current: currentBookingCount,
+                  allowed: newPlanBookingLimit,
+                  excess: currentBookingCount - newPlanBookingLimit,
+                  action: "Must wait until next month"
+                }
+              ],
+              currentPlan: currentPlan.name,
+              targetPlan: plan.name,
+              canDowngrade: false,
+              requiresTableReduction: true,
+              requiresBookingReduction: true
+            });
+          }
+          
+          if (tableExceeded) {
+            // Table limit exceeded - Must remove tables first
+            return res.status(400).json({
+              error: "Table limit exceeded",
+              message: `❌ DOWNGRADE BLOCKED - Must remove ${totalTables - newPlanTableLimit} tables first. You currently have ${totalTables} tables, but the ${plan.name} plan allows only ${newPlanTableLimit} tables.`,
+              validationFailures: [
+                {
+                  type: "table_limit",
+                  current: totalTables,
+                  allowed: newPlanTableLimit,
+                  excess: totalTables - newPlanTableLimit,
+                  action: `Must remove ${totalTables - newPlanTableLimit} tables first`
+                }
+              ],
+              currentPlan: currentPlan.name,
+              targetPlan: plan.name,
+              canDowngrade: false,
+              requiresTableReduction: true,
+              tableBreakdown: restaurantTableBreakdown
+            });
+          }
+          
+          if (bookingExceeded) {
+            // Booking limit exceeded - Must wait until next month
+            return res.status(400).json({
+              error: "Booking limit exceeded",
+              message: `❌ DOWNGRADE BLOCKED - Must wait until next month. You currently have ${currentBookingCount} bookings this month, but the ${plan.name} plan allows only ${newPlanBookingLimit} bookings per month.`,
+              validationFailures: [
+                {
+                  type: "booking_limit",
+                  current: currentBookingCount,
+                  allowed: newPlanBookingLimit,
+                  excess: currentBookingCount - newPlanBookingLimit,
+                  action: "Must wait until next month"
+                }
+              ],
+              currentPlan: currentPlan.name,
+              targetPlan: plan.name,
+              canDowngrade: false,
+              requiresBookingReduction: true,
+              nextAllowedDowngrade: new Date(new Date().getFullYear(), new Date().getMonth() + 1, 1).toISOString()
+            });
+          }
+        }
+      }
+
       // For free plans, update directly
       if (plan.price === 0) {
         await storage.updateTenant(tenantUser.id, {
