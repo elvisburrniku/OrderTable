@@ -580,29 +580,7 @@ export default function BillingPage() {
               </div>
             )}
 
-            {/* Test button to simulate cancelled status */}
-            {subscriptionDetails.tenant.subscriptionStatus === "active" && (
-              <div className="space-y-2 mt-4 p-3 border rounded bg-yellow-50">
-                <p className="text-sm text-yellow-800">Test: Simulate cancelled subscription</p>
-                <Button
-                  onClick={async () => {
-                    try {
-                      await fetch('/api/billing/cancel-subscription', {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' }
-                      });
-                      subscriptionDetailsQuery.refetch();
-                    } catch (error) {
-                      console.error('Cancel test failed:', error);
-                    }
-                  }}
-                  variant="destructive"
-                  size="sm"
-                >
-                  Test Cancel (to show reactivate button)
-                </Button>
-              </div>
-            )}
+
           </CardContent>
         </Card>
       )}

@@ -7197,11 +7197,21 @@ app.put("/api/tenants/:tenantId/bookings/:id", validateTenant, async (req, res) 
       if (tenant?.stripeSubscriptionId) {
         try {
           const stripeSubscription = await stripe.subscriptions.retrieve(tenant.stripeSubscriptionId);
-          // Convert Stripe timestamp to Date
-          stripeSubscriptionEndDate = new Date(stripeSubscription.current_period_end * 1000);
+          
+          // Validate and convert Stripe timestamp to Date
+          const endTimestamp = stripeSubscription.current_period_end;
+          if (endTimestamp && typeof endTimestamp === 'number' && endTimestamp > 0) {
+            stripeSubscriptionEndDate = new Date(endTimestamp * 1000);
+            
+            // Validate the date is valid
+            if (isNaN(stripeSubscriptionEndDate.getTime())) {
+              console.error("Invalid date created from Stripe timestamp:", endTimestamp);
+              stripeSubscriptionEndDate = tenant?.subscriptionEndDate; // Fall back to existing date
+            }
+          }
           
           // Map Stripe status to our internal status
-          if (stripeSubscription.status === 'active') {
+          if (stripeSubscription.status === 'active' && !stripeSubscription.cancel_at_period_end) {
             stripeSubscriptionStatus = 'active';
           } else if (stripeSubscription.cancel_at_period_end) {
             stripeSubscriptionStatus = 'cancelled';
@@ -7209,11 +7219,21 @@ app.put("/api/tenants/:tenantId/bookings/:id", validateTenant, async (req, res) 
             stripeSubscriptionStatus = stripeSubscription.status;
           }
           
-          // Update local database with current Stripe data
-          await storage.updateTenant(tenantUser.id, {
-            subscriptionStatus: stripeSubscriptionStatus,
-            subscriptionEndDate: stripeSubscriptionEndDate,
-          });
+          // Only update database if we have valid data and it's different from current
+          if (stripeSubscriptionStatus !== tenant?.subscriptionStatus || 
+              (stripeSubscriptionEndDate && stripeSubscriptionEndDate !== tenant?.subscriptionEndDate)) {
+            
+            const updateData: any = {
+              subscriptionStatus: stripeSubscriptionStatus,
+            };
+            
+            // Only include end date if it's valid
+            if (stripeSubscriptionEndDate && !isNaN(stripeSubscriptionEndDate.getTime())) {
+              updateData.subscriptionEndDate = stripeSubscriptionEndDate;
+            }
+            
+            await storage.updateTenant(tenantUser.id, updateData);
+          }
         } catch (stripeError) {
           console.error("Error fetching Stripe subscription:", stripeError);
           // Fall back to local data if Stripe call fails
@@ -7491,14 +7511,34 @@ app.put("/api/tenants/:tenantId/bookings/:id", validateTenant, async (req, res) 
         cancel_at_period_end: true
       });
 
-      await storage.updateTenant(tenantUser.id, {
+      // Get the subscription end date from Stripe
+      let subscriptionEndDate = null;
+      if (subscription.current_period_end && typeof subscription.current_period_end === 'number' && subscription.current_period_end > 0) {
+        subscriptionEndDate = new Date(subscription.current_period_end * 1000);
+        
+        // Validate the date is valid
+        if (isNaN(subscriptionEndDate.getTime())) {
+          console.error("Invalid date created from Stripe timestamp:", subscription.current_period_end);
+          subscriptionEndDate = null;
+        }
+      }
+
+      const updateData: any = {
         subscriptionStatus: 'cancelled'
-      });
+      };
+
+      // Only include end date if it's valid
+      if (subscriptionEndDate) {
+        updateData.subscriptionEndDate = subscriptionEndDate;
+      }
+
+      await storage.updateTenant(tenantUser.id, updateData);
 
       res.json({ 
         success: true, 
         message: "Subscription will be cancelled at the end of the billing period",
-        cancelAt: subscription.cancel_at
+        cancelAt: subscription.cancel_at,
+        endDate: subscriptionEndDate
       });
     } catch (error) {
       console.error("Error cancelling subscription:", error);
