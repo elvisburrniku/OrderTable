@@ -7015,6 +7015,8 @@ app.put("/api/tenants/:tenantId/bookings/:id", validateTenant, async (req, res) 
         return res.status(404).json({ error: "Subscription plan not found" });
       }
 
+      const tenant = await storage.getTenantById(tenantUser.id);
+
       // For free plans, update directly
       if (plan.price === 0) {
         await storage.updateTenant(tenantUser.id, {
@@ -7036,24 +7038,120 @@ app.put("/api/tenants/:tenantId/bookings/:id", validateTenant, async (req, res) 
         });
       }
 
-      // For paid plans, create Stripe checkout session
-      const baseUrl = process.env.NODE_ENV === 'production' 
-        ? `https://${req.get('host')}` 
-        : `http://${req.get('host')}`;
+      // For paid plans, check if user has payment method
+      let customerId = tenant?.stripeCustomerId;
 
-      const session = await SubscriptionService.createCheckoutSession(
-        tenantUser.id,
-        planId,
-        `${baseUrl}/billing?upgrade=success`,
-        `${baseUrl}/billing?upgrade=cancelled`
-      );
+      if (!customerId) {
+        // Create Stripe customer if doesn't exist
+        const customer = await stripe.customers.create({
+          email: req.user.email,
+          name: req.user.name,
+          metadata: {
+            tenantId: tenantUser.id.toString()
+          }
+        });
+        
+        await storage.updateTenant(tenantUser.id, {
+          stripeCustomerId: customer.id
+        });
+        
+        customerId = customer.id;
+      }
 
-      res.json({ 
-        success: true,
-        message: "Redirecting to payment...",
-        checkoutUrl: session.url,
-        sessionId: session.id
+      // Check if customer has saved payment methods
+      const paymentMethods = await stripe.paymentMethods.list({
+        customer: customerId,
+        type: 'card'
       });
+
+      if (paymentMethods.data.length === 0) {
+        // No payment method - require adding one first
+        return res.json({
+          success: false,
+          requiresPaymentMethod: true,
+          message: "Please add a payment method first to upgrade to a paid plan"
+        });
+      }
+
+      // Has payment method - proceed with subscription
+      if (tenant?.stripeSubscriptionId) {
+        // Update existing subscription
+        const subscription = await stripe.subscriptions.retrieve(tenant.stripeSubscriptionId);
+        
+        await stripe.subscriptions.update(tenant.stripeSubscriptionId, {
+          items: [{
+            id: subscription.items.data[0].id,
+            price_data: {
+              currency: 'usd',
+              product_data: {
+                name: plan.name,
+                description: `${plan.name} subscription plan`,
+              },
+              unit_amount: plan.price,
+              recurring: {
+                interval: 'month',
+              },
+            },
+          }],
+          proration_behavior: 'always_invoice',
+        });
+
+        // Update tenant with new plan (effective immediately with proration)
+        await storage.updateTenant(tenantUser.id, {
+          subscriptionPlanId: plan.id,
+        });
+
+        return res.json({
+          success: true,
+          message: `Successfully upgraded to ${plan.name} plan. Changes are effective immediately with prorated billing.`,
+          plan: {
+            id: plan.id,
+            name: plan.name,
+            price: plan.price,
+            interval: plan.interval
+          }
+        });
+      } else {
+        // Create new subscription
+        const subscription = await stripe.subscriptions.create({
+          customer: customerId,
+          items: [{
+            price_data: {
+              currency: 'usd',
+              product_data: {
+                name: plan.name,
+                description: `${plan.name} subscription plan`,
+              },
+              unit_amount: plan.price,
+              recurring: {
+                interval: 'month',
+              },
+            },
+          }],
+          default_payment_method: paymentMethods.data[0].id,
+          expand: ['latest_invoice.payment_intent'],
+        });
+
+        // Update tenant with subscription details
+        await storage.updateTenant(tenantUser.id, {
+          subscriptionPlanId: plan.id,
+          subscriptionStatus: 'active',
+          stripeSubscriptionId: subscription.id,
+          subscriptionStartDate: new Date(),
+          subscriptionEndDate: new Date(subscription.current_period_end * 1000),
+        });
+
+        return res.json({
+          success: true,
+          message: `Successfully subscribed to ${plan.name} plan!`,
+          plan: {
+            id: plan.id,
+            name: plan.name,
+            price: plan.price,
+            interval: plan.interval
+          }
+        });
+      }
     } catch (error) {
       console.error("Error subscribing to plan:", error);
       res.status(500).json({ error: "Failed to subscribe to plan" });

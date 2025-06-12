@@ -410,15 +410,27 @@ export default function BillingPage() {
   const upgradeSubscriptionMutation = useMutation({
     mutationFn: (planId: number) =>
       apiRequest("POST", "/api/subscription/subscribe", { planId }),
-    onSuccess: (data) => {
-      toast({
-        title: "Subscription Updated",
-        description: data.message || "Your subscription has been updated successfully",
-      });
-      queryClient.invalidateQueries({ queryKey: ["/api/billing/info"] });
-      queryClient.invalidateQueries({
-        queryKey: ["/api/subscription/details"],
-      });
+    onSuccess: (data: any) => {
+      if (data.requiresPaymentMethod) {
+        toast({
+          title: "Payment Method Required",
+          description: data.message || "Please add a payment method first to upgrade to a paid plan",
+          variant: "destructive",
+        });
+        setAddPaymentDialogOpen(true);
+      } else if (data.checkoutUrl) {
+        // Redirect to Stripe checkout for new subscriptions
+        window.location.href = data.checkoutUrl;
+      } else {
+        toast({
+          title: "Subscription Updated",
+          description: data.message || "Your subscription has been updated successfully",
+        });
+        queryClient.invalidateQueries({ queryKey: ["/api/billing/info"] });
+        queryClient.invalidateQueries({
+          queryKey: ["/api/subscription/details"],
+        });
+      }
     },
     onError: (error: any) => {
       toast({
