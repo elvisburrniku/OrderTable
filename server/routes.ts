@@ -672,6 +672,26 @@ export async function registerRoutes(app: Express): Promise<Server> {
         });
       }
 
+      // Check subscription booking limits
+      const tenant = await storage.getTenantById(tenantId);
+      if (!tenant) {
+        return res.status(404).json({ message: "Tenant not found" });
+      }
+
+      const subscriptionPlan = await storage.getSubscriptionPlanById(tenant.subscriptionPlanId);
+      if (!subscriptionPlan) {
+        return res.status(400).json({ message: "Invalid subscription plan" });
+      }
+
+      const currentBookingCount = await storage.getBookingCountForTenantThisMonth(tenantId);
+      const maxBookingsPerMonth = subscriptionPlan.maxBookingsPerMonth || 100;
+
+      if (currentBookingCount >= maxBookingsPerMonth) {
+        return res.status(400).json({ 
+          message: `You have reached your monthly booking limit of ${maxBookingsPerMonth} bookings for your ${subscriptionPlan.name} plan. Please upgrade your subscription to create more bookings.`
+        });
+      }
+
       const booking = await storage.createBooking(bookingData);
 
       // Generate and store management hash for the booking

@@ -445,6 +445,18 @@ export class MemoryStorage implements IStorage {
     return true;
   }
 
+  async getBookingCountForTenantThisMonth(tenantId: number): Promise<number> {
+    const now = new Date();
+    const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+    const startOfNextMonth = new Date(now.getFullYear(), now.getMonth() + 1, 1);
+    
+    return this.bookings.filter(booking => 
+      booking.tenantId === tenantId &&
+      booking.createdAt >= startOfMonth &&
+      booking.createdAt < startOfNextMonth
+    ).length;
+  }
+
   async getCustomersByRestaurant(restaurantId: number): Promise<Customer[]> {
     return this.customers.filter(c => c.restaurantId === restaurantId);
   }

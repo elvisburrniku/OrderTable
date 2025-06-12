@@ -129,6 +129,7 @@ export interface IStorage {
   createBooking(booking: InsertBooking): Promise<Booking>;
   updateBooking(id: number, booking: Partial<Booking>): Promise<Booking | undefined>;
   deleteBooking(id: number): Promise<boolean>;
+  getBookingCountForTenantThisMonth(tenantId: number): Promise<number>;
 
   // Customers
   getCustomersByRestaurant(restaurantId: number): Promise<Customer[]>;

@@ -439,6 +439,24 @@ export class DatabaseStorage implements IStorage {
     return true;
   }
 
+  async getBookingCountForTenantThisMonth(tenantId: number): Promise<number> {
+    if (!this.db) throw new Error("Database connection not available");
+    
+    // Get the start and end of the current month
+    const now = new Date();
+    const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+    const startOfNextMonth = new Date(now.getFullYear(), now.getMonth() + 1, 1);
+    
+    const result = await this.db.execute(
+      sql`SELECT COUNT(*) as count FROM bookings 
+          WHERE tenant_id = ${tenantId} 
+          AND created_at >= ${startOfMonth.toISOString()} 
+          AND created_at < ${startOfNextMonth.toISOString()}`
+    );
+    
+    return Number(result.rows[0]?.count || 0);
+  }
+
   async getCustomersByRestaurant(restaurantId: number): Promise<any[]> {
     if (!this.db) return [];
     const result = await this.db.select().from(customers).where(eq(customers.restaurantId, restaurantId));
