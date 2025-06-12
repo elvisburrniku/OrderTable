@@ -56,7 +56,7 @@ export default function Rooms() {
           if (room.id) {
             // Update existing room
             const response = await fetch(
-              `/api/tenants/${currentTenantId}/rooms/${room.id}`,
+              `/api/tenants/${currentTenantId}/restaurants/${restaurant.id}/rooms/${room.id}`,
               {
                 method: "PUT",
                 headers: { "Content-Type": "application/json" },
