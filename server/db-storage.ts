@@ -355,6 +355,12 @@ export class DatabaseStorage implements IStorage {
     return result[0];
   }
 
+  async getRestaurantsByTenantId(tenantId: number): Promise<any[]> {
+    if (!this.db) throw new Error("Database connection not available");
+    const result = await this.db.select().from(restaurants).where(eq(restaurants.tenantId, tenantId));
+    return result;
+  }
+
   async createRestaurant(restaurant: any): Promise<any> {
     if (!this.db) throw new Error("Database connection not available");
     const result = await this.db.insert(restaurants).values(restaurant).returning();

@@ -298,6 +298,10 @@ export class MemoryStorage implements IStorage {
     return this.getRestaurant(id);
   }
 
+  async getRestaurantsByTenantId(tenantId: number): Promise<Restaurant[]> {
+    return this.restaurants.filter(r => r.tenantId === tenantId);
+  }
+
   async createRestaurant(restaurant: InsertRestaurant): Promise<Restaurant> {
     const newRestaurant: Restaurant = {
       id: this.nextId++,

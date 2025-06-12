@@ -112,6 +112,7 @@ export interface IStorage {
   getRestaurant(id: number): Promise<Restaurant | undefined>;
   getRestaurantByUserId(userId: number): Promise<Restaurant | undefined>;
   getRestaurantById(id: number): Promise<Restaurant | undefined>;
+  getRestaurantsByTenantId(tenantId: number): Promise<Restaurant[]>;
   createRestaurant(restaurant: InsertRestaurant): Promise<Restaurant>;
   updateRestaurant(id: number, restaurant: Partial<Restaurant>): Promise<Restaurant | undefined>;
 
