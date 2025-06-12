@@ -6993,6 +6993,73 @@ app.put("/api/tenants/:tenantId/bookings/:id", validateTenant, async (req, res) 
     }
   });
 
+  // Subscribe to a plan (upgrade subscription)
+  app.post("/api/subscription/subscribe", attachUser, async (req: Request, res: Response) => {
+    if (!req.user) {
+      return res.status(401).json({ error: "Not authenticated" });
+    }
+
+    try {
+      const { planId } = req.body;
+      if (!planId) {
+        return res.status(400).json({ error: "Plan ID is required" });
+      }
+
+      const tenantUser = await storage.getTenantByUserId(req.user.id);
+      if (!tenantUser) {
+        return res.status(404).json({ error: "Tenant not found" });
+      }
+
+      const plan = await storage.getSubscriptionPlanById(planId);
+      if (!plan) {
+        return res.status(404).json({ error: "Subscription plan not found" });
+      }
+
+      // For free plans, update directly
+      if (plan.price === 0) {
+        await storage.updateTenant(tenantUser.id, {
+          subscriptionPlanId: plan.id,
+          subscriptionStatus: 'active',
+          subscriptionStartDate: new Date(),
+          subscriptionEndDate: null,
+        });
+
+        return res.json({ 
+          success: true,
+          message: `Successfully upgraded to ${plan.name} plan`,
+          plan: {
+            id: plan.id,
+            name: plan.name,
+            price: plan.price,
+            interval: plan.interval
+          }
+        });
+      }
+
+      // For paid plans, create Stripe checkout session
+      const baseUrl = process.env.NODE_ENV === 'production' 
+        ? `https://${req.get('host')}` 
+        : `http://${req.get('host')}`;
+
+      const session = await SubscriptionService.createCheckoutSession(
+        tenantUser.id,
+        planId,
+        `${baseUrl}/billing?upgrade=success`,
+        `${baseUrl}/billing?upgrade=cancelled`
+      );
+
+      res.json({ 
+        success: true,
+        message: "Redirecting to payment...",
+        checkoutUrl: session.url,
+        sessionId: session.id
+      });
+    } catch (error) {
+      console.error("Error subscribing to plan:", error);
+      res.status(500).json({ error: "Failed to subscribe to plan" });
+    }
+  });
+
   // Get current subscription details
   app.get("/api/subscription/details", attachUser, async (req: Request, res: Response) => {
     if (!req.user) {
