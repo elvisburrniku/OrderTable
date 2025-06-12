@@ -22,17 +22,36 @@ export default function Rooms() {
   const [rooms, setRooms] = useState<Room[]>([]);
   const [originalRooms, setOriginalRooms] = useState<Room[]>([]);
 
+  // Early return if restaurant data is not available
+  if (!restaurant?.id || !restaurant?.tenantId) {
+    return (
+      <div className="min-h-screen bg-gray-50">
+        <div className="max-w-7xl mx-auto py-6 px-4 sm:px-6 lg:px-8">
+          <div className="bg-white shadow rounded-lg p-6">
+            <div className="text-center">
+              <p className="text-gray-500">Loading restaurant data...</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   // Fetch rooms from API
-  const { data: fetchedRooms = [], isLoading } = useQuery({
+  const { data: fetchedRooms = [], isLoading, error } = useQuery({
     queryKey: ["/api/tenants", restaurant?.tenantId, "restaurants", restaurant?.id, "rooms"],
     queryFn: async () => {
+      if (!restaurant?.tenantId || !restaurant?.id) {
+        throw new Error("Restaurant data not available");
+      }
       const response = await fetch(
-        `/api/tenants/${restaurant?.tenantId}/restaurants/${restaurant?.id}/rooms`,
+        `/api/tenants/${restaurant.tenantId}/restaurants/${restaurant.id}/rooms`,
       );
       if (!response.ok) throw new Error("Failed to fetch rooms");
       return response.json();
     },
     enabled: !!restaurant?.id && !!restaurant?.tenantId,
+    retry: false,
   });
 
   // Update local state when rooms are fetched
@@ -242,6 +261,34 @@ export default function Rooms() {
     const validRooms = rooms.filter(room => room.name.trim() !== "");
     saveRoomsMutation.mutate(validRooms);
   };
+
+  if (isLoading) {
+    return (
+      <div className="min-h-screen bg-gray-50">
+        <div className="max-w-7xl mx-auto py-6 px-4 sm:px-6 lg:px-8">
+          <div className="bg-white shadow rounded-lg p-6">
+            <div className="text-center">
+              <p className="text-gray-500">Loading rooms...</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="min-h-screen bg-gray-50">
+        <div className="max-w-7xl mx-auto py-6 px-4 sm:px-6 lg:px-8">
+          <div className="bg-white shadow rounded-lg p-6">
+            <div className="text-center">
+              <p className="text-red-500">Error loading rooms: {error.message}</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-gray-50">
