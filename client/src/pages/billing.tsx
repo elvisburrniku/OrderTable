@@ -430,6 +430,7 @@ export default function BillingPage() {
         queryClient.invalidateQueries({
           queryKey: ["/api/subscription/details"],
         });
+        queryClient.invalidateQueries({ queryKey: ["/api/billing/invoices"] });
       }
     },
     onError: (error: any) => {
