@@ -57,8 +57,8 @@ export function LayoutWrapper({ children }: LayoutWrapperProps) {
     return <>{children}</>;
   }
   
-  // Hide sidebar for ended subscriptions
-  if (isSubscriptionEnded) {
+  // Hide sidebar for blocked access (ended subscriptions or expired trials)
+  if (isBlocked) {
     return (
       <main className="min-h-screen bg-gray-50">
         {children}

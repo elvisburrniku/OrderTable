@@ -351,7 +351,16 @@ const OverduePaymentBanner = ({ subscriptionDetails, isEnded, isTrialExpired }: 
           </div>
         )}
 
-        {!willBeSuspended && (
+        {isTrialExpired && (
+          <div className="bg-blue-50 dark:bg-blue-950 border border-blue-200 dark:border-blue-800 rounded-lg p-4">
+            <div className="text-sm text-blue-800 dark:text-blue-200">
+              <strong>Choose a subscription plan to continue:</strong>
+              <p className="mt-2">Your free trial has ended. Select a plan below to continue using all restaurant management features.</p>
+            </div>
+          </div>
+        )}
+
+        {!willBeSuspended && !isTrialExpired && (
           <div className="bg-yellow-50 dark:bg-yellow-950 border border-yellow-200 dark:border-yellow-800 rounded-lg p-4">
             <div className="text-sm text-yellow-800 dark:text-yellow-200">
               <strong>What happens next?</strong>
