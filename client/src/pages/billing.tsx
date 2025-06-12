@@ -538,6 +538,12 @@ export default function BillingPage() {
               </div>
             )}
 
+            {/* Debug info */}
+            <div className="text-xs text-muted-foreground p-2 bg-gray-50 rounded mb-2">
+              Status: {subscriptionDetails.tenant.subscriptionStatus} | 
+              End Date: {subscriptionDetails.tenant.subscriptionEndDate || 'None'}
+            </div>
+
             {subscriptionDetails.tenant.subscriptionStatus === "cancelled" && subscriptionDetails.tenant.subscriptionEndDate && (
               <div className="space-y-2">
                 <Alert>
@@ -557,6 +563,47 @@ export default function BillingPage() {
                   {reactivateSubscriptionMutation.isPending
                     ? "Reactivating..."
                     : "Reactivate Subscription"}
+                </Button>
+              </div>
+            )}
+
+            {/* Show reactivate button for any non-active status with subscription */}
+            {subscriptionDetails.tenant.subscriptionStatus !== "active" && 
+             subscriptionDetails.tenant.subscriptionStatus !== "trial" && 
+             subscriptionDetails.plan && (
+              <div className="space-y-2">
+                <Button
+                  onClick={() => reactivateSubscriptionMutation.mutate()}
+                  disabled={reactivateSubscriptionMutation.isPending}
+                  variant="outline"
+                >
+                  {reactivateSubscriptionMutation.isPending
+                    ? "Reactivating..."
+                    : "Reactivate Subscription"}
+                </Button>
+              </div>
+            )}
+
+            {/* Test button to simulate cancelled status */}
+            {subscriptionDetails.tenant.subscriptionStatus === "active" && (
+              <div className="space-y-2 mt-4 p-3 border rounded bg-yellow-50">
+                <p className="text-sm text-yellow-800">Test: Simulate cancelled subscription</p>
+                <Button
+                  onClick={async () => {
+                    try {
+                      await fetch('/api/billing/cancel-subscription', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' }
+                      });
+                      subscriptionDetailsQuery.refetch();
+                    } catch (error) {
+                      console.error('Cancel test failed:', error);
+                    }
+                  }}
+                  variant="destructive"
+                  size="sm"
+                >
+                  Test Cancel (to show reactivate button)
                 </Button>
               </div>
             )}
