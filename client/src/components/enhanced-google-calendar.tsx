@@ -195,14 +195,21 @@ export default function EnhancedGoogleCalendar({
   const handleMouseMove = useCallback((e: React.MouseEvent) => {
     if (!isDragging || !draggedBooking) return;
     
-    // Visual feedback during drag (you can add CSS transforms here)
+    // Prevent default to avoid text selection during drag
+    e.preventDefault();
+    
     const rect = calendarRef.current?.getBoundingClientRect();
     if (!rect) return;
     
     const x = e.clientX - rect.left;
     const y = e.clientY - rect.top;
     
-    // Update drag position if needed for visual feedback
+    // Add visual feedback for drag position
+    const dragElement = document.querySelector(`[data-booking-id="${draggedBooking.booking.id}"]`) as HTMLElement;
+    if (dragElement) {
+      dragElement.style.transform = `translate(${x - draggedBooking.dragStart.x}px, ${y - draggedBooking.dragStart.y}px)`;
+      dragElement.style.zIndex = '1000';
+    }
   }, [isDragging, draggedBooking]);
 
   const handleMouseUp = useCallback((e: React.MouseEvent, targetDate?: Date, targetTime?: string) => {
@@ -210,24 +217,36 @@ export default function EnhancedGoogleCalendar({
     
     setIsDragging(false);
     
+    // Reset drag element styles
+    const dragElement = document.querySelector(`[data-booking-id="${draggedBooking.booking.id}"]`) as HTMLElement;
+    if (dragElement) {
+      dragElement.style.transform = '';
+      dragElement.style.zIndex = '';
+    }
+    
     if (targetDate && targetTime) {
-      // Update booking with new date/time
-      updateBookingMutation.mutate({
-        bookingId: draggedBooking.booking.id,
-        newDate: format(targetDate, 'yyyy-MM-dd'),
-        newTime: targetTime
-      });
+      // Only update if date/time actually changed
+      const originalDate = format(draggedBooking.initialDate, 'yyyy-MM-dd');
+      const newDate = format(targetDate, 'yyyy-MM-dd');
+      
+      if (originalDate !== newDate || draggedBooking.initialTime !== targetTime) {
+        updateBookingMutation.mutate({
+          bookingId: draggedBooking.booking.id,
+          newDate: newDate,
+          newTime: targetTime
+        });
+      }
     }
     
     setDraggedBooking(null);
-  }, [isDragging, draggedBooking]);
+  }, [isDragging, draggedBooking, updateBookingMutation]);
 
   // Update booking mutation
   const updateBookingMutation = useMutation({
     mutationFn: async ({ bookingId, newDate, newTime }: { bookingId: number; newDate: string; newTime: string }) => {
       const response = await apiRequest("PATCH", `/api/tenants/${restaurant?.tenantId}/restaurants/${restaurant?.id}/bookings/${bookingId}`, {
         bookingDate: newDate,
-        bookingTime: newTime
+        startTime: newTime
       });
       return response.json();
     },
