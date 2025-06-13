@@ -756,7 +756,18 @@ export default function EnhancedGoogleCalendar({
 
   // Function to get available tables for a specific time slot
   const getAvailableTablesForTimeSlot = (date: Date, startTime: string, endTime: string = startTime) => {
-    const dateStr = format(date, 'yyyy-MM-dd');
+    // Validate inputs to prevent RangeError
+    if (!date || !startTime) {
+      return tables;
+    }
+    
+    let dateStr: string;
+    try {
+      dateStr = format(date, 'yyyy-MM-dd');
+    } catch (error) {
+      console.warn('Invalid date provided to getAvailableTablesForTimeSlot:', date);
+      return tables;
+    }
     
     return tables.filter(table => {
       // Check if this table has any bookings that overlap with the selected time
@@ -770,7 +781,11 @@ export default function EnhancedGoogleCalendar({
         
         // Convert times to minutes for easier comparison
         const toMinutes = (timeStr: string) => {
-          const [hours, minutes] = timeStr.split(':').map(Number);
+          if (!timeStr || typeof timeStr !== 'string') return 0;
+          const parts = timeStr.split(':');
+          if (parts.length !== 2) return 0;
+          const [hours, minutes] = parts.map(Number);
+          if (isNaN(hours) || isNaN(minutes)) return 0;
           return hours * 60 + minutes;
         };
         
@@ -1311,7 +1326,13 @@ export default function EnhancedGoogleCalendar({
                 <SelectContent>
                   {(() => {
                     // Get available tables for the selected time slot
-                    const bookingDate = selectedTimeSlot?.date || new Date(newBooking.bookingDate);
+                    let bookingDate: Date;
+                    try {
+                      bookingDate = selectedTimeSlot?.date || (newBooking.bookingDate ? new Date(newBooking.bookingDate) : new Date());
+                    } catch (error) {
+                      bookingDate = new Date();
+                    }
+                    
                     const availableTables = getAvailableTablesForTimeSlot(
                       bookingDate, 
                       newBooking.startTime, 
@@ -1335,7 +1356,13 @@ export default function EnhancedGoogleCalendar({
                 </SelectContent>
               </Select>
               {(() => {
-                const bookingDate = selectedTimeSlot?.date || new Date(newBooking.bookingDate);
+                let bookingDate: Date;
+                try {
+                  bookingDate = selectedTimeSlot?.date || (newBooking.bookingDate ? new Date(newBooking.bookingDate) : new Date());
+                } catch (error) {
+                  bookingDate = new Date();
+                }
+                
                 const availableTables = getAvailableTablesForTimeSlot(
                   bookingDate, 
                   newBooking.startTime, 
