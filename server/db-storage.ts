@@ -1014,6 +1014,42 @@ export class DatabaseStorage implements IStorage {
     }
   }
 
+  async getIntegrationByRestaurantAndType(restaurantId: number, integrationType: string): Promise<any> {
+    try {
+      const result = await this.db
+        .select()
+        .from(integrationConfigurations)
+        .where(and(
+          eq(integrationConfigurations.restaurantId, restaurantId),
+          eq(integrationConfigurations.integrationId, integrationType)
+        ));
+      
+      if (result.length === 0) {
+        return null;
+      }
+
+      const config = result[0];
+      
+      // Parse configuration JSON string back to object
+      let parsedConfig = config.configuration;
+      if (typeof config.configuration === 'string') {
+        try {
+          parsedConfig = JSON.parse(config.configuration);
+        } catch (e) {
+          parsedConfig = {};
+        }
+      }
+      
+      return {
+        ...config,
+        configuration: parsedConfig
+      };
+    } catch (error) {
+      console.error("Error fetching integration by restaurant and type:", error);
+      return null;
+    }
+  }
+
   async getIntegrationConfiguration(restaurantId: number, integrationId: string): Promise<any> {
     try {
       const result = await this.db

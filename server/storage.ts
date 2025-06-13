@@ -241,6 +241,7 @@ export interface IStorage {
   // Integration Configurations
   getIntegrationConfigurationsByRestaurant(restaurantId: number): Promise<any[]>;
   getIntegrationConfiguration(restaurantId: number, integrationId: string): Promise<any>;
+  getIntegrationByRestaurantAndType(restaurantId: number, integrationType: string): Promise<any>;
   createOrUpdateIntegrationConfiguration(restaurantId: number, tenantId: number, integrationId: string, isEnabled: boolean, configuration?: any): Promise<any>;
   deleteIntegrationConfiguration(restaurantId: number, integrationId: string): Promise<boolean>;
 

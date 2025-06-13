@@ -833,6 +833,12 @@ export class MemoryStorage implements IStorage {
       config.restaurantId === restaurantId && config.integrationId === integrationId
     );
   }
+
+  async getIntegrationByRestaurantAndType(restaurantId: number, integrationType: string): Promise<any> {
+    return this.integrationConfigurations.find(config => 
+      config.restaurantId === restaurantId && config.integrationId === integrationType
+    );
+  }
   
   async createOrUpdateIntegrationConfiguration(restaurantId: number, tenantId: number, integrationId: string, isEnabled: boolean, configuration?: any): Promise<any> { 
     const existingIndex = this.integrationConfigurations.findIndex(config => 
