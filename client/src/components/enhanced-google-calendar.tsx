@@ -317,11 +317,18 @@ export default function EnhancedGoogleCalendar({
     }
   });
 
-  // Click handler for editing bookings
-  const handleBookingClick = useCallback((e: React.MouseEvent, booking: Booking) => {
+  // Double-click handler for editing bookings
+  const handleBookingDoubleClick = useCallback((e: React.MouseEvent, booking: Booking) => {
     e.stopPropagation();
+    e.preventDefault();
     setEditingBooking(booking);
     setIsEditBookingOpen(true);
+  }, []);
+
+  // Single click handler (for drag functionality)
+  const handleBookingClick = useCallback((e: React.MouseEvent, booking: Booking) => {
+    e.stopPropagation();
+    // Single click is handled by drag functionality, double-click opens editor
   }, []);
 
   // Enhanced drag and drop handlers with smooth initialization
@@ -563,6 +570,7 @@ export default function EnhancedGoogleCalendar({
                           draggedBooking?.booking.id === booking.id ? 'opacity-50 transform scale-95' : ''
                         }`}
                         draggable
+                        onDoubleClick={(e) => handleBookingDoubleClick(e, booking)}
                         onMouseDown={(e) => handleMouseDown(e, booking)}
                         onDragStart={(e) => e.preventDefault()}
                       >
@@ -628,10 +636,10 @@ export default function EnhancedGoogleCalendar({
                             draggedBooking?.booking.id === booking.id ? 'dragging opacity-50 transform scale-95' : ''
                           }`}
                           draggable
-                          onClick={(e) => handleBookingClick(e, booking)}
+                          onDoubleClick={(e) => handleBookingDoubleClick(e, booking)}
                           onMouseDown={(e) => handleMouseDown(e, booking)}
                           onDragStart={(e) => e.preventDefault()}
-                          title="Click to edit booking"
+                          title="Double-click to edit booking"
                         >
                           <div className="truncate font-medium">{booking.customerName}</div>
                           <div className="text-xs opacity-75">{booking.guestCount} guests</div>
@@ -709,10 +717,10 @@ export default function EnhancedGoogleCalendar({
                             draggedBooking?.booking.id === booking.id ? 'dragging opacity-50 transform scale-95' : ''
                           }`}
                           draggable
-                          onClick={(e) => handleBookingClick(e, booking)}
+                          onDoubleClick={(e) => handleBookingDoubleClick(e, booking)}
                           onMouseDown={(e) => handleMouseDown(e, booking)}
                           onDragStart={(e) => e.preventDefault()}
-                          title="Click to edit booking"
+                          title="Double-click to edit booking"
                         >
                           {booking.customerName}
                         </div>
