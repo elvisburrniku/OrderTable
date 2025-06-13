@@ -61,7 +61,7 @@ export default function GoogleIntegration() {
   });
 
   const copyBookingUrl = () => {
-    const bookingUrl = googleProfile?.bookingUrl;
+    const bookingUrl = (googleProfile as any)?.bookingUrl;
     if (bookingUrl) {
       navigator.clipboard.writeText(bookingUrl);
       setCopied(true);
@@ -238,7 +238,7 @@ export default function GoogleIntegration() {
                       <AlertDescription>
                         <strong>Recommendations:</strong>
                         <ul className="mt-1 ml-4 list-disc">
-                          {validation.warnings.map((warning, index) => (
+                          {validation.warnings.map((warning: string, index: number) => (
                             <li key={index} className="text-sm">{warning}</li>
                           ))}
                         </ul>
@@ -260,7 +260,7 @@ export default function GoogleIntegration() {
           </Card>
 
           {/* Booking URL */}
-          {googleProfile?.bookingUrl && (
+          {(googleProfile as any)?.bookingUrl && (
             <Card>
               <CardHeader>
                 <CardTitle>My Business Booking Link</CardTitle>
@@ -271,7 +271,7 @@ export default function GoogleIntegration() {
               <CardContent>
                 <div className="flex items-center space-x-2 p-3 bg-gray-50 rounded-lg">
                   <Input 
-                    value={googleProfile.bookingUrl} 
+                    value={(googleProfile as any)?.bookingUrl || ''} 
                     disabled 
                     className="flex-1 text-sm"
                   />
@@ -284,7 +284,7 @@ export default function GoogleIntegration() {
                     {copied ? "Copied" : "Copy"}
                   </Button>
                   <Button 
-                    onClick={() => window.open(googleProfile.bookingUrl, '_blank')}
+                    onClick={() => window.open((googleProfile as any)?.bookingUrl, '_blank')}
                     variant="outline"
                     size="sm"
                   >
