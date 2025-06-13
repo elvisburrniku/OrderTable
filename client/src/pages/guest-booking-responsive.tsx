@@ -140,11 +140,7 @@ export default function GuestBookingResponsive(props: any) {
   const generateCalendarDates = () => {
     const start = startOfMonth(currentMonth);
     const end = endOfMonth(currentMonth);
-    const monthDates = eachDayOfInterval({ start, end });
-    
-    // Filter out past dates (only show today and future dates)
-    const today = startOfDay(new Date());
-    return monthDates.filter(date => date >= today);
+    return eachDayOfInterval({ start, end });
   };
 
   const calendarDates = generateCalendarDates();
@@ -491,12 +487,8 @@ export default function GuestBookingResponsive(props: any) {
                   {/* Empty cells for proper day alignment - Monday first */}
                   {(() => {
                     const firstDayOfMonth = getDay(startOfMonth(currentMonth));
-                    // Debug logging
-                    console.log('First day of month:', format(startOfMonth(currentMonth), 'yyyy-MM-dd'), 'getDay():', firstDayOfMonth);
-                    
                     // Convert to Monday-first: Sunday=0 -> 6, Monday=1 -> 0, Tuesday=2 -> 1, etc.
                     const mondayFirstOffset = firstDayOfMonth === 0 ? 6 : firstDayOfMonth - 1;
-                    console.log('Monday-first offset (empty cells):', mondayFirstOffset);
                     
                     return Array.from({ length: mondayFirstOffset }).map((_, index) => (
                       <div key={`empty-${index}`} className="h-12"></div>
@@ -507,13 +499,10 @@ export default function GuestBookingResponsive(props: any) {
                   {calendarDates.map((date, index) => {
                     const isSelected = selectedDate && format(selectedDate, 'yyyy-MM-dd') === format(date, 'yyyy-MM-dd');
                     const isToday = format(date, 'yyyy-MM-dd') === format(new Date(), 'yyyy-MM-dd');
-                    const isAvailable = isDateAvailable(date);
+                    const isPastDate = date < startOfDay(new Date());
+                    const isAvailable = !isPastDate && isDateAvailable(date);
                     
-                    // Debug logging for June 13th
-                    if (format(date, 'd') === '13') {
-                      const actualPosition = (6 + index) % 7; // 6 empty cells + index, modulo 7 for grid wrap
-                      console.log(`June 13th: date=${format(date, 'yyyy-MM-dd')}, dayOfWeek=${getDay(date)}, index=${index}, actualGridPosition=${actualPosition}`);
-                    }
+
                     
                     return (
                       <button
@@ -522,7 +511,9 @@ export default function GuestBookingResponsive(props: any) {
                         disabled={!isAvailable}
                         className={`
                           h-12 w-full rounded-lg border-2 transition-all duration-200 text-center flex flex-col items-center justify-center
-                          ${!isAvailable
+                          ${isPastDate
+                            ? 'border-gray-200 bg-gray-100 text-gray-400 cursor-not-allowed'
+                            : !isAvailable
                             ? 'border-red-300 bg-red-100 text-red-600 cursor-not-allowed'
                             : isSelected
                             ? 'border-blue-500 bg-blue-500 text-white shadow-lg'
@@ -533,7 +524,8 @@ export default function GuestBookingResponsive(props: any) {
                       >
                         <span className="text-sm font-medium">{format(date, 'd')}</span>
                         {isToday && isAvailable && <span className="text-xs">Today</span>}
-                        {!isAvailable && <span className="text-xs">Closed</span>}
+                        {isPastDate && <span className="text-xs">Past</span>}
+                        {!isAvailable && !isPastDate && <span className="text-xs">Closed</span>}
                       </button>
                     );
                   })}
