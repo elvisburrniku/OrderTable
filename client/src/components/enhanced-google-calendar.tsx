@@ -554,7 +554,12 @@ export default function EnhancedGoogleCalendar({
                   className={`flex items-center space-x-4 p-2 border rounded cursor-pointer transition-all duration-200 ${availabilityColor} ${
                     isDragging ? 'hover:border-blue-300' : ''
                   }`}
-                  onClick={() => openNewBookingDialog(currentDate, timeSlot)}
+                  onClick={(e) => {
+                    // Only open dialog if clicking directly on the container, not on bookings
+                    if (e.target === e.currentTarget) {
+                      openNewBookingDialog(currentDate, timeSlot);
+                    }
+                  }}
                   onMouseUp={(e) => handleMouseUp(e, currentDate, timeSlot)}
                   title={getAvailabilityText(availabilityLevel)}
                 >
@@ -626,7 +631,12 @@ export default function EnhancedGoogleCalendar({
                     <div
                       key={`${date.toISOString()}-${timeSlot}`}
                       className={`p-1 border-l min-h-[60px] cursor-pointer relative ${availabilityColor}`}
-                      onClick={() => openNewBookingDialog(date, timeSlot)}
+                      onClick={(e) => {
+                        // Only open dialog if clicking directly on the container, not on bookings
+                        if (e.target === e.currentTarget) {
+                          openNewBookingDialog(date, timeSlot);
+                        }
+                      }}
                       onMouseUp={(e) => handleMouseUp(e, date, timeSlot)}
                       title={getAvailabilityText(availabilityLevel)}
                     >
@@ -699,10 +709,13 @@ export default function EnhancedGoogleCalendar({
                     } ${isToday(date) ? 'ring-2 ring-blue-500' : ''} ${
                       isDragging ? 'hover:border-blue-300' : ''
                     }`}
-                    onClick={() => {
-                      onDateSelect(date);
-                      setCurrentDate(date);
-                      setView('day');
+                    onClick={(e) => {
+                      // Only change view if clicking directly on the container, not on bookings
+                      if (e.target === e.currentTarget) {
+                        onDateSelect(date);
+                        setCurrentDate(date);
+                        setView('day');
+                      }
                     }}
                     onMouseUp={(e) => handleMouseUp(e, date)}
                     title={getAvailabilityText(availabilityLevel)}
