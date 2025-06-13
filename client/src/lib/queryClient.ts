@@ -85,17 +85,7 @@ export const getQueryFn: <T>(options: {
     }
 
     await throwIfResNotOk(res);
-    
-    // Check if response has content before parsing JSON
-    const text = await res.text();
-    if (!text) return null;
-    
-    try {
-      return JSON.parse(text);
-    } catch (error) {
-      console.error("Failed to parse JSON response:", text);
-      return null;
-    }
+    return await res.json();
   };
 
 export const queryClient = new QueryClient({

@@ -9,7 +9,6 @@ import { Calendar as CalendarIcon, Clock, Users, Grid, List, Filter } from "luci
 import { format, startOfMonth, endOfMonth, eachDayOfInterval, isSameDay, isToday, addMonths, subMonths } from "date-fns";
 import InteractiveBookingCalendar from "@/components/interactive-booking-calendar";
 import GoogleCalendar from "@/components/google-calendar";
-import EnhancedGoogleCalendar from "@/components/enhanced-google-calendar";
 import BookingCalendar from "@/components/booking-calendar";
 
 export default function Calendar() {
@@ -33,7 +32,7 @@ export default function Calendar() {
   });
 
   // Filter bookings for selected date
-  const selectedDateBookings = (bookings as any[]).filter((booking: any) => 
+  const selectedDateBookings = bookings.filter((booking: any) => 
     isSameDay(new Date(booking.bookingDate), selectedDate)
   );
 
@@ -59,11 +58,11 @@ export default function Calendar() {
         );
       case 'google':
         return (
-          <EnhancedGoogleCalendar 
+          <GoogleCalendar 
             selectedDate={selectedDate}
             bookings={selectedDateBookings}
-            allBookings={bookings as any[]}
-            tables={tables as any[]}
+            allBookings={bookings}
+            tables={tables}
             isLoading={bookingsLoading || tablesLoading}
             onDateSelect={setSelectedDate}
           />
@@ -73,8 +72,8 @@ export default function Calendar() {
           <BookingCalendar 
             selectedDate={selectedDate}
             bookings={selectedDateBookings}
-            allBookings={bookings as any[]}
-            tables={tables as any[]}
+            allBookings={bookings}
+            tables={tables}
             isLoading={bookingsLoading || tablesLoading}
             onDateSelect={setSelectedDate}
           />
