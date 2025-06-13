@@ -819,19 +819,73 @@ export class DatabaseStorage implements IStorage {
   }
 
   async getSpecialPeriodsByRestaurant(restaurantId: number): Promise<any> {
-    return [];
+    try {
+      const periods = await this.db
+        .select()
+        .from(specialPeriods)
+        .where(eq(specialPeriods.restaurantId, restaurantId))
+        .orderBy(specialPeriods.startDate);
+      return periods;
+    } catch (error) {
+      console.error("Error fetching special periods:", error);
+      return [];
+    }
   }
 
   async createSpecialPeriod(periodData: any): Promise<any> {
-    throw new Error("Method not implemented");
+    try {
+      const [period] = await this.db
+        .insert(specialPeriods)
+        .values({
+          restaurantId: periodData.restaurantId,
+          tenantId: periodData.tenantId,
+          name: periodData.name,
+          startDate: periodData.startDate,
+          endDate: periodData.endDate,
+          isOpen: periodData.isOpen,
+          openTime: periodData.openTime,
+          closeTime: periodData.closeTime,
+        })
+        .returning();
+      return period;
+    } catch (error) {
+      console.error("Error creating special period:", error);
+      throw new Error("Failed to create special period");
+    }
   }
 
   async updateSpecialPeriod(id: number, updates: any): Promise<any> {
-    throw new Error("Method not implemented");
+    try {
+      const [period] = await this.db
+        .update(specialPeriods)
+        .set({
+          name: updates.name,
+          startDate: updates.startDate,
+          endDate: updates.endDate,
+          isOpen: updates.isOpen,
+          openTime: updates.openTime,
+          closeTime: updates.closeTime,
+          updatedAt: new Date(),
+        })
+        .where(eq(specialPeriods.id, id))
+        .returning();
+      return period;
+    } catch (error) {
+      console.error("Error updating special period:", error);
+      throw new Error("Failed to update special period");
+    }
   }
 
   async deleteSpecialPeriod(id: number): Promise<boolean> {
-    return false;
+    try {
+      await this.db
+        .delete(specialPeriods)
+        .where(eq(specialPeriods.id, id));
+      return true;
+    } catch (error) {
+      console.error("Error deleting special period:", error);
+      return false;
+    }
   }
 
   async getCutOffTimesByRestaurant(restaurantId: number): Promise<any> {
