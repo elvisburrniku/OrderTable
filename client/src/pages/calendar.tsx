@@ -73,8 +73,8 @@ export default function Calendar() {
           <BookingCalendar 
             selectedDate={selectedDate}
             bookings={selectedDateBookings}
-            allBookings={bookings}
-            tables={tables}
+            allBookings={bookings as any[]}
+            tables={tables as any[]}
             isLoading={bookingsLoading || tablesLoading}
             onDateSelect={setSelectedDate}
           />

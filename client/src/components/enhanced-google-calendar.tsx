@@ -315,7 +315,9 @@ export default function EnhancedGoogleCalendar({
               return (
                 <div
                   key={timeSlot}
-                  className="flex items-center space-x-4 p-2 border rounded hover:bg-gray-50 cursor-pointer"
+                  className={`flex items-center space-x-4 p-2 border rounded cursor-pointer transition-all duration-200 ${
+                    isDragging ? 'hover:bg-blue-50 hover:border-blue-300' : 'hover:bg-gray-50'
+                  }`}
                   onClick={() => openNewBookingDialog(currentDate, timeSlot)}
                   onMouseUp={(e) => handleMouseUp(e, currentDate, timeSlot)}
                 >
@@ -382,12 +384,19 @@ export default function EnhancedGoogleCalendar({
                       {slotBookings.map(booking => (
                         <div
                           key={booking.id}
-                          className="p-1 mb-1 bg-blue-100 text-blue-800 rounded text-xs cursor-move"
+                          className={`p-1 mb-1 bg-blue-100 text-blue-800 rounded text-xs cursor-move transition-all duration-200 hover:bg-blue-200 hover:shadow-md ${
+                            draggedBooking?.booking.id === booking.id ? 'opacity-50 transform scale-95' : ''
+                          }`}
                           draggable
                           onMouseDown={(e) => handleMouseDown(e, booking)}
                         >
-                          <div className="truncate">{booking.customerName}</div>
-                          <div className="text-xs">{booking.guestCount} guests</div>
+                          <div className="truncate font-medium">{booking.customerName}</div>
+                          <div className="text-xs opacity-75">{booking.guestCount} guests</div>
+                          {booking.tableId && (
+                            <div className="text-xs opacity-75">
+                              Table {tables.find(t => t.id === booking.tableId)?.tableNumber}
+                            </div>
+                          )}
                         </div>
                       ))}
                     </div>
@@ -429,14 +438,17 @@ export default function EnhancedGoogleCalendar({
                 return (
                   <div
                     key={date.toISOString()}
-                    className={`p-2 border-l first:border-l-0 min-h-[120px] cursor-pointer hover:bg-gray-50 ${
+                    className={`p-2 border-l first:border-l-0 min-h-[120px] cursor-pointer transition-all duration-200 ${
                       !isCurrentMonth ? 'bg-gray-100 text-gray-400' : ''
-                    } ${isToday(date) ? 'bg-blue-50' : ''}`}
+                    } ${isToday(date) ? 'bg-blue-50' : ''} ${
+                      isDragging ? 'hover:bg-blue-50 hover:border-blue-300' : 'hover:bg-gray-50'
+                    }`}
                     onClick={() => {
                       onDateSelect(date);
                       setCurrentDate(date);
                       setView('day');
                     }}
+                    onMouseUp={(e) => handleMouseUp(e, date)}
                   >
                     <div className={`text-sm mb-1 ${isToday(date) ? 'font-bold text-blue-600' : ''}`}>
                       {format(date, 'd')}
@@ -494,9 +506,10 @@ export default function EnhancedGoogleCalendar({
   return (
     <div 
       ref={calendarRef}
-      className="space-y-4"
+      className={`space-y-4 ${isDragging ? 'cursor-grabbing' : ''}`}
       onMouseMove={handleMouseMove}
       onMouseUp={(e) => handleMouseUp(e)}
+      style={{ userSelect: isDragging ? 'none' : 'auto' }}
     >
       {/* Calendar Controls */}
       <div className="flex items-center justify-between">
