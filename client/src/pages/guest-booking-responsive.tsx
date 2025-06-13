@@ -389,7 +389,7 @@ export default function GuestBookingResponsive(props: any) {
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-900 via-blue-900 to-indigo-900">
       {/* Header with Personalized Welcome */}
-      <div className="text-center py-6 md:py-8 px-4">
+      <div className="text-center py-6 md:py-8 px-4 bg-[#431b6d]">
         <div className="mb-4 animate-fade-in">
           <span className="text-4xl md:text-6xl mb-2 block animate-bounce">{welcomeMessage.icon}</span>
           <h1 className="text-xl md:text-2xl lg:text-3xl font-bold text-blue-300 mb-2">
