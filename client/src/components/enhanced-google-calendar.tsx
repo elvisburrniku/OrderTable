@@ -177,6 +177,55 @@ export default function EnhancedGoogleCalendar({
     });
   }, [allBookings]);
 
+  // Calculate availability level for a time slot
+  const getAvailabilityLevel = useCallback((date: Date, timeSlot?: string) => {
+    const slotBookings = getBookingsForSlot(date, timeSlot);
+    const totalCapacity = tables.reduce((sum, table) => sum + table.capacity, 0);
+    const bookedCapacity = slotBookings.reduce((sum, booking) => sum + booking.guestCount, 0);
+    
+    if (totalCapacity === 0) return 'unavailable';
+    
+    const availabilityRatio = (totalCapacity - bookedCapacity) / totalCapacity;
+    
+    if (availabilityRatio >= 0.7) return 'high'; // 70%+ available
+    if (availabilityRatio >= 0.3) return 'medium'; // 30-70% available
+    if (availabilityRatio > 0) return 'low'; // 1-30% available
+    return 'full'; // 0% available
+  }, [getBookingsForSlot, tables]);
+
+  // Get availability color classes
+  const getAvailabilityColor = (level: string) => {
+    switch (level) {
+      case 'high': return 'bg-green-50 border-l-4 border-green-400';
+      case 'medium': return 'bg-yellow-50 border-l-4 border-yellow-400';
+      case 'low': return 'bg-orange-50 border-l-4 border-orange-400';
+      case 'full': return 'bg-red-50 border-l-4 border-red-400';
+      default: return 'bg-gray-50 border-l-4 border-gray-300';
+    }
+  };
+
+  // Get availability indicator dot
+  const getAvailabilityDot = (level: string) => {
+    switch (level) {
+      case 'high': return 'w-2 h-2 bg-green-400 rounded-full';
+      case 'medium': return 'w-2 h-2 bg-yellow-400 rounded-full';
+      case 'low': return 'w-2 h-2 bg-orange-400 rounded-full';
+      case 'full': return 'w-2 h-2 bg-red-400 rounded-full';
+      default: return 'w-2 h-2 bg-gray-300 rounded-full';
+    }
+  };
+
+  // Get availability text
+  const getAvailabilityText = (level: string) => {
+    switch (level) {
+      case 'high': return 'High availability';
+      case 'medium': return 'Medium availability';
+      case 'low': return 'Low availability';
+      case 'full': return 'Fully booked';
+      default: return 'Unavailable';
+    }
+  };
+
   // Update booking mutation
   const updateBookingMutation = useMutation({
     mutationFn: async ({ bookingId, newDate, newTime }: { bookingId: number; newDate: string; newTime: string }) => {
@@ -331,16 +380,22 @@ export default function EnhancedGoogleCalendar({
           <div className="p-4 space-y-2 max-h-96 overflow-y-auto">
             {timeSlots.map(timeSlot => {
               const slotBookings = getBookingsForSlot(currentDate, timeSlot);
+              const availabilityLevel = getAvailabilityLevel(currentDate, timeSlot);
+              const availabilityColor = getAvailabilityColor(availabilityLevel);
               return (
                 <div
                   key={timeSlot}
-                  className={`flex items-center space-x-4 p-2 border rounded cursor-pointer transition-all duration-200 ${
-                    isDragging ? 'hover:bg-blue-50 hover:border-blue-300' : 'hover:bg-gray-50'
+                  className={`flex items-center space-x-4 p-2 border rounded cursor-pointer transition-all duration-200 ${availabilityColor} ${
+                    isDragging ? 'hover:border-blue-300' : ''
                   }`}
                   onClick={() => openNewBookingDialog(currentDate, timeSlot)}
                   onMouseUp={(e) => handleMouseUp(e, currentDate, timeSlot)}
+                  title={getAvailabilityText(availabilityLevel)}
                 >
-                  <div className="w-20 text-sm text-gray-600">{timeSlot}</div>
+                  <div className="w-20 text-sm text-gray-600 flex items-center space-x-2">
+                    <span>{timeSlot}</span>
+                    <div className={getAvailabilityDot(availabilityLevel)}></div>
+                  </div>
                   <div className="flex-1 space-y-1">
                     {slotBookings.map(booking => (
                       <div
@@ -397,12 +452,15 @@ export default function EnhancedGoogleCalendar({
                 <div className="p-2 text-xs text-gray-600 border-r">{timeSlot}</div>
                 {visibleDates.map(date => {
                   const slotBookings = getBookingsForSlot(date, timeSlot);
+                  const availabilityLevel = getAvailabilityLevel(date, timeSlot);
+                  const availabilityColor = getAvailabilityColor(availabilityLevel);
                   return (
                     <div
                       key={`${date.toISOString()}-${timeSlot}`}
-                      className="p-1 border-l min-h-[60px] hover:bg-gray-50 cursor-pointer relative"
+                      className={`p-1 border-l min-h-[60px] cursor-pointer relative ${availabilityColor}`}
                       onClick={() => openNewBookingDialog(date, timeSlot)}
                       onMouseUp={(e) => handleMouseUp(e, date, timeSlot)}
+                      title={getAvailabilityText(availabilityLevel)}
                     >
                       {slotBookings.map(booking => (
                         <div
@@ -459,14 +517,16 @@ export default function EnhancedGoogleCalendar({
               {week.map(date => {
                 const dayBookings = getBookingsForSlot(date);
                 const isCurrentMonth = isSameMonth(date, currentDate);
+                const availabilityLevel = getAvailabilityLevel(date);
+                const availabilityColor = getAvailabilityColor(availabilityLevel);
                 
                 return (
                   <div
                     key={date.toISOString()}
-                    className={`p-2 border-l first:border-l-0 min-h-[120px] cursor-pointer transition-all duration-200 ${
-                      !isCurrentMonth ? 'bg-gray-100 text-gray-400' : ''
-                    } ${isToday(date) ? 'bg-blue-50' : ''} ${
-                      isDragging ? 'hover:bg-blue-50 hover:border-blue-300' : 'hover:bg-gray-50'
+                    className={`p-2 border-l first:border-l-0 min-h-[120px] cursor-pointer transition-all duration-200 ${availabilityColor} ${
+                      !isCurrentMonth ? 'opacity-50' : ''
+                    } ${isToday(date) ? 'ring-2 ring-blue-500' : ''} ${
+                      isDragging ? 'hover:border-blue-300' : ''
                     }`}
                     onClick={() => {
                       onDateSelect(date);
@@ -474,9 +534,11 @@ export default function EnhancedGoogleCalendar({
                       setView('day');
                     }}
                     onMouseUp={(e) => handleMouseUp(e, date)}
+                    title={getAvailabilityText(availabilityLevel)}
                   >
-                    <div className={`text-sm mb-1 ${isToday(date) ? 'font-bold text-blue-600' : ''}`}>
-                      {format(date, 'd')}
+                    <div className={`text-sm mb-1 flex items-center justify-between ${isToday(date) ? 'font-bold text-blue-600' : ''}`}>
+                      <span>{format(date, 'd')}</span>
+                      <div className={getAvailabilityDot(availabilityLevel)}></div>
                     </div>
                     <div className="space-y-1">
                       {dayBookings.slice(0, 3).map(booking => (
@@ -583,6 +645,29 @@ export default function EnhancedGoogleCalendar({
             >
               Month
             </Button>
+          </div>
+        </div>
+      </div>
+
+      {/* Availability Legend */}
+      <div className="px-6 py-3 bg-gray-50 border-b">
+        <div className="flex items-center space-x-6 text-sm">
+          <span className="font-medium text-gray-700">Availability:</span>
+          <div className="flex items-center space-x-2">
+            <div className="w-3 h-3 bg-green-400 rounded-full"></div>
+            <span className="text-gray-600">High (70%+)</span>
+          </div>
+          <div className="flex items-center space-x-2">
+            <div className="w-3 h-3 bg-yellow-400 rounded-full"></div>
+            <span className="text-gray-600">Medium (30-70%)</span>
+          </div>
+          <div className="flex items-center space-x-2">
+            <div className="w-3 h-3 bg-orange-400 rounded-full"></div>
+            <span className="text-gray-600">Low (1-30%)</span>
+          </div>
+          <div className="flex items-center space-x-2">
+            <div className="w-3 h-3 bg-red-400 rounded-full"></div>
+            <span className="text-gray-600">Fully booked</span>
           </div>
         </div>
       </div>
