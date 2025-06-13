@@ -19,6 +19,15 @@ export default function GoogleIntegration() {
   const queryClient = useQueryClient();
   const [copied, setCopied] = useState(false);
 
+  // Generate booking URL automatically
+  const generateBookingUrl = () => {
+    if (!tenant?.id || !restaurant?.id) return '';
+    const currentDomain = window.location.origin;
+    return `${currentDomain}/${tenant.id}/book/${restaurant.id}`;
+  };
+
+  const bookingUrl = generateBookingUrl();
+
   // Fetch Google profile data
   const { data: googleProfile, isLoading } = useQuery({
     queryKey: [`/api/tenants/${tenant?.id}/restaurants/${restaurant?.id}/google/profile`],
@@ -112,7 +121,6 @@ export default function GoogleIntegration() {
   });
 
   const copyBookingUrl = () => {
-    const bookingUrl = (googleProfile as any)?.bookingUrl;
     if (bookingUrl) {
       navigator.clipboard.writeText(bookingUrl);
       setCopied(true);
@@ -132,12 +140,12 @@ export default function GoogleIntegration() {
     return <div>Loading Google integration...</div>;
   }
 
-  const validation = googleProfile?.validation || { isComplete: false, missingFields: [], warnings: [] };
-  const integrationStatus = googleProfile?.googleIntegrationStatus || 'inactive';
+  const validation = (googleProfile as any)?.validation || { isComplete: false, missingFields: [], warnings: [] };
+  const integrationStatus = (googleProfile as any)?.googleIntegrationStatus || 'inactive';
   const isGoogleActive = integrationStatus === 'active';
   const isReadyToActivate = integrationStatus === 'ready_to_activate';
   const isPendingProfile = integrationStatus === 'pending_profile';
-  const isIntegrationEnabled = googleProfile?.isIntegrationEnabled || false;
+  const isIntegrationEnabled = (googleProfile as any)?.isIntegrationEnabled || false;
 
   return (
     <div className="bg-gray-50 min-h-screen">
@@ -402,42 +410,40 @@ export default function GoogleIntegration() {
             </CardContent>
           </Card>
 
-          {/* Booking URL */}
-          {(googleProfile as any)?.bookingUrl && (
-            <Card>
-              <CardHeader>
-                <CardTitle>My Business Booking Link</CardTitle>
-                <p className="text-sm text-gray-600">
-                  Share this link with your customers or use it in your marketing materials. Customers can book directly through this without needing to go through Google.
-                </p>
-              </CardHeader>
-              <CardContent>
-                <div className="flex items-center space-x-2 p-3 bg-gray-50 rounded-lg">
-                  <Input 
-                    value={(googleProfile as any)?.bookingUrl || ''} 
-                    disabled 
-                    className="flex-1 text-sm"
-                  />
-                  <Button 
-                    onClick={copyBookingUrl}
-                    variant="outline"
-                    size="sm"
-                  >
-                    {copied ? <CheckCircle className="w-4 h-4" /> : <Copy className="w-4 h-4" />}
-                    {copied ? "Copied" : "Copy"}
-                  </Button>
-                  <Button 
-                    onClick={() => window.open((googleProfile as any)?.bookingUrl, '_blank')}
-                    variant="outline"
-                    size="sm"
-                  >
-                    <ExternalLink className="w-4 h-4" />
-                    Test
-                  </Button>
-                </div>
-              </CardContent>
-            </Card>
-          )}
+          {/* Booking URL - Always display automatically generated URL */}
+          <Card>
+            <CardHeader>
+              <CardTitle>My Business Booking Link</CardTitle>
+              <p className="text-sm text-gray-600">
+                Share this link with your customers or use it in your marketing materials. Customers can book directly through this without needing to go through Google.
+              </p>
+            </CardHeader>
+            <CardContent>
+              <div className="flex items-center space-x-2 p-3 bg-gray-50 rounded-lg">
+                <Input 
+                  value={bookingUrl} 
+                  disabled 
+                  className="flex-1 text-sm"
+                />
+                <Button 
+                  onClick={copyBookingUrl}
+                  variant="outline"
+                  size="sm"
+                >
+                  {copied ? <CheckCircle className="w-4 h-4" /> : <Copy className="w-4 h-4" />}
+                  {copied ? "Copied" : "Copy"}
+                </Button>
+                <Button 
+                  onClick={() => window.open(bookingUrl, '_blank')}
+                  variant="outline"
+                  size="sm"
+                >
+                  <ExternalLink className="w-4 h-4" />
+                  Test
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
 
           {/* Important Notes */}
           <Card>
