@@ -23,7 +23,7 @@ export default function GoogleIntegration() {
   const generateBookingUrl = () => {
     if (!tenant?.id || !restaurant?.id) return '';
     const currentDomain = window.location.origin;
-    return `${currentDomain}/${tenant.id}/book/${restaurant.id}`;
+    return `${currentDomain}/guest-booking/${tenant.id}/${restaurant.id}`;
   };
 
   const bookingUrl = generateBookingUrl();
