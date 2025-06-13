@@ -235,12 +235,28 @@ export class MemoryStorage implements IStorage {
     return newUser;
   }
 
+  async getAllUsers(): Promise<User[]> {
+    return this.users;
+  }
+
   async updateUser(id: number, updates: Partial<User>): Promise<User | undefined> {
     const index = this.users.findIndex(u => u.id === id);
     if (index === -1) return undefined;
     
     this.users[index] = { ...this.users[index], ...updates };
     return this.users[index];
+  }
+
+  async deleteUserAccount(userId: number): Promise<void> {
+    const userIndex = this.users.findIndex(u => u.id === userId);
+    if (userIndex !== -1) {
+      this.users.splice(userIndex, 1);
+    }
+    
+    // Remove related data
+    this.restaurants = this.restaurants.filter(r => r.userId !== userId);
+    this.tenantUsers = this.tenantUsers.filter(tu => tu.userId !== userId);
+    this.userSubscriptions = this.userSubscriptions.filter(us => us.userId !== userId);
   }
 
   // Tenants
@@ -266,6 +282,10 @@ export class MemoryStorage implements IStorage {
 
   async getTenantByStripeCustomerId(stripeCustomerId: string): Promise<any> {
     return this.tenants.find(t => t.stripeCustomerId === stripeCustomerId);
+  }
+
+  async getAllTenants(): Promise<any[]> {
+    return this.tenants;
   }
 
   async updateTenant(id: number, updates: any): Promise<any> {

@@ -741,6 +741,8 @@ export class BrevoEmailService {
       currency?: string;
     }
   ) {
+    if (!this.checkEnabled()) return;
+    
     const sendSmtpEmail = new SendSmtpEmail();
     
     const actionText = {
