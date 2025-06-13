@@ -325,11 +325,13 @@ export default function EnhancedGoogleCalendar({
     setIsEditBookingOpen(true);
   }, []);
 
-  // Single click handler (for drag functionality)
+  // Single click handler - now opens edit dialog
   const handleBookingClick = useCallback((e: React.MouseEvent, booking: Booking) => {
     e.stopPropagation();
     e.preventDefault();
-    // Prevent booking creation modal from opening when clicking on bookings
+    // Open edit dialog on single click
+    setEditingBooking(booking);
+    setIsEditBookingOpen(true);
   }, []);
 
   // Enhanced drag and drop handlers with smooth initialization
@@ -577,7 +579,6 @@ export default function EnhancedGoogleCalendar({
                         }`}
                         draggable
                         onClick={(e) => handleBookingClick(e, booking)}
-                        onDoubleClick={(e) => handleBookingDoubleClick(e, booking)}
                         onMouseDown={(e) => handleMouseDown(e, booking)}
                         onDragStart={(e) => e.preventDefault()}
                       >
@@ -649,10 +650,9 @@ export default function EnhancedGoogleCalendar({
                           }`}
                           draggable
                           onClick={(e) => handleBookingClick(e, booking)}
-                          onDoubleClick={(e) => handleBookingDoubleClick(e, booking)}
                           onMouseDown={(e) => handleMouseDown(e, booking)}
                           onDragStart={(e) => e.preventDefault()}
-                          title="Double-click to edit booking"
+                          title="Click to edit booking"
                         >
                           <div className="truncate font-medium">{booking.customerName}</div>
                           <div className="text-xs opacity-75">{booking.guestCount} guests</div>
@@ -734,10 +734,9 @@ export default function EnhancedGoogleCalendar({
                           }`}
                           draggable
                           onClick={(e) => handleBookingClick(e, booking)}
-                          onDoubleClick={(e) => handleBookingDoubleClick(e, booking)}
                           onMouseDown={(e) => handleMouseDown(e, booking)}
                           onDragStart={(e) => e.preventDefault()}
-                          title="Double-click to edit booking"
+                          title="Click to edit booking"
                         >
                           {booking.customerName}
                         </div>
