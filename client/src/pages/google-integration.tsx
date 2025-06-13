@@ -61,8 +61,9 @@ export default function GoogleIntegration() {
   });
 
   const copyBookingUrl = () => {
-    if (googleProfile?.bookingUrl) {
-      navigator.clipboard.writeText(googleProfile.bookingUrl);
+    const bookingUrl = googleProfile?.bookingUrl;
+    if (bookingUrl) {
+      navigator.clipboard.writeText(bookingUrl);
       setCopied(true);
       setTimeout(() => setCopied(false), 2000);
       toast({
@@ -80,7 +81,7 @@ export default function GoogleIntegration() {
     return <div>Loading Google integration...</div>;
   }
 
-  const validation = googleProfile?.validation;
+  const validation = googleProfile?.validation || { isComplete: false, missingFields: [], warnings: [] };
   const isGoogleActive = googleProfile?.googleIntegrationStatus === 'active';
 
   return (
@@ -153,7 +154,7 @@ export default function GoogleIntegration() {
                       Restaurant Name
                     </Label>
                     <Input 
-                      value={googleProfile?.restaurant?.name || ''} 
+                      value={(googleProfile as any)?.restaurant?.name || ''} 
                       disabled 
                       className="bg-gray-50"
                     />
@@ -165,7 +166,7 @@ export default function GoogleIntegration() {
                       Phone Number
                     </Label>
                     <Input 
-                      value={googleProfile?.restaurant?.phone || ''} 
+                      value={(googleProfile as any)?.restaurant?.phone || ''} 
                       disabled 
                       className="bg-gray-50"
                     />
@@ -177,7 +178,7 @@ export default function GoogleIntegration() {
                       Address
                     </Label>
                     <Input 
-                      value={googleProfile?.restaurant?.address || ''} 
+                      value={(googleProfile as any)?.restaurant?.address || ''} 
                       disabled 
                       className="bg-gray-50"
                     />
@@ -189,7 +190,7 @@ export default function GoogleIntegration() {
                       Email
                     </Label>
                     <Input 
-                      value={googleProfile?.restaurant?.email || ''} 
+                      value={(googleProfile as any)?.restaurant?.email || ''} 
                       disabled 
                       className="bg-gray-50"
                     />
@@ -201,7 +202,7 @@ export default function GoogleIntegration() {
                       Website
                     </Label>
                     <Input 
-                      value={googleProfile?.restaurant?.website || ''} 
+                      value={(googleProfile as any)?.restaurant?.website || ''} 
                       disabled 
                       className="bg-gray-50"
                     />
@@ -210,7 +211,7 @@ export default function GoogleIntegration() {
                   <div className="space-y-2 md:col-span-2">
                     <Label>Description</Label>
                     <Textarea 
-                      value={googleProfile?.restaurant?.description || ''} 
+                      value={(googleProfile as any)?.restaurant?.description || ''} 
                       disabled 
                       className="bg-gray-50"
                       rows={3}

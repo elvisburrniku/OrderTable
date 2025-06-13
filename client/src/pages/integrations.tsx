@@ -284,7 +284,7 @@ export default function Integrations() {
                                       disabled={saveConfigMutation.isPending}
                                     />
                                     <a 
-                                      href={`/${tenant.id}/integrations/${integration.id}`}
+                                      href={integration.id === 'google' ? `/${tenant.id}/integrations/google` : `/${tenant.id}/integrations/${integration.id}`}
                                       className="text-gray-400 hover:text-gray-600"
                                     >
                                       <Settings className="w-4 h-4" />

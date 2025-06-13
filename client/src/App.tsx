@@ -39,7 +39,7 @@ import FeedbackResponses from "./pages/feedback-responses";
 import OpeningHours from "./pages/opening-hours";
 import Integrations from "./pages/integrations";
 import ActiveCampaignIntegration from "./pages/integrations/activecampaign";
-import GoogleIntegration from "./pages/integrations/google";
+import GoogleIntegration from "./pages/google-integration";
 import KlaviyoIntegration from "./pages/integrations/klaviyo";
 import MailchimpIntegration from "./pages/integrations/mailchimp";
 import MetaIntegration from "./pages/integrations/meta";
