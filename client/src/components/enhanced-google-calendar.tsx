@@ -184,7 +184,17 @@ export default function EnhancedGoogleCalendar({
         bookingDate: newDate,
         startTime: newTime
       });
-      return response.json();
+      
+      // Check if response has content before parsing JSON
+      const text = await response.text();
+      if (!text) return { success: true };
+      
+      try {
+        return JSON.parse(text);
+      } catch (error) {
+        console.error("Failed to parse JSON response:", text);
+        return { success: true }; // Assume success if response is not JSON
+      }
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: [`/api/tenants/${restaurant?.tenantId}/restaurants/${restaurant?.id}/bookings`] });
