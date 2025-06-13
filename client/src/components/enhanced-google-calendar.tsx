@@ -581,13 +581,10 @@ export default function EnhancedGoogleCalendar({
                         }`}
                         draggable
                         onClick={(e) => {
-                          // Only handle click if not dragging
-                          if (!draggedBooking) {
-                            e.stopPropagation();
-                            e.preventDefault();
-                            setEditingBooking(booking);
-                            setIsEditBookingOpen(true);
-                          }
+                          e.stopPropagation();
+                          e.preventDefault();
+                          setEditingBooking(booking);
+                          setIsEditBookingOpen(true);
                         }}
                         onMouseDown={(e) => handleMouseDown(e, booking)}
                         onDragStart={(e) => e.preventDefault()}
@@ -660,13 +657,10 @@ export default function EnhancedGoogleCalendar({
                           }`}
                           draggable
                           onClick={(e) => {
-                            // Only handle click if not dragging
-                            if (!draggedBooking) {
-                              e.stopPropagation();
-                              e.preventDefault();
-                              setEditingBooking(booking);
-                              setIsEditBookingOpen(true);
-                            }
+                            e.stopPropagation();
+                            e.preventDefault();
+                            setEditingBooking(booking);
+                            setIsEditBookingOpen(true);
                           }}
                           onMouseDown={(e) => handleMouseDown(e, booking)}
                           onDragStart={(e) => e.preventDefault()}
@@ -752,13 +746,10 @@ export default function EnhancedGoogleCalendar({
                           }`}
                           draggable
                           onClick={(e) => {
-                            // Only handle click if not dragging
-                            if (!draggedBooking) {
-                              e.stopPropagation();
-                              e.preventDefault();
-                              setEditingBooking(booking);
-                              setIsEditBookingOpen(true);
-                            }
+                            e.stopPropagation();
+                            e.preventDefault();
+                            setEditingBooking(booking);
+                            setIsEditBookingOpen(true);
                           }}
                           onMouseDown={(e) => handleMouseDown(e, booking)}
                           onDragStart={(e) => e.preventDefault()}
