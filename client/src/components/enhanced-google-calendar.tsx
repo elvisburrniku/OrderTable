@@ -1,4 +1,4 @@
-import { useState, useMemo, useCallback, useRef, memo } from "react";
+import { useState, useMemo, useCallback, useRef } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -32,9 +32,7 @@ import {
   setHours,
   setMinutes,
   isSameMonth,
-  isWeekend,
-  addMinutes,
-  parse
+  isWeekend
 } from "date-fns";
 import { ChevronLeft, ChevronRight, Plus, Calendar, Clock, Users, Settings, Grid, List } from "lucide-react";
 import { Booking, Table as TableType } from "@shared/schema";
@@ -72,19 +70,10 @@ export default function EnhancedGoogleCalendar({
   const [view, setView] = useState<ViewType>('week');
   const [currentDate, setCurrentDate] = useState(selectedDate);
   const [isNewBookingOpen, setIsNewBookingOpen] = useState(false);
-  const [isEditBookingOpen, setIsEditBookingOpen] = useState(false);
   const [selectedTimeSlot, setSelectedTimeSlot] = useState<{ date: Date; time: string } | null>(null);
-  const [editingBooking, setEditingBooking] = useState<Booking | null>(null);
+  const [draggedBooking, setDraggedBooking] = useState<DraggedBooking | null>(null);
   const [isDragging, setIsDragging] = useState(false);
-  const [draggedBooking, setDraggedBooking] = useState<{
-    booking: Booking;
-    offset: { x: number; y: number };
-  } | null>(null);
-  
   const calendarRef = useRef<HTMLDivElement>(null);
-  const dragStartTime = useRef<number>(0);
-  const dragStartPos = useRef<{ x: number; y: number }>({ x: 0, y: 0 });
-  const clickTimeout = useRef<NodeJS.Timeout | null>(null);
 
   // Fetch opening hours
   const { data: openingHours = [] } = useQuery({
@@ -175,104 +164,27 @@ export default function EnhancedGoogleCalendar({
     setCurrentDate(new Date());
   }, []);
 
-  // Memoized booking calculations for performance
-  const bookingsByDate = useMemo(() => {
-    const grouped = new Map<string, Booking[]>();
-    allBookings.forEach(booking => {
-      const dateKey = format(new Date(booking.bookingDate), 'yyyy-MM-dd');
-      if (!grouped.has(dateKey)) {
-        grouped.set(dateKey, []);
-      }
-      grouped.get(dateKey)!.push(booking);
-    });
-    return grouped;
-  }, [allBookings]);
-
-  const bookingsByTimeSlot = useMemo(() => {
-    const grouped = new Map<string, Booking[]>();
-    allBookings.forEach(booking => {
-      const dateKey = format(new Date(booking.bookingDate), 'yyyy-MM-dd');
-      const timeKey = `${dateKey}-${booking.startTime?.substring(0, 5)}`;
-      if (!grouped.has(timeKey)) {
-        grouped.set(timeKey, []);
-      }
-      grouped.get(timeKey)!.push(booking);
-    });
-    return grouped;
-  }, [allBookings]);
-
-  const totalCapacity = useMemo(() => {
-    return tables.reduce((sum, table) => sum + table.capacity, 0);
-  }, [tables]);
-
   // Get bookings for a specific date and time slot
   const getBookingsForSlot = useCallback((date: Date, timeSlot?: string) => {
-    const dateKey = format(date, 'yyyy-MM-dd');
-    
-    if (timeSlot) {
-      const timeKey = `${dateKey}-${timeSlot}`;
-      return bookingsByTimeSlot.get(timeKey) || [];
-    }
-    
-    return bookingsByDate.get(dateKey) || [];
-  }, [bookingsByDate, bookingsByTimeSlot]);
-
-  // Calculate availability level for a time slot
-  const getAvailabilityLevel = useCallback((date: Date, timeSlot?: string) => {
-    const slotBookings = getBookingsForSlot(date, timeSlot);
-    const bookedCapacity = slotBookings.reduce((sum, booking) => sum + booking.guestCount, 0);
-    
-    if (totalCapacity === 0) return 'unavailable';
-    
-    const availabilityRatio = (totalCapacity - bookedCapacity) / totalCapacity;
-    
-    if (availabilityRatio >= 0.7) return 'high'; // 70%+ available
-    if (availabilityRatio >= 0.3) return 'medium'; // 30-70% available
-    if (availabilityRatio > 0) return 'low'; // 1-30% available
-    return 'full'; // 0% available
-  }, [getBookingsForSlot, totalCapacity]);
-
-  // Get availability color classes
-  const getAvailabilityColor = (level: string) => {
-    switch (level) {
-      case 'high': return 'bg-green-50 border-l-4 border-green-400';
-      case 'medium': return 'bg-yellow-50 border-l-4 border-yellow-400';
-      case 'low': return 'bg-orange-50 border-l-4 border-orange-400';
-      case 'full': return 'bg-red-50 border-l-4 border-red-400';
-      default: return 'bg-gray-50 border-l-4 border-gray-300';
-    }
-  };
-
-  // Get availability indicator dot
-  const getAvailabilityDot = (level: string) => {
-    switch (level) {
-      case 'high': return 'w-2 h-2 bg-green-400 rounded-full';
-      case 'medium': return 'w-2 h-2 bg-yellow-400 rounded-full';
-      case 'low': return 'w-2 h-2 bg-orange-400 rounded-full';
-      case 'full': return 'w-2 h-2 bg-red-400 rounded-full';
-      default: return 'w-2 h-2 bg-gray-300 rounded-full';
-    }
-  };
-
-  // Get availability text
-  const getAvailabilityText = (level: string) => {
-    switch (level) {
-      case 'high': return 'High availability';
-      case 'medium': return 'Medium availability';
-      case 'low': return 'Low availability';
-      case 'full': return 'Fully booked';
-      default: return 'Unavailable';
-    }
-  };
+    return allBookings.filter(booking => {
+      const bookingDate = new Date(booking.bookingDate);
+      const isSameDate = isSameDay(bookingDate, date);
+      
+      if (!timeSlot) return isSameDate;
+      
+      const bookingTime = booking.startTime?.substring(0, 5);
+      return isSameDate && bookingTime === timeSlot;
+    });
+  }, [allBookings]);
 
   // Update booking mutation
   const updateBookingMutation = useMutation({
     mutationFn: async ({ bookingId, newDate, newTime }: { bookingId: number; newDate: string; newTime: string }) => {
-      const response = await apiRequest("PUT", `/api/tenants/${restaurant?.tenantId}/restaurants/${restaurant?.id}/bookings/${bookingId}`, {
+      const response = await apiRequest("PATCH", `/api/tenants/${restaurant?.tenantId}/restaurants/${restaurant?.id}/bookings/${bookingId}`, {
         bookingDate: newDate,
         startTime: newTime
       });
-      return response;
+      return response.json();
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: [`/api/tenants/${restaurant?.tenantId}/restaurants/${restaurant?.id}/bookings`] });
@@ -290,155 +202,69 @@ export default function EnhancedGoogleCalendar({
     }
   });
 
-  // Edit booking mutation
-  const editBookingMutation = useMutation({
-    mutationFn: async (updatedData: Partial<Booking>) => {
-      if (!editingBooking) throw new Error("No booking selected for editing");
-      const response = await apiRequest("PUT", `/api/tenants/${restaurant?.tenantId}/restaurants/${restaurant?.id}/bookings/${editingBooking.id}`, updatedData);
-      return response;
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: [`/api/tenants/${restaurant?.tenantId}/restaurants/${restaurant?.id}/bookings`] });
-      setIsEditBookingOpen(false);
-      setEditingBooking(null);
-      toast({
-        title: "Booking Updated",
-        description: "Booking has been updated successfully."
-      });
-    },
-    onError: (error: any) => {
-      toast({
-        title: "Error",
-        description: error.message || "Failed to update booking",
-        variant: "destructive"
-      });
-    }
-  });
-
-  // Double-click handler for editing bookings
-  const handleBookingDoubleClick = useCallback((e: React.MouseEvent, booking: Booking) => {
-    e.stopPropagation();
-    e.preventDefault();
-    setEditingBooking(booking);
-    setIsEditBookingOpen(true);
-  }, []);
-
-  // Single click handler - now opens edit dialog
-  const handleBookingClick = useCallback((e: React.MouseEvent, booking: Booking) => {
-    e.stopPropagation();
-    e.preventDefault();
-    console.log('Booking clicked, opening edit dialog for:', booking.customerName);
-    // Open edit dialog on single click
-    setEditingBooking(booking);
-    setIsEditBookingOpen(true);
-    return false; // Ensure no propagation
-  }, []);
-
-  // Drag handlers that work with click-to-edit
+  // Drag and drop handlers
   const handleMouseDown = useCallback((e: React.MouseEvent, booking: Booking) => {
-    const startX = e.clientX;
-    const startY = e.clientY;
-    dragStartTime.current = Date.now();
-    dragStartPos.current = { x: startX, y: startY };
-    
-    // Clear any existing click timeout
-    if (clickTimeout.current) {
-      clearTimeout(clickTimeout.current);
-      clickTimeout.current = null;
-    }
-    
-    const handleMouseMove = (moveEvent: MouseEvent) => {
-      const deltaX = Math.abs(moveEvent.clientX - startX);
-      const deltaY = Math.abs(moveEvent.clientY - startY);
-      const distance = Math.sqrt(deltaX * deltaX + deltaY * deltaY);
-      
-      // If moved more than 5px, start dragging
-      if (distance > 5 && !isDragging) {
-        setIsDragging(true);
-        setDraggedBooking({
-          booking,
-          offset: { x: deltaX, y: deltaY }
-        });
-        
-        const dragElement = e.currentTarget as HTMLElement;
-        dragElement.style.opacity = '0.7';
-        dragElement.style.transform = 'scale(1.05)';
-        dragElement.style.zIndex = '1000';
-        dragElement.style.pointerEvents = 'none';
-      }
-      
-      // Update drag position
-      if (isDragging && draggedBooking) {
-        const dragElement = document.querySelector(`[data-booking-id="${booking.id}"]`) as HTMLElement;
-        if (dragElement) {
-          dragElement.style.transform = `translate(${deltaX}px, ${deltaY}px) scale(1.05)`;
-        }
-      }
-    };
-    
-    const handleMouseUp = () => {
-      document.removeEventListener('mousemove', handleMouseMove);
-      document.removeEventListener('mouseup', handleMouseUp);
-      
-      const duration = Date.now() - dragStartTime.current;
-      const deltaX = Math.abs(e.clientX - dragStartPos.current.x);
-      const deltaY = Math.abs(e.clientY - dragStartPos.current.y);
-      const distance = Math.sqrt(deltaX * deltaX + deltaY * deltaY);
-      
-      // If it was a quick click (less than 200ms) or minimal movement, treat as click
-      if (duration < 200 && distance < 5) {
-        console.log('Quick click detected, opening edit dialog');
-        setEditingBooking(booking);
-        setIsEditBookingOpen(true);
-      } else if (isDragging) {
-        // Handle drop logic here
-        console.log('Drag completed for booking:', booking.customerName);
-        // Reset drag state
-        const dragElement = document.querySelector(`[data-booking-id="${booking.id}"]`) as HTMLElement;
-        if (dragElement) {
-          dragElement.style.opacity = '';
-          dragElement.style.transform = '';
-          dragElement.style.zIndex = '';
-          dragElement.style.pointerEvents = '';
-        }
-      }
-      
-      setIsDragging(false);
-      setDraggedBooking(null);
-    };
-    
-    document.addEventListener('mousemove', handleMouseMove);
-    document.addEventListener('mouseup', handleMouseUp);
-  }, [isDragging, draggedBooking]);
+    e.preventDefault();
+    const rect = calendarRef.current?.getBoundingClientRect();
+    if (!rect) return;
 
-  // Add drop zone detection for proper drag and drop
-  const handleDrop = useCallback((targetDate: Date, targetTime?: string) => {
+    setDraggedBooking({
+      booking,
+      dragStart: { x: e.clientX - rect.left, y: e.clientY - rect.top },
+      initialDate: new Date(booking.bookingDate),
+      initialTime: booking.startTime || ''
+    });
+    setIsDragging(true);
+  }, []);
+
+  const handleMouseMove = useCallback((e: React.MouseEvent) => {
     if (!isDragging || !draggedBooking) return;
     
-    const newDateStr = format(targetDate, 'yyyy-MM-dd');
-    const currentDateStr = format(new Date(draggedBooking.booking.bookingDate), 'yyyy-MM-dd');
+    // Prevent default to avoid text selection during drag
+    e.preventDefault();
     
-    // Check if anything actually changed
-    if (newDateStr !== currentDateStr || (targetTime && targetTime !== draggedBooking.booking.startTime)) {
-      console.log(`Moving booking ${draggedBooking.booking.customerName} to ${newDateStr} at ${targetTime || draggedBooking.booking.startTime}`);
-      
-      const updatedBooking = {
-        ...draggedBooking.booking,
-        bookingDate: new Date(newDateStr),
-        startTime: targetTime || draggedBooking.booking.startTime,
-        endTime: targetTime ? addMinutes(parse(targetTime, 'HH:mm', new Date()), 60).toLocaleTimeString('en-US', { 
-          hour12: false, 
-          hour: '2-digit', 
-          minute: '2-digit' 
-        }) : draggedBooking.booking.endTime
-      };
-      
-      editBookingMutation.mutate(updatedBooking);
+    const rect = calendarRef.current?.getBoundingClientRect();
+    if (!rect) return;
+    
+    const x = e.clientX - rect.left;
+    const y = e.clientY - rect.top;
+    
+    // Add visual feedback for drag position
+    const dragElement = document.querySelector(`[data-booking-id="${draggedBooking.booking.id}"]`) as HTMLElement;
+    if (dragElement) {
+      dragElement.style.transform = `translate(${x - draggedBooking.dragStart.x}px, ${y - draggedBooking.dragStart.y}px)`;
+      dragElement.style.zIndex = '1000';
     }
+  }, [isDragging, draggedBooking]);
+
+  const handleMouseUp = useCallback((e: React.MouseEvent, targetDate?: Date, targetTime?: string) => {
+    if (!isDragging || !draggedBooking) return;
     
     setIsDragging(false);
+    
+    // Reset drag element styles
+    const dragElement = document.querySelector(`[data-booking-id="${draggedBooking.booking.id}"]`) as HTMLElement;
+    if (dragElement) {
+      dragElement.style.transform = '';
+      dragElement.style.zIndex = '';
+    }
+    
+    if (targetDate && targetTime) {
+      // Only update if date/time actually changed
+      const originalDate = format(draggedBooking.initialDate, 'yyyy-MM-dd');
+      const newDate = format(targetDate, 'yyyy-MM-dd');
+      
+      if (originalDate !== newDate || draggedBooking.initialTime !== targetTime) {
+        updateBookingMutation.mutate({
+          bookingId: draggedBooking.booking.id,
+          newDate: newDate,
+          newTime: targetTime
+        });
+      }
+    }
+    
     setDraggedBooking(null);
-  }, [isDragging, draggedBooking, editBookingMutation]);
+  }, [isDragging, draggedBooking, updateBookingMutation]);
 
   // Create booking mutation
   const createBookingMutation = useMutation({
@@ -478,7 +304,6 @@ export default function EnhancedGoogleCalendar({
     
     createBookingMutation.mutate({
       ...newBooking,
-      tableId: newBooking.tableId ? parseInt(newBooking.tableId, 10) : null,
       bookingDate: format(selectedTimeSlot.date, 'yyyy-MM-dd'),
       bookingTime: selectedTimeSlot.time,
       restaurantId: restaurant?.id,
@@ -488,19 +313,6 @@ export default function EnhancedGoogleCalendar({
 
   const openNewBookingDialog = (date: Date, time: string) => {
     setSelectedTimeSlot({ date, time });
-    
-    // Calculate end time (1 hour later)
-    const [hours, minutes] = time.split(':').map(Number);
-    const endHour = hours + 1;
-    const endTime = `${endHour.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}`;
-    
-    // Update the booking form with the clicked time
-    setNewBooking(prev => ({
-      ...prev,
-      startTime: time,
-      endTime: endTime
-    }));
-    
     setIsNewBookingOpen(true);
   };
 
@@ -519,55 +331,28 @@ export default function EnhancedGoogleCalendar({
           <div className="p-4 space-y-2 max-h-96 overflow-y-auto">
             {timeSlots.map(timeSlot => {
               const slotBookings = getBookingsForSlot(currentDate, timeSlot);
-              const availabilityLevel = getAvailabilityLevel(currentDate, timeSlot);
-              const availabilityColor = getAvailabilityColor(availabilityLevel);
               return (
                 <div
                   key={timeSlot}
-                  className={`flex items-center space-x-4 p-2 border rounded cursor-pointer transition-all duration-200 ${availabilityColor} ${
-                    isDragging ? 'hover:border-blue-300' : ''
+                  className={`flex items-center space-x-4 p-2 border rounded cursor-pointer transition-all duration-200 ${
+                    isDragging ? 'hover:bg-blue-50 hover:border-blue-300' : 'hover:bg-gray-50'
                   }`}
-                  onClick={(e) => {
-                    // Only open dialog if clicking directly on the container, not on bookings
-                    if (e.target === e.currentTarget) {
-                      openNewBookingDialog(currentDate, timeSlot);
-                    }
-                  }}
-                  onMouseUp={(e) => {
-                    if (isDragging && draggedBooking) {
-                      e.preventDefault();
-                      handleDrop(currentDate, timeSlot);
-                    }
-                  }}
-                  title={getAvailabilityText(availabilityLevel)}
+                  onClick={() => openNewBookingDialog(currentDate, timeSlot)}
+                  onMouseUp={(e) => handleMouseUp(e, currentDate, timeSlot)}
                 >
-                  <div className="w-20 text-sm text-gray-600 flex items-center space-x-2">
-                    <span>{timeSlot}</span>
-                    <div className={getAvailabilityDot(availabilityLevel)}></div>
-                  </div>
+                  <div className="w-20 text-sm text-gray-600">{timeSlot}</div>
                   <div className="flex-1 space-y-1">
                     {slotBookings.map(booking => (
                       <div
                         key={booking.id}
-                        data-booking-id={booking.id}
-                        className={`flex items-center space-x-2 p-2 bg-blue-100 text-blue-800 rounded text-sm cursor-pointer transition-all duration-300 ease-out hover:bg-blue-200 hover:shadow-lg hover:scale-105 hover:-translate-y-1 hover:rotate-1 active:scale-95 active:rotate-0`}
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          e.preventDefault();
-                          console.log('Day view booking clicked:', booking);
-                          setEditingBooking(booking);
-                          setIsEditBookingOpen(true);
-                          console.log('Day view edit dialog should open');
-                        }}
+                        className="flex items-center space-x-2 p-2 bg-blue-100 text-blue-800 rounded text-sm cursor-move"
+                        draggable
+                        onMouseDown={(e) => handleMouseDown(e, booking)}
                       >
                         <Users className="w-4 h-4" />
-                        <span>
-                          {booking.customerName} ({booking.guestCount} guests)
-                        </span>
+                        <span>{booking.customerName} ({booking.guestCount} guests)</span>
                         {booking.tableId && (
-                          <Badge variant="outline">
-                            Table {tables.find(t => t.id === booking.tableId)?.tableNumber}
-                          </Badge>
+                          <Badge variant="outline">Table {tables.find(t => t.id === booking.tableId)?.tableNumber}</Badge>
                         )}
                       </div>
                     ))}
@@ -608,40 +393,24 @@ export default function EnhancedGoogleCalendar({
                 <div className="p-2 text-xs text-gray-600 border-r">{timeSlot}</div>
                 {visibleDates.map(date => {
                   const slotBookings = getBookingsForSlot(date, timeSlot);
-                  const availabilityLevel = getAvailabilityLevel(date, timeSlot);
-                  const availabilityColor = getAvailabilityColor(availabilityLevel);
                   return (
                     <div
                       key={`${date.toISOString()}-${timeSlot}`}
-                      className={`p-1 border-l min-h-[60px] cursor-pointer relative ${availabilityColor}`}
-                      onClick={(e) => {
-                        // Only open dialog if clicking directly on the container, not on bookings
-                        if (e.target === e.currentTarget) {
-                          openNewBookingDialog(date, timeSlot);
-                        }
-                      }}
-                      onMouseUp={(e) => {
-                        if (isDragging && draggedBooking) {
-                          e.preventDefault();
-                          handleDrop(date, timeSlot);
-                        }
-                      }}
-                      title={getAvailabilityText(availabilityLevel)}
+                      className="p-1 border-l min-h-[60px] hover:bg-gray-50 cursor-pointer relative"
+                      onClick={() => openNewBookingDialog(date, timeSlot)}
+                      onMouseUp={(e) => handleMouseUp(e, date, timeSlot)}
                     >
                       {slotBookings.map(booking => (
                         <div
                           key={booking.id}
-                          data-booking-id={booking.id}
-                          className={`booking-card p-1 mb-1 bg-blue-100 text-blue-800 rounded text-xs cursor-pointer transition-all duration-300 ease-out hover:bg-blue-200 hover:shadow-lg hover:scale-110 hover:-translate-y-1 hover:rotate-2 active:scale-95 active:rotate-0`}
+                          className={`p-1 mb-1 bg-blue-100 text-blue-800 rounded text-xs cursor-move transition-all duration-200 hover:bg-blue-200 hover:shadow-md ${
+                            draggedBooking?.booking.id === booking.id ? 'opacity-50 transform scale-95' : ''
+                          }`}
+                          draggable
                           onMouseDown={(e) => handleMouseDown(e, booking)}
-                          title="Click to edit booking"
                         >
-                          <div className="truncate font-medium">
-                            {booking.customerName}
-                          </div>
-                          <div className="text-xs opacity-75">
-                            {booking.guestCount} guests
-                          </div>
+                          <div className="truncate font-medium">{booking.customerName}</div>
+                          <div className="text-xs opacity-75">{booking.guestCount} guests</div>
                           {booking.tableId && (
                             <div className="text-xs opacity-75">
                               Table {tables.find(t => t.id === booking.tableId)?.tableNumber}
@@ -684,49 +453,34 @@ export default function EnhancedGoogleCalendar({
               {week.map(date => {
                 const dayBookings = getBookingsForSlot(date);
                 const isCurrentMonth = isSameMonth(date, currentDate);
-                const availabilityLevel = getAvailabilityLevel(date);
-                const availabilityColor = getAvailabilityColor(availabilityLevel);
                 
                 return (
                   <div
                     key={date.toISOString()}
-                    className={`p-2 border-l first:border-l-0 min-h-[120px] cursor-pointer transition-all duration-200 ${availabilityColor} ${
-                      !isCurrentMonth ? 'opacity-50' : ''
-                    } ${isToday(date) ? 'ring-2 ring-blue-500' : ''} ${
-                      isDragging ? 'hover:border-blue-300' : ''
+                    className={`p-2 border-l first:border-l-0 min-h-[120px] cursor-pointer transition-all duration-200 ${
+                      !isCurrentMonth ? 'bg-gray-100 text-gray-400' : ''
+                    } ${isToday(date) ? 'bg-blue-50' : ''} ${
+                      isDragging ? 'hover:bg-blue-50 hover:border-blue-300' : 'hover:bg-gray-50'
                     }`}
-                    onClick={(e) => {
-                      // Only change view if clicking directly on the container, not on bookings
-                      if (e.target === e.currentTarget) {
-                        onDateSelect(date);
-                        setCurrentDate(date);
-                        setView('day');
-                      }
+                    onClick={() => {
+                      onDateSelect(date);
+                      setCurrentDate(date);
+                      setView('day');
                     }}
-                    onMouseUp={(e) => {
-                      if (isDragging && draggedBooking) {
-                        e.preventDefault();
-                        handleDrop(date);
-                      }
-                    }}
-                    title={getAvailabilityText(availabilityLevel)}
+                    onMouseUp={(e) => handleMouseUp(e, date)}
                   >
-                    <div className={`text-sm mb-1 flex items-center justify-between ${isToday(date) ? 'font-bold text-blue-600' : ''}`}>
-                      <span>{format(date, 'd')}</span>
-                      <div className={getAvailabilityDot(availabilityLevel)}></div>
+                    <div className={`text-sm mb-1 ${isToday(date) ? 'font-bold text-blue-600' : ''}`}>
+                      {format(date, 'd')}
                     </div>
                     <div className="space-y-1">
                       {dayBookings.slice(0, 3).map(booking => (
                         <div
                           key={booking.id}
-                          data-booking-id={booking.id}
-                          className={`booking-card p-1 bg-blue-100 text-blue-800 rounded text-xs truncate cursor-pointer transition-all duration-300 ease-out hover:bg-blue-200 hover:shadow-lg hover:scale-105 hover:-translate-y-0.5 hover:rotate-1 active:scale-95 active:rotate-0`}
+                          className="p-1 bg-blue-100 text-blue-800 rounded text-xs truncate cursor-move"
+                          draggable
                           onMouseDown={(e) => handleMouseDown(e, booking)}
-                          title="Click to edit booking"
                         >
-                          <span>
-                            {booking.customerName}
-                          </span>
+                          {booking.customerName}
                         </div>
                       ))}
                       {dayBookings.length > 3 && (
@@ -771,7 +525,9 @@ export default function EnhancedGoogleCalendar({
   return (
     <div 
       ref={calendarRef}
-      className={`calendar-container space-y-4 ${isDragging ? 'cursor-grabbing' : ''}`}
+      className={`space-y-4 ${isDragging ? 'cursor-grabbing' : ''}`}
+      onMouseMove={handleMouseMove}
+      onMouseUp={(e) => handleMouseUp(e)}
       style={{ userSelect: isDragging ? 'none' : 'auto' }}
     >
       {/* Calendar Controls */}
@@ -817,29 +573,6 @@ export default function EnhancedGoogleCalendar({
             >
               Month
             </Button>
-          </div>
-        </div>
-      </div>
-
-      {/* Availability Legend */}
-      <div className="px-6 py-3 bg-gray-50 border-b">
-        <div className="flex items-center space-x-6 text-sm">
-          <span className="font-medium text-gray-700">Availability:</span>
-          <div className="flex items-center space-x-2">
-            <div className="w-3 h-3 bg-green-400 rounded-full"></div>
-            <span className="text-gray-600">High (70%+)</span>
-          </div>
-          <div className="flex items-center space-x-2">
-            <div className="w-3 h-3 bg-yellow-400 rounded-full"></div>
-            <span className="text-gray-600">Medium (30-70%)</span>
-          </div>
-          <div className="flex items-center space-x-2">
-            <div className="w-3 h-3 bg-orange-400 rounded-full"></div>
-            <span className="text-gray-600">Low (1-30%)</span>
-          </div>
-          <div className="flex items-center space-x-2">
-            <div className="w-3 h-3 bg-red-400 rounded-full"></div>
-            <span className="text-gray-600">Fully booked</span>
           </div>
         </div>
       </div>
@@ -960,168 +693,6 @@ export default function EnhancedGoogleCalendar({
           </div>
         </DialogContent>
       </Dialog>
-
-      {/* Edit Booking Dialog */}
-      <Dialog open={isEditBookingOpen} onOpenChange={setIsEditBookingOpen}>
-        <DialogContent className="max-w-md">
-          <DialogHeader>
-            <DialogTitle>Edit Booking</DialogTitle>
-          </DialogHeader>
-          {editingBooking ? (
-            <EditBookingForm
-              booking={editingBooking}
-              tables={tables}
-              onSave={(updatedData) => editBookingMutation.mutate(updatedData)}
-              onCancel={() => {
-                setIsEditBookingOpen(false);
-                setEditingBooking(null);
-              }}
-              isLoading={editBookingMutation.isPending}
-            />
-          ) : (
-            <div>No booking selected for editing</div>
-          )}
-        </DialogContent>
-      </Dialog>
     </div>
-  );
-}
-
-// Edit Booking Form Component
-interface EditBookingFormProps {
-  booking: Booking;
-  tables: TableType[];
-  onSave: (data: Partial<Booking>) => void;
-  onCancel: () => void;
-  isLoading: boolean;
-}
-
-function EditBookingForm({ booking, tables, onSave, onCancel, isLoading }: EditBookingFormProps) {
-  const [formData, setFormData] = useState({
-    customerName: booking.customerName,
-    customerEmail: booking.customerEmail || '',
-    customerPhone: booking.customerPhone || '',
-    guestCount: booking.guestCount,
-    bookingDate: typeof booking.bookingDate === 'string' ? booking.bookingDate : booking.bookingDate.toISOString().split('T')[0],
-    startTime: booking.startTime,
-    tableId: booking.tableId,
-    notes: booking.notes || ''
-  });
-
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    onSave({
-      ...formData,
-      bookingDate: new Date(formData.bookingDate)
-    });
-  };
-
-  return (
-    <form onSubmit={handleSubmit} className="space-y-4">
-      <div>
-        <Label htmlFor="edit-customerName">Customer Name</Label>
-        <Input
-          id="edit-customerName"
-          value={formData.customerName}
-          onChange={(e) => setFormData(prev => ({ ...prev, customerName: e.target.value }))}
-          placeholder="Enter customer name"
-          required
-        />
-      </div>
-      
-      <div>
-        <Label htmlFor="edit-customerEmail">Email</Label>
-        <Input
-          id="edit-customerEmail"
-          type="email"
-          value={formData.customerEmail}
-          onChange={(e) => setFormData(prev => ({ ...prev, customerEmail: e.target.value }))}
-          placeholder="customer@example.com"
-        />
-      </div>
-      
-      <div>
-        <Label htmlFor="edit-customerPhone">Phone</Label>
-        <Input
-          id="edit-customerPhone"
-          value={formData.customerPhone}
-          onChange={(e) => setFormData(prev => ({ ...prev, customerPhone: e.target.value }))}
-          placeholder="Phone number"
-        />
-      </div>
-      
-      <div className="grid grid-cols-2 gap-4">
-        <div>
-          <Label htmlFor="edit-guestCount">Guests</Label>
-          <Input
-            id="edit-guestCount"
-            type="number"
-            min="1"
-            max="20"
-            value={formData.guestCount}
-            onChange={(e) => setFormData(prev => ({ ...prev, guestCount: parseInt(e.target.value) || 1 }))}
-          />
-        </div>
-        
-        <div>
-          <Label htmlFor="edit-tableId">Table</Label>
-          <Select value={formData.tableId?.toString() || 'none'} onValueChange={(value) => setFormData(prev => ({ ...prev, tableId: value === 'none' ? null : parseInt(value) }))}>
-            <SelectTrigger>
-              <SelectValue placeholder="Select table" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="none">No table assigned</SelectItem>
-              {tables.map(table => (
-                <SelectItem key={table.id} value={table.id.toString()}>
-                  Table {table.tableNumber} ({table.capacity} seats)
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        </div>
-      </div>
-      
-      <div className="grid grid-cols-2 gap-4">
-        <div>
-          <Label htmlFor="edit-bookingDate">Date</Label>
-          <Input
-            id="edit-bookingDate"
-            type="date"
-            value={formData.bookingDate}
-            onChange={(e) => setFormData(prev => ({ ...prev, bookingDate: e.target.value }))}
-          />
-        </div>
-        
-        <div>
-          <Label htmlFor="edit-startTime">Time</Label>
-          <Input
-            id="edit-startTime"
-            type="time"
-            value={formData.startTime}
-            onChange={(e) => setFormData(prev => ({ ...prev, startTime: e.target.value }))}
-          />
-        </div>
-      </div>
-      
-      <div>
-        <Label htmlFor="edit-notes">Notes</Label>
-        <Textarea
-          id="edit-notes"
-          value={formData.notes}
-          onChange={(e) => setFormData(prev => ({ ...prev, notes: e.target.value }))}
-          placeholder="Special requests or notes..."
-          className="min-h-[80px]"
-        />
-      </div>
-      
-      <div className="flex justify-end space-x-2">
-        <Button variant="outline" type="button" onClick={onCancel}>
-          Cancel
-        </Button>
-        <Button type="submit" disabled={isLoading || !formData.customerName}>
-          {isLoading ? "Saving..." : "Save Changes"}
-        </Button>
-      </div>
-    </form>
   );
 }
