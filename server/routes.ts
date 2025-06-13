@@ -802,6 +802,53 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Update booking route with tenant and restaurant validation
+  app.put("/api/tenants/:tenantId/restaurants/:restaurantId/bookings/:id", validateTenant, async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      const restaurantId = parseInt(req.params.restaurantId);
+      const tenantId = parseInt(req.params.tenantId);
+      
+      // Validate request body
+      if (!req.body || typeof req.body !== 'object') {
+        return res.status(400).json({ message: "Invalid JSON in request body" });
+      }
+      
+      // Verify restaurant belongs to tenant
+      const restaurant = await storage.getRestaurantById(restaurantId);
+      if (!restaurant || restaurant.tenantId !== tenantId) {
+        return res.status(404).json({ message: "Restaurant not found" });
+      }
+
+      const existingBooking = await storage.getBookingById(id);
+      if (!existingBooking || existingBooking.tenantId !== tenantId || existingBooking.restaurantId !== restaurantId) {
+        return res.status(404).json({ message: "Booking not found" });
+      }
+
+      const updates = req.body;
+      if (updates.bookingDate) {
+        updates.bookingDate = new Date(updates.bookingDate);
+      }
+
+      const updatedBooking = await storage.updateBooking(id, updates);
+      
+      // Send webhook notifications for booking update
+      if (updatedBooking) {
+        try {
+          const webhookService = new WebhookService(storage);
+          await webhookService.notifyBookingUpdated(restaurantId, updatedBooking);
+        } catch (webhookError) {
+          console.error('Error sending booking update webhook:', webhookError);
+        }
+      }
+      
+      res.json(updatedBooking);
+    } catch (error) {
+      console.error("Booking update error:", error);
+      res.status(400).json({ message: "Failed to update booking" });
+    }
+  });
+
   // Complete tenant-restaurant routes implementation
   app.get("/api/tenants/:tenantId/restaurants/:restaurantId/tables", validateTenant, async (req, res) => {
     try {
