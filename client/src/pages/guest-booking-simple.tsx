@@ -32,9 +32,12 @@ const steps: BookingStep[] = [
 ];
 
 export default function GuestBookingSimple() {
-  const [match, params] = useRoute("/guest-booking/:tenantId/:restaurantId");
-  const tenantId = params?.tenantId;
-  const restaurantId = params?.restaurantId;
+  // Handle both URL patterns
+  const [guestMatch, guestParams] = useRoute("/guest-booking/:tenantId/:restaurantId");
+  const [bookMatch, bookParams] = useRoute("/:tenantId/book/:restaurantId");
+  
+  const tenantId = guestParams?.tenantId || bookParams?.tenantId;
+  const restaurantId = guestParams?.restaurantId || bookParams?.restaurantId;
 
   const [currentStep, setCurrentStep] = useState(0);
   const [guestCount, setGuestCount] = useState(2);

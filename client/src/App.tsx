@@ -145,6 +145,7 @@ function App() {
             <Route path="/feedback-responses-popup" component={FeedbackResponsesPopup} />
             <Route path="/contact" component={Contact} />
             <Route path="/guest-booking/:tenantId/:restaurantId" component={GuestBookingSimple} />
+            <Route path="/:tenantId/book/:restaurantId" component={GuestBookingSimple} />
             <Route component={NotFound} />
           </Switch>
         </LayoutWrapper>
