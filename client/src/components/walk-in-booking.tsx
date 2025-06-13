@@ -48,6 +48,12 @@ function WalkInBookingButton() {
     enabled: !!restaurant?.id && !!restaurant?.tenantId
   });
 
+  // Fetch existing bookings to check availability
+  const { data: bookings = [] } = useQuery({
+    queryKey: [`/api/tenants/${restaurant?.tenantId}/restaurants/${restaurant?.id}/bookings`],
+    enabled: !!restaurant?.id && !!restaurant?.tenantId
+  });
+
   const walkInMutation = useMutation({
     mutationFn: async (data: typeof formData) => {
       const bookingData = {
@@ -131,12 +137,62 @@ function WalkInBookingButton() {
     setFormData(prev => ({ ...prev, [field]: value }));
   };
 
-  // Filter available tables based on guest count
-  const suitableTables = tables.filter(table => 
-    table.capacity >= formData.guestCount
-  );
+  // Check if a table is available at the requested time
+  const isTableAvailable = (tableId: number, startTime: string, endTime: string, bookingDate: string) => {
+    if (!startTime || !endTime) return true; // If no end time specified, assume available
 
-  // Tables are filtered based on guest count capacity
+    const requestedStart = timeToMinutes(startTime);
+    const requestedEnd = timeToMinutes(endTime);
+    
+    // Filter bookings for this table on the selected date
+    const tableBookings = bookings.filter((booking: any) => 
+      booking.tableId === tableId && 
+      booking.bookingDate.split('T')[0] === bookingDate &&
+      booking.status !== 'cancelled'
+    );
+
+    // Check for time conflicts
+    return !tableBookings.some((booking: any) => {
+      const existingStart = timeToMinutes(booking.startTime);
+      const existingEnd = timeToMinutes(booking.endTime || "23:59");
+      
+      // Add 30-minute buffer for table turnover
+      const bufferMinutes = 30;
+      const requestedStartWithBuffer = requestedStart - bufferMinutes;
+      const requestedEndWithBuffer = requestedEnd + bufferMinutes;
+      const existingStartWithBuffer = existingStart - bufferMinutes;
+      const existingEndWithBuffer = existingEnd + bufferMinutes;
+      
+      // Check for overlap: start1 < end2 && start2 < end1
+      return requestedStartWithBuffer < existingEndWithBuffer && existingStartWithBuffer < requestedEndWithBuffer;
+    });
+  };
+
+  // Convert time string to minutes (e.g., "14:30" -> 870)
+  const timeToMinutes = (timeStr: string): number => {
+    const [hours, minutes] = timeStr.split(':').map(Number);
+    return hours * 60 + minutes;
+  };
+
+  // Filter available tables based on guest count and time availability
+  const suitableTables = tables.filter(table => {
+    // Check capacity
+    if (table.capacity < formData.guestCount) return false;
+    
+    // If no time specified, show all tables with sufficient capacity
+    if (!formData.startTime) return true;
+    
+    // Calculate end time if not provided (default 2 hours)
+    let endTime = formData.endTime;
+    if (!endTime && formData.startTime) {
+      const startMinutes = timeToMinutes(formData.startTime);
+      const endMinutes = startMinutes + 120; // 2 hours default
+      endTime = `${Math.floor(endMinutes / 60).toString().padStart(2, '0')}:${(endMinutes % 60).toString().padStart(2, '0')}`;
+    }
+    
+    // Check availability
+    return isTableAvailable(table.id, formData.startTime, endTime, formData.bookingDate);
+  });
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
@@ -238,9 +294,19 @@ function WalkInBookingButton() {
                     ))}
                   </SelectContent>
                 </Select>
-                {!tablesLoading && suitableTables.length === 0 && formData.guestCount > 0 && (
+                {!tablesLoading && suitableTables.length === 0 && formData.guestCount > 0 && formData.startTime && (
+                  <p className="text-sm text-orange-600 mt-1">
+                    No tables available for {formData.guestCount} guests at {formData.startTime}
+                  </p>
+                )}
+                {!tablesLoading && suitableTables.length === 0 && formData.guestCount > 0 && !formData.startTime && (
                   <p className="text-sm text-orange-600 mt-1">
                     No tables available for {formData.guestCount} guests
+                  </p>
+                )}
+                {!tablesLoading && suitableTables.length > 0 && (
+                  <p className="text-sm text-green-600 mt-1">
+                    {suitableTables.length} table{suitableTables.length !== 1 ? 's' : ''} available
                   </p>
                 )}
                 {tablesLoading && (
