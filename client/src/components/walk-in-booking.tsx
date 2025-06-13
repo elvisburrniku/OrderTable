@@ -19,7 +19,7 @@ interface WalkInBookingProps {
 
 interface Table {
   id: number;
-  tableNumber: string;
+  table_number: string;
   capacity: number;
   isActive?: boolean;
 }
@@ -136,10 +136,7 @@ function WalkInBookingButton() {
     table.capacity >= formData.guestCount
   );
 
-  // Debug logging to see what tables are available
-  console.log('Tables data:', tables);
-  console.log('Suitable tables:', suitableTables);
-  console.log('Guest count:', formData.guestCount);
+  // Tables are filtered based on guest count capacity
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
@@ -227,22 +224,28 @@ function WalkInBookingButton() {
                 <Select 
                   value={formData.tableId} 
                   onValueChange={(value) => handleInputChange("tableId", value)}
+                  disabled={tablesLoading}
                 >
                   <SelectTrigger>
-                    <SelectValue placeholder="Auto-assign table" />
+                    <SelectValue placeholder={tablesLoading ? "Loading tables..." : "Auto-assign table"} />
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="auto">Auto-assign table</SelectItem>
-                    {suitableTables.map((table) => (
+                    {!tablesLoading && suitableTables.map((table) => (
                       <SelectItem key={table.id} value={table.id.toString()}>
-                        Table {table.tableNumber} (Capacity: {table.capacity})
+                        Table {table.table_number} (Capacity: {table.capacity})
                       </SelectItem>
                     ))}
                   </SelectContent>
                 </Select>
-                {suitableTables.length === 0 && formData.guestCount > 0 && (
+                {!tablesLoading && suitableTables.length === 0 && formData.guestCount > 0 && (
                   <p className="text-sm text-orange-600 mt-1">
                     No tables available for {formData.guestCount} guests
+                  </p>
+                )}
+                {tablesLoading && (
+                  <p className="text-sm text-gray-500 mt-1">
+                    Loading available tables...
                   </p>
                 )}
               </div>
