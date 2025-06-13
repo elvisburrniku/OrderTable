@@ -5,6 +5,7 @@ import { setupVite, serveStatic, log } from "./vite";
 import { storage } from "./storage";
 import { DatabaseStorage } from "./db-storage";
 import { ReminderService } from "./reminder-service";
+import { AutoAssignmentService } from "./auto-assignment-service";
 
 const app = express();
 app.use(express.json());
@@ -63,6 +64,10 @@ app.use((req, res, next) => {
   // Start reminder service for email notifications
   const reminderService = new ReminderService();
   reminderService.startReminderScheduler();
+
+  // Start auto-assignment service for unassigned bookings
+  const autoAssignmentService = new AutoAssignmentService(storage);
+  autoAssignmentService.start();
 
   const server = await registerRoutes(app);
 

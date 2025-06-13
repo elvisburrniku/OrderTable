@@ -74,12 +74,10 @@ export class AutoAssignmentService {
         
         if (assignedTable) {
           await this.storage.updateBooking(booking.id, {
-            tableId: assignedTable.id,
-            assignedAt: new Date(),
-            assignmentType: 'auto'
+            tableId: assignedTable.id
           });
 
-          console.log(`Successfully auto-assigned Table ${assignedTable.table_number} (capacity: ${assignedTable.capacity}) to booking ${booking.id}`);
+          console.log(`Successfully auto-assigned Table ${assignedTable.tableNumber} (capacity: ${assignedTable.capacity}) to booking ${booking.id}`);
           
           // Log the assignment for tracking
           await this.logTableAssignment(booking, assignedTable, 'auto');
@@ -198,19 +196,15 @@ export class AutoAssignmentService {
           if (alternativeTable) {
             // Reassign the conflicting booking
             await this.storage.updateBooking(conflictingBooking.id, {
-              tableId: alternativeTable.id,
-              assignedAt: new Date(),
-              assignmentType: 'auto_reassign'
+              tableId: alternativeTable.id
             });
 
             // Assign the original table to our booking
             await this.storage.updateBooking(booking.id, {
-              tableId: table.id,
-              assignedAt: new Date(),
-              assignmentType: 'auto_conflict_resolved'
+              tableId: table.id
             });
 
-            console.log(`Conflict resolved: Moved booking ${conflictingBooking.id} to Table ${alternativeTable.table_number}, assigned Table ${table.table_number} to booking ${booking.id}`);
+            console.log(`Conflict resolved: Moved booking ${conflictingBooking.id} to Table ${alternativeTable.tableNumber}, assigned Table ${table.tableNumber} to booking ${booking.id}`);
             
             await this.logTableAssignment(booking, table, 'auto_conflict_resolved');
             await this.logTableAssignment(conflictingBooking, alternativeTable, 'auto_reassign');
@@ -229,7 +223,7 @@ export class AutoAssignmentService {
   private async logTableAssignment(booking: any, table: any, assignmentType: string) {
     try {
       // This would typically log to a dedicated assignment log table
-      console.log(`ASSIGNMENT LOG: Booking ${booking.id} (${booking.customerName}) assigned to Table ${table.table_number} (${assignmentType}) at ${new Date().toISOString()}`);
+      console.log(`ASSIGNMENT LOG: Booking ${booking.id} (${booking.customerName}) assigned to Table ${table.tableNumber} (${assignmentType}) at ${new Date().toISOString()}`);
     } catch (error) {
       console.error('Error logging table assignment:', error);
     }

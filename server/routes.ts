@@ -33,6 +33,7 @@ import { metaInstallService } from "./meta-install-service";
 import { setupSSO } from "./sso-auth";
 import { SubscriptionService } from "./subscription-service";
 import { CancellationReminderService } from "./cancellation-reminder-service";
+import { GoogleCalendarService } from "./google-calendar-service";
 
 const stripe = new Stripe(
   process.env.STRIPE_SECRET_KEY || "sk_test_your_stripe_secret_key",
