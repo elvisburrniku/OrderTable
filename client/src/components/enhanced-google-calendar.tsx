@@ -238,10 +238,30 @@ export default function EnhancedGoogleCalendar({
       case 'high': return 'bg-green-50 border-l-4 border-green-400';
       case 'medium': return 'bg-yellow-50 border-l-4 border-yellow-400';
       case 'low': return 'bg-orange-50 border-l-4 border-orange-400';
-      case 'full': return 'bg-red-50 border-l-4 border-red-400';
+      case 'full': return 'bg-red-100 border-l-4 border-red-500';
       default: return 'bg-gray-50 border-l-4 border-gray-300';
     }
   };
+
+  // Check if a table is conflicted at a specific time slot
+  const getTableConflictStatus = useCallback((tableId: number, date: Date, timeSlot: string) => {
+    const slotBookings = getBookingsForSlot(date, timeSlot);
+    const tableBookings = slotBookings.filter(booking => booking.tableId === tableId);
+    return tableBookings.length > 1; // More than one booking = conflict
+  }, [getBookingsForSlot]);
+
+  // Get conflict styling for booking cards
+  const getBookingCardStyle = useCallback((booking: Booking, date: Date, timeSlot: string) => {
+    if (!booking.tableId) return 'bg-blue-100 text-blue-800 border-l-4 border-blue-400';
+    
+    const hasConflict = getTableConflictStatus(booking.tableId, date, timeSlot);
+    
+    if (hasConflict) {
+      return 'bg-red-200 text-red-900 border-l-4 border-red-600 ring-2 ring-red-300';
+    }
+    
+    return 'bg-blue-100 text-blue-800 border-l-4 border-blue-400';
+  }, [getTableConflictStatus]);
 
   // Get availability indicator dot
   const getAvailabilityDot = (level: string) => {
@@ -591,7 +611,7 @@ export default function EnhancedGoogleCalendar({
                       <div
                         key={booking.id}
                         data-booking-id={booking.id}
-                        className={`booking-card flex items-center space-x-2 p-2 bg-blue-100 text-blue-800 rounded text-sm cursor-pointer transition-all duration-300 ease-out hover:bg-blue-200 hover:shadow-lg hover:scale-105 hover:-translate-y-1 hover:rotate-1 active:scale-95 active:rotate-0`}
+                        className={`booking-card flex items-center space-x-2 p-2 rounded text-sm cursor-pointer transition-all duration-300 ease-out hover:shadow-lg hover:scale-105 hover:-translate-y-1 hover:rotate-1 active:scale-95 active:rotate-0 ${getBookingCardStyle(booking, currentDate, timeSlot)}`}
                         onClick={(e) => {
                           e.stopPropagation();
                           e.preventDefault();
@@ -601,6 +621,7 @@ export default function EnhancedGoogleCalendar({
                           console.log('Day view edit dialog should open');
                         }}
                         onMouseDown={(e) => handleMouseDown(e, booking)}
+                        title={getTableConflictStatus(booking.tableId || 0, currentDate, timeSlot) ? "TABLE CONFLICT - Multiple bookings on same table!" : "Click to edit booking"}
                       >
                         <Users className="w-4 h-4" />
                         <span>
@@ -674,9 +695,9 @@ export default function EnhancedGoogleCalendar({
                         <div
                           key={booking.id}
                           data-booking-id={booking.id}
-                          className={`booking-card p-1 mb-1 bg-blue-100 text-blue-800 rounded text-xs cursor-pointer transition-all duration-300 ease-out hover:bg-blue-200 hover:shadow-lg hover:scale-110 hover:-translate-y-1 hover:rotate-2 active:scale-95 active:rotate-0`}
+                          className={`booking-card p-1 mb-1 rounded text-xs cursor-pointer transition-all duration-300 ease-out hover:shadow-lg hover:scale-110 hover:-translate-y-1 hover:rotate-2 active:scale-95 active:rotate-0 ${getBookingCardStyle(booking, date, timeSlot)}`}
                           onMouseDown={(e) => handleMouseDown(e, booking)}
-                          title="Click to edit booking"
+                          title={getTableConflictStatus(booking.tableId || 0, date, timeSlot) ? "TABLE CONFLICT - Multiple bookings on same table!" : "Click to edit booking"}
                         >
                           <div className="truncate font-medium">
                             {booking.customerName}
@@ -869,23 +890,32 @@ export default function EnhancedGoogleCalendar({
 
       {/* Availability Legend */}
       <div className="px-6 py-3 bg-gray-50 border-b">
-        <div className="flex items-center space-x-6 text-sm">
-          <span className="font-medium text-gray-700">Availability:</span>
-          <div className="flex items-center space-x-2">
-            <div className="w-3 h-3 bg-green-400 rounded-full"></div>
-            <span className="text-gray-600">High (70%+)</span>
+        <div className="flex items-center justify-between">
+          <div className="flex items-center space-x-6 text-sm">
+            <span className="font-medium text-gray-700">Availability:</span>
+            <div className="flex items-center space-x-2">
+              <div className="w-3 h-3 bg-green-400 rounded-full"></div>
+              <span className="text-gray-600">High (70%+)</span>
+            </div>
+            <div className="flex items-center space-x-2">
+              <div className="w-3 h-3 bg-yellow-400 rounded-full"></div>
+              <span className="text-gray-600">Medium (30-70%)</span>
+            </div>
+            <div className="flex items-center space-x-2">
+              <div className="w-3 h-3 bg-orange-400 rounded-full"></div>
+              <span className="text-gray-600">Low (1-30%)</span>
+            </div>
+            <div className="flex items-center space-x-2">
+              <div className="w-3 h-3 bg-red-400 rounded-full"></div>
+              <span className="text-gray-600">Fully booked</span>
+            </div>
           </div>
-          <div className="flex items-center space-x-2">
-            <div className="w-3 h-3 bg-yellow-400 rounded-full"></div>
-            <span className="text-gray-600">Medium (30-70%)</span>
-          </div>
-          <div className="flex items-center space-x-2">
-            <div className="w-3 h-3 bg-orange-400 rounded-full"></div>
-            <span className="text-gray-600">Low (1-30%)</span>
-          </div>
-          <div className="flex items-center space-x-2">
-            <div className="w-3 h-3 bg-red-400 rounded-full"></div>
-            <span className="text-gray-600">Fully booked</span>
+          <div className="flex items-center space-x-4 text-sm">
+            <span className="font-medium text-gray-700">Conflicts:</span>
+            <div className="flex items-center space-x-2">
+              <div className="w-4 h-4 bg-red-200 border-l-2 border-red-600 rounded"></div>
+              <span className="text-red-700 font-medium">Table conflict detected</span>
+            </div>
           </div>
         </div>
       </div>
