@@ -64,6 +64,7 @@ import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import { RealTimeNotifications } from "@/components/real-time-notifications";
+import { safeArray, safeObject } from "@/hooks/use-mobile-safe";
 
 export default function Dashboard() {
   const [, setLocation] = useLocation();
@@ -634,17 +635,24 @@ export default function Dashboard() {
   };
 
   const getAvailableTablesCount = () => {
-    if (!Array.isArray(tables) || !Array.isArray(todayBookings)) return 0;
+    const safeTables = safeArray(tables);
+    const safeBookings = safeArray(todayBookings);
+    
+    if (safeTables.length === 0) return 0;
+    
     const currentHour = new Date().getHours();
-    const bookedTableIds = todayBookings
+    const bookedTableIds = safeBookings
       .filter((booking: any) => {
-        const bookingHour = new Date(booking.bookingDate).getHours();
-        return Math.abs(bookingHour - currentHour) < 2; // Within 2 hours
+        try {
+          const bookingHour = new Date(booking.bookingDate).getHours();
+          return Math.abs(bookingHour - currentHour) < 2;
+        } catch {
+          return false;
+        }
       })
       .map((booking: any) => booking.tableId);
 
-    return tables.filter((table: any) => !bookedTableIds.includes(table.id))
-      .length;
+    return safeTables.filter((table: any) => !bookedTableIds.includes(table.id)).length;
   };
 
   const getOpeningHoursForDay = (date: Date) => {
@@ -696,7 +704,19 @@ export default function Dashboard() {
   }
 
   if (!user || !restaurant) {
-    return null;
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="text-center">
+          <p>Please log in to access the dashboard</p>
+          <button 
+            onClick={() => setLocation("/login")}
+            className="mt-4 px-4 py-2 bg-green-600 text-white rounded"
+          >
+            Go to Login
+          </button>
+        </div>
+      </div>
+    );
   }
 
   const getTableStyle = (table: any, position: any) => {
@@ -746,9 +766,11 @@ export default function Dashboard() {
   };
 
   const renderTableLayout = () => {
-    const tablePositions = savedLayout?.positions || {};
-    const tablesWithPositions =
-      (tables || []).filter((table: any) => tablePositions[table.id]) || [];
+    const tablePositions = safeObject(savedLayout?.positions, {});
+    const safeTables = safeArray(tables);
+    const tablesWithPositions = safeTables.filter((table: any) => 
+      table && table.id && tablePositions[table.id]
+    );
 
     return (
       <Card className="bg-white border border-gray-200">
@@ -812,7 +834,7 @@ export default function Dashboard() {
             ) : (
               <>
                 {/* Placed Tables */}
-                {tablesWithPositions.map((table) => {
+                {tablesWithPositions.map((table: any) => {
                   const position = tablePositions[table.id];
                   const tableBookings = getTableBookings(table.id);
 
