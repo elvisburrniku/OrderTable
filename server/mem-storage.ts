@@ -603,13 +603,25 @@ export class MemoryStorage implements IStorage {
     this.smsMessages.push(newMessage);
     return newMessage;
   }
-  async getWaitingListByRestaurant(restaurantId: number): Promise<WaitingList[]> { return []; }
+  async getWaitingListByRestaurant(restaurantId: number): Promise<WaitingList[]> {
+    return this.waitingList.filter(entry => entry.restaurantId === restaurantId);
+  }
   async createWaitingListEntry(entry: InsertWaitingList): Promise<WaitingList> { 
     const newEntry: WaitingList = { id: this.nextId++, ...entry, createdAt: new Date() };
     this.waitingList.push(newEntry);
     return newEntry;
   }
-  async updateWaitingListEntry(id: number, updates: Partial<WaitingList>): Promise<WaitingList | undefined> { return undefined; }
+  async getWaitingListEntryById(id: number): Promise<WaitingList | undefined> {
+    return this.waitingList.find(entry => entry.id === id);
+  }
+
+  async updateWaitingListEntry(id: number, updates: Partial<WaitingList>): Promise<WaitingList | undefined> {
+    const index = this.waitingList.findIndex(entry => entry.id === id);
+    if (index === -1) return undefined;
+    
+    this.waitingList[index] = { ...this.waitingList[index], ...updates };
+    return this.waitingList[index];
+  }
   async getFeedbackByRestaurant(restaurantId: number): Promise<Feedback[]> { return []; }
   async createFeedback(feedback: InsertFeedback): Promise<Feedback> { 
     const newFeedback: Feedback = { id: this.nextId++, ...feedback, createdAt: new Date() };

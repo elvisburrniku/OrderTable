@@ -8352,6 +8352,61 @@ app.put("/api/tenants/:tenantId/bookings/:id", validateTenant, async (req, res) 
     res.json({ success: true, message: "Next month simulation disabled - normal booking count restored" });
   });
 
+  // Legacy waiting list routes for backward compatibility
+  app.get("/api/restaurants/:restaurantId/waiting-list", async (req, res) => {
+    try {
+      const restaurantId = parseInt(req.params.restaurantId);
+      const waitingList = await storage.getWaitingListByRestaurant(restaurantId);
+      res.json(waitingList);
+    } catch (error) {
+      console.error("Error fetching waiting list:", error);
+      res.status(400).json({ message: "Invalid request" });
+    }
+  });
+
+  app.post("/api/restaurants/:restaurantId/waiting-list", async (req, res) => {
+    try {
+      const restaurantId = parseInt(req.params.restaurantId);
+      // This is a legacy route, we need to get the tenant ID from the restaurant
+      const restaurant = await storage.getRestaurantById(restaurantId);
+      if (!restaurant) {
+        return res.status(404).json({ message: "Restaurant not found" });
+      }
+      
+      const entryData = {
+        ...req.body,
+        restaurantId,
+        tenantId: restaurant.tenantId
+      };
+
+      const entry = await storage.createWaitingListEntry(entryData);
+      res.json(entry);
+    } catch (error) {
+      console.error("Error creating waiting list entry:", error);
+      res.status(400).json({ message: "Invalid waiting list data" });
+    }
+  });
+
+  app.put("/api/restaurants/:restaurantId/waiting-list/:id", async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      const restaurantId = parseInt(req.params.restaurantId);
+      const updates = req.body;
+
+      // Verify waiting list entry belongs to restaurant before updating
+      const existingEntry = await storage.getWaitingListEntryById(id);
+      if (!existingEntry || existingEntry.restaurantId !== restaurantId) {
+        return res.status(404).json({ message: "Waiting list entry not found" });
+      }
+
+      const entry = await storage.updateWaitingListEntry(id, updates);
+      res.json(entry);
+    } catch (error) {
+      console.error("Error updating waiting list entry:", error);
+      res.status(400).json({ message: "Invalid request" });
+    }
+  });
+
   // Initialize cancellation reminder service
   const cancellationReminderService = new CancellationReminderService();
   cancellationReminderService.start();

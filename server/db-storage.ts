@@ -1094,15 +1094,26 @@ export class DatabaseStorage implements IStorage {
   }
 
   async getWaitingListByRestaurant(restaurantId: number): Promise<any[]> {
-    return [];
+    if (!this.db) throw new Error("Database connection not available");
+    return await this.db.select().from(waitingList).where(eq(waitingList.restaurantId, restaurantId));
   }
 
   async createWaitingListEntry(entry: any): Promise<any> {
-    throw new Error("Method not implemented");
+    if (!this.db) throw new Error("Database connection not available");
+    const [newEntry] = await this.db.insert(waitingList).values(entry).returning();
+    return newEntry;
+  }
+
+  async getWaitingListEntryById(id: number): Promise<any> {
+    if (!this.db) throw new Error("Database connection not available");
+    const result = await this.db.select().from(waitingList).where(eq(waitingList.id, id));
+    return result[0];
   }
 
   async updateWaitingListEntry(id: number, updates: any): Promise<any> {
-    throw new Error("Method not implemented");
+    if (!this.db) throw new Error("Database connection not available");
+    const [updated] = await this.db.update(waitingList).set(updates).where(eq(waitingList.id, id)).returning();
+    return updated;
   }
 
   async getWaitingListEntryById(id: number): Promise<any> {
