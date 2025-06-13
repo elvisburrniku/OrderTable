@@ -65,7 +65,7 @@ import TableFeedback from "./pages/table-feedback";
 import FeedbackResponsesPopup from "./pages/feedback-responses-popup";
 import Contact from "./pages/contact";
 import GuestBookingNew from "./pages/guest-booking-new";
-import GuestBookingSimple from "./pages/guest-booking-simple";
+import GuestBookingElegant from "./pages/guest-booking-elegant";
 import SetupWizard from "./pages/setup-wizard";
 import EmailTest from "./pages/email-test";
 import TestTools from "./pages/test-tools";
@@ -144,8 +144,8 @@ function App() {
             <Route path="/feedback-responses" component={FeedbackResponses} />
             <Route path="/feedback-responses-popup" component={FeedbackResponsesPopup} />
             <Route path="/contact" component={Contact} />
-            <Route path="/guest-booking/:tenantId/:restaurantId" component={GuestBookingSimple} />
-            <Route path="/:tenantId/book/:restaurantId" component={GuestBookingSimple} />
+            <Route path="/guest-booking/:tenantId/:restaurantId" component={GuestBookingElegant} />
+            <Route path="/:tenantId/book/:restaurantId" component={GuestBookingElegant} />
             <Route component={NotFound} />
           </Switch>
         </LayoutWrapper>

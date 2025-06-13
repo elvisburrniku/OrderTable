@@ -5213,7 +5213,7 @@ app.put("/api/tenants/:tenantId/bookings/:id", validateTenant, async (req, res) 
 
       // Generate booking URL
       const baseUrl = process.env.FRONTEND_URL || `${req.protocol}://${req.get('host')}`;
-      const bookingUrl = `${baseUrl}/${tenantId}/book/${restaurantId}?source=google`;
+      const bookingUrl = `${baseUrl}/guest-booking/${tenantId}/${restaurantId}?source=google`;
 
       res.json({
         restaurant: {
