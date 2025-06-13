@@ -387,10 +387,7 @@ export default function EnhancedGoogleCalendar({
         
         const dragElement = document.querySelector(`[data-booking-id="${booking.id}"]`) as HTMLElement;
         if (dragElement) {
-          dragElement.style.opacity = '0.7';
-          dragElement.style.transform = 'scale(1.05)';
-          dragElement.style.zIndex = '1000';
-          dragElement.style.cursor = 'grabbing';
+          dragElement.classList.add('dragging');
         }
       }
       
@@ -416,17 +413,25 @@ export default function EnhancedGoogleCalendar({
         setIsEditBookingOpen(true);
       }
       
-      // Reset drag styles but don't reset drag state here - let drop zones handle it
+      // Reset drag styles completely
       if (hasMoved) {
-        console.log('Drag ended, checking for drop zone');
-        // Reset visual state but keep drag state for drop detection
+        console.log('Drag ended, resetting styles');
         const dragElement = document.querySelector(`[data-booking-id="${booking.id}"]`) as HTMLElement;
         if (dragElement) {
           dragElement.style.opacity = '';
           dragElement.style.transform = '';
           dragElement.style.zIndex = '';
           dragElement.style.cursor = '';
+          dragElement.style.pointerEvents = '';
+          dragElement.style.transition = '';
+          dragElement.style.boxShadow = '';
         }
+        
+        // Reset drag state after a short delay to allow drop detection
+        setTimeout(() => {
+          setIsDragging(false);
+          setDraggedBooking(null);
+        }, 50);
       }
     };
     
@@ -437,8 +442,19 @@ export default function EnhancedGoogleCalendar({
   // Global drag cleanup effect
   useEffect(() => {
     const handleGlobalMouseUp = () => {
-      if (isDragging) {
+      if (isDragging && draggedBooking) {
         console.log('Global drag cleanup - resetting drag state');
+        // Clean up any remaining drag styles
+        const dragElement = document.querySelector(`[data-booking-id="${draggedBooking.booking.id}"]`) as HTMLElement;
+        if (dragElement) {
+          dragElement.style.opacity = '';
+          dragElement.style.transform = '';
+          dragElement.style.zIndex = '';
+          dragElement.style.cursor = '';
+          dragElement.style.pointerEvents = '';
+          dragElement.style.transition = '';
+          dragElement.style.boxShadow = '';
+        }
         setIsDragging(false);
         setDraggedBooking(null);
       }
@@ -446,7 +462,7 @@ export default function EnhancedGoogleCalendar({
 
     document.addEventListener('mouseup', handleGlobalMouseUp);
     return () => document.removeEventListener('mouseup', handleGlobalMouseUp);
-  }, [isDragging]);
+  }, [isDragging, draggedBooking]);
 
   // Add drop zone detection for proper drag and drop
   const handleDrop = useCallback((targetDate: Date, targetTime?: string) => {
