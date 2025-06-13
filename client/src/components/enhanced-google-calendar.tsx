@@ -1505,13 +1505,25 @@ function EditBookingForm({
     customerEmail: booking.customerEmail || "",
     customerPhone: booking.customerPhone || "",
     guestCount: booking.guestCount,
-    bookingDate:
-      typeof booking.bookingDate === "string"
-        ? booking.bookingDate
-        : booking.bookingDate.toISOString().split("T")[0],
+    bookingDate: (() => {
+      try {
+        if (typeof booking.bookingDate === "string") {
+          // Parse the date string and format as YYYY-MM-DD
+          const date = new Date(booking.bookingDate);
+          return format(date, 'yyyy-MM-dd');
+        } else if (booking.bookingDate instanceof Date) {
+          return format(booking.bookingDate, 'yyyy-MM-dd');
+        } else {
+          return format(new Date(), 'yyyy-MM-dd');
+        }
+      } catch (error) {
+        return format(new Date(), 'yyyy-MM-dd');
+      }
+    })(),
     startTime: booking.startTime,
     tableId: booking.tableId,
     notes: booking.notes || "",
+    status: booking.status || "confirmed",
   });
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -1671,6 +1683,27 @@ function EditBookingForm({
           placeholder="Special requests or notes..."
           className="min-h-[80px]"
         />
+      </div>
+
+      <div>
+        <Label htmlFor="edit-status">Status</Label>
+        <Select
+          value={formData.status}
+          onValueChange={(value) =>
+            setFormData((prev) => ({ ...prev, status: value }))
+          }
+        >
+          <SelectTrigger>
+            <SelectValue placeholder="Select status" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="confirmed">Confirmed</SelectItem>
+            <SelectItem value="pending">Pending</SelectItem>
+            <SelectItem value="cancelled">Cancelled</SelectItem>
+            <SelectItem value="completed">Completed</SelectItem>
+            <SelectItem value="no-show">No Show</SelectItem>
+          </SelectContent>
+        </Select>
       </div>
 
       <div className="flex justify-end space-x-2">
