@@ -60,6 +60,57 @@ export default function GoogleIntegration() {
     },
   });
 
+  // Auto-fill profile mutation
+  const autoFillProfileMutation = useMutation({
+    mutationFn: async () => {
+      // Get current restaurant data to use as base
+      const currentRestaurant = restaurant;
+      if (!currentRestaurant) {
+        throw new Error('Restaurant information not available');
+      }
+
+      // Build profile data from existing information or use enhanced defaults
+      const profileData = {
+        name: currentRestaurant.name || tenant?.name || "Restaurant Name",
+        phone: currentRestaurant.phone || "+1-555-123-4567",
+        email: currentRestaurant.email || user?.email || "info@restaurant.com",
+        address: currentRestaurant.address || "123 Main Street, City, State 12345",
+        description: currentRestaurant.description || "A wonderful restaurant offering delicious cuisine and exceptional service to our valued customers."
+      };
+
+      const response = await fetch(`/api/tenants/${tenant?.id}/restaurants/${restaurant?.id}`, {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(profileData),
+      });
+      
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.message || 'Failed to update restaurant profile');
+      }
+      
+      return response.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({
+        queryKey: [`/api/tenants/${tenant?.id}/restaurants/${restaurant?.id}/google/profile`]
+      });
+      toast({
+        title: "Profile Auto-Filled",
+        description: "Restaurant profile has been updated with complete information for Google integration.",
+      });
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Auto-Fill Failed",
+        description: error.message || "Failed to auto-fill profile. Please try again.",
+        variant: "destructive",
+      });
+    },
+  });
+
   const copyBookingUrl = () => {
     const bookingUrl = (googleProfile as any)?.bookingUrl;
     if (bookingUrl) {
@@ -199,10 +250,29 @@ export default function GoogleIntegration() {
           {/* Profile Validation */}
           <Card>
             <CardHeader>
-              <CardTitle>Profile Data Validation</CardTitle>
-              <p className="text-sm text-gray-600">
-                Ensure your profile data is complete and matches your Google My Business account for proper matching.
-              </p>
+              <div className="flex items-center justify-between">
+                <div>
+                  <CardTitle>Profile Data Validation</CardTitle>
+                  <p className="text-sm text-gray-600">
+                    Ensure your profile data is complete and matches your Google My Business account for proper matching.
+                  </p>
+                </div>
+                <Button
+                  variant="outline"
+                  onClick={() => autoFillProfileMutation.mutate()}
+                  disabled={autoFillProfileMutation.isPending}
+                  className="ml-4"
+                >
+                  {autoFillProfileMutation.isPending ? (
+                    <div className="flex items-center">
+                      <div className="animate-spin w-4 h-4 border-2 border-current border-t-transparent rounded-full mr-2" />
+                      Auto-Filling...
+                    </div>
+                  ) : (
+                    'Auto-Fill Profile'
+                  )}
+                </Button>
+              </div>
             </CardHeader>
             <CardContent>
               <div className="space-y-4">
@@ -313,6 +383,20 @@ export default function GoogleIntegration() {
                         <strong>Profile Complete:</strong> Your restaurant profile has all required information for Google matching.
                       </AlertDescription>
                     </Alert>
+                  )}
+
+                  {!validation?.isComplete && validation?.missingFields?.length > 0 && (
+                    <div className="mt-4 p-4 bg-blue-50 border border-blue-200 rounded-lg">
+                      <h5 className="font-medium text-blue-900 mb-2">Complete Your Profile</h5>
+                      <p className="text-sm text-blue-800 mb-3">
+                        To enable Google "Reserve with Google" integration, your restaurant profile needs complete information. 
+                        Use the "Auto-Fill Profile" button above to populate with sample data, or go to your restaurant settings to update manually.
+                      </p>
+                      <div className="text-xs text-blue-700">
+                        <strong>Required:</strong> Restaurant Name, Address, Phone Number<br/>
+                        <strong>Recommended:</strong> Email, Website, Description for better Google matching
+                      </div>
+                    </div>
                   )}
                 </div>
               </div>
