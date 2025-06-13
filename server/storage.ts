@@ -202,6 +202,7 @@ export interface IStorage {
 
   // Opening Hours
   getOpeningHours(tenantId: number, restaurantId: number): Promise<any[]>;
+  getOpeningHoursByRestaurant(restaurantId: number): Promise<any[]>;
   createOpeningHour(hourData: any): Promise<any>;
   clearOpeningHours(tenantId: number, restaurantId: number): Promise<void>;
 
