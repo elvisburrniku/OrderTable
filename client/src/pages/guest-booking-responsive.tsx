@@ -387,7 +387,7 @@ export default function GuestBookingResponsive(props: any) {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-blue-900 to-indigo-900">
+    <div className="min-h-screen from-slate-900 via-blue-900 to-indigo-900 bg-[#431b6d]">
       {/* Header with Personalized Welcome */}
       <div className="text-center py-6 md:py-8 px-4 bg-[#431b6d]">
         <div className="mb-4 animate-fade-in">
@@ -407,7 +407,7 @@ export default function GuestBookingResponsive(props: any) {
         </p>
       </div>
       {/* Progress Steps */}
-      <div className="px-4 mb-6 md:mb-8">
+      <div className="px-4 mb-6 md:mb-8 bg-[#431b6d]">
         <div className="max-w-2xl mx-auto">
           <div className="flex justify-between items-center">
             {steps.map((step, index) => {
