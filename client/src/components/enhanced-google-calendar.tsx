@@ -70,7 +70,9 @@ export default function EnhancedGoogleCalendar({
   const [view, setView] = useState<ViewType>('week');
   const [currentDate, setCurrentDate] = useState(selectedDate);
   const [isNewBookingOpen, setIsNewBookingOpen] = useState(false);
+  const [isEditBookingOpen, setIsEditBookingOpen] = useState(false);
   const [selectedTimeSlot, setSelectedTimeSlot] = useState<{ date: Date; time: string } | null>(null);
+  const [editingBooking, setEditingBooking] = useState<Booking | null>(null);
   const [draggedBooking, setDraggedBooking] = useState<DraggedBooking | null>(null);
   const [isDragging, setIsDragging] = useState(false);
   const calendarRef = useRef<HTMLDivElement>(null);
@@ -250,6 +252,38 @@ export default function EnhancedGoogleCalendar({
       });
     }
   });
+
+  // Edit booking mutation
+  const editBookingMutation = useMutation({
+    mutationFn: async (updatedData: Partial<Booking>) => {
+      if (!editingBooking) throw new Error("No booking selected for editing");
+      const response = await apiRequest("PUT", `/api/tenants/${restaurant?.tenantId}/restaurants/${restaurant?.id}/bookings/${editingBooking.id}`, updatedData);
+      return response;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: [`/api/tenants/${restaurant?.tenantId}/restaurants/${restaurant?.id}/bookings`] });
+      setIsEditBookingOpen(false);
+      setEditingBooking(null);
+      toast({
+        title: "Booking Updated",
+        description: "Booking has been updated successfully."
+      });
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Error",
+        description: error.message || "Failed to update booking",
+        variant: "destructive"
+      });
+    }
+  });
+
+  // Click handler for editing bookings
+  const handleBookingClick = useCallback((e: React.MouseEvent, booking: Booking) => {
+    e.stopPropagation();
+    setEditingBooking(booking);
+    setIsEditBookingOpen(true);
+  }, []);
 
   // Drag and drop handlers
   const handleMouseDown = useCallback((e: React.MouseEvent, booking: Booking) => {
@@ -466,12 +500,14 @@ export default function EnhancedGoogleCalendar({
                         <div
                           key={booking.id}
                           data-booking-id={booking.id}
-                          className={`p-1 mb-1 bg-blue-100 text-blue-800 rounded text-xs cursor-move transition-all duration-200 hover:bg-blue-200 hover:shadow-md ${
+                          className={`p-1 mb-1 bg-blue-100 text-blue-800 rounded text-xs cursor-pointer transition-all duration-200 hover:bg-blue-200 hover:shadow-md ${
                             draggedBooking?.booking.id === booking.id ? 'opacity-50 transform scale-95' : ''
                           }`}
                           draggable
+                          onClick={(e) => handleBookingClick(e, booking)}
                           onMouseDown={(e) => handleMouseDown(e, booking)}
                           onDragStart={(e) => e.preventDefault()}
+                          title="Click to edit booking"
                         >
                           <div className="truncate font-medium">{booking.customerName}</div>
                           <div className="text-xs opacity-75">{booking.guestCount} guests</div>
@@ -788,6 +824,163 @@ export default function EnhancedGoogleCalendar({
           </div>
         </DialogContent>
       </Dialog>
+
+      {/* Edit Booking Dialog */}
+      <Dialog open={isEditBookingOpen} onOpenChange={setIsEditBookingOpen}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>Edit Booking</DialogTitle>
+          </DialogHeader>
+          {editingBooking && (
+            <EditBookingForm
+              booking={editingBooking}
+              tables={tables}
+              onSave={(updatedData) => editBookingMutation.mutate(updatedData)}
+              onCancel={() => {
+                setIsEditBookingOpen(false);
+                setEditingBooking(null);
+              }}
+              isLoading={editBookingMutation.isPending}
+            />
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
+  );
+}
+
+// Edit Booking Form Component
+interface EditBookingFormProps {
+  booking: Booking;
+  tables: TableType[];
+  onSave: (data: Partial<Booking>) => void;
+  onCancel: () => void;
+  isLoading: boolean;
+}
+
+function EditBookingForm({ booking, tables, onSave, onCancel, isLoading }: EditBookingFormProps) {
+  const [formData, setFormData] = useState({
+    customerName: booking.customerName,
+    customerEmail: booking.customerEmail || '',
+    customerPhone: booking.customerPhone || '',
+    guestCount: booking.guestCount,
+    bookingDate: booking.bookingDate,
+    startTime: booking.startTime,
+    tableId: booking.tableId || '',
+    notes: booking.notes || ''
+  });
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    onSave(formData);
+  };
+
+  return (
+    <form onSubmit={handleSubmit} className="space-y-4">
+      <div>
+        <Label htmlFor="edit-customerName">Customer Name</Label>
+        <Input
+          id="edit-customerName"
+          value={formData.customerName}
+          onChange={(e) => setFormData(prev => ({ ...prev, customerName: e.target.value }))}
+          placeholder="Enter customer name"
+          required
+        />
+      </div>
+      
+      <div>
+        <Label htmlFor="edit-customerEmail">Email</Label>
+        <Input
+          id="edit-customerEmail"
+          type="email"
+          value={formData.customerEmail}
+          onChange={(e) => setFormData(prev => ({ ...prev, customerEmail: e.target.value }))}
+          placeholder="customer@example.com"
+        />
+      </div>
+      
+      <div>
+        <Label htmlFor="edit-customerPhone">Phone</Label>
+        <Input
+          id="edit-customerPhone"
+          value={formData.customerPhone}
+          onChange={(e) => setFormData(prev => ({ ...prev, customerPhone: e.target.value }))}
+          placeholder="Phone number"
+        />
+      </div>
+      
+      <div className="grid grid-cols-2 gap-4">
+        <div>
+          <Label htmlFor="edit-guestCount">Guests</Label>
+          <Input
+            id="edit-guestCount"
+            type="number"
+            min="1"
+            max="20"
+            value={formData.guestCount}
+            onChange={(e) => setFormData(prev => ({ ...prev, guestCount: parseInt(e.target.value) || 1 }))}
+          />
+        </div>
+        
+        <div>
+          <Label htmlFor="edit-tableId">Table</Label>
+          <Select value={formData.tableId?.toString() || ''} onValueChange={(value) => setFormData(prev => ({ ...prev, tableId: value ? parseInt(value) : null }))}>
+            <SelectTrigger>
+              <SelectValue placeholder="Select table" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="">No table assigned</SelectItem>
+              {tables.map(table => (
+                <SelectItem key={table.id} value={table.id.toString()}>
+                  Table {table.tableNumber} ({table.capacity} seats)
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+      </div>
+      
+      <div className="grid grid-cols-2 gap-4">
+        <div>
+          <Label htmlFor="edit-bookingDate">Date</Label>
+          <Input
+            id="edit-bookingDate"
+            type="date"
+            value={formData.bookingDate}
+            onChange={(e) => setFormData(prev => ({ ...prev, bookingDate: e.target.value }))}
+          />
+        </div>
+        
+        <div>
+          <Label htmlFor="edit-startTime">Time</Label>
+          <Input
+            id="edit-startTime"
+            type="time"
+            value={formData.startTime}
+            onChange={(e) => setFormData(prev => ({ ...prev, startTime: e.target.value }))}
+          />
+        </div>
+      </div>
+      
+      <div>
+        <Label htmlFor="edit-notes">Notes</Label>
+        <Textarea
+          id="edit-notes"
+          value={formData.notes}
+          onChange={(e) => setFormData(prev => ({ ...prev, notes: e.target.value }))}
+          placeholder="Special requests or notes..."
+          className="min-h-[80px]"
+        />
+      </div>
+      
+      <div className="flex justify-end space-x-2">
+        <Button variant="outline" type="button" onClick={onCancel}>
+          Cancel
+        </Button>
+        <Button type="submit" disabled={isLoading || !formData.customerName}>
+          {isLoading ? "Saving..." : "Save Changes"}
+        </Button>
+      </div>
+    </form>
   );
 }
