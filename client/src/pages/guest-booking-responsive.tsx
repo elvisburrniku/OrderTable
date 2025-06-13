@@ -491,8 +491,13 @@ export default function GuestBookingResponsive(props: any) {
                   {/* Empty cells for proper day alignment - Monday first */}
                   {(() => {
                     const firstDayOfMonth = getDay(startOfMonth(currentMonth));
+                    // Debug logging
+                    console.log('First day of month:', format(startOfMonth(currentMonth), 'yyyy-MM-dd'), 'getDay():', firstDayOfMonth);
+                    
                     // Convert to Monday-first: Sunday=0 -> 6, Monday=1 -> 0, Tuesday=2 -> 1, etc.
                     const mondayFirstOffset = firstDayOfMonth === 0 ? 6 : firstDayOfMonth - 1;
+                    console.log('Monday-first offset (empty cells):', mondayFirstOffset);
+                    
                     return Array.from({ length: mondayFirstOffset }).map((_, index) => (
                       <div key={`empty-${index}`} className="h-12"></div>
                     ));
