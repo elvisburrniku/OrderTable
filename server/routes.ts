@@ -8400,6 +8400,72 @@ app.put("/api/tenants/:tenantId/bookings/:id", validateTenant, async (req, res) 
       }
 
       const entry = await storage.updateWaitingListEntry(id, updates);
+
+      // If status is changed to "booked", create a booking in the calendar
+      if (updates.status === "booked" && existingEntry.status !== "booked") {
+        try {
+          const restaurant = await storage.getRestaurantById(restaurantId);
+          if (restaurant) {
+            // Parse the requested date and time to create a proper booking date
+            const bookingDate = new Date(existingEntry.requestedDate);
+            
+            const bookingData = {
+              tenantId: restaurant.tenantId,
+              restaurantId: restaurantId,
+              customerName: existingEntry.customerName,
+              customerEmail: existingEntry.customerEmail,
+              customerPhone: existingEntry.customerPhone || null,
+              guestCount: existingEntry.guestCount,
+              bookingDate: bookingDate,
+              startTime: existingEntry.requestedTime,
+              specialRequests: existingEntry.notes || null,
+              status: "confirmed",
+              source: "waiting_list"
+            };
+
+            const booking = await storage.createBooking(bookingData);
+            console.log(`Booking created from waiting list entry ${id}:`, booking.id);
+
+            // Send notification via WebSocket
+            if (wsClients.has(restaurantId)) {
+              const clients = wsClients.get(restaurantId);
+              const notification = {
+                type: 'booking_created',
+                message: `Booking confirmed from waiting list: ${existingEntry.customerName}`,
+                data: booking
+              };
+              
+              clients.forEach((client) => {
+                if (client.readyState === WebSocket.OPEN) {
+                  client.send(JSON.stringify(notification));
+                }
+              });
+            }
+
+            // Log the activity
+            await storage.createActivityLog({
+              tenantId: restaurant.tenantId,
+              restaurantId: restaurantId,
+              eventType: "booking_created",
+              description: `Booking created from waiting list for ${existingEntry.customerName}`,
+              source: "waiting_list",
+              userEmail: null,
+              details: JSON.stringify({
+                waitingListId: id,
+                bookingId: booking.id,
+                customerName: existingEntry.customerName,
+                guestCount: existingEntry.guestCount,
+                requestedDate: existingEntry.requestedDate,
+                requestedTime: existingEntry.requestedTime
+              })
+            });
+          }
+        } catch (bookingError) {
+          console.error("Error creating booking from waiting list:", bookingError);
+          // Don't fail the waiting list update if booking creation fails
+        }
+      }
+
       res.json(entry);
     } catch (error) {
       console.error("Error updating waiting list entry:", error);
