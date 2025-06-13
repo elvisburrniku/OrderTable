@@ -144,12 +144,17 @@ function App() {
             <Route path="/feedback-responses" component={FeedbackResponses} />
             <Route path="/feedback-responses-popup" component={FeedbackResponsesPopup} />
             <Route path="/contact" component={Contact} />
-            <Route path="/guest-booking/:tenantId/:restaurantId" component={GuestBookingElegant} />
-            <Route path="/:tenantId/book/:restaurantId" component={GuestBookingElegant} />
             <Route component={NotFound} />
           </Switch>
         </LayoutWrapper>
       </RouteGuard>
+      
+      {/* Public routes - no authentication required */}
+      <Switch>
+        <Route path="/guest-booking/:tenantId/:restaurantId" component={GuestBookingElegant} />
+        <Route path="/:tenantId/book/:restaurantId" component={GuestBookingElegant} />
+      </Switch>
+      
       <Toaster />
     </TenantProvider>
     </AuthProvider>

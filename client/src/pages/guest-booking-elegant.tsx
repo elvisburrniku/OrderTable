@@ -26,13 +26,10 @@ const generateTimeSlots = () => {
 
 const timeSlots = generateTimeSlots();
 
-export default function GuestBookingElegant() {
-  // Handle both URL patterns
-  const [guestMatch, guestParams] = useRoute("/guest-booking/:tenantId/:restaurantId");
-  const [bookMatch, bookParams] = useRoute("/:tenantId/book/:restaurantId");
-  
-  const tenantId = guestParams?.tenantId || bookParams?.tenantId;
-  const restaurantId = guestParams?.restaurantId || bookParams?.restaurantId;
+export default function GuestBookingElegant(props: any) {
+  // Extract parameters from the URL
+  const tenantId = props.params?.tenantId;
+  const restaurantId = props.params?.restaurantId;
   const { toast } = useToast();
 
   const [currentStep, setCurrentStep] = useState(0);
