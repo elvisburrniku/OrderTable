@@ -581,12 +581,14 @@ export default function EnhancedGoogleCalendar({
                         <div
                           key={booking.id}
                           data-booking-id={booking.id}
-                          className={`p-1 bg-blue-100 text-blue-800 rounded text-xs truncate cursor-move transition-all duration-200 hover:bg-blue-200 hover:shadow-md ${
+                          className={`p-1 bg-blue-100 text-blue-800 rounded text-xs truncate cursor-pointer transition-all duration-200 hover:bg-blue-200 hover:shadow-md ${
                             draggedBooking?.booking.id === booking.id ? 'opacity-50 transform scale-95' : ''
                           }`}
                           draggable
+                          onClick={(e) => handleBookingClick(e, booking)}
                           onMouseDown={(e) => handleMouseDown(e, booking)}
                           onDragStart={(e) => e.preventDefault()}
+                          title="Click to edit booking"
                         >
                           {booking.customerName}
                         </div>
@@ -864,9 +866,9 @@ function EditBookingForm({ booking, tables, onSave, onCancel, isLoading }: EditB
     customerEmail: booking.customerEmail || '',
     customerPhone: booking.customerPhone || '',
     guestCount: booking.guestCount,
-    bookingDate: booking.bookingDate,
+    bookingDate: booking.bookingDate, // Keep as string since API expects string
     startTime: booking.startTime,
-    tableId: booking.tableId || '',
+    tableId: booking.tableId,
     notes: booking.notes || ''
   });
 
@@ -946,7 +948,7 @@ function EditBookingForm({ booking, tables, onSave, onCancel, isLoading }: EditB
           <Input
             id="edit-bookingDate"
             type="date"
-            value={formData.bookingDate}
+            value={formData.bookingDate.toString()}
             onChange={(e) => setFormData(prev => ({ ...prev, bookingDate: e.target.value }))}
           />
         </div>
