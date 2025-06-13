@@ -6867,6 +6867,162 @@ export async function registerRoutes(app: Express): Promise<Server> {
     },
   );
 
+  // Google Calendar Integration Routes
+  app.get(
+    "/api/google-calendar/auth-url",
+    async (req, res) => {
+      try {
+        const authUrl = await googleCalendarService.getAuthUrl();
+        res.json({ authUrl });
+      } catch (error) {
+        console.error('Error generating Google Calendar auth URL:', error);
+        res.status(500).json({ message: "Failed to generate authentication URL" });
+      }
+    }
+  );
+
+  app.post(
+    "/api/google-calendar/auth-callback",
+    async (req, res) => {
+      try {
+        const { code } = req.body;
+        if (!code) {
+          return res.status(400).json({ message: "Authorization code is required" });
+        }
+
+        const tokens = await googleCalendarService.handleAuthCallback(code);
+        res.json({ 
+          message: "Google Calendar authentication successful",
+          tokens: {
+            access_token: tokens.access_token ? "***" : null,
+            refresh_token: tokens.refresh_token ? "***" : null,
+            expiry_date: tokens.expiry_date
+          }
+        });
+      } catch (error) {
+        console.error('Error handling Google Calendar auth callback:', error);
+        res.status(500).json({ message: "Authentication failed" });
+      }
+    }
+  );
+
+  app.post(
+    "/api/tenants/:tenantId/restaurants/:restaurantId/google-calendar/sync",
+    validateTenant,
+    async (req, res) => {
+      try {
+        const restaurantId = parseInt(req.params.restaurantId);
+        const tenantId = parseInt(req.params.tenantId);
+
+        const restaurant = await storage.getRestaurantById(restaurantId);
+        if (!restaurant || restaurant.tenantId !== tenantId) {
+          return res.status(404).json({ message: "Restaurant not found" });
+        }
+
+        // Perform full calendar sync
+        await googleCalendarService.fullSync(restaurantId, tenantId);
+        
+        res.json({ 
+          message: "Google Calendar sync completed successfully",
+          timestamp: new Date().toISOString()
+        });
+      } catch (error) {
+        console.error('Error syncing with Google Calendar:', error);
+        res.status(500).json({ 
+          message: "Calendar sync failed",
+          error: error.message 
+        });
+      }
+    }
+  );
+
+  app.post(
+    "/api/tenants/:tenantId/restaurants/:restaurantId/google-calendar/sync-opening-hours",
+    validateTenant,
+    async (req, res) => {
+      try {
+        const restaurantId = parseInt(req.params.restaurantId);
+        const tenantId = parseInt(req.params.tenantId);
+
+        const restaurant = await storage.getRestaurantById(restaurantId);
+        if (!restaurant || restaurant.tenantId !== tenantId) {
+          return res.status(404).json({ message: "Restaurant not found" });
+        }
+
+        await googleCalendarService.syncOpeningHours(restaurantId, tenantId);
+        
+        res.json({ 
+          message: "Opening hours synced to Google Calendar successfully",
+          timestamp: new Date().toISOString()
+        });
+      } catch (error) {
+        console.error('Error syncing opening hours to Google Calendar:', error);
+        res.status(500).json({ 
+          message: "Opening hours sync failed",
+          error: error.message 
+        });
+      }
+    }
+  );
+
+  app.post(
+    "/api/tenants/:tenantId/restaurants/:restaurantId/google-calendar/sync-special-periods",
+    validateTenant,
+    async (req, res) => {
+      try {
+        const restaurantId = parseInt(req.params.restaurantId);
+        const tenantId = parseInt(req.params.tenantId);
+
+        const restaurant = await storage.getRestaurantById(restaurantId);
+        if (!restaurant || restaurant.tenantId !== tenantId) {
+          return res.status(404).json({ message: "Restaurant not found" });
+        }
+
+        await googleCalendarService.syncSpecialPeriods(restaurantId);
+        
+        res.json({ 
+          message: "Special periods synced to Google Calendar successfully",
+          timestamp: new Date().toISOString()
+        });
+      } catch (error) {
+        console.error('Error syncing special periods to Google Calendar:', error);
+        res.status(500).json({ 
+          message: "Special periods sync failed",
+          error: error.message 
+        });
+      }
+    }
+  );
+
+  app.post(
+    "/api/tenants/:tenantId/restaurants/:restaurantId/google-calendar/sync-cutoff-times",
+    validateTenant,
+    async (req, res) => {
+      try {
+        const restaurantId = parseInt(req.params.restaurantId);
+        const tenantId = parseInt(req.params.tenantId);
+
+        const restaurant = await storage.getRestaurantById(restaurantId);
+        if (!restaurant || restaurant.tenantId !== tenantId) {
+          return res.status(404).json({ message: "Restaurant not found" });
+        }
+
+        await googleCalendarService.syncCutOffTimes(restaurantId);
+        
+        res.json({ 
+          message: "Cut-off times synced to Google Calendar successfully",
+          timestamp: new Date().toISOString()
+        });
+      } catch (error) {
+        console.error('Error syncing cut-off times to Google Calendar:', error);
+        res.status(500).json({ 
+          message: "Cut-off times sync failed",
+          error: error.message 
+        });
+      }
+    }
+  );
+
   // Generate Meta install link
   app.post(
     "/api/tenants/:tenantId/restaurants/:restaurantId/meta-install-link",
