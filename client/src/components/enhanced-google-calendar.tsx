@@ -1634,7 +1634,7 @@ function EditBookingForm({
                       </SelectItem>
                     ))}
                     {unavailableCount > 0 && (
-                      <SelectItem value="" disabled className="text-red-600">
+                      <SelectItem value="unavailable-info" disabled className="text-red-600">
                         {unavailableCount} table{unavailableCount !== 1 ? 's' : ''} unavailable at this time
                       </SelectItem>
                     )}
