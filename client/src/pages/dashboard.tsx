@@ -737,7 +737,35 @@ export default function Dashboard() {
                 Live Status
               </Button>
             </div>
-            <Button className="bg-green-600 hover:bg-green-700 text-white">
+            <Button 
+              className="bg-green-600 hover:bg-green-700 text-white"
+              onClick={() => {
+                // Find the first available table for immediate booking
+                const now = new Date();
+                const currentTime = `${now.getHours().toString().padStart(2, '0')}:${now.getMinutes().toString().padStart(2, '0')}`;
+                const availableTable = findAlternativeTable(2, currentTime, selectedDate);
+                
+                if (availableTable) {
+                  setSelectedTableForBooking(availableTable);
+                  setNewBooking({
+                    customerName: "",
+                    customerEmail: "",
+                    customerPhone: "",
+                    guestCount: 2,
+                    startTime: currentTime,
+                    endTime: String(parseInt(currentTime.split(':')[0]) + 2).padStart(2, '0') + ':' + currentTime.split(':')[1],
+                    notes: ""
+                  });
+                  setIsNewBookingOpen(true);
+                } else {
+                  toast({
+                    title: "No Available Tables",
+                    description: "No tables are currently available for immediate booking. Try selecting a different time or date.",
+                    variant: "destructive"
+                  });
+                }
+              }}
+            >
               <Plus className="h-4 w-4 mr-2" />
               New booking
             </Button>
