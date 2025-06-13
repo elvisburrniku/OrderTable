@@ -93,9 +93,9 @@ export default function Calendar() {
   }
 
   return (
-    <div className="space-y-6">
+    <div className="h-screen flex flex-col p-6">
       {/* Header */}
-      <div className="flex items-center justify-between">
+      <div className="flex items-center justify-between mb-6 flex-shrink-0">
         <div>
           <h1 className="text-3xl font-bold tracking-tight">Calendar</h1>
           <p className="text-muted-foreground">
@@ -113,8 +113,8 @@ export default function Calendar() {
       </div>
 
       {/* Calendar View Selector */}
-      <Tabs value={calendarView} onValueChange={setCalendarView} className="w-full">
-        <TabsList className="grid w-full grid-cols-3">
+      <Tabs value={calendarView} onValueChange={setCalendarView} className="flex-1 flex flex-col">
+        <TabsList className="grid w-full grid-cols-3 mb-4 flex-shrink-0">
           <TabsTrigger value="enhanced" className="flex items-center space-x-2">
             <Grid className="w-4 h-4" />
             <span>Enhanced</span>
@@ -129,92 +129,18 @@ export default function Calendar() {
           </TabsTrigger>
         </TabsList>
 
-        <TabsContent value="enhanced" className="space-y-4">
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center space-x-2">
-                <Grid className="w-5 h-5" />
-                <span>Enhanced Calendar View</span>
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              {renderCalendarView()}
-            </CardContent>
-          </Card>
+        <TabsContent value="enhanced" className="flex-1">
+          {renderCalendarView()}
         </TabsContent>
 
-        <TabsContent value="google" className="space-y-4">
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center space-x-2">
-                <CalendarIcon className="w-5 h-5" />
-                <span>Google Calendar Style</span>
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              {renderCalendarView()}
-            </CardContent>
-          </Card>
+        <TabsContent value="google" className="flex-1">
+          {renderCalendarView()}
         </TabsContent>
 
-        <TabsContent value="standard" className="space-y-4">
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center space-x-2">
-                <List className="w-5 h-5" />
-                <span>Standard Calendar</span>
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              {renderCalendarView()}
-            </CardContent>
-          </Card>
+        <TabsContent value="standard" className="flex-1">
+          {renderCalendarView()}
         </TabsContent>
       </Tabs>
-
-      {/* Today's Bookings Summary */}
-      {selectedDateBookings.length > 0 && (
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center space-x-2">
-              <Clock className="w-5 h-5" />
-              <span>Bookings for {format(selectedDate, 'MMMM dd, yyyy')}</span>
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-              {selectedDateBookings.map((booking: any) => (
-                <div key={booking.id} className="border rounded-lg p-4 space-y-2">
-                  <div className="flex items-center justify-between">
-                    <h4 className="font-medium">{booking.customerName}</h4>
-                    <Badge className={getBookingStatusColor(booking.status)}>
-                      {booking.status}
-                    </Badge>
-                  </div>
-                  <div className="text-sm text-gray-600 space-y-1">
-                    <div className="flex items-center space-x-2">
-                      <Clock className="w-4 h-4" />
-                      <span>{booking.startTime}</span>
-                    </div>
-                    <div className="flex items-center space-x-2">
-                      <Users className="w-4 h-4" />
-                      <span>{booking.guestCount} guests</span>
-                    </div>
-                    {booking.tableId && (
-                      <div className="flex items-center space-x-2">
-                        <span className="text-xs">Table {booking.tableId}</span>
-                      </div>
-                    )}
-                  </div>
-                  {booking.notes && (
-                    <p className="text-xs text-gray-500 mt-2">{booking.notes}</p>
-                  )}
-                </div>
-              ))}
-            </div>
-          </CardContent>
-        </Card>
-      )}
     </div>
   );
 }
