@@ -65,7 +65,7 @@ import TableFeedback from "./pages/table-feedback";
 import FeedbackResponsesPopup from "./pages/feedback-responses-popup";
 import Contact from "./pages/contact";
 import GuestBookingNew from "./pages/guest-booking-new";
-import GuestBookingElegant from "./pages/guest-booking-elegant";
+import GuestBookingResponsive from "./pages/guest-booking-responsive";
 import SetupWizard from "./pages/setup-wizard";
 import EmailTest from "./pages/email-test";
 import TestTools from "./pages/test-tools";
@@ -151,8 +151,8 @@ function App() {
       
       {/* Public routes - no authentication required */}
       <Switch>
-        <Route path="/guest-booking/:tenantId/:restaurantId" component={GuestBookingElegant} />
-        <Route path="/:tenantId/book/:restaurantId" component={GuestBookingElegant} />
+        <Route path="/guest-booking/:tenantId/:restaurantId" component={GuestBookingResponsive} />
+        <Route path="/:tenantId/book/:restaurantId" component={GuestBookingResponsive} />
       </Switch>
       
       <Toaster />
