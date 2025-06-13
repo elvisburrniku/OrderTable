@@ -431,15 +431,26 @@ export default function EnhancedGoogleCalendar({
     if (newDateStr !== currentDateStr || (targetTime && targetTime !== draggedBooking.booking.startTime)) {
       console.log(`Moving booking ${draggedBooking.booking.customerName} to ${newDateStr} at ${targetTime || draggedBooking.booking.startTime}`);
       
+      // Create proper date object for the new booking date
+      const newBookingDate = new Date(targetDate.getFullYear(), targetDate.getMonth(), targetDate.getDate());
+      
       const updatedBooking = {
-        ...draggedBooking.booking,
-        bookingDate: new Date(newDateStr),
+        id: draggedBooking.booking.id,
+        restaurantId: draggedBooking.booking.restaurantId,
+        customerName: draggedBooking.booking.customerName,
+        customerEmail: draggedBooking.booking.customerEmail,
+        customerPhone: draggedBooking.booking.customerPhone,
+        guestCount: draggedBooking.booking.guestCount,
+        tableNumber: draggedBooking.booking.tableNumber,
+        bookingDate: newBookingDate.toISOString().split('T')[0], // Format as YYYY-MM-DD string
         startTime: targetTime || draggedBooking.booking.startTime,
         endTime: targetTime ? addMinutes(parse(targetTime, 'HH:mm', new Date()), 60).toLocaleTimeString('en-US', { 
           hour12: false, 
           hour: '2-digit', 
           minute: '2-digit' 
-        }) : draggedBooking.booking.endTime
+        }) : draggedBooking.booking.endTime,
+        notes: draggedBooking.booking.notes,
+        status: draggedBooking.booking.status
       };
       
       editBookingMutation.mutate(updatedBooking);
