@@ -2,20 +2,30 @@ import { TransactionalEmailsApi, SendSmtpEmail } from '@getbrevo/brevo';
 import { BookingHash } from './booking-hash';
 
 export class BrevoEmailService {
-  private apiInstance: TransactionalEmailsApi;
+  private apiInstance: TransactionalEmailsApi | null = null;
+  private isEnabled: boolean;
 
   constructor() {
     const apiKey = process.env.BREVO_API_KEY;
-    if (!apiKey) {
-      throw new Error('BREVO_API_KEY environment variable is required');
+    this.isEnabled = !!apiKey;
+    
+    if (apiKey) {
+      this.apiInstance = new TransactionalEmailsApi();
+      // Set the default headers for authentication
+      this.apiInstance.defaultHeaders = {
+        'api-key': apiKey
+      };
+    } else {
+      console.log('BREVO_API_KEY not found - email notifications disabled');
     }
+  }
 
-    this.apiInstance = new TransactionalEmailsApi();
-
-    // Set the default headers for authentication
-    this.apiInstance.defaultHeaders = {
-      'api-key': apiKey
-    };
+  private checkEnabled(): boolean {
+    if (!this.isEnabled || !this.apiInstance) {
+      console.log('Email service not enabled - skipping email notification');
+      return false;
+    }
+    return true;
   }
 
 
@@ -64,6 +74,8 @@ export class BrevoEmailService {
   }
 
   async sendBookingConfirmation(customerEmail: string, customerName: string, bookingDetails: any) {
+    if (!this.checkEnabled()) return;
+    
     const sendSmtpEmail = new SendSmtpEmail();
 
     // Ensure booking ID is properly set
@@ -211,7 +223,7 @@ export class BrevoEmailService {
     }];
 
     try {
-      const result = await this.apiInstance.sendTransacEmail(sendSmtpEmail);
+      const result = await this.apiInstance!.sendTransacEmail(sendSmtpEmail);
       console.log('Booking confirmation email sent:', result);
       return result;
     } catch (error) {
@@ -339,7 +351,7 @@ export class BrevoEmailService {
     }];
 
     try {
-      const result = await this.apiInstance.sendTransacEmail(sendSmtpEmail);
+      const result = await this.apiInstance!.sendTransacEmail(sendSmtpEmail);
       console.log('Booking change request email sent:', result);
       return result;
     } catch (error) {
@@ -473,7 +485,7 @@ export class BrevoEmailService {
     }];
 
     try {
-      const result = await this.apiInstance.sendTransacEmail(sendSmtpEmail);
+      const result = await this.apiInstance!.sendTransacEmail(sendSmtpEmail);
       console.log('Change request response email sent:', result);
       return result;
     } catch (error) {
@@ -515,7 +527,7 @@ export class BrevoEmailService {
     }];
 
     try {
-      const result = await this.apiInstance.sendTransacEmail(sendSmtpEmail);
+      const result = await this.apiInstance!.sendTransacEmail(sendSmtpEmail);
       console.log('Booking reminder email sent:', result);
       return result;
     } catch (error) {
@@ -651,11 +663,11 @@ export class BrevoEmailService {
 
     try {
       // Send notification to support team
-      const supportResult = await this.apiInstance.sendTransacEmail(sendSmtpEmail);
+      const supportResult = await this.apiInstance!.sendTransacEmail(sendSmtpEmail);
       console.log('Contact form notification sent to support:', supportResult);
 
       // Send auto-reply to customer
-      const customerResult = await this.apiInstance.sendTransacEmail(autoReply);
+      const customerResult = await this.apiInstance!.sendTransacEmail(autoReply);
       console.log('Contact form auto-reply sent to customer:', customerResult);
 
       return { supportResult, customerResult };
