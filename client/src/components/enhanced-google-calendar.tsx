@@ -655,7 +655,6 @@ export default function EnhancedGoogleCalendar({
                           onClick={(e) => {
                             e.stopPropagation();
                             e.preventDefault();
-                            console.log('Week view booking clicked:', booking.customerName);
                             setEditingBooking(booking);
                             setIsEditBookingOpen(true);
                           }}
@@ -742,7 +741,6 @@ export default function EnhancedGoogleCalendar({
                           onClick={(e) => {
                             e.stopPropagation();
                             e.preventDefault();
-                            console.log('Month view booking clicked:', booking.customerName);
                             setEditingBooking(booking);
                             setIsEditBookingOpen(true);
                           }}
