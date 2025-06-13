@@ -1457,12 +1457,23 @@ export async function registerRoutes(app: Express): Promise<Server> {
         const bookings = await storage.getBookingsByRestaurant(restaurantId);
         const rooms = await storage.getRoomsByRestaurant(restaurantId);
 
+        // Get current time in the restaurant's timezone 
         const now = new Date();
-        // Use local time for consistency with booking storage
-        const currentTime = now.getHours() * 60 + now.getMinutes(); // Current time in minutes
-        const today = now.toISOString().split("T")[0]; // Today's date
+        // Calculate timezone offset based on user's reported time vs server time
+        // User says it's 18:09, server shows 16:13, so +2 hours difference
+        const timeZoneOffset = 2; // UTC+2 hours
+        const localNow = new Date(now.getTime() + (timeZoneOffset * 60 * 60 * 1000));
+        const currentTime = localNow.getUTCHours() * 60 + localNow.getUTCMinutes(); // Use UTC methods for adjusted time
+        const today = localNow.toISOString().split("T")[0]; // Today's date in local timezone
         
-        console.log(`Real-time status check - Server time: ${now.toISOString()}, Local time: ${now.getHours()}:${now.getMinutes().toString().padStart(2, '0')} (${currentTime} minutes), Date: ${today}`);
+        console.log(`Real-time status check - UTC: ${now.toISOString()}, Adjusted local time: ${localNow.getUTCHours()}:${localNow.getUTCMinutes().toString().padStart(2, '0')} (${currentTime} minutes), Date: ${today}`);
+        
+        // Check if 18:00 booking should be active
+        if (currentTime >= 1080) { // 18:00 = 1080 minutes
+          console.log(`Current time ${currentTime} >= 1080 (18:00), so 18:00 bookings should be ACTIVE`);
+        } else {
+          console.log(`Current time ${currentTime} < 1080 (18:00), so 18:00 bookings are future: ${1080 - currentTime} minutes remaining`);
+        }
 
         // Create a map of room names
         const roomMap = new Map();
