@@ -327,9 +327,31 @@ export default function EnhancedGoogleCalendar({
       });
     },
     onError: (error: any) => {
+      console.error('Update booking error:', error);
+      
+      // Try to parse the error message to extract the actual conflict message
+      let errorMessage = "Failed to update booking";
+      
+      if (error.message) {
+        try {
+          // Check if the error message contains JSON (like "400: {"message":"...}")
+          const match = error.message.match(/400:\s*({.*})/);
+          if (match) {
+            const jsonError = JSON.parse(match[1]);
+            errorMessage = jsonError.message || errorMessage;
+          } else {
+            // If it's a simple error message, use it directly
+            errorMessage = error.message;
+          }
+        } catch (parseError) {
+          // If parsing fails, use the original error message
+          errorMessage = error.message;
+        }
+      }
+      
       toast({
-        title: "Error",
-        description: error.message || "Failed to update booking",
+        title: "Update Failed",
+        description: errorMessage,
         variant: "destructive"
       });
     }
@@ -355,9 +377,30 @@ export default function EnhancedGoogleCalendar({
     },
     onError: (error: any) => {
       console.error('Drag update error:', error);
+      
+      // Try to parse the error message to extract the actual conflict message
+      let errorMessage = "Could not move the booking. Please try again.";
+      
+      if (error.message) {
+        try {
+          // Check if the error message contains JSON (like "400: {"message":"...}")
+          const match = error.message.match(/400:\s*({.*})/);
+          if (match) {
+            const jsonError = JSON.parse(match[1]);
+            errorMessage = jsonError.message || errorMessage;
+          } else {
+            // If it's a simple error message, use it directly
+            errorMessage = error.message;
+          }
+        } catch (parseError) {
+          // If parsing fails, use the original error message
+          errorMessage = error.message;
+        }
+      }
+      
       toast({
-        title: "Failed to Move Booking",
-        description: error.message || "Could not move the booking. Please try again.",
+        title: "Table Conflict",
+        description: errorMessage,
         variant: "destructive"
       });
     }
