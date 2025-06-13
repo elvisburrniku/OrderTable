@@ -315,6 +315,34 @@ export default function EnhancedGoogleCalendar({
     }
   });
 
+  // Drag update mutation for drag and drop operations
+  const dragUpdateMutation = useMutation({
+    mutationFn: async (updatedData: { id: number; bookingDate: string; startTime: string; endTime?: string }) => {
+      console.log('Updating booking via drag:', updatedData);
+      const response = await apiRequest("PUT", `/api/tenants/${restaurant?.tenantId}/restaurants/${restaurant?.id}/bookings/${updatedData.id}`, {
+        bookingDate: updatedData.bookingDate,
+        startTime: updatedData.startTime,
+        endTime: updatedData.endTime
+      });
+      return response;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: [`/api/tenants/${restaurant?.tenantId}/restaurants/${restaurant?.id}/bookings`] });
+      toast({
+        title: "Booking Moved",
+        description: "Booking has been moved successfully."
+      });
+    },
+    onError: (error: any) => {
+      console.error('Drag update error:', error);
+      toast({
+        title: "Failed to Move Booking",
+        description: error.message || "Could not move the booking. Please try again.",
+        variant: "destructive"
+      });
+    }
+  });
+
   // Double-click handler for editing bookings
   const handleBookingDoubleClick = useCallback((e: React.MouseEvent, booking: Booking) => {
     e.stopPropagation();
@@ -431,34 +459,23 @@ export default function EnhancedGoogleCalendar({
     if (newDateStr !== currentDateStr || (targetTime && targetTime !== draggedBooking.booking.startTime)) {
       console.log(`Moving booking ${draggedBooking.booking.customerName} to ${newDateStr} at ${targetTime || draggedBooking.booking.startTime}`);
       
-      // Create proper date object for the new booking date
-      const newBookingDate = new Date(targetDate.getFullYear(), targetDate.getMonth(), targetDate.getDate());
+      const newEndTime = targetTime ? addMinutes(parse(targetTime, 'HH:mm', new Date()), 60).toLocaleTimeString('en-US', { 
+        hour12: false, 
+        hour: '2-digit', 
+        minute: '2-digit' 
+      }) : draggedBooking.booking.endTime || undefined;
       
-      const updatedBooking = {
+      dragUpdateMutation.mutate({
         id: draggedBooking.booking.id,
-        restaurantId: draggedBooking.booking.restaurantId,
-        customerName: draggedBooking.booking.customerName,
-        customerEmail: draggedBooking.booking.customerEmail,
-        customerPhone: draggedBooking.booking.customerPhone,
-        guestCount: draggedBooking.booking.guestCount,
-        tableNumber: draggedBooking.booking.tableNumber,
-        bookingDate: newBookingDate.toISOString().split('T')[0], // Format as YYYY-MM-DD string
+        bookingDate: newDateStr,
         startTime: targetTime || draggedBooking.booking.startTime,
-        endTime: targetTime ? addMinutes(parse(targetTime, 'HH:mm', new Date()), 60).toLocaleTimeString('en-US', { 
-          hour12: false, 
-          hour: '2-digit', 
-          minute: '2-digit' 
-        }) : draggedBooking.booking.endTime,
-        notes: draggedBooking.booking.notes,
-        status: draggedBooking.booking.status
-      };
-      
-      editBookingMutation.mutate(updatedBooking);
+        endTime: newEndTime || undefined
+      });
     }
     
     setIsDragging(false);
     setDraggedBooking(null);
-  }, [isDragging, draggedBooking, editBookingMutation]);
+  }, [isDragging, draggedBooking, dragUpdateMutation]);
 
   // Create booking mutation
   const createBookingMutation = useMutation({
