@@ -785,65 +785,9 @@ export default function Dashboard() {
           </div>
         </div>
 
-        {/* Stats Overview */}
-        <div className="p-6">
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-            <Card>
-              <CardContent className="p-6">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="text-sm text-gray-600">Today's Bookings</p>
-                    <p className="text-2xl font-bold">
-                      {Array.isArray(todayBookings) ? todayBookings.length : 0}
-                    </p>
-                  </div>
-                  <CalendarIcon className="h-8 w-8 text-green-500" />
-                </div>
-              </CardContent>
-            </Card>
-            <Card>
-              <CardContent className="p-6">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="text-sm text-gray-600">Total Tables</p>
-                    <p className="text-2xl font-bold">
-                      {tables?.length || 0}
-                    </p>
-                  </div>
-                  <Users className="h-8 w-8 text-green-500" />
-                </div>
-              </CardContent>
-            </Card>
-            <Card>
-              <CardContent className="p-6">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="text-sm text-gray-600">Available Now</p>
-                    <p className="text-2xl font-bold">
-                      {getAvailableTablesCount()}
-                    </p>
-                  </div>
-                  <Clock className="h-8 w-8 text-orange-500" />
-                </div>
-              </CardContent>
-            </Card>
-            <Card>
-              <CardContent className="p-6">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="text-sm text-gray-600">This Month</p>
-                    <p className="text-2xl font-bold">
-                      {allBookings?.length || 0}
-                    </p>
-                  </div>
-                  <TrendingUp className="h-8 w-8 text-purple-500" />
-                </div>
-              </CardContent>
-            </Card>
-          </div>
-
-          {/* Compact Real-Time Status Widget */}
-          {viewMode !== 'status' && (
+        {/* Compact Real-Time Status Widget */}
+        {viewMode !== 'status' && (
+          <div className="p-6">
             <div className="mb-8">
               <RealTimeTableStatus 
                 restaurantId={restaurant?.id || 0}
@@ -853,8 +797,8 @@ export default function Dashboard() {
                 refreshInterval={60000}
               />
             </div>
-          )}
-        </div>
+          </div>
+        )}
 
         {/* Main Interface */}
         <div className="flex-1 p-6">
