@@ -533,7 +533,12 @@ export default function EnhancedGoogleCalendar({
                       openNewBookingDialog(currentDate, timeSlot);
                     }
                   }}
-                  onMouseUp={(e) => handleMouseUp(e, currentDate, timeSlot)}
+                  onMouseUp={(e) => {
+                    if (isDragging && draggedBooking) {
+                      e.preventDefault();
+                      handleDrop(currentDate, timeSlot);
+                    }
+                  }}
                   title={getAvailabilityText(availabilityLevel)}
                 >
                   <div className="w-20 text-sm text-gray-600 flex items-center space-x-2">
@@ -615,7 +620,12 @@ export default function EnhancedGoogleCalendar({
                           openNewBookingDialog(date, timeSlot);
                         }
                       }}
-                      onMouseUp={(e) => handleMouseUp(e, date, timeSlot)}
+                      onMouseUp={(e) => {
+                        if (isDragging && draggedBooking) {
+                          e.preventDefault();
+                          handleDrop(date, timeSlot);
+                        }
+                      }}
                       title={getAvailabilityText(availabilityLevel)}
                     >
                       {slotBookings.map(booking => (
