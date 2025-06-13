@@ -906,4 +906,19 @@ export class MemoryStorage implements IStorage {
   async getReschedulingSuggestionById(id: number): Promise<any> { return undefined; }
   async deleteReschedulingSuggestion(id: number): Promise<boolean> { return false; }
   async deleteExpiredReschedulingSuggestions(): Promise<void> { }
+
+  // Auto-assignment methods
+  async getUnassignedBookings(): Promise<Booking[]> {
+    return this.bookings.filter(booking => 
+      booking.status === 'confirmed' && 
+      (booking.tableId === null || booking.tableId === undefined)
+    );
+  }
+
+  async getBookingsByDateAndRestaurant(date: string, restaurantId: number): Promise<Booking[]> {
+    return this.bookings.filter(booking => {
+      const bookingDate = new Date(booking.bookingDate).toISOString().split('T')[0];
+      return bookingDate === date && booking.restaurantId === restaurantId;
+    });
+  }
 }

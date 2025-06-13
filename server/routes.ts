@@ -7488,6 +7488,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
         let actualOpenTime = null;
         let actualCloseTime = null;
+        const dayOfWeek = bookingDate.getDay();
 
         if (specialPeriod) {
           // Special period exists - completely disable opening hours
@@ -7505,7 +7506,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
           // No special period - use regular opening hours
           console.log(`Restaurant ${restaurantId}: No special period for ${dateStr}, checking regular opening hours`);
           
-          const dayOfWeek = bookingDate.getDay();
           const openingHours = await storage.getOpeningHoursByRestaurant(restaurantId);
           const dayHours = openingHours.find((oh: any) => oh.dayOfWeek === dayOfWeek);
 

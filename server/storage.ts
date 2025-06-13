@@ -254,6 +254,10 @@ export interface IStorage {
   getReschedulingSuggestionById(id: number): Promise<any>;
   deleteReschedulingSuggestion(id: number): Promise<boolean>;
   deleteExpiredReschedulingSuggestions(): Promise<void>;
+
+  // Auto-assignment methods
+  getUnassignedBookings(): Promise<Booking[]>;
+  getBookingsByDateAndRestaurant(date: string, restaurantId: number): Promise<Booking[]>;
 }
 
 import { DatabaseStorage } from "./db-storage";
