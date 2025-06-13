@@ -576,15 +576,21 @@ export default function EnhancedGoogleCalendar({
                       <div
                         key={booking.id}
                         data-booking-id={booking.id}
-                        className={`flex items-center space-x-2 p-2 bg-blue-100 text-blue-800 rounded text-sm cursor-pointer transition-all duration-300 ease-out hover:bg-blue-200 hover:shadow-lg hover:scale-105 hover:-translate-y-1 hover:rotate-1 active:scale-95 active:rotate-0 ${
+                        className={`flex items-center space-x-2 p-2 bg-blue-100 text-blue-800 rounded text-sm cursor-move transition-all duration-300 ease-out hover:bg-blue-200 hover:shadow-lg hover:scale-105 hover:-translate-y-1 hover:rotate-1 active:scale-95 active:rotate-0 ${
                           draggedBooking?.booking.id === booking.id ? 'opacity-50 transform scale-95' : ''
                         }`}
+                        draggable
                         onClick={(e) => {
-                          e.stopPropagation();
-                          e.preventDefault();
-                          setEditingBooking(booking);
-                          setIsEditBookingOpen(true);
+                          // Only handle click if not dragging
+                          if (!draggedBooking) {
+                            e.stopPropagation();
+                            e.preventDefault();
+                            setEditingBooking(booking);
+                            setIsEditBookingOpen(true);
+                          }
                         }}
+                        onMouseDown={(e) => handleMouseDown(e, booking)}
+                        onDragStart={(e) => e.preventDefault()}
                       >
                         <Users className="w-4 h-4" />
                         <span>{booking.customerName} ({booking.guestCount} guests)</span>
@@ -649,15 +655,21 @@ export default function EnhancedGoogleCalendar({
                         <div
                           key={booking.id}
                           data-booking-id={booking.id}
-                          className={`booking-card p-1 mb-1 bg-blue-100 text-blue-800 rounded text-xs cursor-pointer transition-all duration-300 ease-out hover:bg-blue-200 hover:shadow-lg hover:scale-110 hover:-translate-y-1 hover:rotate-2 active:scale-95 active:rotate-0 ${
+                          className={`booking-card p-1 mb-1 bg-blue-100 text-blue-800 rounded text-xs cursor-move transition-all duration-300 ease-out hover:bg-blue-200 hover:shadow-lg hover:scale-110 hover:-translate-y-1 hover:rotate-2 active:scale-95 active:rotate-0 ${
                             draggedBooking?.booking.id === booking.id ? 'dragging opacity-50 transform scale-95' : ''
                           }`}
+                          draggable
                           onClick={(e) => {
-                            e.stopPropagation();
-                            e.preventDefault();
-                            setEditingBooking(booking);
-                            setIsEditBookingOpen(true);
+                            // Only handle click if not dragging
+                            if (!draggedBooking) {
+                              e.stopPropagation();
+                              e.preventDefault();
+                              setEditingBooking(booking);
+                              setIsEditBookingOpen(true);
+                            }
                           }}
+                          onMouseDown={(e) => handleMouseDown(e, booking)}
+                          onDragStart={(e) => e.preventDefault()}
                           title="Click to edit booking"
                         >
                           <div className="truncate font-medium">{booking.customerName}</div>
@@ -735,15 +747,21 @@ export default function EnhancedGoogleCalendar({
                         <div
                           key={booking.id}
                           data-booking-id={booking.id}
-                          className={`booking-card p-1 bg-blue-100 text-blue-800 rounded text-xs truncate cursor-pointer transition-all duration-300 ease-out hover:bg-blue-200 hover:shadow-lg hover:scale-105 hover:-translate-y-0.5 hover:rotate-1 active:scale-95 active:rotate-0 ${
+                          className={`booking-card p-1 bg-blue-100 text-blue-800 rounded text-xs truncate cursor-move transition-all duration-300 ease-out hover:bg-blue-200 hover:shadow-lg hover:scale-105 hover:-translate-y-0.5 hover:rotate-1 active:scale-95 active:rotate-0 ${
                             draggedBooking?.booking.id === booking.id ? 'dragging opacity-50 transform scale-95' : ''
                           }`}
+                          draggable
                           onClick={(e) => {
-                            e.stopPropagation();
-                            e.preventDefault();
-                            setEditingBooking(booking);
-                            setIsEditBookingOpen(true);
+                            // Only handle click if not dragging
+                            if (!draggedBooking) {
+                              e.stopPropagation();
+                              e.preventDefault();
+                              setEditingBooking(booking);
+                              setIsEditBookingOpen(true);
+                            }
                           }}
+                          onMouseDown={(e) => handleMouseDown(e, booking)}
+                          onDragStart={(e) => e.preventDefault()}
                           title="Click to edit booking"
                         >
                           {booking.customerName}
