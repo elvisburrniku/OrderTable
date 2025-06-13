@@ -802,10 +802,7 @@ export default function EnhancedGoogleCalendar({
         return hasOverlap;
       });
       
-      const isAvailable = conflictingBookings.length === 0;
-      console.log(`Table ${table.tableNumber} (ID: ${table.id}): ${isAvailable ? 'AVAILABLE' : 'CONFLICTS'} - ${conflictingBookings.length} conflicts`);
-      
-      return isAvailable;
+      return conflictingBookings.length === 0;
     });
   };
 
