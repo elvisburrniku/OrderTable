@@ -634,7 +634,7 @@ export default function Dashboard() {
   };
 
   const getAvailableTablesCount = () => {
-    if (!tables || !Array.isArray(todayBookings)) return 0;
+    if (!Array.isArray(tables) || !Array.isArray(todayBookings)) return 0;
     const currentHour = new Date().getHours();
     const bookedTableIds = todayBookings
       .filter((booking: any) => {
@@ -643,7 +643,7 @@ export default function Dashboard() {
       })
       .map((booking: any) => booking.tableId);
 
-    return (tables || []).filter((table: any) => !bookedTableIds.includes(table.id))
+    return tables.filter((table: any) => !bookedTableIds.includes(table.id))
       .length;
   };
 
