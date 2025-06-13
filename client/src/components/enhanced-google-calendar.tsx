@@ -591,7 +591,7 @@ export default function EnhancedGoogleCalendar({
                       <div
                         key={booking.id}
                         data-booking-id={booking.id}
-                        className={`flex items-center space-x-2 p-2 bg-blue-100 text-blue-800 rounded text-sm cursor-pointer transition-all duration-300 ease-out hover:bg-blue-200 hover:shadow-lg hover:scale-105 hover:-translate-y-1 hover:rotate-1 active:scale-95 active:rotate-0`}
+                        className={`booking-card flex items-center space-x-2 p-2 bg-blue-100 text-blue-800 rounded text-sm cursor-pointer transition-all duration-300 ease-out hover:bg-blue-200 hover:shadow-lg hover:scale-105 hover:-translate-y-1 hover:rotate-1 active:scale-95 active:rotate-0`}
                         onClick={(e) => {
                           e.stopPropagation();
                           e.preventDefault();
@@ -600,6 +600,7 @@ export default function EnhancedGoogleCalendar({
                           setIsEditBookingOpen(true);
                           console.log('Day view edit dialog should open');
                         }}
+                        onMouseDown={(e) => handleMouseDown(e, booking)}
                       >
                         <Users className="w-4 h-4" />
                         <span>
