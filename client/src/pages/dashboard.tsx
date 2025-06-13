@@ -89,12 +89,22 @@ export default function Dashboard() {
   const [showBookingManager, setShowBookingManager] = useState(false);
   const [selectedTableBookings, setSelectedTableBookings] = useState<any[]>([]);
   const [editingBooking, setEditingBooking] = useState<any>(null);
+  const [currentTime, setCurrentTime] = useState(new Date());
 
   useEffect(() => {
     if (!isLoading && (!user || !restaurant)) {
       setLocation("/login");
     }
   }, [isLoading, user, restaurant]);
+
+  // Update current time every second
+  useEffect(() => {
+    const timer = setInterval(() => {
+      setCurrentTime(new Date());
+    }, 1000);
+
+    return () => clearInterval(timer);
+  }, []);
 
   // Fetch today's bookings
   const { data: todayBookings = [] } = useQuery({
@@ -878,9 +888,17 @@ export default function Dashboard() {
         <div className="bg-white border-b border-gray-200 px-6 py-4 flex justify-between items-center">
           <div className="flex items-center space-x-4">
             <div>
-              <h1 className="text-2xl font-bold text-gray-900">
-                {format(selectedDate, "EEEE dd MMMM yyyy")}
-              </h1>
+              <div className="flex items-center space-x-4">
+                <h1 className="text-2xl font-bold text-gray-900">
+                  {format(selectedDate, "EEEE dd MMMM yyyy")}
+                </h1>
+                <div className="flex items-center bg-blue-50 border border-blue-200 rounded-lg px-3 py-2">
+                  <Clock className="h-4 w-4 mr-2 text-blue-600" />
+                  <span className="text-sm font-medium text-blue-800">
+                    {format(currentTime, "HH:mm:ss")}
+                  </span>
+                </div>
+              </div>
               {(() => {
                 const todayHours = getTodayOpeningHours();
                 const isTodaySelected =
