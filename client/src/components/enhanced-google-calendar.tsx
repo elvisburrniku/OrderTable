@@ -47,6 +47,7 @@ import {
   isWeekend,
   addMinutes,
   parse,
+  differenceInMinutes,
 } from "date-fns";
 import {
   ChevronLeft,
@@ -754,6 +755,38 @@ export default function EnhancedGoogleCalendar({
     setIsNewBookingOpen(true);
   };
 
+  // Function to calculate booking duration in minutes
+  const getBookingDurationMinutes = (startTime: string, endTime?: string) => {
+    if (!endTime) return 60; // Default 1 hour if no end time
+    
+    const toMinutes = (timeStr: string) => {
+      const [hours, minutes] = timeStr.split(':').map(Number);
+      return hours * 60 + minutes;
+    };
+    
+    const startMinutes = toMinutes(startTime);
+    const endMinutes = toMinutes(endTime);
+    
+    return endMinutes - startMinutes;
+  };
+
+  // Function to get timeline bar width based on duration
+  const getTimelineBarWidth = (startTime: string, endTime?: string) => {
+    const duration = getBookingDurationMinutes(startTime, endTime);
+    const maxDuration = 180; // 3 hours max for scaling
+    const percentage = Math.min((duration / maxDuration) * 100, 100);
+    return `${percentage}%`;
+  };
+
+  // Function to get timeline bar color based on duration
+  const getTimelineBarColor = (startTime: string, endTime?: string) => {
+    const duration = getBookingDurationMinutes(startTime, endTime);
+    
+    if (duration <= 60) return 'bg-green-400'; // Short booking (≤1h)
+    if (duration <= 120) return 'bg-yellow-400'; // Medium booking (≤2h)
+    return 'bg-red-400'; // Long booking (>2h)
+  };
+
   // Function to get available tables for a specific time slot
   const getAvailableTablesForTimeSlot = (date: Date, startTime: string, endTime: string = startTime, excludeBookingId?: number) => {
     // Validate inputs to prevent RangeError
@@ -894,19 +927,34 @@ export default function EnhancedGoogleCalendar({
                             : "Click to edit booking"
                         }
                       >
-                        <Users className="w-4 h-4" />
-                        <span>
-                          {booking.customerName} ({booking.guestCount} guests) - {booking.startTime}{booking.endTime ? `-${booking.endTime}` : ''}
-                        </span>
-                        {booking.tableId && (
-                          <Badge variant="outline">
-                            Table{" "}
-                            {
-                              tables.find((t) => t.id === booking.tableId)
-                                ?.tableNumber
-                            }
-                          </Badge>
-                        )}
+                        <div className="flex flex-col w-full">
+                          <div className="flex items-center space-x-2">
+                            <Users className="w-4 h-4" />
+                            <span className="flex-1">
+                              {booking.customerName} ({booking.guestCount} guests) - {booking.startTime}{booking.endTime ? `-${booking.endTime}` : ''}
+                            </span>
+                            {booking.tableId && (
+                              <Badge variant="outline">
+                                Table{" "}
+                                {
+                                  tables.find((t) => t.id === booking.tableId)
+                                    ?.tableNumber
+                                }
+                              </Badge>
+                            )}
+                          </div>
+                          {/* Timeline Preview */}
+                          <div className="mt-1 w-full bg-gray-200 rounded-full h-2">
+                            <div 
+                              className={`h-2 rounded-full transition-all duration-300 ${getTimelineBarColor(booking.startTime, booking.endTime)}`}
+                              style={{ width: getTimelineBarWidth(booking.startTime, booking.endTime) }}
+                              title={`Duration: ${getBookingDurationMinutes(booking.startTime, booking.endTime)} minutes`}
+                            />
+                          </div>
+                          <div className="text-xs text-gray-500 mt-1">
+                            {getBookingDurationMinutes(booking.startTime, booking.endTime)} min duration
+                          </div>
+                        </div>
                       </div>
                     ))}
                     {slotBookings.length === 0 && (
@@ -1003,6 +1051,14 @@ export default function EnhancedGoogleCalendar({
                           </div>
                           <div className="text-xs opacity-75">
                             {booking.startTime}{booking.endTime ? `-${booking.endTime}` : ''}
+                          </div>
+                          {/* Timeline Preview for Week View */}
+                          <div className="mt-1 w-full bg-gray-200 rounded-full h-1.5">
+                            <div 
+                              className={`h-1.5 rounded-full transition-all duration-300 ${getTimelineBarColor(booking.startTime, booking.endTime)}`}
+                              style={{ width: getTimelineBarWidth(booking.startTime, booking.endTime) }}
+                              title={`Duration: ${getBookingDurationMinutes(booking.startTime, booking.endTime)} min`}
+                            />
                           </div>
                           {booking.tableId && (
                             <div className="text-xs opacity-75">
@@ -1106,6 +1162,14 @@ export default function EnhancedGoogleCalendar({
                             <div className="font-medium">{booking.customerName}</div>
                             <div className="text-xs opacity-75">
                               {booking.startTime}{booking.endTime ? `-${booking.endTime}` : ''}
+                            </div>
+                            {/* Timeline Preview for Month View */}
+                            <div className="mt-1 w-full bg-blue-200 rounded-full h-1">
+                              <div 
+                                className={`h-1 rounded-full transition-all duration-300 ${getTimelineBarColor(booking.startTime, booking.endTime)} opacity-80`}
+                                style={{ width: getTimelineBarWidth(booking.startTime, booking.endTime) }}
+                                title={`${getBookingDurationMinutes(booking.startTime, booking.endTime)} min`}
+                              />
                             </div>
                           </div>
                         </div>
