@@ -2217,16 +2217,24 @@ export async function registerRoutes(app: Express): Promise<Server> {
           return res.status(404).json({ message: "Restaurant not found" });
         }
 
+        console.log('Special period creation request:', JSON.stringify(req.body, null, 2));
+        
         const periodData = {
           ...req.body,
           restaurantId,
           tenantId,
         };
 
+        console.log('Final period data:', JSON.stringify(periodData, null, 2));
+        
         const period = await storage.createSpecialPeriod(periodData);
         res.json(period);
       } catch (error) {
-        res.status(400).json({ message: "Invalid special period data" });
+        console.error('Special period creation error:', error);
+        res.status(400).json({ 
+          message: "Invalid special period data",
+          error: error.message 
+        });
       }
     },
   );

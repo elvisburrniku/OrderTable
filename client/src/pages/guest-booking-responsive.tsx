@@ -33,7 +33,8 @@ export default function GuestBookingResponsive(props: any) {
   const [customerData, setCustomerData] = useState({
     name: '',
     email: '',
-    phone: ''
+    phone: '',
+    comment: ''
   });
   const [bookingId, setBookingId] = useState<number | null>(null);
 
