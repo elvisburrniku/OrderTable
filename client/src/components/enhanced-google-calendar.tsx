@@ -745,7 +745,7 @@ export default function EnhancedGoogleCalendar({
   return (
     <div 
       ref={calendarRef}
-      className={`space-y-4 ${isDragging ? 'cursor-grabbing' : ''}`}
+      className={`calendar-container space-y-4 ${isDragging ? 'cursor-grabbing' : ''}`}
       onMouseMove={handleMouseMove}
       onMouseUp={(e) => handleMouseUp(e)}
       style={{ userSelect: isDragging ? 'none' : 'auto' }}
