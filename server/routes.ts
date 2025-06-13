@@ -1466,14 +1466,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
         const currentTime = localNow.getUTCHours() * 60 + localNow.getUTCMinutes(); // Use UTC methods for adjusted time
         const today = localNow.toISOString().split("T")[0]; // Today's date in local timezone
         
-        console.log(`Real-time status check - UTC: ${now.toISOString()}, Adjusted local time: ${localNow.getUTCHours()}:${localNow.getUTCMinutes().toString().padStart(2, '0')} (${currentTime} minutes), Date: ${today}`);
-        
-        // Check if 18:00 booking should be active
-        if (currentTime >= 1080) { // 18:00 = 1080 minutes
-          console.log(`Current time ${currentTime} >= 1080 (18:00), so 18:00 bookings should be ACTIVE`);
-        } else {
-          console.log(`Current time ${currentTime} < 1080 (18:00), so 18:00 bookings are future: ${1080 - currentTime} minutes remaining`);
-        }
+        // Optional debug logging (can be removed in production)
+        // console.log(`Real-time status check - Local time: ${localNow.getUTCHours()}:${localNow.getUTCMinutes().toString().padStart(2, '0')} (${currentTime} minutes)`);
 
         // Create a map of room names
         const roomMap = new Map();
@@ -1514,7 +1508,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
               ? timeToMinutes(booking.endTime)
               : startMinutes + 120; // Default 2 hours
 
-            console.log(`Table ${table.tableNumber}: Booking ${booking.customerName} at ${booking.startTime} (${startMinutes}min) - ${booking.endTime || 'no end time'} (${endMinutes}min). Current: ${currentTime}min`);
+            // Optional debug: console.log(`Table ${table.tableNumber}: Booking ${booking.customerName} at ${booking.startTime} (${startMinutes}min) - ${booking.endTime || 'no end time'} (${endMinutes}min). Current: ${currentTime}min`);
 
             if (currentTime >= startMinutes && currentTime <= endMinutes) {
               // Table is currently occupied
