@@ -15,7 +15,7 @@ import BookingCalendar from "@/components/booking-calendar";
 export default function Calendar() {
   const { restaurant } = useAuth();
   const [selectedDate, setSelectedDate] = useState(new Date());
-  const [calendarView, setCalendarView] = useState("enhanced");
+  const [calendarView, setCalendarView] = useState("google");
 
   const tenantId = restaurant?.tenantId;
   const restaurantId = restaurant?.id;

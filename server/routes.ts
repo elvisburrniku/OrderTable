@@ -802,6 +802,53 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Update booking route with tenant and restaurant validation
+  app.put("/api/tenants/:tenantId/restaurants/:restaurantId/bookings/:id", validateTenant, async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      const restaurantId = parseInt(req.params.restaurantId);
+      const tenantId = parseInt(req.params.tenantId);
+      
+      // Validate request body
+      if (!req.body || typeof req.body !== 'object') {
+        return res.status(400).json({ message: "Invalid JSON in request body" });
+      }
+      
+      // Verify restaurant belongs to tenant
+      const restaurant = await storage.getRestaurantById(restaurantId);
+      if (!restaurant || restaurant.tenantId !== tenantId) {
+        return res.status(404).json({ message: "Restaurant not found" });
+      }
+
+      const existingBooking = await storage.getBookingById(id);
+      if (!existingBooking || existingBooking.tenantId !== tenantId || existingBooking.restaurantId !== restaurantId) {
+        return res.status(404).json({ message: "Booking not found" });
+      }
+
+      const updates = req.body;
+      if (updates.bookingDate) {
+        updates.bookingDate = new Date(updates.bookingDate);
+      }
+
+      const updatedBooking = await storage.updateBooking(id, updates);
+      
+      // Send webhook notifications for booking update
+      if (updatedBooking) {
+        try {
+          const webhookService = new WebhookService(storage);
+          await webhookService.notifyBookingUpdated(restaurantId, updatedBooking);
+        } catch (webhookError) {
+          console.error('Error sending booking update webhook:', webhookError);
+        }
+      }
+      
+      res.json(updatedBooking);
+    } catch (error) {
+      console.error("Booking update error:", error);
+      res.status(400).json({ message: "Failed to update booking" });
+    }
+  });
+
   // Complete tenant-restaurant routes implementation
   app.get("/api/tenants/:tenantId/restaurants/:restaurantId/tables", validateTenant, async (req, res) => {
     try {
@@ -1385,8 +1432,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Public booking info for feedback validation (for customers via QR code)
-  app.get("/api/tenants/:tenantId/restaurants/:restaurantId/bookings", async (req, res) => {
+  // Get bookings (authenticated route for dashboard)
+  app.get("/api/tenants/:tenantId/restaurants/:restaurantId/bookings", validateTenant, async (req, res) => {
     try {
       const restaurantId = parseInt(req.params.restaurantId);
       const tenantId = parseInt(req.params.tenantId);
@@ -1406,20 +1453,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
           booking.tableId === parseInt(table as string) &&
           booking.status !== 'cancelled'
         );
+      } else {
+        // Get all bookings for the restaurant
+        bookings = await storage.getBookingsByRestaurant(restaurantId);
       }
 
-      // Return only necessary booking information for feedback validation
-      const publicBookings = bookings.map(booking => ({
-        id: booking.id,
-        startTime: booking.startTime,
-        endTime: booking.endTime,
-        tableId: booking.tableId,
-        status: booking.status
-      }));
-
-      res.json(publicBookings);
+      res.json(bookings);
     } catch (error) {
-      res.status(400).json({ message: "Invalid request" });
+      console.error("Error fetching bookings:", error);
+      res.status(500).json({ message: "Failed to fetch bookings" });
     }
   });
 
@@ -3140,6 +3182,12 @@ app.put("/api/tenants/:tenantId/bookings/:id", validateTenant, async (req, res) 
     try {
       const id = parseInt(req.params.id);
       const tenantId = parseInt(req.params.tenantId);
+      
+      // Validate request body
+      if (!req.body || typeof req.body !== 'object') {
+        return res.status(400).json({ message: "Invalid JSON in request body" });
+      }
+      
       const updates = req.body;
 
       if (updates.bookingDate) {

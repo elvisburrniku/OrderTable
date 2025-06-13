@@ -4,6 +4,7 @@ import { useAuth } from "@/lib/auth.tsx";
 import { useQuery } from "@tanstack/react-query";
 
 import BookingCalendar from "@/components/booking-calendar";
+import EnhancedGoogleCalendar from "@/components/enhanced-google-calendar";
 import WalkInBookingButton from "@/components/walk-in-booking";
 import RealTimeTableStatus from "@/components/real-time-table-status";
 import { Button } from "@/components/ui/button";
@@ -736,7 +737,35 @@ export default function Dashboard() {
                 Live Status
               </Button>
             </div>
-            <Button className="bg-green-600 hover:bg-green-700 text-white">
+            <Button 
+              className="bg-green-600 hover:bg-green-700 text-white"
+              onClick={() => {
+                // Find the first available table for immediate booking
+                const now = new Date();
+                const currentTime = `${now.getHours().toString().padStart(2, '0')}:${now.getMinutes().toString().padStart(2, '0')}`;
+                const availableTable = findAlternativeTable(2, currentTime, selectedDate);
+                
+                if (availableTable) {
+                  setSelectedTableForBooking(availableTable);
+                  setNewBooking({
+                    customerName: "",
+                    customerEmail: "",
+                    customerPhone: "",
+                    guestCount: 2,
+                    startTime: currentTime,
+                    endTime: String(parseInt(currentTime.split(':')[0]) + 2).padStart(2, '0') + ':' + currentTime.split(':')[1],
+                    notes: ""
+                  });
+                  setIsNewBookingOpen(true);
+                } else {
+                  toast({
+                    title: "No Available Tables",
+                    description: "No tables are currently available for immediate booking. Try selecting a different time or date.",
+                    variant: "destructive"
+                  });
+                }
+              }}
+            >
               <Plus className="h-4 w-4 mr-2" />
               New booking
             </Button>
@@ -784,76 +813,7 @@ export default function Dashboard() {
           </div>
         </div>
 
-        {/* Stats Overview */}
-        <div className="p-6">
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-            <Card>
-              <CardContent className="p-6">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="text-sm text-gray-600">Today's Bookings</p>
-                    <p className="text-2xl font-bold">
-                      {Array.isArray(todayBookings) ? todayBookings.length : 0}
-                    </p>
-                  </div>
-                  <CalendarIcon className="h-8 w-8 text-green-500" />
-                </div>
-              </CardContent>
-            </Card>
-            <Card>
-              <CardContent className="p-6">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="text-sm text-gray-600">Total Tables</p>
-                    <p className="text-2xl font-bold">
-                      {tables?.length || 0}
-                    </p>
-                  </div>
-                  <Users className="h-8 w-8 text-green-500" />
-                </div>
-              </CardContent>
-            </Card>
-            <Card>
-              <CardContent className="p-6">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="text-sm text-gray-600">Available Now</p>
-                    <p className="text-2xl font-bold">
-                      {getAvailableTablesCount()}
-                    </p>
-                  </div>
-                  <Clock className="h-8 w-8 text-orange-500" />
-                </div>
-              </CardContent>
-            </Card>
-            <Card>
-              <CardContent className="p-6">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="text-sm text-gray-600">This Month</p>
-                    <p className="text-2xl font-bold">
-                      {allBookings?.length || 0}
-                    </p>
-                  </div>
-                  <TrendingUp className="h-8 w-8 text-purple-500" />
-                </div>
-              </CardContent>
-            </Card>
-          </div>
 
-          {/* Compact Real-Time Status Widget */}
-          {viewMode !== 'status' && (
-            <div className="mb-8">
-              <RealTimeTableStatus 
-                restaurantId={restaurant?.id || 0}
-                tenantId={restaurant?.tenantId || 0}
-                showCompactView={true}
-                autoRefresh={true}
-                refreshInterval={60000}
-              />
-            </div>
-          )}
-        </div>
 
         {/* Main Interface */}
         <div className="flex-1 p-6">
@@ -868,7 +828,7 @@ export default function Dashboard() {
               refreshInterval={30000}
             />
           ) : (
-            <BookingCalendar 
+            <EnhancedGoogleCalendar 
               selectedDate={selectedDate}
               bookings={(selectedDateBookings as any) || []}
               allBookings={(allBookings as any) || []}
