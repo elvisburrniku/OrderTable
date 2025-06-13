@@ -329,6 +329,7 @@ export default function EnhancedGoogleCalendar({
   const handleBookingClick = useCallback((e: React.MouseEvent, booking: Booking) => {
     e.stopPropagation();
     e.preventDefault();
+    console.log('Booking clicked, opening edit dialog for:', booking.customerName);
     // Open edit dialog on single click
     setEditingBooking(booking);
     setIsEditBookingOpen(true);
@@ -558,8 +559,12 @@ export default function EnhancedGoogleCalendar({
                   }`}
                   onClick={(e) => {
                     // Only open dialog if clicking directly on the container, not on bookings
+                    console.log('Container clicked, target:', e.target, 'currentTarget:', e.currentTarget);
                     if (e.target === e.currentTarget) {
+                      console.log('Opening new booking dialog');
                       openNewBookingDialog(currentDate, timeSlot);
+                    } else {
+                      console.log('Click on child element, not opening dialog');
                     }
                   }}
                   onMouseUp={(e) => handleMouseUp(e, currentDate, timeSlot)}
