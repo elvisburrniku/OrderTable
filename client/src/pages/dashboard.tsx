@@ -748,7 +748,7 @@ export default function Dashboard() {
   const renderTableLayout = () => {
     const tablePositions = savedLayout?.positions || {};
     const tablesWithPositions =
-      tables?.filter((table) => tablePositions[table.id]) || [];
+      (tables || []).filter((table: any) => tablePositions[table.id]) || [];
 
     return (
       <Card className="bg-white border border-gray-200">

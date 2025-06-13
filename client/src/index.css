@@ -65,6 +65,44 @@
   body {
     @apply font-sans antialiased bg-background text-foreground;
     font-family: 'Inter', system-ui, sans-serif;
+    /* iOS Safari specific fixes */
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    /* Prevent iOS Safari zoom on input focus */
+    -webkit-text-size-adjust: 100%;
+    /* Fix iOS Safari viewport issues */
+    overflow-x: hidden;
+  }
+
+  /* iOS Safari specific fixes */
+  html {
+    -webkit-text-size-adjust: 100%;
+    /* Prevent horizontal scrolling */
+    overflow-x: hidden;
+  }
+
+  /* Fix iOS Safari input zoom */
+  input, select, textarea {
+    font-size: 16px !important;
+  }
+
+  /* Prevent iOS Safari from adding touch callouts */
+  * {
+    -webkit-touch-callout: none;
+    -webkit-user-select: none;
+    -khtml-user-select: none;
+    -moz-user-select: none;
+    -ms-user-select: none;
+    user-select: none;
+  }
+
+  /* Allow text selection for input elements */
+  input, textarea, [contenteditable] {
+    -webkit-user-select: text;
+    -khtml-user-select: text;
+    -moz-user-select: text;
+    -ms-user-select: text;
+    user-select: text;
   }
 }
 

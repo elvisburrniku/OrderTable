@@ -71,16 +71,18 @@ import EmailTest from "./pages/email-test";
 import TestTools from "./pages/test-tools";
 import { SetupGuard } from "./components/setup-guard";
 import { OverduePaymentGuard } from "./components/overdue-payment-guard";
+import ErrorBoundary from "./components/error-boundary";
 
 function App() {
   return (
-    <QueryClientProvider client={queryClient}>
-      <AuthProvider>
-        <TenantProvider>
-          <RouteGuard>
-            <LayoutWrapper>
-              <SessionTimeoutHandler />
-              <Switch>
+    <ErrorBoundary>
+      <QueryClientProvider client={queryClient}>
+        <AuthProvider>
+          <TenantProvider>
+            <RouteGuard>
+              <LayoutWrapper>
+                <SessionTimeoutHandler />
+                <Switch>
             <Route path="/" component={Home} />
             <Route path="/login" component={Login} />
             <Route path="/register" component={Register} />
@@ -156,9 +158,10 @@ function App() {
       </Switch>
       
       <Toaster />
-    </TenantProvider>
-    </AuthProvider>
-    </QueryClientProvider>
+      </TenantProvider>
+      </AuthProvider>
+      </QueryClientProvider>
+    </ErrorBoundary>
   );
 }
 
