@@ -21,7 +21,7 @@ interface Table {
   id: number;
   tableNumber: string;
   capacity: number;
-  isActive: boolean;
+  isActive?: boolean;
 }
 
 function WalkInBookingButton() {
@@ -43,9 +43,9 @@ function WalkInBookingButton() {
   const queryClient = useQueryClient();
 
   // Fetch available tables
-  const { data: tables = [] } = useQuery<Table[]>({
+  const { data: tables = [], isLoading: tablesLoading } = useQuery<Table[]>({
     queryKey: [`/api/tenants/${restaurant?.tenantId}/restaurants/${restaurant?.id}/tables`],
-    enabled: open && !!restaurant?.id && !!restaurant?.tenantId
+    enabled: !!restaurant?.id && !!restaurant?.tenantId
   });
 
   const walkInMutation = useMutation({
@@ -133,8 +133,13 @@ function WalkInBookingButton() {
 
   // Filter available tables based on guest count
   const suitableTables = tables.filter(table => 
-    table.isActive && table.capacity >= formData.guestCount
+    table.capacity >= formData.guestCount
   );
+
+  // Debug logging to see what tables are available
+  console.log('Tables data:', tables);
+  console.log('Suitable tables:', suitableTables);
+  console.log('Guest count:', formData.guestCount);
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
