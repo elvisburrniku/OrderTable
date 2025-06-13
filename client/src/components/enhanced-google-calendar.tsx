@@ -755,7 +755,7 @@ export default function EnhancedGoogleCalendar({
   };
 
   // Function to get available tables for a specific time slot
-  const getAvailableTablesForTimeSlot = (date: Date, startTime: string, endTime: string = startTime) => {
+  const getAvailableTablesForTimeSlot = (date: Date, startTime: string, endTime: string = startTime, excludeBookingId?: number) => {
     // Validate inputs to prevent RangeError
     if (!date || !startTime) {
       return tables;
@@ -765,13 +765,15 @@ export default function EnhancedGoogleCalendar({
     try {
       dateStr = format(date, 'yyyy-MM-dd');
     } catch (error) {
-      console.warn('Invalid date provided to getAvailableTablesForTimeSlot:', date);
       return tables;
     }
     
     return tables.filter(table => {
       // Check if this table has any bookings that overlap with the selected time
       const conflictingBookings = allBookings.filter(booking => {
+        // Skip the booking we're editing
+        if (excludeBookingId && booking.id === excludeBookingId) return false;
+        
         if (booking.tableId !== table.id) return false;
         if (booking.bookingDate !== dateStr) return false;
         
@@ -794,11 +796,16 @@ export default function EnhancedGoogleCalendar({
         const existingStart = toMinutes(bookingStart);
         const existingEnd = toMinutes(bookingEnd);
         
-        // Check if times overlap
-        return selectedStart < existingEnd && selectedEnd > existingStart;
+        // Check if times overlap (any overlap means conflict)
+        const hasOverlap = !(selectedEnd <= existingStart || selectedStart >= existingEnd);
+        
+        return hasOverlap;
       });
       
-      return conflictingBookings.length === 0;
+      const isAvailable = conflictingBookings.length === 0;
+      console.log(`Table ${table.tableNumber} (ID: ${table.id}): ${isAvailable ? 'AVAILABLE' : 'CONFLICTS'} - ${conflictingBookings.length} conflicts`);
+      
+      return isAvailable;
     });
   };
 
@@ -1439,6 +1446,8 @@ export default function EnhancedGoogleCalendar({
                 setEditingBooking(null);
               }}
               isLoading={editBookingMutation.isPending}
+              allBookings={allBookings}
+              getAvailableTablesForTimeSlot={getAvailableTablesForTimeSlot}
             />
           ) : (
             <div>No booking selected for editing</div>
@@ -1456,6 +1465,8 @@ interface EditBookingFormProps {
   onSave: (data: Partial<Booking>) => void;
   onCancel: () => void;
   isLoading: boolean;
+  allBookings: Booking[];
+  getAvailableTablesForTimeSlot: (date: Date, startTime: string, endTime?: string, excludeBookingId?: number) => TableType[];
 }
 
 function EditBookingForm({
@@ -1464,6 +1475,8 @@ function EditBookingForm({
   onSave,
   onCancel,
   isLoading,
+  allBookings,
+  getAvailableTablesForTimeSlot,
 }: EditBookingFormProps) {
   const [formData, setFormData] = useState({
     customerName: booking.customerName,
@@ -1561,11 +1574,39 @@ function EditBookingForm({
             </SelectTrigger>
             <SelectContent>
               <SelectItem value="none">No table assigned</SelectItem>
-              {tables.map((table) => (
-                <SelectItem key={table.id} value={table.id.toString()}>
-                  Table {table.tableNumber} ({table.capacity} seats)
-                </SelectItem>
-              ))}
+              {(() => {
+                // Get available tables for the selected time slot when editing
+                let bookingDate: Date;
+                try {
+                  bookingDate = new Date(formData.bookingDate);
+                } catch (error) {
+                  bookingDate = new Date();
+                }
+                
+                const availableTables = getAvailableTablesForTimeSlot(
+                  bookingDate, 
+                  formData.startTime, 
+                  formData.startTime, // Using same time for start and end
+                  booking.id // Exclude current booking from conflict check
+                );
+                
+                const unavailableCount = tables.length - availableTables.length;
+                
+                return (
+                  <>
+                    {availableTables.map((table) => (
+                      <SelectItem key={table.id} value={table.id.toString()}>
+                        Table {table.tableNumber} ({table.capacity} seats)
+                      </SelectItem>
+                    ))}
+                    {unavailableCount > 0 && (
+                      <SelectItem value="" disabled className="text-red-600">
+                        {unavailableCount} table{unavailableCount !== 1 ? 's' : ''} unavailable at this time
+                      </SelectItem>
+                    )}
+                  </>
+                );
+              })()}
             </SelectContent>
           </Select>
         </div>
