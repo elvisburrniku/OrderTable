@@ -3094,8 +3094,20 @@ export async function registerRoutes(app: Express): Promise<Server> {
       };
 
       // Validate required fields
+      console.log('Guest booking data received:', JSON.stringify(bookingData, null, 2));
+      
       if (!bookingData.customerName || !bookingData.customerEmail || !bookingData.guestCount || !bookingData.bookingDate || !bookingData.startTime) {
-        return res.status(400).json({ message: "Missing required booking information" });
+        const missingFields = [];
+        if (!bookingData.customerName) missingFields.push('customerName');
+        if (!bookingData.customerEmail) missingFields.push('customerEmail');
+        if (!bookingData.guestCount) missingFields.push('guestCount');
+        if (!bookingData.bookingDate) missingFields.push('bookingDate');
+        if (!bookingData.startTime) missingFields.push('startTime');
+        
+        console.log('Missing required fields:', missingFields);
+        return res.status(400).json({ 
+          message: `Missing required booking information: ${missingFields.join(', ')}` 
+        });
       }
 
       const booking = await storage.createBooking(bookingData);

@@ -108,12 +108,13 @@ export default function GuestBookingResponsive(props: any) {
     } else {
       // Submit booking
       const bookingData = {
-        date: selectedDate ? format(selectedDate, 'yyyy-MM-dd') : '',
-        time: selectedTime,
-        guests: guestCount,
+        bookingDate: selectedDate ? format(selectedDate, 'yyyy-MM-dd') : '',
+        startTime: selectedTime,
+        guestCount: guestCount,
         customerName: customerData.name,
         customerEmail: customerData.email,
         customerPhone: customerData.phone,
+        specialRequests: customerData.comment || null,
         source: 'guest_booking'
       };
       createBookingMutation.mutate(bookingData);
