@@ -5681,6 +5681,79 @@ app.put("/api/tenants/:tenantId/bookings/:id", validateTenant, async (req, res) 
     }
   });
 
+  // Get public available time slots
+  app.get("/api/restaurants/:restaurantId/available-slots", async (req, res) => {
+    try {
+      const restaurantId = parseInt(req.params.restaurantId);
+      const { date, guests } = req.query;
+      
+      if (isNaN(restaurantId)) {
+        return res.status(400).json({ message: "Invalid restaurant ID" });
+      }
+
+      if (!date) {
+        return res.status(400).json({ message: "Date parameter is required" });
+      }
+
+      const restaurant = await storage.getRestaurantById(restaurantId);
+      if (!restaurant) {
+        return res.status(404).json({ message: "Restaurant not found" });
+      }
+
+      const guestCount = parseInt(guests as string) || 2;
+      const targetDate = new Date(date as string);
+      const dateStr = targetDate.toISOString().split('T')[0];
+
+      // Get tables and existing bookings
+      const tables = await storage.getTablesByRestaurant(restaurantId);
+      const existingBookings = await storage.getBookingsByDate(restaurantId, dateStr);
+
+      // Generate time slots from 6:00 PM to 9:00 PM
+      const timeSlots = [];
+      for (let hour = 18; hour <= 21; hour++) {
+        for (let minute = 0; minute < 60; minute += 15) {
+          if (hour === 21 && minute > 0) break; // Stop at 9:00 PM
+          const time = `${hour.toString().padStart(2, '0')}:${minute.toString().padStart(2, '0')}`;
+          timeSlots.push(time);
+        }
+      }
+
+      // Filter available slots
+      const availableSlots = timeSlots.filter(timeStr => {
+        // Check if any table is available for this time slot
+        const hasAvailableTable = tables.some(table => {
+          if (table.capacity < guestCount) return false;
+
+          // Check for conflicts with existing bookings
+          const hasConflict = existingBookings.some(booking => {
+            if (booking.tableId !== table.id || booking.status === 'cancelled') return false;
+
+            const bookingStart = parseInt(booking.startTime.split(':')[0]) * 60 + parseInt(booking.startTime.split(':')[1]);
+            const bookingEnd = booking.endTime 
+              ? parseInt(booking.endTime.split(':')[0]) * 60 + parseInt(booking.endTime.split(':')[1])
+              : bookingStart + 120; // Default 2 hours
+
+            const slotStart = parseInt(timeStr.split(':')[0]) * 60 + parseInt(timeStr.split(':')[1]);
+            const slotEnd = slotStart + 120; // 2 hour booking
+
+            // Add buffer time (30 minutes)
+            const buffer = 30;
+            return (slotStart - buffer) < bookingEnd && bookingStart < (slotEnd + buffer);
+          });
+
+          return !hasConflict;
+        });
+
+        return hasAvailableTable;
+      });
+
+      res.json({ slots: availableSlots });
+    } catch (error) {
+      console.error("Error fetching available slots:", error);
+      res.status(500).json({ message: "Internal server error" });
+    }
+  });
+
   // Get public opening hours
   app.get("/api/restaurants/:restaurantId/opening-hours/public", async (req, res) => {
     try {
@@ -5721,6 +5794,111 @@ app.put("/api/tenants/:tenantId/bookings/:id", validateTenant, async (req, res) 
       res.json(specialPeriods);
     } catch (error) {
       console.error("Error fetching special periods:", error);
+      res.status(500).json({ message: "Internal server error" });
+    }
+  });
+
+  // Create public booking (for guest booking form)
+  app.post("/api/restaurants/:restaurantId/bookings", async (req, res) => {
+    try {
+      const restaurantId = parseInt(req.params.restaurantId);
+      
+      if (isNaN(restaurantId)) {
+        return res.status(400).json({ message: "Invalid restaurant ID" });
+      }
+
+      const restaurant = await storage.getRestaurantById(restaurantId);
+      if (!restaurant) {
+        return res.status(404).json({ message: "Restaurant not found" });
+      }
+
+      const {
+        customerName,
+        customerEmail,
+        customerPhone,
+        guestCount,
+        bookingDate,
+        comment,
+        source = 'website',
+        status = 'confirmed',
+        tenantId
+      } = req.body;
+
+      if (!customerName || !customerEmail || !guestCount || !bookingDate || !tenantId) {
+        return res.status(400).json({ 
+          message: "Missing required fields: customerName, customerEmail, guestCount, bookingDate, tenantId" 
+        });
+      }
+
+      // Parse booking date and extract time
+      const bookingDateTime = new Date(bookingDate);
+      const bookingTime = `${bookingDateTime.getHours().toString().padStart(2, '0')}:${bookingDateTime.getMinutes().toString().padStart(2, '0')}`;
+      const dateStr = bookingDateTime.toISOString().split('T')[0];
+
+      // Get available tables for this time slot
+      const tables = await storage.getTablesByRestaurant(restaurantId);
+      const existingBookings = await storage.getBookingsByDate(restaurantId, dateStr);
+
+      // Find the best available table
+      let assignedTableId = null;
+      const availableTables = tables.filter(table => {
+        if (table.capacity < guestCount) return false;
+
+        // Check for conflicts with existing bookings
+        const hasConflict = existingBookings.some(booking => {
+          if (booking.tableId !== table.id || booking.status === 'cancelled') return false;
+
+          const bookingStart = parseInt(booking.startTime.split(':')[0]) * 60 + parseInt(booking.startTime.split(':')[1]);
+          const bookingEnd = booking.endTime 
+            ? parseInt(booking.endTime.split(':')[0]) * 60 + parseInt(booking.endTime.split(':')[1])
+            : bookingStart + 120; // Default 2 hours
+
+          const slotStart = parseInt(bookingTime.split(':')[0]) * 60 + parseInt(bookingTime.split(':')[1]);
+          const slotEnd = slotStart + 120; // 2 hour booking
+
+          // Add buffer time (30 minutes)
+          const buffer = 30;
+          return (slotStart - buffer) < bookingEnd && bookingStart < (slotEnd + buffer);
+        });
+
+        return !hasConflict;
+      }).sort((a, b) => a.capacity - b.capacity); // Sort by capacity (smallest suitable first)
+
+      if (availableTables.length === 0) {
+        return res.status(400).json({ 
+          message: `No tables available for ${guestCount} guests at ${bookingTime} on ${dateStr}. Please try a different time or date.`
+        });
+      }
+
+      assignedTableId = availableTables[0].id;
+
+      // Create the booking
+      const newBooking = await storage.createBooking({
+        restaurantId,
+        tenantId,
+        tableId: assignedTableId,
+        customerName,
+        customerEmail,
+        customerPhone: customerPhone || null,
+        guestCount,
+        bookingDate: bookingDateTime,
+        startTime: bookingTime,
+        endTime: `${(bookingDateTime.getHours() + 2).toString().padStart(2, '0')}:${bookingDateTime.getMinutes().toString().padStart(2, '0')}`,
+        comment: comment || null,
+        source,
+        status,
+        createdAt: new Date()
+      });
+
+      res.status(201).json({
+        id: newBooking.id,
+        message: "Booking created successfully",
+        booking: newBooking,
+        tableNumber: availableTables[0].tableNumber
+      });
+
+    } catch (error) {
+      console.error("Error creating public booking:", error);
       res.status(500).json({ message: "Internal server error" });
     }
   });
