@@ -77,6 +77,17 @@ export default function EnhancedGoogleCalendar({
   const [isDragging, setIsDragging] = useState(false);
   const calendarRef = useRef<HTMLDivElement>(null);
 
+  // Performance-optimized drag state
+  const dragStateRef = useRef<{
+    lastUpdateTime: number;
+    animationFrame: number | null;
+    element: HTMLElement | null;
+  }>({
+    lastUpdateTime: 0,
+    animationFrame: null,
+    element: null
+  });
+
   // Fetch opening hours
   const { data: openingHours = [] } = useQuery({
     queryKey: ["openingHours", restaurant?.id, restaurant?.tenantId],
@@ -313,11 +324,26 @@ export default function EnhancedGoogleCalendar({
     setIsEditBookingOpen(true);
   }, []);
 
-  // Drag and drop handlers
+  // Enhanced drag and drop handlers with smooth initialization
   const handleMouseDown = useCallback((e: React.MouseEvent, booking: Booking) => {
     e.preventDefault();
+    e.stopPropagation();
+    
     const rect = calendarRef.current?.getBoundingClientRect();
     if (!rect) return;
+
+    // Pre-optimize the drag element for smooth performance
+    const dragElement = document.querySelector(`[data-booking-id="${booking.id}"]`) as HTMLElement;
+    if (dragElement) {
+      // Prepare element for optimal dragging performance
+      dragElement.style.willChange = 'transform';
+      dragElement.style.userSelect = 'none';
+      dragElement.style.webkitUserSelect = 'none';
+      dragElement.style.cursor = 'grabbing';
+      
+      // Cache element reference immediately
+      dragStateRef.current.element = dragElement;
+    }
 
     setDraggedBooking({
       booking,
@@ -328,11 +354,10 @@ export default function EnhancedGoogleCalendar({
     setIsDragging(true);
   }, []);
 
-  // Throttled mouse move handler for smooth drag performance
-  const throttledMouseMove = useCallback((e: React.MouseEvent) => {
+  // High-performance mouse move handler with RAF optimization
+  const handleMouseMove = useCallback((e: React.MouseEvent) => {
     if (!isDragging || !draggedBooking) return;
     
-    // Prevent default to avoid text selection during drag
     e.preventDefault();
     
     const rect = calendarRef.current?.getBoundingClientRect();
@@ -341,36 +366,81 @@ export default function EnhancedGoogleCalendar({
     const x = e.clientX - rect.left;
     const y = e.clientY - rect.top;
     
-    // Use transform for hardware acceleration and smooth movement
-    const dragElement = document.querySelector(`[data-booking-id="${draggedBooking.booking.id}"]`) as HTMLElement;
-    if (dragElement) {
-      dragElement.style.transform = `translate3d(${x - draggedBooking.dragStart.x}px, ${y - draggedBooking.dragStart.y}px, 0)`;
-      dragElement.style.zIndex = '1000';
-      dragElement.style.pointerEvents = 'none';
-      dragElement.style.opacity = '0.8';
-      dragElement.style.cursor = 'grabbing';
+    // Throttle updates to 60fps for optimal performance
+    const now = performance.now();
+    if (now - dragStateRef.current.lastUpdateTime > 16) {
+      // Cancel previous animation frame to prevent queuing
+      if (dragStateRef.current.animationFrame) {
+        cancelAnimationFrame(dragStateRef.current.animationFrame);
+      }
+      
+      // Use requestAnimationFrame for smooth 60fps updates
+      dragStateRef.current.animationFrame = requestAnimationFrame(() => {
+        const dragElement = dragStateRef.current.element || 
+          document.querySelector(`[data-booking-id="${draggedBooking.booking.id}"]`) as HTMLElement;
+        
+        if (dragElement) {
+          // Cache element reference for better performance
+          dragStateRef.current.element = dragElement;
+          
+          // Apply optimized transform with hardware acceleration
+          dragElement.style.willChange = 'transform';
+          dragElement.style.transform = `translate3d(${x - draggedBooking.dragStart.x}px, ${y - draggedBooking.dragStart.y}px, 0)`;
+          dragElement.style.zIndex = '1000';
+          dragElement.style.pointerEvents = 'none';
+          dragElement.style.opacity = '0.85';
+          dragElement.style.cursor = 'grabbing';
+          dragElement.style.boxShadow = '0 8px 25px rgba(0, 0, 0, 0.15)';
+          dragElement.style.transition = 'none';
+        }
+        
+        dragStateRef.current.animationFrame = null;
+      });
+      
+      dragStateRef.current.lastUpdateTime = now;
     }
   }, [isDragging, draggedBooking]);
-
-  // Throttle the mouse move handler to 60fps for optimal performance
-  const handleMouseMove = useCallback((e: React.MouseEvent) => {
-    throttledMouseMove(e);
-  }, [throttledMouseMove]);
 
   const handleMouseUp = useCallback((e: React.MouseEvent, targetDate?: Date, targetTime?: string) => {
     if (!isDragging || !draggedBooking) return;
     
     setIsDragging(false);
     
-    // Reset all drag element styles completely
-    const dragElement = document.querySelector(`[data-booking-id="${draggedBooking.booking.id}"]`) as HTMLElement;
-    if (dragElement) {
-      dragElement.style.transform = '';
-      dragElement.style.zIndex = '';
-      dragElement.style.pointerEvents = '';
-      dragElement.style.opacity = '';
-      dragElement.style.cursor = '';
+    // Cancel any pending animation frames
+    if (dragStateRef.current.animationFrame) {
+      cancelAnimationFrame(dragStateRef.current.animationFrame);
+      dragStateRef.current.animationFrame = null;
     }
+    
+    // Smooth cleanup with animation
+    const dragElement = dragStateRef.current.element || 
+      document.querySelector(`[data-booking-id="${draggedBooking.booking.id}"]`) as HTMLElement;
+    
+    if (dragElement) {
+      // Re-enable smooth transitions for cleanup
+      dragElement.style.transition = 'all 0.2s cubic-bezier(0.4, 0, 0.2, 1)';
+      
+      // Reset all drag styles with smooth animation
+      requestAnimationFrame(() => {
+        dragElement.style.transform = '';
+        dragElement.style.zIndex = '';
+        dragElement.style.pointerEvents = '';
+        dragElement.style.opacity = '';
+        dragElement.style.cursor = '';
+        dragElement.style.boxShadow = '';
+        dragElement.style.willChange = 'auto';
+        
+        // Clean up transition after animation completes
+        setTimeout(() => {
+          if (dragElement.style) {
+            dragElement.style.transition = '';
+          }
+        }, 200);
+      });
+    }
+    
+    // Reset cached element reference
+    dragStateRef.current.element = null;
     
     if (targetDate && targetTime) {
       // Only update if date/time actually changed
