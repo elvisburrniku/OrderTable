@@ -202,23 +202,22 @@ export default function GoogleIntegration() {
                   disabled={
                     activateGoogleMutation.isPending || 
                     !validation?.isComplete || 
-                    isGoogleActive ||
-                    isIntegrationEnabled
+                    isGoogleActive
                   }
                   className={`${
                     isGoogleActive 
                       ? 'bg-green-600 hover:bg-green-700' 
-                      : isReadyToActivate && !isIntegrationEnabled
+                      : isReadyToActivate
                       ? 'bg-blue-600 hover:bg-blue-700'
                       : 'bg-gray-400'
-                  } ${(!validation?.isComplete || isGoogleActive || isIntegrationEnabled) ? 'opacity-50 cursor-not-allowed' : ''}`}
+                  } ${(!validation?.isComplete || isGoogleActive) ? 'opacity-50 cursor-not-allowed' : ''}`}
                 >
                   {activateGoogleMutation.isPending ? (
                     <div className="flex items-center">
                       <div className="animate-spin w-4 h-4 border-2 border-white border-t-transparent rounded-full mr-2" />
                       Activating...
                     </div>
-                  ) : isGoogleActive || isIntegrationEnabled ? (
+                  ) : isGoogleActive ? (
                     <div className="flex items-center">
                       <CheckCircle className="w-4 h-4 mr-2" />
                       Activated
