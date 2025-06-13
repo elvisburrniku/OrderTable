@@ -27,7 +27,17 @@ export default function GuestBookingResponsive(props: any) {
   const { toast } = useToast();
 
   const [currentStep, setCurrentStep] = useState(0);
-  const [guestCount, setGuestCount] = useState(2);
+  
+  // Set default guest count based on time of day
+  const getDefaultGuestCount = () => {
+    const currentHour = new Date().getHours();
+    if (currentHour >= 7 && currentHour < 12) return 2; // Breakfast - smaller groups
+    if (currentHour >= 12 && currentHour < 17) return 3; // Lunch - medium groups
+    if (currentHour >= 17 && currentHour < 21) return 4; // Dinner - larger groups
+    return 2; // Late night - smaller groups
+  };
+  
+  const [guestCount, setGuestCount] = useState(getDefaultGuestCount());
   const [selectedDate, setSelectedDate] = useState<Date | null>(null);
   const [selectedTime, setSelectedTime] = useState('');
   const [customerData, setCustomerData] = useState({
@@ -129,6 +139,69 @@ export default function GuestBookingResponsive(props: any) {
 
   const availableDates = generateDates();
 
+  // Generate personalized welcome message based on time of day
+  const getWelcomeMessage = () => {
+    const currentHour = new Date().getHours();
+    const restaurantName = (restaurant as any)?.name || "Our Restaurant";
+    
+    if (currentHour >= 5 && currentHour < 12) {
+      return {
+        greeting: "Good Morning!",
+        message: `Start your day with a delicious breakfast at ${restaurantName}`,
+        icon: "🌅",
+        mealType: "breakfast",
+        suggestion: "Perfect time for fresh pastries, coffee, and morning specialties"
+      };
+    } else if (currentHour >= 12 && currentHour < 17) {
+      return {
+        greeting: "Good Afternoon!",
+        message: `Perfect time for lunch at ${restaurantName}`,
+        icon: "☀️",
+        mealType: "lunch", 
+        suggestion: "Enjoy our midday menu with light dishes and refreshing beverages"
+      };
+    } else if (currentHour >= 17 && currentHour < 21) {
+      return {
+        greeting: "Good Evening!",
+        message: `Join us for an exceptional dinner at ${restaurantName}`,
+        icon: "🌆",
+        mealType: "dinner",
+        suggestion: "Indulge in our signature dishes and fine dining experience"
+      };
+    } else {
+      return {
+        greeting: "Welcome!",
+        message: `Experience late-night dining at ${restaurantName}`,
+        icon: "🌙",
+        mealType: "late-night",
+        suggestion: "Discover our special late-night menu and cozy atmosphere"
+      };
+    }
+  };
+
+  const welcomeMessage = getWelcomeMessage();
+
+  // Get recommended time slots based on current time and meal type
+  const getRecommendedTimeSlots = () => {
+    const currentHour = new Date().getHours();
+    
+    if (currentHour >= 5 && currentHour < 12) {
+      // Morning - recommend breakfast times
+      return ['08:00', '09:00', '10:00', '11:00'];
+    } else if (currentHour >= 12 && currentHour < 17) {
+      // Afternoon - recommend lunch times
+      return ['12:00', '12:30', '13:00', '13:30', '14:00'];
+    } else if (currentHour >= 17 && currentHour < 21) {
+      // Evening - recommend dinner times
+      return ['18:00', '18:30', '19:00', '19:30', '20:00', '20:30'];
+    } else {
+      // Late night - recommend available evening slots
+      return ['21:00', '21:30', '22:00'];
+    }
+  };
+
+  const recommendedSlots = getRecommendedTimeSlots();
+
   if (bookingId) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-slate-900 via-blue-900 to-indigo-900 flex items-center justify-center p-4">
@@ -159,13 +232,22 @@ export default function GuestBookingResponsive(props: any) {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-900 via-blue-900 to-indigo-900">
-      {/* Header */}
+      {/* Header with Personalized Welcome */}
       <div className="text-center py-6 md:py-8 px-4">
-        <h1 className="text-2xl md:text-4xl lg:text-5xl font-bold text-white mb-2 md:mb-4">
+        <div className="mb-4 animate-fade-in">
+          <span className="text-4xl md:text-6xl mb-2 block animate-bounce">{welcomeMessage.icon}</span>
+          <h1 className="text-xl md:text-2xl lg:text-3xl font-bold text-blue-300 mb-2">
+            {welcomeMessage.greeting}
+          </h1>
+        </div>
+        <h2 className="text-2xl md:text-4xl lg:text-5xl font-bold text-white mb-2 md:mb-4">
           Reserve Your Table
-        </h1>
-        <p className="text-sm md:text-lg lg:text-xl text-blue-100">
-          at <span className="text-blue-300 font-semibold">{(restaurant as any)?.name || "Our Restaurant"}</span>
+        </h2>
+        <p className="text-sm md:text-lg lg:text-xl text-blue-100 max-w-3xl mx-auto mb-3">
+          {welcomeMessage.message}
+        </p>
+        <p className="text-xs md:text-sm text-blue-200/80 max-w-2xl mx-auto italic">
+          {welcomeMessage.suggestion}
         </p>
       </div>
 
@@ -232,33 +314,57 @@ export default function GuestBookingResponsive(props: any) {
             {/* Step 1: Time Selection */}
             {currentStep === 1 && (
               <div className="space-y-6">
-                <h2 className="text-xl md:text-2xl font-bold text-gray-900 text-center">Select Time</h2>
-                <div className="grid grid-cols-3 md:grid-cols-4 gap-3">
-                  {timeSlots.map((time) => (
-                    <button
-                      key={time}
-                      onClick={() => setSelectedTime(time)}
-                      disabled={(availableSlots as any) && !(availableSlots as any).slots?.includes(time)}
-                      className={`
-                        p-3 rounded-lg border-2 transition-all duration-200
-                        ${selectedTime === time
-                          ? 'border-blue-500 bg-blue-50 text-blue-700'
-                          : (availableSlots as any) && !(availableSlots as any).slots?.includes(time)
-                          ? 'border-gray-200 bg-gray-100 text-gray-400 cursor-not-allowed'
-                          : 'border-gray-200 hover:border-blue-300 hover:bg-blue-50'}
-                      `}
-                    >
-                      {time}
-                    </button>
-                  ))}
+                <div className="text-center">
+                  <h2 className="text-xl md:text-2xl font-bold text-gray-900 mb-2">Select Time</h2>
+                  <p className="text-sm text-blue-600 font-medium">
+                    ⭐ Recommended for {welcomeMessage.mealType}
+                  </p>
                 </div>
+                <div className="grid grid-cols-3 md:grid-cols-4 gap-3">
+                  {timeSlots.map((time) => {
+                    const isRecommended = recommendedSlots.includes(time);
+                    const isAvailable = !(availableSlots as any) || (availableSlots as any).slots?.includes(time);
+                    const isSelected = selectedTime === time;
+                    
+                    return (
+                      <button
+                        key={time}
+                        onClick={() => setSelectedTime(time)}
+                        disabled={!isAvailable}
+                        className={`
+                          relative p-3 rounded-lg border-2 transition-all duration-200
+                          ${isSelected
+                            ? 'border-blue-500 bg-blue-50 text-blue-700 shadow-lg'
+                            : !isAvailable
+                            ? 'border-gray-200 bg-gray-100 text-gray-400 cursor-not-allowed'
+                            : isRecommended
+                            ? 'border-amber-300 bg-amber-50 text-amber-700 hover:border-amber-400 hover:bg-amber-100'
+                            : 'border-gray-200 hover:border-blue-300 hover:bg-blue-50'}
+                        `}
+                      >
+                        {isRecommended && isAvailable && !isSelected && (
+                          <span className="absolute -top-1 -right-1 w-3 h-3 bg-amber-400 rounded-full"></span>
+                        )}
+                        {time}
+                      </button>
+                    );
+                  })}
+                </div>
+                <p className="text-xs text-gray-500 text-center">
+                  Golden dots indicate recommended times for {welcomeMessage.mealType}
+                </p>
               </div>
             )}
 
             {/* Step 2: Guest Count */}
             {currentStep === 2 && (
               <div className="space-y-6">
-                <h2 className="text-xl md:text-2xl font-bold text-gray-900 text-center">Number of Guests</h2>
+                <div className="text-center">
+                  <h2 className="text-xl md:text-2xl font-bold text-gray-900 mb-2">Number of Guests</h2>
+                  <p className="text-sm text-blue-600 font-medium">
+                    Suggested for {welcomeMessage.mealType}: {getDefaultGuestCount()} guests
+                  </p>
+                </div>
                 <div className="flex items-center justify-center space-x-6">
                   <Button
                     variant="outline"
@@ -280,7 +386,25 @@ export default function GuestBookingResponsive(props: any) {
                     +
                   </Button>
                 </div>
-                <p className="text-center text-gray-600">Select number of guests (1-10)</p>
+                <div className="flex justify-center space-x-2 flex-wrap">
+                  {[1, 2, 3, 4, 5, 6].map((count) => (
+                    <button
+                      key={count}
+                      onClick={() => setGuestCount(count)}
+                      className={`
+                        px-3 py-1 rounded-full text-sm transition-all duration-200
+                        ${guestCount === count 
+                          ? 'bg-blue-500 text-white' 
+                          : count === getDefaultGuestCount()
+                          ? 'bg-amber-100 text-amber-700 border border-amber-300'
+                          : 'bg-gray-100 text-gray-600 hover:bg-gray-200'}
+                      `}
+                    >
+                      {count}
+                    </button>
+                  ))}
+                </div>
+                <p className="text-center text-gray-600 text-sm">Quick select or use +/- buttons (1-10 guests)</p>
               </div>
             )}
 
