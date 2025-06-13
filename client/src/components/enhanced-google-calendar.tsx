@@ -333,6 +333,7 @@ export default function EnhancedGoogleCalendar({
     // Open edit dialog on single click
     setEditingBooking(booking);
     setIsEditBookingOpen(true);
+    return false; // Ensure no propagation
   }, []);
 
   // Enhanced drag and drop handlers with smooth initialization
@@ -559,12 +560,8 @@ export default function EnhancedGoogleCalendar({
                   }`}
                   onClick={(e) => {
                     // Only open dialog if clicking directly on the container, not on bookings
-                    console.log('Container clicked, target:', e.target, 'currentTarget:', e.currentTarget);
                     if (e.target === e.currentTarget) {
-                      console.log('Opening new booking dialog');
                       openNewBookingDialog(currentDate, timeSlot);
-                    } else {
-                      console.log('Click on child element, not opening dialog');
                     }
                   }}
                   onMouseUp={(e) => handleMouseUp(e, currentDate, timeSlot)}
@@ -579,13 +576,15 @@ export default function EnhancedGoogleCalendar({
                       <div
                         key={booking.id}
                         data-booking-id={booking.id}
-                        className={`flex items-center space-x-2 p-2 bg-blue-100 text-blue-800 rounded text-sm cursor-move transition-all duration-200 hover:bg-blue-200 hover:shadow-md ${
+                        className={`flex items-center space-x-2 p-2 bg-blue-100 text-blue-800 rounded text-sm cursor-pointer transition-all duration-200 hover:bg-blue-200 hover:shadow-md ${
                           draggedBooking?.booking.id === booking.id ? 'opacity-50 transform scale-95' : ''
                         }`}
-                        draggable
-                        onClick={(e) => handleBookingClick(e, booking)}
-                        onMouseDown={(e) => handleMouseDown(e, booking)}
-                        onDragStart={(e) => e.preventDefault()}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          e.preventDefault();
+                          setEditingBooking(booking);
+                          setIsEditBookingOpen(true);
+                        }}
                       >
                         <Users className="w-4 h-4" />
                         <span>{booking.customerName} ({booking.guestCount} guests)</span>
@@ -653,10 +652,13 @@ export default function EnhancedGoogleCalendar({
                           className={`booking-card p-1 mb-1 bg-blue-100 text-blue-800 rounded text-xs cursor-pointer hover:bg-blue-200 hover:shadow-md ${
                             draggedBooking?.booking.id === booking.id ? 'dragging opacity-50 transform scale-95' : ''
                           }`}
-                          draggable
-                          onClick={(e) => handleBookingClick(e, booking)}
-                          onMouseDown={(e) => handleMouseDown(e, booking)}
-                          onDragStart={(e) => e.preventDefault()}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            e.preventDefault();
+                            console.log('Week view booking clicked:', booking.customerName);
+                            setEditingBooking(booking);
+                            setIsEditBookingOpen(true);
+                          }}
                           title="Click to edit booking"
                         >
                           <div className="truncate font-medium">{booking.customerName}</div>
@@ -737,10 +739,13 @@ export default function EnhancedGoogleCalendar({
                           className={`booking-card p-1 bg-blue-100 text-blue-800 rounded text-xs truncate cursor-pointer hover:bg-blue-200 hover:shadow-md ${
                             draggedBooking?.booking.id === booking.id ? 'dragging opacity-50 transform scale-95' : ''
                           }`}
-                          draggable
-                          onClick={(e) => handleBookingClick(e, booking)}
-                          onMouseDown={(e) => handleMouseDown(e, booking)}
-                          onDragStart={(e) => e.preventDefault()}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            e.preventDefault();
+                            console.log('Month view booking clicked:', booking.customerName);
+                            setEditingBooking(booking);
+                            setIsEditBookingOpen(true);
+                          }}
                           title="Click to edit booking"
                         >
                           {booking.customerName}
