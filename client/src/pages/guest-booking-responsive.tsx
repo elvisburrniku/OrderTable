@@ -407,7 +407,7 @@ export default function GuestBookingResponsive(props: any) {
         </p>
       </div>
       {/* Progress Steps */}
-      <div className="px-4 mb-6 md:mb-8 bg-[#431b6d]">
+      <div className="px-4 md:mb-8 bg-[#431b6d] mt-[1px] mb-[1px]">
         <div className="max-w-2xl mx-auto">
           <div className="flex justify-between items-center">
             {steps.map((step, index) => {
