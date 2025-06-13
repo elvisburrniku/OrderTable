@@ -1432,8 +1432,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Public booking info for feedback validation (for customers via QR code)
-  app.get("/api/tenants/:tenantId/restaurants/:restaurantId/bookings", async (req, res) => {
+  // Get bookings (authenticated route for dashboard)
+  app.get("/api/tenants/:tenantId/restaurants/:restaurantId/bookings", validateTenant, async (req, res) => {
     try {
       const restaurantId = parseInt(req.params.restaurantId);
       const tenantId = parseInt(req.params.tenantId);
@@ -1453,20 +1453,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
           booking.tableId === parseInt(table as string) &&
           booking.status !== 'cancelled'
         );
+      } else {
+        // Get all bookings for the restaurant
+        bookings = await storage.getBookingsByRestaurant(restaurantId);
       }
 
-      // Return only necessary booking information for feedback validation
-      const publicBookings = bookings.map(booking => ({
-        id: booking.id,
-        startTime: booking.startTime,
-        endTime: booking.endTime,
-        tableId: booking.tableId,
-        status: booking.status
-      }));
-
-      res.json(publicBookings);
+      res.json(bookings);
     } catch (error) {
-      res.status(400).json({ message: "Invalid request" });
+      console.error("Error fetching bookings:", error);
+      res.status(500).json({ message: "Failed to fetch bookings" });
     }
   });
 
