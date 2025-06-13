@@ -233,6 +233,8 @@ export class BrevoEmailService {
   }
 
   async sendBookingChangeRequest(restaurantEmail: string, changeRequestDetails: any, bookingDetails: any) {
+    if (!this.checkEnabled()) return;
+    
     const sendSmtpEmail = new SendSmtpEmail();
 
     const baseUrl = process.env.APP_BASE_URL || process.env.REPLIT_DEV_DOMAIN 
@@ -361,6 +363,8 @@ export class BrevoEmailService {
   }
 
   async sendChangeRequestResponse(customerEmail: string, customerName: string, approved: boolean, bookingDetails: any, changeDetails: any, restaurantResponse?: string) {
+    if (!this.checkEnabled()) return;
+    
     const sendSmtpEmail = new SendSmtpEmail();
 
     const baseUrl = process.env.APP_BASE_URL || process.env.REPLIT_DEV_DOMAIN 
@@ -495,6 +499,8 @@ export class BrevoEmailService {
   }
 
   async sendBookingReminder(customerEmail: string, customerName: string, bookingDetails: any, hoursBeforeVisit: number) {
+    if (!this.checkEnabled()) return;
+    
     const sendSmtpEmail = new SendSmtpEmail();
 
     sendSmtpEmail.subject = `Reminder: Your reservation is in ${hoursBeforeVisit} hours`;
@@ -537,6 +543,8 @@ export class BrevoEmailService {
   }
 
   async sendContactFormNotification(contactData: any) {
+    if (!this.checkEnabled()) return;
+    
     const sendSmtpEmail = new SendSmtpEmail();
 
     sendSmtpEmail.subject = `New Contact Form Submission: ${contactData.subject}`;
@@ -678,6 +686,8 @@ export class BrevoEmailService {
   }
 
   async sendRestaurantNotification(restaurantEmail: string, bookingDetails: any) {
+    if (!this.checkEnabled()) return;
+    
     const sendSmtpEmail = new SendSmtpEmail();
 
     sendSmtpEmail.subject = "New Booking Received";
@@ -710,7 +720,7 @@ export class BrevoEmailService {
     }];
 
     try {
-      const result = await this.apiInstance.sendTransacEmail(sendSmtpEmail);
+      const result = await this.apiInstance!.sendTransacEmail(sendSmtpEmail);
       console.log('Restaurant notification email sent:', result);
       return result;
     } catch (error) {
@@ -803,7 +813,7 @@ export class BrevoEmailService {
     });
 
     try {
-      const result = await this.apiInstance.sendTransacEmail(sendSmtpEmail);
+      const result = await this.apiInstance!.sendTransacEmail(sendSmtpEmail);
       console.log(`Subscription change notification sent successfully to ${adminEmail}:`, {
         messageId: result.body?.messageId,
         action: subscriptionData.action,
