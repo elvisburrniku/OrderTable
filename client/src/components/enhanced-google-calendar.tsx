@@ -336,39 +336,38 @@ export default function EnhancedGoogleCalendar({
 
   // Drag handlers that work with click-to-edit
   const handleMouseDown = useCallback((e: React.MouseEvent, booking: Booking) => {
+    e.preventDefault();
+    
     const startX = e.clientX;
     const startY = e.clientY;
-    dragStartTime.current = Date.now();
-    dragStartPos.current = { x: startX, y: startY };
-    
-    // Clear any existing click timeout
-    if (clickTimeout.current) {
-      clearTimeout(clickTimeout.current);
-      clickTimeout.current = null;
-    }
+    const startTime = Date.now();
+    let hasMoved = false;
     
     const handleMouseMove = (moveEvent: MouseEvent) => {
-      const deltaX = Math.abs(moveEvent.clientX - startX);
-      const deltaY = Math.abs(moveEvent.clientY - startY);
+      const deltaX = moveEvent.clientX - startX;
+      const deltaY = moveEvent.clientY - startY;
       const distance = Math.sqrt(deltaX * deltaX + deltaY * deltaY);
       
       // If moved more than 5px, start dragging
-      if (distance > 5 && !isDragging) {
+      if (distance > 5 && !hasMoved) {
+        hasMoved = true;
         setIsDragging(true);
         setDraggedBooking({
           booking,
           offset: { x: deltaX, y: deltaY }
         });
         
-        const dragElement = e.currentTarget as HTMLElement;
-        dragElement.style.opacity = '0.7';
-        dragElement.style.transform = 'scale(1.05)';
-        dragElement.style.zIndex = '1000';
-        dragElement.style.pointerEvents = 'none';
+        const dragElement = document.querySelector(`[data-booking-id="${booking.id}"]`) as HTMLElement;
+        if (dragElement) {
+          dragElement.style.opacity = '0.7';
+          dragElement.style.transform = 'scale(1.05)';
+          dragElement.style.zIndex = '1000';
+          dragElement.style.cursor = 'grabbing';
+        }
       }
       
-      // Update drag position
-      if (isDragging && draggedBooking) {
+      // Update drag position if dragging
+      if (hasMoved) {
         const dragElement = document.querySelector(`[data-booking-id="${booking.id}"]`) as HTMLElement;
         if (dragElement) {
           dragElement.style.transform = `translate(${deltaX}px, ${deltaY}px) scale(1.05)`;
@@ -376,40 +375,50 @@ export default function EnhancedGoogleCalendar({
       }
     };
     
-    const handleMouseUp = () => {
+    const handleMouseUp = (upEvent: MouseEvent) => {
       document.removeEventListener('mousemove', handleMouseMove);
       document.removeEventListener('mouseup', handleMouseUp);
       
-      const duration = Date.now() - dragStartTime.current;
-      const deltaX = Math.abs(e.clientX - dragStartPos.current.x);
-      const deltaY = Math.abs(e.clientY - dragStartPos.current.y);
-      const distance = Math.sqrt(deltaX * deltaX + deltaY * deltaY);
+      const duration = Date.now() - startTime;
       
-      // If it was a quick click (less than 200ms) or minimal movement, treat as click
-      if (duration < 200 && distance < 5) {
-        console.log('Quick click detected, opening edit dialog');
+      // If it was a quick click without movement, treat as click
+      if (!hasMoved && duration < 300) {
+        console.log('Click detected, opening edit dialog');
         setEditingBooking(booking);
         setIsEditBookingOpen(true);
-      } else if (isDragging) {
-        // Handle drop logic here
-        console.log('Drag completed for booking:', booking.customerName);
-        // Reset drag state
+      }
+      
+      // Reset drag styles but don't reset drag state here - let drop zones handle it
+      if (hasMoved) {
+        console.log('Drag ended, checking for drop zone');
+        // Reset visual state but keep drag state for drop detection
         const dragElement = document.querySelector(`[data-booking-id="${booking.id}"]`) as HTMLElement;
         if (dragElement) {
           dragElement.style.opacity = '';
           dragElement.style.transform = '';
           dragElement.style.zIndex = '';
-          dragElement.style.pointerEvents = '';
+          dragElement.style.cursor = '';
         }
       }
-      
-      setIsDragging(false);
-      setDraggedBooking(null);
     };
     
     document.addEventListener('mousemove', handleMouseMove);
     document.addEventListener('mouseup', handleMouseUp);
-  }, [isDragging, draggedBooking]);
+  }, []);
+
+  // Global drag cleanup effect
+  useEffect(() => {
+    const handleGlobalMouseUp = () => {
+      if (isDragging) {
+        console.log('Global drag cleanup - resetting drag state');
+        setIsDragging(false);
+        setDraggedBooking(null);
+      }
+    };
+
+    document.addEventListener('mouseup', handleGlobalMouseUp);
+    return () => document.removeEventListener('mouseup', handleGlobalMouseUp);
+  }, [isDragging]);
 
   // Add drop zone detection for proper drag and drop
   const handleDrop = useCallback((targetDate: Date, targetTime?: string) => {
@@ -707,6 +716,10 @@ export default function EnhancedGoogleCalendar({
                       if (isDragging && draggedBooking) {
                         e.preventDefault();
                         handleDrop(date);
+                      } else {
+                        // Reset drag state if no active drag
+                        setIsDragging(false);
+                        setDraggedBooking(null);
                       }
                     }}
                     title={getAvailabilityText(availabilityLevel)}
