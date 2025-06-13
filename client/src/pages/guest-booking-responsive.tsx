@@ -488,10 +488,15 @@ export default function GuestBookingResponsive(props: any) {
 
                 {/* Calendar Grid */}
                 <div className="grid grid-cols-7 gap-2">
-                  {/* Empty cells for proper day alignment */}
-                  {Array.from({ length: (getDay(startOfMonth(currentMonth)) + 6) % 7 }).map((_, index) => (
-                    <div key={`empty-${index}`} className="h-12"></div>
-                  ))}
+                  {/* Empty cells for proper day alignment - Monday first */}
+                  {(() => {
+                    const firstDayOfMonth = getDay(startOfMonth(currentMonth));
+                    // Convert Sunday=0 to Sunday=6 for Monday-first layout
+                    const mondayFirstDay = firstDayOfMonth === 0 ? 6 : firstDayOfMonth - 1;
+                    return Array.from({ length: mondayFirstDay }).map((_, index) => (
+                      <div key={`empty-${index}`} className="h-12"></div>
+                    ));
+                  })()}
                   
                   {/* Date buttons */}
                   {calendarDates.map((date, index) => {
