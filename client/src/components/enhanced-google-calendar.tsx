@@ -610,8 +610,8 @@ export default function EnhancedGoogleCalendar({
                         <div
                           key={booking.id}
                           data-booking-id={booking.id}
-                          className={`p-1 mb-1 bg-blue-100 text-blue-800 rounded text-xs cursor-pointer transition-all duration-200 hover:bg-blue-200 hover:shadow-md ${
-                            draggedBooking?.booking.id === booking.id ? 'opacity-50 transform scale-95' : ''
+                          className={`booking-card p-1 mb-1 bg-blue-100 text-blue-800 rounded text-xs cursor-pointer hover:bg-blue-200 hover:shadow-md ${
+                            draggedBooking?.booking.id === booking.id ? 'dragging opacity-50 transform scale-95' : ''
                           }`}
                           draggable
                           onClick={(e) => handleBookingClick(e, booking)}
@@ -691,8 +691,8 @@ export default function EnhancedGoogleCalendar({
                         <div
                           key={booking.id}
                           data-booking-id={booking.id}
-                          className={`p-1 bg-blue-100 text-blue-800 rounded text-xs truncate cursor-pointer transition-all duration-200 hover:bg-blue-200 hover:shadow-md ${
-                            draggedBooking?.booking.id === booking.id ? 'opacity-50 transform scale-95' : ''
+                          className={`booking-card p-1 bg-blue-100 text-blue-800 rounded text-xs truncate cursor-pointer hover:bg-blue-200 hover:shadow-md ${
+                            draggedBooking?.booking.id === booking.id ? 'dragging opacity-50 transform scale-95' : ''
                           }`}
                           draggable
                           onClick={(e) => handleBookingClick(e, booking)}

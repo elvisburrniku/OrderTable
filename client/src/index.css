@@ -140,3 +140,71 @@
 .animation-delay-4000 {
   animation-delay: 4s;
 }
+
+/* Enhanced drag performance optimizations */
+.booking-card {
+  will-change: auto;
+  transform: translateZ(0);
+  backface-visibility: hidden;
+  perspective: 1000px;
+}
+
+.booking-card.dragging {
+  will-change: transform;
+  transform: translateZ(0);
+  pointer-events: none;
+  user-select: none;
+  -webkit-user-select: none;
+  -moz-user-select: none;
+  -ms-user-select: none;
+}
+
+/* Smooth drag transitions */
+.booking-card:not(.dragging) {
+  transition: transform 0.2s cubic-bezier(0.4, 0, 0.2, 1),
+              box-shadow 0.2s cubic-bezier(0.4, 0, 0.2, 1),
+              opacity 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* GPU-accelerated grid */
+.calendar-grid {
+  contain: layout style paint;
+  transform: translateZ(0);
+  will-change: scroll-position;
+}
+
+/* Optimized time slots */
+.time-slot {
+  contain: layout style;
+  transform: translateZ(0);
+}
+
+/* Drop zone visual feedback */
+.drop-zone-active {
+  background: linear-gradient(45deg, 
+    rgba(34, 197, 94, 0.1) 25%, 
+    transparent 25%, 
+    transparent 75%, 
+    rgba(34, 197, 94, 0.1) 75%);
+  background-size: 20px 20px;
+  border: 2px dashed rgb(34, 197, 94);
+  animation: dropZonePulse 1s ease-in-out infinite alternate;
+}
+
+@keyframes dropZonePulse {
+  0% { 
+    border-color: rgba(34, 197, 94, 0.5);
+    background-position: 0 0;
+  }
+  100% { 
+    border-color: rgba(34, 197, 94, 0.8);
+    background-position: 20px 20px;
+  }
+}
+
+/* Calendar performance optimizations */
+.calendar-container {
+  contain: layout style paint;
+  transform: translateZ(0);
+  will-change: scroll-position;
+}
