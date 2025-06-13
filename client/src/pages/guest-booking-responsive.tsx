@@ -406,7 +406,6 @@ export default function GuestBookingResponsive(props: any) {
           {welcomeMessage.suggestion}
         </p>
       </div>
-
       {/* Progress Steps */}
       <div className="px-4 mb-6 md:mb-8">
         <div className="max-w-2xl mx-auto">
@@ -437,9 +436,8 @@ export default function GuestBookingResponsive(props: any) {
           </div>
         </div>
       </div>
-
       {/* Main Content */}
-      <div className="flex-1 px-4 pb-6">
+      <div className="flex-1 px-4 pb-6 bg-[#431b6d]">
         <Card className="max-w-2xl mx-auto bg-white/95 backdrop-blur-sm shadow-2xl">
           <CardContent className="p-6 md:p-8">
             {/* Step 0: Date Selection */}
@@ -761,7 +759,6 @@ export default function GuestBookingResponsive(props: any) {
           </CardContent>
         </Card>
       </div>
-
       {/* Restaurant Info Footer */}
       <div className="text-center py-6 px-4 border-t border-white/10">
         <p className="text-white/80 text-sm">
