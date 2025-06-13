@@ -211,6 +211,10 @@ export default function GuestBookingResponsive(props: any) {
   const isDateAvailable = (date: Date) => {
     const dayOfWeek = date.getDay(); // 0 = Sunday, 1 = Monday, etc.
     
+    // Debug logging
+    console.log('Checking date:', format(date, 'yyyy-MM-dd'), 'dayOfWeek:', dayOfWeek);
+    console.log('Opening hours data:', openingHours);
+    
     // Check special periods first
     if (specialPeriods && Array.isArray(specialPeriods)) {
       const dateStr = format(date, 'yyyy-MM-dd');
@@ -220,15 +224,23 @@ export default function GuestBookingResponsive(props: any) {
         const checkDate = new Date(dateStr);
         return checkDate >= start && checkDate <= end && !period.isOpen;
       });
-      if (hasSpecialPeriod) return false;
+      if (hasSpecialPeriod) {
+        console.log('Date blocked by special period');
+        return false;
+      }
     }
 
     // Check opening hours
     if (openingHours && Array.isArray(openingHours)) {
       const dayHours = openingHours.find((h: any) => h.dayOfWeek === dayOfWeek);
-      if (!dayHours || !dayHours.isOpen) return false;
+      console.log('Found day hours:', dayHours);
+      if (!dayHours || !dayHours.isOpen) {
+        console.log('Date unavailable - no hours or closed');
+        return false;
+      }
     }
 
+    console.log('Date is available');
     return true;
   };
 
