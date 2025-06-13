@@ -345,9 +345,13 @@ export default function EnhancedGoogleCalendar({
                     {slotBookings.map(booking => (
                       <div
                         key={booking.id}
-                        className="flex items-center space-x-2 p-2 bg-blue-100 text-blue-800 rounded text-sm cursor-move"
+                        data-booking-id={booking.id}
+                        className={`flex items-center space-x-2 p-2 bg-blue-100 text-blue-800 rounded text-sm cursor-move transition-all duration-200 hover:bg-blue-200 hover:shadow-md ${
+                          draggedBooking?.booking.id === booking.id ? 'opacity-50 transform scale-95' : ''
+                        }`}
                         draggable
                         onMouseDown={(e) => handleMouseDown(e, booking)}
+                        onDragStart={(e) => e.preventDefault()}
                       >
                         <Users className="w-4 h-4" />
                         <span>{booking.customerName} ({booking.guestCount} guests)</span>
@@ -403,11 +407,13 @@ export default function EnhancedGoogleCalendar({
                       {slotBookings.map(booking => (
                         <div
                           key={booking.id}
+                          data-booking-id={booking.id}
                           className={`p-1 mb-1 bg-blue-100 text-blue-800 rounded text-xs cursor-move transition-all duration-200 hover:bg-blue-200 hover:shadow-md ${
                             draggedBooking?.booking.id === booking.id ? 'opacity-50 transform scale-95' : ''
                           }`}
                           draggable
                           onMouseDown={(e) => handleMouseDown(e, booking)}
+                          onDragStart={(e) => e.preventDefault()}
                         >
                           <div className="truncate font-medium">{booking.customerName}</div>
                           <div className="text-xs opacity-75">{booking.guestCount} guests</div>
@@ -476,9 +482,13 @@ export default function EnhancedGoogleCalendar({
                       {dayBookings.slice(0, 3).map(booking => (
                         <div
                           key={booking.id}
-                          className="p-1 bg-blue-100 text-blue-800 rounded text-xs truncate cursor-move"
+                          data-booking-id={booking.id}
+                          className={`p-1 bg-blue-100 text-blue-800 rounded text-xs truncate cursor-move transition-all duration-200 hover:bg-blue-200 hover:shadow-md ${
+                            draggedBooking?.booking.id === booking.id ? 'opacity-50 transform scale-95' : ''
+                          }`}
                           draggable
                           onMouseDown={(e) => handleMouseDown(e, booking)}
+                          onDragStart={(e) => e.preventDefault()}
                         >
                           {booking.customerName}
                         </div>
