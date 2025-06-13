@@ -407,7 +407,7 @@ export default function GuestBookingResponsive(props: any) {
         </p>
       </div>
       {/* Progress Steps */}
-      <div className="px-4 md:mb-8 bg-[#431b6d] mt-[1px] mb-[1px]">
+      <div className="px-4 md:mb-8 bg-[#431b6d] mt-[0px] mb-[0px]">
         <div className="max-w-2xl mx-auto">
           <div className="flex justify-between items-center">
             {steps.map((step, index) => {
@@ -628,6 +628,28 @@ export default function GuestBookingResponsive(props: any) {
                     Suggested for {welcomeMessage.mealType}: {getDefaultGuestCount()} guests
                   </p>
                 </div>
+                
+                {/* Direct Input Option */}
+                <div className="flex items-center justify-center space-x-4 mb-6">
+                  <Label htmlFor="guestInput" className="text-sm font-medium text-gray-700">
+                    Enter guests:
+                  </Label>
+                  <Input
+                    id="guestInput"
+                    type="number"
+                    min="1"
+                    max="20"
+                    value={guestCount}
+                    onChange={(e) => {
+                      const value = parseInt(e.target.value) || 1;
+                      setGuestCount(Math.max(1, Math.min(20, value)));
+                    }}
+                    className="w-20 text-center text-lg font-bold"
+                  />
+                  <span className="text-sm text-gray-500">guests</span>
+                </div>
+
+                {/* Slider Controls */}
                 <div className="flex items-center justify-center space-x-6">
                   <Button
                     variant="outline"
@@ -643,12 +665,14 @@ export default function GuestBookingResponsive(props: any) {
                   <Button
                     variant="outline"
                     size="lg"
-                    onClick={() => setGuestCount(Math.min(10, guestCount + 1))}
+                    onClick={() => setGuestCount(Math.min(20, guestCount + 1))}
                     className="w-12 h-12 rounded-full"
                   >
                     +
                   </Button>
                 </div>
+                
+                {/* Quick Select Buttons */}
                 <div className="flex justify-center space-x-2 flex-wrap">
                   {[1, 2, 3, 4, 5, 6].map((count) => (
                     <button
@@ -667,7 +691,7 @@ export default function GuestBookingResponsive(props: any) {
                     </button>
                   ))}
                 </div>
-                <p className="text-center text-gray-600 text-sm">Quick select or use +/- buttons (1-10 guests)</p>
+                <p className="text-center text-gray-600 text-sm">Type directly, use +/- buttons, or quick select (1-20 guests)</p>
               </div>
             )}
 
