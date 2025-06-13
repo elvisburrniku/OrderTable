@@ -497,6 +497,7 @@ export default function EnhancedGoogleCalendar({
     
     createBookingMutation.mutate({
       ...newBooking,
+      tableId: newBooking.tableId ? parseInt(newBooking.tableId, 10) : null,
       bookingDate: format(selectedTimeSlot.date, 'yyyy-MM-dd'),
       bookingTime: selectedTimeSlot.time,
       restaurantId: restaurant?.id,
