@@ -586,12 +586,12 @@ export default function EnhancedGoogleCalendar({
                           console.log('Day view edit dialog should open');
                         }}
                       >
-                        <Users className="w-4 h-4" onClick={(e) => e.stopPropagation()} />
-                        <span onClick={(e) => e.stopPropagation()}>
+                        <Users className="w-4 h-4" />
+                        <span>
                           {booking.customerName} ({booking.guestCount} guests)
                         </span>
                         {booking.tableId && (
-                          <Badge variant="outline" onClick={(e) => e.stopPropagation()}>
+                          <Badge variant="outline">
                             Table {tables.find(t => t.id === booking.tableId)?.tableNumber}
                           </Badge>
                         )}
@@ -664,23 +664,14 @@ export default function EnhancedGoogleCalendar({
                           }}
                           title="Click to edit booking"
                         >
-                          <div 
-                            className="truncate font-medium"
-                            onClick={(e) => e.stopPropagation()}
-                          >
+                          <div className="truncate font-medium">
                             {booking.customerName}
                           </div>
-                          <div 
-                            className="text-xs opacity-75"
-                            onClick={(e) => e.stopPropagation()}
-                          >
+                          <div className="text-xs opacity-75">
                             {booking.guestCount} guests
                           </div>
                           {booking.tableId && (
-                            <div 
-                              className="text-xs opacity-75"
-                              onClick={(e) => e.stopPropagation()}
-                            >
+                            <div className="text-xs opacity-75">
                               Table {tables.find(t => t.id === booking.tableId)?.tableNumber}
                             </div>
                           )}
@@ -763,7 +754,7 @@ export default function EnhancedGoogleCalendar({
                           }}
                           title="Click to edit booking"
                         >
-                          <span onClick={(e) => e.stopPropagation()}>
+                          <span>
                             {booking.customerName}
                           </span>
                         </div>
