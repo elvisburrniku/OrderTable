@@ -79,7 +79,7 @@ export default function GoogleIntegration() {
       };
 
       const response = await fetch(`/api/tenants/${tenant?.id}/restaurants/${restaurant?.id}`, {
-        method: 'PATCH',
+        method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
         },
