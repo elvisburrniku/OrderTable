@@ -5201,6 +5201,16 @@ app.put("/api/tenants/:tenantId/bookings/:id", validateTenant, async (req, res) 
         }
       });
 
+      // Check if Google integration is already activated
+      const googleIntegration = await storage.getIntegrationByRestaurantAndType(restaurantId, 'google');
+      let integrationStatus = 'inactive';
+      
+      if (googleIntegration && googleIntegration.isEnabled) {
+        integrationStatus = validation.isComplete ? 'active' : 'pending_profile';
+      } else if (validation.isComplete) {
+        integrationStatus = 'ready_to_activate';
+      }
+
       // Generate booking URL
       const baseUrl = process.env.FRONTEND_URL || `${req.protocol}://${req.get('host')}`;
       const bookingUrl = `${baseUrl}/${tenantId}/book/${restaurantId}?source=google`;
@@ -5216,7 +5226,8 @@ app.put("/api/tenants/:tenantId/bookings/:id", validateTenant, async (req, res) 
         },
         validation,
         bookingUrl,
-        googleIntegrationStatus: 'pending' // Would be updated based on actual Google API status
+        googleIntegrationStatus: integrationStatus,
+        isIntegrationEnabled: googleIntegration?.isEnabled || false
       });
     } catch (error) {
       console.error("Error fetching Google profile:", error);
@@ -5238,14 +5249,26 @@ app.put("/api/tenants/:tenantId/bookings/:id", validateTenant, async (req, res) 
         return res.status(404).json({ message: "Restaurant not found" });
       }
 
+      // Check if Google integration is already activated
+      const existingIntegration = await storage.getIntegrationByRestaurantAndType(restaurantId, 'google');
+      if (existingIntegration && existingIntegration.isEnabled) {
+        return res.json({
+          success: true,
+          message: "Reserve with Google is already activated",
+          status: "active",
+          alreadyActive: true
+        });
+      }
+
       // Validate required fields before activation
       const requiredFields = ['name', 'address', 'phone'];
       const missingFields = requiredFields.filter(field => !restaurant[field as keyof typeof restaurant]);
 
       if (missingFields.length > 0) {
         return res.status(400).json({ 
-          message: "Missing required fields", 
-          missingFields 
+          message: "Missing required fields for Google integration", 
+          missingFields,
+          requiredFields: ['Restaurant Name', 'Address', 'Phone Number']
         });
       }
 
@@ -5274,7 +5297,7 @@ app.put("/api/tenants/:tenantId/bookings/:id", validateTenant, async (req, res) 
 
       res.json({
         success: true,
-        message: "Reserve with Google has been activated",
+        message: "Reserve with Google has been successfully activated",
         bookingUrl,
         status: "active"
       });

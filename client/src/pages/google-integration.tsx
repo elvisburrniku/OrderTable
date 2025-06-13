@@ -9,7 +9,7 @@ import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
-import { AlertCircle, CheckCircle, ExternalLink, Copy, Globe, MapPin, Phone, Mail, AlertTriangle } from 'lucide-react';
+import { AlertCircle, CheckCircle, ExternalLink, Copy, Globe, MapPin, Phone, Mail, AlertTriangle, Clock } from 'lucide-react';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 
 export default function GoogleIntegration() {
@@ -82,7 +82,11 @@ export default function GoogleIntegration() {
   }
 
   const validation = googleProfile?.validation || { isComplete: false, missingFields: [], warnings: [] };
-  const isGoogleActive = googleProfile?.googleIntegrationStatus === 'active';
+  const integrationStatus = googleProfile?.googleIntegrationStatus || 'inactive';
+  const isGoogleActive = integrationStatus === 'active';
+  const isReadyToActivate = integrationStatus === 'ready_to_activate';
+  const isPendingProfile = integrationStatus === 'pending_profile';
+  const isIntegrationEnabled = googleProfile?.isIntegrationEnabled || false;
 
   return (
     <div className="bg-gray-50 min-h-screen">
@@ -104,6 +108,8 @@ export default function GoogleIntegration() {
               <CardTitle className="flex items-center">
                 {isGoogleActive ? (
                   <CheckCircle className="w-5 h-5 text-green-600 mr-2" />
+                ) : isReadyToActivate ? (
+                  <Clock className="w-5 h-5 text-blue-600 mr-2" />
                 ) : (
                   <AlertCircle className="w-5 h-5 text-orange-600 mr-2" />
                 )}
@@ -113,26 +119,80 @@ export default function GoogleIntegration() {
             <CardContent>
               <div className="flex items-center justify-between">
                 <div>
-                  <Badge variant={isGoogleActive ? "default" : "secondary"} className="mb-2">
-                    {isGoogleActive ? "Active" : "Inactive"}
+                  <Badge 
+                    variant={
+                      isGoogleActive ? "default" : 
+                      isReadyToActivate ? "outline" : 
+                      "secondary"
+                    } 
+                    className={`mb-2 ${
+                      isGoogleActive ? "bg-green-600" :
+                      isReadyToActivate ? "border-blue-600 text-blue-600" :
+                      ""
+                    }`}
+                  >
+                    {isGoogleActive ? "Active" : 
+                     isReadyToActivate ? "Ready to Activate" : 
+                     isPendingProfile ? "Pending Profile" : 
+                     "Inactive"}
                   </Badge>
                   <p className="text-sm text-gray-600">
                     {isGoogleActive 
                       ? "Your restaurant can accept bookings from Google Search and Maps"
+                      : isReadyToActivate
+                      ? "Profile is complete - you can now activate Google booking"
                       : "Complete your profile to activate Google booking"
                     }
                   </p>
                 </div>
-                {!isGoogleActive && validation?.isComplete && (
-                  <Button 
-                    onClick={() => activateGoogleMutation.mutate()}
-                    disabled={activateGoogleMutation.isPending}
-                    className="bg-blue-600 hover:bg-blue-700"
-                  >
-                    {activateGoogleMutation.isPending ? "Activating..." : "Activate Reserve with Google"}
-                  </Button>
-                )}
+                
+                <Button 
+                  onClick={() => activateGoogleMutation.mutate()}
+                  disabled={
+                    activateGoogleMutation.isPending || 
+                    !validation?.isComplete || 
+                    isGoogleActive ||
+                    isIntegrationEnabled
+                  }
+                  className={`${
+                    isGoogleActive 
+                      ? 'bg-green-600 hover:bg-green-700' 
+                      : isReadyToActivate && !isIntegrationEnabled
+                      ? 'bg-blue-600 hover:bg-blue-700'
+                      : 'bg-gray-400'
+                  } ${(!validation?.isComplete || isGoogleActive || isIntegrationEnabled) ? 'opacity-50 cursor-not-allowed' : ''}`}
+                >
+                  {activateGoogleMutation.isPending ? (
+                    <div className="flex items-center">
+                      <div className="animate-spin w-4 h-4 border-2 border-white border-t-transparent rounded-full mr-2" />
+                      Activating...
+                    </div>
+                  ) : isGoogleActive || isIntegrationEnabled ? (
+                    <div className="flex items-center">
+                      <CheckCircle className="w-4 h-4 mr-2" />
+                      Activated
+                    </div>
+                  ) : (
+                    'Activate Reserve with Google'
+                  )}
+                </Button>
               </div>
+
+              {!validation?.isComplete && validation?.missingFields?.length > 0 && (
+                <div className="mt-4 p-3 bg-yellow-50 border border-yellow-200 rounded-lg">
+                  <p className="text-sm text-yellow-800">
+                    Complete your profile data to activate Google integration. Missing: {validation.missingFields.join(', ')}
+                  </p>
+                </div>
+              )}
+
+              {(isGoogleActive || isIntegrationEnabled) && (
+                <div className="mt-4 p-3 bg-green-50 border border-green-200 rounded-lg">
+                  <p className="text-sm text-green-800">
+                    Reserve with Google is active. Customers can now book directly from Google Search and Maps.
+                  </p>
+                </div>
+              )}
             </CardContent>
           </Card>
 
