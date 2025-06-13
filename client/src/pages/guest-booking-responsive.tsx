@@ -455,12 +455,12 @@ export default function GuestBookingResponsive(props: any) {
                         className={`
                           h-12 w-full rounded-lg border-2 transition-all duration-200 text-center flex flex-col items-center justify-center
                           ${!isAvailable
-                            ? 'border-gray-200 bg-gray-100 text-gray-400 cursor-not-allowed'
+                            ? 'border-red-300 bg-red-100 text-red-600 cursor-not-allowed'
                             : isSelected
                             ? 'border-blue-500 bg-blue-500 text-white shadow-lg'
                             : isToday
-                            ? 'border-blue-300 bg-blue-50 text-blue-700 font-semibold'
-                            : 'border-gray-200 hover:border-blue-300 hover:bg-blue-50'}
+                            ? 'border-green-400 bg-green-100 text-green-700 font-semibold'
+                            : 'border-green-300 bg-green-50 text-green-700 hover:border-green-400 hover:bg-green-100'}
                         `}
                       >
                         <span className="text-sm font-medium">{format(date, 'd')}</span>
@@ -473,7 +473,16 @@ export default function GuestBookingResponsive(props: any) {
                 
                 <div className="text-center text-sm text-gray-600 space-y-1">
                   <p>Select your preferred date • Today is highlighted</p>
-                  <p className="text-xs">Grayed out dates are closed or unavailable</p>
+                  <div className="text-xs flex justify-center items-center space-x-4">
+                    <span className="flex items-center space-x-1">
+                      <div className="w-3 h-3 bg-green-100 border border-green-300 rounded"></div>
+                      <span>Available</span>
+                    </span>
+                    <span className="flex items-center space-x-1">
+                      <div className="w-3 h-3 bg-red-100 border border-red-300 rounded"></div>
+                      <span>Closed</span>
+                    </span>
+                  </div>
                 </div>
               </div>
             )}
@@ -503,12 +512,12 @@ export default function GuestBookingResponsive(props: any) {
                         className={`
                           relative p-3 rounded-lg border-2 transition-all duration-200
                           ${!isAvailable
-                            ? 'border-gray-200 bg-gray-100 text-gray-400 cursor-not-allowed'
+                            ? 'border-red-300 bg-red-100 text-red-600 cursor-not-allowed'
                             : isSelected
                             ? 'border-blue-500 bg-blue-50 text-blue-700 shadow-lg'
                             : isRecommended
                             ? 'border-amber-300 bg-amber-50 text-amber-700 hover:border-amber-400 hover:bg-amber-100'
-                            : 'border-gray-200 hover:border-blue-300 hover:bg-blue-50'}
+                            : 'border-green-300 bg-green-50 text-green-700 hover:border-green-400 hover:bg-green-100'}
                         `}
                       >
                         {isRecommended && isAvailable && !isSelected && (
@@ -519,9 +528,22 @@ export default function GuestBookingResponsive(props: any) {
                     );
                   })}
                 </div>
-                <div className="text-xs text-gray-500 text-center space-y-1">
+                <div className="text-xs text-gray-500 text-center space-y-2">
                   <p>Golden dots indicate recommended times for {welcomeMessage.mealType}</p>
-                  <p>Times shown respect opening hours and cut-off policies</p>
+                  <div className="flex justify-center items-center space-x-4">
+                    <span className="flex items-center space-x-1">
+                      <div className="w-3 h-3 bg-green-100 border border-green-300 rounded"></div>
+                      <span>Available</span>
+                    </span>
+                    <span className="flex items-center space-x-1">
+                      <div className="w-3 h-3 bg-amber-100 border border-amber-300 rounded"></div>
+                      <span>Recommended</span>
+                    </span>
+                    <span className="flex items-center space-x-1">
+                      <div className="w-3 h-3 bg-red-100 border border-red-300 rounded"></div>
+                      <span>Unavailable</span>
+                    </span>
+                  </div>
                 </div>
               </div>
             )}
