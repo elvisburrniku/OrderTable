@@ -785,20 +785,7 @@ export default function Dashboard() {
           </div>
         </div>
 
-        {/* Compact Real-Time Status Widget */}
-        {viewMode !== 'status' && (
-          <div className="p-6">
-            <div className="mb-8">
-              <RealTimeTableStatus 
-                restaurantId={restaurant?.id || 0}
-                tenantId={restaurant?.tenantId || 0}
-                showCompactView={true}
-                autoRefresh={true}
-                refreshInterval={60000}
-              />
-            </div>
-          </div>
-        )}
+
 
         {/* Main Interface */}
         <div className="flex-1 p-6">
