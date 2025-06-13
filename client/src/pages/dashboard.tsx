@@ -10,7 +10,7 @@ import RealTimeTableStatus from "@/components/real-time-table-status";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent } from "@/components/ui/card";
-import { Calendar, dateFns } from "@/components/ui/calendar";
+import { Calendar } from "@/components/ui/calendar";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -643,7 +643,7 @@ export default function Dashboard() {
       })
       .map((booking: any) => booking.tableId);
 
-    return tables.filter((table: any) => !bookedTableIds.includes(table.id))
+    return (tables || []).filter((table: any) => !bookedTableIds.includes(table.id))
       .length;
   };
 
@@ -998,7 +998,6 @@ export default function Dashboard() {
             <WalkInBookingButton />
           </div>
           <div className="flex items-center space-x-4">
-            <Input type="text" placeholder="Customer search" className="w-64" />
             <RealTimeNotifications />
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
