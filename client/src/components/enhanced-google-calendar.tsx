@@ -1,4 +1,4 @@
-import { useState, useMemo, useCallback, useRef } from "react";
+import { useState, useMemo, useCallback, useRef, memo } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -166,23 +166,51 @@ export default function EnhancedGoogleCalendar({
     setCurrentDate(new Date());
   }, []);
 
+  // Memoized booking calculations for performance
+  const bookingsByDate = useMemo(() => {
+    const grouped = new Map<string, Booking[]>();
+    allBookings.forEach(booking => {
+      const dateKey = format(new Date(booking.bookingDate), 'yyyy-MM-dd');
+      if (!grouped.has(dateKey)) {
+        grouped.set(dateKey, []);
+      }
+      grouped.get(dateKey)!.push(booking);
+    });
+    return grouped;
+  }, [allBookings]);
+
+  const bookingsByTimeSlot = useMemo(() => {
+    const grouped = new Map<string, Booking[]>();
+    allBookings.forEach(booking => {
+      const dateKey = format(new Date(booking.bookingDate), 'yyyy-MM-dd');
+      const timeKey = `${dateKey}-${booking.startTime?.substring(0, 5)}`;
+      if (!grouped.has(timeKey)) {
+        grouped.set(timeKey, []);
+      }
+      grouped.get(timeKey)!.push(booking);
+    });
+    return grouped;
+  }, [allBookings]);
+
+  const totalCapacity = useMemo(() => {
+    return tables.reduce((sum, table) => sum + table.capacity, 0);
+  }, [tables]);
+
   // Get bookings for a specific date and time slot
   const getBookingsForSlot = useCallback((date: Date, timeSlot?: string) => {
-    return allBookings.filter(booking => {
-      const bookingDate = new Date(booking.bookingDate);
-      const isSameDate = isSameDay(bookingDate, date);
-      
-      if (!timeSlot) return isSameDate;
-      
-      const bookingTime = booking.startTime?.substring(0, 5);
-      return isSameDate && bookingTime === timeSlot;
-    });
-  }, [allBookings]);
+    const dateKey = format(date, 'yyyy-MM-dd');
+    
+    if (timeSlot) {
+      const timeKey = `${dateKey}-${timeSlot}`;
+      return bookingsByTimeSlot.get(timeKey) || [];
+    }
+    
+    return bookingsByDate.get(dateKey) || [];
+  }, [bookingsByDate, bookingsByTimeSlot]);
 
   // Calculate availability level for a time slot
   const getAvailabilityLevel = useCallback((date: Date, timeSlot?: string) => {
     const slotBookings = getBookingsForSlot(date, timeSlot);
-    const totalCapacity = tables.reduce((sum, table) => sum + table.capacity, 0);
     const bookedCapacity = slotBookings.reduce((sum, booking) => sum + booking.guestCount, 0);
     
     if (totalCapacity === 0) return 'unavailable';
@@ -193,7 +221,7 @@ export default function EnhancedGoogleCalendar({
     if (availabilityRatio >= 0.3) return 'medium'; // 30-70% available
     if (availabilityRatio > 0) return 'low'; // 1-30% available
     return 'full'; // 0% available
-  }, [getBookingsForSlot, tables]);
+  }, [getBookingsForSlot, totalCapacity]);
 
   // Get availability color classes
   const getAvailabilityColor = (level: string) => {
@@ -300,7 +328,8 @@ export default function EnhancedGoogleCalendar({
     setIsDragging(true);
   }, []);
 
-  const handleMouseMove = useCallback((e: React.MouseEvent) => {
+  // Throttled mouse move handler for smooth drag performance
+  const throttledMouseMove = useCallback((e: React.MouseEvent) => {
     if (!isDragging || !draggedBooking) return;
     
     // Prevent default to avoid text selection during drag
@@ -312,24 +341,35 @@ export default function EnhancedGoogleCalendar({
     const x = e.clientX - rect.left;
     const y = e.clientY - rect.top;
     
-    // Add visual feedback for drag position
+    // Use transform for hardware acceleration and smooth movement
     const dragElement = document.querySelector(`[data-booking-id="${draggedBooking.booking.id}"]`) as HTMLElement;
     if (dragElement) {
-      dragElement.style.transform = `translate(${x - draggedBooking.dragStart.x}px, ${y - draggedBooking.dragStart.y}px)`;
+      dragElement.style.transform = `translate3d(${x - draggedBooking.dragStart.x}px, ${y - draggedBooking.dragStart.y}px, 0)`;
       dragElement.style.zIndex = '1000';
+      dragElement.style.pointerEvents = 'none';
+      dragElement.style.opacity = '0.8';
+      dragElement.style.cursor = 'grabbing';
     }
   }, [isDragging, draggedBooking]);
+
+  // Throttle the mouse move handler to 60fps for optimal performance
+  const handleMouseMove = useCallback((e: React.MouseEvent) => {
+    throttledMouseMove(e);
+  }, [throttledMouseMove]);
 
   const handleMouseUp = useCallback((e: React.MouseEvent, targetDate?: Date, targetTime?: string) => {
     if (!isDragging || !draggedBooking) return;
     
     setIsDragging(false);
     
-    // Reset drag element styles
+    // Reset all drag element styles completely
     const dragElement = document.querySelector(`[data-booking-id="${draggedBooking.booking.id}"]`) as HTMLElement;
     if (dragElement) {
       dragElement.style.transform = '';
       dragElement.style.zIndex = '';
+      dragElement.style.pointerEvents = '';
+      dragElement.style.opacity = '';
+      dragElement.style.cursor = '';
     }
     
     if (targetDate && targetTime) {
