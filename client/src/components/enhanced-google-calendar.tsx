@@ -758,6 +758,7 @@ export default function EnhancedGoogleCalendar({
   const getAvailableTablesForTimeSlot = (date: Date, startTime: string, endTime: string = startTime, excludeBookingId?: number) => {
     // Validate inputs to prevent RangeError
     if (!date || !startTime) {
+      console.log('DEBUG: Invalid inputs to getAvailableTablesForTimeSlot:', { date, startTime });
       return tables;
     }
     
@@ -765,8 +766,18 @@ export default function EnhancedGoogleCalendar({
     try {
       dateStr = format(date, 'yyyy-MM-dd');
     } catch (error) {
+      console.log('DEBUG: Date format error:', error);
       return tables;
     }
+    
+    console.log('DEBUG: Checking availability for:', { 
+      dateStr, 
+      startTime, 
+      endTime, 
+      totalBookings: allBookings.length, 
+      totalTables: tables.length,
+      excludeBookingId 
+    });
     
     return tables.filter(table => {
       // Check if this table has any bookings that overlap with the selected time
@@ -775,7 +786,33 @@ export default function EnhancedGoogleCalendar({
         if (excludeBookingId && booking.id === excludeBookingId) return false;
         
         if (booking.tableId !== table.id) return false;
-        if (booking.bookingDate !== dateStr) return false;
+        
+        // Convert booking date to string for comparison
+        let bookingDateStr: string;
+        try {
+          if (typeof booking.bookingDate === 'string') {
+            // If it's already a string, parse it and format it
+            bookingDateStr = format(new Date(booking.bookingDate), 'yyyy-MM-dd');
+          } else if (booking.bookingDate instanceof Date) {
+            bookingDateStr = format(booking.bookingDate, 'yyyy-MM-dd');
+          } else {
+            // Fallback - convert to string and parse
+            bookingDateStr = format(new Date(booking.bookingDate), 'yyyy-MM-dd');
+          }
+        } catch (error) {
+          console.warn('DEBUG: Error parsing booking date:', booking.bookingDate, error);
+          return false; // Skip this booking if date is invalid
+        }
+        
+        // Debug the date comparison
+        console.log('DEBUG: Date comparison:', { 
+          originalBookingDate: booking.bookingDate,
+          bookingDateStr, 
+          dateStr, 
+          match: bookingDateStr === dateStr 
+        });
+        
+        if (bookingDateStr !== dateStr) return false;
         
         // Check for time overlap
         const bookingStart = booking.startTime;
@@ -799,10 +836,23 @@ export default function EnhancedGoogleCalendar({
         // Check if times overlap (any overlap means conflict)
         const hasOverlap = !(selectedEnd <= existingStart || selectedStart >= existingEnd);
         
+        console.log('DEBUG: Time overlap check for table', table.tableNumber, ':', {
+          selectedTime: `${startTime}-${endTime}`,
+          existingTime: `${bookingStart}-${bookingEnd}`,
+          selectedStartMin: selectedStart,
+          selectedEndMin: selectedEnd,
+          existingStartMin: existingStart,
+          existingEndMin: existingEnd,
+          hasOverlap
+        });
+        
         return hasOverlap;
       });
       
-      return conflictingBookings.length === 0;
+      const isAvailable = conflictingBookings.length === 0;
+      console.log(`DEBUG: Table ${table.tableNumber} (ID: ${table.id}): ${isAvailable ? 'AVAILABLE' : 'UNAVAILABLE'} - ${conflictingBookings.length} conflicts`);
+      
+      return isAvailable;
     });
   };
 
