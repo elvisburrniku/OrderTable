@@ -218,16 +218,33 @@ export default function EnhancedGoogleCalendar({
 
   const bookingsByTimeSlot = useMemo(() => {
     const grouped = new Map<string, Booking[]>();
+    
     allBookings.forEach((booking) => {
+      if (!booking.startTime) return;
+      
       const dateKey = format(new Date(booking.bookingDate), "yyyy-MM-dd");
-      const timeKey = `${dateKey}-${booking.startTime?.substring(0, 5)}`;
-      if (!grouped.has(timeKey)) {
-        grouped.set(timeKey, []);
+      
+      // Convert booking time to minutes to find the correct slot
+      const [hours, minutes] = booking.startTime.split(':').map(Number);
+      const bookingMinutes = hours * 60 + minutes;
+      
+      // Find the appropriate time slot (round down to nearest 30-minute interval)
+      const slotHour = Math.floor(bookingMinutes / 60);
+      const slotMinute = Math.floor((bookingMinutes % 60) / 30) * 30;
+      const assignedSlot = `${slotHour.toString().padStart(2, '0')}:${slotMinute.toString().padStart(2, '0')}`;
+      
+      // Only assign to slots that exist in timeSlots array
+      if (timeSlots.includes(assignedSlot)) {
+        const timeKey = `${dateKey}-${assignedSlot}`;
+        if (!grouped.has(timeKey)) {
+          grouped.set(timeKey, []);
+        }
+        grouped.get(timeKey)!.push(booking);
       }
-      grouped.get(timeKey)!.push(booking);
     });
+    
     return grouped;
-  }, [allBookings]);
+  }, [allBookings, timeSlots]);
 
   const totalCapacity = useMemo(() => {
     return tables.reduce((sum, table) => sum + table.capacity, 0);

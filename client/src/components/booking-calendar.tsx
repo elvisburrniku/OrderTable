@@ -281,9 +281,16 @@ export default function BookingCalendar({ selectedDate, bookings, allBookings = 
   const timeSlots = generateTimeSlots();
 
   const getBookingForTableAndTime = (tableId: number, time: string) => {
-    return bookings.find(booking => 
-      booking.tableId === tableId && booking.startTime === time
-    );
+    return bookings.find(booking => {
+      if (booking.tableId !== tableId || !booking.startTime) return false;
+      
+      // Extract hour from both booking time and slot time
+      const bookingHour = parseInt(booking.startTime.split(':')[0]);
+      const slotHour = parseInt(time.split(':')[0]);
+      
+      // Match bookings that fall within the same hour slot
+      return bookingHour === slotHour;
+    });
   };
 
   const getBookingsForDate = (date: Date) => {
@@ -374,7 +381,12 @@ export default function BookingCalendar({ selectedDate, bookings, allBookings = 
               
               for (let hour = openHour; hour < closeHour; hour++) {
                 const timeStr = `${hour.toString().padStart(2, '0')}:00`;
-                const booking = dayBookings.find(b => b.startTime === timeStr);
+                // Find any booking that starts within this hour slot
+                const booking = dayBookings.find(b => {
+                  if (!b.startTime) return false;
+                  const bookingHour = parseInt(b.startTime.split(':')[0]);
+                  return bookingHour === hour;
+                });
                 slots.push({ time: timeStr, booking });
               }
               return slots;
