@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test Guest Booking</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 600px;
+            margin: 50px auto;
+            padding: 20px;
+        }
+        .form-group {
+            margin-bottom: 15px;
+        }
+        label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+        }
+        input, select, textarea {
+            width: 100%;
+            padding: 8px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+        }
+        button {
+            background-color: #007bff;
+            color: white;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+        button:hover {
+            background-color: #0056b3;
+        }
+        .success {
+            color: green;
+            font-weight: bold;
+        }
+        .error {
+            color: red;
+            font-weight: bold;
+        }
+    </style>
+</head>
+<body>
+    <h1>Test Guest Booking API</h1>
+    
+    <form id="bookingForm">
+        <div class="form-group">
+            <label for="customerName">Customer Name:</label>
+            <input type="text" id="customerName" required>
+        </div>
+        
+        <div class="form-group">
+            <label for="customerEmail">Customer Email:</label>
+            <input type="email" id="customerEmail" required>
+        </div>
+        
+        <div class="form-group">
+            <label for="customerPhone">Customer Phone:</label>
+            <input type="tel" id="customerPhone">
+        </div>
+        
+        <div class="form-group">
+            <label for="guestCount">Number of Guests:</label>
+            <select id="guestCount" required>
+                <option value="1">1 Guest</option>
+                <option value="2">2 Guests</option>
+                <option value="3">3 Guests</option>
+                <option value="4">4 Guests</option>
+                <option value="5">5 Guests</option>
+                <option value="6">6 Guests</option>
+            </select>
+        </div>
+        
+        <div class="form-group">
+            <label for="bookingDate">Booking Date:</label>
+            <input type="date" id="bookingDate" required>
+        </div>
+        
+        <div class="form-group">
+            <label for="startTime">Start Time:</label>
+            <input type="time" id="startTime" required>
+        </div>
+        
+        <div class="form-group">
+            <label for="specialRequests">Special Requests:</label>
+            <textarea id="specialRequests" rows="3"></textarea>
+        </div>
+        
+        <button type="submit">Create Booking</button>
+    </form>
+    
+    <div id="result"></div>
+
+    <script>
+        document.getElementById('bookingForm').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            
+            const formData = {
+                customerName: document.getElementById('customerName').value,
+                customerEmail: document.getElementById('customerEmail').value,
+                customerPhone: document.getElementById('customerPhone').value,
+                guestCount: parseInt(document.getElementById('guestCount').value),
+                bookingDate: document.getElementById('bookingDate').value,
+                startTime: document.getElementById('startTime').value,
+                specialRequests: document.getElementById('specialRequests').value
+            };
+            
+            try {
+                const response = await fetch('/api/tenants/10/restaurants/12/bookings/guest', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify(formData)
+                });
+                
+                const result = await response.json();
+                const resultDiv = document.getElementById('result');
+                
+                if (response.ok) {
+                    resultDiv.innerHTML = '<p class="success">Booking created successfully! Booking ID: ' + result.id + '</p>';
+                    document.getElementById('bookingForm').reset();
+                } else {
+                    resultDiv.innerHTML = '<p class="error">Error: ' + (result.message || 'Unknown error') + '</p>';
+                }
+            } catch (error) {
+                document.getElementById('result').innerHTML = '<p class="error">Network error: ' + error.message + '</p>';
+            }
+        });
+        
+        // Set minimum date to today
+        const today = new Date().toISOString().split('T')[0];
+        document.getElementById('bookingDate').setAttribute('min', today);
+    </script>
+</body>
+</html>

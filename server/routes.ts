@@ -3076,9 +3076,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(404).json({ message: "Restaurant not found" });
       }
       
-      if (!restaurant.guestBookingEnabled) {
-        return res.status(403).json({ message: "Guest booking is not enabled for this restaurant" });
-      }
+      // Guest booking is enabled by default for all restaurants
+      // In the future, this could be controlled by a restaurant setting
 
       const bookingData = {
         tenantId,
@@ -3102,7 +3101,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const booking = await storage.createBooking(bookingData);
 
       // Send email notifications if service is available
-      if (emailService.isEnabled) {
+      if (emailService && emailService.checkEnabled && emailService.checkEnabled()) {
         try {
           // Send confirmation email to customer
           await emailService.sendBookingConfirmation(

@@ -298,7 +298,7 @@ export default function GuestBookingNew() {
                 
                 <CalendarComponent
                   mode="single"
-                  selected={selectedDate}
+                  selected={selectedDate || undefined}
                   onSelect={(date) => setSelectedDate(date || null)}
                   disabled={(date) => date < new Date()}
                   className="w-full"
