@@ -509,6 +509,11 @@ export default function GuestBookingResponsive(props: any) {
                     const isToday = format(date, 'yyyy-MM-dd') === format(new Date(), 'yyyy-MM-dd');
                     const isAvailable = isDateAvailable(date);
                     
+                    // Debug logging for June 13th
+                    if (format(date, 'd') === '13') {
+                      console.log(`June 13th: date=${format(date, 'yyyy-MM-dd')}, dayOfWeek=${getDay(date)}, gridPosition=${6 + index + 1}`);
+                    }
+                    
                     return (
                       <button
                         key={index}
