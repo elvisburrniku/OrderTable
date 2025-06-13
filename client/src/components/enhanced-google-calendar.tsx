@@ -866,7 +866,7 @@ function EditBookingForm({ booking, tables, onSave, onCancel, isLoading }: EditB
     customerEmail: booking.customerEmail || '',
     customerPhone: booking.customerPhone || '',
     guestCount: booking.guestCount,
-    bookingDate: booking.bookingDate, // Keep as string since API expects string
+    bookingDate: typeof booking.bookingDate === 'string' ? booking.bookingDate : booking.bookingDate.toISOString().split('T')[0],
     startTime: booking.startTime,
     tableId: booking.tableId,
     notes: booking.notes || ''
@@ -874,7 +874,10 @@ function EditBookingForm({ booking, tables, onSave, onCancel, isLoading }: EditB
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    onSave(formData);
+    onSave({
+      ...formData,
+      bookingDate: new Date(formData.bookingDate)
+    });
   };
 
   return (
@@ -926,12 +929,12 @@ function EditBookingForm({ booking, tables, onSave, onCancel, isLoading }: EditB
         
         <div>
           <Label htmlFor="edit-tableId">Table</Label>
-          <Select value={formData.tableId?.toString() || ''} onValueChange={(value) => setFormData(prev => ({ ...prev, tableId: value ? parseInt(value) : null }))}>
+          <Select value={formData.tableId?.toString() || 'none'} onValueChange={(value) => setFormData(prev => ({ ...prev, tableId: value === 'none' ? null : parseInt(value) }))}>
             <SelectTrigger>
               <SelectValue placeholder="Select table" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="">No table assigned</SelectItem>
+              <SelectItem value="none">No table assigned</SelectItem>
               {tables.map(table => (
                 <SelectItem key={table.id} value={table.id.toString()}>
                   Table {table.tableNumber} ({table.capacity} seats)
@@ -948,7 +951,7 @@ function EditBookingForm({ booking, tables, onSave, onCancel, isLoading }: EditB
           <Input
             id="edit-bookingDate"
             type="date"
-            value={formData.bookingDate.toString()}
+            value={formData.bookingDate}
             onChange={(e) => setFormData(prev => ({ ...prev, bookingDate: e.target.value }))}
           />
         </div>
