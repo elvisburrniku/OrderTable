@@ -177,6 +177,31 @@ export default function EnhancedGoogleCalendar({
     });
   }, [allBookings]);
 
+  // Update booking mutation
+  const updateBookingMutation = useMutation({
+    mutationFn: async ({ bookingId, newDate, newTime }: { bookingId: number; newDate: string; newTime: string }) => {
+      const response = await apiRequest("PATCH", `/api/tenants/${restaurant?.tenantId}/restaurants/${restaurant?.id}/bookings/${bookingId}`, {
+        bookingDate: newDate,
+        startTime: newTime
+      });
+      return response.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: [`/api/tenants/${restaurant?.tenantId}/restaurants/${restaurant?.id}/bookings`] });
+      toast({
+        title: "Booking Updated",
+        description: "Booking has been moved successfully."
+      });
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Error",
+        description: error.message || "Failed to update booking",
+        variant: "destructive"
+      });
+    }
+  });
+
   // Drag and drop handlers
   const handleMouseDown = useCallback((e: React.MouseEvent, booking: Booking) => {
     e.preventDefault();
@@ -240,31 +265,6 @@ export default function EnhancedGoogleCalendar({
     
     setDraggedBooking(null);
   }, [isDragging, draggedBooking, updateBookingMutation]);
-
-  // Update booking mutation
-  const updateBookingMutation = useMutation({
-    mutationFn: async ({ bookingId, newDate, newTime }: { bookingId: number; newDate: string; newTime: string }) => {
-      const response = await apiRequest("PATCH", `/api/tenants/${restaurant?.tenantId}/restaurants/${restaurant?.id}/bookings/${bookingId}`, {
-        bookingDate: newDate,
-        startTime: newTime
-      });
-      return response.json();
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: [`/api/tenants/${restaurant?.tenantId}/restaurants/${restaurant?.id}/bookings`] });
-      toast({
-        title: "Booking Updated",
-        description: "Booking has been moved successfully."
-      });
-    },
-    onError: (error: any) => {
-      toast({
-        title: "Error",
-        description: error.message || "Failed to update booking",
-        variant: "destructive"
-      });
-    }
-  });
 
   // Create booking mutation
   const createBookingMutation = useMutation({
