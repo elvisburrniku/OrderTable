@@ -8,18 +8,7 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Calendar, Clock, Users, Phone, Mail, User, Check, ChevronLeft, ChevronRight } from 'lucide-react';
 import { format, addDays, startOfDay, startOfMonth, endOfMonth, addMonths, subMonths, getDay, eachDayOfInterval } from 'date-fns';
 
-const generateTimeSlots = () => {
-  const slots = [];
-  for (let hour = 18; hour <= 21; hour++) {
-    for (let minute = 0; minute < 60; minute += 15) {
-      const time = `${hour.toString().padStart(2, '0')}:${minute.toString().padStart(2, '0')}`;
-      slots.push(time);
-    }
-  }
-  return slots;
-};
-
-const timeSlots = generateTimeSlots();
+// Dynamic time slot generation will be done based on opening hours
 
 export default function GuestBookingResponsive(props: any) {
   const tenantId = props.params?.tenantId;
@@ -176,6 +165,48 @@ export default function GuestBookingResponsive(props: any) {
   // Get day names for header
   const dayNames = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
 
+  // Generate time slots based on restaurant opening hours for selected date
+  const generateTimeSlotsForDate = (date: Date) => {
+    if (!date || !openingHours || !Array.isArray(openingHours)) return [];
+    
+    const dayOfWeek = date.getDay();
+    const dayHours = openingHours.find((h: any) => h.dayOfWeek === dayOfWeek);
+    
+    if (!dayHours || !dayHours.isOpen) return [];
+    
+    const slots = [];
+    const [openHour, openMin] = dayHours.openTime.split(':').map(Number);
+    const [closeHour, closeMin] = dayHours.closeTime.split(':').map(Number);
+    
+    // Start from opening time
+    let currentHour = openHour;
+    let currentMin = openMin;
+    
+    // Generate 15-minute intervals until closing time
+    while (true) {
+      const slotTime = currentHour * 60 + currentMin;
+      const closeTime = closeHour * 60 + closeMin;
+      
+      // Stop if we've reached or passed closing time
+      if (slotTime >= closeTime) break;
+      
+      const timeString = `${currentHour.toString().padStart(2, '0')}:${currentMin.toString().padStart(2, '0')}`;
+      slots.push(timeString);
+      
+      // Add 15 minutes
+      currentMin += 15;
+      if (currentMin >= 60) {
+        currentMin = 0;
+        currentHour++;
+      }
+    }
+    
+    return slots;
+  };
+
+  // Get time slots for the selected date
+  const timeSlots = selectedDate ? generateTimeSlotsForDate(selectedDate) : [];
+
   // Check if a date is available based on opening hours and special periods
   const isDateAvailable = (date: Date) => {
     const dayOfWeek = date.getDay(); // 0 = Sunday, 1 = Monday, etc.
@@ -289,26 +320,32 @@ export default function GuestBookingResponsive(props: any) {
 
   const welcomeMessage = getWelcomeMessage();
 
-  // Get recommended time slots based on current time and meal type
-  const getRecommendedTimeSlots = () => {
+  // Get recommended time slots based on current time and available slots
+  const getRecommendedTimeSlots = (availableSlots: string[]) => {
+    if (!availableSlots.length) return [];
+    
     const currentHour = new Date().getHours();
+    let preferredTimes: string[] = [];
     
     if (currentHour >= 5 && currentHour < 12) {
       // Morning - recommend breakfast times
-      return ['08:00', '09:00', '10:00', '11:00'];
+      preferredTimes = ['08:00', '09:00', '10:00', '11:00'];
     } else if (currentHour >= 12 && currentHour < 17) {
       // Afternoon - recommend lunch times
-      return ['12:00', '12:30', '13:00', '13:30', '14:00'];
+      preferredTimes = ['12:00', '12:30', '13:00', '13:30', '14:00'];
     } else if (currentHour >= 17 && currentHour < 21) {
       // Evening - recommend dinner times
-      return ['18:00', '18:30', '19:00', '19:30', '20:00', '20:30'];
+      preferredTimes = ['18:00', '18:30', '19:00', '19:30', '20:00', '20:30'];
     } else {
       // Late night - recommend available evening slots
-      return ['21:00', '21:30', '22:00'];
+      preferredTimes = ['21:00', '21:30', '22:00'];
     }
+    
+    // Return only preferred times that are actually available
+    return preferredTimes.filter(time => availableSlots.includes(time));
   };
 
-  const recommendedSlots = getRecommendedTimeSlots();
+  const recommendedSlots = getRecommendedTimeSlots(timeSlots);
 
   if (bookingId) {
     return (
@@ -492,59 +529,72 @@ export default function GuestBookingResponsive(props: any) {
               <div className="space-y-6">
                 <div className="text-center">
                   <h2 className="text-xl md:text-2xl font-bold text-gray-900 mb-2">Select Time</h2>
-                  <p className="text-sm text-blue-600 font-medium">
-                    ⭐ Recommended for {welcomeMessage.mealType}
-                  </p>
+                  {timeSlots.length > 0 && (
+                    <p className="text-sm text-blue-600 font-medium">
+                      ⭐ Recommended for {welcomeMessage.mealType}
+                    </p>
+                  )}
                 </div>
-                <div className="grid grid-cols-3 md:grid-cols-4 gap-3">
-                  {timeSlots.map((time) => {
-                    const isRecommended = recommendedSlots.includes(time);
-                    const isValidByRules = selectedDate ? isTimeSlotValid(time, selectedDate) : false;
-                    const isAvailableBySystem = !(availableSlots as any) || (availableSlots as any).slots?.includes(time);
-                    const isAvailable = isValidByRules && isAvailableBySystem;
-                    const isSelected = selectedTime === time;
-                    
-                    return (
-                      <button
-                        key={time}
-                        onClick={() => isAvailable && setSelectedTime(time)}
-                        disabled={!isAvailable}
-                        className={`
-                          relative p-3 rounded-lg border-2 transition-all duration-200
-                          ${!isAvailable
-                            ? 'border-red-300 bg-red-100 text-red-600 cursor-not-allowed'
-                            : isSelected
-                            ? 'border-blue-500 bg-blue-50 text-blue-700 shadow-lg'
-                            : isRecommended
-                            ? 'border-amber-300 bg-amber-50 text-amber-700 hover:border-amber-400 hover:bg-amber-100'
-                            : 'border-green-300 bg-green-50 text-green-700 hover:border-green-400 hover:bg-green-100'}
-                        `}
-                      >
-                        {isRecommended && isAvailable && !isSelected && (
-                          <span className="absolute -top-1 -right-1 w-3 h-3 bg-amber-400 rounded-full"></span>
-                        )}
-                        {time}
-                      </button>
-                    );
-                  })}
-                </div>
-                <div className="text-xs text-gray-500 text-center space-y-2">
-                  <p>Golden dots indicate recommended times for {welcomeMessage.mealType}</p>
-                  <div className="flex justify-center items-center space-x-4">
-                    <span className="flex items-center space-x-1">
-                      <div className="w-3 h-3 bg-green-100 border border-green-300 rounded"></div>
-                      <span>Available</span>
-                    </span>
-                    <span className="flex items-center space-x-1">
-                      <div className="w-3 h-3 bg-amber-100 border border-amber-300 rounded"></div>
-                      <span>Recommended</span>
-                    </span>
-                    <span className="flex items-center space-x-1">
-                      <div className="w-3 h-3 bg-red-100 border border-red-300 rounded"></div>
-                      <span>Unavailable</span>
-                    </span>
+                
+                {timeSlots.length === 0 ? (
+                  <div className="text-center py-8">
+                    <Clock className="w-12 h-12 text-gray-400 mx-auto mb-4" />
+                    <p className="text-gray-600 mb-2">No time slots available for this date</p>
+                    <p className="text-sm text-gray-500">Please select a different date</p>
                   </div>
-                </div>
+                ) : (
+                  <div>
+                    <div className="grid grid-cols-3 md:grid-cols-4 gap-3">
+                      {timeSlots.map((time) => {
+                        const isRecommended = recommendedSlots.includes(time);
+                        const isValidByRules = selectedDate ? isTimeSlotValid(time, selectedDate) : false;
+                        const isAvailableBySystem = !(availableSlots as any) || (availableSlots as any).slots?.includes(time);
+                        const isAvailable = isValidByRules && isAvailableBySystem;
+                        const isSelected = selectedTime === time;
+                        
+                        return (
+                          <button
+                            key={time}
+                            onClick={() => isAvailable && setSelectedTime(time)}
+                            disabled={!isAvailable}
+                            className={`
+                              relative p-3 rounded-lg border-2 transition-all duration-200
+                              ${!isAvailable
+                                ? 'border-red-300 bg-red-100 text-red-600 cursor-not-allowed'
+                                : isSelected
+                                ? 'border-blue-500 bg-blue-50 text-blue-700 shadow-lg'
+                                : isRecommended
+                                ? 'border-amber-300 bg-amber-50 text-amber-700 hover:border-amber-400 hover:bg-amber-100'
+                                : 'border-green-300 bg-green-50 text-green-700 hover:border-green-400 hover:bg-green-100'}
+                            `}
+                          >
+                            {isRecommended && isAvailable && !isSelected && (
+                              <span className="absolute -top-1 -right-1 w-3 h-3 bg-amber-400 rounded-full"></span>
+                            )}
+                            {time}
+                          </button>
+                        );
+                      })}
+                    </div>
+                    <div className="text-xs text-gray-500 text-center space-y-2">
+                      <p>Golden dots indicate recommended times for {welcomeMessage.mealType}</p>
+                      <div className="flex justify-center items-center space-x-4">
+                        <span className="flex items-center space-x-1">
+                          <div className="w-3 h-3 bg-green-100 border border-green-300 rounded"></div>
+                          <span>Available</span>
+                        </span>
+                        <span className="flex items-center space-x-1">
+                          <div className="w-3 h-3 bg-amber-100 border border-amber-300 rounded"></div>
+                          <span>Recommended</span>
+                        </span>
+                        <span className="flex items-center space-x-1">
+                          <div className="w-3 h-3 bg-red-100 border border-red-300 rounded"></div>
+                          <span>Unavailable</span>
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+                )}
               </div>
             )}
 
