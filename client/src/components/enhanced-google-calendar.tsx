@@ -754,6 +754,39 @@ export default function EnhancedGoogleCalendar({
     setIsNewBookingOpen(true);
   };
 
+  // Function to get available tables for a specific time slot
+  const getAvailableTablesForTimeSlot = (date: Date, startTime: string, endTime: string = startTime) => {
+    const dateStr = format(date, 'yyyy-MM-dd');
+    
+    return tables.filter(table => {
+      // Check if this table has any bookings that overlap with the selected time
+      const conflictingBookings = allBookings.filter(booking => {
+        if (booking.tableId !== table.id) return false;
+        if (booking.bookingDate !== dateStr) return false;
+        
+        // Check for time overlap
+        const bookingStart = booking.startTime;
+        const bookingEnd = booking.endTime || booking.startTime;
+        
+        // Convert times to minutes for easier comparison
+        const toMinutes = (timeStr: string) => {
+          const [hours, minutes] = timeStr.split(':').map(Number);
+          return hours * 60 + minutes;
+        };
+        
+        const selectedStart = toMinutes(startTime);
+        const selectedEnd = toMinutes(endTime);
+        const existingStart = toMinutes(bookingStart);
+        const existingEnd = toMinutes(bookingEnd);
+        
+        // Check if times overlap
+        return selectedStart < existingEnd && selectedEnd > existingStart;
+      });
+      
+      return conflictingBookings.length === 0;
+    });
+  };
+
   // Render functions for different views
   const renderDayView = () => {
     const dayBookings = getBookingsForSlot(currentDate);
@@ -1265,7 +1298,7 @@ export default function EnhancedGoogleCalendar({
             </div>
 
             <div>
-              <Label htmlFor="tableId">Table</Label>
+              <Label htmlFor="tableId">Available Tables</Label>
               <Select
                 value={newBooking.tableId}
                 onValueChange={(value) =>
@@ -1273,16 +1306,59 @@ export default function EnhancedGoogleCalendar({
                 }
               >
                 <SelectTrigger>
-                  <SelectValue placeholder="Select a table" />
+                  <SelectValue placeholder="Select an available table" />
                 </SelectTrigger>
                 <SelectContent>
-                  {tables.map((table) => (
-                    <SelectItem key={table.id} value={table.id.toString()}>
-                      Table {table.tableNumber} (Capacity: {table.capacity})
-                    </SelectItem>
-                  ))}
+                  {(() => {
+                    // Get available tables for the selected time slot
+                    const bookingDate = selectedTimeSlot?.date || new Date(newBooking.bookingDate);
+                    const availableTables = getAvailableTablesForTimeSlot(
+                      bookingDate, 
+                      newBooking.startTime, 
+                      newBooking.endTime
+                    );
+                    
+                    if (availableTables.length === 0) {
+                      return (
+                        <SelectItem value="" disabled>
+                          No tables available for this time slot
+                        </SelectItem>
+                      );
+                    }
+                    
+                    return availableTables.map((table) => (
+                      <SelectItem key={table.id} value={table.id.toString()}>
+                        Table {table.tableNumber} (Capacity: {table.capacity})
+                      </SelectItem>
+                    ));
+                  })()}
                 </SelectContent>
               </Select>
+              {(() => {
+                const bookingDate = selectedTimeSlot?.date || new Date(newBooking.bookingDate);
+                const availableTables = getAvailableTablesForTimeSlot(
+                  bookingDate, 
+                  newBooking.startTime, 
+                  newBooking.endTime
+                );
+                const totalTables = tables.length;
+                const unavailableCount = totalTables - availableTables.length;
+                
+                if (unavailableCount > 0) {
+                  return (
+                    <p className="text-sm text-orange-600 mt-1">
+                      {availableTables.length} of {totalTables} tables available 
+                      ({unavailableCount} already booked)
+                    </p>
+                  );
+                }
+                
+                return (
+                  <p className="text-sm text-green-600 mt-1">
+                    All {totalTables} tables available
+                  </p>
+                );
+              })()}
             </div>
 
             <div>
