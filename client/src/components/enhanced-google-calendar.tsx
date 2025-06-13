@@ -32,7 +32,9 @@ import {
   setHours,
   setMinutes,
   isSameMonth,
-  isWeekend
+  isWeekend,
+  addMinutes,
+  parse
 } from "date-fns";
 import { ChevronLeft, ChevronRight, Plus, Calendar, Clock, Users, Settings, Grid, List } from "lucide-react";
 import { Booking, Table as TableType } from "@shared/schema";
@@ -409,110 +411,34 @@ export default function EnhancedGoogleCalendar({
     document.addEventListener('mouseup', handleMouseUp);
   }, [isDragging, draggedBooking]);
 
-  // High-performance mouse move handler with RAF optimization
-  const handleMouseMove = useCallback((e: React.MouseEvent) => {
+  // Add drop zone detection for proper drag and drop
+  const handleDrop = useCallback((targetDate: Date, targetTime?: string) => {
     if (!isDragging || !draggedBooking) return;
     
-    e.preventDefault();
+    const newDateStr = format(targetDate, 'yyyy-MM-dd');
+    const currentDateStr = format(new Date(draggedBooking.booking.bookingDate), 'yyyy-MM-dd');
     
-    const rect = calendarRef.current?.getBoundingClientRect();
-    if (!rect) return;
-    
-    const x = e.clientX - rect.left;
-    const y = e.clientY - rect.top;
-    
-    // Throttle updates to 60fps for optimal performance
-    const now = performance.now();
-    if (now - dragStateRef.current.lastUpdateTime > 16) {
-      // Cancel previous animation frame to prevent queuing
-      if (dragStateRef.current.animationFrame) {
-        cancelAnimationFrame(dragStateRef.current.animationFrame);
-      }
+    // Check if anything actually changed
+    if (newDateStr !== currentDateStr || (targetTime && targetTime !== draggedBooking.booking.startTime)) {
+      console.log(`Moving booking ${draggedBooking.booking.customerName} to ${newDateStr} at ${targetTime || draggedBooking.booking.startTime}`);
       
-      // Use requestAnimationFrame for smooth 60fps updates
-      dragStateRef.current.animationFrame = requestAnimationFrame(() => {
-        const dragElement = dragStateRef.current.element || 
-          document.querySelector(`[data-booking-id="${draggedBooking.booking.id}"]`) as HTMLElement;
-        
-        if (dragElement) {
-          // Cache element reference for better performance
-          dragStateRef.current.element = dragElement;
-          
-          // Apply optimized transform with hardware acceleration
-          dragElement.style.willChange = 'transform';
-          dragElement.style.transform = `translate3d(${x - draggedBooking.dragStart.x}px, ${y - draggedBooking.dragStart.y}px, 0)`;
-          dragElement.style.zIndex = '1000';
-          dragElement.style.pointerEvents = 'none';
-          dragElement.style.opacity = '0.85';
-          dragElement.style.cursor = 'grabbing';
-          dragElement.style.boxShadow = '0 8px 25px rgba(0, 0, 0, 0.15)';
-          dragElement.style.transition = 'none';
-        }
-        
-        dragStateRef.current.animationFrame = null;
-      });
+      const updatedBooking = {
+        ...draggedBooking.booking,
+        bookingDate: new Date(newDateStr),
+        startTime: targetTime || draggedBooking.booking.startTime,
+        endTime: targetTime ? addMinutes(parse(targetTime, 'HH:mm', new Date()), 60).toLocaleTimeString('en-US', { 
+          hour12: false, 
+          hour: '2-digit', 
+          minute: '2-digit' 
+        }) : draggedBooking.booking.endTime
+      };
       
-      dragStateRef.current.lastUpdateTime = now;
+      editBookingMutation.mutate(updatedBooking);
     }
-  }, [isDragging, draggedBooking]);
-
-  const handleMouseUp = useCallback((e: React.MouseEvent, targetDate?: Date, targetTime?: string) => {
-    if (!isDragging || !draggedBooking) return;
     
     setIsDragging(false);
-    
-    // Cancel any pending animation frames
-    if (dragStateRef.current.animationFrame) {
-      cancelAnimationFrame(dragStateRef.current.animationFrame);
-      dragStateRef.current.animationFrame = null;
-    }
-    
-    // Smooth cleanup with animation
-    const dragElement = dragStateRef.current.element || 
-      document.querySelector(`[data-booking-id="${draggedBooking.booking.id}"]`) as HTMLElement;
-    
-    if (dragElement) {
-      // Re-enable smooth transitions for cleanup
-      dragElement.style.transition = 'all 0.2s cubic-bezier(0.4, 0, 0.2, 1)';
-      
-      // Reset all drag styles with smooth animation
-      requestAnimationFrame(() => {
-        dragElement.style.transform = '';
-        dragElement.style.zIndex = '';
-        dragElement.style.pointerEvents = '';
-        dragElement.style.opacity = '';
-        dragElement.style.cursor = '';
-        dragElement.style.boxShadow = '';
-        dragElement.style.willChange = 'auto';
-        
-        // Clean up transition after animation completes
-        setTimeout(() => {
-          if (dragElement.style) {
-            dragElement.style.transition = '';
-          }
-        }, 200);
-      });
-    }
-    
-    // Reset cached element reference
-    dragStateRef.current.element = null;
-    
-    if (targetDate && targetTime) {
-      // Only update if date/time actually changed
-      const originalDate = format(draggedBooking.initialDate, 'yyyy-MM-dd');
-      const newDate = format(targetDate, 'yyyy-MM-dd');
-      
-      if (originalDate !== newDate || draggedBooking.initialTime !== targetTime) {
-        updateBookingMutation.mutate({
-          bookingId: draggedBooking.booking.id,
-          newDate: newDate,
-          newTime: targetTime
-        });
-      }
-    }
-    
     setDraggedBooking(null);
-  }, [isDragging, draggedBooking, updateBookingMutation]);
+  }, [isDragging, draggedBooking, editBookingMutation]);
 
   // Create booking mutation
   const createBookingMutation = useMutation({
@@ -767,7 +693,12 @@ export default function EnhancedGoogleCalendar({
                         setView('day');
                       }
                     }}
-                    onMouseUp={(e) => handleMouseUp(e, date)}
+                    onMouseUp={(e) => {
+                      if (isDragging && draggedBooking) {
+                        e.preventDefault();
+                        handleDrop(date);
+                      }
+                    }}
                     title={getAvailabilityText(availabilityLevel)}
                   >
                     <div className={`text-sm mb-1 flex items-center justify-between ${isToday(date) ? 'font-bold text-blue-600' : ''}`}>
@@ -831,8 +762,6 @@ export default function EnhancedGoogleCalendar({
     <div 
       ref={calendarRef}
       className={`calendar-container space-y-4 ${isDragging ? 'cursor-grabbing' : ''}`}
-      onMouseMove={handleMouseMove}
-      onMouseUp={(e) => handleMouseUp(e)}
       style={{ userSelect: isDragging ? 'none' : 'auto' }}
     >
       {/* Calendar Controls */}
