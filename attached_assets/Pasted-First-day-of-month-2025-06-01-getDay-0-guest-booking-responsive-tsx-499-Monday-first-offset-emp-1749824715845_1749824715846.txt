@@ -1,0 +1,222 @@
+First day of month: 2025-06-01 getDay(): 0
+guest-booking-responsive.tsx:499 Monday-first offset (empty cells): 6
+guest-booking-responsive.tsx:514 June 13th: date=2025-06-13, dayOfWeek=5, gridPosition=7
+queryClient.ts:79 
+            
+            
+           GET https://bd35e12f-4cc7-4619-9f19-8e776fcdc616-00-1z4r2c4zdvz0q.worf.replit.dev/api/auth/validate 401 (Unauthorized)
+(anonymous) @ queryClient.ts:79
+fetchFn @ @tanstack_react-query.js?v=17e8feea:840
+run @ @tanstack_react-query.js?v=17e8feea:494
+start @ @tanstack_react-query.js?v=17e8feea:536
+fetch @ @tanstack_react-query.js?v=17e8feea:926
+executeFetch_fn @ @tanstack_react-query.js?v=17e8feea:2211
+onSubscribe @ @tanstack_react-query.js?v=17e8feea:1898
+subscribe @ @tanstack_react-query.js?v=17e8feea:24
+(anonymous) @ @tanstack_react-query.js?v=17e8feea:3022
+subscribeToStore @ chunk-RPCDYKBN.js?v=17e8feea:11984
+commitHookEffectListMount @ chunk-RPCDYKBN.js?v=17e8feea:16915
+commitPassiveMountOnFiber @ chunk-RPCDYKBN.js?v=17e8feea:18156
+commitPassiveMountEffects_complete @ chunk-RPCDYKBN.js?v=17e8feea:18129
+commitPassiveMountEffects_begin @ chunk-RPCDYKBN.js?v=17e8feea:18119
+commitPassiveMountEffects @ chunk-RPCDYKBN.js?v=17e8feea:18109
+flushPassiveEffectsImpl @ chunk-RPCDYKBN.js?v=17e8feea:19490
+flushPassiveEffects @ chunk-RPCDYKBN.js?v=17e8feea:19447
+performSyncWorkOnRoot @ chunk-RPCDYKBN.js?v=17e8feea:18868
+flushSyncCallbacks @ chunk-RPCDYKBN.js?v=17e8feea:9119
+commitRootImpl @ chunk-RPCDYKBN.js?v=17e8feea:19432
+commitRoot @ chunk-RPCDYKBN.js?v=17e8feea:19277
+finishConcurrentRender @ chunk-RPCDYKBN.js?v=17e8feea:18805
+performConcurrentWorkOnRoot @ chunk-RPCDYKBN.js?v=17e8feea:18718
+workLoop @ chunk-RPCDYKBN.js?v=17e8feea:197
+flushWork @ chunk-RPCDYKBN.js?v=17e8feea:176
+performWorkUntilDeadline @ chunk-RPCDYKBN.js?v=17e8feea:384
+queryClient.ts:79 
+            
+            
+           GET https://bd35e12f-4cc7-4619-9f19-8e776fcdc616-00-1z4r2c4zdvz0q.worf.replit.dev/api/subscription/details 401 (Unauthorized)
+(anonymous) @ queryClient.ts:79
+fetchFn @ @tanstack_react-query.js?v=17e8feea:840
+run @ @tanstack_react-query.js?v=17e8feea:494
+start @ @tanstack_react-query.js?v=17e8feea:536
+fetch @ @tanstack_react-query.js?v=17e8feea:926
+executeFetch_fn @ @tanstack_react-query.js?v=17e8feea:2211
+onSubscribe @ @tanstack_react-query.js?v=17e8feea:1898
+subscribe @ @tanstack_react-query.js?v=17e8feea:24
+(anonymous) @ @tanstack_react-query.js?v=17e8feea:3022
+subscribeToStore @ chunk-RPCDYKBN.js?v=17e8feea:11984
+commitHookEffectListMount @ chunk-RPCDYKBN.js?v=17e8feea:16915
+commitPassiveMountOnFiber @ chunk-RPCDYKBN.js?v=17e8feea:18156
+commitPassiveMountEffects_complete @ chunk-RPCDYKBN.js?v=17e8feea:18129
+commitPassiveMountEffects_begin @ chunk-RPCDYKBN.js?v=17e8feea:18119
+commitPassiveMountEffects @ chunk-RPCDYKBN.js?v=17e8feea:18109
+flushPassiveEffectsImpl @ chunk-RPCDYKBN.js?v=17e8feea:19490
+flushPassiveEffects @ chunk-RPCDYKBN.js?v=17e8feea:19447
+commitRootImpl @ chunk-RPCDYKBN.js?v=17e8feea:19416
+commitRoot @ chunk-RPCDYKBN.js?v=17e8feea:19277
+performSyncWorkOnRoot @ chunk-RPCDYKBN.js?v=17e8feea:18895
+flushSyncCallbacks @ chunk-RPCDYKBN.js?v=17e8feea:9119
+(anonymous) @ chunk-RPCDYKBN.js?v=17e8feea:18627
+setTimeout
+scheduleFn @ @tanstack_react-query.js?v=17e8feea:555
+flush @ @tanstack_react-query.js?v=17e8feea:569
+batch @ @tanstack_react-query.js?v=17e8feea:587
+dispatch_fn @ @tanstack_react-query.js?v=17e8feea:996
+onError @ @tanstack_react-query.js?v=17e8feea:861
+reject @ @tanstack_react-query.js?v=17e8feea:465
+(anonymous) @ @tanstack_react-query.js?v=17e8feea:508
+Promise.catch
+run @ @tanstack_react-query.js?v=17e8feea:498
+start @ @tanstack_react-query.js?v=17e8feea:536
+fetch @ @tanstack_react-query.js?v=17e8feea:926
+executeFetch_fn @ @tanstack_react-query.js?v=17e8feea:2211
+onSubscribe @ @tanstack_react-query.js?v=17e8feea:1898
+subscribe @ @tanstack_react-query.js?v=17e8feea:24
+(anonymous) @ @tanstack_react-query.js?v=17e8feea:3022
+subscribeToStore @ chunk-RPCDYKBN.js?v=17e8feea:11984
+commitHookEffectListMount @ chunk-RPCDYKBN.js?v=17e8feea:16915
+commitPassiveMountOnFiber @ chunk-RPCDYKBN.js?v=17e8feea:18156
+commitPassiveMountEffects_complete @ chunk-RPCDYKBN.js?v=17e8feea:18129
+commitPassiveMountEffects_begin @ chunk-RPCDYKBN.js?v=17e8feea:18119
+commitPassiveMountEffects @ chunk-RPCDYKBN.js?v=17e8feea:18109
+flushPassiveEffectsImpl @ chunk-RPCDYKBN.js?v=17e8feea:19490
+flushPassiveEffects @ chunk-RPCDYKBN.js?v=17e8feea:19447
+performSyncWorkOnRoot @ chunk-RPCDYKBN.js?v=17e8feea:18868
+flushSyncCallbacks @ chunk-RPCDYKBN.js?v=17e8feea:9119
+commitRootImpl @ chunk-RPCDYKBN.js?v=17e8feea:19432
+commitRoot @ chunk-RPCDYKBN.js?v=17e8feea:19277
+finishConcurrentRender @ chunk-RPCDYKBN.js?v=17e8feea:18805
+performConcurrentWorkOnRoot @ chunk-RPCDYKBN.js?v=17e8feea:18718
+workLoop @ chunk-RPCDYKBN.js?v=17e8feea:197
+flushWork @ chunk-RPCDYKBN.js?v=17e8feea:176
+performWorkUntilDeadline @ chunk-RPCDYKBN.js?v=17e8feea:384
+queryClient.ts:79 
+            
+            
+           GET https://bd35e12f-4cc7-4619-9f19-8e776fcdc616-00-1z4r2c4zdvz0q.worf.replit.dev/api/billing/info 401 (Unauthorized)
+(anonymous) @ queryClient.ts:79
+fetchFn @ @tanstack_react-query.js?v=17e8feea:840
+run @ @tanstack_react-query.js?v=17e8feea:494
+start @ @tanstack_react-query.js?v=17e8feea:536
+fetch @ @tanstack_react-query.js?v=17e8feea:926
+executeFetch_fn @ @tanstack_react-query.js?v=17e8feea:2211
+onSubscribe @ @tanstack_react-query.js?v=17e8feea:1898
+subscribe @ @tanstack_react-query.js?v=17e8feea:24
+(anonymous) @ @tanstack_react-query.js?v=17e8feea:3022
+subscribeToStore @ chunk-RPCDYKBN.js?v=17e8feea:11984
+commitHookEffectListMount @ chunk-RPCDYKBN.js?v=17e8feea:16915
+commitPassiveMountOnFiber @ chunk-RPCDYKBN.js?v=17e8feea:18156
+commitPassiveMountEffects_complete @ chunk-RPCDYKBN.js?v=17e8feea:18129
+commitPassiveMountEffects_begin @ chunk-RPCDYKBN.js?v=17e8feea:18119
+commitPassiveMountEffects @ chunk-RPCDYKBN.js?v=17e8feea:18109
+flushPassiveEffectsImpl @ chunk-RPCDYKBN.js?v=17e8feea:19490
+flushPassiveEffects @ chunk-RPCDYKBN.js?v=17e8feea:19447
+commitRootImpl @ chunk-RPCDYKBN.js?v=17e8feea:19416
+commitRoot @ chunk-RPCDYKBN.js?v=17e8feea:19277
+performSyncWorkOnRoot @ chunk-RPCDYKBN.js?v=17e8feea:18895
+flushSyncCallbacks @ chunk-RPCDYKBN.js?v=17e8feea:9119
+(anonymous) @ chunk-RPCDYKBN.js?v=17e8feea:18627
+setTimeout
+scheduleFn @ @tanstack_react-query.js?v=17e8feea:555
+flush @ @tanstack_react-query.js?v=17e8feea:569
+batch @ @tanstack_react-query.js?v=17e8feea:587
+dispatch_fn @ @tanstack_react-query.js?v=17e8feea:996
+onError @ @tanstack_react-query.js?v=17e8feea:861
+reject @ @tanstack_react-query.js?v=17e8feea:465
+(anonymous) @ @tanstack_react-query.js?v=17e8feea:508
+Promise.catch
+run @ @tanstack_react-query.js?v=17e8feea:498
+start @ @tanstack_react-query.js?v=17e8feea:536
+fetch @ @tanstack_react-query.js?v=17e8feea:926
+executeFetch_fn @ @tanstack_react-query.js?v=17e8feea:2211
+onSubscribe @ @tanstack_react-query.js?v=17e8feea:1898
+subscribe @ @tanstack_react-query.js?v=17e8feea:24
+(anonymous) @ @tanstack_react-query.js?v=17e8feea:3022
+subscribeToStore @ chunk-RPCDYKBN.js?v=17e8feea:11984
+commitHookEffectListMount @ chunk-RPCDYKBN.js?v=17e8feea:16915
+commitPassiveMountOnFiber @ chunk-RPCDYKBN.js?v=17e8feea:18156
+commitPassiveMountEffects_complete @ chunk-RPCDYKBN.js?v=17e8feea:18129
+commitPassiveMountEffects_begin @ chunk-RPCDYKBN.js?v=17e8feea:18119
+commitPassiveMountEffects @ chunk-RPCDYKBN.js?v=17e8feea:18109
+flushPassiveEffectsImpl @ chunk-RPCDYKBN.js?v=17e8feea:19490
+flushPassiveEffects @ chunk-RPCDYKBN.js?v=17e8feea:19447
+performSyncWorkOnRoot @ chunk-RPCDYKBN.js?v=17e8feea:18868
+flushSyncCallbacks @ chunk-RPCDYKBN.js?v=17e8feea:9119
+commitRootImpl @ chunk-RPCDYKBN.js?v=17e8feea:19432
+commitRoot @ chunk-RPCDYKBN.js?v=17e8feea:19277
+finishConcurrentRender @ chunk-RPCDYKBN.js?v=17e8feea:18805
+performConcurrentWorkOnRoot @ chunk-RPCDYKBN.js?v=17e8feea:18718
+workLoop @ chunk-RPCDYKBN.js?v=17e8feea:197
+flushWork @ chunk-RPCDYKBN.js?v=17e8feea:176
+performWorkUntilDeadline @ chunk-RPCDYKBN.js?v=17e8feea:384
+queryClient.ts:79 
+            
+            
+           GET https://bd35e12f-4cc7-4619-9f19-8e776fcdc616-00-1z4r2c4zdvz0q.worf.replit.dev/api/billing/invoices 401 (Unauthorized)
+(anonymous) @ queryClient.ts:79
+fetchFn @ @tanstack_react-query.js?v=17e8feea:840
+run @ @tanstack_react-query.js?v=17e8feea:494
+start @ @tanstack_react-query.js?v=17e8feea:536
+fetch @ @tanstack_react-query.js?v=17e8feea:926
+executeFetch_fn @ @tanstack_react-query.js?v=17e8feea:2211
+onSubscribe @ @tanstack_react-query.js?v=17e8feea:1898
+subscribe @ @tanstack_react-query.js?v=17e8feea:24
+(anonymous) @ @tanstack_react-query.js?v=17e8feea:3022
+subscribeToStore @ chunk-RPCDYKBN.js?v=17e8feea:11984
+commitHookEffectListMount @ chunk-RPCDYKBN.js?v=17e8feea:16915
+commitPassiveMountOnFiber @ chunk-RPCDYKBN.js?v=17e8feea:18156
+commitPassiveMountEffects_complete @ chunk-RPCDYKBN.js?v=17e8feea:18129
+commitPassiveMountEffects_begin @ chunk-RPCDYKBN.js?v=17e8feea:18119
+commitPassiveMountEffects @ chunk-RPCDYKBN.js?v=17e8feea:18109
+flushPassiveEffectsImpl @ chunk-RPCDYKBN.js?v=17e8feea:19490
+flushPassiveEffects @ chunk-RPCDYKBN.js?v=17e8feea:19447
+commitRootImpl @ chunk-RPCDYKBN.js?v=17e8feea:19416
+commitRoot @ chunk-RPCDYKBN.js?v=17e8feea:19277
+performSyncWorkOnRoot @ chunk-RPCDYKBN.js?v=17e8feea:18895
+flushSyncCallbacks @ chunk-RPCDYKBN.js?v=17e8feea:9119
+(anonymous) @ chunk-RPCDYKBN.js?v=17e8feea:18627
+setTimeout
+scheduleFn @ @tanstack_react-query.js?v=17e8feea:555
+flush @ @tanstack_react-query.js?v=17e8feea:569
+batch @ @tanstack_react-query.js?v=17e8feea:587
+dispatch_fn @ @tanstack_react-query.js?v=17e8feea:996
+onError @ @tanstack_react-query.js?v=17e8feea:861
+reject @ @tanstack_react-query.js?v=17e8feea:465
+(anonymous) @ @tanstack_react-query.js?v=17e8feea:508
+Promise.catch
+run @ @tanstack_react-query.js?v=17e8feea:498
+start @ @tanstack_react-query.js?v=17e8feea:536
+fetch @ @tanstack_react-query.js?v=17e8feea:926
+executeFetch_fn @ @tanstack_react-query.js?v=17e8feea:2211
+onSubscribe @ @tanstack_react-query.js?v=17e8feea:1898
+subscribe @ @tanstack_react-query.js?v=17e8feea:24
+(anonymous) @ @tanstack_react-query.js?v=17e8feea:3022
+subscribeToStore @ chunk-RPCDYKBN.js?v=17e8feea:11984
+commitHookEffectListMount @ chunk-RPCDYKBN.js?v=17e8feea:16915
+commitPassiveMountOnFiber @ chunk-RPCDYKBN.js?v=17e8feea:18156
+commitPassiveMountEffects_complete @ chunk-RPCDYKBN.js?v=17e8feea:18129
+commitPassiveMountEffects_begin @ chunk-RPCDYKBN.js?v=17e8feea:18119
+commitPassiveMountEffects @ chunk-RPCDYKBN.js?v=17e8feea:18109
+flushPassiveEffectsImpl @ chunk-RPCDYKBN.js?v=17e8feea:19490
+flushPassiveEffects @ chunk-RPCDYKBN.js?v=17e8feea:19447
+performSyncWorkOnRoot @ chunk-RPCDYKBN.js?v=17e8feea:18868
+flushSyncCallbacks @ chunk-RPCDYKBN.js?v=17e8feea:9119
+commitRootImpl @ chunk-RPCDYKBN.js?v=17e8feea:19432
+commitRoot @ chunk-RPCDYKBN.js?v=17e8feea:19277
+finishConcurrentRender @ chunk-RPCDYKBN.js?v=17e8feea:18805
+performConcurrentWorkOnRoot @ chunk-RPCDYKBN.js?v=17e8feea:18718
+workLoop @ chunk-RPCDYKBN.js?v=17e8feea:197
+flushWork @ chunk-RPCDYKBN.js?v=17e8feea:176
+performWorkUntilDeadline @ chunk-RPCDYKBN.js?v=17e8feea:384
+guest-booking-responsive.tsx:495 First day of month: 2025-06-01 getDay(): 0
+guest-booking-responsive.tsx:499 Monday-first offset (empty cells): 6
+guest-booking-responsive.tsx:514 June 13th: date=2025-06-13, dayOfWeek=5, gridPosition=7
+guest-booking-responsive.tsx:495 First day of month: 2025-06-01 getDay(): 0
+guest-booking-responsive.tsx:499 Monday-first offset (empty cells): 6
+guest-booking-responsive.tsx:514 June 13th: date=2025-06-13, dayOfWeek=5, gridPosition=7
+guest-booking-responsive.tsx:495 First day of month: 2025-06-01 getDay(): 0
+guest-booking-responsive.tsx:499 Monday-first offset (empty cells): 6
+guest-booking-responsive.tsx:514 June 13th: date=2025-06-13, dayOfWeek=5, gridPosition=7
+guest-booking-responsive.tsx:495 First day of month: 2025-06-01 getDay(): 0
+guest-booking-responsive.tsx:499 Monday-first offset (empty cells): 6
+guest-booking-responsive.tsx:514 June 13th: date=2025-06-13, dayOfWeek=5, gridPosition=7

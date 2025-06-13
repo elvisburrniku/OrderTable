@@ -511,7 +511,8 @@ export default function GuestBookingResponsive(props: any) {
                     
                     // Debug logging for June 13th
                     if (format(date, 'd') === '13') {
-                      console.log(`June 13th: date=${format(date, 'yyyy-MM-dd')}, dayOfWeek=${getDay(date)}, gridPosition=${6 + index + 1}`);
+                      const actualPosition = (6 + index) % 7; // 6 empty cells + index, modulo 7 for grid wrap
+                      console.log(`June 13th: date=${format(date, 'yyyy-MM-dd')}, dayOfWeek=${getDay(date)}, index=${index}, actualGridPosition=${actualPosition}`);
                     }
                     
                     return (
