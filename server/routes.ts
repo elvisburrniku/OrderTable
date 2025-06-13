@@ -3064,6 +3064,79 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Guest booking endpoint (public, no authentication required)
+  app.post("/api/tenants/:tenantId/restaurants/:restaurantId/bookings/guest", async (req, res) => {
+    try {
+      const tenantId = parseInt(req.params.tenantId);
+      const restaurantId = parseInt(req.params.restaurantId);
+      
+      // Verify restaurant exists and guest booking is enabled
+      const restaurant = await storage.getRestaurantById(restaurantId);
+      if (!restaurant || restaurant.tenantId !== tenantId) {
+        return res.status(404).json({ message: "Restaurant not found" });
+      }
+      
+      if (!restaurant.guestBookingEnabled) {
+        return res.status(403).json({ message: "Guest booking is not enabled for this restaurant" });
+      }
+
+      const bookingData = {
+        tenantId,
+        restaurantId,
+        customerName: req.body.customerName,
+        customerEmail: req.body.customerEmail,
+        customerPhone: req.body.customerPhone || null,
+        guestCount: req.body.guestCount,
+        bookingDate: new Date(req.body.bookingDate),
+        startTime: req.body.startTime,
+        specialRequests: req.body.specialRequests || null,
+        status: "confirmed",
+        source: req.body.source || "guest_booking"
+      };
+
+      // Validate required fields
+      if (!bookingData.customerName || !bookingData.customerEmail || !bookingData.guestCount || !bookingData.bookingDate || !bookingData.startTime) {
+        return res.status(400).json({ message: "Missing required booking information" });
+      }
+
+      const booking = await storage.createBooking(bookingData);
+
+      // Send email notifications if service is available
+      if (emailService.isEnabled) {
+        try {
+          // Send confirmation email to customer
+          await emailService.sendBookingConfirmation(
+            bookingData.customerEmail,
+            bookingData.customerName,
+            {
+              ...bookingData,
+              id: booking.id,
+              restaurantName: restaurant.name,
+              restaurantAddress: restaurant.address
+            }
+          );
+
+          // Send notification to restaurant
+          if (restaurant.email) {
+            await emailService.sendRestaurantNotification(restaurant.email, {
+              ...bookingData,
+              id: booking.id,
+              restaurantName: restaurant.name
+            });
+          }
+        } catch (emailError) {
+          console.error('Error sending guest booking email notifications:', emailError);
+          // Don't fail the booking if email fails
+        }
+      }
+
+      res.json(booking);
+    } catch (error) {
+      console.error("Guest booking creation error:", error);
+      res.status(400).json({ message: "Failed to create booking. Please try again." });
+    }
+  });
+
 app.put("/api/tenants/:tenantId/bookings/:id", validateTenant, async (req, res) => {
     try {
       const id = parseInt(req.params.id);

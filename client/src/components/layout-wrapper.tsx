@@ -15,20 +15,6 @@ export function LayoutWrapper({ children }: LayoutWrapperProps) {
   const tenantMatch = location.match(/^\/(\d+)/);
   const tenantId = tenantMatch ? parseInt(tenantMatch[1]) : 0;
   
-  // Fetch subscription details to check if subscription has ended
-  const { data: subscriptionDetails } = useQuery<{
-    tenant: {
-      id: number;
-      name: string;
-      subscriptionStatus: string;
-      subscriptionEndDate: string;
-    };
-    plan: any;
-  }>({
-    queryKey: ["/api/subscription/details"],
-    enabled: !!user && !!tenantId,
-  });
-  
   // Define routes that should NOT show the sidebar
   const publicRoutes = [
     /^\/guest-booking\/\d+\/\d+$/,
@@ -43,6 +29,20 @@ export function LayoutWrapper({ children }: LayoutWrapperProps) {
   ];
   
   const isPublicRoute = publicRoutes.some(pattern => pattern.test(location));
+
+  // Fetch subscription details to check if subscription has ended
+  const { data: subscriptionDetails } = useQuery<{
+    tenant: {
+      id: number;
+      name: string;
+      subscriptionStatus: string;
+      subscriptionEndDate: string;
+    };
+    plan: any;
+  }>({
+    queryKey: ["/api/subscription/details"],
+    enabled: !!user && !!tenantId && !isPublicRoute,
+  });
   
   // Check if subscription has ended, is canceled, or trial has expired
   const isSubscriptionEnded = subscriptionDetails?.tenant?.subscriptionStatus === 'ended' || 
