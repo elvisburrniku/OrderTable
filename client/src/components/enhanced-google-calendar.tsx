@@ -506,6 +506,19 @@ export default function EnhancedGoogleCalendar({
 
   const openNewBookingDialog = (date: Date, time: string) => {
     setSelectedTimeSlot({ date, time });
+    
+    // Calculate end time (1 hour later)
+    const [hours, minutes] = time.split(':').map(Number);
+    const endHour = hours + 1;
+    const endTime = `${endHour.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}`;
+    
+    // Update the booking form with the clicked time
+    setNewBooking(prev => ({
+      ...prev,
+      startTime: time,
+      endTime: endTime
+    }));
+    
     setIsNewBookingOpen(true);
   };
 
