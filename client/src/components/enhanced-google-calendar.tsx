@@ -576,7 +576,7 @@ export default function EnhancedGoogleCalendar({
                       <div
                         key={booking.id}
                         data-booking-id={booking.id}
-                        className={`flex items-center space-x-2 p-2 bg-blue-100 text-blue-800 rounded text-sm cursor-pointer transition-all duration-200 hover:bg-blue-200 hover:shadow-md ${
+                        className={`flex items-center space-x-2 p-2 bg-blue-100 text-blue-800 rounded text-sm cursor-pointer transition-all duration-300 ease-out hover:bg-blue-200 hover:shadow-lg hover:scale-105 hover:-translate-y-1 hover:rotate-1 active:scale-95 active:rotate-0 ${
                           draggedBooking?.booking.id === booking.id ? 'opacity-50 transform scale-95' : ''
                         }`}
                         onClick={(e) => {
@@ -649,7 +649,7 @@ export default function EnhancedGoogleCalendar({
                         <div
                           key={booking.id}
                           data-booking-id={booking.id}
-                          className={`booking-card p-1 mb-1 bg-blue-100 text-blue-800 rounded text-xs cursor-pointer hover:bg-blue-200 hover:shadow-md ${
+                          className={`booking-card p-1 mb-1 bg-blue-100 text-blue-800 rounded text-xs cursor-pointer transition-all duration-300 ease-out hover:bg-blue-200 hover:shadow-lg hover:scale-110 hover:-translate-y-1 hover:rotate-2 active:scale-95 active:rotate-0 ${
                             draggedBooking?.booking.id === booking.id ? 'dragging opacity-50 transform scale-95' : ''
                           }`}
                           onClick={(e) => {
@@ -735,7 +735,7 @@ export default function EnhancedGoogleCalendar({
                         <div
                           key={booking.id}
                           data-booking-id={booking.id}
-                          className={`booking-card p-1 bg-blue-100 text-blue-800 rounded text-xs truncate cursor-pointer hover:bg-blue-200 hover:shadow-md ${
+                          className={`booking-card p-1 bg-blue-100 text-blue-800 rounded text-xs truncate cursor-pointer transition-all duration-300 ease-out hover:bg-blue-200 hover:shadow-lg hover:scale-105 hover:-translate-y-0.5 hover:rotate-1 active:scale-95 active:rotate-0 ${
                             draggedBooking?.booking.id === booking.id ? 'dragging opacity-50 transform scale-95' : ''
                           }`}
                           onClick={(e) => {
