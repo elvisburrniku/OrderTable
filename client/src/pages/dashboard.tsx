@@ -635,8 +635,8 @@ export default function Dashboard() {
   };
 
   const getAvailableTablesCount = () => {
-    const safeTables = safeArray(tables);
-    const safeBookings = safeArray(todayBookings);
+    const safeTables = safeArray(tables as any[]);
+    const safeBookings = safeArray(todayBookings as any[]);
     
     if (safeTables.length === 0) return 0;
     
