@@ -7140,14 +7140,49 @@ export async function registerRoutes(app: Express): Promise<Server> {
           dateStr,
         );
 
-        // Generate time slots from 6:00 PM to 9:00 PM
+        // Check for special periods that apply to this date
+        const specialPeriods = await storage.getSpecialPeriodsByRestaurant(restaurantId);
+        const activeSpecialPeriod = specialPeriods.find(period => {
+          const periodStart = new Date(period.startDate);
+          const periodEnd = new Date(period.endDate);
+          const checkDate = new Date(dateStr);
+          return checkDate >= periodStart && checkDate <= periodEnd && period.isOpen;
+        });
+
+        // Determine operating hours
+        let openTime = "18:00"; // Default 6 PM
+        let closeTime = "21:00"; // Default 9 PM
+        
+        if (activeSpecialPeriod && activeSpecialPeriod.openTime && activeSpecialPeriod.closeTime) {
+          openTime = activeSpecialPeriod.openTime;
+          closeTime = activeSpecialPeriod.closeTime;
+          console.log(`Using special period hours for ${dateStr}: ${openTime} - ${closeTime}`);
+        } else {
+          // Could also check regular opening hours here if needed
+          console.log(`Using default hours for ${dateStr}: ${openTime} - ${closeTime}`);
+        }
+
+        // Helper function to convert time string to minutes
+        const timeToMinutes = (timeStr) => {
+          const [hours, minutes] = timeStr.split(':').map(Number);
+          return hours * 60 + minutes;
+        };
+
+        // Helper function to convert minutes to time string
+        const minutesToTime = (minutes) => {
+          const hours = Math.floor(minutes / 60);
+          const mins = minutes % 60;
+          return `${hours.toString().padStart(2, "0")}:${mins.toString().padStart(2, "0")}`;
+        };
+
+        // Generate time slots based on operating hours
+        const openMinutes = timeToMinutes(openTime);
+        const closeMinutes = timeToMinutes(closeTime);
         const timeSlots = [];
-        for (let hour = 18; hour <= 21; hour++) {
-          for (let minute = 0; minute < 60; minute += 15) {
-            if (hour === 21 && minute > 0) break; // Stop at 9:00 PM
-            const time = `${hour.toString().padStart(2, "0")}:${minute.toString().padStart(2, "0")}`;
-            timeSlots.push(time);
-          }
+        
+        for (let minutes = openMinutes; minutes < closeMinutes; minutes += 15) {
+          const time = minutesToTime(minutes);
+          timeSlots.push(time);
         }
 
         // Filter available slots
