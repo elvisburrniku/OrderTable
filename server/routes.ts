@@ -7651,6 +7651,179 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Get calendar availability data for a specific date (includes closed periods)
+  app.get(
+    "/api/restaurants/:restaurantId/calendar-availability",
+    async (req, res) => {
+      try {
+        const restaurantId = parseInt(req.params.restaurantId);
+        const { date, guests } = req.query;
+
+        if (isNaN(restaurantId)) {
+          return res.status(400).json({ message: "Invalid restaurant ID" });
+        }
+
+        if (!date || !guests) {
+          return res
+            .status(400)
+            .json({ message: "Date and guest count are required" });
+        }
+
+        const restaurant = await storage.getRestaurantById(restaurantId);
+        if (!restaurant) {
+          return res.status(404).json({ message: "Restaurant not found" });
+        }
+
+        const bookingDate = new Date(date as string);
+        const guestCount = parseInt(guests as string);
+        const dateStr = bookingDate.toISOString().split("T")[0];
+        const dayOfWeek = bookingDate.getDay();
+
+        // Check special periods first
+        const specialPeriods = await storage.getSpecialPeriodsByRestaurant(restaurantId);
+        const specialPeriod = specialPeriods.find(
+          (sp: any) => dateStr >= sp.startDate && dateStr <= sp.endDate,
+        );
+
+        let isOpen = true;
+        let openTime = null;
+        let closeTime = null;
+        let closureReason = null;
+
+        if (specialPeriod) {
+          if (!specialPeriod.isOpen) {
+            isOpen = false;
+            closureReason = specialPeriod.name || "Special closure";
+          } else {
+            openTime = specialPeriod.openTime;
+            closeTime = specialPeriod.closeTime;
+          }
+        } else {
+          // Check regular opening hours
+          const openingHours = await storage.getOpeningHoursByRestaurant(restaurantId);
+          const dayHours = openingHours.find((oh: any) => oh.dayOfWeek === dayOfWeek);
+
+          if (!dayHours || !dayHours.isOpen) {
+            isOpen = false;
+            closureReason = "Closed on this day";
+          } else {
+            openTime = dayHours.openTime;
+            closeTime = dayHours.closeTime;
+          }
+        }
+
+        if (!isOpen) {
+          return res.json({
+            date: dateStr,
+            isOpen: false,
+            closureReason,
+            availableSlots: [],
+            allTimeSlots: [],
+            openTime: null,
+            closeTime: null
+          });
+        }
+
+        // Generate all possible time slots within opening hours
+        const openTimeMinutes = timeToMinutes(openTime);
+        const closeTimeMinutes = timeToMinutes(closeTime);
+        const allTimeSlots = [];
+        
+        for (let minutes = openTimeMinutes; minutes <= closeTimeMinutes - 60; minutes += 30) {
+          const hours = Math.floor(minutes / 60);
+          const mins = minutes % 60;
+          const timeStr = `${hours.toString().padStart(2, "0")}:${mins.toString().padStart(2, "0")}`;
+          allTimeSlots.push(timeStr);
+        }
+
+        // Get cut-off times and existing bookings
+        const cutOffTimes = await storage.getCutOffTimesByRestaurant(restaurantId);
+        const cutOffTime = cutOffTimes.find((ct: any) => ct.dayOfWeek === dayOfWeek);
+        
+        const tables = await storage.getTablesByRestaurant(restaurantId);
+        const combinedTables = await storage.getCombinedTablesByRestaurant(restaurantId);
+        const suitableTables = tables.filter((table) => table.capacity >= guestCount);
+        const suitableCombinedTables = combinedTables.filter((table) => table.capacity >= guestCount);
+
+        if (suitableTables.length === 0 && suitableCombinedTables.length === 0) {
+          return res.json({
+            date: dateStr,
+            isOpen: true,
+            closureReason: null,
+            availableSlots: [],
+            allTimeSlots,
+            openTime,
+            closeTime,
+            noTablesAvailable: true
+          });
+        }
+
+        const existingBookings = await storage.getBookingsByDate(restaurantId, dateStr);
+        const activeBookings = existingBookings.filter((booking) => booking.status !== "cancelled");
+        const now = new Date();
+
+        // Filter available slots
+        const availableSlots = allTimeSlots.filter((timeStr) => {
+          const [hours, mins] = timeStr.split(':').map(Number);
+          const minutes = hours * 60 + mins;
+
+          // Apply cut-off time validation
+          if (cutOffTime && cutOffTime.cutOffHours > 0) {
+            const bookingDateTime = new Date(bookingDate);
+            bookingDateTime.setHours(hours, mins, 0, 0);
+            const cutOffMilliseconds = cutOffTime.cutOffHours * 60 * 60 * 1000;
+            const cutOffDeadline = new Date(bookingDateTime.getTime() - cutOffMilliseconds);
+
+            if (now > cutOffDeadline) return false;
+          }
+
+          // Don't allow bookings in the past
+          const bookingDateTime = new Date(bookingDate);
+          bookingDateTime.setHours(hours, mins, 0, 0);
+          if (bookingDateTime <= now) return false;
+
+          // Check if any suitable table is available
+          return [...suitableTables, ...suitableCombinedTables].some((table) => {
+            const bookingStart = minutes;
+            const bookingEnd = minutes + 120;
+            const bufferMinutes = 60;
+
+            const hasConflict = activeBookings.some((booking) => {
+              if (booking.tableId !== table.id) return false;
+
+              const existingStart = timeToMinutes(booking.startTime);
+              const existingEnd = booking.endTime ? timeToMinutes(booking.endTime) : existingStart + 120;
+
+              const requestedStart = bookingStart - bufferMinutes;
+              const requestedEnd = bookingEnd + bufferMinutes;
+              const existingStartWithBuffer = existingStart - bufferMinutes;
+              const existingEndWithBuffer = existingEnd + bufferMinutes;
+
+              return requestedStart < existingEndWithBuffer && existingStartWithBuffer < requestedEnd;
+            });
+
+            return !hasConflict;
+          });
+        });
+
+        res.json({
+          date: dateStr,
+          isOpen: true,
+          closureReason: null,
+          availableSlots,
+          allTimeSlots,
+          openTime,
+          closeTime,
+          noTablesAvailable: false
+        });
+
+      } catch (error) {
+        console.error("Error fetching calendar availability:", error);
+        res.status(500).json({ message: "Internal server error" });
+      }
+    }
+  );
+
   // Get available time slots for a specific date
   app.get(
     "/api/restaurants/:restaurantId/available-times",

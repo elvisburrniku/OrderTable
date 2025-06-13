@@ -32,14 +32,18 @@ interface DayAvailability {
   timeSlots: TimeSlot[];
   openTime?: string;
   closeTime?: string;
+  closureReason?: string;
+  allTimeSlots?: string[];
+  noTablesAvailable?: boolean;
 }
 
 interface InteractiveBookingCalendarProps {
   restaurantId: number;
   tenantId?: number;
-  onTimeSlotSelect?: (date: Date, time: string) => void;
+  onTimeSlotSelect?: (date: Date, time: string, isManagerOverride?: boolean) => void;
   guestCount?: number;
   isPublic?: boolean;
+  isManager?: boolean;
 }
 
 export default function InteractiveBookingCalendar({ 
@@ -47,12 +51,15 @@ export default function InteractiveBookingCalendar({
   tenantId, 
   onTimeSlotSelect, 
   guestCount = 2,
-  isPublic = false 
+  isPublic = false,
+  isManager = false
 }: InteractiveBookingCalendarProps) {
   const [currentMonth, setCurrentMonth] = useState(new Date());
   const [selectedDate, setSelectedDate] = useState<Date | null>(null);
   const [selectedTimeSlot, setSelectedTimeSlot] = useState<string | null>(null);
   const [showTimeSlots, setShowTimeSlots] = useState(false);
+  const [showManagerOverrideDialog, setShowManagerOverrideDialog] = useState(false);
+  const [overrideDateAndTime, setOverrideDateAndTime] = useState<{date: Date, time: string} | null>(null);
   const [availabilityData, setAvailabilityData] = useState<Map<string, DayAvailability>>(new Map());
 
   // Get calendar days for current month view
@@ -92,6 +99,129 @@ export default function InteractiveBookingCalendar({
   // Fetch availability data for visible date range
   useEffect(() => {
     const fetchAvailabilityData = async () => {
+      const promises = calendarDays.map(async (day) => {
+        const dateStr = format(day, 'yyyy-MM-dd');
+        
+        try {
+          // Use the new calendar availability API
+          const response = await fetch(`/api/restaurants/${restaurantId}/calendar-availability?date=${dateStr}&guests=${guestCount}`);
+          if (!response.ok) {
+            throw new Error(`Failed to fetch availability for ${dateStr}`);
+          }
+          
+          const availabilityInfo = await response.json();
+          
+          if (!availabilityInfo.isOpen) {
+            // Restaurant is closed
+            return [dateStr, {
+              date: day,
+              isOpen: false,
+              totalSlots: 0,
+              availableSlots: 0,
+              timeSlots: [],
+              closureReason: availabilityInfo.closureReason,
+              allTimeSlots: [],
+              noTablesAvailable: false
+            } as DayAvailability];
+          }
+          
+          // Convert to TimeSlot format for compatibility
+          const timeSlots: TimeSlot[] = availabilityInfo.allTimeSlots.map((time: string) => ({
+            time,
+            available: availabilityInfo.availableSlots.includes(time),
+            capacity: 0,
+            bookedSlots: 0,
+            bookings: []
+          }));
+
+          return [dateStr, {
+            date: day,
+            isOpen: true,
+            totalSlots: availabilityInfo.allTimeSlots.length,
+            availableSlots: availabilityInfo.availableSlots.length,
+            timeSlots,
+            openTime: availabilityInfo.openTime,
+            closeTime: availabilityInfo.closeTime,
+            closureReason: null,
+            allTimeSlots: availabilityInfo.allTimeSlots,
+            noTablesAvailable: availabilityInfo.noTablesAvailable || false
+          } as DayAvailability];
+
+        } catch (error) {
+          console.error(`Error fetching availability for ${dateStr}:`, error);
+          return [dateStr, {
+            date: day,
+            isOpen: false,
+            totalSlots: 0,
+            availableSlots: 0,
+            timeSlots: [],
+            closureReason: 'Error loading availability',
+            allTimeSlots: [],
+            noTablesAvailable: false
+          } as DayAvailability];
+        }
+      });
+
+      const results = await Promise.all(promises);
+      setAvailabilityData(new Map(results));
+    };
+
+    if (restaurantId) {
+      fetchAvailabilityData();
+    }
+  }, [currentMonth, restaurantId, guestCount]);
+
+  // Handle manager override functionality
+  const handleManagerOverride = () => {
+    if (overrideDateAndTime && onTimeSlotSelect) {
+      onTimeSlotSelect(overrideDateAndTime.date, overrideDateAndTime.time, true);
+      setShowManagerOverrideDialog(false);
+      setOverrideDateAndTime(null);
+    }
+  };
+
+  // Handle time slot selection with override logic
+  const handleTimeSlotClick = (date: Date, time: string) => {
+    const dayData = availabilityData.get(format(date, 'yyyy-MM-dd'));
+    
+    if (!dayData) return;
+    
+    // Check if this is a closed day/time
+    if (!dayData.isOpen || (dayData.allTimeSlots && !dayData.allTimeSlots.includes(time))) {
+      if (isManager) {
+        // Show manager override dialog
+        setOverrideDateAndTime({ date, time });
+        setShowManagerOverrideDialog(true);
+        return;
+      } else {
+        // Regular users cannot book closed times
+        return;
+      }
+    }
+    
+    // Check if time slot is available
+    const timeSlot = dayData.timeSlots.find(slot => slot.time === time);
+    if (!timeSlot?.available && !isManager) {
+      // Time slot is not available and user is not a manager
+      return;
+    }
+    
+    // If it's not available but user is manager, show override dialog
+    if (!timeSlot?.available && isManager) {
+      setOverrideDateAndTime({ date, time });
+      setShowManagerOverrideDialog(true);
+      return;
+    }
+    
+    // Regular booking
+    if (onTimeSlotSelect) {
+      onTimeSlotSelect(date, time, false);
+    }
+  };
+
+  // Updated availability check to handle the new API structure
+  useEffect(() => {
+    const fetchLegacyAvailabilityData = async () => {
       const promises = calendarDays.map(async (day) => {
         const dateStr = format(day, 'yyyy-MM-dd');
         
@@ -246,10 +376,9 @@ export default function InteractiveBookingCalendar({
     setShowTimeSlots(true);
   };
 
-  const handleTimeSlotClick = (time: string) => {
-    if (selectedDate && onTimeSlotSelect) {
-      setSelectedTimeSlot(time);
-      onTimeSlotSelect(selectedDate, time);
+  const handleLegacyTimeSlotClick = (time: string) => {
+    if (selectedDate) {
+      handleTimeSlotClick(selectedDate, time);
       setShowTimeSlots(false);
     }
   };
@@ -452,6 +581,57 @@ export default function InteractiveBookingCalendar({
                   </div>
                 </div>
               )}
+            </div>
+          </DialogContent>
+        </Dialog>
+
+        {/* Manager Override Dialog */}
+        <Dialog open={showManagerOverrideDialog} onOpenChange={setShowManagerOverrideDialog}>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>Manager Override Required</DialogTitle>
+            </DialogHeader>
+            <div className="space-y-4">
+              <div className="text-sm text-gray-600">
+                {overrideDateAndTime && (
+                  <>
+                    <p>
+                      You are attempting to create a booking for{" "}
+                      <strong>{format(overrideDateAndTime.date, 'EEEE, MMMM do, yyyy')}</strong> at{" "}
+                      <strong>{overrideDateAndTime.time}</strong>
+                    </p>
+                    <p className="mt-2">
+                      This time slot is normally unavailable due to restaurant closure or existing bookings.
+                      As a manager, you can override this restriction to create a special booking.
+                    </p>
+                  </>
+                )}
+              </div>
+              
+              <div className="flex items-center space-x-2 p-3 bg-yellow-50 rounded-lg border border-yellow-200">
+                <AlertCircle className="h-5 w-5 text-yellow-600" />
+                <span className="text-sm text-yellow-800">
+                  This booking will bypass normal availability restrictions
+                </span>
+              </div>
+
+              <div className="flex justify-end space-x-2">
+                <Button
+                  variant="outline"
+                  onClick={() => {
+                    setShowManagerOverrideDialog(false);
+                    setOverrideDateAndTime(null);
+                  }}
+                >
+                  Cancel
+                </Button>
+                <Button
+                  onClick={handleManagerOverride}
+                  className="bg-red-600 hover:bg-red-700 text-white"
+                >
+                  Create Override Booking
+                </Button>
+              </div>
             </div>
           </DialogContent>
         </Dialog>
