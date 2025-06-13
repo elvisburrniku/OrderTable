@@ -93,9 +93,9 @@ export default function Calendar() {
   }
 
   return (
-    <div className="space-y-6">
+    <div className="h-screen flex flex-col p-6">
       {/* Header */}
-      <div className="flex items-center justify-between">
+      <div className="flex items-center justify-between mb-6 flex-shrink-0">
         <div>
           <h1 className="text-3xl font-bold tracking-tight">Calendar</h1>
           <p className="text-muted-foreground">
@@ -113,7 +113,7 @@ export default function Calendar() {
       </div>
 
       {/* Calendar View Selector */}
-      <Tabs value={calendarView} onValueChange={setCalendarView} className="w-full">
+      <Tabs value={calendarView} onValueChange={setCalendarView} className="flex-1 flex flex-col">
         <TabsList className="grid w-full grid-cols-3">
           <TabsTrigger value="enhanced" className="flex items-center space-x-2">
             <Grid className="w-4 h-4" />

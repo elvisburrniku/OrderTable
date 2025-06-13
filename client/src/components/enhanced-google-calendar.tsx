@@ -550,14 +550,14 @@ export default function EnhancedGoogleCalendar({
     const dayBookings = getBookingsForSlot(currentDate);
     
     return (
-      <div className="flex-1">
-        <div className="border rounded-lg overflow-hidden">
+      <div className="flex-1 flex flex-col">
+        <div className="border rounded-lg overflow-hidden flex-1 flex flex-col">
           <div className="bg-gray-50 p-4 border-b">
             <h3 className="font-semibold text-lg">
               {format(currentDate, 'EEEE, MMMM d, yyyy')}
             </h3>
           </div>
-          <div className="p-4 space-y-2 max-h-96 overflow-y-auto">
+          <div className="p-4 space-y-2 flex-1 overflow-y-auto">
             {timeSlots.map(timeSlot => {
               const slotBookings = getBookingsForSlot(currentDate, timeSlot);
               const availabilityLevel = getAvailabilityLevel(currentDate, timeSlot);
@@ -628,8 +628,8 @@ export default function EnhancedGoogleCalendar({
 
   const renderWeekView = () => {
     return (
-      <div className="flex-1">
-        <div className="border rounded-lg overflow-hidden">
+      <div className="flex-1 flex flex-col">
+        <div className="border rounded-lg overflow-hidden flex-1 flex flex-col">
           {/* Week header */}
           <div className="grid grid-cols-8 bg-gray-50 border-b">
             <div className="p-2 text-sm font-medium">Time</div>
@@ -644,7 +644,7 @@ export default function EnhancedGoogleCalendar({
           </div>
           
           {/* Time slots */}
-          <div className="max-h-96 overflow-y-auto">
+          <div className="flex-1 overflow-y-auto">
             {timeSlots.map(timeSlot => (
               <div key={timeSlot} className="grid grid-cols-8 border-b">
                 <div className="p-2 text-xs text-gray-600 border-r">{timeSlot}</div>
@@ -709,8 +709,8 @@ export default function EnhancedGoogleCalendar({
     }
 
     return (
-      <div className="flex-1">
-        <div className="border rounded-lg overflow-hidden">
+      <div className="flex-1 flex flex-col">
+        <div className="border rounded-lg overflow-hidden flex-1 flex flex-col">
           {/* Month header */}
           <div className="grid grid-cols-7 bg-gray-50 border-b">
             {['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].map(day => (
@@ -817,7 +817,7 @@ export default function EnhancedGoogleCalendar({
   return (
     <div 
       ref={calendarRef}
-      className={`calendar-container space-y-4 ${isDragging ? 'cursor-grabbing' : ''}`}
+      className={`calendar-container h-full flex flex-col space-y-4 ${isDragging ? 'cursor-grabbing' : ''}`}
       style={{ userSelect: isDragging ? 'none' : 'auto' }}
     >
       {/* Calendar Controls */}
