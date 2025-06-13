@@ -59,6 +59,9 @@ try {
 // Initialize webhook service
 const webhookService = new WebhookService(storage);
 
+// Initialize Google Calendar service
+const googleCalendarService = new GoogleCalendarService(storage);
+
 // Utility function to convert time string to minutes
 function timeToMinutes(timeStr: string): number {
   const [hours, minutes] = timeStr.split(":").map(Number);
@@ -1692,6 +1695,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
           tenantId,
           hoursData,
         );
+
+        // Sync with Google Calendar after updating opening hours
+        try {
+          await googleCalendarService.syncOpeningHours(restaurantId, tenantId);
+          console.log(`Google Calendar sync completed for restaurant ${restaurantId} opening hours`);
+        } catch (error) {
+          console.error('Google Calendar sync failed for opening hours:', error);
+          // Don't fail the request if calendar sync fails
+        }
+
         res.json(openingHours);
       } catch (error) {
         console.error("Error saving opening hours:", error);
@@ -2239,6 +2252,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
         console.log('Final period data:', JSON.stringify(periodData, null, 2));
         
         const period = await storage.createSpecialPeriod(periodData);
+
+        // Sync with Google Calendar after creating special period
+        try {
+          await googleCalendarService.syncSpecialPeriods(restaurantId);
+          console.log(`Google Calendar sync completed for restaurant ${restaurantId} special periods`);
+        } catch (error) {
+          console.error('Google Calendar sync failed for special periods:', error);
+          // Don't fail the request if calendar sync fails
+        }
+
         res.json(period);
       } catch (error) {
         console.error('Special period creation error:', error);
@@ -2268,6 +2291,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
         const period = await storage.updateSpecialPeriod(id, updates);
         if (!period) {
           return res.status(404).json({ message: "Special period not found" });
+        }
+
+        // Sync with Google Calendar after updating special period
+        try {
+          await googleCalendarService.syncSpecialPeriods(restaurantId);
+          console.log(`Google Calendar sync completed for restaurant ${restaurantId} special periods update`);
+        } catch (error) {
+          console.error('Google Calendar sync failed for special periods update:', error);
         }
 
         res.json(period);
@@ -2392,6 +2423,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
           tenantId,
           timesData,
         );
+
+        // Sync with Google Calendar after updating cut-off times
+        try {
+          await googleCalendarService.syncCutOffTimes(restaurantId);
+          console.log(`Google Calendar sync completed for restaurant ${restaurantId} cut-off times`);
+        } catch (error) {
+          console.error('Google Calendar sync failed for cut-off times:', error);
+          // Don't fail the request if calendar sync fails
+        }
+
         res.json(savedTimes);
       } catch (error) {
         console.error("Error saving cut-off times:", error);

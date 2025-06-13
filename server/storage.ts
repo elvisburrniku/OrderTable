@@ -181,6 +181,10 @@ export interface IStorage {
   getTableById(id: number): Promise<Table | undefined>;
   getWaitingListEntryById(id: number): Promise<WaitingList | undefined>;
   getTimeSlotById(id: number): Promise<TimeSlots | undefined>;
+  
+  // Auto-assignment methods
+  getUnassignedBookings(): Promise<Booking[]>;
+  getBookingsByDateAndRestaurant(restaurantId: number, date: string): Promise<Booking[]>;
 
   // Rooms
   getRoomsByRestaurant(restaurantId: number): Promise<Room[]>;
