@@ -8466,6 +8466,73 @@ app.put("/api/tenants/:tenantId/bookings/:id", validateTenant, async (req, res) 
         }
       }
 
+      // If status is changed to "waiting" or "canceled", remove any existing booking from calendar
+      if ((updates.status === "waiting" || updates.status === "canceled") && existingEntry.status === "booked") {
+        try {
+          const restaurant = await storage.getRestaurantById(restaurantId);
+          if (restaurant) {
+            // Find and delete the booking that was created from this waiting list entry
+            const bookingDate = new Date(existingEntry.requestedDate);
+            const existingBookings = await storage.getBookingsByDateRange(
+              restaurant.tenantId,
+              restaurantId,
+              bookingDate,
+              bookingDate
+            );
+
+            // Find the booking that matches this waiting list entry
+            const bookingToDelete = existingBookings.find(booking => 
+              booking.customerName === existingEntry.customerName &&
+              booking.customerEmail === existingEntry.customerEmail &&
+              booking.startTime === existingEntry.requestedTime &&
+              booking.source === "waiting_list"
+            );
+
+            if (bookingToDelete) {
+              await storage.deleteBooking(bookingToDelete.id);
+              console.log(`Booking ${bookingToDelete.id} removed from calendar for waiting list entry ${id}`);
+
+              // Send notification via WebSocket
+              if (wsClients.has(restaurantId)) {
+                const clients = wsClients.get(restaurantId);
+                const notification = {
+                  type: 'booking_removed',
+                  message: `Booking removed from calendar: ${existingEntry.customerName}`,
+                  data: { bookingId: bookingToDelete.id, waitingListId: id }
+                };
+                
+                clients.forEach((client) => {
+                  if (client.readyState === WebSocket.OPEN) {
+                    client.send(JSON.stringify(notification));
+                  }
+                });
+              }
+
+              // Log the activity
+              await storage.createActivityLog({
+                tenantId: restaurant.tenantId,
+                restaurantId: restaurantId,
+                eventType: "booking_removed",
+                description: `Booking removed from calendar for ${existingEntry.customerName} (status changed to ${updates.status})`,
+                source: "waiting_list",
+                userEmail: null,
+                details: JSON.stringify({
+                  waitingListId: id,
+                  bookingId: bookingToDelete.id,
+                  customerName: existingEntry.customerName,
+                  newStatus: updates.status,
+                  requestedDate: existingEntry.requestedDate,
+                  requestedTime: existingEntry.requestedTime
+                })
+              });
+            }
+          }
+        } catch (bookingError) {
+          console.error("Error removing booking from waiting list:", bookingError);
+          // Don't fail the waiting list update if booking removal fails
+        }
+      }
+
       res.json(entry);
     } catch (error) {
       console.error("Error updating waiting list entry:", error);
