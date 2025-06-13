@@ -589,10 +589,14 @@ export default function EnhancedGoogleCalendar({
                         onMouseDown={(e) => handleMouseDown(e, booking)}
                         onDragStart={(e) => e.preventDefault()}
                       >
-                        <Users className="w-4 h-4" />
-                        <span>{booking.customerName} ({booking.guestCount} guests)</span>
+                        <Users className="w-4 h-4" onClick={(e) => e.stopPropagation()} />
+                        <span onClick={(e) => e.stopPropagation()}>
+                          {booking.customerName} ({booking.guestCount} guests)
+                        </span>
                         {booking.tableId && (
-                          <Badge variant="outline">Table {tables.find(t => t.id === booking.tableId)?.tableNumber}</Badge>
+                          <Badge variant="outline" onClick={(e) => e.stopPropagation()}>
+                            Table {tables.find(t => t.id === booking.tableId)?.tableNumber}
+                          </Badge>
                         )}
                       </div>
                     ))}
@@ -666,10 +670,23 @@ export default function EnhancedGoogleCalendar({
                           onDragStart={(e) => e.preventDefault()}
                           title="Click to edit booking"
                         >
-                          <div className="truncate font-medium">{booking.customerName}</div>
-                          <div className="text-xs opacity-75">{booking.guestCount} guests</div>
+                          <div 
+                            className="truncate font-medium"
+                            onClick={(e) => e.stopPropagation()}
+                          >
+                            {booking.customerName}
+                          </div>
+                          <div 
+                            className="text-xs opacity-75"
+                            onClick={(e) => e.stopPropagation()}
+                          >
+                            {booking.guestCount} guests
+                          </div>
                           {booking.tableId && (
-                            <div className="text-xs opacity-75">
+                            <div 
+                              className="text-xs opacity-75"
+                              onClick={(e) => e.stopPropagation()}
+                            >
                               Table {tables.find(t => t.id === booking.tableId)?.tableNumber}
                             </div>
                           )}
@@ -748,14 +765,18 @@ export default function EnhancedGoogleCalendar({
                           onClick={(e) => {
                             e.stopPropagation();
                             e.preventDefault();
+                            console.log('Month view booking clicked:', booking);
                             setEditingBooking(booking);
                             setIsEditBookingOpen(true);
+                            console.log('Edit dialog should open, isEditBookingOpen:', true);
                           }}
                           onMouseDown={(e) => handleMouseDown(e, booking)}
                           onDragStart={(e) => e.preventDefault()}
                           title="Click to edit booking"
                         >
-                          {booking.customerName}
+                          <span onClick={(e) => e.stopPropagation()}>
+                            {booking.customerName}
+                          </span>
                         </div>
                       ))}
                       {dayBookings.length > 3 && (
@@ -998,7 +1019,7 @@ export default function EnhancedGoogleCalendar({
           <DialogHeader>
             <DialogTitle>Edit Booking</DialogTitle>
           </DialogHeader>
-          {editingBooking && (
+          {editingBooking ? (
             <EditBookingForm
               booking={editingBooking}
               tables={tables}
@@ -1009,6 +1030,8 @@ export default function EnhancedGoogleCalendar({
               }}
               isLoading={editBookingMutation.isPending}
             />
+          ) : (
+            <div>No booking selected for editing</div>
           )}
         </DialogContent>
       </Dialog>
