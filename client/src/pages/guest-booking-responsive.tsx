@@ -211,11 +211,11 @@ export default function GuestBookingResponsive(props: any) {
   const isDateAvailable = (date: Date) => {
     const dayOfWeek = date.getDay(); // 0 = Sunday, 1 = Monday, etc.
     
-    // Debug logging
-    console.log('Checking date:', format(date, 'yyyy-MM-dd'), 'dayOfWeek:', dayOfWeek);
-    console.log('Opening hours data:', openingHours);
+    // Check if date is in the past
+    const today = startOfDay(new Date());
+    if (date < today) return false;
     
-    // Check special periods first
+    // Check special periods first (restaurant-specific closures)
     if (specialPeriods && Array.isArray(specialPeriods)) {
       const dateStr = format(date, 'yyyy-MM-dd');
       const hasSpecialPeriod = specialPeriods.some((period: any) => {
@@ -224,23 +224,26 @@ export default function GuestBookingResponsive(props: any) {
         const checkDate = new Date(dateStr);
         return checkDate >= start && checkDate <= end && !period.isOpen;
       });
-      if (hasSpecialPeriod) {
-        console.log('Date blocked by special period');
-        return false;
-      }
+      if (hasSpecialPeriod) return false;
     }
 
-    // Check opening hours
+    // Check regular opening hours
     if (openingHours && Array.isArray(openingHours)) {
       const dayHours = openingHours.find((h: any) => h.dayOfWeek === dayOfWeek);
-      console.log('Found day hours:', dayHours);
-      if (!dayHours || !dayHours.isOpen) {
-        console.log('Date unavailable - no hours or closed');
-        return false;
+      if (!dayHours || !dayHours.isOpen) return false;
+    }
+
+    // Check cut-off times (advance booking requirements)
+    if (cutOffTimes && Array.isArray(cutOffTimes)) {
+      const now = new Date();
+      const cutOff = cutOffTimes.find((c: any) => c.dayOfWeek === dayOfWeek);
+      if (cutOff && cutOff.hoursInAdvance > 0) {
+        const requiredTime = new Date(date);
+        requiredTime.setHours(requiredTime.getHours() - cutOff.hoursInAdvance);
+        if (now > requiredTime) return false;
       }
     }
 
-    console.log('Date is available');
     return true;
   };
 
