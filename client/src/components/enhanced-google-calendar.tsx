@@ -418,13 +418,7 @@ export default function EnhancedGoogleCalendar({
         console.log('Drag ended, resetting styles');
         const dragElement = document.querySelector(`[data-booking-id="${booking.id}"]`) as HTMLElement;
         if (dragElement) {
-          dragElement.style.opacity = '';
-          dragElement.style.transform = '';
-          dragElement.style.zIndex = '';
-          dragElement.style.cursor = '';
-          dragElement.style.pointerEvents = '';
-          dragElement.style.transition = '';
-          dragElement.style.boxShadow = '';
+          dragElement.classList.remove('dragging');
         }
         
         // Reset drag state after a short delay to allow drop detection
@@ -447,13 +441,7 @@ export default function EnhancedGoogleCalendar({
         // Clean up any remaining drag styles
         const dragElement = document.querySelector(`[data-booking-id="${draggedBooking.booking.id}"]`) as HTMLElement;
         if (dragElement) {
-          dragElement.style.opacity = '';
-          dragElement.style.transform = '';
-          dragElement.style.zIndex = '';
-          dragElement.style.cursor = '';
-          dragElement.style.pointerEvents = '';
-          dragElement.style.transition = '';
-          dragElement.style.boxShadow = '';
+          dragElement.classList.remove('dragging');
         }
         setIsDragging(false);
         setDraggedBooking(null);
