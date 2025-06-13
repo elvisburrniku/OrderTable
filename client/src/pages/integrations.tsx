@@ -142,24 +142,25 @@ export default function Integrations() {
       });
       
       if (!response.ok) {
-        throw new Error('Failed to save integration configuration');
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.message || 'Failed to save integration configuration');
       }
       
       return response.json();
     },
-    onSuccess: () => {
+    onSuccess: (data, variables) => {
       queryClient.invalidateQueries({
         queryKey: [`/api/tenants/${tenant?.id}/restaurants/${restaurant?.id}/integrations`]
       });
       toast({
         title: "Integration updated",
-        description: "Your integration settings have been saved successfully.",
+        description: `${variables.integrationId} integration has been ${variables.isEnabled ? 'enabled' : 'disabled'} successfully.`,
       });
     },
-    onError: () => {
+    onError: (error: any) => {
       toast({
         title: "Error",
-        description: "Failed to save integration settings. Please try again.",
+        description: error.message || "Failed to save integration settings. Please try again.",
         variant: "destructive",
       });
     },

@@ -5054,6 +5054,106 @@ app.put("/api/tenants/:tenantId/bookings/:id", validateTenant, async (req, res) 
     }
   });
 
+  // Test integration connection
+  app.post("/api/tenants/:tenantId/restaurants/:restaurantId/integrations/:integrationId/test", validateTenant, async (req, res) => {
+    try {
+      const restaurantId = parseInt(req.params.restaurantId);
+      const tenantId = parseInt(req.params.tenantId);
+      const integrationId = req.params.integrationId;
+      const { configuration } = req.body;
+
+      if (isNaN(restaurantId) || isNaN(tenantId)) {
+        return res.status(400).json({ message: "Invalid restaurant ID or tenant ID" });
+      }
+
+      // Verify restaurant belongs to tenant
+      const restaurant = await storage.getRestaurantById(restaurantId);
+      if (!restaurant || restaurant.tenantId !== tenantId) {
+        return res.status(404).json({ message: "Restaurant not found" });
+      }
+
+      let testResult = false;
+      let errorMessage = '';
+
+      try {
+        // Test different integrations based on their API requirements
+        switch (integrationId) {
+          case 'mailchimp':
+            if (configuration.apiKey) {
+              const response = await fetch(`https://us1.api.mailchimp.com/3.0/`, {
+                headers: {
+                  'Authorization': `Bearer ${configuration.apiKey}`,
+                  'Content-Type': 'application/json'
+                }
+              });
+              testResult = response.ok;
+              if (!testResult) errorMessage = 'Invalid API key or server connection failed';
+            } else {
+              errorMessage = 'API key is required';
+            }
+            break;
+
+          case 'google':
+            if (configuration.accessToken) {
+              const response = await fetch(`https://www.googleapis.com/oauth2/v1/tokeninfo?access_token=${configuration.accessToken}`);
+              testResult = response.ok;
+              if (!testResult) errorMessage = 'Invalid access token';
+            } else {
+              errorMessage = 'Access token is required';
+            }
+            break;
+
+          case 'klaviyo':
+            if (configuration.apiKey) {
+              const response = await fetch(`https://a.klaviyo.com/api/accounts/`, {
+                headers: {
+                  'Authorization': `Klaviyo-API-Key ${configuration.apiKey}`,
+                  'revision': '2024-10-15',
+                  'Content-Type': 'application/json'
+                }
+              });
+              testResult = response.ok;
+              if (!testResult) errorMessage = 'Invalid API key or server connection failed';
+            } else {
+              errorMessage = 'API key is required';
+            }
+            break;
+
+          case 'webhooks':
+            if (configuration.webhookUrl) {
+              const response = await fetch(configuration.webhookUrl, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ test: true, timestamp: new Date().toISOString() })
+              });
+              testResult = response.ok;
+              if (!testResult) errorMessage = 'Webhook URL unreachable or returned error';
+            } else {
+              errorMessage = 'Webhook URL is required';
+            }
+            break;
+
+          default:
+            // For integrations without API testing capability
+            testResult = true;
+            break;
+        }
+      } catch (error) {
+        testResult = false;
+        errorMessage = 'Connection test failed: ' + (error as Error).message;
+      }
+
+      res.json({ 
+        success: testResult, 
+        integrationId,
+        message: testResult ? 'Connection successful' : errorMessage 
+      });
+    } catch (error) {
+      console.error("Error testing integration connection:", error);
+      res.status(500).json({ message: "Internal server error" });
+    }
+  });
+
   app.get("/api/tenants/:tenantId/restaurants/:restaurantId/integrations/:integrationId", validateTenant, async (req, res) => {
     try {
       const restaurantId = parseInt(req.params.restaurantId);

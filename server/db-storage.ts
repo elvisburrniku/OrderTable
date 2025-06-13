@@ -992,7 +992,7 @@ export class DatabaseStorage implements IStorage {
         .where(eq(integrationConfigurations.restaurantId, restaurantId));
       
       // Parse configuration JSON strings back to objects
-      const parsedData = integrationData.map(config => {
+      const parsedData = integrationData.map((config: any) => {
         let parsedConfig = config.configuration;
         if (typeof config.configuration === 'string') {
           try {
@@ -1132,9 +1132,7 @@ export class DatabaseStorage implements IStorage {
     return updated;
   }
 
-  async getWaitingListEntryById(id: number): Promise<any> {
-    return null;
-  }
+
 
   async getFeedbackByRestaurant(restaurantId: number): Promise<any[]> {
     return [];
