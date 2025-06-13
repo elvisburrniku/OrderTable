@@ -4,6 +4,7 @@ import { useAuth } from "@/lib/auth.tsx";
 import { useQuery } from "@tanstack/react-query";
 
 import BookingCalendar from "@/components/booking-calendar";
+import EnhancedGoogleCalendar from "@/components/enhanced-google-calendar";
 import WalkInBookingButton from "@/components/walk-in-booking";
 import RealTimeTableStatus from "@/components/real-time-table-status";
 import { Button } from "@/components/ui/button";
@@ -868,7 +869,7 @@ export default function Dashboard() {
               refreshInterval={30000}
             />
           ) : (
-            <BookingCalendar 
+            <EnhancedGoogleCalendar 
               selectedDate={selectedDate}
               bookings={(selectedDateBookings as any) || []}
               allBookings={(allBookings as any) || []}
