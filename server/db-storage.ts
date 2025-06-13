@@ -991,7 +991,23 @@ export class DatabaseStorage implements IStorage {
         .from(integrationConfigurations)
         .where(eq(integrationConfigurations.restaurantId, restaurantId));
       
-      return integrationData || [];
+      // Parse configuration JSON strings back to objects
+      const parsedData = integrationData.map(config => {
+        let parsedConfig = config.configuration;
+        if (typeof config.configuration === 'string') {
+          try {
+            parsedConfig = JSON.parse(config.configuration);
+          } catch (e) {
+            parsedConfig = {};
+          }
+        }
+        return {
+          ...config,
+          configuration: parsedConfig
+        };
+      });
+      
+      return parsedData || [];
     } catch (error) {
       console.error("Error fetching integration configurations:", error);
       return [];
@@ -1015,7 +1031,7 @@ export class DatabaseStorage implements IStorage {
     }
   }
 
-  async createOrUpdateIntegrationConfiguration(restaurantId: number, tenantId: number, integrationId: string, configuration: any): Promise<any> {
+  async createOrUpdateIntegrationConfiguration(restaurantId: number, tenantId: number, integrationId: string, isEnabled: boolean, configuration: any = {}): Promise<any> {
     try {
       // Check if configuration already exists
       const existing = await this.getIntegrationConfiguration(restaurantId, integrationId);
@@ -1025,8 +1041,8 @@ export class DatabaseStorage implements IStorage {
         const [updated] = await this.db
           .update(integrationConfigurations)
           .set({
-            configuration: JSON.stringify(configuration),
-            isEnabled: configuration.isEnabled || false,
+            configuration: configuration,
+            isEnabled: isEnabled,
             updatedAt: new Date()
           })
           .where(and(
@@ -1044,8 +1060,8 @@ export class DatabaseStorage implements IStorage {
             restaurantId,
             tenantId,
             integrationId,
-            configuration: JSON.stringify(configuration),
-            isEnabled: configuration.isEnabled || false,
+            configuration: configuration,
+            isEnabled: isEnabled,
             createdAt: new Date(),
             updatedAt: new Date()
           })
