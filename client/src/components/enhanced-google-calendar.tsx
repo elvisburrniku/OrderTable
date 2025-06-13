@@ -73,20 +73,16 @@ export default function EnhancedGoogleCalendar({
   const [isEditBookingOpen, setIsEditBookingOpen] = useState(false);
   const [selectedTimeSlot, setSelectedTimeSlot] = useState<{ date: Date; time: string } | null>(null);
   const [editingBooking, setEditingBooking] = useState<Booking | null>(null);
-  const [draggedBooking, setDraggedBooking] = useState<DraggedBooking | null>(null);
   const [isDragging, setIsDragging] = useState(false);
+  const [draggedBooking, setDraggedBooking] = useState<{
+    booking: Booking;
+    offset: { x: number; y: number };
+  } | null>(null);
+  
   const calendarRef = useRef<HTMLDivElement>(null);
-
-  // Performance-optimized drag state
-  const dragStateRef = useRef<{
-    lastUpdateTime: number;
-    animationFrame: number | null;
-    element: HTMLElement | null;
-  }>({
-    lastUpdateTime: 0,
-    animationFrame: null,
-    element: null
-  });
+  const dragStartTime = useRef<number>(0);
+  const dragStartPos = useRef<{ x: number; y: number }>({ x: 0, y: 0 });
+  const clickTimeout = useRef<NodeJS.Timeout | null>(null);
 
   // Fetch opening hours
   const { data: openingHours = [] } = useQuery({
@@ -336,35 +332,82 @@ export default function EnhancedGoogleCalendar({
     return false; // Ensure no propagation
   }, []);
 
-  // Enhanced drag and drop handlers with smooth initialization
+  // Drag handlers that work with click-to-edit
   const handleMouseDown = useCallback((e: React.MouseEvent, booking: Booking) => {
-    e.preventDefault();
-    e.stopPropagation();
+    const startX = e.clientX;
+    const startY = e.clientY;
+    dragStartTime.current = Date.now();
+    dragStartPos.current = { x: startX, y: startY };
     
-    const rect = calendarRef.current?.getBoundingClientRect();
-    if (!rect) return;
-
-    // Pre-optimize the drag element for smooth performance
-    const dragElement = document.querySelector(`[data-booking-id="${booking.id}"]`) as HTMLElement;
-    if (dragElement) {
-      // Prepare element for optimal dragging performance
-      dragElement.style.willChange = 'transform';
-      dragElement.style.userSelect = 'none';
-      dragElement.style.webkitUserSelect = 'none';
-      dragElement.style.cursor = 'grabbing';
-      
-      // Cache element reference immediately
-      dragStateRef.current.element = dragElement;
+    // Clear any existing click timeout
+    if (clickTimeout.current) {
+      clearTimeout(clickTimeout.current);
+      clickTimeout.current = null;
     }
-
-    setDraggedBooking({
-      booking,
-      dragStart: { x: e.clientX - rect.left, y: e.clientY - rect.top },
-      initialDate: new Date(booking.bookingDate),
-      initialTime: booking.startTime || ''
-    });
-    setIsDragging(true);
-  }, []);
+    
+    const handleMouseMove = (moveEvent: MouseEvent) => {
+      const deltaX = Math.abs(moveEvent.clientX - startX);
+      const deltaY = Math.abs(moveEvent.clientY - startY);
+      const distance = Math.sqrt(deltaX * deltaX + deltaY * deltaY);
+      
+      // If moved more than 5px, start dragging
+      if (distance > 5 && !isDragging) {
+        setIsDragging(true);
+        setDraggedBooking({
+          booking,
+          offset: { x: deltaX, y: deltaY }
+        });
+        
+        const dragElement = e.currentTarget as HTMLElement;
+        dragElement.style.opacity = '0.7';
+        dragElement.style.transform = 'scale(1.05)';
+        dragElement.style.zIndex = '1000';
+        dragElement.style.pointerEvents = 'none';
+      }
+      
+      // Update drag position
+      if (isDragging && draggedBooking) {
+        const dragElement = document.querySelector(`[data-booking-id="${booking.id}"]`) as HTMLElement;
+        if (dragElement) {
+          dragElement.style.transform = `translate(${deltaX}px, ${deltaY}px) scale(1.05)`;
+        }
+      }
+    };
+    
+    const handleMouseUp = () => {
+      document.removeEventListener('mousemove', handleMouseMove);
+      document.removeEventListener('mouseup', handleMouseUp);
+      
+      const duration = Date.now() - dragStartTime.current;
+      const deltaX = Math.abs(e.clientX - dragStartPos.current.x);
+      const deltaY = Math.abs(e.clientY - dragStartPos.current.y);
+      const distance = Math.sqrt(deltaX * deltaX + deltaY * deltaY);
+      
+      // If it was a quick click (less than 200ms) or minimal movement, treat as click
+      if (duration < 200 && distance < 5) {
+        console.log('Quick click detected, opening edit dialog');
+        setEditingBooking(booking);
+        setIsEditBookingOpen(true);
+      } else if (isDragging) {
+        // Handle drop logic here
+        console.log('Drag completed for booking:', booking.customerName);
+        // Reset drag state
+        const dragElement = document.querySelector(`[data-booking-id="${booking.id}"]`) as HTMLElement;
+        if (dragElement) {
+          dragElement.style.opacity = '';
+          dragElement.style.transform = '';
+          dragElement.style.zIndex = '';
+          dragElement.style.pointerEvents = '';
+        }
+      }
+      
+      setIsDragging(false);
+      setDraggedBooking(null);
+    };
+    
+    document.addEventListener('mousemove', handleMouseMove);
+    document.addEventListener('mouseup', handleMouseUp);
+  }, [isDragging, draggedBooking]);
 
   // High-performance mouse move handler with RAF optimization
   const handleMouseMove = useCallback((e: React.MouseEvent) => {
@@ -654,14 +697,7 @@ export default function EnhancedGoogleCalendar({
                           key={booking.id}
                           data-booking-id={booking.id}
                           className={`booking-card p-1 mb-1 bg-blue-100 text-blue-800 rounded text-xs cursor-pointer transition-all duration-300 ease-out hover:bg-blue-200 hover:shadow-lg hover:scale-110 hover:-translate-y-1 hover:rotate-2 active:scale-95 active:rotate-0`}
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            e.preventDefault();
-                            console.log('Week view booking clicked:', booking);
-                            setEditingBooking(booking);
-                            setIsEditBookingOpen(true);
-                            console.log('Edit dialog state set:', true);
-                          }}
+                          onMouseDown={(e) => handleMouseDown(e, booking)}
                           title="Click to edit booking"
                         >
                           <div className="truncate font-medium">
@@ -744,14 +780,7 @@ export default function EnhancedGoogleCalendar({
                           key={booking.id}
                           data-booking-id={booking.id}
                           className={`booking-card p-1 bg-blue-100 text-blue-800 rounded text-xs truncate cursor-pointer transition-all duration-300 ease-out hover:bg-blue-200 hover:shadow-lg hover:scale-105 hover:-translate-y-0.5 hover:rotate-1 active:scale-95 active:rotate-0`}
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            e.preventDefault();
-                            console.log('Month view booking clicked:', booking);
-                            setEditingBooking(booking);
-                            setIsEditBookingOpen(true);
-                            console.log('Edit dialog should open, isEditBookingOpen:', true);
-                          }}
+                          onMouseDown={(e) => handleMouseDown(e, booking)}
                           title="Click to edit booking"
                         >
                           <span>
