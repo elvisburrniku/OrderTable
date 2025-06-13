@@ -193,10 +193,11 @@
   -moz-user-select: none;
   -ms-user-select: none;
   opacity: 0.8;
-  z-index: 1000;
+  z-index: 9999 !important;
   cursor: grabbing;
   box-shadow: 0 8px 25px rgba(0,0,0,0.15);
   transition: none;
+  position: relative !important;
 }
 
 /* Smooth drag transitions */
