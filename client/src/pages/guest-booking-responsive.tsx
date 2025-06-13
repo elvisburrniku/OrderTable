@@ -6,7 +6,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent } from '@/components/ui/card';
 import { Calendar, Clock, Users, Phone, Mail, User, Check, ChevronLeft, ChevronRight } from 'lucide-react';
-import { format, addDays, startOfDay } from 'date-fns';
+import { format, addDays, startOfDay, startOfMonth, endOfMonth, addMonths, subMonths, getDay, eachDayOfInterval } from 'date-fns';
 
 const generateTimeSlots = () => {
   const slots = [];
@@ -40,6 +40,7 @@ export default function GuestBookingResponsive(props: any) {
   const [guestCount, setGuestCount] = useState(getDefaultGuestCount());
   const [selectedDate, setSelectedDate] = useState<Date | null>(null);
   const [selectedTime, setSelectedTime] = useState('');
+  const [currentMonth, setCurrentMonth] = useState(new Date());
   const [customerData, setCustomerData] = useState({
     name: '',
     email: '',
@@ -128,16 +129,34 @@ export default function GuestBookingResponsive(props: any) {
     }
   };
 
-  // Generate next 30 days for date selection
-  const generateDates = () => {
-    const dates = [];
-    for (let i = 0; i < 30; i++) {
-      dates.push(addDays(new Date(), i));
-    }
-    return dates;
+  // Generate calendar dates for current month view
+  const generateCalendarDates = () => {
+    const start = startOfMonth(currentMonth);
+    const end = endOfMonth(currentMonth);
+    const monthDates = eachDayOfInterval({ start, end });
+    
+    // Filter out past dates (only show today and future dates)
+    const today = startOfDay(new Date());
+    return monthDates.filter(date => date >= today);
   };
 
-  const availableDates = generateDates();
+  const calendarDates = generateCalendarDates();
+
+  // Navigation functions
+  const goToPreviousMonth = () => {
+    const prevMonth = subMonths(currentMonth, 1);
+    // Don't allow going to months before current month
+    if (prevMonth >= startOfMonth(new Date())) {
+      setCurrentMonth(prevMonth);
+    }
+  };
+
+  const goToNextMonth = () => {
+    setCurrentMonth(addMonths(currentMonth, 1));
+  };
+
+  // Get day names for header
+  const dayNames = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
 
   // Generate personalized welcome message based on time of day
   const getWelcomeMessage = () => {
@@ -290,24 +309,77 @@ export default function GuestBookingResponsive(props: any) {
             {currentStep === 0 && (
               <div className="space-y-6">
                 <h2 className="text-xl md:text-2xl font-bold text-gray-900 text-center">Select Date</h2>
-                <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
-                  {availableDates.slice(0, 12).map((date, index) => (
-                    <button
-                      key={index}
-                      onClick={() => setSelectedDate(date)}
-                      className={`
-                        p-3 rounded-lg border-2 transition-all duration-200 text-center
-                        ${selectedDate && format(selectedDate, 'yyyy-MM-dd') === format(date, 'yyyy-MM-dd')
-                          ? 'border-blue-500 bg-blue-50 text-blue-700'
-                          : 'border-gray-200 hover:border-blue-300 hover:bg-blue-50'}
-                      `}
-                    >
-                      <div className="text-sm font-medium">{format(date, 'EEE')}</div>
-                      <div className="text-lg font-bold">{format(date, 'd')}</div>
-                      <div className="text-xs text-gray-500">{format(date, 'MMM')}</div>
-                    </button>
+                
+                {/* Month Navigation Header */}
+                <div className="flex items-center justify-between mb-4">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={goToPreviousMonth}
+                    disabled={startOfMonth(currentMonth) <= startOfMonth(new Date())}
+                    className="flex items-center space-x-1"
+                  >
+                    <ChevronLeft className="w-4 h-4" />
+                  </Button>
+                  
+                  <h3 className="text-lg font-semibold text-gray-800">
+                    {format(currentMonth, 'MMMM yyyy')}
+                  </h3>
+                  
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={goToNextMonth}
+                    className="flex items-center space-x-1"
+                  >
+                    <ChevronRight className="w-4 h-4" />
+                  </Button>
+                </div>
+
+                {/* Day Headers */}
+                <div className="grid grid-cols-7 gap-1 mb-2">
+                  {dayNames.map((day) => (
+                    <div key={day} className="text-center text-xs font-medium text-gray-500 py-2">
+                      {day}
+                    </div>
                   ))}
                 </div>
+
+                {/* Calendar Grid */}
+                <div className="grid grid-cols-7 gap-2">
+                  {/* Empty cells for proper day alignment */}
+                  {Array.from({ length: (getDay(startOfMonth(currentMonth)) + 6) % 7 }).map((_, index) => (
+                    <div key={`empty-${index}`} className="h-12"></div>
+                  ))}
+                  
+                  {/* Date buttons */}
+                  {calendarDates.map((date, index) => {
+                    const isSelected = selectedDate && format(selectedDate, 'yyyy-MM-dd') === format(date, 'yyyy-MM-dd');
+                    const isToday = format(date, 'yyyy-MM-dd') === format(new Date(), 'yyyy-MM-dd');
+                    
+                    return (
+                      <button
+                        key={index}
+                        onClick={() => setSelectedDate(date)}
+                        className={`
+                          h-12 w-full rounded-lg border-2 transition-all duration-200 text-center flex flex-col items-center justify-center
+                          ${isSelected
+                            ? 'border-blue-500 bg-blue-500 text-white shadow-lg'
+                            : isToday
+                            ? 'border-blue-300 bg-blue-50 text-blue-700 font-semibold'
+                            : 'border-gray-200 hover:border-blue-300 hover:bg-blue-50'}
+                        `}
+                      >
+                        <span className="text-sm font-medium">{format(date, 'd')}</span>
+                        {isToday && <span className="text-xs">Today</span>}
+                      </button>
+                    );
+                  })}
+                </div>
+                
+                <p className="text-center text-sm text-gray-600">
+                  Select your preferred date • Today is highlighted
+                </p>
               </div>
             )}
 
