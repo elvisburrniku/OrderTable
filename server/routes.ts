@@ -7149,42 +7149,52 @@ export async function registerRoutes(app: Express): Promise<Server> {
           return checkDate >= periodStart && checkDate <= periodEnd && period.isOpen;
         });
 
-        // Determine operating hours with proper priority
+        // Determine operating hours by combining both special periods and regular opening hours
         let openTime = "18:00"; // Default fallback
         let closeTime = "21:00"; // Default fallback
         
+        // First get regular opening hours for this day
+        let regularOpenTime = null;
+        let regularCloseTime = null;
+        
+        try {
+          const openingHours = await storage.getOpeningHoursByRestaurant(restaurantId);
+          console.log(`Fetched opening hours for restaurant ${restaurantId}:`, openingHours?.length || 0, 'records');
+          
+          if (openingHours && openingHours.length > 0) {
+            const targetDayOfWeek = targetDate.getDay(); // 0 = Sunday, 1 = Monday, etc.
+            console.log(`Target day of week: ${targetDayOfWeek} for date ${dateStr}`);
+            
+            const dayOpeningHours = openingHours.find(oh => oh.dayOfWeek === targetDayOfWeek);
+            console.log(`Day opening hours found:`, dayOpeningHours);
+            
+            if (dayOpeningHours && dayOpeningHours.isOpen && dayOpeningHours.openTime && dayOpeningHours.closeTime) {
+              regularOpenTime = dayOpeningHours.openTime;
+              regularCloseTime = dayOpeningHours.closeTime;
+              console.log(`Regular opening hours for ${dateStr}: ${regularOpenTime} - ${regularCloseTime}`);
+            } else {
+              console.log(`Restaurant closed on regular hours for day ${targetDayOfWeek}`);
+            }
+          }
+        } catch (error) {
+          console.error("Error fetching opening hours:", error);
+        }
+        
+        // Now check special periods and use them if available, otherwise use regular hours
         if (activeSpecialPeriod && activeSpecialPeriod.openTime && activeSpecialPeriod.closeTime) {
-          // Priority 1: Special periods
+          // Use special period hours - these override everything including closed days
           openTime = activeSpecialPeriod.openTime;
           closeTime = activeSpecialPeriod.closeTime;
           console.log(`Using special period hours for ${dateStr}: ${openTime} - ${closeTime}`);
+        } else if (regularOpenTime && regularCloseTime) {
+          // Use regular opening hours
+          openTime = regularOpenTime;
+          closeTime = regularCloseTime;
+          console.log(`Using regular opening hours for ${dateStr}: ${openTime} - ${closeTime}`);
         } else {
-          // Priority 2: Regular opening hours from database
-          try {
-            const openingHours = await storage.getOpeningHoursByRestaurant(restaurantId);
-            console.log(`Fetched opening hours for restaurant ${restaurantId}:`, openingHours?.length || 0, 'records');
-            
-            if (openingHours && openingHours.length > 0) {
-              const targetDayOfWeek = targetDate.getDay(); // 0 = Sunday, 1 = Monday, etc.
-              console.log(`Target day of week: ${targetDayOfWeek} for date ${dateStr}`);
-              
-              const dayOpeningHours = openingHours.find(oh => oh.dayOfWeek === targetDayOfWeek);
-              console.log(`Day opening hours found:`, dayOpeningHours);
-              
-              if (dayOpeningHours && dayOpeningHours.isOpen && dayOpeningHours.openTime && dayOpeningHours.closeTime) {
-                openTime = dayOpeningHours.openTime;
-                closeTime = dayOpeningHours.closeTime;
-                console.log(`Using regular opening hours for ${dateStr}: ${openTime} - ${closeTime}`);
-              } else {
-                console.log(`Restaurant closed on this day (${targetDayOfWeek}), using default hours for ${dateStr}: ${openTime} - ${closeTime}`);
-              }
-            } else {
-              console.log(`No opening hours found, using default hours for ${dateStr}: ${openTime} - ${closeTime}`);
-            }
-          } catch (error) {
-            console.error("Error fetching opening hours:", error);
-            console.log(`Error fetching opening hours, using default hours for ${dateStr}: ${openTime} - ${closeTime}`);
-          }
+          // Restaurant is closed - no slots available
+          console.log(`Restaurant is closed on ${dateStr}, no slots available`);
+          return res.json({ slots: [] });
         }
 
         // Helper function to convert time string to minutes
