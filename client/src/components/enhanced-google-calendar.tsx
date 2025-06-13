@@ -328,7 +328,8 @@ export default function EnhancedGoogleCalendar({
   // Single click handler (for drag functionality)
   const handleBookingClick = useCallback((e: React.MouseEvent, booking: Booking) => {
     e.stopPropagation();
-    // Single click is handled by drag functionality, double-click opens editor
+    e.preventDefault();
+    // Prevent booking creation modal from opening when clicking on bookings
   }, []);
 
   // Enhanced drag and drop handlers with smooth initialization
@@ -570,6 +571,7 @@ export default function EnhancedGoogleCalendar({
                           draggedBooking?.booking.id === booking.id ? 'opacity-50 transform scale-95' : ''
                         }`}
                         draggable
+                        onClick={(e) => handleBookingClick(e, booking)}
                         onDoubleClick={(e) => handleBookingDoubleClick(e, booking)}
                         onMouseDown={(e) => handleMouseDown(e, booking)}
                         onDragStart={(e) => e.preventDefault()}
@@ -636,6 +638,7 @@ export default function EnhancedGoogleCalendar({
                             draggedBooking?.booking.id === booking.id ? 'dragging opacity-50 transform scale-95' : ''
                           }`}
                           draggable
+                          onClick={(e) => handleBookingClick(e, booking)}
                           onDoubleClick={(e) => handleBookingDoubleClick(e, booking)}
                           onMouseDown={(e) => handleMouseDown(e, booking)}
                           onDragStart={(e) => e.preventDefault()}
@@ -717,6 +720,7 @@ export default function EnhancedGoogleCalendar({
                             draggedBooking?.booking.id === booking.id ? 'dragging opacity-50 transform scale-95' : ''
                           }`}
                           draggable
+                          onClick={(e) => handleBookingClick(e, booking)}
                           onDoubleClick={(e) => handleBookingDoubleClick(e, booking)}
                           onMouseDown={(e) => handleMouseDown(e, booking)}
                           onDragStart={(e) => e.preventDefault()}
