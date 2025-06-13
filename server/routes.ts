@@ -3140,6 +3140,12 @@ app.put("/api/tenants/:tenantId/bookings/:id", validateTenant, async (req, res) 
     try {
       const id = parseInt(req.params.id);
       const tenantId = parseInt(req.params.tenantId);
+      
+      // Validate request body
+      if (!req.body || typeof req.body !== 'object') {
+        return res.status(400).json({ message: "Invalid JSON in request body" });
+      }
+      
       const updates = req.body;
 
       if (updates.bookingDate) {
