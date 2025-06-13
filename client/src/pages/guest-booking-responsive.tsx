@@ -243,7 +243,7 @@ export default function GuestBookingResponsive(props: any) {
                         p-3 rounded-lg border-2 transition-all duration-200
                         ${selectedTime === time
                           ? 'border-blue-500 bg-blue-50 text-blue-700'
-                          : availableSlots && !availableSlots.slots?.includes(time)
+                          : (availableSlots as any) && !(availableSlots as any).slots?.includes(time)
                           ? 'border-gray-200 bg-gray-100 text-gray-400 cursor-not-allowed'
                           : 'border-gray-200 hover:border-blue-300 hover:bg-blue-50'}
                       `}
@@ -376,11 +376,11 @@ export default function GuestBookingResponsive(props: any) {
       {/* Restaurant Info Footer */}
       <div className="text-center py-6 px-4 border-t border-white/10">
         <p className="text-white/80 text-sm">
-          {restaurant?.address && (
-            <>📍 {restaurant.address}</>
+          {(restaurant as any)?.address && (
+            <>📍 {(restaurant as any).address}</>
           )}
-          {restaurant?.phone && (
-            <> • 📞 {restaurant.phone}</>
+          {(restaurant as any)?.phone && (
+            <> • 📞 {(restaurant as any).phone}</>
           )}
         </p>
       </div>
