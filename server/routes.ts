@@ -1458,8 +1458,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
         const rooms = await storage.getRoomsByRestaurant(restaurantId);
 
         const now = new Date();
+        // Use local time for consistency with booking storage
         const currentTime = now.getHours() * 60 + now.getMinutes(); // Current time in minutes
         const today = now.toISOString().split("T")[0]; // Today's date
+        
+        console.log(`Real-time status check - Server time: ${now.toISOString()}, Local time: ${now.getHours()}:${now.getMinutes().toString().padStart(2, '0')} (${currentTime} minutes), Date: ${today}`);
 
         // Create a map of room names
         const roomMap = new Map();
@@ -1500,6 +1503,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
               ? timeToMinutes(booking.endTime)
               : startMinutes + 120; // Default 2 hours
 
+            console.log(`Table ${table.tableNumber}: Booking ${booking.customerName} at ${booking.startTime} (${startMinutes}min) - ${booking.endTime || 'no end time'} (${endMinutes}min). Current: ${currentTime}min`);
+
             if (currentTime >= startMinutes && currentTime <= endMinutes) {
               // Table is currently occupied
               status = "occupied";
@@ -1522,8 +1527,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
                 isOvertime: currentTime > endMinutes,
               };
               break;
-            } else if (currentTime < startMinutes) {
-              // This is the next booking
+            } else if (startMinutes > currentTime) {
+              // This is a future booking - find the next one
               if (!nextBooking) {
                 // Check if table is reserved (within 30 minutes of start time)
                 if (startMinutes - currentTime <= 30) {
