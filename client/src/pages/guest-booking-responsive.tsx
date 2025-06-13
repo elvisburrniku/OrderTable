@@ -70,7 +70,7 @@ export default function GuestBookingResponsive(props: any) {
   // Create booking mutation
   const createBookingMutation = useMutation({
     mutationFn: async (bookingData: any) => {
-      const response = await fetch(`/api/restaurants/${restaurantId}/bookings/guest`, {
+      const response = await fetch(`/api/tenants/${tenantId}/restaurants/${restaurantId}/bookings/guest`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(bookingData),
