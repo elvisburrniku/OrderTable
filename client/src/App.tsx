@@ -76,8 +76,9 @@ function App() {
   return (
     <QueryClientProvider client={queryClient}>
       <Switch>
-        {/* Public guest booking route - no authentication required */}
+        {/* Public routes - no authentication required */}
         <Route path="/guest-booking/:tenantId/:restaurantId" component={GuestBookingStandalone} />
+        <Route path="/booking-manage/:id" component={BookingManage} />
         
         {/* All other routes require authentication */}
         <Route>
@@ -137,7 +138,6 @@ function App() {
                 <Route path="/:tenantId/rooms" component={Rooms} />
                 <Route path="/:tenantId/booking-agents" component={BookingAgents} />
                 <Route path="/:tenantId/restaurants/:restaurantId/settings" component={RestaurantSettings} />
-                <Route path="/booking-manage/:id" component={BookingManage} />
                 <Route path="/feedback/:tenantId/:restaurantId" component={TableFeedback} />
                 <Route path="/:tenantId/booking/:id" component={lazy(() => import("./pages/booking-detail"))} />
                 <Route path="/:tenantId/profile" component={Profile} />
