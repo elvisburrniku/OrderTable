@@ -692,6 +692,92 @@ export async function registerRoutes(app: Express): Promise<Server> {
         });
       }
 
+      // Validate table availability and prevent conflicts
+      if (bookingData.tableId) {
+        const tableId = bookingData.tableId;
+        const bookingDate = new Date(bookingData.bookingDate).toISOString().split('T')[0];
+        const startTime = bookingData.startTime;
+        const endTime = bookingData.endTime || (() => {
+          // Default to 2 hours if no end time provided
+          const [hours, minutes] = startTime.split(':').map(Number);
+          const endHours = (hours + 2) % 24;
+          return `${endHours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}`;
+        })();
+
+        // Get all existing bookings for this table on the same date
+        const existingBookings = await storage.getBookingsByDate(restaurantId, bookingDate);
+        const tableBookings = existingBookings.filter(booking => 
+          booking.tableId === tableId && 
+          booking.status !== 'cancelled'
+        );
+
+        // Check for time conflicts
+        const hasConflict = tableBookings.some(existingBooking => {
+          const existingStartTime = existingBooking.startTime;
+          const existingEndTime = existingBooking.endTime || (() => {
+            // Default to 2 hours for existing bookings without end time
+            const [hours, minutes] = existingStartTime.split(':').map(Number);
+            const endHours = (hours + 2) % 24;
+            return `${endHours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}`;
+          })();
+
+          // Convert times to minutes for easier comparison
+          const timeToMinutes = (timeStr: string) => {
+            const [hours, minutes] = timeStr.split(':').map(Number);
+            return hours * 60 + minutes;
+          };
+
+          const newStartMinutes = timeToMinutes(startTime);
+          const newEndMinutes = timeToMinutes(endTime);
+          const existingStartMinutes = timeToMinutes(existingStartTime);
+          const existingEndMinutes = timeToMinutes(existingEndTime);
+
+          // Check for overlap: bookings overlap if one starts before the other ends
+          // Using strict overlap check without buffer for exact table conflict detection
+          return (newStartMinutes < existingEndMinutes && existingStartMinutes < newEndMinutes);
+        });
+
+        if (hasConflict) {
+          const conflictingBooking = tableBookings.find(existingBooking => {
+            const existingStartTime = existingBooking.startTime;
+            const existingEndTime = existingBooking.endTime || (() => {
+              const [hours, minutes] = existingStartTime.split(':').map(Number);
+              const endHours = (hours + 2) % 24;
+              return `${endHours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}`;
+            })();
+
+            const timeToMinutes = (timeStr: string) => {
+              const [hours, minutes] = timeStr.split(':').map(Number);
+              return hours * 60 + minutes;
+            };
+
+            const newStartMinutes = timeToMinutes(startTime);
+            const newEndMinutes = timeToMinutes(endTime);
+            const existingStartMinutes = timeToMinutes(existingStartTime);
+            const existingEndMinutes = timeToMinutes(existingEndTime);
+
+            return (newStartMinutes < existingEndMinutes && existingStartMinutes < newEndMinutes);
+          });
+
+          const table = await storage.getTableById(tableId);
+          const tableNumber = table?.tableNumber || tableId;
+
+          return res.status(400).json({ 
+            message: `Table ${tableNumber} is already booked from ${conflictingBooking?.startTime} to ${conflictingBooking?.endTime || 'unknown'} on ${bookingDate}. Please select a different table or time slot.`,
+            conflictDetails: {
+              tableId: tableId,
+              tableNumber: tableNumber,
+              conflictingBooking: {
+                id: conflictingBooking?.id,
+                startTime: conflictingBooking?.startTime,
+                endTime: conflictingBooking?.endTime,
+                customerName: conflictingBooking?.customerName
+              }
+            }
+          });
+        }
+      }
+
       const booking = await storage.createBooking(bookingData);
 
       // Generate and store management hash for the booking
@@ -828,6 +914,92 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const updates = req.body;
       if (updates.bookingDate) {
         updates.bookingDate = new Date(updates.bookingDate);
+      }
+
+      // Validate table availability for updates that might cause conflicts
+      if (updates.tableId || updates.bookingDate || updates.startTime) {
+        const tableId = updates.tableId || existingBooking.tableId;
+        const bookingDate = updates.bookingDate ? new Date(updates.bookingDate).toISOString().split('T')[0] : new Date(existingBooking.bookingDate).toISOString().split('T')[0];
+        const startTime = updates.startTime || existingBooking.startTime;
+        const endTime = updates.endTime || existingBooking.endTime || (() => {
+          // Default to 2 hours if no end time provided
+          const [hours, minutes] = startTime.split(':').map(Number);
+          const endHours = (hours + 2) % 24;
+          return `${endHours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}`;
+        })();
+
+        // Get all existing bookings for this table on the target date
+        const existingBookings = await storage.getBookingsByDate(restaurantId, bookingDate);
+        const conflictingBookings = existingBookings.filter(booking => 
+          booking.tableId === tableId && 
+          booking.status !== 'cancelled' &&
+          booking.id !== id // Exclude the current booking being updated
+        );
+
+        // Check for time conflicts
+        const hasConflict = conflictingBookings.some(conflictingBooking => {
+          const conflictingStartTime = conflictingBooking.startTime;
+          const conflictingEndTime = conflictingBooking.endTime || (() => {
+            // Default to 2 hours for existing bookings without end time
+            const [hours, minutes] = conflictingStartTime.split(':').map(Number);
+            const endHours = (hours + 2) % 24;
+            return `${endHours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}`;
+          })();
+
+          // Convert times to minutes for easier comparison
+          const timeToMinutes = (timeStr: string) => {
+            const [hours, minutes] = timeStr.split(':').map(Number);
+            return hours * 60 + minutes;
+          };
+
+          const newStartMinutes = timeToMinutes(startTime);
+          const newEndMinutes = timeToMinutes(endTime);
+          const conflictingStartMinutes = timeToMinutes(conflictingStartTime);
+          const conflictingEndMinutes = timeToMinutes(conflictingEndTime);
+
+          // Check for overlap: bookings overlap if one starts before the other ends
+          return (newStartMinutes < conflictingEndMinutes && conflictingStartMinutes < newEndMinutes);
+        });
+
+        if (hasConflict) {
+          const conflictingBooking = conflictingBookings.find(conflictingBooking => {
+            const conflictingStartTime = conflictingBooking.startTime;
+            const conflictingEndTime = conflictingBooking.endTime || (() => {
+              const [hours, minutes] = conflictingStartTime.split(':').map(Number);
+              const endHours = (hours + 2) % 24;
+              return `${endHours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}`;
+            })();
+
+            const timeToMinutes = (timeStr: string) => {
+              const [hours, minutes] = timeStr.split(':').map(Number);
+              return hours * 60 + minutes;
+            };
+
+            const newStartMinutes = timeToMinutes(startTime);
+            const newEndMinutes = timeToMinutes(endTime);
+            const conflictingStartMinutes = timeToMinutes(conflictingStartTime);
+            const conflictingEndMinutes = timeToMinutes(conflictingEndTime);
+
+            return (newStartMinutes < conflictingEndMinutes && conflictingStartMinutes < newEndMinutes);
+          });
+
+          const table = await storage.getTableById(tableId);
+          const tableNumber = table?.tableNumber || tableId;
+
+          return res.status(400).json({ 
+            message: `Cannot move booking: Table ${tableNumber} is already booked from ${conflictingBooking?.startTime} to ${conflictingBooking?.endTime || 'unknown'} on ${bookingDate}. Please select a different table or time slot.`,
+            conflictDetails: {
+              tableId: tableId,
+              tableNumber: tableNumber,
+              conflictingBooking: {
+                id: conflictingBooking?.id,
+                startTime: conflictingBooking?.startTime,
+                endTime: conflictingBooking?.endTime,
+                customerName: conflictingBooking?.customerName
+              }
+            }
+          });
+        }
       }
 
       const updatedBooking = await storage.updateBooking(id, updates);
