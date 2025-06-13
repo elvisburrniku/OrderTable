@@ -5154,6 +5154,180 @@ app.put("/api/tenants/:tenantId/bookings/:id", validateTenant, async (req, res) 
     }
   });
 
+  // Google My Business - Reserve with Google
+  app.get("/api/tenants/:tenantId/restaurants/:restaurantId/google/profile", validateTenant, async (req, res) => {
+    try {
+      const restaurantId = parseInt(req.params.restaurantId);
+      const tenantId = parseInt(req.params.tenantId);
+
+      if (isNaN(restaurantId) || isNaN(tenantId)) {
+        return res.status(400).json({ message: "Invalid restaurant ID or tenant ID" });
+      }
+
+      const restaurant = await storage.getRestaurantById(restaurantId);
+      if (!restaurant || restaurant.tenantId !== tenantId) {
+        return res.status(404).json({ message: "Restaurant not found" });
+      }
+
+      // Validate business profile completeness
+      const validation = {
+        isComplete: true,
+        missingFields: [] as string[],
+        warnings: [] as string[]
+      };
+
+      const requiredFields = [
+        { field: 'name', value: restaurant.name, label: 'Restaurant Name' },
+        { field: 'address', value: restaurant.address, label: 'Address' },
+        { field: 'phone', value: restaurant.phone, label: 'Phone Number' }
+      ];
+
+      const recommendedFields = [
+        { field: 'website', value: restaurant.website, label: 'Website' },
+        { field: 'email', value: restaurant.email, label: 'Email' },
+        { field: 'description', value: restaurant.description, label: 'Description' }
+      ];
+
+      requiredFields.forEach(({ field, value, label }) => {
+        if (!value || value.trim() === '') {
+          validation.missingFields.push(label);
+          validation.isComplete = false;
+        }
+      });
+
+      recommendedFields.forEach(({ field, value, label }) => {
+        if (!value || value.trim() === '') {
+          validation.warnings.push(`${label} is recommended for better Google matching`);
+        }
+      });
+
+      // Generate booking URL
+      const baseUrl = process.env.FRONTEND_URL || `${req.protocol}://${req.get('host')}`;
+      const bookingUrl = `${baseUrl}/${tenantId}/book/${restaurantId}?source=google`;
+
+      res.json({
+        restaurant: {
+          name: restaurant.name,
+          address: restaurant.address,
+          phone: restaurant.phone,
+          website: restaurant.website,
+          email: restaurant.email,
+          description: restaurant.description
+        },
+        validation,
+        bookingUrl,
+        googleIntegrationStatus: 'pending' // Would be updated based on actual Google API status
+      });
+    } catch (error) {
+      console.error("Error fetching Google profile:", error);
+      res.status(500).json({ message: "Internal server error" });
+    }
+  });
+
+  app.post("/api/tenants/:tenantId/restaurants/:restaurantId/google/activate", validateTenant, async (req, res) => {
+    try {
+      const restaurantId = parseInt(req.params.restaurantId);
+      const tenantId = parseInt(req.params.tenantId);
+
+      if (isNaN(restaurantId) || isNaN(tenantId)) {
+        return res.status(400).json({ message: "Invalid restaurant ID or tenant ID" });
+      }
+
+      const restaurant = await storage.getRestaurantById(restaurantId);
+      if (!restaurant || restaurant.tenantId !== tenantId) {
+        return res.status(404).json({ message: "Restaurant not found" });
+      }
+
+      // Validate required fields before activation
+      const requiredFields = ['name', 'address', 'phone'];
+      const missingFields = requiredFields.filter(field => !restaurant[field as keyof typeof restaurant]);
+
+      if (missingFields.length > 0) {
+        return res.status(400).json({ 
+          message: "Missing required fields", 
+          missingFields 
+        });
+      }
+
+      // Save or update Google integration configuration
+      await storage.createOrUpdateIntegrationConfiguration(
+        restaurantId,
+        tenantId,
+        'google',
+        true,
+        {
+          reserveWithGoogle: true,
+          activatedAt: new Date().toISOString(),
+          profileData: {
+            name: restaurant.name,
+            address: restaurant.address,
+            phone: restaurant.phone,
+            website: restaurant.website,
+            email: restaurant.email,
+            description: restaurant.description
+          }
+        }
+      );
+
+      const baseUrl = process.env.FRONTEND_URL || `${req.protocol}://${req.get('host')}`;
+      const bookingUrl = `${baseUrl}/${tenantId}/book/${restaurantId}?source=google`;
+
+      res.json({
+        success: true,
+        message: "Reserve with Google has been activated",
+        bookingUrl,
+        status: "active"
+      });
+    } catch (error) {
+      console.error("Error activating Google integration:", error);
+      res.status(500).json({ message: "Internal server error" });
+    }
+  });
+
+  // Public booking endpoint for Google
+  app.get("/api/public/:tenantId/restaurants/:restaurantId/availability", async (req, res) => {
+    try {
+      const restaurantId = parseInt(req.params.restaurantId);
+      const tenantId = parseInt(req.params.tenantId);
+      const { date, guests } = req.query;
+
+      if (isNaN(restaurantId) || isNaN(tenantId)) {
+        return res.status(400).json({ message: "Invalid restaurant ID or tenant ID" });
+      }
+
+      const restaurant = await storage.getRestaurantById(restaurantId);
+      if (!restaurant || restaurant.tenantId !== tenantId) {
+        return res.status(404).json({ message: "Restaurant not found" });
+      }
+
+      // Check if Google integration is active
+      const googleConfig = await storage.getIntegrationConfiguration(restaurantId, 'google');
+      if (!googleConfig || !googleConfig.isEnabled) {
+        return res.status(403).json({ message: "Google booking not enabled for this restaurant" });
+      }
+
+      // Get available time slots for the date
+      const availableTimes = await storage.getAvailableTimeSlots(restaurantId, date as string, parseInt(guests as string) || 2);
+      
+      res.json({
+        restaurant: {
+          name: restaurant.name,
+          address: restaurant.address,
+          phone: restaurant.phone
+        },
+        date,
+        guests,
+        availableTimes: availableTimes.map(time => ({
+          time,
+          available: true
+        }))
+      });
+    } catch (error) {
+      console.error("Error fetching public availability:", error);
+      res.status(500).json({ message: "Internal server error" });
+    }
+  });
+
   app.get("/api/tenants/:tenantId/restaurants/:restaurantId/integrations/:integrationId", validateTenant, async (req, res) => {
     try {
       const restaurantId = parseInt(req.params.restaurantId);

@@ -96,8 +96,8 @@ function App() {
                 <Route path="/:tenantId/tables" component={Tables} />
                 <Route path="/:tenantId/customers" component={Customers} />
                 <Route path="/:tenantId/integrations" component={Integrations} />
+        <Route path="/:tenantId/integrations/google" component={GoogleIntegration} />
                 <Route path="/:tenantId/integrations/activecampaign" component={ActiveCampaignIntegration} />
-                <Route path="/:tenantId/integrations/google" component={GoogleIntegration} />
                 <Route path="/:tenantId/integrations/klaviyo" component={KlaviyoIntegration} />
                 <Route path="/:tenantId/integrations/mailchimp" component={MailchimpIntegration} />
                 <Route path="/:tenantId/integrations/meta" component={MetaIntegration} />
