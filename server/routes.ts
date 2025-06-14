@@ -9064,22 +9064,49 @@ export async function registerRoutes(app: Express): Promise<Server> {
     detectCapacityExceeded: (bookings: any[], tables: any[]) => {
       const conflicts: any[] = [];
       const tableCapacities = new Map(tables.map((t) => [t.id, t.capacity]));
+      const maxRestaurantCapacity = Math.max(...tables.map(t => t.capacity), 0);
 
       bookings.forEach((booking) => {
+        // Skip cancelled bookings
+        if (booking.status === 'cancelled') return;
+
+        let hasCapacityConflict = false;
+        let conflictType = 'assigned_table_exceeded';
+
         if (booking.tableId && tableCapacities.has(booking.tableId)) {
+          // Check assigned table capacity
           const tableCapacity = tableCapacities.get(booking.tableId);
           if (booking.guestCount > tableCapacity) {
-            conflicts.push({
-              id: `capacity-conflict-${booking.id}`,
-              type: "capacity_exceeded",
-              severity: "medium",
-              bookings: [booking],
-              autoResolvable: true,
-              createdAt: new Date().toISOString(),
-              suggestedResolutions:
-                ConflictResolver.generateCapacityResolutions(booking, tables),
-            });
+            hasCapacityConflict = true;
+            conflictType = 'assigned_table_exceeded';
           }
+        } else if (!booking.tableId) {
+          // Check if unassigned booking exceeds any available table capacity
+          if (booking.guestCount > maxRestaurantCapacity) {
+            hasCapacityConflict = true;
+            conflictType = 'no_suitable_table';
+          }
+        }
+
+        if (hasCapacityConflict) {
+          const suitableTables = tables.filter(t => t.capacity >= booking.guestCount);
+          conflicts.push({
+            id: `capacity-conflict-${booking.id}`,
+            type: "capacity_exceeded",
+            severity: conflictType === 'no_suitable_table' ? "high" : "medium",
+            bookings: [booking],
+            autoResolvable: suitableTables.length > 0,
+            createdAt: new Date().toISOString(),
+            details: {
+              conflictType,
+              guestCount: booking.guestCount,
+              maxTableCapacity: maxRestaurantCapacity,
+              suitableTablesAvailable: suitableTables.length,
+              currentTableId: booking.tableId
+            },
+            suggestedResolutions:
+              ConflictResolver.generateCapacityResolutions(booking, tables),
+          });
         }
       });
 
