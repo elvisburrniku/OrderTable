@@ -5,9 +5,10 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent } from '@/components/ui/card';
-import { Calendar, Clock, Users, Phone, Mail, User, Check, ChevronLeft, ChevronRight } from 'lucide-react';
+import { Calendar, Clock, Users, Phone, Mail, User, Check, ChevronLeft, ChevronRight, Sparkles } from 'lucide-react';
 import { format, addDays, startOfDay, startOfMonth, endOfMonth, addMonths, subMonths, getDay, eachDayOfInterval } from 'date-fns';
 import ActiveSeasonalThemeDisplay from '@/components/active-seasonal-theme-display';
+import SeasonalThemeSelector from '@/components/seasonal-theme-selector';
 
 // Dynamic time slot generation will be done based on opening hours
 
@@ -37,6 +38,7 @@ export default function GuestBookingResponsive(props: any) {
     phone: '',
     comment: ''
   });
+  const [selectedSeasonalTheme, setSelectedSeasonalTheme] = useState<string | null>(null);
   const [bookingId, setBookingId] = useState<number | null>(null);
 
   // Fetch restaurant data
@@ -101,6 +103,7 @@ export default function GuestBookingResponsive(props: any) {
     { title: "Date", icon: Calendar },
     { title: "Time", icon: Clock },
     { title: "Guests", icon: Users },
+    { title: "Experience", icon: Sparkles },
     { title: "Details", icon: User },
   ];
 
@@ -117,6 +120,7 @@ export default function GuestBookingResponsive(props: any) {
         customerEmail: customerData.email,
         customerPhone: customerData.phone,
         specialRequests: customerData.comment || null,
+        seasonalThemeId: selectedSeasonalTheme ? parseInt(selectedSeasonalTheme) : null,
         source: 'guest_booking'
       };
       createBookingMutation.mutate(bookingData);
@@ -134,7 +138,8 @@ export default function GuestBookingResponsive(props: any) {
       case 0: return selectedDate !== null;
       case 1: return selectedTime !== '';
       case 2: return guestCount >= 1;
-      case 3: return customerData.name && customerData.email && customerData.phone;
+      case 3: return true; // Seasonal theme is optional
+      case 4: return customerData.name && customerData.email && customerData.phone;
       default: return false;
     }
   };
