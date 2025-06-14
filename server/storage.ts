@@ -247,6 +247,19 @@ export interface IStorage {
   getResolvedConflictsByRestaurant(restaurantId: number): Promise<ResolvedConflict[]>;
   createResolvedConflict(resolvedConflict: InsertResolvedConflict): Promise<ResolvedConflict>;
 
+  // Menu Categories
+  getMenuCategoriesByRestaurant(restaurantId: number): Promise<MenuCategory[]>;
+  createMenuCategory(category: InsertMenuCategory): Promise<MenuCategory>;
+  updateMenuCategory(id: number, updates: Partial<MenuCategory>): Promise<MenuCategory | undefined>;
+  deleteMenuCategory(id: number): Promise<boolean>;
+
+  // Menu Items
+  getMenuItemsByRestaurant(restaurantId: number): Promise<MenuItem[]>;
+  getMenuItemsByCategory(categoryId: number): Promise<MenuItem[]>;
+  createMenuItem(item: InsertMenuItem): Promise<MenuItem>;
+  updateMenuItem(id: number, updates: Partial<MenuItem>): Promise<MenuItem | undefined>;
+  deleteMenuItem(id: number): Promise<boolean>;
+
   // Webhooks
   getWebhooksByRestaurant(restaurantId: number): Promise<any[]>;
   saveWebhooks(restaurantId: number, tenantId: number, webhooks: any[]): Promise<any[]>;

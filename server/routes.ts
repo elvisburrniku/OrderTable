@@ -8835,6 +8835,198 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   );
 
+  // Menu Categories endpoints
+  app.get(
+    "/api/tenants/:tenantId/restaurants/:restaurantId/menu-categories",
+    validateTenant,
+    async (req: Request, res: Response) => {
+      try {
+        const { tenantId, restaurantId } = req.params;
+        const restaurant = await storage.getRestaurantById(parseInt(restaurantId));
+        if (!restaurant || restaurant.tenantId !== parseInt(tenantId)) {
+          return res.status(404).json({ message: "Restaurant not found" });
+        }
+
+        const categories = await storage.getMenuCategoriesByRestaurant(parseInt(restaurantId));
+        res.json(categories);
+      } catch (error) {
+        console.error("Error fetching menu categories:", error);
+        res.status(500).json({ error: "Failed to fetch menu categories" });
+      }
+    }
+  );
+
+  app.post(
+    "/api/tenants/:tenantId/restaurants/:restaurantId/menu-categories",
+    validateTenant,
+    async (req: Request, res: Response) => {
+      try {
+        const { tenantId, restaurantId } = req.params;
+        const restaurant = await storage.getRestaurantById(parseInt(restaurantId));
+        if (!restaurant || restaurant.tenantId !== parseInt(tenantId)) {
+          return res.status(404).json({ message: "Restaurant not found" });
+        }
+
+        const categoryData = {
+          ...req.body,
+          restaurantId: parseInt(restaurantId),
+          tenantId: parseInt(tenantId),
+        };
+
+        const category = await storage.createMenuCategory(categoryData);
+        res.json(category);
+      } catch (error) {
+        console.error("Error creating menu category:", error);
+        res.status(500).json({ error: "Failed to create menu category" });
+      }
+    }
+  );
+
+  app.put(
+    "/api/tenants/:tenantId/restaurants/:restaurantId/menu-categories/:categoryId",
+    validateTenant,
+    async (req: Request, res: Response) => {
+      try {
+        const { tenantId, restaurantId, categoryId } = req.params;
+        const restaurant = await storage.getRestaurantById(parseInt(restaurantId));
+        if (!restaurant || restaurant.tenantId !== parseInt(tenantId)) {
+          return res.status(404).json({ message: "Restaurant not found" });
+        }
+
+        const category = await storage.updateMenuCategory(parseInt(categoryId), req.body);
+        if (!category) {
+          return res.status(404).json({ message: "Category not found" });
+        }
+        res.json(category);
+      } catch (error) {
+        console.error("Error updating menu category:", error);
+        res.status(500).json({ error: "Failed to update menu category" });
+      }
+    }
+  );
+
+  app.delete(
+    "/api/tenants/:tenantId/restaurants/:restaurantId/menu-categories/:categoryId",
+    validateTenant,
+    async (req: Request, res: Response) => {
+      try {
+        const { tenantId, restaurantId, categoryId } = req.params;
+        const restaurant = await storage.getRestaurantById(parseInt(restaurantId));
+        if (!restaurant || restaurant.tenantId !== parseInt(tenantId)) {
+          return res.status(404).json({ message: "Restaurant not found" });
+        }
+
+        const success = await storage.deleteMenuCategory(parseInt(categoryId));
+        if (!success) {
+          return res.status(404).json({ message: "Category not found" });
+        }
+        res.json({ message: "Category deleted successfully" });
+      } catch (error) {
+        console.error("Error deleting menu category:", error);
+        res.status(500).json({ error: "Failed to delete menu category" });
+      }
+    }
+  );
+
+  // Menu Items endpoints
+  app.get(
+    "/api/tenants/:tenantId/restaurants/:restaurantId/menu-items",
+    validateTenant,
+    async (req: Request, res: Response) => {
+      try {
+        const { tenantId, restaurantId } = req.params;
+        const { categoryId } = req.query;
+        const restaurant = await storage.getRestaurantById(parseInt(restaurantId));
+        if (!restaurant || restaurant.tenantId !== parseInt(tenantId)) {
+          return res.status(404).json({ message: "Restaurant not found" });
+        }
+
+        let items;
+        if (categoryId) {
+          items = await storage.getMenuItemsByCategory(parseInt(categoryId as string));
+        } else {
+          items = await storage.getMenuItemsByRestaurant(parseInt(restaurantId));
+        }
+        res.json(items);
+      } catch (error) {
+        console.error("Error fetching menu items:", error);
+        res.status(500).json({ error: "Failed to fetch menu items" });
+      }
+    }
+  );
+
+  app.post(
+    "/api/tenants/:tenantId/restaurants/:restaurantId/menu-items",
+    validateTenant,
+    async (req: Request, res: Response) => {
+      try {
+        const { tenantId, restaurantId } = req.params;
+        const restaurant = await storage.getRestaurantById(parseInt(restaurantId));
+        if (!restaurant || restaurant.tenantId !== parseInt(tenantId)) {
+          return res.status(404).json({ message: "Restaurant not found" });
+        }
+
+        const itemData = {
+          ...req.body,
+          restaurantId: parseInt(restaurantId),
+          tenantId: parseInt(tenantId),
+        };
+
+        const item = await storage.createMenuItem(itemData);
+        res.json(item);
+      } catch (error) {
+        console.error("Error creating menu item:", error);
+        res.status(500).json({ error: "Failed to create menu item" });
+      }
+    }
+  );
+
+  app.put(
+    "/api/tenants/:tenantId/restaurants/:restaurantId/menu-items/:itemId",
+    validateTenant,
+    async (req: Request, res: Response) => {
+      try {
+        const { tenantId, restaurantId, itemId } = req.params;
+        const restaurant = await storage.getRestaurantById(parseInt(restaurantId));
+        if (!restaurant || restaurant.tenantId !== parseInt(tenantId)) {
+          return res.status(404).json({ message: "Restaurant not found" });
+        }
+
+        const item = await storage.updateMenuItem(parseInt(itemId), req.body);
+        if (!item) {
+          return res.status(404).json({ message: "Item not found" });
+        }
+        res.json(item);
+      } catch (error) {
+        console.error("Error updating menu item:", error);
+        res.status(500).json({ error: "Failed to update menu item" });
+      }
+    }
+  );
+
+  app.delete(
+    "/api/tenants/:tenantId/restaurants/:restaurantId/menu-items/:itemId",
+    validateTenant,
+    async (req: Request, res: Response) => {
+      try {
+        const { tenantId, restaurantId, itemId } = req.params;
+        const restaurant = await storage.getRestaurantById(parseInt(restaurantId));
+        if (!restaurant || restaurant.tenantId !== parseInt(tenantId)) {
+          return res.status(404).json({ message: "Restaurant not found" });
+        }
+
+        const success = await storage.deleteMenuItem(parseInt(itemId));
+        if (!success) {
+          return res.status(404).json({ message: "Item not found" });
+        }
+        res.json({ message: "Item deleted successfully" });
+      } catch (error) {
+        console.error("Error deleting menu item:", error);
+        res.status(500).json({ error: "Failed to delete menu item" });
+      }
+    }
+  );
+
   // Test webhook endpoint for debugging
   app.post("/api/webhook-test", async (req, res) => {
     console.log("=== WEBHOOK TEST RECEIVED ===");

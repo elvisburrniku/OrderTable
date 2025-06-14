@@ -588,6 +588,42 @@ export const resolvedConflicts = pgTable("resolved_conflicts", {
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 
+// Menu Categories table
+export const menuCategories = pgTable("menu_categories", {
+  id: serial("id").primaryKey(),
+  restaurantId: integer("restaurant_id").notNull().references(() => restaurants.id, { onDelete: "cascade" }),
+  tenantId: integer("tenant_id").notNull().references(() => tenants.id, { onDelete: "cascade" }),
+  name: text("name").notNull(),
+  description: text("description"),
+  sortOrder: integer("sort_order").default(0),
+  isActive: boolean("is_active").default(true),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+});
+
+// Menu Items table
+export const menuItems = pgTable("menu_items", {
+  id: serial("id").primaryKey(),
+  restaurantId: integer("restaurant_id").notNull().references(() => restaurants.id, { onDelete: "cascade" }),
+  tenantId: integer("tenant_id").notNull().references(() => tenants.id, { onDelete: "cascade" }),
+  categoryId: integer("category_id").notNull().references(() => menuCategories.id, { onDelete: "cascade" }),
+  name: text("name").notNull(),
+  description: text("description"),
+  price: integer("price"), // price in cents
+  currency: varchar("currency", { length: 3 }).default("USD"),
+  isPriceVisible: boolean("is_price_visible").default(true),
+  isAvailable: boolean("is_available").default(true),
+  isVegetarian: boolean("is_vegetarian").default(false),
+  isVegan: boolean("is_vegan").default(false),
+  isGlutenFree: boolean("is_gluten_free").default(false),
+  allergens: text("allergens"), // comma-separated list
+  preparationTime: integer("preparation_time"), // in minutes
+  sortOrder: integer("sort_order").default(0),
+  imageUrl: text("image_url"),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+});
+
 // Rescheduling Suggestions table
 export const reschedulingSuggestions = pgTable("rescheduling_suggestions", {
   id: serial("id").primaryKey(),
@@ -685,5 +721,25 @@ export const selectResolvedConflictSchema = createSelectSchema(resolvedConflicts
 
 export type ResolvedConflict = InferSelectModel<typeof resolvedConflicts>;
 export type InsertResolvedConflict = InferInsertModel<typeof resolvedConflicts>;
+
+export type MenuCategory = InferSelectModel<typeof menuCategories>;
+export type InsertMenuCategory = InferInsertModel<typeof menuCategories>;
+
+export type MenuItem = InferSelectModel<typeof menuItems>;
+export type InsertMenuItem = InferInsertModel<typeof menuItems>;
+
+export const insertMenuCategorySchema = createInsertSchema(menuCategories).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+export const selectMenuCategorySchema = createSelectSchema(menuCategories);
+
+export const insertMenuItemSchema = createInsertSchema(menuItems).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+export const selectMenuItemSchema = createSelectSchema(menuItems);
 
 export type LoginData = z.infer<typeof loginSchema>;

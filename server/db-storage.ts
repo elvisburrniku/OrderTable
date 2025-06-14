@@ -29,6 +29,8 @@ const {
   tableLayouts,
   integrationConfigurations,
   resolvedConflicts,
+  menuCategories,
+  menuItems,
 } = schema;
 
 export class DatabaseStorage implements IStorage {
@@ -1345,5 +1347,73 @@ export class DatabaseStorage implements IStorage {
     if (!this.db) throw new Error("Database connection not available");
     const [newResolvedConflict] = await this.db.insert(resolvedConflicts).values(resolvedConflict).returning();
     return newResolvedConflict;
+  }
+
+  // Menu Categories
+  async getMenuCategoriesByRestaurant(restaurantId: number): Promise<any[]> {
+    if (!this.db) return [];
+    const result = await this.db.select().from(menuCategories)
+      .where(eq(menuCategories.restaurantId, restaurantId))
+      .orderBy(asc(menuCategories.sortOrder), asc(menuCategories.name));
+    return result;
+  }
+
+  async createMenuCategory(category: any): Promise<any> {
+    if (!this.db) throw new Error("Database connection not available");
+    const [newCategory] = await this.db.insert(menuCategories).values(category).returning();
+    return newCategory;
+  }
+
+  async updateMenuCategory(id: number, updates: any): Promise<any> {
+    if (!this.db) throw new Error("Database connection not available");
+    const [updatedCategory] = await this.db.update(menuCategories)
+      .set({ ...updates, updatedAt: new Date() })
+      .where(eq(menuCategories.id, id))
+      .returning();
+    return updatedCategory;
+  }
+
+  async deleteMenuCategory(id: number): Promise<boolean> {
+    if (!this.db) return false;
+    await this.db.delete(menuCategories).where(eq(menuCategories.id, id));
+    return true;
+  }
+
+  // Menu Items
+  async getMenuItemsByRestaurant(restaurantId: number): Promise<any[]> {
+    if (!this.db) return [];
+    const result = await this.db.select().from(menuItems)
+      .where(eq(menuItems.restaurantId, restaurantId))
+      .orderBy(asc(menuItems.sortOrder), asc(menuItems.name));
+    return result;
+  }
+
+  async getMenuItemsByCategory(categoryId: number): Promise<any[]> {
+    if (!this.db) return [];
+    const result = await this.db.select().from(menuItems)
+      .where(eq(menuItems.categoryId, categoryId))
+      .orderBy(asc(menuItems.sortOrder), asc(menuItems.name));
+    return result;
+  }
+
+  async createMenuItem(item: any): Promise<any> {
+    if (!this.db) throw new Error("Database connection not available");
+    const [newItem] = await this.db.insert(menuItems).values(item).returning();
+    return newItem;
+  }
+
+  async updateMenuItem(id: number, updates: any): Promise<any> {
+    if (!this.db) throw new Error("Database connection not available");
+    const [updatedItem] = await this.db.update(menuItems)
+      .set({ ...updates, updatedAt: new Date() })
+      .where(eq(menuItems.id, id))
+      .returning();
+    return updatedItem;
+  }
+
+  async deleteMenuItem(id: number): Promise<boolean> {
+    if (!this.db) return false;
+    await this.db.delete(menuItems).where(eq(menuItems.id, id));
+    return true;
   }
 }
