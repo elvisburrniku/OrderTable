@@ -69,6 +69,7 @@ import GuestBookingResponsive from "./pages/guest-booking-responsive";
 import SetupWizard from "./pages/setup-wizard";
 import EmailTest from "./pages/email-test";
 import TestTools from "./pages/test-tools";
+import MenuManagementPage from "./pages/menu-management";
 import { SetupGuard } from "./components/setup-guard";
 import { OverduePaymentGuard } from "./components/overdue-payment-guard";
 import ErrorBoundary from "./components/error-boundary";
@@ -97,6 +98,7 @@ function App() {
                 <Route path="/:tenantId/bookings/:id" component={BookingDetail} />
                 <Route path="/:tenantId/tables" component={Tables} />
                 <Route path="/:tenantId/customers" component={Customers} />
+                <Route path="/:tenantId/menu" component={MenuManagementPage} />
                 <Route path="/:tenantId/integrations" component={Integrations} />
         <Route path="/:tenantId/integrations/google" component={GoogleIntegration} />
                 <Route path="/:tenantId/integrations/activecampaign" component={ActiveCampaignIntegration} />
