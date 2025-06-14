@@ -32,6 +32,7 @@ const {
   menuCategories,
   menuItems,
   seasonalMenuThemes,
+  menuOrders,
 } = schema;
 
 export class DatabaseStorage implements IStorage {
@@ -1483,6 +1484,43 @@ export class DatabaseStorage implements IStorage {
       .set({ isActive: true, updatedAt: new Date() })
       .where(eq(seasonalMenuThemes.id, themeId));
     
+    return true;
+  }
+
+  // Professional Menu Orders
+  async createMenuOrder(orderData: any): Promise<any> {
+    if (!this.db) throw new Error("Database connection not available");
+    const [newOrder] = await this.db.insert(menuOrders).values(orderData).returning();
+    return newOrder;
+  }
+
+  async getMenuOrdersByRestaurant(restaurantId: number, tenantId: number): Promise<any[]> {
+    if (!this.db) return [];
+    const result = await this.db.select().from(menuOrders)
+      .where(and(eq(menuOrders.restaurantId, restaurantId), eq(menuOrders.tenantId, tenantId)))
+      .orderBy(desc(menuOrders.createdAt));
+    return result;
+  }
+
+  async getMenuOrderById(id: number): Promise<any> {
+    if (!this.db) return null;
+    const [order] = await this.db.select().from(menuOrders)
+      .where(eq(menuOrders.id, id));
+    return order;
+  }
+
+  async updateMenuOrder(id: number, updates: any): Promise<any> {
+    if (!this.db) throw new Error("Database connection not available");
+    const [updatedOrder] = await this.db.update(menuOrders)
+      .set({ ...updates, updatedAt: new Date() })
+      .where(eq(menuOrders.id, id))
+      .returning();
+    return updatedOrder;
+  }
+
+  async deleteMenuOrder(id: number): Promise<boolean> {
+    if (!this.db) return false;
+    await this.db.delete(menuOrders).where(eq(menuOrders.id, id));
     return true;
   }
 }

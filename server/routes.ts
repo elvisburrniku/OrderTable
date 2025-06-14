@@ -12232,6 +12232,199 @@ NEXT STEPS:
     },
   );
 
+  // Professional Menu Ordering Service Routes
+  app.post(
+    "/api/tenants/:tenantId/restaurants/:restaurantId/menu-orders",
+    validateTenant,
+    async (req, res) => {
+      try {
+        const restaurantId = parseInt(req.params.restaurantId);
+        const tenantId = parseInt(req.params.tenantId);
+
+        // Generate unique order number
+        const orderNumber = `MO-${Date.now()}-${Math.random().toString(36).substr(2, 9).toUpperCase()}`;
+
+        // Convert dollar amounts to cents for database storage
+        const orderData = {
+          ...req.body,
+          restaurantId,
+          tenantId,
+          orderNumber,
+          subtotal: Math.round(req.body.subtotal * 100), // Convert to cents
+          shippingCost: Math.round(req.body.shippingCost * 100),
+          tax: Math.round(req.body.tax * 100),
+          total: Math.round(req.body.total * 100),
+        };
+
+        const order = await storage.createMenuOrder(orderData);
+
+        // Send order confirmation email
+        if (emailService) {
+          try {
+            const restaurant = await storage.getRestaurantById(restaurantId);
+            const estimatedDelivery = new Date();
+            estimatedDelivery.setDate(estimatedDelivery.getDate() + 7); // Default 7 days
+
+            await emailService.sendEmail({
+              to: [{ email: orderData.contactEmail, name: orderData.contactName }],
+              subject: `Menu Order Confirmation - ${orderNumber}`,
+              htmlContent: `
+                <html>
+                  <body style="font-family: Arial, sans-serif; line-height: 1.6; color: #333;">
+                    <div style="max-width: 600px; margin: 0 auto; padding: 20px;">
+                      <h2 style="color: #2c3e50; border-bottom: 2px solid #3498db; padding-bottom: 10px;">
+                        Menu Order Confirmation
+                      </h2>
+                      
+                      <div style="background: #f8f9fa; padding: 20px; border-radius: 8px; margin: 20px 0;">
+                        <h3 style="margin-top: 0; color: #2c3e50;">Order Details</h3>
+                        <p><strong>Order Number:</strong> ${orderNumber}</p>
+                        <p><strong>Restaurant:</strong> ${restaurant?.name}</p>
+                        <p><strong>Quantity:</strong> ${orderData.quantity} menus</p>
+                        <p><strong>Design Theme:</strong> ${orderData.menuTheme}</p>
+                        <p><strong>Layout:</strong> ${orderData.menuLayout}</p>
+                        <p><strong>Printing Option:</strong> ${orderData.printingOption}</p>
+                        <p><strong>Shipping Method:</strong> ${orderData.shippingOption}</p>
+                      </div>
+
+                      <div style="background: #e8f5e8; padding: 15px; border-radius: 8px; margin: 20px 0;">
+                        <h3 style="margin-top: 0; color: #27ae60;">Order Summary</h3>
+                        <div style="display: flex; justify-content: space-between; margin: 5px 0;">
+                          <span>Subtotal:</span>
+                          <span>$${(orderData.subtotal / 100).toFixed(2)}</span>
+                        </div>
+                        <div style="display: flex; justify-content: space-between; margin: 5px 0;">
+                          <span>Shipping:</span>
+                          <span>$${(orderData.shippingCost / 100).toFixed(2)}</span>
+                        </div>
+                        <div style="display: flex; justify-content: space-between; margin: 5px 0;">
+                          <span>Tax:</span>
+                          <span>$${(orderData.tax / 100).toFixed(2)}</span>
+                        </div>
+                        <hr style="border: 1px solid #27ae60; margin: 10px 0;">
+                        <div style="display: flex; justify-content: space-between; margin: 5px 0; font-weight: bold; font-size: 18px;">
+                          <span>Total:</span>
+                          <span>$${(orderData.total / 100).toFixed(2)}</span>
+                        </div>
+                      </div>
+
+                      <div style="background: #fff3cd; padding: 15px; border-radius: 8px; margin: 20px 0;">
+                        <h3 style="margin-top: 0; color: #856404;">Shipping Information</h3>
+                        <p><strong>Delivery Address:</strong><br>
+                        ${orderData.contactName}<br>
+                        ${orderData.shippingAddress}<br>
+                        ${orderData.city}, ${orderData.state} ${orderData.zipCode}</p>
+                        <p><strong>Phone:</strong> ${orderData.contactPhone}</p>
+                        <p><strong>Estimated Delivery:</strong> ${estimatedDelivery.toLocaleDateString()}</p>
+                      </div>
+
+                      ${orderData.specialInstructions ? `
+                        <div style="background: #f0f0f0; padding: 15px; border-radius: 8px; margin: 20px 0;">
+                          <h3 style="margin-top: 0;">Special Instructions</h3>
+                          <p>${orderData.specialInstructions}</p>
+                        </div>
+                      ` : ''}
+
+                      <div style="background: #d1ecf1; padding: 15px; border-radius: 8px; margin: 20px 0;">
+                        <h3 style="margin-top: 0; color: #0c5460;">What Happens Next?</h3>
+                        <ol>
+                          <li>Your order will be reviewed and confirmed within 24 hours</li>
+                          <li>Professional design team will prepare your menus</li>
+                          <li>Quality printing and finishing</li>
+                          <li>Secure packaging and shipping</li>
+                          <li>Delivery to your restaurant</li>
+                        </ol>
+                      </div>
+
+                      <p style="text-align: center; color: #666; font-size: 14px; margin-top: 30px;">
+                        Thank you for choosing our professional menu printing service!<br>
+                        Questions? Reply to this email or contact our support team.
+                      </p>
+                    </div>
+                  </body>
+                </html>
+              `,
+            });
+          } catch (emailError) {
+            console.error("Failed to send order confirmation email:", emailError);
+          }
+        }
+
+        res.status(201).json({
+          success: true,
+          message: "Menu order placed successfully",
+          order: {
+            id: order.id,
+            orderNumber: order.orderNumber,
+            total: order.total / 100, // Convert back to dollars for response
+            status: order.orderStatus,
+          },
+        });
+      } catch (error) {
+        console.error("Error creating menu order:", error);
+        res.status(500).json({ 
+          success: false,
+          message: "Failed to place menu order" 
+        });
+      }
+    },
+  );
+
+  // Get menu orders for a restaurant
+  app.get(
+    "/api/tenants/:tenantId/restaurants/:restaurantId/menu-orders",
+    validateTenant,
+    async (req, res) => {
+      try {
+        const restaurantId = parseInt(req.params.restaurantId);
+        const tenantId = parseInt(req.params.tenantId);
+
+        const orders = await storage.getMenuOrdersByRestaurant(restaurantId, tenantId);
+        
+        // Convert cents back to dollars for response
+        const formattedOrders = orders.map(order => ({
+          ...order,
+          subtotal: order.subtotal / 100,
+          shippingCost: order.shippingCost / 100,
+          tax: order.tax / 100,
+          total: order.total / 100,
+        }));
+
+        res.json(formattedOrders);
+      } catch (error) {
+        console.error("Error fetching menu orders:", error);
+        res.status(500).json({ message: "Failed to fetch menu orders" });
+      }
+    },
+  );
+
+  // Update menu order status (for admin/fulfillment)
+  app.patch(
+    "/api/tenants/:tenantId/restaurants/:restaurantId/menu-orders/:orderId",
+    validateTenant,
+    async (req, res) => {
+      try {
+        const orderId = parseInt(req.params.orderId);
+        const { orderStatus, trackingNumber, estimatedDelivery } = req.body;
+
+        const updatedOrder = await storage.updateMenuOrder(orderId, {
+          orderStatus,
+          trackingNumber,
+          estimatedDelivery,
+        });
+
+        res.json({
+          success: true,
+          message: "Menu order updated successfully",
+          order: updatedOrder,
+        });
+      } catch (error) {
+        console.error("Error updating menu order:", error);
+        res.status(500).json({ message: "Failed to update menu order" });
+      }
+    },
+  );
+
   // Initialize cancellation reminder service
   const cancellationReminderService = new CancellationReminderService();
   cancellationReminderService.start();
