@@ -9356,27 +9356,31 @@ export async function registerRoutes(app: Express): Promise<Server> {
           
           resolutionDescription = `Split party of ${booking.guestCount} guests into ${tablesNeeded} separate bookings for table assignment`;
           
-          // Create detailed notification for staff to assign tables
-          const splitBookings = await storage.getBookingsByRestaurant(restaurantId);
-          const relatedBookings = splitBookings.filter(b => 
-            b.customerName.includes(booking.customerName) && 
-            b.bookingDate === booking.bookingDate && 
-            b.startTime === booking.startTime
-          );
+          // Create detailed notification for staff to assign tables after split bookings are created
+          const splitBookingDetails = [];
+          splitBookingDetails.push(`• Booking #${booking.id}: ${firstPortionGuests} guests (${booking.customerName})`);
+          
+          // Add details for additional bookings that were created
+          const baseCustomerName = booking.customerName.replace(/ - Part \d+$/, '');
+          for (let i = 2; i <= tablesNeeded; i++) {
+            const additionalGuests = i <= remainderGuests + 1 ? guestsPerTable + 1 : guestsPerTable;
+            splitBookingDetails.push(`• Additional booking: ${additionalGuests} guests (${baseCustomerName} - Part ${i})`);
+          }
           
           const detailedMessage = `SPLIT PARTY ACTION REQUIRED:
-Customer: ${booking.customerName}
+Customer: ${baseCustomerName}
 Original Party: ${booking.guestCount} guests
 Date: ${new Date(booking.bookingDate).toLocaleDateString()}
 Time: ${booking.startTime}
 
 Split into ${tablesNeeded} bookings:
-${relatedBookings.map((b, i) => `• Booking #${b.id}: ${b.guestCount} guests (${b.customerName})`).join('\n')}
+${splitBookingDetails.join('\n')}
 
 NEXT STEPS:
 1. Assign ${tablesNeeded} adjacent tables (capacity 6+ each)
 2. Inform customer about split seating arrangement
-3. Coordinate service timing across tables`;
+3. Coordinate service timing across tables
+4. Offer complimentary appetizer for split seating inconvenience`;
 
           const notification = {
             restaurantId,
