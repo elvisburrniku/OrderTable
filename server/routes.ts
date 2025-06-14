@@ -9356,13 +9356,34 @@ export async function registerRoutes(app: Express): Promise<Server> {
           
           resolutionDescription = `Split party of ${booking.guestCount} guests into ${tablesNeeded} separate bookings for table assignment`;
           
-          // Create notification for staff to assign tables
+          // Create detailed notification for staff to assign tables
+          const splitBookings = await storage.getBookingsByRestaurant(restaurantId);
+          const relatedBookings = splitBookings.filter(b => 
+            b.customerName.includes(booking.customerName) && 
+            b.bookingDate === booking.bookingDate && 
+            b.startTime === booking.startTime
+          );
+          
+          const detailedMessage = `SPLIT PARTY ACTION REQUIRED:
+Customer: ${booking.customerName}
+Original Party: ${booking.guestCount} guests
+Date: ${new Date(booking.bookingDate).toLocaleDateString()}
+Time: ${booking.startTime}
+
+Split into ${tablesNeeded} bookings:
+${relatedBookings.map((b, i) => `• Booking #${b.id}: ${b.guestCount} guests (${b.customerName})`).join('\n')}
+
+NEXT STEPS:
+1. Assign ${tablesNeeded} adjacent tables (capacity 6+ each)
+2. Inform customer about split seating arrangement
+3. Coordinate service timing across tables`;
+
           const notification = {
             restaurantId,
             tenantId,
             type: "split_party_created",
-            title: "Large Party Split - Tables Needed",
-            message: `${booking.customerName}'s party has been split into ${tablesNeeded} bookings. Please assign adjacent tables.`,
+            title: `🍽️ Split Party: ${booking.customerName} (${booking.guestCount} guests)`,
+            message: detailedMessage,
             isRead: false,
             priority: "high",
             createdAt: new Date(),
@@ -9371,7 +9392,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
               conflictId,
               totalGuests: booking.guestCount,
               bookingsCreated: tablesNeeded,
-              originalCustomerName: booking.customerName
+              originalCustomerName: booking.customerName,
+              relatedBookingIds: relatedBookings.map(b => b.id),
+              actionRequired: true
             },
           };
 
