@@ -1,0 +1,70 @@
+error-boundary.tsx:26 Component stack: 
+    at https://842d0c2b-eb0d-4f0d-854a-8504fe69ecaf-00-2qwp6ya3hh1v2.riker.replit.…rkspace/node_modules/.vite/deps/@radix-ui_react-select.js?v=c6a91875:846:7
+    at _c11 (https://842d0c2b-eb0d-4f0d-854a-8504fe69ecaf-00-2qwp6ya3hh1v2.riker.replit.dev/src/components/ui/select.tsx:208:13)
+    at div
+    at https://842d0c2b-eb0d-4f0d-854a-8504fe69ecaf-00-2qwp6ya3hh1v2.riker.replit.…unner/workspace/node_modules/.vite/deps/chunk-Q6YJROYD.js?v=c6a91875:42:13
+    at https://842d0c2b-eb0d-4f0d-854a-8504fe69ecaf-00-2qwp6ya3hh1v2.riker.replit.…unner/workspace/node_modules/.vite/deps/chunk-2K77HOHX.js?v=c6a91875:79:13
+    at https://842d0c2b-eb0d-4f0d-854a-8504fe69ecaf-00-2qwp6ya3hh1v2.riker.replit.…unner/workspace/node_modules/.vite/deps/chunk-2K77HOHX.js?v=c6a91875:56:13
+    at https://842d0c2b-eb0d-4f0d-854a-8504fe69ecaf-00-2qwp6ya3hh1v2.riker.replit.…unner/workspace/node_modules/.vite/deps/chunk-TPYHSINA.js?v=c6a91875:39:15
+    at https://842d0c2b-eb0d-4f0d-854a-8504fe69ecaf-00-2qwp6ya3hh1v2.riker.replit.…kspace/node_modules/.vite/deps/@radix-ui_react-select.js?v=c6a91875:757:13
+    at div
+    at https://842d0c2b-eb0d-4f0d-854a-8504fe69ecaf-00-2qwp6ya3hh1v2.riker.replit.…unner/workspace/node_modules/.vite/deps/chunk-2K77HOHX.js?v=c6a91875:79:13
+    at https://842d0c2b-eb0d-4f0d-854a-8504fe69ecaf-00-2qwp6ya3hh1v2.riker.replit.…unner/workspace/node_modules/.vite/deps/chunk-2K77HOHX.js?v=c6a91875:56:13
+    at https://842d0c2b-eb0d-4f0d-854a-8504fe69ecaf-00-2qwp6ya3hh1v2.riker.replit.…unner/workspace/node_modules/.vite/deps/chunk-TPYHSINA.js?v=c6a91875:39:15
+    at Provider (https://842d0c2b-eb0d-4f0d-854a-8504fe69ecaf-00-2qwp6ya3hh1v2.riker.replit.…unner/workspace/node_modules/.vite/deps/chunk-OXZDJRWN.js?v=c6a91875:38:15)
+    at https://842d0c2b-eb0d-4f0d-854a-8504fe69ecaf-00-2qwp6ya3hh1v2.riker.replit.…kspace/node_modules/.vite/deps/@radix-ui_react-select.js?v=c6a91875:300:58
+    at https://842d0c2b-eb0d-4f0d-854a-8504fe69ecaf-00-2qwp6ya3hh1v2.riker.replit.…unner/workspace/node_modules/.vite/deps/chunk-2K77HOHX.js?v=c6a91875:79:13
+    at https://842d0c2b-eb0d-4f0d-854a-8504fe69ecaf-00-2qwp6ya3hh1v2.riker.replit.…unner/workspace/node_modules/.vite/deps/chunk-2K77HOHX.js?v=c6a91875:56:13
+    at https://842d0c2b-eb0d-4f0d-854a-8504fe69ecaf-00-2qwp6ya3hh1v2.riker.replit.…unner/workspace/node_modules/.vite/deps/chunk-Q6YJROYD.js?v=c6a91875:42:13
+    at https://842d0c2b-eb0d-4f0d-854a-8504fe69ecaf-00-2qwp6ya3hh1v2.riker.replit.…nner/workspace/node_modules/.vite/deps/chunk-WTXLGPPI.js?v=c6a91875:258:22
+    at SelectPortal
+    at _c7 (https://842d0c2b-eb0d-4f0d-854a-8504fe69ecaf-00-2qwp6ya3hh1v2.riker.replit.dev/src/components/ui/select.tsx:123:12)
+    at Provider (https://842d0c2b-eb0d-4f0d-854a-8504fe69ecaf-00-2qwp6ya3hh1v2.riker.replit.…unner/workspace/node_modules/.vite/deps/chunk-OXZDJRWN.js?v=c6a91875:38:15)
+    at Provider (https://842d0c2b-eb0d-4f0d-854a-8504fe69ecaf-00-2qwp6ya3hh1v2.riker.replit.…unner/workspace/node_modules/.vite/deps/chunk-OXZDJRWN.js?v=c6a91875:38:15)
+    at CollectionProvider (https://842d0c2b-eb0d-4f0d-854a-8504fe69ecaf-00-2qwp6ya3hh1v2.riker.replit.…unner/workspace/node_modules/.vite/deps/chunk-TPYHSINA.js?v=c6a91875:29:13)
+    at Provider (https://842d0c2b-eb0d-4f0d-854a-8504fe69ecaf-00-2qwp6ya3hh1v2.riker.replit.…unner/workspace/node_modules/.vite/deps/chunk-OXZDJRWN.js?v=c6a91875:38:15)
+    at Provider (https://842d0c2b-eb0d-4f0d-854a-8504fe69ecaf-00-2qwp6ya3hh1v2.riker.replit.…unner/workspace/node_modules/.vite/deps/chunk-OXZDJRWN.js?v=c6a91875:38:15)
+    at Popper (https://842d0c2b-eb0d-4f0d-854a-8504fe69ecaf-00-2qwp6ya3hh1v2.riker.replit.…ner/workspace/node_modules/.vite/deps/chunk-HYVXXMVF.js?v=c6a91875:1921:11)
+    at Select (https://842d0c2b-eb0d-4f0d-854a-8504fe69ecaf-00-2qwp6ya3hh1v2.riker.replit.…orkspace/node_modules/.vite/deps/@radix-ui_react-select.js?v=c6a91875:88:5)
+    at div
+    at div
+    at div
+    at https://842d0c2b-eb0d-4f0d-854a-8504fe69ecaf-00-2qwp6ya3hh1v2.riker.replit.…unner/workspace/node_modules/.vite/deps/chunk-Q6YJROYD.js?v=c6a91875:42:13
+    at https://842d0c2b-eb0d-4f0d-854a-8504fe69ecaf-00-2qwp6ya3hh1v2.riker.replit.…runner/workspace/node_modules/.vite/deps/chunk-WTXLGPPI.js?v=c6a91875:59:7
+    at https://842d0c2b-eb0d-4f0d-854a-8504fe69ecaf-00-2qwp6ya3hh1v2.riker.replit.…unner/workspace/node_modules/.vite/deps/chunk-2K77HOHX.js?v=c6a91875:79:13
+    at https://842d0c2b-eb0d-4f0d-854a-8504fe69ecaf-00-2qwp6ya3hh1v2.riker.replit.…unner/workspace/node_modules/.vite/deps/chunk-2K77HOHX.js?v=c6a91875:56:13
+    at https://842d0c2b-eb0d-4f0d-854a-8504fe69ecaf-00-2qwp6ya3hh1v2.riker.replit.…unner/workspace/node_modules/.vite/deps/chunk-Q6YJROYD.js?v=c6a91875:42:13
+    at https://842d0c2b-eb0d-4f0d-854a-8504fe69ecaf-00-2qwp6ya3hh1v2.riker.replit.…runner/workspace/node_modules/.vite/deps/chunk-FSPN73EM.js?v=c6a91875:29:5
+    at https://842d0c2b-eb0d-4f0d-854a-8504fe69ecaf-00-2qwp6ya3hh1v2.riker.replit.…nner/workspace/node_modules/.vite/deps/chunk-OKMGZ3NW.js?v=c6a91875:233:13
+    at https://842d0c2b-eb0d-4f0d-854a-8504fe69ecaf-00-2qwp6ya3hh1v2.riker.replit.…nner/workspace/node_modules/.vite/deps/chunk-OKMGZ3NW.js?v=c6a91875:156:58
+    at Presence (https://842d0c2b-eb0d-4f0d-854a-8504fe69ecaf-00-2qwp6ya3hh1v2.riker.replit.…unner/workspace/node_modules/.vite/deps/chunk-66RCPY56.js?v=c6a91875:24:11)
+    at https://842d0c2b-eb0d-4f0d-854a-8504fe69ecaf-00-2qwp6ya3hh1v2.riker.replit.…nner/workspace/node_modules/.vite/deps/chunk-OKMGZ3NW.js?v=c6a91875:147:64
+    at https://842d0c2b-eb0d-4f0d-854a-8504fe69ecaf-00-2qwp6ya3hh1v2.riker.replit.…unner/workspace/node_modules/.vite/deps/chunk-2K77HOHX.js?v=c6a91875:79:13
+    at https://842d0c2b-eb0d-4f0d-854a-8504fe69ecaf-00-2qwp6ya3hh1v2.riker.replit.…unner/workspace/node_modules/.vite/deps/chunk-2K77HOHX.js?v=c6a91875:56:13
+    at https://842d0c2b-eb0d-4f0d-854a-8504fe69ecaf-00-2qwp6ya3hh1v2.riker.replit.…unner/workspace/node_modules/.vite/deps/chunk-Q6YJROYD.js?v=c6a91875:42:13
+    at https://842d0c2b-eb0d-4f0d-854a-8504fe69ecaf-00-2qwp6ya3hh1v2.riker.replit.…nner/workspace/node_modules/.vite/deps/chunk-WTXLGPPI.js?v=c6a91875:258:22
+    at Presence (https://842d0c2b-eb0d-4f0d-854a-8504fe69ecaf-00-2qwp6ya3hh1v2.riker.replit.…unner/workspace/node_modules/.vite/deps/chunk-66RCPY56.js?v=c6a91875:24:11)
+    at Provider (https://842d0c2b-eb0d-4f0d-854a-8504fe69ecaf-00-2qwp6ya3hh1v2.riker.replit.…unner/workspace/node_modules/.vite/deps/chunk-OXZDJRWN.js?v=c6a91875:38:15)
+    at DialogPortal (https://842d0c2b-eb0d-4f0d-854a-8504fe69ecaf-00-2qwp6ya3hh1v2.riker.replit.…nner/workspace/node_modules/.vite/deps/chunk-OKMGZ3NW.js?v=c6a91875:109:11)
+    at _c3 (https://842d0c2b-eb0d-4f0d-854a-8504fe69ecaf-00-2qwp6ya3hh1v2.riker.replit.dev/src/components/ui/dialog.tsx:52:12)
+    at Provider (https://842d0c2b-eb0d-4f0d-854a-8504fe69ecaf-00-2qwp6ya3hh1v2.riker.replit.…unner/workspace/node_modules/.vite/deps/chunk-OXZDJRWN.js?v=c6a91875:38:15)
+    at Dialog (https://842d0c2b-eb0d-4f0d-854a-8504fe69ecaf-00-2qwp6ya3hh1v2.riker.replit.…runner/workspace/node_modules/.vite/deps/chunk-OKMGZ3NW.js?v=c6a91875:50:5)
+    at div
+    at EnhancedGoogleCalendar (https://842d0c2b-eb0d-4f0d-854a-8504fe69ecaf-00-2qwp6ya3hh1v2.riker.replit.dev/src/components/enhanced-google-calendar.tsx:62:3)
+    at div
+    at div
+    at div
+    at Dashboard (https://842d0c2b-eb0d-4f0d-854a-8504fe69ecaf-00-2qwp6ya3hh1v2.riker.replit.dev/src/pages/dashboard.tsx:74:27)
+    at Route (https://842d0c2b-eb0d-4f0d-854a-8504fe69ecaf-00-2qwp6ya3hh1v2.riker.replit.…/home/runner/workspace/node_modules/.vite/deps/wouter.js?v=c6a91875:323:16)
+    at OverduePaymentGuard (https://842d0c2b-eb0d-4f0d-854a-8504fe69ecaf-00-2qwp6ya3hh1v2.riker.replit.dev/src/components/overdue-payment-guard.tsx:28:39)
+    at SetupGuard (https://842d0c2b-eb0d-4f0d-854a-8504fe69ecaf-00-2qwp6ya3hh1v2.riker.replit.dev/src/components/setup-guard.tsx:21:30)
+    at Switch (https://842d0c2b-eb0d-4f0d-854a-8504fe69ecaf-00-2qwp6ya3hh1v2.riker.replit.…/home/runner/workspace/node_modules/.vite/deps/wouter.js?v=c6a91875:379:17)
+    at main
+    at div
+    at LayoutWrapper (https://842d0c2b-eb0d-4f0d-854a-8504fe69ecaf-00-2qwp6ya3hh1v2.riker.replit.dev/src/components/layout-wrapper.tsx:22:33)
+    at RouteGuard (https://842d0c2b-eb0d-4f0d-854a-8504fe69ecaf-00-2qwp6ya3hh1v2.riker.replit.dev/src/components/route-guard.tsx:21:30)
+    at TenantProvider (https://842d0c2b-eb0d-4f0d-854a-8504fe69ecaf-00-2qwp6ya3hh1v2.riker.replit.dev/src/lib/tenant.tsx:22:34)
+    at AuthProvider (https://842d0c2b-eb0d-4f0d-854a-8504fe69ecaf-00-2qwp6ya3hh1v2.riker.replit.dev/src/lib/auth.tsx:25:32)
+    at QueryClientProvider (https://842d0c2b-eb0d-4f0d-854a-8504fe69ecaf-00-2qwp6ya3hh1v2.riker.replit.…rkspace/node_modules/.vite/deps/@tanstack_react-query.js?v=c6a91875:2805:3)
+    at ErrorBoundary (https://842d0c2b-eb0d-4f0d-854a-8504fe69ecaf-00-2qwp6ya3hh1v2.riker.replit.dev/src/components/error-boundary.tsx:7:5)
+    at App

@@ -1760,9 +1760,9 @@ function EditBookingForm({
                       </SelectItem>
                     ))}
                     {unavailableCount > 0 && (
-                      <SelectItem value="unavailable-info" disabled className="text-red-600">
+                      <div className="px-2 py-1 text-xs text-red-600 opacity-60">
                         {unavailableCount} table{unavailableCount !== 1 ? 's' : ''} unavailable at this time
-                      </SelectItem>
+                      </div>
                     )}
                   </>
                 );
