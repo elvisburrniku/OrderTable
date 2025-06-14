@@ -126,6 +126,7 @@ export interface IStorage {
   getBookingsByRestaurant(restaurantId: number): Promise<Booking[]>;
   getBookingsByDate(restaurantId: number, date: string): Promise<Booking[]>;
   getBookingById(id: number): Promise<Booking | undefined>;
+  getUnassignedBookings(restaurantId: number): Promise<Booking[]>;
   createBooking(booking: InsertBooking): Promise<Booking>;
   updateBooking(id: number, booking: Partial<Booking>): Promise<Booking | undefined>;
   deleteBooking(id: number): Promise<boolean>;
@@ -260,7 +261,6 @@ export interface IStorage {
   deleteExpiredReschedulingSuggestions(): Promise<void>;
 
   // Auto-assignment methods
-  getUnassignedBookings(): Promise<Booking[]>;
   getBookingsByDateAndRestaurant(date: string, restaurantId: number): Promise<Booking[]>;
 }
 

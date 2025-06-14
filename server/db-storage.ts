@@ -575,6 +575,16 @@ export class DatabaseStorage implements IStorage {
     return result[0];
   }
 
+  async getUnassignedBookings(restaurantId: number): Promise<any[]> {
+    if (!this.db) return [];
+    const result = await this.db.select().from(bookings)
+      .where(and(
+        eq(bookings.restaurantId, restaurantId),
+        eq(bookings.tableId, null)
+      ));
+    return result;
+  }
+
   // Additional required methods for the application
   async getNotificationsByRestaurant(restaurantId: number): Promise<any[]> {
     try {
