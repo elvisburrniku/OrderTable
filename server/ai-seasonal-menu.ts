@@ -30,6 +30,16 @@ export class AISeasonalMenuService {
   async generateSeasonalTheme(request: SeasonalThemeRequest): Promise<SeasonalThemeResponse> {
     const { season, year, restaurantName, existingMenuItems, customPrompt } = request;
 
+    // Force simulation mode until OpenAI quota is restored
+    console.log('Using simulation mode for seasonal theme generation');
+    return this.generateSimulatedTheme(request);
+
+    // Check if OpenAI API is available
+    if (!process.env.OPENAI_API_KEY) {
+      console.log('OpenAI API key not available, using simulation mode');
+      return this.generateSimulatedTheme(request);
+    }
+
     // Build context about existing menu
     const menuContext = existingMenuItems.map(item => 
       `${item.name} (${item.category})${item.description ? `: ${item.description}` : ''}`
@@ -64,8 +74,122 @@ export class AISeasonalMenuService {
       return this.validateAndFormatResponse(result, season);
     } catch (error) {
       console.error('Error generating seasonal theme:', error);
-      throw new Error('Failed to generate seasonal theme');
+      // Fall back to simulation if API fails
+      console.log('Falling back to simulation mode due to API error');
+      return this.generateSimulatedTheme(request);
     }
+  }
+
+  private generateSimulatedTheme(request: SeasonalThemeRequest): SeasonalThemeResponse {
+    const { season, year, restaurantName, customPrompt } = request;
+    
+    const seasonalThemes = {
+      spring: {
+        name: "Spring Awakening",
+        description: "Fresh ingredients and vibrant flavors celebrating the renewal of spring",
+        color: "#22C55E",
+        marketingCopy: "Experience the fresh taste of spring with our garden-inspired menu featuring locally sourced vegetables, tender herbs, and light, energizing dishes that capture the essence of the season.",
+        suggestedMenuItems: [
+          "Asparagus & Pea Risotto: Creamy arborio rice with fresh spring vegetables",
+          "Spring Herb Crusted Salmon: Fresh Atlantic salmon with garden herb crust",
+          "Baby Spinach & Strawberry Salad: Mixed greens with seasonal berries",
+          "Lemon Thyme Roasted Chicken: Free-range chicken with spring herbs",
+          "Fresh Pea & Mint Soup: Smooth soup with garden peas and fresh mint",
+          "Spring Vegetable Pasta: Seasonal vegetables with house-made pasta",
+          "Artichoke & Goat Cheese Tart: Flaky pastry with spring vegetables",
+          "Rhubarb & Strawberry Crumble: Seasonal fruit dessert with oat topping"
+        ],
+        targetIngredients: ["asparagus", "peas", "spring onions", "fresh herbs", "strawberries", "rhubarb", "artichokes", "baby spinach"],
+        moodKeywords: ["fresh", "light", "vibrant", "energizing", "renewal", "garden-fresh"]
+      },
+      summer: {
+        name: "Summer Harvest",
+        description: "Bright, refreshing dishes that celebrate the abundance of summer",
+        color: "#F59E0B",
+        marketingCopy: "Embrace the warmth of summer with our vibrant menu featuring sun-ripened tomatoes, fresh herbs, and grilled specialties that bring the outdoor dining experience to your table.",
+        suggestedMenuItems: [
+          "Heirloom Tomato Caprese: Fresh mozzarella with garden tomatoes",
+          "Grilled Peach & Arugula Salad: Stone fruit with peppery greens",
+          "Summer Corn Chowder: Sweet corn soup with fresh herbs",
+          "Zucchini Blossom Fritters: Delicate squash blossoms, lightly fried",
+          "Watermelon & Feta Salad: Refreshing fruit and cheese combination",
+          "Grilled Vegetable Medley: Seasonal vegetables with herb oil",
+          "Berry Basil Lemonade Sorbet: Refreshing frozen dessert",
+          "Gazpacho with Cucumber: Chilled soup perfect for hot days"
+        ],
+        targetIngredients: ["tomatoes", "corn", "zucchini", "berries", "stone fruits", "fresh basil", "cucumber", "bell peppers"],
+        moodKeywords: ["bright", "refreshing", "sunny", "grilled", "outdoor", "abundant"]
+      },
+      autumn: {
+        name: "Harvest Moon",
+        description: "Comfort foods and warming spices that embrace the cozy spirit of fall",
+        color: "#EA580C",
+        marketingCopy: "Savor the rich, warming flavors of autumn with our hearty menu featuring seasonal squash, root vegetables, and comfort dishes that bring warmth to crisp fall evenings.",
+        suggestedMenuItems: [
+          "Butternut Squash Soup: Roasted squash with warming spices",
+          "Apple Cider Braised Pork: Tender pork with seasonal fruit",
+          "Roasted Root Vegetable Medley: Carrots, parsnips, and beets",
+          "Pumpkin Risotto: Creamy rice with roasted pumpkin",
+          "Wild Mushroom Tart: Savory pastry with forest mushrooms",
+          "Maple Glazed Brussels Sprouts: Caramelized with maple syrup",
+          "Cranberry Walnut Stuffed Chicken: Holiday-inspired main course",
+          "Spiced Pear & Almond Tart: Seasonal fruit dessert with warming spices"
+        ],
+        targetIngredients: ["pumpkin", "squash", "apples", "root vegetables", "mushrooms", "cranberries", "warming spices", "maple syrup"],
+        moodKeywords: ["cozy", "warming", "hearty", "comfort", "rustic", "harvest"]
+      },
+      winter: {
+        name: "Winter Comfort",
+        description: "Rich, indulgent dishes that provide warmth and comfort during the cold season",
+        color: "#3B82F6",
+        marketingCopy: "Find warmth and comfort in our winter menu featuring hearty stews, rich broths, and indulgent dishes that chase away the winter chill with every satisfying bite.",
+        suggestedMenuItems: [
+          "Beef & Barley Stew: Hearty stew with winter vegetables",
+          "Citrus Glazed Duck: Rich duck with bright winter citrus",
+          "Roasted Chestnut Soup: Creamy soup with toasted chestnuts",
+          "Braised Short Ribs: Slow-cooked beef with red wine",
+          "Winter Kale & White Bean Salad: Hearty greens with protein",
+          "Pomegranate Glazed Lamb: Festive lamb with jewel-toned glaze",
+          "Spiced Hot Chocolate Pot de Crème: Rich chocolate dessert",
+          "Mulled Wine Poached Pears: Warm fruit dessert with spices"
+        ],
+        targetIngredients: ["citrus fruits", "chestnuts", "winter greens", "pomegranate", "root vegetables", "warming spices", "red wine", "chocolate"],
+        moodKeywords: ["warm", "rich", "comforting", "indulgent", "hearty", "festive"]
+      }
+    };
+
+    const themeData = seasonalThemes[season as keyof typeof seasonalThemes];
+    
+    // Customize based on custom prompt if provided
+    if (customPrompt) {
+      const customizations = this.applyCustomPrompt(themeData, customPrompt);
+      return { ...themeData, ...customizations };
+    }
+    
+    return themeData;
+  }
+
+  private applyCustomPrompt(baseTheme: SeasonalThemeResponse, customPrompt: string): Partial<SeasonalThemeResponse> {
+    const customizations: Partial<SeasonalThemeResponse> = {};
+    
+    // Simple customization based on keywords in the prompt
+    if (customPrompt.toLowerCase().includes('comfort')) {
+      customizations.moodKeywords = [...(baseTheme.moodKeywords || []), 'comfort', 'cozy', 'warming'];
+    }
+    
+    if (customPrompt.toLowerCase().includes('local')) {
+      customizations.moodKeywords = [...(baseTheme.moodKeywords || []), 'local', 'artisanal', 'farm-to-table'];
+    }
+    
+    if (customPrompt.toLowerCase().includes('spice')) {
+      customizations.targetIngredients = [...(baseTheme.targetIngredients || []), 'warming spices', 'aromatic herbs'];
+    }
+    
+    if (customPrompt.toLowerCase().includes('vegetarian') || customPrompt.toLowerCase().includes('vegan')) {
+      customizations.moodKeywords = [...(baseTheme.moodKeywords || []), 'plant-based', 'sustainable'];
+    }
+    
+    return customizations;
   }
 
   private buildDefaultPrompt(season: string, year: number, restaurantName: string, menuContext: string, dietaryInfo: any): string {
