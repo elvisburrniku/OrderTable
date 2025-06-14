@@ -137,10 +137,21 @@ export default function EnhancedGoogleCalendar({
     notes: "",
   });
 
-  // Time slots for the calendar (30-minute intervals from 9 AM to 11 PM)
+  // Helper function to get opening hours for a specific date
+  const getOpeningHoursForDate = useCallback((date: Date) => {
+    if (!openingHours || !Array.isArray(openingHours)) return null;
+    const dayOfWeek = date.getDay(); // 0 = Sunday, 1 = Monday, etc.
+    return openingHours.find(h => h.dayOfWeek === dayOfWeek);
+  }, [openingHours]);
+
+  // Time slots for the calendar based on opening hours
   const timeSlots = useMemo(() => {
+    // For week/day view, we need to consider opening hours for each day
+    // For now, let's use a reasonable default range and filter per day
     const slots = [];
-    for (let hour = 9; hour <= 23; hour++) {
+    
+    // Generate slots from 6 AM to midnight to cover all possible restaurant hours
+    for (let hour = 6; hour <= 23; hour++) {
       for (let minute = 0; minute < 60; minute += 30) {
         const time = `${hour.toString().padStart(2, "0")}:${minute.toString().padStart(2, "0")}`;
         slots.push(time);
@@ -148,6 +159,17 @@ export default function EnhancedGoogleCalendar({
     }
     return slots;
   }, []);
+
+  // Check if a time slot is within opening hours for a specific date
+  const isTimeSlotOpen = useCallback((date: Date, timeSlot: string) => {
+    const dayHours = getOpeningHoursForDate(date);
+    if (!dayHours || !dayHours.isOpen) return false;
+
+    const openTime = dayHours.openTime || "09:00";
+    const closeTime = dayHours.closeTime || "22:00";
+
+    return timeSlot >= openTime && timeSlot <= closeTime;
+  }, [getOpeningHoursForDate]);
 
   // Get visible dates based on view
   const visibleDates = useMemo(() => {
@@ -268,6 +290,11 @@ export default function EnhancedGoogleCalendar({
   // Calculate availability level for a time slot
   const getAvailabilityLevel = useCallback(
     (date: Date, timeSlot?: string) => {
+      // First check if the restaurant is open at this time
+      if (timeSlot && !isTimeSlotOpen(date, timeSlot)) {
+        return "closed";
+      }
+
       const slotBookings = getBookingsForSlot(date, timeSlot);
       const bookedCapacity = slotBookings.reduce(
         (sum, booking) => sum + booking.guestCount,
@@ -284,7 +311,7 @@ export default function EnhancedGoogleCalendar({
       if (availabilityRatio > 0) return "low"; // 1-30% available
       return "full"; // 0% available
     },
-    [getBookingsForSlot, totalCapacity],
+    [getBookingsForSlot, totalCapacity, isTimeSlotOpen],
   );
 
   // Get availability color classes
@@ -298,6 +325,8 @@ export default function EnhancedGoogleCalendar({
         return "bg-orange-50 border-l-4 border-orange-400";
       case "full":
         return "bg-red-100 border-l-4 border-red-500";
+      case "closed":
+        return "bg-gray-100 border-l-4 border-gray-400 opacity-50";
       default:
         return "bg-gray-50 border-l-4 border-gray-300";
     }
@@ -347,24 +376,28 @@ export default function EnhancedGoogleCalendar({
         return "w-2 h-2 bg-orange-400 rounded-full";
       case "full":
         return "w-2 h-2 bg-red-400 rounded-full";
+      case "closed":
+        return "w-2 h-2 bg-gray-400 rounded-full opacity-50";
       default:
         return "w-2 h-2 bg-gray-300 rounded-full";
     }
   };
 
-  // Get availability text
+  // Get availability text for tooltips
   const getAvailabilityText = (level: string) => {
     switch (level) {
       case "high":
-        return "High availability";
+        return "High availability - Good time to book";
       case "medium":
-        return "Medium availability";
+        return "Moderate availability - Some tables available";
       case "low":
-        return "Low availability";
+        return "Low availability - Few tables remaining";
       case "full":
-        return "Fully booked";
+        return "Fully booked - No tables available";
+      case "closed":
+        return "Restaurant closed - No bookings available";
       default:
-        return "Unavailable";
+        return "Availability unknown";
     }
   };
 
