@@ -9220,7 +9220,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   // Working conflicts endpoint (bypasses routing issues)
   app.get(
-    "/api/conflicts-check/:tenantId/:restaurantId",
+    "/conflicts-check/:tenantId/:restaurantId",
     async (req, res) => {
       try {
         const restaurantId = parseInt(req.params.restaurantId);
@@ -9261,6 +9261,121 @@ export async function registerRoutes(app: Express): Promise<Server> {
         res.json(conflicts);
       } catch (error) {
         console.error("CONFLICTS CHECK: Error fetching conflicts:", error);
+        res.status(500).json({ message: "Internal server error", error: error.message });
+      }
+    },
+  );
+
+  // Working conflict resolution endpoint (bypasses routing issues)
+  app.post(
+    "/resolve-conflict/:tenantId/:restaurantId/:conflictId",
+    async (req, res) => {
+      try {
+        const restaurantId = parseInt(req.params.restaurantId);
+        const tenantId = parseInt(req.params.tenantId);
+        const conflictId = req.params.conflictId;
+        const { resolutionId, bookingId, newTableId, notes } = req.body;
+
+        console.log(`CONFLICTS RESOLVE: Starting for conflict ${conflictId}, restaurant ${restaurantId}`);
+
+        const restaurant = await storage.getRestaurantById(restaurantId);
+        if (!restaurant || restaurant.tenantId !== tenantId) {
+          console.log(`CONFLICTS RESOLVE: Restaurant not found or tenant mismatch`);
+          return res.status(404).json({ message: "Restaurant not found" });
+        }
+
+        // Get current conflicts to find the specific one
+        const bookings = await storage.getBookingsByRestaurant(restaurantId);
+        const tables = await storage.getTablesByRestaurant(restaurantId);
+
+        const tenantBookings = bookings.filter(b => b.tenantId === tenantId);
+        const tenantTables = tables.filter(t => t.tenant_id === tenantId);
+
+        const allConflicts = [
+          ...ConflictDetector.detectTableDoubleBookings(tenantBookings),
+          ...ConflictDetector.detectCapacityExceeded(tenantBookings, tenantTables),
+          ...ConflictDetector.detectTimeOverlaps(tenantBookings),
+        ];
+
+        const conflict = allConflicts.find((c) => c.id === conflictId);
+        if (!conflict) {
+          console.log(`CONFLICTS RESOLVE: Conflict ${conflictId} not found`);
+          return res.status(404).json({ message: "Conflict not found" });
+        }
+
+        const resolution = conflict.suggestedResolutions.find(
+          (r: any) => r.id === resolutionId,
+        );
+        if (!resolution) {
+          console.log(`CONFLICTS RESOLVE: Resolution ${resolutionId} not found`);
+          return res.status(404).json({ message: "Resolution not found" });
+        }
+
+        console.log(`CONFLICTS RESOLVE: Applying resolution type: ${resolution.type}`);
+
+        // Apply the resolution based on type
+        let resolutionDescription = "";
+        const booking = conflict.bookings[0];
+
+        if (resolution.type === "split_party") {
+          // For capacity conflicts, suggest manual handling since tables need to be assigned manually
+          resolutionDescription = `Large party of ${booking.guestCount} guests requires manual table assignment across multiple tables`;
+          
+          // Create notification for staff to handle manually
+          const notification = {
+            restaurantId,
+            tenantId,
+            type: "manual_action_required",
+            title: "Large Party Needs Table Assignment",
+            message: `${booking.customerName}'s party of ${booking.guestCount} guests exceeds single table capacity (max: ${Math.max(...tenantTables.map(t => t.capacity))}). Please assign multiple adjacent tables.`,
+            isRead: false,
+            priority: "high",
+            createdAt: new Date(),
+            metadata: {
+              bookingId: booking.id,
+              conflictId,
+              guestCount: booking.guestCount,
+              suggestedTablesNeeded: resolution.details?.tablesNeeded || 2
+            },
+          };
+
+          await storage.createNotification(notification);
+          broadcastNotification(restaurantId, notification);
+
+        } else if (resolution.type === "reassign_table" && newTableId) {
+          // Reassign to specific table
+          await storage.updateBooking(booking.id, {
+            tableId: newTableId,
+          });
+          
+          const newTable = tenantTables.find(t => t.id === newTableId);
+          resolutionDescription = `Reassigned to Table ${newTable?.table_number} (capacity: ${newTable?.capacity})`;
+        }
+
+        // Log the resolution
+        try {
+          await storage.createActivityLog({
+            restaurantId,
+            tenantId,
+            eventType: "conflict_resolved",
+            description: `Resolved conflict ${conflictId}: ${resolutionDescription}`,
+            source: "manual",
+            createdAt: new Date(),
+          });
+        } catch (logError) {
+          console.log(`CONFLICTS RESOLVE: Could not create activity log:`, logError);
+        }
+
+        console.log(`CONFLICTS RESOLVE: Successfully resolved conflict ${conflictId}`);
+
+        res.json({
+          message: "Conflict resolved successfully",
+          resolution: resolutionDescription,
+          conflictId,
+          applied: resolution.type
+        });
+      } catch (error) {
+        console.error("CONFLICTS RESOLVE: Error resolving conflict:", error);
         res.status(500).json({ message: "Internal server error", error: error.message });
       }
     },

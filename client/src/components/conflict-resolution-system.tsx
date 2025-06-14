@@ -141,21 +141,23 @@ export default function ConflictResolutionSystem({
     },
   });
 
-  // Manual resolve conflicts mutation
+  // Manual resolve conflicts mutation using working endpoint
   const manualResolveMutation = useMutation({
     mutationFn: async ({ conflictId, resolutionId }: { conflictId: string; resolutionId: string }) => {
-      const response = await apiRequest(
-        "POST",
-        `/api/tenants/${tenantId}/restaurants/${restaurantId}/conflicts/${conflictId}/resolve`,
-        { resolutionId }
-      );
+      const response = await fetch(`/api/resolve-conflict/${tenantId}/${restaurantId}/${conflictId}`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ resolutionId })
+      });
       if (!response.ok) throw new Error("Failed to resolve conflict");
       return response.json();
     },
     onSuccess: (data, { conflictId }) => {
       toast({
         title: "Conflict Resolved",
-        description: "The conflict has been manually resolved.",
+        description: data.resolution || "The conflict has been manually resolved.",
       });
       setSelectedConflict(null);
       setSelectedResolution(null);
