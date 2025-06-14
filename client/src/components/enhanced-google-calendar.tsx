@@ -788,6 +788,16 @@ export default function EnhancedGoogleCalendar({
   };
 
   const openNewBookingDialog = (date: Date, time: string) => {
+    // Check if restaurant is open at this time
+    if (!isTimeSlotOpen(date, time)) {
+      toast({
+        title: "Restaurant Closed",
+        description: "The restaurant is closed at this time. Please select a time during operating hours.",
+        variant: "destructive",
+      });
+      return;
+    }
+
     setSelectedTimeSlot({ date, time });
 
     // Calculate end time (1 hour later)
@@ -929,9 +939,9 @@ export default function EnhancedGoogleCalendar({
               return (
                 <div
                   key={timeSlot}
-                  className={`flex items-center space-x-4 p-2 border rounded cursor-pointer transition-all duration-200 ${availabilityColor} ${
-                    isDragging ? "hover:border-blue-300" : ""
-                  }`}
+                  className={`flex items-center space-x-4 p-2 border rounded transition-all duration-200 ${availabilityColor} ${
+                    availabilityLevel === "closed" ? "cursor-not-allowed" : "cursor-pointer"
+                  } ${isDragging ? "hover:border-blue-300" : ""}`}
                   onClick={(e) => {
                     // Only open dialog if clicking directly on the container, not on bookings
                     if (e.target === e.currentTarget) {
@@ -1062,7 +1072,9 @@ export default function EnhancedGoogleCalendar({
                   return (
                     <div
                       key={`${date.toISOString()}-${timeSlot}`}
-                      className={`p-1 border-l min-h-[60px] cursor-pointer relative ${availabilityColor}`}
+                      className={`p-1 border-l min-h-[60px] relative ${availabilityColor} ${
+                        availabilityLevel === "closed" ? "cursor-not-allowed" : "cursor-pointer"
+                      }`}
                       onClick={(e) => {
                         // Only open dialog if clicking directly on the container, not on bookings
                         if (e.target === e.currentTarget) {
