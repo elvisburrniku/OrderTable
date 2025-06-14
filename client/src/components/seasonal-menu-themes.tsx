@@ -40,8 +40,16 @@ export default function SeasonalMenuThemes({ restaurantId, tenantId }: SeasonalM
   const queryClient = useQueryClient();
 
   const { data: themes = [], isLoading } = useQuery({
-    queryKey: ['/api/seasonal-themes', tenantId, restaurantId],
-    queryFn: () => apiRequest(`/api/tenants/${tenantId}/restaurants/${restaurantId}/seasonal-themes`)
+    queryKey: [`/api/tenants/${tenantId}/restaurants/${restaurantId}/seasonal-themes`],
+    queryFn: async () => {
+      const response = await fetch(`/api/tenants/${tenantId}/restaurants/${restaurantId}/seasonal-themes`, {
+        credentials: 'include'
+      });
+      if (!response.ok) {
+        throw new Error('Failed to fetch themes');
+      }
+      return response.json();
+    }
   });
 
   const generateThemeMutation = useMutation({
@@ -57,7 +65,7 @@ export default function SeasonalMenuThemes({ restaurantId, tenantId }: SeasonalM
         title: "Theme Generated",
         description: "Your seasonal menu theme has been created successfully!"
       });
-      queryClient.invalidateQueries({ queryKey: ['/api/seasonal-themes', tenantId, restaurantId] });
+      queryClient.invalidateQueries({ queryKey: [`/api/tenants/${tenantId}/restaurants/${restaurantId}/seasonal-themes`] });
       setShowGenerator(false);
       setSelectedSeason("");
       setCustomPrompt("");
@@ -84,7 +92,7 @@ export default function SeasonalMenuThemes({ restaurantId, tenantId }: SeasonalM
         title: "Theme Activated",
         description: "The seasonal theme is now active for your restaurant"
       });
-      queryClient.invalidateQueries({ queryKey: ['/api/seasonal-themes', tenantId, restaurantId] });
+      queryClient.invalidateQueries({ queryKey: [`/api/tenants/${tenantId}/restaurants/${restaurantId}/seasonal-themes`] });
     }
   });
 
@@ -101,7 +109,7 @@ export default function SeasonalMenuThemes({ restaurantId, tenantId }: SeasonalM
         title: "Theme Deleted",
         description: "The seasonal theme has been removed"
       });
-      queryClient.invalidateQueries({ queryKey: ['/api/seasonal-themes', tenantId, restaurantId] });
+      queryClient.invalidateQueries({ queryKey: [`/api/tenants/${tenantId}/restaurants/${restaurantId}/seasonal-themes`] });
     }
   });
 
