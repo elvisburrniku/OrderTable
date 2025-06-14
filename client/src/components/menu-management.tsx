@@ -207,11 +207,15 @@ export function MenuManagement({ restaurantId, tenantId }: MenuManagementProps) 
     const formData = new FormData(event.currentTarget);
     const priceStr = formData.get('price') as string;
     
-    // Build dietary flags string
+    // Build dietary flags array
     const dietaryFlags = [];
     if (formData.get('isVegetarian') === 'on') dietaryFlags.push('vegetarian');
     if (formData.get('isVegan') === 'on') dietaryFlags.push('vegan');
     if (formData.get('isGlutenFree') === 'on') dietaryFlags.push('gluten-free');
+    
+    // Process allergens as array
+    const allergensStr = formData.get('allergens') as string;
+    const allergensArray = allergensStr ? allergensStr.split(',').map(a => a.trim()).filter(a => a) : [];
     
     const data = {
       categoryId: parseInt(formData.get('categoryId') as string),
@@ -221,8 +225,8 @@ export function MenuManagement({ restaurantId, tenantId }: MenuManagementProps) 
       currency: formData.get('currency') as string || 'USD',
       imageUrl: formData.get('imageUrl') as string,
       isAvailable: formData.get('isAvailable') === 'on',
-      allergens: formData.get('allergens') as string,
-      dietary: dietaryFlags.join(','),
+      allergens: allergensArray,
+      dietary: dietaryFlags,
       preparationTime: parseInt(formData.get('preparationTime') as string) || undefined,
       ingredients: formData.get('ingredients') as string,
       nutritionalInfo: formData.get('nutritionalInfo') as string,
@@ -439,7 +443,7 @@ export function MenuManagement({ restaurantId, tenantId }: MenuManagementProps) 
                     id="allergens"
                     name="allergens"
                     placeholder="e.g., nuts, dairy, eggs"
-                    defaultValue={editingItem?.allergens || ''}
+                    defaultValue={editingItem?.allergens?.join(', ') || ''}
                   />
                 </div>
                 <div>
@@ -589,9 +593,9 @@ export function MenuManagement({ restaurantId, tenantId }: MenuManagementProps) 
                             {item.preparationTime} min
                           </span>
                         )}
-                        {item.allergens && (
+                        {item.allergens && item.allergens.length > 0 && (
                           <span className="text-sm text-muted-foreground">
-                            Allergens: {item.allergens}
+                            Allergens: {item.allergens.join(', ')}
                           </span>
                         )}
                       </div>
