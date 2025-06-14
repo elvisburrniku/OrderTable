@@ -6,8 +6,9 @@ import { Badge } from '@/components/ui/badge';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Separator } from '@/components/ui/separator';
-import { Printer, Download, Eye, Palette, Layout, Star } from 'lucide-react';
+import { Printer, Download, Eye, Palette, Layout, Star, ShoppingCart } from 'lucide-react';
 import { format } from 'date-fns';
+import MenuOrderingService from './menu-ordering-service';
 
 interface PrintableMenuProps {
   restaurantId: number;
@@ -111,6 +112,7 @@ const designThemes: MenuDesignTheme[] = [
 export default function PrintableMenu({ restaurantId, tenantId }: PrintableMenuProps) {
   const [selectedTheme, setSelectedTheme] = useState<string>('classic');
   const [showPreview, setShowPreview] = useState(false);
+  const [showOrderService, setShowOrderService] = useState(false);
   const [menuLayout, setMenuLayout] = useState<'single' | 'double' | 'trifold'>('double');
 
   const { data: restaurant } = useQuery({
@@ -454,6 +456,26 @@ export default function PrintableMenu({ restaurantId, tenantId }: PrintableMenuP
             <Download className="h-4 w-4 mr-2" />
             Save as PDF
           </Button>
+          
+          <Dialog open={showOrderService} onOpenChange={setShowOrderService}>
+            <DialogTrigger asChild>
+              <Button size="sm" className="bg-green-600 hover:bg-green-700">
+                <ShoppingCart className="h-4 w-4 mr-2" />
+                Order Printed Menus
+              </Button>
+            </DialogTrigger>
+            <DialogContent className="max-w-6xl max-h-[90vh] overflow-auto">
+              <DialogHeader>
+                <DialogTitle>Professional Menu Printing Service</DialogTitle>
+              </DialogHeader>
+              <MenuOrderingService
+                restaurantId={restaurantId}
+                tenantId={tenantId}
+                selectedTheme={selectedTheme}
+                menuLayout={menuLayout}
+              />
+            </DialogContent>
+          </Dialog>
         </div>
       </div>
 

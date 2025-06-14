@@ -749,6 +749,47 @@ export type InsertMenuCategory = InferInsertModel<typeof menuCategories>;
 export type MenuItem = InferSelectModel<typeof menuItems>;
 export type InsertMenuItem = InferInsertModel<typeof menuItems>;
 
+// Menu Orders table for professional printing service
+export const menuOrders = pgTable("menu_orders", {
+  id: serial("id").primaryKey(),
+  restaurantId: integer("restaurant_id").notNull().references(() => restaurants.id, { onDelete: "cascade" }),
+  tenantId: integer("tenant_id").notNull().references(() => tenants.id, { onDelete: "cascade" }),
+  orderNumber: text("order_number").notNull().unique(),
+  printingOption: text("printing_option").notNull(), // standard, premium, deluxe, luxury
+  shippingOption: text("shipping_option").notNull(), // standard, expedited, overnight
+  quantity: integer("quantity").notNull(),
+  menuTheme: text("menu_theme").notNull(),
+  menuLayout: text("menu_layout").notNull(), // single, double, trifold
+  subtotal: integer("subtotal").notNull(), // in cents
+  shippingCost: integer("shipping_cost").notNull(), // in cents
+  tax: integer("tax").notNull(), // in cents
+  total: integer("total").notNull(), // in cents
+  contactName: text("contact_name").notNull(),
+  contactEmail: text("contact_email").notNull(),
+  contactPhone: text("contact_phone").notNull(),
+  shippingAddress: text("shipping_address").notNull(),
+  city: text("city").notNull(),
+  state: text("state").notNull(),
+  zipCode: text("zip_code").notNull(),
+  specialInstructions: text("special_instructions"),
+  orderStatus: text("order_status").default("pending").notNull(), // pending, confirmed, printing, shipped, delivered, cancelled
+  estimatedDelivery: date("estimated_delivery"),
+  trackingNumber: text("tracking_number"),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+});
+
+export type MenuOrder = InferSelectModel<typeof menuOrders>;
+export type InsertMenuOrder = InferInsertModel<typeof menuOrders>;
+
+export const insertMenuOrderSchema = createInsertSchema(menuOrders).omit({
+  id: true,
+  orderNumber: true,
+  createdAt: true,
+  updatedAt: true,
+});
+export const selectMenuOrderSchema = createSelectSchema(menuOrders);
+
 export type SeasonalMenuTheme = InferSelectModel<typeof seasonalMenuThemes>;
 export type InsertSeasonalMenuTheme = InferInsertModel<typeof seasonalMenuThemes>;
 
