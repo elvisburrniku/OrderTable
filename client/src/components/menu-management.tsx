@@ -11,8 +11,10 @@ import { Switch } from "@/components/ui/switch";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useToast } from "@/hooks/use-toast";
-import { Plus, Edit, Trash2, DollarSign, Eye, EyeOff, ChefHat, Leaf } from "lucide-react";
+import { Plus, Edit, Trash2, DollarSign, Eye, EyeOff, ChefHat, Leaf, Printer } from "lucide-react";
 import { apiRequest } from "@/lib/queryClient";
+import PrintableMenu from "./printable-menu";
+import SeasonalMenuThemes from "./seasonal-menu-themes";
 
 interface MenuCategory {
   id: number;

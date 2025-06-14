@@ -2,8 +2,9 @@ import { useState } from "react";
 import { useAuth } from "@/lib/auth";
 import { MenuManagement } from "@/components/menu-management";
 import SeasonalMenuThemes from "@/components/seasonal-menu-themes";
+import PrintableMenu from "@/components/printable-menu";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { UtensilsCrossed, Sparkles } from "lucide-react";
+import { UtensilsCrossed, Sparkles, Printer } from "lucide-react";
 
 export default function MenuManagementPage() {
   const { restaurant } = useAuth();
@@ -21,7 +22,7 @@ export default function MenuManagementPage() {
   return (
     <div className="p-6">
       <Tabs defaultValue="menu" className="w-full">
-        <TabsList className="grid w-full grid-cols-2">
+        <TabsList className="grid w-full grid-cols-3">
           <TabsTrigger value="menu" className="flex items-center gap-2">
             <UtensilsCrossed className="h-4 w-4" />
             Menu Management
@@ -29,6 +30,10 @@ export default function MenuManagementPage() {
           <TabsTrigger value="themes" className="flex items-center gap-2">
             <Sparkles className="h-4 w-4" />
             AI Seasonal Themes
+          </TabsTrigger>
+          <TabsTrigger value="print" className="flex items-center gap-2">
+            <Printer className="h-4 w-4" />
+            Print Designer
           </TabsTrigger>
         </TabsList>
         
@@ -41,6 +46,13 @@ export default function MenuManagementPage() {
         
         <TabsContent value="themes" className="mt-6">
           <SeasonalMenuThemes 
+            restaurantId={restaurant.id} 
+            tenantId={restaurant.tenantId} 
+          />
+        </TabsContent>
+        
+        <TabsContent value="print" className="mt-6">
+          <PrintableMenu 
             restaurantId={restaurant.id} 
             tenantId={restaurant.tenantId} 
           />
