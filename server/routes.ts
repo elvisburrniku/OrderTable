@@ -9318,24 +9318,60 @@ export async function registerRoutes(app: Express): Promise<Server> {
         const booking = conflict.bookings[0];
 
         if (resolution.type === "split_party") {
-          // For capacity conflicts, suggest manual handling since tables need to be assigned manually
-          resolutionDescription = `Large party of ${booking.guestCount} guests requires manual table assignment across multiple tables`;
+          // Actually split the large party into multiple bookings to resolve the conflict
+          const maxCapacity = Math.max(...tenantTables.map(t => t.capacity));
+          const tablesNeeded = Math.ceil(booking.guestCount / maxCapacity);
           
-          // Create notification for staff to handle manually
+          // Calculate guest distribution across tables
+          const guestsPerTable = Math.floor(booking.guestCount / tablesNeeded);
+          const remainderGuests = booking.guestCount % tablesNeeded;
+          
+          // Update the original booking to first portion
+          const firstPortionGuests = guestsPerTable + (remainderGuests > 0 ? 1 : 0);
+          await storage.updateBooking(booking.id, {
+            guestCount: firstPortionGuests,
+            notes: `Split party - Part 1 of ${tablesNeeded} (${firstPortionGuests} guests)`
+          });
+          
+          // Create additional bookings for remaining guests
+          for (let i = 1; i < tablesNeeded; i++) {
+            const portionGuests = guestsPerTable + (i < remainderGuests ? 1 : 0);
+            await storage.createBooking({
+              restaurantId,
+              tenantId,
+              customerId: booking.customerId,
+              customerName: `${booking.customerName} (Part ${i + 1})`,
+              customerEmail: booking.customerEmail,
+              customerPhone: booking.customerPhone,
+              guestCount: portionGuests,
+              bookingDate: booking.bookingDate,
+              startTime: booking.startTime,
+              endTime: booking.endTime,
+              status: "confirmed",
+              source: "split_party",
+              notes: `Split party - Part ${i + 1} of ${tablesNeeded} (${portionGuests} guests)`,
+              tableId: null // Will be assigned by staff
+            });
+          }
+          
+          resolutionDescription = `Split party of ${booking.guestCount} guests into ${tablesNeeded} separate bookings for table assignment`;
+          
+          // Create notification for staff to assign tables
           const notification = {
             restaurantId,
             tenantId,
-            type: "manual_action_required",
-            title: "Large Party Needs Table Assignment",
-            message: `${booking.customerName}'s party of ${booking.guestCount} guests exceeds single table capacity (max: ${Math.max(...tenantTables.map(t => t.capacity))}). Please assign multiple adjacent tables.`,
+            type: "split_party_created",
+            title: "Large Party Split - Tables Needed",
+            message: `${booking.customerName}'s party has been split into ${tablesNeeded} bookings. Please assign adjacent tables.`,
             isRead: false,
             priority: "high",
             createdAt: new Date(),
             metadata: {
-              bookingId: booking.id,
+              originalBookingId: booking.id,
               conflictId,
-              guestCount: booking.guestCount,
-              suggestedTablesNeeded: resolution.details?.tablesNeeded || 2
+              totalGuests: booking.guestCount,
+              bookingsCreated: tablesNeeded,
+              originalCustomerName: booking.customerName
             },
           };
 
