@@ -71,10 +71,16 @@ export default function DashboardSidebar({ tenantId, restaurantId }: SidebarProp
       color: "text-purple-600"
     },
     {
-      name: "Menu",
+      name: "Menu Management",
       icon: ChefHat,
-      href: `/${tenantId}/menu`,
+      href: `/${tenantId}/menu-management`,
       color: "text-green-600"
+    },
+    {
+      name: "Kitchen Dashboard",
+      icon: TestTube,
+      href: `/${tenantId}/kitchen-dashboard`,
+      color: "text-orange-600"
     },
     {
       name: "Waiting List",
