@@ -9358,13 +9358,21 @@ export async function registerRoutes(app: Express): Promise<Server> {
           
           // Create detailed notification for staff to assign tables after split bookings are created
           const splitBookingDetails = [];
-          splitBookingDetails.push(`• Booking #${booking.id}: ${firstPortionGuests} guests (${booking.customerName})`);
-          
-          // Add details for additional bookings that were created
           const baseCustomerName = booking.customerName.replace(/ - Part \d+$/, '');
-          for (let i = 2; i <= tablesNeeded; i++) {
-            const additionalGuests = i <= remainderGuests + 1 ? guestsPerTable + 1 : guestsPerTable;
-            splitBookingDetails.push(`• Additional booking: ${additionalGuests} guests (${baseCustomerName} - Part ${i})`);
+          
+          // Calculate actual guest distribution
+          const totalGuests = booking.guestCount;
+          const actualTablesNeeded = Math.ceil(totalGuests / maxCapacity);
+          const baseGuestsPerTable = Math.floor(totalGuests / actualTablesNeeded);
+          const extraGuests = totalGuests % actualTablesNeeded;
+          
+          // Show the main booking (updated)
+          splitBookingDetails.push(`• Booking #${booking.id}: ${firstPortionGuests} guests (${baseCustomerName})`);
+          
+          // Show additional bookings that will be created
+          for (let i = 2; i <= actualTablesNeeded; i++) {
+            const guestsForThisTable = baseGuestsPerTable + (i <= extraGuests + 1 ? 1 : 0);
+            splitBookingDetails.push(`• New booking: ${guestsForThisTable} guests (${baseCustomerName} - Part ${i})`);
           }
           
           const detailedMessage = `SPLIT PARTY ACTION REQUIRED:
@@ -9397,7 +9405,6 @@ NEXT STEPS:
               totalGuests: booking.guestCount,
               bookingsCreated: tablesNeeded,
               originalCustomerName: booking.customerName,
-              relatedBookingIds: relatedBookings.map(b => b.id),
               actionRequired: true
             },
           };
