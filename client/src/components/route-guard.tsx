@@ -65,6 +65,7 @@ export function RouteGuard({ children }: RouteGuardProps) {
         /^\/\d+\/bookings\/\d+$/,
         /^\/\d+\/tables$/,
         /^\/\d+\/customers$/,
+        /^\/\d+\/menu$/,
         /^\/\d+\/statistics$/,
         /^\/\d+\/activity-log$/,
         /^\/\d+\/waiting-list$/,
