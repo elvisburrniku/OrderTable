@@ -9218,6 +9218,74 @@ export async function registerRoutes(app: Express): Promise<Server> {
     },
   );
 
+  // Get conflicts for a restaurant (temporary debug version)
+  app.get(
+    "/api/tenants/:tenantId/restaurants/:restaurantId/conflicts/debug",
+    async (req, res) => {
+      try {
+        console.log(`DEBUG: Getting conflicts for restaurant ${req.params.restaurantId}, tenant ${req.params.tenantId}`);
+        
+        const restaurantId = parseInt(req.params.restaurantId);
+        const tenantId = parseInt(req.params.tenantId);
+
+        const restaurant = await storage.getRestaurantById(restaurantId);
+        console.log(`DEBUG: Restaurant found:`, restaurant ? `${restaurant.name} (tenant ${restaurant.tenantId})` : 'null');
+        
+        if (!restaurant || restaurant.tenantId !== tenantId) {
+          console.log(`DEBUG: Restaurant not found or tenant mismatch: ${restaurantId}, ${tenantId}`);
+          return res.status(404).json({ message: "Restaurant not found" });
+        }
+
+        const bookings = await storage.getBookingsByRestaurant(restaurantId);
+        const tables = await storage.getTablesByRestaurant(restaurantId);
+        
+        console.log(`DEBUG: Found ${bookings.length} total bookings, ${tables.length} total tables`);
+
+        // Filter bookings by tenant for security
+        const tenantBookings = bookings.filter(
+          (booking) => booking.tenantId === tenantId,
+        );
+        const tenantTables = tables.filter(
+          (table) => table.tenant_id === tenantId,
+        );
+
+        console.log(`DEBUG: After tenant filtering - ${tenantBookings.length} bookings, ${tenantTables.length} tables`);
+        
+        // Log bookings with guest counts > 6
+        const largeParties = tenantBookings.filter(b => b.guestCount > 6);
+        console.log(`DEBUG: Large parties (>6 guests):`, largeParties.map(b => `${b.customerName}: ${b.guestCount} guests`));
+        
+        // Log table capacities
+        console.log(`DEBUG: Table capacities:`, tenantTables.map(t => `Table ${t.table_number}: ${t.capacity} capacity`));
+
+        // Detect all types of conflicts
+        const capacityConflicts = ConflictDetector.detectCapacityExceeded(tenantBookings, tenantTables);
+        console.log(`DEBUG: Capacity conflicts detected: ${capacityConflicts.length}`);
+        
+        const conflicts = [
+          ...ConflictDetector.detectTableDoubleBookings(tenantBookings),
+          ...capacityConflicts,
+          ...ConflictDetector.detectTimeOverlaps(tenantBookings),
+        ];
+
+        console.log(`DEBUG: Total conflicts: ${conflicts.length}`);
+        res.json({
+          debug: true,
+          restaurantId,
+          tenantId,
+          bookingsCount: tenantBookings.length,
+          tablesCount: tenantTables.length,
+          largePartiesCount: largeParties.length,
+          maxTableCapacity: Math.max(...tenantTables.map(t => t.capacity), 0),
+          conflicts
+        });
+      } catch (error) {
+        console.error("DEBUG: Error fetching conflicts:", error);
+        res.status(500).json({ message: "Internal server error", error: error.message });
+      }
+    },
+  );
+
   // Get conflicts for a restaurant
   app.get(
     "/api/tenants/:tenantId/restaurants/:restaurantId/conflicts",
