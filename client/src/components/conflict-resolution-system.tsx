@@ -98,9 +98,9 @@ export default function ConflictResolutionSystem({
 
   // Fetch conflicts using working endpoint
   const { data: conflicts = [], isLoading: conflictsLoading, refetch: refetchConflicts } = useQuery({
-    queryKey: [`/api/conflicts-check/${tenantId}/${restaurantId}`],
+    queryKey: [`/conflicts-check/${tenantId}/${restaurantId}`],
     queryFn: async () => {
-      const response = await fetch(`/api/conflicts-check/${tenantId}/${restaurantId}`);
+      const response = await fetch(`/conflicts-check/${tenantId}/${restaurantId}`);
       if (!response.ok) throw new Error("Failed to fetch conflicts");
       return response.json();
     },
@@ -144,7 +144,7 @@ export default function ConflictResolutionSystem({
   // Manual resolve conflicts mutation using working endpoint
   const manualResolveMutation = useMutation({
     mutationFn: async ({ conflictId, resolutionId }: { conflictId: string; resolutionId: string }) => {
-      const response = await fetch(`/api/resolve-conflict/${tenantId}/${restaurantId}/${conflictId}`, {
+      const response = await fetch(`/resolve-conflict/${tenantId}/${restaurantId}/${conflictId}`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
