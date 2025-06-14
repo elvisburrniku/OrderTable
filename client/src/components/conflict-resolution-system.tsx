@@ -96,11 +96,11 @@ export default function ConflictResolutionSystem({
   const [autoResolveEnabled, setAutoResolveEnabled] = useState(false);
   const [activeTab, setActiveTab] = useState("active");
 
-  // Fetch conflicts
+  // Fetch conflicts using working endpoint
   const { data: conflicts = [], isLoading: conflictsLoading, refetch: refetchConflicts } = useQuery({
-    queryKey: [`/api/tenants/${tenantId}/restaurants/${restaurantId}/conflicts`],
+    queryKey: [`/api/conflicts-check/${tenantId}/${restaurantId}`],
     queryFn: async () => {
-      const response = await fetch(`/api/tenants/${tenantId}/restaurants/${restaurantId}/conflicts`);
+      const response = await fetch(`/api/conflicts-check/${tenantId}/${restaurantId}`);
       if (!response.ok) throw new Error("Failed to fetch conflicts");
       return response.json();
     },
