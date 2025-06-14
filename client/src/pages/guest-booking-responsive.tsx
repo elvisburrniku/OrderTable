@@ -7,6 +7,7 @@ import { Label } from '@/components/ui/label';
 import { Card, CardContent } from '@/components/ui/card';
 import { Calendar, Clock, Users, Phone, Mail, User, Check, ChevronLeft, ChevronRight } from 'lucide-react';
 import { format, addDays, startOfDay, startOfMonth, endOfMonth, addMonths, subMonths, getDay, eachDayOfInterval } from 'date-fns';
+import ActiveSeasonalThemeDisplay from '@/components/active-seasonal-theme-display';
 
 // Dynamic time slot generation will be done based on opening hours
 
@@ -440,6 +441,15 @@ export default function GuestBookingResponsive(props: any) {
       </div>
       {/* Main Content */}
       <div className="flex-1 px-4 pb-6 bg-[#431b6d]">
+        {/* Seasonal Theme Display */}
+        <div className="max-w-2xl mx-auto mb-6">
+          <ActiveSeasonalThemeDisplay
+            restaurantId={parseInt(restaurantId)}
+            tenantId={parseInt(tenantId)}
+            variant="compact"
+          />
+        </div>
+        
         <Card className="max-w-2xl mx-auto bg-white/95 backdrop-blur-sm shadow-2xl">
           <CardContent className="p-6 md:p-8">
             {/* Step 0: Date Selection */}

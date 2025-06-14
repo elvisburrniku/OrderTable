@@ -8,6 +8,7 @@ import EnhancedGoogleCalendar from "@/components/enhanced-google-calendar";
 import WalkInBookingButton from "@/components/walk-in-booking";
 import RealTimeTableStatus from "@/components/real-time-table-status";
 import WelcomeAnimation from "@/components/welcome-animation";
+import ActiveSeasonalThemeDisplay from "@/components/active-seasonal-theme-display";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent } from "@/components/ui/card";
@@ -1105,6 +1106,13 @@ export default function Dashboard() {
 
         {/* Main Interface */}
         <div className="flex-1 p-6">
+          {/* Active Seasonal Theme Banner */}
+          <ActiveSeasonalThemeDisplay
+            restaurantId={restaurant?.id || 0}
+            tenantId={restaurant?.tenantId || 0}
+            variant="banner"
+          />
+
           {viewMode === "layout" ? (
             renderTableLayout()
           ) : viewMode === "status" ? (
