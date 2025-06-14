@@ -595,7 +595,7 @@ export const menuCategories = pgTable("menu_categories", {
   tenantId: integer("tenant_id").notNull().references(() => tenants.id, { onDelete: "cascade" }),
   name: text("name").notNull(),
   description: text("description"),
-  sortOrder: integer("sort_order").default(0),
+  displayOrder: integer("display_order").default(0),
   isActive: boolean("is_active").default(true),
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
@@ -611,15 +611,15 @@ export const menuItems = pgTable("menu_items", {
   description: text("description"),
   price: integer("price"), // price in cents
   currency: varchar("currency", { length: 3 }).default("USD"),
-  isPriceVisible: boolean("is_price_visible").default(true),
-  isAvailable: boolean("is_available").default(true),
-  isVegetarian: boolean("is_vegetarian").default(false),
-  isVegan: boolean("is_vegan").default(false),
-  isGlutenFree: boolean("is_gluten_free").default(false),
-  allergens: text("allergens"), // comma-separated list
-  preparationTime: integer("preparation_time"), // in minutes
-  sortOrder: integer("sort_order").default(0),
   imageUrl: text("image_url"),
+  isAvailable: boolean("is_available").default(true),
+  allergens: text("allergens"),
+  dietary: text("dietary"), // vegetarian, vegan, gluten-free flags
+  preparationTime: integer("preparation_time"), // in minutes
+  ingredients: text("ingredients"),
+  nutritionalInfo: text("nutritional_info"),
+  displayOrder: integer("display_order").default(0),
+  isActive: boolean("is_active").default(true),
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
 });

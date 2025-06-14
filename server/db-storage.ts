@@ -1354,7 +1354,7 @@ export class DatabaseStorage implements IStorage {
     if (!this.db) return [];
     const result = await this.db.select().from(menuCategories)
       .where(eq(menuCategories.restaurantId, restaurantId))
-      .orderBy(asc(menuCategories.sortOrder), asc(menuCategories.name));
+      .orderBy(asc(menuCategories.displayOrder), asc(menuCategories.name));
     return result;
   }
 
@@ -1384,7 +1384,7 @@ export class DatabaseStorage implements IStorage {
     if (!this.db) return [];
     const result = await this.db.select().from(menuItems)
       .where(eq(menuItems.restaurantId, restaurantId))
-      .orderBy(asc(menuItems.sortOrder), asc(menuItems.name));
+      .orderBy(asc(menuItems.displayOrder), asc(menuItems.name));
     return result;
   }
 
@@ -1392,7 +1392,7 @@ export class DatabaseStorage implements IStorage {
     if (!this.db) return [];
     const result = await this.db.select().from(menuItems)
       .where(eq(menuItems.categoryId, categoryId))
-      .orderBy(asc(menuItems.sortOrder), asc(menuItems.name));
+      .orderBy(asc(menuItems.displayOrder), asc(menuItems.name));
     return result;
   }
 

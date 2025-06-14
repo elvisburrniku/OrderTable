@@ -20,7 +20,7 @@ interface MenuCategory {
   tenantId: number;
   name: string;
   description?: string;
-  sortOrder: number;
+  displayOrder: number;
   isActive: boolean;
   createdAt: string;
   updatedAt: string;
@@ -35,15 +35,15 @@ interface MenuItem {
   description?: string;
   price?: number;
   currency: string;
-  isPriceVisible: boolean;
-  isAvailable: boolean;
-  isVegetarian: boolean;
-  isVegan: boolean;
-  isGlutenFree: boolean;
-  allergens?: string;
-  preparationTime?: number;
-  sortOrder: number;
   imageUrl?: string;
+  isAvailable: boolean;
+  allergens?: string;
+  dietary?: string;
+  preparationTime?: number;
+  ingredients?: string;
+  nutritionalInfo?: string;
+  displayOrder: number;
+  isActive: boolean;
   createdAt: string;
   updatedAt: string;
 }
