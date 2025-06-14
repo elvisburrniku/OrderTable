@@ -712,8 +712,28 @@ export default function GuestBookingResponsive(props: any) {
               </div>
             )}
 
-            {/* Step 3: Customer Details */}
+            {/* Step 3: Seasonal Theme Selection */}
             {currentStep === 3 && (
+              <div className="space-y-6">
+                <div className="text-center">
+                  <h2 className="text-xl md:text-2xl font-bold text-gray-900 mb-2">Choose Your Dining Experience</h2>
+                  <p className="text-sm text-gray-600">
+                    Enhance your visit with a seasonal theme that matches your mood (optional)
+                  </p>
+                </div>
+                
+                <SeasonalThemeSelector
+                  restaurantId={parseInt(restaurantId)}
+                  tenantId={parseInt(tenantId)}
+                  selectedTheme={selectedSeasonalTheme}
+                  onThemeSelect={setSelectedSeasonalTheme}
+                  variant="inline"
+                />
+              </div>
+            )}
+
+            {/* Step 4: Customer Details */}
+            {currentStep === 4 && (
               <div className="space-y-6">
                 <h2 className="text-xl md:text-2xl font-bold text-gray-900 text-center">Your Details</h2>
                 <div className="space-y-4">
