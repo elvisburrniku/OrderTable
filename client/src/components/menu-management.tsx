@@ -191,7 +191,7 @@ export function MenuManagement({ restaurantId, tenantId }: MenuManagementProps) 
     const data = {
       name: formData.get('name') as string,
       description: formData.get('description') as string,
-      sortOrder: parseInt(formData.get('sortOrder') as string) || 0,
+      displayOrder: parseInt(formData.get('displayOrder') as string) || 0,
       isActive: formData.get('isActive') === 'on',
     };
 
@@ -206,21 +206,28 @@ export function MenuManagement({ restaurantId, tenantId }: MenuManagementProps) 
     event.preventDefault();
     const formData = new FormData(event.currentTarget);
     const priceStr = formData.get('price') as string;
+    
+    // Build dietary flags string
+    const dietaryFlags = [];
+    if (formData.get('isVegetarian') === 'on') dietaryFlags.push('vegetarian');
+    if (formData.get('isVegan') === 'on') dietaryFlags.push('vegan');
+    if (formData.get('isGlutenFree') === 'on') dietaryFlags.push('gluten-free');
+    
     const data = {
       categoryId: parseInt(formData.get('categoryId') as string),
       name: formData.get('name') as string,
       description: formData.get('description') as string,
       price: priceStr ? Math.round(parseFloat(priceStr) * 100) : undefined,
       currency: formData.get('currency') as string || 'USD',
-      isPriceVisible: formData.get('isPriceVisible') === 'on',
-      isAvailable: formData.get('isAvailable') === 'on',
-      isVegetarian: formData.get('isVegetarian') === 'on',
-      isVegan: formData.get('isVegan') === 'on',
-      isGlutenFree: formData.get('isGlutenFree') === 'on',
-      allergens: formData.get('allergens') as string,
-      preparationTime: parseInt(formData.get('preparationTime') as string) || undefined,
-      sortOrder: parseInt(formData.get('sortOrder') as string) || 0,
       imageUrl: formData.get('imageUrl') as string,
+      isAvailable: formData.get('isAvailable') === 'on',
+      allergens: formData.get('allergens') as string,
+      dietary: dietaryFlags.join(','),
+      preparationTime: parseInt(formData.get('preparationTime') as string) || undefined,
+      ingredients: formData.get('ingredients') as string,
+      nutritionalInfo: formData.get('nutritionalInfo') as string,
+      displayOrder: parseInt(formData.get('displayOrder') as string) || 0,
+      isActive: formData.get('isActive') === 'on',
     };
 
     if (editingItem) {
@@ -282,12 +289,12 @@ export function MenuManagement({ restaurantId, tenantId }: MenuManagementProps) 
                   />
                 </div>
                 <div>
-                  <Label htmlFor="sortOrder">Sort Order</Label>
+                  <Label htmlFor="displayOrder">Sort Order</Label>
                   <Input
-                    id="sortOrder"
-                    name="sortOrder"
+                    id="displayOrder"
+                    name="displayOrder"
                     type="number"
-                    defaultValue={editingCategory?.sortOrder || 0}
+                    defaultValue={editingCategory?.displayOrder || 0}
                   />
                 </div>
                 <div className="flex items-center space-x-2">
@@ -392,30 +399,20 @@ export function MenuManagement({ restaurantId, tenantId }: MenuManagementProps) 
                     />
                   </div>
                 </div>
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="flex items-center space-x-2">
-                    <Switch
-                      id="isPriceVisible"
-                      name="isPriceVisible"
-                      defaultChecked={editingItem?.isPriceVisible !== false}
-                    />
-                    <Label htmlFor="isPriceVisible">Show Price</Label>
-                  </div>
-                  <div className="flex items-center space-x-2">
-                    <Switch
-                      id="isAvailable"
-                      name="isAvailable"
-                      defaultChecked={editingItem?.isAvailable !== false}
-                    />
-                    <Label htmlFor="isAvailable">Available</Label>
-                  </div>
+                <div className="flex items-center space-x-2">
+                  <Switch
+                    id="isAvailable"
+                    name="isAvailable"
+                    defaultChecked={editingItem?.isAvailable !== false}
+                  />
+                  <Label htmlFor="isAvailable">Available</Label>
                 </div>
                 <div className="grid grid-cols-3 gap-4">
                   <div className="flex items-center space-x-2">
                     <Switch
                       id="isVegetarian"
                       name="isVegetarian"
-                      defaultChecked={editingItem?.isVegetarian || false}
+                      defaultChecked={editingItem?.dietary?.includes('vegetarian') || false}
                     />
                     <Label htmlFor="isVegetarian">Vegetarian</Label>
                   </div>
@@ -423,7 +420,7 @@ export function MenuManagement({ restaurantId, tenantId }: MenuManagementProps) 
                     <Switch
                       id="isVegan"
                       name="isVegan"
-                      defaultChecked={editingItem?.isVegan || false}
+                      defaultChecked={editingItem?.dietary?.includes('vegan') || false}
                     />
                     <Label htmlFor="isVegan">Vegan</Label>
                   </div>
@@ -431,7 +428,7 @@ export function MenuManagement({ restaurantId, tenantId }: MenuManagementProps) 
                     <Switch
                       id="isGlutenFree"
                       name="isGlutenFree"
-                      defaultChecked={editingItem?.isGlutenFree || false}
+                      defaultChecked={editingItem?.dietary?.includes('gluten-free') || false}
                     />
                     <Label htmlFor="isGlutenFree">Gluten-Free</Label>
                   </div>
@@ -445,7 +442,25 @@ export function MenuManagement({ restaurantId, tenantId }: MenuManagementProps) 
                     defaultValue={editingItem?.allergens || ''}
                   />
                 </div>
-                <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <Label htmlFor="ingredients">Ingredients</Label>
+                  <Textarea
+                    id="ingredients"
+                    name="ingredients"
+                    placeholder="List of ingredients"
+                    defaultValue={editingItem?.ingredients || ''}
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="nutritionalInfo">Nutritional Information</Label>
+                  <Textarea
+                    id="nutritionalInfo"
+                    name="nutritionalInfo"
+                    placeholder="Calories, protein, etc."
+                    defaultValue={editingItem?.nutritionalInfo || ''}
+                  />
+                </div>
+                <div className="grid grid-cols-3 gap-4">
                   <div>
                     <Label htmlFor="imageUrl">Image URL</Label>
                     <Input
@@ -455,13 +470,21 @@ export function MenuManagement({ restaurantId, tenantId }: MenuManagementProps) 
                     />
                   </div>
                   <div>
-                    <Label htmlFor="sortOrder">Sort Order</Label>
+                    <Label htmlFor="displayOrder">Sort Order</Label>
                     <Input
-                      id="sortOrder"
-                      name="sortOrder"
+                      id="displayOrder"
+                      name="displayOrder"
                       type="number"
-                      defaultValue={editingItem?.sortOrder || 0}
+                      defaultValue={editingItem?.displayOrder || 0}
                     />
+                  </div>
+                  <div className="flex items-center space-x-2">
+                    <Switch
+                      id="isActive"
+                      name="isActive"
+                      defaultChecked={editingItem?.isActive !== false}
+                    />
+                    <Label htmlFor="isActive">Active</Label>
                   </div>
                 </div>
                 <div className="flex justify-end gap-2">
@@ -526,19 +549,19 @@ export function MenuManagement({ restaurantId, tenantId }: MenuManagementProps) 
                       <div className="flex items-center gap-2">
                         <h4 className="font-medium">{item.name}</h4>
                         <div className="flex gap-1">
-                          {item.isVegetarian && (
+                          {item.dietary?.includes('vegetarian') && (
                             <Badge variant="secondary" className="text-xs">
                               <Leaf className="h-3 w-3 mr-1" />
                               Vegetarian
                             </Badge>
                           )}
-                          {item.isVegan && (
+                          {item.dietary?.includes('vegan') && (
                             <Badge variant="secondary" className="text-xs">
                               <Leaf className="h-3 w-3 mr-1" />
                               Vegan
                             </Badge>
                           )}
-                          {item.isGlutenFree && (
+                          {item.dietary?.includes('gluten-free') && (
                             <Badge variant="secondary" className="text-xs">
                               GF
                             </Badge>
@@ -557,16 +580,9 @@ export function MenuManagement({ restaurantId, tenantId }: MenuManagementProps) 
                       )}
                       <div className="flex items-center gap-4 mt-2">
                         {item.price && (
-                          <div className="flex items-center gap-1">
-                            {item.isPriceVisible ? (
-                              <Eye className="h-4 w-4" />
-                            ) : (
-                              <EyeOff className="h-4 w-4" />
-                            )}
-                            <span className="text-sm font-medium">
-                              {formatPrice(item.price, item.currency)}
-                            </span>
-                          </div>
+                          <span className="text-sm font-medium">
+                            {formatPrice(item.price, item.currency)}
+                          </span>
                         )}
                         {item.preparationTime && (
                           <span className="text-sm text-muted-foreground">
