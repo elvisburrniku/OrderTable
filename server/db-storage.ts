@@ -32,7 +32,7 @@ const {
   menuCategories,
   menuItems,
   seasonalMenuThemes,
-  menuOrders,
+  menuPrintOrders,
 } = schema;
 
 export class DatabaseStorage implements IStorage {
@@ -1487,40 +1487,40 @@ export class DatabaseStorage implements IStorage {
     return true;
   }
 
-  // Professional Menu Orders
+  // Professional Menu Print Orders
   async createMenuOrder(orderData: any): Promise<any> {
     if (!this.db) throw new Error("Database connection not available");
-    const [newOrder] = await this.db.insert(menuOrders).values(orderData).returning();
+    const [newOrder] = await this.db.insert(menuPrintOrders).values(orderData).returning();
     return newOrder;
   }
 
   async getMenuOrdersByRestaurant(restaurantId: number, tenantId: number): Promise<any[]> {
     if (!this.db) return [];
-    const result = await this.db.select().from(menuOrders)
-      .where(and(eq(menuOrders.restaurantId, restaurantId), eq(menuOrders.tenantId, tenantId)))
-      .orderBy(desc(menuOrders.createdAt));
+    const result = await this.db.select().from(menuPrintOrders)
+      .where(and(eq(menuPrintOrders.restaurantId, restaurantId), eq(menuPrintOrders.tenantId, tenantId)))
+      .orderBy(desc(menuPrintOrders.createdAt));
     return result;
   }
 
   async getMenuOrderById(id: number): Promise<any> {
     if (!this.db) return null;
-    const [order] = await this.db.select().from(menuOrders)
-      .where(eq(menuOrders.id, id));
+    const [order] = await this.db.select().from(menuPrintOrders)
+      .where(eq(menuPrintOrders.id, id));
     return order;
   }
 
   async updateMenuOrder(id: number, updates: any): Promise<any> {
     if (!this.db) throw new Error("Database connection not available");
-    const [updatedOrder] = await this.db.update(menuOrders)
+    const [updatedOrder] = await this.db.update(menuPrintOrders)
       .set({ ...updates, updatedAt: new Date() })
-      .where(eq(menuOrders.id, id))
+      .where(eq(menuPrintOrders.id, id))
       .returning();
     return updatedOrder;
   }
 
   async deleteMenuOrder(id: number): Promise<boolean> {
     if (!this.db) return false;
-    await this.db.delete(menuOrders).where(eq(menuOrders.id, id));
+    await this.db.delete(menuPrintOrders).where(eq(menuPrintOrders.id, id));
     return true;
   }
 }

@@ -12259,27 +12259,27 @@ NEXT STEPS:
 
         // Convert dollar amounts to cents for database storage
         const orderData = {
-          restaurantId,
-          tenantId,
-          orderNumber,
-          contactName: req.body.contactName,
-          contactEmail: req.body.contactEmail,
-          contactPhone: req.body.contactPhone,
-          shippingAddress: req.body.shippingAddress,
+          restaurant_id: restaurantId,
+          tenant_id: tenantId,
+          order_number: orderNumber,
+          contact_name: req.body.contactName,
+          contact_email: req.body.contactEmail,
+          contact_phone: req.body.contactPhone,
+          shipping_address: req.body.shippingAddress,
           city: req.body.city,
           state: req.body.state,
-          zipCode: req.body.zipCode,
+          zip_code: req.body.zipCode,
           quantity: parseInt(req.body.quantity),
-          menuTheme: req.body.menuTheme,
-          menuLayout: req.body.menuLayout,
-          printingOption: req.body.printingOption,
-          shippingOption: req.body.shippingOption,
+          menu_theme: req.body.menuTheme,
+          menu_layout: req.body.menuLayout,
+          printing_option: req.body.printingOption,
+          shipping_option: req.body.shippingOption,
           subtotal: Math.round(parseFloat(req.body.subtotal) * 100), // Convert to cents
-          shippingCost: Math.round(parseFloat(req.body.shippingCost) * 100),
+          shipping_cost: Math.round(parseFloat(req.body.shippingCost) * 100),
           tax: Math.round(parseFloat(req.body.tax) * 100),
           total: Math.round(parseFloat(req.body.total) * 100),
-          specialInstructions: req.body.specialInstructions || null,
-          orderStatus: 'pending',
+          special_instructions: req.body.specialInstructions || null,
+          order_status: 'pending',
         };
 
         const order = await storage.createMenuOrder(orderData);
