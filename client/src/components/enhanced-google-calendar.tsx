@@ -147,12 +147,12 @@ export default function EnhancedGoogleCalendar({
   // Time slots for the calendar based on opening hours
   const timeSlots = useMemo(() => {
     // For week/day view, we need to consider opening hours for each day
-    // For now, let's use a reasonable default range and filter per day
+    // Generate full 24-hour slots to accommodate any restaurant schedule
     const slots = [];
     
-    // Generate slots from 6 AM to midnight to cover all possible restaurant hours
-    for (let hour = 6; hour <= 23; hour++) {
-      for (let minute = 0; minute < 60; minute += 30) {
+    // Generate slots from midnight (00:00) to 23:45 to cover all possible restaurant hours
+    for (let hour = 0; hour < 24; hour++) {
+      for (let minute = 0; minute < 60; minute += 15) {
         const time = `${hour.toString().padStart(2, "0")}:${minute.toString().padStart(2, "0")}`;
         slots.push(time);
       }
