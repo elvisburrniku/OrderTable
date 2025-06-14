@@ -89,10 +89,7 @@ export function MenuManagement({ restaurantId, tenantId }: MenuManagementProps) 
   // Category mutations
   const createCategoryMutation = useMutation({
     mutationFn: (data: Partial<MenuCategory>) =>
-      apiRequest(`/api/tenants/${tenantId}/restaurants/${restaurantId}/menu-categories`, {
-        method: 'POST',
-        body: JSON.stringify(data),
-      }),
+      apiRequest('POST', `/api/tenants/${tenantId}/restaurants/${restaurantId}/menu-categories`, data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['/api/tenants', tenantId, 'restaurants', restaurantId, 'menu-categories'] });
       setCategoryDialogOpen(false);
@@ -106,10 +103,7 @@ export function MenuManagement({ restaurantId, tenantId }: MenuManagementProps) 
 
   const updateCategoryMutation = useMutation({
     mutationFn: ({ id, data }: { id: number; data: Partial<MenuCategory> }) =>
-      apiRequest(`/api/tenants/${tenantId}/restaurants/${restaurantId}/menu-categories/${id}`, {
-        method: 'PUT',
-        body: JSON.stringify(data),
-      }),
+      apiRequest('PUT', `/api/tenants/${tenantId}/restaurants/${restaurantId}/menu-categories/${id}`, data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['/api/tenants', tenantId, 'restaurants', restaurantId, 'menu-categories'] });
       setCategoryDialogOpen(false);
@@ -123,9 +117,7 @@ export function MenuManagement({ restaurantId, tenantId }: MenuManagementProps) 
 
   const deleteCategoryMutation = useMutation({
     mutationFn: (id: number) =>
-      apiRequest(`/api/tenants/${tenantId}/restaurants/${restaurantId}/menu-categories/${id}`, {
-        method: 'DELETE',
-      }),
+      apiRequest('DELETE', `/api/tenants/${tenantId}/restaurants/${restaurantId}/menu-categories/${id}`),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['/api/tenants', tenantId, 'restaurants', restaurantId, 'menu-categories'] });
       queryClient.invalidateQueries({ queryKey: ['/api/tenants', tenantId, 'restaurants', restaurantId, 'menu-items'] });
@@ -139,10 +131,7 @@ export function MenuManagement({ restaurantId, tenantId }: MenuManagementProps) 
   // Item mutations
   const createItemMutation = useMutation({
     mutationFn: (data: Partial<MenuItem>) =>
-      apiRequest(`/api/tenants/${tenantId}/restaurants/${restaurantId}/menu-items`, {
-        method: 'POST',
-        body: JSON.stringify(data),
-      }),
+      apiRequest('POST', `/api/tenants/${tenantId}/restaurants/${restaurantId}/menu-items`, data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['/api/tenants', tenantId, 'restaurants', restaurantId, 'menu-items'] });
       setItemDialogOpen(false);
@@ -156,10 +145,7 @@ export function MenuManagement({ restaurantId, tenantId }: MenuManagementProps) 
 
   const updateItemMutation = useMutation({
     mutationFn: ({ id, data }: { id: number; data: Partial<MenuItem> }) =>
-      apiRequest(`/api/tenants/${tenantId}/restaurants/${restaurantId}/menu-items/${id}`, {
-        method: 'PUT',
-        body: JSON.stringify(data),
-      }),
+      apiRequest('PUT', `/api/tenants/${tenantId}/restaurants/${restaurantId}/menu-items/${id}`, data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['/api/tenants', tenantId, 'restaurants', restaurantId, 'menu-items'] });
       setItemDialogOpen(false);
@@ -173,9 +159,7 @@ export function MenuManagement({ restaurantId, tenantId }: MenuManagementProps) 
 
   const deleteItemMutation = useMutation({
     mutationFn: (id: number) =>
-      apiRequest(`/api/tenants/${tenantId}/restaurants/${restaurantId}/menu-items/${id}`, {
-        method: 'DELETE',
-      }),
+      apiRequest('DELETE', `/api/tenants/${tenantId}/restaurants/${restaurantId}/menu-items/${id}`),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['/api/tenants', tenantId, 'restaurants', restaurantId, 'menu-items'] });
       toast({ title: "Menu item deleted successfully" });
