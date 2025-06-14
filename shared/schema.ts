@@ -624,6 +624,27 @@ export const menuItems = pgTable("menu_items", {
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
 });
 
+// Seasonal Menu Themes table
+export const seasonalMenuThemes = pgTable("seasonal_menu_themes", {
+  id: serial("id").primaryKey(),
+  restaurantId: integer("restaurant_id").notNull().references(() => restaurants.id, { onDelete: "cascade" }),
+  tenantId: integer("tenant_id").notNull().references(() => tenants.id, { onDelete: "cascade" }),
+  name: text("name").notNull(),
+  description: text("description").notNull(),
+  season: varchar("season", { length: 20 }).notNull(), // spring, summer, autumn, winter
+  year: integer("year").notNull(),
+  color: varchar("color", { length: 7 }).default("#3B82F6"), // hex color for theme
+  isActive: boolean("is_active").default(false),
+  aiGenerated: boolean("ai_generated").default(true),
+  prompt: text("prompt"), // original AI prompt used
+  suggestedMenuItems: text("suggested_menu_items").array(), // AI-generated menu item suggestions
+  marketingCopy: text("marketing_copy"), // AI-generated marketing description
+  targetIngredients: text("target_ingredients").array(), // seasonal ingredients to focus on
+  moodKeywords: text("mood_keywords").array(), // theme mood descriptors
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+});
+
 // Rescheduling Suggestions table
 export const reschedulingSuggestions = pgTable("rescheduling_suggestions", {
   id: serial("id").primaryKey(),
@@ -728,6 +749,9 @@ export type InsertMenuCategory = InferInsertModel<typeof menuCategories>;
 export type MenuItem = InferSelectModel<typeof menuItems>;
 export type InsertMenuItem = InferInsertModel<typeof menuItems>;
 
+export type SeasonalMenuTheme = InferSelectModel<typeof seasonalMenuThemes>;
+export type InsertSeasonalMenuTheme = InferInsertModel<typeof seasonalMenuThemes>;
+
 export const insertMenuCategorySchema = createInsertSchema(menuCategories).omit({
   id: true,
   createdAt: true,
@@ -736,6 +760,12 @@ export const insertMenuCategorySchema = createInsertSchema(menuCategories).omit(
 export const selectMenuCategorySchema = createSelectSchema(menuCategories);
 
 export const insertMenuItemSchema = createInsertSchema(menuItems).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
+export const insertSeasonalMenuThemeSchema = createInsertSchema(seasonalMenuThemes).omit({
   id: true,
   createdAt: true,
   updatedAt: true,

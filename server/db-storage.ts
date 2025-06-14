@@ -31,6 +31,7 @@ const {
   resolvedConflicts,
   menuCategories,
   menuItems,
+  seasonalMenuThemes,
 } = schema;
 
 export class DatabaseStorage implements IStorage {
@@ -1414,6 +1415,58 @@ export class DatabaseStorage implements IStorage {
   async deleteMenuItem(id: number): Promise<boolean> {
     if (!this.db) return false;
     await this.db.delete(menuItems).where(eq(menuItems.id, id));
+    return true;
+  }
+
+  // Seasonal Menu Themes
+  async getSeasonalMenuThemes(restaurantId: number, tenantId: number): Promise<any[]> {
+    if (!this.db) return [];
+    const result = await this.db.select().from(seasonalMenuThemes)
+      .where(and(eq(seasonalMenuThemes.restaurantId, restaurantId), eq(seasonalMenuThemes.tenantId, tenantId)))
+      .orderBy(desc(seasonalMenuThemes.createdAt));
+    return result;
+  }
+
+  async getSeasonalMenuThemeById(id: number): Promise<any> {
+    if (!this.db) return null;
+    const [theme] = await this.db.select().from(seasonalMenuThemes)
+      .where(eq(seasonalMenuThemes.id, id));
+    return theme;
+  }
+
+  async createSeasonalMenuTheme(theme: any): Promise<any> {
+    if (!this.db) throw new Error("Database connection not available");
+    const [newTheme] = await this.db.insert(seasonalMenuThemes).values(theme).returning();
+    return newTheme;
+  }
+
+  async updateSeasonalMenuTheme(id: number, updates: any): Promise<any> {
+    if (!this.db) throw new Error("Database connection not available");
+    const [updatedTheme] = await this.db.update(seasonalMenuThemes)
+      .set({ ...updates, updatedAt: new Date() })
+      .where(eq(seasonalMenuThemes.id, id))
+      .returning();
+    return updatedTheme;
+  }
+
+  async deleteSeasonalMenuTheme(id: number): Promise<boolean> {
+    if (!this.db) return false;
+    await this.db.delete(seasonalMenuThemes).where(eq(seasonalMenuThemes.id, id));
+    return true;
+  }
+
+  async setActiveSeasonalTheme(restaurantId: number, tenantId: number, themeId: number): Promise<boolean> {
+    if (!this.db) return false;
+    // First deactivate all themes for this restaurant
+    await this.db.update(seasonalMenuThemes)
+      .set({ isActive: false, updatedAt: new Date() })
+      .where(and(eq(seasonalMenuThemes.restaurantId, restaurantId), eq(seasonalMenuThemes.tenantId, tenantId)));
+    
+    // Then activate the selected theme
+    await this.db.update(seasonalMenuThemes)
+      .set({ isActive: true, updatedAt: new Date() })
+      .where(eq(seasonalMenuThemes.id, themeId));
+    
     return true;
   }
 }
