@@ -20,7 +20,8 @@ import {
   specialPeriods,
   cutOffTimes,
   bookingChangeRequests,
-  notifications
+  notifications,
+  resolvedConflicts
 } from "@shared/schema";
 import type {
   User,
@@ -39,6 +40,8 @@ import type {
   TableLayout,
   CombinedTable,
   Notification,
+  ResolvedConflict,
+  InsertResolvedConflict,
   InsertUser,
   InsertRestaurant,
   InsertTable,
@@ -239,6 +242,10 @@ export interface IStorage {
   markAllNotificationsAsRead(restaurantId: number): Promise<void>;
   revertNotification(notificationId: number, userEmail: string): Promise<boolean>;
   deleteNotification(id: number): Promise<boolean>;
+
+  // Resolved Conflicts
+  getResolvedConflictsByRestaurant(restaurantId: number): Promise<ResolvedConflict[]>;
+  createResolvedConflict(resolvedConflict: InsertResolvedConflict): Promise<ResolvedConflict>;
 
   // Webhooks
   getWebhooksByRestaurant(restaurantId: number): Promise<any[]>;

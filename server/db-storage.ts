@@ -28,6 +28,7 @@ const {
   cutOffTimes,
   tableLayouts,
   integrationConfigurations,
+  resolvedConflicts,
 } = schema;
 
 export class DatabaseStorage implements IStorage {
@@ -1329,5 +1330,20 @@ export class DatabaseStorage implements IStorage {
       .where(and(eq(subscriptionPlans.price, 0), eq(subscriptionPlans.isActive, true)))
       .limit(1);
     return result[0];
+  }
+
+  // Resolved Conflicts
+  async getResolvedConflictsByRestaurant(restaurantId: number): Promise<any[]> {
+    if (!this.db) return [];
+    const result = await this.db.select().from(resolvedConflicts)
+      .where(eq(resolvedConflicts.restaurantId, restaurantId))
+      .orderBy(desc(resolvedConflicts.resolvedAt));
+    return result;
+  }
+
+  async createResolvedConflict(resolvedConflict: any): Promise<any> {
+    if (!this.db) throw new Error("Database connection not available");
+    const [newResolvedConflict] = await this.db.insert(resolvedConflicts).values(resolvedConflict).returning();
+    return newResolvedConflict;
   }
 }

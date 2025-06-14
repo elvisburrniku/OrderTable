@@ -9436,6 +9436,28 @@ NEXT STEPS:
           console.log(`CONFLICTS RESOLVE: Could not create activity log:`, logError);
         }
 
+        // Save resolved conflict to database for tracking
+        try {
+          await storage.createResolvedConflict({
+            restaurantId,
+            tenantId,
+            conflictId,
+            conflictType: conflict.type,
+            severity: conflict.severity,
+            bookingIds: conflict.bookings.map((b: any) => b.id),
+            resolutionType: resolution.type,
+            resolutionDetails: resolutionDescription,
+            appliedBy: 'manual',
+            originalData: {
+              conflict: conflict,
+              resolution: resolution,
+              bookingData: conflict.bookings
+            }
+          });
+        } catch (saveError) {
+          console.log(`CONFLICTS RESOLVE: Could not save resolved conflict:`, saveError);
+        }
+
         console.log(`CONFLICTS RESOLVE: Successfully resolved conflict ${conflictId}`);
 
         res.json({
