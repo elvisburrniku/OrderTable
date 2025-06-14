@@ -37,8 +37,8 @@ interface MenuItem {
   currency: string;
   imageUrl?: string;
   isAvailable: boolean;
-  allergens?: string;
-  dietary?: string;
+  allergens?: string[];
+  dietary?: string[];
   preparationTime?: number;
   ingredients?: string;
   nutritionalInfo?: string;

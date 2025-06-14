@@ -613,8 +613,8 @@ export const menuItems = pgTable("menu_items", {
   currency: varchar("currency", { length: 3 }).default("USD"),
   imageUrl: text("image_url"),
   isAvailable: boolean("is_available").default(true),
-  allergens: text("allergens"),
-  dietary: text("dietary"), // vegetarian, vegan, gluten-free flags
+  allergens: text("allergens").array(),
+  dietary: text("dietary").array(),
   preparationTime: integer("preparation_time"), // in minutes
   ingredients: text("ingredients"),
   nutritionalInfo: text("nutritional_info"),
