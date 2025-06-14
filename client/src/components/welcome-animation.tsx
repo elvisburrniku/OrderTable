@@ -104,7 +104,7 @@ export default function WelcomeAnimation({
         className="fixed inset-0 z-50 flex items-center justify-center bg-gradient-to-br from-orange-50 via-white to-orange-100 dark:from-gray-900 dark:via-gray-800 dark:to-gray-900"
         onClick={handleSkip}
       >
-        <Card className="w-full max-w-md mx-4 bg-white/80 dark:bg-gray-800/80 backdrop-blur-sm border-none shadow-2xl">
+        <Card className="w-full max-w-lg mx-4 bg-white/90 dark:bg-gray-800/90 backdrop-blur-md border-none shadow-2xl">
           <CardContent className="p-8 text-center">
             {/* Animated Icons */}
             <div className="relative mb-6 h-20 flex items-center justify-center">
@@ -150,14 +150,39 @@ export default function WelcomeAnimation({
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: -20 }}
               transition={{ duration: 0.5, delay: 0.3 }}
-              className="mb-4"
+              className="mb-6"
             >
               <h2 className="text-2xl font-bold text-gray-800 dark:text-white mb-2">
                 {getGreeting()}, {userName}!
               </h2>
-              <p className="text-lg text-gray-600 dark:text-gray-300">
+              <p className="text-lg text-gray-600 dark:text-gray-300 mb-4">
                 {getPersonalizedMessage()}
               </p>
+              
+              {/* Quick Stats */}
+              {currentStep === 1 && todayBookings.length > 0 && (
+                <motion.div
+                  initial={{ opacity: 0, scale: 0.8 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  transition={{ delay: 0.5 }}
+                  className="bg-orange-50 dark:bg-gray-700 rounded-lg p-4 mt-4"
+                >
+                  <div className="grid grid-cols-2 gap-4 text-sm">
+                    <div className="text-center">
+                      <div className="font-semibold text-orange-600 dark:text-orange-400">
+                        {todayBookings.reduce((total, booking) => total + booking.guestCount, 0)}
+                      </div>
+                      <div className="text-gray-600 dark:text-gray-300">Total Guests</div>
+                    </div>
+                    <div className="text-center">
+                      <div className="font-semibold text-blue-600 dark:text-blue-400">
+                        {todayBookings.filter(b => b.status === 'confirmed').length}
+                      </div>
+                      <div className="text-gray-600 dark:text-gray-300">Confirmed</div>
+                    </div>
+                  </div>
+                </motion.div>
+              )}
             </motion.div>
 
             {/* Progress dots */}
