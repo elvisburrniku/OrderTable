@@ -790,6 +790,117 @@ export const insertMenuPrintOrderSchema = createInsertSchema(menuPrintOrders).om
 });
 export const selectMenuPrintOrderSchema = createSelectSchema(menuPrintOrders);
 
+// Kitchen Dashboard Tables
+export const kitchenOrders = pgTable("kitchen_orders", {
+  id: serial("id").primaryKey(),
+  restaurantId: integer("restaurant_id").notNull().references(() => restaurants.id, { onDelete: "cascade" }),
+  tenantId: integer("tenant_id").notNull().references(() => tenants.id, { onDelete: "cascade" }),
+  orderNumber: text("order_number").notNull(),
+  tableNumber: text("table_number").notNull(),
+  customerName: text("customer_name").notNull(),
+  items: json("items").notNull(), // Array of menu items with quantities and prep times
+  status: text("status").default("pending").notNull(), // pending, preparing, ready, served, cancelled
+  priority: text("priority").default("medium").notNull(), // low, medium, high, urgent
+  estimatedTime: integer("estimated_time").notNull(), // in minutes
+  actualTime: integer("actual_time"), // in minutes
+  startedAt: timestamp("started_at"),
+  readyAt: timestamp("ready_at"),
+  servedAt: timestamp("served_at"),
+  totalAmount: integer("total_amount").notNull(), // in cents
+  specialInstructions: text("special_instructions"),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+});
+
+export const kitchenStations = pgTable("kitchen_stations", {
+  id: serial("id").primaryKey(),
+  restaurantId: integer("restaurant_id").notNull().references(() => restaurants.id, { onDelete: "cascade" }),
+  tenantId: integer("tenant_id").notNull().references(() => tenants.id, { onDelete: "cascade" }),
+  name: text("name").notNull(),
+  type: text("type").notNull(), // grill, fryer, salad, dessert, beverage, prep
+  capacity: integer("capacity").default(5).notNull(),
+  currentOrders: integer("current_orders").default(0).notNull(),
+  efficiency: integer("efficiency").default(100).notNull(), // percentage
+  averageTime: integer("average_time").default(20).notNull(), // in minutes
+  isActive: boolean("is_active").default(true).notNull(),
+  temperature: integer("temperature"), // for temperature-controlled stations
+  lastMaintenance: timestamp("last_maintenance"),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+});
+
+export const kitchenStaff = pgTable("kitchen_staff", {
+  id: serial("id").primaryKey(),
+  restaurantId: integer("restaurant_id").notNull().references(() => restaurants.id, { onDelete: "cascade" }),
+  tenantId: integer("tenant_id").notNull().references(() => tenants.id, { onDelete: "cascade" }),
+  userId: integer("user_id").references(() => users.id, { onDelete: "set null" }),
+  name: text("name").notNull(),
+  role: text("role").notNull(), // head_chef, sous_chef, line_cook, prep_cook, dishwasher
+  shift: text("shift").notNull(), // morning, afternoon, evening, night
+  efficiency: integer("efficiency").default(100).notNull(), // percentage
+  ordersCompleted: integer("orders_completed").default(0).notNull(),
+  status: text("status").default("offline").notNull(), // active, break, offline
+  currentStation: text("current_station"),
+  hourlyRate: integer("hourly_rate"), // in cents
+  startTime: text("start_time"), // shift start time
+  endTime: text("end_time"), // shift end time
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+});
+
+export const kitchenMetrics = pgTable("kitchen_metrics", {
+  id: serial("id").primaryKey(),
+  restaurantId: integer("restaurant_id").notNull().references(() => restaurants.id, { onDelete: "cascade" }),
+  tenantId: integer("tenant_id").notNull().references(() => tenants.id, { onDelete: "cascade" }),
+  date: date("date").notNull(),
+  ordersCompleted: integer("orders_completed").default(0).notNull(),
+  averageTime: integer("average_time").default(0).notNull(), // in minutes
+  efficiency: integer("efficiency").default(0).notNull(), // percentage
+  revenue: integer("revenue").default(0).notNull(), // in cents
+  peakHour: integer("peak_hour"), // hour of day (0-23)
+  popularItems: json("popular_items"), // array of popular items with counts
+  stationUtilization: json("station_utilization"), // station usage data
+  waitTimes: json("wait_times"), // hourly wait time data
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+});
+
+export type KitchenOrder = InferSelectModel<typeof kitchenOrders>;
+export type InsertKitchenOrder = InferInsertModel<typeof kitchenOrders>;
+
+export type KitchenStation = InferSelectModel<typeof kitchenStations>;
+export type InsertKitchenStation = InferInsertModel<typeof kitchenStations>;
+
+export type KitchenStaff = InferSelectModel<typeof kitchenStaff>;
+export type InsertKitchenStaff = InferInsertModel<typeof kitchenStaff>;
+
+export type KitchenMetrics = InferSelectModel<typeof kitchenMetrics>;
+export type InsertKitchenMetrics = InferInsertModel<typeof kitchenMetrics>;
+
+export const insertKitchenOrderSchema = createInsertSchema(kitchenOrders).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
+export const insertKitchenStationSchema = createInsertSchema(kitchenStations).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
+export const insertKitchenStaffSchema = createInsertSchema(kitchenStaff).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
+export const insertKitchenMetricsSchema = createInsertSchema(kitchenMetrics).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
 export type SeasonalMenuTheme = InferSelectModel<typeof seasonalMenuThemes>;
 export type InsertSeasonalMenuTheme = InferInsertModel<typeof seasonalMenuThemes>;
 

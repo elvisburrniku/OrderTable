@@ -12259,27 +12259,27 @@ NEXT STEPS:
 
         // Convert dollar amounts to cents for database storage
         const orderData = {
-          restaurant_id: restaurantId,
-          tenant_id: tenantId,
-          order_number: orderNumber,
-          contact_name: req.body.contactName,
-          contact_email: req.body.contactEmail,
-          contact_phone: req.body.contactPhone,
-          shipping_address: req.body.shippingAddress,
+          restaurantId,
+          tenantId,
+          orderNumber,
+          contactName: req.body.contactName,
+          contactEmail: req.body.contactEmail,
+          contactPhone: req.body.contactPhone,
+          shippingAddress: req.body.shippingAddress,
           city: req.body.city,
           state: req.body.state,
-          zip_code: req.body.zipCode,
+          zipCode: req.body.zipCode,
           quantity: parseInt(req.body.quantity),
-          menu_theme: req.body.menuTheme,
-          menu_layout: req.body.menuLayout,
-          printing_option: req.body.printingOption,
-          shipping_option: req.body.shippingOption,
+          menuTheme: req.body.menuTheme,
+          menuLayout: req.body.menuLayout,
+          printingOption: req.body.printingOption,
+          shippingOption: req.body.shippingOption,
           subtotal: Math.round(parseFloat(req.body.subtotal) * 100), // Convert to cents
-          shipping_cost: Math.round(parseFloat(req.body.shippingCost) * 100),
+          shippingCost: Math.round(parseFloat(req.body.shippingCost) * 100),
           tax: Math.round(parseFloat(req.body.tax) * 100),
           total: Math.round(parseFloat(req.body.total) * 100),
-          special_instructions: req.body.specialInstructions || null,
-          order_status: 'pending',
+          specialInstructions: req.body.specialInstructions || null,
+          orderStatus: 'pending',
         };
 
         const order = await storage.createMenuOrder(orderData);
@@ -12447,6 +12447,219 @@ NEXT STEPS:
       } catch (error) {
         console.error("Error updating menu order:", error);
         res.status(500).json({ message: "Failed to update menu order" });
+      }
+    },
+  );
+
+  // Kitchen Dashboard API Routes
+  
+  // Get kitchen orders
+  app.get(
+    "/api/tenants/:tenantId/restaurants/:restaurantId/kitchen/orders",
+    validateTenant,
+    async (req, res) => {
+      try {
+        const restaurantId = parseInt(req.params.restaurantId);
+        const tenantId = parseInt(req.params.tenantId);
+        const { timeRange } = req.query;
+
+        const orders = await storage.getKitchenOrders(restaurantId, tenantId, timeRange as string);
+        res.json(orders);
+      } catch (error) {
+        console.error("Error fetching kitchen orders:", error);
+        res.status(500).json({ message: "Failed to fetch kitchen orders" });
+      }
+    },
+  );
+
+  // Update kitchen order status
+  app.patch(
+    "/api/tenants/:tenantId/restaurants/:restaurantId/kitchen/orders/:orderId",
+    validateTenant,
+    async (req, res) => {
+      try {
+        const orderId = parseInt(req.params.orderId);
+        const { status, actualTime, timestamp } = req.body;
+
+        const updates: any = { status };
+        
+        if (status === 'preparing' && !req.body.startedAt) {
+          updates.startedAt = new Date();
+        } else if (status === 'ready' && actualTime) {
+          updates.actualTime = actualTime;
+          updates.readyAt = new Date();
+        } else if (status === 'served') {
+          updates.servedAt = new Date();
+        }
+
+        const updatedOrder = await storage.updateKitchenOrder(orderId, updates);
+        res.json(updatedOrder);
+      } catch (error) {
+        console.error("Error updating kitchen order:", error);
+        res.status(500).json({ message: "Failed to update kitchen order" });
+      }
+    },
+  );
+
+  // Create kitchen order
+  app.post(
+    "/api/tenants/:tenantId/restaurants/:restaurantId/kitchen/orders",
+    validateTenant,
+    async (req, res) => {
+      try {
+        const restaurantId = parseInt(req.params.restaurantId);
+        const tenantId = parseInt(req.params.tenantId);
+
+        const orderData = {
+          ...req.body,
+          restaurantId,
+          tenantId,
+        };
+
+        const order = await storage.createKitchenOrder(orderData);
+        res.status(201).json(order);
+      } catch (error) {
+        console.error("Error creating kitchen order:", error);
+        res.status(500).json({ message: "Failed to create kitchen order" });
+      }
+    },
+  );
+
+  // Get kitchen stations
+  app.get(
+    "/api/tenants/:tenantId/restaurants/:restaurantId/kitchen/stations",
+    validateTenant,
+    async (req, res) => {
+      try {
+        const restaurantId = parseInt(req.params.restaurantId);
+        const tenantId = parseInt(req.params.tenantId);
+
+        const stations = await storage.getKitchenStations(restaurantId, tenantId);
+        res.json(stations);
+      } catch (error) {
+        console.error("Error fetching kitchen stations:", error);
+        res.status(500).json({ message: "Failed to fetch kitchen stations" });
+      }
+    },
+  );
+
+  // Update kitchen station
+  app.patch(
+    "/api/tenants/:tenantId/restaurants/:restaurantId/kitchen/stations/:stationId",
+    validateTenant,
+    async (req, res) => {
+      try {
+        const stationId = parseInt(req.params.stationId);
+        const updates = req.body;
+
+        const updatedStation = await storage.updateKitchenStation(stationId, updates);
+        res.json(updatedStation);
+      } catch (error) {
+        console.error("Error updating kitchen station:", error);
+        res.status(500).json({ message: "Failed to update kitchen station" });
+      }
+    },
+  );
+
+  // Create kitchen station
+  app.post(
+    "/api/tenants/:tenantId/restaurants/:restaurantId/kitchen/stations",
+    validateTenant,
+    async (req, res) => {
+      try {
+        const restaurantId = parseInt(req.params.restaurantId);
+        const tenantId = parseInt(req.params.tenantId);
+
+        const stationData = {
+          ...req.body,
+          restaurantId,
+          tenantId,
+        };
+
+        const station = await storage.createKitchenStation(stationData);
+        res.status(201).json(station);
+      } catch (error) {
+        console.error("Error creating kitchen station:", error);
+        res.status(500).json({ message: "Failed to create kitchen station" });
+      }
+    },
+  );
+
+  // Get kitchen staff
+  app.get(
+    "/api/tenants/:tenantId/restaurants/:restaurantId/kitchen/staff",
+    validateTenant,
+    async (req, res) => {
+      try {
+        const restaurantId = parseInt(req.params.restaurantId);
+        const tenantId = parseInt(req.params.tenantId);
+
+        const staff = await storage.getKitchenStaff(restaurantId, tenantId);
+        res.json(staff);
+      } catch (error) {
+        console.error("Error fetching kitchen staff:", error);
+        res.status(500).json({ message: "Failed to fetch kitchen staff" });
+      }
+    },
+  );
+
+  // Update kitchen staff
+  app.patch(
+    "/api/tenants/:tenantId/restaurants/:restaurantId/kitchen/staff/:staffId",
+    validateTenant,
+    async (req, res) => {
+      try {
+        const staffId = parseInt(req.params.staffId);
+        const updates = req.body;
+
+        const updatedStaff = await storage.updateKitchenStaff(staffId, updates);
+        res.json(updatedStaff);
+      } catch (error) {
+        console.error("Error updating kitchen staff:", error);
+        res.status(500).json({ message: "Failed to update kitchen staff" });
+      }
+    },
+  );
+
+  // Create kitchen staff
+  app.post(
+    "/api/tenants/:tenantId/restaurants/:restaurantId/kitchen/staff",
+    validateTenant,
+    async (req, res) => {
+      try {
+        const restaurantId = parseInt(req.params.restaurantId);
+        const tenantId = parseInt(req.params.tenantId);
+
+        const staffData = {
+          ...req.body,
+          restaurantId,
+          tenantId,
+        };
+
+        const staff = await storage.createKitchenStaff(staffData);
+        res.status(201).json(staff);
+      } catch (error) {
+        console.error("Error creating kitchen staff:", error);
+        res.status(500).json({ message: "Failed to create kitchen staff" });
+      }
+    },
+  );
+
+  // Get kitchen metrics (calculated in real-time)
+  app.get(
+    "/api/tenants/:tenantId/restaurants/:restaurantId/kitchen/metrics",
+    validateTenant,
+    async (req, res) => {
+      try {
+        const restaurantId = parseInt(req.params.restaurantId);
+        const tenantId = parseInt(req.params.tenantId);
+        const { timeRange } = req.query;
+
+        const metrics = await storage.calculateKitchenMetrics(restaurantId, tenantId, timeRange as string);
+        res.json(metrics);
+      } catch (error) {
+        console.error("Error calculating kitchen metrics:", error);
+        res.status(500).json({ message: "Failed to calculate kitchen metrics" });
       }
     },
   );

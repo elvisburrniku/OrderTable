@@ -33,6 +33,10 @@ const {
   menuItems,
   seasonalMenuThemes,
   menuPrintOrders,
+  kitchenOrders,
+  kitchenStations,
+  kitchenStaff,
+  kitchenMetrics,
 } = schema;
 
 export class DatabaseStorage implements IStorage {
@@ -1522,5 +1526,242 @@ export class DatabaseStorage implements IStorage {
     if (!this.db) return false;
     await this.db.delete(menuPrintOrders).where(eq(menuPrintOrders.id, id));
     return true;
+  }
+
+  // Kitchen Dashboard Methods
+
+  // Kitchen Orders
+  async createKitchenOrder(orderData: any): Promise<any> {
+    if (!this.db) throw new Error("Database connection not available");
+    const [newOrder] = await this.db.insert(kitchenOrders).values(orderData).returning();
+    return newOrder;
+  }
+
+  async getKitchenOrders(restaurantId: number, tenantId: number, timeRange?: string): Promise<any[]> {
+    if (!this.db) return [];
+    
+    let query = this.db.select().from(kitchenOrders)
+      .where(and(eq(kitchenOrders.restaurantId, restaurantId), eq(kitchenOrders.tenantId, tenantId)));
+    
+    if (timeRange === 'today') {
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+      query = query.where(gte(kitchenOrders.createdAt, today));
+    } else if (timeRange === 'week') {
+      const weekAgo = new Date();
+      weekAgo.setDate(weekAgo.getDate() - 7);
+      query = query.where(gte(kitchenOrders.createdAt, weekAgo));
+    } else if (timeRange === 'month') {
+      const monthAgo = new Date();
+      monthAgo.setDate(monthAgo.getDate() - 30);
+      query = query.where(gte(kitchenOrders.createdAt, monthAgo));
+    }
+    
+    const result = await query.orderBy(desc(kitchenOrders.createdAt));
+    return result;
+  }
+
+  async getKitchenOrderById(id: number): Promise<any> {
+    if (!this.db) return null;
+    const [order] = await this.db.select().from(kitchenOrders)
+      .where(eq(kitchenOrders.id, id));
+    return order;
+  }
+
+  async updateKitchenOrder(id: number, updates: any): Promise<any> {
+    if (!this.db) throw new Error("Database connection not available");
+    const [updatedOrder] = await this.db.update(kitchenOrders)
+      .set({ ...updates, updatedAt: new Date() })
+      .where(eq(kitchenOrders.id, id))
+      .returning();
+    return updatedOrder;
+  }
+
+  async deleteKitchenOrder(id: number): Promise<boolean> {
+    if (!this.db) return false;
+    await this.db.delete(kitchenOrders).where(eq(kitchenOrders.id, id));
+    return true;
+  }
+
+  // Kitchen Stations
+  async createKitchenStation(stationData: any): Promise<any> {
+    if (!this.db) throw new Error("Database connection not available");
+    const [newStation] = await this.db.insert(kitchenStations).values(stationData).returning();
+    return newStation;
+  }
+
+  async getKitchenStations(restaurantId: number, tenantId: number): Promise<any[]> {
+    if (!this.db) return [];
+    const result = await this.db.select().from(kitchenStations)
+      .where(and(eq(kitchenStations.restaurantId, restaurantId), eq(kitchenStations.tenantId, tenantId)))
+      .orderBy(asc(kitchenStations.name));
+    return result;
+  }
+
+  async updateKitchenStation(id: number, updates: any): Promise<any> {
+    if (!this.db) throw new Error("Database connection not available");
+    const [updatedStation] = await this.db.update(kitchenStations)
+      .set({ ...updates, updatedAt: new Date() })
+      .where(eq(kitchenStations.id, id))
+      .returning();
+    return updatedStation;
+  }
+
+  async deleteKitchenStation(id: number): Promise<boolean> {
+    if (!this.db) return false;
+    await this.db.delete(kitchenStations).where(eq(kitchenStations.id, id));
+    return true;
+  }
+
+  // Kitchen Staff
+  async createKitchenStaff(staffData: any): Promise<any> {
+    if (!this.db) throw new Error("Database connection not available");
+    const [newStaff] = await this.db.insert(kitchenStaff).values(staffData).returning();
+    return newStaff;
+  }
+
+  async getKitchenStaff(restaurantId: number, tenantId: number): Promise<any[]> {
+    if (!this.db) return [];
+    const result = await this.db.select().from(kitchenStaff)
+      .where(and(eq(kitchenStaff.restaurantId, restaurantId), eq(kitchenStaff.tenantId, tenantId)))
+      .orderBy(asc(kitchenStaff.name));
+    return result;
+  }
+
+  async updateKitchenStaff(id: number, updates: any): Promise<any> {
+    if (!this.db) throw new Error("Database connection not available");
+    const [updatedStaff] = await this.db.update(kitchenStaff)
+      .set({ ...updates, updatedAt: new Date() })
+      .where(eq(kitchenStaff.id, id))
+      .returning();
+    return updatedStaff;
+  }
+
+  async deleteKitchenStaff(id: number): Promise<boolean> {
+    if (!this.db) return false;
+    await this.db.delete(kitchenStaff).where(eq(kitchenStaff.id, id));
+    return true;
+  }
+
+  // Kitchen Metrics
+  async createKitchenMetrics(metricsData: any): Promise<any> {
+    if (!this.db) throw new Error("Database connection not available");
+    const [newMetrics] = await this.db.insert(kitchenMetrics).values(metricsData).returning();
+    return newMetrics;
+  }
+
+  async getKitchenMetrics(restaurantId: number, tenantId: number, timeRange?: string): Promise<any> {
+    if (!this.db) return null;
+    
+    let query = this.db.select().from(kitchenMetrics)
+      .where(and(eq(kitchenMetrics.restaurantId, restaurantId), eq(kitchenMetrics.tenantId, tenantId)));
+    
+    if (timeRange === 'today') {
+      const today = new Date().toISOString().split('T')[0];
+      query = query.where(eq(kitchenMetrics.date, today));
+    } else if (timeRange === 'week') {
+      const weekAgo = new Date();
+      weekAgo.setDate(weekAgo.getDate() - 7);
+      const weekAgoStr = weekAgo.toISOString().split('T')[0];
+      query = query.where(gte(kitchenMetrics.date, weekAgoStr));
+    } else if (timeRange === 'month') {
+      const monthAgo = new Date();
+      monthAgo.setDate(monthAgo.getDate() - 30);
+      const monthAgoStr = monthAgo.toISOString().split('T')[0];
+      query = query.where(gte(kitchenMetrics.date, monthAgoStr));
+    }
+    
+    const result = await query.orderBy(desc(kitchenMetrics.date)).limit(1);
+    return result[0] || null;
+  }
+
+  async updateKitchenMetrics(id: number, updates: any): Promise<any> {
+    if (!this.db) throw new Error("Database connection not available");
+    const [updatedMetrics] = await this.db.update(kitchenMetrics)
+      .set({ ...updates, updatedAt: new Date() })
+      .where(eq(kitchenMetrics.id, id))
+      .returning();
+    return updatedMetrics;
+  }
+
+  // Calculate real-time metrics from orders
+  async calculateKitchenMetrics(restaurantId: number, tenantId: number, timeRange: string = 'today'): Promise<any> {
+    if (!this.db) return null;
+    
+    const orders = await this.getKitchenOrders(restaurantId, tenantId, timeRange);
+    const completedOrders = orders.filter((order: any) => order.status === 'served');
+    
+    if (completedOrders.length === 0) {
+      return {
+        ordersToday: 0,
+        averageTime: 0,
+        efficiency: 0,
+        revenue: 0,
+        peakHours: [],
+        popularItems: [],
+        stationUtilization: [],
+        waitTimes: []
+      };
+    }
+    
+    // Calculate metrics
+    const ordersToday = completedOrders.length;
+    const totalTime = completedOrders.reduce((sum: number, order: any) => sum + (order.actualTime || 0), 0);
+    const averageTime = totalTime / completedOrders.length;
+    const totalRevenue = completedOrders.reduce((sum: number, order: any) => sum + order.totalAmount, 0);
+    
+    // Calculate efficiency (actual vs estimated time)
+    const efficiencySum = completedOrders.reduce((sum: number, order: any) => {
+      if (order.actualTime && order.estimatedTime) {
+        return sum + Math.min(100, (order.estimatedTime / order.actualTime) * 100);
+      }
+      return sum + 100;
+    }, 0);
+    const efficiency = Math.round(efficiencySum / completedOrders.length);
+    
+    // Calculate peak hours
+    const hourCounts: { [key: number]: number } = {};
+    completedOrders.forEach((order: any) => {
+      const hour = new Date(order.createdAt).getHours();
+      hourCounts[hour] = (hourCounts[hour] || 0) + 1;
+    });
+    const peakHours = Object.entries(hourCounts)
+      .map(([hour, orders]) => ({ hour: parseInt(hour), orders }))
+      .sort((a, b) => b.orders - a.orders)
+      .slice(0, 5);
+    
+    // Calculate popular items
+    const itemCounts: { [key: string]: { count: number; totalTime: number } } = {};
+    completedOrders.forEach((order: any) => {
+      if (order.items && Array.isArray(order.items)) {
+        order.items.forEach((item: any) => {
+          const key = item.name;
+          if (!itemCounts[key]) {
+            itemCounts[key] = { count: 0, totalTime: 0 };
+          }
+          itemCounts[key].count += item.quantity || 1;
+          itemCounts[key].totalTime += item.preparationTime || 0;
+        });
+      }
+    });
+    const popularItems = Object.entries(itemCounts)
+      .map(([name, data]) => ({ 
+        name, 
+        orders: data.count, 
+        time: Math.round(data.totalTime / data.count) 
+      }))
+      .sort((a, b) => b.orders - a.orders)
+      .slice(0, 10);
+    
+    return {
+      ordersToday,
+      averageTime: Math.round(averageTime),
+      efficiency,
+      revenue: totalRevenue / 100, // Convert from cents to dollars
+      peakHours,
+      popularItems,
+      stationUtilization: [], // Would need station assignment data
+      waitTimes: [] // Would need detailed timing data
+    };
   }
 }
