@@ -201,19 +201,25 @@ export function MenuManagement({ restaurantId, tenantId }: MenuManagementProps) 
     const allergensStr = formData.get('allergens') as string;
     const allergensArray = allergensStr ? allergensStr.split(',').map(a => a.trim()).filter(a => a) : [];
     
+    // Sanitize text fields to convert empty strings to null
+    const ingredients = formData.get('ingredients') as string;
+    const nutritionalInfo = formData.get('nutritionalInfo') as string;
+    const description = formData.get('description') as string;
+    const imageUrl = formData.get('imageUrl') as string;
+    
     const data = {
       categoryId: parseInt(formData.get('categoryId') as string),
       name: formData.get('name') as string,
-      description: formData.get('description') as string,
+      description: description && description.trim() !== '' ? description : null,
       price: priceStr ? Math.round(parseFloat(priceStr) * 100) : undefined,
       currency: formData.get('currency') as string || 'USD',
-      imageUrl: formData.get('imageUrl') as string,
+      imageUrl: imageUrl && imageUrl.trim() !== '' ? imageUrl : null,
       isAvailable: formData.get('isAvailable') === 'on',
       allergens: allergensArray,
       dietary: dietaryFlags,
       preparationTime: parseInt(formData.get('preparationTime') as string) || undefined,
-      ingredients: formData.get('ingredients') as string,
-      nutritionalInfo: formData.get('nutritionalInfo') as string,
+      ingredients: ingredients && ingredients.trim() !== '' ? ingredients : null,
+      nutritionalInfo: nutritionalInfo && nutritionalInfo.trim() !== '' ? nutritionalInfo : null,
       displayOrder: parseInt(formData.get('displayOrder') as string) || 0,
       isActive: formData.get('isActive') === 'on',
     };

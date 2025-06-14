@@ -8970,6 +8970,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
           ...req.body,
           restaurantId: parseInt(restaurantId),
           tenantId: parseInt(tenantId),
+          ingredients: req.body.ingredients || null,
+          nutritionalInfo: req.body.nutritionalInfo || null,
         };
 
         const item = await storage.createMenuItem(itemData);
@@ -8992,7 +8994,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
           return res.status(404).json({ message: "Restaurant not found" });
         }
 
-        const item = await storage.updateMenuItem(parseInt(itemId), req.body);
+        const updateData = {
+          ...req.body,
+          ingredients: req.body.ingredients || null,
+          nutritionalInfo: req.body.nutritionalInfo || null,
+        };
+        const item = await storage.updateMenuItem(parseInt(itemId), updateData);
         if (!item) {
           return res.status(404).json({ message: "Item not found" });
         }
