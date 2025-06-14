@@ -8814,6 +8814,27 @@ export async function registerRoutes(app: Express): Promise<Server> {
     },
   );
 
+  // Resolved conflicts endpoint
+  app.get(
+    "/api/tenants/:tenantId/restaurants/:restaurantId/resolved-conflicts",
+    validateTenant,
+    async (req: Request, res: Response) => {
+      try {
+        const { tenantId, restaurantId } = req.params;
+        const restaurant = await storage.getRestaurantById(parseInt(restaurantId));
+        if (!restaurant || restaurant.tenantId !== parseInt(tenantId)) {
+          return res.status(404).json({ message: "Restaurant not found" });
+        }
+
+        const resolvedConflicts = await storage.getResolvedConflictsByRestaurant(parseInt(restaurantId));
+        res.json(resolvedConflicts);
+      } catch (error) {
+        console.error("Error fetching resolved conflicts:", error);
+        res.status(500).json({ error: "Failed to fetch resolved conflicts" });
+      }
+    }
+  );
+
   // Test webhook endpoint for debugging
   app.post("/api/webhook-test", async (req, res) => {
     console.log("=== WEBHOOK TEST RECEIVED ===");

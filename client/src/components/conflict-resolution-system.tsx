@@ -114,6 +114,12 @@ export default function ConflictResolutionSystem({
     enabled: !!tenantId && !!restaurantId,
   });
 
+  // Fetch resolved conflicts for the Resolved tab
+  const { data: resolvedConflicts = [], isLoading: resolvedLoading } = useQuery({
+    queryKey: [`/api/tenants/${tenantId}/restaurants/${restaurantId}/resolved-conflicts`],
+    enabled: !!tenantId && !!restaurantId && activeTab === "resolved",
+  });
+
   // Auto-resolve conflicts mutation
   const autoResolveMutation = useMutation({
     mutationFn: async ({ bookingId, newTableId, resolutionType }: { bookingId: number, newTableId: number, resolutionType: string }) => {
@@ -254,7 +260,6 @@ export default function ConflictResolutionSystem({
   };
 
   const activeConflicts = conflicts.filter(c => c.type !== 'resolved');
-  const resolvedConflicts = conflicts.filter(c => c.type === 'resolved');
 
   return (
     <div className="space-y-6">
@@ -450,7 +455,12 @@ export default function ConflictResolutionSystem({
         </TabsContent>
 
         <TabsContent value="resolved" className="space-y-4">
-          {resolvedConflicts.length === 0 ? (
+          {resolvedLoading ? (
+            <div className="text-center py-8">
+              <RefreshCw className="w-8 h-8 animate-spin mx-auto mb-4 text-muted-foreground" />
+              <p className="text-muted-foreground">Loading resolved conflicts...</p>
+            </div>
+          ) : resolvedConflicts.length === 0 ? (
             <Card>
               <CardContent className="text-center py-8">
                 <Clock className="w-12 h-12 mx-auto mb-4 text-muted-foreground" />
@@ -462,23 +472,68 @@ export default function ConflictResolutionSystem({
             </Card>
           ) : (
             <div className="space-y-4">
-              {resolvedConflicts.map((conflict) => (
-                <Card key={conflict.id} className="border-l-4 border-l-green-500 opacity-75">
+              {resolvedConflicts.map((resolvedConflict: any) => (
+                <Card key={resolvedConflict.id} className="border-l-4 border-l-green-500">
                   <CardHeader>
                     <div className="flex items-center justify-between">
                       <div className="flex items-center space-x-3">
                         <CheckCircle className="w-5 h-5 text-green-500" />
                         <div>
-                          <CardTitle className="text-lg">
-                            {getConflictTypeLabel(conflict.type)} - Resolved
+                          <CardTitle className="text-lg flex items-center space-x-2">
+                            <span>{resolvedConflict.conflictType.replace('_', ' ').toUpperCase()}</span>
+                            <Badge variant="outline" className="text-green-600 border-green-600">
+                              Resolved
+                            </Badge>
                           </CardTitle>
                           <p className="text-sm text-muted-foreground">
-                            Resolved on {format(parseISO(conflict.createdAt), 'MMM dd, HH:mm')}
+                            Resolved on {format(parseISO(resolvedConflict.resolvedAt), 'MMM dd, yyyy HH:mm')} 
+                            by {resolvedConflict.appliedBy}
                           </p>
                         </div>
                       </div>
+                      <Badge 
+                        variant={resolvedConflict.severity === 'high' ? 'destructive' : 
+                                resolvedConflict.severity === 'medium' ? 'default' : 'secondary'}
+                      >
+                        {resolvedConflict.severity}
+                      </Badge>
                     </div>
                   </CardHeader>
+                  <CardContent>
+                    <div className="space-y-3">
+                      <div className="flex items-center justify-between">
+                        <span className="text-sm font-medium text-muted-foreground">Resolution Applied:</span>
+                        <Badge variant="outline" className="text-blue-600 border-blue-600">
+                          {resolvedConflict.resolutionType.replace('_', ' ').toUpperCase()}
+                        </Badge>
+                      </div>
+                      
+                      <div className="bg-muted/50 p-3 rounded-lg">
+                        <p className="text-sm font-medium mb-1">Resolution Details:</p>
+                        <p className="text-sm text-muted-foreground">
+                          {resolvedConflict.resolutionDetails}
+                        </p>
+                      </div>
+
+                      {resolvedConflict.bookingIds && resolvedConflict.bookingIds.length > 0 && (
+                        <div>
+                          <p className="text-sm font-medium mb-2">Affected Bookings:</p>
+                          <div className="flex flex-wrap gap-2">
+                            {resolvedConflict.bookingIds.map((bookingId: number) => (
+                              <Badge key={bookingId} variant="secondary">
+                                Booking #{bookingId}
+                              </Badge>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+
+                      <div className="flex items-center justify-between text-xs text-muted-foreground pt-2 border-t">
+                        <span>Conflict ID: {resolvedConflict.conflictId}</span>
+                        <span>Original Date: {format(parseISO(resolvedConflict.createdAt), 'MMM dd, yyyy')}</span>
+                      </div>
+                    </div>
+                  </CardContent>
                 </Card>
               ))}
             </div>
