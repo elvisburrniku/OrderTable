@@ -12241,19 +12241,45 @@ NEXT STEPS:
         const restaurantId = parseInt(req.params.restaurantId);
         const tenantId = parseInt(req.params.tenantId);
 
+        console.log("Menu order request body:", JSON.stringify(req.body, null, 2));
+
+        // Validate required fields
+        const requiredFields = ['contactName', 'contactEmail', 'contactPhone', 'shippingAddress', 'city', 'state', 'zipCode', 'quantity', 'menuTheme', 'menuLayout', 'printingOption', 'shippingOption', 'subtotal', 'shippingCost', 'tax', 'total'];
+        const missingFields = requiredFields.filter(field => !req.body[field]);
+        
+        if (missingFields.length > 0) {
+          return res.status(400).json({
+            success: false,
+            message: `Missing required fields: ${missingFields.join(', ')}`
+          });
+        }
+
         // Generate unique order number
         const orderNumber = `MO-${Date.now()}-${Math.random().toString(36).substr(2, 9).toUpperCase()}`;
 
         // Convert dollar amounts to cents for database storage
         const orderData = {
-          ...req.body,
           restaurantId,
           tenantId,
           orderNumber,
-          subtotal: Math.round(req.body.subtotal * 100), // Convert to cents
-          shippingCost: Math.round(req.body.shippingCost * 100),
-          tax: Math.round(req.body.tax * 100),
-          total: Math.round(req.body.total * 100),
+          contactName: req.body.contactName,
+          contactEmail: req.body.contactEmail,
+          contactPhone: req.body.contactPhone,
+          shippingAddress: req.body.shippingAddress,
+          city: req.body.city,
+          state: req.body.state,
+          zipCode: req.body.zipCode,
+          quantity: parseInt(req.body.quantity),
+          menuTheme: req.body.menuTheme,
+          menuLayout: req.body.menuLayout,
+          printingOption: req.body.printingOption,
+          shippingOption: req.body.shippingOption,
+          subtotal: Math.round(parseFloat(req.body.subtotal) * 100), // Convert to cents
+          shippingCost: Math.round(parseFloat(req.body.shippingCost) * 100),
+          tax: Math.round(parseFloat(req.body.tax) * 100),
+          total: Math.round(parseFloat(req.body.total) * 100),
+          specialInstructions: req.body.specialInstructions || null,
+          orderStatus: 'pending',
         };
 
         const order = await storage.createMenuOrder(orderData);
