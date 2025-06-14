@@ -249,16 +249,26 @@ export interface IStorage {
 
   // Menu Categories
   getMenuCategoriesByRestaurant(restaurantId: number): Promise<MenuCategory[]>;
+  getMenuCategories(restaurantId: number, tenantId: number): Promise<MenuCategory[]>;
   createMenuCategory(category: InsertMenuCategory): Promise<MenuCategory>;
   updateMenuCategory(id: number, updates: Partial<MenuCategory>): Promise<MenuCategory | undefined>;
   deleteMenuCategory(id: number): Promise<boolean>;
 
   // Menu Items
   getMenuItemsByRestaurant(restaurantId: number): Promise<MenuItem[]>;
+  getMenuItems(restaurantId: number, tenantId: number): Promise<MenuItem[]>;
   getMenuItemsByCategory(categoryId: number): Promise<MenuItem[]>;
   createMenuItem(item: InsertMenuItem): Promise<MenuItem>;
   updateMenuItem(id: number, updates: Partial<MenuItem>): Promise<MenuItem | undefined>;
   deleteMenuItem(id: number): Promise<boolean>;
+
+  // Seasonal Menu Themes
+  getSeasonalMenuThemes(restaurantId: number, tenantId: number): Promise<any[]>;
+  getSeasonalMenuThemeById(id: number): Promise<any>;
+  createSeasonalMenuTheme(theme: any): Promise<any>;
+  updateSeasonalMenuTheme(id: number, updates: any): Promise<any>;
+  deleteSeasonalMenuTheme(id: number): Promise<boolean>;
+  setActiveSeasonalTheme(restaurantId: number, tenantId: number, themeId: number): Promise<boolean>;
 
   // Webhooks
   getWebhooksByRestaurant(restaurantId: number): Promise<any[]>;

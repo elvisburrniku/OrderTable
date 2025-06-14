@@ -1359,6 +1359,14 @@ export class DatabaseStorage implements IStorage {
     return result;
   }
 
+  async getMenuCategories(restaurantId: number, tenantId: number): Promise<any[]> {
+    if (!this.db) return [];
+    const result = await this.db.select().from(menuCategories)
+      .where(and(eq(menuCategories.restaurantId, restaurantId), eq(menuCategories.tenantId, tenantId)))
+      .orderBy(asc(menuCategories.displayOrder), asc(menuCategories.name));
+    return result;
+  }
+
   async createMenuCategory(category: any): Promise<any> {
     if (!this.db) throw new Error("Database connection not available");
     const [newCategory] = await this.db.insert(menuCategories).values(category).returning();
@@ -1385,6 +1393,14 @@ export class DatabaseStorage implements IStorage {
     if (!this.db) return [];
     const result = await this.db.select().from(menuItems)
       .where(eq(menuItems.restaurantId, restaurantId))
+      .orderBy(asc(menuItems.displayOrder), asc(menuItems.name));
+    return result;
+  }
+
+  async getMenuItems(restaurantId: number, tenantId: number): Promise<any[]> {
+    if (!this.db) return [];
+    const result = await this.db.select().from(menuItems)
+      .where(and(eq(menuItems.restaurantId, restaurantId), eq(menuItems.tenantId, tenantId)))
       .orderBy(asc(menuItems.displayOrder), asc(menuItems.name));
     return result;
   }
