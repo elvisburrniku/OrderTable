@@ -1471,9 +1471,12 @@ export default function EnhancedGoogleCalendar({
               <Label htmlFor="tableId">Available Tables</Label>
               <Select
                 value={newBooking.tableId}
-                onValueChange={(value) =>
-                  setNewBooking((prev) => ({ ...prev, tableId: value }))
-                }
+                onValueChange={(value) => {
+                  // Prevent selecting the disabled "no tables available" option
+                  if (value !== "no-tables-available") {
+                    setNewBooking((prev) => ({ ...prev, tableId: value }));
+                  }
+                }}
               >
                 <SelectTrigger>
                   <SelectValue placeholder="Select an available table" />
@@ -1496,7 +1499,7 @@ export default function EnhancedGoogleCalendar({
                     
                     if (availableTables.length === 0) {
                       return (
-                        <SelectItem value="" disabled>
+                        <SelectItem value="no-tables-available" disabled>
                           No tables available for this time slot
                         </SelectItem>
                       );

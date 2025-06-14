@@ -283,7 +283,7 @@ export default function Bookings() {
 
   // Handle table selection with conflict detection
   const handleTableSelection = (tableId: string) => {
-    if (!tableId) {
+    if (!tableId || tableId === "auto-assign") {
       setNewBooking({ ...newBooking, tableId: "" });
       setConflictInfo(null);
       setSuggestedTable(null);
@@ -856,7 +856,7 @@ export default function Bookings() {
                   <SelectValue placeholder="Auto-assign or select table" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="">Auto-assign</SelectItem>
+                  <SelectItem value="auto-assign">Auto-assign</SelectItem>
                   {tables && tables.length > 0 ? (
                     tables.map((table) => (
                       <SelectItem key={`table-${table.id}`} value={table.id.toString()}>
