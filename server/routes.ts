@@ -9034,6 +9034,146 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   );
 
+  // Seasonal Menu Themes Routes
+  app.get(
+    "/api/tenants/:tenantId/restaurants/:restaurantId/seasonal-themes",
+    validateTenant,
+    async (req: Request, res: Response) => {
+      try {
+        const { tenantId, restaurantId } = req.params;
+        const restaurant = await storage.getRestaurantById(parseInt(restaurantId));
+        if (!restaurant || restaurant.tenantId !== parseInt(tenantId)) {
+          return res.status(404).json({ message: "Restaurant not found" });
+        }
+
+        const themes = await storage.getSeasonalMenuThemes(parseInt(restaurantId), parseInt(tenantId));
+        res.json(themes);
+      } catch (error) {
+        console.error("Error fetching seasonal themes:", error);
+        res.status(500).json({ error: "Failed to fetch seasonal themes" });
+      }
+    }
+  );
+
+  app.post(
+    "/api/tenants/:tenantId/restaurants/:restaurantId/seasonal-themes/generate",
+    validateTenant,
+    async (req: Request, res: Response) => {
+      try {
+        const { tenantId, restaurantId } = req.params;
+        const { season, customPrompt } = req.body;
+        
+        const restaurant = await storage.getRestaurantById(parseInt(restaurantId));
+        if (!restaurant || restaurant.tenantId !== parseInt(tenantId)) {
+          return res.status(404).json({ message: "Restaurant not found" });
+        }
+
+        // Get existing menu items for context
+        const menuItems = await storage.getMenuItems(parseInt(restaurantId), parseInt(tenantId));
+        const categories = await storage.getMenuCategories(parseInt(restaurantId), parseInt(tenantId));
+        
+        const menuItemsWithCategories = menuItems.map(item => {
+          const category = categories.find(cat => cat.id === item.categoryId);
+          return {
+            name: item.name,
+            description: item.description,
+            category: category?.name || 'Other',
+            allergens: item.allergens,
+            dietary: item.dietary
+          };
+        });
+
+        const { AISeasonalMenuService } = await import('./ai-seasonal-menu');
+        const aiService = new AISeasonalMenuService();
+        
+        const aiResult = await aiService.generateSeasonalTheme({
+          season,
+          year: new Date().getFullYear(),
+          restaurantName: restaurant.name,
+          existingMenuItems: menuItemsWithCategories,
+          customPrompt
+        });
+
+        // Save the generated theme to database
+        const themeData = {
+          restaurantId: parseInt(restaurantId),
+          tenantId: parseInt(tenantId),
+          name: aiResult.name,
+          description: aiResult.description,
+          season,
+          year: new Date().getFullYear(),
+          color: aiResult.color,
+          isActive: false,
+          aiGenerated: true,
+          prompt: customPrompt || `Generated ${season} theme`,
+          suggestedMenuItems: aiResult.suggestedMenuItems,
+          marketingCopy: aiResult.marketingCopy,
+          targetIngredients: aiResult.targetIngredients,
+          moodKeywords: aiResult.moodKeywords
+        };
+
+        const savedTheme = await storage.createSeasonalMenuTheme(themeData);
+        res.json(savedTheme);
+      } catch (error) {
+        console.error("Error generating seasonal theme:", error);
+        res.status(500).json({ error: "Failed to generate seasonal theme" });
+      }
+    }
+  );
+
+  app.put(
+    "/api/tenants/:tenantId/restaurants/:restaurantId/seasonal-themes/:themeId/activate",
+    validateTenant,
+    async (req: Request, res: Response) => {
+      try {
+        const { tenantId, restaurantId, themeId } = req.params;
+        const restaurant = await storage.getRestaurantById(parseInt(restaurantId));
+        if (!restaurant || restaurant.tenantId !== parseInt(tenantId)) {
+          return res.status(404).json({ message: "Restaurant not found" });
+        }
+
+        const success = await storage.setActiveSeasonalTheme(
+          parseInt(restaurantId), 
+          parseInt(tenantId), 
+          parseInt(themeId)
+        );
+        
+        if (!success) {
+          return res.status(404).json({ message: "Theme not found" });
+        }
+
+        res.json({ message: "Theme activated successfully" });
+      } catch (error) {
+        console.error("Error activating theme:", error);
+        res.status(500).json({ error: "Failed to activate theme" });
+      }
+    }
+  );
+
+  app.delete(
+    "/api/tenants/:tenantId/restaurants/:restaurantId/seasonal-themes/:themeId",
+    validateTenant,
+    async (req: Request, res: Response) => {
+      try {
+        const { tenantId, restaurantId, themeId } = req.params;
+        const restaurant = await storage.getRestaurantById(parseInt(restaurantId));
+        if (!restaurant || restaurant.tenantId !== parseInt(tenantId)) {
+          return res.status(404).json({ message: "Restaurant not found" });
+        }
+
+        const success = await storage.deleteSeasonalMenuTheme(parseInt(themeId));
+        if (!success) {
+          return res.status(404).json({ message: "Theme not found" });
+        }
+
+        res.json({ message: "Theme deleted successfully" });
+      } catch (error) {
+        console.error("Error deleting theme:", error);
+        res.status(500).json({ error: "Failed to delete theme" });
+      }
+    }
+  );
+
   // Test webhook endpoint for debugging
   app.post("/api/webhook-test", async (req, res) => {
     console.log("=== WEBHOOK TEST RECEIVED ===");

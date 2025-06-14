@@ -1,5 +1,9 @@
+import { useState } from "react";
 import { useAuth } from "@/lib/auth";
 import { MenuManagement } from "@/components/menu-management";
+import SeasonalMenuThemes from "@/components/seasonal-menu-themes";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { UtensilsCrossed, Sparkles } from "lucide-react";
 
 export default function MenuManagementPage() {
   const { restaurant } = useAuth();
@@ -16,10 +20,32 @@ export default function MenuManagementPage() {
 
   return (
     <div className="p-6">
-      <MenuManagement 
-        restaurantId={restaurant.id} 
-        tenantId={restaurant.tenantId} 
-      />
+      <Tabs defaultValue="menu" className="w-full">
+        <TabsList className="grid w-full grid-cols-2">
+          <TabsTrigger value="menu" className="flex items-center gap-2">
+            <UtensilsCrossed className="h-4 w-4" />
+            Menu Management
+          </TabsTrigger>
+          <TabsTrigger value="themes" className="flex items-center gap-2">
+            <Sparkles className="h-4 w-4" />
+            AI Seasonal Themes
+          </TabsTrigger>
+        </TabsList>
+        
+        <TabsContent value="menu" className="mt-6">
+          <MenuManagement 
+            restaurantId={restaurant.id} 
+            tenantId={restaurant.tenantId} 
+          />
+        </TabsContent>
+        
+        <TabsContent value="themes" className="mt-6">
+          <SeasonalMenuThemes 
+            restaurantId={restaurant.id} 
+            tenantId={restaurant.tenantId} 
+          />
+        </TabsContent>
+      </Tabs>
     </div>
   );
 }
