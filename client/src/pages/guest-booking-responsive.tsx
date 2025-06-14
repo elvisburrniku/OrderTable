@@ -53,6 +53,12 @@ export default function GuestBookingResponsive(props: any) {
     enabled: !!(tenantId && restaurantId),
   });
 
+  // Fetch seasonal themes to determine if Experience step should be shown
+  const { data: seasonalThemes = [] } = useQuery({
+    queryKey: [`/api/tenants/${tenantId}/restaurants/${restaurantId}/seasonal-themes`],
+    enabled: !!(tenantId && restaurantId),
+  });
+
   // Fetch cut-off times
   const { data: cutOffTimes } = useQuery({
     queryKey: [`/api/tenants/${tenantId}/restaurants/${restaurantId}/cut-off-times`],
@@ -99,11 +105,12 @@ export default function GuestBookingResponsive(props: any) {
     },
   });
 
+  // Dynamic steps based on available seasonal themes
   const steps = [
     { title: "Date", icon: Calendar },
     { title: "Time", icon: Clock },
     { title: "Guests", icon: Users },
-    { title: "Experience", icon: Sparkles },
+    ...(seasonalThemes.length > 0 ? [{ title: "Experience", icon: Sparkles }] : []),
     { title: "Details", icon: User },
   ];
 
@@ -134,12 +141,20 @@ export default function GuestBookingResponsive(props: any) {
   };
 
   const isStepValid = () => {
+    const hasThemes = seasonalThemes.length > 0;
+    
     switch (currentStep) {
       case 0: return selectedDate !== null;
       case 1: return selectedTime !== '';
       case 2: return guestCount >= 1;
-      case 3: return true; // Seasonal theme is optional
-      case 4: return customerData.name && customerData.email && customerData.phone;
+      case 3: 
+        if (hasThemes) {
+          return true; // Seasonal theme is optional
+        } else {
+          // If no themes, step 3 is the Details step
+          return customerData.name && customerData.email && customerData.phone;
+        }
+      case 4: return customerData.name && customerData.email && customerData.phone; // Only when themes exist
       default: return false;
     }
   };
@@ -446,14 +461,16 @@ export default function GuestBookingResponsive(props: any) {
       </div>
       {/* Main Content */}
       <div className="flex-1 px-4 pb-6 bg-[#431b6d]">
-        {/* Seasonal Theme Display */}
-        <div className="max-w-2xl mx-auto mb-6">
-          <ActiveSeasonalThemeDisplay
-            restaurantId={parseInt(restaurantId)}
-            tenantId={parseInt(tenantId)}
-            variant="compact"
-          />
-        </div>
+        {/* Seasonal Theme Display (only if themes exist) */}
+        {seasonalThemes.length > 0 && (
+          <div className="max-w-2xl mx-auto mb-6">
+            <ActiveSeasonalThemeDisplay
+              restaurantId={parseInt(restaurantId)}
+              tenantId={parseInt(tenantId)}
+              variant="compact"
+            />
+          </div>
+        )}
         
         <Card className="max-w-2xl mx-auto bg-white/95 backdrop-blur-sm shadow-2xl">
           <CardContent className="p-6 md:p-8">
@@ -712,8 +729,8 @@ export default function GuestBookingResponsive(props: any) {
               </div>
             )}
 
-            {/* Step 3: Seasonal Theme Selection */}
-            {currentStep === 3 && (
+            {/* Step 3: Seasonal Theme Selection (only if themes exist) */}
+            {currentStep === 3 && seasonalThemes.length > 0 && (
               <div className="space-y-6">
                 <div className="text-center">
                   <h2 className="text-xl md:text-2xl font-bold text-gray-900 mb-2">Choose Your Dining Experience</h2>
@@ -732,8 +749,8 @@ export default function GuestBookingResponsive(props: any) {
               </div>
             )}
 
-            {/* Step 4: Customer Details */}
-            {currentStep === 4 && (
+            {/* Customer Details Step (dynamic step number based on themes availability) */}
+            {((currentStep === 3 && seasonalThemes.length === 0) || (currentStep === 4 && seasonalThemes.length > 0)) && (
               <div className="space-y-6">
                 <h2 className="text-xl md:text-2xl font-bold text-gray-900 text-center">Your Details</h2>
                 <div className="space-y-4">
