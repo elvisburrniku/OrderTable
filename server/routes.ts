@@ -1076,8 +1076,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
         }
 
         // Validate table availability for updates that might cause conflicts
-        if (updates.tableId || updates.bookingDate || updates.startTime) {
-          const tableId = updates.tableId || existingBooking.tableId;
+        // Only check conflicts if a table is actually assigned (not null)
+        const tableId = updates.tableId !== undefined ? updates.tableId : existingBooking.tableId;
+        if ((updates.tableId || updates.bookingDate || updates.startTime) && tableId !== null) {
           const bookingDate = updates.bookingDate
             ? new Date(updates.bookingDate).toISOString().split("T")[0]
             : new Date(existingBooking.bookingDate).toISOString().split("T")[0];
