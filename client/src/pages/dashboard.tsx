@@ -7,6 +7,7 @@ import BookingCalendar from "@/components/booking-calendar";
 import EnhancedGoogleCalendar from "@/components/enhanced-google-calendar";
 import WalkInBookingButton from "@/components/walk-in-booking";
 import RealTimeTableStatus from "@/components/real-time-table-status";
+import WelcomeAnimation from "@/components/welcome-animation";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent } from "@/components/ui/card";
@@ -91,12 +92,24 @@ export default function Dashboard() {
   const [selectedTableBookings, setSelectedTableBookings] = useState<any[]>([]);
   const [editingBooking, setEditingBooking] = useState<any>(null);
   const [currentTime, setCurrentTime] = useState(new Date());
+  const [showWelcomeAnimation, setShowWelcomeAnimation] = useState(() => {
+    // Check if user has seen welcome animation today
+    const lastWelcomeDate = localStorage.getItem('lastWelcomeDate');
+    const today = new Date().toDateString();
+    return lastWelcomeDate !== today;
+  });
 
   useEffect(() => {
     if (!isLoading && (!user || !restaurant)) {
       setLocation("/login");
     }
   }, [isLoading, user, restaurant]);
+
+  // Handle welcome animation completion
+  const handleWelcomeComplete = () => {
+    setShowWelcomeAnimation(false);
+    localStorage.setItem('lastWelcomeDate', new Date().toDateString());
+  };
 
   // Update current time every second
   useEffect(() => {
@@ -904,6 +917,15 @@ export default function Dashboard() {
 
   return (
     <div className="min-h-screen bg-gray-50">
+      {/* Welcome Animation */}
+      {showWelcomeAnimation && (
+        <WelcomeAnimation
+          restaurant={restaurant}
+          todayBookings={todayBookings}
+          onAnimationComplete={handleWelcomeComplete}
+        />
+      )}
+      
       {/* Main Content */}
       <div className="flex-1 flex flex-col">
         {/* Header */}
