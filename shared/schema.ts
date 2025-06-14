@@ -530,6 +530,8 @@ export const selectSpecialPeriodSchema = createSelectSchema(specialPeriods);
 export const insertCutOffTimeSchema = createInsertSchema(cutOffTimes);
 export const selectCutOffTimeSchema = createSelectSchema(cutOffTimes);
 
+
+
 export const tableLayouts = pgTable("table_layouts", {
   id: serial("id").primaryKey(),
   restaurantId: integer("restaurant_id")
@@ -567,6 +569,23 @@ export const webhooks = pgTable("webhooks", {
   isActive: boolean("is_active").default(true),
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow()
+});
+
+// Resolved Conflicts table
+export const resolvedConflicts = pgTable("resolved_conflicts", {
+  id: serial("id").primaryKey(),
+  restaurantId: integer("restaurant_id").notNull().references(() => restaurants.id, { onDelete: "cascade" }),
+  tenantId: integer("tenant_id").notNull().references(() => tenants.id, { onDelete: "cascade" }),
+  conflictId: text("conflict_id").notNull(),
+  conflictType: text("conflict_type").notNull(),
+  severity: text("severity").notNull(),
+  bookingIds: json("booking_ids").notNull().default([]),
+  resolutionType: text("resolution_type").notNull(),
+  resolutionDetails: text("resolution_details").notNull(),
+  appliedBy: text("applied_by").default("system"),
+  originalData: json("original_data").notNull().default({}),
+  resolvedAt: timestamp("resolved_at").defaultNow().notNull(),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 
 // Rescheduling Suggestions table
@@ -656,5 +675,15 @@ export const insertReschedulingSuggestionSchema = createInsertSchema(reschedulin
   updatedAt: true,
 });
 export const selectReschedulingSuggestionSchema = createSelectSchema(reschedulingSuggestions);
+
+export const insertResolvedConflictSchema = createInsertSchema(resolvedConflicts).omit({
+  id: true,
+  createdAt: true,
+  resolvedAt: true,
+});
+export const selectResolvedConflictSchema = createSelectSchema(resolvedConflicts);
+
+export type ResolvedConflict = InferSelectModel<typeof resolvedConflicts>;
+export type InsertResolvedConflict = InferInsertModel<typeof resolvedConflicts>;
 
 export type LoginData = z.infer<typeof loginSchema>;
