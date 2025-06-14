@@ -46,10 +46,11 @@ export default function SeasonalMenuThemes({ restaurantId, tenantId }: SeasonalM
 
   const generateThemeMutation = useMutation({
     mutationFn: async ({ season, customPrompt }: { season: string; customPrompt: string }) => {
-      return apiRequest(`/api/tenants/${tenantId}/restaurants/${restaurantId}/seasonal-themes/generate`, {
-        method: 'POST',
-        body: { season, customPrompt }
-      });
+      const response = await apiRequest('POST', `/api/tenants/${tenantId}/restaurants/${restaurantId}/seasonal-themes/generate`, { season, customPrompt });
+      if (!response.ok) {
+        throw new Error(`Failed to generate theme: ${response.statusText}`);
+      }
+      return response.json();
     },
     onSuccess: () => {
       toast({
@@ -72,9 +73,11 @@ export default function SeasonalMenuThemes({ restaurantId, tenantId }: SeasonalM
 
   const activateThemeMutation = useMutation({
     mutationFn: async (themeId: number) => {
-      return apiRequest(`/api/tenants/${tenantId}/restaurants/${restaurantId}/seasonal-themes/${themeId}/activate`, {
-        method: 'PUT'
-      });
+      const response = await apiRequest('PUT', `/api/tenants/${tenantId}/restaurants/${restaurantId}/seasonal-themes/${themeId}/activate`);
+      if (!response.ok) {
+        throw new Error(`Failed to activate theme: ${response.statusText}`);
+      }
+      return response.json();
     },
     onSuccess: () => {
       toast({
@@ -87,9 +90,11 @@ export default function SeasonalMenuThemes({ restaurantId, tenantId }: SeasonalM
 
   const deleteThemeMutation = useMutation({
     mutationFn: async (themeId: number) => {
-      return apiRequest(`/api/tenants/${tenantId}/restaurants/${restaurantId}/seasonal-themes/${themeId}`, {
-        method: 'DELETE'
-      });
+      const response = await apiRequest('DELETE', `/api/tenants/${tenantId}/restaurants/${restaurantId}/seasonal-themes/${themeId}`);
+      if (!response.ok) {
+        throw new Error(`Failed to delete theme: ${response.statusText}`);
+      }
+      return response.json();
     },
     onSuccess: () => {
       toast({
