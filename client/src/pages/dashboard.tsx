@@ -44,6 +44,7 @@ import {
   TrendingUp,
   Clock4,
   Calendar as CalendarIcon,
+  ChefHat,
 } from "lucide-react";
 import { format } from "date-fns";
 import { CardHeader, CardTitle } from "@/components/ui/card";
@@ -66,12 +67,13 @@ import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import { RealTimeNotifications } from "@/components/real-time-notifications";
 import { safeArray, safeObject } from "@/hooks/use-mobile-safe";
+import { MenuManagement } from "@/components/menu-management";
 
 export default function Dashboard() {
   const [, setLocation] = useLocation();
   const { user, restaurant, logout, isLoading } = useAuth();
   const [selectedDate, setSelectedDate] = useState(new Date());
-  const [viewMode, setViewMode] = useState<"calendar" | "layout" | "status">(
+  const [viewMode, setViewMode] = useState<"calendar" | "layout" | "status" | "menu">(
     "calendar",
   );
   const [selectedRoom, setSelectedRoom] = useState<string>("");
@@ -995,6 +997,15 @@ export default function Dashboard() {
                 <Clock4 className="h-4 w-4 mr-2" />
                 Live Status
               </Button>
+              <Button
+                variant={viewMode === "menu" ? "default" : "ghost"}
+                size="sm"
+                onClick={() => setViewMode("menu")}
+                className={viewMode === "menu" ? "bg-white shadow-sm" : ""}
+              >
+                <ChefHat className="h-4 w-4 mr-2" />
+                Menu
+              </Button>
             </div>
             <Button
               className="bg-green-600 hover:bg-green-700 text-white"
@@ -1103,6 +1114,11 @@ export default function Dashboard() {
               showCompactView={false}
               autoRefresh={true}
               refreshInterval={30000}
+            />
+          ) : viewMode === "menu" ? (
+            <MenuManagement
+              restaurantId={restaurant?.id || 0}
+              tenantId={restaurant?.tenantId || 0}
             />
           ) : (
             <EnhancedGoogleCalendar
