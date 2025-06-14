@@ -1,4 +1,4 @@
-const { ConflictDetector } = require('./server/conflict-detector.ts');
+import { ConflictDetector } from './server/conflict-detector.js';
 
 // Mock data based on the actual database content
 const mockBookings = [
