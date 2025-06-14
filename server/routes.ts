@@ -34,6 +34,7 @@ import { setupSSO } from "./sso-auth";
 import { SubscriptionService } from "./subscription-service";
 import { CancellationReminderService } from "./cancellation-reminder-service";
 import { GoogleCalendarService } from "./google-calendar-service";
+import { ConflictDetector } from "./conflict-detector";
 
 const stripe = new Stripe(
   process.env.STRIPE_SECRET_KEY || "sk_test_your_stripe_secret_key",
@@ -9220,14 +9221,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Get conflicts for a restaurant
   app.get(
     "/api/tenants/:tenantId/restaurants/:restaurantId/conflicts",
-    validateTenant,
     async (req, res) => {
       try {
+        console.log(`Getting conflicts for restaurant ${req.params.restaurantId}, tenant ${req.params.tenantId}`);
+        
         const restaurantId = parseInt(req.params.restaurantId);
         const tenantId = parseInt(req.params.tenantId);
 
         const restaurant = await storage.getRestaurantById(restaurantId);
         if (!restaurant || restaurant.tenantId !== tenantId) {
+          console.log(`Restaurant not found or tenant mismatch: ${restaurantId}, ${tenantId}`);
           return res.status(404).json({ message: "Restaurant not found" });
         }
 
