@@ -9234,9 +9234,27 @@ export async function registerRoutes(app: Express): Promise<Server> {
         const bookings = await storage.getBookingsByRestaurant(restaurantId);
         const tables = await storage.getTablesByRestaurant(restaurantId);
 
-        // Return empty conflicts array (demo conflicts removed)
-        const conflicts = [];
+        // Filter bookings by tenant for security
+        const tenantBookings = bookings.filter(
+          (booking) => booking.tenantId === tenantId,
+        );
+        const tenantTables = tables.filter(
+          (table) => table.tenant_id === tenantId,
+        );
 
+        // Detect all types of conflicts
+        console.log(`Conflict detection - Found ${tenantBookings.length} bookings and ${tenantTables.length} tables`);
+        
+        const capacityConflicts = ConflictDetector.detectCapacityExceeded(tenantBookings, tenantTables);
+        console.log(`Capacity conflicts detected: ${capacityConflicts.length}`);
+        
+        const conflicts = [
+          ...ConflictDetector.detectTableDoubleBookings(tenantBookings),
+          ...capacityConflicts,
+          ...ConflictDetector.detectTimeOverlaps(tenantBookings),
+        ];
+
+        console.log(`Total conflicts: ${conflicts.length}`);
         res.json(conflicts);
       } catch (error) {
         console.error("Error fetching conflicts:", error);
