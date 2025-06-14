@@ -1,0 +1,43 @@
+error-boundary.tsx:24 Error caught by boundary: ReferenceError: fetchAvailabilityData is not defined
+    at interactive-booking-calendar.tsx:320:7
+ 
+Object
+error-boundary.tsx:25 Error stack: ReferenceError: fetchAvailabilityData is not defined
+    at https://842d0c2b-eb0d-4f0d-854a-8504fe69ecaf-00-2qwp6ya3hh1v2.riker.replit.dev/src/components/interactive-booking-calendar.tsx:241:7
+    at commitHookEffectListMount (https://842d0c2b-eb0d-4f0d-854a-8504fe69ecaf-00-2qwp6ya3hh1v2.riker.replit.…er/workspace/node_modules/.vite/deps/chunk-RPCDYKBN.js?v=c6a91875:16915:34)
+    at commitPassiveMountOnFiber (https://842d0c2b-eb0d-4f0d-854a-8504fe69ecaf-00-2qwp6ya3hh1v2.riker.replit.…er/workspace/node_modules/.vite/deps/chunk-RPCDYKBN.js?v=c6a91875:18156:19)
+    at commitPassiveMountEffects_complete (https://842d0c2b-eb0d-4f0d-854a-8504fe69ecaf-00-2qwp6ya3hh1v2.riker.replit.…er/workspace/node_modules/.vite/deps/chunk-RPCDYKBN.js?v=c6a91875:18129:17)
+    at commitPassiveMountEffects_begin (https://842d0c2b-eb0d-4f0d-854a-8504fe69ecaf-00-2qwp6ya3hh1v2.riker.replit.…er/workspace/node_modules/.vite/deps/chunk-RPCDYKBN.js?v=c6a91875:18119:15)
+    at commitPassiveMountEffects (https://842d0c2b-eb0d-4f0d-854a-8504fe69ecaf-00-2qwp6ya3hh1v2.riker.replit.…er/workspace/node_modules/.vite/deps/chunk-RPCDYKBN.js?v=c6a91875:18109:11)
+    at flushPassiveEffectsImpl (https://842d0c2b-eb0d-4f0d-854a-8504fe69ecaf-00-2qwp6ya3hh1v2.riker.replit.…er/workspace/node_modules/.vite/deps/chunk-RPCDYKBN.js?v=c6a91875:19490:11)
+    at flushPassiveEffects (https://842d0c2b-eb0d-4f0d-854a-8504fe69ecaf-00-2qwp6ya3hh1v2.riker.replit.…er/workspace/node_modules/.vite/deps/chunk-RPCDYKBN.js?v=c6a91875:19447:22)
+    at commitRootImpl (https://842d0c2b-eb0d-4f0d-854a-8504fe69ecaf-00-2qwp6ya3hh1v2.riker.replit.…er/workspace/node_modules/.vite/deps/chunk-RPCDYKBN.js?v=c6a91875:19416:13)
+    at commitRoot (https://842d0c2b-eb0d-4f0d-854a-8504fe69ecaf-00-2qwp6ya3hh1v2.riker.replit.…er/workspace/node_modules/.vite/deps/chunk-RPCDYKBN.js?v=c6a91875:19277:13)
+error-boundary.tsx:26 Component stack: 
+    at InteractiveBookingCalendar (https://842d0c2b-eb0d-4f0d-854a-8504fe69ecaf-00-2qwp6ya3hh1v2.riker.replit.dev/src/components/interactive-booking-calendar.tsx:27:3)
+    at div
+    at https://842d0c2b-eb0d-4f0d-854a-8504fe69ecaf-00-2qwp6ya3hh1v2.riker.replit.…unner/workspace/node_modules/.vite/deps/chunk-Q6YJROYD.js?v=c6a91875:42:13
+    at Presence (https://842d0c2b-eb0d-4f0d-854a-8504fe69ecaf-00-2qwp6ya3hh1v2.riker.replit.…unner/workspace/node_modules/.vite/deps/chunk-66RCPY56.js?v=c6a91875:24:11)
+    at https://842d0c2b-eb0d-4f0d-854a-8504fe69ecaf-00-2qwp6ya3hh1v2.riker.replit.…orkspace/node_modules/.vite/deps/@radix-ui_react-tabs.js?v=c6a91875:173:13
+    at _c5 (https://842d0c2b-eb0d-4f0d-854a-8504fe69ecaf-00-2qwp6ya3hh1v2.riker.replit.dev/src/components/ui/tabs.tsx:72:12)
+    at div
+    at https://842d0c2b-eb0d-4f0d-854a-8504fe69ecaf-00-2qwp6ya3hh1v2.riker.replit.…unner/workspace/node_modules/.vite/deps/chunk-Q6YJROYD.js?v=c6a91875:42:13
+    at Provider (https://842d0c2b-eb0d-4f0d-854a-8504fe69ecaf-00-2qwp6ya3hh1v2.riker.replit.…unner/workspace/node_modules/.vite/deps/chunk-OXZDJRWN.js?v=c6a91875:38:15)
+    at https://842d0c2b-eb0d-4f0d-854a-8504fe69ecaf-00-2qwp6ya3hh1v2.riker.replit.…/workspace/node_modules/.vite/deps/@radix-ui_react-tabs.js?v=c6a91875:51:7
+    at div
+    at Calendar (https://842d0c2b-eb0d-4f0d-854a-8504fe69ecaf-00-2qwp6ya3hh1v2.riker.replit.dev/src/pages/calendar.tsx:30:26)
+    at Route (https://842d0c2b-eb0d-4f0d-854a-8504fe69ecaf-00-2qwp6ya3hh1v2.riker.replit.…/home/runner/workspace/node_modules/.vite/deps/wouter.js?v=c6a91875:323:16)
+    at OverduePaymentGuard (https://842d0c2b-eb0d-4f0d-854a-8504fe69ecaf-00-2qwp6ya3hh1v2.riker.replit.dev/src/components/overdue-payment-guard.tsx:28:39)
+    at SetupGuard (https://842d0c2b-eb0d-4f0d-854a-8504fe69ecaf-00-2qwp6ya3hh1v2.riker.replit.dev/src/components/setup-guard.tsx:21:30)
+    at Switch (https://842d0c2b-eb0d-4f0d-854a-8504fe69ecaf-00-2qwp6ya3hh1v2.riker.replit.…/home/runner/workspace/node_modules/.vite/deps/wouter.js?v=c6a91875:379:17)
+    at main
+    at div
+    at LayoutWrapper (https://842d0c2b-eb0d-4f0d-854a-8504fe69ecaf-00-2qwp6ya3hh1v2.riker.replit.dev/src/components/layout-wrapper.tsx:22:33)
+    at RouteGuard (https://842d0c2b-eb0d-4f0d-854a-8504fe69ecaf-00-2qwp6ya3hh1v2.riker.replit.dev/src/components/route-guard.tsx:21:30)
+    at TenantProvider (https://842d0c2b-eb0d-4f0d-854a-8504fe69ecaf-00-2qwp6ya3hh1v2.riker.replit.dev/src/lib/tenant.tsx:22:34)
+    at AuthProvider (https://842d0c2b-eb0d-4f0d-854a-8504fe69ecaf-00-2qwp6ya3hh1v2.riker.replit.dev/src/lib/auth.tsx:25:32)
+    at QueryClientProvider (https://842d0c2b-eb0d-4f0d-854a-8504fe69ecaf-00-2qwp6ya3hh1v2.riker.replit.…rkspace/node_modules/.vite/deps/@tanstack_react-query.js?v=c6a91875:2805:3)
+    at ErrorBoundary (https://842d0c2b-eb0d-4f0d-854a-8504fe69ecaf-00-2qwp6ya3hh1v2.riker.replit.dev/src/components/error-boundary.tsx:7:5)
+    at App
+﻿
+

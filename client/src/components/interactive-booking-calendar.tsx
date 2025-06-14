@@ -317,7 +317,7 @@ export default function InteractiveBookingCalendar({
     };
 
     if (openingHours.length > 0) {
-      fetchAvailabilityData();
+      fetchLegacyAvailabilityData();
     }
   }, [currentMonth, openingHours, restaurantId, guestCount]);
 
