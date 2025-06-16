@@ -37,7 +37,11 @@ export function KitchenPerformanceSparkline({ restaurantId, tenantId }: KitchenP
   // Fetch real-time performance data
   const { data: performanceData = [], isLoading } = useQuery({
     queryKey: [`/api/tenants/${tenantId}/restaurants/${restaurantId}/kitchen/performance-sparkline`, timeRange],
-    queryFn: () => apiRequest('GET', `/api/tenants/${tenantId}/restaurants/${restaurantId}/kitchen/performance-sparkline?timeRange=${timeRange}`),
+    queryFn: async () => {
+      const response = await fetch(`/api/tenants/${tenantId}/restaurants/${restaurantId}/kitchen/performance-sparkline?timeRange=${timeRange}`);
+      if (!response.ok) throw new Error('Failed to fetch performance data');
+      return response.json();
+    },
     refetchInterval: 15000, // Update every 15 seconds
   });
 
@@ -48,6 +52,15 @@ export function KitchenPerformanceSparkline({ restaurantId, tenantId }: KitchenP
     }, 2000);
     return () => clearInterval(interval);
   }, []);
+
+  // Debug logging
+  console.log('Performance Sparkline Data:', {
+    loading: isLoading,
+    dataLength: performanceData.length,
+    data: performanceData.slice(0, 3),
+    timeRange,
+    selectedMetric
+  });
 
   // Generate sparkline data for different metrics
   const generateSparklineData = (metric: string): SparklineData[] => {
@@ -134,6 +147,15 @@ export function KitchenPerformanceSparkline({ restaurantId, tenantId }: KitchenP
   const sparklineData = generateSparklineData(selectedMetric);
   const currentValue = sparklineData.length > 0 ? sparklineData[sparklineData.length - 1].value : 0;
   const previousValue = sparklineData.length > 1 ? sparklineData[sparklineData.length - 2].value : currentValue;
+
+  console.log('Sparkline Processing:', {
+    selectedMetric,
+    sparklineDataLength: sparklineData.length,
+    sparklineData: sparklineData.slice(0, 3),
+    currentValue,
+    previousValue,
+    selectedConfig: selectedConfig.title
+  });
   const trend = currentValue > previousValue ? 'up' : currentValue < previousValue ? 'down' : 'stable';
   const trendPercentage = previousValue > 0 ? Math.abs(((currentValue - previousValue) / previousValue) * 100) : 0;
 
