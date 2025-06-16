@@ -12964,6 +12964,55 @@ NEXT STEPS:
     }
   });
 
+  // Feedback Questions routes
+  app.get("/api/tenants/:tenantId/restaurants/:restaurantId/feedback-questions", async (req, res) => {
+    try {
+      const { tenantId, restaurantId } = req.params;
+      const questions = await storage.getFeedbackQuestions(parseInt(restaurantId), parseInt(tenantId));
+      res.json(questions);
+    } catch (error) {
+      console.error("Error fetching feedback questions:", error);
+      res.status(500).json({ message: "Internal server error" });
+    }
+  });
+
+  app.post("/api/tenants/:tenantId/restaurants/:restaurantId/feedback-questions", async (req, res) => {
+    try {
+      const { tenantId, restaurantId } = req.params;
+      const questionData = req.body;
+      
+      const question = await storage.createFeedbackQuestion(parseInt(restaurantId), parseInt(tenantId), questionData);
+      res.json(question);
+    } catch (error) {
+      console.error("Error creating feedback question:", error);
+      res.status(500).json({ message: "Internal server error" });
+    }
+  });
+
+  app.put("/api/tenants/:tenantId/restaurants/:restaurantId/feedback-questions/:id", async (req, res) => {
+    try {
+      const { id } = req.params;
+      const questionData = req.body;
+      
+      const question = await storage.updateFeedbackQuestion(parseInt(id), questionData);
+      res.json(question);
+    } catch (error) {
+      console.error("Error updating feedback question:", error);
+      res.status(500).json({ message: "Internal server error" });
+    }
+  });
+
+  app.delete("/api/tenants/:tenantId/restaurants/:restaurantId/feedback-questions/:id", async (req, res) => {
+    try {
+      const { id } = req.params;
+      await storage.deleteFeedbackQuestion(parseInt(id));
+      res.json({ message: "Feedback question deleted successfully" });
+    } catch (error) {
+      console.error("Error deleting feedback question:", error);
+      res.status(500).json({ message: "Internal server error" });
+    }
+  });
+
   return httpServer;
 }
 

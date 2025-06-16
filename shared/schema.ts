@@ -849,6 +849,20 @@ export const smsMessages = pgTable("sms_messages", {
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 
+export const feedbackQuestions = pgTable("feedback_questions", {
+  id: serial("id").primaryKey(),
+  restaurantId: integer("restaurant_id").notNull().references(() => restaurants.id, { onDelete: "cascade" }),
+  tenantId: integer("tenant_id").notNull().references(() => tenants.id, { onDelete: "cascade" }),
+  name: text("name").notNull(),
+  questionType: text("question_type").default("nps"), // 'nps', 'rating', 'text'
+  hasNps: boolean("has_nps").default(true),
+  hasComments: boolean("has_comments").default(true),
+  isActive: boolean("is_active").default(true),
+  sortOrder: integer("sort_order").default(0),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+});
+
 export type MenuPrintOrder = InferSelectModel<typeof menuPrintOrders>;
 export type InsertMenuPrintOrder = InferInsertModel<typeof menuPrintOrders>;
 
@@ -919,6 +933,16 @@ export const insertSmsBalanceSchema = createInsertSchema(smsBalance).omit({
   updatedAt: true,
 });
 export const selectSmsBalanceSchema = createSelectSchema(smsBalance);
+
+export type FeedbackQuestion = InferSelectModel<typeof feedbackQuestions>;
+export type InsertFeedbackQuestion = InferInsertModel<typeof feedbackQuestions>;
+
+export const insertFeedbackQuestionSchema = createInsertSchema(feedbackQuestions).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+export const selectFeedbackQuestionSchema = createSelectSchema(feedbackQuestions);
 
 export type SeasonalMenuTheme = InferSelectModel<typeof seasonalMenuThemes>;
 export type InsertSeasonalMenuTheme = InferInsertModel<typeof seasonalMenuThemes>;

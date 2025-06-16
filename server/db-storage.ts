@@ -1287,6 +1287,65 @@ export class DatabaseStorage implements IStorage {
       .orderBy(smsMessages.createdAt);
   }
 
+  // Feedback Questions methods
+  async getFeedbackQuestions(restaurantId: number, tenantId: number): Promise<any[]> {
+    if (!this.db) throw new Error("Database connection not available");
+    
+    return await this.db
+      .select()
+      .from(feedbackQuestions)
+      .where(and(
+        eq(feedbackQuestions.restaurantId, restaurantId),
+        eq(feedbackQuestions.tenantId, tenantId)
+      ))
+      .orderBy(feedbackQuestions.sortOrder, feedbackQuestions.createdAt);
+  }
+
+  async createFeedbackQuestion(restaurantId: number, tenantId: number, questionData: any): Promise<any> {
+    if (!this.db) throw new Error("Database connection not available");
+
+    const [question] = await this.db
+      .insert(feedbackQuestions)
+      .values({
+        restaurantId,
+        tenantId,
+        name: questionData.name,
+        questionType: questionData.questionType || "nps",
+        hasNps: questionData.hasNps !== false,
+        hasComments: questionData.hasComments !== false,
+        isActive: questionData.isActive !== false,
+        sortOrder: questionData.sortOrder || 0,
+      })
+      .returning();
+    
+    return question;
+  }
+
+  async updateFeedbackQuestion(id: number, questionData: any): Promise<any> {
+    if (!this.db) throw new Error("Database connection not available");
+
+    const [updated] = await this.db
+      .update(feedbackQuestions)
+      .set({
+        name: questionData.name,
+        questionType: questionData.questionType,
+        hasNps: questionData.hasNps,
+        hasComments: questionData.hasComments,
+        isActive: questionData.isActive,
+        sortOrder: questionData.sortOrder,
+        updatedAt: new Date(),
+      })
+      .where(eq(feedbackQuestions.id, id))
+      .returning();
+    
+    return updated;
+  }
+
+  async deleteFeedbackQuestion(id: number): Promise<void> {
+    if (!this.db) throw new Error("Database connection not available");
+    await this.db.delete(feedbackQuestions).where(eq(feedbackQuestions.id, id));
+  }
+
   async deleteNotification(id: number): Promise<boolean> {
     return false;
   }
