@@ -1,13 +1,12 @@
 import { useState, useEffect } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { useAuth } from "@/lib/auth.tsx";
-import { useLocation } from "wouter";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Download, Eye, Star, MessageCircle, Calendar, User } from "lucide-react";
+import { apiRequest } from "@/lib/queryClient";
 
 interface FeedbackItem {
   id: number;
@@ -25,19 +24,77 @@ interface FeedbackItem {
   questionName?: string;
 }
 
-export default function FeedbackResponses() {
-  const { user, restaurant } = useAuth();
+export default function FeedbackPublic() {
   const [statusFilter, setStatusFilter] = useState("all");
   const [selectedFeedback, setSelectedFeedback] = useState<FeedbackItem | null>(null);
   const [showDetailModal, setShowDetailModal] = useState(false);
+  const [tenantId, setTenantId] = useState<number | null>(null);
+  const [restaurantId, setRestaurantId] = useState<number | null>(null);
+
+  // Get tenant and restaurant info from localStorage
+  useEffect(() => {
+    const validateAndGetIds = async () => {
+      try {
+        // First try to get from stored user/restaurant data
+        const storedUser = localStorage.getItem('user');
+        const storedRestaurant = localStorage.getItem('restaurant');
+        
+        if (storedUser && storedRestaurant) {
+          try {
+            const user = JSON.parse(storedUser);
+            const restaurant = JSON.parse(storedRestaurant);
+            
+            if (restaurant.tenantId && restaurant.id) {
+              setTenantId(restaurant.tenantId);
+              setRestaurantId(restaurant.id);
+              return;
+            }
+          } catch (error) {
+            console.error('Error parsing stored data:', error);
+          }
+        }
+        
+        // Fallback: try to validate session and get current data
+        const response = await fetch('/api/auth/validate', {
+          credentials: 'include'
+        });
+        
+        if (response.ok) {
+          const data = await response.json();
+          if (data.valid && data.user && data.restaurant) {
+            setTenantId(data.restaurant.tenantId);
+            setRestaurantId(data.restaurant.id);
+          }
+        }
+      } catch (error) {
+        console.error('Error getting tenant/restaurant info:', error);
+      }
+    };
+    
+    validateAndGetIds();
+  }, []);
 
   const { data: feedback, isLoading } = useQuery({
-    queryKey: [`/api/tenants/${restaurant?.tenantId}/restaurants/${restaurant?.id}/feedback`],
-    enabled: !!restaurant?.id && !!restaurant?.tenantId,
+    queryKey: [`/api/tenants/${tenantId}/restaurants/${restaurantId}/feedback`],
+    enabled: !!tenantId && !!restaurantId,
   });
 
-  if (!user || !restaurant) {
-    return null;
+  if (!tenantId || !restaurantId) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="text-center">
+          <MessageCircle className="w-12 h-12 text-gray-400 mx-auto mb-4" />
+          <h3 className="text-lg font-medium text-gray-900 mb-2">Unable to load feedback</h3>
+          <p className="text-gray-600">Please login to access feedback data.</p>
+          <Button 
+            className="mt-4" 
+            onClick={() => window.location.href = '/login'}
+          >
+            Go to Login
+          </Button>
+        </div>
+      </div>
+    );
   }
 
   const filteredFeedback = (feedback as FeedbackItem[])?.filter((item: FeedbackItem) => {
@@ -47,11 +104,6 @@ export default function FeedbackResponses() {
   const handleViewDetails = (feedbackItem: FeedbackItem) => {
     setSelectedFeedback(feedbackItem);
     setShowDetailModal(true);
-  };
-
-  const handleCloseModal = () => {
-    setShowDetailModal(false);
-    setSelectedFeedback(null);
   };
 
   const renderStars = (rating: number) => {

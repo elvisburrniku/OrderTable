@@ -30,6 +30,7 @@ import BookingManage from "@/pages/booking-manage";
 import EmailNotifications from "./pages/email-notifications";
 import SmsNotifications from "./pages/sms-notifications";
 import FeedbackQuestions from "./pages/feedback-questions";
+import FeedbackPublic from "./pages/feedback-public";
 import Events from "./pages/events";
 import PaymentSetups from "./pages/payment-setups";
 import PaymentGateway from "./pages/payment-gateway";
