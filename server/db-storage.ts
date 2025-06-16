@@ -17,6 +17,7 @@ const {
   smsMessages,
   waitingList,
   feedback,
+  feedbackQuestions,
   activityLog,
   timeSlots,
   rooms,
@@ -37,6 +38,8 @@ const {
   periodicCriteria,
   customFields,
   bookingAgents,
+  smsSettings,
+  smsBalance,
 } = schema;
 
 export class DatabaseStorage implements IStorage {
