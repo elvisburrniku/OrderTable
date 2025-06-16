@@ -18,6 +18,7 @@ interface MenuOrderingServiceProps {
   tenantId: number;
   selectedTheme: string;
   menuLayout: string;
+  onOrderCreated?: (clientSecret: string, order: any, savedPaymentMethods?: any[]) => void;
 }
 
 interface PrintingOption {
@@ -112,7 +113,8 @@ export default function MenuOrderingService({
   restaurantId, 
   tenantId, 
   selectedTheme, 
-  menuLayout 
+  menuLayout,
+  onOrderCreated
 }: MenuOrderingServiceProps) {
   const [selectedPrinting, setSelectedPrinting] = useState<string>('premium');
   const [selectedShipping, setSelectedShipping] = useState<string>('standard');
@@ -140,13 +142,26 @@ export default function MenuOrderingService({
 
   const createOrderMutation = useMutation({
     mutationFn: async (orderData: any) => {
-      return apiRequest('POST', `/api/tenants/${tenantId}/restaurants/${restaurantId}/menu-orders`, orderData);
-    },
-    onSuccess: () => {
-      toast({
-        title: "Order Placed Successfully!",
-        description: "Your menu order has been submitted. You'll receive a confirmation email shortly.",
+      return apiRequest('POST', `/api/tenants/${tenantId}/restaurants/${restaurantId}/print-orders`, {
+        customerName: orderData.contactName,
+        customerEmail: orderData.contactEmail,
+        customerPhone: orderData.contactPhone,
+        printType: 'menu',
+        printSize: orderData.menuLayout || 'A4',
+        printQuality: orderData.printingOption,
+        quantity: orderData.quantity,
+        design: `Menu Theme: ${orderData.menuTheme}`,
+        specialInstructions: orderData.specialInstructions,
+        rushOrder: orderData.shippingOption === 'overnight',
+        deliveryMethod: 'delivery',
+        deliveryAddress: `${orderData.shippingAddress}, ${orderData.city}, ${orderData.state} ${orderData.zipCode}`,
+        useSavedPaymentMethod: false
       });
+    },
+    onSuccess: (data: any) => {
+      if (data.clientSecret && onOrderCreated) {
+        onOrderCreated(data.clientSecret, data.printOrder, data.savedPaymentMethods);
+      }
       setShowOrderForm(false);
       // Reset form
       setOrderDetails({
@@ -163,7 +178,7 @@ export default function MenuOrderingService({
     onError: (error: any) => {
       toast({
         title: "Order Failed",
-        description: error.message || "Failed to place order. Please try again.",
+        description: error.message || "Failed to create order. Please try again.",
         variant: "destructive"
       });
     },

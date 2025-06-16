@@ -12686,27 +12686,27 @@ NEXT STEPS:
 
         // Convert dollar amounts to cents for database storage
         const orderData = {
-          restaurant_id: restaurantId,
-          tenant_id: tenantId,
-          order_number: orderNumber,
-          contact_name: req.body.contactName,
-          contact_email: req.body.contactEmail,
-          contact_phone: req.body.contactPhone,
-          shipping_address: req.body.shippingAddress,
+          restaurantId,
+          tenantId,
+          orderNumber,
+          contactName: req.body.contactName,
+          contactEmail: req.body.contactEmail,
+          contactPhone: req.body.contactPhone,
+          shippingAddress: req.body.shippingAddress,
           city: req.body.city,
           state: req.body.state,
-          zip_code: req.body.zipCode,
+          zipCode: req.body.zipCode,
           quantity: parseInt(req.body.quantity),
-          menu_theme: req.body.menuTheme,
-          menu_layout: req.body.menuLayout,
-          printing_option: req.body.printingOption,
-          shipping_option: req.body.shippingOption,
+          menuTheme: req.body.menuTheme,
+          menuLayout: req.body.menuLayout,
+          printingOption: req.body.printingOption,
+          shippingOption: req.body.shippingOption,
           subtotal: Math.round(parseFloat(req.body.subtotal) * 100), // Convert to cents
-          shipping_cost: Math.round(parseFloat(req.body.shippingCost) * 100),
+          shippingCost: Math.round(parseFloat(req.body.shippingCost) * 100),
           tax: Math.round(parseFloat(req.body.tax) * 100),
           total: Math.round(parseFloat(req.body.total) * 100),
-          special_instructions: req.body.specialInstructions || null,
-          order_status: 'pending',
+          specialInstructions: req.body.specialInstructions || null,
+          orderStatus: 'pending',
         };
 
         const order = await storage.createMenuOrder(orderData);
@@ -12877,6 +12877,747 @@ NEXT STEPS:
       }
     },
   );
+
+  // Kitchen Dashboard API Routes
+  
+  // Get kitchen orders
+  app.get(
+    "/api/tenants/:tenantId/restaurants/:restaurantId/kitchen/orders",
+    validateTenant,
+    async (req, res) => {
+      try {
+        const restaurantId = parseInt(req.params.restaurantId);
+        const tenantId = parseInt(req.params.tenantId);
+        const { timeRange } = req.query;
+
+        const orders = await storage.getKitchenOrders(restaurantId, tenantId, timeRange as string);
+        res.json(orders);
+      } catch (error) {
+        console.error("Error fetching kitchen orders:", error);
+        res.status(500).json({ message: "Failed to fetch kitchen orders" });
+      }
+    },
+  );
+
+  // Update kitchen order status
+  app.patch(
+    "/api/tenants/:tenantId/restaurants/:restaurantId/kitchen/orders/:orderId",
+    validateTenant,
+    async (req, res) => {
+      try {
+        const orderId = parseInt(req.params.orderId);
+        const { status, actualTime, timestamp } = req.body;
+
+        const updates: any = { status };
+        
+        if (status === 'preparing' && !req.body.startedAt) {
+          updates.startedAt = new Date();
+        } else if (status === 'ready' && actualTime) {
+          updates.actualTime = actualTime;
+          updates.readyAt = new Date();
+        } else if (status === 'served') {
+          updates.servedAt = new Date();
+        }
+
+        const updatedOrder = await storage.updateKitchenOrder(orderId, updates);
+        res.json(updatedOrder);
+      } catch (error) {
+        console.error("Error updating kitchen order:", error);
+        res.status(500).json({ message: "Failed to update kitchen order" });
+      }
+    },
+  );
+
+  // Create kitchen order
+  app.post(
+    "/api/tenants/:tenantId/restaurants/:restaurantId/kitchen/orders",
+    validateTenant,
+    async (req, res) => {
+      try {
+        const restaurantId = parseInt(req.params.restaurantId);
+        const tenantId = parseInt(req.params.tenantId);
+
+        const orderData = {
+          ...req.body,
+          restaurantId,
+          tenantId,
+        };
+
+        // Convert timestamp fields to Date objects if they exist and are valid
+        if (orderData.startedAt) {
+          const startedDate = new Date(orderData.startedAt);
+          orderData.startedAt = isNaN(startedDate.getTime()) ? null : startedDate;
+        }
+        if (orderData.readyAt) {
+          const readyDate = new Date(orderData.readyAt);
+          orderData.readyAt = isNaN(readyDate.getTime()) ? null : readyDate;
+        }
+        if (orderData.servedAt) {
+          const servedDate = new Date(orderData.servedAt);
+          orderData.servedAt = isNaN(servedDate.getTime()) ? null : servedDate;
+        }
+
+        const order = await storage.createKitchenOrder(orderData);
+        res.status(201).json(order);
+      } catch (error) {
+        console.error("Error creating kitchen order:", error);
+        res.status(500).json({ message: "Failed to create kitchen order" });
+      }
+    },
+  );
+
+  // Get kitchen stations
+  app.get(
+    "/api/tenants/:tenantId/restaurants/:restaurantId/kitchen/stations",
+    validateTenant,
+    async (req, res) => {
+      try {
+        const restaurantId = parseInt(req.params.restaurantId);
+        const tenantId = parseInt(req.params.tenantId);
+
+        const stations = await storage.getKitchenStations(restaurantId, tenantId);
+        res.json(stations);
+      } catch (error) {
+        console.error("Error fetching kitchen stations:", error);
+        res.status(500).json({ message: "Failed to fetch kitchen stations" });
+      }
+    },
+  );
+
+  // Update kitchen station
+  app.patch(
+    "/api/tenants/:tenantId/restaurants/:restaurantId/kitchen/stations/:stationId",
+    validateTenant,
+    async (req, res) => {
+      try {
+        const stationId = parseInt(req.params.stationId);
+        const updates = req.body;
+
+        const updatedStation = await storage.updateKitchenStation(stationId, updates);
+        res.json(updatedStation);
+      } catch (error) {
+        console.error("Error updating kitchen station:", error);
+        res.status(500).json({ message: "Failed to update kitchen station" });
+      }
+    },
+  );
+
+  // Create kitchen station
+  app.post(
+    "/api/tenants/:tenantId/restaurants/:restaurantId/kitchen/stations",
+    validateTenant,
+    async (req, res) => {
+      try {
+        const restaurantId = parseInt(req.params.restaurantId);
+        const tenantId = parseInt(req.params.tenantId);
+
+        const stationData = {
+          ...req.body,
+          restaurantId,
+          tenantId,
+        };
+
+        const station = await storage.createKitchenStation(stationData);
+        res.status(201).json(station);
+      } catch (error) {
+        console.error("Error creating kitchen station:", error);
+        res.status(500).json({ message: "Failed to create kitchen station" });
+      }
+    },
+  );
+
+  // Get kitchen staff
+  app.get(
+    "/api/tenants/:tenantId/restaurants/:restaurantId/kitchen/staff",
+    validateTenant,
+    async (req, res) => {
+      try {
+        const restaurantId = parseInt(req.params.restaurantId);
+        const tenantId = parseInt(req.params.tenantId);
+
+        const staff = await storage.getKitchenStaff(restaurantId, tenantId);
+        res.json(staff);
+      } catch (error) {
+        console.error("Error fetching kitchen staff:", error);
+        res.status(500).json({ message: "Failed to fetch kitchen staff" });
+      }
+    },
+  );
+
+  // Update kitchen staff
+  app.patch(
+    "/api/tenants/:tenantId/restaurants/:restaurantId/kitchen/staff/:staffId",
+    validateTenant,
+    async (req, res) => {
+      try {
+        const staffId = parseInt(req.params.staffId);
+        const updates = req.body;
+
+        const updatedStaff = await storage.updateKitchenStaff(staffId, updates);
+        res.json(updatedStaff);
+      } catch (error) {
+        console.error("Error updating kitchen staff:", error);
+        res.status(500).json({ message: "Failed to update kitchen staff" });
+      }
+    },
+  );
+
+  // Create kitchen staff
+  app.post(
+    "/api/tenants/:tenantId/restaurants/:restaurantId/kitchen/staff",
+    validateTenant,
+    async (req, res) => {
+      try {
+        const restaurantId = parseInt(req.params.restaurantId);
+        const tenantId = parseInt(req.params.tenantId);
+
+        const staffData = {
+          ...req.body,
+          restaurantId,
+          tenantId,
+        };
+
+        const staff = await storage.createKitchenStaff(staffData);
+        res.status(201).json(staff);
+      } catch (error) {
+        console.error("Error creating kitchen staff:", error);
+        res.status(500).json({ message: "Failed to create kitchen staff" });
+      }
+    },
+  );
+
+  // Get kitchen metrics (calculated in real-time)
+  app.get(
+    "/api/tenants/:tenantId/restaurants/:restaurantId/kitchen/metrics",
+    validateTenant,
+    async (req, res) => {
+      try {
+        const restaurantId = parseInt(req.params.restaurantId);
+        const tenantId = parseInt(req.params.tenantId);
+        const { timeRange } = req.query;
+
+        const metrics = await storage.calculateKitchenMetrics(restaurantId, tenantId, timeRange as string);
+        res.json(metrics);
+      } catch (error) {
+        console.error("Error calculating kitchen metrics:", error);
+        res.status(500).json({ message: "Failed to calculate kitchen metrics" });
+      }
+    },
+  );
+
+  // Get kitchen performance sparkline data
+  app.get(
+    "/api/tenants/:tenantId/restaurants/:restaurantId/kitchen/performance-sparkline",
+    validateTenant,
+    async (req, res) => {
+      try {
+        const restaurantId = parseInt(req.params.restaurantId);
+        const tenantId = parseInt(req.params.tenantId);
+        const timeRange = req.query.timeRange as string || '4h';
+
+        const sparklineData = await storage.getKitchenPerformanceSparkline(restaurantId, tenantId, timeRange);
+        res.json(sparklineData);
+      } catch (error) {
+        console.error("Error fetching kitchen performance sparkline:", error);
+        res.status(500).json({ message: "Failed to fetch performance sparkline data" });
+      }
+    },
+  );
+
+  // Print Orders API Routes
+  
+  // Create print order and payment intent
+  app.post(
+    "/api/tenants/:tenantId/restaurants/:restaurantId/print-orders",
+    validateTenant,
+    async (req, res) => {
+      try {
+        const restaurantId = parseInt(req.params.restaurantId);
+        const tenantId = parseInt(req.params.tenantId);
+
+        const restaurant = await storage.getRestaurantById(restaurantId);
+        if (!restaurant || restaurant.tenantId !== tenantId) {
+          return res.status(404).json({ message: "Restaurant not found" });
+        }
+
+        const {
+          customerName,
+          customerEmail,
+          customerPhone,
+          printType,
+          printSize,
+          printQuality,
+          quantity,
+          design,
+          specialInstructions,
+          rushOrder,
+          deliveryMethod,
+          deliveryAddress,
+          useSavedPaymentMethod
+        } = req.body;
+
+        // Calculate pricing based on print specifications
+        const basePrices = {
+          menu: { A4: 500, A3: 800, A2: 1200, A1: 1800, custom: 1000 }, // in cents
+          flyer: { A4: 300, A3: 500, A2: 800, A1: 1200, custom: 600 },
+          poster: { A4: 800, A3: 1200, A2: 1800, A1: 2500, custom: 1500 },
+          banner: { A4: 1200, A3: 1800, A2: 2500, A1: 3500, custom: 2000 },
+          business_card: { A4: 200, A3: 300, A2: 400, A1: 500, custom: 250 }
+        };
+
+        const qualityMultipliers = {
+          draft: 0.8,
+          standard: 1.0,
+          high: 1.3,
+          premium: 1.6
+        };
+
+        const basePrice = basePrices[printType]?.[printSize] || 1000;
+        const qualityMultiplier = qualityMultipliers[printQuality] || 1.0;
+        const rushMultiplier = rushOrder ? 1.5 : 1.0;
+        const deliveryFee = deliveryMethod === 'delivery' ? 500 : deliveryMethod === 'mail' ? 300 : 0;
+
+        const totalAmount = Math.round(basePrice * qualityMultiplier * rushMultiplier * quantity + deliveryFee);
+
+        // Generate unique order number
+        const orderNumber = `PO-${Date.now()}-${Math.random().toString(36).substr(2, 9).toUpperCase()}`;
+
+        // Get tenant and check for saved payment methods
+        const tenant = await storage.getTenantById(tenantId);
+        let paymentIntentOptions = {
+          amount: totalAmount,
+          currency: 'usd',
+          metadata: {
+            orderNumber,
+            restaurantId: restaurantId.toString(),
+            tenantId: tenantId.toString(),
+            printType,
+            quantity: quantity.toString()
+          },
+          description: `Print Order ${orderNumber} - ${printType} (${quantity}x ${printSize})`,
+          automatic_payment_methods: {
+            enabled: true,
+          },
+        };
+
+        // If user wants to use saved payment method and has a Stripe customer ID
+        if (useSavedPaymentMethod && tenant?.stripeCustomerId) {
+          try {
+            // Get customer's payment methods
+            const paymentMethods = await stripe.paymentMethods.list({
+              customer: tenant.stripeCustomerId,
+              type: 'card',
+            });
+
+            if (paymentMethods.data.length > 0) {
+              paymentIntentOptions.customer = tenant.stripeCustomerId;
+              paymentIntentOptions.setup_future_usage = 'off_session';
+            }
+          } catch (error) {
+            console.error('Error fetching payment methods:', error);
+            // Continue with regular payment flow if error
+          }
+        }
+
+        // Create Stripe payment intent
+        const paymentIntent = await stripe.paymentIntents.create(paymentIntentOptions);
+
+        // Create print order in database
+        const printOrder = await storage.createPrintOrder({
+          restaurantId,
+          tenantId,
+          orderNumber,
+          customerName,
+          customerEmail,
+          customerPhone,
+          printType,
+          printSize,
+          printQuality,
+          quantity,
+          design,
+          specialInstructions,
+          rushOrder,
+          totalAmount,
+          paymentIntentId: paymentIntent.id,
+          deliveryMethod,
+          deliveryAddress,
+          estimatedCompletion: new Date(Date.now() + (rushOrder ? 24 : 72) * 60 * 60 * 1000) // 1-3 days
+        });
+
+        // Return saved payment methods if available
+        let savedPaymentMethods = [];
+        if (tenant?.stripeCustomerId) {
+          try {
+            const paymentMethods = await stripe.paymentMethods.list({
+              customer: tenant.stripeCustomerId,
+              type: 'card',
+            });
+            savedPaymentMethods = paymentMethods.data.map(pm => ({
+              id: pm.id,
+              brand: pm.card?.brand,
+              last4: pm.card?.last4,
+              exp_month: pm.card?.exp_month,
+              exp_year: pm.card?.exp_year,
+            }));
+          } catch (error) {
+            console.error('Error fetching payment methods for response:', error);
+          }
+        }
+
+        res.json({
+          printOrder,
+          clientSecret: paymentIntent.client_secret,
+          totalAmount,
+          savedPaymentMethods
+        });
+
+      } catch (error) {
+        console.error("Error creating print order:", error);
+        res.status(500).json({ message: "Failed to create print order" });
+      }
+    }
+  );
+
+  // Get saved payment methods for tenant
+  app.get(
+    "/api/tenants/:tenantId/payment-methods",
+    validateTenant,
+    async (req, res) => {
+      try {
+        const tenantId = parseInt(req.params.tenantId);
+        const tenant = await storage.getTenantById(tenantId);
+
+        if (!tenant?.stripeCustomerId) {
+          return res.json({ paymentMethods: [] });
+        }
+
+        const paymentMethods = await stripe.paymentMethods.list({
+          customer: tenant.stripeCustomerId,
+          type: 'card',
+        });
+
+        const formattedMethods = paymentMethods.data.map(pm => ({
+          id: pm.id,
+          brand: pm.card?.brand,
+          last4: pm.card?.last4,
+          exp_month: pm.card?.exp_month,
+          exp_year: pm.card?.exp_year,
+        }));
+
+        res.json({ paymentMethods: formattedMethods });
+      } catch (error) {
+        console.error("Error fetching payment methods:", error);
+        res.status(500).json({ message: "Failed to fetch payment methods" });
+      }
+    }
+  );
+
+  // Get print orders for restaurant
+  app.get(
+    "/api/tenants/:tenantId/restaurants/:restaurantId/print-orders",
+    validateTenant,
+    async (req, res) => {
+      try {
+        const restaurantId = parseInt(req.params.restaurantId);
+        const tenantId = parseInt(req.params.tenantId);
+
+        const restaurant = await storage.getRestaurantById(restaurantId);
+        if (!restaurant || restaurant.tenantId !== tenantId) {
+          return res.status(404).json({ message: "Restaurant not found" });
+        }
+
+        const printOrders = await storage.getPrintOrdersByRestaurant(restaurantId, tenantId);
+        res.json(printOrders);
+
+      } catch (error) {
+        console.error("Error fetching print orders:", error);
+        res.status(500).json({ message: "Failed to fetch print orders" });
+      }
+    }
+  );
+
+  // Create payment intent for existing print order
+  app.post(
+    "/api/tenants/:tenantId/restaurants/:restaurantId/print-orders/:orderId/create-payment-intent",
+    validateTenant,
+    async (req, res) => {
+      try {
+        const restaurantId = parseInt(req.params.restaurantId);
+        const tenantId = parseInt(req.params.tenantId);
+        const orderId = parseInt(req.params.orderId);
+
+        const restaurant = await storage.getRestaurantById(restaurantId);
+        if (!restaurant || restaurant.tenantId !== tenantId) {
+          return res.status(404).json({ message: "Restaurant not found" });
+        }
+
+        // Get the existing print order
+        const printOrder = await storage.getPrintOrderById(orderId);
+        if (!printOrder) {
+          return res.status(404).json({ message: "Print order not found" });
+        }
+
+        // Check if order is already paid
+        if (printOrder.paymentStatus === 'paid') {
+          return res.status(400).json({ message: "Order is already paid" });
+        }
+
+        // Get tenant for payment methods
+        const tenant = await storage.getTenantById(tenantId);
+        
+        // Create payment intent options
+        let paymentIntentOptions = {
+          amount: printOrder.totalAmount,
+          currency: 'usd',
+          metadata: {
+            orderNumber: printOrder.orderNumber,
+            restaurantId: restaurantId.toString(),
+            tenantId: tenantId.toString(),
+            printType: printOrder.printType,
+            quantity: printOrder.quantity.toString(),
+            existingOrderId: orderId.toString()
+          },
+          description: `Print Order ${printOrder.orderNumber} - ${printOrder.printType} (${printOrder.quantity}x ${printOrder.printSize})`,
+          automatic_payment_methods: {
+            enabled: true,
+          },
+        };
+
+        // Add customer if available
+        if (tenant?.stripeCustomerId) {
+          paymentIntentOptions.customer = tenant.stripeCustomerId;
+        }
+
+        // Create new payment intent
+        const paymentIntent = await stripe.paymentIntents.create(paymentIntentOptions);
+
+        // Update the print order with new payment intent ID
+        await storage.updatePrintOrder(orderId, {
+          paymentIntentId: paymentIntent.id
+        });
+
+        // Get saved payment methods if available
+        let savedPaymentMethods = [];
+        if (tenant?.stripeCustomerId) {
+          try {
+            const paymentMethods = await stripe.paymentMethods.list({
+              customer: tenant.stripeCustomerId,
+              type: 'card',
+            });
+            savedPaymentMethods = paymentMethods.data.map(pm => ({
+              id: pm.id,
+              brand: pm.card?.brand,
+              last4: pm.card?.last4,
+              exp_month: pm.card?.exp_month,
+              exp_year: pm.card?.exp_year,
+            }));
+          } catch (error) {
+            console.error('Error fetching payment methods:', error);
+          }
+        }
+
+        res.json({
+          clientSecret: paymentIntent.client_secret,
+          savedPaymentMethods
+        });
+
+      } catch (error) {
+        console.error("Error creating payment intent for existing order:", error);
+        res.status(500).json({ message: "Failed to create payment intent" });
+      }
+    }
+  );
+
+  // Update print order status
+  app.patch(
+    "/api/tenants/:tenantId/restaurants/:restaurantId/print-orders/:orderId",
+    validateTenant,
+    async (req, res) => {
+      try {
+        const restaurantId = parseInt(req.params.restaurantId);
+        const tenantId = parseInt(req.params.tenantId);
+        const orderId = parseInt(req.params.orderId);
+
+        const restaurant = await storage.getRestaurantById(restaurantId);
+        if (!restaurant || restaurant.tenantId !== tenantId) {
+          return res.status(404).json({ message: "Restaurant not found" });
+        }
+
+        const updates = req.body;
+        const updatedOrder = await storage.updatePrintOrder(orderId, updates);
+
+        if (!updatedOrder) {
+          return res.status(404).json({ message: "Print order not found" });
+        }
+
+        res.json(updatedOrder);
+
+      } catch (error) {
+        console.error("Error updating print order:", error);
+        res.status(500).json({ message: "Failed to update print order" });
+      }
+    }
+  );
+
+  // Confirm payment and update order status
+  app.post(
+    "/api/print-orders/confirm-payment",
+    async (req, res) => {
+      try {
+        const { paymentIntentId } = req.body;
+
+        if (!paymentIntentId) {
+          return res.status(400).json({ message: "Payment intent ID is required" });
+        }
+
+        // Retrieve payment intent from Stripe
+        const paymentIntent = await stripe.paymentIntents.retrieve(paymentIntentId);
+
+        if (paymentIntent.status === 'succeeded') {
+          // Update print order status
+          const updatedOrder = await storage.updatePrintOrderByPaymentIntent(paymentIntentId, {
+            paymentStatus: 'paid',
+            orderStatus: 'processing',
+            stripePaymentId: paymentIntent.id
+          });
+
+          if (updatedOrder) {
+            // Send confirmation email if email service is available
+            if (emailService) {
+              try {
+                await emailService.sendPrintOrderConfirmation(
+                  updatedOrder.customerEmail,
+                  updatedOrder
+                );
+              } catch (emailError) {
+                console.error("Failed to send print order confirmation email:", emailError);
+              }
+            }
+
+            res.json({
+              success: true,
+              message: "Payment confirmed successfully",
+              order: updatedOrder
+            });
+          } else {
+            res.status(404).json({ message: "Print order not found" });
+          }
+        } else {
+          res.status(400).json({ 
+            message: "Payment not successful",
+            status: paymentIntent.status 
+          });
+        }
+
+      } catch (error) {
+        console.error("Error confirming payment:", error);
+        res.status(500).json({ message: "Failed to confirm payment" });
+      }
+    }
+  );
+
+  // Public endpoint to create print order (for external customers)
+  app.post("/api/restaurants/:restaurantId/print-orders/public", async (req, res) => {
+    try {
+      const restaurantId = parseInt(req.params.restaurantId);
+
+      if (isNaN(restaurantId)) {
+        return res.status(400).json({ message: "Invalid restaurant ID" });
+      }
+
+      const restaurant = await storage.getRestaurantById(restaurantId);
+      if (!restaurant) {
+        return res.status(404).json({ message: "Restaurant not found" });
+      }
+
+      const {
+        customerName,
+        customerEmail,
+        customerPhone,
+        printType,
+        printSize,
+        printQuality,
+        quantity,
+        design,
+        specialInstructions,
+        rushOrder,
+        deliveryMethod,
+        deliveryAddress
+      } = req.body;
+
+      // Calculate pricing (same logic as authenticated endpoint)
+      const basePrices = {
+        menu: { A4: 500, A3: 800, A2: 1200, A1: 1800, custom: 1000 },
+        flyer: { A4: 300, A3: 500, A2: 800, A1: 1200, custom: 600 },
+        poster: { A4: 800, A3: 1200, A2: 1800, A1: 2500, custom: 1500 },
+        banner: { A4: 1200, A3: 1800, A2: 2500, A1: 3500, custom: 2000 },
+        business_card: { A4: 200, A3: 300, A2: 400, A1: 500, custom: 250 }
+      };
+
+      const qualityMultipliers = {
+        draft: 0.8,
+        standard: 1.0,
+        high: 1.3,
+        premium: 1.6
+      };
+
+      const basePrice = basePrices[printType]?.[printSize] || 1000;
+      const qualityMultiplier = qualityMultipliers[printQuality] || 1.0;
+      const rushMultiplier = rushOrder ? 1.5 : 1.0;
+      const deliveryFee = deliveryMethod === 'delivery' ? 500 : deliveryMethod === 'mail' ? 300 : 0;
+
+      const totalAmount = Math.round(basePrice * qualityMultiplier * rushMultiplier * quantity + deliveryFee);
+
+      // Generate unique order number
+      const orderNumber = `PO-${Date.now()}-${Math.random().toString(36).substr(2, 9).toUpperCase()}`;
+
+      // Create Stripe payment intent
+      const paymentIntent = await stripe.paymentIntents.create({
+        amount: totalAmount,
+        currency: 'usd',
+        metadata: {
+          orderNumber,
+          restaurantId: restaurantId.toString(),
+          tenantId: restaurant.tenantId.toString(),
+          printType,
+          quantity: quantity.toString()
+        },
+        description: `Print Order ${orderNumber} - ${printType} (${quantity}x ${printSize})`
+      });
+
+      // Create print order in database
+      const printOrder = await storage.createPrintOrder({
+        restaurantId,
+        tenantId: restaurant.tenantId,
+        orderNumber,
+        customerName,
+        customerEmail,
+        customerPhone,
+        printType,
+        printSize,
+        printQuality,
+        quantity,
+        design,
+        specialInstructions,
+        rushOrder,
+        totalAmount,
+        paymentIntentId: paymentIntent.id,
+        deliveryMethod,
+        deliveryAddress,
+        estimatedCompletion: new Date(Date.now() + (rushOrder ? 24 : 72) * 60 * 60 * 1000)
+      });
+
+      res.json({
+        printOrder,
+        clientSecret: paymentIntent.client_secret,
+        totalAmount
+      });
+
+    } catch (error) {
+      console.error("Error creating public print order:", error);
+      res.status(500).json({ message: "Failed to create print order" });
+    }
+  });
 
   // Initialize cancellation reminder service
   const cancellationReminderService = new CancellationReminderService();

@@ -1,16 +1,16 @@
 // Adds Supabase database connection option using environment variables and conditional drizzle setup.
-import { 
-  users, 
-  restaurants, 
-  bookings, 
-  customers, 
-  rooms, 
-  tables, 
-  activityLog, 
-  smsMessages, 
-  waitingList, 
-  feedback, 
-  timeSlots, 
+import {
+  users,
+  restaurants,
+  bookings,
+  customers,
+  rooms,
+  tables,
+  activityLog,
+  smsMessages,
+  waitingList,
+  feedback,
+  timeSlots,
   tableLayouts,
   tenants,
   tenantUsers,
@@ -21,7 +21,7 @@ import {
   cutOffTimes,
   bookingChangeRequests,
   notifications,
-  resolvedConflicts
+  resolvedConflicts,
 } from "@shared/schema";
 import type {
   User,
@@ -56,7 +56,7 @@ import type {
   InsertUserSubscription,
   InsertRoom,
   InsertCombinedTable,
-  InsertNotification
+  InsertNotification,
 } from "@shared/schema";
 import { neon } from "@neondatabase/serverless";
 import { drizzle } from "drizzle-orm/neon-http";
@@ -65,10 +65,13 @@ import postgres from "postgres";
 import * as schema from "../shared/schema";
 
 // Use Supabase database URL if available, otherwise use the existing DATABASE_URL
-const databaseUrl = process.env.SUPABASE_DATABASE_URL || process.env.DATABASE_URL;
+const databaseUrl =
+  process.env.SUPABASE_DATABASE_URL || process.env.DATABASE_URL;
 
 if (!databaseUrl) {
-  console.warn("No database connection string found. Database operations will be disabled until proper connection is configured.");
+  console.warn(
+    "No database connection string found. Database operations will be disabled until proper connection is configured.",
+  );
 }
 
 let db: any;
@@ -117,7 +120,10 @@ export interface IStorage {
   getRestaurantById(id: number): Promise<Restaurant | undefined>;
   getRestaurantsByTenantId(tenantId: number): Promise<Restaurant[]>;
   createRestaurant(restaurant: InsertRestaurant): Promise<Restaurant>;
-  updateRestaurant(id: number, restaurant: Partial<Restaurant>): Promise<Restaurant | undefined>;
+  updateRestaurant(
+    id: number,
+    restaurant: Partial<Restaurant>,
+  ): Promise<Restaurant | undefined>;
 
   // Tables
   getTablesByRestaurant(restaurantId: number): Promise<Table[]>;
@@ -131,18 +137,35 @@ export interface IStorage {
   getBookingById(id: number): Promise<Booking | undefined>;
   getUnassignedBookings(restaurantId: number): Promise<Booking[]>;
   createBooking(booking: InsertBooking): Promise<Booking>;
-  updateBooking(id: number, booking: Partial<Booking>): Promise<Booking | undefined>;
+  updateBooking(
+    id: number,
+    booking: Partial<Booking>,
+  ): Promise<Booking | undefined>;
   deleteBooking(id: number): Promise<boolean>;
   getBookingCountForTenantThisMonth(tenantId: number): Promise<number>;
 
   // Customers
   getCustomersByRestaurant(restaurantId: number): Promise<Customer[]>;
-  getCustomerByEmail(restaurantId: number, email: string): Promise<Customer | undefined>;
+  getCustomerByEmail(
+    restaurantId: number,
+    email: string,
+  ): Promise<Customer | undefined>;
   getCustomerById(id: number): Promise<Customer | undefined>;
   createCustomer(customer: InsertCustomer): Promise<Customer>;
-  updateCustomer(id: number, updates: Partial<Customer>): Promise<Customer | undefined>;
-  getOrCreateCustomer(restaurantId: number, tenantId: number, customerData: { name: string; email: string; phone?: string }): Promise<Customer>;
-  createWalkInCustomer(restaurantId: number, tenantId: number, customerData?: { name?: string; phone?: string; notes?: string }): Promise<Customer>;
+  updateCustomer(
+    id: number,
+    updates: Partial<Customer>,
+  ): Promise<Customer | undefined>;
+  getOrCreateCustomer(
+    restaurantId: number,
+    tenantId: number,
+    customerData: { name: string; email: string; phone?: string },
+  ): Promise<Customer>;
+  createWalkInCustomer(
+    restaurantId: number,
+    tenantId: number,
+    customerData?: { name?: string; phone?: string; notes?: string },
+  ): Promise<Customer>;
 
   // SMS Messages
   getSmsMessagesByRestaurant(restaurantId: number): Promise<SmsMessage[]>;
@@ -151,7 +174,10 @@ export interface IStorage {
   // Waiting List
   getWaitingListByRestaurant(restaurantId: number): Promise<WaitingList[]>;
   createWaitingListEntry(entry: InsertWaitingList): Promise<WaitingList>;
-  updateWaitingListEntry(id: number, updates: Partial<WaitingList>): Promise<WaitingList | undefined>;
+  updateWaitingListEntry(
+    id: number,
+    updates: Partial<WaitingList>,
+  ): Promise<WaitingList | undefined>;
 
   // Feedback
   getFeedbackByRestaurant(restaurantId: number): Promise<Feedback[]>;
@@ -162,33 +188,51 @@ export interface IStorage {
   createActivityLog(log: InsertActivityLog): Promise<ActivityLog>;
 
   // Time Slots
-  getTimeSlotsByRestaurant(restaurantId: number, date?: string): Promise<TimeSlots[]>;
+  getTimeSlotsByRestaurant(
+    restaurantId: number,
+    date?: string,
+  ): Promise<TimeSlots[]>;
   createTimeSlot(slot: InsertTimeSlots): Promise<TimeSlots>;
-  updateTimeSlot(id: number, updates: Partial<TimeSlots>): Promise<TimeSlots | undefined>;
+  updateTimeSlot(
+    id: number,
+    updates: Partial<TimeSlots>,
+  ): Promise<TimeSlots | undefined>;
 
   // Subscription Plans
   getSubscriptionPlans(): Promise<SubscriptionPlan[]>;
   getSubscriptionPlan(id: number): Promise<SubscriptionPlan | undefined>;
   getSubscriptionPlanById(id: number): Promise<SubscriptionPlan | undefined>;
   getFreePlan(): Promise<SubscriptionPlan | undefined>;
-  createSubscriptionPlan(plan: InsertSubscriptionPlan): Promise<SubscriptionPlan>;
+  createSubscriptionPlan(
+    plan: InsertSubscriptionPlan,
+  ): Promise<SubscriptionPlan>;
 
   // User Subscriptions
   getUserSubscription(userId: number): Promise<UserSubscription | undefined>;
-  getUserSubscriptionByStripeId(stripeSubscriptionId: string): Promise<UserSubscription | undefined>;
+  getUserSubscriptionByStripeId(
+    stripeSubscriptionId: string,
+  ): Promise<UserSubscription | undefined>;
   getAllUserSubscriptions(): Promise<UserSubscription[]>;
-  createUserSubscription(subscription: InsertUserSubscription): Promise<UserSubscription>;
-  updateUserSubscription(id: number, updates: Partial<UserSubscription>): Promise<UserSubscription | undefined>;
+  createUserSubscription(
+    subscription: InsertUserSubscription,
+  ): Promise<UserSubscription>;
+  updateUserSubscription(
+    id: number,
+    updates: Partial<UserSubscription>,
+  ): Promise<UserSubscription | undefined>;
   getUserSubscriptionById(id: number): Promise<UserSubscription | undefined>;
 
   // Additional required methods
   getTableById(id: number): Promise<Table | undefined>;
   getWaitingListEntryById(id: number): Promise<WaitingList | undefined>;
   getTimeSlotById(id: number): Promise<TimeSlots | undefined>;
-  
+
   // Auto-assignment methods
   getUnassignedBookings(): Promise<Booking[]>;
-  getBookingsByDateAndRestaurant(restaurantId: number, date: string): Promise<Booking[]>;
+  getBookingsByDateAndRestaurant(
+    restaurantId: number,
+    date: string,
+  ): Promise<Booking[]>;
 
   // Rooms
   getRoomsByRestaurant(restaurantId: number): Promise<Room[]>;
@@ -200,13 +244,26 @@ export interface IStorage {
   // Combined Tables
   getCombinedTablesByRestaurant(restaurantId: number): Promise<CombinedTable[]>;
   getCombinedTableById(id: number): Promise<CombinedTable | undefined>;
-  createCombinedTable(insertCombinedTable: InsertCombinedTable): Promise<CombinedTable>;
-  updateCombinedTable(id: number, updates: Partial<CombinedTable>): Promise<CombinedTable | undefined>;
+  createCombinedTable(
+    insertCombinedTable: InsertCombinedTable,
+  ): Promise<CombinedTable>;
+  updateCombinedTable(
+    id: number,
+    updates: Partial<CombinedTable>,
+  ): Promise<CombinedTable | undefined>;
   deleteCombinedTable(id: number): Promise<boolean>;
 
   // Table Layout
-  getTableLayout(restaurantId: number, room: string): Promise<TableLayout | undefined>;
-  saveTableLayout(restaurantId: number, tenantId: number, room: string, positions: any): Promise<TableLayout>;
+  getTableLayout(
+    restaurantId: number,
+    room: string,
+  ): Promise<TableLayout | undefined>;
+  saveTableLayout(
+    restaurantId: number,
+    tenantId: number,
+    room: string,
+    positions: any,
+  ): Promise<TableLayout>;
 
   // Opening Hours
   getOpeningHours(tenantId: number, restaurantId: number): Promise<any[]>;
@@ -222,11 +279,23 @@ export interface IStorage {
 
   // Cut Off Times
   getCutOffTimesByRestaurant(restaurantId: number): Promise<any>;
-  createOrUpdateCutOffTimes(restaurantId: number, tenantId: number, timesData: any[]): Promise<any>;
+  createOrUpdateCutOffTimes(
+    restaurantId: number,
+    tenantId: number,
+    timesData: any[],
+  ): Promise<any>;
 
   // Business Rules
-  isRestaurantOpen(restaurantId: number, bookingDate: Date, bookingTime: string): Promise<boolean>;
-  isBookingAllowed(restaurantId: number, bookingDate: Date, bookingTime: string): Promise<boolean>;
+  isRestaurantOpen(
+    restaurantId: number,
+    bookingDate: Date,
+    bookingTime: string,
+  ): Promise<boolean>;
+  isBookingAllowed(
+    restaurantId: number,
+    bookingDate: Date,
+    bookingTime: string,
+  ): Promise<boolean>;
 
   // Booking Change Requests
   getBookingChangeRequestsByBookingId(bookingId: number): Promise<any[]>;
@@ -240,18 +309,31 @@ export interface IStorage {
   createNotification(notification: any): Promise<any>;
   markNotificationAsRead(id: number): Promise<any>;
   markAllNotificationsAsRead(restaurantId: number): Promise<void>;
-  revertNotification(notificationId: number, userEmail: string): Promise<boolean>;
+  revertNotification(
+    notificationId: number,
+    userEmail: string,
+  ): Promise<boolean>;
   deleteNotification(id: number): Promise<boolean>;
 
   // Resolved Conflicts
-  getResolvedConflictsByRestaurant(restaurantId: number): Promise<ResolvedConflict[]>;
-  createResolvedConflict(resolvedConflict: InsertResolvedConflict): Promise<ResolvedConflict>;
+  getResolvedConflictsByRestaurant(
+    restaurantId: number,
+  ): Promise<ResolvedConflict[]>;
+  createResolvedConflict(
+    resolvedConflict: InsertResolvedConflict,
+  ): Promise<ResolvedConflict>;
 
   // Menu Categories
   getMenuCategoriesByRestaurant(restaurantId: number): Promise<MenuCategory[]>;
-  getMenuCategories(restaurantId: number, tenantId: number): Promise<MenuCategory[]>;
+  getMenuCategories(
+    restaurantId: number,
+    tenantId: number,
+  ): Promise<MenuCategory[]>;
   createMenuCategory(category: InsertMenuCategory): Promise<MenuCategory>;
-  updateMenuCategory(id: number, updates: Partial<MenuCategory>): Promise<MenuCategory | undefined>;
+  updateMenuCategory(
+    id: number,
+    updates: Partial<MenuCategory>,
+  ): Promise<MenuCategory | undefined>;
   deleteMenuCategory(id: number): Promise<boolean>;
 
   // Menu Items
@@ -259,7 +341,10 @@ export interface IStorage {
   getMenuItems(restaurantId: number, tenantId: number): Promise<MenuItem[]>;
   getMenuItemsByCategory(categoryId: number): Promise<MenuItem[]>;
   createMenuItem(item: InsertMenuItem): Promise<MenuItem>;
-  updateMenuItem(id: number, updates: Partial<MenuItem>): Promise<MenuItem | undefined>;
+  updateMenuItem(
+    id: number,
+    updates: Partial<MenuItem>,
+  ): Promise<MenuItem | undefined>;
   deleteMenuItem(id: number): Promise<boolean>;
 
   // Seasonal Menu Themes
@@ -268,18 +353,43 @@ export interface IStorage {
   createSeasonalMenuTheme(theme: any): Promise<any>;
   updateSeasonalMenuTheme(id: number, updates: any): Promise<any>;
   deleteSeasonalMenuTheme(id: number): Promise<boolean>;
-  setActiveSeasonalTheme(restaurantId: number, tenantId: number, themeId: number): Promise<boolean>;
+  setActiveSeasonalTheme(
+    restaurantId: number,
+    tenantId: number,
+    themeId: number,
+  ): Promise<boolean>;
 
   // Webhooks
   getWebhooksByRestaurant(restaurantId: number): Promise<any[]>;
-  saveWebhooks(restaurantId: number, tenantId: number, webhooks: any[]): Promise<any[]>;
+  saveWebhooks(
+    restaurantId: number,
+    tenantId: number,
+    webhooks: any[],
+  ): Promise<any[]>;
 
   // Integration Configurations
-  getIntegrationConfigurationsByRestaurant(restaurantId: number): Promise<any[]>;
-  getIntegrationConfiguration(restaurantId: number, integrationId: string): Promise<any>;
-  getIntegrationByRestaurantAndType(restaurantId: number, integrationType: string): Promise<any>;
-  createOrUpdateIntegrationConfiguration(restaurantId: number, tenantId: number, integrationId: string, isEnabled: boolean, configuration?: any): Promise<any>;
-  deleteIntegrationConfiguration(restaurantId: number, integrationId: string): Promise<boolean>;
+  getIntegrationConfigurationsByRestaurant(
+    restaurantId: number,
+  ): Promise<any[]>;
+  getIntegrationConfiguration(
+    restaurantId: number,
+    integrationId: string,
+  ): Promise<any>;
+  getIntegrationByRestaurantAndType(
+    restaurantId: number,
+    integrationType: string,
+  ): Promise<any>;
+  createOrUpdateIntegrationConfiguration(
+    restaurantId: number,
+    tenantId: number,
+    integrationId: string,
+    isEnabled: boolean,
+    configuration?: any,
+  ): Promise<any>;
+  deleteIntegrationConfiguration(
+    restaurantId: number,
+    integrationId: string,
+  ): Promise<boolean>;
 
   // Rescheduling Suggestions
   getReschedulingSuggestionsByRestaurant(restaurantId: number): Promise<any[]>;
@@ -291,7 +401,10 @@ export interface IStorage {
   deleteExpiredReschedulingSuggestions(): Promise<void>;
 
   // Auto-assignment methods
-  getBookingsByDateAndRestaurant(date: string, restaurantId: number): Promise<Booking[]>;
+  getBookingsByDateAndRestaurant(
+    date: string,
+    restaurantId: number,
+  ): Promise<Booking[]>;
 
   // Seating Configurations
   getSeatingConfigurationsByRestaurant(restaurantId: number): Promise<any[]>;
@@ -316,7 +429,25 @@ export interface IStorage {
   createBookingAgent(agent: any): Promise<any>;
   updateBookingAgent(id: number, updates: any): Promise<any>;
   deleteBookingAgent(id: number): Promise<boolean>;
-  isBookingAgent(email: string, phone: string, restaurantId: number): Promise<any | null>;
+  isBookingAgent(
+    email: string,
+    phone: string,
+    restaurantId: number,
+  ): Promise<any | null>;
+  // Print Orders
+  createPrintOrder(orderData: any): Promise<any>;
+  getPrintOrdersByRestaurant(
+    restaurantId: number,
+    tenantId: number,
+  ): Promise<any[]>;
+  getPrintOrderById(orderId: number): Promise<any>;
+  updatePrintOrder(orderId: number, updates: any): Promise<any>;
+  updatePrintOrderByPaymentIntent(
+    paymentIntentId: string,
+    updates: any,
+  ): Promise<any>;
+  getPrintOrderByOrderNumber(orderNumber: string): Promise<any>;
+  deletePrintOrder(orderId: number): Promise<any>;
 }
 
 import { DatabaseStorage } from "./db-storage";
@@ -326,7 +457,9 @@ import { MemoryStorage } from "./mem-storage";
 let storage: IStorage;
 
 if (!databaseUrl) {
-  console.log("No database configured, using in-memory storage for development");
+  console.log(
+    "No database configured, using in-memory storage for development",
+  );
   storage = new MemoryStorage();
 } else {
   console.log("Database configured, using database storage");
