@@ -61,11 +61,14 @@ export function CreateKitchenOrder({ restaurantId, tenantId, onOrderCreated }: C
   const queryClient = useQueryClient();
 
   // Fetch menu items
-  const { data: menuItems = [] } = useQuery({
+  const { data: menuItemsData = [] } = useQuery({
     queryKey: [`/api/tenants/${tenantId}/restaurants/${restaurantId}/menu-items`],
     queryFn: () => apiRequest('GET', `/api/tenants/${tenantId}/restaurants/${restaurantId}/menu-items`),
     enabled: isOpen,
   });
+
+  // Ensure menuItems is always an array
+  const menuItems = Array.isArray(menuItemsData) ? menuItemsData : [];
 
   // Create order mutation
   const createOrderMutation = useMutation({
@@ -216,12 +219,13 @@ export function CreateKitchenOrder({ restaurantId, tenantId, onOrderCreated }: C
   };
 
   const groupedMenuItems = menuItems.reduce((acc: Record<string, MenuItem[]>, item: MenuItem) => {
-    if (!acc[item.category]) {
-      acc[item.category] = [];
+    const category = item.category || 'Uncategorized';
+    if (!acc[category]) {
+      acc[category] = [];
     }
-    acc[item.category].push(item);
+    acc[category].push(item);
     return acc;
-  }, {});
+  }, {} as Record<string, MenuItem[]>);
 
   return (
     <Dialog open={isOpen} onOpenChange={setIsOpen}>
