@@ -1865,27 +1865,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     },
   );
 
-  // Feedback routes
-  app.get(
-    "/api/tenants/:tenantId/restaurants/:restaurantId/feedback",
-    validateTenant,
-    async (req, res) => {
-      try {
-        const restaurantId = parseInt(req.params.restaurantId);
-        const tenantId = parseInt(req.params.tenantId);
 
-        const restaurant = await storage.getRestaurantById(restaurantId);
-        if (!restaurant || restaurant.tenantId !== tenantId) {
-          return res.status(404).json({ message: "Restaurant not found" });
-        }
-
-        const feedback = await storage.getFeedbackByRestaurant(restaurantId);
-        res.json(feedback);
-      } catch (error) {
-        res.status(400).json({ message: "Invalid request" });
-      }
-    },
-  );
 
   // Public restaurant info (for customers via QR code)
   app.get(
