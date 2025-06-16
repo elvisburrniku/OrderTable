@@ -13754,8 +13754,8 @@ NEXT STEPS:
     }
   });
 
-  // Feedback responses route
-  app.get("/api/tenants/:tenantId/restaurants/:restaurantId/feedback", async (req, res) => {
+  // Feedback responses route (authenticated)
+  app.get("/api/tenants/:tenantId/restaurants/:restaurantId/feedback", validateTenant, async (req, res) => {
     try {
       const { tenantId, restaurantId } = req.params;
       const feedbackData = await storage.getFeedbackResponses(parseInt(restaurantId), parseInt(tenantId));
