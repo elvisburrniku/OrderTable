@@ -27,17 +27,72 @@ interface FeedbackItem {
 
 export default function FeedbackResponses() {
   const { user, restaurant } = useAuth();
+  const [location] = useLocation();
   const [statusFilter, setStatusFilter] = useState("all");
   const [selectedFeedback, setSelectedFeedback] = useState<FeedbackItem | null>(null);
   const [showDetailModal, setShowDetailModal] = useState(false);
+  const [tenantId, setTenantId] = useState<number | null>(null);
+  const [restaurantId, setRestaurantId] = useState<number | null>(null);
+
+  // Get tenant and restaurant IDs from various sources
+  useEffect(() => {
+    const getRestaurantInfo = async () => {
+      // First try auth context
+      if (restaurant?.tenantId && restaurant?.id) {
+        setTenantId(restaurant.tenantId);
+        setRestaurantId(restaurant.id);
+        return;
+      }
+
+      // Try localStorage
+      try {
+        const storedRestaurant = localStorage.getItem('restaurant');
+        if (storedRestaurant) {
+          const parsed = JSON.parse(storedRestaurant);
+          if (parsed.tenantId && parsed.id) {
+            setTenantId(parsed.tenantId);
+            setRestaurantId(parsed.id);
+            return;
+          }
+        }
+      } catch (error) {
+        console.error('Error parsing stored restaurant:', error);
+      }
+
+      // Try session validation as fallback
+      try {
+        const response = await fetch('/api/auth/validate', { credentials: 'include' });
+        if (response.ok) {
+          const data = await response.json();
+          if (data.valid && data.restaurant) {
+            setTenantId(data.restaurant.tenantId);
+            setRestaurantId(data.restaurant.id);
+          }
+        }
+      } catch (error) {
+        console.error('Session validation error:', error);
+      }
+    };
+
+    getRestaurantInfo();
+  }, [restaurant]);
 
   const { data: feedback, isLoading } = useQuery({
-    queryKey: [`/api/tenants/${restaurant?.tenantId}/restaurants/${restaurant?.id}/feedback`],
-    enabled: !!restaurant?.id && !!restaurant?.tenantId,
+    queryKey: [`/api/tenants/${tenantId}/restaurants/${restaurantId}/feedback`],
+    enabled: !!tenantId && !!restaurantId,
   });
 
-  if (!user || !restaurant) {
-    return null;
+  // Show loading state if we don't have restaurant info yet
+  if (!tenantId || !restaurantId) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="text-center">
+          <MessageCircle className="w-12 h-12 text-gray-400 mx-auto mb-4" />
+          <h3 className="text-lg font-medium text-gray-900 mb-2">Loading feedback...</h3>
+          <p className="text-gray-600">Please wait while we load your feedback data.</p>
+        </div>
+      </div>
+    );
   }
 
   const filteredFeedback = (feedback as FeedbackItem[])?.filter((item: FeedbackItem) => {

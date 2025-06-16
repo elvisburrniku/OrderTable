@@ -148,9 +148,9 @@ function App() {
                 <Route path="/:tenantId/email-test" component={EmailTest} />
                 <Route path="/:tenantId/test-tools" component={TestTools} />
               </OverduePaymentGuard>
+              <Route path="/feedback" component={FeedbackResponses} />
+              <Route path="/feedback-responses" component={FeedbackResponses} />
             </SetupGuard>
-            <Route path="/feedback" component={FeedbackResponses} />
-            <Route path="/feedback-responses" component={FeedbackResponses} />
             <Route path="/feedback-responses-popup" component={FeedbackResponsesPopup} />
             <Route path="/contact" component={Contact} />
             <Route component={NotFound} />
