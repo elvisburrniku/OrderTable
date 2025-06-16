@@ -19,6 +19,7 @@ export function LayoutWrapper({ children }: LayoutWrapperProps) {
   const publicRoutes = [
     /^\/guest-booking\/\d+\/\d+$/,
     /^\/contact$/,
+    /^\/feedback$/,
     /^\/feedback-responses$/,
     /^\/feedback-responses-popup$/,
     /^\/booking-manage$/,
