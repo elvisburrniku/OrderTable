@@ -18,6 +18,7 @@ export function LayoutWrapper({ children }: LayoutWrapperProps) {
   // Define routes that should NOT show the sidebar
   const publicRoutes = [
     /^\/guest-booking\/\d+\/\d+$/,
+    /^\/feedback\/\d+\/\d+$/,
     /^\/contact$/,
     /^\/feedback$/,
     /^\/feedback-responses$/,
