@@ -394,8 +394,8 @@ export default function Tables() {
                         </div>
                       </TableCell>
                       <TableCell>
-                        <Badge variant={table.isActive ? "default" : "secondary"}>
-                          {table.isActive ? "Active" : "Inactive"}
+                        <Badge variant={Boolean(table.isActive) ? "default" : "secondary"}>
+                          {Boolean(table.isActive) ? "Active" : "Inactive"}
                         </Badge>
                       </TableCell>
                       <TableCell>
@@ -418,13 +418,20 @@ export default function Tables() {
                       </TableCell>
                       <TableCell>
                         <div className="flex items-center gap-2">
-                          <Switch
-                            checked={table.isActive}
-                            onCheckedChange={(checked) =>
-                              handleToggleActive(table.id, checked)
-                            }
-                            disabled={updateTableMutation.isPending}
-                          />
+                          <div className="flex items-center gap-1">
+                            <Switch
+                              checked={Boolean(table.isActive)}
+                              onCheckedChange={(checked) => {
+                                console.log(`Toggling table ${table.id} from ${table.isActive} to ${checked}`);
+                                handleToggleActive(table.id, checked);
+                              }}
+                              disabled={updateTableMutation.isPending}
+                              className="data-[state=checked]:bg-green-600"
+                            />
+                            <span className="text-xs text-gray-600">
+                              {Boolean(table.isActive) ? "Active" : "Inactive"}
+                            </span>
+                          </div>
                           <Button
                             variant="outline"
                             size="sm"
