@@ -207,9 +207,14 @@ export function KitchenDashboard({ restaurantId, tenantId }: KitchenDashboardPro
     return diff;
   };
 
-  const activeOrders = orders.filter((order: KitchenOrder) => ['pending', 'preparing'].includes(order.status));
-  const readyOrders = orders.filter((order: KitchenOrder) => order.status === 'ready');
-  const completedToday = orders.filter((order: KitchenOrder) => order.status === 'served').length;
+  // Ensure all data is properly formatted as arrays
+  const ordersArray = Array.isArray(orders) ? orders : [];
+  const stationsArray = Array.isArray(stations) ? stations : [];
+  const staffArray = Array.isArray(staff) ? staff : [];
+  
+  const activeOrders = ordersArray.filter((order: KitchenOrder) => ['pending', 'preparing'].includes(order.status));
+  const readyOrders = ordersArray.filter((order: KitchenOrder) => order.status === 'ready');
+  const completedToday = ordersArray.filter((order: KitchenOrder) => order.status === 'served').length;
 
   return (
     <div className="p-6 space-y-6">
@@ -412,7 +417,7 @@ export function KitchenDashboard({ restaurantId, tenantId }: KitchenDashboardPro
             {stationsLoading ? (
               <div className="col-span-full text-center py-8">Loading stations...</div>
             ) : (
-              stations.map((station: KitchenStation) => (
+              stationsArray.map((station: KitchenStation) => (
                 <Card key={station.id}>
                   <CardHeader>
                     <div className="flex justify-between items-center">
@@ -472,7 +477,7 @@ export function KitchenDashboard({ restaurantId, tenantId }: KitchenDashboardPro
             {staffLoading ? (
               <div className="col-span-full text-center py-8">Loading staff...</div>
             ) : (
-              staff.map((member: KitchenStaff) => (
+              staffArray.map((member: KitchenStaff) => (
                 <Card key={member.id}>
                   <CardHeader>
                     <div className="flex justify-between items-center">
