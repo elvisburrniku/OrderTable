@@ -15,6 +15,7 @@ export function RouteGuard({ children }: RouteGuardProps) {
       // Skip authentication checks for public routes like guest booking
       const publicRoutes = [
         /^\/guest-booking\/\d+\/\d+$/,
+        /^\/feedback\/\d+\/\d+$/,
         /^\/contact$/,
         /^\/feedback-responses$/,
         /^\/feedback-responses-popup$/,
@@ -102,6 +103,7 @@ export function RouteGuard({ children }: RouteGuardProps) {
         /^\/\d+\/feedback-responses-popup$/,
         /^\/contact$/,
         /^\/guest-booking\/\d+\/\d+$/,
+        /^\/feedback\/\d+\/\d+$/,
         /^\/booking-manage$/
       ];
 
