@@ -22,6 +22,7 @@ import {
 import { useToast } from "@/hooks/use-toast";
 import { PrintOrderForm } from "@/components/print-order-form";
 import { PrintOrderPayment } from "@/components/print-order-payment";
+import { OrderTracking } from "@/components/order-tracking";
 import { 
   Printer, 
   Plus, 
@@ -59,6 +60,7 @@ export default function PrintOrders() {
   const [activeTab, setActiveTab] = useState("orders");
   const [selectedOrder, setSelectedOrder] = useState<PrintOrder | null>(null);
   const [showPayment, setShowPayment] = useState(false);
+  const [showTracking, setShowTracking] = useState(false);
   const [paymentData, setPaymentData] = useState<{ 
     clientSecret: string; 
     order: any; 

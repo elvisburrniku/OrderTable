@@ -924,8 +924,15 @@ export const printOrders = pgTable("print_orders", {
   orderStatus: text("order_status").default("pending").notNull(), // pending, processing, printing, completed, cancelled
   estimatedCompletion: timestamp("estimated_completion"),
   completedAt: timestamp("completed_at"),
+  processingStartedAt: timestamp("processing_started_at"),
+  printingStartedAt: timestamp("printing_started_at"),
+  shippedAt: timestamp("shipped_at"),
+  deliveredAt: timestamp("delivered_at"),
+  trackingNumber: text("tracking_number"),
   deliveryMethod: text("delivery_method").default("pickup").notNull(), // pickup, delivery, mail
   deliveryAddress: json("delivery_address"), // delivery address object
+  estimatedDeliveryDate: date("estimated_delivery_date"),
+  deliveryNotes: text("delivery_notes"),
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
 });
