@@ -12882,6 +12882,88 @@ NEXT STEPS:
   const cancellationReminderService = new CancellationReminderService();
   cancellationReminderService.start();
 
+  // SMS Settings routes
+  app.get("/api/tenants/:tenantId/restaurants/:restaurantId/sms-settings", async (req, res) => {
+    try {
+      const { tenantId, restaurantId } = req.params;
+      const settings = await storage.getSmsSettings(parseInt(restaurantId), parseInt(tenantId));
+      res.json(settings);
+    } catch (error) {
+      console.error("Error fetching SMS settings:", error);
+      res.status(500).json({ message: "Internal server error" });
+    }
+  });
+
+  app.post("/api/tenants/:tenantId/restaurants/:restaurantId/sms-settings", async (req, res) => {
+    try {
+      const { tenantId, restaurantId } = req.params;
+      const settings = req.body;
+      
+      const savedSettings = await storage.saveSmsSettings(parseInt(restaurantId), parseInt(tenantId), settings);
+      res.json({ message: "SMS settings saved successfully", settings: savedSettings });
+    } catch (error) {
+      console.error("Error saving SMS settings:", error);
+      res.status(500).json({ message: "Internal server error" });
+    }
+  });
+
+  // SMS Balance routes
+  app.get("/api/tenants/:tenantId/sms-balance", async (req, res) => {
+    try {
+      const { tenantId } = req.params;
+      const balance = await storage.getSmsBalance(parseInt(tenantId));
+      res.json(balance);
+    } catch (error) {
+      console.error("Error fetching SMS balance:", error);
+      res.status(500).json({ message: "Internal server error" });
+    }
+  });
+
+  app.post("/api/tenants/:tenantId/sms-balance/add", async (req, res) => {
+    try {
+      const { tenantId } = req.params;
+      const { amount } = req.body;
+      
+      if (!amount || amount <= 0) {
+        return res.status(400).json({ message: "Invalid amount" });
+      }
+      
+      const updatedBalance = await storage.addSmsBalance(parseInt(tenantId), parseFloat(amount));
+      res.json({ message: "SMS balance added successfully", balance: updatedBalance });
+    } catch (error) {
+      console.error("Error adding SMS balance:", error);
+      res.status(500).json({ message: "Internal server error" });
+    }
+  });
+
+  // SMS Test route for free testing
+  app.post("/api/tenants/:tenantId/restaurants/:restaurantId/sms-messages/test", async (req, res) => {
+    try {
+      const { tenantId, restaurantId } = req.params;
+      const { phoneNumber, message, type } = req.body;
+      
+      // For testing purposes, simulate sending SMS without actual delivery
+      const testMessage = await storage.createSmsMessage(parseInt(restaurantId), parseInt(tenantId), {
+        phoneNumber,
+        message: message || "Test SMS from ReadyTable: Your booking has been confirmed!",
+        type: type || "test",
+        cost: "0.00", // Free for testing
+      });
+      
+      // Simulate successful delivery
+      await storage.updateSmsMessageStatus(testMessage.id, "delivered");
+      
+      res.json({ 
+        message: "Test SMS sent successfully", 
+        smsMessage: testMessage,
+        note: "This is a test message - no actual SMS was sent to preserve your balance"
+      });
+    } catch (error) {
+      console.error("Error sending test SMS:", error);
+      res.status(500).json({ message: "Internal server error" });
+    }
+  });
+
   return httpServer;
 }
 

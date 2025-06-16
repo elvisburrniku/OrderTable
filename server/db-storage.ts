@@ -1118,6 +1118,175 @@ export class DatabaseStorage implements IStorage {
     return false;
   }
 
+  // SMS Settings methods
+  async getSmsSettings(restaurantId: number, tenantId: number): Promise<any> {
+    if (!this.db) throw new Error("Database connection not available");
+    
+    const result = await this.db
+      .select()
+      .from(smsSettings)
+      .where(and(
+        eq(smsSettings.restaurantId, restaurantId),
+        eq(smsSettings.tenantId, tenantId)
+      ))
+      .limit(1);
+    
+    return result[0] || {
+      confirmationEnabled: false,
+      reminderEnabled: false,
+      reminderHours: 2,
+      countryCode: "+1",
+      phoneNumber: "",
+      satisfactionSurveyEnabled: false,
+    };
+  }
+
+  async saveSmsSettings(restaurantId: number, tenantId: number, settings: any): Promise<any> {
+    if (!this.db) throw new Error("Database connection not available");
+
+    const existing = await this.db
+      .select()
+      .from(smsSettings)
+      .where(and(
+        eq(smsSettings.restaurantId, restaurantId),
+        eq(smsSettings.tenantId, tenantId)
+      ))
+      .limit(1);
+
+    if (existing.length > 0) {
+      const [updated] = await this.db
+        .update(smsSettings)
+        .set({
+          confirmationEnabled: settings.confirmationEnabled,
+          reminderEnabled: settings.reminderEnabled,
+          reminderHours: settings.reminderHours,
+          countryCode: settings.countryCode,
+          phoneNumber: settings.phoneNumber,
+          satisfactionSurveyEnabled: settings.satisfactionSurveyEnabled,
+          updatedAt: new Date(),
+        })
+        .where(eq(smsSettings.id, existing[0].id))
+        .returning();
+      return updated;
+    } else {
+      const [created] = await this.db
+        .insert(smsSettings)
+        .values({
+          restaurantId,
+          tenantId,
+          confirmationEnabled: settings.confirmationEnabled,
+          reminderEnabled: settings.reminderEnabled,
+          reminderHours: settings.reminderHours,
+          countryCode: settings.countryCode,
+          phoneNumber: settings.phoneNumber,
+          satisfactionSurveyEnabled: settings.satisfactionSurveyEnabled,
+        })
+        .returning();
+      return created;
+    }
+  }
+
+  // SMS Balance methods
+  async getSmsBalance(tenantId: number): Promise<any> {
+    if (!this.db) throw new Error("Database connection not available");
+    
+    const result = await this.db
+      .select()
+      .from(smsBalance)
+      .where(eq(smsBalance.tenantId, tenantId))
+      .limit(1);
+    
+    return result[0] || { balance: "0.00", currency: "EUR" };
+  }
+
+  async addSmsBalance(tenantId: number, amount: number): Promise<any> {
+    if (!this.db) throw new Error("Database connection not available");
+
+    const existing = await this.db
+      .select()
+      .from(smsBalance)
+      .where(eq(smsBalance.tenantId, tenantId))
+      .limit(1);
+
+    if (existing.length > 0) {
+      const currentBalance = parseFloat(existing[0].balance || "0");
+      const newBalance = currentBalance + amount;
+      
+      const [updated] = await this.db
+        .update(smsBalance)
+        .set({
+          balance: newBalance.toFixed(2),
+          updatedAt: new Date(),
+        })
+        .where(eq(smsBalance.id, existing[0].id))
+        .returning();
+      return updated;
+    } else {
+      const [created] = await this.db
+        .insert(smsBalance)
+        .values({
+          tenantId,
+          balance: amount.toFixed(2),
+          currency: "EUR",
+        })
+        .returning();
+      return created;
+    }
+  }
+
+  // SMS Message methods
+  async createSmsMessage(restaurantId: number, tenantId: number, messageData: any): Promise<any> {
+    if (!this.db) throw new Error("Database connection not available");
+
+    const [message] = await this.db
+      .insert(smsMessages)
+      .values({
+        restaurantId,
+        tenantId,
+        bookingId: messageData.bookingId,
+        phoneNumber: messageData.phoneNumber,
+        message: messageData.message,
+        type: messageData.type,
+        status: "pending",
+        cost: messageData.cost || "0.08",
+      })
+      .returning();
+    
+    return message;
+  }
+
+  async updateSmsMessageStatus(messageId: number, status: string, errorMessage?: string): Promise<any> {
+    if (!this.db) throw new Error("Database connection not available");
+
+    const updateData: any = {
+      status,
+      sentAt: status === "sent" ? new Date() : undefined,
+      deliveredAt: status === "delivered" ? new Date() : undefined,
+      errorMessage: errorMessage || null,
+    };
+
+    const [updated] = await this.db
+      .update(smsMessages)
+      .set(updateData)
+      .where(eq(smsMessages.id, messageId))
+      .returning();
+    
+    return updated;
+  }
+
+  async getSmsMessages(restaurantId: number, tenantId: number): Promise<any[]> {
+    if (!this.db) throw new Error("Database connection not available");
+    
+    return await this.db
+      .select()
+      .from(smsMessages)
+      .where(and(
+        eq(smsMessages.restaurantId, restaurantId),
+        eq(smsMessages.tenantId, tenantId)
+      ))
+      .orderBy(smsMessages.createdAt);
+  }
+
   async deleteNotification(id: number): Promise<boolean> {
     return false;
   }
