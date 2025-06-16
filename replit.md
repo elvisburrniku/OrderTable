@@ -144,4 +144,5 @@ Changelog:
 - June 16, 2025. Fixed table layout saving 500 error - implemented missing saveTableLayout method in database storage with proper upsert functionality for creating and updating table positions.
 - June 16, 2025. Fixed table layout data retrieval issue - implemented missing getTableLayout method to properly fetch saved table positions from database, enabling proper persistence of drag-and-drop table arrangements.
 - June 16, 2025. Fixed seating configurations data persistence - implemented complete backend API with database table, CRUD operations, and frontend integration using React Query for real-time save/load functionality.
+- June 16, 2025. Implemented complete feedback management system - created feedback questions management with CRUD operations, guest feedback responses viewing system with star ratings and NPS scores, proper routing separation between feedback viewing and question management, and comprehensive database integration with sample data for testing.
 ```
