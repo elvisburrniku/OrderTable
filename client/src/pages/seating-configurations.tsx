@@ -1,21 +1,99 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useAuth } from "@/lib/auth.tsx";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Textarea } from "@/components/ui/textarea";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { apiRequest } from "@/lib/queryClient";
+import { useToast } from "@/hooks/use-toast";
+import { Trash2 } from "lucide-react";
 
 export default function SeatingConfigurations() {
   const { user, restaurant } = useAuth();
-  const [configurations, setConfigurations] = useState([
-    {
-      id: 1,
-      name: "Default seating",
-      criteria: "Unlimited",
-      validOnline: "Unlimited"
+  const { toast } = useToast();
+  const queryClient = useQueryClient();
+  const [configurations, setConfigurations] = useState([]);
+
+  // Fetch seating configurations
+  const { data: fetchedConfigurations, isLoading } = useQuery({
+    queryKey: [`/api/tenants/${restaurant?.tenantId}/restaurants/${restaurant?.id}/seating-configurations`],
+    enabled: !!restaurant?.id && !!restaurant?.tenantId,
+  });
+
+  useEffect(() => {
+    if (fetchedConfigurations) {
+      setConfigurations(fetchedConfigurations);
     }
-  ]);
+  }, [fetchedConfigurations]);
+
+  // Save configurations mutation
+  const saveConfigurationsMutation = useMutation({
+    mutationFn: async () => {
+      const promises = configurations.map(async (config) => {
+        if (config.id && config.id > 0) {
+          // Update existing configuration
+          return apiRequest("PUT", `/api/tenants/${restaurant.tenantId}/restaurants/${restaurant.id}/seating-configurations/${config.id}`, {
+            name: config.name,
+            criteria: config.criteria,
+            validOnline: config.validOnline,
+            isActive: config.isActive ?? true,
+          });
+        } else {
+          // Create new configuration
+          return apiRequest("POST", `/api/tenants/${restaurant.tenantId}/restaurants/${restaurant.id}/seating-configurations`, {
+            name: config.name,
+            criteria: config.criteria,
+            validOnline: config.validOnline,
+            isActive: config.isActive ?? true,
+          });
+        }
+      });
+      return Promise.all(promises);
+    },
+    onSuccess: () => {
+      toast({
+        title: "Success",
+        description: "Seating configurations saved successfully",
+      });
+      queryClient.invalidateQueries({ 
+        queryKey: [`/api/tenants/${restaurant.tenantId}/restaurants/${restaurant.id}/seating-configurations`] 
+      });
+    },
+    onError: (error) => {
+      toast({
+        title: "Error",
+        description: "Failed to save seating configurations",
+        variant: "destructive",
+      });
+      console.error("Error saving configurations:", error);
+    },
+  });
+
+  // Delete configuration mutation
+  const deleteConfigurationMutation = useMutation({
+    mutationFn: async (configId: number) => {
+      return apiRequest("DELETE", `/api/tenants/${restaurant.tenantId}/restaurants/${restaurant.id}/seating-configurations/${configId}`);
+    },
+    onSuccess: () => {
+      toast({
+        title: "Success",
+        description: "Seating configuration deleted successfully",
+      });
+      queryClient.invalidateQueries({ 
+        queryKey: [`/api/tenants/${restaurant.tenantId}/restaurants/${restaurant.id}/seating-configurations`] 
+      });
+    },
+    onError: (error) => {
+      toast({
+        title: "Error",
+        description: "Failed to delete seating configuration",
+        variant: "destructive",
+      });
+      console.error("Error deleting configuration:", error);
+    },
+  });
 
   if (!user || !restaurant) {
     return null;
@@ -23,12 +101,39 @@ export default function SeatingConfigurations() {
 
   const addConfiguration = () => {
     const newConfig = {
-      id: configurations.length + 1,
+      id: -(configurations.length + 1), // Negative ID for new items
       name: "",
       criteria: "Unlimited", 
-      validOnline: "Unlimited"
+      validOnline: "Unlimited",
+      isActive: true,
     };
     setConfigurations([...configurations, newConfig]);
+  };
+
+  const updateConfiguration = (index: number, field: string, value: string) => {
+    const updatedConfigs = [...configurations];
+    updatedConfigs[index] = { ...updatedConfigs[index], [field]: value };
+    setConfigurations(updatedConfigs);
+  };
+
+  const deleteConfiguration = (index: number) => {
+    const config = configurations[index];
+    if (config.id && config.id > 0) {
+      // Delete from backend if it exists
+      deleteConfigurationMutation.mutate(config.id);
+    }
+    // Remove from local state
+    const updatedConfigs = configurations.filter((_, i) => i !== index);
+    setConfigurations(updatedConfigs);
+  };
+
+  const handleSave = () => {
+    // Filter out configurations with empty names
+    const validConfigs = configurations.filter(config => config.name.trim() !== "");
+    if (validConfigs.length !== configurations.length) {
+      setConfigurations(validConfigs);
+    }
+    saveConfigurationsMutation.mutate();
   };
 
   return (

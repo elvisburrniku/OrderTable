@@ -10545,6 +10545,107 @@ NEXT STEPS:
     }
   });
 
+  // Seating Configurations API routes
+  app.get(
+    "/api/tenants/:tenantId/restaurants/:restaurantId/seating-configurations",
+    validateTenant,
+    async (req, res) => {
+      try {
+        const restaurantId = parseInt(req.params.restaurantId);
+        const tenantId = parseInt(req.params.tenantId);
+
+        const restaurant = await storage.getRestaurantById(restaurantId);
+        if (!restaurant || restaurant.tenantId !== tenantId) {
+          return res.status(404).json({ message: "Restaurant not found" });
+        }
+
+        const configurations = await storage.getSeatingConfigurationsByRestaurant(restaurantId);
+        res.json(configurations);
+      } catch (error) {
+        console.error("Error fetching seating configurations:", error);
+        res.status(500).json({ message: "Internal server error" });
+      }
+    }
+  );
+
+  app.post(
+    "/api/tenants/:tenantId/restaurants/:restaurantId/seating-configurations",
+    validateTenant,
+    async (req, res) => {
+      try {
+        const restaurantId = parseInt(req.params.restaurantId);
+        const tenantId = parseInt(req.params.tenantId);
+
+        const restaurant = await storage.getRestaurantById(restaurantId);
+        if (!restaurant || restaurant.tenantId !== tenantId) {
+          return res.status(404).json({ message: "Restaurant not found" });
+        }
+
+        const configurationData = {
+          ...req.body,
+          restaurantId,
+          tenantId,
+        };
+
+        const newConfiguration = await storage.createSeatingConfiguration(configurationData);
+        res.json(newConfiguration);
+      } catch (error) {
+        console.error("Error creating seating configuration:", error);
+        res.status(500).json({ message: "Failed to create seating configuration" });
+      }
+    }
+  );
+
+  app.put(
+    "/api/tenants/:tenantId/restaurants/:restaurantId/seating-configurations/:configId",
+    validateTenant,
+    async (req, res) => {
+      try {
+        const configId = parseInt(req.params.configId);
+        const restaurantId = parseInt(req.params.restaurantId);
+        const tenantId = parseInt(req.params.tenantId);
+
+        const restaurant = await storage.getRestaurantById(restaurantId);
+        if (!restaurant || restaurant.tenantId !== tenantId) {
+          return res.status(404).json({ message: "Restaurant not found" });
+        }
+
+        const updatedConfiguration = await storage.updateSeatingConfiguration(configId, req.body);
+        res.json(updatedConfiguration);
+      } catch (error) {
+        console.error("Error updating seating configuration:", error);
+        res.status(500).json({ message: "Failed to update seating configuration" });
+      }
+    }
+  );
+
+  app.delete(
+    "/api/tenants/:tenantId/restaurants/:restaurantId/seating-configurations/:configId",
+    validateTenant,
+    async (req, res) => {
+      try {
+        const configId = parseInt(req.params.configId);
+        const restaurantId = parseInt(req.params.restaurantId);
+        const tenantId = parseInt(req.params.tenantId);
+
+        const restaurant = await storage.getRestaurantById(restaurantId);
+        if (!restaurant || restaurant.tenantId !== tenantId) {
+          return res.status(404).json({ message: "Restaurant not found" });
+        }
+
+        const success = await storage.deleteSeatingConfiguration(configId);
+        if (!success) {
+          return res.status(404).json({ message: "Configuration not found" });
+        }
+
+        res.json({ message: "Seating configuration deleted successfully" });
+      } catch (error) {
+        console.error("Error deleting seating configuration:", error);
+        res.status(500).json({ message: "Failed to delete seating configuration" });
+      }
+    }
+  );
+
   const httpServer = createServer(app);
 
   // Setup WebSocket server for real-time notifications
