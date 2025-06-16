@@ -1321,7 +1321,37 @@ export class DatabaseStorage implements IStorage {
   }
 
   async getTableLayout(restaurantId: number, room: string): Promise<any> {
-    return null;
+    try {
+      const layout = await this.db
+        .select()
+        .from(tableLayouts)
+        .where(
+          and(
+            eq(tableLayouts.restaurantId, restaurantId),
+            eq(tableLayouts.room, room)
+          )
+        )
+        .limit(1);
+
+      if (layout.length > 0) {
+        return {
+          room: layout[0].room,
+          positions: layout[0].positions
+        };
+      }
+
+      // Return default empty layout if none exists
+      return {
+        room: room,
+        positions: {}
+      };
+    } catch (error) {
+      console.error("Error fetching table layout:", error);
+      return {
+        room: room,
+        positions: {}
+      };
+    }
   }
 
   async saveTableLayout(restaurantId: number, tenantId: number, room: string, positions: any): Promise<any> {

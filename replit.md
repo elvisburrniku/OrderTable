@@ -142,4 +142,5 @@ Changelog:
 - June 16, 2025. Fixed table switch cross-switching issue - created isolated TableSwitch component to prevent React reconciliation problems where clicking one switch would toggle a different table's status.
 - June 16, 2025. Fixed combined tables JSON parsing error - updated database storage functions to properly serialize tableIds arrays to JSON format before storing, preventing "Expected ':' after property name" errors in the frontend.
 - June 16, 2025. Fixed table layout saving 500 error - implemented missing saveTableLayout method in database storage with proper upsert functionality for creating and updating table positions.
+- June 16, 2025. Fixed table layout data retrieval issue - implemented missing getTableLayout method to properly fetch saved table positions from database, enabling proper persistence of drag-and-drop table arrangements.
 ```
