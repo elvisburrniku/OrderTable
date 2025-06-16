@@ -45,8 +45,7 @@ function PaymentForm({ order, savedPaymentMethods, onPaymentSuccess, onCancel }:
   const [paymentSuccessful, setPaymentSuccessful] = useState(false);
   const { toast } = useToast();
 
-  // Debug logging
-  console.log('PaymentForm - savedPaymentMethods:', savedPaymentMethods);
+
 
   const handleSubmit = async (event: React.FormEvent) => {
     event.preventDefault();

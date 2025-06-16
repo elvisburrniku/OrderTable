@@ -70,8 +70,7 @@ export default function PrintOrders() {
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
-  // Debug: Check auth state
-  console.log('PrintOrders - Auth state:', { user, restaurant });
+
 
   const { data: printOrders = [], isLoading } = useQuery({
     queryKey: ["/api/tenants", restaurant?.tenantId, "restaurants", restaurant?.id, "print-orders"],
@@ -126,7 +125,6 @@ export default function PrintOrders() {
   };
 
   const handleOrderCreated = (clientSecret: string, order: any, savedPaymentMethods?: any[]) => {
-    console.log('PrintOrders - handleOrderCreated called with:', { clientSecret, order, savedPaymentMethods });
     setPaymentData({ clientSecret, order, savedPaymentMethods });
     setShowPayment(true);
   };
