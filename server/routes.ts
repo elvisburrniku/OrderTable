@@ -1242,6 +1242,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
         console.log(
           `Found ${tables.length} tables for restaurant ${restaurantId}`,
         );
+        
+        // Add cache-control headers to ensure fresh data
+        res.set({
+          'Cache-Control': 'no-cache, no-store, must-revalidate',
+          'Pragma': 'no-cache',
+          'Expires': '0'
+        });
+        
         res.json(tables);
       } catch (error) {
         console.error("Error fetching tables for tenant/restaurant:", error);
