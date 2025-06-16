@@ -369,9 +369,7 @@ export default function GuestFeedbackForm() {
                   <button
                     key={i}
                     type="button"
-                    className="group focus:outline-none"
-                    onMouseEnter={() => setHoverRatings(prev => ({ ...prev, [question.id]: i }))}
-                    onMouseLeave={() => setHoverRatings(prev => ({ ...prev, [question.id]: 0 }))}
+                    className="focus:outline-none"
                     onClick={() => {
                       setQuestionResponses(prev => ({
                         ...prev,
@@ -379,21 +377,12 @@ export default function GuestFeedbackForm() {
                       }));
                     }}
                   >
-                    <div className="flex flex-col items-center space-y-1">
-                      <Star
-                        className={`w-12 h-12 transition-all duration-200 ${
-                          i <= (hoverRatings[question.id] || questionResponses[question.id]?.rating || 0)
-                            ? "fill-yellow-400 text-yellow-400 scale-110"
-                            : "text-gray-300 hover:text-yellow-200"
-                        }`}
-                      />
-                      <span className={`text-sm font-medium transition-colors ${
-                        i <= (hoverRatings[question.id] || questionResponses[question.id]?.rating || 0)
-                          ? "text-yellow-600"
-                          : "text-gray-400"
-                      }`}>
-                        {i}
-                      </span>
+                    <div className={`w-12 h-12 rounded-full border-2 flex items-center justify-center font-semibold text-lg transition-all duration-200 ${
+                      questionResponses[question.id]?.rating === i
+                        ? "bg-blue-500 text-white border-blue-500 shadow-lg"
+                        : "bg-white text-gray-600 border-gray-300 hover:border-blue-300"
+                    }`}>
+                      {i}
                     </div>
                   </button>
                 ))}
