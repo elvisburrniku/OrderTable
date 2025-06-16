@@ -304,6 +304,12 @@ export interface IStorage {
   createPeriodicCriteria(criteria: any): Promise<any>;
   updatePeriodicCriteria(id: number, updates: any): Promise<any>;
   deletePeriodicCriteria(id: number): Promise<boolean>;
+
+  // Custom Fields
+  getCustomFieldsByRestaurant(restaurantId: number): Promise<any[]>;
+  createCustomField(field: any): Promise<any>;
+  updateCustomField(id: number, updates: any): Promise<any>;
+  deleteCustomField(id: number): Promise<boolean>;
 }
 
 import { DatabaseStorage } from "./db-storage";
