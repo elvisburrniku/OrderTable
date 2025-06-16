@@ -153,6 +153,7 @@ function App() {
               <Route path="/feedback-responses" component={FeedbackResponses} />
             </SetupGuard>
             <Route path="/feedback-responses-popup" component={FeedbackResponsesPopup} />
+            <Route path="/feedback/:tenantId/:restaurantId" component={GuestFeedbackForm} />
             <Route path="/contact" component={Contact} />
             <Route component={NotFound} />
           </Switch>
@@ -163,7 +164,6 @@ function App() {
       <Switch>
         <Route path="/guest-booking/:tenantId/:restaurantId" component={GuestBookingResponsive} />
         <Route path="/:tenantId/book/:restaurantId" component={GuestBookingResponsive} />
-        <Route path="/feedback/:tenantId/:restaurantId" component={GuestFeedbackForm} />
       </Switch>
       
       <Toaster />
