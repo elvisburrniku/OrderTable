@@ -34,6 +34,7 @@ const {
   seasonalMenuThemes,
   menuPrintOrders,
   seatingConfigurations,
+  periodicCriteria,
 } = schema;
 
 export class DatabaseStorage implements IStorage {
@@ -1711,6 +1712,78 @@ export class DatabaseStorage implements IStorage {
       return true;
     } catch (error) {
       console.error("Error deleting seating configuration:", error);
+      return false;
+    }
+  }
+
+  async getPeriodicCriteriaByRestaurant(restaurantId: number): Promise<any[]> {
+    try {
+      const criteria = await this.db
+        .select()
+        .from(periodicCriteria)
+        .where(eq(periodicCriteria.restaurantId, restaurantId))
+        .orderBy(periodicCriteria.createdAt);
+
+      return criteria;
+    } catch (error) {
+      console.error("Error fetching periodic criteria:", error);
+      return [];
+    }
+  }
+
+  async createPeriodicCriteria(criteria: any): Promise<any> {
+    try {
+      const [newCriteria] = await this.db
+        .insert(periodicCriteria)
+        .values({
+          restaurantId: criteria.restaurantId,
+          tenantId: criteria.tenantId,
+          name: criteria.name,
+          period: criteria.period,
+          guests: criteria.guests,
+          settings: criteria.settings || "Settings",
+          isActive: criteria.isActive ?? true,
+        })
+        .returning();
+
+      return newCriteria;
+    } catch (error) {
+      console.error("Error creating periodic criteria:", error);
+      throw error;
+    }
+  }
+
+  async updatePeriodicCriteria(id: number, updates: any): Promise<any> {
+    try {
+      const [updatedCriteria] = await this.db
+        .update(periodicCriteria)
+        .set({
+          name: updates.name,
+          period: updates.period,
+          guests: updates.guests,
+          settings: updates.settings,
+          isActive: updates.isActive,
+          updatedAt: new Date(),
+        })
+        .where(eq(periodicCriteria.id, id))
+        .returning();
+
+      return updatedCriteria;
+    } catch (error) {
+      console.error("Error updating periodic criteria:", error);
+      throw error;
+    }
+  }
+
+  async deletePeriodicCriteria(id: number): Promise<boolean> {
+    try {
+      await this.db
+        .delete(periodicCriteria)
+        .where(eq(periodicCriteria.id, id));
+
+      return true;
+    } catch (error) {
+      console.error("Error deleting periodic criteria:", error);
       return false;
     }
   }

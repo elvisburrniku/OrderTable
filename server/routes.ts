@@ -10646,6 +10646,107 @@ NEXT STEPS:
     }
   );
 
+  // Periodic Criteria API routes
+  app.get(
+    "/api/tenants/:tenantId/restaurants/:restaurantId/periodic-criteria",
+    validateTenant,
+    async (req, res) => {
+      try {
+        const restaurantId = parseInt(req.params.restaurantId);
+        const tenantId = parseInt(req.params.tenantId);
+
+        const restaurant = await storage.getRestaurantById(restaurantId);
+        if (!restaurant || restaurant.tenantId !== tenantId) {
+          return res.status(404).json({ message: "Restaurant not found" });
+        }
+
+        const criteria = await storage.getPeriodicCriteriaByRestaurant(restaurantId);
+        res.json(criteria);
+      } catch (error) {
+        console.error("Error fetching periodic criteria:", error);
+        res.status(500).json({ message: "Internal server error" });
+      }
+    }
+  );
+
+  app.post(
+    "/api/tenants/:tenantId/restaurants/:restaurantId/periodic-criteria",
+    validateTenant,
+    async (req, res) => {
+      try {
+        const restaurantId = parseInt(req.params.restaurantId);
+        const tenantId = parseInt(req.params.tenantId);
+
+        const restaurant = await storage.getRestaurantById(restaurantId);
+        if (!restaurant || restaurant.tenantId !== tenantId) {
+          return res.status(404).json({ message: "Restaurant not found" });
+        }
+
+        const criteriaData = {
+          ...req.body,
+          restaurantId,
+          tenantId,
+        };
+
+        const newCriteria = await storage.createPeriodicCriteria(criteriaData);
+        res.json(newCriteria);
+      } catch (error) {
+        console.error("Error creating periodic criteria:", error);
+        res.status(500).json({ message: "Failed to create periodic criteria" });
+      }
+    }
+  );
+
+  app.put(
+    "/api/tenants/:tenantId/restaurants/:restaurantId/periodic-criteria/:criteriaId",
+    validateTenant,
+    async (req, res) => {
+      try {
+        const criteriaId = parseInt(req.params.criteriaId);
+        const restaurantId = parseInt(req.params.restaurantId);
+        const tenantId = parseInt(req.params.tenantId);
+
+        const restaurant = await storage.getRestaurantById(restaurantId);
+        if (!restaurant || restaurant.tenantId !== tenantId) {
+          return res.status(404).json({ message: "Restaurant not found" });
+        }
+
+        const updatedCriteria = await storage.updatePeriodicCriteria(criteriaId, req.body);
+        res.json(updatedCriteria);
+      } catch (error) {
+        console.error("Error updating periodic criteria:", error);
+        res.status(500).json({ message: "Failed to update periodic criteria" });
+      }
+    }
+  );
+
+  app.delete(
+    "/api/tenants/:tenantId/restaurants/:restaurantId/periodic-criteria/:criteriaId",
+    validateTenant,
+    async (req, res) => {
+      try {
+        const criteriaId = parseInt(req.params.criteriaId);
+        const restaurantId = parseInt(req.params.restaurantId);
+        const tenantId = parseInt(req.params.tenantId);
+
+        const restaurant = await storage.getRestaurantById(restaurantId);
+        if (!restaurant || restaurant.tenantId !== tenantId) {
+          return res.status(404).json({ message: "Restaurant not found" });
+        }
+
+        const success = await storage.deletePeriodicCriteria(criteriaId);
+        if (!success) {
+          return res.status(404).json({ message: "Criteria not found" });
+        }
+
+        res.json({ message: "Periodic criteria deleted successfully" });
+      } catch (error) {
+        console.error("Error deleting periodic criteria:", error);
+        res.status(500).json({ message: "Failed to delete periodic criteria" });
+      }
+    }
+  );
+
   const httpServer = createServer(app);
 
   // Setup WebSocket server for real-time notifications

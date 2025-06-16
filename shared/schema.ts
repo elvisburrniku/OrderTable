@@ -791,6 +791,19 @@ export const seatingConfigurations = pgTable("seating_configurations", {
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
 });
 
+export const periodicCriteria = pgTable("periodic_criteria", {
+  id: serial("id").primaryKey(),
+  restaurantId: integer("restaurant_id").notNull().references(() => restaurants.id, { onDelete: "cascade" }),
+  tenantId: integer("tenant_id").notNull().references(() => tenants.id, { onDelete: "cascade" }),
+  name: text("name").notNull(),
+  period: text("period").notNull(), // Time period like "4" hours
+  guests: integer("guests").notNull(), // Guest count
+  settings: text("settings").default("Settings"), // Settings configuration
+  isActive: boolean("is_active").default(true),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+});
+
 export type MenuPrintOrder = InferSelectModel<typeof menuPrintOrders>;
 export type InsertMenuPrintOrder = InferInsertModel<typeof menuPrintOrders>;
 
@@ -811,6 +824,16 @@ export const insertSeatingConfigurationSchema = createInsertSchema(seatingConfig
   updatedAt: true,
 });
 export const selectSeatingConfigurationSchema = createSelectSchema(seatingConfigurations);
+
+export type PeriodicCriteria = InferSelectModel<typeof periodicCriteria>;
+export type InsertPeriodicCriteria = InferInsertModel<typeof periodicCriteria>;
+
+export const insertPeriodicCriteriaSchema = createInsertSchema(periodicCriteria).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+export const selectPeriodicCriteriaSchema = createSelectSchema(periodicCriteria);
 
 export type SeasonalMenuTheme = InferSelectModel<typeof seasonalMenuThemes>;
 export type InsertSeasonalMenuTheme = InferInsertModel<typeof seasonalMenuThemes>;
