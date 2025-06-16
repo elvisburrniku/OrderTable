@@ -163,6 +163,7 @@ function App() {
                 <Route path="/:tenantId/test-tools" component={TestTools} />
               </OverduePaymentGuard>
               <Route path="/feedback-responses" component={FeedbackResponses} />
+              <Route path="/:tenantId/feedbacks" component={FeedbackResponses} />
             </SetupGuard>
             
             {/* Public routes that don't require authentication */}
