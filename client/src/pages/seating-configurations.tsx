@@ -170,40 +170,30 @@ export default function SeatingConfigurations() {
               <div className="space-y-4">
                 <div className="text-sm font-medium text-gray-700 mb-2">Seating name</div>
                 
-                <div className="grid grid-cols-4 gap-4 mb-4">
+                <div className="grid grid-cols-5 gap-4 mb-4">
                   <div className="text-sm font-medium text-gray-700">ID/key</div>
                   <div className="text-sm font-medium text-gray-700">Type name</div>
-                  <div className="text-sm font-medium text-gray-700">Unlimited</div>
-                  <div className="text-sm font-medium text-gray-700">Unlimited</div>
+                  <div className="text-sm font-medium text-gray-700">Criteria</div>
+                  <div className="text-sm font-medium text-gray-700">Valid Online</div>
+                  <div className="text-sm font-medium text-gray-700">Actions</div>
                 </div>
 
-                {configurations.map((config, index) => (
-                  <div key={config.id} className="grid grid-cols-4 gap-4 items-center">
-                    <Input
-                      value={`00-${config.id.toString().padStart(2, '0')}`}
-                      disabled
-                      className="bg-gray-50"
-                    />
-                    <Input
-                      placeholder="Type name"
-                      value={config.name}
-                      onChange={(e) => {
-                        const newConfigs = [...configurations];
-                        newConfigs[index].name = e.target.value;
-                        setConfigurations(newConfigs);
-                      }}
-                    />
-                    <Select value={config.criteria}>
-                      <SelectTrigger>
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="Unlimited">Unlimited</SelectItem>
-                        <SelectItem value="Limited">Limited</SelectItem>
-                      </SelectContent>
-                    </Select>
-                    <div className="flex items-center space-x-2">
-                      <Select value={config.validOnline}>
+                {isLoading ? (
+                  <div className="text-center py-4">Loading configurations...</div>
+                ) : (
+                  configurations.map((config, index) => (
+                    <div key={config.id || index} className="grid grid-cols-5 gap-4 items-center">
+                      <Input
+                        value={config.id > 0 ? `00-${config.id.toString().padStart(2, '0')}` : 'NEW'}
+                        disabled
+                        className="bg-gray-50"
+                      />
+                      <Input
+                        placeholder="Type name"
+                        value={config.name || ""}
+                        onChange={(e) => updateConfiguration(index, 'name', e.target.value)}
+                      />
+                      <Select value={config.criteria} onValueChange={(value) => updateConfiguration(index, 'criteria', value)}>
                         <SelectTrigger>
                           <SelectValue />
                         </SelectTrigger>
@@ -212,12 +202,26 @@ export default function SeatingConfigurations() {
                           <SelectItem value="Limited">Limited</SelectItem>
                         </SelectContent>
                       </Select>
-                      <Button variant="ghost" size="sm" className="text-red-600">
-                        🗑
+                      <Select value={config.validOnline} onValueChange={(value) => updateConfiguration(index, 'validOnline', value)}>
+                        <SelectTrigger>
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="Unlimited">Unlimited</SelectItem>
+                          <SelectItem value="Limited">Limited</SelectItem>
+                        </SelectContent>
+                      </Select>
+                      <Button 
+                        variant="ghost" 
+                        size="sm" 
+                        className="text-red-600 hover:text-red-700"
+                        onClick={() => deleteConfiguration(index)}
+                      >
+                        <Trash2 className="w-4 h-4" />
                       </Button>
                     </div>
-                  </div>
-                ))}
+                  ))
+                )}
               </div>
 
               <div className="pt-4">
@@ -231,7 +235,13 @@ export default function SeatingConfigurations() {
               </div>
 
               <div className="pt-6">
-                <Button className="bg-green-600 hover:bg-green-700 text-white">Save</Button>
+                <Button 
+                  className="bg-green-600 hover:bg-green-700 text-white"
+                  onClick={handleSave}
+                  disabled={saveConfigurationsMutation.isPending}
+                >
+                  {saveConfigurationsMutation.isPending ? "Saving..." : "Save"}
+                </Button>
               </div>
             </CardContent>
           </Card>
