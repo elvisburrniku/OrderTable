@@ -100,7 +100,7 @@ export default function GuestFeedbackForm() {
         return response?.text?.trim().length > 0;
       }
       if (question.questionType === 'star') {
-        return response?.rating > 0;
+        return response?.rating !== undefined && response?.rating !== null;
       }
       return true;
     }
@@ -364,12 +364,12 @@ export default function GuestFeedbackForm() {
           {question.questionType === 'star' && (
             <div className="text-center">
               <p className="text-lg text-gray-600 mb-6">How likely are you to recommend us? (0-10)</p>
-              <div className="flex flex-wrap justify-center gap-3 mb-4">
+              <div className="flex flex-wrap justify-center gap-2 mb-4">
                 {Array.from({ length: 11 }, (_, i) => (
                   <button
                     key={i}
                     type="button"
-                    className="focus:outline-none"
+                    className="group focus:outline-none"
                     onMouseEnter={() => setHoverRatings(prev => ({ ...prev, [question.id]: i }))}
                     onMouseLeave={() => setHoverRatings(prev => ({ ...prev, [question.id]: 0 }))}
                     onClick={() => {
@@ -379,17 +379,28 @@ export default function GuestFeedbackForm() {
                       }));
                     }}
                   >
-                    <div className={`w-12 h-12 rounded-full border-2 flex items-center justify-center font-semibold text-lg transition-all duration-200 ${
-                      questionResponses[question.id]?.rating === i
-                        ? "bg-blue-500 text-white border-blue-500 shadow-lg"
-                        : hoverRatings[question.id] === i
-                          ? "bg-blue-100 text-blue-700 border-blue-300"
-                          : "bg-white text-gray-600 border-gray-300 hover:border-blue-300"
-                    }`}>
-                      {i}
+                    <div className="flex flex-col items-center space-y-1">
+                      <Star
+                        className={`w-12 h-12 transition-all duration-200 ${
+                          i <= (hoverRatings[question.id] || questionResponses[question.id]?.rating || 0)
+                            ? "fill-yellow-400 text-yellow-400 scale-110"
+                            : "text-gray-300 hover:text-yellow-200"
+                        }`}
+                      />
+                      <span className={`text-sm font-medium transition-colors ${
+                        i <= (hoverRatings[question.id] || questionResponses[question.id]?.rating || 0)
+                          ? "text-yellow-600"
+                          : "text-gray-400"
+                      }`}>
+                        {i}
+                      </span>
                     </div>
                   </button>
                 ))}
+              </div>
+              <div className="flex justify-between text-sm text-gray-500 mt-2 px-4">
+                <span>Not likely</span>
+                <span>Very likely</span>
               </div>
               
               {questionResponses[question.id]?.rating > 0 && (
