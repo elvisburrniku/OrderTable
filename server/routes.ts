@@ -13013,6 +13013,18 @@ NEXT STEPS:
     }
   });
 
+  // Feedback responses route
+  app.get("/api/tenants/:tenantId/restaurants/:restaurantId/feedback", async (req, res) => {
+    try {
+      const { tenantId, restaurantId } = req.params;
+      const feedbackData = await storage.getFeedbackResponses(parseInt(restaurantId), parseInt(tenantId));
+      res.json(feedbackData);
+    } catch (error) {
+      console.error("Error fetching feedback responses:", error);
+      res.status(500).json({ message: "Internal server error" });
+    }
+  });
+
   return httpServer;
 }
 

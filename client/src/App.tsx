@@ -118,6 +118,7 @@ function App() {
                 <Route path="/:tenantId/tenant-settings" component={TenantSettings} />
                 <Route path="/:tenantId/email-notifications" component={EmailNotifications} />
                 <Route path="/:tenantId/sms-notifications" component={SmsNotifications} />
+                <Route path="/:tenantId/feedback" component={FeedbackResponses} />
                 <Route path="/:tenantId/feedback-questions" component={FeedbackQuestions} />
                 <Route path="/:tenantId/events" component={Events} />
                 <Route path="/:tenantId/payment-setups" component={PaymentSetups} />

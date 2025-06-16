@@ -3,201 +3,257 @@ import { useQuery } from "@tanstack/react-query";
 import { useAuth } from "@/lib/auth.tsx";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Download } from "lucide-react";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Download, Eye, Star, MessageCircle, Calendar, User } from "lucide-react";
+
+interface FeedbackItem {
+  id: number;
+  customerName: string;
+  customerEmail: string;
+  customerPhone: string;
+  rating: number;
+  npsScore: number;
+  comments: string;
+  tableNumber: string;
+  bookingDate: string;
+  visitDate: string;
+  createdAt: string;
+  visited: boolean;
+  questionName?: string;
+}
 
 export default function FeedbackResponses() {
   const { user, restaurant } = useAuth();
   const [statusFilter, setStatusFilter] = useState("all");
+  const [selectedFeedback, setSelectedFeedback] = useState<FeedbackItem | null>(null);
+  const [showDetailModal, setShowDetailModal] = useState(false);
 
   const { data: feedback, isLoading } = useQuery({
-    queryKey: ['/api/restaurants', restaurant?.id, 'feedback'],
-    enabled: !!restaurant
+    queryKey: [`/api/tenants/${restaurant?.tenantId}/restaurants/${restaurant?.id}/feedback`],
+    enabled: !!restaurant?.id && !!restaurant?.tenantId,
   });
 
   if (!user || !restaurant) {
     return null;
   }
 
-  const filteredFeedback = (feedback as any)?.filter((item: any) => {
+  const filteredFeedback = (feedback as FeedbackItem[])?.filter((item: FeedbackItem) => {
     return statusFilter === "all" || item.visited === (statusFilter === "visited");
   }) || [];
 
+  const handleViewDetails = (feedbackItem: FeedbackItem) => {
+    setSelectedFeedback(feedbackItem);
+    setShowDetailModal(true);
+  };
+
+  const handleCloseModal = () => {
+    setShowDetailModal(false);
+    setSelectedFeedback(null);
+  };
+
+  const renderStars = (rating: number) => {
+    return Array.from({ length: 5 }, (_, i) => (
+      <Star
+        key={i}
+        className={`w-4 h-4 ${i < rating ? 'text-yellow-500 fill-current' : 'text-gray-300'}`}
+      />
+    ));
+  };
+
+  const getNpsColor = (score: number) => {
+    if (score >= 9) return 'text-green-600';
+    if (score >= 7) return 'text-yellow-600';
+    return 'text-red-600';
+  };
+
   return (
     <div className="min-h-screen bg-gray-50">
-      {/* Navigation */}
-      <div className="bg-white border-b">
-        <div className="flex items-center justify-between px-6 py-4">
-          <div className="flex items-center space-x-6">
-            <h1 className="text-xl font-semibold">Responses</h1>
-            <nav className="flex space-x-6">
-              <a href="/dashboard" className="text-gray-600 hover:text-gray-900">Booking</a>
-              <a href="#" className="text-green-600 font-medium">CRM</a>
-              <a href="#" className="text-gray-600 hover:text-gray-900">Archive</a>
-            </nav>
-          </div>
-          <div className="flex items-center space-x-4">
-            <span className="text-sm text-gray-600">{restaurant.name}</span>
-            <Button variant="outline" size="sm">Profile</Button>
-          </div>
-        </div>
-      </div>
-
-      <div className="flex">
-        {/* Sidebar */}
-        <div className="w-64 bg-white border-r min-h-screen">
-          <div className="p-6">
-            <div className="space-y-2">
-              <a href="/customers" className="flex items-center space-x-2 text-gray-600 hover:bg-gray-50 px-3 py-2 rounded">
-                <span className="w-2 h-2 bg-gray-400 rounded-full"></span>
-                <span>Customers</span>
-              </a>
-              <a href="/sms-messages" className="flex items-center space-x-2 text-gray-600 hover:bg-gray-50 px-3 py-2 rounded">
-                <span className="w-2 h-2 bg-gray-400 rounded-full"></span>
-                <span>SMS messages</span>
-              </a>
-              <div className="flex items-center space-x-2 text-green-600 bg-green-50 px-3 py-2 rounded">
-                <span className="w-2 h-2 bg-green-600 rounded-full"></span>
-                <span className="font-medium">Feedback responses</span>
-              </div>
-              <a href="/feedback-responses-popup" className="flex items-center space-x-2 text-gray-600 hover:bg-gray-50 px-3 py-2 rounded ml-4">
-                <span className="w-2 h-2 bg-blue-400 rounded-full"></span>
-                <span>Popup View</span>
-              </a>
-              <a href="#" className="flex items-center space-x-2 text-gray-600 hover:bg-gray-50 px-3 py-2 rounded">
-                <span className="w-2 h-2 bg-gray-400 rounded-full"></span>
-                <span>Newsletter</span>
-              </a>
-            </div>
-          </div>
-        </div>
-
-        {/* Main Content */}
-        <div className="flex-1 p-6">
-          <div className="bg-white rounded-lg shadow">
-            {/* Header */}
-            <div className="p-6 border-b">
-              <h2 className="text-lg font-semibold mb-4">Responses</h2>
-              
-              {/* Filters */}
-              <div className="flex items-center space-x-4 mb-4">
-                <Button variant="outline" size="sm">Show filters</Button>
-                
+      <div className="p-6">
+        <Card>
+          <CardHeader>
+            <div className="flex items-center justify-between">
+              <CardTitle className="flex items-center gap-2">
+                <MessageCircle className="w-5 h-5" />
+                Feedback Responses
+              </CardTitle>
+              <div className="flex items-center gap-4">
                 <Select value={statusFilter} onValueChange={setStatusFilter}>
-                  <SelectTrigger className="w-32">
-                    <SelectValue placeholder="Status" />
+                  <SelectTrigger className="w-48">
+                    <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="all">All</SelectItem>
+                    <SelectItem value="all">All Feedback</SelectItem>
                     <SelectItem value="visited">Visited</SelectItem>
                     <SelectItem value="not-visited">Not Visited</SelectItem>
                   </SelectContent>
                 </Select>
-              </div>
-            </div>
-
-            {/* Table */}
-            <div className="overflow-x-auto">
-              <table className="w-full">
-                <thead className="bg-gray-50">
-                  <tr>
-                    <th className="text-left py-3 px-4 font-medium text-gray-700">ID</th>
-                    <th className="text-left py-3 px-4 font-medium text-gray-700">Customer Name</th>
-                    <th className="text-left py-3 px-4 font-medium text-gray-700">Customer Email</th>
-                    <th className="text-left py-3 px-4 font-medium text-gray-700">Restaurant ID</th>
-                    <th className="text-left py-3 px-4 font-medium text-gray-700">Tenant ID</th>
-                    <th className="text-left py-3 px-4 font-medium text-gray-700">Booking ID</th>
-                    <th className="text-left py-3 px-4 font-medium text-gray-700">Rating</th>
-                    <th className="text-left py-3 px-4 font-medium text-gray-700">NPS</th>
-                    <th className="text-left py-3 px-4 font-medium text-gray-700">Comments</th>
-                    <th className="text-left py-3 px-4 font-medium text-gray-700">Visited</th>
-                    <th className="text-left py-3 px-4 font-medium text-gray-700">Created At</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {isLoading ? (
-                    <tr>
-                      <td colSpan={11} className="py-8 text-center text-gray-500">
-                        Loading feedback...
-                      </td>
-                    </tr>
-                  ) : filteredFeedback.length === 0 ? (
-                    <tr>
-                      <td colSpan={11} className="py-8 text-center text-gray-500">
-                        No feedback responses found
-                      </td>
-                    </tr>
-                  ) : (
-                    filteredFeedback.map((item: any) => (
-                      <tr key={item.id} className="border-b border-gray-100 hover:bg-gray-50">
-                        <td className="py-3 px-4 text-sm font-medium">{item.id}</td>
-                        <td className="py-3 px-4">
-                          <div className="font-medium">{item.customerName}</div>
-                        </td>
-                        <td className="py-3 px-4">
-                          <div className="text-sm text-gray-600">{item.customerEmail}</div>
-                        </td>
-                        <td className="py-3 px-4 text-sm">{item.restaurantId}</td>
-                        <td className="py-3 px-4 text-sm">{item.tenantId}</td>
-                        <td className="py-3 px-4 text-sm">{item.bookingId || '-'}</td>
-                        <td className="py-3 px-4">
-                          {item.rating ? (
-                            <div className="flex">
-                              {[...Array(5)].map((_, i) => (
-                                <span key={i} className={`text-sm ${i < item.rating ? 'text-yellow-400' : 'text-gray-300'}`}>
-                                  ★
-                                </span>
-                              ))}
-                            </div>
-                          ) : (
-                            '-'
-                          )}
-                        </td>
-                        <td className="py-3 px-4 text-sm">{item.nps || '-'}</td>
-                        <td className="py-3 px-4">
-                          <div className="max-w-xs truncate" title={item.comments}>
-                            {item.comments || '-'}
-                          </div>
-                        </td>
-                        <td className="py-3 px-4">
-                          <span className={`px-2 py-1 text-xs rounded-full ${
-                            item.visited ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
-                          }`}>
-                            {item.visited ? 'Yes' : 'No'}
-                          </span>
-                        </td>
-                        <td className="py-3 px-4 text-sm">
-                          {new Date(item.createdAt).toLocaleString()}
-                        </td>
-                      </tr>
-                    ))
-                  )}
-                </tbody>
-              </table>
-            </div>
-
-            {/* Footer */}
-            <div className="p-4 border-t flex items-center justify-between">
-              <div className="text-sm text-gray-600">
-                {filteredFeedback.length} responses
-              </div>
-              
-              <div className="flex items-center space-x-4">
-                <div className="flex items-center space-x-2">
-                  <span className="text-sm text-gray-600">1</span>
-                  <div className="flex space-x-1">
-                    <Button variant="outline" size="sm">20</Button>
-                    <span className="text-sm text-gray-600">results per page</span>
-                  </div>
-                </div>
-                
-                <Button className="bg-green-600 hover:bg-green-700 text-white flex items-center space-x-2">
-                  <Download className="w-4 h-4" />
-                  <span>Download as CSV</span>
+                <Button variant="outline" size="sm">
+                  <Download className="w-4 h-4 mr-2" />
+                  Export
                 </Button>
               </div>
             </div>
-          </div>
-        </div>
+            <p className="text-sm text-gray-600">
+              View and manage all guest feedback from your restaurant. Monitor ratings, NPS scores, and comments to improve your service.
+            </p>
+          </CardHeader>
+          <CardContent>
+            {isLoading ? (
+              <div className="flex items-center justify-center py-8">
+                <div className="animate-spin w-8 h-8 border-4 border-primary border-t-transparent rounded-full" />
+              </div>
+            ) : filteredFeedback.length === 0 ? (
+              <div className="text-center py-8">
+                <MessageCircle className="w-12 h-12 text-gray-400 mx-auto mb-4" />
+                <h3 className="text-lg font-medium text-gray-900 mb-2">No feedback yet</h3>
+                <p className="text-gray-600">Guest feedback will appear here once customers leave reviews.</p>
+              </div>
+            ) : (
+              <div className="space-y-4">
+                {filteredFeedback.map((item) => (
+                  <div key={item.id} className="border border-gray-200 rounded-lg p-4 bg-white hover:shadow-md transition-shadow">
+                    <div className="flex items-start justify-between">
+                      <div className="flex-1">
+                        <div className="flex items-center gap-4 mb-2">
+                          <div className="flex items-center gap-2">
+                            <User className="w-4 h-4 text-gray-500" />
+                            <span className="font-medium text-gray-900">{item.customerName}</span>
+                          </div>
+                          <div className="flex items-center gap-2">
+                            <Calendar className="w-4 h-4 text-gray-500" />
+                            <span className="text-sm text-gray-600">
+                              {new Date(item.visitDate || item.createdAt).toLocaleDateString()}
+                            </span>
+                          </div>
+                          {item.tableNumber && (
+                            <Badge variant="outline">Table {item.tableNumber}</Badge>
+                          )}
+                          {!item.visited && (
+                            <Badge variant="destructive">New</Badge>
+                          )}
+                        </div>
+                        
+                        <div className="flex items-center gap-6 mb-2">
+                          <div className="flex items-center gap-2">
+                            <span className="text-sm text-gray-600">Rating:</span>
+                            <div className="flex">{renderStars(item.rating)}</div>
+                            <span className="text-sm font-medium">{item.rating}/5</span>
+                          </div>
+                          
+                          {item.npsScore !== undefined && (
+                            <div className="flex items-center gap-2">
+                              <span className="text-sm text-gray-600">NPS:</span>
+                              <span className={`text-sm font-medium ${getNpsColor(item.npsScore)}`}>
+                                {item.npsScore}/10
+                              </span>
+                            </div>
+                          )}
+                        </div>
+
+                        {item.comments && (
+                          <p className="text-sm text-gray-700 mb-2 line-clamp-2">
+                            "{item.comments}"
+                          </p>
+                        )}
+
+                        <div className="flex items-center gap-4 text-xs text-gray-500">
+                          <span>{item.customerEmail}</span>
+                          {item.customerPhone && <span>{item.customerPhone}</span>}
+                          {item.questionName && <span>Question: {item.questionName}</span>}
+                        </div>
+                      </div>
+                      
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => handleViewDetails(item)}
+                      >
+                        <Eye className="w-4 h-4 mr-2" />
+                        View
+                      </Button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </CardContent>
+        </Card>
+
+        {/* Detail Modal */}
+        <Dialog open={showDetailModal} onOpenChange={setShowDetailModal}>
+          <DialogContent className="sm:max-w-[500px]">
+            <DialogHeader>
+              <DialogTitle>Feedback Details</DialogTitle>
+            </DialogHeader>
+            {selectedFeedback && (
+              <div className="space-y-4">
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <label className="text-sm font-medium text-gray-700">Customer</label>
+                    <p className="text-sm text-gray-900">{selectedFeedback.customerName}</p>
+                  </div>
+                  <div>
+                    <label className="text-sm font-medium text-gray-700">Visit Date</label>
+                    <p className="text-sm text-gray-900">
+                      {new Date(selectedFeedback.visitDate || selectedFeedback.createdAt).toLocaleDateString()}
+                    </p>
+                  </div>
+                  <div>
+                    <label className="text-sm font-medium text-gray-700">Email</label>
+                    <p className="text-sm text-gray-900">{selectedFeedback.customerEmail}</p>
+                  </div>
+                  <div>
+                    <label className="text-sm font-medium text-gray-700">Phone</label>
+                    <p className="text-sm text-gray-900">{selectedFeedback.customerPhone || 'N/A'}</p>
+                  </div>
+                  {selectedFeedback.tableNumber && (
+                    <div>
+                      <label className="text-sm font-medium text-gray-700">Table</label>
+                      <p className="text-sm text-gray-900">{selectedFeedback.tableNumber}</p>
+                    </div>
+                  )}
+                </div>
+
+                <div className="space-y-3">
+                  <div>
+                    <label className="text-sm font-medium text-gray-700">Rating</label>
+                    <div className="flex items-center gap-2 mt-1">
+                      <div className="flex">{renderStars(selectedFeedback.rating)}</div>
+                      <span className="text-sm font-medium">{selectedFeedback.rating}/5</span>
+                    </div>
+                  </div>
+
+                  {selectedFeedback.npsScore !== undefined && (
+                    <div>
+                      <label className="text-sm font-medium text-gray-700">NPS Score</label>
+                      <p className={`text-lg font-bold ${getNpsColor(selectedFeedback.npsScore)}`}>
+                        {selectedFeedback.npsScore}/10
+                      </p>
+                    </div>
+                  )}
+
+                  {selectedFeedback.comments && (
+                    <div>
+                      <label className="text-sm font-medium text-gray-700">Comments</label>
+                      <p className="text-sm text-gray-900 mt-1 p-3 bg-gray-50 rounded-md">
+                        "{selectedFeedback.comments}"
+                      </p>
+                    </div>
+                  )}
+
+                  {selectedFeedback.questionName && (
+                    <div>
+                      <label className="text-sm font-medium text-gray-700">Question Category</label>
+                      <p className="text-sm text-gray-900">{selectedFeedback.questionName}</p>
+                    </div>
+                  )}
+                </div>
+              </div>
+            )}
+          </DialogContent>
+        </Dialog>
       </div>
     </div>
   );
