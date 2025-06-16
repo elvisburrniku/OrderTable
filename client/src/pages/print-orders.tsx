@@ -17,6 +17,7 @@ import { useToast } from "@/hooks/use-toast";
 import { PrintOrderForm } from "@/components/print-order-form";
 import { PrintOrderPayment } from "@/components/print-order-payment";
 import { OrderTracking } from "@/components/order-tracking";
+import MenuOrderingService from "@/components/menu-ordering-service";
 import { 
   Printer, 
   Plus, 
@@ -235,6 +236,7 @@ export default function PrintOrders() {
         <TabsList>
           <TabsTrigger value="orders">All Orders</TabsTrigger>
           <TabsTrigger value="new-order">Create Order</TabsTrigger>
+          <TabsTrigger value="menu-printing">Menu Printing</TabsTrigger>
         </TabsList>
 
         <TabsContent value="orders" className="space-y-6">
@@ -402,6 +404,16 @@ export default function PrintOrders() {
             restaurantId={restaurant?.id || 1}
             tenantId={restaurant?.tenantId}
             onPaymentRequired={handleOrderCreated}
+          />
+        </TabsContent>
+
+        <TabsContent value="menu-printing">
+          <MenuOrderingService
+            restaurantId={restaurant?.id || 1}
+            tenantId={restaurant?.tenantId || 1}
+            selectedTheme="modern"
+            menuLayout="single"
+            onOrderCreated={handleOrderCreated}
           />
         </TabsContent>
       </Tabs>
