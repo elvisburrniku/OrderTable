@@ -103,7 +103,7 @@ export default function DashboardSidebar({ tenantId, restaurantId }: SidebarProp
     {
       name: "Feedback",
       icon: MessageSquare,
-      href: `/${tenantId}/feedback`,
+      href: `/${tenantId}/feedback-questions`,
       color: "text-pink-600"
     },
     {
