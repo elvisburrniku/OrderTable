@@ -8241,16 +8241,46 @@ export async function registerRoutes(app: Express): Promise<Server> {
             .json({ message: "No tables available at the requested time" });
         }
 
-        // Find or create customer
-        const customer = await storage.getOrCreateCustomer(
-          restaurantId,
-          restaurant.tenantId,
-          {
-            name: bookingData.customerName,
-            email: bookingData.customerEmail,
-            phone: bookingData.customerPhone,
-          },
+        // Check if this is a booking agent to prevent guest profile overwrites
+        const isAgent = await storage.isBookingAgent(
+          bookingData.customerEmail,
+          bookingData.customerPhone || "",
+          restaurantId
         );
+
+        let customer;
+        if (isAgent) {
+          // For booking agents, always create a new customer profile to prevent overwrites
+          // The actual guest information should be provided separately from the agent's contact info
+          console.log(`Booking agent detected: ${isAgent.name} (${isAgent.email})`);
+          
+          // Create a new customer profile without checking for existing ones
+          customer = await storage.createCustomer(
+            restaurantId,
+            restaurant.tenantId,
+            {
+              name: bookingData.customerName,
+              email: bookingData.customerEmail,
+              phone: bookingData.customerPhone,
+            }
+          );
+          
+          // Add a note to the booking indicating it was made by an agent
+          bookingData.notes = bookingData.notes 
+            ? `${bookingData.notes} [Booked by agent: ${isAgent.name}]`
+            : `[Booked by agent: ${isAgent.name}]`;
+        } else {
+          // For regular guests, use the existing logic to find or create customer
+          customer = await storage.getOrCreateCustomer(
+            restaurantId,
+            restaurant.tenantId,
+            {
+              name: bookingData.customerName,
+              email: bookingData.customerEmail,
+              phone: bookingData.customerPhone,
+            },
+          );
+        }
 
         // Calculate end time (2 hours from start time)
         const [startHour, startMinute] = bookingData.startTime
