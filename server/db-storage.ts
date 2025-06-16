@@ -770,7 +770,14 @@ export class DatabaseStorage implements IStorage {
     try {
       const [newCombinedTable] = await this.db
         .insert(combinedTables)
-        .values(data)
+        .values({
+          name: data.name,
+          tableIds: JSON.stringify(data.tableIds), // Properly serialize array to JSON
+          totalCapacity: data.totalCapacity,
+          restaurantId: data.restaurantId,
+          tenantId: data.tenantId,
+          isActive: data.isActive || true
+        })
         .returning();
       
       return newCombinedTable;
@@ -782,9 +789,15 @@ export class DatabaseStorage implements IStorage {
 
   async updateCombinedTable(id: number, updates: any): Promise<any> {
     try {
+      const updateData: any = {};
+      if (updates.name !== undefined) updateData.name = updates.name;
+      if (updates.tableIds !== undefined) updateData.tableIds = JSON.stringify(updates.tableIds);
+      if (updates.totalCapacity !== undefined) updateData.totalCapacity = updates.totalCapacity;
+      if (updates.isActive !== undefined) updateData.isActive = updates.isActive;
+
       const [updatedCombinedTable] = await this.db
         .update(combinedTables)
-        .set(updates)
+        .set(updateData)
         .where(eq(combinedTables.id, id))
         .returning();
       

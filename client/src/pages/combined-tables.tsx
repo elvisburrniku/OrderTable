@@ -216,12 +216,39 @@ export default function CombinedTables() {
   };
 
   const getTableNumbers = (tableIds: number[] | string) => {
-    // Parse tableIds if it's a string (from database)
-    const ids = typeof tableIds === 'string' ? JSON.parse(tableIds) : tableIds;
-    return ids.map((id: number) => {
-      const table = tables.find(t => t.id === id);
-      return table?.tableNumber || `Table ${id}`;
-    }).join(", ");
+    try {
+      // Parse tableIds if it's a string (from database)
+      let ids: number[];
+      
+      if (typeof tableIds === 'string') {
+        // Handle different possible string formats
+        if (tableIds.startsWith('[') && tableIds.endsWith(']')) {
+          // Standard JSON array format
+          ids = JSON.parse(tableIds);
+        } else if (tableIds.includes(',')) {
+          // Comma-separated string format
+          ids = tableIds.split(',').map(id => parseInt(id.trim(), 10)).filter(id => !isNaN(id));
+        } else {
+          // Single ID as string
+          const singleId = parseInt(tableIds.trim(), 10);
+          ids = isNaN(singleId) ? [] : [singleId];
+        }
+      } else if (Array.isArray(tableIds)) {
+        ids = tableIds;
+      } else {
+        console.error('Invalid tableIds format:', tableIds);
+        return 'Invalid table data';
+      }
+
+      return ids.map((id: number) => {
+        const table = tables.find(t => t.id === id);
+        return table?.tableNumber || `Table ${id}`;
+      }).join(", ");
+      
+    } catch (error) {
+      console.error('Error parsing tableIds:', error, 'Data:', tableIds);
+      return 'Error loading table data';
+    }
   };
 
   if (authLoading || tablesLoading || combinedTablesLoading) {
