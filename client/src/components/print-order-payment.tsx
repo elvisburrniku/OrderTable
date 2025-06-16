@@ -45,6 +45,9 @@ function PaymentForm({ order, savedPaymentMethods, onPaymentSuccess, onCancel }:
   const [paymentSuccessful, setPaymentSuccessful] = useState(false);
   const { toast } = useToast();
 
+  // Debug logging
+  console.log('PaymentForm - savedPaymentMethods:', savedPaymentMethods);
+
   const handleSubmit = async (event: React.FormEvent) => {
     event.preventDefault();
 
@@ -189,13 +192,25 @@ function PaymentForm({ order, savedPaymentMethods, onPaymentSuccess, onCancel }:
 
           {savedPaymentMethods && savedPaymentMethods.length > 0 && (
             <div className="space-y-3">
-              <h3 className="text-sm font-medium text-gray-500 dark:text-gray-400">Payment Method</h3>
-              <div className="p-3 bg-blue-50 dark:bg-blue-950 rounded-lg border border-blue-200">
-                <div className="flex items-center gap-2">
-                  <CreditCard className="h-4 w-4 text-blue-600" />
-                  <span className="text-sm text-blue-700 dark:text-blue-300">
-                    Using saved payment method for faster checkout
-                  </span>
+              <h3 className="text-sm font-medium text-gray-500 dark:text-gray-400">Available Payment Methods</h3>
+              <div className="space-y-2">
+                {savedPaymentMethods.map((method) => (
+                  <div key={method.id} className="p-3 bg-blue-50 dark:bg-blue-950 rounded-lg border border-blue-200">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-2">
+                        <CreditCard className="h-4 w-4 text-blue-600" />
+                        <span className="text-sm text-blue-700 dark:text-blue-300">
+                          {method.brand?.toUpperCase()} ending in {method.last4}
+                        </span>
+                      </div>
+                      <span className="text-xs text-blue-600 dark:text-blue-400">
+                        Expires {method.exp_month}/{method.exp_year}
+                      </span>
+                    </div>
+                  </div>
+                ))}
+                <div className="text-xs text-gray-500 dark:text-gray-400">
+                  Stripe will use your saved payment method or allow you to add a new one
                 </div>
               </div>
             </div>

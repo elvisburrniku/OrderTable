@@ -147,6 +147,10 @@ export function PrintOrderForm({
       }
 
       const result = await response.json();
+      
+      // Debug logging
+      console.log('Print order API response:', result);
+      console.log('Saved payment methods from API:', result.savedPaymentMethods);
 
       toast({
         title: "Print Order Created",
