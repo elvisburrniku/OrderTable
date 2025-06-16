@@ -77,7 +77,7 @@ export function CreateKitchenOrder({ restaurantId, tenantId, onOrderCreated }: C
   const queryClient = useQueryClient();
 
   // Fetch menu items
-  const { data: menuItemsData = [] } = useQuery({
+  const { data: menuItemsData = [], isLoading: menuItemsLoading } = useQuery({
     queryKey: [`/api/tenants/${tenantId}/restaurants/${restaurantId}/menu-items`],
     queryFn: () => apiRequest('GET', `/api/tenants/${tenantId}/restaurants/${restaurantId}/menu-items`),
     enabled: isOpen,
@@ -85,6 +85,15 @@ export function CreateKitchenOrder({ restaurantId, tenantId, onOrderCreated }: C
 
   // Ensure menuItems is always an array
   const menuItems = Array.isArray(menuItemsData) ? menuItemsData : [];
+  
+  // Debug logging
+  console.log('Menu items debug:', {
+    menuItemsData,
+    menuItems,
+    menuItemsLength: menuItems.length,
+    isOpen,
+    menuItemsLoading
+  });
 
   // Fetch tables
   const { data: tablesData = [] } = useQuery({
@@ -507,13 +516,17 @@ export function CreateKitchenOrder({ restaurantId, tenantId, onOrderCreated }: C
               </CardHeader>
               <CardContent>
                 <div className="space-y-4 max-h-96 overflow-y-auto">
-                  {menuItems.length === 0 ? (
+                  {menuItemsLoading ? (
                     <div className="text-center py-8 text-gray-500">
                       Loading menu items...
                     </div>
-                  ) : Object.entries(groupedMenuItems).length === 0 ? (
+                  ) : menuItems.length === 0 ? (
                     <div className="text-center py-8 text-gray-500">
                       No menu items available
+                    </div>
+                  ) : Object.entries(groupedMenuItems).length === 0 ? (
+                    <div className="text-center py-8 text-gray-500">
+                      Menu items available but not categorized
                     </div>
                   ) : (
                     Object.entries(groupedMenuItems).map(([category, items]) => (
