@@ -12,13 +12,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
+
 import { useToast } from "@/hooks/use-toast";
 import { PrintOrderForm } from "@/components/print-order-form";
 import { PrintOrderPayment } from "@/components/print-order-payment";
@@ -77,24 +71,7 @@ export default function PrintOrders() {
     enabled: !!restaurant?.tenantId && !!restaurant?.id,
   });
 
-  const updateOrderMutation = useMutation({
-    mutationFn: async ({ orderId, updates }: { orderId: number; updates: any }) => {
-      const response = await fetch(`/api/tenants/${restaurant?.tenantId}/restaurants/${restaurant?.id}/print-orders/${orderId}`, {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(updates),
-      });
-      if (!response.ok) throw new Error("Failed to update order");
-      return response.json();
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: [`/api/tenants/${restaurant?.tenantId}/restaurants/${restaurant?.id}/print-orders`] });
-      toast({ title: "Order updated successfully" });
-    },
-    onError: () => {
-      toast({ title: "Failed to update order", variant: "destructive" });
-    },
-  });
+
 
   const getStatusBadge = (status: string) => {
     const statusConfig = {
@@ -150,22 +127,7 @@ export default function PrintOrders() {
     setSelectedOrder(null);
   };
 
-  const handleStatusUpdate = (orderId: number, newStatus: string) => {
-    const statusTimestamps = {
-      processing: { processingStartedAt: new Date().toISOString() },
-      printing: { printingStartedAt: new Date().toISOString() },
-      shipped: { shippedAt: new Date().toISOString() },
-      completed: { completedAt: new Date().toISOString() },
-      delivered: { deliveredAt: new Date().toISOString() }
-    };
 
-    const updates = {
-      orderStatus: newStatus,
-      ...statusTimestamps[newStatus] || {}
-    };
-
-    updateOrderMutation.mutate({ orderId, updates });
-  };
 
   const formatCurrency = (amount: number) => {
     return new Intl.NumberFormat('en-US', {
@@ -354,21 +316,7 @@ export default function PrintOrders() {
                         <TableCell>{formatCurrency(order.totalAmount)}</TableCell>
                         <TableCell>{getPaymentStatusBadge(order.paymentStatus)}</TableCell>
                         <TableCell>
-                          <Select
-                            value={order.orderStatus}
-                            onValueChange={(value) => handleStatusUpdate(order.id, value)}
-                          >
-                            <SelectTrigger className="w-32">
-                              <SelectValue />
-                            </SelectTrigger>
-                            <SelectContent>
-                              <SelectItem value="pending">Pending</SelectItem>
-                              <SelectItem value="processing">Processing</SelectItem>
-                              <SelectItem value="completed">Completed</SelectItem>
-                              <SelectItem value="shipped">Shipped</SelectItem>
-                              <SelectItem value="cancelled">Cancelled</SelectItem>
-                            </SelectContent>
-                          </Select>
+                          {getStatusBadge(order.orderStatus)}
                         </TableCell>
                         <TableCell>{formatDate(order.createdAt)}</TableCell>
                         <TableCell>
