@@ -1357,7 +1357,9 @@ export class DatabaseStorage implements IStorage {
   async getFeedbackResponses(restaurantId: number, tenantId: number): Promise<any[]> {
     if (!this.db) throw new Error("Database connection not available");
     
-    return await this.db
+    console.log(`Fetching feedback for restaurant ${restaurantId}, tenant ${tenantId}`);
+    
+    const result = await this.db
       .select({
         id: feedback.id,
         customerName: feedback.customerName,
@@ -1381,6 +1383,9 @@ export class DatabaseStorage implements IStorage {
         eq(feedback.tenantId, tenantId)
       ))
       .orderBy(desc(feedback.createdAt));
+    
+    console.log(`Found ${result.length} feedback responses:`, result);
+    return result;
   }
 
   async deleteNotification(id: number): Promise<boolean> {
