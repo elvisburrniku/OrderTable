@@ -33,6 +33,7 @@ const {
   menuItems,
   seasonalMenuThemes,
   menuPrintOrders,
+  seatingConfigurations,
 } = schema;
 
 export class DatabaseStorage implements IStorage {
@@ -1642,5 +1643,75 @@ export class DatabaseStorage implements IStorage {
     if (!this.db) return false;
     await this.db.delete(menuPrintOrders).where(eq(menuPrintOrders.id, id));
     return true;
+  }
+
+  async getSeatingConfigurationsByRestaurant(restaurantId: number): Promise<any[]> {
+    try {
+      const configs = await this.db
+        .select()
+        .from(seatingConfigurations)
+        .where(eq(seatingConfigurations.restaurantId, restaurantId))
+        .orderBy(seatingConfigurations.createdAt);
+
+      return configs;
+    } catch (error) {
+      console.error("Error fetching seating configurations:", error);
+      return [];
+    }
+  }
+
+  async createSeatingConfiguration(configuration: any): Promise<any> {
+    try {
+      const [newConfig] = await this.db
+        .insert(seatingConfigurations)
+        .values({
+          restaurantId: configuration.restaurantId,
+          tenantId: configuration.tenantId,
+          name: configuration.name,
+          criteria: configuration.criteria || "Unlimited",
+          validOnline: configuration.validOnline || "Unlimited",
+          isActive: configuration.isActive ?? true,
+        })
+        .returning();
+
+      return newConfig;
+    } catch (error) {
+      console.error("Error creating seating configuration:", error);
+      throw error;
+    }
+  }
+
+  async updateSeatingConfiguration(id: number, updates: any): Promise<any> {
+    try {
+      const [updatedConfig] = await this.db
+        .update(seatingConfigurations)
+        .set({
+          name: updates.name,
+          criteria: updates.criteria,
+          validOnline: updates.validOnline,
+          isActive: updates.isActive,
+          updatedAt: new Date(),
+        })
+        .where(eq(seatingConfigurations.id, id))
+        .returning();
+
+      return updatedConfig;
+    } catch (error) {
+      console.error("Error updating seating configuration:", error);
+      throw error;
+    }
+  }
+
+  async deleteSeatingConfiguration(id: number): Promise<boolean> {
+    try {
+      await this.db
+        .delete(seatingConfigurations)
+        .where(eq(seatingConfigurations.id, id));
+
+      return true;
+    } catch (error) {
+      console.error("Error deleting seating configuration:", error);
+      return false;
+    }
   }
 }

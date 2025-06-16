@@ -779,6 +779,18 @@ export const menuPrintOrders = pgTable("menu_print_orders", {
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
 });
 
+export const seatingConfigurations = pgTable("seating_configurations", {
+  id: serial("id").primaryKey(),
+  restaurantId: integer("restaurant_id").notNull().references(() => restaurants.id, { onDelete: "cascade" }),
+  tenantId: integer("tenant_id").notNull().references(() => tenants.id, { onDelete: "cascade" }),
+  name: text("name").notNull(),
+  criteria: text("criteria").default("Unlimited"),
+  validOnline: text("valid_online").default("Unlimited"),
+  isActive: boolean("is_active").default(true),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+});
+
 export type MenuPrintOrder = InferSelectModel<typeof menuPrintOrders>;
 export type InsertMenuPrintOrder = InferInsertModel<typeof menuPrintOrders>;
 
@@ -789,6 +801,16 @@ export const insertMenuPrintOrderSchema = createInsertSchema(menuPrintOrders).om
   updatedAt: true,
 });
 export const selectMenuPrintOrderSchema = createSelectSchema(menuPrintOrders);
+
+export type SeatingConfiguration = InferSelectModel<typeof seatingConfigurations>;
+export type InsertSeatingConfiguration = InferInsertModel<typeof seatingConfigurations>;
+
+export const insertSeatingConfigurationSchema = createInsertSchema(seatingConfigurations).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+export const selectSeatingConfigurationSchema = createSelectSchema(seatingConfigurations);
 
 export type SeasonalMenuTheme = InferSelectModel<typeof seasonalMenuThemes>;
 export type InsertSeasonalMenuTheme = InferInsertModel<typeof seasonalMenuThemes>;
