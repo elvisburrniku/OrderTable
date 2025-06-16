@@ -37,6 +37,7 @@ const {
   kitchenStations,
   kitchenStaff,
   kitchenMetrics,
+  printOrders,
 } = schema;
 
 export class DatabaseStorage implements IStorage {
@@ -1835,5 +1836,73 @@ export class DatabaseStorage implements IStorage {
       stationUtilization: [], // Would need station assignment data
       waitTimes: [] // Would need detailed timing data
     };
+  }
+
+  // Print Orders Methods
+  async createPrintOrder(orderData: any) {
+    const [printOrder] = await this.db
+      .insert(printOrders)
+      .values(orderData)
+      .returning();
+    return printOrder;
+  }
+
+  async getPrintOrdersByRestaurant(restaurantId: number, tenantId: number) {
+    return await this.db
+      .select()
+      .from(printOrders)
+      .where(and(
+        eq(printOrders.restaurantId, restaurantId),
+        eq(printOrders.tenantId, tenantId)
+      ))
+      .orderBy(desc(printOrders.createdAt));
+  }
+
+  async getPrintOrderById(orderId: number) {
+    const [printOrder] = await this.db
+      .select()
+      .from(printOrders)
+      .where(eq(printOrders.id, orderId));
+    return printOrder;
+  }
+
+  async updatePrintOrder(orderId: number, updates: any) {
+    const [updatedOrder] = await this.db
+      .update(printOrders)
+      .set({
+        ...updates,
+        updatedAt: new Date()
+      })
+      .where(eq(printOrders.id, orderId))
+      .returning();
+    return updatedOrder;
+  }
+
+  async updatePrintOrderByPaymentIntent(paymentIntentId: string, updates: any) {
+    const [updatedOrder] = await this.db
+      .update(printOrders)
+      .set({
+        ...updates,
+        updatedAt: new Date()
+      })
+      .where(eq(printOrders.paymentIntentId, paymentIntentId))
+      .returning();
+    return updatedOrder;
+  }
+
+  async getPrintOrderByOrderNumber(orderNumber: string) {
+    const [printOrder] = await this.db
+      .select()
+      .from(printOrders)
+      .where(eq(printOrders.orderNumber, orderNumber));
+    return printOrder;
+  }
+
+  async deletePrintOrder(orderId: number) {
+    const [deletedOrder] = await this.db
+      .delete(printOrders)
+      .where(eq(printOrders.id, orderId))
+      .returning();
+    return deletedOrder;
   }
 }

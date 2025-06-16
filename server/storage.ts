@@ -292,6 +292,15 @@ export interface IStorage {
 
   // Auto-assignment methods
   getBookingsByDateAndRestaurant(date: string, restaurantId: number): Promise<Booking[]>;
+
+  // Print Orders
+  createPrintOrder(orderData: any): Promise<any>;
+  getPrintOrdersByRestaurant(restaurantId: number, tenantId: number): Promise<any[]>;
+  getPrintOrderById(orderId: number): Promise<any>;
+  updatePrintOrder(orderId: number, updates: any): Promise<any>;
+  updatePrintOrderByPaymentIntent(paymentIntentId: string, updates: any): Promise<any>;
+  getPrintOrderByOrderNumber(orderNumber: string): Promise<any>;
+  deletePrintOrder(orderId: number): Promise<any>;
 }
 
 import { DatabaseStorage } from "./db-storage";
