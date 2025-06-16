@@ -59,7 +59,11 @@ export default function PrintOrders() {
   const [activeTab, setActiveTab] = useState("orders");
   const [selectedOrder, setSelectedOrder] = useState<PrintOrder | null>(null);
   const [showPayment, setShowPayment] = useState(false);
-  const [paymentData, setPaymentData] = useState<{ clientSecret: string; order: any } | null>(null);
+  const [paymentData, setPaymentData] = useState<{ 
+    clientSecret: string; 
+    order: any; 
+    savedPaymentMethods?: any[] 
+  } | null>(null);
   const { user, restaurant } = useAuth();
   const { toast } = useToast();
   const queryClient = useQueryClient();
@@ -116,8 +120,8 @@ export default function PrintOrders() {
     );
   };
 
-  const handleOrderCreated = (clientSecret: string, order: any) => {
-    setPaymentData({ clientSecret, order });
+  const handleOrderCreated = (clientSecret: string, order: any, savedPaymentMethods?: any[]) => {
+    setPaymentData({ clientSecret, order, savedPaymentMethods });
     setShowPayment(true);
   };
 
@@ -162,6 +166,7 @@ export default function PrintOrders() {
         <PrintOrderPayment
           clientSecret={paymentData.clientSecret}
           order={paymentData.order}
+          savedPaymentMethods={paymentData.savedPaymentMethods}
           onPaymentSuccess={handlePaymentSuccess}
           onCancel={() => {
             setShowPayment(false);

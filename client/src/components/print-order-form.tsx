@@ -50,7 +50,7 @@ interface PrintOrderFormProps {
   restaurantId: number;
   tenantId?: number;
   onOrderCreated?: (order: any) => void;
-  onPaymentRequired?: (clientSecret: string, order: any) => void;
+  onPaymentRequired?: (clientSecret: string, order: any, savedPaymentMethods?: any[]) => void;
 }
 
 export function PrintOrderForm({ 
@@ -154,7 +154,7 @@ export function PrintOrderForm({
       });
 
       if (onPaymentRequired && result.clientSecret) {
-        onPaymentRequired(result.clientSecret, result.printOrder);
+        onPaymentRequired(result.clientSecret, result.printOrder, result.savedPaymentMethods);
       } else if (onOrderCreated) {
         onOrderCreated(result.printOrder);
       }

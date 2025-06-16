@@ -27,8 +27,15 @@ interface PrintOrderPaymentProps {
   onCancel?: () => void;
 }
 
-function PaymentForm({ order, onPaymentSuccess, onCancel }: {
+function PaymentForm({ order, savedPaymentMethods, onPaymentSuccess, onCancel }: {
   order: any;
+  savedPaymentMethods?: Array<{
+    id: string;
+    brand: string;
+    last4: string;
+    exp_month: number;
+    exp_year: number;
+  }>;
   onPaymentSuccess?: (order: any) => void;
   onCancel?: () => void;
 }) {
@@ -180,6 +187,20 @@ function PaymentForm({ order, onPaymentSuccess, onCancel }: {
             </div>
           </div>
 
+          {savedPaymentMethods && savedPaymentMethods.length > 0 && (
+            <div className="space-y-3">
+              <h3 className="text-sm font-medium text-gray-500 dark:text-gray-400">Payment Method</h3>
+              <div className="p-3 bg-blue-50 dark:bg-blue-950 rounded-lg border border-blue-200">
+                <div className="flex items-center gap-2">
+                  <CreditCard className="h-4 w-4 text-blue-600" />
+                  <span className="text-sm text-blue-700 dark:text-blue-300">
+                    Using saved payment method for faster checkout
+                  </span>
+                </div>
+              </div>
+            </div>
+          )}
+
           <div className="space-y-4">
             <h3 className="text-sm font-medium text-gray-500 dark:text-gray-400">Payment Information</h3>
             <PaymentElement />
@@ -222,6 +243,7 @@ function PaymentForm({ order, onPaymentSuccess, onCancel }: {
 export function PrintOrderPayment({ 
   clientSecret, 
   order, 
+  savedPaymentMethods,
   onPaymentSuccess, 
   onCancel 
 }: PrintOrderPaymentProps) {
@@ -271,6 +293,7 @@ export function PrintOrderPayment({
     <Elements stripe={stripePromise} options={options}>
       <PaymentForm 
         order={order} 
+        savedPaymentMethods={savedPaymentMethods}
         onPaymentSuccess={onPaymentSuccess} 
         onCancel={onCancel} 
       />
