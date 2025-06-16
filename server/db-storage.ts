@@ -1325,7 +1325,50 @@ export class DatabaseStorage implements IStorage {
   }
 
   async saveTableLayout(restaurantId: number, tenantId: number, room: string, positions: any): Promise<any> {
-    throw new Error("Method not implemented");
+    try {
+      // Check if layout already exists for this restaurant and room
+      const existingLayout = await this.db
+        .select()
+        .from(tableLayouts)
+        .where(
+          and(
+            eq(tableLayouts.restaurantId, restaurantId),
+            eq(tableLayouts.tenantId, tenantId),
+            eq(tableLayouts.room, room)
+          )
+        )
+        .limit(1);
+
+      if (existingLayout.length > 0) {
+        // Update existing layout
+        const [updatedLayout] = await this.db
+          .update(tableLayouts)
+          .set({
+            positions: positions,
+            updatedAt: new Date()
+          })
+          .where(eq(tableLayouts.id, existingLayout[0].id))
+          .returning();
+        
+        return updatedLayout;
+      } else {
+        // Create new layout
+        const [newLayout] = await this.db
+          .insert(tableLayouts)
+          .values({
+            restaurantId,
+            tenantId,
+            room,
+            positions
+          })
+          .returning();
+        
+        return newLayout;
+      }
+    } catch (error) {
+      console.error("Error saving table layout:", error);
+      throw error;
+    }
   }
 
   async getReschedulingSuggestionsByRestaurant(restaurantId: number): Promise<any[]> {

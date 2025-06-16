@@ -141,4 +141,5 @@ Changelog:
 - June 16, 2025. Fixed table data persistence issue - resolved field mapping between database (snake_case) and frontend (camelCase) by updating Drizzle ORM queries to use explicit field selection. Tables now save and display data correctly.
 - June 16, 2025. Fixed table switch cross-switching issue - created isolated TableSwitch component to prevent React reconciliation problems where clicking one switch would toggle a different table's status.
 - June 16, 2025. Fixed combined tables JSON parsing error - updated database storage functions to properly serialize tableIds arrays to JSON format before storing, preventing "Expected ':' after property name" errors in the frontend.
+- June 16, 2025. Fixed table layout saving 500 error - implemented missing saveTableLayout method in database storage with proper upsert functionality for creating and updating table positions.
 ```
