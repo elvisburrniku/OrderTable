@@ -878,6 +878,11 @@ export type SeatingConfiguration = InferSelectModel<typeof seatingConfigurations
 export type InsertSeatingConfiguration = InferInsertModel<typeof seatingConfigurations>;
 
 export const insertSeatingConfigurationSchema = createInsertSchema(seatingConfigurations).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true
+});
+
 // Kitchen Dashboard Tables
 export const kitchenOrders = pgTable("kitchen_orders", {
   id: serial("id").primaryKey(),
@@ -976,6 +981,10 @@ export type PeriodicCriteria = InferSelectModel<typeof periodicCriteria>;
 export type InsertPeriodicCriteria = InferInsertModel<typeof periodicCriteria>;
 
 export const insertPeriodicCriteriaSchema = createInsertSchema(periodicCriteria).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
 
 export const insertKitchenStationSchema = createInsertSchema(kitchenStations).omit({
   id: true,
@@ -988,6 +997,10 @@ export type CustomField = InferSelectModel<typeof customFields>;
 export type InsertCustomField = InferInsertModel<typeof customFields>;
 
 export const insertCustomFieldSchema = createInsertSchema(customFields).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
 
 export const insertKitchenStaffSchema = createInsertSchema(kitchenStaff).omit({
   id: true,
@@ -1000,6 +1013,10 @@ export type BookingAgent = InferSelectModel<typeof bookingAgents>;
 export type InsertBookingAgent = InferInsertModel<typeof bookingAgents>;
 
 export const insertBookingAgentSchema = createInsertSchema(bookingAgents).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
 
 export const insertKitchenMetricsSchema = createInsertSchema(kitchenMetrics).omit({
   id: true,
@@ -1012,6 +1029,10 @@ export type SmsSettings = InferSelectModel<typeof smsSettings>;
 export type InsertSmsSettings = InferInsertModel<typeof smsSettings>;
 
 export const insertSmsSettingsSchema = createInsertSchema(smsSettings).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
 
 // Print Orders Schema
 export const printOrders = pgTable("print_orders", {

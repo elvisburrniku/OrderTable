@@ -2252,6 +2252,8 @@ export class DatabaseStorage implements IStorage {
       console.error("Error checking booking agent:", error);
       return null;
     }
+  }
+
   // Kitchen Dashboard Methods
 
   // Kitchen Orders
