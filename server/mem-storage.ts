@@ -59,6 +59,7 @@ export class MemoryStorage implements IStorage {
   private integrationConfigurations: any[] = [];
   private webhooks: any[] = [];
   private reschedulingSuggestions: any[] = [];
+  private printOrders: any[] = [];
 
   private nextId = 1;
 

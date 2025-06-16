@@ -34,7 +34,7 @@ import {
   Truck,
   DollarSign
 } from "lucide-react";
-import { useUser } from "@/hooks/use-user";
+import { useAuth } from "@/lib/auth";
 
 interface PrintOrder {
   id: number;
@@ -60,18 +60,18 @@ export default function PrintOrders() {
   const [selectedOrder, setSelectedOrder] = useState<PrintOrder | null>(null);
   const [showPayment, setShowPayment] = useState(false);
   const [paymentData, setPaymentData] = useState<{ clientSecret: string; order: any } | null>(null);
-  const { user } = useUser();
+  const { user, restaurant } = useAuth();
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
   const { data: printOrders = [], isLoading } = useQuery({
-    queryKey: ["/api/tenants", user?.tenantId, "restaurants", user?.restaurantId, "print-orders"],
-    enabled: !!user?.tenantId && !!user?.restaurantId,
+    queryKey: ["/api/tenants", restaurant?.tenantId, "restaurants", restaurant?.id, "print-orders"],
+    enabled: !!restaurant?.tenantId && !!restaurant?.id,
   });
 
   const updateOrderMutation = useMutation({
     mutationFn: async ({ orderId, updates }: { orderId: number; updates: any }) => {
-      const response = await fetch(`/api/tenants/${user?.tenantId}/restaurants/${user?.restaurantId}/print-orders/${orderId}`, {
+      const response = await fetch(`/api/tenants/${restaurant?.tenantId}/restaurants/${restaurant?.id}/print-orders/${orderId}`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(updates),
@@ -80,7 +80,7 @@ export default function PrintOrders() {
       return response.json();
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["/api/tenants", user?.tenantId, "restaurants", user?.restaurantId, "print-orders"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/tenants", restaurant?.tenantId, "restaurants", restaurant?.id, "print-orders"] });
       toast({ title: "Order updated successfully" });
     },
     onError: () => {
@@ -125,7 +125,7 @@ export default function PrintOrders() {
     setShowPayment(false);
     setPaymentData(null);
     setActiveTab("orders");
-    queryClient.invalidateQueries({ queryKey: ["/api/tenants", user?.tenantId, "restaurants", user?.restaurantId, "print-orders"] });
+    queryClient.invalidateQueries({ queryKey: ["/api/tenants", restaurant?.tenantId, "restaurants", restaurant?.id, "print-orders"] });
     toast({
       title: "Payment Successful",
       description: `Print order ${order.orderNumber} has been confirmed!`,
@@ -351,8 +351,8 @@ export default function PrintOrders() {
 
         <TabsContent value="new-order">
           <PrintOrderForm
-            restaurantId={user?.restaurantId || 1}
-            tenantId={user?.tenantId}
+            restaurantId={restaurant?.id || 1}
+            tenantId={restaurant?.tenantId}
             onPaymentRequired={handleOrderCreated}
           />
         </TabsContent>
