@@ -70,6 +70,9 @@ export default function PrintOrders() {
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
+  // Debug: Check auth state
+  console.log('PrintOrders - Auth state:', { user, restaurant });
+
   const { data: printOrders = [], isLoading } = useQuery({
     queryKey: ["/api/tenants", restaurant?.tenantId, "restaurants", restaurant?.id, "print-orders"],
     enabled: !!restaurant?.tenantId && !!restaurant?.id,
