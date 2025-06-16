@@ -84,12 +84,19 @@ function App() {
   return (
     <ErrorBoundary>
       <QueryClientProvider client={queryClient}>
-        <AuthProvider>
-          <TenantProvider>
-            <RouteGuard>
-              <LayoutWrapper>
-                <SessionTimeoutHandler />
-                <Switch>
+        <Switch>
+          {/* Public feedback routes - standalone without guards */}
+          <Route path="/feedback/:tenantId/:restaurantId" component={GuestFeedbackForm} />
+          <Route path="/feedback-test" component={FeedbackTest} />
+          
+          {/* All other routes with authentication */}
+          <Route>
+            <AuthProvider>
+              <TenantProvider>
+                <RouteGuard>
+                  <LayoutWrapper>
+                    <SessionTimeoutHandler />
+                    <Switch>
             <Route path="/" component={Home} />
             <Route path="/login" component={Login} />
             <Route path="/register" component={Register} />
@@ -159,21 +166,20 @@ function App() {
             </SetupGuard>
             
             {/* Public routes that don't require authentication */}
-            <Route path="/feedback-test" component={FeedbackTest} />
-            <Route path="/feedback/:tenantId/:restaurantId" component={GuestFeedbackForm} />
             <Route path="/guest-booking/:tenantId/:restaurantId" component={GuestBookingResponsive} />
             <Route path="/:tenantId/book/:restaurantId" component={GuestBookingResponsive} />
             <Route path="/feedback-responses-popup" component={FeedbackResponsesPopup} />
             <Route path="/contact" component={Contact} />
             <Route path="/feedback" component={FeedbackResponses} />
             <Route component={NotFound} />
-          </Switch>
-        </LayoutWrapper>
-      </RouteGuard>
-      
-      <Toaster />
-      </TenantProvider>
-      </AuthProvider>
+                    </Switch>
+                  </LayoutWrapper>
+                </RouteGuard>
+              </TenantProvider>
+            </AuthProvider>
+          </Route>
+        </Switch>
+        <Toaster />
       </QueryClientProvider>
     </ErrorBoundary>
   );
