@@ -1573,7 +1573,16 @@ export class DatabaseStorage implements IStorage {
   }
 
   async createFeedback(feedbackData: any): Promise<any> {
-    throw new Error("Method not implemented");
+    const feedbackToInsert = {
+      ...feedbackData,
+      createdAt: new Date(),
+      visited: false,
+      bookingDate: feedbackData.visitDate || new Date().toISOString().split('T')[0],
+      questionName: 'Guest Feedback'
+    };
+    
+    const [newFeedback] = await this.db.insert(feedback).values(feedbackToInsert).returning();
+    return newFeedback;
   }
 
   async getActivityLogByRestaurant(restaurantId: number): Promise<any[]> {

@@ -37,6 +37,7 @@ import PaymentGateway from "./pages/payment-gateway";
 import Products from "./pages/products";
 import ProductGroups from "./pages/product-groups";
 import FeedbackResponses from "./pages/feedback-responses";
+import GuestFeedbackForm from "./pages/guest-feedback-form";
 import OpeningHours from "./pages/opening-hours";
 import Integrations from "./pages/integrations";
 import ActiveCampaignIntegration from "./pages/integrations/activecampaign";
@@ -152,6 +153,7 @@ function App() {
               <Route path="/feedback-responses" component={FeedbackResponses} />
             </SetupGuard>
             <Route path="/feedback-responses-popup" component={FeedbackResponsesPopup} />
+            <Route path="/feedback/:tenantId/:restaurantId" component={GuestFeedbackForm} />
             <Route path="/contact" component={Contact} />
             <Route component={NotFound} />
           </Switch>

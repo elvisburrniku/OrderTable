@@ -14,7 +14,7 @@ export class QRCodeService {
     try {
       // Use the correct URL format for the Replit environment
       const domain = baseUrl.includes('localhost') ? `http://${baseUrl}` : `https://${baseUrl}`;
-      const feedbackUrl = `${domain}/feedback/${tenantId}/${restaurantId}?table=${tableId}`;
+      const feedbackUrl = `${domain}/feedback/${tenantId}/${restaurantId}?table=${tableNumber}`;
       const qrCodeDataUrl = await QRCode.toDataURL(feedbackUrl);
       return qrCodeDataUrl;
     } catch (error) {
