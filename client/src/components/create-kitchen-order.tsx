@@ -157,7 +157,13 @@ export function CreateKitchenOrder({ restaurantId, tenantId, onOrderCreated }: C
         title: "Order Created",
         description: "Kitchen order has been successfully created and sent to the kitchen.",
       });
-      queryClient.invalidateQueries({ queryKey: [`/api/tenants/${tenantId}/restaurants/${restaurantId}/kitchen/orders`] });
+      // Invalidate all kitchen-related queries to ensure immediate refresh
+      queryClient.invalidateQueries({ 
+        predicate: (query) => {
+          const key = query.queryKey[0] as string;
+          return key.includes(`/api/tenants/${tenantId}/restaurants/${restaurantId}/kitchen`);
+        }
+      });
       resetForm();
       setIsOpen(false);
       onOrderCreated?.();

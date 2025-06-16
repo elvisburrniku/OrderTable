@@ -234,7 +234,12 @@ export function KitchenDashboard({ restaurantId, tenantId }: KitchenDashboardPro
             restaurantId={restaurantId} 
             tenantId={tenantId}
             onOrderCreated={() => {
-              queryClient.invalidateQueries({ queryKey: [`/api/tenants/${tenantId}/restaurants/${restaurantId}/kitchen/orders`] });
+              queryClient.invalidateQueries({ 
+                queryKey: [`/api/tenants/${tenantId}/restaurants/${restaurantId}/kitchen/orders`] 
+              });
+              queryClient.invalidateQueries({ 
+                queryKey: [`/api/tenants/${tenantId}/restaurants/${restaurantId}/kitchen/metrics`] 
+              });
             }}
           />
           <Select value={selectedTimeRange} onValueChange={setSelectedTimeRange}>
