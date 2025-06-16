@@ -146,19 +146,43 @@ export default function EnhancedGoogleCalendar({
 
   // Time slots for the calendar based on opening hours
   const timeSlots = useMemo(() => {
-    // For week/day view, we need to consider opening hours for each day
-    // Generate full 24-hour slots to accommodate any restaurant schedule
     const slots = [];
     
-    // Generate slots from midnight (00:00) to 23:45 to cover all possible restaurant hours
-    for (let hour = 0; hour < 24; hour++) {
+    // Find the earliest opening time and latest closing time across all days
+    let earliestOpen = 24;
+    let latestClose = 0;
+    
+    if (openingHours && Array.isArray(openingHours)) {
+      openingHours.forEach(hours => {
+        if (hours.isOpen && hours.openTime && hours.closeTime) {
+          const openHour = parseInt(hours.openTime.split(':')[0]);
+          const closeHour = parseInt(hours.closeTime.split(':')[0]);
+          
+          earliestOpen = Math.min(earliestOpen, openHour);
+          latestClose = Math.max(latestClose, closeHour);
+        }
+      });
+    }
+    
+    // Fallback to default hours if no opening hours are set
+    if (earliestOpen === 24 || latestClose === 0) {
+      earliestOpen = 9;
+      latestClose = 22;
+    }
+    
+    // Add 1 hour buffer before and after for flexibility
+    const startHour = Math.max(6, earliestOpen - 1);
+    const endHour = Math.min(23, latestClose + 1);
+    
+    // Generate 15-minute intervals within the working hours range
+    for (let hour = startHour; hour <= endHour; hour++) {
       for (let minute = 0; minute < 60; minute += 15) {
         const time = `${hour.toString().padStart(2, "0")}:${minute.toString().padStart(2, "0")}`;
         slots.push(time);
       }
     }
     return slots;
-  }, []);
+  }, [openingHours]);
 
   // Check if a time slot is within opening hours for a specific date
   const isTimeSlotOpen = useCallback((date: Date, timeSlot: string) => {
