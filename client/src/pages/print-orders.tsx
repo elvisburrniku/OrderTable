@@ -27,7 +27,8 @@ import {
   AlertCircle,
   Package,
   Truck,
-  DollarSign
+  DollarSign,
+  CreditCard
 } from "lucide-react";
 import { useAuth } from "@/lib/auth";
 
@@ -113,7 +114,7 @@ export default function PrintOrders() {
     queryClient.invalidateQueries({ queryKey: [`/api/tenants/${restaurant?.tenantId}/restaurants/${restaurant?.id}/print-orders`] });
     toast({
       title: "Payment Successful",
-      description: `Print order ${order.orderNumber} has been confirmed!`,
+      description: `Print order ${order.orderNumber || paymentData?.orderNumber} has been paid successfully!`,
     });
   };
 
@@ -125,6 +126,18 @@ export default function PrintOrders() {
   const handleCloseTracking = () => {
     setShowTracking(false);
     setSelectedOrder(null);
+  };
+
+  const handlePayNow = (order: PrintOrder) => {
+    setPaymentData({
+      orderId: order.id,
+      amount: order.totalAmount,
+      orderNumber: order.orderNumber,
+      printType: order.printType,
+      printSize: order.printSize,
+      quantity: order.quantity
+    });
+    setShowPayment(true);
   };
 
 
@@ -321,6 +334,16 @@ export default function PrintOrders() {
                         <TableCell>{formatDate(order.createdAt)}</TableCell>
                         <TableCell>
                           <div className="flex gap-2">
+                            {order.paymentStatus === 'pending' && (
+                              <Button
+                                variant="default"
+                                size="sm"
+                                onClick={() => handlePayNow(order)}
+                                title="Pay Now"
+                              >
+                                <CreditCard className="h-4 w-4" />
+                              </Button>
+                            )}
                             <Button
                               variant="ghost"
                               size="sm"
