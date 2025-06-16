@@ -112,7 +112,11 @@ export function KitchenDashboard({ restaurantId, tenantId }: KitchenDashboardPro
   // Real-time data fetching with auto-refresh
   const { data: orders = [], isLoading: ordersLoading } = useQuery({
     queryKey: [`/api/tenants/${tenantId}/restaurants/${restaurantId}/kitchen/orders`, selectedTimeRange],
-    queryFn: () => apiRequest('GET', `/api/tenants/${tenantId}/restaurants/${restaurantId}/kitchen/orders?timeRange=${selectedTimeRange}`),
+    queryFn: async () => {
+      const response = await fetch(`/api/tenants/${tenantId}/restaurants/${restaurantId}/kitchen/orders?timeRange=${selectedTimeRange}`);
+      if (!response.ok) throw new Error('Failed to fetch orders');
+      return response.json();
+    },
     refetchInterval: autoRefresh ? 5000 : false,
   });
 
@@ -214,9 +218,22 @@ export function KitchenDashboard({ restaurantId, tenantId }: KitchenDashboardPro
   const stationsArray = Array.isArray(stations) ? stations : [];
   const staffArray = Array.isArray(staff) ? staff : [];
   
+  // Debug logging
+  console.log('Kitchen Dashboard Data:', {
+    ordersCount: ordersArray.length,
+    orders: ordersArray.slice(0, 3), // Show first 3 orders
+    selectedTimeRange
+  });
+  
   const activeOrders = ordersArray.filter((order: KitchenOrder) => ['pending', 'preparing'].includes(order.status));
   const readyOrders = ordersArray.filter((order: KitchenOrder) => order.status === 'ready');
   const completedToday = ordersArray.filter((order: KitchenOrder) => order.status === 'served').length;
+  
+  console.log('Filtered Orders:', {
+    activeCount: activeOrders.length,
+    readyCount: readyOrders.length,
+    completedCount: completedToday
+  });
 
   return (
     <div className="p-6 space-y-6">
