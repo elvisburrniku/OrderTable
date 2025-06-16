@@ -138,11 +138,31 @@ export default function PrintOrders() {
     });
   };
 
+  const handleViewTracking = (order: PrintOrder) => {
+    setSelectedOrder(order);
+    setShowTracking(true);
+  };
+
+  const handleCloseTracking = () => {
+    setShowTracking(false);
+    setSelectedOrder(null);
+  };
+
   const handleStatusUpdate = (orderId: number, newStatus: string) => {
-    updateOrderMutation.mutate({ 
-      orderId, 
-      updates: { orderStatus: newStatus } 
-    });
+    const statusTimestamps = {
+      processing: { processingStartedAt: new Date().toISOString() },
+      printing: { printingStartedAt: new Date().toISOString() },
+      shipped: { shippedAt: new Date().toISOString() },
+      completed: { completedAt: new Date().toISOString() },
+      delivered: { deliveredAt: new Date().toISOString() }
+    };
+
+    const updates = {
+      orderStatus: newStatus,
+      ...statusTimestamps[newStatus] || {}
+    };
+
+    updateOrderMutation.mutate({ orderId, updates });
   };
 
   const formatCurrency = (amount: number) => {
@@ -174,6 +194,17 @@ export default function PrintOrders() {
             setShowPayment(false);
             setPaymentData(null);
           }}
+        />
+      </div>
+    );
+  }
+
+  if (showTracking && selectedOrder) {
+    return (
+      <div className="container mx-auto p-6">
+        <OrderTracking
+          order={selectedOrder}
+          onClose={handleCloseTracking}
         />
       </div>
     );
@@ -339,13 +370,24 @@ export default function PrintOrders() {
                         </TableCell>
                         <TableCell>{formatDate(order.createdAt)}</TableCell>
                         <TableCell>
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={() => setSelectedOrder(order)}
-                          >
-                            <Eye className="h-4 w-4" />
-                          </Button>
+                          <div className="flex gap-2">
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => handleViewTracking(order)}
+                              title="Track Order"
+                            >
+                              <Eye className="h-4 w-4" />
+                            </Button>
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => setSelectedOrder(order)}
+                              title="View Details"
+                            >
+                              <Package className="h-4 w-4" />
+                            </Button>
+                          </div>
                         </TableCell>
                       </TableRow>
                     ))}
