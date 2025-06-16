@@ -292,6 +292,18 @@ export interface IStorage {
 
   // Auto-assignment methods
   getBookingsByDateAndRestaurant(date: string, restaurantId: number): Promise<Booking[]>;
+
+  // Seating Configurations
+  getSeatingConfigurationsByRestaurant(restaurantId: number): Promise<any[]>;
+  createSeatingConfiguration(configuration: any): Promise<any>;
+  updateSeatingConfiguration(id: number, updates: any): Promise<any>;
+  deleteSeatingConfiguration(id: number): Promise<boolean>;
+
+  // Periodic Criteria
+  getPeriodicCriteriaByRestaurant(restaurantId: number): Promise<any[]>;
+  createPeriodicCriteria(criteria: any): Promise<any>;
+  updatePeriodicCriteria(id: number, updates: any): Promise<any>;
+  deletePeriodicCriteria(id: number): Promise<boolean>;
 }
 
 import { DatabaseStorage } from "./db-storage";
