@@ -40,19 +40,21 @@ export default function GuestFeedbackForm() {
   const tableNumber = urlParams.get("table");
 
   // Fetch restaurant info (public endpoint for guest access)
-  const { data: restaurant } = useQuery({
+  const { data: restaurant, isLoading: restaurantLoading, error: restaurantError } = useQuery({
     queryKey: [`/api/public/tenants/${tenantId}/restaurants/${restaurantId}`],
     enabled: !!tenantId && !!restaurantId,
   });
 
   // Fetch feedback questions (public endpoint for guest access)
-  const { data: questions = [] } = useQuery({
+  const { data: questions = [], isLoading: questionsLoading, error: questionsError } = useQuery({
     queryKey: [`/api/public/tenants/${tenantId}/restaurants/${restaurantId}/feedback-questions`],
     enabled: !!tenantId && !!restaurantId,
   });
 
-  const activeQuestions = questions.filter((q: FeedbackQuestion) => q.isActive)
-    .sort((a: FeedbackQuestion, b: FeedbackQuestion) => a.sortOrder - b.sortOrder);
+  const activeQuestions = Array.isArray(questions) 
+    ? questions.filter((q: FeedbackQuestion) => q.isActive)
+        .sort((a: FeedbackQuestion, b: FeedbackQuestion) => a.sortOrder - b.sortOrder)
+    : [];
 
   // Submit feedback mutation
   const submitFeedbackMutation = useMutation({
@@ -110,8 +112,48 @@ export default function GuestFeedbackForm() {
     submitFeedbackMutation.mutate(feedbackData);
   };
 
-  if (!match) {
-    return <div>Invalid feedback URL</div>;
+  if (!match || !tenantId || !restaurantId) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-red-50 to-orange-50 flex items-center justify-center p-4">
+        <Card className="w-full max-w-md text-center">
+          <CardContent className="pt-6">
+            <AlertCircle className="w-12 h-12 text-red-500 mx-auto mb-4" />
+            <h2 className="text-xl font-semibold text-gray-900 mb-2">Invalid Link</h2>
+            <p className="text-gray-600">This feedback link is not valid. Please contact the restaurant for assistance.</p>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
+
+  // Show loading state
+  if (restaurantLoading || questionsLoading) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-50 flex items-center justify-center p-4">
+        <Card className="w-full max-w-md text-center">
+          <CardContent className="pt-6">
+            <Clock className="w-12 h-12 text-blue-500 mx-auto mb-4 animate-spin" />
+            <h2 className="text-xl font-semibold text-gray-900 mb-2">Loading...</h2>
+            <p className="text-gray-600">Preparing your feedback form</p>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
+
+  // Show error state
+  if (restaurantError || questionsError) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-red-50 to-orange-50 flex items-center justify-center p-4">
+        <Card className="w-full max-w-md text-center">
+          <CardContent className="pt-6">
+            <AlertCircle className="w-12 h-12 text-red-500 mx-auto mb-4" />
+            <h2 className="text-xl font-semibold text-gray-900 mb-2">Error Loading Form</h2>
+            <p className="text-gray-600">Unable to load the feedback form. Please try again later.</p>
+          </CardContent>
+        </Card>
+      </div>
+    );
   }
 
   if (feedbackSubmitted) {
