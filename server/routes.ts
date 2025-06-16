@@ -12516,6 +12516,20 @@ NEXT STEPS:
           tenantId,
         };
 
+        // Convert timestamp fields to Date objects if they exist and are valid
+        if (orderData.startedAt) {
+          const startedDate = new Date(orderData.startedAt);
+          orderData.startedAt = isNaN(startedDate.getTime()) ? null : startedDate;
+        }
+        if (orderData.readyAt) {
+          const readyDate = new Date(orderData.readyAt);
+          orderData.readyAt = isNaN(readyDate.getTime()) ? null : readyDate;
+        }
+        if (orderData.servedAt) {
+          const servedDate = new Date(orderData.servedAt);
+          orderData.servedAt = isNaN(servedDate.getTime()) ? null : servedDate;
+        }
+
         const order = await storage.createKitchenOrder(orderData);
         res.status(201).json(order);
       } catch (error) {
