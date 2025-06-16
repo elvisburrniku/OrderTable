@@ -310,6 +310,13 @@ export interface IStorage {
   createCustomField(field: any): Promise<any>;
   updateCustomField(id: number, updates: any): Promise<any>;
   deleteCustomField(id: number): Promise<boolean>;
+
+  // Booking Agents
+  getBookingAgentsByRestaurant(restaurantId: number): Promise<any[]>;
+  createBookingAgent(agent: any): Promise<any>;
+  updateBookingAgent(id: number, updates: any): Promise<any>;
+  deleteBookingAgent(id: number): Promise<boolean>;
+  isBookingAgent(email: string, phone: string, restaurantId: number): Promise<any | null>;
 }
 
 import { DatabaseStorage } from "./db-storage";

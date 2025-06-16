@@ -36,6 +36,7 @@ const {
   seatingConfigurations,
   periodicCriteria,
   customFields,
+  bookingAgents,
 } = schema;
 
 export class DatabaseStorage implements IStorage {
@@ -1860,6 +1861,104 @@ export class DatabaseStorage implements IStorage {
     } catch (error) {
       console.error("Error deleting custom field:", error);
       return false;
+    }
+  }
+
+  async getBookingAgentsByRestaurant(restaurantId: number): Promise<any[]> {
+    try {
+      const agents = await this.db
+        .select()
+        .from(bookingAgents)
+        .where(eq(bookingAgents.restaurantId, restaurantId))
+        .orderBy(bookingAgents.createdAt);
+
+      return agents;
+    } catch (error) {
+      console.error("Error fetching booking agents:", error);
+      return [];
+    }
+  }
+
+  async createBookingAgent(agent: any): Promise<any> {
+    try {
+      const [newAgent] = await this.db
+        .insert(bookingAgents)
+        .values({
+          restaurantId: agent.restaurantId,
+          tenantId: agent.tenantId,
+          name: agent.name,
+          email: agent.email,
+          phone: agent.phone,
+          role: agent.role || "agent",
+          isActive: agent.isActive ?? true,
+          notes: agent.notes || null,
+        })
+        .returning();
+
+      return newAgent;
+    } catch (error) {
+      console.error("Error creating booking agent:", error);
+      throw error;
+    }
+  }
+
+  async updateBookingAgent(id: number, updates: any): Promise<any> {
+    try {
+      const [updatedAgent] = await this.db
+        .update(bookingAgents)
+        .set({
+          name: updates.name,
+          email: updates.email,
+          phone: updates.phone,
+          role: updates.role,
+          isActive: updates.isActive,
+          notes: updates.notes,
+          updatedAt: new Date(),
+        })
+        .where(eq(bookingAgents.id, id))
+        .returning();
+
+      return updatedAgent;
+    } catch (error) {
+      console.error("Error updating booking agent:", error);
+      throw error;
+    }
+  }
+
+  async deleteBookingAgent(id: number): Promise<boolean> {
+    try {
+      await this.db
+        .delete(bookingAgents)
+        .where(eq(bookingAgents.id, id));
+
+      return true;
+    } catch (error) {
+      console.error("Error deleting booking agent:", error);
+      return false;
+    }
+  }
+
+  async isBookingAgent(email: string, phone: string, restaurantId: number): Promise<any | null> {
+    try {
+      const agent = await this.db
+        .select()
+        .from(bookingAgents)
+        .where(
+          and(
+            eq(bookingAgents.restaurantId, restaurantId),
+            eq(bookingAgents.isActive, true),
+            or(
+              eq(bookingAgents.email, email),
+              eq(bookingAgents.phone, phone)
+            )
+          )
+        )
+        .limit(1);
+
+      return agent.length > 0 ? agent[0] : null;
+    } catch (error) {
+      console.error("Error checking booking agent:", error);
+      return null;
     }
   }
 }

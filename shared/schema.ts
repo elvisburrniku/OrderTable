@@ -818,6 +818,20 @@ export const customFields = pgTable("custom_fields", {
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
 });
 
+export const bookingAgents = pgTable("booking_agents", {
+  id: serial("id").primaryKey(),
+  restaurantId: integer("restaurant_id").notNull().references(() => restaurants.id, { onDelete: "cascade" }),
+  tenantId: integer("tenant_id").notNull().references(() => tenants.id, { onDelete: "cascade" }),
+  name: text("name").notNull(),
+  email: text("email").notNull(),
+  phone: text("phone").notNull(),
+  role: text("role").default("agent"), // "agent", "concierge"
+  isActive: boolean("is_active").default(true),
+  notes: text("notes"),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+});
+
 export type MenuPrintOrder = InferSelectModel<typeof menuPrintOrders>;
 export type InsertMenuPrintOrder = InferInsertModel<typeof menuPrintOrders>;
 
@@ -858,6 +872,16 @@ export const insertCustomFieldSchema = createInsertSchema(customFields).omit({
   updatedAt: true,
 });
 export const selectCustomFieldSchema = createSelectSchema(customFields);
+
+export type BookingAgent = InferSelectModel<typeof bookingAgents>;
+export type InsertBookingAgent = InferInsertModel<typeof bookingAgents>;
+
+export const insertBookingAgentSchema = createInsertSchema(bookingAgents).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+export const selectBookingAgentSchema = createSelectSchema(bookingAgents);
 
 export type SeasonalMenuTheme = InferSelectModel<typeof seasonalMenuThemes>;
 export type InsertSeasonalMenuTheme = InferInsertModel<typeof seasonalMenuThemes>;

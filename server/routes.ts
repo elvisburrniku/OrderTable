@@ -10848,6 +10848,107 @@ NEXT STEPS:
     }
   );
 
+  // Booking Agents API routes
+  app.get(
+    "/api/tenants/:tenantId/restaurants/:restaurantId/booking-agents",
+    validateTenant,
+    async (req, res) => {
+      try {
+        const restaurantId = parseInt(req.params.restaurantId);
+        const tenantId = parseInt(req.params.tenantId);
+
+        const restaurant = await storage.getRestaurantById(restaurantId);
+        if (!restaurant || restaurant.tenantId !== tenantId) {
+          return res.status(404).json({ message: "Restaurant not found" });
+        }
+
+        const agents = await storage.getBookingAgentsByRestaurant(restaurantId);
+        res.json(agents);
+      } catch (error) {
+        console.error("Error fetching booking agents:", error);
+        res.status(500).json({ message: "Internal server error" });
+      }
+    }
+  );
+
+  app.post(
+    "/api/tenants/:tenantId/restaurants/:restaurantId/booking-agents",
+    validateTenant,
+    async (req, res) => {
+      try {
+        const restaurantId = parseInt(req.params.restaurantId);
+        const tenantId = parseInt(req.params.tenantId);
+
+        const restaurant = await storage.getRestaurantById(restaurantId);
+        if (!restaurant || restaurant.tenantId !== tenantId) {
+          return res.status(404).json({ message: "Restaurant not found" });
+        }
+
+        const agentData = {
+          ...req.body,
+          restaurantId,
+          tenantId,
+        };
+
+        const newAgent = await storage.createBookingAgent(agentData);
+        res.json(newAgent);
+      } catch (error) {
+        console.error("Error creating booking agent:", error);
+        res.status(500).json({ message: "Failed to create booking agent" });
+      }
+    }
+  );
+
+  app.put(
+    "/api/tenants/:tenantId/restaurants/:restaurantId/booking-agents/:agentId",
+    validateTenant,
+    async (req, res) => {
+      try {
+        const agentId = parseInt(req.params.agentId);
+        const restaurantId = parseInt(req.params.restaurantId);
+        const tenantId = parseInt(req.params.tenantId);
+
+        const restaurant = await storage.getRestaurantById(restaurantId);
+        if (!restaurant || restaurant.tenantId !== tenantId) {
+          return res.status(404).json({ message: "Restaurant not found" });
+        }
+
+        const updatedAgent = await storage.updateBookingAgent(agentId, req.body);
+        res.json(updatedAgent);
+      } catch (error) {
+        console.error("Error updating booking agent:", error);
+        res.status(500).json({ message: "Failed to update booking agent" });
+      }
+    }
+  );
+
+  app.delete(
+    "/api/tenants/:tenantId/restaurants/:restaurantId/booking-agents/:agentId",
+    validateTenant,
+    async (req, res) => {
+      try {
+        const agentId = parseInt(req.params.agentId);
+        const restaurantId = parseInt(req.params.restaurantId);
+        const tenantId = parseInt(req.params.tenantId);
+
+        const restaurant = await storage.getRestaurantById(restaurantId);
+        if (!restaurant || restaurant.tenantId !== tenantId) {
+          return res.status(404).json({ message: "Restaurant not found" });
+        }
+
+        const success = await storage.deleteBookingAgent(agentId);
+        if (!success) {
+          return res.status(404).json({ message: "Booking agent not found" });
+        }
+
+        res.json({ message: "Booking agent deleted successfully" });
+      } catch (error) {
+        console.error("Error deleting booking agent:", error);
+        res.status(500).json({ message: "Failed to delete booking agent" });
+      }
+    }
+  );
+
   const httpServer = createServer(app);
 
   // Setup WebSocket server for real-time notifications
