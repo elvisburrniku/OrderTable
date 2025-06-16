@@ -13064,7 +13064,7 @@ NEXT STEPS:
           return res.status(404).json({ message: "Restaurant not found" });
         }
 
-        const questions = await storage.getFeedbackQuestionsByRestaurant(parseInt(restaurantId));
+        const questions = await storage.getFeedbackQuestions(parseInt(restaurantId), parseInt(tenantId));
         // Only return active questions for guest access
         const activeQuestions = questions.filter(q => q.isActive);
         res.json(activeQuestions);
