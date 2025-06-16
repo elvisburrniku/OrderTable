@@ -157,20 +157,17 @@ function App() {
               <Route path="/feedback" component={FeedbackResponses} />
               <Route path="/feedback-responses" component={FeedbackResponses} />
             </SetupGuard>
+            
+            {/* Public routes that don't require authentication */}
+            <Route path="/feedback/:tenantId/:restaurantId" component={GuestFeedbackForm} />
+            <Route path="/guest-booking/:tenantId/:restaurantId" component={GuestBookingResponsive} />
+            <Route path="/:tenantId/book/:restaurantId" component={GuestBookingResponsive} />
             <Route path="/feedback-responses-popup" component={FeedbackResponsesPopup} />
             <Route path="/contact" component={Contact} />
             <Route component={NotFound} />
           </Switch>
         </LayoutWrapper>
       </RouteGuard>
-      {/* Public routes that don't require authentication */}
-      <Route path="/feedback/:tenantId/:restaurantId" component={GuestFeedbackForm} />
-      
-      {/* Public routes - no authentication required */}
-      <Switch>
-        <Route path="/guest-booking/:tenantId/:restaurantId" component={GuestBookingResponsive} />
-        <Route path="/:tenantId/book/:restaurantId" component={GuestBookingResponsive} />
-      </Switch>
       
       <Toaster />
       </TenantProvider>
