@@ -31,6 +31,7 @@ export default function GuestFeedbackForm() {
   const [customerEmail, setCustomerEmail] = useState("");
   const [customerPhone, setCustomerPhone] = useState("");
   const [feedbackSubmitted, setFeedbackSubmitted] = useState(false);
+  const [questionResponses, setQuestionResponses] = useState<{[key: number]: any}>({});
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
@@ -80,19 +81,21 @@ export default function GuestFeedbackForm() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    if (rating === 0) {
+    if (!customerName.trim()) {
       toast({
-        title: "Rating Required",
-        description: "Please provide a star rating.",
+        title: "Name Required",
+        description: "Please enter your name.",
         variant: "destructive",
       });
       return;
     }
 
-    if (!customerName.trim()) {
+    // Check if at least one question has been answered
+    const hasResponses = Object.keys(questionResponses).length > 0 || rating > 0 || npsScore > 0 || comments.trim();
+    if (!hasResponses) {
       toast({
-        title: "Name Required",
-        description: "Please enter your name.",
+        title: "Response Required",
+        description: "Please answer at least one feedback question.",
         variant: "destructive",
       });
       return;
@@ -107,6 +110,7 @@ export default function GuestFeedbackForm() {
       comments: comments.trim(),
       tableNumber: tableNumber || "",
       visitDate: new Date().toISOString().split('T')[0],
+      questionResponses,
     };
 
     submitFeedbackMutation.mutate(feedbackData);
@@ -233,83 +237,108 @@ export default function GuestFeedbackForm() {
                 </div>
               </div>
 
-              {/* Star Rating */}
-              <div>
-                <Label className="text-base font-medium">Overall Rating *</Label>
-                <p className="text-sm text-gray-600 mb-3">How would you rate your overall experience?</p>
-                <div className="flex items-center space-x-1">
-                  {[1, 2, 3, 4, 5].map((star) => (
-                    <button
-                      key={star}
-                      type="button"
-                      className="focus:outline-none"
-                      onMouseEnter={() => setHoverRating(star)}
-                      onMouseLeave={() => setHoverRating(0)}
-                      onClick={() => setRating(star)}
-                    >
-                      <Star
-                        className={`w-8 h-8 ${
-                          star <= (hoverRating || rating)
-                            ? "fill-yellow-400 text-yellow-400"
-                            : "text-gray-300"
-                        }`}
+              {/* Dynamic Feedback Questions */}
+              {activeQuestions.map((question: FeedbackQuestion) => (
+                <div key={question.id} className="space-y-3">
+                  <Label className="text-base font-medium">{question.name}</Label>
+                  
+                  {/* Rating Component for Star questions */}
+                  {question.questionType === 'star' && (
+                    <div>
+                      <p className="text-sm text-gray-600 mb-3">Rate your experience (1-5 stars)</p>
+                      <div className="flex items-center space-x-1">
+                        {[1, 2, 3, 4, 5].map((star) => (
+                          <button
+                            key={star}
+                            type="button"
+                            className="focus:outline-none"
+                            onMouseEnter={() => setHoverRating(star)}
+                            onMouseLeave={() => setHoverRating(0)}
+                            onClick={() => {
+                              setRating(star);
+                              setQuestionResponses(prev => ({
+                                ...prev,
+                                [question.id]: { rating: star }
+                              }));
+                            }}
+                          >
+                            <Star
+                              className={`w-8 h-8 ${
+                                star <= (hoverRating || rating)
+                                  ? "fill-yellow-400 text-yellow-400"
+                                  : "text-gray-300"
+                              }`}
+                            />
+                          </button>
+                        ))}
+                        <span className="ml-2 text-sm text-gray-600">
+                          {rating > 0 && `${rating} star${rating !== 1 ? 's' : ''}`}
+                        </span>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* NPS Score */}
+                  {question.hasNps && (
+                    <div>
+                      <p className="text-sm text-gray-600 mb-3">
+                        How likely are you to recommend us? (0-10)
+                      </p>
+                      <div className="flex items-center space-x-1">
+                        {[0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map((score) => (
+                          <button
+                            key={score}
+                            type="button"
+                            onClick={() => {
+                              setNpsScore(score);
+                              setQuestionResponses(prev => ({
+                                ...prev,
+                                [question.id]: { ...prev[question.id], nps: score }
+                              }));
+                            }}
+                            className={`w-8 h-8 text-sm font-medium rounded border focus:outline-none transition-colors ${
+                              npsScore === score
+                                ? "bg-blue-600 text-white border-blue-600"
+                                : "bg-white text-gray-700 border-gray-300 hover:border-blue-300"
+                            }`}
+                          >
+                            {score}
+                          </button>
+                        ))}
+                      </div>
+                      <div className="flex justify-between text-xs text-gray-500 mt-1">
+                        <span>Not likely</span>
+                        <span>Very likely</span>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Comments */}
+                  {question.hasComments && (
+                    <div>
+                      <Label htmlFor={`comments-${question.id}`} className="text-base font-medium">
+                        Comments
+                      </Label>
+                      <p className="text-sm text-gray-600 mb-3">
+                        Tell us more about your experience (optional)
+                      </p>
+                      <Textarea
+                        id={`comments-${question.id}`}
+                        value={questionResponses[question.id]?.comments || ''}
+                        onChange={(e) => {
+                          setComments(e.target.value);
+                          setQuestionResponses(prev => ({
+                            ...prev,
+                            [question.id]: { ...prev[question.id], comments: e.target.value }
+                          }));
+                        }}
+                        placeholder="Share your thoughts about the food, service, atmosphere..."
+                        rows={4}
                       />
-                    </button>
-                  ))}
-                  <span className="ml-2 text-sm text-gray-600">
-                    {rating > 0 && `${rating} star${rating !== 1 ? 's' : ''}`}
-                  </span>
+                    </div>
+                  )}
                 </div>
-              </div>
-
-              {/* NPS Score */}
-              {activeQuestions.some((q: FeedbackQuestion) => q.hasNps) && (
-                <div>
-                  <Label className="text-base font-medium">Recommendation Score</Label>
-                  <p className="text-sm text-gray-600 mb-3">
-                    How likely are you to recommend us to a friend or colleague? (0-10)
-                  </p>
-                  <div className="flex items-center space-x-1">
-                    {[0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map((score) => (
-                      <button
-                        key={score}
-                        type="button"
-                        onClick={() => setNpsScore(score)}
-                        className={`w-8 h-8 text-sm font-medium rounded border focus:outline-none transition-colors ${
-                          npsScore === score
-                            ? "bg-blue-600 text-white border-blue-600"
-                            : "bg-white text-gray-700 border-gray-300 hover:border-blue-300"
-                        }`}
-                      >
-                        {score}
-                      </button>
-                    ))}
-                  </div>
-                  <div className="flex justify-between text-xs text-gray-500 mt-1">
-                    <span>Not likely</span>
-                    <span>Very likely</span>
-                  </div>
-                </div>
-              )}
-
-              {/* Comments */}
-              {activeQuestions.some((q: FeedbackQuestion) => q.hasComments) && (
-                <div>
-                  <Label htmlFor="comments" className="text-base font-medium">
-                    Additional Comments
-                  </Label>
-                  <p className="text-sm text-gray-600 mb-3">
-                    Tell us more about your experience (optional)
-                  </p>
-                  <Textarea
-                    id="comments"
-                    value={comments}
-                    onChange={(e) => setComments(e.target.value)}
-                    placeholder="Share your thoughts about the food, service, atmosphere..."
-                    rows={4}
-                  />
-                </div>
-              )}
+              ))}
 
               <Button
                 type="submit"
