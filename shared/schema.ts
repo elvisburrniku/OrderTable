@@ -804,6 +804,20 @@ export const periodicCriteria = pgTable("periodic_criteria", {
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
 });
 
+export const customFields = pgTable("custom_fields", {
+  id: serial("id").primaryKey(),
+  restaurantId: integer("restaurant_id").notNull().references(() => restaurants.id, { onDelete: "cascade" }),
+  tenantId: integer("tenant_id").notNull().references(() => tenants.id, { onDelete: "cascade" }),
+  name: text("name").notNull(),
+  title: text("title").notNull(),
+  inputType: text("input_type").notNull().default("single_line"), // "single_line", "multi_line"
+  translations: text("translations"), // JSON field for language translations
+  isActive: boolean("is_active").default(true),
+  isOnline: boolean("is_online").default(false),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+});
+
 export type MenuPrintOrder = InferSelectModel<typeof menuPrintOrders>;
 export type InsertMenuPrintOrder = InferInsertModel<typeof menuPrintOrders>;
 
@@ -834,6 +848,16 @@ export const insertPeriodicCriteriaSchema = createInsertSchema(periodicCriteria)
   updatedAt: true,
 });
 export const selectPeriodicCriteriaSchema = createSelectSchema(periodicCriteria);
+
+export type CustomField = InferSelectModel<typeof customFields>;
+export type InsertCustomField = InferInsertModel<typeof customFields>;
+
+export const insertCustomFieldSchema = createInsertSchema(customFields).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+export const selectCustomFieldSchema = createSelectSchema(customFields);
 
 export type SeasonalMenuTheme = InferSelectModel<typeof seasonalMenuThemes>;
 export type InsertSeasonalMenuTheme = InferInsertModel<typeof seasonalMenuThemes>;

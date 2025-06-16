@@ -35,6 +35,7 @@ const {
   menuPrintOrders,
   seatingConfigurations,
   periodicCriteria,
+  customFields,
 } = schema;
 
 export class DatabaseStorage implements IStorage {
@@ -1784,6 +1785,80 @@ export class DatabaseStorage implements IStorage {
       return true;
     } catch (error) {
       console.error("Error deleting periodic criteria:", error);
+      return false;
+    }
+  }
+
+  async getCustomFieldsByRestaurant(restaurantId: number): Promise<any[]> {
+    try {
+      const fields = await this.db
+        .select()
+        .from(customFields)
+        .where(eq(customFields.restaurantId, restaurantId))
+        .orderBy(customFields.createdAt);
+
+      return fields;
+    } catch (error) {
+      console.error("Error fetching custom fields:", error);
+      return [];
+    }
+  }
+
+  async createCustomField(field: any): Promise<any> {
+    try {
+      const [newField] = await this.db
+        .insert(customFields)
+        .values({
+          restaurantId: field.restaurantId,
+          tenantId: field.tenantId,
+          name: field.name,
+          title: field.title,
+          inputType: field.inputType || "single_line",
+          translations: field.translations ? JSON.stringify(field.translations) : null,
+          isActive: field.isActive ?? true,
+          isOnline: field.isOnline ?? false,
+        })
+        .returning();
+
+      return newField;
+    } catch (error) {
+      console.error("Error creating custom field:", error);
+      throw error;
+    }
+  }
+
+  async updateCustomField(id: number, updates: any): Promise<any> {
+    try {
+      const [updatedField] = await this.db
+        .update(customFields)
+        .set({
+          name: updates.name,
+          title: updates.title,
+          inputType: updates.inputType,
+          translations: updates.translations ? JSON.stringify(updates.translations) : null,
+          isActive: updates.isActive,
+          isOnline: updates.isOnline,
+          updatedAt: new Date(),
+        })
+        .where(eq(customFields.id, id))
+        .returning();
+
+      return updatedField;
+    } catch (error) {
+      console.error("Error updating custom field:", error);
+      throw error;
+    }
+  }
+
+  async deleteCustomField(id: number): Promise<boolean> {
+    try {
+      await this.db
+        .delete(customFields)
+        .where(eq(customFields.id, id));
+
+      return true;
+    } catch (error) {
+      console.error("Error deleting custom field:", error);
       return false;
     }
   }

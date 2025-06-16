@@ -10747,6 +10747,107 @@ NEXT STEPS:
     }
   );
 
+  // Custom Fields API routes
+  app.get(
+    "/api/tenants/:tenantId/restaurants/:restaurantId/custom-fields",
+    validateTenant,
+    async (req, res) => {
+      try {
+        const restaurantId = parseInt(req.params.restaurantId);
+        const tenantId = parseInt(req.params.tenantId);
+
+        const restaurant = await storage.getRestaurantById(restaurantId);
+        if (!restaurant || restaurant.tenantId !== tenantId) {
+          return res.status(404).json({ message: "Restaurant not found" });
+        }
+
+        const fields = await storage.getCustomFieldsByRestaurant(restaurantId);
+        res.json(fields);
+      } catch (error) {
+        console.error("Error fetching custom fields:", error);
+        res.status(500).json({ message: "Internal server error" });
+      }
+    }
+  );
+
+  app.post(
+    "/api/tenants/:tenantId/restaurants/:restaurantId/custom-fields",
+    validateTenant,
+    async (req, res) => {
+      try {
+        const restaurantId = parseInt(req.params.restaurantId);
+        const tenantId = parseInt(req.params.tenantId);
+
+        const restaurant = await storage.getRestaurantById(restaurantId);
+        if (!restaurant || restaurant.tenantId !== tenantId) {
+          return res.status(404).json({ message: "Restaurant not found" });
+        }
+
+        const fieldData = {
+          ...req.body,
+          restaurantId,
+          tenantId,
+        };
+
+        const newField = await storage.createCustomField(fieldData);
+        res.json(newField);
+      } catch (error) {
+        console.error("Error creating custom field:", error);
+        res.status(500).json({ message: "Failed to create custom field" });
+      }
+    }
+  );
+
+  app.put(
+    "/api/tenants/:tenantId/restaurants/:restaurantId/custom-fields/:fieldId",
+    validateTenant,
+    async (req, res) => {
+      try {
+        const fieldId = parseInt(req.params.fieldId);
+        const restaurantId = parseInt(req.params.restaurantId);
+        const tenantId = parseInt(req.params.tenantId);
+
+        const restaurant = await storage.getRestaurantById(restaurantId);
+        if (!restaurant || restaurant.tenantId !== tenantId) {
+          return res.status(404).json({ message: "Restaurant not found" });
+        }
+
+        const updatedField = await storage.updateCustomField(fieldId, req.body);
+        res.json(updatedField);
+      } catch (error) {
+        console.error("Error updating custom field:", error);
+        res.status(500).json({ message: "Failed to update custom field" });
+      }
+    }
+  );
+
+  app.delete(
+    "/api/tenants/:tenantId/restaurants/:restaurantId/custom-fields/:fieldId",
+    validateTenant,
+    async (req, res) => {
+      try {
+        const fieldId = parseInt(req.params.fieldId);
+        const restaurantId = parseInt(req.params.restaurantId);
+        const tenantId = parseInt(req.params.tenantId);
+
+        const restaurant = await storage.getRestaurantById(restaurantId);
+        if (!restaurant || restaurant.tenantId !== tenantId) {
+          return res.status(404).json({ message: "Restaurant not found" });
+        }
+
+        const success = await storage.deleteCustomField(fieldId);
+        if (!success) {
+          return res.status(404).json({ message: "Custom field not found" });
+        }
+
+        res.json({ message: "Custom field deleted successfully" });
+      } catch (error) {
+        console.error("Error deleting custom field:", error);
+        res.status(500).json({ message: "Failed to delete custom field" });
+      }
+    }
+  );
+
   const httpServer = createServer(app);
 
   // Setup WebSocket server for real-time notifications
