@@ -138,4 +138,5 @@ Preferred communication style: Simple, everyday language.
 ```
 Changelog:
 - June 16, 2025. Initial setup
+- June 16, 2025. Fixed table data persistence issue - resolved field mapping between database (snake_case) and frontend (camelCase) by updating Drizzle ORM queries to use explicit field selection. Tables now save and display data correctly.
 ```

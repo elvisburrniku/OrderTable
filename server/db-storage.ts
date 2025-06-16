@@ -384,21 +384,20 @@ export class DatabaseStorage implements IStorage {
 
   async getTablesByRestaurant(restaurantId: number): Promise<any[]> {
     if (!this.db) return [];
-    const result = await this.db.select().from(tables).where(eq(tables.restaurantId, restaurantId));
+    const result = await this.db.select({
+      id: tables.id,
+      tableNumber: tables.tableNumber,
+      capacity: tables.capacity,
+      isActive: tables.isActive,
+      restaurantId: tables.restaurantId,
+      tenantId: tables.tenantId,
+      roomId: tables.roomId,
+      qrCode: tables.qrCode,
+      createdAt: tables.createdAt,
+      updatedAt: tables.updatedAt
+    }).from(tables).where(eq(tables.restaurantId, restaurantId));
     
-    // Transform snake_case to camelCase for frontend compatibility
-    return result.map(table => ({
-      id: table.id,
-      tableNumber: table.tableNumber,
-      capacity: table.capacity,
-      isActive: table.isActive,
-      restaurantId: table.restaurantId,
-      tenantId: table.tenantId,
-      roomId: table.roomId,
-      qrCode: table.qrCode,
-      createdAt: table.createdAt,
-      updatedAt: table.updatedAt
-    }));
+    return result;
   }
 
   async createTable(table: any): Promise<any> {
@@ -409,22 +408,20 @@ export class DatabaseStorage implements IStorage {
 
   async updateTable(id: number, updates: any): Promise<any> {
     if (!this.db) throw new Error("Database connection not available");
-    const result = await this.db.update(tables).set(updates).where(eq(tables.id, id)).returning();
-    const table = result[0];
+    const result = await this.db.update(tables).set(updates).where(eq(tables.id, id)).returning({
+      id: tables.id,
+      tableNumber: tables.tableNumber,
+      capacity: tables.capacity,
+      isActive: tables.isActive,
+      restaurantId: tables.restaurantId,
+      tenantId: tables.tenantId,
+      roomId: tables.roomId,
+      qrCode: tables.qrCode,
+      createdAt: tables.createdAt,
+      updatedAt: tables.updatedAt
+    });
     
-    // Transform snake_case to camelCase for frontend compatibility
-    return {
-      id: table.id,
-      tableNumber: table.tableNumber,
-      capacity: table.capacity,
-      isActive: table.isActive,
-      restaurantId: table.restaurantId,
-      tenantId: table.tenantId,
-      roomId: table.roomId,
-      qrCode: table.qrCode,
-      createdAt: table.createdAt,
-      updatedAt: table.updatedAt
-    };
+    return result[0];
   }
 
   async deleteTable(id: number): Promise<boolean> {
@@ -595,24 +592,20 @@ export class DatabaseStorage implements IStorage {
 
   async getTableById(id: number): Promise<any> {
     if (!this.db) return null;
-    const result = await this.db.select().from(tables).where(eq(tables.id, id));
-    const table = result[0];
+    const result = await this.db.select({
+      id: tables.id,
+      tableNumber: tables.tableNumber,
+      capacity: tables.capacity,
+      isActive: tables.isActive,
+      restaurantId: tables.restaurantId,
+      tenantId: tables.tenantId,
+      roomId: tables.roomId,
+      qrCode: tables.qrCode,
+      createdAt: tables.createdAt,
+      updatedAt: tables.updatedAt
+    }).from(tables).where(eq(tables.id, id));
     
-    if (!table) return null;
-    
-    // Transform snake_case to camelCase for frontend compatibility
-    return {
-      id: table.id,
-      tableNumber: table.tableNumber,
-      capacity: table.capacity,
-      isActive: table.isActive,
-      restaurantId: table.restaurantId,
-      tenantId: table.tenantId,
-      roomId: table.roomId,
-      qrCode: table.qrCode,
-      createdAt: table.createdAt,
-      updatedAt: table.updatedAt
-    };
+    return result[0] || null;
   }
 
   async getBookingById(id: number): Promise<any> {
