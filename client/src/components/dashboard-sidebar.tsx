@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Calendar, Users, Clock, Zap, BarChart3, FileText, MessageSquare, CreditCard, Settings, Cog, ChevronDown, ChevronRight, MapPin, Table, Grid3X3, Layout, Armchair, Filter, Mail, HelpCircle, CalendarDays, Package, Layers, Scissors, AlertTriangle, Thermometer, TestTube, ChefHat } from "lucide-react";
+import { Calendar, Users, Clock, Zap, BarChart3, FileText, MessageSquare, CreditCard, Settings, Cog, ChevronDown, ChevronRight, MapPin, Table, Grid3X3, Layout, Armchair, Filter, Mail, HelpCircle, CalendarDays, Package, Layers, Scissors, AlertTriangle, Thermometer, TestTube, ChefHat, Printer } from "lucide-react";
 import { useLocation, Link } from "wouter";
 
 interface SidebarProps {
@@ -81,6 +81,12 @@ export default function DashboardSidebar({ tenantId, restaurantId }: SidebarProp
       icon: TestTube,
       href: `/${tenantId}/kitchen-dashboard`,
       color: "text-orange-600"
+    },
+    {
+      name: "Print Orders",
+      icon: Printer,
+      href: `/${tenantId}/print-orders`,
+      color: "text-indigo-600"
     },
     {
       name: "Waiting List",

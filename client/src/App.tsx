@@ -71,6 +71,7 @@ import EmailTest from "./pages/email-test";
 import TestTools from "./pages/test-tools";
 import MenuManagementPage from "./pages/menu-management";
 import KitchenDashboardPage from "./pages/kitchen-dashboard";
+import PrintOrders from "./pages/print-orders";
 import { SetupGuard } from "./components/setup-guard";
 import { OverduePaymentGuard } from "./components/overdue-payment-guard";
 import ErrorBoundary from "./components/error-boundary";
@@ -144,6 +145,7 @@ function App() {
                 <Route path="/:tenantId/help" component={Help} />
                 <Route path="/:tenantId/menu-management" component={MenuManagementPage} />
                 <Route path="/:tenantId/kitchen-dashboard" component={KitchenDashboardPage} />
+                <Route path="/:tenantId/print-orders" component={PrintOrders} />
                 <Route path="/:tenantId/email-test" component={EmailTest} />
                 <Route path="/:tenantId/test-tools" component={TestTools} />
               </OverduePaymentGuard>
