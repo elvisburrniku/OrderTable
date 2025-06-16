@@ -344,16 +344,84 @@ export function KitchenDashboard({ restaurantId, tenantId }: KitchenDashboardPro
         </TabsList>
 
         {/* Active Orders Tab */}
-        <TabsContent value="orders" className="space-y-4">
-          <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-4">
-            {ordersLoading ? (
-              <div className="col-span-full text-center py-8">Loading orders...</div>
-            ) : activeOrders.length === 0 ? (
-              <div className="col-span-full text-center py-8 text-gray-500">
-                No active orders at the moment
+        <TabsContent value="orders" className="space-y-6">
+          {/* Ready Orders Section */}
+          {readyOrders.length > 0 && (
+            <div>
+              <div className="flex items-center gap-2 mb-4">
+                <CheckCircle className="h-5 w-5 text-green-600" />
+                <h3 className="text-lg font-semibold text-green-600">Ready to Serve ({readyOrders.length})</h3>
               </div>
-            ) : (
-              activeOrders.map((order: KitchenOrder) => (
+              <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-4">
+                {readyOrders.map((order: KitchenOrder) => (
+                  <Card key={order.id} className="relative border-green-200 bg-green-50">
+                    <CardHeader className="pb-3">
+                      <div className="flex justify-between items-start">
+                        <div>
+                          <CardTitle className="text-lg">#{order.orderNumber}</CardTitle>
+                          <p className="text-sm text-gray-600">Table {order.tableNumber} • {order.customerName}</p>
+                        </div>
+                        <div className="flex flex-col items-end gap-1">
+                          <Badge className={getPriorityColor(order.priority)}>
+                            {order.priority.toUpperCase()}
+                          </Badge>
+                          <div className="w-3 h-3 rounded-full bg-green-500" />
+                        </div>
+                      </div>
+                    </CardHeader>
+                    <CardContent className="space-y-3">
+                      <div className="space-y-1">
+                        {order.items.map((item, idx) => (
+                          <div key={idx} className="flex justify-between text-sm">
+                            <span>{item.quantity}x {item.name}</span>
+                            <span className="text-gray-500">{formatTime(item.preparationTime)}</span>
+                          </div>
+                        ))}
+                      </div>
+                      
+                      <Separator />
+                      
+                      <div className="flex justify-between items-center text-sm">
+                        <span>Completed in:</span>
+                        <span className="font-medium text-green-600">{formatTime(order.actualTime || order.estimatedTime)}</span>
+                      </div>
+                      
+                      <div className="flex gap-2 pt-2">
+                        <Button 
+                          size="sm" 
+                          className="flex-1 bg-green-600 hover:bg-green-700"
+                          onClick={() => updateOrderStatusMutation.mutate({ 
+                            orderId: order.id, 
+                            status: 'served' 
+                          })}
+                          disabled={updateOrderStatusMutation.isPending}
+                        >
+                          <CheckCircle className="h-3 w-3 mr-1" />
+                          Served
+                        </Button>
+                      </div>
+                    </CardContent>
+                  </Card>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* Active Orders Section */}
+          <div>
+            <div className="flex items-center gap-2 mb-4">
+              <Activity className="h-5 w-5 text-orange-600" />
+              <h3 className="text-lg font-semibold">In Progress ({activeOrders.length})</h3>
+            </div>
+            <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-4">
+              {ordersLoading ? (
+                <div className="col-span-full text-center py-8">Loading orders...</div>
+              ) : activeOrders.length === 0 ? (
+                <div className="col-span-full text-center py-8 text-gray-500">
+                  No active orders at the moment
+                </div>
+              ) : (
+                activeOrders.map((order: KitchenOrder) => (
                 <Card key={order.id} className="relative">
                   <CardHeader className="pb-3">
                     <div className="flex justify-between items-start">
@@ -440,6 +508,7 @@ export function KitchenDashboard({ restaurantId, tenantId }: KitchenDashboardPro
                 </Card>
               ))
             )}
+            </div>
           </div>
         </TabsContent>
 
