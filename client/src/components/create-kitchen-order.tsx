@@ -104,6 +104,15 @@ export function CreateKitchenOrder({ restaurantId, tenantId, onOrderCreated }: C
 
   const customers = Array.isArray(customersData) ? customersData : [];
 
+  // Fetch menu categories for proper category names
+  const { data: categoriesData = [] } = useQuery({
+    queryKey: [`/api/tenants/${tenantId}/restaurants/${restaurantId}/menu-categories`],
+    queryFn: () => apiRequest('GET', `/api/tenants/${tenantId}/restaurants/${restaurantId}/menu-categories`),
+    enabled: isOpen,
+  });
+
+  const categories = Array.isArray(categoriesData) ? categoriesData : [];
+
   // Create order mutation
   const createOrderMutation = useMutation({
     mutationFn: (orderData: any) => 
@@ -138,8 +147,9 @@ export function CreateKitchenOrder({ restaurantId, tenantId, onOrderCreated }: C
     setSpecialInstructions("");
   };
 
-  const addItemToOrder = (menuItem: MenuItem) => {
+  const addItemToOrder = (menuItem: any) => {
     const existingItem = orderItems.find(item => item.id === menuItem.id);
+    const category = categories.find(c => c.id === menuItem.categoryId)?.name || 'Uncategorized';
     
     if (existingItem) {
       setOrderItems(items => 
@@ -154,9 +164,9 @@ export function CreateKitchenOrder({ restaurantId, tenantId, onOrderCreated }: C
         id: menuItem.id,
         name: menuItem.name,
         quantity: 1,
-        price: menuItem.price,
+        price: menuItem.price / 100, // Convert from cents to dollars
         preparationTime: menuItem.preparationTime,
-        category: menuItem.category,
+        category: category,
       }]);
     }
   };
@@ -270,14 +280,14 @@ export function CreateKitchenOrder({ restaurantId, tenantId, onOrderCreated }: C
     }
   };
 
-  const groupedMenuItems = menuItems.reduce((acc: Record<string, MenuItem[]>, item: MenuItem) => {
-    const category = item.category || 'Uncategorized';
+  const groupedMenuItems = menuItems.reduce((acc: Record<string, any[]>, item: any) => {
+    const category = categories.find(c => c.id === item.categoryId)?.name || 'Uncategorized';
     if (!acc[category]) {
       acc[category] = [];
     }
     acc[category].push(item);
     return acc;
-  }, {} as Record<string, MenuItem[]>);
+  }, {} as Record<string, any[]>);
 
   return (
     <Dialog open={isOpen} onOpenChange={handleDialogOpen}>
@@ -497,35 +507,45 @@ export function CreateKitchenOrder({ restaurantId, tenantId, onOrderCreated }: C
               </CardHeader>
               <CardContent>
                 <div className="space-y-4 max-h-96 overflow-y-auto">
-                  {Object.entries(groupedMenuItems).map(([category, items]) => (
-                    <div key={category}>
-                      <h3 className="font-semibold text-sm text-gray-700 mb-2 uppercase tracking-wide">
-                        {category}
-                      </h3>
-                      <div className="space-y-2">
-                        {items.map((item) => (
-                          <div
-                            key={item.id}
-                            className="flex items-center justify-between p-3 border rounded-lg hover:bg-gray-50 cursor-pointer"
-                            onClick={() => addItemToOrder(item)}
-                          >
-                            <div className="flex-1">
-                              <div className="font-medium">{item.name}</div>
-                              <div className="text-sm text-gray-600">
-                                {item.description}
-                              </div>
-                              <div className="text-xs text-gray-500 mt-1">
-                                {item.preparationTime} min • ${item.price.toFixed(2)}
-                              </div>
-                            </div>
-                            <Button size="sm" variant="outline">
-                              <Plus className="h-3 w-3" />
-                            </Button>
-                          </div>
-                        ))}
-                      </div>
+                  {menuItems.length === 0 ? (
+                    <div className="text-center py-8 text-gray-500">
+                      Loading menu items...
                     </div>
-                  ))}
+                  ) : Object.entries(groupedMenuItems).length === 0 ? (
+                    <div className="text-center py-8 text-gray-500">
+                      No menu items available
+                    </div>
+                  ) : (
+                    Object.entries(groupedMenuItems).map(([category, items]) => (
+                      <div key={category}>
+                        <h3 className="font-semibold text-sm text-gray-700 mb-2 uppercase tracking-wide">
+                          {category}
+                        </h3>
+                        <div className="space-y-2">
+                          {items.map((item) => (
+                            <div
+                              key={item.id}
+                              className="flex items-center justify-between p-3 border rounded-lg hover:bg-gray-50 cursor-pointer"
+                              onClick={() => addItemToOrder(item)}
+                            >
+                              <div className="flex-1">
+                                <div className="font-medium">{item.name}</div>
+                                <div className="text-sm text-gray-600">
+                                  {item.description}
+                                </div>
+                                <div className="text-xs text-gray-500 mt-1">
+                                  {item.preparationTime || 15} min • ${((item.price || 0) / 100).toFixed(2)}
+                                </div>
+                              </div>
+                              <Button size="sm" variant="outline">
+                                <Plus className="h-3 w-3" />
+                              </Button>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    ))
+                  )}
                 </div>
               </CardContent>
             </Card>
