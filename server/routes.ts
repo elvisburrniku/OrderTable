@@ -3524,16 +3524,22 @@ export async function registerRoutes(app: Express): Promise<Server> {
         const tenantId = parseInt(req.params.tenantId);
         const updates = req.body;
 
+        console.log(`Updating table ${id} for tenant ${tenantId}:`, updates);
+
         // Verify table belongs to tenant before updating
         const existingTable = await storage.getTableById(id);
         if (!existingTable || existingTable.tenantId !== tenantId) {
+          console.log(`Table ${id} not found or doesn't belong to tenant ${tenantId}`);
           return res.status(404).json({ message: "Table not found" });
         }
 
+        console.log(`Existing table:`, existingTable);
         const table = await storage.updateTable(id, updates);
+        console.log(`Updated table:`, table);
         res.json(table);
       } catch (error) {
-        res.status(400).json({ message: "Invalid request" });
+        console.error("Error updating table:", error);
+        res.status(500).json({ message: "Failed to update table", error: error.message });
       }
     },
   );
@@ -4262,28 +4268,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     },
   );
 
-  // Table management routes
-  app.put(
-    "/api/tenants/:tenantId/tables/:id",
-    validateTenant,
-    async (req, res) => {
-      try {
-        const id = parseInt(req.params.id);
-        const tenantId = parseInt(req.params.tenantId);
-        const updates = req.body;
-
-        const existingTable = await storage.getTableById(id);
-        if (!existingTable || existingTable.tenantId !== tenantId) {
-          return res.status(404).json({ message: "Table not found" });
-        }
-
-        const table = await storage.updateTable(id, updates);
-        res.json(table);
-      } catch (error) {
-        res.status(400).json({ message: "Invalid request" });
-      }
-    },
-  );
+  // Duplicate endpoint removed - table updates handled by existing PUT endpoint
 
   app.delete(
     "/api/tenants/:tenantId/tables/:id",
