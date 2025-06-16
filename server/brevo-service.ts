@@ -830,4 +830,152 @@ export class BrevoEmailService {
       throw error;
     }
   }
+
+  async sendEmail(emailData: {
+    to: Array<{email: string, name?: string}>;
+    subject: string;
+    htmlContent: string;
+    textContent?: string;
+    attachment?: Array<{content: string, name: string}>;
+  }) {
+    if (!this.checkEnabled()) {
+      return;
+    }
+
+    const sendSmtpEmail = new SendSmtpEmail();
+    const senderEmail = process.env.BREVO_SENDER_EMAIL || "noreply@restaurant.com";
+    
+    sendSmtpEmail.sender = { email: senderEmail, name: "Restaurant System" };
+    sendSmtpEmail.to = emailData.to;
+    sendSmtpEmail.subject = emailData.subject;
+    sendSmtpEmail.htmlContent = emailData.htmlContent;
+    
+    if (emailData.textContent) {
+      sendSmtpEmail.textContent = emailData.textContent;
+    }
+    
+    if (emailData.attachment) {
+      sendSmtpEmail.attachment = emailData.attachment;
+    }
+
+    try {
+      const result = await this.apiInstance!.sendTransacEmail(sendSmtpEmail);
+      console.log(`Email sent successfully to ${emailData.to.map(t => t.email).join(', ')}:`, {
+        messageId: result.body?.messageId,
+        subject: emailData.subject,
+        brevoResponse: result.response?.statusCode
+      });
+      return result;
+    } catch (error) {
+      console.error(`Error sending email to ${emailData.to.map(t => t.email).join(', ')}:`, error);
+      throw error;
+    }
+  }
+
+  async sendPrintOrderConfirmation(customerEmail: string, orderDetails: any) {
+    if (!this.checkEnabled()) {
+      return;
+    }
+
+    const sendSmtpEmail = new SendSmtpEmail();
+    const senderEmail = process.env.BREVO_SENDER_EMAIL || "noreply@restaurant.com";
+    
+    sendSmtpEmail.sender = { email: senderEmail, name: "Restaurant Print Services" };
+    sendSmtpEmail.to = [{ email: customerEmail, name: orderDetails.customerName }];
+    sendSmtpEmail.subject = `Print Order Confirmation - ${orderDetails.orderNumber}`;
+    
+    const estimatedCompletion = new Date(orderDetails.estimatedCompletion).toLocaleDateString();
+    const totalAmount = (orderDetails.totalAmount / 100).toFixed(2);
+
+    sendSmtpEmail.htmlContent = `
+      <html>
+        <body style="font-family: Arial, sans-serif; line-height: 1.6; color: #333;">
+          <div style="max-width: 600px; margin: 0 auto; padding: 20px;">
+            <div style="text-align: center; margin-bottom: 30px;">
+              <h1 style="color: #2563eb; margin-bottom: 10px;">Print Order Confirmed</h1>
+              <p style="font-size: 18px; color: #666;">Order #${orderDetails.orderNumber}</p>
+            </div>
+            
+            <div style="background-color: #f8f9fa; padding: 20px; border-radius: 8px; margin-bottom: 20px;">
+              <h2 style="color: #1f2937; margin-top: 0;">Order Details</h2>
+              <table style="width: 100%; border-collapse: collapse;">
+                <tr style="border-bottom: 1px solid #e5e7eb;">
+                  <td style="padding: 8px 0; font-weight: bold;">Print Type:</td>
+                  <td style="padding: 8px 0; text-transform: capitalize;">${orderDetails.printType}</td>
+                </tr>
+                <tr style="border-bottom: 1px solid #e5e7eb;">
+                  <td style="padding: 8px 0; font-weight: bold;">Size & Quality:</td>
+                  <td style="padding: 8px 0;">${orderDetails.printSize} - ${orderDetails.printQuality}</td>
+                </tr>
+                <tr style="border-bottom: 1px solid #e5e7eb;">
+                  <td style="padding: 8px 0; font-weight: bold;">Quantity:</td>
+                  <td style="padding: 8px 0;">${orderDetails.quantity} copies</td>
+                </tr>
+                <tr style="border-bottom: 1px solid #e5e7eb;">
+                  <td style="padding: 8px 0; font-weight: bold;">Delivery Method:</td>
+                  <td style="padding: 8px 0; text-transform: capitalize;">${orderDetails.deliveryMethod}</td>
+                </tr>
+                ${orderDetails.rushOrder ? '<tr style="border-bottom: 1px solid #e5e7eb;"><td style="padding: 8px 0; font-weight: bold;">Rush Order:</td><td style="padding: 8px 0; color: #dc2626;">Yes (+50% fee)</td></tr>' : ''}
+                <tr>
+                  <td style="padding: 8px 0; font-weight: bold; font-size: 18px;">Total Paid:</td>
+                  <td style="padding: 8px 0; font-size: 18px; font-weight: bold; color: #059669;">$${totalAmount}</td>
+                </tr>
+              </table>
+            </div>
+            
+            <div style="background-color: #ecfdf5; padding: 20px; border-radius: 8px; border-left: 4px solid #10b981; margin-bottom: 20px;">
+              <h3 style="color: #065f46; margin-top: 0;">Production Timeline</h3>
+              <p style="margin: 0; color: #047857;">
+                <strong>Estimated Completion:</strong> ${estimatedCompletion}<br>
+                ${orderDetails.rushOrder ? 'Your rush order will be prioritized and completed within 24 hours.' : 'Standard processing time is 2-3 business days.'}
+              </p>
+            </div>
+            
+            ${orderDetails.deliveryAddress ? `
+            <div style="background-color: #f3f4f6; padding: 20px; border-radius: 8px; margin-bottom: 20px;">
+              <h3 style="color: #374151; margin-top: 0;">Delivery Information</h3>
+              <p style="margin: 0; color: #6b7280;">${orderDetails.deliveryAddress}</p>
+            </div>
+            ` : ''}
+            
+            ${orderDetails.specialInstructions ? `
+            <div style="background-color: #fef3c7; padding: 20px; border-radius: 8px; margin-bottom: 20px;">
+              <h3 style="color: #92400e; margin-top: 0;">Special Instructions</h3>
+              <p style="margin: 0; color: #b45309;">${orderDetails.specialInstructions}</p>
+            </div>
+            ` : ''}
+            
+            <div style="text-align: center; padding: 20px; background-color: #f9fafb; border-radius: 8px;">
+              <h3 style="color: #374151; margin-top: 0;">What's Next?</h3>
+              <p style="margin-bottom: 15px; color: #6b7280;">
+                Our print specialists will review your order and begin production. You'll receive updates as your order progresses.
+              </p>
+              <p style="margin: 0; color: #6b7280;">
+                Questions? Contact us at <a href="mailto:support@restaurant.com" style="color: #2563eb;">support@restaurant.com</a>
+              </p>
+            </div>
+            
+            <div style="text-align: center; margin-top: 30px; padding-top: 20px; border-top: 1px solid #e5e7eb;">
+              <p style="margin: 0; font-size: 12px; color: #9ca3af;">
+                Thank you for choosing our professional print services!
+              </p>
+            </div>
+          </div>
+        </body>
+      </html>
+    `;
+
+    try {
+      const result = await this.apiInstance!.sendTransacEmail(sendSmtpEmail);
+      console.log(`Print order confirmation sent successfully to ${customerEmail}:`, {
+        messageId: result.body?.messageId,
+        orderNumber: orderDetails.orderNumber,
+        brevoResponse: result.response?.statusCode
+      });
+      return result;
+    } catch (error) {
+      console.error(`Error sending print order confirmation to ${customerEmail}:`, error);
+      throw error;
+    }
+  }
 }
