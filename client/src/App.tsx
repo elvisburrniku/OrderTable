@@ -141,7 +141,7 @@ function App() {
                 <Route path="/:tenantId/sms-settings" component={SmsSettings} />
                 <Route path="/:tenantId/restaurants/:restaurantId/settings" component={RestaurantSettings} />
                 <Route path="/booking-manage/:id" component={BookingManage} />
-                <Route path="/feedback/:tenantId/:restaurantId" component={TableFeedback} />
+
                 <Route path="/:tenantId/booking/:id" component={lazy(() => import("./pages/booking-detail"))} />
                 <Route path="/:tenantId/profile" component={Profile} />
                 <Route path="/:tenantId/settings" component={Settings} />
