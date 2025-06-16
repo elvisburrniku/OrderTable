@@ -14,6 +14,9 @@ export function RouteGuard({ children }: RouteGuardProps) {
     if (!isLoading) {
       // Skip authentication checks for public routes like guest booking
       const publicRoutes = [
+        /^\/$/,  // Home page should be public
+        /^\/login$/,
+        /^\/register$/,
         /^\/guest-booking\/\d+\/\d+$/,
         /^\/feedback\/\d+\/\d+$/,
         /^\/contact$/,
