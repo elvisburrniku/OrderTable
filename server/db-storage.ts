@@ -1349,6 +1349,35 @@ export class DatabaseStorage implements IStorage {
     await this.db.delete(feedbackQuestions).where(eq(feedbackQuestions.id, id));
   }
 
+  async getFeedbackResponses(restaurantId: number, tenantId: number): Promise<any[]> {
+    if (!this.db) throw new Error("Database connection not available");
+    
+    return await this.db
+      .select({
+        id: feedback.id,
+        customerName: feedback.customerName,
+        customerEmail: feedback.customerEmail,
+        customerPhone: feedback.customerPhone,
+        rating: feedback.rating,
+        npsScore: feedback.nps,
+        comments: feedback.comments,
+        tableNumber: feedback.tableNumber,
+        bookingDate: feedback.bookingDate,
+        visitDate: feedback.visitDate,
+        createdAt: feedback.createdAt,
+        visited: feedback.visited,
+        restaurantId: feedback.restaurantId,
+        tenantId: feedback.tenantId,
+        bookingId: feedback.bookingId,
+      })
+      .from(feedback)
+      .where(and(
+        eq(feedback.restaurantId, restaurantId),
+        eq(feedback.tenantId, tenantId)
+      ))
+      .orderBy(desc(feedback.createdAt));
+  }
+
   async deleteNotification(id: number): Promise<boolean> {
     return false;
   }
