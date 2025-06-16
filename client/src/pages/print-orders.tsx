@@ -73,7 +73,7 @@ export default function PrintOrders() {
 
 
   const { data: printOrders = [], isLoading } = useQuery({
-    queryKey: ["/api/tenants", restaurant?.tenantId, "restaurants", restaurant?.id, "print-orders"],
+    queryKey: [`/api/tenants/${restaurant?.tenantId}/restaurants/${restaurant?.id}/print-orders`],
     enabled: !!restaurant?.tenantId && !!restaurant?.id,
   });
 
@@ -88,7 +88,7 @@ export default function PrintOrders() {
       return response.json();
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["/api/tenants", restaurant?.tenantId, "restaurants", restaurant?.id, "print-orders"] });
+      queryClient.invalidateQueries({ queryKey: [`/api/tenants/${restaurant?.tenantId}/restaurants/${restaurant?.id}/print-orders`] });
       toast({ title: "Order updated successfully" });
     },
     onError: () => {
@@ -133,7 +133,7 @@ export default function PrintOrders() {
     setShowPayment(false);
     setPaymentData(null);
     setActiveTab("orders");
-    queryClient.invalidateQueries({ queryKey: ["/api/tenants", restaurant?.tenantId, "restaurants", restaurant?.id, "print-orders"] });
+    queryClient.invalidateQueries({ queryKey: [`/api/tenants/${restaurant?.tenantId}/restaurants/${restaurant?.id}/print-orders`] });
     toast({
       title: "Payment Successful",
       description: `Print order ${order.orderNumber} has been confirmed!`,
