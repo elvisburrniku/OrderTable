@@ -1306,7 +1306,7 @@ export class DatabaseStorage implements IStorage {
         eq(feedbackQuestions.restaurantId, restaurantId),
         eq(feedbackQuestions.tenantId, tenantId)
       ))
-      .orderBy(feedbackQuestions.displayOrder, feedbackQuestions.createdAt);
+      .orderBy(feedbackQuestions.sortOrder, feedbackQuestions.createdAt);
   }
 
   async createFeedbackQuestion(restaurantId: number, tenantId: number, questionData: any): Promise<any> {
