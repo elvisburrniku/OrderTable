@@ -162,23 +162,7 @@ export const customers = pgTable("customers", {
   createdAt: timestamp("created_at").defaultNow(),
 });
 
-export const smsMessages = pgTable("sms_messages", {
-  id: serial("id").primaryKey(),
-  restaurantId: integer("restaurant_id")
-    .references(() => restaurants.id)
-    .notNull(),
-  tenantId: integer("tenant_id")
-    .notNull()
-    .references(() => tenants.id),
-  name: text("name").notNull(),
-  messageType: varchar("message_type", { length: 20 }).default("information"),
-  content: text("content").notNull(),
-  receivers: text("receivers").notNull(), // JSON array of phone numbers
-  bookingDateFrom: text("booking_date_from"),
-  bookingDateTo: text("booking_date_to"),
-  language: varchar("language", { length: 10 }).default("english"),
-  createdAt: timestamp("created_at").defaultNow(),
-});
+
 
 export const waitingList = pgTable("waiting_list", {
   id: serial("id").primaryKey(),
@@ -414,11 +398,6 @@ export const insertWalkInCustomerSchema = createInsertSchema(customers).omit({
   email: z.string().optional(),
   phone: z.string().optional(),
   isWalkIn: z.boolean().default(true),
-});
-
-export const insertSmsMessageSchema = createInsertSchema(smsMessages).omit({
-  id: true,
-  createdAt: true,
 });
 
 export const insertWaitingListSchema = createInsertSchema(waitingList).omit({
@@ -832,6 +811,46 @@ export const bookingAgents = pgTable("booking_agents", {
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
 });
 
+export const smsSettings = pgTable("sms_settings", {
+  id: serial("id").primaryKey(),
+  restaurantId: integer("restaurant_id").notNull().references(() => restaurants.id, { onDelete: "cascade" }),
+  tenantId: integer("tenant_id").notNull().references(() => tenants.id, { onDelete: "cascade" }),
+  confirmationEnabled: boolean("confirmation_enabled").default(false),
+  reminderEnabled: boolean("reminder_enabled").default(false),
+  reminderHours: integer("reminder_hours").default(2),
+  countryCode: text("country_code").default("+1"),
+  phoneNumber: text("phone_number"),
+  satisfactionSurveyEnabled: boolean("satisfaction_survey_enabled").default(false),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+});
+
+export const smsBalance = pgTable("sms_balance", {
+  id: serial("id").primaryKey(),
+  tenantId: integer("tenant_id").notNull().references(() => tenants.id, { onDelete: "cascade" }),
+  balance: decimal("balance", { precision: 10, scale: 2 }).default("0.00"),
+  currency: text("currency").default("EUR"),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+});
+
+export const smsMessages = pgTable("sms_messages", {
+  id: serial("id").primaryKey(),
+  restaurantId: integer("restaurant_id").notNull().references(() => restaurants.id, { onDelete: "cascade" }),
+  tenantId: integer("tenant_id").notNull().references(() => tenants.id, { onDelete: "cascade" }),
+  bookingId: integer("booking_id").references(() => bookings.id, { onDelete: "cascade" }),
+  phoneNumber: text("phone_number").notNull(),
+  message: text("message").notNull(),
+  type: text("type").notNull(), // 'confirmation', 'reminder', 'survey'
+  status: text("status").default("pending"), // 'pending', 'sent', 'failed', 'delivered'
+  cost: decimal("cost", { precision: 8, scale: 4 }),
+  providerId: text("provider_id"),
+  errorMessage: text("error_message"),
+  sentAt: timestamp("sent_at"),
+  deliveredAt: timestamp("delivered_at"),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
 export type MenuPrintOrder = InferSelectModel<typeof menuPrintOrders>;
 export type InsertMenuPrintOrder = InferInsertModel<typeof menuPrintOrders>;
 
@@ -882,6 +901,35 @@ export const insertBookingAgentSchema = createInsertSchema(bookingAgents).omit({
   updatedAt: true,
 });
 export const selectBookingAgentSchema = createSelectSchema(bookingAgents);
+
+export type SmsSettings = InferSelectModel<typeof smsSettings>;
+export type InsertSmsSettings = InferInsertModel<typeof smsSettings>;
+
+export const insertSmsSettingsSchema = createInsertSchema(smsSettings).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+export const selectSmsSettingsSchema = createSelectSchema(smsSettings);
+
+export type SmsBalance = InferSelectModel<typeof smsBalance>;
+export type InsertSmsBalance = InferInsertModel<typeof smsBalance>;
+
+export const insertSmsBalanceSchema = createInsertSchema(smsBalance).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+export const selectSmsBalanceSchema = createSelectSchema(smsBalance);
+
+export type SmsMessage = InferSelectModel<typeof smsMessages>;
+export type InsertSmsMessage = InferInsertModel<typeof smsMessages>;
+
+export const insertSmsMessageSchema = createInsertSchema(smsMessages).omit({
+  id: true,
+  createdAt: true,
+});
+export const selectSmsMessageSchema = createSelectSchema(smsMessages);
 
 export type SeasonalMenuTheme = InferSelectModel<typeof seasonalMenuThemes>;
 export type InsertSeasonalMenuTheme = InferInsertModel<typeof seasonalMenuThemes>;
