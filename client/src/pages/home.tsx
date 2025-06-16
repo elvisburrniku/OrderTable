@@ -3,6 +3,7 @@ import Footer from "@/components/footer";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { useTranslations } from "@/lib/i18n";
 import { 
   Calendar, 
   Users, 
@@ -45,60 +46,62 @@ import {
 import { Link } from "wouter";
 
 export default function Home() {
+  const t = useTranslations();
+
   const pricingPlans = [
     {
-      name: "Starter",
+      name: t.pricing.starter,
       price: "$0",
       period: "forever",
-      description: "Perfect for small restaurants getting started",
+      description: t.pricing.starterDesc,
       features: [
-        "Up to 50 bookings per month",
-        "Basic table management",
-        "Email notifications",
-        "Guest booking forms",
-        "Basic analytics",
-        "Community support"
+        t.pricing.features.bookings50,
+        t.pricing.features.tableBasic,
+        t.pricing.features.emailNotifications,
+        t.pricing.features.guestForms,
+        t.pricing.features.analyticsBasic,
+        t.pricing.features.communitySupport
       ],
-      buttonText: "Start Free",
+      buttonText: t.pricing.startFree,
       buttonStyle: "outline",
       popular: false
     },
     {
-      name: "Professional",
+      name: t.pricing.professional,
       price: "$29",
       period: "per month",
-      description: "Everything you need to run a successful restaurant",
+      description: t.pricing.professionalDesc,
       features: [
-        "Unlimited bookings",
-        "Advanced table management",
-        "SMS & email notifications",
-        "QR code feedback system",
-        "Advanced analytics & reports",
-        "Kitchen dashboard",
-        "Multi-location support",
-        "Priority support",
-        "Custom integrations"
+        t.pricing.features.bookingsUnlimited,
+        t.pricing.features.tableAdvanced,
+        t.pricing.features.smsEmail,
+        t.pricing.features.qrFeedback,
+        t.pricing.features.analyticsAdvanced,
+        t.pricing.features.kitchenDashboard,
+        t.pricing.features.multiLocation,
+        t.pricing.features.prioritySupport,
+        t.pricing.features.customIntegrations
       ],
-      buttonText: "Start 14-Day Free Trial",
+      buttonText: t.pricing.startTrial,
       buttonStyle: "default",
       popular: true
     },
     {
-      name: "Enterprise",
+      name: t.pricing.enterprise,
       price: "$99",
       period: "per month",
-      description: "Advanced features for restaurant chains and enterprises",
+      description: t.pricing.enterpriseDesc,
       features: [
-        "Everything in Professional",
-        "White-label solution",
-        "Advanced API access",
-        "Custom integrations",
-        "Dedicated account manager",
-        "24/7 phone support",
-        "Custom training sessions",
-        "SLA guarantee"
+        t.pricing.features.everythingPro,
+        t.pricing.features.whiteLabel,
+        t.pricing.features.advancedApi,
+        t.pricing.features.customIntegrations,
+        t.pricing.features.accountManager,
+        t.pricing.features.phoneSupport,
+        t.pricing.features.customTraining,
+        t.pricing.features.slaGuarantee
       ],
-      buttonText: "Contact Sales",
+      buttonText: t.pricing.contactSales,
       buttonStyle: "outline",
       popular: false
     }
@@ -106,111 +109,69 @@ export default function Home() {
 
   const features = [
     {
-      category: "Booking Management",
+      category: t.features.bookingManagement,
       icon: Calendar,
       color: "from-blue-500 to-blue-600",
-      items: [
-        "Real-time availability checking",
-        "Smart table assignment", 
-        "Booking modifications & cancellations",
-        "Walk-in management",
-        "Conflict detection & resolution",
-        "Custom booking forms"
-      ]
+      items: t.features.bookingFeatures
     },
     {
-      category: "Restaurant Operations",
+      category: t.features.restaurantOperations,
       icon: Utensils,
       color: "from-green-500 to-green-600", 
-      items: [
-        "Multi-restaurant management",
-        "Table & room configuration",
-        "Capacity optimization",
-        "Opening hours management",
-        "Combined table handling",
-        "Real-time status tracking"
-      ]
+      items: t.features.operationsFeatures
     },
     {
-      category: "Customer Experience",
+      category: t.features.customerExperience,
       icon: Users,
       color: "from-purple-500 to-purple-600",
-      items: [
-        "Complete customer profiles",
-        "QR code feedback collection",
-        "Satisfaction surveys",
-        "Automated confirmations",
-        "SMS & email reminders",
-        "Multi-language support"
-      ]
+      items: t.features.customerFeatures
     },
     {
-      category: "Analytics & Insights",
+      category: t.features.analyticsInsights,
       icon: BarChart3,
       color: "from-orange-500 to-orange-600",
-      items: [
-        "Booking trends & statistics",
-        "Table utilization heat maps",
-        "Revenue analytics",
-        "Customer behavior insights",
-        "Performance dashboards",
-        "Detailed reporting"
-      ]
+      items: t.features.analyticsFeatures
     },
     {
-      category: "Kitchen Operations",
+      category: t.features.kitchenOperations,
       icon: ChefHat,
       color: "from-red-500 to-red-600",
-      items: [
-        "Kitchen order tracking",
-        "Menu management system",
-        "Product organization",
-        "Order management",
-        "Performance analytics",
-        "Printable order forms"
-      ]
+      items: t.features.kitchenFeatures
     },
     {
-      category: "Integrations",
+      category: t.features.integrations,
       icon: Link2,
       color: "from-indigo-500 to-indigo-600",
-      items: [
-        "Google Calendar sync",
-        "Stripe payment processing",
-        "Email service integration",
-        "Social media connections",
-        "Webhook configurations",
-        "Third-party app support"
-      ]
+      items: t.features.integrationFeatures
     }
   ];
 
   const deviceShowcase = [
     {
-      device: "Desktop",
+      device: t.devices.desktop,
       icon: Monitor,
       image: "https://images.unsplash.com/photo-1551650975-87deedd944c3?ixlib=rb-4.0.3&auto=format&fit=crop&w=1200&h=800",
-      description: "Complete restaurant management dashboard"
+      description: t.devices.desktopDesc
     },
     {
-      device: "Tablet",
+      device: t.devices.tablet,
       icon: Tablet,
       image: "https://images.unsplash.com/photo-1559526324-4b87b5e36e44?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&h=600",
-      description: "Table-side booking and order management"
+      description: t.devices.tabletDesc
     },
     {
-      device: "Mobile",
+      device: t.devices.mobile,
       icon: Smartphone,
       image: "https://images.unsplash.com/photo-1512941937669-90a1b58e7e9c?ixlib=rb-4.0.3&auto=format&fit=crop&w=600&h=800",
-      description: "On-the-go access for staff and customers"
+      description: t.devices.mobileDesc
     }
   ];
 
   const stats = [
-    { number: "50+", label: "Features Available", icon: Target },
-    { number: "99.9%", label: "Uptime Guarantee", icon: Activity },
-    { number: "∞", label: "Bookings Supported", icon: Infinity },
-    { number: "24/7", label: "Support Available", icon: Clock }
+    { number: "50+", label: t.stats.features, icon: Target },
+    { number: "99.9%", label: t.stats.uptime, icon: Activity },
+    { number: "∞", label: t.stats.bookings, icon: Infinity },
+    { number: "24/7", label: t.stats.support, icon: Clock }
   ];
 
   return (
@@ -227,29 +188,29 @@ export default function Home() {
         <div className="relative max-w-7xl mx-auto">
           <div className="text-center">
             <Badge className="mb-6 bg-gradient-to-r from-blue-600 to-purple-600 text-white hover:from-blue-700 hover:to-purple-700 px-6 py-2 text-sm font-medium">
-              🚀 Complete Restaurant Management Platform
+              {t.hero.badge}
             </Badge>
             <h1 className="text-6xl md:text-8xl font-extrabold mb-6">
               <span className="bg-gradient-to-r from-gray-900 via-blue-800 to-purple-800 bg-clip-text text-transparent">
-                ReadyTable
+                {t.hero.title}
               </span>
               <span className="block text-4xl md:text-5xl bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent mt-2">
-                Restaurant Revolution
+                {t.hero.subtitle}
               </span>
             </h1>
             <p className="text-2xl text-gray-700 mb-8 max-w-4xl mx-auto leading-relaxed font-light">
-              Transform your restaurant with our comprehensive booking and management solution. 
-              <span className="font-medium text-blue-600">30+ advanced features</span> designed for modern restaurants.
+              {t.hero.description}
+              <span className="font-medium text-blue-600"> 30+ advanced features</span> designed for modern restaurants.
             </p>
             <div className="flex flex-col sm:flex-row gap-6 justify-center mb-12">
               <Link href="/register">
                 <Button size="lg" className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white px-8 py-4 text-lg font-semibold shadow-lg hover:shadow-xl transition-all duration-300">
-                  Start Free Trial <Sparkles className="ml-2 h-5 w-5" />
+                  {t.hero.startTrial} <Sparkles className="ml-2 h-5 w-5" />
                 </Button>
               </Link>
               <Button size="lg" variant="outline" className="border-2 border-gray-300 hover:border-blue-400 px-8 py-4 text-lg font-semibold group">
                 <Play className="mr-2 h-5 w-5 group-hover:text-blue-600" />
-                Watch Demo
+                {t.hero.watchDemo}
               </Button>
             </div>
             
@@ -257,15 +218,15 @@ export default function Home() {
             <div className="flex flex-wrap justify-center items-center gap-8 text-sm text-gray-500">
               <div className="flex items-center gap-2">
                 <Shield className="h-4 w-4 text-green-500" />
-                <span>Enterprise Security</span>
+                <span>{t.hero.enterpriseSecurity}</span>
               </div>
               <div className="flex items-center gap-2">
                 <Clock className="h-4 w-4 text-blue-500" />
-                <span>99.9% Uptime</span>
+                <span>{t.hero.uptime}</span>
               </div>
               <div className="flex items-center gap-2">
                 <Globe className="h-4 w-4 text-purple-500" />
-                <span>Global Support</span>
+                <span>{t.hero.globalSupport}</span>
               </div>
             </div>
           </div>
@@ -277,10 +238,10 @@ export default function Home() {
         <div className="max-w-7xl mx-auto">
           <div className="text-center mb-16">
             <h2 className="text-4xl font-bold text-gray-900 mb-4">
-              Works Perfectly on Every Device
+              {t.devices.title}
             </h2>
             <p className="text-xl text-gray-600 max-w-3xl mx-auto">
-              Your restaurant management platform, available anywhere. Desktop, tablet, mobile - seamless experience across all devices.
+              {t.devices.description}
             </p>
           </div>
           
