@@ -159,13 +159,40 @@ export default function GoogleCalendar({ selectedDate, bookings, allBookings = [
 
   const generateTimeSlots = () => {
     const slots = [];
-    for (let hour = 8; hour <= 23; hour++) {
+    
+    // Find the earliest opening time and latest closing time across all days
+    let earliestOpen = 24;
+    let latestClose = 0;
+    
+    if (openingHours && Array.isArray(openingHours)) {
+      openingHours.forEach(hours => {
+        if (hours.isOpen && hours.openTime && hours.closeTime) {
+          const openHour = parseInt(hours.openTime.split(':')[0]);
+          const closeHour = parseInt(hours.closeTime.split(':')[0]);
+          
+          earliestOpen = Math.min(earliestOpen, openHour);
+          latestClose = Math.max(latestClose, closeHour);
+        }
+      });
+    }
+    
+    // Fallback to default hours if no opening hours are set
+    if (earliestOpen === 24 || latestClose === 0) {
+      earliestOpen = 9;
+      latestClose = 22;
+    }
+    
+    // Add 1 hour buffer before and after for flexibility
+    const startHour = Math.max(7, earliestOpen - 1);
+    const endHour = Math.min(23, latestClose + 1);
+    
+    for (let hour = startHour; hour <= endHour; hour++) {
       slots.push(`${hour.toString().padStart(2, '0')}:00`);
     }
     return slots;
   };
 
-  const timeSlots = generateTimeSlots();
+  const timeSlots = useMemo(() => generateTimeSlots(), [openingHours]);
   const weekDays = eachDayOfInterval({ 
     start: currentWeek, 
     end: endOfWeek(currentWeek, { weekStartsOn: 0 }) 
