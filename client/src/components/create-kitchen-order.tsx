@@ -89,15 +89,6 @@ export function CreateKitchenOrder({ restaurantId, tenantId, onOrderCreated }: C
 
   // Ensure menuItems is always an array
   const menuItems = Array.isArray(menuItemsData) ? menuItemsData : [];
-  
-  // Debug logging - remove after verification
-  if (isOpen) {
-    console.log('Menu items loaded:', {
-      menuItemsCount: menuItems.length,
-      categoriesCount: categories.length,
-      groupedCount: Object.keys(groupedMenuItems).length
-    });
-  }
 
   // Fetch tables
   const { data: tablesData = [] } = useQuery({
@@ -137,6 +128,25 @@ export function CreateKitchenOrder({ restaurantId, tenantId, onOrderCreated }: C
   });
 
   const categories = Array.isArray(categoriesData) ? categoriesData : [];
+
+  // Group menu items by category
+  const groupedMenuItems = menuItems.reduce((acc: Record<string, any[]>, item: any) => {
+    const category = categories.find(c => c.id === item.categoryId)?.name || 'Uncategorized';
+    if (!acc[category]) {
+      acc[category] = [];
+    }
+    acc[category].push(item);
+    return acc;
+  }, {} as Record<string, any[]>);
+
+  // Debug logging - remove after verification
+  if (isOpen && menuItems.length > 0) {
+    console.log('Menu items loaded:', {
+      menuItemsCount: menuItems.length,
+      categoriesCount: categories.length,
+      groupedCount: Object.keys(groupedMenuItems).length
+    });
+  }
 
   // Create order mutation
   const createOrderMutation = useMutation({
@@ -304,15 +314,6 @@ export function CreateKitchenOrder({ restaurantId, tenantId, onOrderCreated }: C
       default: return 'bg-gray-500 text-white';
     }
   };
-
-  const groupedMenuItems = menuItems.reduce((acc: Record<string, any[]>, item: any) => {
-    const category = categories.find(c => c.id === item.categoryId)?.name || 'Uncategorized';
-    if (!acc[category]) {
-      acc[category] = [];
-    }
-    acc[category].push(item);
-    return acc;
-  }, {} as Record<string, any[]>);
 
   return (
     <Dialog open={isOpen} onOpenChange={handleDialogOpen}>
