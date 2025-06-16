@@ -519,6 +519,24 @@ export class DatabaseStorage implements IStorage {
     return result[0];
   }
 
+  async createCustomer(restaurantId: number, tenantId: number, customerData: { name: string; email: string; phone?: string }): Promise<any> {
+    if (!this.db) throw new Error("Database connection not available");
+
+    // Always create a new customer without checking for existing ones
+    const [newCustomer] = await this.db
+      .insert(customers)
+      .values({
+        restaurantId,
+        tenantId,
+        name: customerData.name,
+        email: customerData.email,
+        phone: customerData.phone || null,
+      })
+      .returning();
+    
+    return newCustomer;
+  }
+
   async getOrCreateCustomer(restaurantId: number, tenantId: number, customerData: any): Promise<any> {
     if (!this.db) throw new Error("Database connection not available");
     
