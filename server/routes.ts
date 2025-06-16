@@ -12678,6 +12678,25 @@ NEXT STEPS:
     },
   );
 
+  // Get kitchen performance sparkline data
+  app.get(
+    "/api/tenants/:tenantId/restaurants/:restaurantId/kitchen/performance-sparkline",
+    validateTenant,
+    async (req, res) => {
+      try {
+        const restaurantId = parseInt(req.params.restaurantId);
+        const tenantId = parseInt(req.params.tenantId);
+        const timeRange = req.query.timeRange as string || '4h';
+
+        const sparklineData = await storage.getKitchenPerformanceSparkline(restaurantId, tenantId, timeRange);
+        res.json(sparklineData);
+      } catch (error) {
+        console.error("Error fetching kitchen performance sparkline:", error);
+        res.status(500).json({ message: "Failed to fetch performance sparkline data" });
+      }
+    },
+  );
+
   // Initialize cancellation reminder service
   const cancellationReminderService = new CancellationReminderService();
   cancellationReminderService.start();

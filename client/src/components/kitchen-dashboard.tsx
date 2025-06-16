@@ -12,6 +12,7 @@ import { Label } from "@/components/ui/label";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Separator } from "@/components/ui/separator";
 import { useToast } from "@/hooks/use-toast";
+import { KitchenPerformanceSparkline } from "@/components/kitchen-performance-sparkline";
 import { 
   Clock, 
   ChefHat, 
@@ -304,10 +305,11 @@ export function KitchenDashboard({ restaurantId, tenantId }: KitchenDashboardPro
       </div>
 
       <Tabs defaultValue="orders" className="w-full">
-        <TabsList className="grid w-full grid-cols-4">
+        <TabsList className="grid w-full grid-cols-5">
           <TabsTrigger value="orders">Active Orders</TabsTrigger>
           <TabsTrigger value="stations">Kitchen Stations</TabsTrigger>
           <TabsTrigger value="staff">Staff Performance</TabsTrigger>
+          <TabsTrigger value="performance">Performance Sparkline</TabsTrigger>
           <TabsTrigger value="analytics">Analytics</TabsTrigger>
         </TabsList>
 
@@ -518,6 +520,14 @@ export function KitchenDashboard({ restaurantId, tenantId }: KitchenDashboardPro
               ))
             )}
           </div>
+        </TabsContent>
+
+        {/* Performance Sparkline Tab */}
+        <TabsContent value="performance" className="space-y-4">
+          <KitchenPerformanceSparkline 
+            restaurantId={restaurantId} 
+            tenantId={tenantId} 
+          />
         </TabsContent>
 
         {/* Analytics Tab */}
