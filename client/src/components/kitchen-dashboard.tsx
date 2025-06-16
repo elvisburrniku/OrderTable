@@ -13,6 +13,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { Separator } from "@/components/ui/separator";
 import { useToast } from "@/hooks/use-toast";
 import { KitchenPerformanceSparkline } from "@/components/kitchen-performance-sparkline";
+import { CreateKitchenOrder } from "@/components/create-kitchen-order";
 import { 
   Clock, 
   ChefHat, 
@@ -229,6 +230,13 @@ export function KitchenDashboard({ restaurantId, tenantId }: KitchenDashboardPro
           <p className="text-gray-600 mt-1">Real-time kitchen operations and efficiency monitoring</p>
         </div>
         <div className="flex items-center gap-4">
+          <CreateKitchenOrder 
+            restaurantId={restaurantId} 
+            tenantId={tenantId}
+            onOrderCreated={() => {
+              queryClient.invalidateQueries({ queryKey: [`/api/tenants/${tenantId}/restaurants/${restaurantId}/kitchen/orders`] });
+            }}
+          />
           <Select value={selectedTimeRange} onValueChange={setSelectedTimeRange}>
             <SelectTrigger className="w-40">
               <SelectValue />
