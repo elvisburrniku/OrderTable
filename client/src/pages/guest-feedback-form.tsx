@@ -59,7 +59,7 @@ export default function GuestFeedbackForm() {
   // Submit feedback mutation
   const submitFeedbackMutation = useMutation({
     mutationFn: async (feedbackData: any) => {
-      return apiRequest("POST", `/api/tenants/${tenantId}/restaurants/${restaurantId}/feedback`, feedbackData);
+      return apiRequest("POST", `/api/public/tenants/${tenantId}/restaurants/${restaurantId}/feedback`, feedbackData);
     },
     onSuccess: () => {
       setFeedbackSubmitted(true);

@@ -13075,6 +13075,32 @@ NEXT STEPS:
     }
   );
 
+  app.post(
+    "/api/public/tenants/:tenantId/restaurants/:restaurantId/feedback",
+    async (req: Request, res: Response) => {
+      try {
+        const { tenantId, restaurantId } = req.params;
+        const restaurant = await storage.getRestaurantById(parseInt(restaurantId));
+        
+        if (!restaurant || restaurant.tenantId !== parseInt(tenantId)) {
+          return res.status(404).json({ message: "Restaurant not found" });
+        }
+
+        const feedbackData = {
+          ...req.body,
+          restaurantId: parseInt(restaurantId),
+          tenantId: parseInt(tenantId),
+        };
+
+        const feedback = await storage.createFeedbackResponse(parseInt(restaurantId), parseInt(tenantId), feedbackData);
+        res.json(feedback);
+      } catch (error) {
+        console.error("Error submitting public feedback:", error);
+        res.status(500).json({ error: "Failed to submit feedback" });
+      }
+    }
+  );
+
   return httpServer;
 }
 
