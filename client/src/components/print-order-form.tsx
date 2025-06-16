@@ -26,6 +26,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { useToast } from "@/hooks/use-toast";
+import { PaymentMethodSelector } from "@/components/payment-method-selector";
 import { Printer, Clock, Truck, Mail, MapPin, CreditCard } from "lucide-react";
 
 const printOrderSchema = z.object({
@@ -60,6 +61,8 @@ export function PrintOrderForm({
 }: PrintOrderFormProps) {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [estimatedPrice, setEstimatedPrice] = useState(0);
+  const [useSavedPaymentMethod, setUseSavedPaymentMethod] = useState(false);
+  const [selectedPaymentMethodId, setSelectedPaymentMethodId] = useState<string>("");
   const { toast } = useToast();
 
   const form = useForm<PrintOrderFormData>({
@@ -113,6 +116,11 @@ export function PrintOrderForm({
     setEstimatedPrice(price);
   }, [watchedValues]);
 
+  const handlePaymentMethodChange = (useSaved: boolean, methodId?: string) => {
+    setUseSavedPaymentMethod(useSaved);
+    setSelectedPaymentMethodId(methodId || "");
+  };
+
   const onSubmit = async (data: PrintOrderFormData) => {
     setIsSubmitting(true);
     try {
@@ -120,12 +128,18 @@ export function PrintOrderForm({
         ? `/api/tenants/${tenantId}/restaurants/${restaurantId}/print-orders`
         : `/api/restaurants/${restaurantId}/print-orders/public`;
 
+      const submitData = {
+        ...data,
+        useSavedPaymentMethod,
+        selectedPaymentMethodId: useSavedPaymentMethod ? selectedPaymentMethodId : undefined
+      };
+
       const response = await fetch(endpoint, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify(data),
+        body: JSON.stringify(submitData),
       });
 
       if (!response.ok) {
@@ -463,6 +477,19 @@ export function PrintOrderForm({
                   />
                 )}
               </div>
+
+              <Separator />
+
+              {/* Payment Method Selection - Only show for authenticated users */}
+              {tenantId && (
+                <div className="space-y-4">
+                  <h3 className="text-lg font-semibold">Payment Method</h3>
+                  <PaymentMethodSelector
+                    onSelectionChange={handlePaymentMethodChange}
+                    selectedMethod={selectedPaymentMethodId}
+                  />
+                </div>
+              )}
 
               <Separator />
 

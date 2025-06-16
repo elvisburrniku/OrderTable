@@ -12725,7 +12725,8 @@ NEXT STEPS:
           specialInstructions,
           rushOrder,
           deliveryMethod,
-          deliveryAddress
+          deliveryAddress,
+          useSavedPaymentMethod
         } = req.body;
 
         // Calculate pricing based on print specifications
@@ -12754,8 +12755,9 @@ NEXT STEPS:
         // Generate unique order number
         const orderNumber = `PO-${Date.now()}-${Math.random().toString(36).substr(2, 9).toUpperCase()}`;
 
-        // Create Stripe payment intent
-        const paymentIntent = await stripe.paymentIntents.create({
+        // Get tenant and check for saved payment methods
+        const tenant = await storage.getTenantById(tenantId);
+        let paymentIntentOptions = {
           amount: totalAmount,
           currency: 'usd',
           metadata: {
@@ -12765,8 +12767,33 @@ NEXT STEPS:
             printType,
             quantity: quantity.toString()
           },
-          description: `Print Order ${orderNumber} - ${printType} (${quantity}x ${printSize})`
-        });
+          description: `Print Order ${orderNumber} - ${printType} (${quantity}x ${printSize})`,
+          automatic_payment_methods: {
+            enabled: true,
+          },
+        };
+
+        // If user wants to use saved payment method and has a Stripe customer ID
+        if (useSavedPaymentMethod && tenant?.stripeCustomerId) {
+          try {
+            // Get customer's payment methods
+            const paymentMethods = await stripe.paymentMethods.list({
+              customer: tenant.stripeCustomerId,
+              type: 'card',
+            });
+
+            if (paymentMethods.data.length > 0) {
+              paymentIntentOptions.customer = tenant.stripeCustomerId;
+              paymentIntentOptions.setup_future_usage = 'off_session';
+            }
+          } catch (error) {
+            console.error('Error fetching payment methods:', error);
+            // Continue with regular payment flow if error
+          }
+        }
+
+        // Create Stripe payment intent
+        const paymentIntent = await stripe.paymentIntents.create(paymentIntentOptions);
 
         // Create print order in database
         const printOrder = await storage.createPrintOrder({
@@ -12790,15 +12817,70 @@ NEXT STEPS:
           estimatedCompletion: new Date(Date.now() + (rushOrder ? 24 : 72) * 60 * 60 * 1000) // 1-3 days
         });
 
+        // Return saved payment methods if available
+        let savedPaymentMethods = [];
+        if (tenant?.stripeCustomerId) {
+          try {
+            const paymentMethods = await stripe.paymentMethods.list({
+              customer: tenant.stripeCustomerId,
+              type: 'card',
+            });
+            savedPaymentMethods = paymentMethods.data.map(pm => ({
+              id: pm.id,
+              brand: pm.card?.brand,
+              last4: pm.card?.last4,
+              exp_month: pm.card?.exp_month,
+              exp_year: pm.card?.exp_year,
+            }));
+          } catch (error) {
+            console.error('Error fetching payment methods for response:', error);
+          }
+        }
+
         res.json({
           printOrder,
           clientSecret: paymentIntent.client_secret,
-          totalAmount
+          totalAmount,
+          savedPaymentMethods
         });
 
       } catch (error) {
         console.error("Error creating print order:", error);
         res.status(500).json({ message: "Failed to create print order" });
+      }
+    }
+  );
+
+  // Get saved payment methods for tenant
+  app.get(
+    "/api/tenants/:tenantId/payment-methods",
+    validateTenant,
+    async (req, res) => {
+      try {
+        const tenantId = parseInt(req.params.tenantId);
+        const tenant = await storage.getTenantById(tenantId);
+
+        if (!tenant?.stripeCustomerId) {
+          return res.json({ paymentMethods: [] });
+        }
+
+        const paymentMethods = await stripe.paymentMethods.list({
+          customer: tenant.stripeCustomerId,
+          type: 'card',
+        });
+
+        const formattedMethods = paymentMethods.data.map(pm => ({
+          id: pm.id,
+          brand: pm.card?.brand,
+          last4: pm.card?.last4,
+          exp_month: pm.card?.exp_month,
+          exp_year: pm.card?.exp_year,
+        }));
+
+        res.json({ paymentMethods: formattedMethods });
+      } catch (error) {
+        console.error("Error fetching payment methods:", error);
+        res.status(500).json({ message: "Failed to fetch payment methods" });
       }
     }
   );

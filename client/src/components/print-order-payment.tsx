@@ -16,6 +16,13 @@ const stripePromise = import.meta.env.VITE_STRIPE_PUBLIC_KEY
 interface PrintOrderPaymentProps {
   clientSecret: string;
   order: any;
+  savedPaymentMethods?: Array<{
+    id: string;
+    brand: string;
+    last4: string;
+    exp_month: number;
+    exp_year: number;
+  }>;
   onPaymentSuccess?: (order: any) => void;
   onCancel?: () => void;
 }
