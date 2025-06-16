@@ -243,7 +243,28 @@ export default function Tables() {
   };
 
   const handleToggleActive = (tableId: number, isActive: boolean) => {
+    console.log(`Handler called for table ID: ${tableId}, setting to: ${isActive}`);
     updateTableMutation.mutate({ id: tableId, isActive });
+  };
+
+  // Isolated switch component to prevent cross-switching
+  const TableSwitch = ({ tableId, isActive, onToggle, disabled }: {
+    tableId: number;
+    isActive: boolean;
+    onToggle: (id: number, active: boolean) => void;
+    disabled: boolean;
+  }) => {
+    return (
+      <Switch
+        checked={Boolean(isActive)}
+        onCheckedChange={(checked) => {
+          console.log(`Switch for table ${tableId}: ${isActive} -> ${checked}`);
+          onToggle(tableId, checked);
+        }}
+        disabled={disabled}
+        className="data-[state=checked]:bg-green-600"
+      />
+    );
   };
 
 
@@ -419,14 +440,11 @@ export default function Tables() {
                       <TableCell>
                         <div className="flex items-center gap-2">
                           <div className="flex items-center gap-1">
-                            <Switch
-                              checked={Boolean(table.isActive)}
-                              onCheckedChange={(checked) => {
-                                console.log(`Toggling table ${table.id} from ${table.isActive} to ${checked}`);
-                                handleToggleActive(table.id, checked);
-                              }}
+                            <TableSwitch
+                              tableId={table.id}
+                              isActive={table.isActive}
+                              onToggle={handleToggleActive}
                               disabled={updateTableMutation.isPending}
-                              className="data-[state=checked]:bg-green-600"
                             />
                             <span className="text-xs text-gray-600">
                               {Boolean(table.isActive) ? "Active" : "Inactive"}
