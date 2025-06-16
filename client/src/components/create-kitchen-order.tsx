@@ -43,6 +43,20 @@ interface OrderItem {
   specialInstructions?: string;
 }
 
+interface Customer {
+  id: number;
+  name: string;
+  email: string;
+  phone: string;
+}
+
+interface Table {
+  id: number;
+  table_number: string;
+  seats: number;
+  room_id: number;
+}
+
 interface CreateKitchenOrderProps {
   restaurantId: number;
   tenantId: number;
@@ -53,8 +67,10 @@ export function CreateKitchenOrder({ restaurantId, tenantId, onOrderCreated }: C
   const [isOpen, setIsOpen] = useState(false);
   const [orderItems, setOrderItems] = useState<OrderItem[]>([]);
   const [orderNumber, setOrderNumber] = useState("");
-  const [tableNumber, setTableNumber] = useState("");
-  const [customerName, setCustomerName] = useState("");
+  const [selectedTableId, setSelectedTableId] = useState("");
+  const [selectedCustomerId, setSelectedCustomerId] = useState("");
+  const [customCustomerName, setCustomCustomerName] = useState("");
+  const [useExistingCustomer, setUseExistingCustomer] = useState(true);
   const [priority, setPriority] = useState<'low' | 'medium' | 'high' | 'urgent'>('medium');
   const [specialInstructions, setSpecialInstructions] = useState("");
   const { toast } = useToast();
@@ -69,6 +85,24 @@ export function CreateKitchenOrder({ restaurantId, tenantId, onOrderCreated }: C
 
   // Ensure menuItems is always an array
   const menuItems = Array.isArray(menuItemsData) ? menuItemsData : [];
+
+  // Fetch tables
+  const { data: tablesData = [] } = useQuery({
+    queryKey: [`/api/tenants/${tenantId}/restaurants/${restaurantId}/tables`],
+    queryFn: () => apiRequest('GET', `/api/tenants/${tenantId}/restaurants/${restaurantId}/tables`),
+    enabled: isOpen,
+  });
+
+  const tables = Array.isArray(tablesData) ? tablesData : [];
+
+  // Fetch customers
+  const { data: customersData = [] } = useQuery({
+    queryKey: [`/api/tenants/${tenantId}/restaurants/${restaurantId}/customers`],
+    queryFn: () => apiRequest('GET', `/api/tenants/${tenantId}/restaurants/${restaurantId}/customers`),
+    enabled: isOpen,
+  });
+
+  const customers = Array.isArray(customersData) ? customersData : [];
 
   // Create order mutation
   const createOrderMutation = useMutation({
@@ -96,8 +130,10 @@ export function CreateKitchenOrder({ restaurantId, tenantId, onOrderCreated }: C
   const resetForm = () => {
     setOrderItems([]);
     setOrderNumber("");
-    setTableNumber("");
-    setCustomerName("");
+    setSelectedTableId("");
+    setSelectedCustomerId("");
+    setCustomCustomerName("");
+    setUseExistingCustomer(true);
     setPriority('medium');
     setSpecialInstructions("");
   };
@@ -184,7 +220,23 @@ export function CreateKitchenOrder({ restaurantId, tenantId, onOrderCreated }: C
     return `K${timestamp}${random}`;
   };
 
+  // Auto-generate order number when dialog opens
+  const handleDialogOpen = (open: boolean) => {
+    setIsOpen(open);
+    if (open && !orderNumber) {
+      setOrderNumber(generateOrderNumber());
+    }
+  };
+
   const handleSubmit = () => {
+    const selectedTable = tables.find(t => t.id.toString() === selectedTableId);
+    const selectedCustomer = customers.find(c => c.id.toString() === selectedCustomerId);
+    
+    const tableNumber = selectedTable ? selectedTable.table_number : '';
+    const customerName = useExistingCustomer 
+      ? (selectedCustomer ? selectedCustomer.name : '')
+      : customCustomerName;
+
     if (!orderNumber || !tableNumber || !customerName || orderItems.length === 0) {
       toast({
         title: "Missing Information",
@@ -228,7 +280,7 @@ export function CreateKitchenOrder({ restaurantId, tenantId, onOrderCreated }: C
   }, {} as Record<string, MenuItem[]>);
 
   return (
-    <Dialog open={isOpen} onOpenChange={setIsOpen}>
+    <Dialog open={isOpen} onOpenChange={handleDialogOpen}>
       <DialogTrigger asChild>
         <Button className="flex items-center gap-2">
           <Plus className="h-4 w-4" />
@@ -259,36 +311,78 @@ export function CreateKitchenOrder({ restaurantId, tenantId, onOrderCreated }: C
                         id="orderNumber"
                         value={orderNumber}
                         onChange={(e) => setOrderNumber(e.target.value)}
-                        placeholder="Enter order number"
+                        placeholder="Auto-generated"
+                        readOnly
                       />
                       <Button 
                         variant="outline" 
                         size="sm"
                         onClick={() => setOrderNumber(generateOrderNumber())}
                       >
-                        Generate
+                        New
                       </Button>
                     </div>
                   </div>
                   <div>
-                    <Label htmlFor="tableNumber">Table Number</Label>
-                    <Input
-                      id="tableNumber"
-                      value={tableNumber}
-                      onChange={(e) => setTableNumber(e.target.value)}
-                      placeholder="e.g., T12"
-                    />
+                    <Label htmlFor="tableSelect">Table</Label>
+                    <Select value={selectedTableId} onValueChange={setSelectedTableId}>
+                      <SelectTrigger id="tableSelect">
+                        <SelectValue placeholder="Select table" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {tables.map((table) => (
+                          <SelectItem key={table.id} value={table.id.toString()}>
+                            {table.table_number} ({table.seats} seats)
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
                   </div>
                 </div>
 
                 <div>
-                  <Label htmlFor="customerName">Customer Name</Label>
-                  <Input
-                    id="customerName"
-                    value={customerName}
-                    onChange={(e) => setCustomerName(e.target.value)}
-                    placeholder="Enter customer name"
-                  />
+                  <Label>Customer</Label>
+                  <div className="space-y-3">
+                    <div className="flex gap-4">
+                      <label className="flex items-center gap-2">
+                        <input
+                          type="radio"
+                          checked={useExistingCustomer}
+                          onChange={() => setUseExistingCustomer(true)}
+                        />
+                        Existing Customer
+                      </label>
+                      <label className="flex items-center gap-2">
+                        <input
+                          type="radio"
+                          checked={!useExistingCustomer}
+                          onChange={() => setUseExistingCustomer(false)}
+                        />
+                        New Customer
+                      </label>
+                    </div>
+                    
+                    {useExistingCustomer ? (
+                      <Select value={selectedCustomerId} onValueChange={setSelectedCustomerId}>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Select customer" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {customers.map((customer) => (
+                            <SelectItem key={customer.id} value={customer.id.toString()}>
+                              {customer.name} ({customer.email})
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    ) : (
+                      <Input
+                        value={customCustomerName}
+                        onChange={(e) => setCustomCustomerName(e.target.value)}
+                        placeholder="Enter customer name"
+                      />
+                    )}
+                  </div>
                 </div>
 
                 <div>
@@ -441,9 +535,13 @@ export function CreateKitchenOrder({ restaurantId, tenantId, onOrderCreated }: C
         <div className="flex justify-between items-center pt-4 border-t">
           <div className="text-sm text-gray-600">
             {orderItems.length} items • Est. {calculateEstimatedTime()} min • ${calculateTotal().toFixed(2)}
+            {selectedTableId && ` • Table ${tables.find(t => t.id.toString() === selectedTableId)?.table_number}`}
+            {(selectedCustomerId || customCustomerName) && ` • ${useExistingCustomer 
+              ? customers.find(c => c.id.toString() === selectedCustomerId)?.name 
+              : customCustomerName}`}
           </div>
           <div className="flex gap-2">
-            <Button variant="outline" onClick={() => setIsOpen(false)}>
+            <Button variant="outline" onClick={() => handleDialogOpen(false)}>
               Cancel
             </Button>
             <Button 
