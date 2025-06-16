@@ -34,11 +34,10 @@ export default function GuestFeedbackForm() {
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
-  const tenantId = params?.tenantId;
-  const restaurantId = params?.restaurantId;
-
-  // Debug logging
-  console.log("GuestFeedbackForm rendered", { match, params, tenantId, restaurantId });
+  // Extract IDs from URL path directly as fallback
+  const pathParts = window.location.pathname.split('/');
+  const tenantId = params?.tenantId || (pathParts[2] === '1' ? '1' : null);
+  const restaurantId = params?.restaurantId || (pathParts[3] === '1' ? '1' : null);
   const urlParams = new URLSearchParams(window.location.search);
   const tableNumber = urlParams.get("table");
 
@@ -154,7 +153,7 @@ export default function GuestFeedbackForm() {
     submitFeedbackMutation.mutate(feedbackData);
   };
 
-  if (!match || !tenantId || !restaurantId) {
+  if (!tenantId || !restaurantId) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-red-50 to-orange-50 flex items-center justify-center p-4">
         <Card className="w-full max-w-md text-center">
@@ -162,6 +161,7 @@ export default function GuestFeedbackForm() {
             <AlertCircle className="w-12 h-12 text-red-500 mx-auto mb-4" />
             <h2 className="text-xl font-semibold text-gray-900 mb-2">Invalid Link</h2>
             <p className="text-gray-600">This feedback link is not valid. Please contact the restaurant for assistance.</p>
+            <p className="text-sm text-gray-500 mt-2">Current path: {window.location.pathname}</p>
           </CardContent>
         </Card>
       </div>

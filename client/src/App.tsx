@@ -159,6 +159,7 @@ function App() {
             </SetupGuard>
             
             {/* Public routes that don't require authentication */}
+            <Route path="/feedback-test" component={FeedbackTest} />
             <Route path="/feedback/:tenantId/:restaurantId" component={GuestFeedbackForm} />
             <Route path="/guest-booking/:tenantId/:restaurantId" component={GuestBookingResponsive} />
             <Route path="/:tenantId/book/:restaurantId" component={GuestBookingResponsive} />
