@@ -13025,6 +13025,56 @@ NEXT STEPS:
     }
   });
 
+  // Public API endpoints for guest feedback access (no authentication required)
+  app.get(
+    "/api/public/tenants/:tenantId/restaurants/:restaurantId",
+    async (req: Request, res: Response) => {
+      try {
+        const { tenantId, restaurantId } = req.params;
+        const restaurant = await storage.getRestaurantById(parseInt(restaurantId));
+        
+        if (!restaurant || restaurant.tenantId !== parseInt(tenantId)) {
+          return res.status(404).json({ message: "Restaurant not found" });
+        }
+
+        // Return basic restaurant info for guest access
+        res.json({
+          id: restaurant.id,
+          name: restaurant.name,
+          description: restaurant.description,
+          address: restaurant.address,
+          phone: restaurant.phone,
+          email: restaurant.email
+        });
+      } catch (error) {
+        console.error("Error fetching public restaurant info:", error);
+        res.status(500).json({ error: "Failed to fetch restaurant information" });
+      }
+    }
+  );
+
+  app.get(
+    "/api/public/tenants/:tenantId/restaurants/:restaurantId/feedback-questions",
+    async (req: Request, res: Response) => {
+      try {
+        const { tenantId, restaurantId } = req.params;
+        const restaurant = await storage.getRestaurantById(parseInt(restaurantId));
+        
+        if (!restaurant || restaurant.tenantId !== parseInt(tenantId)) {
+          return res.status(404).json({ message: "Restaurant not found" });
+        }
+
+        const questions = await storage.getFeedbackQuestionsByRestaurant(parseInt(restaurantId));
+        // Only return active questions for guest access
+        const activeQuestions = questions.filter(q => q.isActive);
+        res.json(activeQuestions);
+      } catch (error) {
+        console.error("Error fetching public feedback questions:", error);
+        res.status(500).json({ error: "Failed to fetch feedback questions" });
+      }
+    }
+  );
+
   return httpServer;
 }
 

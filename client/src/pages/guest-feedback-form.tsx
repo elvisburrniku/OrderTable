@@ -39,15 +39,15 @@ export default function GuestFeedbackForm() {
   const urlParams = new URLSearchParams(window.location.search);
   const tableNumber = urlParams.get("table");
 
-  // Fetch restaurant info
+  // Fetch restaurant info (public endpoint for guest access)
   const { data: restaurant } = useQuery({
-    queryKey: [`/api/tenants/${tenantId}/restaurants/${restaurantId}`],
+    queryKey: [`/api/public/tenants/${tenantId}/restaurants/${restaurantId}`],
     enabled: !!tenantId && !!restaurantId,
   });
 
-  // Fetch feedback questions
+  // Fetch feedback questions (public endpoint for guest access)
   const { data: questions = [] } = useQuery({
-    queryKey: [`/api/tenants/${tenantId}/restaurants/${restaurantId}/feedback-questions`],
+    queryKey: [`/api/public/tenants/${tenantId}/restaurants/${restaurantId}/feedback-questions`],
     enabled: !!tenantId && !!restaurantId,
   });
 
