@@ -122,19 +122,31 @@ export function KitchenDashboard({ restaurantId, tenantId }: KitchenDashboardPro
 
   const { data: stations = [], isLoading: stationsLoading } = useQuery({
     queryKey: [`/api/tenants/${tenantId}/restaurants/${restaurantId}/kitchen/stations`],
-    queryFn: () => apiRequest('GET', `/api/tenants/${tenantId}/restaurants/${restaurantId}/kitchen/stations`),
+    queryFn: async () => {
+      const response = await fetch(`/api/tenants/${tenantId}/restaurants/${restaurantId}/kitchen/stations`);
+      if (!response.ok) throw new Error('Failed to fetch stations');
+      return response.json();
+    },
     refetchInterval: autoRefresh ? 10000 : false,
   });
 
   const { data: staff = [], isLoading: staffLoading } = useQuery({
     queryKey: [`/api/tenants/${tenantId}/restaurants/${restaurantId}/kitchen/staff`],
-    queryFn: () => apiRequest('GET', `/api/tenants/${tenantId}/restaurants/${restaurantId}/kitchen/staff`),
+    queryFn: async () => {
+      const response = await fetch(`/api/tenants/${tenantId}/restaurants/${restaurantId}/kitchen/staff`);
+      if (!response.ok) throw new Error('Failed to fetch staff');
+      return response.json();
+    },
     refetchInterval: autoRefresh ? 15000 : false,
   });
 
   const { data: metrics, isLoading: metricsLoading } = useQuery({
     queryKey: [`/api/tenants/${tenantId}/restaurants/${restaurantId}/kitchen/metrics`, selectedTimeRange],
-    queryFn: () => apiRequest('GET', `/api/tenants/${tenantId}/restaurants/${restaurantId}/kitchen/metrics?timeRange=${selectedTimeRange}`),
+    queryFn: async () => {
+      const response = await fetch(`/api/tenants/${tenantId}/restaurants/${restaurantId}/kitchen/metrics?timeRange=${selectedTimeRange}`);
+      if (!response.ok) throw new Error('Failed to fetch metrics');
+      return response.json();
+    },
     refetchInterval: autoRefresh ? 10000 : false,
   });
 
