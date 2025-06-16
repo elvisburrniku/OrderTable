@@ -11,6 +11,7 @@ import {
   time,
   json,
   unique,
+  decimal,
 } from "drizzle-orm/pg-core";
 import { createInsertSchema, createSelectSchema } from "drizzle-zod";
 import { z } from "zod";
@@ -663,9 +664,6 @@ export type InsertBooking = InferInsertModel<typeof bookings>;
 export type Customer = InferSelectModel<typeof customers>;
 export type InsertCustomer = InferInsertModel<typeof customers>;
 
-export type SmsMessage = InferSelectModel<typeof smsMessages>;
-export type InsertSmsMessage = InferInsertModel<typeof smsMessages>;
-
 export type WaitingList = InferSelectModel<typeof waitingList>;
 export type InsertWaitingList = InferInsertModel<typeof waitingList>;
 
@@ -921,15 +919,6 @@ export const insertSmsBalanceSchema = createInsertSchema(smsBalance).omit({
   updatedAt: true,
 });
 export const selectSmsBalanceSchema = createSelectSchema(smsBalance);
-
-export type SmsMessage = InferSelectModel<typeof smsMessages>;
-export type InsertSmsMessage = InferInsertModel<typeof smsMessages>;
-
-export const insertSmsMessageSchema = createInsertSchema(smsMessages).omit({
-  id: true,
-  createdAt: true,
-});
-export const selectSmsMessageSchema = createSelectSchema(smsMessages);
 
 export type SeasonalMenuTheme = InferSelectModel<typeof seasonalMenuThemes>;
 export type InsertSeasonalMenuTheme = InferInsertModel<typeof seasonalMenuThemes>;
