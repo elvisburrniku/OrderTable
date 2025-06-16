@@ -54,6 +54,9 @@ export default function SmsSettings() {
     satisfactionSurveyEnabled: false,
   });
 
+  const [testPhone, setTestPhone] = useState("");
+  const [lastTestResult, setLastTestResult] = useState("");
+
   // Fetch SMS settings
   const { data: currentSettings, isLoading } = useQuery({
     queryKey: [`/api/tenants/${restaurant?.tenantId}/restaurants/${restaurant?.id}/sms-settings`],
@@ -113,6 +116,31 @@ export default function SmsSettings() {
     },
   });
 
+  // Test SMS mutation
+  const testSMSMutation = useMutation({
+    mutationFn: async () => {
+      return apiRequest("POST", `/api/tenants/${restaurant.tenantId}/restaurants/${restaurant.id}/sms-messages/test`, {
+        phoneNumber: testPhone,
+        message: "Test SMS from ReadyTable: Your booking system is working perfectly!",
+        type: "test"
+      });
+    },
+    onSuccess: (data) => {
+      setLastTestResult(data.note || "Test SMS sent successfully");
+      toast({
+        title: "Test Successful",
+        description: "SMS test completed successfully",
+      });
+    },
+    onError: (error) => {
+      toast({
+        title: "Test Failed",
+        description: "Failed to send test SMS",
+        variant: "destructive",
+      });
+    },
+  });
+
   if (!user || !restaurant) {
     return null;
   }
@@ -123,6 +151,18 @@ export default function SmsSettings() {
 
   const handleAddBalance = (amount: number) => {
     addBalanceMutation.mutate(amount);
+  };
+
+  const handleTestSMS = () => {
+    if (!testPhone.trim()) {
+      toast({
+        title: "Error",
+        description: "Please enter a phone number for testing",
+        variant: "destructive",
+      });
+      return;
+    }
+    testSMSMutation.mutate();
   };
 
   return (
@@ -348,6 +388,34 @@ export default function SmsSettings() {
                     +50 EUR
                   </Button>
                 </div>
+              </div>
+
+              {/* Free Testing Section */}
+              <div className="border-t pt-4 mt-4">
+                <h4 className="font-medium mb-3">Test SMS for Free</h4>
+                <p className="text-sm text-gray-600 mb-3">
+                  Send a test SMS to verify your settings without using your balance
+                </p>
+                <div className="flex gap-2">
+                  <Input
+                    placeholder="Test phone number"
+                    value={testPhone}
+                    onChange={(e) => setTestPhone(e.target.value)}
+                    className="flex-1"
+                  />
+                  <Button 
+                    onClick={handleTestSMS}
+                    disabled={testSMSMutation.isPending || !testPhone}
+                    className="bg-blue-600 hover:bg-blue-700 text-white"
+                  >
+                    {testSMSMutation.isPending ? "Sending..." : "Send Test SMS"}
+                  </Button>
+                </div>
+                {lastTestResult && (
+                  <div className="mt-3 p-3 bg-green-50 border border-green-200 rounded">
+                    <p className="text-sm text-green-800">{lastTestResult}</p>
+                  </div>
+                )}
               </div>
             </CardContent>
           </Card>
