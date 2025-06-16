@@ -79,26 +79,34 @@ export function CreateKitchenOrder({ restaurantId, tenantId, onOrderCreated }: C
   // Fetch menu items
   const { data: menuItemsData = [], isLoading: menuItemsLoading } = useQuery({
     queryKey: [`/api/tenants/${tenantId}/restaurants/${restaurantId}/menu-items`],
-    queryFn: () => apiRequest('GET', `/api/tenants/${tenantId}/restaurants/${restaurantId}/menu-items`),
+    queryFn: async () => {
+      const response = await fetch(`/api/tenants/${tenantId}/restaurants/${restaurantId}/menu-items`);
+      if (!response.ok) throw new Error('Failed to fetch menu items');
+      return response.json();
+    },
     enabled: isOpen,
   });
 
   // Ensure menuItems is always an array
   const menuItems = Array.isArray(menuItemsData) ? menuItemsData : [];
   
-  // Debug logging
-  console.log('Menu items debug:', {
-    menuItemsData,
-    menuItems,
-    menuItemsLength: menuItems.length,
-    isOpen,
-    menuItemsLoading
-  });
+  // Debug logging - remove after verification
+  if (isOpen) {
+    console.log('Menu items loaded:', {
+      menuItemsCount: menuItems.length,
+      categoriesCount: categories.length,
+      groupedCount: Object.keys(groupedMenuItems).length
+    });
+  }
 
   // Fetch tables
   const { data: tablesData = [] } = useQuery({
     queryKey: [`/api/tenants/${tenantId}/restaurants/${restaurantId}/tables`],
-    queryFn: () => apiRequest('GET', `/api/tenants/${tenantId}/restaurants/${restaurantId}/tables`),
+    queryFn: async () => {
+      const response = await fetch(`/api/tenants/${tenantId}/restaurants/${restaurantId}/tables`);
+      if (!response.ok) throw new Error('Failed to fetch tables');
+      return response.json();
+    },
     enabled: isOpen,
   });
 
@@ -107,7 +115,11 @@ export function CreateKitchenOrder({ restaurantId, tenantId, onOrderCreated }: C
   // Fetch customers
   const { data: customersData = [] } = useQuery({
     queryKey: [`/api/tenants/${tenantId}/restaurants/${restaurantId}/customers`],
-    queryFn: () => apiRequest('GET', `/api/tenants/${tenantId}/restaurants/${restaurantId}/customers`),
+    queryFn: async () => {
+      const response = await fetch(`/api/tenants/${tenantId}/restaurants/${restaurantId}/customers`);
+      if (!response.ok) throw new Error('Failed to fetch customers');
+      return response.json();
+    },
     enabled: isOpen,
   });
 
@@ -116,7 +128,11 @@ export function CreateKitchenOrder({ restaurantId, tenantId, onOrderCreated }: C
   // Fetch menu categories for proper category names
   const { data: categoriesData = [] } = useQuery({
     queryKey: [`/api/tenants/${tenantId}/restaurants/${restaurantId}/menu-categories`],
-    queryFn: () => apiRequest('GET', `/api/tenants/${tenantId}/restaurants/${restaurantId}/menu-categories`),
+    queryFn: async () => {
+      const response = await fetch(`/api/tenants/${tenantId}/restaurants/${restaurantId}/menu-categories`);
+      if (!response.ok) throw new Error('Failed to fetch categories');
+      return response.json();
+    },
     enabled: isOpen,
   });
 
