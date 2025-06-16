@@ -69,6 +69,7 @@ import FeedbackResponsesPopup from "./pages/feedback-responses-popup";
 import Contact from "./pages/contact";
 import GuestBookingNew from "./pages/guest-booking-new";
 import GuestBookingResponsive from "./pages/guest-booking-responsive";
+import FeedbackTest from "./pages/feedback-test";
 import SetupWizard from "./pages/setup-wizard";
 import EmailTest from "./pages/email-test";
 import TestTools from "./pages/test-tools";
@@ -154,7 +155,6 @@ function App() {
                 <Route path="/:tenantId/email-test" component={EmailTest} />
                 <Route path="/:tenantId/test-tools" component={TestTools} />
               </OverduePaymentGuard>
-              <Route path="/feedback" component={FeedbackResponses} />
               <Route path="/feedback-responses" component={FeedbackResponses} />
             </SetupGuard>
             
@@ -164,6 +164,7 @@ function App() {
             <Route path="/:tenantId/book/:restaurantId" component={GuestBookingResponsive} />
             <Route path="/feedback-responses-popup" component={FeedbackResponsesPopup} />
             <Route path="/contact" component={Contact} />
+            <Route path="/feedback" component={FeedbackResponses} />
             <Route component={NotFound} />
           </Switch>
         </LayoutWrapper>

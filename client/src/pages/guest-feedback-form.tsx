@@ -36,6 +36,9 @@ export default function GuestFeedbackForm() {
 
   const tenantId = params?.tenantId;
   const restaurantId = params?.restaurantId;
+
+  // Debug logging
+  console.log("GuestFeedbackForm rendered", { match, params, tenantId, restaurantId });
   const urlParams = new URLSearchParams(window.location.search);
   const tableNumber = urlParams.get("table");
 
