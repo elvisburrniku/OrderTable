@@ -12909,6 +12909,98 @@ NEXT STEPS:
     }
   );
 
+  // Create payment intent for existing print order
+  app.post(
+    "/api/tenants/:tenantId/restaurants/:restaurantId/print-orders/:orderId/create-payment-intent",
+    validateTenant,
+    async (req, res) => {
+      try {
+        const restaurantId = parseInt(req.params.restaurantId);
+        const tenantId = parseInt(req.params.tenantId);
+        const orderId = parseInt(req.params.orderId);
+
+        const restaurant = await storage.getRestaurantById(restaurantId);
+        if (!restaurant || restaurant.tenantId !== tenantId) {
+          return res.status(404).json({ message: "Restaurant not found" });
+        }
+
+        // Get the existing print order
+        const printOrder = await storage.getPrintOrderById(orderId);
+        if (!printOrder) {
+          return res.status(404).json({ message: "Print order not found" });
+        }
+
+        // Check if order is already paid
+        if (printOrder.paymentStatus === 'paid') {
+          return res.status(400).json({ message: "Order is already paid" });
+        }
+
+        // Get tenant for payment methods
+        const tenant = await storage.getTenantById(tenantId);
+        
+        // Create payment intent options
+        let paymentIntentOptions = {
+          amount: printOrder.totalAmount,
+          currency: 'usd',
+          metadata: {
+            orderNumber: printOrder.orderNumber,
+            restaurantId: restaurantId.toString(),
+            tenantId: tenantId.toString(),
+            printType: printOrder.printType,
+            quantity: printOrder.quantity.toString(),
+            existingOrderId: orderId.toString()
+          },
+          description: `Print Order ${printOrder.orderNumber} - ${printOrder.printType} (${printOrder.quantity}x ${printOrder.printSize})`,
+          automatic_payment_methods: {
+            enabled: true,
+          },
+        };
+
+        // Add customer if available
+        if (tenant?.stripeCustomerId) {
+          paymentIntentOptions.customer = tenant.stripeCustomerId;
+        }
+
+        // Create new payment intent
+        const paymentIntent = await stripe.paymentIntents.create(paymentIntentOptions);
+
+        // Update the print order with new payment intent ID
+        await storage.updatePrintOrder(orderId, {
+          paymentIntentId: paymentIntent.id
+        });
+
+        // Get saved payment methods if available
+        let savedPaymentMethods = [];
+        if (tenant?.stripeCustomerId) {
+          try {
+            const paymentMethods = await stripe.paymentMethods.list({
+              customer: tenant.stripeCustomerId,
+              type: 'card',
+            });
+            savedPaymentMethods = paymentMethods.data.map(pm => ({
+              id: pm.id,
+              brand: pm.card?.brand,
+              last4: pm.card?.last4,
+              exp_month: pm.card?.exp_month,
+              exp_year: pm.card?.exp_year,
+            }));
+          } catch (error) {
+            console.error('Error fetching payment methods:', error);
+          }
+        }
+
+        res.json({
+          clientSecret: paymentIntent.client_secret,
+          savedPaymentMethods
+        });
+
+      } catch (error) {
+        console.error("Error creating payment intent for existing order:", error);
+        res.status(500).json({ message: "Failed to create payment intent" });
+      }
+    }
+  );
+
   // Update print order status
   app.patch(
     "/api/tenants/:tenantId/restaurants/:restaurantId/print-orders/:orderId",

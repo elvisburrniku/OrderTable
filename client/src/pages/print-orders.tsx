@@ -128,16 +128,42 @@ export default function PrintOrders() {
     setSelectedOrder(null);
   };
 
-  const handlePayNow = (order: PrintOrder) => {
-    setPaymentData({
-      orderId: order.id,
-      amount: order.totalAmount,
-      orderNumber: order.orderNumber,
-      printType: order.printType,
-      printSize: order.printSize,
-      quantity: order.quantity
-    });
-    setShowPayment(true);
+  const handlePayNow = async (order: PrintOrder) => {
+    try {
+      // Create payment intent for existing order
+      const response = await fetch(`/api/tenants/${restaurant?.tenantId}/restaurants/${restaurant?.id}/print-orders/${order.id}/create-payment-intent`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+      });
+
+      if (!response.ok) {
+        throw new Error("Failed to create payment intent");
+      }
+
+      const { clientSecret, savedPaymentMethods } = await response.json();
+      
+      setPaymentData({
+        clientSecret,
+        order: {
+          id: order.id,
+          orderNumber: order.orderNumber,
+          printType: order.printType,
+          printSize: order.printSize,
+          printQuality: order.printQuality,
+          quantity: order.quantity,
+          deliveryMethod: order.deliveryMethod,
+          totalAmount: order.totalAmount,
+        },
+        savedPaymentMethods
+      });
+      setShowPayment(true);
+    } catch (error) {
+      toast({
+        title: "Payment Setup Failed",
+        description: "Could not prepare payment. Please try again.",
+        variant: "destructive",
+      });
+    }
   };
 
 
