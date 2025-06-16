@@ -901,6 +901,44 @@ export const insertKitchenMetricsSchema = createInsertSchema(kitchenMetrics).omi
   updatedAt: true,
 });
 
+// Print Orders Schema
+export const printOrders = pgTable("print_orders", {
+  id: serial("id").primaryKey(),
+  restaurantId: integer("restaurant_id").notNull().references(() => restaurants.id, { onDelete: "cascade" }),
+  tenantId: integer("tenant_id").notNull().references(() => tenants.id, { onDelete: "cascade" }),
+  orderNumber: text("order_number").notNull().unique(),
+  customerName: text("customer_name").notNull(),
+  customerEmail: text("customer_email").notNull(),
+  customerPhone: text("customer_phone"),
+  printType: text("print_type").notNull(), // menu, flyer, poster, banner, business_card
+  printSize: text("print_size").notNull(), // A4, A3, A2, A1, custom
+  printQuality: text("print_quality").default("standard").notNull(), // draft, standard, high, premium
+  quantity: integer("quantity").default(1).notNull(),
+  design: json("design").notNull(), // design configuration object
+  specialInstructions: text("special_instructions"),
+  rushOrder: boolean("rush_order").default(false).notNull(),
+  totalAmount: integer("total_amount").notNull(), // in cents
+  paymentStatus: text("payment_status").default("pending").notNull(), // pending, paid, failed, refunded
+  paymentIntentId: text("payment_intent_id"),
+  stripePaymentId: text("stripe_payment_id"),
+  orderStatus: text("order_status").default("pending").notNull(), // pending, processing, printing, completed, cancelled
+  estimatedCompletion: timestamp("estimated_completion"),
+  completedAt: timestamp("completed_at"),
+  deliveryMethod: text("delivery_method").default("pickup").notNull(), // pickup, delivery, mail
+  deliveryAddress: json("delivery_address"), // delivery address object
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+});
+
+export type PrintOrder = InferSelectModel<typeof printOrders>;
+export type InsertPrintOrder = InferInsertModel<typeof printOrders>;
+
+export const insertPrintOrderSchema = createInsertSchema(printOrders).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
 export type SeasonalMenuTheme = InferSelectModel<typeof seasonalMenuThemes>;
 export type InsertSeasonalMenuTheme = InferInsertModel<typeof seasonalMenuThemes>;
 

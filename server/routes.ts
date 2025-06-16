@@ -12697,6 +12697,327 @@ NEXT STEPS:
     },
   );
 
+  // Print Orders API Routes
+  
+  // Create print order and payment intent
+  app.post(
+    "/api/tenants/:tenantId/restaurants/:restaurantId/print-orders",
+    validateTenant,
+    async (req, res) => {
+      try {
+        const restaurantId = parseInt(req.params.restaurantId);
+        const tenantId = parseInt(req.params.tenantId);
+
+        const restaurant = await storage.getRestaurantById(restaurantId);
+        if (!restaurant || restaurant.tenantId !== tenantId) {
+          return res.status(404).json({ message: "Restaurant not found" });
+        }
+
+        const {
+          customerName,
+          customerEmail,
+          customerPhone,
+          printType,
+          printSize,
+          printQuality,
+          quantity,
+          design,
+          specialInstructions,
+          rushOrder,
+          deliveryMethod,
+          deliveryAddress
+        } = req.body;
+
+        // Calculate pricing based on print specifications
+        const basePrices = {
+          menu: { A4: 500, A3: 800, A2: 1200, A1: 1800, custom: 1000 }, // in cents
+          flyer: { A4: 300, A3: 500, A2: 800, A1: 1200, custom: 600 },
+          poster: { A4: 800, A3: 1200, A2: 1800, A1: 2500, custom: 1500 },
+          banner: { A4: 1200, A3: 1800, A2: 2500, A1: 3500, custom: 2000 },
+          business_card: { A4: 200, A3: 300, A2: 400, A1: 500, custom: 250 }
+        };
+
+        const qualityMultipliers = {
+          draft: 0.8,
+          standard: 1.0,
+          high: 1.3,
+          premium: 1.6
+        };
+
+        const basePrice = basePrices[printType]?.[printSize] || 1000;
+        const qualityMultiplier = qualityMultipliers[printQuality] || 1.0;
+        const rushMultiplier = rushOrder ? 1.5 : 1.0;
+        const deliveryFee = deliveryMethod === 'delivery' ? 500 : deliveryMethod === 'mail' ? 300 : 0;
+
+        const totalAmount = Math.round(basePrice * qualityMultiplier * rushMultiplier * quantity + deliveryFee);
+
+        // Generate unique order number
+        const orderNumber = `PO-${Date.now()}-${Math.random().toString(36).substr(2, 9).toUpperCase()}`;
+
+        // Create Stripe payment intent
+        const paymentIntent = await stripe.paymentIntents.create({
+          amount: totalAmount,
+          currency: 'usd',
+          metadata: {
+            orderNumber,
+            restaurantId: restaurantId.toString(),
+            tenantId: tenantId.toString(),
+            printType,
+            quantity: quantity.toString()
+          },
+          description: `Print Order ${orderNumber} - ${printType} (${quantity}x ${printSize})`
+        });
+
+        // Create print order in database
+        const printOrder = await storage.createPrintOrder({
+          restaurantId,
+          tenantId,
+          orderNumber,
+          customerName,
+          customerEmail,
+          customerPhone,
+          printType,
+          printSize,
+          printQuality,
+          quantity,
+          design,
+          specialInstructions,
+          rushOrder,
+          totalAmount,
+          paymentIntentId: paymentIntent.id,
+          deliveryMethod,
+          deliveryAddress,
+          estimatedCompletion: new Date(Date.now() + (rushOrder ? 24 : 72) * 60 * 60 * 1000) // 1-3 days
+        });
+
+        res.json({
+          printOrder,
+          clientSecret: paymentIntent.client_secret,
+          totalAmount
+        });
+
+      } catch (error) {
+        console.error("Error creating print order:", error);
+        res.status(500).json({ message: "Failed to create print order" });
+      }
+    }
+  );
+
+  // Get print orders for restaurant
+  app.get(
+    "/api/tenants/:tenantId/restaurants/:restaurantId/print-orders",
+    validateTenant,
+    async (req, res) => {
+      try {
+        const restaurantId = parseInt(req.params.restaurantId);
+        const tenantId = parseInt(req.params.tenantId);
+
+        const restaurant = await storage.getRestaurantById(restaurantId);
+        if (!restaurant || restaurant.tenantId !== tenantId) {
+          return res.status(404).json({ message: "Restaurant not found" });
+        }
+
+        const printOrders = await storage.getPrintOrdersByRestaurant(restaurantId, tenantId);
+        res.json(printOrders);
+
+      } catch (error) {
+        console.error("Error fetching print orders:", error);
+        res.status(500).json({ message: "Failed to fetch print orders" });
+      }
+    }
+  );
+
+  // Update print order status
+  app.patch(
+    "/api/tenants/:tenantId/restaurants/:restaurantId/print-orders/:orderId",
+    validateTenant,
+    async (req, res) => {
+      try {
+        const restaurantId = parseInt(req.params.restaurantId);
+        const tenantId = parseInt(req.params.tenantId);
+        const orderId = parseInt(req.params.orderId);
+
+        const restaurant = await storage.getRestaurantById(restaurantId);
+        if (!restaurant || restaurant.tenantId !== tenantId) {
+          return res.status(404).json({ message: "Restaurant not found" });
+        }
+
+        const updates = req.body;
+        const updatedOrder = await storage.updatePrintOrder(orderId, updates);
+
+        if (!updatedOrder) {
+          return res.status(404).json({ message: "Print order not found" });
+        }
+
+        res.json(updatedOrder);
+
+      } catch (error) {
+        console.error("Error updating print order:", error);
+        res.status(500).json({ message: "Failed to update print order" });
+      }
+    }
+  );
+
+  // Confirm payment and update order status
+  app.post(
+    "/api/print-orders/confirm-payment",
+    async (req, res) => {
+      try {
+        const { paymentIntentId } = req.body;
+
+        if (!paymentIntentId) {
+          return res.status(400).json({ message: "Payment intent ID is required" });
+        }
+
+        // Retrieve payment intent from Stripe
+        const paymentIntent = await stripe.paymentIntents.retrieve(paymentIntentId);
+
+        if (paymentIntent.status === 'succeeded') {
+          // Update print order status
+          const updatedOrder = await storage.updatePrintOrderByPaymentIntent(paymentIntentId, {
+            paymentStatus: 'paid',
+            orderStatus: 'processing',
+            stripePaymentId: paymentIntent.id
+          });
+
+          if (updatedOrder) {
+            // Send confirmation email if email service is available
+            if (emailService) {
+              try {
+                await emailService.sendPrintOrderConfirmation(
+                  updatedOrder.customerEmail,
+                  updatedOrder
+                );
+              } catch (emailError) {
+                console.error("Failed to send print order confirmation email:", emailError);
+              }
+            }
+
+            res.json({
+              success: true,
+              message: "Payment confirmed successfully",
+              order: updatedOrder
+            });
+          } else {
+            res.status(404).json({ message: "Print order not found" });
+          }
+        } else {
+          res.status(400).json({ 
+            message: "Payment not successful",
+            status: paymentIntent.status 
+          });
+        }
+
+      } catch (error) {
+        console.error("Error confirming payment:", error);
+        res.status(500).json({ message: "Failed to confirm payment" });
+      }
+    }
+  );
+
+  // Public endpoint to create print order (for external customers)
+  app.post("/api/restaurants/:restaurantId/print-orders/public", async (req, res) => {
+    try {
+      const restaurantId = parseInt(req.params.restaurantId);
+
+      if (isNaN(restaurantId)) {
+        return res.status(400).json({ message: "Invalid restaurant ID" });
+      }
+
+      const restaurant = await storage.getRestaurantById(restaurantId);
+      if (!restaurant) {
+        return res.status(404).json({ message: "Restaurant not found" });
+      }
+
+      const {
+        customerName,
+        customerEmail,
+        customerPhone,
+        printType,
+        printSize,
+        printQuality,
+        quantity,
+        design,
+        specialInstructions,
+        rushOrder,
+        deliveryMethod,
+        deliveryAddress
+      } = req.body;
+
+      // Calculate pricing (same logic as authenticated endpoint)
+      const basePrices = {
+        menu: { A4: 500, A3: 800, A2: 1200, A1: 1800, custom: 1000 },
+        flyer: { A4: 300, A3: 500, A2: 800, A1: 1200, custom: 600 },
+        poster: { A4: 800, A3: 1200, A2: 1800, A1: 2500, custom: 1500 },
+        banner: { A4: 1200, A3: 1800, A2: 2500, A1: 3500, custom: 2000 },
+        business_card: { A4: 200, A3: 300, A2: 400, A1: 500, custom: 250 }
+      };
+
+      const qualityMultipliers = {
+        draft: 0.8,
+        standard: 1.0,
+        high: 1.3,
+        premium: 1.6
+      };
+
+      const basePrice = basePrices[printType]?.[printSize] || 1000;
+      const qualityMultiplier = qualityMultipliers[printQuality] || 1.0;
+      const rushMultiplier = rushOrder ? 1.5 : 1.0;
+      const deliveryFee = deliveryMethod === 'delivery' ? 500 : deliveryMethod === 'mail' ? 300 : 0;
+
+      const totalAmount = Math.round(basePrice * qualityMultiplier * rushMultiplier * quantity + deliveryFee);
+
+      // Generate unique order number
+      const orderNumber = `PO-${Date.now()}-${Math.random().toString(36).substr(2, 9).toUpperCase()}`;
+
+      // Create Stripe payment intent
+      const paymentIntent = await stripe.paymentIntents.create({
+        amount: totalAmount,
+        currency: 'usd',
+        metadata: {
+          orderNumber,
+          restaurantId: restaurantId.toString(),
+          tenantId: restaurant.tenantId.toString(),
+          printType,
+          quantity: quantity.toString()
+        },
+        description: `Print Order ${orderNumber} - ${printType} (${quantity}x ${printSize})`
+      });
+
+      // Create print order in database
+      const printOrder = await storage.createPrintOrder({
+        restaurantId,
+        tenantId: restaurant.tenantId,
+        orderNumber,
+        customerName,
+        customerEmail,
+        customerPhone,
+        printType,
+        printSize,
+        printQuality,
+        quantity,
+        design,
+        specialInstructions,
+        rushOrder,
+        totalAmount,
+        paymentIntentId: paymentIntent.id,
+        deliveryMethod,
+        deliveryAddress,
+        estimatedCompletion: new Date(Date.now() + (rushOrder ? 24 : 72) * 60 * 60 * 1000)
+      });
+
+      res.json({
+        printOrder,
+        clientSecret: paymentIntent.client_secret,
+        totalAmount
+      });
+
+    } catch (error) {
+      console.error("Error creating public print order:", error);
+      res.status(500).json({ message: "Failed to create print order" });
+    }
+  });
+
   // Initialize cancellation reminder service
   const cancellationReminderService = new CancellationReminderService();
   cancellationReminderService.start();
