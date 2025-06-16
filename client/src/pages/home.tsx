@@ -287,13 +287,13 @@ export default function Home() {
         <div className="max-w-7xl mx-auto">
           <div className="text-center mb-16">
             <Badge className="mb-4 bg-green-100 text-green-800 hover:bg-green-200">
-              Simple, Transparent Pricing
+              {t.pricing.badge}
             </Badge>
             <h2 className="text-5xl font-bold text-gray-900 mb-6">
-              Choose Your Perfect Plan
+              {t.pricing.title}
             </h2>
             <p className="text-xl text-gray-600 max-w-3xl mx-auto">
-              Start free and scale as you grow. No hidden fees, no surprises. Cancel anytime.
+              {t.pricing.description}
             </p>
           </div>
           
@@ -308,7 +308,7 @@ export default function Home() {
                   <div className="absolute -top-4 left-1/2 transform -translate-x-1/2">
                     <Badge className="bg-gradient-to-r from-blue-600 to-purple-600 text-white px-6 py-2 text-sm font-semibold">
                       <Crown className="w-4 h-4 mr-1" />
-                      Most Popular
+                      {t.pricing.mostPopular}
                     </Badge>
                   </div>
                 )}
@@ -354,11 +354,11 @@ export default function Home() {
           
           <div className="text-center mt-16">
             <p className="text-gray-600 mb-4">
-              Need a custom solution? We've got you covered.
+              {t.pricing.customSolution}
             </p>
             <Link href="/contact">
               <Button variant="outline" size="lg" className="border-2 border-gray-300 hover:border-blue-400">
-                Contact Sales Team
+                {t.pricing.contactSalesTeam}
               </Button>
             </Link>
           </div>
@@ -370,14 +370,13 @@ export default function Home() {
         <div className="max-w-7xl mx-auto">
           <div className="text-center mb-20">
             <Badge className="mb-4 bg-purple-100 text-purple-800 hover:bg-purple-200">
-              30+ Powerful Features
+              {t.features.badge}
             </Badge>
             <h2 className="text-5xl font-bold text-gray-900 mb-6">
-              Everything Your Restaurant Needs
+              {t.features.title}
             </h2>
             <p className="text-xl text-gray-600 max-w-4xl mx-auto">
-              From booking management to kitchen operations, analytics to customer feedback - 
-              we've built every feature you need to run a successful restaurant.
+              {t.features.description}
             </p>
           </div>
           
@@ -422,10 +421,10 @@ export default function Home() {
         <div className="max-w-7xl mx-auto">
           <div className="text-center mb-16">
             <h2 className="text-4xl font-bold text-gray-900 mb-6">
-              Why Restaurants Choose ReadyTable
+              {t.whyChoose.title}
             </h2>
             <p className="text-xl text-gray-600 max-w-3xl mx-auto">
-              Built with enterprise-grade technology and designed for restaurants that demand excellence
+              {t.whyChoose.description}
             </p>
           </div>
           
@@ -434,9 +433,9 @@ export default function Home() {
               <div className="inline-flex items-center justify-center w-20 h-20 bg-gradient-to-r from-blue-500 to-blue-600 rounded-2xl mb-6 shadow-lg group-hover:shadow-xl transition-all duration-300 transform group-hover:scale-110">
                 <Shield className="h-10 w-10 text-white" />
               </div>
-              <h3 className="text-xl font-bold text-gray-900 mb-3">Enterprise Security</h3>
+              <h3 className="text-xl font-bold text-gray-900 mb-3">{t.whyChoose.enterpriseSecurity}</h3>
               <p className="text-gray-600 leading-relaxed">
-                Multi-tenant isolation, role-based access control, and secure authentication with SSO support
+                {t.whyChoose.enterpriseSecurityDesc}
               </p>
             </div>
             
@@ -444,9 +443,9 @@ export default function Home() {
               <div className="inline-flex items-center justify-center w-20 h-20 bg-gradient-to-r from-green-500 to-green-600 rounded-2xl mb-6 shadow-lg group-hover:shadow-xl transition-all duration-300 transform group-hover:scale-110">
                 <Zap className="h-10 w-10 text-white" />
               </div>
-              <h3 className="text-xl font-bold text-gray-900 mb-3">Lightning Fast</h3>
+              <h3 className="text-xl font-bold text-gray-900 mb-3">{t.whyChoose.lightningFast}</h3>
               <p className="text-gray-600 leading-relaxed">
-                Real-time updates, instant notifications, and blazing-fast performance on all devices
+                {t.whyChoose.lightningFastDesc}
               </p>
             </div>
             
@@ -454,9 +453,9 @@ export default function Home() {
               <div className="inline-flex items-center justify-center w-20 h-20 bg-gradient-to-r from-purple-500 to-purple-600 rounded-2xl mb-6 shadow-lg group-hover:shadow-xl transition-all duration-300 transform group-hover:scale-110">
                 <Globe className="h-10 w-10 text-white" />
               </div>
-              <h3 className="text-xl font-bold text-gray-900 mb-3">Cloud-Based</h3>
+              <h3 className="text-xl font-bold text-gray-900 mb-3">{t.whyChoose.cloudBased}</h3>
               <p className="text-gray-600 leading-relaxed">
-                Access anywhere with automatic backups, scaling, and 99.9% uptime guarantee
+                {t.whyChoose.cloudBasedDesc}
               </p>
             </div>
             
@@ -464,9 +463,9 @@ export default function Home() {
               <div className="inline-flex items-center justify-center w-20 h-20 bg-gradient-to-r from-orange-500 to-orange-600 rounded-2xl mb-6 shadow-lg group-hover:shadow-xl transition-all duration-300 transform group-hover:scale-110">
                 <HeartHandshake className="h-10 w-10 text-white" />
               </div>
-              <h3 className="text-xl font-bold text-gray-900 mb-3">Customer-Centric</h3>
+              <h3 className="text-xl font-bold text-gray-900 mb-3">{t.whyChoose.customerCentric}</h3>
               <p className="text-gray-600 leading-relaxed">
-                Seamless guest experience from booking to feedback with automated communications
+                {t.whyChoose.customerCentricDesc}
               </p>
             </div>
           </div>
@@ -483,42 +482,41 @@ export default function Home() {
         
         <div className="relative max-w-5xl mx-auto text-center">
           <Badge className="mb-6 bg-white/20 text-white hover:bg-white/30 px-6 py-2 text-sm font-medium">
-            Join 1000+ Restaurants Worldwide
+            {t.cta.badge}
           </Badge>
           <h2 className="text-5xl md:text-6xl font-bold text-white mb-6">
-            Ready to Transform Your Restaurant?
+            {t.cta.title}
           </h2>
           <p className="text-xl md:text-2xl text-blue-100 mb-12 max-w-3xl mx-auto leading-relaxed">
-            Start your free trial today and discover why restaurants worldwide choose ReadyTable 
-            to streamline operations and delight customers.
+            {t.cta.description}
           </p>
           
           <div className="flex flex-col sm:flex-row gap-6 justify-center mb-12">
             <Link href="/register">
               <Button size="lg" className="bg-white text-blue-600 hover:bg-gray-100 px-10 py-4 text-lg font-bold shadow-xl hover:shadow-2xl transition-all duration-300 transform hover:scale-105">
-                Start Free Trial Now
+                {t.cta.startTrialNow}
                 <ArrowRight className="ml-2 h-5 w-5" />
               </Button>
             </Link>
             <Link href="/contact">
               <Button size="lg" variant="outline" className="border-2 border-white text-white hover:bg-white hover:text-blue-600 px-10 py-4 text-lg font-bold transition-all duration-300">
-                Talk to Sales
+                {t.cta.talkToSales}
               </Button>
             </Link>
           </div>
           
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-8 text-center">
             <div>
-              <div className="text-3xl font-bold text-white mb-2">14 Days</div>
-              <div className="text-blue-200">Free Trial</div>
+              <div className="text-3xl font-bold text-white mb-2">{t.cta.freeTrial}</div>
+              <div className="text-blue-200">{t.cta.freeTrialDesc}</div>
             </div>
             <div>
-              <div className="text-3xl font-bold text-white mb-2">No Setup</div>
-              <div className="text-blue-200">Fees Required</div>
+              <div className="text-3xl font-bold text-white mb-2">{t.cta.noSetup}</div>
+              <div className="text-blue-200">{t.cta.noSetupDesc}</div>
             </div>
             <div>
-              <div className="text-3xl font-bold text-white mb-2">Cancel</div>
-              <div className="text-blue-200">Anytime</div>
+              <div className="text-3xl font-bold text-white mb-2">{t.cta.cancel}</div>
+              <div className="text-blue-200">{t.cta.cancelDesc}</div>
             </div>
           </div>
         </div>

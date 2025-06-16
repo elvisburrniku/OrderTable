@@ -102,9 +102,9 @@ export default function Footer() {
                   {companyLinks.map((link, index) => (
                     <li key={index}>
                       <Link href={link.href}>
-                        <a className="text-gray-400 hover:text-white transition-colors duration-200">
+                        <span className="text-gray-400 hover:text-white transition-colors duration-200 cursor-pointer">
                           {link.name}
-                        </a>
+                        </span>
                       </Link>
                     </li>
                   ))}
@@ -118,9 +118,9 @@ export default function Footer() {
                   {productLinks.map((link, index) => (
                     <li key={index}>
                       <Link href={link.href}>
-                        <a className="text-gray-400 hover:text-white transition-colors duration-200">
+                        <span className="text-gray-400 hover:text-white transition-colors duration-200 cursor-pointer">
                           {link.name}
-                        </a>
+                        </span>
                       </Link>
                     </li>
                   ))}
@@ -134,9 +134,9 @@ export default function Footer() {
                   {resourceLinks.map((link, index) => (
                     <li key={index}>
                       <Link href={link.href}>
-                        <a className="text-gray-400 hover:text-white transition-colors duration-200">
+                        <span className="text-gray-400 hover:text-white transition-colors duration-200 cursor-pointer">
                           {link.name}
-                        </a>
+                        </span>
                       </Link>
                     </li>
                   ))}
@@ -150,9 +150,9 @@ export default function Footer() {
                   {legalLinks.map((link, index) => (
                     <li key={index}>
                       <Link href={link.href}>
-                        <a className="text-gray-400 hover:text-white transition-colors duration-200">
+                        <span className="text-gray-400 hover:text-white transition-colors duration-200 cursor-pointer">
                           {link.name}
-                        </a>
+                        </span>
                       </Link>
                     </li>
                   ))}
