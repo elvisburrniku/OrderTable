@@ -235,6 +235,23 @@ export function KitchenDashboard({ restaurantId, tenantId }: KitchenDashboardPro
     completedCount: completedToday
   });
 
+  console.log('Kitchen Dashboard All Data:', {
+    stations: {
+      loading: stationsLoading,
+      count: stationsArray.length,
+      data: stationsArray.slice(0, 2)
+    },
+    staff: {
+      loading: staffLoading,
+      count: staffArray.length,
+      data: staffArray.slice(0, 2)
+    },
+    metrics: {
+      loading: metricsLoading,
+      data: metrics
+    }
+  });
+
   return (
     <div className="p-6 space-y-6">
       {/* Header */}
