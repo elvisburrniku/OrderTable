@@ -23,15 +23,12 @@ interface FeedbackQuestion {
 
 export default function GuestFeedbackForm() {
   const [match, params] = useRoute("/feedback/:tenantId/:restaurantId");
-  const [rating, setRating] = useState(0);
-  const [hoverRating, setHoverRating] = useState(0);
-  const [npsScore, setNpsScore] = useState(0);
-  const [comments, setComments] = useState("");
   const [customerName, setCustomerName] = useState("");
   const [customerEmail, setCustomerEmail] = useState("");
   const [customerPhone, setCustomerPhone] = useState("");
   const [feedbackSubmitted, setFeedbackSubmitted] = useState(false);
   const [questionResponses, setQuestionResponses] = useState<{[key: number]: any}>({});
+  const [hoverRatings, setHoverRatings] = useState<{[key: number]: number}>({});
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
@@ -242,6 +239,24 @@ export default function GuestFeedbackForm() {
                 <div key={question.id} className="space-y-3">
                   <Label className="text-base font-medium">{question.name}</Label>
                   
+                  {/* Text Only Questions */}
+                  {question.questionType === 'text' && (
+                    <div>
+                      <Textarea
+                        id={`text-${question.id}`}
+                        value={questionResponses[question.id]?.text || ''}
+                        onChange={(e) => {
+                          setQuestionResponses(prev => ({
+                            ...prev,
+                            [question.id]: { text: e.target.value }
+                          }));
+                        }}
+                        placeholder="Please share your thoughts..."
+                        rows={4}
+                      />
+                    </div>
+                  )}
+
                   {/* Rating Component for Star questions */}
                   {question.questionType === 'star' && (
                     <div>
@@ -252,19 +267,18 @@ export default function GuestFeedbackForm() {
                             key={star}
                             type="button"
                             className="focus:outline-none"
-                            onMouseEnter={() => setHoverRating(star)}
-                            onMouseLeave={() => setHoverRating(0)}
+                            onMouseEnter={() => setHoverRatings(prev => ({ ...prev, [question.id]: star }))}
+                            onMouseLeave={() => setHoverRatings(prev => ({ ...prev, [question.id]: 0 }))}
                             onClick={() => {
-                              setRating(star);
                               setQuestionResponses(prev => ({
                                 ...prev,
-                                [question.id]: { rating: star }
+                                [question.id]: { ...prev[question.id], rating: star }
                               }));
                             }}
                           >
                             <Star
                               className={`w-8 h-8 ${
-                                star <= (hoverRating || rating)
+                                star <= (hoverRatings[question.id] || questionResponses[question.id]?.rating || 0)
                                   ? "fill-yellow-400 text-yellow-400"
                                   : "text-gray-300"
                               }`}
@@ -272,14 +286,16 @@ export default function GuestFeedbackForm() {
                           </button>
                         ))}
                         <span className="ml-2 text-sm text-gray-600">
-                          {rating > 0 && `${rating} star${rating !== 1 ? 's' : ''}`}
+                          {questionResponses[question.id]?.rating > 0 && 
+                            `${questionResponses[question.id]?.rating} star${questionResponses[question.id]?.rating !== 1 ? 's' : ''}`
+                          }
                         </span>
                       </div>
                     </div>
                   )}
 
-                  {/* NPS Score */}
-                  {question.hasNps && (
+                  {/* NPS Score - only show if hasNps is true and not text-only */}
+                  {question.hasNps && question.questionType !== 'text' && (
                     <div>
                       <p className="text-sm text-gray-600 mb-3">
                         How likely are you to recommend us? (0-10)
@@ -290,14 +306,13 @@ export default function GuestFeedbackForm() {
                             key={score}
                             type="button"
                             onClick={() => {
-                              setNpsScore(score);
                               setQuestionResponses(prev => ({
                                 ...prev,
                                 [question.id]: { ...prev[question.id], nps: score }
                               }));
                             }}
                             className={`w-8 h-8 text-sm font-medium rounded border focus:outline-none transition-colors ${
-                              npsScore === score
+                              questionResponses[question.id]?.nps === score
                                 ? "bg-blue-600 text-white border-blue-600"
                                 : "bg-white text-gray-700 border-gray-300 hover:border-blue-300"
                             }`}
@@ -313,8 +328,8 @@ export default function GuestFeedbackForm() {
                     </div>
                   )}
 
-                  {/* Comments */}
-                  {question.hasComments && (
+                  {/* Comments - only show if hasComments is true and not text-only */}
+                  {question.hasComments && question.questionType !== 'text' && (
                     <div>
                       <Label htmlFor={`comments-${question.id}`} className="text-base font-medium">
                         Comments
@@ -326,7 +341,6 @@ export default function GuestFeedbackForm() {
                         id={`comments-${question.id}`}
                         value={questionResponses[question.id]?.comments || ''}
                         onChange={(e) => {
-                          setComments(e.target.value);
                           setQuestionResponses(prev => ({
                             ...prev,
                             [question.id]: { ...prev[question.id], comments: e.target.value }
