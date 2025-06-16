@@ -13092,7 +13092,7 @@ NEXT STEPS:
           tenantId: parseInt(tenantId),
         };
 
-        const feedback = await storage.createFeedbackResponse(parseInt(restaurantId), parseInt(tenantId), feedbackData);
+        const feedback = await storage.createFeedback(feedbackData);
         res.json(feedback);
       } catch (error) {
         console.error("Error submitting public feedback:", error);
