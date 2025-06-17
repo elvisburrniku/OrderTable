@@ -1,5 +1,6 @@
 import { useAuth } from "@/lib/auth";
 import { KitchenDashboard } from "@/components/kitchen-dashboard";
+import { PaymentRequiredGuard } from "@/components/payment-required-guard";
 
 export default function KitchenDashboardPage() {
   const { restaurant } = useAuth();
@@ -15,9 +16,11 @@ export default function KitchenDashboardPage() {
   }
 
   return (
-    <KitchenDashboard 
-      restaurantId={restaurant.id} 
-      tenantId={restaurant.tenantId} 
-    />
+    <PaymentRequiredGuard feature="kitchen dashboard and order management">
+      <KitchenDashboard 
+        restaurantId={restaurant.id} 
+        tenantId={restaurant.tenantId} 
+      />
+    </PaymentRequiredGuard>
   );
 }
