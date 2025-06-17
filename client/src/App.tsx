@@ -7,6 +7,7 @@ import { TenantProvider } from "./lib/tenant";
 import { RouteGuard } from "./components/route-guard";
 import { LayoutWrapper } from "./components/layout-wrapper";
 import { SessionTimeoutHandler } from "./components/session-timeout-handler";
+import { LanguageProvider } from "./contexts/language-context";
 import Home from "./pages/home";
 import Login from "./pages/login";
 import Register from "./pages/register";
@@ -83,7 +84,8 @@ import ErrorBoundary from "./components/error-boundary";
 function App() {
   return (
     <ErrorBoundary>
-      <QueryClientProvider client={queryClient}>
+      <LanguageProvider>
+        <QueryClientProvider client={queryClient}>
         <Switch>
           {/* Public feedback routes - standalone without guards */}
           <Route path="/feedback/:tenantId/:restaurantId" component={GuestFeedbackForm} />
@@ -179,8 +181,9 @@ function App() {
             </AuthProvider>
           </Route>
         </Switch>
-        <Toaster />
-      </QueryClientProvider>
+          <Toaster />
+        </QueryClientProvider>
+      </LanguageProvider>
     </ErrorBoundary>
   );
 }

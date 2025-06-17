@@ -3,7 +3,7 @@ import Footer from "@/components/footer";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { useTranslations } from "@/lib/i18n";
+import { useTranslations } from "@/contexts/language-context";
 import { 
   Calendar, 
   Users, 

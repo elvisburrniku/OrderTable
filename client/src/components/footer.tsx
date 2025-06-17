@@ -1,12 +1,13 @@
 import { ReadyTableLogo } from "@/components/ui/ready-table-logo";
-import { useTranslations, Language, detectLanguage } from "@/lib/i18n";
+import { useTranslations } from "@/contexts/language-context";
+import { useLanguage } from "@/contexts/language-context";
+import { Language } from "@/lib/i18n";
 import { Globe, Mail, Phone, MapPin, Facebook, Twitter, Linkedin, Instagram } from "lucide-react";
 import { Link } from "wouter";
-import { useState } from "react";
 
 export default function Footer() {
   const t = useTranslations();
-  const [currentLanguage, setCurrentLanguage] = useState<Language>(detectLanguage());
+  const { language: currentLanguage, setLanguage } = useLanguage();
 
   const languages: { code: Language; name: string; flag: string }[] = [
     { code: "en", name: "English", flag: "gb" },
@@ -187,7 +188,7 @@ export default function Footer() {
                 {languages.map((lang) => (
                   <button
                     key={lang.code}
-                    onClick={() => setCurrentLanguage(lang.code)}
+                    onClick={() => setLanguage(lang.code)}
                     className={`flex items-center gap-2 px-3 py-1 rounded-md text-sm transition-colors duration-200 ${
                       currentLanguage === lang.code
                         ? 'bg-blue-600 text-white'

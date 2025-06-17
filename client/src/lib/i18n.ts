@@ -2071,11 +2071,14 @@ export function detectLanguage(): Language {
   return 'en';
 }
 
-// Hook for using translations
+// Hook for using translations (legacy - use context version instead)
 export function useTranslations(): Translations {
   const language = detectLanguage();
   return translations[language];
 }
+
+// Export translations object for context
+export { translations };
 
 // Get specific translation
 export function getTranslation(key: string, language?: Language): string {
