@@ -13899,7 +13899,8 @@ NEXT STEPS:
 
         const { customerName, customerEmail, customerPhone, tableNumber, overallRating, questionResponses } = req.body;
 
-        // Create main feedback entry
+        // Create main feedback entry with validated rating
+        const validatedOverallRating = overallRating ? Math.min(Math.max(overallRating, 1), 5) : null;
         const feedbackData = {
           customerName,
           customerEmail,
@@ -13907,7 +13908,7 @@ NEXT STEPS:
           tableNumber,
           restaurantId,
           tenantId,
-          rating: overallRating || null,
+          rating: validatedOverallRating,
           nps: null,
           comments: null,
           visited: false,
