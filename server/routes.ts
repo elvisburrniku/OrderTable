@@ -1657,7 +1657,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
         const customer = await storage.createCustomer(customerData);
         res.json(customer);
       } catch (error) {
-        res.status(400).json({ message: "Invalid customer data" });
+        console.error("Customer creation error:", error);
+        if (error.name === 'ZodError') {
+          res.status(400).json({ 
+            message: "Invalid customer data", 
+            details: error.errors 
+          });
+        } else {
+          res.status(400).json({ 
+            message: "Invalid customer data",
+            error: error.message 
+          });
+        }
       }
     },
   );
