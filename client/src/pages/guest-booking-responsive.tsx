@@ -19,9 +19,7 @@ export default function GuestBookingResponsive(props: any) {
   const restaurantId = params?.restaurantId || props.params?.restaurantId || props.restaurantId;
   const { toast } = useToast();
 
-  // Debug logging
-  console.log('GuestBookingResponsive match:', match, 'params:', params);
-  console.log('tenantId:', tenantId, 'restaurantId:', restaurantId);
+
 
   const [currentStep, setCurrentStep] = useState(0);
   
