@@ -212,54 +212,54 @@ export default function GoogleCalendar({ selectedDate, bookings, allBookings = [
 
   // Calculate current time indicator position with second precision
   const getCurrentTimePosition = useCallback(() => {
+    if (timeSlots.length === 0) return -1;
+    
     const now = currentTime;
-    const hours = now.getHours();
-    const minutes = now.getMinutes();
-    const seconds = now.getSeconds();
+    const currentHour = now.getHours();
+    const currentMinute = now.getMinutes();
+    const currentSecond = now.getSeconds();
     
-    // Convert current time to total minutes since start of day
-    const currentTotalMinutes = hours * 60 + minutes + (seconds / 60);
+    // Find the exact slot index for current time
+    let targetSlotIndex = -1;
     
-    // Find which time slot the current time falls into or after
-    let slotIndex = -1;
-    let minutesFromSlotStart = 0;
-    
+    // Look for exact 15-minute slot match
     for (let i = 0; i < timeSlots.length; i++) {
-      const [h, m] = timeSlots[i].split(':').map(Number);
-      const slotMinutes = h * 60 + m;
+      const slotTime = timeSlots[i];
+      const [slotHour, slotMinute] = slotTime.split(':').map(Number);
       
-      // If current time is within this slot (slot to slot+15 minutes)
-      if (currentTotalMinutes >= slotMinutes && currentTotalMinutes < slotMinutes + 15) {
-        slotIndex = i;
-        minutesFromSlotStart = currentTotalMinutes - slotMinutes;
-        break;
-      }
-      // If current time is before the first slot, position at beginning
-      else if (i === 0 && currentTotalMinutes < slotMinutes) {
-        slotIndex = 0;
-        minutesFromSlotStart = Math.max(0, currentTotalMinutes - slotMinutes);
-        break;
-      }
-      // If we're past all slots, position at the last slot
-      else if (i === timeSlots.length - 1 && currentTotalMinutes >= slotMinutes) {
-        slotIndex = i;
-        minutesFromSlotStart = currentTotalMinutes - slotMinutes;
+      // Check if current time falls within this 15-minute slot
+      if (currentHour === slotHour && currentMinute >= slotMinute && currentMinute < slotMinute + 15) {
+        targetSlotIndex = i;
         break;
       }
     }
     
-    // Return -1 if current time is outside reasonable range
-    if (slotIndex === -1) return -1;
+    // If no exact match found, find closest slot
+    if (targetSlotIndex === -1) {
+      const currentTotalMinutes = currentHour * 60 + currentMinute;
+      let closestDistance = Infinity;
+      
+      for (let i = 0; i < timeSlots.length; i++) {
+        const [slotHour, slotMinute] = timeSlots[i].split(':').map(Number);
+        const slotTotalMinutes = slotHour * 60 + slotMinute;
+        const distance = Math.abs(currentTotalMinutes - slotTotalMinutes);
+        
+        if (distance < closestDistance) {
+          closestDistance = distance;
+          targetSlotIndex = i;
+        }
+      }
+    }
     
-    // Each time slot has a fixed height regardless of content
-    const slotHeight = 60; // Height matches the calendar grid rows
-    const minutesPerSlot = 15;
+    if (targetSlotIndex === -1) return -1;
     
-    // Calculate exact position within the slot
-    const positionInSlot = Math.max(0, Math.min(1, minutesFromSlotStart / minutesPerSlot));
-    const position = (slotIndex * slotHeight) + (positionInSlot * slotHeight);
+    // Calculate position within the found slot
+    const [slotHour, slotMinute] = timeSlots[targetSlotIndex].split(':').map(Number);
+    const minutesIntoSlot = (currentMinute - slotMinute) + (currentSecond / 60);
+    const progressInSlot = Math.max(0, Math.min(1, minutesIntoSlot / 15));
     
-    return position;
+    const slotHeight = 60;
+    return (targetSlotIndex * slotHeight) + (progressInSlot * slotHeight);
   }, [currentTime, timeSlots]);
 
   const getBookingsForDay = (date: Date) => {
