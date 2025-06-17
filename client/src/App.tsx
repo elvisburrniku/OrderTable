@@ -154,7 +154,6 @@ function App() {
                 <Route path="/:tenantId/booking-agents" component={BookingAgents} />
                 <Route path="/:tenantId/sms-settings" component={SmsSettings} />
                 <Route path="/:tenantId/restaurants/:restaurantId/settings" component={RestaurantSettings} />
-                <Route path="/booking-manage/:id" component={BookingManage} />
 
                 <Route path="/:tenantId/booking/:id" component={lazy(() => import("./pages/booking-detail"))} />
                 <Route path="/:tenantId/profile" component={Profile} />
@@ -170,11 +169,11 @@ function App() {
             </SetupGuard>
             
             {/* Public routes that don't require authentication */}
+            <Route path="/booking-manage/:id" component={BookingManage} />
             <Route path="/guest-booking/:tenantId/:restaurantId" component={GuestBookingResponsive} />
             <Route path="/:tenantId/book/:restaurantId" component={GuestBookingResponsive} />
             <Route path="/feedback-responses-popup" component={FeedbackResponsesPopup} />
             <Route path="/contact" component={Contact} />
-            <Route path="/feedback" component={FeedbackResponses} />
             <Route component={NotFound} />
                     </Switch>
                   </LayoutWrapper>
