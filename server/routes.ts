@@ -262,12 +262,36 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Hash password
       const hashedPassword = await bcrypt.hash(password, 10);
 
-      // Create tenant with trial period
-      const slug = companyName
+      // Create unique tenant slug
+      let baseSlug = companyName
         .toLowerCase()
         .replace(/[^a-z0-9]/g, "-")
         .replace(/-+/g, "-")
-        .substring(0, 50);
+        .replace(/^-+|-+$/g, "")
+        .substring(0, 45); // Leave room for suffix
+
+      if (!baseSlug) {
+        baseSlug = "company";
+      }
+
+      let slug = baseSlug;
+      let counter = 1;
+      
+      // Keep trying until we find a unique slug
+      while (true) {
+        try {
+          const existingTenant = await storage.getTenantBySlug(slug);
+          if (!existingTenant) {
+            break; // Slug is unique
+          }
+          slug = `${baseSlug}-${counter}`;
+          counter++;
+        } catch (error) {
+          // If getTenantBySlug throws an error for not found, the slug is unique
+          break;
+        }
+      }
+
       const trialEndDate = new Date();
       trialEndDate.setDate(trialEndDate.getDate() + plan.trialDays);
 

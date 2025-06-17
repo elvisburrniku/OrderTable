@@ -275,6 +275,10 @@ export class MemoryStorage implements IStorage {
     return this.tenants.find(t => t.id === id);
   }
 
+  async getTenantBySlug(slug: string): Promise<any> {
+    return this.tenants.find(t => t.slug === slug);
+  }
+
   async getTenantByUserId(userId: number): Promise<any> {
     const tenantUser = this.tenantUsers.find(tu => tu.userId === userId);
     if (!tenantUser) return undefined;
