@@ -19,6 +19,27 @@ export default function GuestBookingResponsive(props: any) {
   const restaurantId = params?.restaurantId || props.params?.restaurantId || props.restaurantId;
   const { toast } = useToast();
 
+  // Debug logging
+  console.log('GuestBooking - match:', match);
+  console.log('GuestBooking - params:', params);
+  console.log('GuestBooking - tenantId:', tenantId, 'restaurantId:', restaurantId);
+  
+  // Early return with visible content for debugging
+  if (!tenantId || !restaurantId) {
+    console.log('Missing parameters, showing fallback');
+    return (
+      <div className="min-h-screen bg-red-500 flex items-center justify-center text-white">
+        <div className="text-center">
+          <h1 className="text-2xl mb-4">DEBUG: Guest Booking</h1>
+          <p>tenantId: {tenantId}</p>
+          <p>restaurantId: {restaurantId}</p>
+          <p>match: {match ? 'true' : 'false'}</p>
+          <p>URL: {window.location.href}</p>
+        </div>
+      </div>
+    );
+  }
+
 
 
   const [currentStep, setCurrentStep] = useState(0);
@@ -46,22 +67,27 @@ export default function GuestBookingResponsive(props: any) {
   const [bookingId, setBookingId] = useState<number | null>(null);
 
   // Fetch restaurant data
-  const { data: restaurant } = useQuery({
+  const { data: restaurant, isLoading: restaurantLoading, error: restaurantError } = useQuery({
     queryKey: [`/api/public/tenants/${tenantId}/restaurants/${restaurantId}`],
     enabled: !!(tenantId && restaurantId),
   });
 
   // Fetch opening hours
-  const { data: openingHours } = useQuery({
+  const { data: openingHours, isLoading: hoursLoading, error: hoursError } = useQuery({
     queryKey: [`/api/public/tenants/${tenantId}/restaurants/${restaurantId}/opening-hours`],
     enabled: !!(tenantId && restaurantId),
   });
 
   // Fetch seasonal themes to determine if Experience step should be shown
-  const { data: seasonalThemes = [] } = useQuery({
+  const { data: seasonalThemes = [], isLoading: themesLoading, error: themesError } = useQuery({
     queryKey: [`/api/public/tenants/${tenantId}/restaurants/${restaurantId}/seasonal-themes`],
     enabled: !!(tenantId && restaurantId),
   });
+
+  // Debug query states
+  console.log('Restaurant:', restaurant, 'Loading:', restaurantLoading, 'Error:', restaurantError);
+  console.log('Opening hours:', openingHours, 'Loading:', hoursLoading, 'Error:', hoursError);
+  console.log('Themes:', seasonalThemes, 'Loading:', themesLoading, 'Error:', themesError);
 
   // Fetch cut-off times
   const { data: cutOffTimes } = useQuery({
