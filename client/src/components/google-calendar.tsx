@@ -1,4 +1,4 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect, useCallback } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -45,6 +45,18 @@ export default function GoogleCalendar({ selectedDate, bookings, allBookings = [
   const [currentWeek, setCurrentWeek] = useState(startOfWeek(selectedDate, { weekStartsOn: 0 }));
   const [isNewBookingOpen, setIsNewBookingOpen] = useState(false);
   const [selectedTimeSlot, setSelectedTimeSlot] = useState<{ date: Date; time: string } | null>(null);
+  
+  // Current time indicator state
+  const [currentTime, setCurrentTime] = useState(new Date());
+
+  // Update current time every minute
+  useEffect(() => {
+    const timer = setInterval(() => {
+      setCurrentTime(new Date());
+    }, 60000); // Update every minute
+
+    return () => clearInterval(timer);
+  }, []);
 
   // Fetch opening hours
   const { data: openingHours = [] } = useQuery({
@@ -197,6 +209,26 @@ export default function GoogleCalendar({ selectedDate, bookings, allBookings = [
     start: currentWeek, 
     end: endOfWeek(currentWeek, { weekStartsOn: 0 }) 
   });
+
+  // Calculate current time indicator position
+  const getCurrentTimePosition = useCallback(() => {
+    const now = currentTime;
+    const hours = now.getHours();
+    const minutes = now.getMinutes();
+    
+    // Find the index of the current time in timeSlots
+    const currentTimeString = `${hours.toString().padStart(2, "0")}:${Math.floor(minutes / 15) * 15}`;
+    const slotIndex = timeSlots.findIndex(slot => slot >= currentTimeString);
+    
+    if (slotIndex === -1) return -1;
+    
+    // Calculate exact position based on minutes within the 15-minute slot
+    const minutesIntoSlot = minutes % 15;
+    const slotHeight = 60; // Height of each time slot in pixels
+    const position = (slotIndex * slotHeight) + (minutesIntoSlot / 15 * slotHeight);
+    
+    return position;
+  }, [currentTime, timeSlots]);
 
   const getBookingsForDay = (date: Date) => {
     return allBookings.filter(booking => 
@@ -520,6 +552,22 @@ export default function GoogleCalendar({ selectedDate, bookings, allBookings = [
 
             {/* Time slots grid */}
             <div className="relative">
+              {/* Current time indicator line */}
+              {getCurrentTimePosition() >= 0 && weekDays.some(day => isToday(day)) && (
+                <div
+                  className="absolute left-0 right-0 z-20 flex items-center pointer-events-none"
+                  style={{
+                    top: `${getCurrentTimePosition()}px`,
+                  }}
+                >
+                  <div className="w-16 bg-red-500 text-white text-xs px-1 py-0.5 rounded-l font-medium">
+                    {format(currentTime, "HH:mm")}
+                  </div>
+                  <div className="flex-1 h-0.5 bg-red-500"></div>
+                  <div className="w-2 h-2 bg-red-500 rounded-full -ml-1"></div>
+                </div>
+              )}
+              
               {timeSlots.map(time => (
                 <div key={time} className="grid grid-cols-8 border-b border-gray-100 hover:bg-gray-25">
                   {/* Time label */}
