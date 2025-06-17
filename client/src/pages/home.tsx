@@ -208,8 +208,8 @@ export default function Home() {
                   {t.hero.startTrial} <Sparkles className="ml-2 h-5 w-5" />
                 </Button>
               </Link>
-              <Button size="lg" variant="outline" className="border-2 border-gray-300 hover:border-blue-400 px-8 py-4 text-lg font-semibold group bg-[#4059db]">
-                <Play className="mr-2 h-5 w-5 group-hover:text-blue-600" />
+              <Button size="lg" variant="outline" className="border-2 border-gray-300 hover:border-blue-400 px-8 py-4 text-lg font-semibold group bg-[#4059db] text-white">
+                <Play className="mr-2 h-5 w-5 text-white group-hover:text-blue-600" />
                 {t.hero.watchDemo}
               </Button>
             </div>
