@@ -9752,8 +9752,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
           const guestsPerTable = Math.floor(booking.guestCount / tablesNeeded);
           const remainderGuests = booking.guestCount % tablesNeeded;
           
+          // Debug logging to identify the source of invalid values
+          console.log(`CONFLICTS RESOLVE: Debug values - guestCount: ${booking.guestCount}, maxCapacity: ${maxCapacity}, tablesNeeded: ${tablesNeeded}, guestsPerTable: ${guestsPerTable}, remainderGuests: ${remainderGuests}`);
+          
           // Update the original booking to first portion
           const firstPortionGuests = guestsPerTable + (remainderGuests > 0 ? 1 : 0);
+          
+          // Validate calculated values before database update
+          if (!Number.isFinite(firstPortionGuests) || firstPortionGuests <= 0) {
+            console.log(`CONFLICTS RESOLVE: Invalid firstPortionGuests: ${firstPortionGuests}`);
+            return res.status(400).json({ message: "Invalid guest count calculation" });
+          }
+          
           await storage.updateBooking(booking.id, {
             guestCount: firstPortionGuests,
             notes: `Split party - Part 1 of ${tablesNeeded} (${firstPortionGuests} guests)`
@@ -9762,6 +9772,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
           // Create additional bookings for remaining guests
           for (let i = 1; i < tablesNeeded; i++) {
             const portionGuests = guestsPerTable + (i < remainderGuests ? 1 : 0);
+            
+            // Validate calculated values before database operation
+            if (!Number.isFinite(portionGuests) || portionGuests <= 0) {
+              console.log(`CONFLICTS RESOLVE: Invalid portionGuests: ${portionGuests} for booking ${i + 1}`);
+              return res.status(400).json({ message: "Invalid guest count calculation for split booking" });
+            }
+            
             await storage.createBooking({
               restaurantId,
               tenantId,

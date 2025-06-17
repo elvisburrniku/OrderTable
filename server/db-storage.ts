@@ -464,6 +464,23 @@ export class DatabaseStorage implements IStorage {
   async createBooking(booking: any): Promise<any> {
     if (!this.db) throw new Error("Database connection not available");
     
+    // Validate numeric fields to prevent invalid database values
+    if (booking.guestCount !== undefined) {
+      if (!Number.isFinite(booking.guestCount) || booking.guestCount <= 0) {
+        throw new Error(`Invalid guestCount value: ${booking.guestCount}`);
+      }
+    }
+    if (booking.tableId !== undefined && booking.tableId !== null) {
+      if (!Number.isFinite(booking.tableId) || booking.tableId <= 0) {
+        throw new Error(`Invalid tableId value: ${booking.tableId}`);
+      }
+    }
+    if (booking.customerId !== undefined && booking.customerId !== null) {
+      if (!Number.isFinite(booking.customerId) || booking.customerId <= 0) {
+        throw new Error(`Invalid customerId value: ${booking.customerId}`);
+      }
+    }
+    
     // Import BookingHash for generating management hash
     const { BookingHash } = await import('./booking-hash');
     
@@ -489,6 +506,19 @@ export class DatabaseStorage implements IStorage {
 
   async updateBooking(id: number, updates: any): Promise<any> {
     if (!this.db) throw new Error("Database connection not available");
+    
+    // Validate numeric fields to prevent invalid database values
+    if (updates.guestCount !== undefined) {
+      if (!Number.isFinite(updates.guestCount) || updates.guestCount <= 0) {
+        throw new Error(`Invalid guestCount value: ${updates.guestCount}`);
+      }
+    }
+    if (updates.tableId !== undefined && updates.tableId !== null) {
+      if (!Number.isFinite(updates.tableId) || updates.tableId <= 0) {
+        throw new Error(`Invalid tableId value: ${updates.tableId}`);
+      }
+    }
+    
     const result = await this.db.update(bookings).set(updates).where(eq(bookings.id, id)).returning();
     return result[0];
   }
