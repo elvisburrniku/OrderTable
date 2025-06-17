@@ -9551,9 +9551,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
         const tables = await storage.getTablesByRestaurant(restaurantId);
         const bookings = await storage.getBookingsByRestaurant(restaurantId);
         
+        console.log(`Heat map: Found ${tables.length} tables and ${bookings.length} bookings for restaurant ${restaurantId}`);
+        
         // Get table layout positions
         const tableLayout = await storage.getTableLayout(restaurantId);
         const positions = tableLayout?.positions || {};
+        
+        console.log(`Heat map: Table layout positions:`, positions);
 
         // Calculate heat map data for each table
         const heatMapData = tables.map((table, index) => {
