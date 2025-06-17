@@ -1,5 +1,7 @@
 import { useState, useEffect } from "react";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { useToast } from "@/hooks/use-toast";
+import { apiRequest } from "@/lib/queryClient";
 import { useAuth } from "@/lib/auth.tsx";
 import { useLocation } from "wouter";
 import { Button } from "@/components/ui/button";
@@ -7,7 +9,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
-import { Download, Eye, Star, MessageCircle, Calendar, User, HelpCircle } from "lucide-react";
+import { Download, Eye, Star, MessageCircle, Calendar, User, HelpCircle, Trash2 } from "lucide-react";
 
 interface FeedbackItem {
   id: number;
@@ -45,6 +47,8 @@ export default function FeedbackResponses() {
   const [showDetailModal, setShowDetailModal] = useState(false);
   const [tenantId, setTenantId] = useState<number | null>(null);
   const [restaurantId, setRestaurantId] = useState<number | null>(null);
+  const { toast } = useToast();
+  const queryClient = useQueryClient();
 
   // Get tenant and restaurant IDs from various sources
   useEffect(() => {
@@ -98,6 +102,31 @@ export default function FeedbackResponses() {
   const { data: feedbackResponses, isLoading: responsesLoading } = useQuery({
     queryKey: [`/api/tenants/${tenantId}/restaurants/${restaurantId}/feedback/${selectedFeedback?.id}/responses`],
     enabled: !!selectedFeedback && !!tenantId && !!restaurantId,
+  });
+
+  // Delete feedback mutation
+  const deleteFeedbackMutation = useMutation({
+    mutationFn: async (feedbackId: number) => {
+      return apiRequest("DELETE", `/api/tenants/${tenantId}/restaurants/${restaurantId}/feedback/${feedbackId}`);
+    },
+    onSuccess: () => {
+      toast({
+        title: "Success",
+        description: "Feedback deleted successfully",
+      });
+      queryClient.invalidateQueries({
+        queryKey: [`/api/tenants/${tenantId}/restaurants/${restaurantId}/feedback`],
+      });
+      setShowDetailModal(false);
+      setSelectedFeedback(null);
+    },
+    onError: () => {
+      toast({
+        title: "Error",
+        description: "Failed to delete feedback",
+        variant: "destructive",
+      });
+    },
   });
 
   // Show loading state if we don't have restaurant info yet
@@ -224,15 +253,6 @@ export default function FeedbackResponses() {
                             <div className="flex">{renderStars(item.rating)}</div>
                             <span className="text-sm font-medium">{item.rating ? `${Math.min(Math.max(item.rating, 0), 5)}/5` : 'No rating'}</span>
                           </div>
-                          
-                          {item.npsScore !== null && item.npsScore !== undefined && (
-                            <div className="flex items-center gap-2">
-                              <span className="text-sm text-gray-600">NPS:</span>
-                              <span className={`text-sm font-medium ${getNpsColor(item.npsScore)}`}>
-                                {item.npsScore}/10
-                              </span>
-                            </div>
-                          )}
                         </div>
 
                         {item.comments && (
@@ -248,14 +268,25 @@ export default function FeedbackResponses() {
                         </div>
                       </div>
                       
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => handleViewDetails(item)}
-                      >
-                        <Eye className="w-4 h-4 mr-2" />
-                        View
-                      </Button>
+                      <div className="flex gap-2">
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => handleViewDetails(item)}
+                        >
+                          <Eye className="w-4 h-4 mr-2" />
+                          View
+                        </Button>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => deleteFeedbackMutation.mutate(item.id)}
+                          disabled={deleteFeedbackMutation.isPending}
+                        >
+                          <Trash2 className="w-4 h-4 mr-2" />
+                          Delete
+                        </Button>
+                      </div>
                     </div>
                   </div>
                 ))}
