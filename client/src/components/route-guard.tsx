@@ -88,6 +88,7 @@ export function RouteGuard({ children }: RouteGuardProps) {
         /^\/\d+\/products$/,
         /^\/\d+\/product-groups$/,
         /^\/\d+\/feedback-responses$/,
+        /^\/\d+\/feedbacks$/,
         /^\/\d+\/opening-hours$/,
         /^\/\d+\/integrations/,
         /^\/\d+\/special-periods$/,
