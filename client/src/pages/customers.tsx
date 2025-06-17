@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { useAuth } from "@/lib/auth.tsx";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
@@ -6,9 +5,22 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
 import { Badge } from "@/components/ui/badge";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
 import { Search, Plus, Mail, Phone, Calendar, Star } from "lucide-react";
 import { format } from "date-fns";
 
@@ -24,44 +36,63 @@ export default function Customers() {
   });
 
   const { data: customers = [], isLoading } = useQuery({
-    queryKey: ["/api/tenants", restaurant?.tenantId, "restaurants", restaurant?.id, "customers"],
+    queryKey: [
+      "/api/tenants",
+      restaurant?.tenantId,
+      "restaurants",
+      restaurant?.id,
+      "customers",
+    ],
     enabled: !!restaurant,
     queryFn: async () => {
-      const response = await fetch(`/api/tenants/${restaurant?.tenantId}/restaurants/${restaurant?.id}/customers`, {
-        headers: {
-          'x-tenant-id': restaurant?.tenantId?.toString() || '1'
-        }
-      });
+      const response = await fetch(
+        `/api/tenants/${restaurant?.tenantId}/restaurants/${restaurant?.id}/customers`,
+        {
+          headers: {
+            "x-tenant-id": restaurant?.tenantId?.toString() || "1",
+          },
+        },
+      );
       if (!response.ok) throw new Error("Failed to fetch customers");
       return response.json();
-    }
+    },
   });
 
   const createCustomerMutation = useMutation({
     mutationFn: async (customerData: any) => {
-      const response = await fetch(`/api/tenants/${restaurant?.tenantId}/restaurants/${restaurant?.id}/customers`, {
-        method: "POST",
-        headers: { 
-          "Content-Type": "application/json",
-          'x-tenant-id': restaurant?.tenantId?.toString() || '1'
+      const response = await fetch(
+        `/api/tenants/${restaurant?.tenantId}/restaurants/${restaurant?.id}/customers`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            "x-tenant-id": restaurant?.tenantId?.toString() || "1",
+          },
+          body: JSON.stringify(customerData),
         },
-        body: JSON.stringify(customerData),
-      });
+      );
       if (!response.ok) throw new Error("Failed to create customer");
       return response.json();
     },
     onSuccess: () => {
       queryClient.invalidateQueries({
-        queryKey: ["/api/tenants", restaurant?.tenantId, "restaurants", restaurant?.id, "customers"],
+        queryKey: [
+          "/api/tenants",
+          restaurant?.tenantId,
+          "restaurants",
+          restaurant?.id,
+          "customers",
+        ],
       });
       setIsDialogOpen(false);
       setNewCustomer({ name: "", email: "", phone: "" });
     },
   });
 
-  const filteredCustomers = customers.filter((customer: any) =>
-    customer.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    customer.email.toLowerCase().includes(searchTerm.toLowerCase())
+  const filteredCustomers = customers.filter(
+    (customer: any) =>
+      customer.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      customer.email.toLowerCase().includes(searchTerm.toLowerCase()),
   );
 
   const handleCreateCustomer = (e: React.FormEvent) => {
@@ -75,35 +106,6 @@ export default function Customers() {
 
   return (
     <div className="min-h-screen bg-gray-50">
-      {/* Navigation */}
-      <div className="bg-white border-b">
-        <div className="flex items-center justify-between px-6 py-4">
-          <div className="flex items-center space-x-6">
-            <h1 className="text-xl font-semibold">Customers</h1>
-            <nav className="flex space-x-6">
-              <a
-                href="/dashboard"
-                className="text-gray-600 hover:text-gray-900"
-              >
-                Booking
-              </a>
-              <a href="#" className="text-green-600 font-medium">
-                CRM
-              </a>
-              <a href="#" className="text-gray-600 hover:text-gray-900">
-                Archive
-              </a>
-            </nav>
-          </div>
-          <div className="flex items-center space-x-4">
-            <span className="text-sm text-gray-600">{restaurant.name}</span>
-            <Button variant="outline" size="sm">
-              Profile
-            </Button>
-          </div>
-        </div>
-      </div>
-
       <div className="p-6">
         <Card>
           <CardHeader>
@@ -127,7 +129,10 @@ export default function Customers() {
                         id="name"
                         value={newCustomer.name}
                         onChange={(e) =>
-                          setNewCustomer({ ...newCustomer, name: e.target.value })
+                          setNewCustomer({
+                            ...newCustomer,
+                            name: e.target.value,
+                          })
                         }
                         required
                       />
@@ -139,7 +144,10 @@ export default function Customers() {
                         type="email"
                         value={newCustomer.email}
                         onChange={(e) =>
-                          setNewCustomer({ ...newCustomer, email: e.target.value })
+                          setNewCustomer({
+                            ...newCustomer,
+                            email: e.target.value,
+                          })
                         }
                         required
                       />
@@ -150,7 +158,10 @@ export default function Customers() {
                         id="phone"
                         value={newCustomer.phone}
                         onChange={(e) =>
-                          setNewCustomer({ ...newCustomer, phone: e.target.value })
+                          setNewCustomer({
+                            ...newCustomer,
+                            phone: e.target.value,
+                          })
                         }
                       />
                     </div>
@@ -159,7 +170,9 @@ export default function Customers() {
                       className="w-full"
                       disabled={createCustomerMutation.isPending}
                     >
-                      {createCustomerMutation.isPending ? "Adding..." : "Add Customer"}
+                      {createCustomerMutation.isPending
+                        ? "Adding..."
+                        : "Add Customer"}
                     </Button>
                   </form>
                 </DialogContent>
@@ -180,7 +193,9 @@ export default function Customers() {
               <div className="text-center py-8">Loading customers...</div>
             ) : filteredCustomers.length === 0 ? (
               <div className="text-center py-8 text-gray-500">
-                {searchTerm ? "No customers found matching your search" : "No customers yet"}
+                {searchTerm
+                  ? "No customers found matching your search"
+                  : "No customers yet"}
               </div>
             ) : (
               <Table>
@@ -196,7 +211,9 @@ export default function Customers() {
                 <TableBody>
                   {filteredCustomers.map((customer: any) => (
                     <TableRow key={customer.id}>
-                      <TableCell className="font-medium">{customer.name}</TableCell>
+                      <TableCell className="font-medium">
+                        {customer.name}
+                      </TableCell>
                       <TableCell>
                         <div className="space-y-1">
                           <div className="flex items-center gap-2 text-sm">
@@ -228,15 +245,15 @@ export default function Customers() {
                             (customer.totalBookings || 0) > 5
                               ? "default"
                               : (customer.totalBookings || 0) > 2
-                              ? "secondary"
-                              : "outline"
+                                ? "secondary"
+                                : "outline"
                           }
                         >
                           {(customer.totalBookings || 0) > 5
                             ? "VIP"
                             : (customer.totalBookings || 0) > 2
-                            ? "Regular"
-                            : "New"}
+                              ? "Regular"
+                              : "New"}
                         </Badge>
                       </TableCell>
                     </TableRow>

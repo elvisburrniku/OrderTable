@@ -26,23 +26,28 @@ export default function SpecialPeriods() {
 
   // Fetch existing special periods
   const { data: existingPeriods, isLoading } = useQuery({
-    queryKey: [`/api/tenants/${restaurant?.tenantId}/restaurants/${restaurant?.id}/special-periods`],
+    queryKey: [
+      `/api/tenants/${restaurant?.tenantId}/restaurants/${restaurant?.id}/special-periods`,
+    ],
     enabled: !!restaurant?.id && !!restaurant?.tenantId,
   });
 
   // Create special period mutation
   const createPeriodMutation = useMutation({
     mutationFn: async (periodData: SpecialPeriod) => {
-      const response = await fetch(`/api/tenants/${restaurant?.tenantId}/restaurants/${restaurant?.id}/special-periods`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
+      const response = await fetch(
+        `/api/tenants/${restaurant?.tenantId}/restaurants/${restaurant?.id}/special-periods`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify(periodData),
         },
-        body: JSON.stringify(periodData),
-      });
+      );
 
       if (!response.ok) {
-        throw new Error('Failed to create special period');
+        throw new Error("Failed to create special period");
       }
 
       return response.json();
@@ -56,11 +61,12 @@ export default function SpecialPeriods() {
       queryClient.invalidateQueries({
         predicate: (query) => {
           const queryKey = query.queryKey;
-          return Array.isArray(queryKey) && (
-            queryKey.includes('special-periods') ||
-            (queryKey.length >= 3 && queryKey[0] === 'specialPeriods')
+          return (
+            Array.isArray(queryKey) &&
+            (queryKey.includes("special-periods") ||
+              (queryKey.length >= 3 && queryKey[0] === "specialPeriods"))
           );
-        }
+        },
       });
     },
     onError: (error) => {
@@ -74,17 +80,26 @@ export default function SpecialPeriods() {
 
   // Update special period mutation
   const updatePeriodMutation = useMutation({
-    mutationFn: async ({ periodId, periodData }: { periodId: number, periodData: SpecialPeriod }) => {
-      const response = await fetch(`/api/tenants/${restaurant?.tenantId}/restaurants/${restaurant?.id}/special-periods/${periodId}`, {
-        method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
+    mutationFn: async ({
+      periodId,
+      periodData,
+    }: {
+      periodId: number;
+      periodData: SpecialPeriod;
+    }) => {
+      const response = await fetch(
+        `/api/tenants/${restaurant?.tenantId}/restaurants/${restaurant?.id}/special-periods/${periodId}`,
+        {
+          method: "PUT",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify(periodData),
         },
-        body: JSON.stringify(periodData),
-      });
+      );
 
       if (!response.ok) {
-        throw new Error('Failed to update special period');
+        throw new Error("Failed to update special period");
       }
 
       return response.json();
@@ -98,11 +113,12 @@ export default function SpecialPeriods() {
       queryClient.invalidateQueries({
         predicate: (query) => {
           const queryKey = query.queryKey;
-          return Array.isArray(queryKey) && (
-            queryKey.includes('special-periods') ||
-            (queryKey.length >= 3 && queryKey[0] === 'specialPeriods')
+          return (
+            Array.isArray(queryKey) &&
+            (queryKey.includes("special-periods") ||
+              (queryKey.length >= 3 && queryKey[0] === "specialPeriods"))
           );
-        }
+        },
       });
     },
     onError: (error) => {
@@ -117,12 +133,15 @@ export default function SpecialPeriods() {
   // Delete special period mutation
   const deletePeriodMutation = useMutation({
     mutationFn: async (periodId: number) => {
-      const response = await fetch(`/api/tenants/${restaurant?.tenantId}/restaurants/${restaurant?.id}/special-periods/${periodId}`, {
-        method: 'DELETE',
-      });
+      const response = await fetch(
+        `/api/tenants/${restaurant?.tenantId}/restaurants/${restaurant?.id}/special-periods/${periodId}`,
+        {
+          method: "DELETE",
+        },
+      );
 
       if (!response.ok) {
-        throw new Error('Failed to delete special period');
+        throw new Error("Failed to delete special period");
       }
 
       return response.json();
@@ -136,11 +155,12 @@ export default function SpecialPeriods() {
       queryClient.invalidateQueries({
         predicate: (query) => {
           const queryKey = query.queryKey;
-          return Array.isArray(queryKey) && (
-            queryKey.includes('special-periods') ||
-            (queryKey.length >= 3 && queryKey[0] === 'specialPeriods')
+          return (
+            Array.isArray(queryKey) &&
+            (queryKey.includes("special-periods") ||
+              (queryKey.length >= 3 && queryKey[0] === "specialPeriods"))
           );
-        }
+        },
       });
     },
     onError: (error) => {
@@ -155,15 +175,17 @@ export default function SpecialPeriods() {
   // Load existing periods when data is fetched
   useEffect(() => {
     if (existingPeriods && Array.isArray(existingPeriods)) {
-      setPeriods(existingPeriods.map((period: any) => ({
-        id: period.id,
-        name: period.name,
-        startDate: period.startDate,
-        endDate: period.endDate,
-        isOpen: period.isOpen,
-        openTime: period.openTime || "09:00",
-        closeTime: period.closeTime || "22:00",
-      })));
+      setPeriods(
+        existingPeriods.map((period: any) => ({
+          id: period.id,
+          name: period.name,
+          startDate: period.startDate,
+          endDate: period.endDate,
+          isOpen: period.isOpen,
+          openTime: period.openTime || "09:00",
+          closeTime: period.closeTime || "22:00",
+        })),
+      );
     }
   }, [existingPeriods]);
 
@@ -172,14 +194,17 @@ export default function SpecialPeriods() {
   }
 
   const addPeriod = () => {
-    setPeriods([...periods, { 
-      name: "", 
-      startDate: "", 
-      endDate: "", 
-      isOpen: true, 
-      openTime: "09:00", 
-      closeTime: "22:00" 
-    }]);
+    setPeriods([
+      ...periods,
+      {
+        name: "",
+        startDate: "",
+        endDate: "",
+        isOpen: true,
+        openTime: "09:00",
+        closeTime: "22:00",
+      },
+    ]);
   };
 
   const updatePeriod = (index: number, field: string, value: any) => {
@@ -229,30 +254,13 @@ export default function SpecialPeriods() {
 
   return (
     <div className="min-h-screen bg-gray-50">
-      {/* Navigation */}
-      <div className="bg-white border-b">
-        <div className="flex items-center justify-between px-6 py-4">
-          <div className="flex items-center space-x-6">
-            <h1 className="text-xl font-semibold">Special periods</h1>
-            <nav className="flex space-x-6">
-              <a href="/dashboard" className="text-gray-600 hover:text-gray-900">Booking</a>
-              <a href="#" className="text-green-600 font-medium">CRM</a>
-              <a href="#" className="text-gray-600 hover:text-gray-900">Archive</a>
-            </nav>
-          </div>
-          <div className="flex items-center space-x-4">
-            <span className="text-sm text-gray-600">{restaurant.name}</span>
-            <Button variant="outline" size="sm">Profile</Button>
-          </div>
-        </div>
-      </div>
-
       <div className="p-6">
         <Card>
           <CardHeader>
             <CardTitle>Special periods</CardTitle>
             <p className="text-sm text-gray-600">
-              Here you can define periods with different opening hours and closing.
+              Here you can define periods with different opening hours and
+              closing.
             </p>
           </CardHeader>
           <CardContent className="space-y-6">
@@ -265,7 +273,9 @@ export default function SpecialPeriods() {
                 {periods.map((period, index) => (
                   <div key={index} className="border rounded-lg p-4 space-y-4">
                     <div className="flex justify-between items-center">
-                      <h4 className="font-medium">Special Period #{index + 1}</h4>
+                      <h4 className="font-medium">
+                        Special Period #{index + 1}
+                      </h4>
                       <Button
                         variant="outline"
                         size="sm"
@@ -275,7 +285,7 @@ export default function SpecialPeriods() {
                         <Trash2 className="h-4 w-4" />
                       </Button>
                     </div>
-                    
+
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                       <div>
                         <Label htmlFor={`name-${index}`}>Period Name</Label>
@@ -283,7 +293,9 @@ export default function SpecialPeriods() {
                           id={`name-${index}`}
                           placeholder="e.g., Holiday Hours"
                           value={period.name}
-                          onChange={(e) => updatePeriod(index, 'name', e.target.value)}
+                          onChange={(e) =>
+                            updatePeriod(index, "name", e.target.value)
+                          }
                         />
                       </div>
                       <div>
@@ -292,7 +304,9 @@ export default function SpecialPeriods() {
                           id={`start-${index}`}
                           type="date"
                           value={period.startDate}
-                          onChange={(e) => updatePeriod(index, 'startDate', e.target.value)}
+                          onChange={(e) =>
+                            updatePeriod(index, "startDate", e.target.value)
+                          }
                         />
                       </div>
                       <div>
@@ -301,7 +315,9 @@ export default function SpecialPeriods() {
                           id={`end-${index}`}
                           type="date"
                           value={period.endDate}
-                          onChange={(e) => updatePeriod(index, 'endDate', e.target.value)}
+                          onChange={(e) =>
+                            updatePeriod(index, "endDate", e.target.value)
+                          }
                         />
                       </div>
                     </div>
@@ -311,7 +327,9 @@ export default function SpecialPeriods() {
                         <Switch
                           id={`open-${index}`}
                           checked={period.isOpen}
-                          onCheckedChange={(checked) => updatePeriod(index, 'isOpen', checked)}
+                          onCheckedChange={(checked) =>
+                            updatePeriod(index, "isOpen", checked)
+                          }
                         />
                         <Label htmlFor={`open-${index}`}>Restaurant Open</Label>
                       </div>
@@ -320,40 +338,55 @@ export default function SpecialPeriods() {
                     {period.isOpen && (
                       <div className="grid grid-cols-2 gap-4">
                         <div>
-                          <Label htmlFor={`open-time-${index}`}>Open Time</Label>
+                          <Label htmlFor={`open-time-${index}`}>
+                            Open Time
+                          </Label>
                           <Input
                             id={`open-time-${index}`}
                             type="time"
                             value={period.openTime}
-                            onChange={(e) => updatePeriod(index, 'openTime', e.target.value)}
+                            onChange={(e) =>
+                              updatePeriod(index, "openTime", e.target.value)
+                            }
                           />
                         </div>
                         <div>
-                          <Label htmlFor={`close-time-${index}`}>Close Time</Label>
+                          <Label htmlFor={`close-time-${index}`}>
+                            Close Time
+                          </Label>
                           <Input
                             id={`close-time-${index}`}
                             type="time"
                             value={period.closeTime}
-                            onChange={(e) => updatePeriod(index, 'closeTime', e.target.value)}
+                            onChange={(e) =>
+                              updatePeriod(index, "closeTime", e.target.value)
+                            }
                           />
                         </div>
                       </div>
                     )}
 
-                    <Button 
+                    <Button
                       onClick={() => savePeriod(index)}
-                      disabled={createPeriodMutation.isPending || updatePeriodMutation.isPending}
+                      disabled={
+                        createPeriodMutation.isPending ||
+                        updatePeriodMutation.isPending
+                      }
                       className="bg-blue-600 hover:bg-blue-700 text-white"
                     >
-                      {(createPeriodMutation.isPending || updatePeriodMutation.isPending) ? "Saving..." : 
-                       (period.id ? "Update Period" : "Create Period")}
+                      {createPeriodMutation.isPending ||
+                      updatePeriodMutation.isPending
+                        ? "Saving..."
+                        : period.id
+                          ? "Update Period"
+                          : "Create Period"}
                     </Button>
                   </div>
                 ))}
               </div>
             )}
 
-            <Button 
+            <Button
               onClick={addPeriod}
               className="bg-green-600 hover:bg-green-700 text-white"
             >

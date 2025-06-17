@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { useAuth } from "@/lib/auth.tsx";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
@@ -7,8 +6,21 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Settings as SettingsIcon, Clock, Bell, Palette, Mail, Save } from "lucide-react";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import {
+  Settings as SettingsIcon,
+  Clock,
+  Bell,
+  Palette,
+  Mail,
+  Save,
+} from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 
 export default function Settings() {
@@ -38,11 +50,14 @@ export default function Settings() {
 
   const updateSettingsMutation = useMutation({
     mutationFn: async (data: any) => {
-      const response = await fetch(`/api/tenants/${restaurant?.tenantId}/restaurants/${restaurant?.id}/settings`, {
-        method: "PUT",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(data),
-      });
+      const response = await fetch(
+        `/api/tenants/${restaurant?.tenantId}/restaurants/${restaurant?.id}/settings`,
+        {
+          method: "PUT",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(data),
+        },
+      );
       if (!response.ok) throw new Error("Failed to update settings");
       return response.json();
     },
@@ -68,32 +83,6 @@ export default function Settings() {
 
   return (
     <div className="min-h-screen bg-gray-50">
-      {/* Navigation */}
-      <div className="bg-white border-b">
-        <div className="flex items-center justify-between px-6 py-4">
-          <div className="flex items-center space-x-6">
-            <h1 className="text-xl font-semibold">Settings</h1>
-            <nav className="flex space-x-6">
-              <a href={`/${restaurant?.tenantId}/dashboard`} className="text-gray-600 hover:text-gray-900">
-                Booking
-              </a>
-              <a href={`/${restaurant?.tenantId}/bookings`} className="text-gray-600 hover:text-gray-900">
-                CRM
-              </a>
-              <a href={`/${restaurant?.tenantId}/activity-log`} className="text-gray-600 hover:text-gray-900">
-                Archive
-              </a>
-            </nav>
-          </div>
-          <div className="flex items-center space-x-4">
-            <span className="text-sm text-gray-600">{restaurant?.name}</span>
-            <Button variant="outline" size="sm">
-              Profile
-            </Button>
-          </div>
-        </div>
-      </div>
-
       <div className="p-6 space-y-6">
         {/* General Settings */}
         <Card>
@@ -107,21 +96,39 @@ export default function Settings() {
             <div className="grid grid-cols-2 gap-4">
               <div>
                 <Label htmlFor="timeZone">Time Zone</Label>
-                <Select value={appSettings.timeZone} onValueChange={(value) => setAppSettings({ ...appSettings, timeZone: value })}>
+                <Select
+                  value={appSettings.timeZone}
+                  onValueChange={(value) =>
+                    setAppSettings({ ...appSettings, timeZone: value })
+                  }
+                >
                   <SelectTrigger>
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="America/New_York">Eastern Time</SelectItem>
-                    <SelectItem value="America/Chicago">Central Time</SelectItem>
-                    <SelectItem value="America/Denver">Mountain Time</SelectItem>
-                    <SelectItem value="America/Los_Angeles">Pacific Time</SelectItem>
+                    <SelectItem value="America/New_York">
+                      Eastern Time
+                    </SelectItem>
+                    <SelectItem value="America/Chicago">
+                      Central Time
+                    </SelectItem>
+                    <SelectItem value="America/Denver">
+                      Mountain Time
+                    </SelectItem>
+                    <SelectItem value="America/Los_Angeles">
+                      Pacific Time
+                    </SelectItem>
                   </SelectContent>
                 </Select>
               </div>
               <div>
                 <Label htmlFor="dateFormat">Date Format</Label>
-                <Select value={appSettings.dateFormat} onValueChange={(value) => setAppSettings({ ...appSettings, dateFormat: value })}>
+                <Select
+                  value={appSettings.dateFormat}
+                  onValueChange={(value) =>
+                    setAppSettings({ ...appSettings, dateFormat: value })
+                  }
+                >
                   <SelectTrigger>
                     <SelectValue />
                   </SelectTrigger>
@@ -136,7 +143,12 @@ export default function Settings() {
             <div className="grid grid-cols-2 gap-4">
               <div>
                 <Label htmlFor="timeFormat">Time Format</Label>
-                <Select value={appSettings.timeFormat} onValueChange={(value) => setAppSettings({ ...appSettings, timeFormat: value })}>
+                <Select
+                  value={appSettings.timeFormat}
+                  onValueChange={(value) =>
+                    setAppSettings({ ...appSettings, timeFormat: value })
+                  }
+                >
                   <SelectTrigger>
                     <SelectValue />
                   </SelectTrigger>
@@ -147,12 +159,19 @@ export default function Settings() {
                 </Select>
               </div>
               <div>
-                <Label htmlFor="defaultDuration">Default Booking Duration (minutes)</Label>
+                <Label htmlFor="defaultDuration">
+                  Default Booking Duration (minutes)
+                </Label>
                 <Input
                   id="defaultDuration"
                   type="number"
                   value={appSettings.defaultBookingDuration}
-                  onChange={(e) => setAppSettings({ ...appSettings, defaultBookingDuration: parseInt(e.target.value) })}
+                  onChange={(e) =>
+                    setAppSettings({
+                      ...appSettings,
+                      defaultBookingDuration: parseInt(e.target.value),
+                    })
+                  }
                 />
               </div>
             </div>
@@ -162,7 +181,12 @@ export default function Settings() {
                 id="maxAdvance"
                 type="number"
                 value={appSettings.maxAdvanceBookingDays}
-                onChange={(e) => setAppSettings({ ...appSettings, maxAdvanceBookingDays: parseInt(e.target.value) })}
+                onChange={(e) =>
+                  setAppSettings({
+                    ...appSettings,
+                    maxAdvanceBookingDays: parseInt(e.target.value),
+                  })
+                }
               />
             </div>
           </CardContent>
@@ -180,31 +204,46 @@ export default function Settings() {
             <div className="flex items-center justify-between">
               <div>
                 <Label>Enable Walk-ins</Label>
-                <p className="text-sm text-gray-600">Allow walk-in customers without reservations</p>
+                <p className="text-sm text-gray-600">
+                  Allow walk-in customers without reservations
+                </p>
               </div>
               <Switch
                 checked={appSettings.enableWalkIns}
-                onCheckedChange={(checked) => setAppSettings({ ...appSettings, enableWalkIns: checked })}
+                onCheckedChange={(checked) =>
+                  setAppSettings({ ...appSettings, enableWalkIns: checked })
+                }
               />
             </div>
             <div className="flex items-center justify-between">
               <div>
                 <Label>Enable Waiting List</Label>
-                <p className="text-sm text-gray-600">Allow customers to join waiting list when fully booked</p>
+                <p className="text-sm text-gray-600">
+                  Allow customers to join waiting list when fully booked
+                </p>
               </div>
               <Switch
                 checked={appSettings.enableWaitingList}
-                onCheckedChange={(checked) => setAppSettings({ ...appSettings, enableWaitingList: checked })}
+                onCheckedChange={(checked) =>
+                  setAppSettings({ ...appSettings, enableWaitingList: checked })
+                }
               />
             </div>
             <div className="flex items-center justify-between">
               <div>
                 <Label>Auto-confirm Bookings</Label>
-                <p className="text-sm text-gray-600">Automatically confirm bookings without manual approval</p>
+                <p className="text-sm text-gray-600">
+                  Automatically confirm bookings without manual approval
+                </p>
               </div>
               <Switch
                 checked={appSettings.autoConfirmBookings}
-                onCheckedChange={(checked) => setAppSettings({ ...appSettings, autoConfirmBookings: checked })}
+                onCheckedChange={(checked) =>
+                  setAppSettings({
+                    ...appSettings,
+                    autoConfirmBookings: checked,
+                  })
+                }
               />
             </div>
           </CardContent>
@@ -225,7 +264,12 @@ export default function Settings() {
                 <Input
                   id="fromName"
                   value={emailSettings.fromName}
-                  onChange={(e) => setEmailSettings({ ...emailSettings, fromName: e.target.value })}
+                  onChange={(e) =>
+                    setEmailSettings({
+                      ...emailSettings,
+                      fromName: e.target.value,
+                    })
+                  }
                 />
               </div>
               <div>
@@ -234,37 +278,63 @@ export default function Settings() {
                   id="fromEmail"
                   type="email"
                   value={emailSettings.fromEmail}
-                  onChange={(e) => setEmailSettings({ ...emailSettings, fromEmail: e.target.value })}
+                  onChange={(e) =>
+                    setEmailSettings({
+                      ...emailSettings,
+                      fromEmail: e.target.value,
+                    })
+                  }
                 />
               </div>
             </div>
             <div className="flex items-center justify-between">
               <div>
                 <Label>Booking Confirmation Emails</Label>
-                <p className="text-sm text-gray-600">Send confirmation email when booking is made</p>
+                <p className="text-sm text-gray-600">
+                  Send confirmation email when booking is made
+                </p>
               </div>
               <Switch
                 checked={emailSettings.enableBookingConfirmation}
-                onCheckedChange={(checked) => setEmailSettings({ ...emailSettings, enableBookingConfirmation: checked })}
+                onCheckedChange={(checked) =>
+                  setEmailSettings({
+                    ...emailSettings,
+                    enableBookingConfirmation: checked,
+                  })
+                }
               />
             </div>
             <div className="flex items-center justify-between">
               <div>
                 <Label>Booking Reminder Emails</Label>
-                <p className="text-sm text-gray-600">Send reminder email before booking</p>
+                <p className="text-sm text-gray-600">
+                  Send reminder email before booking
+                </p>
               </div>
               <Switch
                 checked={emailSettings.enableBookingReminders}
-                onCheckedChange={(checked) => setEmailSettings({ ...emailSettings, enableBookingReminders: checked })}
+                onCheckedChange={(checked) =>
+                  setEmailSettings({
+                    ...emailSettings,
+                    enableBookingReminders: checked,
+                  })
+                }
               />
             </div>
             <div>
-              <Label htmlFor="reminderHours">Reminder Hours Before Booking</Label>
+              <Label htmlFor="reminderHours">
+                Reminder Hours Before Booking
+              </Label>
               <Input
                 id="reminderHours"
                 type="number"
                 value={emailSettings.reminderHoursBefore}
-                onChange={(e) => setEmailSettings({ ...emailSettings, reminderHoursBefore: parseInt(e.target.value) })}
+                onChange={(e) =>
+                  setEmailSettings({
+                    ...emailSettings,
+                    reminderHoursBefore: parseInt(e.target.value),
+                  })
+                }
               />
             </div>
           </CardContent>
@@ -272,9 +342,14 @@ export default function Settings() {
 
         {/* Save Button */}
         <div className="flex justify-end">
-          <Button onClick={handleSaveSettings} disabled={updateSettingsMutation.isPending}>
+          <Button
+            onClick={handleSaveSettings}
+            disabled={updateSettingsMutation.isPending}
+          >
             <Save className="h-4 w-4 mr-2" />
-            {updateSettingsMutation.isPending ? "Saving..." : "Save All Settings"}
+            {updateSettingsMutation.isPending
+              ? "Saving..."
+              : "Save All Settings"}
           </Button>
         </div>
       </div>

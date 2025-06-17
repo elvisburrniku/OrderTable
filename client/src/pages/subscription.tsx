@@ -4,7 +4,15 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Check, X, CreditCard, Calendar, ExternalLink, CheckCircle, AlertCircle } from "lucide-react";
+import {
+  Check,
+  X,
+  CreditCard,
+  Calendar,
+  ExternalLink,
+  CheckCircle,
+  AlertCircle,
+} from "lucide-react";
 import { format } from "date-fns";
 import { loadStripe } from "@stripe/stripe-js";
 
@@ -34,9 +42,9 @@ export default function Subscription() {
   // Handle success/cancel from Stripe redirect
   useEffect(() => {
     if (!user) return;
-    
+
     const urlParams = new URLSearchParams(window.location.search);
-    if (urlParams.get('success') === 'true') {
+    if (urlParams.get("success") === "true") {
       setShowSuccessMessage(true);
       // Refresh subscription data
       queryClient.invalidateQueries({
@@ -47,7 +55,7 @@ export default function Subscription() {
       // Hide message after 5 seconds
       setTimeout(() => setShowSuccessMessage(false), 5000);
     }
-    if (urlParams.get('canceled') === 'true') {
+    if (urlParams.get("canceled") === "true") {
       setShowCancelMessage(true);
       // Clear the URL parameter
       window.history.replaceState({}, document.title, window.location.pathname);
@@ -56,24 +64,36 @@ export default function Subscription() {
     }
   }, [queryClient, user]);
 
-  const { data: plans = [], isLoading: plansLoading } = useQuery<SubscriptionPlan[]>({
+  const { data: plans = [], isLoading: plansLoading } = useQuery<
+    SubscriptionPlan[]
+  >({
     queryKey: ["/api/subscription-plans"],
     enabled: !!user,
   });
 
-  const { data: currentSubscription, isLoading: subscriptionLoading } = useQuery<UserSubscription | null>({
-    queryKey: ["/api/users", user?.id, "subscription"],
-    enabled: !!user,
-  });
+  const { data: currentSubscription, isLoading: subscriptionLoading } =
+    useQuery<UserSubscription | null>({
+      queryKey: ["/api/users", user?.id, "subscription"],
+      enabled: !!user,
+    });
 
   const subscribeMutation = useMutation({
-    mutationFn: async ({ planId, action }: { planId: number; action?: 'cancel' }) => {
-      if (action === 'cancel') {
+    mutationFn: async ({
+      planId,
+      action,
+    }: {
+      planId: number;
+      action?: "cancel";
+    }) => {
+      if (action === "cancel") {
         // Cancel subscription
-        const response = await fetch(`/api/subscriptions/${currentSubscription?.id}/cancel`, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-        });
+        const response = await fetch(
+          `/api/subscriptions/${currentSubscription?.id}/cancel`,
+          {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+          },
+        );
 
         if (!response.ok) throw new Error("Failed to cancel subscription");
         return response.json();
@@ -126,10 +146,14 @@ export default function Subscription() {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
         <div className="text-center">
-          <h1 className="text-2xl font-bold text-gray-800 mb-4">Access Required</h1>
-          <p className="text-gray-600 mb-6">Please log in to view your subscription.</p>
-          <a 
-            href="/login" 
+          <h1 className="text-2xl font-bold text-gray-800 mb-4">
+            Access Required
+          </h1>
+          <p className="text-gray-600 mb-6">
+            Please log in to view your subscription.
+          </p>
+          <a
+            href="/login"
             className="inline-flex items-center px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
           >
             Go to Login
@@ -153,7 +177,7 @@ export default function Subscription() {
   const handleSubscribe = (planId: number) => {
     if (currentSubscription && currentSubscription.planId === planId) {
       // Cancel current subscription
-      subscribeMutation.mutate({ planId, action: 'cancel' });
+      subscribeMutation.mutate({ planId, action: "cancel" });
     } else {
       // Subscribe to new plan
       subscribeMutation.mutate({ planId });
@@ -176,35 +200,6 @@ export default function Subscription() {
 
   return (
     <div className="min-h-screen bg-gray-50">
-      {/* Navigation */}
-      <div className="bg-white border-b">
-        <div className="flex items-center justify-between px-6 py-4">
-          <div className="flex items-center space-x-6">
-            <h1 className="text-xl font-semibold">Subscription</h1>
-            <nav className="flex space-x-6">
-              <a
-                href={`/${restaurant.tenantId}/dashboard`}
-                className="text-gray-600 hover:text-gray-900"
-              >
-                Booking
-              </a>
-              <a href={`/${restaurant.tenantId}/bookings`} className="text-green-600 font-medium">
-                CRM
-              </a>
-              <a href={`/${restaurant.tenantId}/activity-log`} className="text-gray-600 hover:text-gray-900">
-                Archive
-              </a>
-            </nav>
-          </div>
-          <div className="flex items-center space-x-4">
-            <span className="text-sm text-gray-600">{restaurant.name}</span>
-            <Button variant="outline" size="sm">
-              Profile
-            </Button>
-          </div>
-        </div>
-      </div>
-
       <div className="p-6">
         {/* Success Message */}
         {showSuccessMessage && (
@@ -213,10 +208,13 @@ export default function Subscription() {
               <CardContent className="p-4">
                 <div className="flex items-center gap-2 text-green-800">
                   <CheckCircle className="h-5 w-5" />
-                  <span className="font-medium">Subscription Updated Successfully!</span>
+                  <span className="font-medium">
+                    Subscription Updated Successfully!
+                  </span>
                 </div>
                 <p className="text-sm text-green-700 mt-1">
-                  Your subscription has been activated and you now have access to all features.
+                  Your subscription has been activated and you now have access
+                  to all features.
                 </p>
               </CardContent>
             </Card>
@@ -230,7 +228,9 @@ export default function Subscription() {
               <CardContent className="p-4">
                 <div className="flex items-center gap-2 text-orange-800">
                   <AlertCircle className="h-5 w-5" />
-                  <span className="font-medium">Subscription Update Cancelled</span>
+                  <span className="font-medium">
+                    Subscription Update Cancelled
+                  </span>
                 </div>
                 <p className="text-sm text-orange-700 mt-1">
                   Your subscription change was cancelled. No charges were made.
@@ -254,7 +254,9 @@ export default function Subscription() {
                 <div className="flex items-center justify-between">
                   <div>
                     <div className="flex items-center gap-2 mb-2">
-                      <h3 className="text-lg font-semibold">{getCurrentPlanName()}</h3>
+                      <h3 className="text-lg font-semibold">
+                        {getCurrentPlanName()}
+                      </h3>
                       <Badge
                         variant={
                           currentSubscription.status === "active"

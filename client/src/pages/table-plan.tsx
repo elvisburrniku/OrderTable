@@ -143,7 +143,13 @@ export default function TablePlan() {
   const planRef = useRef<HTMLDivElement>(null);
 
   const { data: tables = [], isLoading: tablesLoading } = useQuery({
-    queryKey: ["/api/tenants", restaurant?.tenantId, "restaurants", restaurant?.id, "tables"],
+    queryKey: [
+      "/api/tenants",
+      restaurant?.tenantId,
+      "restaurants",
+      restaurant?.id,
+      "tables",
+    ],
     queryFn: async () => {
       const tenantId = restaurant?.tenantId;
       const response = await fetch(
@@ -156,7 +162,13 @@ export default function TablePlan() {
   });
 
   const { data: rooms = [] } = useQuery({
-    queryKey: ["/api/tenants", restaurant?.tenantId, "restaurants", restaurant?.id, "rooms"],
+    queryKey: [
+      "/api/tenants",
+      restaurant?.tenantId,
+      "restaurants",
+      restaurant?.id,
+      "rooms",
+    ],
     queryFn: async () => {
       const tenantId = restaurant?.tenantId;
       const response = await fetch(
@@ -241,15 +253,18 @@ export default function TablePlan() {
     [],
   );
 
-  const handleDragOver = useCallback((e: React.DragEvent) => {
-    e.preventDefault();
-    e.stopPropagation();
-    if (draggedStructure) {
-      e.dataTransfer.dropEffect = "copy";
-    } else {
-      e.dataTransfer.dropEffect = "move";
-    }
-  }, [draggedStructure]);
+  const handleDragOver = useCallback(
+    (e: React.DragEvent) => {
+      e.preventDefault();
+      e.stopPropagation();
+      if (draggedStructure) {
+        e.dataTransfer.dropEffect = "copy";
+      } else {
+        e.dataTransfer.dropEffect = "move";
+      }
+    },
+    [draggedStructure],
+  );
 
   const handleDrop = useCallback(
     (e: React.DragEvent) => {
@@ -356,7 +371,7 @@ export default function TablePlan() {
           body: JSON.stringify({ ...tableData, restaurantId: restaurant?.id }),
         },
       );
-      
+
       if (!response.ok) {
         const errorData = await response.json().catch(() => null);
         if (errorData?.requiresUpgrade) {
@@ -386,7 +401,13 @@ export default function TablePlan() {
 
       // Refresh tables list
       queryClient.invalidateQueries({
-        queryKey: ["/api/tenants", restaurant?.tenantId, "restaurants", restaurant?.id, "tables"],
+        queryKey: [
+          "/api/tenants",
+          restaurant?.tenantId,
+          "restaurants",
+          restaurant?.id,
+          "tables",
+        ],
       });
 
       setShowConfigDialog(false);
@@ -402,9 +423,13 @@ export default function TablePlan() {
     }
 
     // Check if table number already exists
-    const existingTable = tables.find((table: any) => table.tableNumber === tableConfig.tableNumber);
+    const existingTable = tables.find(
+      (table: any) => table.tableNumber === tableConfig.tableNumber,
+    );
     if (existingTable) {
-      alert("A table with this number already exists. Please choose a different number.");
+      alert(
+        "A table with this number already exists. Please choose a different number.",
+      );
       return;
     }
 
@@ -499,35 +524,6 @@ export default function TablePlan() {
 
   return (
     <div className="min-h-screen bg-gray-50">
-      {/* Navigation */}
-      <div className="bg-white border-b">
-        <div className="flex items-center justify-between px-6 py-4">
-          <div className="flex items-center space-x-6">
-            <h1 className="text-xl font-semibold">Table Plan</h1>
-            <nav className="flex space-x-6">
-              <a
-                href="/dashboard"
-                className="text-gray-600 hover:text-gray-900"
-              >
-                Booking
-              </a>
-              <a href="#" className="text-green-600 font-medium">
-                CRM
-              </a>
-              <a href="#" className="text-gray-600 hover:text-gray-900">
-                Archive
-              </a>
-            </nav>
-          </div>
-          <div className="flex items-center space-x-4">
-            <span className="text-sm text-gray-600">{restaurant.name}</span>
-            <Button variant="outline" size="sm">
-              Profile
-            </Button>
-          </div>
-        </div>
-      </div>
-
       <div className="flex">
         {/* Sidebar */}
         <div className="w-64 bg-white border-r min-h-screen">
@@ -543,7 +539,10 @@ export default function TablePlan() {
                 </SelectTrigger>
                 <SelectContent>
                   {rooms.map((room: any) => (
-                    <SelectItem key={`room-${room.id}`} value={room.id.toString()}>
+                    <SelectItem
+                      key={`room-${room.id}`}
+                      value={room.id.toString()}
+                    >
                       {room.name}
                     </SelectItem>
                   ))}
@@ -604,7 +603,10 @@ export default function TablePlan() {
                           </SelectTrigger>
                           <SelectContent>
                             {TABLE_SHAPES.map((shape) => (
-                              <SelectItem key={`shape-${shape.value}`} value={shape.value}>
+                              <SelectItem
+                                key={`shape-${shape.value}`}
+                                value={shape.value}
+                              >
                                 {shape.label}
                               </SelectItem>
                             ))}
@@ -649,7 +651,8 @@ export default function TablePlan() {
               </div>
               <div className="text-xs text-gray-500 p-2 bg-blue-50 rounded">
                 <strong>Tips:</strong>
-                <br />• Drag table structures onto the floor plan to add new tables
+                <br />• Drag table structures onto the floor plan to add new
+                tables
                 <br />• Hover over placed tables to see the remove button (×)
                 <br />• Right-click on tables for quick removal
               </div>
@@ -679,7 +682,9 @@ export default function TablePlan() {
               <div className="flex items-center justify-between">
                 <CardTitle>
                   Table Plan -{" "}
-                  {rooms.find((room: any) => room.id.toString() === selectedRoom)?.name || "Select a room"}
+                  {rooms.find(
+                    (room: any) => room.id.toString() === selectedRoom,
+                  )?.name || "Select a room"}
                 </CardTitle>
                 <div className="flex gap-2">
                   <Button
@@ -748,7 +753,9 @@ export default function TablePlan() {
                 {/* Placed Tables */}
                 {Object.entries(tablePositions).map(([tableId, position]) => {
                   // Find corresponding table from database if it exists
-                  const dbTable = tables.find((t: any) => t.id === parseInt(tableId));
+                  const dbTable = tables.find(
+                    (t: any) => t.id === parseInt(tableId),
+                  );
                   const numericTableId = parseInt(tableId);
 
                   return (
@@ -767,8 +774,12 @@ export default function TablePlan() {
                       }
                       onContextMenu={(e) => {
                         e.preventDefault();
-                        if (window.confirm(`Are you sure you want to remove this table from the floor plan?`)) {
-                          setTablePositions(prev => {
+                        if (
+                          window.confirm(
+                            `Are you sure you want to remove this table from the floor plan?`,
+                          )
+                        ) {
+                          setTablePositions((prev) => {
                             const newPositions = { ...prev };
                             delete newPositions[numericTableId];
                             return newPositions;
@@ -797,8 +808,12 @@ export default function TablePlan() {
                           onClick={(e) => {
                             e.preventDefault();
                             e.stopPropagation();
-                            if (window.confirm(`Are you sure you want to remove this table from the floor plan?`)) {
-                              setTablePositions(prev => {
+                            if (
+                              window.confirm(
+                                `Are you sure you want to remove this table from the floor plan?`,
+                              )
+                            ) {
+                              setTablePositions((prev) => {
                                 const newPositions = { ...prev };
                                 delete newPositions[numericTableId];
                                 return newPositions;
@@ -844,9 +859,8 @@ export default function TablePlan() {
           <DialogHeader>
             <DialogTitle>Configure New Table</DialogTitle>
             <p className="text-sm text-gray-600">
-              {pendingTablePosition?.structure && 
-                `Adding ${pendingTablePosition.structure.name} (${pendingTablePosition.structure.description})`
-              }
+              {pendingTablePosition?.structure &&
+                `Adding ${pendingTablePosition.structure.name} (${pendingTablePosition.structure.description})`}
             </p>
           </DialogHeader>
           <div className="space-y-4">
@@ -894,7 +908,10 @@ export default function TablePlan() {
               <Button
                 onClick={handleConfigSubmit}
                 className="bg-green-600 hover:bg-green-700"
-                disabled={createTableMutation.isPending || !tableConfig.tableNumber.trim()}
+                disabled={
+                  createTableMutation.isPending ||
+                  !tableConfig.tableNumber.trim()
+                }
               >
                 {createTableMutation.isPending ? "Creating..." : "Add Table"}
               </Button>
