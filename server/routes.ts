@@ -2,6 +2,7 @@ import type { Express } from "express";
 import { createServer, type Server } from "http";
 import { WebSocketServer, WebSocket } from "ws";
 import { storage } from "./storage";
+import { db } from "./db";
 import {
   insertUserSchema,
   loginSchema,
@@ -117,22 +118,32 @@ export async function registerRoutes(app: Express): Promise<Server> {
         req.query.tenantId ||
         req.body.tenantId;
 
+      // Security audit log for tenant access attempts
+      if (process.env.NODE_ENV === 'development') {
+        console.log(`SECURITY: ${req.method} ${req.originalUrl} - User: ${req.user?.id || 'unauthenticated'} - Tenant: ${tenantId}`);
+      }
+
       if (!tenantId) {
+        console.log("SECURITY DEBUG: No tenant ID provided");
         return res.status(400).json({ message: "Tenant ID is required" });
       }
 
       const parsedTenantId = parseInt(tenantId as string);
       if (isNaN(parsedTenantId)) {
+        console.log("SECURITY DEBUG: Invalid tenant ID format");
         return res.status(400).json({ message: "Invalid tenant ID" });
       }
 
       // Check if user is authenticated
       if (!req.user || !req.user.id) {
+        console.log("SECURITY DEBUG: No authenticated user found");
         return res.status(401).json({ message: "Authentication required" });
       }
 
+      console.log(`SECURITY DEBUG: Checking access for user ${req.user.id} to tenant ${parsedTenantId}`);
+
       // Verify user has access to this tenant
-      const userTenant = await storage.db
+      const userTenant = await db
         .select()
         .from(tenantUsers)
         .where(
@@ -142,8 +153,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
           )
         );
 
+      console.log(`SECURITY DEBUG: User tenant query result:`, userTenant);
+
       if (!userTenant.length) {
-        console.warn(`SECURITY: User ${req.user.id} attempted to access tenant ${parsedTenantId} without permission`);
+        console.warn(`SECURITY VIOLATION: User ${req.user.id} attempted to access tenant ${parsedTenantId} without permission`);
         return res.status(403).json({ message: "Access denied: You don't have permission to access this tenant" });
       }
 
@@ -152,7 +165,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       if (restaurantId) {
         const parsedRestaurantId = parseInt(restaurantId);
         if (!isNaN(parsedRestaurantId)) {
-          const restaurant = await storage.db
+          const restaurant = await db
             .select()
             .from(restaurants)
             .where(
@@ -162,13 +175,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
               )
             );
 
+          console.log(`SECURITY DEBUG: Restaurant validation for ${parsedRestaurantId} in tenant ${parsedTenantId}:`, restaurant);
+
           if (!restaurant.length) {
-            console.warn(`SECURITY: User ${req.user.id} attempted to access restaurant ${parsedRestaurantId} not belonging to tenant ${parsedTenantId}`);
+            console.warn(`SECURITY VIOLATION: User ${req.user.id} attempted to access restaurant ${parsedRestaurantId} not belonging to tenant ${parsedTenantId}`);
             return res.status(403).json({ message: "Access denied: Restaurant not found in this tenant" });
           }
         }
       }
 
+      console.log(`SECURITY DEBUG: Access granted for user ${req.user.id} to tenant ${parsedTenantId}`);
       req.tenantId = parsedTenantId;
       req.userRole = userTenant[0].role;
       next();
