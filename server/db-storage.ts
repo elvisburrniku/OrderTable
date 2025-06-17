@@ -1680,7 +1680,15 @@ export class DatabaseStorage implements IStorage {
   }
 
   async getActivityLogByRestaurant(restaurantId: number): Promise<any[]> {
-    return [];
+    if (!this.db) throw new Error("Database connection not available");
+    
+    const logs = await this.db
+      .select()
+      .from(activityLog)
+      .where(eq(activityLog.restaurantId, restaurantId))
+      .orderBy(desc(activityLog.createdAt));
+    
+    return logs;
   }
 
   async createActivityLog(log: any): Promise<any> {
