@@ -94,14 +94,28 @@ export default function CookieConsent() {
     setIsVisible(false);
   };
 
-  // Don't render if translations aren't loaded or banner isn't visible
-  console.log('Cookie consent render check:', { 
-    hasTranslations: !!t, 
-    hasCookieConsent: !!(t && t.cookieConsent), 
-    isVisible 
-  });
+  // Don't render if banner isn't visible
+  if (!isVisible) return null;
   
-  if (!t || !t.cookieConsent || !isVisible) return null;
+  // Use fallback English text if translations aren't loaded yet
+  const fallbackText = {
+    title: "We Value Your Privacy",
+    description: "We use cookies to enhance your experience, analyze site traffic, and personalize content. You can customize your preferences or accept all cookies.",
+    acceptAll: "Accept All Cookies",
+    rejectAll: "Reject All",
+    customize: "Customize Settings",
+    necessary: "Necessary Cookies",
+    analytics: "Analytics Cookies", 
+    marketing: "Marketing Cookies",
+    necessaryDesc: "Essential cookies required for basic website functionality and security.",
+    analyticsDesc: "Help us understand how visitors interact with our website to improve performance.",
+    marketingDesc: "Used to deliver personalized advertisements and track marketing campaign effectiveness.",
+    savePreferences: "Save My Preferences",
+    privacyPolicy: "Privacy Policy",
+    learnMore: "Learn More"
+  };
+  
+  const cookieText = (t && t.cookieConsent) ? t.cookieConsent : fallbackText;
 
   return (
     <>
@@ -115,17 +129,17 @@ export default function CookieConsent() {
               </div>
               <div className="flex-1">
                 <h3 className="font-semibold text-gray-900 mb-1">
-                  {t.cookieConsent.title}
+                  {cookieText.title}
                 </h3>
                 <p className="text-sm text-gray-600 leading-relaxed">
-                  {t.cookieConsent.description}
+                  {cookieText.description}
                 </p>
                 <div className="flex items-center gap-2 mt-2">
                   <button 
                     className="text-sm text-blue-600 hover:text-blue-700 font-medium inline-flex items-center gap-1"
                     onClick={() => setShowCustomize(true)}
                   >
-                    {t.cookieConsent.learnMore}
+                    {cookieText.learnMore}
                     <ExternalLink className="w-3 h-3" />
                   </button>
                 </div>
@@ -138,7 +152,7 @@ export default function CookieConsent() {
                 onClick={handleRejectAll}
                 className="order-2 sm:order-1"
               >
-                {t.cookieConsent.rejectAll}
+                {cookieText.rejectAll}
               </Button>
               <Button
                 variant="outline"
@@ -146,13 +160,13 @@ export default function CookieConsent() {
                 className="order-3 sm:order-2"
               >
                 <Settings className="w-4 h-4 mr-2" />
-                {t.cookieConsent.customize}
+                {cookieText.customize}
               </Button>
               <Button
                 onClick={handleAcceptAll}
                 className="order-1 sm:order-3 bg-blue-600 hover:bg-blue-700"
               >
-                {t.cookieConsent.acceptAll}
+                {cookieText.acceptAll}
               </Button>
             </div>
           </div>
