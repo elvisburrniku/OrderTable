@@ -662,6 +662,44 @@ export class MemoryStorage implements IStorage {
     this.activityLog = this.activityLog.filter(log => log.createdAt >= beforeDate);
     return initialCount - this.activityLog.length;
   }
+
+  // Product Groups
+  private productGroups: any[] = [];
+  
+  async getProductGroupsByRestaurant(restaurantId: number): Promise<any[]> {
+    return this.productGroups.filter(group => group.restaurantId === restaurantId);
+  }
+
+  async createProductGroup(group: any): Promise<any> {
+    const newGroup = { 
+      id: this.nextId++, 
+      ...group, 
+      createdAt: new Date(),
+      updatedAt: new Date()
+    };
+    this.productGroups.push(newGroup);
+    return newGroup;
+  }
+
+  async updateProductGroup(id: number, updates: any): Promise<any> {
+    const index = this.productGroups.findIndex(group => group.id === id);
+    if (index >= 0) {
+      this.productGroups[index] = { 
+        ...this.productGroups[index], 
+        ...updates, 
+        updatedAt: new Date() 
+      };
+      return this.productGroups[index];
+    }
+    return undefined;
+  }
+
+  async deleteProductGroup(id: number): Promise<void> {
+    const index = this.productGroups.findIndex(group => group.id === id);
+    if (index >= 0) {
+      this.productGroups.splice(index, 1);
+    }
+  }
   async getTimeSlotsByRestaurant(restaurantId: number, date?: string): Promise<TimeSlots[]> { return []; }
   async createTimeSlot(slot: InsertTimeSlots): Promise<TimeSlots> { 
     const newSlot: TimeSlots = { id: this.nextId++, ...slot, createdAt: new Date() };
