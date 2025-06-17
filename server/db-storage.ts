@@ -18,6 +18,7 @@ const {
   waitingList,
   feedback,
   feedbackQuestions,
+  feedbackResponses,
   activityLog,
   timeSlots,
   rooms,
@@ -1354,6 +1355,36 @@ export class DatabaseStorage implements IStorage {
   async deleteFeedbackQuestion(id: number): Promise<void> {
     if (!this.db) throw new Error("Database connection not available");
     await this.db.delete(feedbackQuestions).where(eq(feedbackQuestions.id, id));
+  }
+
+  // Feedback Response methods
+  async createFeedbackResponse(responseData: any): Promise<any> {
+    if (!this.db) throw new Error("Database connection not available");
+    const [newResponse] = await this.db.insert(feedbackResponses).values(responseData).returning();
+    return newResponse;
+  }
+
+  async getFeedbackResponsesByFeedbackId(feedbackId: number): Promise<any[]> {
+    if (!this.db) throw new Error("Database connection not available");
+    
+    const result = await this.db
+      .select({
+        id: feedbackResponses.id,
+        feedbackId: feedbackResponses.feedbackId,
+        questionId: feedbackResponses.questionId,
+        rating: feedbackResponses.rating,
+        npsScore: feedbackResponses.npsScore,
+        textResponse: feedbackResponses.textResponse,
+        createdAt: feedbackResponses.createdAt,
+        questionName: feedbackQuestions.name,
+        questionType: feedbackQuestions.questionType,
+      })
+      .from(feedbackResponses)
+      .leftJoin(feedbackQuestions, eq(feedbackResponses.questionId, feedbackQuestions.id))
+      .where(eq(feedbackResponses.feedbackId, feedbackId))
+      .orderBy(asc(feedbackQuestions.sortOrder));
+    
+    return result;
   }
 
   async getFeedbackResponses(restaurantId: number, tenantId: number): Promise<any[]> {

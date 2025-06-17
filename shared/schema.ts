@@ -864,6 +864,18 @@ export const feedbackQuestions = pgTable("feedback_questions", {
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
 });
 
+export const feedbackResponses = pgTable("feedback_responses", {
+  id: serial("id").primaryKey(),
+  feedbackId: integer("feedback_id").notNull().references(() => feedback.id, { onDelete: "cascade" }),
+  questionId: integer("question_id").notNull().references(() => feedbackQuestions.id, { onDelete: "cascade" }),
+  restaurantId: integer("restaurant_id").notNull().references(() => restaurants.id, { onDelete: "cascade" }),
+  tenantId: integer("tenant_id").notNull().references(() => tenants.id, { onDelete: "cascade" }),
+  rating: integer("rating"), // Star rating (1-5)
+  npsScore: integer("nps_score"), // NPS score (0-10)
+  textResponse: text("text_response"), // Text answer
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
 export type MenuPrintOrder = InferSelectModel<typeof menuPrintOrders>;
 export type InsertMenuPrintOrder = InferInsertModel<typeof menuPrintOrders>;
 
@@ -883,6 +895,14 @@ export const insertSeatingConfigurationSchema = createInsertSchema(seatingConfig
   createdAt: true,
   updatedAt: true
 });
+
+export const insertFeedbackResponseSchema = createInsertSchema(feedbackResponses).omit({
+  id: true,
+  createdAt: true,
+});
+
+export type FeedbackResponse = typeof feedbackResponses.$inferSelect;
+export type InsertFeedbackResponse = typeof feedbackResponses.$inferInsert;
 
 // Kitchen Dashboard Tables
 export const kitchenOrders = pgTable("kitchen_orders", {

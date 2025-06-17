@@ -1991,16 +1991,85 @@ export async function registerRoutes(app: Express): Promise<Server> {
           return res.status(404).json({ message: "Restaurant not found" });
         }
 
+        const { customerName, customerEmail, customerPhone, questionResponses } = req.body;
+
+        // Create main feedback entry
         const feedbackData = {
-          ...req.body,
+          customerName,
+          customerEmail,
+          customerPhone,
           restaurantId,
           tenantId,
+          rating: null, // Will be calculated from responses
+          nps: null, // Will be set from NPS response
+          comments: '', // Will be combined from text responses
         };
 
         const feedback = await storage.createFeedback(feedbackData);
+
+        // Store individual question responses
+        if (questionResponses && Array.isArray(questionResponses)) {
+          for (const response of questionResponses) {
+            await storage.createFeedbackResponse({
+              feedbackId: feedback.id,
+              questionId: response.questionId,
+              restaurantId,
+              tenantId,
+              rating: response.rating || null,
+              npsScore: response.npsScore || null,
+              textResponse: response.textResponse || null,
+            });
+
+            // Update main feedback with overall rating and NPS
+            if (response.rating) {
+              feedbackData.rating = response.rating;
+            }
+            if (response.npsScore) {
+              feedbackData.nps = response.npsScore;
+            }
+            if (response.textResponse) {
+              feedbackData.comments = feedbackData.comments 
+                ? `${feedbackData.comments}; ${response.textResponse}`
+                : response.textResponse;
+            }
+          }
+
+          // Update the main feedback entry with aggregated data
+          await storage.updateFeedback(feedback.id, {
+            rating: feedbackData.rating,
+            nps: feedbackData.nps,
+            comments: feedbackData.comments,
+          });
+        }
+
         res.json(feedback);
       } catch (error) {
+        console.error("Feedback submission error:", error);
         res.status(400).json({ message: "Invalid feedback data" });
+      }
+    },
+  );
+
+  // Get feedback responses for specific feedback
+  app.get(
+    "/api/tenants/:tenantId/restaurants/:restaurantId/feedback/:feedbackId/responses",
+    validateTenant,
+    async (req, res) => {
+      try {
+        const restaurantId = parseInt(req.params.restaurantId);
+        const tenantId = parseInt(req.params.tenantId);
+        const feedbackId = parseInt(req.params.feedbackId);
+
+        const restaurant = await storage.getRestaurantById(restaurantId);
+        if (!restaurant || restaurant.tenantId !== tenantId) {
+          return res.status(404).json({ message: "Restaurant not found" });
+        }
+
+        const responses = await storage.getFeedbackResponsesByFeedbackId(feedbackId);
+        res.json(responses);
+      } catch (error) {
+        console.error("Error fetching feedback responses:", error);
+        res.status(500).json({ message: "Failed to fetch feedback responses" });
       }
     },
   );
