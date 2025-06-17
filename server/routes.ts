@@ -133,6 +133,44 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Apply session middleware to all routes
   app.use(attachUser);
 
+  // Helper function to log activities
+  const logActivity = async (params: {
+    restaurantId?: number;
+    tenantId?: number;
+    eventType: string;
+    description: string;
+    source: string;
+    userEmail?: string;
+    userLogin?: string;
+    guestEmail?: string;
+    ipAddress?: string;
+    userAgent?: string;
+    bookingId?: number;
+    customerId?: number;
+    details?: any;
+  }) => {
+    try {
+      await storage.createActivityLog({
+        restaurantId: params.restaurantId,
+        tenantId: params.tenantId,
+        eventType: params.eventType,
+        description: params.description,
+        source: params.source,
+        userEmail: params.userEmail,
+        userLogin: params.userLogin,
+        guestEmail: params.guestEmail,
+        ipAddress: params.ipAddress,
+        userAgent: params.userAgent,
+        bookingId: params.bookingId,
+        customerId: params.customerId,
+        details: params.details,
+        createdAt: new Date(),
+      });
+    } catch (error) {
+      console.error("Failed to log activity:", error);
+    }
+  };
+
   // Company Registration route
   app.post("/api/auth/register-company", async (req, res) => {
     try {
@@ -198,6 +236,25 @@ export async function registerRoutes(app: Express): Promise<Server> {
         name: restaurantName,
         userId: user.id,
         emailSettings: JSON.stringify({}),
+      });
+
+      // Log company registration
+      await logActivity({
+        restaurantId: restaurant.id,
+        tenantId: tenant.id,
+        eventType: "company_registration",
+        description: `New company "${companyName}" registered with restaurant "${restaurantName}"`,
+        source: "registration",
+        userEmail: email,
+        userLogin: email,
+        ipAddress: req.ip,
+        userAgent: req.get('User-Agent'),
+        details: {
+          companyName,
+          restaurantName,
+          planName: plan.name,
+          subscriptionStatus: "trial"
+        }
       });
 
       // If this is a paid plan, create Stripe checkout session
@@ -343,6 +400,23 @@ export async function registerRoutes(app: Express): Promise<Server> {
       (req as any).session.restaurant = restaurant;
       (req as any).session.rememberMe = rememberMe;
 
+      // Log successful login
+      await logActivity({
+        restaurantId: restaurant?.id,
+        tenantId: tenantUser.id,
+        eventType: "login",
+        description: `User logged in successfully`,
+        source: "manual",
+        userEmail: user.email,
+        userLogin: user.email,
+        ipAddress: req.ip,
+        userAgent: req.get('User-Agent'),
+        details: {
+          rememberMe,
+          sessionDuration: rememberMe ? "30 days" : "24 hours"
+        }
+      });
+
       res.json({
         user: { ...user, password: undefined },
         tenant: tenantUser,
@@ -359,6 +433,25 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Logout route
   app.post("/api/auth/logout", async (req, res) => {
     try {
+      const sessionUser = (req as any).session?.user;
+      const sessionTenant = (req as any).session?.tenant;
+      const sessionRestaurant = (req as any).session?.restaurant;
+
+      // Log logout before destroying session
+      if (sessionUser && sessionTenant) {
+        await logActivity({
+          restaurantId: sessionRestaurant?.id,
+          tenantId: sessionTenant.id,
+          eventType: "logout",
+          description: `User logged out`,
+          source: "manual",
+          userEmail: sessionUser.email,
+          userLogin: sessionUser.email,
+          ipAddress: req.ip,
+          userAgent: req.get('User-Agent')
+        });
+      }
+
       // Destroy session
       (req as any).session.destroy((err: any) => {
         if (err) {
@@ -417,6 +510,21 @@ export async function registerRoutes(app: Express): Promise<Server> {
         password: hashedNewPassword,
       });
 
+      // Log password change
+      const sessionTenant = (req as any).session?.tenant;
+      const sessionRestaurant = (req as any).session?.restaurant;
+      await logActivity({
+        restaurantId: sessionRestaurant?.id,
+        tenantId: sessionTenant?.id,
+        eventType: "password_change",
+        description: `User changed password`,
+        source: "manual",
+        userEmail: user.email,
+        userLogin: user.email,
+        ipAddress: req.ip,
+        userAgent: req.get('User-Agent')
+      });
+
       res.json({ message: "Password updated successfully" });
     } catch (error) {
       console.error("Password change error:", error);
@@ -444,6 +552,26 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       // Update user in database
       const updatedUser = await storage.updateUser(userId, { name, email });
+
+      // Log profile update
+      const sessionTenant = (req as any).session?.tenant;
+      const sessionRestaurant = (req as any).session?.restaurant;
+      await logActivity({
+        restaurantId: sessionRestaurant?.id,
+        tenantId: sessionTenant?.id,
+        eventType: "profile_update",
+        description: `User updated profile information`,
+        source: "manual",
+        userEmail: email,
+        userLogin: email,
+        ipAddress: req.ip,
+        userAgent: req.get('User-Agent'),
+        details: {
+          oldEmail: existingUser?.email !== email ? existingUser?.email : undefined,
+          newEmail: email,
+          nameChanged: true
+        }
+      });
 
       if (!updatedUser) {
         return res.status(404).json({ message: "User not found" });
