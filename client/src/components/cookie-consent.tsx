@@ -115,7 +115,7 @@ export default function CookieConsent() {
     learnMore: "Learn More"
   };
   
-  const cookieText = (t && t.cookieConsent) ? t.cookieConsent : fallbackText;
+  const cookieText = (t?.cookieConsent) || fallbackText;
 
   return (
     <>
@@ -278,7 +278,7 @@ export default function CookieConsent() {
                 target="_blank"
                 rel="noopener noreferrer"
               >
-                {t.cookieConsent.privacyPolicy}
+                {cookieText.privacyPolicy}
               </a>
             </div>
           </div>
