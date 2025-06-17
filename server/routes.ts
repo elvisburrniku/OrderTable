@@ -6096,156 +6096,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     },
   );
 
-  // Heat map data endpoint
-  app.get(
-    "/api/tenants/:tenantId/restaurants/:restaurantId/heat-map",
-    validateTenant,
-    async (req, res) => {
-      try {
-        const restaurantId = parseInt(req.params.restaurantId);
-        const tenantId = parseInt(req.params.tenantId);
-        const { timeRange = "today" } = req.query;
 
-        // Get tables and bookings for the restaurant
-        const tables = await storage.getTablesByRestaurant(restaurantId);
-        const bookings = await storage.getBookingsByRestaurant(restaurantId);
-
-        // Filter by tenant and normalize table data structure
-        const tenantTables = tables
-          .filter((table) => table.tenant_id === tenantId)
-          .map((table) => ({
-            id: table.id,
-            tableNumber: table.table_number,
-            capacity: table.capacity,
-            tenantId: table.tenant_id,
-            restaurantId: table.restaurant_id,
-          }));
-        const tenantBookings = bookings.filter(
-          (booking) => booking.tenantId === tenantId,
-        );
-
-        // Filter bookings by time range
-        let filteredBookings = tenantBookings;
-        const now = new Date();
-
-        if (timeRange === "today") {
-          const today = now.toISOString().split("T")[0];
-          filteredBookings = tenantBookings.filter((booking) => {
-            const bookingDate = new Date(booking.bookingDate)
-              .toISOString()
-              .split("T")[0];
-            return bookingDate === today;
-          });
-        } else if (timeRange === "week") {
-          const weekAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
-          filteredBookings = tenantBookings.filter((booking) => {
-            const bookingDate = new Date(booking.bookingDate);
-            return bookingDate >= weekAgo;
-          });
-        } else if (timeRange === "month") {
-          const monthAgo = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
-          filteredBookings = tenantBookings.filter((booking) => {
-            const bookingDate = new Date(booking.bookingDate);
-            return bookingDate >= monthAgo;
-          });
-        }
-
-        // Calculate heat map data for each table
-        const heatMapData = tenantTables.map((table, index) => {
-          const tableBookings = filteredBookings.filter(
-            (booking) => booking.tableId === table.id,
-          );
-
-          // Calculate metrics
-          const bookingCount = tableBookings.length;
-          const totalGuests = tableBookings.reduce(
-            (sum, booking) => sum + (booking.guestCount || 0),
-            0,
-          );
-          const avgPerGuest = 25; // Estimated revenue per guest
-          const revenueGenerated = totalGuests * avgPerGuest;
-
-          // Calculate occupancy rate based on booking frequency
-          const totalPossibleSlots =
-            timeRange === "today" ? 10 : timeRange === "week" ? 70 : 300;
-          const occupancyRate = Math.min(
-            (bookingCount / totalPossibleSlots) * 100,
-            100,
-          );
-
-          // Calculate heat score (combination of occupancy and revenue)
-          const heatScore = Math.min(
-            occupancyRate * 0.6 + (revenueGenerated / 500) * 40,
-            100,
-          );
-
-          // Calculate peak hours
-          const hourlyBookings = tableBookings.reduce((acc: any, booking) => {
-            if (booking.startTime) {
-              const hour = parseInt(booking.startTime.split(":")[0]);
-              acc[hour] = (acc[hour] || 0) + 1;
-            }
-            return acc;
-          }, {});
-
-          const peakHours = Object.entries(hourlyBookings)
-            .sort(([, a], [, b]) => (b as number) - (a as number))
-            .slice(0, 3)
-            .map(([hour]) => `${hour}:00`);
-
-          // Determine current status based on current bookings
-          const currentHour = now.getHours();
-          const currentBookings = tableBookings.filter((booking) => {
-            if (!booking.startTime) return false;
-            const startHour = parseInt(booking.startTime.split(":")[0]);
-            const endHour = booking.endTime
-              ? parseInt(booking.endTime.split(":")[0])
-              : startHour + 2;
-            const today = now.toISOString().split("T")[0];
-            const bookingToday =
-              new Date(booking.bookingDate).toISOString().split("T")[0] ===
-              today;
-            return (
-              bookingToday && currentHour >= startHour && currentHour <= endHour
-            );
-          });
-
-          const status = currentBookings.length > 0 ? "occupied" : "available";
-
-          // Position tables in a grid layout
-          const gridCols = Math.ceil(Math.sqrt(tenantTables.length));
-          const row = Math.floor(index / gridCols);
-          const col = index % gridCols;
-
-          return {
-            tableId: table.id,
-            tableName: `Table ${table.tableNumber}`,
-            capacity: table.capacity || 4,
-            position: {
-              x: col * 120 + 60,
-              y: row * 100 + 50,
-            },
-            heatScore: Math.round(heatScore),
-            bookingCount,
-            occupancyRate: Math.round(occupancyRate),
-            revenueGenerated: Math.round(revenueGenerated),
-            averageStayDuration: 90, // Default 90 minutes
-            peakHours,
-            status: status as
-              | "available"
-              | "occupied"
-              | "reserved"
-              | "maintenance",
-          };
-        });
-
-        res.json(heatMapData);
-      } catch (error) {
-        console.error("Heat map calculation error:", error);
-        res.status(500).json({ message: "Failed to calculate heat map data" });
-      }
-    },
-  );
 
   // Webhook Management Routes
   app.get(
@@ -9539,9 +9390,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
     "/api/tenants/:tenantId/restaurants/:restaurantId/heat-map",
     validateTenant,
     async (req, res) => {
+      console.log('Heat map endpoint reached');
       try {
         const tenantId = parseInt(req.params.tenantId);
         const restaurantId = parseInt(req.params.restaurantId);
+        console.log(`Heat map: Processing tenant ${tenantId}, restaurant ${restaurantId}`);
 
         const restaurant = await storage.getRestaurantById(restaurantId);
         if (!restaurant || restaurant.tenantId !== tenantId) {
