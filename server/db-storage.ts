@@ -46,6 +46,7 @@ const {
   kitchenStaff,
   kitchenMetrics,
   printOrders,
+  productGroups,
 } = schema;
 
 export class DatabaseStorage implements IStorage {
@@ -1722,6 +1723,50 @@ export class DatabaseStorage implements IStorage {
       .where(lt(activityLog.createdAt, beforeDate));
     
     return result.rowCount || 0;
+  }
+
+  // Product Groups
+  async getProductGroupsByRestaurant(restaurantId: number): Promise<any[]> {
+    if (!this.db) throw new Error("Database connection not available");
+    
+    const groups = await this.db
+      .select()
+      .from(productGroups)
+      .where(eq(productGroups.restaurantId, restaurantId))
+      .orderBy(desc(productGroups.createdAt));
+    
+    return groups;
+  }
+
+  async createProductGroup(group: any): Promise<any> {
+    if (!this.db) throw new Error("Database connection not available");
+    
+    const result = await this.db
+      .insert(productGroups)
+      .values(group)
+      .returning();
+    
+    return result[0];
+  }
+
+  async updateProductGroup(id: number, updates: any): Promise<any> {
+    if (!this.db) throw new Error("Database connection not available");
+    
+    const result = await this.db
+      .update(productGroups)
+      .set({ ...updates, updatedAt: new Date() })
+      .where(eq(productGroups.id, id))
+      .returning();
+    
+    return result[0];
+  }
+
+  async deleteProductGroup(id: number): Promise<void> {
+    if (!this.db) throw new Error("Database connection not available");
+    
+    await this.db
+      .delete(productGroups)
+      .where(eq(productGroups.id, id));
   }
 
   async getTimeSlotsByRestaurant(restaurantId: number, date?: string): Promise<any[]> {

@@ -1145,3 +1145,25 @@ export const insertSeasonalMenuThemeSchema = createInsertSchema(seasonalMenuThem
 export const selectMenuItemSchema = createSelectSchema(menuItems);
 
 export type LoginData = z.infer<typeof loginSchema>;
+
+// Product Groups table
+export const productGroups = pgTable("product_groups", {
+  id: serial("id").primaryKey(),
+  restaurantId: integer("restaurant_id").notNull().references(() => restaurants.id, { onDelete: "cascade" }),
+  tenantId: integer("tenant_id").notNull().references(() => tenants.id, { onDelete: "cascade" }),
+  groupName: text("group_name").notNull(),
+  quantity: integer("quantity").notNull().default(0),
+  status: varchar("status", { length: 20 }).notNull().default("active"), // active, inactive
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+});
+
+export type ProductGroup = InferSelectModel<typeof productGroups>;
+export type InsertProductGroup = InferInsertModel<typeof productGroups>;
+
+export const insertProductGroupSchema = createInsertSchema(productGroups).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+export const selectProductGroupSchema = createSelectSchema(productGroups);

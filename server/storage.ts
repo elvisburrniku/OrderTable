@@ -57,6 +57,8 @@ import type {
   InsertRoom,
   InsertCombinedTable,
   InsertNotification,
+  ProductGroup,
+  InsertProductGroup,
 } from "@shared/schema";
 import { neon } from "@neondatabase/serverless";
 import { drizzle } from "drizzle-orm/neon-http";
@@ -189,6 +191,12 @@ export interface IStorage {
   getActivityLogByTenant(tenantId: number): Promise<ActivityLog[]>;
   createActivityLog(log: InsertActivityLog): Promise<ActivityLog>;
   deleteOldActivityLogs(beforeDate: Date): Promise<number>;
+
+  // Product Groups
+  getProductGroupsByRestaurant(restaurantId: number): Promise<ProductGroup[]>;
+  createProductGroup(group: InsertProductGroup): Promise<ProductGroup>;
+  updateProductGroup(id: number, updates: Partial<ProductGroup>): Promise<ProductGroup | undefined>;
+  deleteProductGroup(id: number): Promise<void>;
 
   // Time Slots
   getTimeSlotsByRestaurant(
