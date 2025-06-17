@@ -160,17 +160,25 @@ export default function GuestFeedbackForm() {
       }
     });
 
+    // Format question responses for API
+    const formattedResponses = questions.map(question => {
+      const response = questionResponses[question.id];
+      if (!response) return null;
+
+      return {
+        questionId: question.id,
+        rating: response.rating || null,
+        npsScore: response.npsScore || null,
+        textResponse: response.text || null,
+      };
+    }).filter(Boolean);
+
     const feedbackData = {
       customerName: customerName.trim(),
       customerEmail: customerEmail.trim(),
       customerPhone: customerPhone.trim(),
       tableNumber: tableNumber || '',
-      bookingDate: new Date().toISOString().split('T')[0],
-      visitDate: new Date().toISOString().split('T')[0],
-      rating: overallRating,
-      nps: overallNpsScore,
-      comments: overallComments || null,
-      questionResponses,
+      questionResponses: formattedResponses,
     };
 
     submitFeedbackMutation.mutate(feedbackData);

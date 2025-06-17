@@ -1387,6 +1387,21 @@ export class DatabaseStorage implements IStorage {
     return result;
   }
 
+  async updateFeedback(feedbackId: number, updateData: any): Promise<any> {
+    if (!this.db) throw new Error("Database connection not available");
+    
+    const [updated] = await this.db
+      .update(feedback)
+      .set({
+        ...updateData,
+        updatedAt: new Date(),
+      })
+      .where(eq(feedback.id, feedbackId))
+      .returning();
+    
+    return updated;
+  }
+
   async getFeedbackResponses(restaurantId: number, tenantId: number): Promise<any[]> {
     if (!this.db) throw new Error("Database connection not available");
     

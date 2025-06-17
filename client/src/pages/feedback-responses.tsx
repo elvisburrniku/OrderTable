@@ -7,7 +7,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
-import { Download, Eye, Star, MessageCircle, Calendar, User } from "lucide-react";
+import { Download, Eye, Star, MessageCircle, Calendar, User, HelpCircle } from "lucide-react";
 
 interface FeedbackItem {
   id: number;
@@ -23,6 +23,18 @@ interface FeedbackItem {
   createdAt: string;
   visited: boolean;
   questionName?: string;
+}
+
+interface FeedbackResponse {
+  id: number;
+  feedbackId: number;
+  questionId: number;
+  rating: number | null;
+  npsScore: number | null;
+  textResponse: string | null;
+  createdAt: string;
+  questionName: string;
+  questionType: string;
 }
 
 export default function FeedbackResponses() {
@@ -80,6 +92,12 @@ export default function FeedbackResponses() {
   const { data: feedback, isLoading } = useQuery({
     queryKey: [`/api/tenants/${tenantId}/restaurants/${restaurantId}/feedback`],
     enabled: !!tenantId && !!restaurantId,
+  });
+
+  // Fetch detailed question responses for selected feedback
+  const { data: feedbackResponses, isLoading: responsesLoading } = useQuery({
+    queryKey: [`/api/tenants/${tenantId}/restaurants/${restaurantId}/feedback/${selectedFeedback?.id}/responses`],
+    enabled: !!selectedFeedback && !!tenantId && !!restaurantId,
   });
 
   // Show loading state if we don't have restaurant info yet
@@ -296,6 +314,73 @@ export default function FeedbackResponses() {
                       <p className="text-sm text-gray-900 mt-1 p-3 bg-gray-50 rounded-md">
                         "{selectedFeedback.comments}"
                       </p>
+                    </div>
+                  )}
+
+                  {/* Individual Question Responses */}
+                  {feedbackResponses && feedbackResponses.length > 0 && (
+                    <div>
+                      <label className="text-sm font-medium text-gray-700 mb-3 block">
+                        Individual Question Responses
+                      </label>
+                      <div className="space-y-3">
+                        {(feedbackResponses as FeedbackResponse[]).map((response) => (
+                          <div key={response.id} className="p-3 bg-gray-50 rounded-md border">
+                            <div className="flex items-start justify-between">
+                              <div className="flex-1">
+                                <div className="flex items-center gap-2 mb-2">
+                                  <HelpCircle className="w-4 h-4 text-gray-500" />
+                                  <span className="text-sm font-medium text-gray-900">
+                                    {response.questionName}
+                                  </span>
+                                  <Badge variant="secondary" className="text-xs">
+                                    {response.questionType}
+                                  </Badge>
+                                </div>
+                                
+                                {/* Rating Display */}
+                                {response.rating && (
+                                  <div className="flex items-center gap-2 mb-2">
+                                    <span className="text-xs text-gray-600">Rating:</span>
+                                    <div className="flex items-center gap-1">
+                                      {renderStars(response.rating)}
+                                      <span className="text-sm font-medium text-gray-900">
+                                        {response.rating}/5
+                                      </span>
+                                    </div>
+                                  </div>
+                                )}
+
+                                {/* NPS Score Display */}
+                                {response.npsScore !== null && response.npsScore !== undefined && (
+                                  <div className="flex items-center gap-2 mb-2">
+                                    <span className="text-xs text-gray-600">NPS Score:</span>
+                                    <span className={`text-sm font-medium ${getNpsColor(response.npsScore)}`}>
+                                      {response.npsScore}/10
+                                    </span>
+                                  </div>
+                                )}
+
+                                {/* Text Response Display */}
+                                {response.textResponse && (
+                                  <div className="mt-2">
+                                    <span className="text-xs text-gray-600">Response:</span>
+                                    <p className="text-sm text-gray-900 mt-1">
+                                      "{response.textResponse}"
+                                    </p>
+                                  </div>
+                                )}
+                              </div>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                      
+                      {responsesLoading && (
+                        <div className="text-center py-4">
+                          <div className="text-sm text-gray-500">Loading question details...</div>
+                        </div>
+                      )}
                     </div>
                   )}
 
