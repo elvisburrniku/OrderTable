@@ -2012,12 +2012,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         let aggregatedNps = null;
         let aggregatedComments = '';
         
-        console.log('=== FEEDBACK DEBUG ===');
-        console.log('Raw request body:', req.body);
-        console.log('questionResponses:', questionResponses);
-        console.log('questionResponses type:', typeof questionResponses);
-        console.log('questionResponses is array:', Array.isArray(questionResponses));
-        console.log('questionResponses length:', questionResponses?.length);
+
         
         if (questionResponses && Array.isArray(questionResponses)) {
           // First, store all individual responses
