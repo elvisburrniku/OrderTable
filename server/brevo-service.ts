@@ -978,4 +978,116 @@ export class BrevoEmailService {
       throw error;
     }
   }
+
+  async sendBookingCancellationNotification(restaurantEmail: string, restaurantName: string, bookingDetails: any) {
+    if (!this.checkEnabled()) return;
+    
+    const sendSmtpEmail = new SendSmtpEmail();
+
+    sendSmtpEmail.subject = `Booking Cancellation - ${bookingDetails.customerName}`;
+    sendSmtpEmail.htmlContent = `
+      <!DOCTYPE html>
+      <html>
+        <head>
+          <meta charset="utf-8">
+          <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        </head>
+        <body style="margin: 0; padding: 20px; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Arial, sans-serif; background-color: #f5f5f5;">
+          <div style="max-width: 600px; margin: 0 auto; background-color: white; border-radius: 8px; overflow: hidden; box-shadow: 0 2px 10px rgba(0,0,0,0.1);">
+
+            <!-- Header -->
+            <div style="background-color: #f8d7da; padding: 30px 30px 20px; text-align: center; border-bottom: 1px solid #e5e5e5;">
+              <h1 style="margin: 0; font-size: 28px; font-weight: 600; color: #721c24; letter-spacing: -0.5px;">Booking Cancelled</h1>
+            </div>
+
+            <!-- Content -->
+            <div style="padding: 30px;">
+              <p style="margin: 0 0 20px; font-size: 16px; color: #333; line-height: 1.5;">Dear ${restaurantName} Team,</p>
+
+              <p style="margin: 0 0 30px; font-size: 16px; color: #666; line-height: 1.6;">
+                A customer has cancelled their booking. Here are the details:
+              </p>
+
+              <!-- Cancelled Booking Details -->
+              <div style="background-color: #f8d7da; border-radius: 8px; padding: 25px; margin: 25px 0; border-left: 4px solid #dc3545;">
+                <h3 style="margin: 0 0 15px; font-size: 18px; color: #333; font-weight: 600;">Cancelled Booking</h3>
+                <div style="display: grid; gap: 10px;">
+                  <div style="display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid #f1aeb5;">
+                    <span style="color: #666; font-weight: 500;">Customer:</span>
+                    <span style="color: #333; font-weight: 600;">${bookingDetails.customerName}</span>
+                  </div>
+                  ${bookingDetails.customerEmail ? `
+                    <div style="display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid #f1aeb5;">
+                      <span style="color: #666; font-weight: 500;">Email:</span>
+                      <span style="color: #333; font-weight: 600;">${bookingDetails.customerEmail}</span>
+                    </div>
+                  ` : ''}
+                  ${bookingDetails.customerPhone ? `
+                    <div style="display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid #f1aeb5;">
+                      <span style="color: #666; font-weight: 500;">Phone:</span>
+                      <span style="color: #333; font-weight: 600;">${bookingDetails.customerPhone}</span>
+                    </div>
+                  ` : ''}
+                  <div style="display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid #f1aeb5;">
+                    <span style="color: #666; font-weight: 500;">Date:</span>
+                    <span style="color: #333; font-weight: 600;">${new Date(bookingDetails.bookingDate).toLocaleDateString()}</span>
+                  </div>
+                  <div style="display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid #f1aeb5;">
+                    <span style="color: #666; font-weight: 500;">Time:</span>
+                    <span style="color: #333; font-weight: 600;">${bookingDetails.startTime}${bookingDetails.endTime ? ` - ${bookingDetails.endTime}` : ''}</span>
+                  </div>
+                  <div style="display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid #f1aeb5;">
+                    <span style="color: #666; font-weight: 500;">Party Size:</span>
+                    <span style="color: #333; font-weight: 600;">${bookingDetails.guestCount} guests</span>
+                  </div>
+                  <div style="display: flex; justify-content: space-between; padding: 8px 0;">
+                    <span style="color: #666; font-weight: 500;">Cancellation Time:</span>
+                    <span style="color: #333; font-weight: 600;">${new Date().toLocaleString()}</span>
+                  </div>
+                </div>
+              </div>
+
+              ${bookingDetails.notes ? `
+                <div style="background-color: #f8f9fa; border-radius: 8px; padding: 20px; margin: 25px 0;">
+                  <h4 style="margin: 0 0 10px; color: #333;">Original Notes:</h4>
+                  <p style="margin: 0; color: #666; font-style: italic;">"${bookingDetails.notes}"</p>
+                </div>
+              ` : ''}
+
+              <div style="background-color: #d1ecf1; border-radius: 8px; padding: 20px; margin: 25px 0; border-left: 4px solid #17a2b8;">
+                <p style="margin: 0; color: #0c5460; font-weight: 500;">
+                  📅 This table is now available for other bookings at this time slot.
+                </p>
+              </div>
+
+              <p style="margin: 30px 0 10px; font-size: 16px; color: #333;">Best regards,</p>
+              <p style="margin: 0; font-size: 16px; color: #333; font-weight: 600;">Trofta Booking System</p>
+            </div>
+          </div>
+        </body>
+      </html>
+    `;
+
+    const senderEmail = process.env.BREVO_SENDER_EMAIL || "noreply@restaurant.com";
+    console.log('Using sender email:', senderEmail);
+
+    sendSmtpEmail.sender = {
+      name: "Trofta",
+      email: senderEmail
+    };
+
+    sendSmtpEmail.to = [{
+      email: restaurantEmail,
+      name: restaurantName
+    }];
+
+    try {
+      const result = await this.apiInstance!.sendTransacEmail(sendSmtpEmail);
+      console.log('Booking cancellation notification email sent:', result);
+      return result;
+    } catch (error) {
+      console.error('Error sending booking cancellation notification email:', error);
+      throw error;
+    }
+  }
 }

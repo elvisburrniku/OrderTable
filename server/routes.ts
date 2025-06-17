@@ -4799,6 +4799,45 @@ export async function registerRoutes(app: Express): Promise<Server> {
         timestamp: new Date().toISOString(),
       });
 
+      // Get restaurant and tenant information for email notification
+      const restaurant = await storage.getRestaurantById(updatedBooking.restaurantId);
+      const tenant = await storage.getTenantById(updatedBooking.tenantId);
+
+      // Send email notification to restaurant
+      if (restaurant && tenant && restaurant.email) {
+        try {
+          await emailService.sendBookingCancellationNotification(
+            restaurant.email,
+            restaurant.name,
+            {
+              ...updatedBooking,
+              restaurantName: restaurant.name,
+              tenantName: tenant.name,
+            }
+          );
+          console.log(`Cancellation email sent to restaurant: ${restaurant.email}`);
+        } catch (emailError) {
+          console.error("Failed to send cancellation email:", emailError);
+          // Don't fail the cancellation if email fails
+        }
+      }
+
+      // Create a notification record in the database
+      try {
+        await storage.createNotification({
+          restaurantId: updatedBooking.restaurantId,
+          tenantId: updatedBooking.tenantId,
+          type: "booking_cancelled",
+          title: "Booking Cancelled",
+          message: `${updatedBooking.customerName} cancelled their booking for ${new Date(updatedBooking.bookingDate).toLocaleDateString()} at ${updatedBooking.startTime}`,
+          bookingId: updatedBooking.id,
+          isRead: false,
+        });
+      } catch (notificationError) {
+        console.error("Failed to create notification record:", notificationError);
+        // Don't fail the cancellation if notification creation fails
+      }
+
       res.json({
         message: "Booking cancelled successfully",
         booking: updatedBooking,
