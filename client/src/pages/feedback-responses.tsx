@@ -213,7 +213,7 @@ export default function FeedbackResponses() {
                           {item.tableNumber && (
                             <Badge variant="outline">Table {item.tableNumber}</Badge>
                           )}
-                          {!item.visited && (
+                          {!item.visited && new Date(item.createdAt).toDateString() === new Date().toDateString() && (
                             <Badge variant="destructive">New</Badge>
                           )}
                         </div>

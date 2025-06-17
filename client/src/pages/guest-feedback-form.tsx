@@ -384,7 +384,7 @@ export default function GuestFeedbackForm() {
                   {response.rating && (
                     <div className="flex items-center gap-2">
                       <div className="flex">
-                        {Array.from({ length: 10 }, (_, i) => (
+                        {Array.from({ length: 5 }, (_, i) => (
                           <Star
                             key={i}
                             className={`w-5 h-5 ${
@@ -393,7 +393,7 @@ export default function GuestFeedbackForm() {
                           />
                         ))}
                       </div>
-                      <span className="text-sm text-gray-600">{response.rating}/10</span>
+                      <span className="text-sm text-gray-600">{response.rating}/5</span>
                     </div>
                   )}
                   {response.text && <p className="text-gray-700">{response.text}</p>}
