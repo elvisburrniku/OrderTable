@@ -140,6 +140,26 @@ export default function GuestFeedbackForm() {
       return;
     }
 
+    // Extract rating and NPS score from questionResponses
+    let overallRating = null;
+    let overallNpsScore = null;
+    let overallComments = '';
+
+    activeQuestions.forEach((question: FeedbackQuestion) => {
+      const response = questionResponses[question.id];
+      if (response) {
+        if (question.questionType === 'star' && response.rating) {
+          overallRating = response.rating;
+        }
+        if (response.npsScore !== undefined && response.npsScore !== null) {
+          overallNpsScore = response.npsScore;
+        }
+        if (response.text) {
+          overallComments += (overallComments ? '\n' : '') + response.text;
+        }
+      }
+    });
+
     const feedbackData = {
       customerName: customerName.trim(),
       customerEmail: customerEmail.trim(),
@@ -147,6 +167,9 @@ export default function GuestFeedbackForm() {
       tableNumber: tableNumber || '',
       bookingDate: new Date().toISOString().split('T')[0],
       visitDate: new Date().toISOString().split('T')[0],
+      rating: overallRating,
+      nps: overallNpsScore,
+      comments: overallComments || null,
       questionResponses,
     };
 
