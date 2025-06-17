@@ -1,6 +1,7 @@
 import Navigation from "@/components/navigation";
 import Footer from "@/components/footer";
 import CookieConsent from "@/components/cookie-consent";
+import CookieBannerReset from "@/components/cookie-banner-reset";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -218,6 +219,11 @@ export default function Home() {
                 <Play className="mr-2 h-5 w-5 text-white group-hover:text-blue-600" />
                 {t.hero.watchDemo}
               </Button>
+            </div>
+            
+            {/* Cookie Banner Demo Section */}
+            <div className="max-w-md mx-auto">
+              <CookieBannerReset />
             </div>
             
             {/* Trust indicators */}

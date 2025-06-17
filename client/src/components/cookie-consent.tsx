@@ -35,6 +35,13 @@ export default function CookieConsent() {
       // Show banner after a short delay
       const timer = setTimeout(() => setIsVisible(true), 1500);
       return () => clearTimeout(timer);
+    } else {
+      // For testing purposes, show banner if specific debug flag is set
+      const showDebug = localStorage.getItem('cookieDebug');
+      if (showDebug === 'true') {
+        const timer = setTimeout(() => setIsVisible(true), 1500);
+        return () => clearTimeout(timer);
+      }
     }
   }, []);
 
