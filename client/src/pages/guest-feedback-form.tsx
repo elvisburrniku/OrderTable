@@ -149,17 +149,13 @@ export default function GuestFeedbackForm() {
       return;
     }
 
-    // Extract rating and NPS score from questionResponses
-    let overallRating = null;
+    // Extract NPS score and comments from questionResponses, but use dedicated overall rating
     let overallNpsScore = null;
     let overallComments = '';
 
     activeQuestions.forEach((question: FeedbackQuestion) => {
       const response = questionResponses[question.id];
       if (response) {
-        if (question.questionType === 'star' && response.rating) {
-          overallRating = response.rating;
-        }
         if (response.npsScore !== undefined && response.npsScore !== null) {
           overallNpsScore = response.npsScore;
         }
@@ -187,7 +183,7 @@ export default function GuestFeedbackForm() {
       customerEmail: customerEmail.trim(),
       customerPhone: customerPhone.trim(),
       tableNumber: tableNumber || '',
-      overallRating: overallRating,
+      overallRating: overallRating, // Use the dedicated 5-star rating from the overall rating step
       questionResponses: formattedResponses,
     };
 
