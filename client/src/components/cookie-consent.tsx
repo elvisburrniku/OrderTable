@@ -179,13 +179,13 @@ export default function CookieConsent() {
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
               <Settings className="w-5 h-5" />
-              {t.cookieConsent.customize}
+              {cookieText.customize}
             </DialogTitle>
           </DialogHeader>
           
           <div className="space-y-6">
             <div className="text-sm text-gray-600">
-              {t.cookieConsent.description}
+              {cookieText.description}
             </div>
 
             {/* Necessary Cookies */}
@@ -194,7 +194,7 @@ export default function CookieConsent() {
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-2">
                     <Shield className="w-4 h-4 text-green-600" />
-                    <CardTitle className="text-base">{t.cookieConsent.necessary}</CardTitle>
+                    <CardTitle className="text-base">{cookieText.necessary}</CardTitle>
                     <Badge variant="secondary" className="bg-green-100 text-green-700">
                       Required
                     </Badge>
@@ -204,7 +204,7 @@ export default function CookieConsent() {
               </CardHeader>
               <CardContent className="pt-0">
                 <p className="text-sm text-gray-600">
-                  {t.cookieConsent.necessaryDesc}
+                  {cookieText.necessaryDesc}
                 </p>
               </CardContent>
             </Card>
@@ -215,7 +215,7 @@ export default function CookieConsent() {
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-2">
                     <BarChart3 className="w-4 h-4 text-blue-600" />
-                    <CardTitle className="text-base">{t.cookieConsent.analytics}</CardTitle>
+                    <CardTitle className="text-base">{cookieText.analytics}</CardTitle>
                   </div>
                   <Switch 
                     checked={preferences.analytics}
@@ -227,7 +227,7 @@ export default function CookieConsent() {
               </CardHeader>
               <CardContent className="pt-0">
                 <p className="text-sm text-gray-600">
-                  {t.cookieConsent.analyticsDesc}
+                  {cookieText.analyticsDesc}
                 </p>
               </CardContent>
             </Card>
@@ -238,7 +238,7 @@ export default function CookieConsent() {
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-2">
                     <Target className="w-4 h-4 text-purple-600" />
-                    <CardTitle className="text-base">{t.cookieConsent.marketing}</CardTitle>
+                    <CardTitle className="text-base">{cookieText.marketing}</CardTitle>
                   </div>
                   <Switch 
                     checked={preferences.marketing}
@@ -250,7 +250,7 @@ export default function CookieConsent() {
               </CardHeader>
               <CardContent className="pt-0">
                 <p className="text-sm text-gray-600">
-                  {t.cookieConsent.marketingDesc}
+                  {cookieText.marketingDesc}
                 </p>
               </CardContent>
             </Card>
@@ -267,7 +267,7 @@ export default function CookieConsent() {
                 onClick={handleSaveCustom}
                 className="flex-1 bg-blue-600 hover:bg-blue-700"
               >
-                {t.cookieConsent.savePreferences}
+                {cookieText.savePreferences}
               </Button>
             </div>
 
