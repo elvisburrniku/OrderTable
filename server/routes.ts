@@ -108,20 +108,74 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Setup SSO authentication first
   setupSSO(app);
 
-  // Middleware to extract and validate tenant ID
+  // Middleware to extract and validate tenant ID with proper authorization
   const validateTenant = async (req: any, res: any, next: any) => {
-    const tenantId =
-      req.params.tenantId ||
-      req.headers["x-tenant-id"] ||
-      req.query.tenantId ||
-      req.body.tenantId;
+    try {
+      const tenantId =
+        req.params.tenantId ||
+        req.headers["x-tenant-id"] ||
+        req.query.tenantId ||
+        req.body.tenantId;
 
-    if (!tenantId) {
-      return res.status(400).json({ message: "Tenant ID is required" });
+      if (!tenantId) {
+        return res.status(400).json({ message: "Tenant ID is required" });
+      }
+
+      const parsedTenantId = parseInt(tenantId as string);
+      if (isNaN(parsedTenantId)) {
+        return res.status(400).json({ message: "Invalid tenant ID" });
+      }
+
+      // Check if user is authenticated
+      if (!req.user || !req.user.id) {
+        return res.status(401).json({ message: "Authentication required" });
+      }
+
+      // Verify user has access to this tenant
+      const userTenant = await storage.db
+        .select()
+        .from(tenantUsers)
+        .where(
+          and(
+            eq(tenantUsers.tenantId, parsedTenantId),
+            eq(tenantUsers.userId, req.user.id)
+          )
+        );
+
+      if (!userTenant.length) {
+        console.warn(`SECURITY: User ${req.user.id} attempted to access tenant ${parsedTenantId} without permission`);
+        return res.status(403).json({ message: "Access denied: You don't have permission to access this tenant" });
+      }
+
+      // If restaurant ID is provided, verify it belongs to the tenant
+      const restaurantId = req.params.restaurantId;
+      if (restaurantId) {
+        const parsedRestaurantId = parseInt(restaurantId);
+        if (!isNaN(parsedRestaurantId)) {
+          const restaurant = await storage.db
+            .select()
+            .from(restaurants)
+            .where(
+              and(
+                eq(restaurants.id, parsedRestaurantId),
+                eq(restaurants.tenantId, parsedTenantId)
+              )
+            );
+
+          if (!restaurant.length) {
+            console.warn(`SECURITY: User ${req.user.id} attempted to access restaurant ${parsedRestaurantId} not belonging to tenant ${parsedTenantId}`);
+            return res.status(403).json({ message: "Access denied: Restaurant not found in this tenant" });
+          }
+        }
+      }
+
+      req.tenantId = parsedTenantId;
+      req.userRole = userTenant[0].role;
+      next();
+    } catch (error) {
+      console.error("Error in tenant validation:", error);
+      return res.status(500).json({ message: "Internal server error" });
     }
-
-    req.tenantId = parseInt(tenantId as string);
-    next();
   };
 
   // Middleware to attach user from session to request
