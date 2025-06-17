@@ -339,14 +339,7 @@ export default function FeedbackResponses() {
                     </div>
                   </div>
 
-                  {selectedFeedback.npsScore !== undefined && (
-                    <div>
-                      <label className="text-sm font-medium text-gray-700">NPS Score</label>
-                      <p className={`text-lg font-bold ${getNpsColor(selectedFeedback.npsScore)}`}>
-                        {selectedFeedback.npsScore}/10
-                      </p>
-                    </div>
-                  )}
+
 
                   {selectedFeedback.comments && (
                     <div>
