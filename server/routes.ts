@@ -1046,6 +1046,31 @@ export async function registerRoutes(app: Express): Promise<Server> {
           );
         }
 
+        // Log booking creation
+        const sessionUser = (req as any).session?.user;
+        await logActivity({
+          restaurantId: booking.restaurantId,
+          tenantId: booking.tenantId,
+          eventType: "new_booking",
+          description: `New booking created for ${booking.customerName}`,
+          source: "manual",
+          userEmail: sessionUser?.email,
+          userLogin: sessionUser?.email,
+          guestEmail: booking.customerEmail,
+          ipAddress: req.ip,
+          userAgent: req.get('User-Agent'),
+          bookingId: booking.id,
+          customerId: booking.customerId,
+          details: {
+            bookingDate: booking.bookingDate,
+            startTime: booking.startTime,
+            endTime: booking.endTime,
+            guestCount: booking.guestCount,
+            tableId: booking.tableId,
+            status: booking.status
+          }
+        });
+
         // Send email notifications if Brevo is configured
         if (emailService) {
           console.log(
@@ -1319,6 +1344,30 @@ export async function registerRoutes(app: Express): Promise<Server> {
         }
 
         const updatedBooking = await storage.updateBooking(id, updates);
+
+        // Log booking update
+        const sessionUser = (req as any).session?.user;
+        await logActivity({
+          restaurantId: updatedBooking.restaurantId,
+          tenantId: updatedBooking.tenantId,
+          eventType: "booking_update",
+          description: `Booking updated for ${updatedBooking.customerName}`,
+          source: "manual",
+          userEmail: sessionUser?.email,
+          userLogin: sessionUser?.email,
+          guestEmail: updatedBooking.customerEmail,
+          ipAddress: req.ip,
+          userAgent: req.get('User-Agent'),
+          bookingId: updatedBooking.id,
+          customerId: updatedBooking.customerId,
+          details: {
+            updatedFields: Object.keys(updates),
+            newStatus: updates.status,
+            newTableId: updates.tableId,
+            newBookingDate: updates.bookingDate,
+            newStartTime: updates.startTime
+          }
+        });
 
         // Send webhook notifications for booking update
         if (updatedBooking) {
@@ -2135,6 +2184,26 @@ export async function registerRoutes(app: Express): Promise<Server> {
         };
 
         const feedback = await storage.createFeedback(feedbackData);
+
+        // Log guest feedback submission
+        await logActivity({
+          restaurantId,
+          tenantId,
+          eventType: "guest_feedback_submit",
+          description: `Guest feedback submitted by ${feedbackData.customerName}`,
+          source: "guest_form",
+          guestEmail: feedbackData.customerEmail,
+          ipAddress: req.ip,
+          userAgent: req.get('User-Agent'),
+          details: {
+            feedbackId: feedback.id,
+            customerName: feedbackData.customerName,
+            customerEmail: feedbackData.customerEmail,
+            overallRating: feedbackData.rating,
+            hasQuestionResponses: !!(questionResponses && questionResponses.length > 0),
+            responseCount: questionResponses ? questionResponses.length : 0
+          }
+        });
 
         // Store individual question responses and aggregate data
         let aggregatedRating = null;
