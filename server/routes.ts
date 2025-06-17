@@ -11260,6 +11260,107 @@ NEXT STEPS:
     }
   );
 
+  // Product Groups API Routes
+  app.get("/api/tenants/:tenantId/restaurants/:restaurantId/product-groups", validateTenant, async (req, res) => {
+    try {
+      const restaurantId = parseInt(req.params.restaurantId);
+      const tenantId = parseInt(req.params.tenantId);
+      
+      // Verify restaurant belongs to tenant
+      const restaurant = await storage.getRestaurantById(restaurantId);
+      if (!restaurant || restaurant.tenantId !== tenantId) {
+        return res.status(404).json({ message: "Restaurant not found" });
+      }
+      
+      const productGroups = await storage.getProductGroupsByRestaurant(restaurantId);
+      res.json(productGroups);
+    } catch (error) {
+      console.error("Error fetching product groups:", error);
+      res.status(500).json({ message: "Failed to fetch product groups" });
+    }
+  });
+
+  app.post("/api/tenants/:tenantId/restaurants/:restaurantId/product-groups", validateTenant, async (req, res) => {
+    try {
+      const restaurantId = parseInt(req.params.restaurantId);
+      const tenantId = parseInt(req.params.tenantId);
+      const { groupName, quantity, status } = req.body;
+      
+      if (!groupName) {
+        return res.status(400).json({ message: "Group name is required" });
+      }
+      
+      // Verify restaurant belongs to tenant
+      const restaurant = await storage.getRestaurantById(restaurantId);
+      if (!restaurant || restaurant.tenantId !== tenantId) {
+        return res.status(404).json({ message: "Restaurant not found" });
+      }
+      
+      const productGroup = await storage.createProductGroup({
+        restaurantId,
+        tenantId,
+        groupName,
+        quantity: quantity || 0,
+        status: status || "active"
+      });
+      
+      res.status(201).json(productGroup);
+    } catch (error) {
+      console.error("Error creating product group:", error);
+      res.status(500).json({ message: "Failed to create product group" });
+    }
+  });
+
+  app.put("/api/tenants/:tenantId/restaurants/:restaurantId/product-groups/:id", validateTenant, async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      const restaurantId = parseInt(req.params.restaurantId);
+      const tenantId = parseInt(req.params.tenantId);
+      const { groupName, quantity, status } = req.body;
+      
+      // Verify restaurant belongs to tenant
+      const restaurant = await storage.getRestaurantById(restaurantId);
+      if (!restaurant || restaurant.tenantId !== tenantId) {
+        return res.status(404).json({ message: "Restaurant not found" });
+      }
+      
+      const updatedGroup = await storage.updateProductGroup(id, {
+        groupName,
+        quantity,
+        status
+      });
+      
+      if (!updatedGroup) {
+        return res.status(404).json({ message: "Product group not found" });
+      }
+      
+      res.json(updatedGroup);
+    } catch (error) {
+      console.error("Error updating product group:", error);
+      res.status(500).json({ message: "Failed to update product group" });
+    }
+  });
+
+  app.delete("/api/tenants/:tenantId/restaurants/:restaurantId/product-groups/:id", validateTenant, async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      const restaurantId = parseInt(req.params.restaurantId);
+      const tenantId = parseInt(req.params.tenantId);
+      
+      // Verify restaurant belongs to tenant
+      const restaurant = await storage.getRestaurantById(restaurantId);
+      if (!restaurant || restaurant.tenantId !== tenantId) {
+        return res.status(404).json({ message: "Restaurant not found" });
+      }
+      
+      await storage.deleteProductGroup(id);
+      res.json({ message: "Product group deleted successfully" });
+    } catch (error) {
+      console.error("Error deleting product group:", error);
+      res.status(500).json({ message: "Failed to delete product group" });
+    }
+  });
+
   const httpServer = createServer(app);
 
   // Setup WebSocket server for real-time notifications

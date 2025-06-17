@@ -175,6 +175,12 @@ export default function DashboardSidebar({
       color: "text-indigo-600",
     },
     {
+      name: "Product Groups",
+      icon: Package,
+      href: `/${tenantId}/product-groups`,
+      color: "text-emerald-600",
+    },
+    {
       name: "Waiting List",
       icon: Clock,
       href: `/${tenantId}/waiting-list`,
