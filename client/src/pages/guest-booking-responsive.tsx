@@ -15,30 +15,19 @@ import SeasonalThemeSelector from '@/components/seasonal-theme-selector';
 
 export default function GuestBookingResponsive(props: any) {
   const [match, params] = useRoute('/guest-booking/:tenantId/:restaurantId');
-  const tenantId = params?.tenantId || props.params?.tenantId || props.tenantId;
-  const restaurantId = params?.restaurantId || props.params?.restaurantId || props.restaurantId;
+  
+  // Extract parameters from URL path manually if useRoute doesn't work
+  const pathParts = window.location.pathname.split('/');
+  const pathTenantId = pathParts[2];
+  const pathRestaurantId = pathParts[3];
+  
+  const tenantId = params?.tenantId || pathTenantId || props.params?.tenantId || props.tenantId;
+  const restaurantId = params?.restaurantId || pathRestaurantId || props.params?.restaurantId || props.restaurantId;
   const { toast } = useToast();
 
-  // Debug logging
-  console.log('GuestBooking - match:', match);
-  console.log('GuestBooking - params:', params);
-  console.log('GuestBooking - tenantId:', tenantId, 'restaurantId:', restaurantId);
-  
-  // Early return with visible content for debugging
-  if (!tenantId || !restaurantId) {
-    console.log('Missing parameters, showing fallback');
-    return (
-      <div className="min-h-screen bg-red-500 flex items-center justify-center text-white">
-        <div className="text-center">
-          <h1 className="text-2xl mb-4">DEBUG: Guest Booking</h1>
-          <p>tenantId: {tenantId}</p>
-          <p>restaurantId: {restaurantId}</p>
-          <p>match: {match ? 'true' : 'false'}</p>
-          <p>URL: {window.location.href}</p>
-        </div>
-      </div>
-    );
-  }
+  // Always render with fallback values for testing
+  const finalTenantId = tenantId || '1';
+  const finalRestaurantId = restaurantId || '1';
 
 
 
@@ -67,50 +56,45 @@ export default function GuestBookingResponsive(props: any) {
   const [bookingId, setBookingId] = useState<number | null>(null);
 
   // Fetch restaurant data
-  const { data: restaurant, isLoading: restaurantLoading, error: restaurantError } = useQuery({
-    queryKey: [`/api/public/tenants/${tenantId}/restaurants/${restaurantId}`],
-    enabled: !!(tenantId && restaurantId),
+  const { data: restaurant } = useQuery({
+    queryKey: [`/api/public/tenants/${finalTenantId}/restaurants/${finalRestaurantId}`],
+    enabled: !!(finalTenantId && finalRestaurantId),
   });
 
   // Fetch opening hours
-  const { data: openingHours, isLoading: hoursLoading, error: hoursError } = useQuery({
-    queryKey: [`/api/public/tenants/${tenantId}/restaurants/${restaurantId}/opening-hours`],
-    enabled: !!(tenantId && restaurantId),
+  const { data: openingHours } = useQuery({
+    queryKey: [`/api/public/tenants/${finalTenantId}/restaurants/${finalRestaurantId}/opening-hours`],
+    enabled: !!(finalTenantId && finalRestaurantId),
   });
 
   // Fetch seasonal themes to determine if Experience step should be shown
-  const { data: seasonalThemes = [], isLoading: themesLoading, error: themesError } = useQuery({
-    queryKey: [`/api/public/tenants/${tenantId}/restaurants/${restaurantId}/seasonal-themes`],
-    enabled: !!(tenantId && restaurantId),
+  const { data: seasonalThemes = [] } = useQuery({
+    queryKey: [`/api/public/tenants/${finalTenantId}/restaurants/${finalRestaurantId}/seasonal-themes`],
+    enabled: !!(finalTenantId && finalRestaurantId),
   });
-
-  // Debug query states
-  console.log('Restaurant:', restaurant, 'Loading:', restaurantLoading, 'Error:', restaurantError);
-  console.log('Opening hours:', openingHours, 'Loading:', hoursLoading, 'Error:', hoursError);
-  console.log('Themes:', seasonalThemes, 'Loading:', themesLoading, 'Error:', themesError);
 
   // Fetch cut-off times
   const { data: cutOffTimes } = useQuery({
-    queryKey: [`/api/tenants/${tenantId}/restaurants/${restaurantId}/cut-off-times`],
-    enabled: !!(tenantId && restaurantId),
+    queryKey: [`/api/tenants/${finalTenantId}/restaurants/${finalRestaurantId}/cut-off-times`],
+    enabled: !!(finalTenantId && finalRestaurantId),
   });
 
   // Fetch special periods
   const { data: specialPeriods } = useQuery({
-    queryKey: [`/api/tenants/${tenantId}/restaurants/${restaurantId}/special-periods`],
-    enabled: !!(tenantId && restaurantId),
+    queryKey: [`/api/tenants/${finalTenantId}/restaurants/${finalRestaurantId}/special-periods`],
+    enabled: !!(finalTenantId && finalRestaurantId),
   });
 
   // Fetch available slots
   const { data: availableSlots } = useQuery({
-    queryKey: [`/api/restaurants/${restaurantId}/available-slots`, selectedDate],
-    enabled: !!restaurantId && !!selectedDate,
+    queryKey: [`/api/restaurants/${finalRestaurantId}/available-slots`, selectedDate],
+    enabled: !!finalRestaurantId && !!selectedDate,
   });
 
   // Create booking mutation
   const createBookingMutation = useMutation({
     mutationFn: async (bookingData: any) => {
-      const response = await fetch(`/api/tenants/${tenantId}/restaurants/${restaurantId}/bookings/guest`, {
+      const response = await fetch(`/api/tenants/${finalTenantId}/restaurants/${finalRestaurantId}/bookings/guest`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(bookingData),
