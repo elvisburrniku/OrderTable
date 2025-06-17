@@ -11,7 +11,8 @@ import {
 } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Activity, Clock, User, MapPin } from "lucide-react";
+import { Activity, Clock, User, MapPin, ArrowLeft } from "lucide-react";
+import { Link } from "wouter";
 
 export default function GlobalActivityLog() {
   const {
@@ -108,13 +109,23 @@ export default function GlobalActivityLog() {
     <div className="p-6 max-w-7xl mx-auto">
       <Card>
         <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Activity className="h-5 w-5" />
-            Global Activity Log - All Restaurants
-          </CardTitle>
-          <p className="text-sm text-gray-600">
-            View activities across all restaurants in your account
-          </p>
+          <div className="flex items-center justify-between">
+            <div>
+              <CardTitle className="flex items-center gap-2">
+                <Activity className="h-5 w-5" />
+                Global Activity Log - All Restaurants
+              </CardTitle>
+              <p className="text-sm text-gray-600">
+                View activities across all restaurants in your account
+              </p>
+            </div>
+            <Link href={`/${restaurant.tenantId}/activity-log`}>
+              <Button variant="outline" className="flex items-center gap-2">
+                <ArrowLeft className="h-4 w-4" />
+                Back to Restaurant Log
+              </Button>
+            </Link>
+          </div>
         </CardHeader>
         <CardContent>
           {/* Filter Controls */}

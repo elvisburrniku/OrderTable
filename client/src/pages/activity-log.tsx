@@ -10,6 +10,8 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
+import { Link } from "wouter";
+import { Activity, Globe } from "lucide-react";
 
 export default function ActivityLog() {
   const {
@@ -121,7 +123,18 @@ export default function ActivityLog() {
         <div className="bg-white rounded-lg shadow">
           {/* Header */}
           <div className="p-6 border-b">
-            <h2 className="text-lg font-semibold mb-4">Log</h2>
+            <div className="flex items-center justify-between mb-4">
+              <div className="flex items-center gap-2">
+                <Activity className="h-5 w-5" />
+                <h2 className="text-lg font-semibold">Activity Log - {restaurant.name}</h2>
+              </div>
+              <Link href={`/${restaurant.tenantId}/global-activity-log`}>
+                <Button variant="outline" className="flex items-center gap-2">
+                  <Globe className="h-4 w-4" />
+                  View All Restaurants
+                </Button>
+              </Link>
+            </div>
 
             {/* Filters */}
             <div className="flex items-center space-x-4 mb-4">

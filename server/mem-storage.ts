@@ -635,7 +635,22 @@ export class MemoryStorage implements IStorage {
       this.feedback.splice(index, 1);
     }
   }
-  async getActivityLogByRestaurant(restaurantId: number): Promise<ActivityLog[]> { return []; }
+  async getActivityLogByRestaurant(restaurantId: number): Promise<ActivityLog[]> { 
+    return this.activityLog.filter(log => log.restaurantId === restaurantId);
+  }
+
+  async getActivityLogByTenant(tenantId: number): Promise<any[]> {
+    const tenantLogs = this.activityLog.filter(log => log.tenantId === tenantId);
+    
+    // Add restaurant names to the logs
+    return tenantLogs.map(log => {
+      const restaurant = this.restaurants.find(r => r.id === log.restaurantId);
+      return {
+        ...log,
+        restaurantName: restaurant?.name || `Restaurant ${log.restaurantId}`
+      };
+    });
+  }
   async createActivityLog(log: InsertActivityLog): Promise<ActivityLog> { 
     const newLog: ActivityLog = { id: this.nextId++, ...log, createdAt: new Date() };
     this.activityLog.push(newLog);
