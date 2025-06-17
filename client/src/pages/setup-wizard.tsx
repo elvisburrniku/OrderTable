@@ -113,9 +113,6 @@ export default function SetupWizard() {
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
-  // Calculate max steps based on whether payment is required
-  const maxSteps = steps.length;
-
   // Handle payment success/failure from URL parameters
   useEffect(() => {
     const urlParams = new URLSearchParams(window.location.search);

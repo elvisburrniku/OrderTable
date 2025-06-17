@@ -12694,6 +12694,106 @@ NEXT STEPS:
     },
   );
 
+  // Get user's saved payment methods
+  app.get(
+    "/api/billing/payment-methods",
+    attachUser,
+    async (req: Request, res: Response) => {
+      if (!req.user) {
+        return res.status(401).json({ error: "Not authenticated" });
+      }
+
+      try {
+        const tenant = await storage.getTenantByUserId(req.user.id);
+        if (!tenant || !tenant.stripeCustomerId) {
+          return res.json({ paymentMethods: [] });
+        }
+
+        const paymentMethods = await stripe.paymentMethods.list({
+          customer: tenant.stripeCustomerId,
+          type: 'card',
+        });
+
+        const formattedMethods = paymentMethods.data.map(pm => ({
+          id: pm.id,
+          brand: pm.card?.brand,
+          last4: pm.card?.last4,
+          exp_month: pm.card?.exp_month,
+          exp_year: pm.card?.exp_year,
+          isDefault: pm.id === tenant.defaultPaymentMethodId,
+        }));
+
+        res.json({ paymentMethods: formattedMethods });
+      } catch (error) {
+        console.error("Error fetching payment methods:", error);
+        res.status(500).json({ error: "Failed to fetch payment methods" });
+      }
+    },
+  );
+
+  // Delete a payment method
+  app.delete(
+    "/api/billing/payment-methods/:paymentMethodId",
+    attachUser,
+    async (req: Request, res: Response) => {
+      if (!req.user) {
+        return res.status(401).json({ error: "Not authenticated" });
+      }
+
+      try {
+        const { paymentMethodId } = req.params;
+        const tenant = await storage.getTenantByUserId(req.user.id);
+        
+        if (!tenant || !tenant.stripeCustomerId) {
+          return res.status(404).json({ error: "No customer found" });
+        }
+
+        // Detach payment method from customer
+        await stripe.paymentMethods.detach(paymentMethodId);
+
+        res.json({ success: true, message: "Payment method removed successfully" });
+      } catch (error) {
+        console.error("Error deleting payment method:", error);
+        res.status(500).json({ error: "Failed to delete payment method" });
+      }
+    },
+  );
+
+  // Set default payment method
+  app.put(
+    "/api/billing/payment-methods/:paymentMethodId/default",
+    attachUser,
+    async (req: Request, res: Response) => {
+      if (!req.user) {
+        return res.status(401).json({ error: "Not authenticated" });
+      }
+
+      try {
+        const { paymentMethodId } = req.params;
+        const tenant = await storage.getTenantByUserId(req.user.id);
+        
+        if (!tenant || !tenant.stripeCustomerId) {
+          return res.status(404).json({ error: "No customer found" });
+        }
+
+        // Update customer's default payment method
+        await stripe.customers.update(tenant.stripeCustomerId, {
+          invoice_settings: {
+            default_payment_method: paymentMethodId,
+          },
+        });
+
+        // Update tenant record
+        await storage.updateTenant(tenant.id, { defaultPaymentMethodId: paymentMethodId });
+
+        res.json({ success: true, message: "Default payment method updated" });
+      } catch (error) {
+        console.error("Error setting default payment method:", error);
+        res.status(500).json({ error: "Failed to set default payment method" });
+      }
+    },
+  );
+
   // Create checkout session for setup wizard
   app.post(
     "/api/billing/create-checkout-session",
