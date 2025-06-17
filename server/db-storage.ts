@@ -1357,6 +1357,16 @@ export class DatabaseStorage implements IStorage {
     await this.db.delete(feedbackQuestions).where(eq(feedbackQuestions.id, id));
   }
 
+  async deleteFeedback(id: number): Promise<void> {
+    if (!this.db) throw new Error("Database connection not available");
+    
+    // First delete related feedback responses
+    await this.db.delete(feedbackResponses).where(eq(feedbackResponses.feedbackId, id));
+    
+    // Then delete the feedback entry
+    await this.db.delete(feedback).where(eq(feedback.id, id));
+  }
+
   // Feedback Response methods
   async createFeedbackResponse(responseData: any): Promise<any> {
     if (!this.db) throw new Error("Database connection not available");

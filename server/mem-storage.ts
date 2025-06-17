@@ -629,6 +629,12 @@ export class MemoryStorage implements IStorage {
     this.feedback.push(newFeedback);
     return newFeedback;
   }
+  async deleteFeedback(id: number): Promise<void> {
+    const index = this.feedback.findIndex(f => f.id === id);
+    if (index >= 0) {
+      this.feedback.splice(index, 1);
+    }
+  }
   async getActivityLogByRestaurant(restaurantId: number): Promise<ActivityLog[]> { return []; }
   async createActivityLog(log: InsertActivityLog): Promise<ActivityLog> { 
     const newLog: ActivityLog = { id: this.nextId++, ...log, createdAt: new Date() };

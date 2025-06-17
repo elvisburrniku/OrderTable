@@ -182,6 +182,7 @@ export interface IStorage {
   // Feedback
   getFeedbackByRestaurant(restaurantId: number): Promise<Feedback[]>;
   createFeedback(feedback: InsertFeedback): Promise<Feedback>;
+  deleteFeedback(id: number): Promise<void>;
 
   // Activity Log
   getActivityLogByRestaurant(restaurantId: number): Promise<ActivityLog[]>;
