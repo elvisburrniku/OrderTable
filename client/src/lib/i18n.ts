@@ -972,6 +972,22 @@ export const translations: Record<Language, Translations> = {
       uptime: "Garantie de disponibilité",
       bookings: "Réservations supportées",
       support: "Support disponible"
+    },
+    cookieConsent: {
+      title: "Nous respectons votre vie privée",
+      description: "Nous utilisons des cookies pour améliorer votre expérience, analyser le trafic du site et personnaliser le contenu. Vous pouvez personnaliser vos préférences ou accepter tous les cookies.",
+      acceptAll: "Accepter tous les cookies",
+      rejectAll: "Tout refuser",
+      customize: "Personnaliser les paramètres",
+      necessary: "Cookies nécessaires",
+      analytics: "Cookies d'analyse",
+      marketing: "Cookies marketing",
+      necessaryDesc: "Cookies essentiels requis pour les fonctionnalités de base du site web et la sécurité.",
+      analyticsDesc: "Nous aident à comprendre comment les visiteurs interagissent avec notre site web pour améliorer les performances.",
+      marketingDesc: "Utilisés pour diffuser des publicités personnalisées et suivre l'efficacité des campagnes marketing.",
+      savePreferences: "Enregistrer mes préférences",
+      privacyPolicy: "Politique de confidentialité",
+      learnMore: "En savoir plus"
     }
   },
   it: {
@@ -1157,6 +1173,22 @@ export const translations: Record<Language, Translations> = {
       uptime: "Garanzia uptime",
       bookings: "Prenotazioni supportate",
       support: "Supporto disponibile"
+    },
+    cookieConsent: {
+      title: "Rispettiamo la tua privacy",
+      description: "Utilizziamo i cookie per migliorare la tua esperienza, analizzare il traffico del sito e personalizzare i contenuti. Puoi personalizzare le tue preferenze o accettare tutti i cookie.",
+      acceptAll: "Accetta tutti i cookie",
+      rejectAll: "Rifiuta tutti",
+      customize: "Personalizza impostazioni",
+      necessary: "Cookie necessari",
+      analytics: "Cookie analitici",
+      marketing: "Cookie marketing",
+      necessaryDesc: "Cookie essenziali richiesti per le funzionalità di base del sito web e la sicurezza.",
+      analyticsDesc: "Ci aiutano a capire come i visitatori interagiscono con il nostro sito web per migliorare le prestazioni.",
+      marketingDesc: "Utilizzati per fornire pubblicità personalizzate e tracciare l'efficacia delle campagne marketing.",
+      savePreferences: "Salva le mie preferenze",
+      privacyPolicy: "Informativa sulla privacy",
+      learnMore: "Scopri di più"
     }
   },
   no: {
@@ -1342,6 +1374,22 @@ export const translations: Record<Language, Translations> = {
       uptime: "Oppetidsgaranti",
       bookings: "Støttede bookinger",
       support: "Støtte tilgjengelig"
+    },
+    cookieConsent: {
+      title: "Vi respekterer ditt personvern",
+      description: "Vi bruker informasjonskapsler for å forbedre opplevelsen din, analysere nettstedstrafikk og tilpasse innhold. Du kan tilpasse preferansene dine eller godta alle informasjonskapsler.",
+      acceptAll: "Godta alle informasjonskapsler",
+      rejectAll: "Avvis alle",
+      customize: "Tilpass innstillinger",
+      necessary: "Nødvendige informasjonskapsler",
+      analytics: "Analyse-informasjonskapsler",
+      marketing: "Markedsførings-informasjonskapsler",
+      necessaryDesc: "Essensielle informasjonskapsler som kreves for grunnleggende nettsidefunksjonalitet og sikkerhet.",
+      analyticsDesc: "Hjelper oss å forstå hvordan besøkende samhandler med nettstedet vårt for å forbedre ytelsen.",
+      marketingDesc: "Brukes til å levere personlig tilpasset reklame og spore effektiviteten av markedsføringskampanjer.",
+      savePreferences: "Lagre mine preferanser",
+      privacyPolicy: "Personvernregler",
+      learnMore: "Lær mer"
     }
   },
   da: {
@@ -1527,6 +1575,22 @@ export const translations: Record<Language, Translations> = {
       uptime: "Oppetidsgaranti",
       bookings: "Understøttede bookinger",
       support: "Support tilgængelig"
+    },
+    cookieConsent: {
+      title: "Vi respekterer dit privatliv",
+      description: "Vi bruger cookies for at forbedre din oplevelse, analysere webstedstrafik og personliggøre indhold. Du kan tilpasse dine præferencer eller acceptere alle cookies.",
+      acceptAll: "Accepter alle cookies",
+      rejectAll: "Afvis alle",
+      customize: "Tilpas indstillinger",
+      necessary: "Nødvendige cookies",
+      analytics: "Analyse-cookies",
+      marketing: "Marketing-cookies",
+      necessaryDesc: "Essentielle cookies der kræves til grundlæggende webstedfunktionalitet og sikkerhed.",
+      analyticsDesc: "Hjælper os med at forstå hvordan besøgende interagerer med vores websted for at forbedre ydeevnen.",
+      marketingDesc: "Bruges til at levere personlig tilpasset reklame og spore effektiviteten af marketingkampagner.",
+      savePreferences: "Gem mine præferencer",
+      privacyPolicy: "Privatlivspolitik",
+      learnMore: "Lær mere"
     }
   },
   sv: {
