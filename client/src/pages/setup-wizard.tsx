@@ -14,6 +14,7 @@ import { useToast } from "@/hooks/use-toast";
 import { Link, useLocation } from "wouter";
 import { apiRequest } from "@/lib/queryClient";
 import { CheckCircle, Circle, ArrowRight, ArrowLeft, Building, Clock, Utensils, Settings, CreditCard } from "lucide-react";
+import { PaymentMethodForm } from "@/components/payment-method-form";
 
 const restaurantDetailsSchema = z.object({
   address: z.string().min(1, "Address is required"),
@@ -762,44 +763,21 @@ export default function SetupWizard() {
         // Payment step for paid plans
         if (requiresPayment) {
           return (
-            <div className="text-center space-y-6">
-              <div className="mx-auto w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center">
-                <CreditCard className="w-8 h-8 text-blue-600" />
-              </div>
-              <div>
-                <h3 className="text-xl font-semibold mb-2">Complete Your Subscription</h3>
+            <div className="space-y-6">
+              <div className="text-center mb-6">
+                <h3 className="text-xl font-semibold mb-2">Payment Information</h3>
                 <p className="text-gray-600 mb-4">
-                  You've selected the <strong>{subscriptionData?.plan?.name}</strong> plan.
-                  Complete your payment to activate all features.
+                  Add your payment method for the <strong>{subscriptionData?.plan?.name}</strong> plan
+                  (${(subscriptionData?.plan?.price || 0) / 100}/month)
                 </p>
-                <div className="bg-gray-50 p-4 rounded-lg mb-6">
-                  <div className="flex justify-between items-center">
-                    <span className="font-medium">{subscriptionData?.plan?.name} Plan</span>
-                    <span className="text-2xl font-bold">${(subscriptionData?.plan?.price || 0) / 100}/month</span>
-                  </div>
-                  <p className="text-sm text-gray-600 mt-2">
-                    Billed monthly • Cancel anytime
-                  </p>
-                </div>
               </div>
-              <div className="space-y-4">
-                <Button 
-                  onClick={() => createCheckoutMutation.mutate()} 
-                  className="w-full" 
-                  disabled={createCheckoutMutation.isPending}
-                >
-                  {createCheckoutMutation.isPending ? "Creating checkout..." : "Complete Payment"}
-                </Button>
-                <Button
-                  type="button"
-                  variant="outline"
-                  onClick={() => setCurrentStep(3)}
-                  className="w-full"
-                >
-                  <ArrowLeft className="w-4 h-4 mr-2" />
-                  Back to Tables
-                </Button>
-              </div>
+              <PaymentMethodForm
+                onSuccess={() => {
+                  setCompletedSteps(prev => [...prev, 4]);
+                  setCurrentStep(5);
+                }}
+                onBack={() => setCurrentStep(3)}
+              />
             </div>
           );
         }

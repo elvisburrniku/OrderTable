@@ -12527,6 +12527,173 @@ NEXT STEPS:
 
   // Billing Management Routes
 
+  // Setup payment method for wallet storage
+  app.post(
+    "/api/billing/setup-payment-method",
+    attachUser,
+    async (req: Request, res: Response) => {
+      if (!req.user) {
+        return res.status(401).json({ error: "Not authenticated" });
+      }
+
+      try {
+        const { cardNumber, expiryMonth, expiryYear, cvc, cardholderName, billingAddress } = req.body;
+
+        if (!cardNumber || !expiryMonth || !expiryYear || !cvc || !cardholderName) {
+          return res.status(400).json({ error: "All card details are required" });
+        }
+
+        // Get user's tenant
+        const tenant = await storage.getTenantByUserId(req.user.id);
+        if (!tenant) {
+          return res.status(404).json({ error: "Tenant not found" });
+        }
+
+        // Create or get Stripe customer
+        let customerId = tenant.stripeCustomerId;
+        if (!customerId) {
+          const customer = await stripe.customers.create({
+            email: req.user.email,
+            name: req.user.name,
+            address: billingAddress ? {
+              line1: billingAddress.line1,
+              city: billingAddress.city,
+              state: billingAddress.state,
+              postal_code: billingAddress.postal_code,
+              country: billingAddress.country,
+            } : undefined,
+            metadata: {
+              tenantId: tenant.id.toString(),
+              userId: req.user.id.toString(),
+            },
+          });
+          customerId = customer.id;
+          await storage.updateTenant(tenant.id, { stripeCustomerId: customerId });
+        }
+
+        // Create payment method using Stripe
+        const paymentMethod = await stripe.paymentMethods.create({
+          type: 'card',
+          card: {
+            number: cardNumber.replace(/\s/g, ''),
+            exp_month: parseInt(expiryMonth),
+            exp_year: parseInt(expiryYear),
+            cvc: cvc,
+          },
+          billing_details: {
+            name: cardholderName,
+            address: billingAddress ? {
+              line1: billingAddress.line1,
+              city: billingAddress.city,
+              state: billingAddress.state,
+              postal_code: billingAddress.postal_code,
+              country: billingAddress.country,
+            } : undefined,
+          },
+        });
+
+        // Attach payment method to customer
+        await stripe.paymentMethods.attach(paymentMethod.id, {
+          customer: customerId,
+        });
+
+        // Set as default payment method if this is their first one
+        const existingMethods = await stripe.paymentMethods.list({
+          customer: customerId,
+          type: 'card',
+        });
+
+        if (existingMethods.data.length === 1) {
+          await stripe.customers.update(customerId, {
+            invoice_settings: {
+              default_payment_method: paymentMethod.id,
+            },
+          });
+        }
+
+        // If this is for a paid plan, create subscription immediately
+        const subscriptionDetails = await storage.getSubscriptionDetailsByTenantId(tenant.id);
+        if (subscriptionDetails?.plan?.price > 0 && tenant.subscriptionStatus === 'trial') {
+          try {
+            const subscription = await stripe.subscriptions.create({
+              customer: customerId,
+              items: [{
+                price_data: {
+                  currency: 'usd',
+                  product_data: {
+                    name: subscriptionDetails.plan.name,
+                    description: `${subscriptionDetails.plan.name} subscription plan`,
+                  },
+                  unit_amount: subscriptionDetails.plan.price,
+                  recurring: {
+                    interval: 'month',
+                  },
+                },
+              }],
+              default_payment_method: paymentMethod.id,
+              metadata: {
+                tenantId: tenant.id.toString(),
+                planId: subscriptionDetails.plan.id.toString(),
+              },
+            });
+
+            // Update tenant subscription status
+            await storage.updateTenant(tenant.id, {
+              stripeSubscriptionId: subscription.id,
+              subscriptionStatus: 'active',
+            });
+
+            res.json({
+              success: true,
+              paymentMethod: {
+                id: paymentMethod.id,
+                brand: paymentMethod.card?.brand,
+                last4: paymentMethod.card?.last4,
+                exp_month: paymentMethod.card?.exp_month,
+                exp_year: paymentMethod.card?.exp_year,
+              },
+              subscription: {
+                id: subscription.id,
+                status: subscription.status,
+              },
+              message: "Payment method saved and subscription activated successfully",
+            });
+          } catch (subscriptionError) {
+            console.error("Error creating subscription:", subscriptionError);
+            // Still return success for payment method saving
+            res.json({
+              success: true,
+              paymentMethod: {
+                id: paymentMethod.id,
+                brand: paymentMethod.card?.brand,
+                last4: paymentMethod.card?.last4,
+                exp_month: paymentMethod.card?.exp_month,
+                exp_year: paymentMethod.card?.exp_year,
+              },
+              message: "Payment method saved successfully, but subscription activation failed",
+              warning: "Please contact support to activate your subscription",
+            });
+          }
+        } else {
+          res.json({
+            success: true,
+            paymentMethod: {
+              id: paymentMethod.id,
+              brand: paymentMethod.card?.brand,
+              last4: paymentMethod.card?.last4,
+              exp_month: paymentMethod.card?.exp_month,
+              exp_year: paymentMethod.card?.exp_year,
+            },
+            message: "Payment method saved successfully",
+          });
+        }
+      } catch (error) {
+        console.error("Error saving payment method:", error);
+        res.status(500).json({ error: "Failed to save payment method" });
+      }
+    },
+  );
+
   // Create checkout session for setup wizard
   app.post(
     "/api/billing/create-checkout-session",
@@ -12544,8 +12711,8 @@ NEXT STEPS:
         }
 
         // Get tenant and verify user access
-        const tenantUser = await storage.getTenantUserByIds(tenantId, req.user.id);
-        if (!tenantUser) {
+        const userTenant = await storage.getTenantByUserId(req.user.id);
+        if (!userTenant || userTenant.id !== tenantId) {
           return res.status(403).json({ error: "Access denied" });
         }
 
