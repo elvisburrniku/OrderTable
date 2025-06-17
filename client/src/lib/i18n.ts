@@ -164,6 +164,24 @@ export interface Translations {
     bookings: string;
     support: string;
   };
+
+  // Cookie Consent
+  cookieConsent: {
+    title: string;
+    description: string;
+    acceptAll: string;
+    rejectAll: string;
+    customize: string;
+    necessary: string;
+    analytics: string;
+    marketing: string;
+    necessaryDesc: string;
+    analyticsDesc: string;
+    marketingDesc: string;
+    savePreferences: string;
+    privacyPolicy: string;
+    learnMore: string;
+  };
 }
 
 export const translations: Record<Language, Translations> = {
@@ -350,6 +368,22 @@ export const translations: Record<Language, Translations> = {
       uptime: "Uptime Guarantee",
       bookings: "Bookings Supported",
       support: "Support Available"
+    },
+    cookieConsent: {
+      title: "We Value Your Privacy",
+      description: "We use cookies to enhance your experience, analyze site traffic, and personalize content. You can customize your preferences or accept all cookies.",
+      acceptAll: "Accept All Cookies",
+      rejectAll: "Reject All",
+      customize: "Customize Settings",
+      necessary: "Necessary Cookies",
+      analytics: "Analytics Cookies",
+      marketing: "Marketing Cookies",
+      necessaryDesc: "Essential cookies required for basic website functionality and security.",
+      analyticsDesc: "Help us understand how visitors interact with our website to improve performance.",
+      marketingDesc: "Used to deliver personalized advertisements and track marketing campaign effectiveness.",
+      savePreferences: "Save My Preferences",
+      privacyPolicy: "Privacy Policy",
+      learnMore: "Learn More"
     }
   },
   de: {
@@ -535,6 +569,22 @@ export const translations: Record<Language, Translations> = {
       uptime: "Verfügbarkeitsgarantie",
       bookings: "Unterstützte Buchungen",
       support: "Support verfügbar"
+    },
+    cookieConsent: {
+      title: "Wir respektieren Ihre Privatsphäre",
+      description: "Wir verwenden Cookies, um Ihre Erfahrung zu verbessern, den Website-Traffic zu analysieren und Inhalte zu personalisieren. Sie können Ihre Einstellungen anpassen oder alle Cookies akzeptieren.",
+      acceptAll: "Alle Cookies akzeptieren",
+      rejectAll: "Alle ablehnen",
+      customize: "Einstellungen anpassen",
+      necessary: "Notwendige Cookies",
+      analytics: "Analyse-Cookies",
+      marketing: "Marketing-Cookies",
+      necessaryDesc: "Wesentliche Cookies, die für grundlegende Website-Funktionen und Sicherheit erforderlich sind.",
+      analyticsDesc: "Helfen uns zu verstehen, wie Besucher mit unserer Website interagieren, um die Leistung zu verbessern.",
+      marketingDesc: "Werden verwendet, um personalisierte Werbung zu liefern und die Wirksamkeit von Marketingkampagnen zu verfolgen.",
+      savePreferences: "Meine Einstellungen speichern",
+      privacyPolicy: "Datenschutzrichtlinie",
+      learnMore: "Mehr erfahren"
     }
   },
   // Add more languages (es, fr, it, no, da, sv, cs, nl) with similar structure...
@@ -721,6 +771,22 @@ export const translations: Record<Language, Translations> = {
       uptime: "Garantía de Disponibilidad",
       bookings: "Reservas Soportadas",
       support: "Soporte Disponible"
+    },
+    cookieConsent: {
+      title: "Valoramos tu Privacidad",
+      description: "Utilizamos cookies para mejorar tu experiencia, analizar el tráfico del sitio y personalizar el contenido. Puedes personalizar tus preferencias o aceptar todas las cookies.",
+      acceptAll: "Aceptar Todas las Cookies",
+      rejectAll: "Rechazar Todas",
+      customize: "Personalizar Configuración",
+      necessary: "Cookies Necesarias",
+      analytics: "Cookies de Análisis",
+      marketing: "Cookies de Marketing",
+      necessaryDesc: "Cookies esenciales requeridas para la funcionalidad básica del sitio web y seguridad.",
+      analyticsDesc: "Nos ayudan a entender cómo los visitantes interactúan con nuestro sitio web para mejorar el rendimiento.",
+      marketingDesc: "Se utilizan para entregar publicidad personalizada y rastrear la efectividad de campañas de marketing.",
+      savePreferences: "Guardar Mis Preferencias",
+      privacyPolicy: "Política de Privacidad",
+      learnMore: "Saber Más"
     }
   },
   fr: {
