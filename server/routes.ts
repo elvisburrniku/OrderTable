@@ -9406,8 +9406,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
         
         console.log(`Heat map: Found ${tables.length} tables and ${bookings.length} bookings for restaurant ${restaurantId}`);
         
-        // Get table layout positions
-        const tableLayout = await storage.getTableLayout(restaurantId);
+        // Get table layout positions (using default room "1")
+        const tableLayout = await storage.getTableLayout(restaurantId, "1");
+        console.log(`Heat map: Raw table layout:`, tableLayout);
         const positions = tableLayout?.positions || {};
         
         console.log(`Heat map: Table layout positions:`, positions);
@@ -9433,7 +9434,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           const heatScore = Math.round((occupancyRate + revenueScore + bookingScore) / 3);
 
           // Get position from saved layout or use default grid position
-          const savedPosition = positions[`table-${table.id}`];
+          const savedPosition = positions[table.id.toString()];
           const defaultPosition = {
             x: 60 + (index % 4) * 120,
             y: 60 + Math.floor(index / 4) * 100
