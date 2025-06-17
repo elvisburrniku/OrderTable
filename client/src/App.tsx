@@ -79,6 +79,7 @@ import TestTools from "./pages/test-tools";
 import MenuManagementPage from "./pages/menu-management";
 import KitchenDashboardPage from "./pages/kitchen-dashboard";
 import PrintOrders from "./pages/print-orders";
+import CountdownDemoPage from "./pages/countdown-demo";
 import { SetupGuard } from "./components/setup-guard";
 import { OverduePaymentGuard } from "./components/overdue-payment-guard";
 import ErrorBoundary from "./components/error-boundary";

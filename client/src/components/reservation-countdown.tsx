@@ -3,6 +3,7 @@ import { Clock, Users, Calendar, MapPin, Sparkles, Heart, Star } from 'lucide-re
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils';
+import FloatingTimeParticles from './floating-time-particles';
 
 interface Reservation {
   id: number;
@@ -133,6 +134,12 @@ const ReservationCard = ({ reservation, index }: { reservation: Reservation; ind
         ? "border-orange-400 bg-gradient-to-br from-orange-50 to-orange-100"
         : "border-blue-200 bg-gradient-to-br from-blue-50 to-blue-100"
     )}>
+      {/* Floating time particles */}
+      <FloatingTimeParticles 
+        isUrgent={isUrgent || isCritical} 
+        particleCount={isCritical ? 8 : isUrgent ? 6 : 4}
+      />
+      
       {/* Animated background effects */}
       <div className="absolute top-0 right-0 w-20 h-20 opacity-10">
         <div className={cn(

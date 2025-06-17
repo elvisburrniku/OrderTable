@@ -276,6 +276,35 @@ export default function Dashboard() {
   const queryClient = useQueryClient();
   const { toast } = useToast();
 
+  // Helper functions for reservation countdown calculations
+  const calculateTimeRemaining = (targetTime: string) => {
+    const now = new Date();
+    const target = new Date();
+    const [hours, minutes] = targetTime.split(':');
+    target.setHours(parseInt(hours), parseInt(minutes), 0, 0);
+    
+    if (target < now) {
+      target.setDate(target.getDate() + 1);
+    }
+    
+    const diff = target.getTime() - now.getTime();
+    return Math.max(0, Math.floor(diff / (1000 * 60)));
+  };
+
+  const getUpcomingReservations = () => {
+    return selectedDateBookings.filter(booking => {
+      const timeRemaining = calculateTimeRemaining(booking.startTime);
+      return timeRemaining > 0 && timeRemaining <= 480; // Within 8 hours
+    });
+  };
+
+  const getUrgentReservations = () => {
+    return selectedDateBookings.filter(booking => {
+      const timeRemaining = calculateTimeRemaining(booking.startTime);
+      return timeRemaining > 0 && timeRemaining <= 30; // Within 30 minutes
+    });
+  };
+
   const createBookingMutation = useMutation({
     mutationFn: async (bookingData: any) => {
       return apiRequest(
@@ -939,11 +968,17 @@ export default function Dashboard() {
                 <h1 className="text-2xl font-bold text-gray-900">
                   {format(selectedDate, "EEEE dd MMMM yyyy")}
                 </h1>
-                <div className="flex items-center bg-blue-50 border border-blue-200 rounded-lg px-3 py-2">
-                  <Clock className="h-4 w-4 mr-2 text-blue-600" />
-                  <span className="text-sm font-medium text-blue-800">
-                    {format(currentTime, "HH:mm:ss")}
-                  </span>
+                <div className="flex items-center gap-3">
+                  <div className="flex items-center bg-blue-50 border border-blue-200 rounded-lg px-3 py-2">
+                    <Clock className="h-4 w-4 mr-2 text-blue-600" />
+                    <span className="text-sm font-medium text-blue-800">
+                      {format(currentTime, "HH:mm:ss")}
+                    </span>
+                  </div>
+                  <AnimatedNotificationBadge 
+                    count={getUpcomingReservations().length}
+                    urgentCount={getUrgentReservations().length}
+                  />
                 </div>
               </div>
               {(() => {
