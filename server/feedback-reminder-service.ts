@@ -187,7 +187,7 @@ export class FeedbackReminderService {
 
       // Send email with QR code attachment
       await this.emailService.sendEmail({
-        to: booking.customerEmail,
+        to: [{ email: booking.customerEmail, name: booking.customerName }],
         subject,
         text: textContent,
         html: htmlContent,

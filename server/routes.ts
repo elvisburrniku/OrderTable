@@ -36,6 +36,7 @@ import { CancellationReminderService } from "./cancellation-reminder-service";
 import { GoogleCalendarService } from "./google-calendar-service";
 import { ConflictDetector } from "./conflict-detector";
 import { feedbackReminderService } from "./feedback-reminder-service";
+import { activityLogger } from "./activity-logger";
 
 const stripe = new Stripe(
   process.env.STRIPE_SECRET_KEY || "sk_test_your_stripe_secret_key",
@@ -132,6 +133,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   // Apply session middleware to all routes
   app.use(attachUser);
+
+  // Apply comprehensive activity logging middleware
+  app.use(activityLogger.middleware());
 
   // Helper function to log activities
   const logActivity = async (params: {
