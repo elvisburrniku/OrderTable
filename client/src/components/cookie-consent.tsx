@@ -15,6 +15,11 @@ interface CookiePreferences {
 
 export default function CookieConsent() {
   const { t } = useLanguage();
+  
+  // Early return if translations aren't loaded yet
+  if (!t || !t.cookieConsent) {
+    return null;
+  }
   const [isVisible, setIsVisible] = useState(false);
   const [showCustomize, setShowCustomize] = useState(false);
   const [preferences, setPreferences] = useState<CookiePreferences>({

@@ -9,6 +9,8 @@ import WalkInBookingButton from "@/components/walk-in-booking";
 import RealTimeTableStatus from "@/components/real-time-table-status";
 import WelcomeAnimation from "@/components/welcome-animation";
 import ActiveSeasonalThemeDisplay from "@/components/active-seasonal-theme-display";
+import ReservationCountdown from "@/components/reservation-countdown";
+import AnimatedNotificationBadge from "@/components/animated-notification-badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent } from "@/components/ui/card";
@@ -1110,6 +1112,16 @@ export default function Dashboard() {
             tenantId={restaurant?.tenantId || 0}
             variant="banner"
           />
+
+          {/* Reservation Countdown - only show in calendar view */}
+          {viewMode === "calendar" && (
+            <div className="mb-6">
+              <ReservationCountdown 
+                reservations={selectedDateBookings || []} 
+                className="max-w-6xl mx-auto"
+              />
+            </div>
+          )}
 
           {viewMode === "layout" ? (
             renderTableLayout()
