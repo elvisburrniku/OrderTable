@@ -115,11 +115,11 @@ export default function EnhancedGoogleCalendar({
   // Current time indicator state
   const [currentTime, setCurrentTime] = useState(new Date());
 
-  // Update current time every minute
+  // Update current time every second for real-time movement
   useEffect(() => {
     const timer = setInterval(() => {
       setCurrentTime(new Date());
-    }, 60000); // Update every minute
+    }, 1000); // Update every second
 
     return () => clearInterval(timer);
   }, []);
@@ -196,22 +196,32 @@ export default function EnhancedGoogleCalendar({
     return slots;
   }, [openingHours]);
 
-  // Calculate current time indicator position
+  // Calculate current time indicator position with second precision
   const getCurrentTimePosition = useCallback(() => {
     const now = currentTime;
     const hours = now.getHours();
     const minutes = now.getMinutes();
+    const seconds = now.getSeconds();
     
-    // Find the index of the current time in timeSlots
-    const currentTimeString = `${hours.toString().padStart(2, "0")}:${Math.floor(minutes / 15) * 15}`;
-    const slotIndex = timeSlots.findIndex(slot => slot >= currentTimeString);
+    // Convert current time to total minutes since start of day
+    const currentTotalMinutes = hours * 60 + minutes + (seconds / 60);
     
-    if (slotIndex === -1) return -1;
+    // Find the first time slot that matches or is after current time
+    const timeSlotMinutes = timeSlots.map(slot => {
+      const [h, m] = slot.split(':').map(Number);
+      return h * 60 + m;
+    });
     
-    // Calculate exact position based on minutes within the 15-minute slot
-    const minutesIntoSlot = minutes % 15;
+    const firstSlotMinutes = timeSlotMinutes[0] || 0;
     const slotHeight = 60; // Height of each time slot in pixels
-    const position = (slotIndex * slotHeight) + (minutesIntoSlot / 15 * slotHeight);
+    const minutesPerSlot = 15; // Each slot represents 15 minutes
+    
+    // Calculate position relative to the first time slot
+    const minutesFromFirstSlot = currentTotalMinutes - firstSlotMinutes;
+    const position = (minutesFromFirstSlot / minutesPerSlot) * slotHeight;
+    
+    // Only show if within visible time range
+    if (position < 0 || position > timeSlots.length * slotHeight) return -1;
     
     return position;
   }, [currentTime, timeSlots]);
