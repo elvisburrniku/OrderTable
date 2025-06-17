@@ -148,22 +148,6 @@ function FeedbackDetailModal({
               </CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
-
-              <div>
-                <label className="text-sm font-medium text-gray-600">Overall Rating</label>
-                <div className="flex items-center gap-2 mt-1">
-                  <div className="flex">
-                    {[1, 2, 3, 4, 5].map((star) => (
-                      <Star
-                        key={star}
-                        className={`w-6 h-6 ${
-                          star <= feedback.rating
-                            ? 'fill-yellow-400 text-yellow-400'
-                            : 'text-gray-300'
-                        }`}
-                      />
-                    ))}
-
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
                   <label className="text-sm font-medium text-gray-600">
@@ -186,13 +170,10 @@ function FeedbackDetailModal({
                       {feedback.rating}/5
                     </span>
                   </div>
-                  <span className="text-lg font-semibold">{feedback.rating}/5</span>
+                  <span className="text-lg font-semibold">
+                    {feedback.rating}/5
+                  </span>
                 </div>
-
-                {feedback.nps && (
-                 
-                )}
-
               </div>
 
               {feedback.comments && (
