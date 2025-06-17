@@ -13897,7 +13897,7 @@ NEXT STEPS:
           return res.status(404).json({ message: "Restaurant not found" });
         }
 
-        const { customerName, customerEmail, customerPhone, tableNumber, questionResponses } = req.body;
+        const { customerName, customerEmail, customerPhone, tableNumber, overallRating, questionResponses } = req.body;
 
         // Create main feedback entry
         const feedbackData = {
@@ -13907,7 +13907,7 @@ NEXT STEPS:
           tableNumber,
           restaurantId,
           tenantId,
-          rating: null,
+          rating: overallRating || null,
           nps: null,
           comments: null,
           visited: false,

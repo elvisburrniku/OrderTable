@@ -127,7 +127,12 @@ export default function FeedbackResponses() {
     setSelectedFeedback(null);
   };
 
-  const renderStars = (rating: number) => {
+  const renderStars = (rating: number | null) => {
+    if (!rating) {
+      return Array.from({ length: 5 }, (_, i) => (
+        <Star key={i} className="w-4 h-4 text-gray-300" />
+      ));
+    }
     return Array.from({ length: 5 }, (_, i) => (
       <Star
         key={i}
@@ -213,10 +218,10 @@ export default function FeedbackResponses() {
                           <div className="flex items-center gap-2">
                             <span className="text-sm text-gray-600">Rating:</span>
                             <div className="flex">{renderStars(item.rating)}</div>
-                            <span className="text-sm font-medium">{item.rating || 'N/A'}/5</span>
+                            <span className="text-sm font-medium">{item.rating ? `${item.rating}/5` : 'No rating'}</span>
                           </div>
                           
-                          {item.npsScore !== undefined && (
+                          {item.npsScore !== null && item.npsScore !== undefined && (
                             <div className="flex items-center gap-2">
                               <span className="text-sm text-gray-600">NPS:</span>
                               <span className={`text-sm font-medium ${getNpsColor(item.npsScore)}`}>
