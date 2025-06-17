@@ -42,12 +42,20 @@ export default function Contact() {
   });
 
   const contactMutation = useMutation({
-    mutationFn: (data: ContactFormData) => 
-      fetch("/api/contact", {
+    mutationFn: async (data: ContactFormData) => {
+      const response = await fetch("/api/contact", {
         method: "POST",
         body: JSON.stringify(data),
         headers: { "Content-Type": "application/json" }
-      }).then(res => res.json()),
+      });
+      
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.message || `HTTP error! status: ${response.status}`);
+      }
+      
+      return response.json();
+    },
     onSuccess: () => {
       setIsSubmitted(true);
       form.reset();
@@ -56,10 +64,11 @@ export default function Contact() {
         description: "We'll get back to you within 24 hours."
       });
     },
-    onError: () => {
+    onError: (error: Error) => {
+      console.error('Contact form error:', error);
       toast({
         title: "Error sending message",
-        description: "Please try again later or contact us directly.",
+        description: error.message || "Please try again later or contact us directly.",
         variant: "destructive"
       });
     }
