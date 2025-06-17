@@ -49,19 +49,19 @@ export default function GuestBookingResponsive(props: any) {
 
   // Fetch restaurant data
   const { data: restaurant } = useQuery({
-    queryKey: [`/api/restaurants/${restaurantId}/public`],
-    enabled: !!restaurantId,
+    queryKey: [`/api/public/tenants/${tenantId}/restaurants/${restaurantId}`],
+    enabled: !!(tenantId && restaurantId),
   });
 
   // Fetch opening hours
   const { data: openingHours } = useQuery({
-    queryKey: [`/api/tenants/${tenantId}/restaurants/${restaurantId}/opening-hours`],
+    queryKey: [`/api/public/tenants/${tenantId}/restaurants/${restaurantId}/opening-hours`],
     enabled: !!(tenantId && restaurantId),
   });
 
   // Fetch seasonal themes to determine if Experience step should be shown
   const { data: seasonalThemes = [] } = useQuery({
-    queryKey: [`/api/tenants/${tenantId}/restaurants/${restaurantId}/seasonal-themes`],
+    queryKey: [`/api/public/tenants/${tenantId}/restaurants/${restaurantId}/seasonal-themes`],
     enabled: !!(tenantId && restaurantId),
   });
 

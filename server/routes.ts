@@ -13822,6 +13822,48 @@ NEXT STEPS:
     }
   );
 
+  // Public opening hours endpoint
+  app.get(
+    "/api/public/tenants/:tenantId/restaurants/:restaurantId/opening-hours",
+    async (req: Request, res: Response) => {
+      try {
+        const { tenantId, restaurantId } = req.params;
+        const restaurant = await storage.getRestaurantById(parseInt(restaurantId));
+        
+        if (!restaurant || restaurant.tenantId !== parseInt(tenantId)) {
+          return res.status(404).json({ message: "Restaurant not found" });
+        }
+
+        const openingHours = await storage.getOpeningHoursByRestaurant(parseInt(restaurantId));
+        res.json(openingHours);
+      } catch (error) {
+        console.error("Error fetching public opening hours:", error);
+        res.status(500).json({ error: "Failed to fetch opening hours" });
+      }
+    }
+  );
+
+  // Public seasonal themes endpoint
+  app.get(
+    "/api/public/tenants/:tenantId/restaurants/:restaurantId/seasonal-themes",
+    async (req: Request, res: Response) => {
+      try {
+        const { tenantId, restaurantId } = req.params;
+        const restaurant = await storage.getRestaurantById(parseInt(restaurantId));
+        
+        if (!restaurant || restaurant.tenantId !== parseInt(tenantId)) {
+          return res.status(404).json({ message: "Restaurant not found" });
+        }
+
+        const themes = await storage.getSeasonalMenuThemes(parseInt(restaurantId), parseInt(tenantId));
+        res.json(themes);
+      } catch (error) {
+        console.error("Error fetching public seasonal themes:", error);
+        res.status(500).json({ error: "Failed to fetch seasonal themes" });
+      }
+    }
+  );
+
   return httpServer;
 }
 
