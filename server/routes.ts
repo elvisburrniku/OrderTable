@@ -14105,6 +14105,28 @@ NEXT STEPS:
 
         const feedback = await storage.createFeedback(feedbackData);
 
+        // Log public guest feedback submission
+        await logActivity({
+          restaurantId,
+          tenantId,
+          eventType: "guest_feedback_submit",
+          description: `Public guest feedback submitted by ${feedbackData.customerName}`,
+          source: "qr_code_guest_form",
+          guestEmail: feedbackData.customerEmail,
+          ipAddress: req.ip,
+          userAgent: req.get('User-Agent'),
+          details: {
+            feedbackId: feedback.id,
+            customerName: feedbackData.customerName,
+            customerEmail: feedbackData.customerEmail,
+            tableNumber: feedbackData.tableNumber,
+            overallRating: validatedOverallRating,
+            hasQuestionResponses: !!(questionResponses && questionResponses.length > 0),
+            responseCount: questionResponses ? questionResponses.length : 0,
+            accessMethod: "qr_code"
+          }
+        });
+
         // Store individual question responses and aggregate data
         let aggregatedRating = null;
         let aggregatedNps = null;
