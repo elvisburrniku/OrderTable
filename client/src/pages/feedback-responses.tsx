@@ -133,10 +133,14 @@ export default function FeedbackResponses() {
         <Star key={i} className="w-4 h-4 text-gray-300" />
       ));
     }
+    
+    // Ensure rating is within 1-5 range for star display
+    const normalizedRating = Math.min(Math.max(rating, 0), 5);
+    
     return Array.from({ length: 5 }, (_, i) => (
       <Star
         key={i}
-        className={`w-4 h-4 ${i < rating ? 'text-yellow-500 fill-current' : 'text-gray-300'}`}
+        className={`w-4 h-4 ${i < normalizedRating ? 'text-yellow-500 fill-current' : 'text-gray-300'}`}
       />
     ));
   };
@@ -218,7 +222,7 @@ export default function FeedbackResponses() {
                           <div className="flex items-center gap-2">
                             <span className="text-sm text-gray-600">Rating:</span>
                             <div className="flex">{renderStars(item.rating)}</div>
-                            <span className="text-sm font-medium">{item.rating ? `${item.rating}/5` : 'No rating'}</span>
+                            <span className="text-sm font-medium">{item.rating ? `${Math.min(Math.max(item.rating, 0), 5)}/5` : 'No rating'}</span>
                           </div>
                           
                           {item.npsScore !== null && item.npsScore !== undefined && (
