@@ -2077,9 +2077,6 @@ export function useTranslations(): Translations {
   return translations[language];
 }
 
-// Export translations object for context
-export { translations };
-
 // Get specific translation
 export function getTranslation(key: string, language?: Language): string {
   const lang = language || detectLanguage();
