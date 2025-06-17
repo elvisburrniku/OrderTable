@@ -48,6 +48,7 @@ const {
   printOrders,
   productGroups,
   products,
+  paymentSetups,
 } = schema;
 
 export class DatabaseStorage implements IStorage {
@@ -1822,6 +1823,50 @@ export class DatabaseStorage implements IStorage {
     await this.db
       .delete(products)
       .where(eq(products.id, id));
+  }
+
+  // Payment Setups
+  async getPaymentSetupsByRestaurant(restaurantId: number): Promise<any[]> {
+    if (!this.db) throw new Error("Database connection not available");
+    
+    const paymentSetupsData = await this.db
+      .select()
+      .from(paymentSetups)
+      .where(eq(paymentSetups.restaurantId, restaurantId))
+      .orderBy(desc(paymentSetups.createdAt));
+    
+    return paymentSetupsData;
+  }
+
+  async createPaymentSetup(setup: any): Promise<any> {
+    if (!this.db) throw new Error("Database connection not available");
+    
+    const result = await this.db
+      .insert(paymentSetups)
+      .values(setup)
+      .returning();
+    
+    return result[0];
+  }
+
+  async updatePaymentSetup(id: number, updates: any): Promise<any> {
+    if (!this.db) throw new Error("Database connection not available");
+    
+    const result = await this.db
+      .update(paymentSetups)
+      .set({ ...updates, updatedAt: new Date() })
+      .where(eq(paymentSetups.id, id))
+      .returning();
+    
+    return result[0];
+  }
+
+  async deletePaymentSetup(id: number): Promise<void> {
+    if (!this.db) throw new Error("Database connection not available");
+    
+    await this.db
+      .delete(paymentSetups)
+      .where(eq(paymentSetups.id, id));
   }
 
   async getTimeSlotsByRestaurant(restaurantId: number, date?: string): Promise<any[]> {

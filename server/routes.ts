@@ -11465,6 +11465,152 @@ NEXT STEPS:
     }
   });
 
+  // Payment Setups API Routes
+  app.get("/api/tenants/:tenantId/restaurants/:restaurantId/payment-setups", validateTenant, async (req, res) => {
+    try {
+      const restaurantId = parseInt(req.params.restaurantId);
+      const tenantId = parseInt(req.params.tenantId);
+      
+      // Verify restaurant belongs to tenant
+      const restaurant = await storage.getRestaurantById(restaurantId);
+      if (!restaurant || restaurant.tenantId !== tenantId) {
+        return res.status(404).json({ message: "Restaurant not found" });
+      }
+      
+      const paymentSetups = await storage.getPaymentSetupsByRestaurant(restaurantId);
+      res.json(paymentSetups);
+    } catch (error) {
+      console.error("Error fetching payment setups:", error);
+      res.status(500).json({ message: "Failed to fetch payment setups" });
+    }
+  });
+
+  app.post("/api/tenants/:tenantId/restaurants/:restaurantId/payment-setups", validateTenant, async (req, res) => {
+    try {
+      const restaurantId = parseInt(req.params.restaurantId);
+      const tenantId = parseInt(req.params.tenantId);
+      const { 
+        name, 
+        method, 
+        type, 
+        priceType, 
+        amount, 
+        currency, 
+        priceUnit, 
+        allowResidual, 
+        residualAmount, 
+        cancellationNotice, 
+        description, 
+        language 
+      } = req.body;
+      
+      if (!name || !method || !type || !amount) {
+        return res.status(400).json({ message: "Name, method, type, and amount are required" });
+      }
+      
+      // Verify restaurant belongs to tenant
+      const restaurant = await storage.getRestaurantById(restaurantId);
+      if (!restaurant || restaurant.tenantId !== tenantId) {
+        return res.status(404).json({ message: "Restaurant not found" });
+      }
+      
+      const paymentSetup = await storage.createPaymentSetup({
+        restaurantId,
+        tenantId,
+        name,
+        method,
+        type,
+        priceType: priceType || "one_price",
+        amount: parseFloat(amount),
+        currency: currency || "EUR",
+        priceUnit: priceUnit || "per_guest",
+        allowResidual: allowResidual || false,
+        residualAmount: residualAmount ? parseFloat(residualAmount) : null,
+        cancellationNotice: cancellationNotice || "24_hours",
+        description: description || null,
+        language: language || "en"
+      });
+      
+      res.status(201).json(paymentSetup);
+    } catch (error) {
+      console.error("Error creating payment setup:", error);
+      res.status(500).json({ message: "Failed to create payment setup" });
+    }
+  });
+
+  app.put("/api/tenants/:tenantId/restaurants/:restaurantId/payment-setups/:id", validateTenant, async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      const restaurantId = parseInt(req.params.restaurantId);
+      const tenantId = parseInt(req.params.tenantId);
+      const { 
+        name, 
+        method, 
+        type, 
+        priceType, 
+        amount, 
+        currency, 
+        priceUnit, 
+        allowResidual, 
+        residualAmount, 
+        cancellationNotice, 
+        description, 
+        language 
+      } = req.body;
+      
+      // Verify restaurant belongs to tenant
+      const restaurant = await storage.getRestaurantById(restaurantId);
+      if (!restaurant || restaurant.tenantId !== tenantId) {
+        return res.status(404).json({ message: "Restaurant not found" });
+      }
+      
+      const updates: any = {};
+      if (name !== undefined) updates.name = name;
+      if (method !== undefined) updates.method = method;
+      if (type !== undefined) updates.type = type;
+      if (priceType !== undefined) updates.priceType = priceType;
+      if (amount !== undefined) updates.amount = parseFloat(amount);
+      if (currency !== undefined) updates.currency = currency;
+      if (priceUnit !== undefined) updates.priceUnit = priceUnit;
+      if (allowResidual !== undefined) updates.allowResidual = allowResidual;
+      if (residualAmount !== undefined) updates.residualAmount = residualAmount ? parseFloat(residualAmount) : null;
+      if (cancellationNotice !== undefined) updates.cancellationNotice = cancellationNotice;
+      if (description !== undefined) updates.description = description;
+      if (language !== undefined) updates.language = language;
+      
+      const updatedPaymentSetup = await storage.updatePaymentSetup(id, updates);
+      
+      if (!updatedPaymentSetup) {
+        return res.status(404).json({ message: "Payment setup not found" });
+      }
+      
+      res.json(updatedPaymentSetup);
+    } catch (error) {
+      console.error("Error updating payment setup:", error);
+      res.status(500).json({ message: "Failed to update payment setup" });
+    }
+  });
+
+  app.delete("/api/tenants/:tenantId/restaurants/:restaurantId/payment-setups/:id", validateTenant, async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      const restaurantId = parseInt(req.params.restaurantId);
+      const tenantId = parseInt(req.params.tenantId);
+      
+      // Verify restaurant belongs to tenant
+      const restaurant = await storage.getRestaurantById(restaurantId);
+      if (!restaurant || restaurant.tenantId !== tenantId) {
+        return res.status(404).json({ message: "Restaurant not found" });
+      }
+      
+      await storage.deletePaymentSetup(id);
+      res.json({ message: "Payment setup deleted successfully" });
+    } catch (error) {
+      console.error("Error deleting payment setup:", error);
+      res.status(500).json({ message: "Failed to delete payment setup" });
+    }
+  });
+
   const httpServer = createServer(app);
 
   // Setup WebSocket server for real-time notifications

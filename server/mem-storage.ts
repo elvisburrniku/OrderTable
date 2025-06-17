@@ -746,6 +746,46 @@ export class MemoryStorage implements IStorage {
       this.products.splice(index, 1);
     }
   }
+
+  // Payment Setups
+  private paymentSetups: any[] = [];
+  
+  async getPaymentSetupsByRestaurant(restaurantId: number): Promise<any[]> {
+    return this.paymentSetups
+      .filter(setup => setup.restaurantId === restaurantId)
+      .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+  }
+
+  async createPaymentSetup(setup: any): Promise<any> {
+    const newSetup = { 
+      id: this.nextId++, 
+      ...setup, 
+      createdAt: new Date(),
+      updatedAt: new Date()
+    };
+    this.paymentSetups.push(newSetup);
+    return newSetup;
+  }
+
+  async updatePaymentSetup(id: number, updates: any): Promise<any> {
+    const index = this.paymentSetups.findIndex(setup => setup.id === id);
+    if (index >= 0) {
+      this.paymentSetups[index] = { 
+        ...this.paymentSetups[index], 
+        ...updates, 
+        updatedAt: new Date() 
+      };
+      return this.paymentSetups[index];
+    }
+    return undefined;
+  }
+
+  async deletePaymentSetup(id: number): Promise<void> {
+    const index = this.paymentSetups.findIndex(setup => setup.id === id);
+    if (index >= 0) {
+      this.paymentSetups.splice(index, 1);
+    }
+  }
   async getTimeSlotsByRestaurant(restaurantId: number, date?: string): Promise<TimeSlots[]> { return []; }
   async createTimeSlot(slot: InsertTimeSlots): Promise<TimeSlots> { 
     const newSlot: TimeSlots = { id: this.nextId++, ...slot, createdAt: new Date() };
