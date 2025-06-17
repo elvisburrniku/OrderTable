@@ -220,7 +220,7 @@ export default function GoogleCalendar({ selectedDate, bookings, allBookings = [
     // Convert current time to total minutes since start of day
     const currentTotalMinutes = hours * 60 + minutes + (seconds / 60);
     
-    // Find which time slot the current time falls into
+    // Find which time slot the current time falls into or after
     let slotIndex = -1;
     let minutesFromSlotStart = 0;
     
@@ -228,14 +228,27 @@ export default function GoogleCalendar({ selectedDate, bookings, allBookings = [
       const [h, m] = timeSlots[i].split(':').map(Number);
       const slotMinutes = h * 60 + m;
       
-      if (i === timeSlots.length - 1 || currentTotalMinutes < slotMinutes + 15) {
+      // If current time is within this slot (slot to slot+15 minutes)
+      if (currentTotalMinutes >= slotMinutes && currentTotalMinutes < slotMinutes + 15) {
+        slotIndex = i;
+        minutesFromSlotStart = currentTotalMinutes - slotMinutes;
+        break;
+      }
+      // If current time is before the first slot, position at beginning
+      else if (i === 0 && currentTotalMinutes < slotMinutes) {
+        slotIndex = 0;
+        minutesFromSlotStart = Math.max(0, currentTotalMinutes - slotMinutes);
+        break;
+      }
+      // If we're past all slots, position at the last slot
+      else if (i === timeSlots.length - 1 && currentTotalMinutes >= slotMinutes) {
         slotIndex = i;
         minutesFromSlotStart = currentTotalMinutes - slotMinutes;
         break;
       }
     }
     
-    // Return -1 if current time is outside visible range
+    // Return -1 if current time is outside reasonable range
     if (slotIndex === -1) return -1;
     
     // Each time slot has a fixed height regardless of content
