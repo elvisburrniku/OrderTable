@@ -111,6 +111,18 @@ export default function EnhancedGoogleCalendar({
   const dragStartTime = useRef<number>(0);
   const dragStartPos = useRef<{ x: number; y: number }>({ x: 0, y: 0 });
   const clickTimeout = useRef<NodeJS.Timeout | null>(null);
+  
+  // Current time indicator state
+  const [currentTime, setCurrentTime] = useState(new Date());
+
+  // Update current time every minute
+  useEffect(() => {
+    const timer = setInterval(() => {
+      setCurrentTime(new Date());
+    }, 60000); // Update every minute
+
+    return () => clearInterval(timer);
+  }, []);
 
   // Fetch opening hours
   const { data: openingHours = [] } = useQuery({
@@ -183,6 +195,26 @@ export default function EnhancedGoogleCalendar({
     }
     return slots;
   }, [openingHours]);
+
+  // Calculate current time indicator position
+  const getCurrentTimePosition = useCallback(() => {
+    const now = currentTime;
+    const hours = now.getHours();
+    const minutes = now.getMinutes();
+    
+    // Find the index of the current time in timeSlots
+    const currentTimeString = `${hours.toString().padStart(2, "0")}:${Math.floor(minutes / 15) * 15}`;
+    const slotIndex = timeSlots.findIndex(slot => slot >= currentTimeString);
+    
+    if (slotIndex === -1) return -1;
+    
+    // Calculate exact position based on minutes within the 15-minute slot
+    const minutesIntoSlot = minutes % 15;
+    const slotHeight = 60; // Height of each time slot in pixels
+    const position = (slotIndex * slotHeight) + (minutesIntoSlot / 15 * slotHeight);
+    
+    return position;
+  }, [currentTime, timeSlots]);
 
   // Check if a time slot is within opening hours for a specific date
   const isTimeSlotOpen = useCallback((date: Date, timeSlot: string) => {
@@ -952,7 +984,23 @@ export default function EnhancedGoogleCalendar({
               {format(currentDate, "EEEE, MMMM d, yyyy")}
             </h3>
           </div>
-          <div className="p-4 space-y-2 flex-1 overflow-y-auto">
+          <div className="p-4 space-y-2 flex-1 overflow-y-auto relative">
+            {/* Current time indicator line for day view */}
+            {getCurrentTimePosition() >= 0 && isToday(currentDate) && (
+              <div
+                className="absolute left-0 right-0 z-10 flex items-center pointer-events-none"
+                style={{
+                  top: `${getCurrentTimePosition()}px`,
+                }}
+              >
+                <div className="w-16 bg-red-500 text-white text-xs px-1 py-0.5 rounded-l font-medium">
+                  {format(currentTime, "HH:mm")}
+                </div>
+                <div className="flex-1 h-0.5 bg-red-500"></div>
+                <div className="w-2 h-2 bg-red-500 rounded-full -ml-1"></div>
+              </div>
+            )}
+            
             {timeSlots.map((timeSlot) => {
               const slotBookings = getBookingsForSlot(currentDate, timeSlot);
               const availabilityLevel = getAvailabilityLevel(
@@ -1079,7 +1127,23 @@ export default function EnhancedGoogleCalendar({
           </div>
 
           {/* Time slots */}
-          <div className="flex-1 overflow-y-auto">
+          <div className="flex-1 overflow-y-auto relative">
+            {/* Current time indicator line */}
+            {getCurrentTimePosition() >= 0 && isToday(visibleDates.find(date => isToday(date)) || new Date()) && (
+              <div
+                className="absolute left-0 right-0 z-10 flex items-center pointer-events-none"
+                style={{
+                  top: `${getCurrentTimePosition()}px`,
+                }}
+              >
+                <div className="w-12 bg-red-500 text-white text-xs px-1 py-0.5 rounded-l font-medium">
+                  {format(currentTime, "HH:mm")}
+                </div>
+                <div className="flex-1 h-0.5 bg-red-500"></div>
+                <div className="w-2 h-2 bg-red-500 rounded-full -ml-1"></div>
+              </div>
+            )}
+            
             {timeSlots.map((timeSlot) => (
               <div key={timeSlot} className="grid grid-cols-8 border-b">
                 <div className="p-2 text-xs text-gray-600 border-r">
