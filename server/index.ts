@@ -6,6 +6,7 @@ import { storage } from "./storage";
 import { DatabaseStorage } from "./db-storage";
 import { ReminderService } from "./reminder-service";
 import { AutoAssignmentService } from "./auto-assignment-service";
+import { activityCleanupService } from "./activity-cleanup-service";
 
 const app = express();
 app.use(express.json());
@@ -68,6 +69,9 @@ app.use((req, res, next) => {
   // Start auto-assignment service for unassigned bookings
   const autoAssignmentService = new AutoAssignmentService(storage);
   autoAssignmentService.start();
+
+  // Start activity cleanup service to auto-delete old activity logs
+  activityCleanupService.start();
 
   const server = await registerRoutes(app);
 
