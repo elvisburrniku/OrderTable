@@ -25,7 +25,7 @@ export default function GuestBookingResponsive(props: any) {
   const restaurantId = params?.restaurantId || pathRestaurantId || props.params?.restaurantId || props.restaurantId;
   const { toast } = useToast();
 
-  // Always render with fallback values for testing
+  // Use fallback values if parameters are missing
   const finalTenantId = tenantId || '1';
   const finalRestaurantId = restaurantId || '1';
 

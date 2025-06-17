@@ -89,9 +89,12 @@ function App() {
       <LanguageProvider>
         <QueryClientProvider client={queryClient}>
         <Switch>
-          {/* Public feedback routes - standalone without guards */}
+          {/* Public routes - standalone without guards */}
           <Route path="/feedback/:tenantId/:restaurantId" component={GuestFeedbackForm} />
           <Route path="/feedback-test" component={FeedbackTest} />
+          <Route path="/guest-booking/:tenantId/:restaurantId" component={GuestBookingResponsive} />
+          <Route path="/:tenantId/book/:restaurantId" component={GuestBookingResponsive} />
+          <Route path="/booking-manage/:id" component={BookingManage} />
           
           {/* All other routes with authentication */}
           <Route>
@@ -168,10 +171,7 @@ function App() {
               </OverduePaymentGuard>
             </SetupGuard>
             
-            {/* Public routes that don't require authentication */}
-            <Route path="/booking-manage/:id" component={BookingManage} />
-            <Route path="/guest-booking/:tenantId/:restaurantId" component={GuestBookingResponsive} />
-            <Route path="/:tenantId/book/:restaurantId" component={GuestBookingResponsive} />
+            {/* Other protected routes */}
             <Route path="/feedback-responses-popup" component={FeedbackResponsesPopup} />
             <Route path="/contact" component={Contact} />
             <Route component={NotFound} />
