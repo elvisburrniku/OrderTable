@@ -34,13 +34,15 @@ interface ProductGroup {
 }
 
 export default function ProductGroups() {
-  const { user } = useAuth();
-  const { currentTenant } = useTenant();
-  const currentRestaurant = user?.restaurants?.[0]; // Get first restaurant for now
+  const { user, restaurant } = useAuth();
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [editingGroup, setEditingGroup] = useState<ProductGroup | null>(null);
+
+  // Get restaurant info from authentication context
+  const tenantId = restaurant?.tenantId;
+  const restaurantId = restaurant?.id;
 
   const form = useForm<ProductGroupForm>({
     resolver: zodResolver(productGroupSchema),
@@ -53,18 +55,18 @@ export default function ProductGroups() {
 
   // Fetch product groups
   const { data: productGroups = [], isLoading } = useQuery({
-    queryKey: [`/api/tenants/${currentTenant?.id}/restaurants/${currentRestaurant?.id}/product-groups`],
-    enabled: !!currentTenant?.id && !!currentRestaurant?.id,
+    queryKey: [`/api/tenants/${tenantId}/restaurants/${restaurantId}/product-groups`],
+    enabled: !!tenantId && !!restaurantId,
   });
 
   // Create product group mutation
   const createMutation = useMutation({
     mutationFn: async (data: ProductGroupForm) => {
-      return await apiRequest("POST", `/api/tenants/${currentTenant?.id}/restaurants/${currentRestaurant?.id}/product-groups`, data);
+      return await apiRequest("POST", `/api/tenants/${tenantId}/restaurants/${restaurantId}/product-groups`, data);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ 
-        queryKey: [`/api/tenants/${currentTenant?.id}/restaurants/${currentRestaurant?.id}/product-groups`] 
+        queryKey: [`/api/tenants/${tenantId}/restaurants/${restaurantId}/product-groups`] 
       });
       toast({
         title: "Success",
@@ -85,11 +87,11 @@ export default function ProductGroups() {
   // Update product group mutation
   const updateMutation = useMutation({
     mutationFn: async ({ id, data }: { id: number; data: ProductGroupForm }) => {
-      return await apiRequest("PUT", `/api/tenants/${currentTenant?.id}/restaurants/${currentRestaurant?.id}/product-groups/${id}`, data);
+      return await apiRequest("PUT", `/api/tenants/${tenantId}/restaurants/${restaurantId}/product-groups/${id}`, data);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ 
-        queryKey: [`/api/tenants/${currentTenant?.id}/restaurants/${currentRestaurant?.id}/product-groups`] 
+        queryKey: [`/api/tenants/${tenantId}/restaurants/${restaurantId}/product-groups`] 
       });
       toast({
         title: "Success",
@@ -111,11 +113,11 @@ export default function ProductGroups() {
   // Delete product group mutation
   const deleteMutation = useMutation({
     mutationFn: async (id: number) => {
-      return await apiRequest("DELETE", `/api/tenants/${currentTenant?.id}/restaurants/${currentRestaurant?.id}/product-groups/${id}`);
+      return await apiRequest("DELETE", `/api/tenants/${tenantId}/restaurants/${restaurantId}/product-groups/${id}`);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ 
-        queryKey: [`/api/tenants/${currentTenant?.id}/restaurants/${currentRestaurant?.id}/product-groups`] 
+        queryKey: [`/api/tenants/${tenantId}/restaurants/${restaurantId}/product-groups`] 
       });
       toast({
         title: "Success",
