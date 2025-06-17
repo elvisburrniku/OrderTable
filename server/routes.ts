@@ -35,6 +35,7 @@ import { SubscriptionService } from "./subscription-service";
 import { CancellationReminderService } from "./cancellation-reminder-service";
 import { GoogleCalendarService } from "./google-calendar-service";
 import { ConflictDetector } from "./conflict-detector";
+import { feedbackReminderService } from "./feedback-reminder-service";
 
 const stripe = new Stripe(
   process.env.STRIPE_SECRET_KEY || "sk_test_your_stripe_secret_key",
@@ -14000,6 +14001,63 @@ NEXT STEPS:
       }
     }
   );
+
+  // Feedback reminder endpoints
+  app.post("/api/admin/send-feedback-reminders", async (req, res) => {
+    try {
+      // Manual trigger for testing feedback reminders
+      console.log("Manual feedback reminder check triggered");
+      
+      // This will be handled by the feedback reminder service
+      res.json({ 
+        message: "Feedback reminder check triggered successfully",
+        note: "The service will process completed bookings and send emails automatically"
+      });
+    } catch (error) {
+      console.error("Error triggering feedback reminders:", error);
+      res.status(500).json({ message: "Failed to trigger feedback reminders" });
+    }
+  });
+
+  // Send immediate feedback email for testing
+  app.post("/api/admin/tenants/:tenantId/restaurants/:restaurantId/send-feedback-email/:bookingId", async (req, res) => {
+    try {
+      const bookingId = parseInt(req.params.bookingId);
+      const restaurantId = parseInt(req.params.restaurantId);
+      const tenantId = parseInt(req.params.tenantId);
+
+      const booking = await storage.getBookingById(bookingId);
+      const restaurant = await storage.getRestaurantById(restaurantId);
+
+      if (!booking || !restaurant || booking.restaurantId !== restaurantId || restaurant.tenantId !== tenantId) {
+        return res.status(404).json({ message: "Booking or restaurant not found" });
+      }
+
+      if (!booking.customerEmail) {
+        return res.status(400).json({ message: "No customer email available for this booking" });
+      }
+
+      // Send feedback request immediately using the existing service
+      await feedbackReminderService.sendFeedbackRequest(booking, restaurant, tenantId);
+
+      res.json({ 
+        message: "Feedback email sent successfully",
+        booking: {
+          id: booking.id,
+          customerName: booking.customerName,
+          customerEmail: booking.customerEmail,
+          bookingDate: booking.bookingDate
+        }
+      });
+    } catch (error) {
+      console.error("Error sending feedback email:", error);
+      res.status(500).json({ message: "Failed to send feedback email" });
+    }
+  });
+
+  // Initialize feedback reminder service
+  console.log("Starting feedback reminder service...");
+  feedbackReminderService.start();
 
   return httpServer;
 }
