@@ -288,10 +288,28 @@ export function CreateKitchenOrder({ restaurantId, tenantId, onOrderCreated }: C
       ? (selectedCustomer ? selectedCustomer.name : '')
       : customCustomerName;
 
+    // Debug logging to identify missing fields
+    console.log('Order validation:', {
+      orderNumber,
+      tableNumber,
+      customerName,
+      orderItemsLength: orderItems.length,
+      selectedTableId,
+      selectedCustomerId,
+      useExistingCustomer,
+      customCustomerName
+    });
+
     if (!orderNumber || !tableNumber || !customerName || orderItems.length === 0) {
+      const missingFields = [];
+      if (!orderNumber) missingFields.push('Order Number');
+      if (!tableNumber) missingFields.push('Table Number');
+      if (!customerName) missingFields.push('Customer Name');
+      if (orderItems.length === 0) missingFields.push('Order Items');
+      
       toast({
         title: "Missing Information",
-        description: "Please fill in all required fields and add at least one item.",
+        description: `Please fill in: ${missingFields.join(', ')}`,
         variant: "destructive",
       });
       return;
