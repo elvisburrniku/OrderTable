@@ -2025,12 +2025,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
               textResponse: response.textResponse || null,
             });
 
-            // Aggregate data from responses
-            if (response.rating && response.rating > 0) {
-              aggregatedRating = response.rating; // Take the last rating value
+            // Aggregate data from responses - prioritize rating over NPS for overall rating
+            if (response.rating !== null && response.rating !== undefined) {
+              aggregatedRating = response.rating;
             }
             if (response.npsScore !== null && response.npsScore !== undefined) {
-              aggregatedNps = response.npsScore; // Take the last NPS value
+              aggregatedNps = response.npsScore;
             }
             if (response.textResponse && response.textResponse.trim()) {
               aggregatedComments = aggregatedComments 
@@ -2039,14 +2039,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
             }
           }
 
-          // Update the main feedback entry with aggregated data only if we have values
-          if (aggregatedRating !== null || aggregatedNps !== null || aggregatedComments) {
-            await storage.updateFeedback(feedback.id, {
-              rating: aggregatedRating,
-              nps: aggregatedNps,
-              comments: aggregatedComments || null,
-            });
-          }
+          // Update the main feedback entry with aggregated data
+          await storage.updateFeedback(feedback.id, {
+            rating: aggregatedRating,
+            nps: aggregatedNps,
+            comments: aggregatedComments || null,
+          });
         }
 
         res.json(feedback);
