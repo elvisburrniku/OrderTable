@@ -9737,8 +9737,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
         if (resolution.type === "split_party") {
           // Actually split the large party into multiple bookings to resolve the conflict
-          const maxCapacity = Math.max(...tenantTables.map(t => t.capacity));
-          const tablesNeeded = Math.ceil(booking.guestCount / maxCapacity);
+          const tableCapacities = tenantTables.map(t => t.capacity).filter(c => c && c > 0);
+          const maxCapacity = tableCapacities.length > 0 ? Math.max(...tableCapacities) : 4; // Default to 4 if no valid capacities
+          
+          // Validate guest count and capacity
+          if (!booking.guestCount || booking.guestCount <= 0) {
+            console.log(`CONFLICTS RESOLVE: Invalid guest count: ${booking.guestCount}`);
+            return res.status(400).json({ message: "Invalid guest count" });
+          }
+          
+          const tablesNeeded = Math.max(1, Math.ceil(booking.guestCount / maxCapacity));
           
           // Calculate guest distribution across tables
           const guestsPerTable = Math.floor(booking.guestCount / tablesNeeded);
