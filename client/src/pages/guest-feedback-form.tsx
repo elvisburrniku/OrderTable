@@ -165,8 +165,6 @@ export default function GuestFeedbackForm() {
       const response = questionResponses[question.id];
       if (!response) return null;
 
-      console.log('Formatting response for question:', question.name, 'Response:', response);
-
       return {
         questionId: question.id,
         rating: response.rating || null,
@@ -174,8 +172,6 @@ export default function GuestFeedbackForm() {
         textResponse: response.text || null,
       };
     }).filter(Boolean);
-
-    console.log('Final formatted responses:', formattedResponses);
 
     const feedbackData = {
       customerName: customerName.trim(),
