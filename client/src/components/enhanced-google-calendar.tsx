@@ -395,6 +395,11 @@ export default function EnhancedGoogleCalendar({
   // Get conflict styling for booking cards
   const getBookingCardStyle = useCallback(
     (booking: Booking, date: Date, timeSlot: string) => {
+      // Check if booking is cancelled
+      if (booking.status === 'cancelled') {
+        return "bg-gray-200 text-gray-500 border-l-4 border-gray-400 opacity-60 cursor-default";
+      }
+
       if (!booking.tableId)
         return "bg-blue-100 text-blue-800 border-l-4 border-blue-400";
 
@@ -1017,7 +1022,11 @@ export default function EnhancedGoogleCalendar({
                       <div
                         key={booking.id}
                         data-booking-id={booking.id}
-                        className={`booking-card flex items-center space-x-2 p-2 rounded text-sm cursor-pointer transition-all duration-300 ease-out hover:shadow-lg hover:scale-105 hover:-translate-y-1 hover:rotate-1 active:scale-95 active:rotate-0 ${getBookingCardStyle(booking, currentDate, timeSlot)}`}
+                        className={`booking-card flex items-center space-x-2 p-2 rounded text-sm transition-all duration-300 ease-out ${
+                          booking.status === 'cancelled' 
+                            ? 'cursor-default' 
+                            : 'cursor-pointer hover:shadow-lg hover:scale-105 hover:-translate-y-1 hover:rotate-1 active:scale-95 active:rotate-0'
+                        } ${getBookingCardStyle(booking, currentDate, timeSlot)}`}
                         onClick={(e) => {
                           e.stopPropagation();
                           e.preventDefault();
@@ -1147,20 +1156,26 @@ export default function EnhancedGoogleCalendar({
                         <div
                           key={booking.id}
                           data-booking-id={booking.id}
-                          className={`booking-card p-1 mb-1 rounded text-xs cursor-pointer transition-all duration-300 ease-out hover:shadow-lg hover:scale-110 hover:-translate-y-1 hover:rotate-2 active:scale-95 active:rotate-0 ${getBookingCardStyle(booking, date, timeSlot)}`}
-                          onMouseDown={(e) => handleMouseDown(e, booking)}
+                          className={`booking-card p-1 mb-1 rounded text-xs transition-all duration-300 ease-out ${
+                            booking.status === 'cancelled' 
+                              ? 'cursor-default' 
+                              : 'cursor-pointer hover:shadow-lg hover:scale-110 hover:-translate-y-1 hover:rotate-2 active:scale-95 active:rotate-0'
+                          } ${getBookingCardStyle(booking, date, timeSlot)}`}
+                          onMouseDown={(e) => booking.status !== 'cancelled' && handleMouseDown(e, booking)}
                           title={
-                            getTableConflictStatus(
-                              booking.tableId || 0,
-                              date,
-                              timeSlot,
-                            )
-                              ? "TABLE CONFLICT - Multiple bookings on same table!"
-                              : "Click to edit booking"
+                            booking.status === 'cancelled'
+                              ? "Cancelled booking - Click to edit only"
+                              : getTableConflictStatus(
+                                  booking.tableId || 0,
+                                  date,
+                                  timeSlot,
+                                )
+                                ? "TABLE CONFLICT - Multiple bookings on same table!"
+                                : "Click to edit booking"
                           }
                         >
                           <div className="truncate font-medium">
-                            {booking.customerName}
+                            {booking.customerName} {booking.status === 'cancelled' && '(Cancelled)'}
                           </div>
                           <div className="text-xs opacity-75">
                             {booking.guestCount} guests
