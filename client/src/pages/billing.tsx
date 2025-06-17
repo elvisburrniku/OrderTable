@@ -123,7 +123,15 @@ export default function BillingPage() {
                     <div className="mt-4">
                       <h4 className="font-medium text-gray-900 dark:text-white mb-2">Features included:</h4>
                       <ul className="space-y-1 text-sm text-gray-600 dark:text-gray-400">
-                        {JSON.parse(plan.features || '[]').map((feature: string, index: number) => (
+                        {(() => {
+                          try {
+                            const features = JSON.parse(plan.features || '[]');
+                            return Array.isArray(features) ? features : [plan.features];
+                          } catch {
+                            // If JSON parsing fails, treat as a single feature string
+                            return plan.features ? [plan.features] : [];
+                          }
+                        })().map((feature: string, index: number) => (
                           <li key={index} className="flex items-center">
                             <span className="w-2 h-2 bg-green-500 rounded-full mr-2"></span>
                             {feature}
