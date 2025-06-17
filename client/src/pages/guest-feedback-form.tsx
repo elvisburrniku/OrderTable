@@ -161,9 +161,11 @@ export default function GuestFeedbackForm() {
     });
 
     // Format question responses for API
-    const formattedResponses = questions.map(question => {
+    const formattedResponses = activeQuestions.map(question => {
       const response = questionResponses[question.id];
       if (!response) return null;
+
+      console.log('Formatting response for question:', question.name, 'Response:', response);
 
       return {
         questionId: question.id,
@@ -172,6 +174,8 @@ export default function GuestFeedbackForm() {
         textResponse: response.text || null,
       };
     }).filter(Boolean);
+
+    console.log('Final formatted responses:', formattedResponses);
 
     const feedbackData = {
       customerName: customerName.trim(),
@@ -406,14 +410,14 @@ export default function GuestFeedbackForm() {
                     onClick={() => {
                       setQuestionResponses(prev => ({
                         ...prev,
-                        [question.id]: { ...prev[question.id], rating: i }
+                        [question.id]: { ...prev[question.id], npsScore: i }
                       }));
                     }}
                   >
                     <div className="flex flex-col items-center space-y-1">
                       <Star
                         className={`w-10 h-10 transition-all duration-200 ${
-                          i <= (hoverRatings[question.id] >= 0 ? hoverRatings[question.id] : (questionResponses[question.id]?.rating ?? -1))
+                          i <= (hoverRatings[question.id] >= 0 ? hoverRatings[question.id] : (questionResponses[question.id]?.npsScore ?? -1))
                             ? "fill-yellow-400 text-yellow-400 scale-110"
                             : "text-gray-300 hover:text-yellow-200"
                         }`}

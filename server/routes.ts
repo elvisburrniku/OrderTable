@@ -2007,8 +2007,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
         const feedback = await storage.createFeedback(feedbackData);
 
-        // Store individual question responses
+        // Store individual question responses and aggregate data
+        let aggregatedRating = null;
+        let aggregatedNps = null;
+        let aggregatedComments = '';
+        
         if (questionResponses && Array.isArray(questionResponses)) {
+          // First, store all individual responses
           for (const response of questionResponses) {
             await storage.createFeedbackResponse({
               feedbackId: feedback.id,
@@ -2020,26 +2025,28 @@ export async function registerRoutes(app: Express): Promise<Server> {
               textResponse: response.textResponse || null,
             });
 
-            // Update main feedback with overall rating and NPS
-            if (response.rating) {
-              feedbackData.rating = response.rating;
+            // Aggregate data from responses
+            if (response.rating && response.rating > 0) {
+              aggregatedRating = response.rating; // Take the last rating value
             }
-            if (response.npsScore) {
-              feedbackData.nps = response.npsScore;
+            if (response.npsScore !== null && response.npsScore !== undefined) {
+              aggregatedNps = response.npsScore; // Take the last NPS value
             }
-            if (response.textResponse) {
-              feedbackData.comments = feedbackData.comments 
-                ? `${feedbackData.comments}; ${response.textResponse}`
+            if (response.textResponse && response.textResponse.trim()) {
+              aggregatedComments = aggregatedComments 
+                ? `${aggregatedComments}; ${response.textResponse}`
                 : response.textResponse;
             }
           }
 
-          // Update the main feedback entry with aggregated data
-          await storage.updateFeedback(feedback.id, {
-            rating: feedbackData.rating,
-            nps: feedbackData.nps,
-            comments: feedbackData.comments,
-          });
+          // Update the main feedback entry with aggregated data only if we have values
+          if (aggregatedRating !== null || aggregatedNps !== null || aggregatedComments) {
+            await storage.updateFeedback(feedback.id, {
+              rating: aggregatedRating,
+              nps: aggregatedNps,
+              comments: aggregatedComments || null,
+            });
+          }
         }
 
         res.json(feedback);
