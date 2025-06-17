@@ -36,7 +36,9 @@ export default function CookieConsent() {
     
     // Listen for force show banner events
     const handleCookieReset = () => {
+      console.log('Cookie reset event received');
       setIsVisible(true);
+      console.log('Banner visibility set to true');
     };
     
     window.addEventListener('cookieReset', handleCookieReset);
@@ -93,6 +95,12 @@ export default function CookieConsent() {
   };
 
   // Don't render if translations aren't loaded or banner isn't visible
+  console.log('Cookie consent render check:', { 
+    hasTranslations: !!t, 
+    hasCookieConsent: !!(t && t.cookieConsent), 
+    isVisible 
+  });
+  
   if (!t || !t.cookieConsent || !isVisible) return null;
 
   return (

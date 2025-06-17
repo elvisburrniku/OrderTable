@@ -10,10 +10,13 @@ export default function CookieBannerReset() {
   };
 
   const forceShowBanner = () => {
+    console.log('Force show banner clicked');
     localStorage.removeItem('cookieConsent');
     localStorage.setItem('cookieDebug', 'true');
+    console.log('Local storage updated');
     // Force immediate display by dispatching a custom event
     window.dispatchEvent(new CustomEvent('cookieReset'));
+    console.log('Custom event dispatched');
   };
 
   const checkCurrentStatus = () => {
