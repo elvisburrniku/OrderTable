@@ -2,7 +2,16 @@ import { ReadyTableLogo } from "@/components/ui/ready-table-logo";
 import { useTranslations } from "@/contexts/language-context";
 import { useLanguage } from "@/contexts/language-context";
 import { Language } from "@/lib/i18n";
-import { Globe, Mail, Phone, MapPin, Facebook, Twitter, Linkedin, Instagram } from "lucide-react";
+import {
+  Globe,
+  Mail,
+  Phone,
+  MapPin,
+  Facebook,
+  Twitter,
+  Linkedin,
+  Instagram,
+} from "lucide-react";
 import { Link } from "wouter";
 
 export default function Footer() {
@@ -19,42 +28,54 @@ export default function Footer() {
     { code: "da", name: "Dansk", flag: "dk" },
     { code: "sv", name: "Svenska", flag: "se" },
     { code: "cs", name: "Čeština", flag: "cz" },
-    { code: "nl", name: "Nederlands", flag: "nl" }
+    { code: "nl", name: "Nederlands", flag: "nl" },
   ];
 
   const companyLinks = [
     { name: t.footer.about, href: "/about" },
     { name: t.footer.careers, href: "/careers" },
     { name: t.footer.blog, href: "/blog" },
-    { name: t.footer.press, href: "/press" }
+    { name: t.footer.press, href: "/press" },
   ];
 
   const productLinks = [
     { name: t.footer.features, href: "#features" },
     { name: t.footer.pricing, href: "#pricing" },
     { name: t.footer.security, href: "/security" },
-    { name: t.footer.integrations, href: "/integrations" }
+    { name: t.footer.integrations, href: "/integrations" },
   ];
 
   const resourceLinks = [
     { name: t.footer.documentation, href: "/docs" },
     { name: t.footer.support, href: "/support" },
     { name: t.footer.community, href: "/community" },
-    { name: t.footer.statusPage, href: "/status" }
+    { name: t.footer.statusPage, href: "/status" },
   ];
 
   const legalLinks = [
     { name: t.footer.privacy, href: "/privacy" },
     { name: t.footer.terms, href: "/terms" },
     { name: t.footer.cookies, href: "/cookies" },
-    { name: t.footer.gdpr, href: "/gdpr" }
+    { name: t.footer.gdpr, href: "/gdpr" },
   ];
 
   const socialLinks = [
-    { name: "Facebook", icon: Facebook, href: "https://facebook.com/readytable" },
+    {
+      name: "Facebook",
+      icon: Facebook,
+      href: "https://facebook.com/readytable",
+    },
     { name: "Twitter", icon: Twitter, href: "https://twitter.com/readytable" },
-    { name: "LinkedIn", icon: Linkedin, href: "https://linkedin.com/company/readytable" },
-    { name: "Instagram", icon: Instagram, href: "https://instagram.com/readytable" }
+    {
+      name: "LinkedIn",
+      icon: Linkedin,
+      href: "https://linkedin.com/company/readytable",
+    },
+    {
+      name: "Instagram",
+      icon: Instagram,
+      href: "https://instagram.com/readytable",
+    },
   ];
 
   return (
@@ -66,12 +87,15 @@ export default function Footer() {
           {/* Company Info */}
           <div className="lg:col-span-4">
             <div className="flex items-center mb-6">
-              <ReadyTableLogo size={36} textClassName="text-2xl font-bold text-white" />
+              <ReadyTableLogo
+                size={36}
+                textClassName="text-2xl font-bold text-white"
+              />
             </div>
             <p className="text-gray-300 mb-6 leading-relaxed">
               {t.footer.description}
             </p>
-            
+
             {/* Contact Info */}
             <div className="space-y-4">
               <div className="flex items-center gap-3">
@@ -98,7 +122,9 @@ export default function Footer() {
             <div className="grid md:grid-cols-4 gap-8">
               {/* Company */}
               <div>
-                <h3 className="text-lg font-semibold mb-4">{t.footer.company}</h3>
+                <h3 className="text-lg font-semibold mb-4">
+                  {t.footer.company}
+                </h3>
                 <ul className="space-y-3">
                   {companyLinks.map((link, index) => (
                     <li key={index}>
@@ -114,7 +140,9 @@ export default function Footer() {
 
               {/* Product */}
               <div>
-                <h3 className="text-lg font-semibold mb-4">{t.footer.product}</h3>
+                <h3 className="text-lg font-semibold mb-4">
+                  {t.footer.product}
+                </h3>
                 <ul className="space-y-3">
                   {productLinks.map((link, index) => (
                     <li key={index}>
@@ -130,7 +158,9 @@ export default function Footer() {
 
               {/* Resources */}
               <div>
-                <h3 className="text-lg font-semibold mb-4">{t.footer.resources}</h3>
+                <h3 className="text-lg font-semibold mb-4">
+                  {t.footer.resources}
+                </h3>
                 <ul className="space-y-3">
                   {resourceLinks.map((link, index) => (
                     <li key={index}>
@@ -180,7 +210,7 @@ export default function Footer() {
                 </a>
               ))}
             </div>
-            
+
             {/* Language Selector */}
             <div className="flex items-center gap-4">
               <Globe className="h-5 w-5 text-gray-400" />
@@ -191,8 +221,8 @@ export default function Footer() {
                     onClick={() => setLanguage(lang.code)}
                     className={`flex items-center gap-2 px-3 py-1 rounded-md text-sm transition-colors duration-200 ${
                       currentLanguage === lang.code
-                        ? 'bg-blue-600 text-white'
-                        : 'text-gray-400 hover:text-white hover:bg-gray-700'
+                        ? "bg-blue-600 text-white"
+                        : "text-gray-400 hover:text-white hover:bg-gray-700"
                     }`}
                   >
                     <img
@@ -215,7 +245,7 @@ export default function Footer() {
               © {new Date().getFullYear()} ReadyTable. {t.footer.rights}
             </div>
             <div className="flex items-center gap-6 text-sm text-gray-400">
-              <span>Made with ❤️ in Denmark</span>
+              <span>Made with ❤️ in Germany</span>
               <span>•</span>
               <span>GDPR Compliant</span>
               <span>•</span>

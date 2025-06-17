@@ -17,7 +17,7 @@ export default function FeaturesSection() {
               />
               <div className="absolute top-4 right-4 bg-black bg-opacity-80 text-white px-3 py-2 rounded-lg">
                 <div className="text-sm font-semibold">Grillen Burgerbar</div>
-                <div className="text-xs">Copenhagen, Denmark</div>
+                <div className="text-xs">Munchen, Germany</div>
               </div>
             </div>
             <div>
