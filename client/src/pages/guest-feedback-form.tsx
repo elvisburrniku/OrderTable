@@ -31,6 +31,8 @@ export default function GuestFeedbackForm() {
   const [questionResponses, setQuestionResponses] = useState<{[key: number]: any}>({});
   const [hoverRatings, setHoverRatings] = useState<{[key: number]: number}>({});
   const [currentStep, setCurrentStep] = useState(0);
+  const [overallRating, setOverallRating] = useState<number>(0);
+  const [hoverOverallRating, setHoverOverallRating] = useState<number>(0);
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
@@ -58,8 +60,8 @@ export default function GuestFeedbackForm() {
         .sort((a: FeedbackQuestion, b: FeedbackQuestion) => a.sortOrder - b.sortOrder)
     : [];
 
-  // Calculate total steps: Personal Info + Questions + Summary
-  const totalSteps = 1 + activeQuestions.length + 1;
+  // Calculate total steps: Personal Info + Questions + Overall Rating + Summary
+  const totalSteps = 1 + activeQuestions.length + 1 + 1;
   const progressPercentage = ((currentStep + 1) / totalSteps) * 100;
   
   const nextStep = () => {
@@ -76,12 +78,14 @@ export default function GuestFeedbackForm() {
 
   const getStepTitle = () => {
     if (currentStep === 0) return "Your Details";
+    if (currentStep === totalSteps - 2) return "Overall Rating";
     if (currentStep === totalSteps - 1) return "Review & Submit";
     return `Question ${currentStep}`;
   };
 
   const getStepIcon = () => {
     if (currentStep === 0) return <User className="w-6 h-6" />;
+    if (currentStep === totalSteps - 2) return <Star className="w-6 h-6" />;
     if (currentStep === totalSteps - 1) return <Check className="w-6 h-6" />;
     return <MessageSquare className="w-6 h-6" />;
   };
@@ -90,7 +94,7 @@ export default function GuestFeedbackForm() {
     if (currentStep === 0) {
       return customerName.trim().length > 0;
     }
-    if (currentStep > 0 && currentStep < totalSteps - 1) {
+    if (currentStep > 0 && currentStep <= activeQuestions.length) {
       const questionIndex = currentStep - 1;
       const question = activeQuestions[questionIndex];
       if (!question) return true;
@@ -103,6 +107,11 @@ export default function GuestFeedbackForm() {
         return response?.rating !== undefined && response?.rating !== null;
       }
       return true;
+    }
+    
+    // Overall rating step
+    if (currentStep === totalSteps - 2) {
+      return overallRating > 0;
     }
     return true;
   };
@@ -178,6 +187,7 @@ export default function GuestFeedbackForm() {
       customerEmail: customerEmail.trim(),
       customerPhone: customerPhone.trim(),
       tableNumber: tableNumber || '',
+      overallRating: overallRating,
       questionResponses: formattedResponses,
     };
 
@@ -297,6 +307,51 @@ export default function GuestFeedbackForm() {
                 placeholder="Your phone number"
                 className="mt-2 h-12 text-lg border-2 focus:border-blue-500 transition-colors"
               />
+            </div>
+          </div>
+        </div>
+      );
+    }
+
+    // Overall rating step
+    if (currentStep === totalSteps - 2) {
+      return (
+        <div className="space-y-6">
+          <div className="text-center mb-8">
+            <div className="w-16 h-16 bg-gradient-to-br from-yellow-500 to-orange-600 rounded-full flex items-center justify-center mx-auto mb-4">
+              <Star className="w-8 h-8 text-white" />
+            </div>
+            <h2 className="text-2xl font-bold text-gray-900 mb-2">Overall Experience</h2>
+            <p className="text-gray-600">How would you rate your overall experience?</p>
+          </div>
+
+          <div className="bg-white rounded-lg p-8 border-2 border-gray-100">
+            <div className="text-center">
+              <div className="flex justify-center items-center gap-2 mb-6">
+                {Array.from({ length: 5 }, (_, i) => (
+                  <button
+                    key={i}
+                    type="button"
+                    onClick={() => setOverallRating(i + 1)}
+                    onMouseEnter={() => setHoverOverallRating(i + 1)}
+                    onMouseLeave={() => setHoverOverallRating(0)}
+                    className="transition-transform hover:scale-110"
+                  >
+                    <Star
+                      className={`w-12 h-12 ${
+                        i < (hoverOverallRating || overallRating)
+                          ? 'fill-yellow-400 text-yellow-400'
+                          : 'text-gray-300'
+                      }`}
+                    />
+                  </button>
+                ))}
+              </div>
+              {overallRating > 0 && (
+                <p className="text-lg font-semibold text-gray-700">
+                  {overallRating} out of 5 stars
+                </p>
+              )}
             </div>
           </div>
         </div>
