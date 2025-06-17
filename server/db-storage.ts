@@ -462,8 +462,28 @@ export class DatabaseStorage implements IStorage {
 
   async createBooking(booking: any): Promise<any> {
     if (!this.db) throw new Error("Database connection not available");
-    const result = await this.db.insert(bookings).values(booking).returning();
-    return result[0];
+    
+    // Import BookingHash for generating management hash
+    const { BookingHash } = await import('./booking-hash');
+    
+    // Insert the booking first to get the ID
+    const [newBooking] = await this.db.insert(bookings).values(booking).returning();
+    
+    // Generate management hash with the actual booking ID
+    const managementHash = BookingHash.generateHash(
+      newBooking.id,
+      newBooking.tenantId,
+      newBooking.restaurantId,
+      'manage'
+    );
+    
+    // Update the booking with the management hash
+    const [updatedBooking] = await this.db.update(bookings)
+      .set({ managementHash })
+      .where(eq(bookings.id, newBooking.id))
+      .returning();
+    
+    return updatedBooking;
   }
 
   async updateBooking(id: number, updates: any): Promise<any> {
