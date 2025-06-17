@@ -436,11 +436,14 @@ export default function Home() {
             <p className="text-gray-600 mb-4">
               {t.pricing.customSolution}
             </p>
-            <Link href="/contact">
-              <Button variant="outline" size="lg" className="border-2 border-gray-300 hover:border-blue-400">
-                {t.pricing.contactSalesTeam}
-              </Button>
-            </Link>
+            <Button 
+              variant="outline" 
+              size="lg" 
+              className="border-2 border-gray-300 hover:border-blue-400"
+              onClick={() => document.getElementById('contact')?.scrollIntoView({ behavior: 'smooth' })}
+            >
+              {t.pricing.contactSalesTeam}
+            </Button>
           </div>
         </div>
       </section>
@@ -578,11 +581,14 @@ export default function Home() {
                 <ArrowRight className="ml-2 h-5 w-5" />
               </Button>
             </Link>
-            <Link href="/contact">
-              <Button size="lg" variant="outline" className="inline-flex items-center justify-center gap-2 whitespace-nowrap ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:size-4 [&_svg]:shrink-0 h-11 rounded-md border-2 border-white text-white hover:bg-white hover:text-blue-600 px-10 py-4 text-lg font-bold transition-all duration-300 bg-[#4059db]">
-                {t.cta.talkToSales}
-              </Button>
-            </Link>
+            <Button 
+              size="lg" 
+              variant="outline" 
+              className="inline-flex items-center justify-center gap-2 whitespace-nowrap ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:size-4 [&_svg]:shrink-0 h-11 rounded-md border-2 border-white text-white hover:bg-white hover:text-blue-600 px-10 py-4 text-lg font-bold transition-all duration-300 bg-[#4059db]"
+              onClick={() => document.getElementById('contact')?.scrollIntoView({ behavior: 'smooth' })}
+            >
+              {t.cta.talkToSales}
+            </Button>
           </div>
           
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-8 text-center">
