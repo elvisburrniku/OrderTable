@@ -5,7 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Switch } from '@/components/ui/switch';
 import { Cookie, Settings, Shield, BarChart3, Target } from 'lucide-react';
-import { useLanguage } from '@/lib/i18n';
+import { useTranslations } from '@/lib/i18n';
 
 interface CookiePreferences {
   necessary: boolean;
@@ -20,7 +20,7 @@ export default function CookieSettingsButton() {
     return saved ? JSON.parse(saved) : { necessary: true, analytics: false, marketing: false };
   });
   
-  const { t } = useLanguage();
+  const t = useTranslations();
 
   // Fallback text for when translations aren't loaded
   const fallbackText = {
