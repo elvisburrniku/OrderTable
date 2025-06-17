@@ -1,7 +1,7 @@
 import Navigation from "@/components/navigation";
 import Footer from "@/components/footer";
 import CookieConsent from "@/components/cookie-consent";
-import CookieBannerReset from "@/components/cookie-banner-reset";
+
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -221,10 +221,7 @@ export default function Home() {
               </Button>
             </div>
             
-            {/* Cookie Banner Demo Section */}
-            <div className="max-w-md mx-auto">
-              <CookieBannerReset />
-            </div>
+
             
             {/* Trust indicators */}
             <div className="flex flex-wrap justify-center items-center gap-8 text-sm text-gray-500">
