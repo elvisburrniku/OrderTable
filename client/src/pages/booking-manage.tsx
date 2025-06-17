@@ -388,7 +388,8 @@ export default function BookingManage() {
     });
   };
 
-  const formatTime = (time: string) => {
+  const formatTime = (time: string | null) => {
+    if (!time) return '';
     const [hours, minutes] = time.split(':');
     const timeDate = new Date();
     timeDate.setHours(parseInt(hours), parseInt(minutes));
