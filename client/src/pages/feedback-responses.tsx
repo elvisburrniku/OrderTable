@@ -213,7 +213,7 @@ export default function FeedbackResponses() {
                           <div className="flex items-center gap-2">
                             <span className="text-sm text-gray-600">Rating:</span>
                             <div className="flex">{renderStars(item.rating)}</div>
-                            <span className="text-sm font-medium">{item.rating}/5</span>
+                            <span className="text-sm font-medium">{item.rating || 'N/A'}/5</span>
                           </div>
                           
                           {item.npsScore !== undefined && (

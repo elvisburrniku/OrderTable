@@ -2012,7 +2012,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
         let aggregatedNps = null;
         let aggregatedComments = '';
         
-
+        console.log('=== FEEDBACK DEBUG ===');
+        console.log('Raw request body:', req.body);
+        console.log('questionResponses:', questionResponses);
+        console.log('questionResponses type:', typeof questionResponses);
+        console.log('questionResponses is array:', Array.isArray(questionResponses));
+        console.log('questionResponses length:', questionResponses?.length);
         
         if (questionResponses && Array.isArray(questionResponses)) {
           // First, store all individual responses
@@ -13889,21 +13894,75 @@ NEXT STEPS:
     "/api/public/tenants/:tenantId/restaurants/:restaurantId/feedback",
     async (req: Request, res: Response) => {
       try {
-        const { tenantId, restaurantId } = req.params;
-        const restaurant = await storage.getRestaurantById(parseInt(restaurantId));
+        const tenantId = parseInt(req.params.tenantId);
+        const restaurantId = parseInt(req.params.restaurantId);
         
-        if (!restaurant || restaurant.tenantId !== parseInt(tenantId)) {
+        const restaurant = await storage.getRestaurantById(restaurantId);
+        if (!restaurant || restaurant.tenantId !== tenantId) {
           return res.status(404).json({ message: "Restaurant not found" });
         }
 
+        const { customerName, customerEmail, customerPhone, tableNumber, questionResponses } = req.body;
+
+        // Create main feedback entry
         const feedbackData = {
-          ...req.body,
-          restaurantId: parseInt(restaurantId),
-          tenantId: parseInt(tenantId),
+          customerName,
+          customerEmail,
+          customerPhone,
+          tableNumber,
+          restaurantId,
+          tenantId,
+          rating: null,
+          nps: null,
+          comments: null,
+          visited: false,
         };
 
         const feedback = await storage.createFeedback(feedbackData);
-        res.json(feedback);
+
+        // Store individual question responses and aggregate data
+        let aggregatedRating = null;
+        let aggregatedNps = null;
+        let aggregatedComments = '';
+        
+        if (questionResponses && Array.isArray(questionResponses)) {
+          // First, store all individual responses
+          for (const response of questionResponses) {
+            await storage.createFeedbackResponse({
+              feedbackId: feedback.id,
+              questionId: response.questionId,
+              restaurantId,
+              tenantId,
+              rating: response.rating || null,
+              npsScore: response.npsScore || null,
+              textResponse: response.textResponse || null,
+            });
+
+            // Aggregate data from responses - prioritize rating over NPS for overall rating
+            if (response.rating !== null && response.rating !== undefined) {
+              aggregatedRating = response.rating;
+            }
+            if (response.npsScore !== null && response.npsScore !== undefined) {
+              aggregatedNps = response.npsScore;
+            }
+            if (response.textResponse && response.textResponse.trim()) {
+              aggregatedComments = aggregatedComments 
+                ? `${aggregatedComments}; ${response.textResponse}`
+                : response.textResponse;
+            }
+          }
+
+          // Update the main feedback entry with aggregated data
+          const updatedFeedback = await storage.updateFeedback(feedback.id, {
+            rating: aggregatedRating,
+            nps: aggregatedNps,
+            comments: aggregatedComments || null,
+          });
+          
+          res.json(updatedFeedback);
+        } else {
+          res.json(feedback);
+        }
       } catch (error) {
         console.error("Error submitting public feedback:", error);
         res.status(500).json({ error: "Failed to submit feedback" });

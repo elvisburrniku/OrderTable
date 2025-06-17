@@ -181,7 +181,11 @@ export default function GuestFeedbackForm() {
       questionResponses: formattedResponses,
     };
 
-
+    console.log('=== CLIENT DEBUG ===');
+    console.log('questionResponses state:', questionResponses);
+    console.log('activeQuestions:', activeQuestions);
+    console.log('formattedResponses:', formattedResponses);
+    console.log('feedbackData:', feedbackData);
 
     submitFeedbackMutation.mutate(feedbackData);
   };
