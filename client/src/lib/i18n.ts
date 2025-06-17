@@ -1776,6 +1776,22 @@ export const translations: Record<Language, Translations> = {
       uptime: "Drifttidsgaranti",
       bookings: "Bokningar som stöds",
       support: "Support tillgänglig"
+    },
+    cookieConsent: {
+      title: "Vi respekterar din integritet",
+      description: "Vi använder cookies för att förbättra din upplevelse, analysera webbplatstrafik och personalisera innehåll. Du kan anpassa dina preferenser eller acceptera alla cookies.",
+      acceptAll: "Acceptera alla cookies",
+      rejectAll: "Avvisa alla",
+      customize: "Anpassa inställningar",
+      necessary: "Nödvändiga cookies",
+      analytics: "Analys-cookies",
+      marketing: "Marknadsförings-cookies",
+      necessaryDesc: "Viktiga cookies som krävs för grundläggande webbplatsfunktionalitet och säkerhet.",
+      analyticsDesc: "Hjälper oss att förstå hur besökare interagerar med vår webbplats för att förbättra prestanda.",
+      marketingDesc: "Används för att leverera personlig reklam och spåra effektiviteten av marknadsföringskampanjer.",
+      savePreferences: "Spara mina preferenser",
+      privacyPolicy: "Integritetspolicy",
+      learnMore: "Läs mer"
     }
   },
   cs: {
@@ -1961,6 +1977,22 @@ export const translations: Record<Language, Translations> = {
       uptime: "Záruka dostupnosti",
       bookings: "Podporované rezervace",
       support: "Dostupná podpora"
+    },
+    cookieConsent: {
+      title: "Respektujeme vaše soukromí",
+      description: "Používáme cookies k vylepšení vašeho zážitku, analýze návštěvnosti webu a personalizaci obsahu. Můžete si přizpůsobit své preference nebo přijmout všechny cookies.",
+      acceptAll: "Přijmout všechny cookies",
+      rejectAll: "Odmítnout vše",
+      customize: "Přizpůsobit nastavení",
+      necessary: "Nezbytné cookies",
+      analytics: "Analytické cookies",
+      marketing: "Marketingové cookies",
+      necessaryDesc: "Základní cookies vyžadované pro základní funkcionalitu webu a bezpečnost.",
+      analyticsDesc: "Pomáhají nám pochopit, jak návštěvníci interagují s naším webem pro zlepšení výkonu.",
+      marketingDesc: "Používané k dodávání personalizované reklamy a sledování efektivity marketingových kampaní.",
+      savePreferences: "Uložit moje preference",
+      privacyPolicy: "Zásady ochrany soukromí",
+      learnMore: "Zjistit více"
     }
   },
   nl: {
@@ -2146,6 +2178,22 @@ export const translations: Record<Language, Translations> = {
       uptime: "Uptime garantie",
       bookings: "Ondersteunde reserveringen",
       support: "Ondersteuning beschikbaar"
+    },
+    cookieConsent: {
+      title: "Wij respecteren uw privacy",
+      description: "Wij gebruiken cookies om uw ervaring te verbeteren, websiteverkeer te analyseren en inhoud te personaliseren. U kunt uw voorkeuren aanpassen of alle cookies accepteren.",
+      acceptAll: "Alle cookies accepteren",
+      rejectAll: "Alles weigeren",
+      customize: "Instellingen aanpassen",
+      necessary: "Noodzakelijke cookies",
+      analytics: "Analyse cookies",
+      marketing: "Marketing cookies",
+      necessaryDesc: "Essentiële cookies vereist voor basale websitefunctionaliteit en beveiliging.",
+      analyticsDesc: "Helpen ons begrijpen hoe bezoekers omgaan met onze website om prestaties te verbeteren.",
+      marketingDesc: "Gebruikt voor het leveren van gepersonaliseerde advertenties en het volgen van de effectiviteit van marketingcampagnes.",
+      savePreferences: "Mijn voorkeuren opslaan",
+      privacyPolicy: "Privacybeleid",
+      learnMore: "Meer informatie"
     }
   }
 };
