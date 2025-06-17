@@ -52,33 +52,7 @@ export default function Register() {
     queryFn: () => fetch('/api/subscription-plans').then(res => res.json()),
   });
 
-  // Redirect authenticated users
-  useEffect(() => {
-    if (!sessionLoading && session) {
-      const restaurant = (session as any)?.restaurant;
-      
-      if (restaurant) {
-        if (restaurant.setupCompleted) {
-          // Redirect to dashboard if setup is complete
-          const tenantId = (session as any)?.tenant?.id;
-          setLocation(`/${tenantId}/dashboard`);
-        } else {
-          // Redirect to setup if setup is not complete
-          setLocation('/setup');
-        }
-      }
-    }
-  }, [session, sessionLoading, setLocation]);
-
-  // Show loading while checking authentication
-  if (sessionLoading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="animate-spin w-8 h-8 border-4 border-primary border-t-transparent rounded-full" />
-      </div>
-    );
-  }
-
+  // Move mutation hook before conditional returns
   const registerMutation = useMutation({
     mutationFn: async (data: RegistrationForm) => {
       const response = await fetch('/api/auth/register-company', {
@@ -122,11 +96,38 @@ export default function Register() {
     },
   });
 
+  // Redirect authenticated users
+  useEffect(() => {
+    if (!sessionLoading && session) {
+      const restaurant = (session as any)?.restaurant;
+      
+      if (restaurant) {
+        if (restaurant.setupCompleted) {
+          // Redirect to dashboard if setup is complete
+          const tenantId = (session as any)?.tenant?.id;
+          setLocation(`/${tenantId}/dashboard`);
+        } else {
+          // Redirect to setup if setup is not complete
+          setLocation('/setup');
+        }
+      }
+    }
+  }, [session, sessionLoading, setLocation]);
+
   const onSubmit = (data: RegistrationForm) => {
     registerMutation.mutate(data);
   };
 
   const trialPlan = plans?.find((plan: any) => plan.name === "Free Trial");
+
+  // Show loading while checking authentication
+  if (sessionLoading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="animate-spin w-8 h-8 border-4 border-primary border-t-transparent rounded-full" />
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-gray-50 dark:bg-gray-900 py-12 px-4 sm:px-6 lg:px-8">
