@@ -1167,3 +1167,26 @@ export const insertProductGroupSchema = createInsertSchema(productGroups).omit({
   updatedAt: true,
 });
 export const selectProductGroupSchema = createSelectSchema(productGroups);
+
+// Products table
+export const products = pgTable("products", {
+  id: serial("id").primaryKey(),
+  restaurantId: integer("restaurant_id").notNull().references(() => restaurants.id, { onDelete: "cascade" }),
+  tenantId: integer("tenant_id").notNull().references(() => tenants.id, { onDelete: "cascade" }),
+  productName: text("product_name").notNull(),
+  categoryId: integer("category_id").notNull().references(() => productGroups.id, { onDelete: "cascade" }), // Reference to product groups
+  price: decimal("price", { precision: 10, scale: 2 }).notNull(),
+  status: varchar("status", { length: 20 }).notNull().default("active"), // active, inactive
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+});
+
+export type Product = InferSelectModel<typeof products>;
+export type InsertProduct = InferInsertModel<typeof products>;
+
+export const insertProductSchema = createInsertSchema(products).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+export const selectProductSchema = createSelectSchema(products);

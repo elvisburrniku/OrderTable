@@ -59,6 +59,8 @@ import type {
   InsertNotification,
   ProductGroup,
   InsertProductGroup,
+  Product,
+  InsertProduct,
 } from "@shared/schema";
 import { neon } from "@neondatabase/serverless";
 import { drizzle } from "drizzle-orm/neon-http";
@@ -197,6 +199,12 @@ export interface IStorage {
   createProductGroup(group: InsertProductGroup): Promise<ProductGroup>;
   updateProductGroup(id: number, updates: Partial<ProductGroup>): Promise<ProductGroup | undefined>;
   deleteProductGroup(id: number): Promise<void>;
+
+  // Products
+  getProductsByRestaurant(restaurantId: number): Promise<Product[]>;
+  createProduct(product: InsertProduct): Promise<Product>;
+  updateProduct(id: number, updates: Partial<Product>): Promise<Product | undefined>;
+  deleteProduct(id: number): Promise<void>;
 
   // Time Slots
   getTimeSlotsByRestaurant(

@@ -700,6 +700,52 @@ export class MemoryStorage implements IStorage {
       this.productGroups.splice(index, 1);
     }
   }
+
+  // Products
+  private products: any[] = [];
+  
+  async getProductsByRestaurant(restaurantId: number): Promise<any[]> {
+    return this.products
+      .filter(product => product.restaurantId === restaurantId)
+      .map(product => {
+        const category = this.productGroups.find(group => group.id === product.categoryId);
+        return {
+          ...product,
+          categoryName: category?.groupName || 'Unknown Category'
+        };
+      });
+  }
+
+  async createProduct(product: any): Promise<any> {
+    const newProduct = { 
+      id: this.nextId++, 
+      ...product, 
+      createdAt: new Date(),
+      updatedAt: new Date()
+    };
+    this.products.push(newProduct);
+    return newProduct;
+  }
+
+  async updateProduct(id: number, updates: any): Promise<any> {
+    const index = this.products.findIndex(product => product.id === id);
+    if (index >= 0) {
+      this.products[index] = { 
+        ...this.products[index], 
+        ...updates, 
+        updatedAt: new Date() 
+      };
+      return this.products[index];
+    }
+    return undefined;
+  }
+
+  async deleteProduct(id: number): Promise<void> {
+    const index = this.products.findIndex(product => product.id === id);
+    if (index >= 0) {
+      this.products.splice(index, 1);
+    }
+  }
   async getTimeSlotsByRestaurant(restaurantId: number, date?: string): Promise<TimeSlots[]> { return []; }
   async createTimeSlot(slot: InsertTimeSlots): Promise<TimeSlots> { 
     const newSlot: TimeSlots = { id: this.nextId++, ...slot, createdAt: new Date() };

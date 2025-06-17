@@ -11361,6 +11361,110 @@ NEXT STEPS:
     }
   });
 
+  // Products API Routes
+  app.get("/api/tenants/:tenantId/restaurants/:restaurantId/products", validateTenant, async (req, res) => {
+    try {
+      const restaurantId = parseInt(req.params.restaurantId);
+      const tenantId = parseInt(req.params.tenantId);
+      
+      // Verify restaurant belongs to tenant
+      const restaurant = await storage.getRestaurantById(restaurantId);
+      if (!restaurant || restaurant.tenantId !== tenantId) {
+        return res.status(404).json({ message: "Restaurant not found" });
+      }
+      
+      const products = await storage.getProductsByRestaurant(restaurantId);
+      res.json(products);
+    } catch (error) {
+      console.error("Error fetching products:", error);
+      res.status(500).json({ message: "Failed to fetch products" });
+    }
+  });
+
+  app.post("/api/tenants/:tenantId/restaurants/:restaurantId/products", validateTenant, async (req, res) => {
+    try {
+      const restaurantId = parseInt(req.params.restaurantId);
+      const tenantId = parseInt(req.params.tenantId);
+      const { productName, categoryId, price, status } = req.body;
+      
+      if (!productName || !categoryId || !price) {
+        return res.status(400).json({ message: "Product name, category, and price are required" });
+      }
+      
+      // Verify restaurant belongs to tenant
+      const restaurant = await storage.getRestaurantById(restaurantId);
+      if (!restaurant || restaurant.tenantId !== tenantId) {
+        return res.status(404).json({ message: "Restaurant not found" });
+      }
+      
+      const product = await storage.createProduct({
+        restaurantId,
+        tenantId,
+        productName,
+        categoryId: parseInt(categoryId),
+        price: parseFloat(price),
+        status: status || "active"
+      });
+      
+      res.status(201).json(product);
+    } catch (error) {
+      console.error("Error creating product:", error);
+      res.status(500).json({ message: "Failed to create product" });
+    }
+  });
+
+  app.put("/api/tenants/:tenantId/restaurants/:restaurantId/products/:id", validateTenant, async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      const restaurantId = parseInt(req.params.restaurantId);
+      const tenantId = parseInt(req.params.tenantId);
+      const { productName, categoryId, price, status } = req.body;
+      
+      // Verify restaurant belongs to tenant
+      const restaurant = await storage.getRestaurantById(restaurantId);
+      if (!restaurant || restaurant.tenantId !== tenantId) {
+        return res.status(404).json({ message: "Restaurant not found" });
+      }
+      
+      const updates: any = {};
+      if (productName !== undefined) updates.productName = productName;
+      if (categoryId !== undefined) updates.categoryId = parseInt(categoryId);
+      if (price !== undefined) updates.price = parseFloat(price);
+      if (status !== undefined) updates.status = status;
+      
+      const updatedProduct = await storage.updateProduct(id, updates);
+      
+      if (!updatedProduct) {
+        return res.status(404).json({ message: "Product not found" });
+      }
+      
+      res.json(updatedProduct);
+    } catch (error) {
+      console.error("Error updating product:", error);
+      res.status(500).json({ message: "Failed to update product" });
+    }
+  });
+
+  app.delete("/api/tenants/:tenantId/restaurants/:restaurantId/products/:id", validateTenant, async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      const restaurantId = parseInt(req.params.restaurantId);
+      const tenantId = parseInt(req.params.tenantId);
+      
+      // Verify restaurant belongs to tenant
+      const restaurant = await storage.getRestaurantById(restaurantId);
+      if (!restaurant || restaurant.tenantId !== tenantId) {
+        return res.status(404).json({ message: "Restaurant not found" });
+      }
+      
+      await storage.deleteProduct(id);
+      res.json({ message: "Product deleted successfully" });
+    } catch (error) {
+      console.error("Error deleting product:", error);
+      res.status(500).json({ message: "Failed to delete product" });
+    }
+  });
+
   const httpServer = createServer(app);
 
   // Setup WebSocket server for real-time notifications

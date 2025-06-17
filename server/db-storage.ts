@@ -47,6 +47,7 @@ const {
   kitchenMetrics,
   printOrders,
   productGroups,
+  products,
 } = schema;
 
 export class DatabaseStorage implements IStorage {
@@ -1767,6 +1768,60 @@ export class DatabaseStorage implements IStorage {
     await this.db
       .delete(productGroups)
       .where(eq(productGroups.id, id));
+  }
+
+  // Products
+  async getProductsByRestaurant(restaurantId: number): Promise<any[]> {
+    if (!this.db) throw new Error("Database connection not available");
+    
+    const productsData = await this.db
+      .select({
+        id: products.id,
+        productName: products.productName,
+        categoryId: products.categoryId,
+        price: products.price,
+        status: products.status,
+        createdAt: products.createdAt,
+        updatedAt: products.updatedAt,
+        categoryName: productGroups.groupName,
+      })
+      .from(products)
+      .leftJoin(productGroups, eq(products.categoryId, productGroups.id))
+      .where(eq(products.restaurantId, restaurantId))
+      .orderBy(desc(products.createdAt));
+    
+    return productsData;
+  }
+
+  async createProduct(product: any): Promise<any> {
+    if (!this.db) throw new Error("Database connection not available");
+    
+    const result = await this.db
+      .insert(products)
+      .values(product)
+      .returning();
+    
+    return result[0];
+  }
+
+  async updateProduct(id: number, updates: any): Promise<any> {
+    if (!this.db) throw new Error("Database connection not available");
+    
+    const result = await this.db
+      .update(products)
+      .set({ ...updates, updatedAt: new Date() })
+      .where(eq(products.id, id))
+      .returning();
+    
+    return result[0];
+  }
+
+  async deleteProduct(id: number): Promise<void> {
+    if (!this.db) throw new Error("Database connection not available");
+    
+    await this.db
+      .delete(products)
+      .where(eq(products.id, id));
   }
 
   async getTimeSlotsByRestaurant(restaurantId: number, date?: string): Promise<any[]> {
