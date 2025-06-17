@@ -37,6 +37,7 @@ import { GoogleCalendarService } from "./google-calendar-service";
 import { ConflictDetector } from "./conflict-detector";
 import { feedbackReminderService } from "./feedback-reminder-service";
 import { activityLogger } from "./activity-logger";
+import { activityCleanupService } from "./activity-cleanup-service";
 
 const stripe = new Stripe(
   process.env.STRIPE_SECRET_KEY || "sk_test_your_stripe_secret_key",

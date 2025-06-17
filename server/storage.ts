@@ -188,6 +188,7 @@ export interface IStorage {
   getActivityLogByRestaurant(restaurantId: number): Promise<ActivityLog[]>;
   getActivityLogByTenant(tenantId: number): Promise<ActivityLog[]>;
   createActivityLog(log: InsertActivityLog): Promise<ActivityLog>;
+  deleteOldActivityLogs(beforeDate: Date): Promise<number>;
 
   // Time Slots
   getTimeSlotsByRestaurant(

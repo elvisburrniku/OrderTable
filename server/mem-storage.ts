@@ -656,6 +656,12 @@ export class MemoryStorage implements IStorage {
     this.activityLog.push(newLog);
     return newLog;
   }
+
+  async deleteOldActivityLogs(beforeDate: Date): Promise<number> {
+    const initialCount = this.activityLog.length;
+    this.activityLog = this.activityLog.filter(log => log.createdAt >= beforeDate);
+    return initialCount - this.activityLog.length;
+  }
   async getTimeSlotsByRestaurant(restaurantId: number, date?: string): Promise<TimeSlots[]> { return []; }
   async createTimeSlot(slot: InsertTimeSlots): Promise<TimeSlots> { 
     const newSlot: TimeSlots = { id: this.nextId++, ...slot, createdAt: new Date() };

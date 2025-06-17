@@ -1,7 +1,7 @@
 import { drizzle } from "drizzle-orm/neon-http";
 import { neon } from "@neondatabase/serverless";
 import * as schema from "@shared/schema";
-import { eq, and, desc, asc, gte, lte, sql } from "drizzle-orm";
+import { eq, and, desc, asc, gte, lte, sql, lt } from "drizzle-orm";
 import { IStorage } from "./storage";
 
 const {
@@ -1712,6 +1712,16 @@ export class DatabaseStorage implements IStorage {
     if (!this.db) throw new Error("Database connection not available");
     const result = await this.db.insert(activityLog).values(log).returning();
     return result[0];
+  }
+
+  async deleteOldActivityLogs(beforeDate: Date): Promise<number> {
+    if (!this.db) throw new Error("Database connection not available");
+    
+    const result = await this.db
+      .delete(activityLog)
+      .where(lt(activityLog.createdAt, beforeDate));
+    
+    return result.rowCount || 0;
   }
 
   async getTimeSlotsByRestaurant(restaurantId: number, date?: string): Promise<any[]> {
