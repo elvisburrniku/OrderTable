@@ -9550,9 +9550,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
         const tables = await storage.getTablesByRestaurant(restaurantId);
         const bookings = await storage.getBookingsByRestaurant(restaurantId);
+        
+        // Get table layout positions
+        const tableLayout = await storage.getTableLayout(restaurantId);
+        const positions = tableLayout?.positions || {};
 
         // Calculate heat map data for each table
-        const heatMapData = tables.map((table) => {
+        const heatMapData = tables.map((table, index) => {
           const tableBookings = bookings.filter((b) => b.tableId === table.id);
           const totalBookings = tableBookings.length;
           const totalRevenue = tableBookings.reduce(
@@ -9565,22 +9569,66 @@ export async function registerRoutes(app: Express): Promise<Server> {
                 totalBookings
               : 0;
 
+          // Calculate heat score based on multiple factors
+          const occupancyRate = table.capacity > 0 ? Math.round((avgGuestCount / table.capacity) * 100) : 0;
+          const revenueScore = Math.min(100, Math.round((totalRevenue || 0) / 100));
+          const bookingScore = Math.min(100, totalBookings * 10);
+          const heatScore = Math.round((occupancyRate + revenueScore + bookingScore) / 3);
+
+          // Get position from saved layout or use default grid position
+          const savedPosition = positions[`table-${table.id}`];
+          const defaultPosition = {
+            x: 60 + (index % 4) * 120,
+            y: 60 + Math.floor(index / 4) * 100
+          };
+
+          // Determine table status based on current time and bookings
+          const now = new Date();
+          const currentHour = now.getHours();
+          const todayBookings = tableBookings.filter(b => {
+            const bookingDate = new Date(b.bookingDate);
+            return bookingDate.toDateString() === now.toDateString();
+          });
+          
+          let status = 'available';
+          const currentTimeSlot = todayBookings.find(b => {
+            const startHour = parseInt(b.startTime.split(':')[0]);
+            const endHour = b.endTime ? parseInt(b.endTime.split(':')[0]) : startHour + 2;
+            return currentHour >= startHour && currentHour < endHour;
+          });
+          
+          if (currentTimeSlot) {
+            status = 'occupied';
+          } else if (todayBookings.some(b => {
+            const startHour = parseInt(b.startTime.split(':')[0]);
+            return Math.abs(currentHour - startHour) <= 1;
+          })) {
+            status = 'reserved';
+          }
+
+          // Generate peak hours based on booking patterns
+          const hourCounts = {};
+          tableBookings.forEach(b => {
+            const hour = parseInt(b.startTime.split(':')[0]);
+            hourCounts[hour] = (hourCounts[hour] || 0) + 1;
+          });
+          const peakHours = Object.entries(hourCounts)
+            .sort(([,a], [,b]) => b - a)
+            .slice(0, 3)
+            .map(([hour]) => `${hour}:00`);
+
           return {
             tableId: table.id,
-            tableName: table.name || `Table ${table.table_number}`,
-            tableNumber: table.table_number,
-            capacity: table.capacity,
-            totalBookings,
-            totalRevenue: totalRevenue || 0,
-            averageGuestCount: Math.round(avgGuestCount * 10) / 10,
-            utilizationRate:
-              table.capacity > 0
-                ? Math.round((avgGuestCount / table.capacity) * 100)
-                : 0,
-            revenuePerSeat:
-              table.capacity > 0
-                ? Math.round(((totalRevenue || 0) / table.capacity) * 100) / 100
-                : 0,
+            tableName: `Table ${table.tableNumber}`,
+            capacity: table.capacity || 4,
+            position: savedPosition || defaultPosition,
+            heatScore,
+            bookingCount: totalBookings,
+            occupancyRate,
+            revenueGenerated: totalRevenue || 0,
+            averageStayDuration: 90, // Default 90 minutes
+            peakHours,
+            status: status as 'available' | 'occupied' | 'reserved' | 'maintenance'
           };
         });
 
