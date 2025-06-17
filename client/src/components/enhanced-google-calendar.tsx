@@ -400,6 +400,11 @@ export default function EnhancedGoogleCalendar({
         return "bg-gray-200 text-gray-500 border-l-4 border-gray-400 opacity-60 cursor-default";
       }
 
+      // Check if booking is no-show
+      if (booking.status === 'no-show') {
+        return "bg-red-100 text-red-700 border-l-4 border-red-300 opacity-70 cursor-default";
+      }
+
       if (!booking.tableId)
         return "bg-blue-100 text-blue-800 border-l-4 border-blue-400";
 
@@ -1023,7 +1028,7 @@ export default function EnhancedGoogleCalendar({
                         key={booking.id}
                         data-booking-id={booking.id}
                         className={`booking-card flex items-center space-x-2 p-2 rounded text-sm transition-all duration-300 ease-out ${
-                          booking.status === 'cancelled' 
+                          booking.status === 'cancelled' || booking.status === 'no-show'
                             ? 'cursor-default' 
                             : 'cursor-pointer hover:shadow-lg hover:scale-105 hover:-translate-y-1 hover:rotate-1 active:scale-95 active:rotate-0'
                         } ${getBookingCardStyle(booking, currentDate, timeSlot)}`}
@@ -1035,24 +1040,26 @@ export default function EnhancedGoogleCalendar({
                           setIsEditBookingOpen(true);
                           console.log("Day view edit dialog should open");
                         }}
-                        onMouseDown={(e) => booking.status !== 'cancelled' && handleMouseDown(e, booking)}
+                        onMouseDown={(e) => (booking.status !== 'cancelled' && booking.status !== 'no-show') && handleMouseDown(e, booking)}
                         title={
                           booking.status === 'cancelled'
                             ? "Cancelled booking - Click to edit only"
-                            : getTableConflictStatus(
-                                booking.tableId || 0,
-                                currentDate,
-                                timeSlot,
-                              )
-                              ? "TABLE CONFLICT - Multiple bookings on same table!"
-                              : "Click to edit booking"
+                            : booking.status === 'no-show'
+                              ? "No-show booking - Click to edit only"
+                              : getTableConflictStatus(
+                                  booking.tableId || 0,
+                                  currentDate,
+                                  timeSlot,
+                                )
+                                ? "TABLE CONFLICT - Multiple bookings on same table!"
+                                : "Click to edit booking"
                         }
                       >
                         <div className="flex flex-col w-full">
                           <div className="flex items-center space-x-2">
                             <Users className="w-4 h-4" />
                             <span className="flex-1">
-                              {booking.customerName} {booking.status === 'cancelled' && '(Cancelled)'} ({booking.guestCount} guests) - {booking.startTime}{booking.endTime ? `-${booking.endTime}` : ''}
+                              {booking.customerName} {booking.status === 'cancelled' && '(Cancelled)'} {booking.status === 'no-show' && '(No Show)'} ({booking.guestCount} guests) - {booking.startTime}{booking.endTime ? `-${booking.endTime}` : ''}
                             </span>
                             {booking.tableId && (
                               <Badge variant="outline">
@@ -1159,25 +1166,27 @@ export default function EnhancedGoogleCalendar({
                           key={booking.id}
                           data-booking-id={booking.id}
                           className={`booking-card p-1 mb-1 rounded text-xs transition-all duration-300 ease-out ${
-                            booking.status === 'cancelled' 
+                            booking.status === 'cancelled' || booking.status === 'no-show'
                               ? 'cursor-default' 
                               : 'cursor-pointer hover:shadow-lg hover:scale-110 hover:-translate-y-1 hover:rotate-2 active:scale-95 active:rotate-0'
                           } ${getBookingCardStyle(booking, date, timeSlot)}`}
-                          onMouseDown={(e) => booking.status !== 'cancelled' && handleMouseDown(e, booking)}
+                          onMouseDown={(e) => (booking.status !== 'cancelled' && booking.status !== 'no-show') && handleMouseDown(e, booking)}
                           title={
                             booking.status === 'cancelled'
                               ? "Cancelled booking - Click to edit only"
-                              : getTableConflictStatus(
-                                  booking.tableId || 0,
-                                  date,
-                                  timeSlot,
-                                )
-                                ? "TABLE CONFLICT - Multiple bookings on same table!"
-                                : "Click to edit booking"
+                              : booking.status === 'no-show'
+                                ? "No-show booking - Click to edit only"
+                                : getTableConflictStatus(
+                                    booking.tableId || 0,
+                                    date,
+                                    timeSlot,
+                                  )
+                                  ? "TABLE CONFLICT - Multiple bookings on same table!"
+                                  : "Click to edit booking"
                           }
                         >
                           <div className="truncate font-medium">
-                            {booking.customerName} {booking.status === 'cancelled' && '(Cancelled)'}
+                            {booking.customerName} {booking.status === 'cancelled' && '(Cancelled)'} {booking.status === 'no-show' && '(No Show)'}
                           </div>
                           <div className="text-xs opacity-75">
                             {booking.guestCount} guests

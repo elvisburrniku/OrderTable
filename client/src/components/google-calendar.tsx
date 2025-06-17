@@ -580,12 +580,20 @@ export default function GoogleCalendar({ selectedDate, bookings, allBookings = [
                           <div className={`text-white text-xs p-1 rounded shadow-sm ${
                             booking.status === 'cancelled' 
                               ? 'bg-gray-400 opacity-60' 
-                              : 'bg-blue-500'
+                              : booking.status === 'no-show'
+                                ? 'bg-red-400 opacity-70'
+                                : 'bg-blue-500'
                           }`}>
                             <div className="font-medium truncate">
-                              {booking.customerName} {booking.status === 'cancelled' && '(Cancelled)'}
+                              {booking.customerName} {booking.status === 'cancelled' && '(Cancelled)'} {booking.status === 'no-show' && '(No Show)'}
                             </div>
-                            <div className={booking.status === 'cancelled' ? 'text-gray-200' : 'text-blue-100'}>
+                            <div className={
+                              booking.status === 'cancelled' 
+                                ? 'text-gray-200' 
+                                : booking.status === 'no-show'
+                                  ? 'text-red-100'
+                                  : 'text-blue-100'
+                            }>
                               {booking.guestCount} guests
                             </div>
                           </div>
