@@ -13,7 +13,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useToast } from "@/hooks/use-toast";
 import { Link, useLocation } from "wouter";
 import { apiRequest } from "@/lib/queryClient";
-import { CheckCircle, Circle, ArrowRight, ArrowLeft, Building, Clock, Utensils, Settings } from "lucide-react";
+import { CheckCircle, Circle, ArrowRight, ArrowLeft, Building, Clock, Utensils, Settings, CreditCard } from "lucide-react";
 
 const restaurantDetailsSchema = z.object({
   address: z.string().min(1, "Address is required"),
@@ -72,7 +72,7 @@ type RestaurantDetails = z.infer<typeof restaurantDetailsSchema>;
 type OpeningHours = z.infer<typeof openingHoursSchema>;
 type Tables = z.infer<typeof tablesSchema>;
 
-const steps = [
+const getStepsForPlan = (requiresPayment: boolean) => [
   {
     id: 1,
     title: "Restaurant Details",
@@ -91,8 +91,14 @@ const steps = [
     description: "Configure your table layout",
     icon: Utensils,
   },
-  {
+  ...(requiresPayment ? [{
     id: 4,
+    title: "Payment Setup",
+    description: "Complete your subscription payment",
+    icon: CreditCard,
+  }] : []),
+  {
+    id: requiresPayment ? 5 : 4,
     title: "Complete Setup",
     description: "Finish and start taking bookings",
     icon: Settings,
@@ -102,7 +108,6 @@ const steps = [
 export default function SetupWizard() {
   const [currentStep, setCurrentStep] = useState(1);
   const [completedSteps, setCompletedSteps] = useState<number[]>([]);
-  const totalSteps = 6; // Expanded from 4 to 6 steps
   const [, setLocation] = useLocation();
   const { toast } = useToast();
   const queryClient = useQueryClient();
@@ -113,9 +118,25 @@ export default function SetupWizard() {
     retry: false,
   });
 
+  // Get subscription details to check if payment is required
+  const { data: subscriptionData } = useQuery({
+    queryKey: ["/api/subscription/details"],
+    enabled: !!session,
+    retry: false,
+  });
+
   const tenantId = (session as any)?.tenant?.id;
   const restaurantId = (session as any)?.restaurant?.id;
   const restaurant = (session as any)?.restaurant;
+  const tenant = (session as any)?.tenant;
+  
+  // Check if payment is required (paid plan with trial or unpaid status)
+  const requiresPayment = subscriptionData?.plan?.price > 0 && 
+    (subscriptionData?.tenant?.subscriptionStatus === 'trial' || 
+     subscriptionData?.tenant?.subscriptionStatus === 'unpaid');
+  
+  const steps = getStepsForPlan(requiresPayment || false);
+  const maxSteps = steps.length;
 
   // Form configurations
   const restaurantForm = useForm<RestaurantDetails>({

@@ -90,19 +90,14 @@ export default function Register() {
     },
     onSuccess: (data) => {
       setLoadingState({ isLoading: false, type: null });
-      if (data.requiresPayment && data.checkoutUrl) {
-        toast({
-          title: "Account created!",
-          description: "Redirecting to payment...",
-        });
-        window.location.href = data.checkoutUrl;
-      } else {
-        toast({
-          title: "Company created successfully!",
-          description: `Welcome to your 14-day trial. Trial ends: ${new Date(data.trialEndsAt).toLocaleDateString()}`,
-        });
-        setLocation('/setup');
-      }
+      toast({
+        title: "Account created successfully!",
+        description: data.requiresPayment 
+          ? `Welcome! Please complete the setup wizard to activate your ${data.planName} plan.`
+          : `Welcome to your 14-day trial. Trial ends: ${new Date(data.trialEndsAt).toLocaleDateString()}`,
+      });
+      // Always redirect to setup wizard, regardless of payment requirement
+      setLocation('/setup');
     },
     onError: (error: any) => {
       setLoadingState({ isLoading: false, type: null });
