@@ -2431,6 +2431,23 @@ export async function registerRoutes(app: Express): Promise<Server> {
     },
   );
 
+  // Global activity log for entire tenant (all restaurants)
+  app.get(
+    "/api/tenants/:tenantId/activity-log",
+    validateTenant,
+    async (req, res) => {
+      try {
+        const tenantId = parseInt(req.params.tenantId);
+
+        const logs = await storage.getActivityLogByTenant(tenantId);
+        res.json(logs);
+      } catch (error) {
+        console.error("Global activity log fetch error:", error);
+        res.status(500).json({ message: "Failed to fetch global activity log" });
+      }
+    },
+  );
+
   app.post(
     "/api/tenants/:tenantId/restaurants/:restaurantId/activity-log",
     validateTenant,

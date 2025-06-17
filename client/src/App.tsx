@@ -23,6 +23,7 @@ import Tables from "./pages/tables";
 import Customers from "./pages/customers";
 import Statistics from "./pages/statistics";
 import ActivityLog from "./pages/activity-log";
+import GlobalActivityLog from "./pages/global-activity-log";
 import WaitingList from "./pages/waiting-list";
 import Subscription from "./pages/subscription";
 import Billing from "./pages/billing";
@@ -131,6 +132,7 @@ function App() {
                 <Route path="/:tenantId/integrations/tripadvisor" component={TripAdvisorIntegration} />
                 <Route path="/:tenantId/statistics" component={Statistics} />
                 <Route path="/:tenantId/activity-log" component={ActivityLog} />
+                <Route path="/:tenantId/global-activity-log" component={GlobalActivityLog} />
                 <Route path="/:tenantId/waiting-list" component={WaitingList} />
                 <Route path="/:tenantId/subscription" component={Subscription} />
                 <Route path="/:tenantId/billing" component={Billing} />

@@ -1691,6 +1691,34 @@ export class DatabaseStorage implements IStorage {
     return logs;
   }
 
+  async getActivityLogByTenant(tenantId: number): Promise<any[]> {
+    if (!this.db) throw new Error("Database connection not available");
+    
+    const logs = await this.db
+      .select({
+        id: activityLog.id,
+        restaurantId: activityLog.restaurantId,
+        tenantId: activityLog.tenantId,
+        eventType: activityLog.eventType,
+        description: activityLog.description,
+        source: activityLog.source,
+        userEmail: activityLog.userEmail,
+        guestEmail: activityLog.guestEmail,
+        userLogin: activityLog.userLogin,
+        ipAddress: activityLog.ipAddress,
+        userAgent: activityLog.userAgent,
+        details: activityLog.details,
+        createdAt: activityLog.createdAt,
+        restaurantName: restaurants.name
+      })
+      .from(activityLog)
+      .leftJoin(restaurants, eq(activityLog.restaurantId, restaurants.id))
+      .where(eq(activityLog.tenantId, tenantId))
+      .orderBy(desc(activityLog.createdAt));
+    
+    return logs;
+  }
+
   async createActivityLog(log: any): Promise<any> {
     if (!this.db) throw new Error("Database connection not available");
     const result = await this.db.insert(activityLog).values(log).returning();
