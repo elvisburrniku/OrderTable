@@ -13,8 +13,8 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
-import { useRestaurant } from "@/contexts/restaurant-context";
-import { useTenant } from "@/contexts/tenant-context";
+import { useAuth } from "@/lib/auth";
+import { useTenant } from "@/lib/tenant";
 
 const productGroupSchema = z.object({
   groupName: z.string().min(1, "Group name is required"),
@@ -34,8 +34,9 @@ interface ProductGroup {
 }
 
 export default function ProductGroups() {
-  const { currentRestaurant } = useRestaurant();
+  const { user } = useAuth();
   const { currentTenant } = useTenant();
+  const currentRestaurant = user?.restaurants?.[0]; // Get first restaurant for now
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const [isDialogOpen, setIsDialogOpen] = useState(false);
