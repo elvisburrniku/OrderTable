@@ -2020,9 +2020,140 @@ export const translations: Record<Language, Translations> = {
   }
 };
 
-// Detect user's language from browser or country
-export function detectLanguage(): Language {
-  // Try to get language from browser
+// Map countries to languages based on geographic location
+const countryLanguageMap: Record<string, Language> = {
+  // German-speaking countries
+  'DE': 'de', // Germany
+  'AT': 'de', // Austria
+  'CH': 'de', // Switzerland (primary language)
+  'LI': 'de', // Liechtenstein
+  'LU': 'de', // Luxembourg (one of the official languages)
+  
+  // Spanish-speaking countries
+  'ES': 'es', // Spain
+  'MX': 'es', // Mexico
+  'AR': 'es', // Argentina
+  'CO': 'es', // Colombia
+  'PE': 'es', // Peru
+  'VE': 'es', // Venezuela
+  'CL': 'es', // Chile
+  'EC': 'es', // Ecuador
+  'BO': 'es', // Bolivia
+  'PY': 'es', // Paraguay
+  'UY': 'es', // Uruguay
+  'CR': 'es', // Costa Rica
+  'PA': 'es', // Panama
+  'NI': 'es', // Nicaragua
+  'HN': 'es', // Honduras
+  'GT': 'es', // Guatemala
+  'SV': 'es', // El Salvador
+  'DO': 'es', // Dominican Republic
+  'CU': 'es', // Cuba
+  
+  // French-speaking countries
+  'FR': 'fr', // France
+  'BE': 'fr', // Belgium (one of official languages)
+  'CA': 'fr', // Canada (official language)
+  'MC': 'fr', // Monaco
+  'CH': 'fr', // Switzerland (official language)
+  
+  // Italian-speaking countries
+  'IT': 'it', // Italy
+  'SM': 'it', // San Marino
+  'VA': 'it', // Vatican City
+  'CH': 'it', // Switzerland (official language)
+  
+  // Norwegian-speaking countries
+  'NO': 'no', // Norway
+  'SJ': 'no', // Svalbard and Jan Mayen
+  
+  // Danish-speaking countries
+  'DK': 'da', // Denmark
+  'GL': 'da', // Greenland
+  'FO': 'da', // Faroe Islands
+  
+  // Swedish-speaking countries
+  'SE': 'sv', // Sweden
+  'FI': 'sv', // Finland (official language)
+  'AX': 'sv', // Åland Islands
+  
+  // Czech-speaking countries
+  'CZ': 'cs', // Czech Republic
+  
+  // Dutch-speaking countries
+  'NL': 'nl', // Netherlands
+  'BE': 'nl', // Belgium (official language)
+  'SR': 'nl', // Suriname
+  'AW': 'nl', // Aruba
+  'CW': 'nl', // Curaçao
+  'SX': 'nl', // Sint Maarten
+  'BQ': 'nl', // Caribbean Netherlands
+};
+
+// Detect user's language from location, browser, or default to English
+export async function detectLanguage(): Promise<Language> {
+  // First try to get stored language preference
+  const stored = localStorage.getItem('readytable-language');
+  if (stored && stored in translations) {
+    return stored as Language;
+  }
+
+  // Try to detect location-based language
+  try {
+    const locationLang = await detectLanguageByLocation();
+    if (locationLang) {
+      return locationLang;
+    }
+  } catch (error) {
+    console.log('Location-based language detection failed, falling back to browser detection');
+  }
+
+  // Fallback to browser language detection
+  return detectLanguageFromBrowser();
+}
+
+// Detect language based on user's geographic location
+async function detectLanguageByLocation(): Promise<Language | null> {
+  try {
+    // Try multiple IP geolocation services for reliability
+    const services = [
+      'https://ipapi.co/country_code/',
+      'https://api.country.is/',
+      'https://ipinfo.io/country'
+    ];
+
+    for (const service of services) {
+      try {
+        const response = await fetch(service);
+        let countryCode: string;
+
+        if (service.includes('country.is')) {
+          const data = await response.json();
+          countryCode = data.country;
+        } else {
+          countryCode = await response.text();
+        }
+
+        countryCode = countryCode.trim().toUpperCase();
+        
+        if (countryLanguageMap[countryCode]) {
+          console.log(`Detected country: ${countryCode}, setting language to: ${countryLanguageMap[countryCode]}`);
+          return countryLanguageMap[countryCode];
+        }
+      } catch (serviceError) {
+        console.log(`Service ${service} failed:`, serviceError);
+        continue;
+      }
+    }
+  } catch (error) {
+    console.log('All location services failed:', error);
+  }
+  
+  return null;
+}
+
+// Detect language from browser settings (fallback)
+function detectLanguageFromBrowser(): Language {
   const browserLang = navigator.language.toLowerCase();
   
   // Map browser languages to our supported languages
@@ -2073,14 +2204,12 @@ export function detectLanguage(): Language {
 
 // Hook for using translations (legacy - use context version instead)
 export function useTranslations(): Translations {
-  const language = detectLanguage();
-  return translations[language];
+  return translations['en']; // Default fallback for legacy usage
 }
 
-// Get specific translation
-export function getTranslation(key: string, language?: Language): string {
-  const lang = language || detectLanguage();
-  const t = translations[lang];
+// Get specific translation (synchronous version for utility usage)
+export function getTranslation(key: string, language: Language = 'en'): string {
+  const t = translations[language];
   
   // Simple key path resolution (e.g., 'nav.features')
   const keys = key.split('.');

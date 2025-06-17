@@ -5,6 +5,7 @@ interface LanguageContextType {
   language: Language;
   setLanguage: (language: Language) => void;
   translations: Translations;
+  isLoading: boolean;
 }
 
 const LanguageContext = createContext<LanguageContextType | undefined>(undefined);
@@ -14,24 +15,37 @@ interface LanguageProviderProps {
 }
 
 export function LanguageProvider({ children }: LanguageProviderProps) {
-  const [language, setLanguageState] = useState<Language>(() => {
-    // Try to get from localStorage first, then fallback to detection
-    const stored = localStorage.getItem('readytable-language');
-    if (stored && stored in translations) {
-      return stored as Language;
+  const [language, setLanguageState] = useState<Language>('en'); // Start with English default
+  const [isLoading, setIsLoading] = useState(true);
+
+  useEffect(() => {
+    async function initializeLanguage() {
+      try {
+        const detectedLang = await detectLanguage();
+        setLanguageState(detectedLang);
+        console.log(`Language initialized: ${detectedLang}`);
+      } catch (error) {
+        console.log('Language detection failed, using English default');
+        setLanguageState('en');
+      } finally {
+        setIsLoading(false);
+      }
     }
-    return detectLanguage();
-  });
+
+    initializeLanguage();
+  }, []);
 
   const setLanguage = (newLanguage: Language) => {
     setLanguageState(newLanguage);
     localStorage.setItem('readytable-language', newLanguage);
+    console.log(`Language changed to: ${newLanguage}`);
   };
 
   const contextValue: LanguageContextType = {
     language,
     setLanguage,
-    translations: translations[language]
+    translations: translations[language],
+    isLoading
   };
 
   return (

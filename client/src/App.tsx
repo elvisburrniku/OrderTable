@@ -8,6 +8,8 @@ import { RouteGuard } from "./components/route-guard";
 import { LayoutWrapper } from "./components/layout-wrapper";
 import { SessionTimeoutHandler } from "./components/session-timeout-handler";
 import { LanguageProvider } from "./contexts/language-context";
+import { LanguageLoading } from "./components/language-loading";
+import { useLanguage } from "./contexts/language-context";
 import Home from "./pages/home";
 import Login from "./pages/login";
 import Register from "./pages/register";
