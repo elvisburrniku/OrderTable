@@ -111,6 +111,18 @@ export default function EnhancedGoogleCalendar({
   const dragStartTime = useRef<number>(0);
   const dragStartPos = useRef<{ x: number; y: number }>({ x: 0, y: 0 });
   const clickTimeout = useRef<NodeJS.Timeout | null>(null);
+  
+  // Current time indicator state
+  const [currentTime, setCurrentTime] = useState(new Date());
+
+  // Update current time every second for real-time movement
+  useEffect(() => {
+    const timer = setInterval(() => {
+      setCurrentTime(new Date());
+    }, 1000); // Update every second
+
+    return () => clearInterval(timer);
+  }, []);
 
   // Fetch opening hours
   const { data: openingHours = [] } = useQuery({
@@ -183,6 +195,18 @@ export default function EnhancedGoogleCalendar({
     }
     return slots;
   }, [openingHours]);
+
+  // Check if a time slot contains the current time
+  const isCurrentTimeSlot = useCallback((timeSlot: string) => {
+    const now = currentTime;
+    const currentHour = now.getHours();
+    const currentMinute = now.getMinutes();
+    
+    const [slotHour, slotMinute] = timeSlot.split(':').map(Number);
+    
+    // Check if current time falls within this 15-minute slot
+    return currentHour === slotHour && currentMinute >= slotMinute && currentMinute < slotMinute + 15;
+  }, [currentTime]);
 
   // Check if a time slot is within opening hours for a specific date
   const isTimeSlotOpen = useCallback((date: Date, timeSlot: string) => {
@@ -371,6 +395,16 @@ export default function EnhancedGoogleCalendar({
   // Get conflict styling for booking cards
   const getBookingCardStyle = useCallback(
     (booking: Booking, date: Date, timeSlot: string) => {
+      // Check if booking is cancelled
+      if (booking.status === 'cancelled') {
+        return "bg-gray-200 text-gray-500 border-l-4 border-gray-400 opacity-60 cursor-default";
+      }
+
+      // Check if booking is no-show
+      if (booking.status === 'no-show') {
+        return "bg-red-100 text-red-700 border-l-4 border-red-300 opacity-70 cursor-default";
+      }
+
       if (!booking.tableId)
         return "bg-blue-100 text-blue-800 border-l-4 border-blue-400";
 
@@ -965,7 +999,9 @@ export default function EnhancedGoogleCalendar({
                   key={timeSlot}
                   className={`flex items-center space-x-4 p-2 border rounded transition-all duration-200 ${availabilityColor} ${
                     availabilityLevel === "closed" ? "cursor-not-allowed" : "cursor-pointer"
-                  } ${isDragging ? "hover:border-blue-300" : ""}`}
+                  } ${isDragging ? "hover:border-blue-300" : ""} ${
+                    isCurrentTimeSlot(timeSlot) ? "ring-2 ring-blue-400 bg-blue-50" : ""
+                  }`}
                   onClick={(e) => {
                     // Only open dialog if clicking directly on the container, not on bookings
                     if (e.target === e.currentTarget) {
@@ -991,7 +1027,11 @@ export default function EnhancedGoogleCalendar({
                       <div
                         key={booking.id}
                         data-booking-id={booking.id}
-                        className={`booking-card flex items-center space-x-2 p-2 rounded text-sm cursor-pointer transition-all duration-300 ease-out hover:shadow-lg hover:scale-105 hover:-translate-y-1 hover:rotate-1 active:scale-95 active:rotate-0 ${getBookingCardStyle(booking, currentDate, timeSlot)}`}
+                        className={`booking-card flex items-center space-x-2 p-2 rounded text-sm transition-all duration-300 ease-out ${
+                          booking.status === 'cancelled' || booking.status === 'no-show'
+                            ? 'cursor-default' 
+                            : 'cursor-pointer hover:shadow-lg hover:scale-105 hover:-translate-y-1 hover:rotate-1 active:scale-95 active:rotate-0'
+                        } ${getBookingCardStyle(booking, currentDate, timeSlot)}`}
                         onClick={(e) => {
                           e.stopPropagation();
                           e.preventDefault();
@@ -1000,22 +1040,26 @@ export default function EnhancedGoogleCalendar({
                           setIsEditBookingOpen(true);
                           console.log("Day view edit dialog should open");
                         }}
-                        onMouseDown={(e) => handleMouseDown(e, booking)}
+                        onMouseDown={(e) => (booking.status !== 'cancelled' && booking.status !== 'no-show') && handleMouseDown(e, booking)}
                         title={
-                          getTableConflictStatus(
-                            booking.tableId || 0,
-                            currentDate,
-                            timeSlot,
-                          )
-                            ? "TABLE CONFLICT - Multiple bookings on same table!"
-                            : "Click to edit booking"
+                          booking.status === 'cancelled'
+                            ? "Cancelled booking - Click to edit only"
+                            : booking.status === 'no-show'
+                              ? "No-show booking - Click to edit only"
+                              : getTableConflictStatus(
+                                  booking.tableId || 0,
+                                  currentDate,
+                                  timeSlot,
+                                )
+                                ? "TABLE CONFLICT - Multiple bookings on same table!"
+                                : "Click to edit booking"
                         }
                       >
                         <div className="flex flex-col w-full">
                           <div className="flex items-center space-x-2">
                             <Users className="w-4 h-4" />
                             <span className="flex-1">
-                              {booking.customerName} ({booking.guestCount} guests) - {booking.startTime}{booking.endTime ? `-${booking.endTime}` : ''}
+                              {booking.customerName} {booking.status === 'cancelled' && '(Cancelled)'} {booking.status === 'no-show' && '(No Show)'} ({booking.guestCount} guests) - {booking.startTime}{booking.endTime ? `-${booking.endTime}` : ''}
                             </span>
                             {booking.tableId && (
                               <Badge variant="outline">
@@ -1082,7 +1126,11 @@ export default function EnhancedGoogleCalendar({
           <div className="flex-1 overflow-y-auto">
             {timeSlots.map((timeSlot) => (
               <div key={timeSlot} className="grid grid-cols-8 border-b">
-                <div className="p-2 text-xs text-gray-600 border-r">
+                <div className={`p-2 text-xs border-r ${
+                  isCurrentTimeSlot(timeSlot) 
+                    ? 'bg-blue-100 text-blue-800 font-semibold' 
+                    : 'text-gray-600'
+                }`}>
                   {timeSlot}
                 </div>
                 {visibleDates.map((date) => {
@@ -1117,20 +1165,28 @@ export default function EnhancedGoogleCalendar({
                         <div
                           key={booking.id}
                           data-booking-id={booking.id}
-                          className={`booking-card p-1 mb-1 rounded text-xs cursor-pointer transition-all duration-300 ease-out hover:shadow-lg hover:scale-110 hover:-translate-y-1 hover:rotate-2 active:scale-95 active:rotate-0 ${getBookingCardStyle(booking, date, timeSlot)}`}
-                          onMouseDown={(e) => handleMouseDown(e, booking)}
+                          className={`booking-card p-1 mb-1 rounded text-xs transition-all duration-300 ease-out ${
+                            booking.status === 'cancelled' || booking.status === 'no-show'
+                              ? 'cursor-default' 
+                              : 'cursor-pointer hover:shadow-lg hover:scale-110 hover:-translate-y-1 hover:rotate-2 active:scale-95 active:rotate-0'
+                          } ${getBookingCardStyle(booking, date, timeSlot)}`}
+                          onMouseDown={(e) => (booking.status !== 'cancelled' && booking.status !== 'no-show') && handleMouseDown(e, booking)}
                           title={
-                            getTableConflictStatus(
-                              booking.tableId || 0,
-                              date,
-                              timeSlot,
-                            )
-                              ? "TABLE CONFLICT - Multiple bookings on same table!"
-                              : "Click to edit booking"
+                            booking.status === 'cancelled'
+                              ? "Cancelled booking - Click to edit only"
+                              : booking.status === 'no-show'
+                                ? "No-show booking - Click to edit only"
+                                : getTableConflictStatus(
+                                    booking.tableId || 0,
+                                    date,
+                                    timeSlot,
+                                  )
+                                  ? "TABLE CONFLICT - Multiple bookings on same table!"
+                                  : "Click to edit booking"
                           }
                         >
                           <div className="truncate font-medium">
-                            {booking.customerName}
+                            {booking.customerName} {booking.status === 'cancelled' && '(Cancelled)'} {booking.status === 'no-show' && '(No Show)'}
                           </div>
                           <div className="text-xs opacity-75">
                             {booking.guestCount} guests

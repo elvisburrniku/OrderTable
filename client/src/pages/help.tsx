@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { useAuth } from "@/lib/auth.tsx";
 import { useMutation } from "@tanstack/react-query";
@@ -7,9 +6,22 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { HelpCircle, Mail, Bug, MessageSquare, Send, ExternalLink } from "lucide-react";
+import {
+  HelpCircle,
+  Mail,
+  Bug,
+  MessageSquare,
+  Send,
+  ExternalLink,
+} from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 
 export default function Help() {
@@ -126,41 +138,20 @@ export default function Help() {
 
   return (
     <div className="min-h-screen bg-gray-50">
-      {/* Navigation */}
-      <div className="bg-white border-b">
-        <div className="flex items-center justify-between px-6 py-4">
-          <div className="flex items-center space-x-6">
-            <h1 className="text-xl font-semibold">Help & Support</h1>
-            <nav className="flex space-x-6">
-              <a href={`/${restaurant?.tenantId}/dashboard`} className="text-gray-600 hover:text-gray-900">
-                Booking
-              </a>
-              <a href={`/${restaurant?.tenantId}/bookings`} className="text-gray-600 hover:text-gray-900">
-                CRM
-              </a>
-              <a href={`/${restaurant?.tenantId}/activity-log`} className="text-gray-600 hover:text-gray-900">
-                Archive
-              </a>
-            </nav>
-          </div>
-          <div className="flex items-center space-x-4">
-            <span className="text-sm text-gray-600">{restaurant?.name}</span>
-            <Button variant="outline" size="sm">
-              Profile
-            </Button>
-          </div>
-        </div>
-      </div>
-
       <div className="p-6">
         <div className="max-w-4xl mx-auto">
           {/* Quick Actions */}
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-            <Card className="cursor-pointer hover:shadow-md transition-shadow" onClick={handleEmailSupport}>
+            <Card
+              className="cursor-pointer hover:shadow-md transition-shadow"
+              onClick={handleEmailSupport}
+            >
               <CardContent className="p-6 text-center">
                 <Mail className="h-8 w-8 text-blue-500 mx-auto mb-3" />
                 <h3 className="font-semibold mb-2">Email Support</h3>
-                <p className="text-sm text-gray-600">Send us an email directly</p>
+                <p className="text-sm text-gray-600">
+                  Send us an email directly
+                </p>
               </CardContent>
             </Card>
             <Card className="cursor-pointer hover:shadow-md transition-shadow">
@@ -174,7 +165,9 @@ export default function Help() {
               <CardContent className="p-6 text-center">
                 <MessageSquare className="h-8 w-8 text-purple-500 mx-auto mb-3" />
                 <h3 className="font-semibold mb-2">Live Chat</h3>
-                <p className="text-sm text-gray-600">Chat with our support team</p>
+                <p className="text-sm text-gray-600">
+                  Chat with our support team
+                </p>
               </CardContent>
             </Card>
           </div>
@@ -201,17 +194,29 @@ export default function Help() {
                         <Label htmlFor="type">Request Type</Label>
                         <Select
                           value={supportForm.type}
-                          onValueChange={(value) => setSupportForm({ ...supportForm, type: value })}
+                          onValueChange={(value) =>
+                            setSupportForm({ ...supportForm, type: value })
+                          }
                         >
                           <SelectTrigger>
                             <SelectValue />
                           </SelectTrigger>
                           <SelectContent>
-                            <SelectItem value="general">General Question</SelectItem>
-                            <SelectItem value="billing">Billing Issue</SelectItem>
-                            <SelectItem value="technical">Technical Problem</SelectItem>
-                            <SelectItem value="feature">Feature Request</SelectItem>
-                            <SelectItem value="account">Account Issue</SelectItem>
+                            <SelectItem value="general">
+                              General Question
+                            </SelectItem>
+                            <SelectItem value="billing">
+                              Billing Issue
+                            </SelectItem>
+                            <SelectItem value="technical">
+                              Technical Problem
+                            </SelectItem>
+                            <SelectItem value="feature">
+                              Feature Request
+                            </SelectItem>
+                            <SelectItem value="account">
+                              Account Issue
+                            </SelectItem>
                           </SelectContent>
                         </Select>
                       </div>
@@ -219,7 +224,9 @@ export default function Help() {
                         <Label htmlFor="priority">Priority</Label>
                         <Select
                           value={supportForm.priority}
-                          onValueChange={(value) => setSupportForm({ ...supportForm, priority: value })}
+                          onValueChange={(value) =>
+                            setSupportForm({ ...supportForm, priority: value })
+                          }
                         >
                           <SelectTrigger>
                             <SelectValue />
@@ -238,7 +245,12 @@ export default function Help() {
                       <Input
                         id="subject"
                         value={supportForm.subject}
-                        onChange={(e) => setSupportForm({ ...supportForm, subject: e.target.value })}
+                        onChange={(e) =>
+                          setSupportForm({
+                            ...supportForm,
+                            subject: e.target.value,
+                          })
+                        }
                         placeholder="Brief description of your issue"
                         required
                       />
@@ -248,15 +260,25 @@ export default function Help() {
                       <Textarea
                         id="message"
                         value={supportForm.message}
-                        onChange={(e) => setSupportForm({ ...supportForm, message: e.target.value })}
+                        onChange={(e) =>
+                          setSupportForm({
+                            ...supportForm,
+                            message: e.target.value,
+                          })
+                        }
                         placeholder="Please describe your issue or question in detail..."
                         rows={6}
                         required
                       />
                     </div>
-                    <Button type="submit" disabled={submitSupportMutation.isPending}>
+                    <Button
+                      type="submit"
+                      disabled={submitSupportMutation.isPending}
+                    >
                       <Send className="h-4 w-4 mr-2" />
-                      {submitSupportMutation.isPending ? "Submitting..." : "Submit Support Request"}
+                      {submitSupportMutation.isPending
+                        ? "Submitting..."
+                        : "Submit Support Request"}
                     </Button>
                   </form>
                 </TabsContent>
@@ -269,7 +291,9 @@ export default function Help() {
                         <Input
                           id="bugTitle"
                           value={bugForm.title}
-                          onChange={(e) => setBugForm({ ...bugForm, title: e.target.value })}
+                          onChange={(e) =>
+                            setBugForm({ ...bugForm, title: e.target.value })
+                          }
                           placeholder="Short description of the bug"
                           required
                         />
@@ -278,16 +302,26 @@ export default function Help() {
                         <Label htmlFor="severity">Severity</Label>
                         <Select
                           value={bugForm.severity}
-                          onValueChange={(value) => setBugForm({ ...bugForm, severity: value })}
+                          onValueChange={(value) =>
+                            setBugForm({ ...bugForm, severity: value })
+                          }
                         >
                           <SelectTrigger>
                             <SelectValue />
                           </SelectTrigger>
                           <SelectContent>
-                            <SelectItem value="low">Low - Minor inconvenience</SelectItem>
-                            <SelectItem value="medium">Medium - Affects functionality</SelectItem>
-                            <SelectItem value="high">High - Major feature broken</SelectItem>
-                            <SelectItem value="critical">Critical - App unusable</SelectItem>
+                            <SelectItem value="low">
+                              Low - Minor inconvenience
+                            </SelectItem>
+                            <SelectItem value="medium">
+                              Medium - Affects functionality
+                            </SelectItem>
+                            <SelectItem value="high">
+                              High - Major feature broken
+                            </SelectItem>
+                            <SelectItem value="critical">
+                              Critical - App unusable
+                            </SelectItem>
                           </SelectContent>
                         </Select>
                       </div>
@@ -297,18 +331,30 @@ export default function Help() {
                       <Textarea
                         id="bugDescription"
                         value={bugForm.description}
-                        onChange={(e) => setBugForm({ ...bugForm, description: e.target.value })}
+                        onChange={(e) =>
+                          setBugForm({
+                            ...bugForm,
+                            description: e.target.value,
+                          })
+                        }
                         placeholder="Describe the bug in detail..."
                         rows={4}
                         required
                       />
                     </div>
                     <div>
-                      <Label htmlFor="stepsToReproduce">Steps to Reproduce</Label>
+                      <Label htmlFor="stepsToReproduce">
+                        Steps to Reproduce
+                      </Label>
                       <Textarea
                         id="stepsToReproduce"
                         value={bugForm.stepsToReproduce}
-                        onChange={(e) => setBugForm({ ...bugForm, stepsToReproduce: e.target.value })}
+                        onChange={(e) =>
+                          setBugForm({
+                            ...bugForm,
+                            stepsToReproduce: e.target.value,
+                          })
+                        }
                         placeholder="1. Go to...&#10;2. Click on...&#10;3. See error..."
                         rows={4}
                         required
@@ -316,11 +362,18 @@ export default function Help() {
                     </div>
                     <div className="grid grid-cols-2 gap-4">
                       <div>
-                        <Label htmlFor="expectedBehavior">Expected Behavior</Label>
+                        <Label htmlFor="expectedBehavior">
+                          Expected Behavior
+                        </Label>
                         <Textarea
                           id="expectedBehavior"
                           value={bugForm.expectedBehavior}
-                          onChange={(e) => setBugForm({ ...bugForm, expectedBehavior: e.target.value })}
+                          onChange={(e) =>
+                            setBugForm({
+                              ...bugForm,
+                              expectedBehavior: e.target.value,
+                            })
+                          }
                           placeholder="What should happen?"
                           rows={3}
                           required
@@ -331,7 +384,12 @@ export default function Help() {
                         <Textarea
                           id="actualBehavior"
                           value={bugForm.actualBehavior}
-                          onChange={(e) => setBugForm({ ...bugForm, actualBehavior: e.target.value })}
+                          onChange={(e) =>
+                            setBugForm({
+                              ...bugForm,
+                              actualBehavior: e.target.value,
+                            })
+                          }
                           placeholder="What actually happens?"
                           rows={3}
                           required
@@ -343,14 +401,24 @@ export default function Help() {
                       <Input
                         id="browserInfo"
                         value={bugForm.browserInfo}
-                        onChange={(e) => setBugForm({ ...bugForm, browserInfo: e.target.value })}
+                        onChange={(e) =>
+                          setBugForm({
+                            ...bugForm,
+                            browserInfo: e.target.value,
+                          })
+                        }
                         placeholder="Browser and version"
                         readOnly
                       />
                     </div>
-                    <Button type="submit" disabled={submitBugMutation.isPending}>
+                    <Button
+                      type="submit"
+                      disabled={submitBugMutation.isPending}
+                    >
                       <Bug className="h-4 w-4 mr-2" />
-                      {submitBugMutation.isPending ? "Submitting..." : "Submit Bug Report"}
+                      {submitBugMutation.isPending
+                        ? "Submitting..."
+                        : "Submit Bug Report"}
                     </Button>
                   </form>
                 </TabsContent>
@@ -366,27 +434,39 @@ export default function Help() {
             <CardContent>
               <div className="space-y-4">
                 <div>
-                  <h4 className="font-semibold mb-2">How do I add new tables to my restaurant?</h4>
+                  <h4 className="font-semibold mb-2">
+                    How do I add new tables to my restaurant?
+                  </h4>
                   <p className="text-gray-600 text-sm">
-                    Go to the Table Plan page and use the table management tools to add new tables to your layout.
+                    Go to the Table Plan page and use the table management tools
+                    to add new tables to your layout.
                   </p>
                 </div>
                 <div>
-                  <h4 className="font-semibold mb-2">How can I modify my subscription?</h4>
+                  <h4 className="font-semibold mb-2">
+                    How can I modify my subscription?
+                  </h4>
                   <p className="text-gray-600 text-sm">
-                    Visit the Subscription page to upgrade, downgrade, or cancel your subscription at any time.
+                    Visit the Subscription page to upgrade, downgrade, or cancel
+                    your subscription at any time.
                   </p>
                 </div>
                 <div>
-                  <h4 className="font-semibold mb-2">How do I set up email notifications?</h4>
+                  <h4 className="font-semibold mb-2">
+                    How do I set up email notifications?
+                  </h4>
                   <p className="text-gray-600 text-sm">
-                    Configure email settings in the Settings page under Email Notifications section.
+                    Configure email settings in the Settings page under Email
+                    Notifications section.
                   </p>
                 </div>
                 <div>
-                  <h4 className="font-semibold mb-2">Can I export my booking data?</h4>
+                  <h4 className="font-semibold mb-2">
+                    Can I export my booking data?
+                  </h4>
                   <p className="text-gray-600 text-sm">
-                    Yes, you can export booking data from the Bookings page using the export functionality.
+                    Yes, you can export booking data from the Bookings page
+                    using the export functionality.
                   </p>
                 </div>
               </div>

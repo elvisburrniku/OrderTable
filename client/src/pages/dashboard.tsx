@@ -157,10 +157,8 @@ export default function Dashboard() {
       );
       if (!response.ok) throw new Error("Failed to fetch all bookings");
       const data = await response.json();
-      // Filter out cancelled bookings from all booking displays
-      return Array.isArray(data)
-        ? data.filter((booking) => booking.status !== "cancelled")
-        : [];
+      // Return all bookings including cancelled and no-show for proper calendar display
+      return Array.isArray(data) ? data : [];
     },
     enabled: !!restaurant?.id && !!restaurant.tenantId,
   });

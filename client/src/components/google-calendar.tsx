@@ -1,4 +1,4 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect, useCallback } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -45,6 +45,18 @@ export default function GoogleCalendar({ selectedDate, bookings, allBookings = [
   const [currentWeek, setCurrentWeek] = useState(startOfWeek(selectedDate, { weekStartsOn: 0 }));
   const [isNewBookingOpen, setIsNewBookingOpen] = useState(false);
   const [selectedTimeSlot, setSelectedTimeSlot] = useState<{ date: Date; time: string } | null>(null);
+  
+  // Current time indicator state
+  const [currentTime, setCurrentTime] = useState(new Date());
+
+  // Update current time every second for real-time movement
+  useEffect(() => {
+    const timer = setInterval(() => {
+      setCurrentTime(new Date());
+    }, 1000); // Update every second
+
+    return () => clearInterval(timer);
+  }, []);
 
   // Fetch opening hours
   const { data: openingHours = [] } = useQuery({
@@ -197,6 +209,18 @@ export default function GoogleCalendar({ selectedDate, bookings, allBookings = [
     start: currentWeek, 
     end: endOfWeek(currentWeek, { weekStartsOn: 0 }) 
   });
+
+  // Check if a time slot contains the current time
+  const isCurrentTimeSlot = useCallback((timeSlot: string) => {
+    const now = currentTime;
+    const currentHour = now.getHours();
+    const currentMinute = now.getMinutes();
+    
+    const [slotHour, slotMinute] = timeSlot.split(':').map(Number);
+    
+    // Check if current time falls within this 15-minute slot
+    return currentHour === slotHour && currentMinute >= slotMinute && currentMinute < slotMinute + 15;
+  }, [currentTime]);
 
   const getBookingsForDay = (date: Date) => {
     return allBookings.filter(booking => 
@@ -519,11 +543,15 @@ export default function GoogleCalendar({ selectedDate, bookings, allBookings = [
             </div>
 
             {/* Time slots grid */}
-            <div className="relative">
+            <div>
               {timeSlots.map(time => (
                 <div key={time} className="grid grid-cols-8 border-b border-gray-100 hover:bg-gray-25">
                   {/* Time label */}
-                  <div className="p-3 text-xs text-gray-500 border-r border-gray-200 font-medium text-right pr-4">
+                  <div className={`p-3 text-xs border-r border-gray-200 font-medium text-right pr-4 ${
+                    isCurrentTimeSlot(time) 
+                      ? 'bg-blue-100 text-blue-800 font-semibold' 
+                      : 'text-gray-500'
+                  }`}>
                     {format(new Date(`2000-01-01T${time}`), 'h a')}
                   </div>
                   
@@ -549,11 +577,23 @@ export default function GoogleCalendar({ selectedDate, bookings, allBookings = [
                         onClick={() => handleTimeSlotClick(day, time)}
                       >
                         {booking && (
-                          <div className="bg-blue-500 text-white text-xs p-1 rounded shadow-sm">
+                          <div className={`text-white text-xs p-1 rounded shadow-sm ${
+                            booking.status === 'cancelled' 
+                              ? 'bg-gray-400 opacity-60' 
+                              : booking.status === 'no-show'
+                                ? 'bg-red-400 opacity-70'
+                                : 'bg-blue-500'
+                          }`}>
                             <div className="font-medium truncate">
-                              {booking.customerName}
+                              {booking.customerName} {booking.status === 'cancelled' && '(Cancelled)'} {booking.status === 'no-show' && '(No Show)'}
                             </div>
-                            <div className="text-blue-100">
+                            <div className={
+                              booking.status === 'cancelled' 
+                                ? 'text-gray-200' 
+                                : booking.status === 'no-show'
+                                  ? 'text-red-100'
+                                  : 'text-blue-100'
+                            }>
                               {booking.guestCount} guests
                             </div>
                           </div>

@@ -3,27 +3,38 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useAuth } from "@/lib/auth.tsx";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
-import { 
+import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuLabel,
   DropdownMenuSeparator,
-  DropdownMenuTrigger
+  DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
-import { 
-  Calendar, 
-  Clock, 
-  Plus, 
-  Search, 
-  Filter, 
-  MoreHorizontal, 
-  Eye, 
-  Edit, 
+import {
+  Calendar,
+  Clock,
+  Plus,
+  Search,
+  Filter,
+  MoreHorizontal,
+  Eye,
+  Edit,
   Trash2,
   Users,
   Phone,
@@ -37,7 +48,7 @@ import {
   RotateCcw,
   Download,
   List,
-  Grid
+  Grid,
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
@@ -57,11 +68,11 @@ export default function Bookings() {
     customerEmail: "",
     customerPhone: "",
     guestCount: 2,
-    bookingDate: new Date().toISOString().split('T')[0],
+    bookingDate: new Date().toISOString().split("T")[0],
     startTime: "19:00",
     endTime: "20:00",
     tableId: "",
-    notes: ""
+    notes: "",
   });
   const [conflictInfo, setConflictInfo] = useState<any>(null);
   const [suggestedTable, setSuggestedTable] = useState<any>(null);
@@ -69,31 +80,48 @@ export default function Bookings() {
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
-  const { data: bookings, isLoading, error } = useQuery({
-    queryKey: [`/api/tenants/${restaurant?.tenantId}/restaurants/${restaurant?.id}/bookings`],
+  const {
+    data: bookings,
+    isLoading,
+    error,
+  } = useQuery({
+    queryKey: [
+      `/api/tenants/${restaurant?.tenantId}/restaurants/${restaurant?.id}/bookings`,
+    ],
     enabled: !!restaurant && !!restaurant.tenantId && !!restaurant.id,
     retry: 1,
-    staleTime: 30000 // 30 seconds
+    staleTime: 30000, // 30 seconds
   });
 
   // Fetch tables for conflict detection
   const { data: tables = [] } = useQuery({
-    queryKey: [`/api/tenants/${restaurant?.tenantId}/restaurants/${restaurant?.id}/tables`],
-    enabled: !!restaurant && !!restaurant.tenantId && !!restaurant.id
+    queryKey: [
+      `/api/tenants/${restaurant?.tenantId}/restaurants/${restaurant?.id}/tables`,
+    ],
+    enabled: !!restaurant && !!restaurant.tenantId && !!restaurant.id,
   });
 
   // Function to find alternative tables when conflict detected
-  const findAlternativeTable = (requestedGuestCount: number, requestedTime: string, requestedDate: string, excludeTableId?: number) => {
+  const findAlternativeTable = (
+    requestedGuestCount: number,
+    requestedTime: string,
+    requestedDate: string,
+    excludeTableId?: number,
+  ) => {
     if (!tables || !Array.isArray(tables)) return null;
 
     // Get bookings for the requested date
-    const dateBookings = Array.isArray(bookings) ? bookings.filter(booking => {
-      const bookingDate = new Date(booking.bookingDate).toISOString().split('T')[0];
-      return bookingDate === requestedDate;
-    }) : [];
+    const dateBookings = Array.isArray(bookings)
+      ? bookings.filter((booking) => {
+          const bookingDate = new Date(booking.bookingDate)
+            .toISOString()
+            .split("T")[0];
+          return bookingDate === requestedDate;
+        })
+      : [];
 
     // Find tables that can accommodate the guest count and are available at the requested time
-    const availableTables = tables.filter(table => {
+    const availableTables = tables.filter((table) => {
       // Skip the excluded table
       if (excludeTableId && table.id === excludeTableId) return false;
 
@@ -101,28 +129,32 @@ export default function Bookings() {
       if (table.capacity < requestedGuestCount) return false;
 
       // Check if table is occupied at the requested time
-      const tableBookings = dateBookings.filter(booking => booking.tableId === table.id);
+      const tableBookings = dateBookings.filter(
+        (booking) => booking.tableId === table.id,
+      );
 
-      const isOccupied = tableBookings.some(booking => {
+      const isOccupied = tableBookings.some((booking) => {
         const startTime = booking.startTime;
         const endTime = booking.endTime || "23:59";
 
         // Check if requested time overlaps with existing booking (with 1-hour buffer)
-        const requestedHour = parseInt(requestedTime.split(':')[0]);
-        const requestedMinute = parseInt(requestedTime.split(':')[1]);
+        const requestedHour = parseInt(requestedTime.split(":")[0]);
+        const requestedMinute = parseInt(requestedTime.split(":")[1]);
         const requestedTotalMinutes = requestedHour * 60 + requestedMinute;
 
-        const startHour = parseInt(startTime.split(':')[0]);
-        const startMinute = parseInt(startTime.split(':')[1]);
+        const startHour = parseInt(startTime.split(":")[0]);
+        const startMinute = parseInt(startTime.split(":")[1]);
         const startTotalMinutes = startHour * 60 + startMinute;
 
-        const endHour = parseInt(endTime.split(':')[0]);
-        const endMinute = parseInt(endTime.split(':')[1]);
+        const endHour = parseInt(endTime.split(":")[0]);
+        const endMinute = parseInt(endTime.split(":")[1]);
         const endTotalMinutes = endHour * 60 + endMinute;
 
         // Add 1-hour buffer (60 minutes) for table turnover
-        return requestedTotalMinutes >= (startTotalMinutes - 60) && 
-               requestedTotalMinutes <= (endTotalMinutes + 60);
+        return (
+          requestedTotalMinutes >= startTotalMinutes - 60 &&
+          requestedTotalMinutes <= endTotalMinutes + 60
+        );
       });
 
       return !isOccupied;
@@ -144,38 +176,52 @@ export default function Bookings() {
   };
 
   // Function to check table availability and conflicts
-  const checkTableConflict = (tableId: number, guestCount: number, bookingDate: string, startTime: string) => {
+  const checkTableConflict = (
+    tableId: number,
+    guestCount: number,
+    bookingDate: string,
+    startTime: string,
+  ) => {
     if (!tables || !Array.isArray(bookings)) return { hasConflict: false };
 
-    const table = tables.find(t => t.id === tableId);
+    const table = tables.find((t) => t.id === tableId);
     if (!table) return { hasConflict: false };
 
     // Check capacity
     if (table.capacity < guestCount) {
       return {
         hasConflict: true,
-        reason: 'capacity',
-        message: `Table ${table.tableNumber} can only accommodate ${table.capacity} guests. You have ${guestCount} guests.`
+        reason: "capacity",
+        message: `Table ${table.tableNumber} can only accommodate ${table.capacity} guests. You have ${guestCount} guests.`,
       };
     }
 
     // Get bookings for the requested date and table
-    const dateBookings = bookings.filter(booking => {
-      const bookingDateStr = new Date(booking.bookingDate).toISOString().split('T')[0];
+    const dateBookings = bookings.filter((booking) => {
+      const bookingDateStr = new Date(booking.bookingDate)
+        .toISOString()
+        .split("T")[0];
       return bookingDateStr === bookingDate && booking.tableId === tableId;
     });
 
     // Check time conflicts
-    const hasTimeConflict = dateBookings.some(booking => {
+    const hasTimeConflict = dateBookings.some((booking) => {
       const existingStartTime = booking.startTime;
       const existingEndTime = booking.endTime || "23:59";
 
       // Convert times to minutes for easier comparison
-      const requestedStartMinutes = parseInt(startTime.split(':')[0]) * 60 + parseInt(startTime.split(':')[1]);
-      const requestedEndMinutes = parseInt(endTime.split(':')[0]) * 60 + parseInt(endTime.split(':')[1]);
+      const requestedStartMinutes =
+        parseInt(startTime.split(":")[0]) * 60 +
+        parseInt(startTime.split(":")[1]);
+      const requestedEndMinutes =
+        parseInt(endTime.split(":")[0]) * 60 + parseInt(endTime.split(":")[1]);
 
-      const existingStartMinutes = parseInt(existingStartTime.split(':')[0]) * 60 + parseInt(existingStartTime.split(':')[1]);
-      const existingEndMinutes = parseInt(existingEndTime.split(':')[0]) * 60 + parseInt(existingEndTime.split(':')[1]);
+      const existingStartMinutes =
+        parseInt(existingStartTime.split(":")[0]) * 60 +
+        parseInt(existingStartTime.split(":")[1]);
+      const existingEndMinutes =
+        parseInt(existingEndTime.split(":")[0]) * 60 +
+        parseInt(existingEndTime.split(":")[1]);
 
       // Add 1-hour buffer (60 minutes) for table turnover
       const bufferMinutes = 60;
@@ -193,8 +239,8 @@ export default function Bookings() {
     if (hasTimeConflict) {
       return {
         hasConflict: true,
-        reason: 'time',
-        message: `Table ${table.tableNumber} is occupied at ${startTime} on ${bookingDate}`
+        reason: "time",
+        message: `Table ${table.tableNumber} is occupied at ${startTime} on ${bookingDate}`,
       };
     }
 
@@ -203,13 +249,16 @@ export default function Bookings() {
 
   const createBookingMutation = useMutation({
     mutationFn: async (bookingData: any) => {
-      const response = await fetch(`/api/tenants/${restaurant?.tenantId}/restaurants/${restaurant?.id}/bookings`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
+      const response = await fetch(
+        `/api/tenants/${restaurant?.tenantId}/restaurants/${restaurant?.id}/bookings`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify(bookingData),
         },
-        body: JSON.stringify(bookingData),
-      });
+      );
 
       if (!response.ok) {
         const errorData = await response.json();
@@ -220,8 +269,10 @@ export default function Bookings() {
     },
     onSuccess: (data) => {
       // Only close modal and show success if booking was actually created
-      queryClient.invalidateQueries({ 
-        queryKey: [`/api/tenants/${restaurant?.tenantId}/restaurants/${restaurant?.id}/bookings`] 
+      queryClient.invalidateQueries({
+        queryKey: [
+          `/api/tenants/${restaurant?.tenantId}/restaurants/${restaurant?.id}/bookings`,
+        ],
       });
       setIsNewBookingOpen(false);
       setNewBooking({
@@ -229,11 +280,11 @@ export default function Bookings() {
         customerEmail: "",
         customerPhone: "",
         guestCount: 2,
-        bookingDate: new Date().toISOString().split('T')[0],
+        bookingDate: new Date().toISOString().split("T")[0],
         startTime: "19:00",
         endTime: "21:00",
         tableId: "",
-        notes: ""
+        notes: "",
       });
       setConflictInfo(null);
       setSuggestedTable(null);
@@ -249,37 +300,56 @@ export default function Bookings() {
         description: error.message || "Failed to create booking",
         variant: "destructive",
       });
-    }
+    },
   });
 
   const deleteBookingMutation = useMutation({
     mutationFn: async (id: number) => {
-      const response = await fetch(`/api/tenants/${restaurant?.tenantId}/bookings/${id}`, {
-        method: 'DELETE',
-      });
-      if (!response.ok) throw new Error('Failed to delete booking');
+      const response = await fetch(
+        `/api/tenants/${restaurant?.tenantId}/bookings/${id}`,
+        {
+          method: "DELETE",
+        },
+      );
+      if (!response.ok) throw new Error("Failed to delete booking");
       return response.json();
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: [`/api/tenants/${restaurant?.tenantId}/restaurants/${restaurant?.id}/bookings`] });
+      queryClient.invalidateQueries({
+        queryKey: [
+          `/api/tenants/${restaurant?.tenantId}/restaurants/${restaurant?.id}/bookings`,
+        ],
+      });
     },
   });
 
   const updateBookingMutation = useMutation({
-    mutationFn: async ({ id, updates }: { id: number; updates: Partial<Booking> }) => {
-      const response = await fetch(`/api/tenants/${restaurant?.tenantId}/bookings/${id}`, {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(updates),
-      });
-      if (!response.ok) throw new Error('Failed to update booking');
+    mutationFn: async ({
+      id,
+      updates,
+    }: {
+      id: number;
+      updates: Partial<Booking>;
+    }) => {
+      const response = await fetch(
+        `/api/tenants/${restaurant?.tenantId}/bookings/${id}`,
+        {
+          method: "PUT",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(updates),
+        },
+      );
+      if (!response.ok) throw new Error("Failed to update booking");
       return response.json();
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: [`/api/tenants/${restaurant?.tenantId}/restaurants/${restaurant?.id}/bookings`] });
+      queryClient.invalidateQueries({
+        queryKey: [
+          `/api/tenants/${restaurant?.tenantId}/restaurants/${restaurant?.id}/bookings`,
+        ],
+      });
     },
   });
-
 
   // Handle table selection with conflict detection
   const handleTableSelection = (tableId: string) => {
@@ -293,16 +363,22 @@ export default function Bookings() {
     const tableIdNum = parseInt(tableId);
 
     // Use current state values for conflict checking
-    const currentBooking = newBooking.tableId === tableId ? newBooking : { ...newBooking, tableId };
-    const conflict = checkTableConflict(tableIdNum, currentBooking.guestCount, currentBooking.bookingDate, currentBooking.startTime);
+    const currentBooking =
+      newBooking.tableId === tableId ? newBooking : { ...newBooking, tableId };
+    const conflict = checkTableConflict(
+      tableIdNum,
+      currentBooking.guestCount,
+      currentBooking.bookingDate,
+      currentBooking.startTime,
+    );
 
     if (conflict.hasConflict) {
       // Find alternative table using current booking state
       const alternative = findAlternativeTable(
-        currentBooking.guestCount, 
-        currentBooking.startTime, 
-        currentBooking.bookingDate, 
-        tableIdNum
+        currentBooking.guestCount,
+        currentBooking.startTime,
+        currentBooking.bookingDate,
+        tableIdNum,
       );
 
       setConflictInfo(conflict);
@@ -316,7 +392,7 @@ export default function Bookings() {
         });
       } else {
         toast({
-          title: "Table Conflict", 
+          title: "Table Conflict",
           description: `${conflict.message}. No suitable alternative tables available for ${currentBooking.guestCount} guests at ${currentBooking.startTime}.`,
           variant: "destructive",
         });
@@ -328,8 +404,6 @@ export default function Bookings() {
 
     setNewBooking({ ...newBooking, tableId });
   };
-
-
 
   // Use suggested table
   const useSuggestedTable = () => {
@@ -351,14 +425,16 @@ export default function Bookings() {
     // If a specific table is selected, do final conflict check
     if (newBooking.tableId) {
       const conflict = checkTableConflict(
-        parseInt(newBooking.tableId), 
-        newBooking.guestCount, 
-        newBooking.bookingDate, 
-        newBooking.startTime
+        parseInt(newBooking.tableId),
+        newBooking.guestCount,
+        newBooking.bookingDate,
+        newBooking.startTime,
       );
 
       if (conflict.hasConflict) {
-        const table = tables?.find(t => t.id === parseInt(newBooking.tableId));
+        const table = tables?.find(
+          (t) => t.id === parseInt(newBooking.tableId),
+        );
         toast({
           title: "Table Conflict",
           description: `Table ${table?.tableNumber || newBooking.tableId} is already booked at ${newBooking.startTime} on ${newBooking.bookingDate}. Please select a different table or time.`,
@@ -371,7 +447,7 @@ export default function Bookings() {
       const availableTable = findAlternativeTable(
         newBooking.guestCount,
         newBooking.startTime,
-        newBooking.bookingDate
+        newBooking.bookingDate,
       );
 
       if (!availableTable) {
@@ -389,7 +465,7 @@ export default function Bookings() {
       ...newBooking,
       bookingDate: newBooking.bookingDate, // Already in YYYY-MM-DD format from input
       tableId: newBooking.tableId ? parseInt(newBooking.tableId) : null,
-      restaurantId: restaurant?.id
+      restaurantId: restaurant?.id,
     });
   };
 
@@ -407,17 +483,27 @@ export default function Bookings() {
     console.error("Bookings fetch error:", error);
   }
 
-  const filteredBookings = Array.isArray(bookings) ? bookings.filter((booking: any) => {
-    const matchesSearch = 
-      booking.customerName?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      booking.customerEmail?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      booking.customerPhone?.toLowerCase().includes(searchTerm.toLowerCase());
+  const filteredBookings = Array.isArray(bookings)
+    ? bookings.filter((booking: any) => {
+        const matchesSearch =
+          booking.customerName
+            ?.toLowerCase()
+            .includes(searchTerm.toLowerCase()) ||
+          booking.customerEmail
+            ?.toLowerCase()
+            .includes(searchTerm.toLowerCase()) ||
+          booking.customerPhone
+            ?.toLowerCase()
+            .includes(searchTerm.toLowerCase());
 
-    const matchesStatus = statusFilter === "all" || booking.status === statusFilter;
-    const matchesSource = sourceFilter === "all" || booking.source === sourceFilter;
+        const matchesStatus =
+          statusFilter === "all" || booking.status === statusFilter;
+        const matchesSource =
+          sourceFilter === "all" || booking.source === sourceFilter;
 
-    return matchesSearch && matchesStatus && matchesSource;
-  }) : [];
+        return matchesSearch && matchesStatus && matchesSource;
+      })
+    : [];
 
   const getStatusBadge = (status: string) => {
     switch (status) {
@@ -441,72 +527,18 @@ export default function Bookings() {
       case "online":
         return <Badge className="bg-blue-100 text-blue-800">Online</Badge>;
       case "google":
-        return <Badge className="bg-orange-100 text-orange-800">Google My Business</Badge>;
+        return (
+          <Badge className="bg-orange-100 text-orange-800">
+            Google My Business
+          </Badge>
+        );
       default:
         return <Badge variant="outline">{source}</Badge>;
     }
   };
 
-
   return (
     <div className="min-h-screen bg-gray-50">
-      {/* Navigation */}
-      <div className="bg-white border-b">
-        <div className="flex items-center justify-between px-6 py-4">
-          <div className="flex items-center space-x-6">
-            <h1 className="text-xl font-semibold">Bookings</h1>
-            <nav className="flex space-x-6">
-              <a href={`/${restaurant.tenantId}/dashboard`} className="text-gray-600 hover:text-gray-900">Booking</a>
-              <a href="#" className="text-green-600 font-medium">CRM</a>
-              <a href="#" className="text-gray-600 hover:text-gray-900">Archive</a>
-            </nav>
-          </div>
-          <div className="flex items-center space-x-4">
-            <Button 
-              className="bg-green-600 hover:bg-green-700 text-white"
-              onClick={() => setIsNewBookingOpen(true)}
-            >
-              <Plus className="h-4 w-4 mr-2" />
-              New Booking
-            </Button>
-            <span className="text-sm text-gray-600">{restaurant.name}</span>
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                  <Button variant="outline" size="sm">
-                      <User className="mr-2 h-4 w-4" />
-                      {user?.firstName}
-                  </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent className="w-56" align="end" forceMount>
-                  <DropdownMenuLabel>My Account</DropdownMenuLabel>
-                  <DropdownMenuSeparator />
-                  <DropdownMenuItem>
-                      <User className="mr-2 h-4 w-4" />
-                      <span>Profile</span>
-                  </DropdownMenuItem>
-                  <DropdownMenuItem>
-                      <Settings className="mr-2 h-4 w-4" />
-                      <span>Settings</span>
-                  </DropdownMenuItem>
-                  <DropdownMenuItem>
-                      <CreditCard className="mr-2 h-4 w-4" />
-                      <span>Billing</span>
-                  </DropdownMenuItem>
-                  <DropdownMenuSeparator />
-                  <DropdownMenuItem>
-                      <HelpCircle className="mr-2 h-4 w-4" />
-                      <span>Help</span>
-                  </DropdownMenuItem>
-                  <DropdownMenuItem>
-                      <LogOut className="mr-2 h-4 w-4" />
-                      <span>Logout</span>
-                  </DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
-          </div>
-        </div>
-      </div>
-
       <div className="flex">
         {/* Sidebar */}
         <div className="w-64 bg-white border-r min-h-screen">
@@ -516,15 +548,24 @@ export default function Bookings() {
                 <span className="w-2 h-2 bg-green-600 rounded-full"></span>
                 <span className="font-medium">Bookings</span>
               </div>
-              <a href={`/${restaurant.tenantId}/waiting-list`} className="flex items-center space-x-2 text-gray-600 hover:bg-gray-50 px-3 py-2 rounded">
+              <a
+                href={`/${restaurant.tenantId}/waiting-list`}
+                className="flex items-center space-x-2 text-gray-600 hover:bg-gray-50 px-3 py-2 rounded"
+              >
                 <span className="w-2 h-2 bg-gray-400 rounded-full"></span>
                 <span>Waiting List</span>
               </a>
-              <a href={`/${restaurant.tenantId}/statistics`} className="flex items-center space-x-2 text-gray-600 hover:bg-gray-50 px-3 py-2 rounded">
+              <a
+                href={`/${restaurant.tenantId}/statistics`}
+                className="flex items-center space-x-2 text-gray-600 hover:bg-gray-50 px-3 py-2 rounded"
+              >
                 <span className="w-2 h-2 bg-gray-400 rounded-full"></span>
                 <span>Statistics</span>
               </a>
-              <a href={`/${restaurant.tenantId}/activity-log`} className="flex items-center space-x-2 text-gray-600 hover:bg-gray-50 px-3 py-2 rounded">
+              <a
+                href={`/${restaurant.tenantId}/activity-log`}
+                className="flex items-center space-x-2 text-gray-600 hover:bg-gray-50 px-3 py-2 rounded"
+              >
                 <span className="w-2 h-2 bg-gray-400 rounded-full"></span>
                 <span>Log</span>
               </a>
@@ -545,170 +586,234 @@ export default function Bookings() {
             />
           ) : (
             <div className="bg-white rounded-lg shadow">
-            {/* Header */}
-            <div className="p-6 border-b">
-              <div className="flex items-center justify-between mb-4">
-                <h2 className="text-lg font-semibold">Bookings</h2>
-                
-                {/* View Toggle */}
-                <div className="flex items-center space-x-2">
-                  <Button
-                    variant={viewMode === "list" ? "default" : "outline"}
-                    size="sm"
-                    onClick={() => setViewMode("list")}
-                    className="flex items-center space-x-1"
-                  >
-                    <List className="w-4 h-4" />
-                    <span>List</span>
-                  </Button>
-                  <Button
-                    variant={viewMode === "calendar" ? "default" : "outline"}
-                    size="sm"
-                    onClick={() => setViewMode("calendar")}
-                    className="flex items-center space-x-1"
-                  >
-                    <Calendar className="w-4 h-4" />
-                    <span>Calendar</span>
-                  </Button>
-                </div>
-              </div>
+              {/* Header */}
+              <div className="p-6 border-b">
+                <div className="flex items-center justify-between mb-4">
+                  <h2 className="text-lg font-semibold">Bookings</h2>
 
-              {/* Filters - Only show in list view */}
-              {viewMode === "list" && (
-                <div className="flex items-center space-x-4 mb-4">
-                  <Button variant="outline" size="sm" className="flex items-center space-x-1">
-                    <Filter className="w-4 h-4" />
-                    <span>Show filters</span>
-                  </Button>
-
-                <div className="flex items-center space-x-2">
-                  <Search className="w-4 h-4 text-gray-400" />
-                  <Input
-                    placeholder="Search bookings..."
-                    value={searchTerm}
-                    onChange={(e) => setSearchTerm(e.target.value)}
-                    className="w-64"
-                  />
-                </div>
-
-                <Select value={statusFilter} onValueChange={setStatusFilter}>
-                  <SelectTrigger className="w-32">
-                    <SelectValue placeholder="Status" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="all">All Status</SelectItem>
-                    <SelectItem value="confirmed">Active</SelectItem>
-                    <SelectItem value="completed">Completed</SelectItem>
-                    <SelectItem value="cancelled">Cancelled</SelectItem>
-                    <SelectItem value="no-show">No Show</SelectItem>
-                  </SelectContent>
-                </Select>
-
-                <Select value={sourceFilter} onValueChange={setSourceFilter}>
-                  <SelectTrigger className="w-32">
-                    <SelectValue placeholder="Source" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="all">All Sources</SelectItem>
-                    <SelectItem value="manual">Manual</SelectItem>
-                    <SelectItem value="online">Online</SelectItem>
-                    <SelectItem value="google">Google</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-            )}
-
-            {/* Table */}
-            <div className="overflow-x-auto">
-              <table className="w-full">
-                <thead className="bg-gray-50">
-                  <tr>
-                    <th className="text-left py-3 px-4 font-medium text-gray-700">ID</th>
-                    <th className="text-left py-3 px-4 font-medium text-gray-700">Name</th>
-                    <th className="text-left py-3 px-4 font-medium text-gray-700">Arrival</th>
-                    <th className="text-left py-3 px-4 font-medium text-gray-700">Guests</th>
-                    <th className="text-left py-3 px-4 font-medium text-gray-700">Status</th>
-                    <th className="text-left py-3 px-4 font-medium text-gray-700">Created</th>
-                    <th className="text-left py-3 px-4 font-medium text-gray-700">Source</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {isLoading ? (
-                    <tr>
-                      <td colSpan={7} className="py-8 text-center text-gray-500">
-                        Loading bookings...
-                      </td>
-                    </tr>
-                  ) : filteredBookings.length === 0 ? (
-                    <tr>
-                      <td colSpan={7} className="py-8 text-center text-gray-500">
-                        No bookings found
-                        {bookings && (
-                          <div className="text-xs mt-2">
-                            Raw data: {Array.isArray(bookings) ? `${bookings.length} items` : 'Not an array'}
-                            {error && <div className="text-red-500">Error: {String(error)}</div>}
-                          </div>
-                        )}
-                      </td>
-                    </tr>
-                  ) : (
-                    filteredBookings.map((booking: any) => (
-                      <tr 
-                        key={booking.id} 
-                        className="border-b border-gray-100 hover:bg-gray-50 cursor-pointer"
-                        onClick={() => window.location.href = `/${restaurant.tenantId}/bookings/${booking.id}`}
-                      >
-                        <td className="py-3 px-4 text-sm">{booking.id}</td>
-                        <td className="py-3 px-4">
-                          <div>
-                            <div className="font-medium">{booking.customerName}</div>
-                            <div className="text-sm text-gray-500">{booking.customerEmail}</div>
-                          </div>
-                        </td>
-                        <td className="py-3 px-4">
-                          <div>
-                            <div className="font-medium">
-                              {new Date(booking.bookingDate).toLocaleDateString()} at {booking.startTime}
-                            </div>
-                          </div>
-                        </td>
-                        <td className="py-3 px-4">{booking.guestCount}</td>
-                        <td className="py-3 px-4">{getStatusBadge(booking.status)}</td>
-                        <td className="py-3 px-4">
-                          {new Date(booking.createdAt).toLocaleDateString()} at {new Date(booking.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                        </td>
-                        <td className="py-3 px-4">{getSourceBadge(booking.source || 'manual')}</td>
-                      </tr>
-                    ))
-                  )}
-                </tbody>
-              </table>
-            </div>
-
-            {/* Footer */}
-            <div className="p-4 border-t flex items-center justify-between">
-              <div className="text-sm text-gray-600">
-                {filteredBookings.length} bookings, {filteredBookings.reduce((sum: number, booking: any) => sum + booking.guestCount, 0)} guests
-              </div>
-
-              <div className="flex items-center space-x-4">
-                <div className="flex items-center space-x-2">
-                  <span className="text-sm text-gray-600">1</span>
-                  <div className="flex space-x-1">
-                    <Button variant="outline" size="sm">20</Button>
-                    <span className="text-sm text-gray-600">results per page</span>
+                  {/* View Toggle */}
+                  <div className="flex items-center space-x-2">
+                    <Button
+                      variant={viewMode === "list" ? "default" : "outline"}
+                      size="sm"
+                      onClick={() => setViewMode("list")}
+                      className="flex items-center space-x-1"
+                    >
+                      <List className="w-4 h-4" />
+                      <span>List</span>
+                    </Button>
+                    <Button
+                      variant={viewMode === "calendar" ? "default" : "outline"}
+                      size="sm"
+                      onClick={() => setViewMode("calendar")}
+                      className="flex items-center space-x-1"
+                    >
+                      <Calendar className="w-4 h-4" />
+                      <span>Calendar</span>
+                    </Button>
                   </div>
                 </div>
 
-                <Button className="bg-green-600 hover:bg-green-700 text-white flex items-center space-x-2">
-                  <Download className="w-4 h-4" />
-                  <span>Download as CSV</span>
-                </Button>
+                {/* Filters - Only show in list view */}
+                {viewMode === "list" && (
+                  <div className="flex items-center space-x-4 mb-4">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="flex items-center space-x-1"
+                    >
+                      <Filter className="w-4 h-4" />
+                      <span>Show filters</span>
+                    </Button>
+
+                    <div className="flex items-center space-x-2">
+                      <Search className="w-4 h-4 text-gray-400" />
+                      <Input
+                        placeholder="Search bookings..."
+                        value={searchTerm}
+                        onChange={(e) => setSearchTerm(e.target.value)}
+                        className="w-64"
+                      />
+                    </div>
+
+                    <Select
+                      value={statusFilter}
+                      onValueChange={setStatusFilter}
+                    >
+                      <SelectTrigger className="w-32">
+                        <SelectValue placeholder="Status" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="all">All Status</SelectItem>
+                        <SelectItem value="confirmed">Active</SelectItem>
+                        <SelectItem value="completed">Completed</SelectItem>
+                        <SelectItem value="cancelled">Cancelled</SelectItem>
+                        <SelectItem value="no-show">No Show</SelectItem>
+                      </SelectContent>
+                    </Select>
+
+                    <Select
+                      value={sourceFilter}
+                      onValueChange={setSourceFilter}
+                    >
+                      <SelectTrigger className="w-32">
+                        <SelectValue placeholder="Source" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="all">All Sources</SelectItem>
+                        <SelectItem value="manual">Manual</SelectItem>
+                        <SelectItem value="online">Online</SelectItem>
+                        <SelectItem value="google">Google</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                )}
+
+                {/* Table */}
+                <div className="overflow-x-auto">
+                  <table className="w-full">
+                    <thead className="bg-gray-50">
+                      <tr>
+                        <th className="text-left py-3 px-4 font-medium text-gray-700">
+                          ID
+                        </th>
+                        <th className="text-left py-3 px-4 font-medium text-gray-700">
+                          Name
+                        </th>
+                        <th className="text-left py-3 px-4 font-medium text-gray-700">
+                          Arrival
+                        </th>
+                        <th className="text-left py-3 px-4 font-medium text-gray-700">
+                          Guests
+                        </th>
+                        <th className="text-left py-3 px-4 font-medium text-gray-700">
+                          Status
+                        </th>
+                        <th className="text-left py-3 px-4 font-medium text-gray-700">
+                          Created
+                        </th>
+                        <th className="text-left py-3 px-4 font-medium text-gray-700">
+                          Source
+                        </th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {isLoading ? (
+                        <tr>
+                          <td
+                            colSpan={7}
+                            className="py-8 text-center text-gray-500"
+                          >
+                            Loading bookings...
+                          </td>
+                        </tr>
+                      ) : filteredBookings.length === 0 ? (
+                        <tr>
+                          <td
+                            colSpan={7}
+                            className="py-8 text-center text-gray-500"
+                          >
+                            No bookings found
+                            {bookings && (
+                              <div className="text-xs mt-2">
+                                Raw data:{" "}
+                                {Array.isArray(bookings)
+                                  ? `${bookings.length} items`
+                                  : "Not an array"}
+                                {error && (
+                                  <div className="text-red-500">
+                                    Error: {String(error)}
+                                  </div>
+                                )}
+                              </div>
+                            )}
+                          </td>
+                        </tr>
+                      ) : (
+                        filteredBookings.map((booking: any) => (
+                          <tr
+                            key={booking.id}
+                            className="border-b border-gray-100 hover:bg-gray-50 cursor-pointer"
+                            onClick={() =>
+                              (window.location.href = `/${restaurant.tenantId}/bookings/${booking.id}`)
+                            }
+                          >
+                            <td className="py-3 px-4 text-sm">{booking.id}</td>
+                            <td className="py-3 px-4">
+                              <div>
+                                <div className="font-medium">
+                                  {booking.customerName}
+                                </div>
+                                <div className="text-sm text-gray-500">
+                                  {booking.customerEmail}
+                                </div>
+                              </div>
+                            </td>
+                            <td className="py-3 px-4">
+                              <div>
+                                <div className="font-medium">
+                                  {new Date(
+                                    booking.bookingDate,
+                                  ).toLocaleDateString()}{" "}
+                                  at {booking.startTime}
+                                </div>
+                              </div>
+                            </td>
+                            <td className="py-3 px-4">{booking.guestCount}</td>
+                            <td className="py-3 px-4">
+                              {getStatusBadge(booking.status)}
+                            </td>
+                            <td className="py-3 px-4">
+                              {new Date(booking.createdAt).toLocaleDateString()}{" "}
+                              at{" "}
+                              {new Date(booking.createdAt).toLocaleTimeString(
+                                [],
+                                { hour: "2-digit", minute: "2-digit" },
+                              )}
+                            </td>
+                            <td className="py-3 px-4">
+                              {getSourceBadge(booking.source || "manual")}
+                            </td>
+                          </tr>
+                        ))
+                      )}
+                    </tbody>
+                  </table>
+                </div>
+
+                {/* Footer */}
+                <div className="p-4 border-t flex items-center justify-between">
+                  <div className="text-sm text-gray-600">
+                    {filteredBookings.length} bookings,{" "}
+                    {filteredBookings.reduce(
+                      (sum: number, booking: any) => sum + booking.guestCount,
+                      0,
+                    )}{" "}
+                    guests
+                  </div>
+
+                  <div className="flex items-center space-x-4">
+                    <div className="flex items-center space-x-2">
+                      <span className="text-sm text-gray-600">1</span>
+                      <div className="flex space-x-1">
+                        <Button variant="outline" size="sm">
+                          20
+                        </Button>
+                        <span className="text-sm text-gray-600">
+                          results per page
+                        </span>
+                      </div>
+                    </div>
+
+                    <Button className="bg-green-600 hover:bg-green-700 text-white flex items-center space-x-2">
+                      <Download className="w-4 h-4" />
+                      <span>Download as CSV</span>
+                    </Button>
+                  </div>
+                </div>
               </div>
             </div>
-          </div>
-            </div>
-            )}
+          )}
         </div>
       </div>
 
@@ -725,7 +830,12 @@ export default function Bookings() {
                 <Input
                   id="customerName"
                   value={newBooking.customerName}
-                  onChange={(e) => setNewBooking({ ...newBooking, customerName: e.target.value })}
+                  onChange={(e) =>
+                    setNewBooking({
+                      ...newBooking,
+                      customerName: e.target.value,
+                    })
+                  }
                   required
                 />
               </div>
@@ -735,7 +845,12 @@ export default function Bookings() {
                   id="customerEmail"
                   type="email"
                   value={newBooking.customerEmail}
-                  onChange={(e) => setNewBooking({ ...newBooking, customerEmail: e.target.value })}
+                  onChange={(e) =>
+                    setNewBooking({
+                      ...newBooking,
+                      customerEmail: e.target.value,
+                    })
+                  }
                   required
                 />
               </div>
@@ -747,13 +862,18 @@ export default function Bookings() {
                 <Input
                   id="customerPhone"
                   value={newBooking.customerPhone}
-                  onChange={(e) => setNewBooking({ ...newBooking, customerPhone: e.target.value })}
+                  onChange={(e) =>
+                    setNewBooking({
+                      ...newBooking,
+                      customerPhone: e.target.value,
+                    })
+                  }
                 />
               </div>
               <div>
                 <Label htmlFor="guestCount">Number of Guests</Label>
-                <Select 
-                  value={newBooking.guestCount.toString()} 
+                <Select
+                  value={newBooking.guestCount.toString()}
                   onValueChange={(value) => {
                     const guestCount = parseInt(value);
                     setNewBooking({ ...newBooking, guestCount });
@@ -773,7 +893,9 @@ export default function Bookings() {
                   </SelectTrigger>
                   <SelectContent>
                     {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12].map((num) => (
-                      <SelectItem key={num} value={num.toString()}>{num} guests</SelectItem>
+                      <SelectItem key={num} value={num.toString()}>
+                        {num} guests
+                      </SelectItem>
                     ))}
                   </SelectContent>
                 </Select>
@@ -805,11 +927,15 @@ export default function Bookings() {
               </div>
               <div>
                 <Label htmlFor="startTime">Start Time</Label>
-                <Select 
-                  value={newBooking.startTime} 
+                <Select
+                  value={newBooking.startTime}
                   onValueChange={(value) => {
-                    const endTime = `${(parseInt(value.split(':')[0]) + 1).toString().padStart(2, '0')}:00`;
-                    setNewBooking({ ...newBooking, startTime: value, endTime: endTime });
+                    const endTime = `${(parseInt(value.split(":")[0]) + 1).toString().padStart(2, "0")}:00`;
+                    setNewBooking({
+                      ...newBooking,
+                      startTime: value,
+                      endTime: endTime,
+                    });
                     // Clear any existing conflict info when time changes
                     setConflictInfo(null);
                     setSuggestedTable(null);
@@ -825,21 +951,58 @@ export default function Bookings() {
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
-                    {["10:00", "11:00", "12:00", "13:00", "14:00", "15:00", "16:00", "17:00", "18:00", "19:00", "20:00", "21:00", "22:00"].map((time) => (
-                      <SelectItem key={time} value={time}>{time}</SelectItem>
+                    {[
+                      "10:00",
+                      "11:00",
+                      "12:00",
+                      "13:00",
+                      "14:00",
+                      "15:00",
+                      "16:00",
+                      "17:00",
+                      "18:00",
+                      "19:00",
+                      "20:00",
+                      "21:00",
+                      "22:00",
+                    ].map((time) => (
+                      <SelectItem key={time} value={time}>
+                        {time}
+                      </SelectItem>
                     ))}
                   </SelectContent>
                 </Select>
               </div>
               <div>
                 <Label htmlFor="endTime">End Time</Label>
-                <Select value={newBooking.endTime} onValueChange={(value) => setNewBooking({ ...newBooking, endTime: value })}>
+                <Select
+                  value={newBooking.endTime}
+                  onValueChange={(value) =>
+                    setNewBooking({ ...newBooking, endTime: value })
+                  }
+                >
                   <SelectTrigger>
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
-                    {["11:00", "12:00", "13:00", "14:00", "15:00", "16:00", "17:00", "18:00", "19:00", "20:00", "21:00", "22:00", "23:00"].map((time) => (
-                      <SelectItem key={time} value={time}>{time}</SelectItem>
+                    {[
+                      "11:00",
+                      "12:00",
+                      "13:00",
+                      "14:00",
+                      "15:00",
+                      "16:00",
+                      "17:00",
+                      "18:00",
+                      "19:00",
+                      "20:00",
+                      "21:00",
+                      "22:00",
+                      "23:00",
+                    ].map((time) => (
+                      <SelectItem key={time} value={time}>
+                        {time}
+                      </SelectItem>
                     ))}
                   </SelectContent>
                 </Select>
@@ -848,8 +1011,8 @@ export default function Bookings() {
 
             <div>
               <Label htmlFor="tableId">Table (Optional)</Label>
-              <Select 
-                value={newBooking.tableId} 
+              <Select
+                value={newBooking.tableId}
                 onValueChange={handleTableSelection}
               >
                 <SelectTrigger>
@@ -857,15 +1020,18 @@ export default function Bookings() {
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="auto-assign">Auto-assign</SelectItem>
-                  {tables && tables.length > 0 ? (
-                    tables.map((table) => (
-                      <SelectItem key={`table-${table.id}`} value={table.id.toString()}>
-                        Table {table.tableNumber} ({table.capacity} seats)
-                      </SelectItem>
-                    ))
-                  ) : null}
+                  {tables && tables.length > 0
+                    ? tables.map((table) => (
+                        <SelectItem
+                          key={`table-${table.id}`}
+                          value={table.id.toString()}
+                        >
+                          Table {table.tableNumber} ({table.capacity} seats)
+                        </SelectItem>
+                      ))
+                    : null}
                 </SelectContent>
-                            </Select>
+              </Select>
             </div>
 
             {/* Conflict Warning */}
@@ -874,12 +1040,18 @@ export default function Bookings() {
                 <div className="flex items-start space-x-3">
                   <AlertTriangle className="h-5 w-5 text-red-500 mt-0.5" />
                   <div className="flex-1">
-                    <h4 className="text-sm font-medium text-red-800">Table Conflict Detected</h4>
-                    <p className="text-sm text-red-700 mt-1">{conflictInfo.message}</p>
+                    <h4 className="text-sm font-medium text-red-800">
+                      Table Conflict Detected
+                    </h4>
+                    <p className="text-sm text-red-700 mt-1">
+                      {conflictInfo.message}
+                    </p>
                     {suggestedTable && (
                       <div className="mt-3">
                         <p className="text-sm text-red-700 mb-2">
-                          Suggested alternative: Table {suggestedTable.tableNumber} ({suggestedTable.capacity} seats)
+                          Suggested alternative: Table{" "}
+                          {suggestedTable.tableNumber} (
+                          {suggestedTable.capacity} seats)
                         </p>
                         <Button
                           type="button"
@@ -901,15 +1073,17 @@ export default function Bookings() {
               <Input
                 id="notes"
                 value={newBooking.notes}
-                onChange={(e) => setNewBooking({ ...newBooking, notes: e.target.value })}
+                onChange={(e) =>
+                  setNewBooking({ ...newBooking, notes: e.target.value })
+                }
                 placeholder="Special requests, dietary requirements..."
               />
             </div>
 
             <div className="flex justify-end gap-2 pt-4">
-              <Button 
-                type="button" 
-                variant="outline" 
+              <Button
+                type="button"
+                variant="outline"
                 onClick={() => {
                   setIsNewBookingOpen(false);
                   setConflictInfo(null);
@@ -918,12 +1092,17 @@ export default function Bookings() {
               >
                 Cancel
               </Button>
-              <Button 
-                type="submit" 
-                className="bg-green-600 hover:bg-green-700" 
-                disabled={createBookingMutation.isPending || (conflictInfo && conflictInfo.hasConflict)}
+              <Button
+                type="submit"
+                className="bg-green-600 hover:bg-green-700"
+                disabled={
+                  createBookingMutation.isPending ||
+                  (conflictInfo && conflictInfo.hasConflict)
+                }
               >
-                {createBookingMutation.isPending ? "Creating..." : "Create Booking"}
+                {createBookingMutation.isPending
+                  ? "Creating..."
+                  : "Create Booking"}
               </Button>
             </div>
           </form>

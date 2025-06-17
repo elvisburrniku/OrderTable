@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { useAuth } from "@/lib/auth.tsx";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
@@ -14,12 +13,12 @@ export default function Profile() {
   const { user, restaurant, refreshUserData } = useAuth();
   const { toast } = useToast();
   const queryClient = useQueryClient();
-  
+
   const [userForm, setUserForm] = useState({
     name: user?.name || "",
     email: user?.email || "",
   });
-  
+
   const [restaurantForm, setRestaurantForm] = useState({
     name: restaurant?.name || "",
     address: restaurant?.address || "",
@@ -86,11 +85,14 @@ export default function Profile() {
 
   const updateRestaurantMutation = useMutation({
     mutationFn: async (data: any) => {
-      const response = await fetch(`/api/tenants/${restaurant?.tenantId}/restaurants/${restaurant?.id}`, {
-        method: "PUT",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(data),
-      });
+      const response = await fetch(
+        `/api/tenants/${restaurant?.tenantId}/restaurants/${restaurant?.id}`,
+        {
+          method: "PUT",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(data),
+        },
+      );
       if (!response.ok) throw new Error("Failed to update restaurant");
       return response.json();
     },
@@ -122,7 +124,11 @@ export default function Profile() {
       return response.json();
     },
     onSuccess: () => {
-      setPasswordForm({ currentPassword: "", newPassword: "", confirmPassword: "" });
+      setPasswordForm({
+        currentPassword: "",
+        newPassword: "",
+        confirmPassword: "",
+      });
       toast({ title: "Password updated successfully" });
     },
     onError: (error: Error) => {
@@ -146,7 +152,7 @@ export default function Profile() {
 
   const handlePasswordSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     if (passwordForm.newPassword !== passwordForm.confirmPassword) {
       toast({
         title: "Error",
@@ -173,32 +179,6 @@ export default function Profile() {
 
   return (
     <div className="min-h-screen bg-gray-50">
-      {/* Navigation */}
-      <div className="bg-white border-b">
-        <div className="flex items-center justify-between px-6 py-4">
-          <div className="flex items-center space-x-6">
-            <h1 className="text-xl font-semibold">Profile</h1>
-            <nav className="flex space-x-6">
-              <a href={`/${restaurant?.tenantId}/dashboard`} className="text-gray-600 hover:text-gray-900">
-                Booking
-              </a>
-              <a href={`/${restaurant?.tenantId}/bookings`} className="text-gray-600 hover:text-gray-900">
-                CRM
-              </a>
-              <a href={`/${restaurant?.tenantId}/activity-log`} className="text-gray-600 hover:text-gray-900">
-                Archive
-              </a>
-            </nav>
-          </div>
-          <div className="flex items-center space-x-4">
-            <span className="text-sm text-gray-600">{restaurant?.name}</span>
-            <Button variant="outline" size="sm">
-              Profile
-            </Button>
-          </div>
-        </div>
-      </div>
-
       <div className="p-6 space-y-6">
         {/* User Profile */}
         <Card>
@@ -216,7 +196,9 @@ export default function Profile() {
                   <Input
                     id="userName"
                     value={userForm.name}
-                    onChange={(e) => setUserForm({ ...userForm, name: e.target.value })}
+                    onChange={(e) =>
+                      setUserForm({ ...userForm, name: e.target.value })
+                    }
                     required
                   />
                 </div>
@@ -226,14 +208,18 @@ export default function Profile() {
                     id="userEmail"
                     type="email"
                     value={userForm.email}
-                    onChange={(e) => setUserForm({ ...userForm, email: e.target.value })}
+                    onChange={(e) =>
+                      setUserForm({ ...userForm, email: e.target.value })
+                    }
                     required
                   />
                 </div>
               </div>
               <Button type="submit" disabled={updateUserMutation.isPending}>
                 <Save className="h-4 w-4 mr-2" />
-                {updateUserMutation.isPending ? "Saving..." : "Save User Profile"}
+                {updateUserMutation.isPending
+                  ? "Saving..."
+                  : "Save User Profile"}
               </Button>
             </form>
           </CardContent>
@@ -254,7 +240,12 @@ export default function Profile() {
                 <Input
                   id="restaurantName"
                   value={restaurantForm.name}
-                  onChange={(e) => setRestaurantForm({ ...restaurantForm, name: e.target.value })}
+                  onChange={(e) =>
+                    setRestaurantForm({
+                      ...restaurantForm,
+                      name: e.target.value,
+                    })
+                  }
                   required
                 />
               </div>
@@ -265,7 +256,12 @@ export default function Profile() {
                     id="restaurantPhone"
                     type="tel"
                     value={restaurantForm.phone}
-                    onChange={(e) => setRestaurantForm({ ...restaurantForm, phone: e.target.value })}
+                    onChange={(e) =>
+                      setRestaurantForm({
+                        ...restaurantForm,
+                        phone: e.target.value,
+                      })
+                    }
                     placeholder="+1 (555) 123-4567"
                   />
                 </div>
@@ -275,7 +271,12 @@ export default function Profile() {
                     id="restaurantEmail"
                     type="email"
                     value={restaurantForm.email}
-                    onChange={(e) => setRestaurantForm({ ...restaurantForm, email: e.target.value })}
+                    onChange={(e) =>
+                      setRestaurantForm({
+                        ...restaurantForm,
+                        email: e.target.value,
+                      })
+                    }
                     placeholder="info@restaurant.com"
                   />
                 </div>
@@ -285,7 +286,12 @@ export default function Profile() {
                 <Input
                   id="restaurantAddress"
                   value={restaurantForm.address}
-                  onChange={(e) => setRestaurantForm({ ...restaurantForm, address: e.target.value })}
+                  onChange={(e) =>
+                    setRestaurantForm({
+                      ...restaurantForm,
+                      address: e.target.value,
+                    })
+                  }
                   placeholder="123 Main St, City, State 12345"
                 />
               </div>
@@ -294,14 +300,24 @@ export default function Profile() {
                 <Textarea
                   id="restaurantDescription"
                   value={restaurantForm.description}
-                  onChange={(e) => setRestaurantForm({ ...restaurantForm, description: e.target.value })}
+                  onChange={(e) =>
+                    setRestaurantForm({
+                      ...restaurantForm,
+                      description: e.target.value,
+                    })
+                  }
                   placeholder="Tell customers about your restaurant..."
                   rows={4}
                 />
               </div>
-              <Button type="submit" disabled={updateRestaurantMutation.isPending}>
+              <Button
+                type="submit"
+                disabled={updateRestaurantMutation.isPending}
+              >
                 <Save className="h-4 w-4 mr-2" />
-                {updateRestaurantMutation.isPending ? "Saving..." : "Save Restaurant Profile"}
+                {updateRestaurantMutation.isPending
+                  ? "Saving..."
+                  : "Save Restaurant Profile"}
               </Button>
             </form>
           </CardContent>
@@ -323,7 +339,12 @@ export default function Profile() {
                   id="currentPassword"
                   type="password"
                   value={passwordForm.currentPassword}
-                  onChange={(e) => setPasswordForm({ ...passwordForm, currentPassword: e.target.value })}
+                  onChange={(e) =>
+                    setPasswordForm({
+                      ...passwordForm,
+                      currentPassword: e.target.value,
+                    })
+                  }
                   required
                 />
               </div>
@@ -334,7 +355,12 @@ export default function Profile() {
                     id="newPassword"
                     type="password"
                     value={passwordForm.newPassword}
-                    onChange={(e) => setPasswordForm({ ...passwordForm, newPassword: e.target.value })}
+                    onChange={(e) =>
+                      setPasswordForm({
+                        ...passwordForm,
+                        newPassword: e.target.value,
+                      })
+                    }
                     required
                     minLength={6}
                   />
@@ -345,7 +371,12 @@ export default function Profile() {
                     id="confirmPassword"
                     type="password"
                     value={passwordForm.confirmPassword}
-                    onChange={(e) => setPasswordForm({ ...passwordForm, confirmPassword: e.target.value })}
+                    onChange={(e) =>
+                      setPasswordForm({
+                        ...passwordForm,
+                        confirmPassword: e.target.value,
+                      })
+                    }
                     required
                     minLength={6}
                   />
@@ -353,7 +384,9 @@ export default function Profile() {
               </div>
               <Button type="submit" disabled={updatePasswordMutation.isPending}>
                 <Save className="h-4 w-4 mr-2" />
-                {updatePasswordMutation.isPending ? "Updating..." : "Update Password"}
+                {updatePasswordMutation.isPending
+                  ? "Updating..."
+                  : "Update Password"}
               </Button>
             </form>
           </CardContent>
