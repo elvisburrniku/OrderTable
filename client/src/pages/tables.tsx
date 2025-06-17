@@ -285,9 +285,6 @@ export default function Tables() {
               <a href="#" className="text-green-600 font-medium">
                 CRM
               </a>
-              <a href="#" className="text-gray-600 hover:text-gray-900">
-                Archive
-              </a>
             </nav>
           </div>
           <div className="flex items-center space-x-4">
