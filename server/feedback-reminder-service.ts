@@ -4,7 +4,6 @@ import { QRCodeService } from "./qr-service";
 
 export class FeedbackReminderService {
   private emailService: BrevoEmailService | null = null;
-  private qrService: QRCodeService;
   private isRunning = false;
 
   constructor() {
@@ -18,8 +17,6 @@ export class FeedbackReminderService {
     } catch (error) {
       console.error("Feedback reminder service: Error initializing email service:", error);
     }
-    
-    this.qrService = new QRCodeService();
   }
 
   start() {
@@ -125,7 +122,12 @@ export class FeedbackReminderService {
     try {
       // Generate QR code for direct feedback access
       const feedbackUrl = `${process.env.BASE_URL || 'https://your-domain.com'}/guest-feedback/${tenantId}/${restaurant.id}?table=${booking.tableId || 'booking'}`;
-      const qrCodeDataUrl = await this.qrService.generateQRCode(feedbackUrl);
+      const qrCodeDataUrl = await QRCodeService.generateTableQRCode(
+        booking.tableId || 1,
+        booking.tableId?.toString() || 'booking',
+        restaurant.id,
+        tenantId
+      );
 
       // Create email content
       const subject = `How was your experience at ${restaurant.name}?`;
