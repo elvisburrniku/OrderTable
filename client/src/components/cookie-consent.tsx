@@ -31,17 +31,12 @@ export default function CookieConsent() {
   useEffect(() => {
     // Check if user has already made a choice
     const cookieConsent = localStorage.getItem('cookieConsent');
-    if (!cookieConsent) {
+    const showDebug = localStorage.getItem('cookieDebug');
+    
+    if (!cookieConsent || showDebug === 'true') {
       // Show banner after a short delay
       const timer = setTimeout(() => setIsVisible(true), 1500);
       return () => clearTimeout(timer);
-    } else {
-      // For testing purposes, show banner if specific debug flag is set
-      const showDebug = localStorage.getItem('cookieDebug');
-      if (showDebug === 'true') {
-        const timer = setTimeout(() => setIsVisible(true), 1500);
-        return () => clearTimeout(timer);
-      }
     }
   }, []);
 
@@ -74,6 +69,9 @@ export default function CookieConsent() {
       timestamp: new Date().toISOString(),
       version: '1.0'
     }));
+    
+    // Clear debug flag after saving preferences
+    localStorage.removeItem('cookieDebug');
     
     // Set cookie tracking flags
     if (typeof window !== 'undefined') {
