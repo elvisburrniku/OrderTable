@@ -2,6 +2,7 @@ import { useLocation } from "wouter";
 import DashboardSidebar from "./dashboard-sidebar";
 import { useAuth } from "@/lib/auth";
 import { useQuery } from "@tanstack/react-query";
+import CookieSettingsButton from "./cookie-settings-button";
 
 interface LayoutWrapperProps {
   children: React.ReactNode;
@@ -56,15 +57,23 @@ export function LayoutWrapper({ children }: LayoutWrapperProps) {
   
   if (isPublicRoute) {
     // Render without sidebar for public routes
-    return <>{children}</>;
+    return (
+      <>
+        {children}
+        <CookieSettingsButton />
+      </>
+    );
   }
   
   // Hide sidebar for blocked access (ended subscriptions or expired trials)
   if (isBlocked) {
     return (
-      <main className="min-h-screen bg-gray-50">
-        {children}
-      </main>
+      <>
+        <main className="min-h-screen bg-gray-50">
+          {children}
+        </main>
+        <CookieSettingsButton />
+      </>
     );
   }
   
@@ -75,6 +84,7 @@ export function LayoutWrapper({ children }: LayoutWrapperProps) {
       <main className="flex-1 overflow-auto">
         {children}
       </main>
+      <CookieSettingsButton />
     </div>
   );
 }
