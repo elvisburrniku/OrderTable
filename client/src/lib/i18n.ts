@@ -2020,93 +2020,181 @@ export const translations: Record<Language, Translations> = {
   }
 };
 
-// Map countries to languages based on geographic location
-const countryLanguageMap: Record<string, Language> = {
+// Enhanced country-to-language mapping with fallback logic for multilingual countries
+interface CountryLanguageMapping {
+  primary: Language;
+  alternatives?: Language[];
+  regions?: Record<string, Language>;
+}
+
+const countryLanguageMap: Record<string, CountryLanguageMapping> = {
   // German-speaking countries
-  'DE': 'de', // Germany
-  'AT': 'de', // Austria
-  'CH': 'de', // Switzerland (German is most widely spoken)
-  'LI': 'de', // Liechtenstein
-  'LU': 'de', // Luxembourg
+  'DE': { primary: 'de' }, // Germany
+  'AT': { primary: 'de' }, // Austria
+  'CH': { 
+    primary: 'de', // German is most widely spoken (63%)
+    alternatives: ['fr', 'it'], // French (18%), Italian (8%)
+  }, // Switzerland
+  'LI': { primary: 'de' }, // Liechtenstein
+  'LU': { primary: 'de', alternatives: ['fr'] }, // Luxembourg
+  
+  // English-speaking countries
+  'US': { primary: 'en' }, // United States
+  'GB': { primary: 'en' }, // United Kingdom
+  'IE': { primary: 'en' }, // Ireland
+  'AU': { primary: 'en' }, // Australia
+  'NZ': { primary: 'en' }, // New Zealand
+  'CA': { primary: 'en', alternatives: ['fr'] }, // Canada
+  'ZA': { primary: 'en' }, // South Africa
+  'IN': { primary: 'en' }, // India
+  'SG': { primary: 'en' }, // Singapore
+  'MT': { primary: 'en' }, // Malta
+  'CY': { primary: 'en' }, // Cyprus
   
   // Spanish-speaking countries
-  'ES': 'es', // Spain
-  'MX': 'es', // Mexico
-  'AR': 'es', // Argentina
-  'CO': 'es', // Colombia
-  'PE': 'es', // Peru
-  'VE': 'es', // Venezuela
-  'CL': 'es', // Chile
-  'EC': 'es', // Ecuador
-  'BO': 'es', // Bolivia
-  'PY': 'es', // Paraguay
-  'UY': 'es', // Uruguay
-  'CR': 'es', // Costa Rica
-  'PA': 'es', // Panama
-  'NI': 'es', // Nicaragua
-  'HN': 'es', // Honduras
-  'GT': 'es', // Guatemala
-  'SV': 'es', // El Salvador
-  'DO': 'es', // Dominican Republic
-  'CU': 'es', // Cuba
+  'ES': { primary: 'es' }, // Spain
+  'MX': { primary: 'es' }, // Mexico
+  'AR': { primary: 'es' }, // Argentina
+  'CO': { primary: 'es' }, // Colombia
+  'PE': { primary: 'es' }, // Peru
+  'VE': { primary: 'es' }, // Venezuela
+  'CL': { primary: 'es' }, // Chile
+  'EC': { primary: 'es' }, // Ecuador
+  'BO': { primary: 'es' }, // Bolivia
+  'PY': { primary: 'es' }, // Paraguay
+  'UY': { primary: 'es' }, // Uruguay
+  'CR': { primary: 'es' }, // Costa Rica
+  'PA': { primary: 'es' }, // Panama
+  'NI': { primary: 'es' }, // Nicaragua
+  'HN': { primary: 'es' }, // Honduras
+  'GT': { primary: 'es' }, // Guatemala
+  'SV': { primary: 'es' }, // El Salvador
+  'DO': { primary: 'es' }, // Dominican Republic
+  'CU': { primary: 'es' }, // Cuba
+  'PR': { primary: 'es' }, // Puerto Rico
   
   // French-speaking countries
-  'FR': 'fr', // France
-  'BE': 'nl', // Belgium (Dutch is primary in northern region)
-  'CA': 'en', // Canada (English is more widely spoken)
-  'MC': 'fr', // Monaco
+  'FR': { primary: 'fr' }, // France
+  'BE': { 
+    primary: 'nl', // Dutch (59%)
+    alternatives: ['fr'], // French (40%)
+  }, // Belgium
+  'MC': { primary: 'fr' }, // Monaco
+  'SN': { primary: 'fr' }, // Senegal
+  'CI': { primary: 'fr' }, // Côte d'Ivoire
+  'MA': { primary: 'fr' }, // Morocco
+  'TN': { primary: 'fr' }, // Tunisia
+  'DZ': { primary: 'fr' }, // Algeria
+  'BF': { primary: 'fr' }, // Burkina Faso
+  'ML': { primary: 'fr' }, // Mali
+  'NE': { primary: 'fr' }, // Niger
+  'TD': { primary: 'fr' }, // Chad
+  'CM': { primary: 'fr' }, // Cameroon
+  'GA': { primary: 'fr' }, // Gabon
+  'CG': { primary: 'fr' }, // Republic of the Congo
+  'CD': { primary: 'fr' }, // Democratic Republic of the Congo
+  'CF': { primary: 'fr' }, // Central African Republic
+  'MG': { primary: 'fr' }, // Madagascar
+  'RW': { primary: 'fr' }, // Rwanda
+  'BI': { primary: 'fr' }, // Burundi
+  'DJ': { primary: 'fr' }, // Djibouti
+  'KM': { primary: 'fr' }, // Comoros
+  'VU': { primary: 'fr' }, // Vanuatu
+  'NC': { primary: 'fr' }, // New Caledonia
+  'PF': { primary: 'fr' }, // French Polynesia
+  'WF': { primary: 'fr' }, // Wallis and Futuna
+  'PM': { primary: 'fr' }, // Saint Pierre and Miquelon
+  'BL': { primary: 'fr' }, // Saint Barthélemy
+  'MF': { primary: 'fr' }, // Saint Martin
+  'GP': { primary: 'fr' }, // Guadeloupe
+  'MQ': { primary: 'fr' }, // Martinique
+  'GF': { primary: 'fr' }, // French Guiana
+  'RE': { primary: 'fr' }, // Réunion
+  'YT': { primary: 'fr' }, // Mayotte
   
   // Italian-speaking countries
-  'IT': 'it', // Italy
-  'SM': 'it', // San Marino
-  'VA': 'it', // Vatican City
+  'IT': { primary: 'it' }, // Italy
+  'SM': { primary: 'it' }, // San Marino
+  'VA': { primary: 'it' }, // Vatican City
   
   // Norwegian-speaking countries
-  'NO': 'no', // Norway
-  'SJ': 'no', // Svalbard and Jan Mayen
+  'NO': { primary: 'no' }, // Norway
+  'SJ': { primary: 'no' }, // Svalbard and Jan Mayen
   
   // Danish-speaking countries
-  'DK': 'da', // Denmark
-  'GL': 'da', // Greenland
-  'FO': 'da', // Faroe Islands
+  'DK': { primary: 'da' }, // Denmark
+  'GL': { primary: 'da' }, // Greenland
+  'FO': { primary: 'da' }, // Faroe Islands
   
   // Swedish-speaking countries
-  'SE': 'sv', // Sweden
-  'FI': 'sv', // Finland (Swedish is official but Finnish is primary)
-  'AX': 'sv', // Åland Islands
+  'SE': { primary: 'sv' }, // Sweden
+  'FI': { primary: 'sv', alternatives: ['en'] }, // Finland (Swedish is official but less common)
+  'AX': { primary: 'sv' }, // Åland Islands
   
   // Czech-speaking countries
-  'CZ': 'cs', // Czech Republic
+  'CZ': { primary: 'cs' }, // Czech Republic
   
   // Dutch-speaking countries
-  'NL': 'nl', // Netherlands
-  'SR': 'nl', // Suriname
-  'AW': 'nl', // Aruba
-  'CW': 'nl', // Curaçao
-  'SX': 'nl', // Sint Maarten
-  'BQ': 'nl', // Caribbean Netherlands
+  'NL': { primary: 'nl' }, // Netherlands
+  'SR': { primary: 'nl' }, // Suriname
+  'AW': { primary: 'nl' }, // Aruba
+  'CW': { primary: 'nl' }, // Curaçao
+  'SX': { primary: 'nl' }, // Sint Maarten
+  'BQ': { primary: 'nl' }, // Caribbean Netherlands
 };
+
+// Helper function to get language from country code
+function getLanguageFromCountry(countryCode: string): Language {
+  const mapping = countryLanguageMap[countryCode];
+  if (!mapping) {
+    return 'en'; // Default to English for unknown countries
+  }
+  
+  // Try to detect browser language preference for multilingual countries
+  if (mapping.alternatives && mapping.alternatives.length > 0) {
+    const browserLang = navigator.language.toLowerCase();
+    const langPrefix = browserLang.split('-')[0];
+    
+    // Check if browser language matches any of the alternatives
+    if (mapping.alternatives.includes(langPrefix as Language)) {
+      return langPrefix as Language;
+    }
+  }
+  
+  return mapping.primary;
+}
 
 // Detect user's language from location, browser, or default to English
 export async function detectLanguage(): Promise<Language> {
   // First try to get stored language preference
   const stored = localStorage.getItem('readytable-language');
   if (stored && stored in translations) {
+    // Store detection info
+    localStorage.setItem('readytable-language-detection', JSON.stringify({
+      detectionMethod: 'stored'
+    }));
     return stored as Language;
   }
 
   // Try to detect location-based language
   try {
-    const locationLang = await detectLanguageByLocation();
-    if (locationLang) {
-      return locationLang;
+    const locationResult = await detectLanguageByLocation();
+    if (locationResult) {
+      return locationResult;
     }
   } catch (error) {
     console.log('Location-based language detection failed, falling back to browser detection');
   }
 
   // Fallback to browser language detection
-  return detectLanguageFromBrowser();
+  const browserLang = detectLanguageFromBrowser();
+  
+  // Store detection info
+  localStorage.setItem('readytable-language-detection', JSON.stringify({
+    detectionMethod: 'browser'
+  }));
+  
+  return browserLang;
 }
 
 // Detect language based on user's geographic location
@@ -2114,36 +2202,80 @@ async function detectLanguageByLocation(): Promise<Language | null> {
   try {
     // Try multiple IP geolocation services for reliability
     const services = [
-      'https://ipapi.co/country_code/',
-      'https://api.country.is/',
-      'https://ipinfo.io/country'
+      {
+        url: 'https://ipapi.co/json/',
+        parser: (data: any) => ({
+          country: data.country_code,
+          region: data.region,
+          city: data.city
+        })
+      },
+      {
+        url: 'https://api.country.is/',
+        parser: (data: any) => ({
+          country: data.country,
+          region: null,
+          city: null
+        })
+      },
+      {
+        url: 'https://ipinfo.io/json',
+        parser: (data: any) => ({
+          country: data.country,
+          region: data.region,
+          city: data.city
+        })
+      }
     ];
 
     for (const service of services) {
       try {
-        const response = await fetch(service);
-        let countryCode: string;
-
-        if (service.includes('country.is')) {
-          const data = await response.json();
-          countryCode = data.country;
-        } else {
-          countryCode = await response.text();
+        const response = await fetch(service.url);
+        
+        if (!response.ok) {
+          console.log(`Service ${service.url} returned ${response.status}`);
+          continue;
         }
 
-        countryCode = countryCode.trim().toUpperCase();
+        let locationData;
+        if (service.url.includes('ipapi.co/country_code/') || service.url.includes('ipinfo.io/country')) {
+          // These services return plain text
+          const countryCode = await response.text();
+          locationData = { country: countryCode.trim().toUpperCase(), region: null, city: null };
+        } else {
+          // These services return JSON
+          const data = await response.json();
+          locationData = service.parser(data);
+        }
+
+        const countryCode = locationData.country?.trim().toUpperCase();
         
-        if (countryLanguageMap[countryCode]) {
-          console.log(`Detected country: ${countryCode}, setting language to: ${countryLanguageMap[countryCode]}`);
-          return countryLanguageMap[countryCode];
+        if (countryCode && countryLanguageMap[countryCode]) {
+          const detectedLanguage = getLanguageFromCountry(countryCode);
+          console.log(`Detected location: ${countryCode} (${locationData.city || 'Unknown city'}, ${locationData.region || 'Unknown region'})`);
+          console.log(`Setting language to: ${detectedLanguage}`);
+          
+          // Store detection info
+          localStorage.setItem('readytable-language-detection', JSON.stringify({
+            detectionMethod: 'location',
+            country: countryCode,
+            region: locationData.region,
+            city: locationData.city
+          }));
+          
+          return detectedLanguage;
+        } else {
+          console.log(`Unknown country code: ${countryCode}`);
         }
       } catch (serviceError) {
-        console.log(`Service ${service} failed:`, serviceError);
+        console.log(`Service ${service.url} failed:`, serviceError);
         continue;
       }
     }
+    
+    console.log('All location services failed or returned unknown countries');
   } catch (error) {
-    console.log('All location services failed:', error);
+    console.log('Location detection error:', error);
   }
   
   return null;
@@ -2151,51 +2283,54 @@ async function detectLanguageByLocation(): Promise<Language | null> {
 
 // Detect language from browser settings (fallback)
 function detectLanguageFromBrowser(): Language {
-  const browserLang = navigator.language.toLowerCase();
+  // Get all browser languages in order of preference
+  const browserLanguages = navigator.languages || [navigator.language];
   
   // Map browser languages to our supported languages
   const languageMap: Record<string, Language> = {
-    'en': 'en',
-    'en-us': 'en',
-    'en-gb': 'en',
-    'de': 'de',
-    'de-de': 'de',
-    'de-at': 'de',
-    'de-ch': 'de',
-    'es': 'es',
-    'es-es': 'es',
-    'es-mx': 'es',
-    'fr': 'fr',
-    'fr-fr': 'fr',
-    'fr-ca': 'fr',
-    'it': 'it',
-    'it-it': 'it',
-    'no': 'no',
-    'nb': 'no',
-    'nn': 'no',
-    'da': 'da',
-    'da-dk': 'da',
-    'sv': 'sv',
-    'sv-se': 'sv',
-    'cs': 'cs',
-    'cs-cz': 'cs',
-    'nl': 'nl',
-    'nl-nl': 'nl',
-    'nl-be': 'nl'
+    // English variants
+    'en': 'en', 'en-us': 'en', 'en-gb': 'en', 'en-au': 'en', 'en-ca': 'en', 'en-nz': 'en', 'en-za': 'en', 'en-ie': 'en',
+    // German variants
+    'de': 'de', 'de-de': 'de', 'de-at': 'de', 'de-ch': 'de', 'de-li': 'de', 'de-lu': 'de',
+    // Spanish variants
+    'es': 'es', 'es-es': 'es', 'es-mx': 'es', 'es-ar': 'es', 'es-co': 'es', 'es-pe': 'es', 'es-ve': 'es',
+    'es-cl': 'es', 'es-ec': 'es', 'es-bo': 'es', 'es-py': 'es', 'es-uy': 'es', 'es-cr': 'es', 'es-pa': 'es',
+    'es-ni': 'es', 'es-hn': 'es', 'es-gt': 'es', 'es-sv': 'es', 'es-do': 'es', 'es-cu': 'es', 'es-pr': 'es',
+    // French variants
+    'fr': 'fr', 'fr-fr': 'fr', 'fr-ca': 'fr', 'fr-be': 'fr', 'fr-ch': 'fr', 'fr-lu': 'fr', 'fr-mc': 'fr',
+    // Italian variants
+    'it': 'it', 'it-it': 'it', 'it-ch': 'it', 'it-sm': 'it', 'it-va': 'it',
+    // Norwegian variants
+    'no': 'no', 'nb': 'no', 'nn': 'no', 'nb-no': 'no', 'nn-no': 'no',
+    // Danish variants
+    'da': 'da', 'da-dk': 'da', 'da-gl': 'da', 'da-fo': 'da',
+    // Swedish variants
+    'sv': 'sv', 'sv-se': 'sv', 'sv-fi': 'sv', 'sv-ax': 'sv',
+    // Czech variants
+    'cs': 'cs', 'cs-cz': 'cs',
+    // Dutch variants
+    'nl': 'nl', 'nl-nl': 'nl', 'nl-be': 'nl', 'nl-sr': 'nl', 'nl-aw': 'nl', 'nl-cw': 'nl', 'nl-sx': 'nl', 'nl-bq': 'nl'
   };
   
-  // Check exact match first
-  if (languageMap[browserLang]) {
-    return languageMap[browserLang];
+  // Try each browser language in order of preference
+  for (const browserLang of browserLanguages) {
+    const lang = browserLang.toLowerCase();
+    
+    // Check exact match first
+    if (languageMap[lang]) {
+      console.log(`Browser language detected: ${lang} -> ${languageMap[lang]}`);
+      return languageMap[lang];
+    }
+    
+    // Check language prefix (e.g., 'de' from 'de-at')
+    const langPrefix = lang.split('-')[0];
+    if (languageMap[langPrefix]) {
+      console.log(`Browser language detected (prefix): ${lang} -> ${languageMap[langPrefix]}`);
+      return languageMap[langPrefix];
+    }
   }
   
-  // Check language prefix (e.g., 'de' from 'de-at')
-  const langPrefix = browserLang.split('-')[0];
-  if (languageMap[langPrefix]) {
-    return languageMap[langPrefix];
-  }
-  
-  // Default to English
+  console.log('No supported browser language found, defaulting to English');
   return 'en';
 }
 
