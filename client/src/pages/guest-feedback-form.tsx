@@ -181,6 +181,9 @@ export default function GuestFeedbackForm() {
       questionResponses: formattedResponses,
     };
 
+    console.log('Submitting feedback data:', feedbackData);
+    console.log('Question responses count:', formattedResponses.length);
+
     submitFeedbackMutation.mutate(feedbackData);
   };
 

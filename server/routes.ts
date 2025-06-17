@@ -2012,6 +2012,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
         let aggregatedNps = null;
         let aggregatedComments = '';
         
+        console.log('Received questionResponses:', questionResponses);
+        console.log('questionResponses type:', typeof questionResponses);
+        console.log('questionResponses is array:', Array.isArray(questionResponses));
+        
         if (questionResponses && Array.isArray(questionResponses)) {
           // First, store all individual responses
           for (const response of questionResponses) {
@@ -2040,14 +2044,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
           }
 
           // Update the main feedback entry with aggregated data
-          await storage.updateFeedback(feedback.id, {
+          const updatedFeedback = await storage.updateFeedback(feedback.id, {
             rating: aggregatedRating,
             nps: aggregatedNps,
             comments: aggregatedComments || null,
           });
+          
+          res.json(updatedFeedback);
+        } else {
+          res.json(feedback);
         }
-
-        res.json(feedback);
       } catch (error) {
         console.error("Feedback submission error:", error);
         res.status(400).json({ message: "Invalid feedback data" });
