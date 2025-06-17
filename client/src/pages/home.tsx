@@ -203,12 +203,17 @@ export default function Home() {
               <span className="font-medium text-blue-600"> 30+ advanced features</span> designed for modern restaurants.
             </p>
             <div className="flex flex-col sm:flex-row gap-6 justify-center mb-12">
-              <Link href="/register">
+              <Link href="/login">
                 <Button size="lg" className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white px-8 py-4 text-lg font-semibold shadow-lg hover:shadow-xl transition-all duration-300">
                   {t.hero.startTrial} <Sparkles className="ml-2 h-5 w-5" />
                 </Button>
               </Link>
-              <Button size="lg" variant="outline" className="border-2 border-gray-300 hover:border-blue-400 px-8 py-4 text-lg font-semibold group bg-[#4059db] text-white">
+              <Button 
+                size="lg" 
+                variant="outline" 
+                className="border-2 border-gray-300 hover:border-blue-400 px-8 py-4 text-lg font-semibold group bg-[#4059db] text-white"
+                onClick={() => window.open('https://www.youtube.com/watch?v=dQw4w9WgXcQ', '_blank')}
+              >
                 <Play className="mr-2 h-5 w-5 text-white group-hover:text-blue-600" />
                 {t.hero.watchDemo}
               </Button>
@@ -492,7 +497,7 @@ export default function Home() {
           </p>
           
           <div className="flex flex-col sm:flex-row gap-6 justify-center mb-12">
-            <Link href="/register">
+            <Link href="/login">
               <Button size="lg" className="bg-white text-blue-600 hover:bg-gray-100 px-10 py-4 text-lg font-bold shadow-xl hover:shadow-2xl transition-all duration-300 transform hover:scale-105">
                 {t.cta.startTrialNow}
                 <ArrowRight className="ml-2 h-5 w-5" />
