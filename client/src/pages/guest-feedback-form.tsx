@@ -535,30 +535,32 @@ export default function GuestFeedbackForm() {
             </div>
           )}
 
-          {/* Rating Questions (0-10 scale) */}
+          {/* Rating Questions (1-5 star scale) */}
           {question.questionType === 'rating' && (
             <div className="text-center">
-              <p className="text-lg text-gray-600 mb-4">
-                Rate your experience (0-10)
-              </p>
-              <div className="flex flex-wrap justify-center gap-2">
-                {[0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map((score) => (
+              <p className="text-lg text-gray-600 mb-6">Rate your experience (1-5 stars)</p>
+              <div className="flex justify-center gap-1 mb-4">
+                {[1, 2, 3, 4, 5].map((star) => (
                   <button
-                    key={score}
+                    key={star}
                     type="button"
+                    className="group focus:outline-none"
+                    onMouseEnter={() => setHoverRatings(prev => ({ ...prev, [question.id]: star }))}
+                    onMouseLeave={() => setHoverRatings(prev => ({ ...prev, [question.id]: -1 }))}
                     onClick={() => {
                       setQuestionResponses(prev => ({
                         ...prev,
-                        [question.id]: { ...prev[question.id], rating: score }
+                        [question.id]: { ...prev[question.id], rating: star }
                       }));
                     }}
-                    className={`w-12 h-12 text-lg font-bold rounded-full border-2 focus:outline-none transition-all duration-200 ${
-                      questionResponses[question.id]?.rating === score
-                        ? "bg-green-600 text-white border-green-600 scale-110"
-                        : "bg-white text-gray-700 border-gray-300 hover:border-green-300 hover:scale-105"
-                    }`}
                   >
-                    {score}
+                    <Star
+                      className={`w-12 h-12 transition-all duration-200 ${
+                        star <= (hoverRatings[question.id] >= 0 ? hoverRatings[question.id] : (questionResponses[question.id]?.rating ?? 0))
+                          ? "fill-yellow-400 text-yellow-400 scale-110"
+                          : "text-gray-300 hover:text-yellow-200"
+                      }`}
+                    />
                   </button>
                 ))}
               </div>
@@ -567,11 +569,16 @@ export default function GuestFeedbackForm() {
                 <span>Excellent</span>
               </div>
               
-              {questionResponses[question.id]?.rating !== undefined && questionResponses[question.id]?.rating !== null && (
-                <div className="bg-green-50 border border-green-200 rounded-lg p-4 mt-4">
-                  <p className="text-green-800 font-semibold">
-                    You rated: {questionResponses[question.id]?.rating}/10
+              {questionResponses[question.id]?.rating > 0 && (
+                <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4 mt-4">
+                  <p className="text-yellow-800 font-semibold">
+                    You rated: {questionResponses[question.id]?.rating}/5 stars
                   </p>
+                  <div className="flex justify-center mt-2">
+                    {Array.from({ length: questionResponses[question.id]?.rating }, (_, i) => (
+                      <Star key={i} className="w-5 h-5 fill-yellow-400 text-yellow-400" />
+                    ))}
+                  </div>
                 </div>
               )}
             </div>
