@@ -2417,15 +2417,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
         const restaurantId = parseInt(req.params.restaurantId);
         const tenantId = parseInt(req.params.tenantId);
 
-        console.log(`Fetching activity log for restaurant ${restaurantId}, tenant ${tenantId}`);
-
         const restaurant = await storage.getRestaurantById(restaurantId);
         if (!restaurant || restaurant.tenantId !== tenantId) {
           return res.status(404).json({ message: "Restaurant not found" });
         }
 
         const logs = await storage.getActivityLogByRestaurant(restaurantId);
-        console.log(`Found ${logs.length} activity log entries for restaurant ${restaurantId}`);
         res.json(logs);
       } catch (error) {
         console.error("Activity log fetch error:", error);
