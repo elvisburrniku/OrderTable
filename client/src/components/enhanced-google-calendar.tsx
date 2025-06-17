@@ -196,60 +196,17 @@ export default function EnhancedGoogleCalendar({
     return slots;
   }, [openingHours]);
 
-  // Calculate current time indicator position with second precision
-  const getCurrentTimePosition = useCallback(() => {
-    if (timeSlots.length === 0) return -1;
-    
+  // Check if a time slot contains the current time
+  const isCurrentTimeSlot = useCallback((timeSlot: string) => {
     const now = currentTime;
     const currentHour = now.getHours();
     const currentMinute = now.getMinutes();
-    const currentSecond = now.getSeconds();
     
-    // Create current time string for exact matching
-    const currentTimeString = `${currentHour.toString().padStart(2, '0')}:${Math.floor(currentMinute / 15) * 15}`;
+    const [slotHour, slotMinute] = timeSlot.split(':').map(Number);
     
-    // Find the exact slot index for current time
-    let targetSlotIndex = -1;
-    
-    // Look for exact 15-minute slot match
-    for (let i = 0; i < timeSlots.length; i++) {
-      const slotTime = timeSlots[i];
-      const [slotHour, slotMinute] = slotTime.split(':').map(Number);
-      
-      // Check if current time falls within this 15-minute slot
-      if (currentHour === slotHour && currentMinute >= slotMinute && currentMinute < slotMinute + 15) {
-        targetSlotIndex = i;
-        break;
-      }
-    }
-    
-    // If no exact match found, find closest slot
-    if (targetSlotIndex === -1) {
-      const currentTotalMinutes = currentHour * 60 + currentMinute;
-      let closestDistance = Infinity;
-      
-      for (let i = 0; i < timeSlots.length; i++) {
-        const [slotHour, slotMinute] = timeSlots[i].split(':').map(Number);
-        const slotTotalMinutes = slotHour * 60 + slotMinute;
-        const distance = Math.abs(currentTotalMinutes - slotTotalMinutes);
-        
-        if (distance < closestDistance) {
-          closestDistance = distance;
-          targetSlotIndex = i;
-        }
-      }
-    }
-    
-    if (targetSlotIndex === -1) return -1;
-    
-    // Calculate position within the found slot
-    const [slotHour, slotMinute] = timeSlots[targetSlotIndex].split(':').map(Number);
-    const minutesIntoSlot = (currentMinute - slotMinute) + (currentSecond / 60);
-    const progressInSlot = Math.max(0, Math.min(1, minutesIntoSlot / 15));
-    
-    const slotHeight = 60;
-    return (targetSlotIndex * slotHeight) + (progressInSlot * slotHeight);
-  }, [currentTime, timeSlots]);
+    // Check if current time falls within this 15-minute slot
+    return currentHour === slotHour && currentMinute >= slotMinute && currentMinute < slotMinute + 15;
+  }, [currentTime]);
 
   // Check if a time slot is within opening hours for a specific date
   const isTimeSlotOpen = useCallback((date: Date, timeSlot: string) => {
@@ -1019,23 +976,7 @@ export default function EnhancedGoogleCalendar({
               {format(currentDate, "EEEE, MMMM d, yyyy")}
             </h3>
           </div>
-          <div className="p-4 space-y-2 flex-1 overflow-y-auto relative">
-            {/* Current time indicator line for day view */}
-            {getCurrentTimePosition() >= 0 && isToday(currentDate) && (
-              <div
-                className="absolute left-0 right-0 z-10 flex items-center pointer-events-none"
-                style={{
-                  top: `${getCurrentTimePosition()}px`,
-                }}
-              >
-                <div className="w-16 bg-red-500 text-white text-xs px-1 py-0.5 rounded-l font-medium">
-                  {format(currentTime, "HH:mm")}
-                </div>
-                <div className="flex-1 h-0.5 bg-red-500"></div>
-                <div className="w-2 h-2 bg-red-500 rounded-full -ml-1"></div>
-              </div>
-            )}
-            
+          <div className="p-4 space-y-2 flex-1 overflow-y-auto">
             {timeSlots.map((timeSlot) => {
               const slotBookings = getBookingsForSlot(currentDate, timeSlot);
               const availabilityLevel = getAvailabilityLevel(
@@ -1048,7 +989,9 @@ export default function EnhancedGoogleCalendar({
                   key={timeSlot}
                   className={`flex items-center space-x-4 p-2 border rounded transition-all duration-200 ${availabilityColor} ${
                     availabilityLevel === "closed" ? "cursor-not-allowed" : "cursor-pointer"
-                  } ${isDragging ? "hover:border-blue-300" : ""}`}
+                  } ${isDragging ? "hover:border-blue-300" : ""} ${
+                    isCurrentTimeSlot(timeSlot) ? "ring-2 ring-blue-400 bg-blue-50" : ""
+                  }`}
                   onClick={(e) => {
                     // Only open dialog if clicking directly on the container, not on bookings
                     if (e.target === e.currentTarget) {
@@ -1162,26 +1105,14 @@ export default function EnhancedGoogleCalendar({
           </div>
 
           {/* Time slots */}
-          <div className="flex-1 overflow-y-auto relative">
-            {/* Current time indicator line */}
-            {getCurrentTimePosition() >= 0 && isToday(visibleDates.find(date => isToday(date)) || new Date()) && (
-              <div
-                className="absolute left-0 right-0 z-10 flex items-center pointer-events-none"
-                style={{
-                  top: `${getCurrentTimePosition()}px`,
-                }}
-              >
-                <div className="w-12 bg-red-500 text-white text-xs px-1 py-0.5 rounded-l font-medium">
-                  {format(currentTime, "HH:mm")}
-                </div>
-                <div className="flex-1 h-0.5 bg-red-500"></div>
-                <div className="w-2 h-2 bg-red-500 rounded-full -ml-1"></div>
-              </div>
-            )}
-            
+          <div className="flex-1 overflow-y-auto">
             {timeSlots.map((timeSlot) => (
               <div key={timeSlot} className="grid grid-cols-8 border-b">
-                <div className="p-2 text-xs text-gray-600 border-r">
+                <div className={`p-2 text-xs border-r ${
+                  isCurrentTimeSlot(timeSlot) 
+                    ? 'bg-blue-100 text-blue-800 font-semibold' 
+                    : 'text-gray-600'
+                }`}>
                   {timeSlot}
                 </div>
                 {visibleDates.map((date) => {

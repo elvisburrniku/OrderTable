@@ -210,57 +210,17 @@ export default function GoogleCalendar({ selectedDate, bookings, allBookings = [
     end: endOfWeek(currentWeek, { weekStartsOn: 0 }) 
   });
 
-  // Calculate current time indicator position with second precision
-  const getCurrentTimePosition = useCallback(() => {
-    if (timeSlots.length === 0) return -1;
-    
+  // Check if a time slot contains the current time
+  const isCurrentTimeSlot = useCallback((timeSlot: string) => {
     const now = currentTime;
     const currentHour = now.getHours();
     const currentMinute = now.getMinutes();
-    const currentSecond = now.getSeconds();
     
-    // Find the exact slot index for current time
-    let targetSlotIndex = -1;
+    const [slotHour, slotMinute] = timeSlot.split(':').map(Number);
     
-    // Look for exact 15-minute slot match
-    for (let i = 0; i < timeSlots.length; i++) {
-      const slotTime = timeSlots[i];
-      const [slotHour, slotMinute] = slotTime.split(':').map(Number);
-      
-      // Check if current time falls within this 15-minute slot
-      if (currentHour === slotHour && currentMinute >= slotMinute && currentMinute < slotMinute + 15) {
-        targetSlotIndex = i;
-        break;
-      }
-    }
-    
-    // If no exact match found, find closest slot
-    if (targetSlotIndex === -1) {
-      const currentTotalMinutes = currentHour * 60 + currentMinute;
-      let closestDistance = Infinity;
-      
-      for (let i = 0; i < timeSlots.length; i++) {
-        const [slotHour, slotMinute] = timeSlots[i].split(':').map(Number);
-        const slotTotalMinutes = slotHour * 60 + slotMinute;
-        const distance = Math.abs(currentTotalMinutes - slotTotalMinutes);
-        
-        if (distance < closestDistance) {
-          closestDistance = distance;
-          targetSlotIndex = i;
-        }
-      }
-    }
-    
-    if (targetSlotIndex === -1) return -1;
-    
-    // Calculate position within the found slot
-    const [slotHour, slotMinute] = timeSlots[targetSlotIndex].split(':').map(Number);
-    const minutesIntoSlot = (currentMinute - slotMinute) + (currentSecond / 60);
-    const progressInSlot = Math.max(0, Math.min(1, minutesIntoSlot / 15));
-    
-    const slotHeight = 60;
-    return (targetSlotIndex * slotHeight) + (progressInSlot * slotHeight);
-  }, [currentTime, timeSlots]);
+    // Check if current time falls within this 15-minute slot
+    return currentHour === slotHour && currentMinute >= slotMinute && currentMinute < slotMinute + 15;
+  }, [currentTime]);
 
   const getBookingsForDay = (date: Date) => {
     return allBookings.filter(booking => 
@@ -583,27 +543,15 @@ export default function GoogleCalendar({ selectedDate, bookings, allBookings = [
             </div>
 
             {/* Time slots grid */}
-            <div className="relative">
-              {/* Current time indicator line */}
-              {getCurrentTimePosition() >= 0 && weekDays.some(day => isToday(day)) && (
-                <div
-                  className="absolute left-0 right-0 z-20 flex items-center pointer-events-none"
-                  style={{
-                    top: `${getCurrentTimePosition()}px`,
-                  }}
-                >
-                  <div className="w-16 bg-red-500 text-white text-xs px-1 py-0.5 rounded-l font-medium">
-                    {format(currentTime, "HH:mm")}
-                  </div>
-                  <div className="flex-1 h-0.5 bg-red-500"></div>
-                  <div className="w-2 h-2 bg-red-500 rounded-full -ml-1"></div>
-                </div>
-              )}
-              
+            <div>
               {timeSlots.map(time => (
                 <div key={time} className="grid grid-cols-8 border-b border-gray-100 hover:bg-gray-25">
                   {/* Time label */}
-                  <div className="p-3 text-xs text-gray-500 border-r border-gray-200 font-medium text-right pr-4">
+                  <div className={`p-3 text-xs border-r border-gray-200 font-medium text-right pr-4 ${
+                    isCurrentTimeSlot(time) 
+                      ? 'bg-blue-100 text-blue-800 font-semibold' 
+                      : 'text-gray-500'
+                  }`}>
                     {format(new Date(`2000-01-01T${time}`), 'h a')}
                   </div>
                   
