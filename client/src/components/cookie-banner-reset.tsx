@@ -5,8 +5,15 @@ import { RotateCcw, Cookie } from 'lucide-react';
 export default function CookieBannerReset() {
   const resetCookieConsent = () => {
     localStorage.removeItem('cookieConsent');
-    localStorage.setItem('cookieDebug', 'true');
+    localStorage.removeItem('cookieDebug');
     window.location.reload();
+  };
+
+  const forceShowBanner = () => {
+    localStorage.removeItem('cookieConsent');
+    localStorage.setItem('cookieDebug', 'true');
+    // Force immediate display by dispatching a custom event
+    window.dispatchEvent(new CustomEvent('cookieReset'));
   };
 
   const checkCurrentStatus = () => {
@@ -41,14 +48,24 @@ export default function CookieBannerReset() {
           <p className="text-sm text-gray-600">No cookie preferences set yet</p>
         )}
         
-        <Button 
-          onClick={resetCookieConsent}
-          className="w-full flex items-center gap-2"
-          variant="outline"
-        >
-          <RotateCcw className="w-4 h-4" />
-          Reset & Show Cookie Banner
-        </Button>
+        <div className="flex gap-2">
+          <Button 
+            onClick={resetCookieConsent}
+            className="flex-1 flex items-center gap-2"
+            variant="outline"
+          >
+            <RotateCcw className="w-4 h-4" />
+            Reset & Reload
+          </Button>
+          <Button 
+            onClick={forceShowBanner}
+            className="flex-1 flex items-center gap-2"
+            variant="default"
+          >
+            <Cookie className="w-4 h-4" />
+            Force Show Banner
+          </Button>
+        </div>
       </CardContent>
     </Card>
   );

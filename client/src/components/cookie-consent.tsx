@@ -15,11 +15,6 @@ interface CookiePreferences {
 
 export default function CookieConsent() {
   const { t } = useLanguage();
-  
-  // Early return if translations aren't loaded yet
-  if (!t || !t.cookieConsent) {
-    return null;
-  }
   const [isVisible, setIsVisible] = useState(false);
   const [showCustomize, setShowCustomize] = useState(false);
   const [preferences, setPreferences] = useState<CookiePreferences>({
@@ -38,6 +33,14 @@ export default function CookieConsent() {
       const timer = setTimeout(() => setIsVisible(true), 1500);
       return () => clearTimeout(timer);
     }
+    
+    // Listen for force show banner events
+    const handleCookieReset = () => {
+      setIsVisible(true);
+    };
+    
+    window.addEventListener('cookieReset', handleCookieReset);
+    return () => window.removeEventListener('cookieReset', handleCookieReset);
   }, []);
 
   const handleAcceptAll = () => {
@@ -89,7 +92,8 @@ export default function CookieConsent() {
     setIsVisible(false);
   };
 
-  if (!isVisible) return null;
+  // Don't render if translations aren't loaded or banner isn't visible
+  if (!t || !t.cookieConsent || !isVisible) return null;
 
   return (
     <>
