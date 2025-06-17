@@ -280,10 +280,19 @@ export function CreateKitchenOrder({ restaurantId, tenantId, onOrderCreated }: C
   };
 
   const handleSubmit = () => {
+    console.log('Form state before submission:', {
+      selectedTableId,
+      selectedCustomerId,
+      useExistingCustomer,
+      customCustomerName,
+      orderNumber,
+      orderItemsCount: orderItems.length
+    });
+    
     const selectedTable = tables.find(t => t.id.toString() === selectedTableId);
     const selectedCustomer = customers.find(c => c.id.toString() === selectedCustomerId);
     
-    const tableNumber = selectedTable ? selectedTable.table_number : '';
+    const tableNumber = selectedTable ? selectedTable.tableNumber : '';
     const customerName = useExistingCustomer 
       ? (selectedCustomer ? selectedCustomer.name : '')
       : customCustomerName;
@@ -297,7 +306,11 @@ export function CreateKitchenOrder({ restaurantId, tenantId, onOrderCreated }: C
       selectedTableId,
       selectedCustomerId,
       useExistingCustomer,
-      customCustomerName
+      customCustomerName,
+      tablesLength: tables.length,
+      customersLength: customers.length,
+      selectedTable,
+      selectedCustomer
     });
 
     if (!orderNumber || !tableNumber || !customerName || orderItems.length === 0) {
@@ -392,7 +405,7 @@ export function CreateKitchenOrder({ restaurantId, tenantId, onOrderCreated }: C
                       <SelectContent>
                         {tables.map((table) => (
                           <SelectItem key={table.id} value={table.id.toString()}>
-                            {table.table_number} ({table.seats} seats)
+                            {table.tableNumber} ({table.capacity} seats)
                           </SelectItem>
                         ))}
                       </SelectContent>
