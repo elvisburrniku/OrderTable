@@ -13949,8 +13949,10 @@ NEXT STEPS:
           }
 
           // Update the main feedback entry with aggregated data
+          // Always prioritize the 5-star overall rating over individual question ratings
+          const finalRating = validatedOverallRating !== null ? validatedOverallRating : aggregatedRating;
           const updatedFeedback = await storage.updateFeedback(feedback.id, {
-            rating: aggregatedRating,
+            rating: finalRating,
             nps: aggregatedNps,
             comments: aggregatedComments || null,
           });
