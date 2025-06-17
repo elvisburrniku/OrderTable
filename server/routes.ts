@@ -12503,6 +12503,91 @@ NEXT STEPS:
 
   // Billing Management Routes
 
+  // Create checkout session for setup wizard
+  app.post(
+    "/api/billing/create-checkout-session",
+    attachUser,
+    async (req: Request, res: Response) => {
+      if (!req.user) {
+        return res.status(401).json({ error: "Not authenticated" });
+      }
+
+      try {
+        const { planId, tenantId } = req.body;
+
+        if (!planId || !tenantId) {
+          return res.status(400).json({ error: "Plan ID and Tenant ID are required" });
+        }
+
+        // Get tenant and verify user access
+        const tenantUser = await storage.getTenantUserByIds(tenantId, req.user.id);
+        if (!tenantUser) {
+          return res.status(403).json({ error: "Access denied" });
+        }
+
+        const tenant = await storage.getTenantById(tenantId);
+        if (!tenant) {
+          return res.status(404).json({ error: "Tenant not found" });
+        }
+
+        const plan = await storage.getSubscriptionPlan(planId);
+        if (!plan || plan.price === 0) {
+          return res.status(400).json({ error: "Invalid paid plan" });
+        }
+
+        // Create or get Stripe customer
+        let customerId = tenant.stripeCustomerId;
+        if (!customerId) {
+          const customer = await stripe.customers.create({
+            email: req.user.email,
+            name: req.user.name,
+            metadata: {
+              tenantId: tenantId.toString(),
+              userId: req.user.id.toString(),
+            },
+          });
+          customerId = customer.id;
+          await storage.updateTenant(tenantId, { stripeCustomerId: customerId });
+        }
+
+        // Create checkout session
+        const session = await stripe.checkout.sessions.create({
+          customer: customerId,
+          payment_method_types: ["card"],
+          line_items: [
+            {
+              price_data: {
+                currency: "usd",
+                product_data: {
+                  name: plan.name,
+                  description: `${plan.name} subscription plan`,
+                },
+                unit_amount: plan.price,
+                recurring: {
+                  interval: "month",
+                },
+              },
+              quantity: 1,
+            },
+          ],
+          mode: "subscription",
+          success_url: `${req.protocol}://${req.get("host")}/setup?payment=success&session_id={CHECKOUT_SESSION_ID}`,
+          cancel_url: `${req.protocol}://${req.get("host")}/setup?payment=cancelled`,
+          metadata: {
+            tenantId: tenantId.toString(),
+            planId: planId.toString(),
+            userId: req.user.id.toString(),
+          },
+        });
+
+        res.json({ checkoutUrl: session.url, sessionId: session.id });
+      } catch (error) {
+        console.error("Error creating checkout session:", error);
+        res.status(500).json({ error: "Failed to create checkout session" });
+      }
+    },
+  );
+
   // Get billing information
   app.get(
     "/api/billing/info",

@@ -112,6 +112,42 @@ export default function SetupWizard() {
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
+  // Handle payment success/failure from URL parameters
+  useEffect(() => {
+    const urlParams = new URLSearchParams(window.location.search);
+    const paymentStatus = urlParams.get('payment');
+    const sessionId = urlParams.get('session_id');
+
+    if (paymentStatus === 'success' && sessionId) {
+      toast({
+        title: "Payment successful!",
+        description: "Your subscription has been activated. Completing setup...",
+      });
+      
+      // Invalidate subscription data to refresh payment status
+      queryClient.invalidateQueries({ queryKey: ["/api/subscription/details"] });
+      
+      // Move to final step
+      setCurrentStep(5);
+      setCompletedSteps([1, 2, 3, 4]);
+      
+      // Clean up URL parameters
+      window.history.replaceState({}, '', '/setup');
+    } else if (paymentStatus === 'cancelled') {
+      toast({
+        title: "Payment cancelled",
+        description: "You can complete payment later from the setup wizard.",
+        variant: "destructive",
+      });
+      
+      // Stay on payment step
+      setCurrentStep(4);
+      
+      // Clean up URL parameters
+      window.history.replaceState({}, '', '/setup');
+    }
+  }, [toast, queryClient]);
+
   // Get user session to access tenant and restaurant info
   const { data: session } = useQuery({
     queryKey: ["/api/auth/validate"],
@@ -438,6 +474,30 @@ export default function SetupWizard() {
     },
   });
 
+  // Payment mutation for paid plans
+  const createCheckoutMutation = useMutation({
+    mutationFn: async () => {
+      const response = await apiRequest("POST", "/api/billing/create-checkout-session", {
+        planId: subscriptionData?.plan?.id,
+        tenantId: tenantId,
+      });
+      return response.json();
+    },
+    onSuccess: (data) => {
+      if (data.checkoutUrl) {
+        // Redirect to Stripe checkout
+        window.location.href = data.checkoutUrl;
+      }
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Payment setup failed",
+        description: error.message || "Unable to create payment session",
+        variant: "destructive",
+      });
+    },
+  });
+
   const completeSetupMutation = useMutation({
     mutationFn: async () => {
       // Mark setup as complete in restaurant settings
@@ -699,6 +759,53 @@ export default function SetupWizard() {
         );
 
       case 4:
+        // Payment step for paid plans
+        if (requiresPayment) {
+          return (
+            <div className="text-center space-y-6">
+              <div className="mx-auto w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center">
+                <CreditCard className="w-8 h-8 text-blue-600" />
+              </div>
+              <div>
+                <h3 className="text-xl font-semibold mb-2">Complete Your Subscription</h3>
+                <p className="text-gray-600 mb-4">
+                  You've selected the <strong>{subscriptionData?.plan?.name}</strong> plan.
+                  Complete your payment to activate all features.
+                </p>
+                <div className="bg-gray-50 p-4 rounded-lg mb-6">
+                  <div className="flex justify-between items-center">
+                    <span className="font-medium">{subscriptionData?.plan?.name} Plan</span>
+                    <span className="text-2xl font-bold">${(subscriptionData?.plan?.price || 0) / 100}/month</span>
+                  </div>
+                  <p className="text-sm text-gray-600 mt-2">
+                    Billed monthly • Cancel anytime
+                  </p>
+                </div>
+              </div>
+              <div className="space-y-4">
+                <Button 
+                  onClick={() => createCheckoutMutation.mutate()} 
+                  className="w-full" 
+                  disabled={createCheckoutMutation.isPending}
+                >
+                  {createCheckoutMutation.isPending ? "Creating checkout..." : "Complete Payment"}
+                </Button>
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => setCurrentStep(3)}
+                  className="w-full"
+                >
+                  <ArrowLeft className="w-4 h-4 mr-2" />
+                  Back to Tables
+                </Button>
+              </div>
+            </div>
+          );
+        }
+        // Fall through to completion step for free plans
+        
+      case 5:
         return (
           <div className="text-center space-y-6">
             <div className="mx-auto w-16 h-16 bg-green-100 rounded-full flex items-center justify-center">
@@ -727,6 +834,12 @@ export default function SetupWizard() {
                     <CheckCircle className="w-4 h-4 text-green-600 mr-2" />
                     Tables and seating layout
                   </li>
+                  {requiresPayment && (
+                    <li className="flex items-center">
+                      <CheckCircle className="w-4 h-4 text-green-600 mr-2" />
+                      Payment setup completed
+                    </li>
+                  )}
                 </ul>
               </div>
               <Button onClick={() => completeSetupMutation.mutate()} className="w-full" disabled={completeSetupMutation.isPending}>
