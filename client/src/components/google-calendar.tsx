@@ -577,11 +577,15 @@ export default function GoogleCalendar({ selectedDate, bookings, allBookings = [
                         onClick={() => handleTimeSlotClick(day, time)}
                       >
                         {booking && (
-                          <div className="bg-blue-500 text-white text-xs p-1 rounded shadow-sm">
+                          <div className={`text-white text-xs p-1 rounded shadow-sm ${
+                            booking.status === 'cancelled' 
+                              ? 'bg-gray-400 opacity-60' 
+                              : 'bg-blue-500'
+                          }`}>
                             <div className="font-medium truncate">
-                              {booking.customerName}
+                              {booking.customerName} {booking.status === 'cancelled' && '(Cancelled)'}
                             </div>
-                            <div className="text-blue-100">
+                            <div className={booking.status === 'cancelled' ? 'text-gray-200' : 'text-blue-100'}>
                               {booking.guestCount} guests
                             </div>
                           </div>

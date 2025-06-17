@@ -1035,22 +1035,24 @@ export default function EnhancedGoogleCalendar({
                           setIsEditBookingOpen(true);
                           console.log("Day view edit dialog should open");
                         }}
-                        onMouseDown={(e) => handleMouseDown(e, booking)}
+                        onMouseDown={(e) => booking.status !== 'cancelled' && handleMouseDown(e, booking)}
                         title={
-                          getTableConflictStatus(
-                            booking.tableId || 0,
-                            currentDate,
-                            timeSlot,
-                          )
-                            ? "TABLE CONFLICT - Multiple bookings on same table!"
-                            : "Click to edit booking"
+                          booking.status === 'cancelled'
+                            ? "Cancelled booking - Click to edit only"
+                            : getTableConflictStatus(
+                                booking.tableId || 0,
+                                currentDate,
+                                timeSlot,
+                              )
+                              ? "TABLE CONFLICT - Multiple bookings on same table!"
+                              : "Click to edit booking"
                         }
                       >
                         <div className="flex flex-col w-full">
                           <div className="flex items-center space-x-2">
                             <Users className="w-4 h-4" />
                             <span className="flex-1">
-                              {booking.customerName} ({booking.guestCount} guests) - {booking.startTime}{booking.endTime ? `-${booking.endTime}` : ''}
+                              {booking.customerName} {booking.status === 'cancelled' && '(Cancelled)'} ({booking.guestCount} guests) - {booking.startTime}{booking.endTime ? `-${booking.endTime}` : ''}
                             </span>
                             {booking.tableId && (
                               <Badge variant="outline">
