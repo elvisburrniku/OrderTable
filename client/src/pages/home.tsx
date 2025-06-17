@@ -13,7 +13,7 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
-import { useMutation } from "@tanstack/react-query";
+import { useMutation, useQuery } from "@tanstack/react-query";
 import { useTranslations } from "@/contexts/language-context";
 import { 
   Calendar, 
@@ -121,64 +121,47 @@ export default function Home() {
     contactMutation.mutate(data);
   };
 
-  const pricingPlans = [
-    {
-      name: t.pricing.starter,
-      price: "$0",
-      period: "forever",
-      description: t.pricing.starterDesc,
-      features: [
-        t.pricing.features.bookings50,
-        t.pricing.features.tableBasic,
-        t.pricing.features.emailNotifications,
-        t.pricing.features.guestForms,
-        t.pricing.features.analyticsBasic,
-        t.pricing.features.communitySupport
-      ],
-      buttonText: t.pricing.startFree,
-      buttonStyle: "outline",
-      popular: false
-    },
-    {
-      name: t.pricing.professional,
-      price: "$29",
-      period: "per month",
-      description: t.pricing.professionalDesc,
-      features: [
-        t.pricing.features.bookingsUnlimited,
-        t.pricing.features.tableAdvanced,
-        t.pricing.features.smsEmail,
-        t.pricing.features.qrFeedback,
-        t.pricing.features.analyticsAdvanced,
-        t.pricing.features.kitchenDashboard,
-        t.pricing.features.multiLocation,
-        t.pricing.features.prioritySupport,
-        t.pricing.features.customIntegrations
-      ],
-      buttonText: t.pricing.startTrial,
-      buttonStyle: "default",
-      popular: true
-    },
-    {
-      name: t.pricing.enterprise,
-      price: "$99",
-      period: "per month",
-      description: t.pricing.enterpriseDesc,
-      features: [
-        t.pricing.features.everythingPro,
-        t.pricing.features.whiteLabel,
-        t.pricing.features.advancedApi,
-        t.pricing.features.customIntegrations,
-        t.pricing.features.accountManager,
-        t.pricing.features.phoneSupport,
-        t.pricing.features.customTraining,
-        t.pricing.features.slaGuarantee
-      ],
-      buttonText: t.pricing.contactSales,
-      buttonStyle: "outline",
-      popular: false
+  // Fetch subscription plans from database
+  const { data: dbPlans = [], isLoading: plansLoading } = useQuery({
+    queryKey: ['/api/subscription-plans']
+  });
+
+  // Transform database plans into display format
+  const pricingPlans = dbPlans.map((plan: any, index: number) => {
+    const features = typeof plan.features === 'string' ? JSON.parse(plan.features) : plan.features || [];
+    const price = plan.price === 0 ? "$0" : `$${(plan.price / 100).toFixed(0)}`;
+    const period = plan.price === 0 ? "forever" : "per month";
+    
+    return {
+      id: plan.id,
+      name: plan.name,
+      price,
+      period,
+      description: getDescriptionForPlan(plan.name),
+      features,
+      buttonText: plan.price === 0 ? "Start Free" : (plan.name === "Professional" ? "Start Trial" : "Get Started"),
+      buttonStyle: plan.name === "Professional" ? "default" : "outline",
+      popular: plan.name === "Professional",
+      maxTables: plan.maxTables,
+      maxBookings: plan.maxBookingsPerMonth,
+      trialDays: plan.trialDays
+    };
+  });
+
+  function getDescriptionForPlan(planName: string): string {
+    switch (planName) {
+      case "Free":
+        return "Perfect for getting started with basic restaurant management";
+      case "Starter":
+        return "Ideal for small restaurants with essential booking features";
+      case "Professional":
+        return "Complete solution for growing restaurants with advanced features";
+      case "Enterprise":
+        return "Full-scale solution for large restaurants and restaurant groups";
+      default:
+        return "Complete restaurant management solution";
     }
-  ];
+  }
 
   const features = [
     {
@@ -377,9 +360,15 @@ export default function Home() {
             </p>
           </div>
           
-          <div className="grid lg:grid-cols-3 gap-8 max-w-6xl mx-auto">
+          {plansLoading ? (
+            <div className="text-center">
+              <div className="animate-spin w-8 h-8 border-4 border-primary border-t-transparent rounded-full mx-auto" />
+              <p className="mt-4 text-gray-600">Loading plans...</p>
+            </div>
+          ) : (
+            <div className="grid lg:grid-cols-4 gap-6 max-w-7xl mx-auto">
             {pricingPlans.map((plan, index) => (
-              <Card key={index} className={`relative border-0 shadow-xl hover:shadow-2xl transition-all duration-300 transform hover:scale-105 ${
+              <Card key={plan.id || index} className={`relative border-0 shadow-xl hover:shadow-2xl transition-all duration-300 transform hover:scale-105 ${
                 plan.popular 
                   ? 'ring-4 ring-blue-500 ring-opacity-50 bg-gradient-to-b from-blue-50 to-white' 
                   : 'bg-white'
@@ -406,6 +395,26 @@ export default function Home() {
                 
                 <CardContent className="px-8 pb-8">
                   <ul className="space-y-4 mb-8">
+                    {/* Plan limits */}
+                    <li className="flex items-start gap-3">
+                      <CheckCircle className="h-5 w-5 text-green-500 mt-0.5 flex-shrink-0" />
+                      <span className="text-gray-700">
+                        Up to {plan.maxTables === 999 ? "unlimited" : plan.maxTables} tables
+                      </span>
+                    </li>
+                    <li className="flex items-start gap-3">
+                      <CheckCircle className="h-5 w-5 text-green-500 mt-0.5 flex-shrink-0" />
+                      <span className="text-gray-700">
+                        {plan.maxBookings === 9999 ? "Unlimited" : plan.maxBookings} bookings/month
+                      </span>
+                    </li>
+                    {plan.trialDays > 0 && (
+                      <li className="flex items-start gap-3">
+                        <CheckCircle className="h-5 w-5 text-green-500 mt-0.5 flex-shrink-0" />
+                        <span className="text-gray-700">{plan.trialDays}-day free trial</span>
+                      </li>
+                    )}
+                    {/* Database features */}
                     {plan.features.map((feature, featureIndex) => (
                       <li key={featureIndex} className="flex items-start gap-3">
                         <CheckCircle className="h-5 w-5 text-green-500 mt-0.5 flex-shrink-0" />
@@ -430,7 +439,8 @@ export default function Home() {
                 </CardContent>
               </Card>
             ))}
-          </div>
+            </div>
+          )}
           
           <div className="text-center mt-16">
             <p className="text-gray-600 mb-4">
