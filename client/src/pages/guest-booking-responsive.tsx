@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useQuery, useMutation } from '@tanstack/react-query';
 import { useToast } from '@/hooks/use-toast';
+import { useRoute } from 'wouter';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -13,9 +14,14 @@ import SeasonalThemeSelector from '@/components/seasonal-theme-selector';
 // Dynamic time slot generation will be done based on opening hours
 
 export default function GuestBookingResponsive(props: any) {
-  const tenantId = props.params?.tenantId;
-  const restaurantId = props.params?.restaurantId;
+  const [match, params] = useRoute('/guest-booking/:tenantId/:restaurantId');
+  const tenantId = params?.tenantId || props.params?.tenantId || props.tenantId;
+  const restaurantId = params?.restaurantId || props.params?.restaurantId || props.restaurantId;
   const { toast } = useToast();
+
+  // Debug logging
+  console.log('GuestBookingResponsive match:', match, 'params:', params);
+  console.log('tenantId:', tenantId, 'restaurantId:', restaurantId);
 
   const [currentStep, setCurrentStep] = useState(0);
   
