@@ -9408,10 +9408,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         
         // Get table layout positions (using default room "1")
         const tableLayout = await storage.getTableLayout(restaurantId, "1");
-        console.log(`Heat map: Raw table layout:`, tableLayout);
         const positions = tableLayout?.positions || {};
-        
-        console.log(`Heat map: Table layout positions:`, positions);
 
         // Calculate heat map data for each table
         const heatMapData = tables.map((table, index) => {
