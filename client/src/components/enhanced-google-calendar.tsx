@@ -206,22 +206,31 @@ export default function EnhancedGoogleCalendar({
     // Convert current time to total minutes since start of day
     const currentTotalMinutes = hours * 60 + minutes + (seconds / 60);
     
-    // Find the first time slot that matches or is after current time
-    const timeSlotMinutes = timeSlots.map(slot => {
-      const [h, m] = slot.split(':').map(Number);
-      return h * 60 + m;
-    });
+    // Find which time slot the current time falls into
+    let slotIndex = -1;
+    let minutesFromSlotStart = 0;
     
-    const firstSlotMinutes = timeSlotMinutes[0] || 0;
-    const slotHeight = 60; // Height of each time slot in pixels
-    const minutesPerSlot = 15; // Each slot represents 15 minutes
+    for (let i = 0; i < timeSlots.length; i++) {
+      const [h, m] = timeSlots[i].split(':').map(Number);
+      const slotMinutes = h * 60 + m;
+      
+      if (i === timeSlots.length - 1 || currentTotalMinutes < slotMinutes + 15) {
+        slotIndex = i;
+        minutesFromSlotStart = currentTotalMinutes - slotMinutes;
+        break;
+      }
+    }
     
-    // Calculate position relative to the first time slot
-    const minutesFromFirstSlot = currentTotalMinutes - firstSlotMinutes;
-    const position = (minutesFromFirstSlot / minutesPerSlot) * slotHeight;
+    // Return -1 if current time is outside visible range
+    if (slotIndex === -1) return -1;
     
-    // Only show if within visible time range
-    if (position < 0 || position > timeSlots.length * slotHeight) return -1;
+    // Each time slot has a fixed height regardless of content
+    const slotHeight = 60; // min-h-[60px] from the grid
+    const minutesPerSlot = 15;
+    
+    // Calculate exact position within the slot
+    const positionInSlot = Math.max(0, Math.min(1, minutesFromSlotStart / minutesPerSlot));
+    const position = (slotIndex * slotHeight) + (positionInSlot * slotHeight);
     
     return position;
   }, [currentTime, timeSlots]);
