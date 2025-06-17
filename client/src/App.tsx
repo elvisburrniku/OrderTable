@@ -166,6 +166,7 @@ function App() {
                 <Route path="/:tenantId/menu-management" component={MenuManagementPage} />
                 <Route path="/:tenantId/kitchen-dashboard" component={KitchenDashboardPage} />
                 <Route path="/:tenantId/print-orders" component={PrintOrders} />
+                <Route path="/:tenantId/countdown-demo" component={CountdownDemoPage} />
                 <Route path="/:tenantId/email-test" component={EmailTest} />
                 <Route path="/:tenantId/test-tools" component={TestTools} />
                 <Route path="/:tenantId/feedbacks" component={FeedbackResponses} />
