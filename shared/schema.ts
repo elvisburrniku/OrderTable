@@ -1190,3 +1190,34 @@ export const insertProductSchema = createInsertSchema(products).omit({
   updatedAt: true,
 });
 export const selectProductSchema = createSelectSchema(products);
+
+// Payment Setups table
+export const paymentSetups = pgTable("payment_setups", {
+  id: serial("id").primaryKey(),
+  restaurantId: integer("restaurant_id").notNull().references(() => restaurants.id, { onDelete: "cascade" }),
+  tenantId: integer("tenant_id").notNull().references(() => tenants.id, { onDelete: "cascade" }),
+  name: text("name").notNull(),
+  method: varchar("method", { length: 50 }).notNull(), // capture_amount, reserve_amount, membership_fee
+  type: varchar("type", { length: 50 }).notNull(), // deposit, prepayment, membership
+  priceType: varchar("price_type", { length: 50 }).default("one_price").notNull(), // one_price, multiple_prices
+  amount: decimal("amount", { precision: 10, scale: 2 }).notNull(),
+  currency: varchar("currency", { length: 10 }).default("EUR").notNull(),
+  priceUnit: varchar("price_unit", { length: 50 }).default("per_guest").notNull(), // per_guest, per_booking, per_table
+  allowResidual: boolean("allow_residual").default(false).notNull(),
+  residualAmount: decimal("residual_amount", { precision: 10, scale: 2 }),
+  cancellationNotice: varchar("cancellation_notice", { length: 50 }).default("24_hours").notNull(), // 24_hours, 48_hours, 72_hours, 1_week
+  description: text("description"),
+  language: varchar("language", { length: 10 }).default("en").notNull(),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+});
+
+export type PaymentSetup = InferSelectModel<typeof paymentSetups>;
+export type InsertPaymentSetup = InferInsertModel<typeof paymentSetups>;
+
+export const insertPaymentSetupSchema = createInsertSchema(paymentSetups).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+export const selectPaymentSetupSchema = createSelectSchema(paymentSetups);
