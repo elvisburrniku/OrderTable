@@ -2025,9 +2025,9 @@ const countryLanguageMap: Record<string, Language> = {
   // German-speaking countries
   'DE': 'de', // Germany
   'AT': 'de', // Austria
-  'CH': 'de', // Switzerland (primary language)
+  'CH': 'de', // Switzerland (German is most widely spoken)
   'LI': 'de', // Liechtenstein
-  'LU': 'de', // Luxembourg (one of the official languages)
+  'LU': 'de', // Luxembourg
   
   // Spanish-speaking countries
   'ES': 'es', // Spain
@@ -2052,16 +2052,14 @@ const countryLanguageMap: Record<string, Language> = {
   
   // French-speaking countries
   'FR': 'fr', // France
-  'BE': 'fr', // Belgium (one of official languages)
-  'CA': 'fr', // Canada (official language)
+  'BE': 'nl', // Belgium (Dutch is primary in northern region)
+  'CA': 'en', // Canada (English is more widely spoken)
   'MC': 'fr', // Monaco
-  'CH': 'fr', // Switzerland (official language)
   
   // Italian-speaking countries
   'IT': 'it', // Italy
   'SM': 'it', // San Marino
   'VA': 'it', // Vatican City
-  'CH': 'it', // Switzerland (official language)
   
   // Norwegian-speaking countries
   'NO': 'no', // Norway
@@ -2074,7 +2072,7 @@ const countryLanguageMap: Record<string, Language> = {
   
   // Swedish-speaking countries
   'SE': 'sv', // Sweden
-  'FI': 'sv', // Finland (official language)
+  'FI': 'sv', // Finland (Swedish is official but Finnish is primary)
   'AX': 'sv', // Åland Islands
   
   // Czech-speaking countries
@@ -2082,7 +2080,6 @@ const countryLanguageMap: Record<string, Language> = {
   
   // Dutch-speaking countries
   'NL': 'nl', // Netherlands
-  'BE': 'nl', // Belgium (official language)
   'SR': 'nl', // Suriname
   'AW': 'nl', // Aruba
   'CW': 'nl', // Curaçao
