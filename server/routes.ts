@@ -2083,6 +2083,30 @@ export async function registerRoutes(app: Express): Promise<Server> {
     },
   );
 
+  // Delete feedback
+  app.delete(
+    "/api/tenants/:tenantId/restaurants/:restaurantId/feedback/:feedbackId",
+    validateTenant,
+    async (req, res) => {
+      try {
+        const restaurantId = parseInt(req.params.restaurantId);
+        const tenantId = parseInt(req.params.tenantId);
+        const feedbackId = parseInt(req.params.feedbackId);
+
+        const restaurant = await storage.getRestaurantById(restaurantId);
+        if (!restaurant || restaurant.tenantId !== tenantId) {
+          return res.status(404).json({ message: "Restaurant not found" });
+        }
+
+        await storage.deleteFeedback(feedbackId);
+        res.json({ message: "Feedback deleted successfully" });
+      } catch (error) {
+        console.error("Error deleting feedback:", error);
+        res.status(500).json({ message: "Failed to delete feedback" });
+      }
+    },
+  );
+
   // Admin feedback route (requires authentication)
   app.post(
     "/api/admin/tenants/:tenantId/restaurants/:restaurantId/feedback",
