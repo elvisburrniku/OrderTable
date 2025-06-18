@@ -1,5 +1,5 @@
 import { Request, Response, NextFunction } from 'express';
-import { storage } from './storage-config';
+import { storage } from './storage';
 
 interface ActivityLoggerOptions {
   excludeRoutes?: string[];

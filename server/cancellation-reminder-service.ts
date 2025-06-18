@@ -1,4 +1,4 @@
-import { storage } from './storage-config';
+import { storage } from './storage.js';
 import { BrevoEmailService } from './brevo-service.js';
 
 export class CancellationReminderService {

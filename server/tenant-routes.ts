@@ -1,7 +1,7 @@
 import { Request, Response } from "express";
 import { tenants, users, tenantUsers, restaurants } from "../shared/schema";
 import { eq, and } from "drizzle-orm";
-import { storage } from "./storage-config";
+import { storage } from "./storage";
 
 // Get tenant information
 export async function getTenant(req: Request, res: Response) {

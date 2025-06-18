@@ -1,8 +1,7 @@
 import type { Express } from "express";
 import { createServer, type Server } from "http";
 import { WebSocketServer, WebSocket } from "ws";
-import { storage } from "./storage-config";
-import { db } from "./db";
+import { storage } from "./storage";
 import {
   insertUserSchema,
   loginSchema,
@@ -109,73 +108,20 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Setup SSO authentication first
   setupSSO(app);
 
-  // Middleware to extract and validate tenant ID with proper authorization
+  // Middleware to extract and validate tenant ID
   const validateTenant = async (req: any, res: any, next: any) => {
-    try {
-      const tenantId =
-        req.params.tenantId ||
-        req.headers["x-tenant-id"] ||
-        req.query.tenantId ||
-        req.body.tenantId;
+    const tenantId =
+      req.params.tenantId ||
+      req.headers["x-tenant-id"] ||
+      req.query.tenantId ||
+      req.body.tenantId;
 
-      // Log tenant access attempts in development for security monitoring
-      if (process.env.NODE_ENV === 'development') {
-        console.log(`TENANT ACCESS: ${req.method} ${req.originalUrl} - User: ${req.user?.id || 'unauthenticated'} - Tenant: ${tenantId}`);
-      }
-
-      if (!tenantId) {
-        return res.status(400).json({ message: "Tenant ID is required" });
-      }
-
-      const parsedTenantId = parseInt(tenantId as string);
-      if (isNaN(parsedTenantId)) {
-        return res.status(400).json({ message: "Invalid tenant ID" });
-      }
-
-      // Check if user is authenticated
-      if (!req.user || !req.user.id) {
-        return res.status(401).json({ message: "Authentication required" });
-      }
-
-      // Verify user has access to this tenant using storage interface
-      try {
-        const userTenants = await storage.getUserTenants(req.user.id);
-        const hasAccess = userTenants.some(ut => ut.tenantId === parsedTenantId);
-        
-        if (!hasAccess) {
-          console.warn(`SECURITY VIOLATION: User ${req.user.id} attempted to access tenant ${parsedTenantId} without permission`);
-          return res.status(403).json({ message: "Access denied: You don't have permission to access this tenant" });
-        }
-      } catch (error) {
-        console.error('Error validating tenant access:', error);
-        return res.status(500).json({ message: "Internal server error" });
-      }
-
-      // If restaurant ID is provided, verify it belongs to the tenant
-      const restaurantId = req.params.restaurantId;
-      if (restaurantId) {
-        const parsedRestaurantId = parseInt(restaurantId);
-        if (!isNaN(parsedRestaurantId)) {
-          try {
-            const restaurant = await storage.getRestaurant(parsedRestaurantId);
-            if (!restaurant || restaurant.tenantId !== parsedTenantId) {
-              console.warn(`SECURITY VIOLATION: User ${req.user.id} attempted to access restaurant ${parsedRestaurantId} not belonging to tenant ${parsedTenantId}`);
-              return res.status(403).json({ message: "Access denied: Restaurant not found in this tenant" });
-            }
-          } catch (error) {
-            console.error('Error validating restaurant access:', error);
-            return res.status(500).json({ message: "Internal server error" });
-          }
-        }
-      }
-
-      req.tenantId = parsedTenantId;
-      req.userRole = userTenant[0].role;
-      next();
-    } catch (error) {
-      console.error("Error in tenant validation:", error);
-      return res.status(500).json({ message: "Internal server error" });
+    if (!tenantId) {
+      return res.status(400).json({ message: "Tenant ID is required" });
     }
+
+    req.tenantId = parseInt(tenantId as string);
+    next();
   };
 
   // Middleware to attach user from session to request

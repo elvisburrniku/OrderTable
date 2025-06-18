@@ -1,5 +1,5 @@
 
-import { storage } from "./storage-config";
+import { storage } from "./storage";
 import { BrevoEmailService } from "./brevo-service";
 
 export class ReminderService {

@@ -1,4 +1,4 @@
-import { storage } from "./storage-config";
+import { storage } from "./storage";
 
 export class IntegrationService {
   private static instance: IntegrationService;

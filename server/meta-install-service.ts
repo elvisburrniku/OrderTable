@@ -1,5 +1,5 @@
 import { v4 as uuidv4 } from 'uuid';
-import { storage } from './storage-config';
+import { storage } from './storage';
 
 interface MetaInstallRequest {
   restaurantId: number;

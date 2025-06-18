@@ -1,4 +1,4 @@
-import { storage } from "./storage-config";
+import { storage } from "./storage";
 import { BrevoEmailService } from "./brevo-service";
 import { QRCodeService } from "./qr-service";
 

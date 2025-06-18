@@ -1,19 +1,10 @@
 import Navigation from "@/components/navigation";
 import Footer from "@/components/footer";
 import CookieConsent from "@/components/cookie-consent";
-import { useState } from "react";
-import { useForm } from "react-hook-form";
-import { zodResolver } from "@hookform/resolvers/zod";
-import { z } from "zod";
+
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
-import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { useToast } from "@/hooks/use-toast";
-import { useMutation, useQuery } from "@tanstack/react-query";
 import { useTranslations } from "@/contexts/language-context";
 import { 
   Calendar, 
@@ -56,112 +47,67 @@ import {
 } from "lucide-react";
 import { Link } from "wouter";
 
-const contactSchema = z.object({
-  name: z.string().min(2, "Name must be at least 2 characters"),
-  email: z.string().email("Please enter a valid email address"),
-  company: z.string().optional(),
-  subject: z.string().min(5, "Subject must be at least 5 characters"),
-  message: z.string().min(10, "Message must be at least 10 characters"),
-  category: z.enum(["general", "booking-channels", "reservation-software", "restaurants", "products", "partners"])
-});
-
-type ContactFormData = z.infer<typeof contactSchema>;
-
 export default function Home() {
   const t = useTranslations();
-  const { toast } = useToast();
-  const [isContactSubmitted, setIsContactSubmitted] = useState(false);
 
-  const contactForm = useForm<ContactFormData>({
-    resolver: zodResolver(contactSchema),
-    defaultValues: {
-      name: "",
-      email: "",
-      company: "",
-      subject: "",
-      message: "",
-      category: "general"
-    }
-  });
-
-  const contactMutation = useMutation({
-    mutationFn: async (data: ContactFormData) => {
-      const response = await fetch("/api/contact", {
-        method: "POST",
-        body: JSON.stringify(data),
-        headers: { "Content-Type": "application/json" }
-      });
-      
-      if (!response.ok) {
-        const errorData = await response.json().catch(() => ({}));
-        throw new Error(errorData.message || `HTTP error! status: ${response.status}`);
-      }
-      
-      return response.json();
+  const pricingPlans = [
+    {
+      name: t.pricing.starter,
+      price: "$0",
+      period: "forever",
+      description: t.pricing.starterDesc,
+      features: [
+        t.pricing.features.bookings50,
+        t.pricing.features.tableBasic,
+        t.pricing.features.emailNotifications,
+        t.pricing.features.guestForms,
+        t.pricing.features.analyticsBasic,
+        t.pricing.features.communitySupport
+      ],
+      buttonText: t.pricing.startFree,
+      buttonStyle: "outline",
+      popular: false
     },
-    onSuccess: () => {
-      setIsContactSubmitted(true);
-      contactForm.reset();
-      toast({
-        title: "Message sent successfully!",
-        description: "We'll get back to you within 24 hours."
-      });
+    {
+      name: t.pricing.professional,
+      price: "$29",
+      period: "per month",
+      description: t.pricing.professionalDesc,
+      features: [
+        t.pricing.features.bookingsUnlimited,
+        t.pricing.features.tableAdvanced,
+        t.pricing.features.smsEmail,
+        t.pricing.features.qrFeedback,
+        t.pricing.features.analyticsAdvanced,
+        t.pricing.features.kitchenDashboard,
+        t.pricing.features.multiLocation,
+        t.pricing.features.prioritySupport,
+        t.pricing.features.customIntegrations
+      ],
+      buttonText: t.pricing.startTrial,
+      buttonStyle: "default",
+      popular: true
     },
-    onError: (error: Error) => {
-      console.error('Contact form error:', error);
-      toast({
-        title: "Error sending message",
-        description: error.message || "Please try again later or contact us directly.",
-        variant: "destructive"
-      });
+    {
+      name: t.pricing.enterprise,
+      price: "$99",
+      period: "per month",
+      description: t.pricing.enterpriseDesc,
+      features: [
+        t.pricing.features.everythingPro,
+        t.pricing.features.whiteLabel,
+        t.pricing.features.advancedApi,
+        t.pricing.features.customIntegrations,
+        t.pricing.features.accountManager,
+        t.pricing.features.phoneSupport,
+        t.pricing.features.customTraining,
+        t.pricing.features.slaGuarantee
+      ],
+      buttonText: t.pricing.contactSales,
+      buttonStyle: "outline",
+      popular: false
     }
-  });
-
-  const onContactSubmit = (data: ContactFormData) => {
-    contactMutation.mutate(data);
-  };
-
-  // Fetch subscription plans from database
-  const { data: dbPlans = [], isLoading: plansLoading } = useQuery({
-    queryKey: ['/api/subscription-plans']
-  });
-
-  // Transform database plans into display format
-  const pricingPlans = dbPlans.map((plan: any, index: number) => {
-    const features = typeof plan.features === 'string' ? JSON.parse(plan.features) : plan.features || [];
-    const price = plan.price === 0 ? "$0" : `$${(plan.price / 100).toFixed(0)}`;
-    const period = plan.price === 0 ? "forever" : "per month";
-    
-    return {
-      id: plan.id,
-      name: plan.name,
-      price,
-      period,
-      description: getDescriptionForPlan(plan.name),
-      features,
-      buttonText: plan.price === 0 ? "Start Free" : (plan.name === "Professional" ? "Start Trial" : "Get Started"),
-      buttonStyle: plan.name === "Professional" ? "default" : "outline",
-      popular: plan.name === "Professional",
-      maxTables: plan.maxTables,
-      maxBookings: plan.maxBookingsPerMonth,
-      trialDays: plan.trialDays
-    };
-  });
-
-  function getDescriptionForPlan(planName: string): string {
-    switch (planName) {
-      case "Free":
-        return "Perfect for getting started with basic restaurant management";
-      case "Starter":
-        return "Ideal for small restaurants with essential booking features";
-      case "Professional":
-        return "Complete solution for growing restaurants with advanced features";
-      case "Enterprise":
-        return "Full-scale solution for large restaurants and restaurant groups";
-      default:
-        return "Complete restaurant management solution";
-    }
-  }
+  ];
 
   const features = [
     {
@@ -360,15 +306,9 @@ export default function Home() {
             </p>
           </div>
           
-          {plansLoading ? (
-            <div className="text-center">
-              <div className="animate-spin w-8 h-8 border-4 border-primary border-t-transparent rounded-full mx-auto" />
-              <p className="mt-4 text-gray-600">Loading plans...</p>
-            </div>
-          ) : (
-            <div className="grid lg:grid-cols-4 gap-6 max-w-7xl mx-auto">
+          <div className="grid lg:grid-cols-3 gap-8 max-w-6xl mx-auto">
             {pricingPlans.map((plan, index) => (
-              <Card key={plan.id || index} className={`relative border-0 shadow-xl hover:shadow-2xl transition-all duration-300 transform hover:scale-105 ${
+              <Card key={index} className={`relative border-0 shadow-xl hover:shadow-2xl transition-all duration-300 transform hover:scale-105 ${
                 plan.popular 
                   ? 'ring-4 ring-blue-500 ring-opacity-50 bg-gradient-to-b from-blue-50 to-white' 
                   : 'bg-white'
@@ -395,26 +335,6 @@ export default function Home() {
                 
                 <CardContent className="px-8 pb-8">
                   <ul className="space-y-4 mb-8">
-                    {/* Plan limits */}
-                    <li className="flex items-start gap-3">
-                      <CheckCircle className="h-5 w-5 text-green-500 mt-0.5 flex-shrink-0" />
-                      <span className="text-gray-700">
-                        Up to {plan.maxTables === 999 ? "unlimited" : plan.maxTables} tables
-                      </span>
-                    </li>
-                    <li className="flex items-start gap-3">
-                      <CheckCircle className="h-5 w-5 text-green-500 mt-0.5 flex-shrink-0" />
-                      <span className="text-gray-700">
-                        {plan.maxBookings === 9999 ? "Unlimited" : plan.maxBookings} bookings/month
-                      </span>
-                    </li>
-                    {plan.trialDays > 0 && (
-                      <li className="flex items-start gap-3">
-                        <CheckCircle className="h-5 w-5 text-green-500 mt-0.5 flex-shrink-0" />
-                        <span className="text-gray-700">{plan.trialDays}-day free trial</span>
-                      </li>
-                    )}
-                    {/* Database features */}
                     {plan.features.map((feature, featureIndex) => (
                       <li key={featureIndex} className="flex items-start gap-3">
                         <CheckCircle className="h-5 w-5 text-green-500 mt-0.5 flex-shrink-0" />
@@ -439,21 +359,17 @@ export default function Home() {
                 </CardContent>
               </Card>
             ))}
-            </div>
-          )}
+          </div>
           
           <div className="text-center mt-16">
             <p className="text-gray-600 mb-4">
               {t.pricing.customSolution}
             </p>
-            <Button 
-              variant="outline" 
-              size="lg" 
-              className="border-2 border-gray-300 hover:border-blue-400"
-              onClick={() => document.getElementById('contact')?.scrollIntoView({ behavior: 'smooth' })}
-            >
-              {t.pricing.contactSalesTeam}
-            </Button>
+            <Link href="/contact">
+              <Button variant="outline" size="lg" className="border-2 border-gray-300 hover:border-blue-400">
+                {t.pricing.contactSalesTeam}
+              </Button>
+            </Link>
           </div>
         </div>
       </section>
@@ -591,14 +507,11 @@ export default function Home() {
                 <ArrowRight className="ml-2 h-5 w-5" />
               </Button>
             </Link>
-            <Button 
-              size="lg" 
-              variant="outline" 
-              className="inline-flex items-center justify-center gap-2 whitespace-nowrap ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:size-4 [&_svg]:shrink-0 h-11 rounded-md border-2 border-white text-white hover:bg-white hover:text-blue-600 px-10 py-4 text-lg font-bold transition-all duration-300 bg-[#4059db]"
-              onClick={() => document.getElementById('contact')?.scrollIntoView({ behavior: 'smooth' })}
-            >
-              {t.cta.talkToSales}
-            </Button>
+            <Link href="/contact">
+              <Button size="lg" variant="outline" className="inline-flex items-center justify-center gap-2 whitespace-nowrap ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:size-4 [&_svg]:shrink-0 h-11 rounded-md border-2 border-white text-white hover:bg-white hover:text-blue-600 px-10 py-4 text-lg font-bold transition-all duration-300 bg-[#4059db]">
+                {t.cta.talkToSales}
+              </Button>
+            </Link>
           </div>
           
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-8 text-center">
@@ -613,219 +526,6 @@ export default function Home() {
             <div>
               <div className="text-3xl font-bold text-white mb-2">{t.cta.cancel}</div>
               <div className="text-blue-200">{t.cta.cancelDesc}</div>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* Contact Section */}
-      <section id="contact" className="py-24 px-4 sm:px-6 lg:px-8 bg-white">
-        <div className="max-w-7xl mx-auto">
-          <div className="text-center mb-16">
-            <Badge className="mb-4 bg-blue-100 text-blue-800 hover:bg-blue-200">
-              Get In Touch
-            </Badge>
-            <h2 className="text-5xl font-bold text-gray-900 mb-6">
-              Contact Us
-            </h2>
-            <p className="text-xl text-gray-600 max-w-3xl mx-auto">
-              Ready to transform your restaurant operations? Get in touch with our team to learn more about ReadyTable and how we can help your business thrive.
-            </p>
-          </div>
-          
-          <div className="grid lg:grid-cols-2 gap-12">
-            {/* Contact Information */}
-            <div className="space-y-8">
-              <div>
-                <h3 className="text-2xl font-bold text-gray-900 mb-6">Let's Start a Conversation</h3>
-                <p className="text-lg text-gray-600 mb-8">
-                  Whether you're looking to streamline your booking system, improve kitchen efficiency, or enhance customer experience, we're here to help.
-                </p>
-              </div>
-              
-              <div className="space-y-6">
-                <div className="flex items-start gap-4">
-                  <div className="p-3 bg-blue-100 rounded-lg">
-                    <Mail className="h-6 w-6 text-blue-600" />
-                  </div>
-                  <div>
-                    <h4 className="font-semibold text-gray-900">Email Support</h4>
-                    <p className="text-gray-600">support@readytable.com</p>
-                    <p className="text-sm text-gray-500">Response within 24 hours</p>
-                  </div>
-                </div>
-                
-                <div className="flex items-start gap-4">
-                  <div className="p-3 bg-green-100 rounded-lg">
-                    <MessageSquare className="h-6 w-6 text-green-600" />
-                  </div>
-                  <div>
-                    <h4 className="font-semibold text-gray-900">Live Chat</h4>
-                    <p className="text-gray-600">Available 9 AM - 6 PM EST</p>
-                    <p className="text-sm text-gray-500">Instant support for urgent matters</p>
-                  </div>
-                </div>
-                
-                <div className="flex items-start gap-4">
-                  <div className="p-3 bg-purple-100 rounded-lg">
-                    <Clock className="h-6 w-6 text-purple-600" />
-                  </div>
-                  <div>
-                    <h4 className="font-semibold text-gray-900">Schedule a Demo</h4>
-                    <p className="text-gray-600">Book a personalized walkthrough</p>
-                    <p className="text-sm text-gray-500">See ReadyTable in action</p>
-                  </div>
-                </div>
-              </div>
-              
-              <div className="pt-8 border-t border-gray-200">
-                <h4 className="font-semibold text-gray-900 mb-4">Why Choose ReadyTable?</h4>
-                <ul className="space-y-3 text-gray-600">
-                  <li className="flex items-center gap-2">
-                    <CheckCircle className="h-5 w-5 text-green-500" />
-                    30-day free trial, no credit card required
-                  </li>
-                  <li className="flex items-center gap-2">
-                    <CheckCircle className="h-5 w-5 text-green-500" />
-                    Quick setup in under 15 minutes
-                  </li>
-                  <li className="flex items-center gap-2">
-                    <CheckCircle className="h-5 w-5 text-green-500" />
-                    24/7 customer support included
-                  </li>
-                  <li className="flex items-center gap-2">
-                    <CheckCircle className="h-5 w-5 text-green-500" />
-                    No long-term contracts or hidden fees
-                  </li>
-                </ul>
-              </div>
-            </div>
-            
-            {/* Contact Form */}
-            <div>
-              <Card className="shadow-xl border-0">
-                <CardHeader>
-                  <CardTitle className="text-2xl text-gray-900">Send us a message</CardTitle>
-                  <CardDescription className="text-gray-600">
-                    Fill out the form below and we'll get back to you shortly.
-                  </CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <Form {...contactForm}>
-                    <form onSubmit={contactForm.handleSubmit(onContactSubmit)} className="space-y-6">
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <FormField
-                          control={contactForm.control}
-                          name="name"
-                          render={({ field }) => (
-                            <FormItem>
-                              <FormLabel>Full Name *</FormLabel>
-                              <FormControl>
-                                <Input placeholder="Your full name" {...field} />
-                              </FormControl>
-                              <FormMessage />
-                            </FormItem>
-                          )}
-                        />
-                        
-                        <FormField
-                          control={contactForm.control}
-                          name="email"
-                          render={({ field }) => (
-                            <FormItem>
-                              <FormLabel>Email Address *</FormLabel>
-                              <FormControl>
-                                <Input type="email" placeholder="your@email.com" {...field} />
-                              </FormControl>
-                              <FormMessage />
-                            </FormItem>
-                          )}
-                        />
-                      </div>
-                      
-                      <FormField
-                        control={contactForm.control}
-                        name="company"
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel>Restaurant/Company Name</FormLabel>
-                            <FormControl>
-                              <Input placeholder="Your restaurant name" {...field} />
-                            </FormControl>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
-                      
-                      <FormField
-                        control={contactForm.control}
-                        name="category"
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel>Inquiry Type</FormLabel>
-                            <Select onValueChange={field.onChange} defaultValue={field.value}>
-                              <FormControl>
-                                <SelectTrigger>
-                                  <SelectValue placeholder="Select inquiry type" />
-                                </SelectTrigger>
-                              </FormControl>
-                              <SelectContent>
-                                <SelectItem value="general">General Question</SelectItem>
-                                <SelectItem value="restaurants">Restaurant Operations</SelectItem>
-                                <SelectItem value="booking-channels">Booking & Reservations</SelectItem>
-                                <SelectItem value="products">Product Features</SelectItem>
-                                <SelectItem value="partners">Partnership Opportunities</SelectItem>
-                                <SelectItem value="reservation-software">Technical Support</SelectItem>
-                              </SelectContent>
-                            </Select>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
-                      
-                      <FormField
-                        control={contactForm.control}
-                        name="subject"
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel>Subject *</FormLabel>
-                            <FormControl>
-                              <Input placeholder="Brief subject line" {...field} />
-                            </FormControl>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
-                      
-                      <FormField
-                        control={contactForm.control}
-                        name="message"
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel>Message *</FormLabel>
-                            <FormControl>
-                              <Textarea 
-                                placeholder="Tell us about your restaurant and how we can help..."
-                                className="min-h-[120px]"
-                                {...field}
-                              />
-                            </FormControl>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
-                      
-                      <Button 
-                        type="submit" 
-                        className="w-full bg-blue-600 hover:bg-blue-700 text-white py-3 text-lg font-semibold"
-                        disabled={contactMutation.isPending}
-                      >
-                        {contactMutation.isPending ? "Sending..." : "Send Message"}
-                      </Button>
-                    </form>
-                  </Form>
-                </CardContent>
-              </Card>
             </div>
           </div>
         </div>
