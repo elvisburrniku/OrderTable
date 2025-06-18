@@ -1,4 +1,4 @@
-import { storage } from "./storage";
+import { storage } from "./storage-config";
 
 async function initializeSubscriptionPlans() {
   console.log("Initializing subscription plans...");

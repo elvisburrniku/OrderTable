@@ -1,4 +1,4 @@
-import { storage } from "./storage";
+import { storage } from "./storage-config";
 import Stripe from "stripe";
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY || 'sk_test_your_stripe_secret_key', {

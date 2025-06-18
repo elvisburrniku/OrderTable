@@ -2,7 +2,7 @@ import passport from "passport";
 import { Strategy as GoogleStrategy } from "passport-google-oauth20";
 import { Strategy as AppleStrategy } from "passport-apple";
 import type { Express, Request, Response, NextFunction } from "express";
-import { storage } from "./storage";
+import { storage } from "./storage-config";
 // Simple slug generator function
 function generateSlug(text: string): string {
   return text

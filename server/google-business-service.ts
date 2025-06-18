@@ -1,4 +1,4 @@
-import { storage } from "./storage";
+import { storage } from "./storage-config";
 
 export class GoogleBusinessService {
   private static instance: GoogleBusinessService;
