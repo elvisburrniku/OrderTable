@@ -173,6 +173,7 @@ export default function SetupWizard() {
      subscriptionData?.tenant?.subscriptionStatus === 'unpaid');
   
   const steps = getStepsForPlan(requiresPayment || false);
+  const maxSteps = steps.length;
 
   // Form configurations
   const restaurantForm = useForm<RestaurantDetails>({
@@ -474,7 +475,29 @@ export default function SetupWizard() {
     },
   });
 
-
+  // Payment mutation for paid plans
+  const createCheckoutMutation = useMutation({
+    mutationFn: async () => {
+      const response = await apiRequest("POST", "/api/billing/create-checkout-session", {
+        planId: subscriptionData?.plan?.id,
+        tenantId: tenantId,
+      });
+      return response.json();
+    },
+    onSuccess: (data) => {
+      if (data.checkoutUrl) {
+        // Redirect to Stripe checkout
+        window.location.href = data.checkoutUrl;
+      }
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Payment setup failed",
+        description: error.message || "Unable to create payment session",
+        variant: "destructive",
+      });
+    },
+  });
 
   const completeSetupMutation = useMutation({
     mutationFn: async () => {
@@ -863,7 +886,7 @@ export default function SetupWizard() {
           </div>
           <div className="flex justify-between mt-2">
             {steps.map((step) => (
-              <div key={step.id} className="text-center" style={{ width: `calc(100% / ${steps.length})` }}>
+              <div key={step.id} className="text-center" style={{ width: `calc(100% / ${maxSteps})` }}>
                 <p className="text-sm font-medium text-gray-900 dark:text-white">
                   {step.title}
                 </p>
