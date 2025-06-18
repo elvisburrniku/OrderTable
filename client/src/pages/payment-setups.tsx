@@ -603,10 +603,26 @@ export default function PaymentSetups() {
                         </SelectTrigger>
                       </FormControl>
                       <SelectContent>
+                        <SelectItem value="30_min">30 min</SelectItem>
+                        <SelectItem value="45_min">45 min</SelectItem>
+                        <SelectItem value="1_hour">1 hour</SelectItem>
+                        <SelectItem value="1.5_hour">1½ hour</SelectItem>
+                        <SelectItem value="2_hours">2 hours</SelectItem>
+                        <SelectItem value="2.5_hour">2½ hour</SelectItem>
+                        <SelectItem value="3_hours">3 hours</SelectItem>
+                        <SelectItem value="4_hours">4 hours</SelectItem>
+                        <SelectItem value="5_hours">5 hours</SelectItem>
+                        <SelectItem value="6_hours">6 hours</SelectItem>
+                        <SelectItem value="8_hours">8 hours</SelectItem>
+                        <SelectItem value="12_hours">12 hours</SelectItem>
                         <SelectItem value="24_hours">24 hours</SelectItem>
+                        <SelectItem value="36_hours">36 hours</SelectItem>
                         <SelectItem value="48_hours">48 hours</SelectItem>
-                        <SelectItem value="72_hours">72 hours</SelectItem>
-                        <SelectItem value="1_week">1 week</SelectItem>
+                        <SelectItem value="3_days">3 days</SelectItem>
+                        <SelectItem value="4_days">4 days</SelectItem>
+                        <SelectItem value="5_days">5 days</SelectItem>
+                        <SelectItem value="6_days">6 days</SelectItem>
+                        <SelectItem value="7_days">7 days</SelectItem>
                       </SelectContent>
                     </Select>
                     <FormMessage />
