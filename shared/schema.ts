@@ -95,6 +95,10 @@ export const restaurants = pgTable("restaurants", {
   guestBookingEnabled: boolean("guest_booking_enabled").default(true),
   createdAt: timestamp("created_at").defaultNow(),
   emailSettings: text("email_settings"),
+  // General settings as JSON
+  generalSettings: text("general_settings"),
+  bookingSettings: text("booking_settings"),
+  notificationSettings: text("notification_settings"),
 });
 
 export const tables = pgTable("tables", {

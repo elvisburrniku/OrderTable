@@ -3776,6 +3776,56 @@ export async function registerRoutes(app: Express): Promise<Server> {
     },
   );
 
+  // Settings routes
+  app.get(
+    "/api/tenants/:tenantId/restaurants/:restaurantId/settings",
+    validateTenant,
+    async (req, res) => {
+      try {
+        const restaurantId = parseInt(req.params.restaurantId);
+        const tenantId = parseInt(req.params.tenantId);
+
+        const restaurant = await storage.getRestaurantById(restaurantId);
+        if (!restaurant || restaurant.tenantId !== tenantId) {
+          return res.status(404).json({ message: "Restaurant not found" });
+        }
+
+        const settings = await storage.getRestaurantSettings(restaurantId, tenantId);
+        res.json(settings);
+      } catch (error) {
+        console.error("Error fetching settings:", error);
+        res.status(500).json({ message: "Internal server error" });
+      }
+    },
+  );
+
+  app.put(
+    "/api/tenants/:tenantId/restaurants/:restaurantId/settings",
+    validateTenant,
+    async (req, res) => {
+      try {
+        const restaurantId = parseInt(req.params.restaurantId);
+        const tenantId = parseInt(req.params.tenantId);
+
+        const restaurant = await storage.getRestaurantById(restaurantId);
+        if (!restaurant || restaurant.tenantId !== tenantId) {
+          return res.status(404).json({ message: "Restaurant not found" });
+        }
+
+        const updatedSettings = await storage.updateRestaurantSettings(
+          restaurantId,
+          tenantId,
+          req.body
+        );
+
+        res.json({ message: "Settings updated successfully", settings: updatedSettings });
+      } catch (error) {
+        console.error("Error updating settings:", error);
+        res.status(500).json({ message: "Internal server error" });
+      }
+    },
+  );
+
   // Tables routes
   app.get(
     "/api/tenants/:tenantId/restaurants/:restaurantId/tables",

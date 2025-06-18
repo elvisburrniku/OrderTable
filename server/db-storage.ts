@@ -1162,6 +1162,97 @@ export class DatabaseStorage implements IStorage {
     return false;
   }
 
+  // Restaurant Settings methods
+  async getRestaurantSettings(restaurantId: number, tenantId: number): Promise<any> {
+    if (!this.db) throw new Error("Database connection not available");
+    
+    const [restaurant] = await this.db
+      .select({
+        emailSettings: restaurants.emailSettings,
+        generalSettings: restaurants.generalSettings,
+        bookingSettings: restaurants.bookingSettings,
+        notificationSettings: restaurants.notificationSettings,
+      })
+      .from(restaurants)
+      .where(and(
+        eq(restaurants.id, restaurantId),
+        eq(restaurants.tenantId, tenantId)
+      ))
+      .limit(1);
+
+    if (!restaurant) {
+      throw new Error("Restaurant not found");
+    }
+
+    // Return parsed settings with defaults
+    return {
+      emailSettings: restaurant.emailSettings ? JSON.parse(restaurant.emailSettings) : {
+        enableBookingConfirmation: true,
+        enableBookingReminders: true,
+        enableCancellationNotice: true,
+        reminderHoursBefore: 24,
+        fromEmail: "",
+        fromName: "",
+      },
+      generalSettings: restaurant.generalSettings ? JSON.parse(restaurant.generalSettings) : {
+        timeZone: "America/New_York",
+        dateFormat: "MM/dd/yyyy",
+        timeFormat: "12h",
+        defaultBookingDuration: 120,
+        maxAdvanceBookingDays: 30,
+        currency: "USD",
+        language: "en",
+      },
+      bookingSettings: restaurant.bookingSettings ? JSON.parse(restaurant.bookingSettings) : {
+        enableWalkIns: true,
+        enableWaitingList: true,
+        autoConfirmBookings: false,
+        requireDeposit: false,
+        depositAmount: 0,
+        allowSameDayBookings: true,
+        minBookingNotice: 0,
+      },
+      notificationSettings: restaurant.notificationSettings ? JSON.parse(restaurant.notificationSettings) : {
+        emailNotifications: true,
+        smsNotifications: false,
+        pushNotifications: true,
+        bookingReminders: true,
+        cancelationAlerts: true,
+        noShowAlerts: true,
+      },
+    };
+  }
+
+  async updateRestaurantSettings(restaurantId: number, tenantId: number, settings: any): Promise<any> {
+    if (!this.db) throw new Error("Database connection not available");
+
+    const updateData: any = {};
+    
+    if (settings.emailSettings) {
+      updateData.emailSettings = JSON.stringify(settings.emailSettings);
+    }
+    if (settings.generalSettings) {
+      updateData.generalSettings = JSON.stringify(settings.generalSettings);
+    }
+    if (settings.bookingSettings) {
+      updateData.bookingSettings = JSON.stringify(settings.bookingSettings);
+    }
+    if (settings.notificationSettings) {
+      updateData.notificationSettings = JSON.stringify(settings.notificationSettings);
+    }
+
+    const [updatedRestaurant] = await this.db
+      .update(restaurants)
+      .set(updateData)
+      .where(and(
+        eq(restaurants.id, restaurantId),
+        eq(restaurants.tenantId, tenantId)
+      ))
+      .returning();
+
+    return updatedRestaurant;
+  }
+
   // SMS Settings methods
   async getSmsSettings(restaurantId: number, tenantId: number): Promise<any> {
     if (!this.db) throw new Error("Database connection not available");
