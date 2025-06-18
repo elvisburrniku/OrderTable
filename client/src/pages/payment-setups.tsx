@@ -282,44 +282,46 @@ export default function PaymentSetups() {
                 name="method"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Method:</FormLabel>
+                    <FormLabel className="text-sm text-gray-700">Method:</FormLabel>
                     <FormControl>
                       <RadioGroup
                         onValueChange={field.onChange}
                         defaultValue={field.value}
                         className="grid grid-cols-3 gap-4"
                       >
-                        <div className="border rounded-lg p-4 space-y-2">
+                        <div className="border rounded-lg p-4 space-y-2 bg-green-50 border-green-200">
                           <div className="flex items-center space-x-2">
-                            <RadioGroupItem value="capture_amount" id="capture" />
+                            <RadioGroupItem value="capture_amount" id="capture" className="text-green-600" />
                             <Label htmlFor="capture" className="font-medium text-green-600">
-                              Capture amount
+                              Capture
                             </Label>
                           </div>
+                          <div className="font-medium text-green-600">amount</div>
                           <p className="text-xs text-gray-600">
-                            The amount is withdrawn immediately
+                            The amount is withdrawn immediately.
                           </p>
                         </div>
-                        <div className="border rounded-lg p-4 space-y-2">
+                        <div className="border rounded-lg p-4 space-y-2 bg-gray-50">
                           <div className="flex items-center space-x-2">
                             <RadioGroupItem value="reserve_amount" id="reserve" />
-                            <Label htmlFor="reserve" className="font-medium">
-                              Reserve amount
+                            <Label htmlFor="reserve" className="font-medium text-gray-700">
+                              Reserve
                             </Label>
                           </div>
+                          <div className="font-medium text-gray-700">amount</div>
                           <p className="text-xs text-gray-600">
-                            The amount is reserved. It gets debited 8 hours before arrival or on last cancellation.
+                            The amount is reserved and deducted 6 hours before arrival or on late cancellation.
                           </p>
                         </div>
-                        <div className="border rounded-lg p-4 space-y-2">
+                        <div className="border rounded-lg p-4 space-y-2 bg-gray-50">
                           <div className="flex items-center space-x-2">
                             <RadioGroupItem value="membership_fee" id="membership" />
-                            <Label htmlFor="membership" className="font-medium">
-                              Membership fee
+                            <Label htmlFor="membership" className="font-medium text-gray-700">
+                              No-show fee
                             </Label>
                           </div>
                           <p className="text-xs text-gray-600">
-                            Saves credit card information and charges a fee in case of no-show cancellation.
+                            Saves credit card information and charges a fee in case of no-show or late cancellation.
                           </p>
                         </div>
                       </RadioGroup>
@@ -335,16 +337,16 @@ export default function PaymentSetups() {
                 name="type"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Type:</FormLabel>
+                    <FormLabel className="text-sm text-gray-700">Type:</FormLabel>
                     <Select onValueChange={field.onChange} defaultValue={field.value}>
                       <FormControl>
-                        <SelectTrigger>
-                          <SelectValue placeholder="Select type" />
+                        <SelectTrigger className="bg-gray-100">
+                          <SelectValue placeholder="Prepayment" />
                         </SelectTrigger>
                       </FormControl>
                       <SelectContent>
-                        <SelectItem value="deposit">Deposit</SelectItem>
                         <SelectItem value="prepayment">Prepayment</SelectItem>
+                        <SelectItem value="deposit">Deposit</SelectItem>
                         <SelectItem value="membership">Membership</SelectItem>
                       </SelectContent>
                     </Select>
@@ -359,7 +361,7 @@ export default function PaymentSetups() {
                 name="priceType"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Price:</FormLabel>
+                    <FormLabel className="text-sm text-gray-700">Price:</FormLabel>
                     <FormControl>
                       <RadioGroup
                         onValueChange={field.onChange}
@@ -367,12 +369,12 @@ export default function PaymentSetups() {
                         className="flex space-x-6"
                       >
                         <div className="flex items-center space-x-2">
-                          <RadioGroupItem value="one_price" id="one_price" />
-                          <Label htmlFor="one_price">One price</Label>
+                          <RadioGroupItem value="one_price" id="one_price" className="text-green-600" />
+                          <Label htmlFor="one_price" className="text-sm">One price</Label>
                         </div>
                         <div className="flex items-center space-x-2">
                           <RadioGroupItem value="multiple_prices" id="multiple_prices" />
-                          <Label htmlFor="multiple_prices">Multiple prices</Label>
+                          <Label htmlFor="multiple_prices" className="text-sm">Multiple prices</Label>
                         </div>
                       </RadioGroup>
                     </FormControl>
@@ -394,6 +396,7 @@ export default function PaymentSetups() {
                             type="number"
                             step="0.01"
                             placeholder="12"
+                            className="bg-gray-100"
                             {...field}
                             onChange={(e) => field.onChange(parseFloat(e.target.value) || 0)}
                           />
@@ -409,8 +412,8 @@ export default function PaymentSetups() {
                       <FormItem>
                         <Select onValueChange={field.onChange} defaultValue={field.value}>
                           <FormControl>
-                            <SelectTrigger>
-                              <SelectValue />
+                            <SelectTrigger className="bg-gray-100">
+                              <SelectValue placeholder="EUR" />
                             </SelectTrigger>
                           </FormControl>
                           <SelectContent>
@@ -430,13 +433,13 @@ export default function PaymentSetups() {
                       <FormItem>
                         <Select onValueChange={field.onChange} defaultValue={field.value}>
                           <FormControl>
-                            <SelectTrigger>
-                              <SelectValue />
+                            <SelectTrigger className="bg-gray-100">
+                              <SelectValue placeholder="Per booking" />
                             </SelectTrigger>
                           </FormControl>
                           <SelectContent>
-                            <SelectItem value="per_guest">Per guest</SelectItem>
                             <SelectItem value="per_booking">Per booking</SelectItem>
+                            <SelectItem value="per_guest">Per guest</SelectItem>
                             <SelectItem value="per_table">Per table</SelectItem>
                           </SelectContent>
                         </Select>
@@ -554,35 +557,36 @@ export default function PaymentSetups() {
 
               {/* Allow Residual Payment */}
               <div className="space-y-4">
-                <div className="flex items-center space-x-2">
+                <div className="flex items-center space-x-3">
                   <input
                     type="checkbox"
                     checked={form.watch("allowResidual")}
                     onChange={(e) => form.setValue("allowResidual", e.target.checked)}
-                    className="h-4 w-4"
+                    className="h-4 w-4 accent-green-600"
                   />
-                  <Label>Allow residual payment:</Label>
+                  <Label className="text-sm text-gray-700">Allow residual payment:</Label>
+                  {form.watch("allowResidual") && (
+                    <FormField
+                      control={form.control}
+                      name="residualAmount"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormControl>
+                            <Input
+                              type="number"
+                              step="0.01"
+                              placeholder="12"
+                              className="bg-gray-100 w-20"
+                              {...field}
+                              onChange={(e) => field.onChange(parseFloat(e.target.value) || 0)}
+                            />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                  )}
                 </div>
-                {form.watch("allowResidual") && (
-                  <FormField
-                    control={form.control}
-                    name="residualAmount"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormControl>
-                          <Input
-                            type="number"
-                            step="0.01"
-                            placeholder="0.00"
-                            {...field}
-                            onChange={(e) => field.onChange(parseFloat(e.target.value) || 0)}
-                          />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                )}
               </div>
 
               {/* Cancellation Notice */}
@@ -591,11 +595,11 @@ export default function PaymentSetups() {
                 name="cancellationNotice"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Cancellation notice:</FormLabel>
+                    <FormLabel className="text-sm text-gray-700">Cancellation notice:</FormLabel>
                     <Select onValueChange={field.onChange} defaultValue={field.value}>
                       <FormControl>
-                        <SelectTrigger>
-                          <SelectValue />
+                        <SelectTrigger className="bg-gray-100">
+                          <SelectValue placeholder="24 hours" />
                         </SelectTrigger>
                       </FormControl>
                       <SelectContent>
@@ -611,54 +615,58 @@ export default function PaymentSetups() {
               />
 
               {/* Description */}
-              <FormField
-                control={form.control}
-                name="description"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Description (to guest)</FormLabel>
-                    <FormControl>
-                      <div className="space-y-2">
-                        <div className="flex items-center space-x-2 text-xs text-gray-600">
-                          <span className="bg-red-100 text-red-600 px-2 py-1 rounded">EN</span>
-                          <span>English</span>
-                        </div>
-                        <Textarea
-                          placeholder="Enter description for guests..."
-                          {...field}
-                        />
-                      </div>
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-
-              {/* Language Selection */}
-              <FormField
-                control={form.control}
-                name="language"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Add translation:</FormLabel>
-                    <Select onValueChange={field.onChange} defaultValue={field.value}>
-                      <FormControl>
-                        <SelectTrigger>
-                          <SelectValue placeholder="Select language" />
-                        </SelectTrigger>
-                      </FormControl>
-                      <SelectContent>
-                        <SelectItem value="en">English</SelectItem>
-                        <SelectItem value="fr">French</SelectItem>
-                        <SelectItem value="de">German</SelectItem>
-                        <SelectItem value="es">Spanish</SelectItem>
-                        <SelectItem value="it">Italian</SelectItem>
-                      </SelectContent>
-                    </Select>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
+              <div className="space-y-4">
+                <h3 className="text-lg font-medium text-gray-800">Description (to guest)</h3>
+                
+                <div className="space-y-3">
+                  <div className="flex items-center space-x-2">
+                    <span className="bg-red-100 text-red-600 px-2 py-1 rounded text-xs font-medium">EN</span>
+                    <span className="text-sm text-gray-600">EN</span>
+                  </div>
+                  
+                  <FormField
+                    control={form.control}
+                    name="description"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormControl>
+                          <Textarea
+                            placeholder="12123123"
+                            className="min-h-[80px] bg-gray-100"
+                            {...field}
+                          />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                </div>
+                
+                <FormField
+                  control={form.control}
+                  name="language"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel className="text-sm text-gray-700">Add translation:</FormLabel>
+                      <Select onValueChange={field.onChange} defaultValue={field.value}>
+                        <FormControl>
+                          <SelectTrigger className="bg-gray-100">
+                            <SelectValue placeholder="Select language" />
+                          </SelectTrigger>
+                        </FormControl>
+                        <SelectContent>
+                          <SelectItem value="en">English</SelectItem>
+                          <SelectItem value="fr">French</SelectItem>
+                          <SelectItem value="de">German</SelectItem>
+                          <SelectItem value="es">Spanish</SelectItem>
+                          <SelectItem value="it">Italian</SelectItem>
+                        </SelectContent>
+                      </Select>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              </div>
 
               <div className="flex justify-end space-x-2 pt-4">
                 <Button
