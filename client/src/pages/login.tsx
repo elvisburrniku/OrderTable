@@ -439,12 +439,12 @@ export default function Login() {
                         <Checkbox
                           id="rememberMe"
                           checked={formData.rememberMe}
-                          onCheckedChange={(checked) =>
-                            setFormData({
-                              ...formData,
-                              rememberMe: Boolean(checked),
-                            })
-                          }
+                          onCheckedChange={(checked) => {
+                            setFormData(prev => ({
+                              ...prev,
+                              rememberMe: checked === true,
+                            }));
+                          }}
                           className="border-white/30 data-[state=checked]:bg-emerald-500 data-[state=checked]:border-emerald-500"
                         />
                         <Label
