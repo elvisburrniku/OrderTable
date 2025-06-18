@@ -1202,8 +1202,41 @@ export class DatabaseStorage implements IStorage {
         maxAdvanceBookingDays: 30,
         currency: "USD",
         language: "en",
+        
+        // Restaurant operations
+        operationalSettings: {
+          autoAcceptReservations: false,
+          requireConfirmation: true,
+          allowModifications: true,
+          enableNoShowTracking: true,
+          noShowGracePeriod: 15, // minutes
+          automaticTableRelease: 30, // minutes after no-show
+        },
+        
+        // Payment and pricing
+        paymentSettings: {
+          acceptCreditCards: true,
+          acceptCash: true,
+          acceptDigitalPayments: true,
+          requireDepositForLargeGroups: true,
+          largeGroupThreshold: 8,
+          cancellationPolicy: "24h", // 24h, 48h, 72h, 1week
+          refundPolicy: "full", // full, partial, none
+        },
+        
+        // Staff and service
+        serviceSettings: {
+          enableTableService: true,
+          enableTakeout: true,
+          enableDelivery: false,
+          deliveryRadius: 5, // miles/km
+          averageServiceTime: 90, // minutes
+          enableSpecialRequests: true,
+          maxSpecialRequestLength: 500,
+        },
       },
       bookingSettings: restaurant.bookingSettings ? JSON.parse(restaurant.bookingSettings) : {
+        // Basic booking settings
         enableWalkIns: true,
         enableWaitingList: true,
         autoConfirmBookings: false,
@@ -1211,6 +1244,63 @@ export class DatabaseStorage implements IStorage {
         depositAmount: 0,
         allowSameDayBookings: true,
         minBookingNotice: 0,
+        
+        // Duration and timing settings
+        defaultDuration: 120, // minutes
+        emptySeats: 2,
+        turnaroundTime: 0, // minutes
+        useEndingTime: false,
+        
+        // Contact and cancellation
+        contactMethod: "phone", // phone, email, both
+        allowCancellationAndChanges: true,
+        cancellationNotice: "none", // none, 24h, 48h, 1week
+        groupRequest: false,
+        
+        // Table booking preferences
+        tableBooking: "recommended", // recommended, required, disabled
+        
+        // Data storage
+        personalDataStorage: "1year", // 6months, 1year, 2years, 5years
+        
+        // Field visibility
+        showCompanyNameField: { manual: false, online: false },
+        showRoomNumberField: { manual: false, online: false },
+        showAgreedPriceField: false,
+        showPromoCodeField: { manual: false, online: false },
+        
+        // Online booking settings
+        onlineBooking: {
+          enabled: true,
+          bookingFlow: "guest_first", // guest_first, date_first
+          minGuests: 1,
+          maxGuests: 10,
+          minNotice: 1.5, // hours
+          maxNotice: 45, // days
+          interval: 15, // minutes
+          maxBookingsPerTime: "unlimited",
+          maxGuestsPerTime: "unlimited",
+          maxCapacity: "unlimited",
+          collectEmail: true,
+          emailRequired: false,
+          collectAddress: "zipcode", // none, zipcode, full
+          confirmNewsletter: true,
+          confirmDuration: false,
+          confirmUrl: "",
+          privacyPolicyUrl: "",
+        },
+        
+        // Manual booking (administration)
+        manualBooking: {
+          tableSuggestions: true,
+          interval: 15, // minutes
+          initialsRequired: false,
+        },
+        
+        // Administration
+        administration: {
+          newBookingNotification: true,
+        },
       },
       notificationSettings: restaurant.notificationSettings ? JSON.parse(restaurant.notificationSettings) : {
         emailNotifications: true,

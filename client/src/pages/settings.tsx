@@ -59,6 +59,7 @@ export default function Settings() {
   });
 
   const [bookingSettings, setBookingSettings] = useState({
+    // Basic booking settings
     enableWalkIns: true,
     enableWaitingList: true,
     autoConfirmBookings: false,
@@ -66,6 +67,63 @@ export default function Settings() {
     depositAmount: 0,
     allowSameDayBookings: true,
     minBookingNotice: 0,
+    
+    // Duration and timing settings
+    defaultDuration: 120,
+    emptySeats: 2,
+    turnaroundTime: 0,
+    useEndingTime: false,
+    
+    // Contact and cancellation
+    contactMethod: "phone",
+    allowCancellationAndChanges: true,
+    cancellationNotice: "none",
+    groupRequest: false,
+    
+    // Table booking preferences
+    tableBooking: "recommended",
+    
+    // Data storage
+    personalDataStorage: "1year",
+    
+    // Field visibility
+    showCompanyNameField: { manual: false, online: false },
+    showRoomNumberField: { manual: false, online: false },
+    showAgreedPriceField: false,
+    showPromoCodeField: { manual: false, online: false },
+    
+    // Online booking settings
+    onlineBooking: {
+      enabled: true,
+      bookingFlow: "guest_first",
+      minGuests: 1,
+      maxGuests: 10,
+      minNotice: 1.5,
+      maxNotice: 45,
+      interval: 15,
+      maxBookingsPerTime: "unlimited",
+      maxGuestsPerTime: "unlimited",
+      maxCapacity: "unlimited",
+      collectEmail: true,
+      emailRequired: false,
+      collectAddress: "zipcode",
+      confirmNewsletter: true,
+      confirmDuration: false,
+      confirmUrl: "",
+      privacyPolicyUrl: "",
+    },
+    
+    // Manual booking (administration)
+    manualBooking: {
+      tableSuggestions: true,
+      interval: 15,
+      initialsRequired: false,
+    },
+    
+    // Administration
+    administration: {
+      newBookingNotification: true,
+    },
   });
 
   const [notificationSettings, setNotificationSettings] = useState({
@@ -317,130 +375,843 @@ export default function Settings() {
           <CardHeader>
             <CardTitle className="flex items-center space-x-2">
               <Calendar className="h-5 w-5" />
-              <span>Booking & Reservation Settings</span>
+              <span>Booking Settings</span>
             </CardTitle>
             <CardDescription>
-              Configure booking policies, requirements, and operational rules
+              Configure detailed booking policies, timing, and operational preferences
             </CardDescription>
           </CardHeader>
-          <CardContent className="space-y-6">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <div className="space-y-4">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <Label>Enable Walk-ins</Label>
-                    <p className="text-sm text-gray-500">
-                      Allow walk-in customers without reservations
-                    </p>
-                  </div>
-                  <Switch
-                    checked={bookingSettings.enableWalkIns}
-                    onCheckedChange={(checked) =>
-                      setBookingSettings({ ...bookingSettings, enableWalkIns: checked })
-                    }
-                  />
+          <CardContent className="space-y-8">
+            {/* Core Booking Configuration */}
+            <div>
+              <h4 className="text-lg font-medium mb-4">Bookings</h4>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div>
+                  <Label htmlFor="duration">Duration:</Label>
+                  <Select
+                    value={`${bookingSettings.defaultDuration} minutes`}
+                    onValueChange={(value) => {
+                      const minutes = parseInt(value.split(' ')[0]);
+                      setBookingSettings({ ...bookingSettings, defaultDuration: minutes });
+                    }}
+                  >
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="60 minutes">1 hour</SelectItem>
+                      <SelectItem value="90 minutes">1.5 hours</SelectItem>
+                      <SelectItem value="120 minutes">2 hours</SelectItem>
+                      <SelectItem value="150 minutes">2.5 hours</SelectItem>
+                      <SelectItem value="180 minutes">3 hours</SelectItem>
+                      <SelectItem value="240 minutes">4 hours</SelectItem>
+                    </SelectContent>
+                  </Select>
                 </div>
-                <div className="flex items-center justify-between">
-                  <div>
-                    <Label>Enable Waiting List</Label>
-                    <p className="text-sm text-gray-500">
-                      Allow customers to join waiting list when fully booked
-                    </p>
-                  </div>
-                  <Switch
-                    checked={bookingSettings.enableWaitingList}
-                    onCheckedChange={(checked) =>
-                      setBookingSettings({ ...bookingSettings, enableWaitingList: checked })
+
+                <div>
+                  <Label htmlFor="emptySeats">Empty seats:</Label>
+                  <Select
+                    value={bookingSettings.emptySeats.toString()}
+                    onValueChange={(value) =>
+                      setBookingSettings({ ...bookingSettings, emptySeats: parseInt(value) })
                     }
-                  />
+                  >
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="0">0</SelectItem>
+                      <SelectItem value="1">1</SelectItem>
+                      <SelectItem value="2">2</SelectItem>
+                      <SelectItem value="3">3</SelectItem>
+                      <SelectItem value="4">4</SelectItem>
+                    </SelectContent>
+                  </Select>
                 </div>
-                <div className="flex items-center justify-between">
-                  <div>
-                    <Label>Auto-confirm Bookings</Label>
-                    <p className="text-sm text-gray-500">
-                      Automatically confirm bookings without manual approval
-                    </p>
-                  </div>
-                  <Switch
-                    checked={bookingSettings.autoConfirmBookings}
-                    onCheckedChange={(checked) =>
-                      setBookingSettings({
-                        ...bookingSettings,
-                        autoConfirmBookings: checked,
-                      })
-                    }
-                  />
+
+                <div>
+                  <Label htmlFor="turnaroundTime">Turnaround time:</Label>
+                  <Select
+                    value={`${bookingSettings.turnaroundTime} min.`}
+                    onValueChange={(value) => {
+                      const minutes = parseInt(value.split(' ')[0]);
+                      setBookingSettings({ ...bookingSettings, turnaroundTime: minutes });
+                    }}
+                  >
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="0 min.">0 min.</SelectItem>
+                      <SelectItem value="15 min.">15 min.</SelectItem>
+                      <SelectItem value="30 min.">30 min.</SelectItem>
+                      <SelectItem value="45 min.">45 min.</SelectItem>
+                      <SelectItem value="60 min.">60 min.</SelectItem>
+                    </SelectContent>
+                  </Select>
                 </div>
-                <div className="flex items-center justify-between">
-                  <div>
-                    <Label>Allow Same Day Bookings</Label>
-                    <p className="text-sm text-gray-500">
-                      Permit reservations for today
-                    </p>
-                  </div>
-                  <Switch
-                    checked={bookingSettings.allowSameDayBookings}
-                    onCheckedChange={(checked) =>
-                      setBookingSettings({ ...bookingSettings, allowSameDayBookings: checked })
+
+                <div>
+                  <Label htmlFor="contactMethod">Contact method:</Label>
+                  <Select
+                    value={bookingSettings.contactMethod}
+                    onValueChange={(value) =>
+                      setBookingSettings({ ...bookingSettings, contactMethod: value })
                     }
-                  />
+                  >
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="phone">Phone</SelectItem>
+                      <SelectItem value="email">Email</SelectItem>
+                      <SelectItem value="both">Both</SelectItem>
+                    </SelectContent>
+                  </Select>
                 </div>
               </div>
-              
-              <div className="space-y-4">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <Label>Require Deposit</Label>
-                    <p className="text-sm text-gray-500">
-                      Require deposit payment for reservations
-                    </p>
-                  </div>
+
+              <div className="mt-6 space-y-4">
+                <div className="flex items-center space-x-2">
                   <Switch
-                    checked={bookingSettings.requireDeposit}
+                    checked={bookingSettings.useEndingTime}
                     onCheckedChange={(checked) =>
-                      setBookingSettings({ ...bookingSettings, requireDeposit: checked })
+                      setBookingSettings({ ...bookingSettings, useEndingTime: checked })
                     }
                   />
+                  <Label>Use ending time:</Label>
                 </div>
-                
-                {bookingSettings.requireDeposit && (
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   <div>
-                    <Label htmlFor="depositAmount">Deposit Amount ({generalSettings.currency})</Label>
+                    <Label>Allow cancellation and changes:</Label>
+                    <Select
+                      value={bookingSettings.allowCancellationAndChanges ? "Yes" : "No"}
+                      onValueChange={(value) =>
+                        setBookingSettings({ 
+                          ...bookingSettings, 
+                          allowCancellationAndChanges: value === "Yes" 
+                        })
+                      }
+                    >
+                      <SelectTrigger>
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="Yes">Yes</SelectItem>
+                        <SelectItem value="No">No</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+
+                  <div>
+                    <Label>Cancellation notice:</Label>
+                    <Select
+                      value={bookingSettings.cancellationNotice}
+                      onValueChange={(value) =>
+                        setBookingSettings({ ...bookingSettings, cancellationNotice: value })
+                      }
+                    >
+                      <SelectTrigger>
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="none">None</SelectItem>
+                        <SelectItem value="24h">24 hours</SelectItem>
+                        <SelectItem value="48h">48 hours</SelectItem>
+                        <SelectItem value="1week">1 week</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </div>
+
+                <div className="flex items-center space-x-2">
+                  <Switch
+                    checked={bookingSettings.groupRequest}
+                    onCheckedChange={(checked) =>
+                      setBookingSettings({ ...bookingSettings, groupRequest: checked })
+                    }
+                  />
+                  <Label>Group Request</Label>
+                </div>
+
+                <div className="space-y-2">
+                  <Label>Enable waiting list:</Label>
+                  <div className="flex flex-wrap gap-4">
+                    <div className="flex items-center space-x-2">
+                      <Switch
+                        checked={bookingSettings.enableWaitingList}
+                        onCheckedChange={(checked) =>
+                          setBookingSettings({ ...bookingSettings, enableWaitingList: checked })
+                        }
+                      />
+                      <span className="text-sm">Enable</span>
+                    </div>
+                    <div className="flex items-center space-x-2">
+                      <Switch
+                        checked={bookingSettings.autoWaitingList || false}
+                        onCheckedChange={(checked) =>
+                          setBookingSettings({ ...bookingSettings, autoWaitingList: checked })
+                        }
+                      />
+                      <span className="text-sm">Automate the waiting list</span>
+                    </div>
+                    <div className="flex items-center space-x-2">
+                      <Switch
+                        checked={bookingSettings.waitingListOnlyNoTimes || false}
+                        onCheckedChange={(checked) =>
+                          setBookingSettings({ ...bookingSettings, waitingListOnlyNoTimes: checked })
+                        }
+                      />
+                      <span className="text-sm">Only use waiting list if no available times</span>
+                    </div>
+                  </div>
+                </div>
+
+                <div>
+                  <Label>Table booking:</Label>
+                  <Select
+                    value={bookingSettings.tableBooking}
+                    onValueChange={(value) =>
+                      setBookingSettings({ ...bookingSettings, tableBooking: value })
+                    }
+                  >
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="recommended">Book with tables (recommended)</SelectItem>
+                      <SelectItem value="required">Book with tables (required)</SelectItem>
+                      <SelectItem value="disabled">Disabled</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <div>
+                  <Label>Storage of personal data:</Label>
+                  <Select
+                    value={bookingSettings.personalDataStorage}
+                    onValueChange={(value) =>
+                      setBookingSettings({ ...bookingSettings, personalDataStorage: value })
+                    }
+                  >
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="6months">6 months</SelectItem>
+                      <SelectItem value="1year">1 year</SelectItem>
+                      <SelectItem value="2years">2 years</SelectItem>
+                      <SelectItem value="5years">5 years</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                {/* Field Visibility Settings */}
+                <div className="space-y-4">
+                  <h5 className="font-medium">Show fields:</h5>
+                  
+                  <div className="space-y-3">
+                    <div>
+                      <Label>Show "Company name" field:</Label>
+                      <div className="flex gap-4 mt-2">
+                        <div className="flex items-center space-x-2">
+                          <Switch
+                            checked={bookingSettings.showCompanyNameField.manual}
+                            onCheckedChange={(checked) =>
+                              setBookingSettings({ 
+                                ...bookingSettings, 
+                                showCompanyNameField: { 
+                                  ...bookingSettings.showCompanyNameField, 
+                                  manual: checked 
+                                }
+                              })
+                            }
+                          />
+                          <span className="text-sm">Manual booking</span>
+                        </div>
+                        <div className="flex items-center space-x-2">
+                          <Switch
+                            checked={bookingSettings.showCompanyNameField.online}
+                            onCheckedChange={(checked) =>
+                              setBookingSettings({ 
+                                ...bookingSettings, 
+                                showCompanyNameField: { 
+                                  ...bookingSettings.showCompanyNameField, 
+                                  online: checked 
+                                }
+                              })
+                            }
+                          />
+                          <span className="text-sm">Both manual and online booking</span>
+                        </div>
+                      </div>
+                    </div>
+
+                    <div>
+                      <Label>Show "Room no." field:</Label>
+                      <div className="flex gap-4 mt-2">
+                        <div className="flex items-center space-x-2">
+                          <Switch
+                            checked={bookingSettings.showRoomNumberField.manual}
+                            onCheckedChange={(checked) =>
+                              setBookingSettings({ 
+                                ...bookingSettings, 
+                                showRoomNumberField: { 
+                                  ...bookingSettings.showRoomNumberField, 
+                                  manual: checked 
+                                }
+                              })
+                            }
+                          />
+                          <span className="text-sm">Manual booking</span>
+                        </div>
+                        <div className="flex items-center space-x-2">
+                          <Switch
+                            checked={bookingSettings.showRoomNumberField.online}
+                            onCheckedChange={(checked) =>
+                              setBookingSettings({ 
+                                ...bookingSettings, 
+                                showRoomNumberField: { 
+                                  ...bookingSettings.showRoomNumberField, 
+                                  online: checked 
+                                }
+                              })
+                            }
+                          />
+                          <span className="text-sm">Both manual and online booking</span>
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="flex items-center space-x-2">
+                      <Switch
+                        checked={bookingSettings.showAgreedPriceField}
+                        onCheckedChange={(checked) =>
+                          setBookingSettings({ ...bookingSettings, showAgreedPriceField: checked })
+                        }
+                      />
+                      <Label>Show Agreed Price field:</Label>
+                    </div>
+
+                    <div>
+                      <Label>Show promo code field:</Label>
+                      <div className="flex gap-4 mt-2">
+                        <div className="flex items-center space-x-2">
+                          <Switch
+                            checked={bookingSettings.showPromoCodeField.manual}
+                            onCheckedChange={(checked) =>
+                              setBookingSettings({ 
+                                ...bookingSettings, 
+                                showPromoCodeField: { 
+                                  ...bookingSettings.showPromoCodeField, 
+                                  manual: checked 
+                                }
+                              })
+                            }
+                          />
+                          <span className="text-sm">Manual booking</span>
+                        </div>
+                        <div className="flex items-center space-x-2">
+                          <Switch
+                            checked={bookingSettings.showPromoCodeField.online}
+                            onCheckedChange={(checked) =>
+                              setBookingSettings({ 
+                                ...bookingSettings, 
+                                showPromoCodeField: { 
+                                  ...bookingSettings.showPromoCodeField, 
+                                  online: checked 
+                                }
+                              })
+                            }
+                          />
+                          <span className="text-sm">Both manual and online booking</span>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <Separator />
+
+            {/* Online Booking Settings */}
+            <div>
+              <h4 className="text-lg font-medium mb-4">Online booking (on website)</h4>
+              <div className="space-y-6">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <div>
+                    <Label>Booking flow:</Label>
+                    <Select
+                      value={bookingSettings.onlineBooking.bookingFlow}
+                      onValueChange={(value) =>
+                        setBookingSettings({ 
+                          ...bookingSettings, 
+                          onlineBooking: { 
+                            ...bookingSettings.onlineBooking, 
+                            bookingFlow: value 
+                          }
+                        })
+                      }
+                    >
+                      <SelectTrigger>
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="guest_first">Guest selects booking type first, then date and time</SelectItem>
+                        <SelectItem value="date_first">Guest selects date and time first, then booking type</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+
+                  <div>
+                    <Label>Min. guests:</Label>
+                    <Select
+                      value={bookingSettings.onlineBooking.minGuests.toString()}
+                      onValueChange={(value) =>
+                        setBookingSettings({ 
+                          ...bookingSettings, 
+                          onlineBooking: { 
+                            ...bookingSettings.onlineBooking, 
+                            minGuests: parseInt(value) 
+                          }
+                        })
+                      }
+                    >
+                      <SelectTrigger>
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {[1,2,3,4,5,6,7,8,9,10].map(num => (
+                          <SelectItem key={num} value={num.toString()}>{num}</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+
+                  <div>
+                    <Label>Max. guests:</Label>
+                    <Select
+                      value={bookingSettings.onlineBooking.maxGuests.toString()}
+                      onValueChange={(value) =>
+                        setBookingSettings({ 
+                          ...bookingSettings, 
+                          onlineBooking: { 
+                            ...bookingSettings.onlineBooking, 
+                            maxGuests: parseInt(value) 
+                          }
+                        })
+                      }
+                    >
+                      <SelectTrigger>
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {[2,4,6,8,10,12,15,20,25,30].map(num => (
+                          <SelectItem key={num} value={num.toString()}>{num}</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+
+                  <div>
+                    <Label>Min. notice:</Label>
+                    <Select
+                      value={`${bookingSettings.onlineBooking.minNotice} hour`}
+                      onValueChange={(value) =>
+                        setBookingSettings({ 
+                          ...bookingSettings, 
+                          onlineBooking: { 
+                            ...bookingSettings.onlineBooking, 
+                            minNotice: parseFloat(value.split(' ')[0])
+                          }
+                        })
+                      }
+                    >
+                      <SelectTrigger>
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="0.5 hour">½ hour</SelectItem>
+                        <SelectItem value="1 hour">1 hour</SelectItem>
+                        <SelectItem value="1.5 hour">1½ hour</SelectItem>
+                        <SelectItem value="2 hour">2 hours</SelectItem>
+                        <SelectItem value="4 hour">4 hours</SelectItem>
+                        <SelectItem value="8 hour">8 hours</SelectItem>
+                        <SelectItem value="24 hour">24 hours</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+
+                  <div>
+                    <Label>Max. notice:</Label>
+                    <Select
+                      value={`${bookingSettings.onlineBooking.maxNotice} days`}
+                      onValueChange={(value) =>
+                        setBookingSettings({ 
+                          ...bookingSettings, 
+                          onlineBooking: { 
+                            ...bookingSettings.onlineBooking, 
+                            maxNotice: parseInt(value.split(' ')[0])
+                          }
+                        })
+                      }
+                    >
+                      <SelectTrigger>
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="7 days">7 days</SelectItem>
+                        <SelectItem value="14 days">14 days</SelectItem>
+                        <SelectItem value="30 days">30 days</SelectItem>
+                        <SelectItem value="45 days">45 days</SelectItem>
+                        <SelectItem value="60 days">60 days</SelectItem>
+                        <SelectItem value="90 days">90 days</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+
+                  <div>
+                    <Label>Interval:</Label>
+                    <Select
+                      value={`${bookingSettings.onlineBooking.interval} min.`}
+                      onValueChange={(value) =>
+                        setBookingSettings({ 
+                          ...bookingSettings, 
+                          onlineBooking: { 
+                            ...bookingSettings.onlineBooking, 
+                            interval: parseInt(value.split(' ')[0])
+                          }
+                        })
+                      }
+                    >
+                      <SelectTrigger>
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="15 min.">15 min.</SelectItem>
+                        <SelectItem value="30 min.">30 min.</SelectItem>
+                        <SelectItem value="45 min.">45 min.</SelectItem>
+                        <SelectItem value="60 min.">60 min.</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                  <div>
+                    <Label>Max. bookings per arrival time:</Label>
+                    <Select
+                      value={bookingSettings.onlineBooking.maxBookingsPerTime}
+                      onValueChange={(value) =>
+                        setBookingSettings({ 
+                          ...bookingSettings, 
+                          onlineBooking: { 
+                            ...bookingSettings.onlineBooking, 
+                            maxBookingsPerTime: value 
+                          }
+                        })
+                      }
+                    >
+                      <SelectTrigger>
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="unlimited">Unlimited</SelectItem>
+                        <SelectItem value="1">1</SelectItem>
+                        <SelectItem value="2">2</SelectItem>
+                        <SelectItem value="3">3</SelectItem>
+                        <SelectItem value="5">5</SelectItem>
+                        <SelectItem value="10">10</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+
+                  <div>
+                    <Label>Max. guests per arrival time:</Label>
+                    <Select
+                      value={bookingSettings.onlineBooking.maxGuestsPerTime}
+                      onValueChange={(value) =>
+                        setBookingSettings({ 
+                          ...bookingSettings, 
+                          onlineBooking: { 
+                            ...bookingSettings.onlineBooking, 
+                            maxGuestsPerTime: value 
+                          }
+                        })
+                      }
+                    >
+                      <SelectTrigger>
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="unlimited">Unlimited</SelectItem>
+                        <SelectItem value="10">10</SelectItem>
+                        <SelectItem value="20">20</SelectItem>
+                        <SelectItem value="30">30</SelectItem>
+                        <SelectItem value="50">50</SelectItem>
+                        <SelectItem value="100">100</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+
+                  <div>
+                    <Label>Max. capacity (concurrent guests):</Label>
+                    <Select
+                      value={bookingSettings.onlineBooking.maxCapacity}
+                      onValueChange={(value) =>
+                        setBookingSettings({ 
+                          ...bookingSettings, 
+                          onlineBooking: { 
+                            ...bookingSettings.onlineBooking, 
+                            maxCapacity: value 
+                          }
+                        })
+                      }
+                    >
+                      <SelectTrigger>
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="unlimited">Unlimited</SelectItem>
+                        <SelectItem value="50">50</SelectItem>
+                        <SelectItem value="100">100</SelectItem>
+                        <SelectItem value="150">150</SelectItem>
+                        <SelectItem value="200">200</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </div>
+
+                <div className="space-y-4">
+                  <div className="flex items-center space-x-2">
+                    <Switch
+                      checked={bookingSettings.onlineBooking.collectEmail}
+                      onCheckedChange={(checked) =>
+                        setBookingSettings({ 
+                          ...bookingSettings, 
+                          onlineBooking: { 
+                            ...bookingSettings.onlineBooking, 
+                            collectEmail: checked 
+                          }
+                        })
+                      }
+                    />
+                    <Label>Collect e-mail:</Label>
+                  </div>
+
+                  <div className="flex items-center space-x-2">
+                    <Switch
+                      checked={bookingSettings.onlineBooking.emailRequired}
+                      onCheckedChange={(checked) =>
+                        setBookingSettings({ 
+                          ...bookingSettings, 
+                          onlineBooking: { 
+                            ...bookingSettings.onlineBooking, 
+                            emailRequired: checked 
+                          }
+                        })
+                      }
+                    />
+                    <Label>E-mail required:</Label>
+                  </div>
+
+                  <div>
+                    <Label>Collect address:</Label>
+                    <div className="flex gap-4 mt-2">
+                      <div className="flex items-center space-x-2">
+                        <Switch
+                          checked={bookingSettings.onlineBooking.collectAddress === "zipcode"}
+                          onCheckedChange={(checked) =>
+                            setBookingSettings({ 
+                              ...bookingSettings, 
+                              onlineBooking: { 
+                                ...bookingSettings.onlineBooking, 
+                                collectAddress: checked ? "zipcode" : "none" 
+                              }
+                            })
+                          }
+                        />
+                        <span className="text-sm">Zip code only</span>
+                      </div>
+                      <div className="flex items-center space-x-2">
+                        <Switch
+                          checked={bookingSettings.onlineBooking.collectAddress === "full"}
+                          onCheckedChange={(checked) =>
+                            setBookingSettings({ 
+                              ...bookingSettings, 
+                              onlineBooking: { 
+                                ...bookingSettings.onlineBooking, 
+                                collectAddress: checked ? "full" : "none" 
+                              }
+                            })
+                          }
+                        />
+                        <span className="text-sm">Full address</span>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="flex items-center space-x-2">
+                    <Switch
+                      checked={bookingSettings.onlineBooking.confirmNewsletter}
+                      onCheckedChange={(checked) =>
+                        setBookingSettings({ 
+                          ...bookingSettings, 
+                          onlineBooking: { 
+                            ...bookingSettings.onlineBooking, 
+                            confirmNewsletter: checked 
+                          }
+                        })
+                      }
+                    />
+                    <Label>Confirm newsletter:</Label>
+                  </div>
+
+                  <div className="flex items-center space-x-2">
+                    <Switch
+                      checked={bookingSettings.onlineBooking.confirmDuration}
+                      onCheckedChange={(checked) =>
+                        setBookingSettings({ 
+                          ...bookingSettings, 
+                          onlineBooking: { 
+                            ...bookingSettings.onlineBooking, 
+                            confirmDuration: checked 
+                          }
+                        })
+                      }
+                    />
+                    <Label>Confirm duration:</Label>
+                  </div>
+
+                  <div>
+                    <Label htmlFor="confirmUrl">Confirm URL:</Label>
                     <Input
-                      id="depositAmount"
-                      type="number"
-                      min="0"
-                      step="0.01"
-                      value={bookingSettings.depositAmount}
+                      id="confirmUrl"
+                      type="url"
+                      placeholder="https://yourrestaurant.com/booking-confirmed"
+                      value={bookingSettings.onlineBooking.confirmUrl}
                       onChange={(e) =>
-                        setBookingSettings({
-                          ...bookingSettings,
-                          depositAmount: parseFloat(e.target.value) || 0,
+                        setBookingSettings({ 
+                          ...bookingSettings, 
+                          onlineBooking: { 
+                            ...bookingSettings.onlineBooking, 
+                            confirmUrl: e.target.value 
+                          }
                         })
                       }
                     />
                   </div>
-                )}
-                
-                <div>
-                  <Label htmlFor="minBookingNotice">Minimum Booking Notice (hours)</Label>
-                  <Input
-                    id="minBookingNotice"
-                    type="number"
-                    min="0"
-                    max="72"
-                    value={bookingSettings.minBookingNotice}
-                    onChange={(e) =>
-                      setBookingSettings({
-                        ...bookingSettings,
-                        minBookingNotice: parseInt(e.target.value) || 0,
+
+                  <div>
+                    <Label htmlFor="privacyPolicyUrl">Privacy Policy URL:</Label>
+                    <Input
+                      id="privacyPolicyUrl"
+                      type="url"
+                      placeholder="https://yourrestaurant.com/privacy-policy"
+                      value={bookingSettings.onlineBooking.privacyPolicyUrl}
+                      onChange={(e) =>
+                        setBookingSettings({ 
+                          ...bookingSettings, 
+                          onlineBooking: { 
+                            ...bookingSettings.onlineBooking, 
+                            privacyPolicyUrl: e.target.value 
+                          }
+                        })
+                      }
+                    />
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <Separator />
+
+            {/* Manual Booking (Administration) */}
+            <div>
+              <h4 className="text-lg font-medium mb-4">Manual booking (administration)</h4>
+              <div className="space-y-4">
+                <div className="flex items-center space-x-2">
+                  <Switch
+                    checked={bookingSettings.manualBooking.tableSuggestions}
+                    onCheckedChange={(checked) =>
+                      setBookingSettings({ 
+                        ...bookingSettings, 
+                        manualBooking: { 
+                          ...bookingSettings.manualBooking, 
+                          tableSuggestions: checked 
+                        }
                       })
                     }
                   />
-                  <p className="text-sm text-gray-500 mt-1">
-                    Minimum time required before booking time
-                  </p>
+                  <Label>Table suggestions:</Label>
                 </div>
+
+                <div>
+                  <Label>Interval:</Label>
+                  <Select
+                    value={`${bookingSettings.manualBooking.interval} min.`}
+                    onValueChange={(value) =>
+                      setBookingSettings({ 
+                        ...bookingSettings, 
+                        manualBooking: { 
+                          ...bookingSettings.manualBooking, 
+                          interval: parseInt(value.split(' ')[0])
+                        }
+                      })
+                    }
+                  >
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="15 min.">15 min.</SelectItem>
+                      <SelectItem value="30 min.">30 min.</SelectItem>
+                      <SelectItem value="45 min.">45 min.</SelectItem>
+                      <SelectItem value="60 min.">60 min.</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <div className="flex items-center space-x-2">
+                  <Switch
+                    checked={bookingSettings.manualBooking.initialsRequired}
+                    onCheckedChange={(checked) =>
+                      setBookingSettings({ 
+                        ...bookingSettings, 
+                        manualBooking: { 
+                          ...bookingSettings.manualBooking, 
+                          initialsRequired: checked 
+                        }
+                      })
+                    }
+                  />
+                  <Label>Initials are mandatory:</Label>
+                </div>
+              </div>
+            </div>
+
+            <Separator />
+
+            {/* Administration */}
+            <div>
+              <h4 className="text-lg font-medium mb-4">Administration</h4>
+              <div className="flex items-center space-x-2">
+                <Switch
+                  checked={bookingSettings.administration.newBookingNotification}
+                  onCheckedChange={(checked) =>
+                    setBookingSettings({ 
+                      ...bookingSettings, 
+                      administration: { 
+                        ...bookingSettings.administration, 
+                        newBookingNotification: checked 
+                      }
+                    })
+                  }
+                />
+                <Label>New booking notification:</Label>
               </div>
             </div>
           </CardContent>
@@ -699,6 +1470,457 @@ export default function Settings() {
                     onCheckedChange={(checked) =>
                       setNotificationSettings({ ...notificationSettings, noShowAlerts: checked })
                     }
+                  />
+                </div>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Kitchen & Operations Settings */}
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center space-x-2">
+              <Utensils className="h-5 w-5" />
+              <span>Kitchen & Operations</span>
+            </CardTitle>
+            <CardDescription>
+              Configure kitchen workflow, service options, and operational preferences
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div className="space-y-4">
+                <h4 className="font-medium text-gray-900 dark:text-white">Service Options</h4>
+                
+                <div className="flex items-center justify-between">
+                  <div>
+                    <Label>Table Service</Label>
+                    <p className="text-sm text-gray-500">Full-service dining</p>
+                  </div>
+                  <Switch defaultChecked />
+                </div>
+                
+                <div className="flex items-center justify-between">
+                  <div>
+                    <Label>Takeout Orders</Label>
+                    <p className="text-sm text-gray-500">Customer pickup orders</p>
+                  </div>
+                  <Switch defaultChecked />
+                </div>
+                
+                <div className="flex items-center justify-between">
+                  <div>
+                    <Label>Delivery Service</Label>
+                    <p className="text-sm text-gray-500">Home delivery options</p>
+                  </div>
+                  <Switch />
+                </div>
+                
+                <div>
+                  <Label htmlFor="deliveryRadius">Delivery Radius (miles)</Label>
+                  <Input
+                    id="deliveryRadius"
+                    type="number"
+                    min="1"
+                    max="25"
+                    defaultValue="5"
+                  />
+                </div>
+              </div>
+              
+              <div className="space-y-4">
+                <h4 className="font-medium text-gray-900 dark:text-white">Kitchen Operations</h4>
+                
+                <div>
+                  <Label htmlFor="avgServiceTime">Average Service Time (minutes)</Label>
+                  <Select defaultValue="90">
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="60">60 minutes</SelectItem>
+                      <SelectItem value="75">75 minutes</SelectItem>
+                      <SelectItem value="90">90 minutes</SelectItem>
+                      <SelectItem value="105">105 minutes</SelectItem>
+                      <SelectItem value="120">120 minutes</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                
+                <div className="flex items-center justify-between">
+                  <div>
+                    <Label>Special Requests</Label>
+                    <p className="text-sm text-gray-500">Allow dietary modifications</p>
+                  </div>
+                  <Switch defaultChecked />
+                </div>
+                
+                <div>
+                  <Label htmlFor="noShowGrace">No-Show Grace Period (minutes)</Label>
+                  <Select defaultValue="15">
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="10">10 minutes</SelectItem>
+                      <SelectItem value="15">15 minutes</SelectItem>
+                      <SelectItem value="20">20 minutes</SelectItem>
+                      <SelectItem value="30">30 minutes</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                
+                <div>
+                  <Label htmlFor="tableRelease">Auto Table Release (minutes)</Label>
+                  <Select defaultValue="30">
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="20">20 minutes</SelectItem>
+                      <SelectItem value="30">30 minutes</SelectItem>
+                      <SelectItem value="45">45 minutes</SelectItem>
+                      <SelectItem value="60">60 minutes</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Payment & Financial Settings */}
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center space-x-2">
+              <DollarSign className="h-5 w-5" />
+              <span>Payment & Financial Settings</span>
+            </CardTitle>
+            <CardDescription>
+              Configure payment methods, policies, and financial preferences
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div className="space-y-4">
+                <h4 className="font-medium text-gray-900 dark:text-white">Accepted Payment Methods</h4>
+                
+                <div className="flex items-center justify-between">
+                  <div>
+                    <Label>Credit/Debit Cards</Label>
+                    <p className="text-sm text-gray-500">Visa, Mastercard, Amex</p>
+                  </div>
+                  <Switch defaultChecked />
+                </div>
+                
+                <div className="flex items-center justify-between">
+                  <div>
+                    <Label>Cash Payments</Label>
+                    <p className="text-sm text-gray-500">Physical currency</p>
+                  </div>
+                  <Switch defaultChecked />
+                </div>
+                
+                <div className="flex items-center justify-between">
+                  <div>
+                    <Label>Digital Payments</Label>
+                    <p className="text-sm text-gray-500">Apple Pay, Google Pay</p>
+                  </div>
+                  <Switch defaultChecked />
+                </div>
+                
+                <div className="flex items-center justify-between">
+                  <div>
+                    <Label>Require Deposit for Large Groups</Label>
+                    <p className="text-sm text-gray-500">Security deposit requirement</p>
+                  </div>
+                  <Switch defaultChecked />
+                </div>
+                
+                <div>
+                  <Label htmlFor="groupThreshold">Large Group Threshold</Label>
+                  <Select defaultValue="8">
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="6">6+ guests</SelectItem>
+                      <SelectItem value="8">8+ guests</SelectItem>
+                      <SelectItem value="10">10+ guests</SelectItem>
+                      <SelectItem value="12">12+ guests</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+              
+              <div className="space-y-4">
+                <h4 className="font-medium text-gray-900 dark:text-white">Policies</h4>
+                
+                <div>
+                  <Label>Cancellation Policy</Label>
+                  <Select defaultValue="24h">
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="24h">24 hours notice</SelectItem>
+                      <SelectItem value="48h">48 hours notice</SelectItem>
+                      <SelectItem value="72h">72 hours notice</SelectItem>
+                      <SelectItem value="1week">1 week notice</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                
+                <div>
+                  <Label>Refund Policy</Label>
+                  <Select defaultValue="full">
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="full">Full refund</SelectItem>
+                      <SelectItem value="partial">Partial refund (50%)</SelectItem>
+                      <SelectItem value="credit">Store credit only</SelectItem>
+                      <SelectItem value="none">No refunds</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                
+                <div>
+                  <Label htmlFor="serviceFee">Service Fee (%)</Label>
+                  <Input
+                    id="serviceFee"
+                    type="number"
+                    min="0"
+                    max="25"
+                    step="0.5"
+                    placeholder="0"
+                  />
+                  <p className="text-sm text-gray-500 mt-1">
+                    Optional service charge percentage
+                  </p>
+                </div>
+                
+                <div>
+                  <Label htmlFor="taxRate">Tax Rate (%)</Label>
+                  <Input
+                    id="taxRate"
+                    type="number"
+                    min="0"
+                    max="15"
+                    step="0.25"
+                    placeholder="8.25"
+                  />
+                </div>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Customer Experience Settings */}
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center space-x-2">
+              <Users className="h-5 w-5" />
+              <span>Customer Experience</span>
+            </CardTitle>
+            <CardDescription>
+              Enhance customer satisfaction and engagement features
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div className="space-y-4">
+                <h4 className="font-medium text-gray-900 dark:text-white">Loyalty & Rewards</h4>
+                
+                <div className="flex items-center justify-between">
+                  <div>
+                    <Label>Enable Loyalty Program</Label>
+                    <p className="text-sm text-gray-500">Points-based rewards</p>
+                  </div>
+                  <Switch />
+                </div>
+                
+                <div className="flex items-center justify-between">
+                  <div>
+                    <Label>Birthday Rewards</Label>
+                    <p className="text-sm text-gray-500">Special birthday offers</p>
+                  </div>
+                  <Switch />
+                </div>
+                
+                <div className="flex items-center justify-between">
+                  <div>
+                    <Label>Feedback Collection</Label>
+                    <p className="text-sm text-gray-500">Post-meal surveys</p>
+                  </div>
+                  <Switch defaultChecked />
+                </div>
+                
+                <div>
+                  <Label>Review Platform Integration</Label>
+                  <div className="space-y-2 mt-2">
+                    <div className="flex items-center space-x-2">
+                      <Switch />
+                      <span className="text-sm">Google Reviews</span>
+                    </div>
+                    <div className="flex items-center space-x-2">
+                      <Switch />
+                      <span className="text-sm">Yelp Integration</span>
+                    </div>
+                    <div className="flex items-center space-x-2">
+                      <Switch />
+                      <span className="text-sm">TripAdvisor</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+              
+              <div className="space-y-4">
+                <h4 className="font-medium text-gray-900 dark:text-white">Communication Preferences</h4>
+                
+                <div className="flex items-center justify-between">
+                  <div>
+                    <Label>Automated Thank You Messages</Label>
+                    <p className="text-sm text-gray-500">Post-visit appreciation</p>
+                  </div>
+                  <Switch defaultChecked />
+                </div>
+                
+                <div className="flex items-center justify-between">
+                  <div>
+                    <Label>Special Event Invitations</Label>
+                    <p className="text-sm text-gray-500">Private events & tastings</p>
+                  </div>
+                  <Switch />
+                </div>
+                
+                <div className="flex items-center justify-between">
+                  <div>
+                    <Label>Newsletter Subscriptions</Label>
+                    <p className="text-sm text-gray-500">Monthly updates</p>
+                  </div>
+                  <Switch />
+                </div>
+                
+                <div>
+                  <Label htmlFor="avgResponseTime">Average Response Time</Label>
+                  <Select defaultValue="2h">
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="30m">30 minutes</SelectItem>
+                      <SelectItem value="1h">1 hour</SelectItem>
+                      <SelectItem value="2h">2 hours</SelectItem>
+                      <SelectItem value="4h">4 hours</SelectItem>
+                      <SelectItem value="24h">24 hours</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Marketing & Promotions */}
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center space-x-2">
+              <MessageSquare className="h-5 w-5" />
+              <span>Marketing & Promotions</span>
+            </CardTitle>
+            <CardDescription>
+              Configure promotional campaigns and marketing preferences
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div className="space-y-4">
+                <h4 className="font-medium text-gray-900 dark:text-white">Promotional Features</h4>
+                
+                <div className="flex items-center justify-between">
+                  <div>
+                    <Label>Happy Hour Specials</Label>
+                    <p className="text-sm text-gray-500">Time-based discounts</p>
+                  </div>
+                  <Switch />
+                </div>
+                
+                <div className="flex items-center justify-between">
+                  <div>
+                    <Label>Early Bird Discounts</Label>
+                    <p className="text-sm text-gray-500">Morning reservations</p>
+                  </div>
+                  <Switch />
+                </div>
+                
+                <div className="flex items-center justify-between">
+                  <div>
+                    <Label>Group Discounts</Label>
+                    <p className="text-sm text-gray-500">Large party savings</p>
+                  </div>
+                  <Switch />
+                </div>
+                
+                <div className="flex items-center justify-between">
+                  <div>
+                    <Label>Seasonal Promotions</Label>
+                    <p className="text-sm text-gray-500">Holiday specials</p>
+                  </div>
+                  <Switch defaultChecked />
+                </div>
+                
+                <div>
+                  <Label htmlFor="promoCode">Default Promo Code</Label>
+                  <Input
+                    id="promoCode"
+                    placeholder="WELCOME10"
+                  />
+                </div>
+              </div>
+              
+              <div className="space-y-4">
+                <h4 className="font-medium text-gray-900 dark:text-white">Social Media Integration</h4>
+                
+                <div className="flex items-center justify-between">
+                  <div>
+                    <Label>Instagram Integration</Label>
+                    <p className="text-sm text-gray-500">Photo sharing</p>
+                  </div>
+                  <Switch />
+                </div>
+                
+                <div className="flex items-center justify-between">
+                  <div>
+                    <Label>Facebook Check-ins</Label>
+                    <p className="text-sm text-gray-500">Location tagging</p>
+                  </div>
+                  <Switch />
+                </div>
+                
+                <div className="flex items-center justify-between">
+                  <div>
+                    <Label>Twitter Updates</Label>
+                    <p className="text-sm text-gray-500">Daily specials</p>
+                  </div>
+                  <Switch />
+                </div>
+                
+                <div>
+                  <Label htmlFor="hashtag">Restaurant Hashtag</Label>
+                  <Input
+                    id="hashtag"
+                    placeholder="#YourRestaurant"
+                  />
+                </div>
+                
+                <div>
+                  <Label htmlFor="socialHandle">Social Media Handle</Label>
+                  <Input
+                    id="socialHandle"
+                    placeholder="@yourrestaurant"
                   />
                 </div>
               </div>
