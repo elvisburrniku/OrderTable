@@ -341,34 +341,66 @@ export default function PaymentSetups() {
                         defaultValue={field.value}
                         className="grid grid-cols-3 gap-4"
                       >
-                        <div className="border rounded-lg p-4 space-y-2 bg-green-50 border-green-200">
+                        <div className={`border rounded-lg p-4 space-y-2 ${
+                          form.watch("method") === "capture_amount" 
+                            ? "bg-green-50 border-green-200" 
+                            : "bg-gray-50"
+                        }`}>
                           <div className="flex items-center space-x-2">
-                            <RadioGroupItem value="capture_amount" id="capture" className="text-green-600" />
-                            <Label htmlFor="capture" className="font-medium text-green-600">
+                            <RadioGroupItem value="capture_amount" id="capture" />
+                            <Label htmlFor="capture" className={`font-medium ${
+                              form.watch("method") === "capture_amount" 
+                                ? "text-green-600" 
+                                : "text-gray-700"
+                            }`}>
                               Capture
                             </Label>
                           </div>
-                          <div className="font-medium text-green-600">amount</div>
+                          <div className={`font-medium ${
+                            form.watch("method") === "capture_amount" 
+                              ? "text-green-600" 
+                              : "text-gray-700"
+                          }`}>amount</div>
                           <p className="text-xs text-gray-600">
                             The amount is withdrawn immediately.
                           </p>
                         </div>
-                        <div className="border rounded-lg p-4 space-y-2 bg-gray-50">
+                        <div className={`border rounded-lg p-4 space-y-2 ${
+                          form.watch("method") === "reserve_amount" 
+                            ? "bg-green-50 border-green-200" 
+                            : "bg-gray-50"
+                        }`}>
                           <div className="flex items-center space-x-2">
                             <RadioGroupItem value="reserve_amount" id="reserve" />
-                            <Label htmlFor="reserve" className="font-medium text-gray-700">
+                            <Label htmlFor="reserve" className={`font-medium ${
+                              form.watch("method") === "reserve_amount" 
+                                ? "text-green-600" 
+                                : "text-gray-700"
+                            }`}>
                               Reserve
                             </Label>
                           </div>
-                          <div className="font-medium text-gray-700">amount</div>
+                          <div className={`font-medium ${
+                            form.watch("method") === "reserve_amount" 
+                              ? "text-green-600" 
+                              : "text-gray-700"
+                          }`}>amount</div>
                           <p className="text-xs text-gray-600">
                             The amount is reserved and deducted 6 hours before arrival or on late cancellation.
                           </p>
                         </div>
-                        <div className="border rounded-lg p-4 space-y-2 bg-gray-50">
+                        <div className={`border rounded-lg p-4 space-y-2 ${
+                          form.watch("method") === "membership_fee" 
+                            ? "bg-green-50 border-green-200" 
+                            : "bg-gray-50"
+                        }`}>
                           <div className="flex items-center space-x-2">
                             <RadioGroupItem value="membership_fee" id="membership" />
-                            <Label htmlFor="membership" className="font-medium text-gray-700">
+                            <Label htmlFor="membership" className={`font-medium ${
+                              form.watch("method") === "membership_fee" 
+                                ? "text-green-600" 
+                                : "text-gray-700"
+                            }`}>
                               No-show fee
                             </Label>
                           </div>
