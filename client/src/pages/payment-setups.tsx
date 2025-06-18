@@ -155,6 +155,10 @@ export default function PaymentSetups() {
       });
       setIsDialogOpen(false);
       form.reset();
+      setMultiplePrices([{ id: 1, name: "", price: 0, serviceFee: 0 }]);
+      setLanguageDescriptions([
+        { id: 1, language: "en", flag: "🇬🇧", code: "EN", description: "" }
+      ]);
     },
     onError: (error: any) => {
       toast({
@@ -181,6 +185,10 @@ export default function PaymentSetups() {
       setIsDialogOpen(false);
       setEditingSetup(null);
       form.reset();
+      setMultiplePrices([{ id: 1, name: "", price: 0, serviceFee: 0 }]);
+      setLanguageDescriptions([
+        { id: 1, language: "en", flag: "🇬🇧", code: "EN", description: "" }
+      ]);
     },
     onError: (error: any) => {
       toast({
@@ -215,10 +223,18 @@ export default function PaymentSetups() {
   });
 
   const onSubmit = (data: PaymentSetupForm) => {
+    const setupData = {
+      ...data,
+      tenantId,
+      restaurantId,
+      multiplePrices: form.watch("priceType") === "multiple_prices" ? multiplePrices : null,
+      languageDescriptions: languageDescriptions,
+    };
+
     if (editingSetup) {
-      updateMutation.mutate({ id: editingSetup.id, data });
+      updateMutation.mutate({ id: editingSetup.id, data: setupData });
     } else {
-      createMutation.mutate(data);
+      createMutation.mutate(setupData);
     }
   };
 
@@ -250,6 +266,10 @@ export default function PaymentSetups() {
   const handleNewSetup = () => {
     setEditingSetup(null);
     form.reset();
+    setMultiplePrices([{ id: 1, name: "", price: 0, serviceFee: 0 }]);
+    setLanguageDescriptions([
+      { id: 1, language: "en", flag: "🇬🇧", code: "EN", description: "" }
+    ]);
     setIsDialogOpen(true);
   };
 
