@@ -432,7 +432,7 @@ export default function GuestBookingElegant(props: any) {
                     <Checkbox
                       id="marketing"
                       checked={customerData.marketing}
-                      onCheckedChange={(checked) => setCustomerData({...customerData, marketing: !!checked})}
+                      onCheckedChange={(checked) => setCustomerData(prev => ({...prev, marketing: checked === true}))}
                     />
                     <Label htmlFor="marketing" className="text-xs text-gray-600 leading-relaxed">
                       Receive emails with offers and news from {restaurant?.name}. <span className="text-blue-600">Read more</span>
