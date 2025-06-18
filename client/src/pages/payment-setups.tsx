@@ -639,39 +639,41 @@ export default function PaymentSetups() {
                 </div>
               )}
 
-              {/* Allow Residual Payment */}
-              <div className="space-y-4">
-                <div className="flex items-center space-x-3">
-                  <input
-                    type="checkbox"
-                    checked={form.watch("allowResidual")}
-                    onChange={(e) => form.setValue("allowResidual", e.target.checked)}
-                    className="h-4 w-4 accent-green-600"
-                  />
-                  <Label className="text-sm text-gray-700">Allow residual payment:</Label>
-                  {form.watch("allowResidual") && (
-                    <FormField
-                      control={form.control}
-                      name="residualAmount"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormControl>
-                            <Input
-                              type="number"
-                              step="0.01"
-                              placeholder="12"
-                              className="bg-gray-100 w-20"
-                              {...field}
-                              onChange={(e) => field.onChange(parseFloat(e.target.value) || 0)}
-                            />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
+              {/* Allow Residual Payment - Hide for Reserve Amount */}
+              {form.watch("method") !== "reserve_amount" && (
+                <div className="space-y-4">
+                  <div className="flex items-center space-x-3">
+                    <input
+                      type="checkbox"
+                      checked={form.watch("allowResidual")}
+                      onChange={(e) => form.setValue("allowResidual", e.target.checked)}
+                      className="h-4 w-4 accent-green-600"
                     />
-                  )}
+                    <Label className="text-sm text-gray-700">Allow residual payment:</Label>
+                    {form.watch("allowResidual") && (
+                      <FormField
+                        control={form.control}
+                        name="residualAmount"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormControl>
+                              <Input
+                                type="number"
+                                step="0.01"
+                                placeholder="12"
+                                className="bg-gray-100 w-20"
+                                {...field}
+                                onChange={(e) => field.onChange(parseFloat(e.target.value) || 0)}
+                              />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                    )}
+                  </div>
                 </div>
-              </div>
+              )}
 
               {/* Cancellation Notice */}
               <FormField
