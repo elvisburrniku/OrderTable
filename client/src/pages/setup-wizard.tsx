@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
@@ -13,7 +14,13 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useToast } from "@/hooks/use-toast";
 import { Link, useLocation } from "wouter";
 import { apiRequest } from "@/lib/queryClient";
-import { CheckCircle, Circle, ArrowRight, ArrowLeft, Building, Clock, Utensils, Settings, CreditCard } from "lucide-react";
+import { CheckCircle, Circle, ArrowRight, ArrowLeft, Building, Clock, Utensils, Settings, CreditCard, Plus } from "lucide-react";
+import { loadStripe } from "@stripe/stripe-js";
+import { Elements, CardElement, useStripe, useElements } from "@stripe/react-stripe-js";
+
+const stripePromise = loadStripe(
+  import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY || "pk_test_your_publishable_key",
+);
 
 const restaurantDetailsSchema = z.object({
   address: z.string().min(1, "Address is required"),
@@ -72,6 +79,92 @@ type RestaurantDetails = z.infer<typeof restaurantDetailsSchema>;
 type OpeningHours = z.infer<typeof openingHoursSchema>;
 type Tables = z.infer<typeof tablesSchema>;
 
+// Payment method setup component
+const PaymentMethodSetup = ({ onSuccess }: { onSuccess: () => void }) => {
+  const stripe = useStripe();
+  const elements = useElements();
+  const [isLoading, setIsLoading] = useState(false);
+  const { toast } = useToast();
+
+  const setupIntentMutation = useMutation({
+    mutationFn: async () => {
+      const response = await apiRequest("POST", "/api/billing/setup-intent");
+      return response.json();
+    },
+    onSuccess: async (data) => {
+      if (!stripe || !elements) return;
+
+      const cardElement = elements.getElement(CardElement);
+      if (!cardElement) return;
+
+      setIsLoading(true);
+      
+      const { error } = await stripe.confirmCardSetup(data.clientSecret, {
+        payment_method: {
+          card: cardElement,
+        },
+      });
+
+      setIsLoading(false);
+
+      if (error) {
+        toast({
+          title: "Error",
+          description: error.message,
+          variant: "destructive",
+        });
+      } else {
+        toast({
+          title: "Success",
+          description: "Payment method added successfully",
+        });
+        onSuccess();
+      }
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Error",
+        description: error.message || "Failed to add payment method",
+        variant: "destructive",
+      });
+    },
+  });
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setupIntentMutation.mutate();
+  };
+
+  return (
+    <form onSubmit={handleSubmit} className="space-y-4">
+      <div className="p-4 border rounded-lg bg-gray-50 dark:bg-gray-800">
+        <CardElement
+          options={{
+            style: {
+              base: {
+                fontSize: "16px",
+                color: "#424770",
+                "::placeholder": {
+                  color: "#aab7c4",
+                },
+              },
+            },
+          }}
+        />
+      </div>
+      <Button
+        type="submit"
+        disabled={!stripe || isLoading || setupIntentMutation.isPending}
+        className="w-full"
+      >
+        {isLoading || setupIntentMutation.isPending
+          ? "Adding Payment Method..."
+          : "Add Payment Method"}
+      </Button>
+    </form>
+  );
+};
+
 const steps = [
   {
     id: 1,
@@ -113,6 +206,8 @@ export default function SetupWizard() {
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const [selectedPlanId, setSelectedPlanId] = useState<number | null>(null);
+  const [showPaymentSetup, setShowPaymentSetup] = useState(false);
+  const [paymentMethodAdded, setPaymentMethodAdded] = useState(false);
 
   // Get user session to access tenant and restaurant info
   const { data: session } = useQuery({
@@ -136,6 +231,8 @@ export default function SetupWizard() {
       const currentPlan = (session as any)?.tenant?.subscriptionPlanId;
       if (currentPlan) {
         setSelectedPlanId(currentPlan);
+        // If current plan is paid and has payment method, mark as added
+        setPaymentMethodAdded(true);
       } else {
         const freePlan = plans.find((plan: any) => plan.price === 0);
         if (freePlan) {
@@ -144,6 +241,29 @@ export default function SetupWizard() {
       }
     }
   }, [plans, selectedPlanId, session]);
+
+  // Reset payment setup when plan changes
+  useEffect(() => {
+    if (selectedPlanId && plans) {
+      const selectedPlan = plans.find((plan: any) => plan.id === selectedPlanId);
+      if (selectedPlan && selectedPlan.price === 0) {
+        // Free plan doesn't need payment method
+        setPaymentMethodAdded(true);
+        setShowPaymentSetup(false);
+      } else if (selectedPlan && selectedPlan.price > 0) {
+        // Paid plan needs payment method
+        const currentPlan = (session as any)?.tenant?.subscriptionPlanId;
+        if (selectedPlanId === currentPlan) {
+          // Current paid plan, assume payment method exists
+          setPaymentMethodAdded(true);
+        } else {
+          // New paid plan, need to add payment method
+          setPaymentMethodAdded(false);
+        }
+        setShowPaymentSetup(false);
+      }
+    }
+  }, [selectedPlanId, plans, session]);
 
   // Form configurations
   const restaurantForm = useForm<RestaurantDetails>({
@@ -737,11 +857,22 @@ export default function SetupWizard() {
                         ? 'border-blue-500 bg-blue-50 dark:bg-blue-900/20'
                         : 'border-gray-200 hover:border-gray-300 dark:border-gray-700'
                     }`}
-                    onClick={() => setSelectedPlanId(plan.id)}
+                    onClick={() => {
+                      setSelectedPlanId(plan.id);
+                      setShowPaymentSetup(false); // Reset payment setup when switching plans
+                    }}
                   >
                     <div className="flex items-start justify-between mb-4">
                       <div>
-                        <h4 className="text-lg font-semibold">{plan.name}</h4>
+                        <div className="flex items-center gap-2">
+                          <h4 className="text-lg font-semibold">{plan.name}</h4>
+                          {plan.price > 0 && (
+                            <Badge variant="outline" className="text-xs">
+                              <CreditCard className="w-3 h-3 mr-1" />
+                              Card Required
+                            </Badge>
+                          )}
+                        </div>
                         <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">
                           {plan.description}
                         </p>
@@ -776,28 +907,73 @@ export default function SetupWizard() {
               </div>
             )}
             
+            {/* Payment Method Setup for Paid Plans */}
+            {selectedPlanId && plans && showPaymentSetup && (
+              <div className="mt-6 p-6 border rounded-lg bg-blue-50 dark:bg-blue-900/20">
+                <h4 className="text-lg font-semibold mb-4 flex items-center">
+                  <CreditCard className="w-5 h-5 mr-2" />
+                  Add Payment Method
+                </h4>
+                <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">
+                  This plan requires a payment method. Your card will be charged monthly.
+                </p>
+                <Elements stripe={stripePromise}>
+                  <PaymentMethodSetup 
+                    onSuccess={() => {
+                      setPaymentMethodAdded(true);
+                      setShowPaymentSetup(false);
+                      toast({
+                        title: "Payment method added!",
+                        description: "You can now continue with your subscription.",
+                      });
+                    }} 
+                  />
+                </Elements>
+              </div>
+            )}
+            
             <div className="flex justify-center pt-4">
               <Button 
                 onClick={() => {
-                  if (selectedPlanId) {
-                    setCompletedSteps([...completedSteps, 4]);
-                    setCurrentStep(5);
-                    toast({
-                      title: "Plan selected!",
-                      description: "Your subscription plan has been configured.",
-                    });
-                  } else {
+                  if (!selectedPlanId) {
                     toast({
                       title: "Please select a plan",
                       description: "You need to choose a subscription plan to continue.",
                       variant: "destructive",
                     });
+                    return;
                   }
+
+                  const selectedPlan = plans?.find((plan: any) => plan.id === selectedPlanId);
+                  const isPaidPlan = selectedPlan && selectedPlan.price > 0;
+
+                  // If it's a paid plan and no payment method is added yet
+                  if (isPaidPlan && !paymentMethodAdded) {
+                    setShowPaymentSetup(true);
+                    return;
+                  }
+
+                  // Continue to next step
+                  setCompletedSteps([...completedSteps, 4]);
+                  setCurrentStep(5);
+                  toast({
+                    title: "Plan configured!",
+                    description: "Your subscription plan has been set up successfully.",
+                  });
                 }}
                 className="w-full max-w-md"
                 disabled={!selectedPlanId}
               >
-                Continue with Selected Plan
+                {(() => {
+                  if (!selectedPlanId) return "Select a Plan";
+                  const selectedPlan = plans?.find((plan: any) => plan.id === selectedPlanId);
+                  const isPaidPlan = selectedPlan && selectedPlan.price > 0;
+                  
+                  if (isPaidPlan && !paymentMethodAdded) {
+                    return "Continue & Add Payment Method";
+                  }
+                  return "Continue with Selected Plan";
+                })()}
                 <ArrowRight className="w-4 h-4 ml-2" />
               </Button>
             </div>
