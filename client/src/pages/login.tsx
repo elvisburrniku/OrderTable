@@ -297,7 +297,7 @@ export default function Login() {
                         type="text"
                         value={formData.name}
                         onChange={(e) =>
-                          setFormData({ ...formData, name: e.target.value })
+                          setFormData(prev => ({ ...prev, name: e.target.value }))
                         }
                         className="mt-1 bg-white/10 border-white/20 text-white placeholder:text-white/50 focus:border-emerald-400 focus:ring-emerald-400/20 backdrop-blur-sm transition-all duration-300"
                         required
@@ -313,7 +313,7 @@ export default function Login() {
                         type="text"
                         value={formData.restaurantName}
                         onChange={(e) =>
-                          setFormData({ ...formData, restaurantName: e.target.value })
+                          setFormData(prev => ({ ...prev, restaurantName: e.target.value }))
                         }
                         className="mt-1 bg-white/10 border-white/20 text-white placeholder:text-white/50 focus:border-emerald-400 focus:ring-emerald-400/20 backdrop-blur-sm transition-all duration-300"
                         required
@@ -341,10 +341,10 @@ export default function Login() {
                                   : 'border-white/20 bg-white/5 hover:border-white/30 hover:bg-white/10'
                               }`}
                               onClick={() =>
-                                setFormData({
-                                  ...formData,
+                                setFormData(prev => ({
+                                  ...prev,
                                   selectedPlanId: plan.id,
-                                })
+                                }))
                               }
                             >
                               <div className="flex items-center justify-between mb-2">
@@ -410,7 +410,7 @@ export default function Login() {
                       type="email"
                       value={formData.email}
                       onChange={(e) =>
-                        setFormData({ ...formData, email: e.target.value })
+                        setFormData(prev => ({ ...prev, email: e.target.value }))
                       }
                       className="bg-white/10 border-white/20 text-white placeholder:text-white/50 focus:border-emerald-400 focus:ring-emerald-400/20 backdrop-blur-sm transition-all duration-300"
                       required
@@ -426,7 +426,7 @@ export default function Login() {
                       type="password"
                       value={formData.password}
                       onChange={(e) =>
-                        setFormData({ ...formData, password: e.target.value })
+                        setFormData(prev => ({ ...prev, password: e.target.value }))
                       }
                       className="bg-white/10 border-white/20 text-white placeholder:text-white/50 focus:border-emerald-400 focus:ring-emerald-400/20 backdrop-blur-sm transition-all duration-300"
                       required
@@ -440,10 +440,10 @@ export default function Login() {
                           id="rememberMe"
                           checked={formData.rememberMe}
                           onCheckedChange={(checked) =>
-                            setFormData({
-                              ...formData,
+                            setFormData(prev => ({
+                              ...prev,
                               rememberMe: Boolean(checked),
-                            })
+                            }))
                           }
                           className="border-white/30 data-[state=checked]:bg-emerald-500 data-[state=checked]:border-emerald-500"
                         />
