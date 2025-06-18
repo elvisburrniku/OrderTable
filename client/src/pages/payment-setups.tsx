@@ -623,6 +623,20 @@ export default function PaymentSetups() {
                         <SelectItem value="5_days">5 days</SelectItem>
                         <SelectItem value="6_days">6 days</SelectItem>
                         <SelectItem value="7_days">7 days</SelectItem>
+                        <SelectItem value="8_days">8 days</SelectItem>
+                        <SelectItem value="9_days">9 days</SelectItem>
+                        <SelectItem value="10_days">10 days</SelectItem>
+                        <SelectItem value="11_days">11 days</SelectItem>
+                        <SelectItem value="12_days">12 days</SelectItem>
+                        <SelectItem value="13_days">13 days</SelectItem>
+                        <SelectItem value="14_days">14 days</SelectItem>
+                        <SelectItem value="15_days">15 days</SelectItem>
+                        <SelectItem value="16_days">16 days</SelectItem>
+                        <SelectItem value="17_days">17 days</SelectItem>
+                        <SelectItem value="18_days">18 days</SelectItem>
+                        <SelectItem value="19_days">19 days</SelectItem>
+                        <SelectItem value="20_days">20 days</SelectItem>
+                        <SelectItem value="21_days">21 days</SelectItem>
                       </SelectContent>
                     </Select>
                     <FormMessage />
