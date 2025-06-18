@@ -753,6 +753,51 @@ export async function registerRoutes(app: Express): Promise<Server> {
     },
   );
 
+  // Update tenant subscription plan
+  app.put(
+    "/api/tenants/:tenantId",
+    validateTenant,
+    async (req, res) => {
+      try {
+        const tenantId = parseInt(req.params.tenantId);
+        const { subscriptionPlanId } = req.body;
+
+        if (!subscriptionPlanId) {
+          return res.status(400).json({ message: "Subscription plan ID is required" });
+        }
+
+        // Verify the subscription plan exists
+        const plan = await db
+          .select()
+          .from(subscriptionPlans)
+          .where(eq(subscriptionPlans.id, subscriptionPlanId));
+
+        if (!plan.length) {
+          return res.status(404).json({ message: "Subscription plan not found" });
+        }
+
+        // Update the tenant's subscription plan
+        const updatedTenant = await db
+          .update(tenants)
+          .set({ 
+            subscriptionPlanId,
+            maxRestaurants: plan[0].maxRestaurants,
+          })
+          .where(eq(tenants.id, tenantId))
+          .returning();
+
+        if (!updatedTenant.length) {
+          return res.status(404).json({ message: "Tenant not found" });
+        }
+
+        res.json(updatedTenant[0]);
+      } catch (error) {
+        console.error("Error updating tenant subscription:", error);
+        res.status(500).json({ message: "Internal server error" });
+      }
+    },
+  );
+
   // Create a new restaurant for a tenant
   app.post(
     "/api/tenants/:tenantId/restaurants",

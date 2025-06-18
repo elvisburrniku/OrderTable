@@ -108,10 +108,11 @@ const steps = [
 export default function SetupWizard() {
   const [currentStep, setCurrentStep] = useState(1);
   const [completedSteps, setCompletedSteps] = useState<number[]>([]);
-  const totalSteps = 6; // Expanded from 4 to 6 steps
+  const totalSteps = 5; // Updated to match new step count
   const [, setLocation] = useLocation();
   const { toast } = useToast();
   const queryClient = useQueryClient();
+  const [selectedPlanId, setSelectedPlanId] = useState<number | null>(null);
 
   // Get user session to access tenant and restaurant info
   const { data: session } = useQuery({
@@ -122,6 +123,27 @@ export default function SetupWizard() {
   const tenantId = (session as any)?.tenant?.id;
   const restaurantId = (session as any)?.restaurant?.id;
   const restaurant = (session as any)?.restaurant;
+
+  // Fetch subscription plans for billing step
+  const { data: plans, isLoading: plansLoading } = useQuery({
+    queryKey: ["/api/subscription-plans"],
+    enabled: currentStep === 4, // Only fetch when on billing step
+  });
+
+  // Auto-select current plan or free plan when plans are loaded
+  useEffect(() => {
+    if (plans && plans.length > 0 && !selectedPlanId) {
+      const currentPlan = (session as any)?.tenant?.subscriptionPlanId;
+      if (currentPlan) {
+        setSelectedPlanId(currentPlan);
+      } else {
+        const freePlan = plans.find((plan: any) => plan.price === 0);
+        if (freePlan) {
+          setSelectedPlanId(freePlan.id);
+        }
+      }
+    }
+  }, [plans, selectedPlanId, session]);
 
   // Form configurations
   const restaurantForm = useForm<RestaurantDetails>({
@@ -425,6 +447,13 @@ export default function SetupWizard() {
 
   const completeSetupMutation = useMutation({
     mutationFn: async () => {
+      // Update subscription plan if changed
+      if (selectedPlanId && selectedPlanId !== (session as any)?.tenant?.subscriptionPlanId) {
+        await apiRequest("PUT", `/api/tenants/${tenantId}`, {
+          subscriptionPlanId: selectedPlanId,
+        });
+      }
+      
       // Mark setup as complete in restaurant settings
       const response = await apiRequest("PUT", `/api/tenants/${tenantId}/restaurants/${restaurantId}`, {
         setupCompleted: true,
@@ -685,6 +714,98 @@ export default function SetupWizard() {
 
       case 4:
         return (
+          <div className="space-y-6">
+            <div className="text-center mb-6">
+              <h3 className="text-xl font-semibold mb-2">Choose Your Subscription Plan</h3>
+              <p className="text-gray-600">
+                Select the plan that best fits your restaurant's needs. You can change or upgrade anytime.
+              </p>
+            </div>
+            
+            {plansLoading ? (
+              <div className="flex items-center justify-center p-8">
+                <div className="animate-spin w-8 h-8 border-4 border-primary border-t-transparent rounded-full" />
+                <span className="ml-3 text-gray-600">Loading subscription plans...</span>
+              </div>
+            ) : (
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {plans?.map((plan: any) => (
+                  <div
+                    key={plan.id}
+                    className={`border-2 rounded-lg p-6 cursor-pointer transition-all ${
+                      selectedPlanId === plan.id
+                        ? 'border-blue-500 bg-blue-50 dark:bg-blue-900/20'
+                        : 'border-gray-200 hover:border-gray-300 dark:border-gray-700'
+                    }`}
+                    onClick={() => setSelectedPlanId(plan.id)}
+                  >
+                    <div className="flex items-start justify-between mb-4">
+                      <div>
+                        <h4 className="text-lg font-semibold">{plan.name}</h4>
+                        <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">
+                          {plan.description}
+                        </p>
+                      </div>
+                      <div className="text-right">
+                        <div className="text-2xl font-bold text-blue-600">
+                          {plan.price === 0 ? 'Free' : `$${plan.price}`}
+                        </div>
+                        {plan.price > 0 && (
+                          <div className="text-sm text-gray-500">per month</div>
+                        )}
+                      </div>
+                    </div>
+                    
+                    <div className="space-y-2">
+                      {JSON.parse(plan.features || '[]').map((feature: string, index: number) => (
+                        <div key={index} className="flex items-center text-sm">
+                          <CheckCircle className="w-4 h-4 text-green-500 mr-2 flex-shrink-0" />
+                          <span>{feature}</span>
+                        </div>
+                      ))}
+                    </div>
+                    
+                    <div className="mt-4 text-xs text-gray-500">
+                      <div>Max Tables: {plan.maxTables}</div>
+                      <div>Max Bookings/Month: {plan.maxBookingsPerMonth}</div>
+                      <div>Max Restaurants: {plan.maxRestaurants}</div>
+                      {plan.trialDays > 0 && <div>Trial: {plan.trialDays} days</div>}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+            
+            <div className="flex justify-center pt-4">
+              <Button 
+                onClick={() => {
+                  if (selectedPlanId) {
+                    setCompletedSteps([...completedSteps, 4]);
+                    setCurrentStep(5);
+                    toast({
+                      title: "Plan selected!",
+                      description: "Your subscription plan has been configured.",
+                    });
+                  } else {
+                    toast({
+                      title: "Please select a plan",
+                      description: "You need to choose a subscription plan to continue.",
+                      variant: "destructive",
+                    });
+                  }
+                }}
+                className="w-full max-w-md"
+                disabled={!selectedPlanId}
+              >
+                Continue with Selected Plan
+                <ArrowRight className="w-4 h-4 ml-2" />
+              </Button>
+            </div>
+          </div>
+        );
+
+      case 5:
+        return (
           <div className="text-center space-y-6">
             <div className="mx-auto w-16 h-16 bg-green-100 rounded-full flex items-center justify-center">
               <CheckCircle className="w-8 h-8 text-green-600" />
@@ -711,6 +832,10 @@ export default function SetupWizard() {
                   <li className="flex items-center">
                     <CheckCircle className="w-4 h-4 text-green-600 mr-2" />
                     Tables and seating layout
+                  </li>
+                  <li className="flex items-center">
+                    <CheckCircle className="w-4 h-4 text-green-600 mr-2" />
+                    Subscription plan selected
                   </li>
                 </ul>
               </div>
