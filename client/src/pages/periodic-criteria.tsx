@@ -161,7 +161,7 @@ export default function PeriodicCriteria() {
                     />
                     <Checkbox
                       checked={currentCriteria.capacity.fixedCapacity}
-                      onCheckedChange={(checked) => updateCriteria('capacity', 'fixedCapacity', checked === true)}
+                      onCheckedChange={(checked) => updateCriteria('capacity', 'fixedCapacity', checked)}
                     />
                   </div>
                 </div>
@@ -176,7 +176,7 @@ export default function PeriodicCriteria() {
                     />
                     <Checkbox
                       checked={currentCriteria.capacity.fixedCapacity}
-                      onCheckedChange={(checked) => updateCriteria('capacity', 'fixedCapacity', checked === true)}
+                      onCheckedChange={(checked) => updateCriteria('capacity', 'fixedCapacity', checked)}
                     />
                   </div>
                 </div>

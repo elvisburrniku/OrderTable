@@ -112,7 +112,6 @@ export interface IStorage {
   // Tenants
   createTenant(tenant: any): Promise<any>;
   getTenantById(id: number): Promise<any>;
-  getTenantBySlug(slug: string): Promise<any>;
   getTenantByUserId(userId: number): Promise<any>;
   getTenantByStripeCustomerId(stripeCustomerId: string): Promise<any>;
   getAllTenants(): Promise<any[]>;

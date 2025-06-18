@@ -262,36 +262,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Hash password
       const hashedPassword = await bcrypt.hash(password, 10);
 
-      // Create unique tenant slug
-      let baseSlug = companyName
+      // Create tenant with trial period
+      const slug = companyName
         .toLowerCase()
         .replace(/[^a-z0-9]/g, "-")
         .replace(/-+/g, "-")
-        .replace(/^-+|-+$/g, "")
-        .substring(0, 45); // Leave room for suffix
-
-      if (!baseSlug) {
-        baseSlug = "company";
-      }
-
-      let slug = baseSlug;
-      let counter = 1;
-      
-      // Keep trying until we find a unique slug
-      while (true) {
-        try {
-          const existingTenant = await storage.getTenantBySlug(slug);
-          if (!existingTenant) {
-            break; // Slug is unique
-          }
-          slug = `${baseSlug}-${counter}`;
-          counter++;
-        } catch (error) {
-          // If getTenantBySlug throws an error for not found, the slug is unique
-          break;
-        }
-      }
-
+        .substring(0, 50);
       const trialEndDate = new Date();
       trialEndDate.setDate(trialEndDate.getDate() + plan.trialDays);
 
@@ -346,7 +322,54 @@ export async function registerRoutes(app: Express): Promise<Server> {
         }
       });
 
-      // Always create session for all plans (free and paid)
+      // If this is a paid plan, create Stripe checkout session
+      if (plan.price > 0) {
+        try {
+          const session = await stripe.checkout.sessions.create({
+            payment_method_types: ["card"],
+            line_items: [
+              {
+                price_data: {
+                  currency: "usd",
+                  product_data: {
+                    name: plan.name,
+                    description: `${plan.name} subscription plan`,
+                  },
+                  unit_amount: plan.price,
+                  recurring: {
+                    interval: "month",
+                  },
+                },
+                quantity: 1,
+              },
+            ],
+            mode: "subscription",
+            success_url: `${req.protocol}://${req.get("host")}/dashboard?payment=success`,
+            cancel_url: `${req.protocol}://${req.get("host")}/register?payment=cancelled`,
+            metadata: {
+              userId: user.id.toString(),
+              planId: plan.id.toString(),
+              tenantId: tenant.id.toString(),
+            },
+            customer_email: email,
+          });
+
+          return res.status(201).json({
+            message: "Company created successfully",
+            user: { id: user.id, email: user.email, name: user.name },
+            tenant: { id: tenant.id, name: tenant.name, slug: tenant.slug },
+            restaurant: { id: restaurant.id, name: restaurant.name },
+            trialEndsAt: trialEndDate,
+            requiresPayment: true,
+            checkoutUrl: session.url,
+          });
+        } catch (stripeError) {
+          console.error("Stripe error:", stripeError);
+          return res.status(500).json({ message: "Payment processing error" });
+        }
+      }
+
+      // For free plans, complete registration immediately and create session
       (req as any).session.user = {
         id: user.id,
         email: user.email,
@@ -363,9 +386,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         tenant: { id: tenant.id, name: tenant.name, slug: tenant.slug },
         restaurant: { id: restaurant.id, name: restaurant.name },
         trialEndsAt: trialEndDate,
-        requiresPayment: plan.price > 0,
-        planName: plan.name,
-        planPrice: plan.price,
+        requiresPayment: false,
       });
     } catch (error) {
       console.error("Registration error:", error);
@@ -12526,258 +12547,6 @@ NEXT STEPS:
   );
 
   // Billing Management Routes
-
-  // Setup payment method for wallet storage
-  app.post(
-    "/api/billing/setup-payment-method",
-    attachUser,
-    async (req: Request, res: Response) => {
-      if (!req.user) {
-        return res.status(401).json({ error: "Not authenticated" });
-      }
-
-      try {
-        const { cardNumber, expiryMonth, expiryYear, cvc, cardholderName, billingAddress } = req.body;
-
-        if (!cardNumber || !expiryMonth || !expiryYear || !cvc || !cardholderName) {
-          return res.status(400).json({ error: "All card details are required" });
-        }
-
-        // Get user's tenant
-        const tenant = await storage.getTenantByUserId(req.user.id);
-        if (!tenant) {
-          return res.status(404).json({ error: "Tenant not found" });
-        }
-
-        // Create or get Stripe customer
-        let customerId = tenant.stripeCustomerId;
-        if (!customerId) {
-          const customer = await stripe.customers.create({
-            email: req.user.email,
-            name: req.user.name,
-            address: billingAddress ? {
-              line1: billingAddress.line1,
-              city: billingAddress.city,
-              state: billingAddress.state,
-              postal_code: billingAddress.postal_code,
-              country: billingAddress.country,
-            } : undefined,
-            metadata: {
-              tenantId: tenant.id.toString(),
-              userId: req.user.id.toString(),
-            },
-          });
-          customerId = customer.id;
-          await storage.updateTenant(tenant.id, { stripeCustomerId: customerId });
-        }
-
-        // Create payment method using Stripe
-        const paymentMethod = await stripe.paymentMethods.create({
-          type: 'card',
-          card: {
-            number: cardNumber.replace(/\s/g, ''),
-            exp_month: parseInt(expiryMonth),
-            exp_year: parseInt(expiryYear),
-            cvc: cvc,
-          },
-          billing_details: {
-            name: cardholderName,
-            address: billingAddress ? {
-              line1: billingAddress.line1,
-              city: billingAddress.city,
-              state: billingAddress.state,
-              postal_code: billingAddress.postal_code,
-              country: billingAddress.country,
-            } : undefined,
-          },
-        });
-
-        // Attach payment method to customer
-        await stripe.paymentMethods.attach(paymentMethod.id, {
-          customer: customerId,
-        });
-
-        // Set as default payment method if this is their first one
-        const existingMethods = await stripe.paymentMethods.list({
-          customer: customerId,
-          type: 'card',
-        });
-
-        if (existingMethods.data.length === 1) {
-          await stripe.customers.update(customerId, {
-            invoice_settings: {
-              default_payment_method: paymentMethod.id,
-            },
-          });
-        }
-
-        // If this is for a paid plan, create subscription immediately
-        const subscriptionDetails = await storage.getSubscriptionDetailsByTenantId(tenant.id);
-        if (subscriptionDetails?.plan?.price > 0 && tenant.subscriptionStatus === 'trial') {
-          try {
-            const subscription = await stripe.subscriptions.create({
-              customer: customerId,
-              items: [{
-                price_data: {
-                  currency: 'usd',
-                  product_data: {
-                    name: subscriptionDetails.plan.name,
-                    description: `${subscriptionDetails.plan.name} subscription plan`,
-                  },
-                  unit_amount: subscriptionDetails.plan.price,
-                  recurring: {
-                    interval: 'month',
-                  },
-                },
-              }],
-              default_payment_method: paymentMethod.id,
-              metadata: {
-                tenantId: tenant.id.toString(),
-                planId: subscriptionDetails.plan.id.toString(),
-              },
-            });
-
-            // Update tenant subscription status
-            await storage.updateTenant(tenant.id, {
-              stripeSubscriptionId: subscription.id,
-              subscriptionStatus: 'active',
-            });
-
-            res.json({
-              success: true,
-              paymentMethod: {
-                id: paymentMethod.id,
-                brand: paymentMethod.card?.brand,
-                last4: paymentMethod.card?.last4,
-                exp_month: paymentMethod.card?.exp_month,
-                exp_year: paymentMethod.card?.exp_year,
-              },
-              subscription: {
-                id: subscription.id,
-                status: subscription.status,
-              },
-              message: "Payment method saved and subscription activated successfully",
-            });
-          } catch (subscriptionError) {
-            console.error("Error creating subscription:", subscriptionError);
-            // Still return success for payment method saving
-            res.json({
-              success: true,
-              paymentMethod: {
-                id: paymentMethod.id,
-                brand: paymentMethod.card?.brand,
-                last4: paymentMethod.card?.last4,
-                exp_month: paymentMethod.card?.exp_month,
-                exp_year: paymentMethod.card?.exp_year,
-              },
-              message: "Payment method saved successfully, but subscription activation failed",
-              warning: "Please contact support to activate your subscription",
-            });
-          }
-        } else {
-          res.json({
-            success: true,
-            paymentMethod: {
-              id: paymentMethod.id,
-              brand: paymentMethod.card?.brand,
-              last4: paymentMethod.card?.last4,
-              exp_month: paymentMethod.card?.exp_month,
-              exp_year: paymentMethod.card?.exp_year,
-            },
-            message: "Payment method saved successfully",
-          });
-        }
-      } catch (error) {
-        console.error("Error saving payment method:", error);
-        res.status(500).json({ error: "Failed to save payment method" });
-      }
-    },
-  );
-
-  // Create checkout session for setup wizard
-  app.post(
-    "/api/billing/create-checkout-session",
-    attachUser,
-    async (req: Request, res: Response) => {
-      if (!req.user) {
-        return res.status(401).json({ error: "Not authenticated" });
-      }
-
-      try {
-        const { planId, tenantId } = req.body;
-
-        if (!planId || !tenantId) {
-          return res.status(400).json({ error: "Plan ID and Tenant ID are required" });
-        }
-
-        // Get tenant and verify user access
-        const userTenant = await storage.getTenantByUserId(req.user.id);
-        if (!userTenant || userTenant.id !== tenantId) {
-          return res.status(403).json({ error: "Access denied" });
-        }
-
-        const tenant = await storage.getTenantById(tenantId);
-        if (!tenant) {
-          return res.status(404).json({ error: "Tenant not found" });
-        }
-
-        const plan = await storage.getSubscriptionPlan(planId);
-        if (!plan || plan.price === 0) {
-          return res.status(400).json({ error: "Invalid paid plan" });
-        }
-
-        // Create or get Stripe customer
-        let customerId = tenant.stripeCustomerId;
-        if (!customerId) {
-          const customer = await stripe.customers.create({
-            email: req.user.email,
-            name: req.user.name,
-            metadata: {
-              tenantId: tenantId.toString(),
-              userId: req.user.id.toString(),
-            },
-          });
-          customerId = customer.id;
-          await storage.updateTenant(tenantId, { stripeCustomerId: customerId });
-        }
-
-        // Create checkout session
-        const session = await stripe.checkout.sessions.create({
-          customer: customerId,
-          payment_method_types: ["card"],
-          line_items: [
-            {
-              price_data: {
-                currency: "usd",
-                product_data: {
-                  name: plan.name,
-                  description: `${plan.name} subscription plan`,
-                },
-                unit_amount: plan.price,
-                recurring: {
-                  interval: "month",
-                },
-              },
-              quantity: 1,
-            },
-          ],
-          mode: "subscription",
-          success_url: `${req.protocol}://${req.get("host")}/setup?payment=success&session_id={CHECKOUT_SESSION_ID}`,
-          cancel_url: `${req.protocol}://${req.get("host")}/setup?payment=cancelled`,
-          metadata: {
-            tenantId: tenantId.toString(),
-            planId: planId.toString(),
-            userId: req.user.id.toString(),
-          },
-        });
-
-        res.json({ checkoutUrl: session.url, sessionId: session.id });
-      } catch (error) {
-        console.error("Error creating checkout session:", error);
-        res.status(500).json({ error: "Failed to create checkout session" });
-      }
-    },
-  );
 
   // Get billing information
   app.get(

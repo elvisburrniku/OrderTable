@@ -13,8 +13,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useToast } from "@/hooks/use-toast";
 import { Link, useLocation } from "wouter";
 import { apiRequest } from "@/lib/queryClient";
-import { CheckCircle, Circle, ArrowRight, ArrowLeft, Building, Clock, Utensils, Settings, CreditCard } from "lucide-react";
-import { PaymentMethodForm } from "@/components/payment-method-form";
+import { CheckCircle, Circle, ArrowRight, ArrowLeft, Building, Clock, Utensils, Settings } from "lucide-react";
 
 const restaurantDetailsSchema = z.object({
   address: z.string().min(1, "Address is required"),
@@ -73,7 +72,7 @@ type RestaurantDetails = z.infer<typeof restaurantDetailsSchema>;
 type OpeningHours = z.infer<typeof openingHoursSchema>;
 type Tables = z.infer<typeof tablesSchema>;
 
-const getStepsForPlan = (requiresPayment: boolean) => [
+const steps = [
   {
     id: 1,
     title: "Restaurant Details",
@@ -92,14 +91,8 @@ const getStepsForPlan = (requiresPayment: boolean) => [
     description: "Configure your table layout",
     icon: Utensils,
   },
-  ...(requiresPayment ? [{
-    id: 4,
-    title: "Payment Setup",
-    description: "Complete your subscription payment",
-    icon: CreditCard,
-  }] : []),
   {
-    id: requiresPayment ? 5 : 4,
+    id: 4,
     title: "Complete Setup",
     description: "Finish and start taking bookings",
     icon: Settings,
@@ -109,45 +102,10 @@ const getStepsForPlan = (requiresPayment: boolean) => [
 export default function SetupWizard() {
   const [currentStep, setCurrentStep] = useState(1);
   const [completedSteps, setCompletedSteps] = useState<number[]>([]);
+  const totalSteps = 6; // Expanded from 4 to 6 steps
   const [, setLocation] = useLocation();
   const { toast } = useToast();
   const queryClient = useQueryClient();
-
-  // Handle payment success/failure from URL parameters
-  useEffect(() => {
-    const urlParams = new URLSearchParams(window.location.search);
-    const paymentStatus = urlParams.get('payment');
-    const sessionId = urlParams.get('session_id');
-
-    if (paymentStatus === 'success' && sessionId) {
-      toast({
-        title: "Payment successful!",
-        description: "Your subscription has been activated. Completing setup...",
-      });
-      
-      // Invalidate subscription data to refresh payment status
-      queryClient.invalidateQueries({ queryKey: ["/api/subscription/details"] });
-      
-      // Move to final step
-      setCurrentStep(5);
-      setCompletedSteps([1, 2, 3, 4]);
-      
-      // Clean up URL parameters
-      window.history.replaceState({}, '', '/setup');
-    } else if (paymentStatus === 'cancelled') {
-      toast({
-        title: "Payment cancelled",
-        description: "You can complete payment later from the setup wizard.",
-        variant: "destructive",
-      });
-      
-      // Stay on payment step
-      setCurrentStep(4);
-      
-      // Clean up URL parameters
-      window.history.replaceState({}, '', '/setup');
-    }
-  }, [toast, queryClient]);
 
   // Get user session to access tenant and restaurant info
   const { data: session } = useQuery({
@@ -155,25 +113,9 @@ export default function SetupWizard() {
     retry: false,
   });
 
-  // Get subscription details to check if payment is required
-  const { data: subscriptionData } = useQuery({
-    queryKey: ["/api/subscription/details"],
-    enabled: !!session,
-    retry: false,
-  });
-
   const tenantId = (session as any)?.tenant?.id;
   const restaurantId = (session as any)?.restaurant?.id;
   const restaurant = (session as any)?.restaurant;
-  const tenant = (session as any)?.tenant;
-  
-  // Check if payment is required (paid plan with trial or unpaid status)
-  const requiresPayment = subscriptionData?.plan?.price > 0 && 
-    (subscriptionData?.tenant?.subscriptionStatus === 'trial' || 
-     subscriptionData?.tenant?.subscriptionStatus === 'unpaid');
-  
-  const steps = getStepsForPlan(requiresPayment || false);
-  const maxSteps = steps.length;
 
   // Form configurations
   const restaurantForm = useForm<RestaurantDetails>({
@@ -475,30 +417,6 @@ export default function SetupWizard() {
     },
   });
 
-  // Payment mutation for paid plans
-  const createCheckoutMutation = useMutation({
-    mutationFn: async () => {
-      const response = await apiRequest("POST", "/api/billing/create-checkout-session", {
-        planId: subscriptionData?.plan?.id,
-        tenantId: tenantId,
-      });
-      return response.json();
-    },
-    onSuccess: (data) => {
-      if (data.checkoutUrl) {
-        // Redirect to Stripe checkout
-        window.location.href = data.checkoutUrl;
-      }
-    },
-    onError: (error: any) => {
-      toast({
-        title: "Payment setup failed",
-        description: error.message || "Unable to create payment session",
-        variant: "destructive",
-      });
-    },
-  });
-
   const completeSetupMutation = useMutation({
     mutationFn: async () => {
       // Mark setup as complete in restaurant settings
@@ -760,30 +678,6 @@ export default function SetupWizard() {
         );
 
       case 4:
-        // Payment step for paid plans
-        if (requiresPayment) {
-          return (
-            <div className="space-y-6">
-              <div className="text-center mb-6">
-                <h3 className="text-xl font-semibold mb-2">Payment Information</h3>
-                <p className="text-gray-600 mb-4">
-                  Add your payment method for the <strong>{subscriptionData?.plan?.name}</strong> plan
-                  (${(subscriptionData?.plan?.price || 0) / 100}/month)
-                </p>
-              </div>
-              <PaymentMethodForm
-                onSuccess={() => {
-                  setCompletedSteps(prev => [...prev, 4]);
-                  setCurrentStep(5);
-                }}
-                onBack={() => setCurrentStep(3)}
-              />
-            </div>
-          );
-        }
-        // Fall through to completion step for free plans
-        
-      case 5:
         return (
           <div className="text-center space-y-6">
             <div className="mx-auto w-16 h-16 bg-green-100 rounded-full flex items-center justify-center">
@@ -812,12 +706,6 @@ export default function SetupWizard() {
                     <CheckCircle className="w-4 h-4 text-green-600 mr-2" />
                     Tables and seating layout
                   </li>
-                  {requiresPayment && (
-                    <li className="flex items-center">
-                      <CheckCircle className="w-4 h-4 text-green-600 mr-2" />
-                      Payment setup completed
-                    </li>
-                  )}
                 </ul>
               </div>
               <Button onClick={() => completeSetupMutation.mutate()} className="w-full" disabled={completeSetupMutation.isPending}>
@@ -886,7 +774,7 @@ export default function SetupWizard() {
           </div>
           <div className="flex justify-between mt-2">
             {steps.map((step) => (
-              <div key={step.id} className="text-center" style={{ width: `calc(100% / ${maxSteps})` }}>
+              <div key={step.id} className="text-center" style={{ width: `calc(100% / ${totalSteps})` }}>
                 <p className="text-sm font-medium text-gray-900 dark:text-white">
                   {step.title}
                 </p>
