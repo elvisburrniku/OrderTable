@@ -57,6 +57,9 @@ export default function PaymentSetups() {
   const queryClient = useQueryClient();
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [editingSetup, setEditingSetup] = useState<PaymentSetup | null>(null);
+  const [multiplePrices, setMultiplePrices] = useState([
+    { id: 1, name: "", price: 0, serviceFee: 0 }
+  ]);
 
   const tenantId = restaurant?.tenantId;
   const restaurantId = restaurant?.id;
@@ -378,69 +381,176 @@ export default function PaymentSetups() {
                 )}
               />
 
-              {/* Amount and Currency */}
-              <div className="grid grid-cols-3 gap-4">
-                <FormField
-                  control={form.control}
-                  name="amount"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormControl>
-                        <Input
-                          type="number"
-                          step="0.01"
-                          placeholder="1"
-                          {...field}
-                          onChange={(e) => field.onChange(parseFloat(e.target.value) || 0)}
-                        />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                <FormField
-                  control={form.control}
-                  name="currency"
-                  render={({ field }) => (
-                    <FormItem>
-                      <Select onValueChange={field.onChange} defaultValue={field.value}>
+              {/* Conditional Price Fields */}
+              {form.watch("priceType") === "one_price" ? (
+                <div className="grid grid-cols-3 gap-4">
+                  <FormField
+                    control={form.control}
+                    name="amount"
+                    render={({ field }) => (
+                      <FormItem>
                         <FormControl>
-                          <SelectTrigger>
-                            <SelectValue />
-                          </SelectTrigger>
+                          <Input
+                            type="number"
+                            step="0.01"
+                            placeholder="12"
+                            {...field}
+                            onChange={(e) => field.onChange(parseFloat(e.target.value) || 0)}
+                          />
                         </FormControl>
-                        <SelectContent>
-                          <SelectItem value="EUR">EUR</SelectItem>
-                          <SelectItem value="USD">USD</SelectItem>
-                          <SelectItem value="GBP">GBP</SelectItem>
-                        </SelectContent>
-                      </Select>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                <FormField
-                  control={form.control}
-                  name="priceUnit"
-                  render={({ field }) => (
-                    <FormItem>
-                      <Select onValueChange={field.onChange} defaultValue={field.value}>
-                        <FormControl>
-                          <SelectTrigger>
-                            <SelectValue />
-                          </SelectTrigger>
-                        </FormControl>
-                        <SelectContent>
-                          <SelectItem value="per_guest">Per guest</SelectItem>
-                          <SelectItem value="per_booking">Per booking</SelectItem>
-                          <SelectItem value="per_table">Per table</SelectItem>
-                        </SelectContent>
-                      </Select>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-              </div>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  <FormField
+                    control={form.control}
+                    name="currency"
+                    render={({ field }) => (
+                      <FormItem>
+                        <Select onValueChange={field.onChange} defaultValue={field.value}>
+                          <FormControl>
+                            <SelectTrigger>
+                              <SelectValue />
+                            </SelectTrigger>
+                          </FormControl>
+                          <SelectContent>
+                            <SelectItem value="EUR">EUR</SelectItem>
+                            <SelectItem value="USD">USD</SelectItem>
+                            <SelectItem value="GBP">GBP</SelectItem>
+                          </SelectContent>
+                        </Select>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  <FormField
+                    control={form.control}
+                    name="priceUnit"
+                    render={({ field }) => (
+                      <FormItem>
+                        <Select onValueChange={field.onChange} defaultValue={field.value}>
+                          <FormControl>
+                            <SelectTrigger>
+                              <SelectValue />
+                            </SelectTrigger>
+                          </FormControl>
+                          <SelectContent>
+                            <SelectItem value="per_guest">Per guest</SelectItem>
+                            <SelectItem value="per_booking">Per booking</SelectItem>
+                            <SelectItem value="per_table">Per table</SelectItem>
+                          </SelectContent>
+                        </Select>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                </div>
+              ) : (
+                <div className="space-y-4">
+                  {/* Multiple Prices Table */}
+                  <div className="border rounded-lg">
+                    <div className="grid grid-cols-4 gap-4 p-4 bg-gray-50 border-b">
+                      <div className="font-medium text-sm">Name</div>
+                      <div className="font-medium text-sm">Price</div>
+                      <div className="font-medium text-sm">Service fee*</div>
+                      <div></div>
+                    </div>
+                    <div className="p-4 space-y-3">
+                      {multiplePrices.map((price, index) => (
+                        <div key={price.id} className="grid grid-cols-4 gap-4 items-center">
+                          <Input 
+                            placeholder="Name (e.g. Adult / Child)" 
+                            value={price.name}
+                            onChange={(e) => {
+                              const newPrices = [...multiplePrices];
+                              newPrices[index].name = e.target.value;
+                              setMultiplePrices(newPrices);
+                            }}
+                          />
+                          <Input 
+                            type="number" 
+                            step="0.01" 
+                            placeholder="0" 
+                            value={price.price || ""}
+                            onChange={(e) => {
+                              const newPrices = [...multiplePrices];
+                              newPrices[index].price = parseFloat(e.target.value) || 0;
+                              setMultiplePrices(newPrices);
+                            }}
+                          />
+                          <Input 
+                            type="number" 
+                            step="0.01" 
+                            placeholder="0" 
+                            value={price.serviceFee || ""}
+                            onChange={(e) => {
+                              const newPrices = [...multiplePrices];
+                              newPrices[index].serviceFee = parseFloat(e.target.value) || 0;
+                              setMultiplePrices(newPrices);
+                            }}
+                          />
+                          <div className="flex items-center space-x-2">
+                            {multiplePrices.length > 1 && (
+                              <Button 
+                                variant="outline" 
+                                size="sm" 
+                                type="button"
+                                onClick={() => {
+                                  const newPrices = multiplePrices.filter((_, i) => i !== index);
+                                  setMultiplePrices(newPrices);
+                                }}
+                              >
+                                <Trash2 className="h-3 w-3" />
+                              </Button>
+                            )}
+                            <span className="text-sm text-gray-500">=</span>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                  
+                  <Button 
+                    type="button" 
+                    variant="outline" 
+                    className="bg-green-600 hover:bg-green-700 text-white"
+                    onClick={() => {
+                      const newId = Math.max(...multiplePrices.map(p => p.id)) + 1;
+                      setMultiplePrices([...multiplePrices, { id: newId, name: "", price: 0, serviceFee: 0 }]);
+                    }}
+                  >
+                    <Plus className="h-4 w-4 mr-2" />
+                    Add price
+                  </Button>
+                  
+                  <div className="grid grid-cols-2 gap-4">
+                    <FormField
+                      control={form.control}
+                      name="currency"
+                      render={({ field }) => (
+                        <FormItem>
+                          <Select onValueChange={field.onChange} defaultValue={field.value}>
+                            <FormControl>
+                              <SelectTrigger>
+                                <SelectValue />
+                              </SelectTrigger>
+                            </FormControl>
+                            <SelectContent>
+                              <SelectItem value="EUR">EUR</SelectItem>
+                              <SelectItem value="USD">USD</SelectItem>
+                              <SelectItem value="GBP">GBP</SelectItem>
+                            </SelectContent>
+                          </Select>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                    <div className="flex items-center space-x-2">
+                      <span className="text-sm text-gray-600">Currency</span>
+                    </div>
+                  </div>
+                </div>
+              )}
 
               {/* Allow Residual Payment */}
               <div className="space-y-4">
