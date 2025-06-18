@@ -668,30 +668,16 @@ export default function PaymentSetups() {
                 />
               </div>
 
-              <div className="flex justify-end space-x-2 pt-4">
-                <Button
-                  type="button"
-                  variant="outline"
-                  onClick={() => {
-                    setIsDialogOpen(false);
-                    setEditingSetup(null);
-                    form.reset();
-                  }}
-                >
-                  Cancel
-                </Button>
+              <div className="flex justify-start pt-6">
                 <Button 
                   type="submit" 
                   disabled={createMutation.isPending || updateMutation.isPending}
-                  className="bg-green-600 hover:bg-green-700"
+                  className="bg-green-600 hover:bg-green-700 text-white px-6"
                 >
                   {createMutation.isPending || updateMutation.isPending ? (
                     <div className="animate-spin w-4 h-4 border-2 border-white border-t-transparent rounded-full" />
                   ) : (
-                    <>
-                      <Check className="h-4 w-4 mr-2" />
-                      Save
-                    </>
+                    "Save"
                   )}
                 </Button>
               </div>
