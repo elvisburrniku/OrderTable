@@ -13,7 +13,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useToast } from "@/hooks/use-toast";
 import { Link, useLocation } from "wouter";
 import { apiRequest } from "@/lib/queryClient";
-import { CheckCircle, Circle, ArrowRight, ArrowLeft, Building, Clock, Utensils, Settings } from "lucide-react";
+import { CheckCircle, Circle, ArrowRight, ArrowLeft, Building, Clock, Utensils, Settings, CreditCard } from "lucide-react";
 
 const restaurantDetailsSchema = z.object({
   address: z.string().min(1, "Address is required"),
@@ -93,6 +93,12 @@ const steps = [
   },
   {
     id: 4,
+    title: "Subscription Plan",
+    description: "Choose your billing plan and features",
+    icon: CreditCard,
+  },
+  {
+    id: 5,
     title: "Complete Setup",
     description: "Finish and start taking bookings",
     icon: Settings,
