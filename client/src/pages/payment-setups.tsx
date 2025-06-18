@@ -60,6 +60,58 @@ export default function PaymentSetups() {
   const [multiplePrices, setMultiplePrices] = useState([
     { id: 1, name: "", price: 0, serviceFee: 0 }
   ]);
+  const [languageDescriptions, setLanguageDescriptions] = useState([
+    { id: 1, language: "en", flag: "🇬🇧", code: "EN", description: "" }
+  ]);
+
+  const availableLanguages = [
+    { code: "en", name: "English (GB)", flag: "🇬🇧", shortCode: "EN" },
+    { code: "al", name: "Albanian", flag: "🇦🇱", shortCode: "AL" },
+    { code: "cz", name: "Czech", flag: "🇨🇿", shortCode: "CZ" },
+    { code: "dk", name: "Danish", flag: "🇩🇰", shortCode: "DK" },
+    { code: "de", name: "German", flag: "🇩🇪", shortCode: "DE" },
+    { code: "es", name: "Spanish", flag: "🇪🇸", shortCode: "ES" },
+    { code: "fi", name: "Finnish", flag: "🇫🇮", shortCode: "FI" },
+    { code: "fo", name: "Faroese", flag: "🇫🇴", shortCode: "FO" },
+    { code: "fr", name: "French", flag: "🇫🇷", shortCode: "FR" },
+    { code: "he", name: "Hebrew", flag: "🇮🇱", shortCode: "HE" },
+    { code: "hu", name: "Hungarian", flag: "🇭🇺", shortCode: "HU" },
+    { code: "is", name: "Icelandic", flag: "🇮🇸", shortCode: "IS" },
+    { code: "it", name: "Italian", flag: "🇮🇹", shortCode: "IT" },
+    { code: "nl", name: "Dutch", flag: "🇳🇱", shortCode: "NL" },
+    { code: "no", name: "Norwegian", flag: "🇳🇴", shortCode: "NO" },
+    { code: "ro", name: "Romanian", flag: "🇷🇴", shortCode: "RO" },
+    { code: "se", name: "Swedish", flag: "🇸🇪", shortCode: "SE" },
+  ];
+
+  const addLanguageDescription = (languageCode: string) => {
+    const language = availableLanguages.find(lang => lang.code === languageCode);
+    if (language) {
+      const newId = Math.max(...languageDescriptions.map(l => l.id)) + 1;
+      setLanguageDescriptions([
+        ...languageDescriptions,
+        {
+          id: newId,
+          language: language.code,
+          flag: language.flag,
+          code: language.shortCode,
+          description: ""
+        }
+      ]);
+    }
+  };
+
+  const removeLanguageDescription = (id: number) => {
+    if (languageDescriptions.length > 1) {
+      setLanguageDescriptions(languageDescriptions.filter(l => l.id !== id));
+    }
+  };
+
+  const updateLanguageDescription = (id: number, description: string) => {
+    setLanguageDescriptions(languageDescriptions.map(l => 
+      l.id === id ? { ...l, description } : l
+    ));
+  };
 
   const tenantId = restaurant?.tenantId;
   const restaurantId = restaurant?.id;
@@ -649,53 +701,58 @@ export default function PaymentSetups() {
                 <h3 className="text-lg font-medium text-gray-800">Description (to guest)</h3>
                 
                 <div className="space-y-3">
-                  <div className="flex items-center space-x-2">
-                    <span className="bg-red-100 text-red-600 px-2 py-1 rounded text-xs font-medium">EN</span>
-                    <span className="text-sm text-gray-600">EN</span>
-                  </div>
+                  <div className="text-sm text-gray-700">Description (to guest):</div>
                   
-                  <FormField
-                    control={form.control}
-                    name="description"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormControl>
-                          <Textarea
-                            placeholder="12123123"
-                            className="min-h-[80px] bg-gray-100"
-                            {...field}
-                          />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
+                  {languageDescriptions.map((langDesc, index) => (
+                    <div key={langDesc.id} className="space-y-2">
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center space-x-2">
+                          <span className="bg-red-100 text-red-600 px-2 py-1 rounded text-xs font-medium">
+                            {langDesc.flag} {langDesc.code}
+                          </span>
+                        </div>
+                        {languageDescriptions.length > 1 && (
+                          <Button
+                            type="button"
+                            variant="outline"
+                            size="sm"
+                            onClick={() => removeLanguageDescription(langDesc.id)}
+                          >
+                            <Trash2 className="h-3 w-3" />
+                          </Button>
+                        )}
+                      </div>
+                      
+                      <Textarea
+                        placeholder=""
+                        className="min-h-[80px] bg-gray-100"
+                        value={langDesc.description}
+                        onChange={(e) => updateLanguageDescription(langDesc.id, e.target.value)}
+                      />
+                    </div>
+                  ))}
                 </div>
                 
-                <FormField
-                  control={form.control}
-                  name="language"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel className="text-sm text-gray-700">Add translation:</FormLabel>
-                      <Select onValueChange={field.onChange} defaultValue={field.value}>
-                        <FormControl>
-                          <SelectTrigger className="bg-gray-100">
-                            <SelectValue placeholder="Select language" />
-                          </SelectTrigger>
-                        </FormControl>
-                        <SelectContent>
-                          <SelectItem value="en">English</SelectItem>
-                          <SelectItem value="fr">French</SelectItem>
-                          <SelectItem value="de">German</SelectItem>
-                          <SelectItem value="es">Spanish</SelectItem>
-                          <SelectItem value="it">Italian</SelectItem>
-                        </SelectContent>
-                      </Select>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
+                <div>
+                  <Label className="text-sm text-gray-700">Add translation:</Label>
+                  <Select onValueChange={addLanguageDescription}>
+                    <SelectTrigger className="bg-gray-100 mt-1">
+                      <SelectValue placeholder="Select language" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {availableLanguages
+                        .filter(lang => !languageDescriptions.some(ld => ld.language === lang.code))
+                        .map(lang => (
+                          <SelectItem key={lang.code} value={lang.code}>
+                            <div className="flex items-center space-x-2">
+                              <span>{lang.flag}</span>
+                              <span>{lang.name}</span>
+                            </div>
+                          </SelectItem>
+                        ))}
+                    </SelectContent>
+                  </Select>
+                </div>
               </div>
 
               <div className="flex justify-start pt-6">
