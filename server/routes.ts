@@ -137,20 +137,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(401).json({ message: "Authentication required" });
       }
 
-      // Verify user has access to this tenant
-      const userTenant = await db
-        .select()
-        .from(tenantUsers)
-        .where(
-          and(
-            eq(tenantUsers.tenantId, parsedTenantId),
-            eq(tenantUsers.userId, req.user.id)
-          )
-        );
-
-      if (!userTenant.length) {
-        console.warn(`SECURITY VIOLATION: User ${req.user.id} attempted to access tenant ${parsedTenantId} without permission`);
-        return res.status(403).json({ message: "Access denied: You don't have permission to access this tenant" });
+      // Verify user has access to this tenant using storage interface
+      try {
+        const userTenants = await storage.getUserTenants(req.user.id);
+        const hasAccess = userTenants.some(ut => ut.tenantId === parsedTenantId);
+        
+        if (!hasAccess) {
+          console.warn(`SECURITY VIOLATION: User ${req.user.id} attempted to access tenant ${parsedTenantId} without permission`);
+          return res.status(403).json({ message: "Access denied: You don't have permission to access this tenant" });
+        }
+      } catch (error) {
+        console.error('Error validating tenant access:', error);
+        return res.status(500).json({ message: "Internal server error" });
       }
 
       // If restaurant ID is provided, verify it belongs to the tenant
@@ -158,19 +156,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
       if (restaurantId) {
         const parsedRestaurantId = parseInt(restaurantId);
         if (!isNaN(parsedRestaurantId)) {
-          const restaurant = await db
-            .select()
-            .from(restaurants)
-            .where(
-              and(
-                eq(restaurants.id, parsedRestaurantId),
-                eq(restaurants.tenantId, parsedTenantId)
-              )
-            );
-
-          if (!restaurant.length) {
-            console.warn(`SECURITY VIOLATION: User ${req.user.id} attempted to access restaurant ${parsedRestaurantId} not belonging to tenant ${parsedTenantId}`);
-            return res.status(403).json({ message: "Access denied: Restaurant not found in this tenant" });
+          try {
+            const restaurant = await storage.getRestaurant(parsedRestaurantId);
+            if (!restaurant || restaurant.tenantId !== parsedTenantId) {
+              console.warn(`SECURITY VIOLATION: User ${req.user.id} attempted to access restaurant ${parsedRestaurantId} not belonging to tenant ${parsedTenantId}`);
+              return res.status(403).json({ message: "Access denied: Restaurant not found in this tenant" });
+            }
+          } catch (error) {
+            console.error('Error validating restaurant access:', error);
+            return res.status(500).json({ message: "Internal server error" });
           }
         }
       }
