@@ -725,8 +725,8 @@ export default function PaymentSetups() {
                 </>
               )}
 
-              {/* Allow Residual Payment - Hide for Reserve Amount */}
-              {form.watch("method") !== "reserve_amount" && (
+              {/* Allow Residual Payment - Hide for Reserve Amount and No-show fee */}
+              {form.watch("method") !== "reserve_amount" && form.watch("method") !== "membership_fee" && (
                 <div className="space-y-4">
                   <div className="flex items-center space-x-3">
                     <input
