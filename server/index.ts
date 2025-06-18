@@ -2,7 +2,7 @@ import express, { type Request, Response, NextFunction } from "express";
 import session from "express-session";
 import { registerRoutes } from "./routes";
 import { setupVite, serveStatic, log } from "./vite";
-import { storage } from "./storage";
+import { storage } from "./storage-config";
 import { DatabaseStorage } from "./db-storage";
 import { ReminderService } from "./reminder-service";
 import { AutoAssignmentService } from "./auto-assignment-service";
