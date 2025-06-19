@@ -463,11 +463,13 @@ export function SneakPeekModal({ children, currentPlan = "basic" }: SneakPeekMod
               const hasPaymentMethod = billingInfo?.paymentMethods && billingInfo.paymentMethods.length > 0;
               
               if (hasPaymentMethod) {
-                // Find the Enterprise plan
+                // Find the Enterprise plan specifically
                 const enterprisePlan = subscriptionPlans.find((plan: any) => 
-                  plan.name.toLowerCase().includes('professional') || 
-                  plan.name.toLowerCase().includes('enterprise') ||
+                  plan.name.toLowerCase().includes('enterprise')
+                ) || subscriptionPlans.find((plan: any) => 
                   plan.name.toLowerCase().includes('premium')
+                ) || subscriptionPlans.find((plan: any) => 
+                  plan.name.toLowerCase().includes('professional')
                 );
                 
                 if (enterprisePlan) {
