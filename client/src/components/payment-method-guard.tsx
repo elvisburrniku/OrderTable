@@ -3,7 +3,7 @@ import { useQuery } from '@tanstack/react-query';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from './ui/card';
 import { Button } from './ui/button';
 import { Alert, AlertDescription } from './ui/alert';
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from './ui/dialog';
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from './ui/dialog';
 import { CreditCard, Lock, Plus, AlertTriangle } from 'lucide-react';
 import { Elements, PaymentElement, useStripe, useElements } from '@stripe/react-stripe-js';
 import { loadStripe } from '@stripe/stripe-js';
@@ -109,8 +109,11 @@ export function PaymentMethodGuard({
 
   const hasPaymentMethod = billingInfo?.paymentMethods && billingInfo.paymentMethods.length > 0;
 
-  const handleAddPaymentMethod = () => {
-    refetchSetupIntent();
+  const handleDialogOpenChange = (open: boolean) => {
+    setShowAddPaymentDialog(open);
+    if (open) {
+      refetchSetupIntent();
+    }
   };
 
   const handlePaymentMethodAdded = async () => {
@@ -163,7 +166,7 @@ export function PaymentMethodGuard({
               </ul>
             </div>
 
-            <Dialog open={showAddPaymentDialog} onOpenChange={setShowAddPaymentDialog}>
+            <Dialog open={showAddPaymentDialog} onOpenChange={handleDialogOpenChange}>
               <DialogTrigger asChild>
                 <Button className="w-full">
                   <Plus className="h-4 w-4 mr-2" />
