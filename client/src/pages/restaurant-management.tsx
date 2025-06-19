@@ -11,6 +11,7 @@ import { Separator } from "@/components/ui/separator";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Building2, Plus, CreditCard, Crown, Users, Calendar, DollarSign } from "lucide-react";
+import { Link } from "wouter";
 import { Elements, PaymentElement, useStripe, useElements } from '@stripe/react-stripe-js';
 import { loadStripe } from '@stripe/stripe-js';
 
@@ -257,10 +258,12 @@ export default function RestaurantManagement() {
             </div>
             
             {managementInfo.limits.canCreateMore ? (
-              <Button>
-                <Plus className="h-4 w-4 mr-2" />
-                Create Restaurant
-              </Button>
+              <Link href={`/${tenantId}/create-restaurant`}>
+                <Button>
+                  <Plus className="h-4 w-4 mr-2" />
+                  Create Restaurant
+                </Button>
+              </Link>
             ) : managementInfo.tenant.isEnterprise ? (
               <Dialog open={showPurchaseDialog} onOpenChange={setShowPurchaseDialog}>
                 <DialogTrigger asChild>
@@ -339,13 +342,25 @@ export default function RestaurantManagement() {
       {/* Restaurant List */}
       <Card>
         <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Building2 className="h-5 w-5" />
-            Your Restaurants
-          </CardTitle>
-          <CardDescription>
-            All restaurants under your account
-          </CardDescription>
+          <div className="flex items-center justify-between">
+            <div>
+              <CardTitle className="flex items-center gap-2">
+                <Building2 className="h-5 w-5" />
+                Your Restaurants
+              </CardTitle>
+              <CardDescription>
+                All restaurants under your account
+              </CardDescription>
+            </div>
+            {managementInfo.limits.canCreateMore && (
+              <Link href={`/${tenantId}/create-restaurant`}>
+                <Button>
+                  <Plus className="h-4 w-4 mr-2" />
+                  Create Restaurant
+                </Button>
+              </Link>
+            )}
+          </div>
         </CardHeader>
         <CardContent>
           {managementInfo.restaurants.length === 0 ? (
@@ -355,10 +370,12 @@ export default function RestaurantManagement() {
               <p className="text-gray-500 mb-4">
                 Create your first restaurant to get started
               </p>
-              <Button>
-                <Plus className="h-4 w-4 mr-2" />
-                Create Restaurant
-              </Button>
+              <Link href={`/${tenantId}/create-restaurant`}>
+                <Button>
+                  <Plus className="h-4 w-4 mr-2" />
+                  Create Restaurant
+                </Button>
+              </Link>
             </div>
           ) : (
             <div className="space-y-4">
@@ -380,9 +397,11 @@ export default function RestaurantManagement() {
                     <Badge variant={restaurant.isActive ? "default" : "secondary"}>
                       {restaurant.isActive ? "Active" : "Inactive"}
                     </Badge>
-                    <Button variant="outline" size="sm">
-                      Manage
-                    </Button>
+                    <Link href={`/${tenantId}/dashboard`}>
+                      <Button variant="outline" size="sm">
+                        Manage
+                      </Button>
+                    </Link>
                   </div>
                 </div>
               ))}

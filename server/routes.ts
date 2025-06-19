@@ -14819,7 +14819,7 @@ NEXT STEPS:
           id: r.id,
           name: r.name,
           createdAt: r.createdAt,
-          isActive: r.isActive
+          isActive: r.isActive ?? true
         })),
         pricing: {
           additionalRestaurantCost: 50,
