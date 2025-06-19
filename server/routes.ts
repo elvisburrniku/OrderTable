@@ -14993,6 +14993,8 @@ NEXT STEPS:
       const baseLimit = subscriptionPlan.maxRestaurants || 1;
       const additionalCount = tenant.additionalRestaurants || 0;
       const totalAllowed = baseLimit + additionalCount;
+      
+      console.log(`Restaurant creation check: current=${currentCount}, baseLimit=${baseLimit}, additional=${additionalCount}, totalAllowed=${totalAllowed}, planName=${subscriptionPlan.name}`);
 
       if (currentCount >= totalAllowed) {
         return res.status(400).json({ 
