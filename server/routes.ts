@@ -14939,11 +14939,16 @@ NEXT STEPS:
         return res.status(404).json({ message: "Subscription plan not found" });
       }
 
+      console.log("CAN-CREATE DEBUG: tenant =", JSON.stringify(tenant));
+      console.log("CAN-CREATE DEBUG: subscriptionPlan =", JSON.stringify(subscriptionPlan));
+
       const allRestaurants = await storage.db?.select().from(restaurants).where(eq(restaurants.tenantId, tenantId)) || [];
       const currentCount = allRestaurants.length;
       const baseLimit = subscriptionPlan.maxRestaurants || 1;
       const additionalCount = tenant.additionalRestaurants || 0;
       const totalAllowed = baseLimit + additionalCount;
+      
+      console.log(`CAN-CREATE DEBUG: current=${currentCount}, baseLimit=${baseLimit}, additional=${additionalCount}, totalAllowed=${totalAllowed}`);
 
       if (currentCount < totalAllowed) {
         res.json({ canCreate: true });
