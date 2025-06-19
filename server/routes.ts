@@ -14968,11 +14968,20 @@ NEXT STEPS:
 
   // Create restaurant endpoint
   app.post("/api/tenants/:tenantId/restaurants", validateTenant, async (req, res) => {
+    console.log("=== RESTAURANT CREATION START ===");
+    console.log("Request body:", JSON.stringify(req.body, null, 2));
+    console.log("Tenant ID:", req.params.tenantId);
+    
     try {
       const tenantId = parseInt(req.params.tenantId);
       const { name, description, address, phone, email, cuisine, userId } = req.body;
 
+      console.log("Parsed tenant ID:", tenantId);
+      console.log("Restaurant name:", name);
+      console.log("User ID:", userId);
+
       if (!name || !userId) {
+        console.log("Missing required fields - name or userId");
         return res.status(400).json({ message: "Restaurant name and user ID are required" });
       }
 
