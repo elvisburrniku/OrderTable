@@ -101,7 +101,6 @@ export const restaurants = pgTable("restaurants", {
   generalSettings: text("general_settings"),
   bookingSettings: text("booking_settings"),
   notificationSettings: text("notification_settings"),
-  isActive: boolean("is_active").default(true),
 });
 
 export const tables = pgTable("tables", {
