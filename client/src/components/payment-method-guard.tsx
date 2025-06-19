@@ -5,9 +5,11 @@ import { Button } from './ui/button';
 import { Alert, AlertDescription } from './ui/alert';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from './ui/dialog';
 import { CreditCard, Lock, Plus, AlertTriangle } from 'lucide-react';
-import { Elements, PaymentElement, useStripe, useElements } from '@stripe/react-stripe-js';
+import { Elements, CardElement, useStripe, useElements } from '@stripe/react-stripe-js';
 import { loadStripe } from '@stripe/stripe-js';
 import { useToast } from '@/hooks/use-toast';
+import { useMutation } from '@tanstack/react-query';
+import { apiRequest } from '@/lib/queryClient';
 
 const stripePromise = loadStripe(import.meta.env.VITE_STRIPE_PUBLIC_KEY);
 
@@ -34,61 +36,86 @@ interface BillingInfo {
 function AddPaymentMethodForm({ onSuccess }: { onSuccess: () => void }) {
   const stripe = useStripe();
   const elements = useElements();
-  const [isProcessing, setIsProcessing] = useState(false);
   const { toast } = useToast();
+  const [isLoading, setIsLoading] = useState(false);
 
-  const handleSubmit = async (event: React.FormEvent) => {
-    event.preventDefault();
+  const setupIntentMutation = useMutation({
+    mutationFn: async () => {
+      const response = await apiRequest("POST", "/api/billing/setup-intent");
+      if (!response.ok) {
+        throw new Error("Failed to create setup intent");
+      }
+      return response.json();
+    },
+    onSuccess: async (data) => {
+      if (!stripe || !elements) return;
 
-    if (!stripe || !elements) {
-      return;
-    }
+      const cardElement = elements.getElement(CardElement);
+      if (!cardElement) return;
 
-    setIsProcessing(true);
-
-    try {
-      const { error } = await stripe.confirmSetup({
-        elements,
-        redirect: 'if_required',
+      setIsLoading(true);
+      
+      const { error } = await stripe.confirmCardSetup(data.clientSecret, {
+        payment_method: {
+          card: cardElement,
+        },
       });
+
+      setIsLoading(false);
 
       if (error) {
         toast({
-          title: "Payment Method Error",
+          title: "Error",
           description: error.message,
-          variant: "destructive"
+          variant: "destructive",
         });
       } else {
         toast({
-          title: "Payment Method Added",
-          description: "Your payment method has been successfully added."
+          title: "Success",
+          description: "Payment method added successfully",
         });
         onSuccess();
       }
-    } catch (err) {
+    },
+    onError: (error: any) => {
       toast({
-        title: "Setup Failed",
-        description: "Failed to add payment method. Please try again.",
-        variant: "destructive"
+        title: "Error",
+        description: error.message || "Failed to add payment method",
+        variant: "destructive",
       });
-    } finally {
-      setIsProcessing(false);
-    }
+    },
+  });
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setupIntentMutation.mutate();
   };
 
   return (
     <form onSubmit={handleSubmit} className="space-y-4">
-      <PaymentElement 
-        options={{
-          layout: 'tabs'
-        }}
-      />
-      <Button 
-        type="submit" 
-        disabled={!stripe || isProcessing} 
+      <div className="p-3 border rounded-md">
+        <CardElement
+          options={{
+            style: {
+              base: {
+                fontSize: "16px",
+                color: "#424770",
+                "::placeholder": {
+                  color: "#aab7c4",
+                },
+              },
+            },
+          }}
+        />
+      </div>
+      <Button
+        type="submit"
+        disabled={!stripe || isLoading || setupIntentMutation.isPending}
         className="w-full"
       >
-        {isProcessing ? 'Adding Payment Method...' : 'Add Payment Method'}
+        {isLoading || setupIntentMutation.isPending
+          ? "Adding..."
+          : "Add Payment Method"}
       </Button>
     </form>
   );
@@ -106,18 +133,12 @@ export function PaymentMethodGuard({
     queryKey: ["/api/billing/info"],
   });
 
-  const { data: setupIntent, refetch: refetchSetupIntent } = useQuery({
-    queryKey: ["/api/billing/setup-intent"],
-    enabled: false, // Only fetch when triggered
-  });
+  // Remove setup intent query since we handle it in the form
 
   const hasPaymentMethod = billingInfo?.paymentMethods && billingInfo.paymentMethods.length > 0;
 
   const handleDialogOpenChange = (open: boolean) => {
     setShowAddPaymentDialog(open);
-    if (open) {
-      refetchSetupIntent();
-    }
   };
 
   const handlePaymentMethodAdded = async () => {
@@ -185,27 +206,9 @@ export function PaymentMethodGuard({
                   </DialogDescription>
                 </DialogHeader>
                 
-                {setupIntent?.client_secret ? (
-                  <Elements 
-                    stripe={stripePromise} 
-                    options={{
-                      clientSecret: setupIntent.client_secret,
-                      appearance: {
-                        theme: 'stripe',
-                        variables: {
-                          colorPrimary: '#2563eb',
-                        }
-                      }
-                    }}
-                  >
-                    <AddPaymentMethodForm onSuccess={handlePaymentMethodAdded} />
-                  </Elements>
-                ) : (
-                  <div className="flex items-center justify-center p-8">
-                    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
-                    <span className="ml-3 text-gray-600">Loading payment form...</span>
-                  </div>
-                )}
+                <Elements stripe={stripePromise}>
+                  <AddPaymentMethodForm onSuccess={handlePaymentMethodAdded} />
+                </Elements>
               </DialogContent>
             </Dialog>
 
