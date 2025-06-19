@@ -428,17 +428,39 @@ export function SneakPeekModal({ children, currentPlan = "basic" }: SneakPeekMod
           <Button 
             className="flex-1"
             onClick={() => {
-              // Navigate to billing page for upgrade
-              const currentPath = window.location.pathname;
-              const tenantId = currentPath.split('/')[1];
-              if (tenantId && !isNaN(Number(tenantId))) {
-                setLocation(`/${tenantId}/billing`);
+              const hasPaymentMethod = billingInfo?.paymentMethods && billingInfo.paymentMethods.length > 0;
+              
+              if (hasPaymentMethod) {
+                // Find the Enterprise plan
+                const enterprisePlan = subscriptionPlans.find((plan: any) => 
+                  plan.name.toLowerCase().includes('professional') || 
+                  plan.name.toLowerCase().includes('enterprise') ||
+                  plan.name.toLowerCase().includes('premium')
+                );
+                
+                if (enterprisePlan) {
+                  upgradeSubscriptionMutation.mutate(enterprisePlan.id);
+                } else {
+                  toast({
+                    title: "Error",
+                    description: "Enterprise plan not found",
+                    variant: "destructive"
+                  });
+                }
               } else {
-                setLocation('/billing');
+                // Navigate to billing page to add payment method
+                const currentPath = window.location.pathname;
+                const tenantId = currentPath.split('/')[1];
+                if (tenantId && !isNaN(Number(tenantId))) {
+                  setLocation(`/${tenantId}/billing`);
+                } else {
+                  setLocation('/billing');
+                }
               }
             }}
+            disabled={upgradeSubscriptionMutation.isPending}
           >
-            Upgrade to Enterprise
+            {upgradeSubscriptionMutation.isPending ? "Upgrading..." : "Upgrade to Enterprise"}
             <ArrowRight className="h-4 w-4 ml-2" />
           </Button>
         </div>
