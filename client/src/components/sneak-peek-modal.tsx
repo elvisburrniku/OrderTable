@@ -1,5 +1,8 @@
 import React, { useState } from 'react';
 import { useLocation } from 'wouter';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useToast } from '@/hooks/use-toast';
+import { apiRequest } from '@/lib/queryClient';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from './ui/dialog';
 import { Button } from './ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from './ui/card';
@@ -34,6 +37,35 @@ interface SneakPeekModalProps {
 export function SneakPeekModal({ children, currentPlan = "basic" }: SneakPeekModalProps) {
   const [activeDemo, setActiveDemo] = useState<string>('overview');
   const [, setLocation] = useLocation();
+  const { toast } = useToast();
+  const queryClient = useQueryClient();
+
+  const { data: billingInfo } = useQuery({
+    queryKey: ["/api/billing/info"],
+  });
+
+  const { data: subscriptionPlans = [] } = useQuery({
+    queryKey: ["/api/subscription-plans"],
+  });
+
+  const upgradeSubscriptionMutation = useMutation({
+    mutationFn: (planId: string) => apiRequest("POST", "/api/subscription/subscribe", { planId }),
+    onSuccess: () => {
+      toast({
+        title: "Success",
+        description: "Successfully upgraded to Enterprise plan!"
+      });
+      queryClient.invalidateQueries({ queryKey: ["/api/subscription/details"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/billing/info"] });
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Error",
+        description: error.message || "Failed to upgrade subscription",
+        variant: "destructive"
+      });
+    }
+  });
 
   const enterpriseFeatures = [
     {
