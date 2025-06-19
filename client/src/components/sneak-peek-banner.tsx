@@ -14,7 +14,7 @@ interface SneakPeekBannerProps {
 export function SneakPeekBanner({ currentPlan = "basic", className = "" }: SneakPeekBannerProps) {
   const [isVisible, setIsVisible] = useState(true);
 
-  const { data: subscriptionDetails } = useQuery({
+  const { data: subscriptionDetails, isLoading: subscriptionLoading } = useQuery({
     queryKey: ["/api/subscription/details"],
   });
 
@@ -23,7 +23,8 @@ export function SneakPeekBanner({ currentPlan = "basic", className = "" }: Sneak
                       subscriptionDetails?.plan?.name?.toLowerCase().includes('premium') ||
                       subscriptionDetails?.plan?.name?.toLowerCase().includes('professional');
 
-  if (!isVisible || isEnterprise) return null;
+  // Hide banner while loading or if user has enterprise plan
+  if (!isVisible || subscriptionLoading || isEnterprise) return null;
 
   return (
     <Card className={`border-blue-200 bg-gradient-to-r from-blue-50 to-purple-50 ${className}`}>

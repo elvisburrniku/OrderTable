@@ -20,7 +20,7 @@ export function SneakPeekWidget({
 }: SneakPeekWidgetProps) {
   const [, setLocation] = useLocation();
 
-  const { data: subscriptionDetails } = useQuery({
+  const { data: subscriptionDetails, isLoading: subscriptionLoading } = useQuery({
     queryKey: ["/api/subscription/details"],
   });
 
@@ -29,7 +29,8 @@ export function SneakPeekWidget({
                       subscriptionDetails?.plan?.name?.toLowerCase().includes('premium') ||
                       subscriptionDetails?.plan?.name?.toLowerCase().includes('professional');
 
-  if (isEnterprise) {
+  // Hide widget while loading or if user has enterprise plan
+  if (subscriptionLoading || isEnterprise) {
     return null;
   }
   
