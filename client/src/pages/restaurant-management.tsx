@@ -331,6 +331,13 @@ export default function RestaurantManagement() {
                   <PurchaseAdditionalRestaurantForm onSuccess={handlePurchaseSuccess} />
                 </DialogContent>
               </Dialog>
+            ) : managementInfo.tenant.isEnterprise ? (
+              <div className="text-center">
+                <Button onClick={() => setLocation("/create-restaurant")}>
+                  <Plus className="h-4 w-4 mr-2" />
+                  Create New Restaurant
+                </Button>
+              </div>
             ) : (
               <div className="text-right space-y-2">
                 <p className="text-sm text-gray-600">
@@ -355,6 +362,81 @@ export default function RestaurantManagement() {
         </CardContent>
       </Card>
 
+      {/* Enterprise Features Dashboard */}
+      {managementInfo.tenant.isEnterprise && (
+        <div className="grid md:grid-cols-3 gap-6">
+          <Card>
+            <CardHeader className="pb-3">
+              <CardTitle className="text-lg flex items-center gap-2">
+                <Users className="h-5 w-5 text-blue-600" />
+                Multi-Location Analytics
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-3">
+                <div className="flex justify-between items-center">
+                  <span className="text-sm text-gray-600">Total Restaurants</span>
+                  <span className="font-semibold">{managementInfo.restaurants.length}</span>
+                </div>
+                <div className="flex justify-between items-center">
+                  <span className="text-sm text-gray-600">Active Locations</span>
+                  <span className="font-semibold text-green-600">
+                    {managementInfo.restaurants.filter((r: any) => r.status !== 'inactive').length}
+                  </span>
+                </div>
+                <div className="flex justify-between items-center">
+                  <span className="text-sm text-gray-600">Available Slots</span>
+                  <span className="font-semibold text-blue-600">
+                    {managementInfo.limits.maxRestaurants === -1 
+                      ? '∞' 
+                      : managementInfo.limits.maxRestaurants - managementInfo.restaurants.length
+                    }
+                  </span>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader className="pb-3">
+              <CardTitle className="text-lg flex items-center gap-2">
+                <Calendar className="h-5 w-5 text-purple-600" />
+                Centralized Booking
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-2">
+                <p className="text-sm text-gray-600">
+                  Manage all restaurant bookings from one dashboard
+                </p>
+                <Button size="sm" className="w-full" variant="outline">
+                  View All Bookings
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader className="pb-3">
+              <CardTitle className="text-lg flex items-center gap-2">
+                <CreditCard className="h-5 w-5 text-green-600" />
+                Revenue Overview
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-2">
+                <p className="text-sm text-gray-600">
+                  Track performance across all locations
+                </p>
+                <Button size="sm" className="w-full" variant="outline">
+                  View Analytics
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+      )}
+
       {/* Pricing Information */}
       {managementInfo.tenant.isEnterprise && (
         <Card>
@@ -364,7 +446,7 @@ export default function RestaurantManagement() {
               Additional Restaurant Pricing
             </CardTitle>
             <CardDescription>
-              Enterprise plan members can purchase additional restaurants
+              Enterprise plan includes 3 restaurants. Additional restaurants available for $50/month each
             </CardDescription>
           </CardHeader>
           <CardContent>
