@@ -3,7 +3,7 @@ import { useQuery, useMutation } from "@tanstack/react-query";
 import { useAuth } from "@/lib/auth";
 import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
-import { useLocation } from "wouter";
+import { useLocation, useParams } from "wouter";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -31,6 +31,8 @@ export default function CreateRestaurant() {
   const { user } = useAuth();
   const { toast } = useToast();
   const [, setLocation] = useLocation();
+  const params = useParams();
+  const tenantId = params.tenantId;
 
   const form = useForm<CreateRestaurantForm>({
     resolver: zodResolver(createRestaurantSchema),
@@ -46,19 +48,22 @@ export default function CreateRestaurant() {
 
   // Check if user can create restaurants
   const { data: canCreate, isLoading: checkingLimits } = useQuery({
-    queryKey: [`/api/tenants/${user?.tenantId}/can-create-restaurant`],
-    enabled: !!user?.tenantId,
+    queryKey: [`/api/tenants/${tenantId}/can-create-restaurant`],
+    enabled: !!tenantId,
   });
 
   // Get restaurant management info for context
   const { data: managementInfo } = useQuery({
-    queryKey: [`/api/tenants/${user?.tenantId}/restaurant-management`],
-    enabled: !!user?.tenantId,
+    queryKey: [`/api/tenants/${tenantId}/restaurant-management`],
+    enabled: !!tenantId,
   });
 
   const createMutation = useMutation({
     mutationFn: async (data: CreateRestaurantForm) => {
-      const response = await apiRequest("POST", `/api/tenants/${user?.tenantId}/restaurants`, data);
+      const response = await apiRequest("POST", `/api/tenants/${tenantId}/restaurants`, {
+        ...data,
+        userId: user?.id
+      });
       return response.json();
     },
     onSuccess: (data) => {
@@ -66,7 +71,7 @@ export default function CreateRestaurant() {
         title: "Success",
         description: "Restaurant created successfully!",
       });
-      setLocation("/dashboard");
+      setLocation(`/${tenantId}/restaurant-management`);
     },
     onError: (error: any) => {
       toast({

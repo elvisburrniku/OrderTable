@@ -14966,6 +14966,78 @@ NEXT STEPS:
     }
   });
 
+  // Create restaurant endpoint
+  app.post("/api/tenants/:tenantId/restaurants", validateTenant, async (req, res) => {
+    try {
+      const tenantId = parseInt(req.params.tenantId);
+      const { name, description, address, phone, email, cuisine, userId } = req.body;
+
+      if (!name || !userId) {
+        return res.status(400).json({ message: "Restaurant name and user ID are required" });
+      }
+
+      // Verify tenant exists and user has permission
+      const tenant = await storage.getTenantById(tenantId);
+      if (!tenant) {
+        return res.status(404).json({ message: "Tenant not found" });
+      }
+
+      const subscriptionPlan = await storage.getSubscriptionPlanById(tenant.subscriptionPlanId);
+      if (!subscriptionPlan) {
+        return res.status(404).json({ message: "Subscription plan not found" });
+      }
+
+      // Check restaurant creation limits
+      const allRestaurants = await storage.db?.select().from(restaurants).where(eq(restaurants.tenantId, tenantId)) || [];
+      const currentCount = allRestaurants.length;
+      const baseLimit = subscriptionPlan.maxRestaurants || 1;
+      const additionalCount = tenant.additionalRestaurants || 0;
+      const totalAllowed = baseLimit + additionalCount;
+
+      if (currentCount >= totalAllowed) {
+        return res.status(400).json({ 
+          message: `Restaurant limit reached. This tenant can have maximum ${totalAllowed} restaurants.` 
+        });
+      }
+
+      // Create the restaurant
+      const restaurant = await storage.createRestaurant({
+        name,
+        userId,
+        tenantId,
+        email: email || null,
+        address: address || null,
+        phone: phone || null,
+        description: description || null,
+        emailSettings: JSON.stringify({})
+      });
+
+      // Log restaurant creation
+      await logActivity({
+        restaurantId: restaurant.id,
+        tenantId: tenantId,
+        eventType: "restaurant_creation",
+        description: `New restaurant "${name}" created`,
+        source: "manual",
+        userEmail: req.user?.email,
+        userLogin: req.user?.email,
+        ipAddress: req.ip,
+        userAgent: req.get('User-Agent'),
+        details: {
+          restaurantName: name,
+          address,
+          phone,
+          email
+        }
+      });
+
+      res.status(201).json(restaurant);
+    } catch (error) {
+      console.error("Error creating restaurant:", error);
+      res.status(500).json({ message: "Internal server error" });
+    }
+  });
+
   // Initialize feedback reminder service
   console.log("Starting feedback reminder service...");
   feedbackReminderService.start();

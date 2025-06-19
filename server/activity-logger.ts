@@ -90,7 +90,7 @@ export class ActivityLogger {
 
       // Create activity log entry
       await storage.createActivityLog({
-        restaurantId: restaurantId || 0,
+        restaurantId: restaurantId || null,
         tenantId,
         eventType,
         description,
