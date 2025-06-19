@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useAuth } from "@/lib/auth";
+import { useParams } from "wouter";
 import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -143,15 +144,17 @@ export default function RestaurantManagement() {
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const [showPurchaseDialog, setShowPurchaseDialog] = useState(false);
+  const params = useParams();
+  const tenantId = params.tenantId;
 
   const { data: managementInfo, isLoading } = useQuery<RestaurantManagementInfo>({
-    queryKey: [`/api/tenants/${user?.tenantId}/restaurant-management`],
-    enabled: !!user?.tenantId,
+    queryKey: [`/api/tenants/${tenantId}/restaurant-management`],
+    enabled: !!tenantId,
   });
 
   const handlePurchaseSuccess = () => {
     setShowPurchaseDialog(false);
-    queryClient.invalidateQueries({ queryKey: [`/api/tenants/${user?.tenantId}/restaurant-management`] });
+    queryClient.invalidateQueries({ queryKey: [`/api/tenants/${tenantId}/restaurant-management`] });
   };
 
   if (isLoading) {
