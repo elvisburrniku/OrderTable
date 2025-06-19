@@ -104,13 +104,12 @@ export function PaymentMethodGuard({
 
   const { data: setupIntent, refetch: refetchSetupIntent } = useQuery({
     queryKey: ["/api/billing/setup-intent"],
-    enabled: showAddPaymentDialog,
+    enabled: false, // Only fetch when triggered
   });
 
   const hasPaymentMethod = billingInfo?.paymentMethods && billingInfo.paymentMethods.length > 0;
 
   const handleAddPaymentMethod = () => {
-    setShowAddPaymentDialog(true);
     refetchSetupIntent();
   };
 
@@ -164,13 +163,39 @@ export function PaymentMethodGuard({
               </ul>
             </div>
 
-            <Button 
-              onClick={handleAddPaymentMethod}
-              className="w-full"
-            >
-              <Plus className="h-4 w-4 mr-2" />
-              Add Payment Method
-            </Button>
+            <Dialog open={showAddPaymentDialog} onOpenChange={setShowAddPaymentDialog}>
+              <DialogTrigger asChild>
+                <Button className="w-full">
+                  <Plus className="h-4 w-4 mr-2" />
+                  Add Payment Method
+                </Button>
+              </DialogTrigger>
+              <DialogContent className="max-w-md">
+                <DialogHeader>
+                  <DialogTitle>Add Payment Method</DialogTitle>
+                  <DialogDescription>
+                    Add a secure payment method to your account
+                  </DialogDescription>
+                </DialogHeader>
+                
+                {setupIntent?.client_secret && (
+                  <Elements 
+                    stripe={stripePromise} 
+                    options={{
+                      clientSecret: setupIntent.client_secret,
+                      appearance: {
+                        theme: 'stripe',
+                        variables: {
+                          colorPrimary: '#2563eb',
+                        }
+                      }
+                    }}
+                  >
+                    <AddPaymentMethodForm onSuccess={handlePaymentMethodAdded} />
+                  </Elements>
+                )}
+              </DialogContent>
+            </Dialog>
 
             <p className="text-xs text-gray-600 text-center">
               We use Stripe for secure payment processing. Your card information is encrypted and never stored on our servers.
@@ -178,34 +203,7 @@ export function PaymentMethodGuard({
           </CardContent>
         </Card>
 
-        {/* Add Payment Method Dialog */}
-        <Dialog open={showAddPaymentDialog} onOpenChange={setShowAddPaymentDialog}>
-          <DialogContent className="max-w-md">
-            <DialogHeader>
-              <DialogTitle>Add Payment Method</DialogTitle>
-              <DialogDescription>
-                Add a secure payment method to your account
-              </DialogDescription>
-            </DialogHeader>
-            
-            {setupIntent?.client_secret && (
-              <Elements 
-                stripe={stripePromise} 
-                options={{
-                  clientSecret: setupIntent.client_secret,
-                  appearance: {
-                    theme: 'stripe',
-                    variables: {
-                      colorPrimary: '#2563eb',
-                    }
-                  }
-                }}
-              >
-                <AddPaymentMethodForm onSuccess={handlePaymentMethodAdded} />
-              </Elements>
-            )}
-          </DialogContent>
-        </Dialog>
+
 
         {/* Blocked Content Preview */}
         <div className="relative">
