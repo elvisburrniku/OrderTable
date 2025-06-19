@@ -12545,6 +12545,83 @@ NEXT STEPS:
     },
   );
 
+  // Purchase additional restaurant slot
+  app.post('/api/billing/purchase-additional-restaurant', attachUser, async (req: Request, res: Response) => {
+    if (!req.user) {
+      return res.status(401).json({ error: 'Not authenticated' });
+    }
+
+    try {
+      const tenantUser = await storage.getTenantByUserId(req.user.id);
+      if (!tenantUser) {
+        return res.status(404).json({ error: 'Tenant not found' });
+      }
+
+      const tenant = await storage.getTenantById(tenantUser.id);
+      if (!tenant) {
+        return res.status(404).json({ error: 'Tenant not found' });
+      }
+
+      // Check if user is on Enterprise plan
+      const plan = tenant.subscriptionPlanId 
+        ? await storage.getSubscriptionPlanById(tenant.subscriptionPlanId)
+        : null;
+        
+      if (!plan || !plan.name.toLowerCase().includes('enterprise')) {
+        return res.status(400).json({ error: 'Additional restaurants are only available for Enterprise plans' });
+      }
+
+      // Get current restaurant count
+      const restaurants = await storage.getRestaurantsByTenantId(tenant.id);
+      const currentCount = restaurants.length;
+      const includedRestaurants = 3; // Enterprise includes 3 restaurants
+      
+      if (currentCount < includedRestaurants) {
+        return res.status(400).json({ error: 'You have not reached the included restaurant limit yet' });
+      }
+
+      // Create additional restaurant charge in Stripe
+      const additionalCost = 5000; // $50.00 in cents
+      
+      if (tenant.stripeCustomerId && tenant.stripeSubscriptionId) {
+        // Add recurring charge for additional restaurant
+        const subscriptionItem = await stripe.subscriptionItems.create({
+          subscription: tenant.stripeSubscriptionId,
+          price_data: {
+            currency: 'usd',
+            product_data: {
+              name: 'Additional Restaurant',
+              description: 'Extra restaurant slot for Enterprise plan',
+            },
+            unit_amount: additionalCost,
+            recurring: {
+              interval: 'month',
+            },
+          },
+          quantity: 1,
+        });
+
+        // Update tenant record
+        await storage.updateTenant(tenant.id, {
+          additionalRestaurants: (tenant.additionalRestaurants || 0) + 1,
+          additionalRestaurantsCost: (tenant.additionalRestaurantsCost || 0) + additionalCost,
+        });
+
+        res.json({
+          success: true,
+          message: 'Additional restaurant slot purchased successfully',
+          additionalCost: additionalCost / 100,
+          subscriptionItem: subscriptionItem.id,
+        });
+      } else {
+        return res.status(400).json({ error: 'No Stripe customer or subscription found' });
+      }
+    } catch (error) {
+      console.error('Error purchasing additional restaurant:', error);
+      res.status(500).json({ error: 'Failed to purchase additional restaurant slot' });
+    }
+  });
+
   // Billing Management Routes
 
   // Get billing information

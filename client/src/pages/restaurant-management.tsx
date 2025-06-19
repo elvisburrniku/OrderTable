@@ -13,6 +13,7 @@ import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Building2, Plus, CreditCard, Crown, Users, Calendar, DollarSign, Eye } from "lucide-react";
 import { SneakPeekModal } from "@/components/sneak-peek-modal";
 import { UpgradeFlowHandler } from "@/components/upgrade-flow-handler";
+import { AdditionalRestaurantBilling } from "@/components/additional-restaurant-billing";
 import { Link } from "wouter";
 import { Elements, PaymentElement, useStripe, useElements } from '@stripe/react-stripe-js';
 import { loadStripe } from '@stripe/stripe-js';
@@ -437,45 +438,17 @@ export default function RestaurantManagement() {
         </div>
       )}
 
-      {/* Pricing Information */}
+      {/* Additional Restaurant Billing */}
       {managementInfo.tenant.isEnterprise && (
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <DollarSign className="h-5 w-5" />
-              Additional Restaurant Pricing
-            </CardTitle>
-            <CardDescription>
-              Enterprise plan includes 3 restaurants. Additional restaurants available for $50/month each
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
-              <div>
-                <div className="font-semibold">Additional Restaurant</div>
-                <div className="text-sm text-gray-600">
-                  Add another restaurant to your account
-                </div>
-              </div>
-              <div className="text-right">
-                <div className="text-2xl font-bold">
-                  ${managementInfo.pricing.additionalRestaurantCost}
-                </div>
-                <div className="text-sm text-gray-600">
-                  per {managementInfo.pricing.billingInterval}
-                </div>
-              </div>
-            </div>
-            
-            {managementInfo.limits.additionalCount > 0 && (
-              <div className="mt-4 p-4 bg-blue-50 rounded-lg">
-                <div className="text-sm text-blue-800">
-                  <strong>Current Additional Cost:</strong> ${managementInfo.limits.additionalCount * managementInfo.pricing.additionalRestaurantCost}/month
-                </div>
-              </div>
-            )}
-          </CardContent>
-        </Card>
+        <AdditionalRestaurantBilling
+          currentRestaurantCount={managementInfo.restaurants.length}
+          includedRestaurants={3}
+          additionalCost={50}
+          onPurchaseSuccess={() => {
+            // Refresh management info
+            window.location.reload();
+          }}
+        />
       )}
 
       {/* Restaurant List */}

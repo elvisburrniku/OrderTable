@@ -11,9 +11,10 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
-import { Building2, Crown, AlertCircle, DollarSign } from "lucide-react";
+import { Building2, Crown, AlertCircle, DollarSign, Badge } from "lucide-react";
 import { SneakPeekModal } from "@/components/sneak-peek-modal";
 import { UpgradeFlowHandler } from "@/components/upgrade-flow-handler";
+import { AdditionalRestaurantBilling } from "@/components/additional-restaurant-billing";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
@@ -190,12 +191,16 @@ export default function CreateRestaurant() {
               </div>
             )}
 
-            <div className="flex gap-3 justify-center">
-              <Button variant="outline" onClick={() => setLocation("/dashboard")}>
-                Back to Dashboard
-              </Button>
-              <Button onClick={() => setLocation("/restaurant-management")}>
-                Purchase Additional Restaurant
+            <AdditionalRestaurantBilling
+              currentRestaurantCount={canCreate?.currentCount || 0}
+              includedRestaurants={3}
+              additionalCost={50}
+              onPurchaseSuccess={handlePurchaseSuccess}
+            />
+            
+            <div className="text-center">
+              <Button variant="outline" onClick={() => setLocation("/restaurant-management")}>
+                Back to Restaurant Management
               </Button>
             </div>
           </CardContent>
