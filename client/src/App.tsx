@@ -67,6 +67,8 @@ import { lazy } from "react";
 import Profile from "./pages/profile";
 import Settings from "./pages/settings";
 import Help from "./pages/help";
+import RestaurantManagement from "./pages/restaurant-management";
+import CreateRestaurant from "./pages/create-restaurant";
 import CustomerFeedback from "./pages/customer-feedback";
 import TableFeedback from "./pages/table-feedback";
 import FeedbackResponsesPopup from "./pages/feedback-responses-popup";
@@ -165,6 +167,8 @@ function App() {
                 <Route path="/:tenantId/profile" component={Profile} />
                 <Route path="/:tenantId/settings" component={Settings} />
                 <Route path="/:tenantId/help" component={Help} />
+                <Route path="/:tenantId/restaurant-management" component={RestaurantManagement} />
+                <Route path="/:tenantId/create-restaurant" component={CreateRestaurant} />
                 <Route path="/:tenantId/menu-management" component={MenuManagementPage} />
                 <Route path="/:tenantId/kitchen-dashboard" component={KitchenDashboardPage} />
                 <Route path="/:tenantId/print-orders" component={PrintOrders} />

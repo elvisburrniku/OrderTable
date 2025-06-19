@@ -28,6 +28,7 @@ import {
   Thermometer,
   TestTube,
   ChefHat,
+  Building2,
   Printer,
   BookOpen,
   Phone,
@@ -191,6 +192,12 @@ export default function DashboardSidebar({
       icon: Zap,
       href: `/${tenantId}/integrations`,
       color: "text-yellow-600",
+    },
+    {
+      name: "Restaurant Management",
+      icon: Building2,
+      href: `/${tenantId}/restaurant-management`,
+      color: "text-purple-600",
     },
     {
       name: "Statistics",
