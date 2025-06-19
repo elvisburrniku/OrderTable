@@ -4111,6 +4111,25 @@ export async function registerRoutes(app: Express): Promise<Server> {
             .json({ message: "Missing required booking fields" });
         }
 
+        // Import settings integration
+        const { settingsIntegration } = await import('./settings-integration');
+        
+        // Validate booking against settings
+        const validation = await settingsIntegration.validateBookingRequest(
+          restaurantId, 
+          tenantId, 
+          {
+            date: req.body.bookingDate,
+            time: req.body.startTime,
+            guests: req.body.guestCount,
+            source: req.body.source || 'manual'
+          }
+        );
+        
+        if (!validation.valid) {
+          return res.status(400).json({ message: validation.message });
+        }
+
         const bookingDate = new Date(req.body.bookingDate);
         const bookingTime = req.body.startTime;
         const tableId = req.body.tableId;
@@ -4275,6 +4294,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
           },
         );
 
+        // Get settings-based defaults
+        const duration = await settingsIntegration.getBookingDuration(restaurantId, tenantId);
+        const shouldAutoConfirm = await settingsIntegration.shouldAutoConfirmBookings(restaurantId, tenantId);
+        const depositInfo = await settingsIntegration.isDepositRequired(restaurantId, tenantId, req.body.guestCount);
+
+        // Calculate end time based on duration setting
+        const startTimeMinutes = parseInt(req.body.startTime.split(':')[0]) * 60 + parseInt(req.body.startTime.split(':')[1]);
+        const endTimeMinutes = startTimeMinutes + duration;
+        const endHours = Math.floor(endTimeMinutes / 60);
+        const endMins = endTimeMinutes % 60;
+        const endTime = `${endHours.toString().padStart(2, '0')}:${endMins.toString().padStart(2, '0')}`;
+
         const bookingData = insertBookingSchema.parse({
           ...req.body,
           restaurantId,
@@ -4282,6 +4313,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
           customerId: customer.id,
           bookingDate: bookingDate,
           tableId: assignedTableId,
+          endTime: endTime,
+          status: shouldAutoConfirm ? 'confirmed' : (req.body.status || 'pending'),
+          depositRequired: depositInfo.required,
+          depositAmount: depositInfo.amount || 0,
         });
 
         const booking = await storage.createBooking(bookingData);
