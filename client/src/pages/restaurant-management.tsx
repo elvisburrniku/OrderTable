@@ -342,7 +342,10 @@ export default function RestaurantManagement() {
                       Preview Features
                     </Button>
                   </SneakPeekModal>
-                  <Button size="sm">
+                  <Button 
+                    size="sm"
+                    onClick={() => setLocation(`/${tenantId}/billing`)}
+                  >
                     Upgrade Plan
                   </Button>
                 </div>

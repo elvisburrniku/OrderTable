@@ -145,7 +145,7 @@ export default function CreateRestaurant() {
                   See Enterprise Features
                 </Button>
               </SneakPeekModal>
-              <Button onClick={() => setLocation("/billing")}>
+              <Button onClick={() => setLocation(`/${tenantId}/billing`)}>
                 Upgrade to Enterprise
               </Button>
             </div>

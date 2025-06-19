@@ -1,4 +1,5 @@
 import React from 'react';
+import { useLocation } from 'wouter';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from './ui/card';
 import { Badge } from './ui/badge';
 import { Button } from './ui/button';
@@ -24,6 +25,7 @@ export function EnterpriseFeatureCard({
   className = "",
   children
 }: EnterpriseFeatureCardProps) {
+  const [, setLocation] = useLocation();
   return (
     <Card className={`relative ${isLocked ? 'border-gray-200 bg-gray-50/50' : 'border-blue-200'} ${className}`}>
       {isLocked && (
@@ -66,7 +68,19 @@ export function EnterpriseFeatureCard({
                   Preview
                 </Button>
               </SneakPeekModal>
-              <Button size="sm" className="flex-1">
+              <Button 
+                size="sm" 
+                className="flex-1"
+                onClick={() => {
+                  const currentPath = window.location.pathname;
+                  const tenantId = currentPath.split('/')[1];
+                  if (tenantId && !isNaN(Number(tenantId))) {
+                    setLocation(`/${tenantId}/billing`);
+                  } else {
+                    setLocation('/billing');
+                  }
+                }}
+              >
                 Upgrade
               </Button>
             </div>

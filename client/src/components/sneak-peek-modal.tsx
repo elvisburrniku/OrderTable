@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { useLocation } from 'wouter';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from './ui/dialog';
 import { Button } from './ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from './ui/card';
@@ -23,6 +24,7 @@ import {
   ArrowRight,
   CheckCircle
 } from 'lucide-react';
+import { ConsultationBookingForm } from './consultation-booking-form';
 
 interface SneakPeekModalProps {
   children: React.ReactNode;
@@ -31,6 +33,7 @@ interface SneakPeekModalProps {
 
 export function SneakPeekModal({ children, currentPlan = "basic" }: SneakPeekModalProps) {
   const [activeDemo, setActiveDemo] = useState<string>('overview');
+  const [, setLocation] = useLocation();
 
   const enterpriseFeatures = [
     {
@@ -406,10 +409,12 @@ export function SneakPeekModal({ children, currentPlan = "basic" }: SneakPeekMod
                     Book a free consultation with our restaurant success team to see how Enterprise features 
                     can transform your operations.
                   </p>
-                  <Button className="w-full">
-                    Schedule Free Consultation
-                    <ArrowRight className="h-4 w-4 ml-2" />
-                  </Button>
+                  <ConsultationBookingForm>
+                    <Button className="w-full">
+                      Schedule Free Consultation
+                      <ArrowRight className="h-4 w-4 ml-2" />
+                    </Button>
+                  </ConsultationBookingForm>
                 </div>
               </CardContent>
             </Card>
@@ -420,7 +425,19 @@ export function SneakPeekModal({ children, currentPlan = "basic" }: SneakPeekMod
           <Button variant="outline" className="flex-1">
             Maybe Later
           </Button>
-          <Button className="flex-1">
+          <Button 
+            className="flex-1"
+            onClick={() => {
+              // Navigate to billing page for upgrade
+              const currentPath = window.location.pathname;
+              const tenantId = currentPath.split('/')[1];
+              if (tenantId && !isNaN(Number(tenantId))) {
+                setLocation(`/${tenantId}/billing`);
+              } else {
+                setLocation('/billing');
+              }
+            }}
+          >
             Upgrade to Enterprise
             <ArrowRight className="h-4 w-4 ml-2" />
           </Button>

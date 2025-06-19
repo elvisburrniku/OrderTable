@@ -1,4 +1,5 @@
 import React from 'react';
+import { useLocation } from 'wouter';
 import { Card, CardContent, CardHeader, CardTitle } from './ui/card';
 import { Button } from './ui/button';
 import { Badge } from './ui/badge';
@@ -16,6 +17,7 @@ export function SneakPeekWidget({
   currentPlan = "basic",
   className = ""
 }: SneakPeekWidgetProps) {
+  const [, setLocation] = useLocation();
   
   if (variant === 'sidebar') {
     return (
