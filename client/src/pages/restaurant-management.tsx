@@ -51,11 +51,18 @@ function PurchaseAdditionalRestaurantForm({ onSuccess }: { onSuccess: () => void
   const { user } = useAuth();
   const { toast } = useToast();
   const [isProcessing, setIsProcessing] = useState(false);
+  const [clientSecret, setClientSecret] = useState<string | null>(null);
 
+  // Create payment intent when component mounts
   const purchaseMutation = useMutation({
     mutationFn: async () => {
       const response = await apiRequest("POST", `/api/tenants/${user?.tenantId}/purchase-additional-restaurant`);
       return response.json();
+    },
+    onSuccess: (data) => {
+      if (data.clientSecret) {
+        setClientSecret(data.clientSecret);
+      }
     },
   });
 
@@ -119,7 +126,7 @@ function PurchaseAdditionalRestaurantForm({ onSuccess }: { onSuccess: () => void
   };
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-6">
+    <div className="space-y-6">
       <div className="text-center space-y-2">
         <h3 className="text-lg font-semibold">Purchase Additional Restaurant</h3>
         <p className="text-sm text-gray-600">
@@ -127,16 +134,31 @@ function PurchaseAdditionalRestaurantForm({ onSuccess }: { onSuccess: () => void
         </p>
       </div>
 
-      <PaymentElement />
+      {!clientSecret && (
+        <Button 
+          onClick={() => purchaseMutation.mutate()}
+          disabled={purchaseMutation.isPending}
+          className="w-full"
+        >
+          {purchaseMutation.isPending ? "Setting up payment..." : "Continue to Payment"}
+        </Button>
+      )}
 
-      <Button 
-        type="submit" 
-        disabled={!stripe || isProcessing}
-        className="w-full"
-      >
-        {isProcessing ? "Processing..." : "Purchase for $50/month"}
-      </Button>
-    </form>
+      {clientSecret && (
+        <Elements stripe={stripePromise} options={{ clientSecret }}>
+          <form onSubmit={handleSubmit} className="space-y-6">
+            <PaymentElement />
+            <Button 
+              type="submit" 
+              disabled={!stripe || isProcessing}
+              className="w-full"
+            >
+              {isProcessing ? "Processing..." : "Purchase for $50/month"}
+            </Button>
+          </form>
+        </Elements>
+      )}
+    </div>
   );
 }
 
@@ -279,9 +301,7 @@ export default function RestaurantManagement() {
                       Purchase an additional restaurant slot for your Enterprise plan
                     </DialogDescription>
                   </DialogHeader>
-                  <Elements stripe={stripePromise}>
-                    <PurchaseAdditionalRestaurantForm onSuccess={handlePurchaseSuccess} />
-                  </Elements>
+                  <PurchaseAdditionalRestaurantForm onSuccess={handlePurchaseSuccess} />
                 </DialogContent>
               </Dialog>
             ) : (
