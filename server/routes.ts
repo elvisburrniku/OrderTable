@@ -14778,11 +14778,197 @@ NEXT STEPS:
     }
   });
 
+  // Multi-restaurant enterprise management routes
+  app.get("/api/tenants/:tenantId/restaurant-management", validateTenant, async (req, res) => {
+    try {
+      const tenantId = parseInt(req.params.tenantId);
+      
+      const tenant = await storage.getTenantById(tenantId);
+      if (!tenant) {
+        return res.status(404).json({ message: "Tenant not found" });
+      }
+
+      const subscriptionPlan = await storage.getSubscriptionPlanById(tenant.subscriptionPlanId);
+      if (!subscriptionPlan) {
+        return res.status(404).json({ message: "Subscription plan not found" });
+      }
+
+      // Get all restaurants for this tenant
+      const allRestaurants = await storage.db?.select().from(restaurants).where(eq(restaurants.tenantId, tenantId)) || [];
+      const currentCount = allRestaurants.length;
+      const baseLimit = subscriptionPlan.maxRestaurants || 1;
+      const additionalCount = tenant.additionalRestaurants || 0;
+      const totalAllowed = baseLimit + additionalCount;
+
+      const managementInfo = {
+        limits: {
+          baseLimit,
+          currentCount,
+          additionalCount,
+          canCreateMore: currentCount < totalAllowed,
+          costPerAdditional: 5000,
+          totalAllowed
+        },
+        tenant: {
+          id: tenant.id,
+          name: tenant.name,
+          subscriptionPlan: subscriptionPlan.name,
+          isEnterprise: subscriptionPlan.name.toLowerCase() === "enterprise"
+        },
+        restaurants: allRestaurants.map(r => ({
+          id: r.id,
+          name: r.name,
+          createdAt: r.createdAt,
+          isActive: r.isActive
+        })),
+        pricing: {
+          additionalRestaurantCost: 50,
+          currency: "USD",
+          billingInterval: "monthly"
+        }
+      };
+
+      res.json(managementInfo);
+    } catch (error) {
+      console.error("Error fetching restaurant management info:", error);
+      res.status(500).json({ message: "Failed to fetch restaurant management info" });
+    }
+  });
+
+  app.post("/api/tenants/:tenantId/purchase-additional-restaurant", validateTenant, async (req, res) => {
+    try {
+      const tenantId = parseInt(req.params.tenantId);
+      
+      const tenant = await storage.getTenantById(tenantId);
+      if (!tenant) {
+        return res.status(404).json({ message: "Tenant not found" });
+      }
+
+      const subscriptionPlan = await storage.getSubscriptionPlanById(tenant.subscriptionPlanId);
+      if (!subscriptionPlan || subscriptionPlan.name.toLowerCase() !== "enterprise") {
+        return res.status(400).json({ 
+          message: "Additional restaurants are only available with Enterprise plans" 
+        });
+      }
+
+      if (!tenant.stripeCustomerId) {
+        return res.status(400).json({ 
+          message: "No payment method on file. Please add a payment method first." 
+        });
+      }
+
+      const paymentIntent = await stripe.paymentIntents.create({
+        amount: 5000,
+        currency: "usd",
+        customer: tenant.stripeCustomerId,
+        description: `Additional restaurant for ${tenant.name}`,
+        metadata: {
+          tenantId: tenantId.toString(),
+          type: "additional_restaurant"
+        },
+        automatic_payment_methods: {
+          enabled: true
+        }
+      });
+
+      res.json({
+        success: true,
+        message: "Payment initiated for additional restaurant",
+        clientSecret: paymentIntent.client_secret,
+        paymentIntentId: paymentIntent.id
+      });
+    } catch (error) {
+      console.error("Error creating additional restaurant payment:", error);
+      res.status(500).json({ 
+        success: false,
+        message: "Failed to process payment for additional restaurant" 
+      });
+    }
+  });
+
+  app.post("/api/tenants/:tenantId/confirm-additional-restaurant", validateTenant, async (req, res) => {
+    try {
+      const tenantId = parseInt(req.params.tenantId);
+      const { paymentIntentId } = req.body;
+
+      if (!paymentIntentId) {
+        return res.status(400).json({ message: "Payment intent ID is required" });
+      }
+
+      const paymentIntent = await stripe.paymentIntents.retrieve(paymentIntentId);
+      
+      if (paymentIntent.status !== "succeeded") {
+        return res.status(400).json({ 
+          message: "Payment not completed successfully" 
+        });
+      }
+
+      const tenant = await storage.getTenantById(tenantId);
+      const newAdditionalCount = (tenant.additionalRestaurants || 0) + 1;
+      const newAdditionalCost = (tenant.additionalRestaurantsCost || 0) + 5000;
+
+      await storage.updateTenant(tenantId, {
+        additionalRestaurants: newAdditionalCount,
+        additionalRestaurantsCost: newAdditionalCost
+      });
+
+      res.json({
+        success: true,
+        message: "Additional restaurant purchased successfully"
+      });
+    } catch (error) {
+      console.error("Error confirming additional restaurant purchase:", error);
+      res.status(500).json({ 
+        success: false,
+        message: "Failed to confirm additional restaurant purchase" 
+      });
+    }
+  });
+
+  app.get("/api/tenants/:tenantId/can-create-restaurant", validateTenant, async (req, res) => {
+    try {
+      const tenantId = parseInt(req.params.tenantId);
+      
+      const tenant = await storage.getTenantById(tenantId);
+      if (!tenant) {
+        return res.status(404).json({ message: "Tenant not found" });
+      }
+
+      const subscriptionPlan = await storage.getSubscriptionPlanById(tenant.subscriptionPlanId);
+      if (!subscriptionPlan) {
+        return res.status(404).json({ message: "Subscription plan not found" });
+      }
+
+      const allRestaurants = await storage.db?.select().from(restaurants).where(eq(restaurants.tenantId, tenantId)) || [];
+      const currentCount = allRestaurants.length;
+      const baseLimit = subscriptionPlan.maxRestaurants || 1;
+      const additionalCount = tenant.additionalRestaurants || 0;
+      const totalAllowed = baseLimit + additionalCount;
+
+      if (currentCount < totalAllowed) {
+        res.json({ canCreate: true });
+      } else if (subscriptionPlan.name.toLowerCase() === 'enterprise') {
+        res.json({ 
+          canCreate: false, 
+          reason: 'Restaurant limit reached. You can purchase additional restaurants for $50/month each.',
+          canPurchaseMore: true
+        });
+      } else {
+        res.json({ 
+          canCreate: false, 
+          reason: 'Additional restaurants are only available with Enterprise plans',
+          canPurchaseMore: false
+        });
+      }
+    } catch (error) {
+      console.error("Error checking restaurant creation limits:", error);
+      res.status(500).json({ message: "Failed to check restaurant limits" });
+    }
+  });
+
   // Initialize feedback reminder service
   console.log("Starting feedback reminder service...");
   feedbackReminderService.start();
 
   return httpServer;
 }
-
-// The code has been modified to improve email confirmation debugging and error handling.

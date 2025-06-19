@@ -45,6 +45,8 @@ export const tenants = pgTable("tenants", {
   stripeCustomerId: text("stripe_customer_id"),
   stripeSubscriptionId: text("stripe_subscription_id"),
   maxRestaurants: integer("max_restaurants").default(1),
+  additionalRestaurants: integer("additional_restaurants").default(0), // Extra restaurants beyond plan limit
+  additionalRestaurantsCost: integer("additional_restaurants_cost").default(0), // Cost in cents for extra restaurants
   createdAt: timestamp("created_at").defaultNow(),
 });
 
