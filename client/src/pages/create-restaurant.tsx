@@ -67,9 +67,16 @@ export default function CreateRestaurant() {
       return response.json();
     },
     onSuccess: (data) => {
+      let description = "Restaurant created successfully!";
+      
+      if (data.billing && data.billing.message) {
+        description = `Restaurant created successfully! ${data.billing.message}`;
+      }
+      
       toast({
         title: "Success",
-        description: "Restaurant created successfully!",
+        description,
+        duration: 6000, // Show longer for billing message
       });
       setLocation(`/${tenantId}/restaurant-management`);
     },

@@ -14999,10 +14999,21 @@ NEXT STEPS:
       
       console.log(`Restaurant creation check: current=${currentCount}, baseLimit=${baseLimit}, additional=${additionalCount}, totalAllowed=${totalAllowed}, planName=${subscriptionPlan.name}`);
 
-      if (currentCount >= totalAllowed) {
+      // Check if this creation would exceed the current limit
+      const willExceedLimit = currentCount >= totalAllowed;
+      const isEnterprise = subscriptionPlan.name.toLowerCase() === 'enterprise';
+      
+      if (willExceedLimit && !isEnterprise) {
         return res.status(400).json({ 
-          message: `Restaurant limit reached. This tenant can have maximum ${totalAllowed} restaurants.` 
+          message: `Restaurant limit reached. Upgrade to Enterprise to add more restaurants.` 
         });
+      }
+      
+      // For Enterprise customers, allow creation beyond limit with automatic billing
+      let willBeBilled = false;
+      if (willExceedLimit && isEnterprise) {
+        willBeBilled = true;
+        console.log(`Enterprise customer creating restaurant beyond limit - will be billed $50/month`);
       }
 
       // Create the restaurant
@@ -15016,6 +15027,19 @@ NEXT STEPS:
         description: description || null,
         emailSettings: JSON.stringify({})
       });
+
+      // If this exceeds the base limit, increment additional restaurants count
+      if (willBeBilled) {
+        const newAdditionalCount = (tenant.additionalRestaurants || 0) + 1;
+        const newAdditionalCost = (tenant.additionalRestaurantsCost || 0) + 5000; // $50 in cents
+        
+        await storage.updateTenant(tenantId, {
+          additionalRestaurants: newAdditionalCount,
+          additionalRestaurantsCost: newAdditionalCost
+        });
+        
+        console.log(`Updated tenant ${tenantId}: additional restaurants now ${newAdditionalCount}, cost $${newAdditionalCost/100}`);
+      }
 
       // Log restaurant creation
       await logActivity({
@@ -15036,7 +15060,17 @@ NEXT STEPS:
         }
       });
 
-      res.status(201).json(restaurant);
+      // Return success response with billing information if applicable
+      const response = {
+        ...restaurant,
+        billing: willBeBilled ? {
+          message: "This restaurant will be billed automatically at $50/month with your subscription.",
+          additionalCost: 5000, // $50 in cents
+          totalAdditionalRestaurants: (tenant.additionalRestaurants || 0) + (willBeBilled ? 1 : 0)
+        } : null
+      };
+
+      res.status(201).json(response);
     } catch (error) {
       console.error("Error creating restaurant:", error);
       res.status(500).json({ message: "Internal server error" });
