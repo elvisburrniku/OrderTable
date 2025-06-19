@@ -78,7 +78,11 @@ function AddPaymentMethodForm({ onSuccess }: { onSuccess: () => void }) {
 
   return (
     <form onSubmit={handleSubmit} className="space-y-4">
-      <PaymentElement />
+      <PaymentElement 
+        options={{
+          layout: 'tabs'
+        }}
+      />
       <Button 
         type="submit" 
         disabled={!stripe || isProcessing} 
@@ -177,11 +181,11 @@ export function PaymentMethodGuard({
                 <DialogHeader>
                   <DialogTitle>Add Payment Method</DialogTitle>
                   <DialogDescription>
-                    Add a secure payment method to your account
+                    Add a new payment method to your account
                   </DialogDescription>
                 </DialogHeader>
                 
-                {setupIntent?.client_secret && (
+                {setupIntent?.client_secret ? (
                   <Elements 
                     stripe={stripePromise} 
                     options={{
@@ -196,6 +200,11 @@ export function PaymentMethodGuard({
                   >
                     <AddPaymentMethodForm onSuccess={handlePaymentMethodAdded} />
                   </Elements>
+                ) : (
+                  <div className="flex items-center justify-center p-8">
+                    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+                    <span className="ml-3 text-gray-600">Loading payment form...</span>
+                  </div>
                 )}
               </DialogContent>
             </Dialog>
