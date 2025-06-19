@@ -7,6 +7,7 @@ import {
   useStripe,
   useElements,
 } from "@stripe/react-stripe-js";
+import { PaymentMethodGuard } from "@/components/payment-method-guard";
 import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import {
@@ -676,16 +677,17 @@ export default function BillingPage() {
 
       {/* Available Subscription Plans */}
       {subscriptionPlans.length > 0 && (
-        <Card>
-          <CardHeader>
-            <CardTitle>Subscription Plans</CardTitle>
-            <CardDescription>
-              Choose the plan that fits your restaurant's needs
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-              {subscriptionPlans.map((plan: any) => {
+        <PaymentMethodGuard requiredFor="subscription upgrade">
+          <Card>
+            <CardHeader>
+              <CardTitle>Subscription Plans</CardTitle>
+              <CardDescription>
+                Choose the plan that fits your restaurant's needs
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+                {subscriptionPlans.map((plan: any) => {
                 const isCurrentPlan = subscriptionDetails?.plan?.id === plan.id;
                 const features = JSON.parse(plan.features || '[]');
                 
@@ -766,10 +768,11 @@ export default function BillingPage() {
                     )}
                   </div>
                 );
-              })}
-            </div>
-          </CardContent>
-        </Card>
+                })}
+              </div>
+            </CardContent>
+          </Card>
+        </PaymentMethodGuard>
       )}
 
       {/* Payment Methods */}

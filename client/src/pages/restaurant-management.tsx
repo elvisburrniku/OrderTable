@@ -12,6 +12,7 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, Di
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Building2, Plus, CreditCard, Crown, Users, Calendar, DollarSign, Eye } from "lucide-react";
 import { SneakPeekModal } from "@/components/sneak-peek-modal";
+import { UpgradeFlowHandler } from "@/components/upgrade-flow-handler";
 import { Link } from "wouter";
 import { Elements, PaymentElement, useStripe, useElements } from '@stripe/react-stripe-js';
 import { loadStripe } from '@stripe/stripe-js';
@@ -342,12 +343,11 @@ export default function RestaurantManagement() {
                       Preview Features
                     </Button>
                   </SneakPeekModal>
-                  <Button 
-                    size="sm"
-                    onClick={() => setLocation(`/${tenantId}/billing`)}
-                  >
-                    Upgrade Plan
-                  </Button>
+                  <UpgradeFlowHandler targetPlan="Enterprise">
+                    <Button size="sm">
+                      Upgrade Plan
+                    </Button>
+                  </UpgradeFlowHandler>
                 </div>
               </div>
             )}

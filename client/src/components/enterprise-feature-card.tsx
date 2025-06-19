@@ -4,6 +4,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from './ui/
 import { Badge } from './ui/badge';
 import { Button } from './ui/button';
 import { SneakPeekModal } from './sneak-peek-modal';
+import { UpgradeFlowHandler } from './upgrade-flow-handler';
 import { Lock, Eye, Crown } from 'lucide-react';
 
 interface EnterpriseFeatureCardProps {
@@ -68,21 +69,11 @@ export function EnterpriseFeatureCard({
                   Preview
                 </Button>
               </SneakPeekModal>
-              <Button 
-                size="sm" 
-                className="flex-1"
-                onClick={() => {
-                  const currentPath = window.location.pathname;
-                  const tenantId = currentPath.split('/')[1];
-                  if (tenantId && !isNaN(Number(tenantId))) {
-                    setLocation(`/${tenantId}/billing`);
-                  } else {
-                    setLocation('/billing');
-                  }
-                }}
-              >
-                Upgrade
-              </Button>
+              <UpgradeFlowHandler targetPlan="Enterprise">
+                <Button size="sm" className="flex-1">
+                  Upgrade
+                </Button>
+              </UpgradeFlowHandler>
             </div>
           </div>
         ) : (
