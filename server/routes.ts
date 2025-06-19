@@ -14765,9 +14765,13 @@ NEXT STEPS:
   });
 
   app.post("/api/tenants/:tenantId/purchase-additional-restaurant", validateTenant, async (req, res) => {
+    const tenantId = parseInt(req.params.tenantId);
+
+    if (isNaN(tenantId) || !tenantId) {
+      return res.status(400).json({ message: "Tenant ID is required and must be a valid number." });
+    }
+
     try {
-      const tenantId = parseInt(req.params.tenantId);
-      
       const tenant = await storage.getTenantById(tenantId);
       if (!tenant) {
         return res.status(404).json({ message: "Tenant not found" });
@@ -14775,17 +14779,14 @@ NEXT STEPS:
 
       const subscriptionPlan = await storage.getSubscriptionPlanById(tenant.subscriptionPlanId);
       if (!subscriptionPlan || subscriptionPlan.name.toLowerCase() !== "enterprise") {
-        return res.status(400).json({ 
-          message: "Additional restaurants are only available with Enterprise plans" 
-        });
+        return res.status(400).json({ message: "Additional restaurants are only available with Enterprise plans" });
       }
 
       if (!tenant.stripeCustomerId) {
-        return res.status(400).json({ 
-          message: "No payment method on file. Please add a payment method first." 
-        });
+        return res.status(400).json({ message: "No payment method on file. Please add a payment method first." });
       }
 
+      // Create additional restaurant payment logic here
       const paymentIntent = await stripe.paymentIntents.create({
         amount: 5000,
         currency: "usd",
@@ -14803,15 +14804,11 @@ NEXT STEPS:
       res.json({
         success: true,
         message: "Payment initiated for additional restaurant",
-        clientSecret: paymentIntent.client_secret,
         paymentIntentId: paymentIntent.id
       });
     } catch (error) {
-      console.error("Error creating additional restaurant payment:", error);
-      res.status(500).json({ 
-        success: false,
-        message: "Failed to process payment for additional restaurant" 
-      });
+      console.error("Error processing additional restaurant purchase:", error);
+      res.status(500).json({ success: false, message: "Failed to process purchase." });
     }
   });
 
