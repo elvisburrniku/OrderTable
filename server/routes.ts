@@ -14987,6 +14987,9 @@ NEXT STEPS:
         return res.status(404).json({ message: "Subscription plan not found" });
       }
 
+      console.log(`DEBUG: tenant=${JSON.stringify(tenant)}`);
+      console.log(`DEBUG: subscriptionPlan=${JSON.stringify(subscriptionPlan)}`);
+
       // Check restaurant creation limits
       const allRestaurants = await storage.db?.select().from(restaurants).where(eq(restaurants.tenantId, tenantId)) || [];
       const currentCount = allRestaurants.length;
