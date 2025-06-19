@@ -10,7 +10,8 @@ import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Alert, AlertDescription } from "@/components/ui/alert";
-import { Building2, Plus, CreditCard, Crown, Users, Calendar, DollarSign } from "lucide-react";
+import { Building2, Plus, CreditCard, Crown, Users, Calendar, DollarSign, Eye } from "lucide-react";
+import { SneakPeekModal } from "@/components/sneak-peek-modal";
 import { Link } from "wouter";
 import { Elements, PaymentElement, useStripe, useElements } from '@stripe/react-stripe-js';
 import { loadStripe } from '@stripe/stripe-js';
@@ -330,13 +331,21 @@ export default function RestaurantManagement() {
                 </DialogContent>
               </Dialog>
             ) : (
-              <div className="text-right">
+              <div className="text-right space-y-2">
                 <p className="text-sm text-gray-600">
                   Upgrade to Enterprise to add more restaurants
                 </p>
-                <Button variant="outline" size="sm">
-                  Upgrade Plan
-                </Button>
+                <div className="flex gap-2">
+                  <SneakPeekModal currentPlan="basic">
+                    <Button variant="outline" size="sm">
+                      <Eye className="h-4 w-4 mr-2" />
+                      Preview Features
+                    </Button>
+                  </SneakPeekModal>
+                  <Button size="sm">
+                    Upgrade Plan
+                  </Button>
+                </div>
               </div>
             )}
           </div>

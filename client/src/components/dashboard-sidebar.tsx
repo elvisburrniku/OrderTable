@@ -35,6 +35,7 @@ import {
   ExternalLink,
 } from "lucide-react";
 import { useLocation, Link } from "wouter";
+import { SneakPeekWidget } from "./sneak-peek-widget";
 
 interface SidebarProps {
   tenantId: number;
@@ -347,6 +348,15 @@ export default function DashboardSidebar({
                 })}
               </div>
             )}
+          </div>
+
+          {/* Enterprise Sneak Peek Widget */}
+          <div className="mt-6">
+            <SneakPeekWidget 
+              variant="sidebar" 
+              currentPlan="basic"
+              className="mb-4"
+            />
           </div>
 
           {/* Help Section */}

@@ -12,6 +12,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Building2, Crown, AlertCircle, DollarSign } from "lucide-react";
+import { SneakPeekModal } from "@/components/sneak-peek-modal";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
@@ -139,6 +140,11 @@ export default function CreateRestaurant() {
               <Button variant="outline" onClick={() => setLocation("/dashboard")}>
                 Back to Dashboard
               </Button>
+              <SneakPeekModal currentPlan="basic">
+                <Button variant="outline">
+                  See Enterprise Features
+                </Button>
+              </SneakPeekModal>
               <Button onClick={() => setLocation("/billing")}>
                 Upgrade to Enterprise
               </Button>

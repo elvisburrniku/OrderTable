@@ -11,6 +11,7 @@ import WelcomeAnimation from "@/components/welcome-animation";
 import ActiveSeasonalThemeDisplay from "@/components/active-seasonal-theme-display";
 import ReservationCountdown from "@/components/reservation-countdown";
 import AnimatedNotificationBadge from "@/components/animated-notification-badge";
+import { SneakPeekBanner } from "@/components/sneak-peek-banner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent } from "@/components/ui/card";
@@ -1141,6 +1142,12 @@ export default function Dashboard() {
 
         {/* Main Interface */}
         <div className="flex-1 p-6">
+          {/* Sneak Peek Banner for non-enterprise users */}
+          <SneakPeekBanner 
+            currentPlan="basic" 
+            className="mb-6" 
+          />
+          
           {/* Active Seasonal Theme Banner */}
           <ActiveSeasonalThemeDisplay
             restaurantId={restaurant?.id || 0}
