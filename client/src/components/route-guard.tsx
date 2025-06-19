@@ -104,6 +104,8 @@ export function RouteGuard({ children }: RouteGuardProps) {
         /^\/\d+\/settings$/,
         /^\/\d+\/billing$/,
         /^\/\d+\/help$/,
+        /^\/\d+\/restaurant-management$/,
+        /^\/\d+\/create-restaurant$/,
         /^\/\d+\/test-tools$/,
         /^\/\d+\/customer-feedback$/,
         /^\/\d+\/table-feedback$/,
