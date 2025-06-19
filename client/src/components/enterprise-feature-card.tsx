@@ -28,6 +28,25 @@ export function EnterpriseFeatureCard({
   children
 }: EnterpriseFeatureCardProps) {
   const [, setLocation] = useLocation();
+
+  const { data: subscriptionDetails } = useQuery({
+    queryKey: ["/api/subscription/details"],
+  });
+
+  // Check if user is on Enterprise or Premium plan
+  const isEnterprise = subscriptionDetails?.plan?.name?.toLowerCase().includes('enterprise') || 
+                      subscriptionDetails?.plan?.name?.toLowerCase().includes('premium') ||
+                      subscriptionDetails?.plan?.name?.toLowerCase().includes('professional');
+
+  // If user has Enterprise, show the actual content instead of the upgrade card
+  if (isEnterprise) {
+    return (
+      <div className={className}>
+        {children}
+      </div>
+    );
+  }
+
   return (
     <Card className={`relative ${isLocked ? 'border-gray-200 bg-gray-50/50' : 'border-blue-200'} ${className}`}>
       {isLocked && (

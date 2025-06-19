@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { useQuery } from '@tanstack/react-query';
 import { Card, CardContent } from './ui/card';
 import { Button } from './ui/button';
 import { Badge } from './ui/badge';
@@ -13,7 +14,16 @@ interface SneakPeekBannerProps {
 export function SneakPeekBanner({ currentPlan = "basic", className = "" }: SneakPeekBannerProps) {
   const [isVisible, setIsVisible] = useState(true);
 
-  if (!isVisible) return null;
+  const { data: subscriptionDetails } = useQuery({
+    queryKey: ["/api/subscription/details"],
+  });
+
+  // Don't show banner if user is on Enterprise or Premium plan
+  const isEnterprise = subscriptionDetails?.plan?.name?.toLowerCase().includes('enterprise') || 
+                      subscriptionDetails?.plan?.name?.toLowerCase().includes('premium') ||
+                      subscriptionDetails?.plan?.name?.toLowerCase().includes('professional');
+
+  if (!isVisible || isEnterprise) return null;
 
   return (
     <Card className={`border-blue-200 bg-gradient-to-r from-blue-50 to-purple-50 ${className}`}>
