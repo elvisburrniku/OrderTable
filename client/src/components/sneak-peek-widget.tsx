@@ -18,6 +18,19 @@ export function SneakPeekWidget({
   className = ""
 }: SneakPeekWidgetProps) {
   const [, setLocation] = useLocation();
+
+  const { data: subscriptionDetails } = useQuery({
+    queryKey: ["/api/subscription/details"],
+  });
+
+  // Don't show widget if user is on Enterprise or Premium plan
+  const isEnterprise = subscriptionDetails?.plan?.name?.toLowerCase().includes('enterprise') || 
+                      subscriptionDetails?.plan?.name?.toLowerCase().includes('premium') ||
+                      subscriptionDetails?.plan?.name?.toLowerCase().includes('professional');
+
+  if (isEnterprise) {
+    return null;
+  }
   
   if (variant === 'sidebar') {
     return (
