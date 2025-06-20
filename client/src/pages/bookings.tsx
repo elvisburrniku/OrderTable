@@ -56,7 +56,7 @@ export default function Bookings() {
   const [isNewBookingOpen, setIsNewBookingOpen] = useState(false);
   const [showFilters, setShowFilters] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
-  const [itemsPerPage, setItemsPerPage] = useState(20);
+  const [itemsPerPage, setItemsPerPage] = useState(7);
   const [newBooking, setNewBooking] = useState({
     customerName: "",
     customerEmail: "",
