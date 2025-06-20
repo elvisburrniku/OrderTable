@@ -21,7 +21,19 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { Search, Plus, Mail, Phone, Calendar, Star } from "lucide-react";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import {
+  Collapsible,
+  CollapsibleContent,
+  CollapsibleTrigger,
+} from "@/components/ui/collapsible";
+import { Search, Plus, Mail, Phone, Calendar, Star, Filter, ChevronDown, ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight } from "lucide-react";
 import { format } from "date-fns";
 
 export default function Customers() {
@@ -29,6 +41,10 @@ export default function Customers() {
   const queryClient = useQueryClient();
   const [searchTerm, setSearchTerm] = useState("");
   const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [showFilters, setShowFilters] = useState(false);
+  const [statusFilter, setStatusFilter] = useState("");
+  const [currentPage, setCurrentPage] = useState(1);
+  const [itemsPerPage, setItemsPerPage] = useState(7);
   const [newCustomer, setNewCustomer] = useState({
     name: "",
     email: "",
@@ -89,11 +105,26 @@ export default function Customers() {
     },
   });
 
-  const filteredCustomers = customers.filter(
-    (customer: any) =>
+  const filteredCustomers = customers.filter((customer: any) => {
+    const matchesSearch = 
       customer.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      customer.email.toLowerCase().includes(searchTerm.toLowerCase()),
-  );
+      customer.email.toLowerCase().includes(searchTerm.toLowerCase());
+    
+    const customerStatus = (customer.totalBookings || 0) > 5 ? "VIP" : 
+                          (customer.totalBookings || 0) > 2 ? "Regular" : "New";
+    const matchesStatus = !statusFilter || customerStatus === statusFilter;
+    
+    return matchesSearch && matchesStatus;
+  });
+
+  // Pagination calculations
+  const totalPages = Math.ceil(filteredCustomers.length / itemsPerPage);
+  const startIndex = (currentPage - 1) * itemsPerPage;
+  const endIndex = startIndex + itemsPerPage;
+  const currentCustomers = filteredCustomers.slice(startIndex, endIndex);
+
+  // Active filters count
+  const activeFiltersCount = [searchTerm, statusFilter].filter(Boolean).length;
 
   const handleCreateCustomer = (e: React.FormEvent) => {
     e.preventDefault();
@@ -107,10 +138,11 @@ export default function Customers() {
   return (
     <div className="min-h-screen bg-gray-50">
       <div className="p-6">
-        <Card>
-          <CardHeader>
-            <div className="flex items-center justify-between">
-              <CardTitle>Customer Database</CardTitle>
+        <div className="bg-white rounded-lg shadow">
+          {/* Header */}
+          <div className="p-6 border-b">
+            <div className="flex items-center justify-between mb-4">
+              <h2 className="text-lg font-semibold">Customer Database</h2>
               <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
                 <DialogTrigger asChild>
                   <Button className="bg-green-600 hover:bg-green-700 text-white">
@@ -178,91 +210,281 @@ export default function Customers() {
                 </DialogContent>
               </Dialog>
             </div>
-            <div className="relative max-w-md">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
-              <Input
-                placeholder="Search customers..."
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                className="pl-10"
-              />
-            </div>
-          </CardHeader>
-          <CardContent>
-            {isLoading ? (
-              <div className="text-center py-8">Loading customers...</div>
-            ) : filteredCustomers.length === 0 ? (
-              <div className="text-center py-8 text-gray-500">
-                {searchTerm
-                  ? "No customers found matching your search"
-                  : "No customers yet"}
-              </div>
-            ) : (
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Name</TableHead>
-                    <TableHead>Contact</TableHead>
-                    <TableHead>Bookings</TableHead>
-                    <TableHead>Last Visit</TableHead>
-                    <TableHead>Status</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {filteredCustomers.map((customer: any) => (
-                    <TableRow key={customer.id}>
-                      <TableCell className="font-medium">
-                        {customer.name}
-                      </TableCell>
-                      <TableCell>
-                        <div className="space-y-1">
-                          <div className="flex items-center gap-2 text-sm">
-                            <Mail className="h-3 w-3" />
-                            {customer.email}
+
+            {/* Modern Filters Section */}
+            <div className="mb-8">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center space-x-4">
+                  <Collapsible open={showFilters} onOpenChange={setShowFilters}>
+                    <CollapsibleTrigger asChild>
+                      <Button 
+                        variant="outline" 
+                        className="h-10 px-4 border-2 border-gray-200 hover:border-green-500 hover:bg-green-50 transition-all duration-200 flex items-center space-x-2"
+                      >
+                        <Filter className="w-4 h-4" />
+                        <span>Filters</span>
+                        {activeFiltersCount > 0 && (
+                          <div className="bg-green-500 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center ml-2">
+                            {activeFiltersCount}
                           </div>
-                          {customer.phone && (
-                            <div className="flex items-center gap-2 text-sm text-gray-600">
-                              <Phone className="h-3 w-3" />
-                              {customer.phone}
+                        )}
+                        <ChevronDown className={`w-4 h-4 transition-transform duration-200 ${showFilters ? 'rotate-180' : ''}`} />
+                      </Button>
+                    </CollapsibleTrigger>
+
+                    <CollapsibleContent className="mt-4">
+                      <div className="bg-gray-50 rounded-lg p-6 border border-gray-200">
+                        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                          {/* Search */}
+                          <div className="space-y-2">
+                            <Label className="text-sm font-medium text-gray-700">Search</Label>
+                            <div className="relative">
+                              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
+                              <Input
+                                placeholder="Search by name or email..."
+                                value={searchTerm}
+                                onChange={(e) => setSearchTerm(e.target.value)}
+                                className="pl-10 h-10 bg-white border-gray-300 focus:border-green-500 focus:ring-green-500"
+                              />
                             </div>
-                          )}
+                          </div>
+
+                          {/* Status Filter */}
+                          <div className="space-y-2">
+                            <Label className="text-sm font-medium text-gray-700">Status</Label>
+                            <Select value={statusFilter} onValueChange={setStatusFilter}>
+                              <SelectTrigger className="h-10 bg-white border-gray-300 focus:border-green-500 focus:ring-green-500">
+                                <SelectValue placeholder="All statuses" />
+                              </SelectTrigger>
+                              <SelectContent>
+                                <SelectItem value="">All statuses</SelectItem>
+                                <SelectItem value="VIP">VIP</SelectItem>
+                                <SelectItem value="Regular">Regular</SelectItem>
+                                <SelectItem value="New">New</SelectItem>
+                              </SelectContent>
+                            </Select>
+                          </div>
+
+                          {/* Clear Filters */}
+                          <div className="flex items-end">
+                            <Button 
+                              variant="outline" 
+                              onClick={() => {
+                                setSearchTerm("");
+                                setStatusFilter("");
+                                setCurrentPage(1);
+                              }}
+                              className="h-10 px-4 border-gray-300 hover:bg-gray-50"
+                            >
+                              Clear all
+                            </Button>
+                          </div>
                         </div>
-                      </TableCell>
-                      <TableCell>
-                        <div className="flex items-center gap-2">
-                          <Calendar className="h-4 w-4" />
-                          {customer.totalBookings || 0} bookings
-                        </div>
-                      </TableCell>
-                      <TableCell>
-                        {customer.lastVisit
-                          ? format(new Date(customer.lastVisit), "MMM dd, yyyy")
-                          : "Never"}
-                      </TableCell>
-                      <TableCell>
-                        <Badge
-                          variant={
-                            (customer.totalBookings || 0) > 5
-                              ? "default"
-                              : (customer.totalBookings || 0) > 2
-                                ? "secondary"
-                                : "outline"
-                          }
-                        >
-                          {(customer.totalBookings || 0) > 5
-                            ? "VIP"
-                            : (customer.totalBookings || 0) > 2
-                              ? "Regular"
-                              : "New"}
-                        </Badge>
-                      </TableCell>
+                      </div>
+                    </CollapsibleContent>
+                  </Collapsible>
+
+                </div>
+              </div>
+            </div>
+
+            {/* Enhanced Table */}
+            <div className="overflow-hidden rounded-lg border border-gray-200">
+              {isLoading ? (
+                <div className="text-center py-12">
+                  <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-green-500 mx-auto"></div>
+                  <p className="mt-2 text-gray-500">Loading customers...</p>
+                </div>
+              ) : currentCustomers.length === 0 ? (
+                <div className="text-center py-12 text-gray-500">
+                  {searchTerm || statusFilter
+                    ? "No customers found matching your filters"
+                    : "No customers yet"}
+                </div>
+              ) : (
+                <Table>
+                  <TableHeader>
+                    <TableRow className="bg-gradient-to-r from-green-50 to-emerald-50 hover:from-green-100 hover:to-emerald-100 border-b-2 border-green-200">
+                      <TableHead className="font-semibold text-gray-800 py-4">Name</TableHead>
+                      <TableHead className="font-semibold text-gray-800 py-4">Contact</TableHead>
+                      <TableHead className="font-semibold text-gray-800 py-4">Bookings</TableHead>
+                      <TableHead className="font-semibold text-gray-800 py-4">Last Visit</TableHead>
+                      <TableHead className="font-semibold text-gray-800 py-4">Status</TableHead>
                     </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
+                  </TableHeader>
+                  <TableBody>
+                    {currentCustomers.map((customer: any, index: number) => (
+                      <TableRow 
+                        key={customer.id}
+                        className={`
+                          hover:bg-green-50 transition-colors duration-200 cursor-pointer
+                          ${index % 2 === 0 ? 'bg-white' : 'bg-gray-50/50'}
+                        `}
+                      >
+                        <TableCell className="py-4">
+                          <div className="flex items-center space-x-3">
+                            <div className="w-10 h-10 rounded-full bg-gradient-to-br from-green-400 to-emerald-600 flex items-center justify-center text-white font-semibold text-sm">
+                              {customer.name.charAt(0).toUpperCase()}
+                            </div>
+                            <div className="font-semibold text-gray-900">
+                              {customer.name}
+                            </div>
+                          </div>
+                        </TableCell>
+                        <TableCell className="py-4">
+                          <div className="space-y-1">
+                            <div className="flex items-center gap-2 text-sm">
+                              <Mail className="h-3 w-3 text-gray-400" />
+                              <span className="text-gray-700">{customer.email}</span>
+                            </div>
+                            {customer.phone && (
+                              <div className="flex items-center gap-2 text-sm text-gray-600">
+                                <Phone className="h-3 w-3 text-gray-400" />
+                                <span>{customer.phone}</span>
+                              </div>
+                            )}
+                          </div>
+                        </TableCell>
+                        <TableCell className="py-4">
+                          <div className="flex items-center gap-2">
+                            <Calendar className="h-4 w-4 text-green-600" />
+                            <span className="font-medium text-gray-900">
+                              {customer.totalBookings || 0} bookings
+                            </span>
+                          </div>
+                        </TableCell>
+                        <TableCell className="py-4">
+                          <span className="text-gray-700">
+                            {customer.lastVisit
+                              ? format(new Date(customer.lastVisit), "MMM dd, yyyy")
+                              : "Never"}
+                          </span>
+                        </TableCell>
+                        <TableCell className="py-4">
+                          <Badge
+                            className={`px-3 py-1 text-xs font-medium rounded-full ${
+                              (customer.totalBookings || 0) > 5
+                                ? "bg-purple-100 text-purple-800 border-purple-200"
+                                : (customer.totalBookings || 0) > 2
+                                  ? "bg-blue-100 text-blue-800 border-blue-200"
+                                  : "bg-green-100 text-green-800 border-green-200"
+                            }`}
+                          >
+                            {(customer.totalBookings || 0) > 5
+                              ? "VIP"
+                              : (customer.totalBookings || 0) > 2
+                                ? "Regular"
+                                : "New"}
+                          </Badge>
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              )}
+            </div>
+
+            {/* Enhanced Pagination */}
+            {totalPages > 1 && (
+              <div className="flex items-center justify-between mt-6 px-2">
+                <div className="flex items-center space-x-2">
+                  <span className="text-sm text-gray-600">Show</span>
+                  <Select value={itemsPerPage.toString()} onValueChange={(value) => {
+                    setItemsPerPage(Number(value));
+                    setCurrentPage(1);
+                  }}>
+                    <SelectTrigger className="w-20 h-8">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="7">7</SelectItem>
+                      <SelectItem value="10">10</SelectItem>
+                      <SelectItem value="20">20</SelectItem>
+                      <SelectItem value="50">50</SelectItem>
+                    </SelectContent>
+                  </Select>
+                  <span className="text-sm text-gray-600">entries</span>
+                </div>
+
+                <div className="flex items-center space-x-2">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setCurrentPage(1)}
+                    disabled={currentPage === 1}
+                    className="w-8 h-8 p-0"
+                  >
+                    <ChevronsLeft className="w-4 h-4" />
+                  </Button>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setCurrentPage(currentPage - 1)}
+                    disabled={currentPage === 1}
+                    className="w-8 h-8 p-0"
+                  >
+                    <ChevronLeft className="w-4 h-4" />
+                  </Button>
+
+                  {/* Page Numbers */}
+                  <div className="flex items-center space-x-1">
+                    {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
+                      let pageNum;
+                      if (totalPages <= 5) {
+                        pageNum = i + 1;
+                      } else if (currentPage <= 3) {
+                        pageNum = i + 1;
+                      } else if (currentPage >= totalPages - 2) {
+                        pageNum = totalPages - 4 + i;
+                      } else {
+                        pageNum = currentPage - 2 + i;
+                      }
+
+                      return (
+                        <Button
+                          key={pageNum}
+                          variant={currentPage === pageNum ? "default" : "outline"}
+                          size="sm"
+                          onClick={() => setCurrentPage(pageNum)}
+                          className={`w-8 h-8 p-0 ${
+                            currentPage === pageNum 
+                              ? "bg-green-600 hover:bg-green-700 text-white" 
+                              : "hover:bg-green-50"
+                          }`}
+                        >
+                          {pageNum}
+                        </Button>
+                      );
+                    })}
+                  </div>
+
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setCurrentPage(currentPage + 1)}
+                    disabled={currentPage === totalPages}
+                    className="w-8 h-8 p-0"
+                  >
+                    <ChevronRight className="w-4 h-4" />
+                  </Button>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setCurrentPage(totalPages)}
+                    disabled={currentPage === totalPages}
+                    className="w-8 h-8 p-0"
+                  >
+                    <ChevronsRight className="w-4 h-4" />
+                  </Button>
+                </div>
+
+                <div className="text-sm text-gray-600">
+                  Showing {startIndex + 1} to {Math.min(endIndex, filteredCustomers.length)} of {filteredCustomers.length} entries
+                </div>
+              </div>
             )}
-          </CardContent>
-        </Card>
+          </div>
+        </div>
       </div>
     </div>
   );
