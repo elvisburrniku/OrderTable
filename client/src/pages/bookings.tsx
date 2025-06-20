@@ -255,7 +255,7 @@ export default function Bookings() {
                       </Button>
                     </CollapsibleTrigger>
                     
-                    <CollapsibleContent className="mt-4 animate-in slide-in-from-top-2 duration-200">
+                    <CollapsibleContent className="mt-4">
                       <div className="bg-gray-50 rounded-xl p-6 border-2 border-gray-100">
                         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                           {/* Search Input */}
@@ -383,26 +383,26 @@ export default function Bookings() {
               <div className="overflow-x-auto">
                 <table className="w-full">
                   <thead>
-                    <tr className="bg-gradient-to-r from-gray-50 to-gray-100 border-b-2 border-gray-200">
-                      <th className="text-left py-4 px-6 text-sm font-semibold text-gray-700 uppercase tracking-wider">
+                    <tr className="bg-gray-50 border-b border-gray-200">
+                      <th className="text-left py-3 px-4 text-xs font-medium text-gray-500 uppercase tracking-wider">
                         Booking ID
                       </th>
-                      <th className="text-left py-4 px-6 text-sm font-semibold text-gray-700 uppercase tracking-wider">
+                      <th className="text-left py-3 px-4 text-xs font-medium text-gray-500 uppercase tracking-wider">
                         Customer
                       </th>
-                      <th className="text-left py-4 px-6 text-sm font-semibold text-gray-700 uppercase tracking-wider">
+                      <th className="text-left py-3 px-4 text-xs font-medium text-gray-500 uppercase tracking-wider">
                         Date & Time
                       </th>
-                      <th className="text-left py-4 px-6 text-sm font-semibold text-gray-700 uppercase tracking-wider">
+                      <th className="text-left py-3 px-4 text-xs font-medium text-gray-500 uppercase tracking-wider">
                         Party Size
                       </th>
-                      <th className="text-left py-4 px-6 text-sm font-semibold text-gray-700 uppercase tracking-wider">
+                      <th className="text-left py-3 px-4 text-xs font-medium text-gray-500 uppercase tracking-wider">
                         Status
                       </th>
-                      <th className="text-left py-4 px-6 text-sm font-semibold text-gray-700 uppercase tracking-wider">
+                      <th className="text-left py-3 px-4 text-xs font-medium text-gray-500 uppercase tracking-wider">
                         Created
                       </th>
-                      <th className="text-left py-4 px-6 text-sm font-semibold text-gray-700 uppercase tracking-wider">
+                      <th className="text-left py-3 px-4 text-xs font-medium text-gray-500 uppercase tracking-wider">
                         Source
                       </th>
                     </tr>
@@ -440,14 +440,14 @@ export default function Bookings() {
                           }`}
                           onClick={() => window.location.href = `/${tenantId}/bookings/${booking.id}`}
                         >
-                          <td className="py-4 px-6">
+                          <td className="py-3 px-4">
                             <div className="flex items-center">
                               <span className="text-blue-600 font-semibold text-sm bg-blue-50 px-2 py-1 rounded-md">
                                 #{booking.id}
                               </span>
                             </div>
                           </td>
-                          <td className="py-4 px-6">
+                          <td className="py-3 px-4">
                             <div className="flex items-center space-x-3">
                               <div className="w-8 h-8 bg-gradient-to-br from-green-400 to-green-600 rounded-full flex items-center justify-center text-white font-medium text-sm">
                                 {booking.customerName?.charAt(0)?.toUpperCase() || 'G'}
@@ -458,7 +458,7 @@ export default function Bookings() {
                               </div>
                             </div>
                           </td>
-                          <td className="py-4 px-6">
+                          <td className="py-3 px-4">
                             <div className="space-y-1">
                               <div className="font-medium text-gray-900">
                                 {formatDate(booking.bookingDate)}
@@ -469,22 +469,22 @@ export default function Bookings() {
                               </div>
                             </div>
                           </td>
-                          <td className="py-4 px-6">
+                          <td className="py-3 px-4">
                             <div className="flex items-center space-x-1">
                               <Users className="w-4 h-4 text-gray-400" />
                               <span className="font-medium text-gray-900">{booking.guestCount}</span>
                               <span className="text-sm text-gray-500">guest{booking.guestCount !== 1 ? 's' : ''}</span>
                             </div>
                           </td>
-                          <td className="py-4 px-6">
+                          <td className="py-3 px-4">
                             {getStatusBadge(booking.status || 'confirmed')}
                           </td>
-                          <td className="py-4 px-6">
+                          <td className="py-3 px-4">
                             <div className="text-sm text-gray-600">
                               {booking.createdAt ? formatDate(booking.createdAt) : formatDate(booking.bookingDate)}
                             </div>
                           </td>
-                          <td className="py-4 px-6">
+                          <td className="py-3 px-4">
                             {getSourceBadge(booking.source || 'manual')}
                           </td>
                         </tr>
