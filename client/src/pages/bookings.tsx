@@ -231,28 +231,6 @@ export default function Bookings() {
           <div className="p-6 border-b">
             <div className="flex items-center justify-between mb-4">
               <h2 className="text-lg font-semibold">Bookings</h2>
-              
-              {/* View Toggle */}
-              <div className="flex items-center space-x-2">
-                <Button
-                  variant={viewMode === "list" ? "default" : "outline"}
-                  size="sm"
-                  onClick={() => setViewMode("list")}
-                  className="flex items-center space-x-1 bg-green-600 hover:bg-green-700 text-white"
-                >
-                  <List className="w-4 h-4" />
-                  <span>List</span>
-                </Button>
-                <Button
-                  variant={viewMode === "calendar" ? "default" : "outline"}
-                  size="sm"
-                  onClick={() => setViewMode("calendar")}
-                  className="flex items-center space-x-1"
-                >
-                  <Calendar className="w-4 h-4" />
-                  <span>Calendar</span>
-                </Button>
-              </div>
             </div>
 
             {/* Modern Filters Section */}
@@ -396,21 +374,6 @@ export default function Bookings() {
                     </CollapsibleContent>
                   </Collapsible>
 
-                  {/* Results Summary */}
-                  <div className="text-sm text-gray-600 bg-gray-100 px-3 py-2 rounded-lg">
-                    <span className="font-medium">{filteredBookings.length}</span> booking{filteredBookings.length !== 1 ? 's' : ''} found
-                  </div>
-                </div>
-
-                {/* Action Buttons */}
-                <div className="flex items-center space-x-3">
-                  <Button 
-                    variant="outline" 
-                    className="h-10 px-4 border-2 border-gray-200 hover:border-green-500 hover:bg-green-50 transition-all duration-200 flex items-center space-x-2"
-                  >
-                    <Download className="w-4 h-4" />
-                    <span>Export CSV</span>
-                  </Button>
                 </div>
               </div>
             </div>
