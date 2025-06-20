@@ -202,36 +202,25 @@ export default function Bookings() {
 
   return (
     <div className="min-h-screen bg-gray-50">
-      {/* Header */}
-      <div className="bg-white border-b px-6 py-4">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center space-x-4">
-            <h1 className="text-2xl font-bold text-gray-900">Bookings</h1>
-            <Badge variant="secondary" className="bg-blue-100 text-blue-800">
-              {restaurant?.name || "Restaurant"}
-            </Badge>
-          </div>
-          
-          <div className="flex items-center space-x-3">
-            <Button
-              onClick={() => setIsNewBookingOpen(true)}
-              className="bg-green-600 hover:bg-green-700 text-white flex items-center space-x-2"
-            >
-              <Plus className="w-4 h-4" />
-              <span>New Booking</span>
-            </Button>
-          </div>
-        </div>
-      </div>
-
-      {/* Main Content */}
       <div className="p-6">
         <div className="bg-white rounded-lg shadow">
-          {/* Header */}
+          {/* Top Header */}
           <div className="p-6 border-b">
-            <div className="flex items-center justify-between mb-4">
-              <h2 className="text-lg font-semibold">Bookings</h2>
+            <div className="flex items-center justify-between">
+              <h1 className="text-2xl font-bold text-gray-900">Bookings</h1>
+              <Button
+                onClick={() => setIsNewBookingOpen(true)}
+                className="bg-green-600 hover:bg-green-700 text-white flex items-center space-x-2"
+              >
+                <Plus className="w-4 h-4" />
+                <span>New Booking</span>
+              </Button>
             </div>
+          </div>
+
+          {/* Filters Section */}
+          <div className="p-6 border-b">
+            <h2 className="text-lg font-semibold text-gray-900 mb-6">Bookings</h2>
 
             {/* Modern Filters Section */}
             <div className="space-y-6 mb-8">
