@@ -139,10 +139,10 @@ export default function Customers() {
     <div className="min-h-screen bg-gray-50">
       <div className="p-6">
         <div className="bg-white rounded-lg shadow">
-          {/* Header */}
+          {/* Top Header */}
           <div className="p-6 border-b">
-            <div className="flex items-center justify-between mb-4">
-              <h2 className="text-lg font-semibold">Customer Database</h2>
+            <div className="flex items-center justify-between">
+              <h1 className="text-2xl font-bold text-gray-900">Customers</h1>
               <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
                 <DialogTrigger asChild>
                   <Button className="bg-green-600 hover:bg-green-700 text-white">
@@ -210,6 +210,11 @@ export default function Customers() {
                 </DialogContent>
               </Dialog>
             </div>
+          </div>
+
+          {/* Filters Section */}
+          <div className="p-6 border-b">
+            <h2 className="text-lg font-semibold text-gray-900 mb-6">Customers</h2>
 
             {/* Modern Filters Section */}
             <div className="mb-8">
