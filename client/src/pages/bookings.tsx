@@ -256,8 +256,8 @@ export default function Bookings() {
             </div>
 
             {/* Filters Row */}
-            <div className="flex items-center justify-between mb-4">
-              <div className="flex items-center space-x-4">
+            <div className="space-y-4">
+              <div className="flex items-center justify-between">
                 <Collapsible open={showFilters} onOpenChange={setShowFilters}>
                   <CollapsibleTrigger asChild>
                     <Button variant="outline" size="sm" className="flex items-center space-x-1">
@@ -267,48 +267,50 @@ export default function Bookings() {
                     </Button>
                   </CollapsibleTrigger>
 
-                  <div className="flex items-center space-x-4 mt-2">
-                    <div className="relative">
-                      <Search className="w-4 h-4 text-gray-400 absolute left-3 top-1/2 transform -translate-y-1/2" />
-                      <Input
-                        placeholder="Search by name or email..."
-                        value={searchTerm}
-                        onChange={(e) => setSearchTerm(e.target.value)}
-                        className="pl-10 w-64"
-                      />
+                  <CollapsibleContent className="mt-4">
+                    <div className="flex items-center space-x-4 pb-4">
+                      <div className="relative">
+                        <Search className="w-4 h-4 text-gray-400 absolute left-3 top-1/2 transform -translate-y-1/2" />
+                        <Input
+                          placeholder="Search by name or email..."
+                          value={searchTerm}
+                          onChange={(e) => setSearchTerm(e.target.value)}
+                          className="pl-10 w-64"
+                        />
+                      </div>
+
+                      <Select value={statusFilter} onValueChange={setStatusFilter}>
+                        <SelectTrigger className="w-40">
+                          <SelectValue placeholder="All Status" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="all">All Status</SelectItem>
+                          <SelectItem value="confirmed">Confirmed</SelectItem>
+                          <SelectItem value="pending">Pending</SelectItem>
+                          <SelectItem value="cancelled">Cancelled</SelectItem>
+                        </SelectContent>
+                      </Select>
+
+                      <Select value={sourceFilter} onValueChange={setSourceFilter}>
+                        <SelectTrigger className="w-40">
+                          <SelectValue placeholder="All Sources" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="all">All Sources</SelectItem>
+                          <SelectItem value="manual">Manual</SelectItem>
+                          <SelectItem value="online">Online</SelectItem>
+                          <SelectItem value="google">Google</SelectItem>
+                        </SelectContent>
+                      </Select>
                     </div>
-
-                    <Select value={statusFilter} onValueChange={setStatusFilter}>
-                      <SelectTrigger className="w-40">
-                        <SelectValue placeholder="All Status" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="all">All Status</SelectItem>
-                        <SelectItem value="confirmed">Confirmed</SelectItem>
-                        <SelectItem value="pending">Pending</SelectItem>
-                        <SelectItem value="cancelled">Cancelled</SelectItem>
-                      </SelectContent>
-                    </Select>
-
-                    <Select value={sourceFilter} onValueChange={setSourceFilter}>
-                      <SelectTrigger className="w-40">
-                        <SelectValue placeholder="All Sources" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="all">All Sources</SelectItem>
-                        <SelectItem value="manual">Manual</SelectItem>
-                        <SelectItem value="online">Online</SelectItem>
-                        <SelectItem value="google">Google</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
+                  </CollapsibleContent>
                 </Collapsible>
-              </div>
 
-              <Button variant="outline" size="sm" className="flex items-center space-x-1 bg-green-600 hover:bg-green-700 text-white">
-                <Download className="w-4 h-4" />
-                <span>Download as CSV</span>
-              </Button>
+                <Button variant="outline" size="sm" className="flex items-center space-x-1 bg-green-600 hover:bg-green-700 text-white">
+                  <Download className="w-4 h-4" />
+                  <span>Download as CSV</span>
+                </Button>
+              </div>
             </div>
 
             {/* Table */}
