@@ -561,9 +561,6 @@ export default function Customers() {
                     </Button>
                   </div>
                   
-                  <div className="text-sm text-gray-600">
-                    Showing 1 to 7 of {filteredCustomers.length} entries
-                  </div>
                 </div>
               </div>
             )}
