@@ -16,6 +16,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { 
   Calendar, 
   Clock, 
@@ -32,7 +33,10 @@ import {
   MapPin,
   User,
   Download,
-  List
+  List,
+  ChevronDown,
+  ChevronLeft,
+  ChevronRight
 } from "lucide-react";
 // import { InternationalPhoneInput } from "@/components/international-phone-input";
 
@@ -50,6 +54,9 @@ export default function Bookings() {
   const [viewMode, setViewMode] = useState<"list" | "calendar">("list");
   const [selectedDate, setSelectedDate] = useState(new Date());
   const [isNewBookingOpen, setIsNewBookingOpen] = useState(false);
+  const [showFilters, setShowFilters] = useState(false);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [itemsPerPage, setItemsPerPage] = useState(20);
   const [newBooking, setNewBooking] = useState({
     customerName: "",
     customerEmail: "",
@@ -91,6 +98,27 @@ export default function Bookings() {
     
     return matchesSearch && matchesStatus && matchesSource;
   });
+
+  // Pagination
+  const totalPages = Math.ceil(filteredBookings.length / itemsPerPage);
+  const startIndex = (currentPage - 1) * itemsPerPage;
+  const endIndex = startIndex + itemsPerPage;
+  const paginatedBookings = filteredBookings.slice(startIndex, endIndex);
+
+  // Format date helper
+  const formatDate = (dateString: string) => {
+    const date = new Date(dateString);
+    return date.toLocaleDateString('en-US', { 
+      month: 'numeric', 
+      day: 'numeric', 
+      year: 'numeric' 
+    });
+  };
+
+  // Format time helper
+  const formatTime = (timeString: string) => {
+    return timeString.substring(0, 5); // Extract HH:MM from HH:MM:SS
+  };
 
   // Create booking mutation
   const createBookingMutation = useMutation({
@@ -144,27 +172,27 @@ export default function Bookings() {
 
   const getStatusBadge = (status: string) => {
     const colors = {
-      confirmed: "bg-green-100 text-green-800",
-      pending: "bg-yellow-100 text-yellow-800",
-      cancelled: "bg-red-100 text-red-800"
+      confirmed: "bg-green-500 text-white px-2 py-1 rounded-full text-xs font-medium",
+      pending: "bg-yellow-500 text-white px-2 py-1 rounded-full text-xs font-medium",
+      cancelled: "bg-red-500 text-white px-2 py-1 rounded-full text-xs font-medium"
     };
     return (
-      <Badge className={colors[status as keyof typeof colors] || "bg-gray-100 text-gray-800"}>
+      <span className={colors[status as keyof typeof colors] || "bg-gray-500 text-white px-2 py-1 rounded-full text-xs font-medium"}>
         {status}
-      </Badge>
+      </span>
     );
   };
 
   const getSourceBadge = (source: string) => {
     const colors = {
-      manual: "bg-blue-100 text-blue-800",
-      online: "bg-purple-100 text-purple-800",
-      google: "bg-orange-100 text-orange-800"
+      manual: "bg-blue-500 text-white px-2 py-1 rounded-full text-xs font-medium",
+      online: "bg-purple-500 text-white px-2 py-1 rounded-full text-xs font-medium",
+      google: "bg-orange-500 text-white px-2 py-1 rounded-full text-xs font-medium"
     };
     return (
-      <Badge className={colors[source as keyof typeof colors] || "bg-gray-100 text-gray-800"}>
+      <span className={colors[source as keyof typeof colors] || "bg-gray-500 text-white px-2 py-1 rounded-full text-xs font-medium"}>
         {source}
-      </Badge>
+      </span>
     );
   };
 
@@ -210,7 +238,7 @@ export default function Bookings() {
                   variant={viewMode === "list" ? "default" : "outline"}
                   size="sm"
                   onClick={() => setViewMode("list")}
-                  className="flex items-center space-x-1"
+                  className="flex items-center space-x-1 bg-green-600 hover:bg-green-700 text-white"
                 >
                   <List className="w-4 h-4" />
                   <span>List</span>
@@ -227,62 +255,74 @@ export default function Bookings() {
               </div>
             </div>
 
-            {/* Filters */}
-            <div className="flex items-center space-x-4 mb-4">
-              <Button variant="outline" size="sm" className="flex items-center space-x-1">
-                <Filter className="w-4 h-4" />
-                <span>Show filters</span>
+            {/* Filters Row */}
+            <div className="flex items-center justify-between mb-4">
+              <div className="flex items-center space-x-4">
+                <Collapsible open={showFilters} onOpenChange={setShowFilters}>
+                  <CollapsibleTrigger asChild>
+                    <Button variant="outline" size="sm" className="flex items-center space-x-1">
+                      <Filter className="w-4 h-4" />
+                      <span>Show filters</span>
+                      <ChevronDown className={`w-4 h-4 transform transition-transform ${showFilters ? 'rotate-180' : ''}`} />
+                    </Button>
+                  </CollapsibleTrigger>
+
+                  <div className="flex items-center space-x-4 mt-2">
+                    <div className="relative">
+                      <Search className="w-4 h-4 text-gray-400 absolute left-3 top-1/2 transform -translate-y-1/2" />
+                      <Input
+                        placeholder="Search by name or email..."
+                        value={searchTerm}
+                        onChange={(e) => setSearchTerm(e.target.value)}
+                        className="pl-10 w-64"
+                      />
+                    </div>
+
+                    <Select value={statusFilter} onValueChange={setStatusFilter}>
+                      <SelectTrigger className="w-40">
+                        <SelectValue placeholder="All Status" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="all">All Status</SelectItem>
+                        <SelectItem value="confirmed">Confirmed</SelectItem>
+                        <SelectItem value="pending">Pending</SelectItem>
+                        <SelectItem value="cancelled">Cancelled</SelectItem>
+                      </SelectContent>
+                    </Select>
+
+                    <Select value={sourceFilter} onValueChange={setSourceFilter}>
+                      <SelectTrigger className="w-40">
+                        <SelectValue placeholder="All Sources" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="all">All Sources</SelectItem>
+                        <SelectItem value="manual">Manual</SelectItem>
+                        <SelectItem value="online">Online</SelectItem>
+                        <SelectItem value="google">Google</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </Collapsible>
+              </div>
+
+              <Button variant="outline" size="sm" className="flex items-center space-x-1 bg-green-600 hover:bg-green-700 text-white">
+                <Download className="w-4 h-4" />
+                <span>Download as CSV</span>
               </Button>
-
-              <div className="flex items-center space-x-2">
-                <Search className="w-4 h-4 text-gray-400" />
-                <Input
-                  placeholder="Search by name or email..."
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                  className="w-64"
-                />
-              </div>
-
-              <div className="flex items-center space-x-2">
-                <Select value={statusFilter} onValueChange={setStatusFilter}>
-                  <SelectTrigger className="w-40">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="all">All Status</SelectItem>
-                    <SelectItem value="confirmed">Confirmed</SelectItem>
-                    <SelectItem value="pending">Pending</SelectItem>
-                    <SelectItem value="cancelled">Cancelled</SelectItem>
-                  </SelectContent>
-                </Select>
-
-                <Select value={sourceFilter} onValueChange={setSourceFilter}>
-                  <SelectTrigger className="w-40">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="all">All Sources</SelectItem>
-                    <SelectItem value="manual">Manual</SelectItem>
-                    <SelectItem value="online">Online</SelectItem>
-                    <SelectItem value="google">Google</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
             </div>
 
             {/* Table */}
             <div className="overflow-x-auto">
               <table className="w-full">
-                <thead className="bg-gray-50">
+                <thead className="bg-gray-50 border-b">
                   <tr>
-                    <th className="text-left py-3 px-4 font-medium text-gray-700">ID</th>
-                    <th className="text-left py-3 px-4 font-medium text-gray-700">Name</th>
-                    <th className="text-left py-3 px-4 font-medium text-gray-700">Arrival</th>
-                    <th className="text-left py-3 px-4 font-medium text-gray-700">Guests</th>
-                    <th className="text-left py-3 px-4 font-medium text-gray-700">Status</th>
-                    <th className="text-left py-3 px-4 font-medium text-gray-700">Created</th>
-                    <th className="text-left py-3 px-4 font-medium text-gray-700">Source</th>
+                    <th className="text-left py-3 px-4 text-sm font-medium text-gray-600">ID</th>
+                    <th className="text-left py-3 px-4 text-sm font-medium text-gray-600">Name</th>
+                    <th className="text-left py-3 px-4 text-sm font-medium text-gray-600">Arrival</th>
+                    <th className="text-left py-3 px-4 text-sm font-medium text-gray-600">Guests</th>
+                    <th className="text-left py-3 px-4 text-sm font-medium text-gray-600">Status</th>
+                    <th className="text-left py-3 px-4 text-sm font-medium text-gray-600">Created</th>
+                    <th className="text-left py-3 px-4 text-sm font-medium text-gray-600">Source</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -292,28 +332,28 @@ export default function Bookings() {
                         Loading bookings...
                       </td>
                     </tr>
-                  ) : filteredBookings.length === 0 ? (
+                  ) : paginatedBookings.length === 0 ? (
                     <tr>
                       <td colSpan={7} className="py-8 text-center text-gray-500">
                         No bookings found
                       </td>
                     </tr>
                   ) : (
-                    filteredBookings.map((booking: any) => (
+                    paginatedBookings.map((booking: any) => (
                       <tr 
                         key={booking.id} 
                         className="border-b border-gray-100 hover:bg-gray-50 cursor-pointer"
                         onClick={() => window.location.href = `/${tenantId}/bookings/${booking.id}`}
                       >
                         <td className="py-3 px-4 text-blue-600 font-medium">#{booking.id}</td>
-                        <td className="py-3 px-4">{booking.customerName}</td>
-                        <td className="py-3 px-4">
-                          {new Date(booking.bookingDate).toLocaleDateString()} at {booking.startTime}
+                        <td className="py-3 px-4 text-gray-900">{booking.customerName}</td>
+                        <td className="py-3 px-4 text-gray-900">
+                          {formatDate(booking.bookingDate)} at {formatTime(booking.startTime)}
                         </td>
-                        <td className="py-3 px-4">{booking.guestCount}</td>
-                        <td className="py-3 px-4">{getStatusBadge(booking.status || 'pending')}</td>
-                        <td className="py-3 px-4">
-                          {booking.createdAt ? new Date(booking.createdAt).toLocaleDateString() : 'N/A'}
+                        <td className="py-3 px-4 text-gray-900">{booking.guestCount}</td>
+                        <td className="py-3 px-4">{getStatusBadge(booking.status || 'confirmed')}</td>
+                        <td className="py-3 px-4 text-gray-900">
+                          {booking.createdAt ? formatDate(booking.createdAt) : formatDate(booking.bookingDate)}
                         </td>
                         <td className="py-3 px-4">{getSourceBadge(booking.source || 'manual')}</td>
                       </tr>
@@ -323,11 +363,17 @@ export default function Bookings() {
               </table>
             </div>
 
-            {/* Footer */}
-            <div className="p-4 border-t flex items-center justify-between">
+            {/* Pagination Footer */}
+            <div className="px-6 py-4 border-t bg-gray-50 flex items-center justify-between">
               <div className="flex items-center space-x-2 text-sm text-gray-600">
                 <span>Showing</span>
-                <Select defaultValue="20">
+                <Select 
+                  value={itemsPerPage.toString()} 
+                  onValueChange={(value) => {
+                    setItemsPerPage(parseInt(value));
+                    setCurrentPage(1);
+                  }}
+                >
                   <SelectTrigger className="w-16 h-8">
                     <SelectValue />
                   </SelectTrigger>
@@ -340,10 +386,37 @@ export default function Bookings() {
                 <span>results per page</span>
               </div>
 
-              <Button className="bg-green-600 hover:bg-green-700 text-white flex items-center space-x-2">
-                <Download className="w-4 h-4" />
-                <span>Download as CSV</span>
-              </Button>
+              <div className="flex items-center space-x-4">
+                <span className="text-sm text-gray-600">
+                  {startIndex + 1}-{Math.min(endIndex, filteredBookings.length)} of {filteredBookings.length}
+                </span>
+                
+                <div className="flex items-center space-x-1">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setCurrentPage(Math.max(1, currentPage - 1))}
+                    disabled={currentPage === 1}
+                    className="h-8 w-8 p-0"
+                  >
+                    <ChevronLeft className="w-4 h-4" />
+                  </Button>
+                  
+                  <span className="text-sm text-gray-600 px-2">
+                    Page {currentPage} of {totalPages}
+                  </span>
+                  
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setCurrentPage(Math.min(totalPages, currentPage + 1))}
+                    disabled={currentPage === totalPages}
+                    className="h-8 w-8 p-0"
+                  >
+                    <ChevronRight className="w-4 h-4" />
+                  </Button>
+                </div>
+              </div>
             </div>
           </div>
         </div>
