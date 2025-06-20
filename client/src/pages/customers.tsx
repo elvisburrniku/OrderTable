@@ -33,7 +33,7 @@ import {
   CollapsibleContent,
   CollapsibleTrigger,
 } from "@/components/ui/collapsible";
-import { Search, Plus, Mail, Phone, Calendar, Star, Filter, ChevronDown, ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight, User } from "lucide-react";
+import { Search, Plus, Mail, Phone, Calendar, Star, Filter, ChevronDown, ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight, User, Users } from "lucide-react";
 import { format } from "date-fns";
 
 export default function Customers() {
@@ -295,19 +295,25 @@ export default function Customers() {
                   <thead>
                     <tr className="bg-gray-50 border-b border-gray-200">
                       <th className="text-left py-3 px-4 text-xs font-medium text-gray-500 uppercase tracking-wider">
-                        Name
+                        Customer ID
                       </th>
                       <th className="text-left py-3 px-4 text-xs font-medium text-gray-500 uppercase tracking-wider">
-                        Contact
+                        Customer
                       </th>
                       <th className="text-left py-3 px-4 text-xs font-medium text-gray-500 uppercase tracking-wider">
-                        Bookings
+                        Phone
                       </th>
                       <th className="text-left py-3 px-4 text-xs font-medium text-gray-500 uppercase tracking-wider">
-                        Last Visit
+                        Total Bookings
                       </th>
                       <th className="text-left py-3 px-4 text-xs font-medium text-gray-500 uppercase tracking-wider">
                         Status
+                      </th>
+                      <th className="text-left py-3 px-4 text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Created
+                      </th>
+                      <th className="text-left py-3 px-4 text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Source
                       </th>
                     </tr>
                   </thead>
@@ -323,7 +329,7 @@ export default function Customers() {
                       </tr>
                     ) : currentCustomers.length === 0 ? (
                       <tr>
-                        <td colSpan={5} className="py-12 text-center">
+                        <td colSpan={7} className="py-12 text-center">
                           <div className="flex flex-col items-center space-y-4">
                             <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center">
                               <User className="w-8 h-8 text-gray-400" />
@@ -348,6 +354,13 @@ export default function Customers() {
                           }`}
                         >
                           <td className="py-3 px-4">
+                            <div className="flex items-center">
+                              <span className="text-blue-600 font-semibold text-sm bg-blue-50 px-2 py-1 rounded-md">
+                                #{customer.id}
+                              </span>
+                            </div>
+                          </td>
+                          <td className="py-3 px-4">
                             <div className="flex items-center space-x-3">
                               <div className="w-8 h-8 bg-gradient-to-br from-green-400 to-green-600 rounded-full flex items-center justify-center text-white font-medium text-sm">
                                 {customer.name?.charAt(0)?.toUpperCase() || 'C'}
@@ -359,32 +372,16 @@ export default function Customers() {
                             </div>
                           </td>
                           <td className="py-3 px-4">
-                            <div className="space-y-1">
-                              <div className="flex items-center gap-2 text-sm">
-                                <Mail className="h-3 w-3 text-gray-400" />
-                                <span className="text-gray-700">{customer.email}</span>
-                              </div>
-                              {customer.phone && (
-                                <div className="flex items-center gap-2 text-sm text-gray-600">
-                                  <Phone className="h-3 w-3 text-gray-400" />
-                                  <span>{customer.phone}</span>
-                                </div>
-                              )}
-                            </div>
+                            <span className="text-gray-700">
+                              {customer.phone || "No phone"}
+                            </span>
                           </td>
                           <td className="py-3 px-4">
                             <div className="flex items-center space-x-1">
-                              <Calendar className="w-4 h-4 text-gray-400" />
+                              <Users className="w-4 h-4 text-gray-400" />
                               <span className="font-medium text-gray-900">{customer.totalBookings || 0}</span>
                               <span className="text-sm text-gray-500">booking{(customer.totalBookings || 0) !== 1 ? 's' : ''}</span>
                             </div>
-                          </td>
-                          <td className="py-3 px-4">
-                            <span className="text-gray-700">
-                              {customer.lastVisit
-                                ? format(new Date(customer.lastVisit), "MMM dd, yyyy")
-                                : "Never"}
-                            </span>
                           </td>
                           <td className="py-3 px-4">
                             <Badge
@@ -401,6 +398,16 @@ export default function Customers() {
                                 : (customer.totalBookings || 0) > 2
                                   ? "Regular"
                                   : "New"}
+                            </Badge>
+                          </td>
+                          <td className="py-3 px-4">
+                            <div className="text-sm text-gray-600">
+                              {customer.createdAt ? format(new Date(customer.createdAt), "M/d/yyyy") : format(new Date(), "M/d/yyyy")}
+                            </div>
+                          </td>
+                          <td className="py-3 px-4">
+                            <Badge className="px-3 py-1 text-xs font-medium rounded-full bg-blue-100 text-blue-800 border-blue-200">
+                              manual
                             </Badge>
                           </td>
                         </tr>
