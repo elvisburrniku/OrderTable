@@ -265,21 +265,54 @@ export default function Customers() {
                             </Select>
                           </div>
 
-                          {/* Clear Filters */}
-                          <div className="flex items-end">
-                            <Button 
-                              variant="outline" 
-                              onClick={() => {
-                                setSearchTerm("");
-                                setStatusFilter("all");
-                                setCurrentPage(1);
-                              }}
-                              className="h-10 px-4 border-gray-300 hover:bg-gray-50"
-                            >
-                              Clear all
-                            </Button>
+                          {/* Source Filter */}
+                          <div className="space-y-2">
+                            <Label className="text-sm font-medium text-gray-700">Source</Label>
+                            <Select value="manual">
+                              <SelectTrigger className="h-10 bg-white border-gray-300 focus:border-green-500 focus:ring-green-500">
+                                <SelectValue placeholder="All sources" />
+                              </SelectTrigger>
+                              <SelectContent>
+                                <SelectItem value="manual">Manual</SelectItem>
+                              </SelectContent>
+                            </Select>
                           </div>
                         </div>
+
+                        {/* Active Filters Display */}
+                        {(searchTerm || statusFilter !== "all") && (
+                          <div className="mt-6 pt-4 border-t border-gray-200">
+                            <div className="flex items-center justify-between">
+                              <div className="flex items-center space-x-2">
+                                <span className="text-sm font-medium text-gray-700">Active filters:</span>
+                                <div className="flex items-center space-x-2">
+                                  {statusFilter !== "all" && (
+                                    <Badge className="px-2 py-1 text-xs bg-blue-100 text-blue-800 border-blue-200">
+                                      Status: {statusFilter}
+                                    </Badge>
+                                  )}
+                                  {searchTerm && (
+                                    <Badge className="px-2 py-1 text-xs bg-purple-100 text-purple-800 border-purple-200">
+                                      Search: {searchTerm}
+                                    </Badge>
+                                  )}
+                                </div>
+                              </div>
+                              <Button 
+                                variant="outline" 
+                                size="sm"
+                                onClick={() => {
+                                  setSearchTerm("");
+                                  setStatusFilter("all");
+                                  setCurrentPage(1);
+                                }}
+                                className="text-xs px-3 py-1 border-gray-300 hover:bg-gray-50"
+                              >
+                                Clear all
+                              </Button>
+                            </div>
+                          </div>
+                        )}
                       </div>
                     </CollapsibleContent>
                   </Collapsible>
