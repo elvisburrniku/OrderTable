@@ -33,7 +33,7 @@ import {
   CollapsibleContent,
   CollapsibleTrigger,
 } from "@/components/ui/collapsible";
-import { Search, Plus, Mail, Phone, Calendar, Star, Filter, ChevronDown, ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight } from "lucide-react";
+import { Search, Plus, Mail, Phone, Calendar, Star, Filter, ChevronDown, ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight, User } from "lucide-react";
 import { format } from "date-fns";
 
 export default function Customers() {
@@ -289,99 +289,126 @@ export default function Customers() {
             </div>
 
             {/* Enhanced Table */}
-            <div className="overflow-hidden rounded-lg border border-gray-200">
-              {isLoading ? (
-                <div className="text-center py-12">
-                  <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-green-500 mx-auto"></div>
-                  <p className="mt-2 text-gray-500">Loading customers...</p>
-                </div>
-              ) : currentCustomers.length === 0 ? (
-                <div className="text-center py-12 text-gray-500">
-                  {searchTerm || statusFilter
-                    ? "No customers found matching your filters"
-                    : "No customers yet"}
-                </div>
-              ) : (
-                <Table>
-                  <TableHeader>
-                    <TableRow className="bg-gradient-to-r from-green-50 to-emerald-50 hover:from-green-100 hover:to-emerald-100 border-b-2 border-green-200">
-                      <TableHead className="font-semibold text-gray-800 py-4">Name</TableHead>
-                      <TableHead className="font-semibold text-gray-800 py-4">Contact</TableHead>
-                      <TableHead className="font-semibold text-gray-800 py-4">Bookings</TableHead>
-                      <TableHead className="font-semibold text-gray-800 py-4">Last Visit</TableHead>
-                      <TableHead className="font-semibold text-gray-800 py-4">Status</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {currentCustomers.map((customer: any, index: number) => (
-                      <TableRow 
-                        key={customer.id}
-                        className={`
-                          hover:bg-green-50 transition-colors duration-200 cursor-pointer
-                          ${index % 2 === 0 ? 'bg-white' : 'bg-gray-50/50'}
-                        `}
-                      >
-                        <TableCell className="py-4">
-                          <div className="flex items-center space-x-3">
-                            <div className="w-10 h-10 rounded-full bg-gradient-to-br from-green-400 to-emerald-600 flex items-center justify-center text-white font-semibold text-sm">
-                              {customer.name.charAt(0).toUpperCase()}
+            <div className="bg-white rounded-xl border-2 border-gray-100 overflow-hidden shadow-sm">
+              <div className="overflow-x-auto">
+                <table className="w-full">
+                  <thead>
+                    <tr className="bg-gray-50 border-b border-gray-200">
+                      <th className="text-left py-3 px-4 text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Name
+                      </th>
+                      <th className="text-left py-3 px-4 text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Contact
+                      </th>
+                      <th className="text-left py-3 px-4 text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Bookings
+                      </th>
+                      <th className="text-left py-3 px-4 text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Last Visit
+                      </th>
+                      <th className="text-left py-3 px-4 text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Status
+                      </th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-gray-100">
+                    {isLoading ? (
+                      <tr>
+                        <td colSpan={5} className="py-12 text-center">
+                          <div className="flex flex-col items-center space-y-4">
+                            <div className="animate-spin rounded-full h-8 w-8 border-2 border-green-500 border-t-transparent"></div>
+                            <span className="text-gray-500 font-medium">Loading customers...</span>
+                          </div>
+                        </td>
+                      </tr>
+                    ) : currentCustomers.length === 0 ? (
+                      <tr>
+                        <td colSpan={5} className="py-12 text-center">
+                          <div className="flex flex-col items-center space-y-4">
+                            <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center">
+                              <User className="w-8 h-8 text-gray-400" />
                             </div>
-                            <div className="font-semibold text-gray-900">
-                              {customer.name}
+                            <div>
+                              <h3 className="text-gray-900 font-medium">No customers found</h3>
+                              <p className="text-gray-500 text-sm mt-1">
+                                {searchTerm || statusFilter
+                                  ? "Try adjusting your filters or search terms"
+                                  : "No customers yet"}
+                              </p>
                             </div>
                           </div>
-                        </TableCell>
-                        <TableCell className="py-4">
-                          <div className="space-y-1">
-                            <div className="flex items-center gap-2 text-sm">
-                              <Mail className="h-3 w-3 text-gray-400" />
-                              <span className="text-gray-700">{customer.email}</span>
-                            </div>
-                            {customer.phone && (
-                              <div className="flex items-center gap-2 text-sm text-gray-600">
-                                <Phone className="h-3 w-3 text-gray-400" />
-                                <span>{customer.phone}</span>
+                        </td>
+                      </tr>
+                    ) : (
+                      currentCustomers.map((customer: any, index: number) => (
+                        <tr 
+                          key={customer.id} 
+                          className={`group hover:bg-blue-50 cursor-pointer transition-all duration-200 ${
+                            index % 2 === 0 ? 'bg-white' : 'bg-gray-50/50'
+                          }`}
+                        >
+                          <td className="py-3 px-4">
+                            <div className="flex items-center space-x-3">
+                              <div className="w-8 h-8 bg-gradient-to-br from-green-400 to-green-600 rounded-full flex items-center justify-center text-white font-medium text-sm">
+                                {customer.name?.charAt(0)?.toUpperCase() || 'C'}
                               </div>
-                            )}
-                          </div>
-                        </TableCell>
-                        <TableCell className="py-4">
-                          <div className="flex items-center gap-2">
-                            <Calendar className="h-4 w-4 text-green-600" />
-                            <span className="font-medium text-gray-900">
-                              {customer.totalBookings || 0} bookings
+                              <div>
+                                <div className="font-medium text-gray-900">{customer.name}</div>
+                                <div className="text-sm text-gray-500">{customer.email}</div>
+                              </div>
+                            </div>
+                          </td>
+                          <td className="py-3 px-4">
+                            <div className="space-y-1">
+                              <div className="flex items-center gap-2 text-sm">
+                                <Mail className="h-3 w-3 text-gray-400" />
+                                <span className="text-gray-700">{customer.email}</span>
+                              </div>
+                              {customer.phone && (
+                                <div className="flex items-center gap-2 text-sm text-gray-600">
+                                  <Phone className="h-3 w-3 text-gray-400" />
+                                  <span>{customer.phone}</span>
+                                </div>
+                              )}
+                            </div>
+                          </td>
+                          <td className="py-3 px-4">
+                            <div className="flex items-center space-x-1">
+                              <Calendar className="w-4 h-4 text-gray-400" />
+                              <span className="font-medium text-gray-900">{customer.totalBookings || 0}</span>
+                              <span className="text-sm text-gray-500">booking{(customer.totalBookings || 0) !== 1 ? 's' : ''}</span>
+                            </div>
+                          </td>
+                          <td className="py-3 px-4">
+                            <span className="text-gray-700">
+                              {customer.lastVisit
+                                ? format(new Date(customer.lastVisit), "MMM dd, yyyy")
+                                : "Never"}
                             </span>
-                          </div>
-                        </TableCell>
-                        <TableCell className="py-4">
-                          <span className="text-gray-700">
-                            {customer.lastVisit
-                              ? format(new Date(customer.lastVisit), "MMM dd, yyyy")
-                              : "Never"}
-                          </span>
-                        </TableCell>
-                        <TableCell className="py-4">
-                          <Badge
-                            className={`px-3 py-1 text-xs font-medium rounded-full ${
-                              (customer.totalBookings || 0) > 5
-                                ? "bg-purple-100 text-purple-800 border-purple-200"
+                          </td>
+                          <td className="py-3 px-4">
+                            <Badge
+                              className={`px-3 py-1 text-xs font-medium rounded-full ${
+                                (customer.totalBookings || 0) > 5
+                                  ? "bg-purple-100 text-purple-800 border-purple-200"
+                                  : (customer.totalBookings || 0) > 2
+                                    ? "bg-blue-100 text-blue-800 border-blue-200"
+                                    : "bg-green-100 text-green-800 border-green-200"
+                              }`}
+                            >
+                              {(customer.totalBookings || 0) > 5
+                                ? "VIP"
                                 : (customer.totalBookings || 0) > 2
-                                  ? "bg-blue-100 text-blue-800 border-blue-200"
-                                  : "bg-green-100 text-green-800 border-green-200"
-                            }`}
-                          >
-                            {(customer.totalBookings || 0) > 5
-                              ? "VIP"
-                              : (customer.totalBookings || 0) > 2
-                                ? "Regular"
-                                : "New"}
-                          </Badge>
-                        </TableCell>
-                      </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
-              )}
+                                  ? "Regular"
+                                  : "New"}
+                            </Badge>
+                          </td>
+                        </tr>
+                      ))
+                    )}
+                  </tbody>
+                </table>
+              </div>
             </div>
 
             {/* Enhanced Pagination */}
