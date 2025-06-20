@@ -458,35 +458,10 @@ export default function Customers() {
 
             {/* Enhanced Pagination */}
             {totalPages > 1 && (
-              <div className="flex items-center justify-between mt-6 px-2">
-                <div className="flex items-center space-x-2">
-                  <span className="text-sm text-gray-600">Show</span>
-                  <Select 
-                    value={itemsPerPage.toString()} 
-                    onValueChange={(value) => {
-                      const newValue = parseInt(value);
-                      if (!isNaN(newValue)) {
-                        setItemsPerPage(newValue);
-                        setCurrentPage(1);
-                      }
-                    }}
-                  >
-                    <SelectTrigger className="w-20 h-8">
-                      <SelectValue placeholder="7" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="7">7</SelectItem>
-                      <SelectItem value="10">10</SelectItem>
-                      <SelectItem value="20">20</SelectItem>
-                      <SelectItem value="50">50</SelectItem>
-                    </SelectContent>
-                  </Select>
-                  <span className="text-sm text-gray-600">entries</span>
-                </div>
-
+              <div className="flex items-center justify-center mt-6 px-2">
                 <div className="flex items-center space-x-4">
                   <div className="text-sm text-gray-600">
-                    {currentPage} of {totalPages}
+                    {startIndex + 1}-{Math.min(endIndex, filteredCustomers.length)} of {filteredCustomers.length}
                   </div>
                   
                   <div className="flex items-center space-x-2">
@@ -560,7 +535,6 @@ export default function Customers() {
                       Last
                     </Button>
                   </div>
-                  
                 </div>
               </div>
             )}
