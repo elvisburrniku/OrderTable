@@ -42,7 +42,7 @@ export default function Customers() {
   const [searchTerm, setSearchTerm] = useState("");
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [showFilters, setShowFilters] = useState(false);
-  const [statusFilter, setStatusFilter] = useState("");
+  const [statusFilter, setStatusFilter] = useState("all");
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage, setItemsPerPage] = useState(7);
   const [newCustomer, setNewCustomer] = useState({
@@ -112,7 +112,7 @@ export default function Customers() {
     
     const customerStatus = (customer.totalBookings || 0) > 5 ? "VIP" : 
                           (customer.totalBookings || 0) > 2 ? "Regular" : "New";
-    const matchesStatus = !statusFilter || customerStatus === statusFilter;
+    const matchesStatus = statusFilter === "all" || customerStatus === statusFilter;
     
     return matchesSearch && matchesStatus;
   });
@@ -124,7 +124,7 @@ export default function Customers() {
   const currentCustomers = filteredCustomers.slice(startIndex, endIndex);
 
   // Active filters count
-  const activeFiltersCount = [searchTerm, statusFilter].filter(Boolean).length;
+  const activeFiltersCount = [searchTerm, statusFilter !== "all" ? statusFilter : null].filter(Boolean).length;
 
   const handleCreateCustomer = (e: React.FormEvent) => {
     e.preventDefault();
@@ -252,12 +252,12 @@ export default function Customers() {
                           {/* Status Filter */}
                           <div className="space-y-2">
                             <Label className="text-sm font-medium text-gray-700">Status</Label>
-                            <Select value={statusFilter} onValueChange={setStatusFilter}>
+                            <Select value={statusFilter || "all"} onValueChange={setStatusFilter}>
                               <SelectTrigger className="h-10 bg-white border-gray-300 focus:border-green-500 focus:ring-green-500">
                                 <SelectValue placeholder="All statuses" />
                               </SelectTrigger>
                               <SelectContent>
-                                <SelectItem value="">All statuses</SelectItem>
+                                <SelectItem value="all">All statuses</SelectItem>
                                 <SelectItem value="VIP">VIP</SelectItem>
                                 <SelectItem value="Regular">Regular</SelectItem>
                                 <SelectItem value="New">New</SelectItem>
@@ -271,7 +271,7 @@ export default function Customers() {
                               variant="outline" 
                               onClick={() => {
                                 setSearchTerm("");
-                                setStatusFilter("");
+                                setStatusFilter("all");
                                 setCurrentPage(1);
                               }}
                               className="h-10 px-4 border-gray-300 hover:bg-gray-50"
@@ -423,12 +423,18 @@ export default function Customers() {
               <div className="flex items-center justify-between mt-6 px-2">
                 <div className="flex items-center space-x-2">
                   <span className="text-sm text-gray-600">Show</span>
-                  <Select value={itemsPerPage.toString()} onValueChange={(value) => {
-                    setItemsPerPage(Number(value));
-                    setCurrentPage(1);
-                  }}>
+                  <Select 
+                    value={itemsPerPage.toString()} 
+                    onValueChange={(value) => {
+                      const newValue = parseInt(value);
+                      if (!isNaN(newValue)) {
+                        setItemsPerPage(newValue);
+                        setCurrentPage(1);
+                      }
+                    }}
+                  >
                     <SelectTrigger className="w-20 h-8">
-                      <SelectValue />
+                      <SelectValue placeholder="7" />
                     </SelectTrigger>
                     <SelectContent>
                       <SelectItem value="7">7</SelectItem>

@@ -1,0 +1,64 @@
+error-boundary.tsx:26 Component stack: 
+    at https://177e9595-de1d-4a21-989a-3ce11ea05de2-00-3k60gl10u2jew.worf.replit.d…rkspace/node_modules/.vite/deps/@radix-ui_react-select.js?v=bd477a90:846:7
+    at _c11 (https://177e9595-de1d-4a21-989a-3ce11ea05de2-00-3k60gl10u2jew.worf.replit.dev/src/components/ui/select.tsx:208:13)
+    at div
+    at https://177e9595-de1d-4a21-989a-3ce11ea05de2-00-3k60gl10u2jew.worf.replit.d…unner/workspace/node_modules/.vite/deps/chunk-AXMZZQ2X.js?v=bd477a90:42:13
+    at https://177e9595-de1d-4a21-989a-3ce11ea05de2-00-3k60gl10u2jew.worf.replit.d…unner/workspace/node_modules/.vite/deps/chunk-2K77HOHX.js?v=bd477a90:79:13
+    at https://177e9595-de1d-4a21-989a-3ce11ea05de2-00-3k60gl10u2jew.worf.replit.d…unner/workspace/node_modules/.vite/deps/chunk-2K77HOHX.js?v=bd477a90:56:13
+    at https://177e9595-de1d-4a21-989a-3ce11ea05de2-00-3k60gl10u2jew.worf.replit.d…unner/workspace/node_modules/.vite/deps/chunk-TPYHSINA.js?v=bd477a90:39:15
+    at https://177e9595-de1d-4a21-989a-3ce11ea05de2-00-3k60gl10u2jew.worf.replit.d…kspace/node_modules/.vite/deps/@radix-ui_react-select.js?v=bd477a90:757:13
+    at div
+    at https://177e9595-de1d-4a21-989a-3ce11ea05de2-00-3k60gl10u2jew.worf.replit.d…unner/workspace/node_modules/.vite/deps/chunk-2K77HOHX.js?v=bd477a90:79:13
+    at https://177e9595-de1d-4a21-989a-3ce11ea05de2-00-3k60gl10u2jew.worf.replit.d…unner/workspace/node_modules/.vite/deps/chunk-2K77HOHX.js?v=bd477a90:56:13
+    at https://177e9595-de1d-4a21-989a-3ce11ea05de2-00-3k60gl10u2jew.worf.replit.d…unner/workspace/node_modules/.vite/deps/chunk-TPYHSINA.js?v=bd477a90:39:15
+    at Provider (https://177e9595-de1d-4a21-989a-3ce11ea05de2-00-3k60gl10u2jew.worf.replit.d…unner/workspace/node_modules/.vite/deps/chunk-OXZDJRWN.js?v=bd477a90:38:15)
+    at https://177e9595-de1d-4a21-989a-3ce11ea05de2-00-3k60gl10u2jew.worf.replit.d…kspace/node_modules/.vite/deps/@radix-ui_react-select.js?v=bd477a90:300:58
+    at https://177e9595-de1d-4a21-989a-3ce11ea05de2-00-3k60gl10u2jew.worf.replit.d…unner/workspace/node_modules/.vite/deps/chunk-2K77HOHX.js?v=bd477a90:79:13
+    at https://177e9595-de1d-4a21-989a-3ce11ea05de2-00-3k60gl10u2jew.worf.replit.d…unner/workspace/node_modules/.vite/deps/chunk-2K77HOHX.js?v=bd477a90:56:13
+    at https://177e9595-de1d-4a21-989a-3ce11ea05de2-00-3k60gl10u2jew.worf.replit.d…unner/workspace/node_modules/.vite/deps/chunk-AXMZZQ2X.js?v=bd477a90:42:13
+    at https://177e9595-de1d-4a21-989a-3ce11ea05de2-00-3k60gl10u2jew.worf.replit.d…nner/workspace/node_modules/.vite/deps/chunk-DCKRMFXL.js?v=bd477a90:258:22
+    at SelectPortal
+    at _c7 (https://177e9595-de1d-4a21-989a-3ce11ea05de2-00-3k60gl10u2jew.worf.replit.dev/src/components/ui/select.tsx:123:12)
+    at Provider (https://177e9595-de1d-4a21-989a-3ce11ea05de2-00-3k60gl10u2jew.worf.replit.d…unner/workspace/node_modules/.vite/deps/chunk-OXZDJRWN.js?v=bd477a90:38:15)
+    at Provider (https://177e9595-de1d-4a21-989a-3ce11ea05de2-00-3k60gl10u2jew.worf.replit.d…unner/workspace/node_modules/.vite/deps/chunk-OXZDJRWN.js?v=bd477a90:38:15)
+    at CollectionProvider (https://177e9595-de1d-4a21-989a-3ce11ea05de2-00-3k60gl10u2jew.worf.replit.d…unner/workspace/node_modules/.vite/deps/chunk-TPYHSINA.js?v=bd477a90:29:13)
+    at Provider (https://177e9595-de1d-4a21-989a-3ce11ea05de2-00-3k60gl10u2jew.worf.replit.d…unner/workspace/node_modules/.vite/deps/chunk-OXZDJRWN.js?v=bd477a90:38:15)
+    at Provider (https://177e9595-de1d-4a21-989a-3ce11ea05de2-00-3k60gl10u2jew.worf.replit.d…unner/workspace/node_modules/.vite/deps/chunk-OXZDJRWN.js?v=bd477a90:38:15)
+    at Popper (https://177e9595-de1d-4a21-989a-3ce11ea05de2-00-3k60gl10u2jew.worf.replit.d…ner/workspace/node_modules/.vite/deps/chunk-AAAWOXFP.js?v=bd477a90:1921:11)
+    at Select (https://177e9595-de1d-4a21-989a-3ce11ea05de2-00-3k60gl10u2jew.worf.replit.d…orkspace/node_modules/.vite/deps/@radix-ui_react-select.js?v=bd477a90:88:5)
+    at div
+    at div
+    at div
+    at div
+    at https://177e9595-de1d-4a21-989a-3ce11ea05de2-00-3k60gl10u2jew.worf.replit.d…unner/workspace/node_modules/.vite/deps/chunk-AXMZZQ2X.js?v=bd477a90:42:13
+    at https://177e9595-de1d-4a21-989a-3ce11ea05de2-00-3k60gl10u2jew.worf.replit.d…e/node_modules/.vite/deps/@radix-ui_react-collapsible.js?v=bd477a90:108:11
+    at Presence (https://177e9595-de1d-4a21-989a-3ce11ea05de2-00-3k60gl10u2jew.worf.replit.d…unner/workspace/node_modules/.vite/deps/chunk-66RCPY56.js?v=bd477a90:24:11)
+    at https://177e9595-de1d-4a21-989a-3ce11ea05de2-00-3k60gl10u2jew.worf.replit.d…e/node_modules/.vite/deps/@radix-ui_react-collapsible.js?v=bd477a90:101:13
+    at div
+    at https://177e9595-de1d-4a21-989a-3ce11ea05de2-00-3k60gl10u2jew.worf.replit.d…unner/workspace/node_modules/.vite/deps/chunk-AXMZZQ2X.js?v=bd477a90:42:13
+    at Provider (https://177e9595-de1d-4a21-989a-3ce11ea05de2-00-3k60gl10u2jew.worf.replit.d…unner/workspace/node_modules/.vite/deps/chunk-OXZDJRWN.js?v=bd477a90:38:15)
+    at https://177e9595-de1d-4a21-989a-3ce11ea05de2-00-3k60gl10u2jew.worf.replit.d…ace/node_modules/.vite/deps/@radix-ui_react-collapsible.js?v=bd477a90:42:7
+    at div
+    at div
+    at div
+    at div
+    at div
+    at div
+    at div
+    at Customers (https://177e9595-de1d-4a21-989a-3ce11ea05de2-00-3k60gl10u2jew.worf.replit.dev/src/pages/customers.tsx?t=1750449031622:48:32)
+    at Route (https://177e9595-de1d-4a21-989a-3ce11ea05de2-00-3k60gl10u2jew.worf.replit.d…/home/runner/workspace/node_modules/.vite/deps/wouter.js?v=bd477a90:323:16)
+    at OverduePaymentGuard (https://177e9595-de1d-4a21-989a-3ce11ea05de2-00-3k60gl10u2jew.worf.replit.dev/src/components/overdue-payment-guard.tsx:28:39)
+    at SetupGuard (https://177e9595-de1d-4a21-989a-3ce11ea05de2-00-3k60gl10u2jew.worf.replit.dev/src/components/setup-guard.tsx:21:30)
+    at Switch (https://177e9595-de1d-4a21-989a-3ce11ea05de2-00-3k60gl10u2jew.worf.replit.d…/home/runner/workspace/node_modules/.vite/deps/wouter.js?v=bd477a90:379:17)
+    at main
+    at div
+    at LayoutWrapper (https://177e9595-de1d-4a21-989a-3ce11ea05de2-00-3k60gl10u2jew.worf.replit.dev/src/components/layout-wrapper.tsx:23:33)
+    at RouteGuard (https://177e9595-de1d-4a21-989a-3ce11ea05de2-00-3k60gl10u2jew.worf.replit.dev/src/components/route-guard.tsx:21:30)
+    at TenantProvider (https://177e9595-de1d-4a21-989a-3ce11ea05de2-00-3k60gl10u2jew.worf.replit.dev/src/lib/tenant.tsx:22:34)
+    at AuthProvider (https://177e9595-de1d-4a21-989a-3ce11ea05de2-00-3k60gl10u2jew.worf.replit.dev/src/lib/auth.tsx:25:32)
+    at Route (https://177e9595-de1d-4a21-989a-3ce11ea05de2-00-3k60gl10u2jew.worf.replit.d…/home/runner/workspace/node_modules/.vite/deps/wouter.js?v=bd477a90:323:16)
+    at Switch (https://177e9595-de1d-4a21-989a-3ce11ea05de2-00-3k60gl10u2jew.worf.replit.d…/home/runner/workspace/node_modules/.vite/deps/wouter.js?v=bd477a90:379:17)
+    at QueryClientProvider (https://177e9595-de1d-4a21-989a-3ce11ea05de2-00-3k60gl10u2jew.worf.replit.d…rkspace/node_modules/.vite/deps/@tanstack_react-query.js?v=bd477a90:2805:3)
+    at LanguageProvider (https://177e9595-de1d-4a21-989a-3ce11ea05de2-00-3k60gl10u2jew.worf.replit.dev/src/contexts/language-context.tsx:21:36)
+    at ErrorBoundary (https://177e9595-de1d-4a21-989a-3ce11ea05de2-00-3k60gl10u2jew.worf.replit.dev/src/components/error-boundary.tsx:7:5)
+    at App
