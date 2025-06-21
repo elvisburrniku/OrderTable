@@ -29,6 +29,9 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import {
   CreditCard,
   Download,
@@ -39,8 +42,16 @@ import {
   CheckCircle,
   Clock,
   Check,
+  Filter,
+  Search,
+  ChevronDown,
+  ChevronLeft,
+  ChevronRight,
+  Eye,
+  Calendar as CalendarIcon,
 } from "lucide-react";
 import { format } from "date-fns";
+import { motion } from "framer-motion";
 
 const stripePromise = loadStripe(
   import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY || "pk_test_your_publishable_key",
@@ -305,6 +316,16 @@ export default function BillingPage() {
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const [addPaymentDialogOpen, setAddPaymentDialogOpen] = useState(false);
+  
+  // Invoice History filters and pagination states
+  const [searchTerm, setSearchTerm] = useState("");
+  const [statusFilter, setStatusFilter] = useState("all");
+  const [dateFilter, setDateFilter] = useState("all");
+  const [showFilters, setShowFilters] = useState(false);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [itemsPerPage, setItemsPerPage] = useState(7);
+  const [showInvoiceModal, setShowInvoiceModal] = useState(false);
+  const [selectedInvoice, setSelectedInvoice] = useState<Invoice | null>(null);
 
   const { data: billingInfo, isLoading: billingLoading } =
     useQuery<BillingInfo>({
@@ -324,6 +345,71 @@ export default function BillingPage() {
   const { data: subscriptionPlans = [] } = useQuery({
     queryKey: ["/api/subscription-plans"],
   });
+
+  // Filter and pagination logic for invoices
+  const filteredInvoices = (invoicesData?.invoices || []).filter((invoice: Invoice) => {
+    const matchesSearch = searchTerm === "" || 
+      invoice.number.toLowerCase().includes(searchTerm.toLowerCase());
+    const matchesStatus = statusFilter === "all" || invoice.status === statusFilter;
+    
+    let matchesDate = true;
+    if (dateFilter !== "all") {
+      const invoiceDate = new Date(invoice.created * 1000);
+      const now = new Date();
+      switch (dateFilter) {
+        case "last30":
+          matchesDate = (now.getTime() - invoiceDate.getTime()) <= (30 * 24 * 60 * 60 * 1000);
+          break;
+        case "last90":
+          matchesDate = (now.getTime() - invoiceDate.getTime()) <= (90 * 24 * 60 * 60 * 1000);
+          break;
+        case "thisYear":
+          matchesDate = invoiceDate.getFullYear() === now.getFullYear();
+          break;
+      }
+    }
+    
+    return matchesSearch && matchesStatus && matchesDate;
+  });
+
+  // Pagination for invoices
+  const totalPages = Math.ceil(filteredInvoices.length / itemsPerPage);
+  const startIndex = (currentPage - 1) * itemsPerPage;
+  const endIndex = startIndex + itemsPerPage;
+  const paginatedInvoices = filteredInvoices.slice(startIndex, endIndex);
+
+  const handleViewInvoiceDetails = (invoice: Invoice) => {
+    setSelectedInvoice(invoice);
+    setShowInvoiceModal(true);
+  };
+
+  const handleCloseInvoiceModal = () => {
+    setShowInvoiceModal(false);
+    setSelectedInvoice(null);
+  };
+
+  const getInvoiceStatusBadge = (status: string) => {
+    switch (status) {
+      case "paid":
+        return (
+          <Badge className="bg-green-500 text-white">
+            <CheckCircle className="h-3 w-3 mr-1" />
+            Paid
+          </Badge>
+        );
+      case "open":
+        return (
+          <Badge className="bg-yellow-500 text-white">
+            <Clock className="h-3 w-3 mr-1" />
+            Open
+          </Badge>
+        );
+      case "void":
+        return <Badge className="bg-gray-500 text-white">Void</Badge>;
+      default:
+        return <Badge variant="outline">{status}</Badge>;
+    }
+  };
 
   const deletePaymentMethodMutation = useMutation({
     mutationFn: (paymentMethodId: string) =>
@@ -869,42 +955,515 @@ export default function BillingPage() {
       {/* Invoice History */}
       <Card>
         <CardHeader>
-          <CardTitle>Invoice History</CardTitle>
+          <CardTitle className="flex items-center gap-2">
+            <Download className="h-6 w-6 text-green-600" />
+            Invoice History
+          </CardTitle>
           <CardDescription>
             View and download your past invoices
           </CardDescription>
         </CardHeader>
         <CardContent>
-          {invoicesLoading ? (
-            <div className="space-y-3">
-              {[1, 2, 3].map((i) => (
-                <div
-                  key={i}
-                  className="animate-pulse flex items-center justify-between p-4 border rounded"
+          <h2 className="text-lg font-semibold text-gray-900 mb-6">Billing History</h2>
+
+          {/* Modern Filters Section */}
+          <motion.div 
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.5, delay: 0.4 }}
+            className="space-y-6 mb-8"
+          >
+            {/* Filter Controls Bar */}
+            <div className="flex items-center justify-between">
+              <div className="flex items-center space-x-4">
+                <Collapsible open={showFilters} onOpenChange={setShowFilters}>
+                  <CollapsibleTrigger asChild>
+                    <Button 
+                      variant="outline" 
+                      className="h-10 px-4 border-2 border-gray-200 hover:border-green-500 hover:bg-green-50 transition-all duration-200 flex items-center space-x-2 font-medium"
+                    >
+                      <Filter className="w-4 h-4" />
+                      <span>Filters</span>
+                      {(statusFilter !== 'all' || dateFilter !== 'all' || searchTerm) && (
+                        <span className="bg-green-500 text-white text-xs px-2 py-0.5 rounded-full ml-1">
+                          {[
+                            statusFilter !== 'all' ? 1 : 0,
+                            dateFilter !== 'all' ? 1 : 0,
+                            searchTerm ? 1 : 0
+                          ].reduce((a, b) => a + b, 0)}
+                        </span>
+                      )}
+                      <ChevronDown className={`w-4 h-4 transition-transform duration-200 ${showFilters ? 'rotate-180' : ''}`} />
+                    </Button>
+                  </CollapsibleTrigger>
+
+                  <CollapsibleContent className="mt-4">
+                    <motion.div
+                      initial={{ opacity: 0, scale: 0.95 }}
+                      animate={{ opacity: 1, scale: 1 }}
+                      transition={{ duration: 0.3 }}
+                      className="bg-gray-50 rounded-xl p-6 border-2 border-gray-100"
+                    >
+                      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+                        {/* Search Input */}
+                        <div className="relative">
+                          <label className="block text-sm font-medium text-gray-700 mb-2">Search</label>
+                          <div className="relative">
+                            <Search className="w-4 h-4 text-gray-400 absolute left-3 top-1/2 transform -translate-y-1/2" />
+                            <Input
+                              placeholder="Search by invoice number..."
+                              value={searchTerm}
+                              onChange={(e) => setSearchTerm(e.target.value)}
+                              className="pl-10 h-11 border-2 border-gray-200 focus:border-green-500 focus:ring-0 rounded-lg transition-all duration-200"
+                            />
+                          </div>
+                        </div>
+
+                        {/* Status Filter */}
+                        <div>
+                          <label className="block text-sm font-medium text-gray-700 mb-2">Status</label>
+                          <Select value={statusFilter} onValueChange={setStatusFilter}>
+                            <SelectTrigger className="h-11 border-2 border-gray-200 focus:border-green-500 rounded-lg transition-all duration-200">
+                              <SelectValue placeholder="All Statuses" />
+                            </SelectTrigger>
+                            <SelectContent className="rounded-lg border-2 border-gray-200">
+                              <SelectItem value="all" className="rounded-md">All Statuses</SelectItem>
+                              <SelectItem value="paid" className="rounded-md">
+                                <div className="flex items-center space-x-2">
+                                  <div className="w-2 h-2 bg-green-500 rounded-full"></div>
+                                  <span>Paid</span>
+                                </div>
+                              </SelectItem>
+                              <SelectItem value="open" className="rounded-md">
+                                <div className="flex items-center space-x-2">
+                                  <div className="w-2 h-2 bg-yellow-500 rounded-full"></div>
+                                  <span>Open</span>
+                                </div>
+                              </SelectItem>
+                              <SelectItem value="void" className="rounded-md">
+                                <div className="flex items-center space-x-2">
+                                  <div className="w-2 h-2 bg-gray-500 rounded-full"></div>
+                                  <span>Void</span>
+                                </div>
+                              </SelectItem>
+                            </SelectContent>
+                          </Select>
+                        </div>
+
+                        {/* Date Filter */}
+                        <div>
+                          <label className="block text-sm font-medium text-gray-700 mb-2">Date Range</label>
+                          <Select value={dateFilter} onValueChange={setDateFilter}>
+                            <SelectTrigger className="h-11 border-2 border-gray-200 focus:border-green-500 rounded-lg transition-all duration-200">
+                              <SelectValue placeholder="All Time" />
+                            </SelectTrigger>
+                            <SelectContent className="rounded-lg border-2 border-gray-200">
+                              <SelectItem value="all" className="rounded-md">All Time</SelectItem>
+                              <SelectItem value="last30" className="rounded-md">Last 30 Days</SelectItem>
+                              <SelectItem value="last90" className="rounded-md">Last 90 Days</SelectItem>
+                              <SelectItem value="thisYear" className="rounded-md">This Year</SelectItem>
+                            </SelectContent>
+                          </Select>
+                        </div>
+
+                        {/* Actions */}
+                        <div className="flex items-end">
+                          <Button variant="outline" className="h-11 flex items-center space-x-2 hover:bg-green-50 hover:border-green-500 transition-all duration-200">
+                            <Download className="w-4 h-4" />
+                            <span>Export</span>
+                          </Button>
+                        </div>
+                      </div>
+
+                      {/* Filter Actions */}
+                      {(statusFilter !== 'all' || dateFilter !== 'all' || searchTerm) && (
+                        <div className="flex items-center justify-between mt-4 pt-4 border-t border-gray-200">
+                          <div className="flex items-center space-x-2 text-sm text-gray-600">
+                            <span>Active filters:</span>
+                            {searchTerm && (
+                              <span className="bg-green-100 text-green-800 px-2 py-1 rounded-md text-xs font-medium">
+                                Search: "{searchTerm}"
+                              </span>
+                            )}
+                            {statusFilter !== 'all' && (
+                              <span className="bg-blue-100 text-blue-800 px-2 py-1 rounded-md text-xs font-medium">
+                                Status: {statusFilter}
+                              </span>
+                            )}
+                            {dateFilter !== 'all' && (
+                              <span className="bg-purple-100 text-purple-800 px-2 py-1 rounded-md text-xs font-medium">
+                                Date: {dateFilter.replace('last', 'Last ').replace('thisYear', 'This Year')}
+                              </span>
+                            )}
+                          </div>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => {
+                              setSearchTerm("");
+                              setStatusFilter("all");
+                              setDateFilter("all");
+                            }}
+                            className="text-gray-500 hover:text-gray-700 hover:bg-gray-100"
+                          >
+                            Clear all
+                          </Button>
+                        </div>
+                      )}
+                    </motion.div>
+                  </CollapsibleContent>
+                </Collapsible>
+              </div>
+            </div>
+          </motion.div>
+
+          {/* Enhanced Table */}
+          <motion.div 
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.5, delay: 0.5 }}
+            className="bg-white rounded-xl border-2 border-gray-100 overflow-hidden shadow-sm mt-6"
+          >
+            <div className="overflow-x-auto">
+              <table className="w-full">
+                <thead>
+                  <tr className="bg-gray-50 border-b border-gray-200">
+                    <th className="text-left py-3 px-4 font-medium text-gray-700 text-sm">INVOICE</th>
+                    <th className="text-left py-3 px-4 font-medium text-gray-700 text-sm">AMOUNT</th>
+                    <th className="text-left py-3 px-4 font-medium text-gray-700 text-sm">STATUS</th>
+                    <th className="text-left py-3 px-4 font-medium text-gray-700 text-sm">DATE</th>
+                    <th className="text-left py-3 px-4 font-medium text-gray-700 text-sm">PERIOD</th>
+                    <th className="text-left py-3 px-4 font-medium text-gray-700 text-sm">ACTIONS</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-gray-100">
+                  {invoicesLoading ? (
+                    <tr>
+                      <td colSpan={6} className="py-12 text-center">
+                        <div className="flex flex-col items-center space-y-4">
+                          <div className="animate-spin rounded-full h-8 w-8 border-2 border-green-500 border-t-transparent"></div>
+                          <span className="text-gray-500 font-medium">Loading invoices...</span>
+                        </div>
+                      </td>
+                    </tr>
+                  ) : paginatedInvoices.length === 0 ? (
+                    <tr>
+                      <td colSpan={6} className="py-12 text-center">
+                        <div className="flex flex-col items-center space-y-4">
+                          <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center">
+                            <Download className="w-8 h-8 text-gray-400" />
+                          </div>
+                          <div>
+                            <h3 className="text-gray-900 font-medium">No invoices found</h3>
+                            <p className="text-gray-500 text-sm mt-1">Try adjusting your filters or check back later</p>
+                          </div>
+                        </div>
+                      </td>
+                    </tr>
+                  ) : (
+                    paginatedInvoices.map((invoice: Invoice, index: number) => (
+                      <motion.tr 
+                        key={invoice.id}
+                        initial={{ opacity: 0, y: 10 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ duration: 0.3, delay: index * 0.05 }}
+                        className={`group hover:bg-blue-50 transition-all duration-200 ${
+                          index % 2 === 0 ? 'bg-white' : 'bg-gray-50/50'
+                        }`}
+                      >
+                        <td className="py-3 px-4">
+                          <div className="flex items-center space-x-3">
+                            <div className="w-8 h-8 bg-gradient-to-br from-blue-400 to-blue-600 rounded-full flex items-center justify-center text-white font-medium text-sm">
+                              #
+                            </div>
+                            <div className="min-w-0 flex-1">
+                              <div className="font-medium text-gray-900 truncate">#{invoice.number}</div>
+                              <div className="text-sm text-gray-500">Invoice ID: {invoice.id.slice(0, 8)}...</div>
+                            </div>
+                          </div>
+                        </td>
+                        <td className="py-3 px-4">
+                          <div className="text-sm">
+                            <div className="text-gray-900 font-medium">
+                              ${(invoice.amount_paid / 100).toFixed(2)} {invoice.currency.toUpperCase()}
+                            </div>
+                            {invoice.amount_due !== invoice.amount_paid && (
+                              <div className="text-gray-500">
+                                Due: ${(invoice.amount_due / 100).toFixed(2)}
+                              </div>
+                            )}
+                          </div>
+                        </td>
+                        <td className="py-3 px-4">
+                          <div className="flex items-center space-x-2">
+                            {getInvoiceStatusBadge(invoice.status)}
+                          </div>
+                        </td>
+                        <td className="py-3 px-4">
+                          <div className="text-sm">
+                            <div className="text-gray-900 font-medium">
+                              {format(new Date(invoice.created * 1000), "MMM dd, yyyy")}
+                            </div>
+                            <div className="text-gray-500 flex items-center">
+                              <Clock className="w-3 h-3 mr-1" />
+                              {format(new Date(invoice.created * 1000), "HH:mm")}
+                            </div>
+                          </div>
+                        </td>
+                        <td className="py-3 px-4">
+                          <div className="text-sm text-gray-600">
+                            {invoice.period_start && invoice.period_end ? (
+                              <>
+                                {format(new Date(invoice.period_start * 1000), "MMM dd")} - {format(new Date(invoice.period_end * 1000), "MMM dd, yyyy")}
+                              </>
+                            ) : (
+                              <span className="text-gray-400">-</span>
+                            )}
+                          </div>
+                        </td>
+                        <td className="py-3 px-4">
+                          <div className="flex items-center space-x-2">
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => handleViewInvoiceDetails(invoice)}
+                              className="h-8 w-8 p-0"
+                            >
+                              <Eye className="w-4 h-4" />
+                            </Button>
+                            {invoice.hosted_invoice_url && (
+                              <Button variant="outline" size="sm" asChild className="h-8 px-3 text-xs">
+                                <a
+                                  href={invoice.hosted_invoice_url}
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                >
+                                  View
+                                </a>
+                              </Button>
+                            )}
+                            {invoice.invoice_pdf && (
+                              <Button variant="outline" size="sm" asChild className="h-8 w-8 p-0">
+                                <a
+                                  href={invoice.invoice_pdf}
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                >
+                                  <Download className="h-4 w-4" />
+                                </a>
+                              </Button>
+                            )}
+                          </div>
+                        </td>
+                      </motion.tr>
+                    ))
+                  )}
+                </tbody>
+              </table>
+            </div>
+          </motion.div>
+
+          {/* Pagination */}
+          {totalPages > 1 && (
+            <motion.div 
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.5, delay: 0.6 }}
+              className="flex items-center justify-between px-6 py-4 border-t bg-gray-50"
+            >
+              <div className="flex items-center space-x-2">
+                <span className="text-sm text-gray-600">Show</span>
+                <Select
+                  value={itemsPerPage.toString()}
+                  onValueChange={(value) => {
+                    setItemsPerPage(parseInt(value));
+                    setCurrentPage(1);
+                  }}
                 >
-                  <div className="space-y-2">
-                    <div className="h-4 bg-gray-200 rounded w-24"></div>
-                    <div className="h-3 bg-gray-200 rounded w-32"></div>
-                  </div>
-                  <div className="h-4 bg-gray-200 rounded w-16"></div>
+                  <SelectTrigger className="w-16 h-8">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="7">7</SelectItem>
+                    <SelectItem value="10">10</SelectItem>
+                    <SelectItem value="20">20</SelectItem>
+                    <SelectItem value="50">50</SelectItem>
+                  </SelectContent>
+                </Select>
+                <span className="text-sm text-gray-600">entries</span>
+              </div>
+
+              <div className="flex items-center space-x-4">
+                <div className="text-sm text-gray-600">
+                  {startIndex + 1}-{Math.min(endIndex, filteredInvoices.length)} of {filteredInvoices.length}
                 </div>
-              ))}
-            </div>
-          ) : invoicesData?.invoices?.length ? (
-            <div className="space-y-3">
-              {invoicesData.invoices.map((invoice) => (
-                <InvoiceRow key={invoice.id} invoice={invoice} />
-              ))}
-            </div>
-          ) : (
-            <div className="text-center py-8 text-muted-foreground">
-              <div className="h-12 w-12 mx-auto mb-4 opacity-50">📄</div>
-              <p>No invoices found</p>
-              <p className="text-sm">Your billing history will appear here</p>
-            </div>
+
+                <div className="flex items-center space-x-2">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setCurrentPage(1)}
+                    disabled={currentPage === 1}
+                    className="px-3 py-1 h-8 text-sm"
+                  >
+                    First
+                  </Button>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setCurrentPage(currentPage - 1)}
+                    disabled={currentPage === 1}
+                    className="w-8 h-8 p-0"
+                  >
+                    <ChevronLeft className="w-4 h-4" />
+                  </Button>
+
+                  {/* Page Numbers */}
+                  <div className="flex items-center space-x-1">
+                    {Array.from({ length: Math.min(3, totalPages) }, (_, i) => {
+                      let pageNum;
+                      if (totalPages <= 3) {
+                        pageNum = i + 1;
+                      } else if (currentPage <= 2) {
+                        pageNum = i + 1;
+                      } else if (currentPage >= totalPages - 1) {
+                        pageNum = totalPages - 2 + i;
+                      } else {
+                        pageNum = currentPage - 1 + i;
+                      }
+
+                      return (
+                        <Button
+                          key={pageNum}
+                          variant={currentPage === pageNum ? "default" : "outline"}
+                          size="sm"
+                          onClick={() => setCurrentPage(pageNum)}
+                          className={currentPage === pageNum ? "w-8 h-8 p-0 bg-green-600 hover:bg-green-700 text-white" : "w-8 h-8 p-0 hover:bg-green-50"}
+                        >
+                          {pageNum}
+                        </Button>
+                      );
+                    })}
+                  </div>
+
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setCurrentPage(currentPage + 1)}
+                    disabled={currentPage === totalPages}
+                    className="w-8 h-8 p-0"
+                  >
+                    <ChevronRight className="w-4 h-4" />
+                  </Button>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setCurrentPage(totalPages)}
+                    disabled={currentPage === totalPages}
+                    className="px-3 py-1 h-8 text-sm"
+                  >
+                    Last
+                  </Button>
+                </div>
+              </div>
+            </motion.div>
           )}
         </CardContent>
       </Card>
+
+      {/* Invoice Detail Modal */}
+      <Dialog open={showInvoiceModal} onOpenChange={setShowInvoiceModal}>
+        <DialogContent className="sm:max-w-[600px] max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Download className="w-5 h-5 text-green-600" />
+              Invoice Details - #{selectedInvoice?.number}
+            </DialogTitle>
+          </DialogHeader>
+          {selectedInvoice && (
+            <div className="space-y-6">
+              {/* Invoice Information */}
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2 text-lg">
+                    <CreditCard className="w-5 h-5" />
+                    Invoice Information
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-3">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                      <label className="text-sm font-medium text-gray-600">Invoice Number</label>
+                      <p className="text-lg">#{selectedInvoice.number}</p>
+                    </div>
+                    <div>
+                      <label className="text-sm font-medium text-gray-600">Amount</label>
+                      <p className="text-lg">${(selectedInvoice.amount_paid / 100).toFixed(2)} {selectedInvoice.currency.toUpperCase()}</p>
+                    </div>
+                    <div>
+                      <label className="text-sm font-medium text-gray-600">Status</label>
+                      <div className="mt-1">{getInvoiceStatusBadge(selectedInvoice.status)}</div>
+                    </div>
+                    <div>
+                      <label className="text-sm font-medium text-gray-600">Created</label>
+                      <p className="text-lg">
+                        {format(new Date(selectedInvoice.created * 1000), "MMM dd, yyyy")}
+                      </p>
+                    </div>
+                    {selectedInvoice.period_start && selectedInvoice.period_end && (
+                      <>
+                        <div>
+                          <label className="text-sm font-medium text-gray-600">Service Period</label>
+                          <p className="text-lg">
+                            {format(new Date(selectedInvoice.period_start * 1000), "MMM dd")} - {format(new Date(selectedInvoice.period_end * 1000), "MMM dd, yyyy")}
+                          </p>
+                        </div>
+                      </>
+                    )}
+                    {selectedInvoice.amount_due !== selectedInvoice.amount_paid && (
+                      <div>
+                        <label className="text-sm font-medium text-gray-600">Amount Due</label>
+                        <p className="text-lg">${(selectedInvoice.amount_due / 100).toFixed(2)} {selectedInvoice.currency.toUpperCase()}</p>
+                      </div>
+                    )}
+                  </div>
+                </CardContent>
+              </Card>
+
+              {/* Actions */}
+              <div className="flex gap-3 pt-4">
+                {selectedInvoice.hosted_invoice_url && (
+                  <Button asChild className="flex items-center gap-2">
+                    <a
+                      href={selectedInvoice.hosted_invoice_url}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                    >
+                      <Eye className="w-4 h-4" />
+                      View Invoice
+                    </a>
+                  </Button>
+                )}
+                {selectedInvoice.invoice_pdf && (
+                  <Button variant="outline" asChild className="flex items-center gap-2">
+                    <a
+                      href={selectedInvoice.invoice_pdf}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                    >
+                      <Download className="w-4 h-4" />
+                      Download PDF
+                    </a>
+                  </Button>
+                )}
+                <Button onClick={handleCloseInvoiceModal} variant="outline" className="flex-1">
+                  Close
+                </Button>
+              </div>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
