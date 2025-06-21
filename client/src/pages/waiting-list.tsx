@@ -367,14 +367,29 @@ export default function WaitingList() {
                         </div>
                       </td>
                       <td className="py-4 px-4">
-                        <span className={`px-3 py-1 rounded-full text-sm font-medium ${
-                          item.status === 'waiting' ? 'bg-green-100 text-green-800' :
-                          item.status === 'contacted' ? 'bg-blue-100 text-blue-800' :
-                          item.status === 'seated' ? 'bg-purple-100 text-purple-800' :
-                          'bg-red-100 text-red-800'
-                        }`}>
-                          {item.status || 'waiting'}
-                        </span>
+                        <Select
+                          value={item.status || 'waiting'}
+                          onValueChange={(value) => updateEntryMutation.mutate({ id: item.id, updates: { status: value } })}
+                        >
+                          <SelectTrigger className="w-32">
+                            <SelectValue>
+                              <span className={`px-2 py-1 rounded-full text-xs font-medium ${
+                                item.status === 'waiting' ? 'bg-green-100 text-green-800' :
+                                item.status === 'contacted' ? 'bg-blue-100 text-blue-800' :
+                                item.status === 'seated' ? 'bg-purple-100 text-purple-800' :
+                                'bg-red-100 text-red-800'
+                              }`}>
+                                {item.status || 'waiting'}
+                              </span>
+                            </SelectValue>
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="waiting">Waiting</SelectItem>
+                            <SelectItem value="contacted">Contacted</SelectItem>
+                            <SelectItem value="seated">Seated</SelectItem>
+                            <SelectItem value="cancelled">Cancelled</SelectItem>
+                          </SelectContent>
+                        </Select>
                       </td>
                       <td className="py-4 px-4 text-sm text-gray-500">
                         {formatDate(item.createdAt)}
