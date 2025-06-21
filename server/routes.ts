@@ -2031,11 +2031,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
         if (updates.status === "seated" && existingEntry.status !== "seated") {
           try {
             const restaurant = await storage.getRestaurantById(existingEntry.restaurantId);
+            console.log(`Creating booking from waiting list entry ${id}:`, {
+              requestedDate: existingEntry.requestedDate,
+              requestedTime: existingEntry.requestedTime,
+              customerName: existingEntry.customerName,
+              guestCount: existingEntry.guestCount
+            });
+
             if (restaurant && existingEntry.requestedDate && existingEntry.requestedTime) {
               // Parse the requested date and time to create a proper booking date
-              const bookingDate = new Date(existingEntry.requestedDate);
-              const [hours, minutes] = existingEntry.requestedTime.split(':');
-              bookingDate.setHours(parseInt(hours), parseInt(minutes), 0, 0);
+              const bookingDate = new Date(existingEntry.requestedDate + 'T' + existingEntry.requestedTime + ':00');
+              console.log(`Parsed booking date:`, bookingDate);
               
               // Calculate end time (assume 2 hours duration)
               const endTime = new Date(bookingDate);
@@ -2049,15 +2055,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
                 customerEmail: existingEntry.customerEmail,
                 customerPhone: existingEntry.customerPhone,
                 guestCount: existingEntry.guestCount,
+                bookingDate: bookingDate,
                 startTime: existingEntry.requestedTime,
                 endTime: `${String(endTime.getHours()).padStart(2, '0')}:${String(endTime.getMinutes()).padStart(2, '0')}`,
-                date: existingEntry.requestedDate,
                 status: 'confirmed',
                 source: 'waiting_list',
                 notes: existingEntry.notes || `Seated from waiting list`,
-                specialRequests: existingEntry.specialRequests || '',
               };
 
+              console.log(`Creating booking with data:`, bookingData);
               const booking = await storage.createBooking(bookingData);
               console.log(`Booking ${booking.id} created from waiting list entry ${id}`);
 
@@ -2077,6 +2083,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
                   requestedDate: existingEntry.requestedDate,
                   requestedTime: existingEntry.requestedTime,
                 }),
+              });
+            } else {
+              console.log(`Cannot create booking - missing data:`, {
+                restaurant: !!restaurant,
+                requestedDate: existingEntry.requestedDate,
+                requestedTime: existingEntry.requestedTime
               });
             }
           } catch (bookingError) {
