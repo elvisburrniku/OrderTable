@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { useAuth, useAuthGuard } from "@/lib/auth.tsx";
@@ -35,7 +34,7 @@ export default function ActivityLog() {
     user,
     restaurant,
   } = useAuthGuard();
-  
+
   const [eventFilter, setEventFilter] = useState("all");
   const [loginFilter, setLoginFilter] = useState("all");
   const [searchTerm, setSearchTerm] = useState("");
@@ -111,7 +110,7 @@ export default function ActivityLog() {
       log.userEmail?.toLowerCase().includes(searchTerm.toLowerCase()) ||
       log.description?.toLowerCase().includes(searchTerm.toLowerCase()) ||
       log.details?.toLowerCase().includes(searchTerm.toLowerCase());
-    
+
     const matchesEvent = eventFilter === "all" || log.eventType === eventFilter;
     const matchesLogin =
       loginFilter === "all" ||
@@ -136,7 +135,7 @@ export default function ActivityLog() {
     };
 
     const badgeClass = badges[eventType as keyof typeof badges] || "bg-gray-500 text-white px-2 py-1 rounded-full text-xs font-medium";
-    
+
     return (
       <span className={badgeClass}>
         {eventType.replace('_', ' ')}
@@ -228,7 +227,7 @@ export default function ActivityLog() {
                         <ChevronDown className={`w-4 h-4 transform transition-transform duration-200 ${showFilters ? 'rotate-180' : ''}`} />
                       </Button>
                     </CollapsibleTrigger>
-                    
+
                     <CollapsibleContent className="mt-4">
                       <motion.div 
                         initial={{ opacity: 0, scale: 0.95 }}
@@ -501,7 +500,7 @@ export default function ActivityLog() {
                   <div className="text-sm text-gray-600">
                     {startIndex + 1}-{Math.min(endIndex, filteredLogs.length)} of {filteredLogs.length}
                   </div>
-                  
+
                   <div className="flex items-center space-x-2">
                     <Button
                       variant="outline"
