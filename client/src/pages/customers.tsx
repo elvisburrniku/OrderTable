@@ -464,7 +464,7 @@ export default function Customers() {
                               manual
                             </Badge>
                           </td>
-                        </tr>
+                        </motion.tr>
                       ))
                     )}
                   </tbody>
