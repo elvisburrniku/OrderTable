@@ -22,6 +22,7 @@ import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
 import { useAuth } from "@/lib/auth";
 import { motion } from "framer-motion";
+import { useScrollToTop } from "@/hooks/use-scroll-to-top";
 
 export default function OpeningHours() {
   const { tenantId } = useParams();
@@ -29,6 +30,9 @@ export default function OpeningHours() {
   const queryClient = useQueryClient();
   const { restaurant } = useAuth();
   const restaurantId = restaurant?.id;
+
+  // Auto scroll to top when page loads
+  useScrollToTop();
 
   // Filter and pagination states
   const [searchTerm, setSearchTerm] = useState("");

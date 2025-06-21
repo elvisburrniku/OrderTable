@@ -40,10 +40,14 @@ import {
 } from "lucide-react";
 // import { InternationalPhoneInput } from "@/components/international-phone-input";
 import { motion } from "framer-motion";
+import { useScrollToTop } from "@/hooks/use-scroll-to-top";
 
 export default function Bookings() {
   const { user, restaurant } = useAuth();
   const queryClient = useQueryClient();
+
+  // Auto scroll to top when page loads
+  useScrollToTop();
 
   // Get restaurant info from authentication context
   const tenantId = restaurant?.tenantId;

@@ -52,6 +52,7 @@ import {
 } from "lucide-react";
 import { format } from "date-fns";
 import { motion } from "framer-motion";
+import { useScrollToTop } from "@/hooks/use-scroll-to-top";
 
 const stripePromise = loadStripe(
   import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY || "pk_test_your_publishable_key",
@@ -316,6 +317,9 @@ export default function BillingPage() {
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const [addPaymentDialogOpen, setAddPaymentDialogOpen] = useState(false);
+  
+  // Auto scroll to top when page loads
+  useScrollToTop();
   
   // Invoice History filters and pagination states
   const [searchTerm, setSearchTerm] = useState("");
