@@ -45,18 +45,15 @@ export default function GuestFeedbackForm() {
   const urlParams = new URLSearchParams(window.location.search);
   const tableNumber = urlParams.get("table");
 
-  console.log('Guest feedback form debug:', {
-    match,
-    match2,
-    params,
-    params2,
-    activeParams,
-    pathParts,
-    tenantId,
-    restaurantId,
-    tableNumber,
-    pathname: window.location.pathname
-  });
+  // Debug info for development
+  if (process.env.NODE_ENV === 'development') {
+    console.log('Guest feedback form loaded:', {
+      tenantId,
+      restaurantId,
+      tableNumber,
+      pathname: window.location.pathname
+    });
+  }
 
   // Fetch restaurant info (public endpoint for guest access)
   const { data: restaurant, isLoading: restaurantLoading, error: restaurantError } = useQuery({
@@ -215,12 +212,8 @@ export default function GuestFeedbackForm() {
             <AlertCircle className="w-12 h-12 text-red-500 mx-auto mb-4" />
             <h2 className="text-xl font-semibold text-gray-900 mb-2">Invalid Link</h2>
             <p className="text-gray-600">This feedback link is not valid. Please contact the restaurant for assistance.</p>
-            <div className="text-xs text-gray-500 mt-4 space-y-1">
-              <p>Current path: {window.location.pathname}</p>
-              <p>Match: {match ? 'true' : 'false'}</p>
-              <p>Tenant ID: {tenantId || 'missing'}</p>
-              <p>Restaurant ID: {restaurantId || 'missing'}</p>
-              <p>Params: {JSON.stringify(params)}</p>
+            <div className="text-xs text-gray-500 mt-4">
+              <p>Please check the URL and try again, or contact the restaurant for assistance.</p>
             </div>
           </CardContent>
         </Card>
