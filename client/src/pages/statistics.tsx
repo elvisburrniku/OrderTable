@@ -61,6 +61,7 @@ import {
   Palette,
   RotateCcw,
 } from "lucide-react";
+import { motion } from "framer-motion"; // Import framer-motion
 
 export default function Statistics() {
   const { user, restaurant } = useAuth();
@@ -330,277 +331,349 @@ export default function Statistics() {
             <>
               {/* Key Metrics */}
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-                <Card>
-                  <CardContent className="p-6">
-                    <div className="flex items-center">
-                      <CalendarIcon2 className="h-8 w-8 text-blue-600" />
-                      <div className="ml-4">
-                        <p className="text-sm font-medium text-gray-600">
-                          Total Bookings
-                        </p>
-                        <p className="text-2xl font-bold text-gray-900">
-                          {stats.totalBookings}
-                        </p>
+                <motion.div
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  transition={{ duration: 0.5 }}
+                >
+                  <Card>
+                    <CardContent className="p-6">
+                      <div className="flex items-center">
+                        <CalendarIcon2 className="h-8 w-8 text-blue-600" />
+                        <div className="ml-4">
+                          <p className="text-sm font-medium text-gray-600">
+                            Total Bookings
+                          </p>
+                          <p className="text-2xl font-bold text-gray-900">
+                            {stats.totalBookings}
+                          </p>
+                        </div>
                       </div>
-                    </div>
-                  </CardContent>
-                </Card>
+                    </CardContent>
+                  </Card>
+                </motion.div>
 
-                <Card>
-                  <CardContent className="p-6">
-                    <div className="flex items-center">
-                      <Users className="h-8 w-8 text-green-600" />
-                      <div className="ml-4">
-                        <p className="text-sm font-medium text-gray-600">
-                          Total Customers
-                        </p>
-                        <p className="text-2xl font-bold text-gray-900">
-                          {stats.totalCustomers}
-                        </p>
+                <motion.div
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  transition={{ duration: 0.5 }}
+                >
+                  <Card>
+                    <CardContent className="p-6">
+                      <div className="flex items-center">
+                        <Users className="h-8 w-8 text-green-600" />
+                        <div className="ml-4">
+                          <p className="text-sm font-medium text-gray-600">
+                            Total Customers
+                          </p>
+                          <p className="text-2xl font-bold text-gray-900">
+                            {stats.totalCustomers}
+                          </p>
+                        </div>
                       </div>
-                    </div>
-                  </CardContent>
-                </Card>
+                    </CardContent>
+                  </Card>
+                </motion.div>
 
-                <Card>
-                  <CardContent className="p-6">
-                    <div className="flex items-center">
-                      <TrendingUp className="h-8 w-8 text-purple-600" />
-                      <div className="ml-4">
-                        <p className="text-sm font-medium text-gray-600">
-                          Table Utilization
-                        </p>
-                        <p className="text-2xl font-bold text-gray-900">
-                          {stats.tableUtilization?.toFixed(1) ?? "0.0"}%
-                        </p>
+                <motion.div
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  transition={{ duration: 0.5 }}
+                >
+                  <Card>
+                    <CardContent className="p-6">
+                      <div className="flex items-center">
+                        <TrendingUp className="h-8 w-8 text-purple-600" />
+                        <div className="ml-4">
+                          <p className="text-sm font-medium text-gray-600">
+                            Table Utilization
+                          </p>
+                          <p className="text-2xl font-bold text-gray-900">
+                            {stats.tableUtilization?.toFixed(1) ?? "0.0"}%
+                          </p>
+                        </div>
                       </div>
-                    </div>
-                  </CardContent>
-                </Card>
+                    </CardContent>
+                  </Card>
+                </motion.div>
 
-                <Card>
-                  <CardContent className="p-6">
-                    <div className="flex items-center">
-                      <DollarSign className="h-8 w-8 text-orange-600" />
-                      <div className="ml-4">
-                        <p className="text-sm font-medium text-gray-600">
-                          Monthly Revenue
-                        </p>
-                        <p className="text-2xl font-bold text-gray-900">
-                          ${(stats.monthlyRevenue ?? 0).toLocaleString()}
-                        </p>
+                <motion.div
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  transition={{ duration: 0.5 }}
+                >
+                  <Card>
+                    <CardContent className="p-6">
+                      <div className="flex items-center">
+                        <DollarSign className="h-8 w-8 text-orange-600" />
+                        <div className="ml-4">
+                          <p className="text-sm font-medium text-gray-600">
+                            Monthly Revenue
+                          </p>
+                          <p className="text-2xl font-bold text-gray-900">
+                            ${(stats.monthlyRevenue ?? 0).toLocaleString()}
+                          </p>
+                        </div>
                       </div>
-                    </div>
-                  </CardContent>
-                </Card>
+                    </CardContent>
+                  </Card>
+                </motion.div>
               </div>
 
               {/* Additional Metrics */}
               <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                <Card>
-                  <CardContent className="p-6">
-                    <div className="text-center">
-                      <p className="text-sm font-medium text-gray-600">
-                        Monthly Bookings
-                      </p>
-                      <p className="text-3xl font-bold text-blue-600">
-                        {stats.monthlyBookings ?? 0}
-                      </p>
-                    </div>
-                  </CardContent>
-                </Card>
+                <motion.div
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  transition={{ duration: 0.5 }}
+                >
+                  <Card>
+                    <CardContent className="p-6">
+                      <div className="text-center">
+                        <p className="text-sm font-medium text-gray-600">
+                          Monthly Bookings
+                        </p>
+                        <p className="text-3xl font-bold text-blue-600">
+                          {stats.monthlyBookings ?? 0}
+                        </p>
+                      </div>
+                    </CardContent>
+                  </Card>
+                </motion.div>
 
-                <Card>
-                  <CardContent className="p-6">
-                    <div className="text-center">
-                      <p className="text-sm font-medium text-gray-600">
-                        Avg Bookings/Day
-                      </p>
-                      <p className="text-3xl font-bold text-green-600">
-                        {stats.avgBookingsPerDay ?? 0}
-                      </p>
-                    </div>
-                  </CardContent>
-                </Card>
+                <motion.div
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  transition={{ duration: 0.5 }}
+                >
+                  <Card>
+                    <CardContent className="p-6">
+                      <div className="text-center">
+                        <p className="text-sm font-medium text-gray-600">
+                          Avg Bookings/Day
+                        </p>
+                        <p className="text-3xl font-bold text-green-600">
+                          {stats.avgBookingsPerDay ?? 0}
+                        </p>
+                      </div>
+                    </CardContent>
+                  </Card>
+                </motion.div>
 
-                <Card>
-                  <CardContent className="p-6">
-                    <div className="text-center">
-                      <p className="text-sm font-medium text-gray-600">
-                        Total Tables
-                      </p>
-                      <p className="text-3xl font-bold text-purple-600">
-                        {stats.totalTables ?? 0}
-                      </p>
-                    </div>
-                  </CardContent>
-                </Card>
+                <motion.div
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  transition={{ duration: 0.5 }}
+                >
+                  <Card>
+                    <CardContent className="p-6">
+                      <div className="text-center">
+                        <p className="text-sm font-medium text-gray-600">
+                          Total Tables
+                        </p>
+                        <p className="text-3xl font-bold text-purple-600">
+                          {stats.totalTables ?? 0}
+                        </p>
+                      </div>
+                    </CardContent>
+                  </Card>
+                </motion.div>
               </div>
 
               {/* Charts Section */}
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                 {/* Booking Trends Chart */}
-                <Card>
-                  <CardHeader>
-                    <CardTitle>Booking Trends</CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    <ResponsiveContainer width="100%" height={300}>
-                      <LineChart data={bookingTrendsData}>
-                        <CartesianGrid strokeDasharray="3 3" />
-                        <XAxis dataKey="month" />
-                        <YAxis />
-                        <Tooltip />
-                        <Legend />
-                        <Line
-                          type="monotone"
-                          dataKey="bookings"
-                          stroke="#3B82F6"
-                          strokeWidth={2}
-                        />
-                      </LineChart>
-                    </ResponsiveContainer>
-                  </CardContent>
-                </Card>
+                <motion.div
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  transition={{ duration: 0.5 }}
+                >
+                  <Card>
+                    <CardHeader>
+                      <CardTitle>Booking Trends</CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                      <ResponsiveContainer width="100%" height={300}>
+                        <LineChart data={bookingTrendsData}>
+                          <CartesianGrid strokeDasharray="3 3" />
+                          <XAxis dataKey="month" />
+                          <YAxis />
+                          <Tooltip />
+                          <Legend />
+                          <Line
+                            type="monotone"
+                            dataKey="bookings"
+                            stroke="#3B82F6"
+                            strokeWidth={2}
+                          />
+                        </LineChart>
+                      </ResponsiveContainer>
+                    </CardContent>
+                  </Card>
+                </motion.div>
 
                 {/* Revenue Chart */}
-                <Card>
-                  <CardHeader>
-                    <CardTitle>Monthly Revenue</CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    <ResponsiveContainer width="100%" height={300}>
-                      <BarChart data={revenueData}>
-                        <CartesianGrid strokeDasharray="3 3" />
-                        <XAxis dataKey="month" />
-                        <YAxis />
-                        <Tooltip
-                          formatter={(value) => [`$${value}`, "Revenue"]}
-                        />
-                        <Bar dataKey="revenue" fill="#10B981" />
-                      </BarChart>
-                    </ResponsiveContainer>
-                  </CardContent>
-                </Card>
-
-                {/* Table Utilization Over Time */}
-                <Card>
-                  <CardHeader>
-                    <CardTitle>Table Utilization Throughout the Day</CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    <ResponsiveContainer width="100%" height={300}>
-                      <LineChart data={tableUtilizationData}>
-                        <CartesianGrid strokeDasharray="3 3" />
-                        <XAxis dataKey="time" />
-                        <YAxis />
-                        <Tooltip
-                          formatter={(value) => [`${value}%`, "Utilization"]}
-                        />
-                        <Line
-                          type="monotone"
-                          dataKey="utilization"
-                          stroke="#8B5CF6"
-                          strokeWidth={2}
-                        />
-                      </LineChart>
-                    </ResponsiveContainer>
-                  </CardContent>
-                </Card>
-
-                {/* Daily Bookings */}
-                <Card>
-                  <CardHeader>
-                    <CardTitle>Bookings by Day of Week</CardTitle>
-                    <p className="text-sm text-gray-600">
-                      Total data points: {dailyBookingsData?.length || 0}
-                    </p>
-                  </CardHeader>
-                  <CardContent>
-                    {dailyBookingsData && dailyBookingsData.length > 0 ? (
+                <motion.div
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  transition={{ duration: 0.5 }}
+                >
+                  <Card>
+                    <CardHeader>
+                      <CardTitle>Monthly Revenue</CardTitle>
+                    </CardHeader>
+                    <CardContent>
                       <ResponsiveContainer width="100%" height={300}>
-                        <BarChart
-                          data={dailyBookingsData}
-                          margin={{ top: 20, right: 30, left: 20, bottom: 5 }}
-                        >
+                        <BarChart data={revenueData}>
                           <CartesianGrid strokeDasharray="3 3" />
-                          <XAxis
-                            dataKey="day"
-                            tickLine={false}
-                            axisLine={false}
-                          />
-                          <YAxis tickLine={false} axisLine={false} />
+                          <XAxis dataKey="month" />
+                          <YAxis />
                           <Tooltip
-                            formatter={(value, name) => [
-                              `${value} bookings`,
-                              "Bookings",
-                            ]}
-                            labelFormatter={(label) => `${label}`}
+                            formatter={(value) => [`$${value}`, "Revenue"]}
                           />
-                          <Bar
-                            dataKey="bookings"
-                            fill="#F59E0B"
-                            radius={[4, 4, 0, 0]}
-                          />
+                          <Bar dataKey="revenue" fill="#10B981" />
                         </BarChart>
                       </ResponsiveContainer>
-                    ) : (
-                      <div className="h-[300px] flex items-center justify-center text-gray-500">
-                        No booking data available
-                      </div>
-                    )}
-                  </CardContent>
-                </Card>
+                    </CardContent>
+                  </Card>
+                </motion.div>
+
+                {/* Table Utilization Over Time */}
+                <motion.div
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  transition={{ duration: 0.5 }}
+                >
+                  <Card>
+                    <CardHeader>
+                      <CardTitle>Table Utilization Throughout the Day</CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                      <ResponsiveContainer width="100%" height={300}>
+                        <LineChart data={tableUtilizationData}>
+                          <CartesianGrid strokeDasharray="3 3" />
+                          <XAxis dataKey="time" />
+                          <YAxis />
+                          <Tooltip
+                            formatter={(value) => [`${value}%`, "Utilization"]}
+                          />
+                          <Line
+                            type="monotone"
+                            dataKey="utilization"
+                            stroke="#8B5CF6"
+                            strokeWidth={2}
+                          />
+                        </LineChart>
+                      </ResponsiveContainer>
+                    </CardContent>
+                  </Card>
+                </motion.div>
+
+                {/* Daily Bookings */}
+                <motion.div
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  transition={{ duration: 0.5 }}
+                >
+                  <Card>
+                    <CardHeader>
+                      <CardTitle>Bookings by Day of Week</CardTitle>
+                      <p className="text-sm text-gray-600">
+                        Total data points: {dailyBookingsData?.length || 0}
+                      </p>
+                    </CardHeader>
+                    <CardContent>
+                      {dailyBookingsData && dailyBookingsData.length > 0 ? (
+                        <ResponsiveContainer width="100%" height={300}>
+                          <BarChart
+                            data={dailyBookingsData}
+                            margin={{ top: 20, right: 30, left: 20, bottom: 5 }}
+                          >
+                            <CartesianGrid strokeDasharray="3 3" />
+                            <XAxis
+                              dataKey="day"
+                              tickLine={false}
+                              axisLine={false}
+                            />
+                            <YAxis tickLine={false} axisLine={false} />
+                            <Tooltip
+                              formatter={(value, name) => [
+                                `${value} bookings`,
+                                "Bookings",
+                              ]}
+                              labelFormatter={(label) => `${label}`}
+                            />
+                            <Bar
+                              dataKey="bookings"
+                              fill="#F59E0B"
+                              radius={[4, 4, 0, 0]}
+                            />
+                          </BarChart>
+                        </ResponsiveContainer>
+                      ) : (
+                        <div className="h-[300px] flex items-center justify-center text-gray-500">
+                          No booking data available
+                        </div>
+                      )}
+                    </CardContent>
+                  </Card>
+                </motion.div>
               </div>
 
               {/* Booking Status Pie Chart */}
-              <Card>
-                <CardHeader>
-                  <CardTitle>Booking Status Breakdown</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="flex flex-col lg:flex-row items-center justify-between">
-                    <div className="w-full lg:w-1/2">
-                      <ResponsiveContainer width="100%" height={300}>
-                        <PieChart>
-                          <Pie
-                            data={bookingStatusData}
-                            cx="50%"
-                            cy="50%"
-                            outerRadius={80}
-                            dataKey="value"
-                            label={({ name, value }) => `${name}: ${value}`}
+              <motion.div
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                transition={{ duration: 0.5 }}
+              >
+                <Card>
+                  <CardHeader>
+                    <CardTitle>Booking Status Breakdown</CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="flex flex-col lg:flex-row items-center justify-between">
+                      <div className="w-full lg:w-1/2">
+                        <ResponsiveContainer width="100%" height={300}>
+                          <PieChart>
+                            <Pie
+                              data={bookingStatusData}
+                              cx="50%"
+                              cy="50%"
+                              outerRadius={80}
+                              dataKey="value"
+                              label={({ name, value }) => `${name}: ${value}`}
+                            >
+                              {bookingStatusData.map((entry, index) => (
+                                <Cell key={`cell-${index}`} fill={entry.color} />
+                              ))}
+                            </Pie>
+                            <Tooltip />
+                          </PieChart>
+                        </ResponsiveContainer>
+                      </div>
+                      <div className="w-full lg:w-1/2 space-y-3">
+                        {bookingStatusData.map((entry, index) => (
+                          <div
+                            key={index}
+                            className="flex items-center justify-between"
                           >
-                            {bookingStatusData.map((entry, index) => (
-                              <Cell key={`cell-${index}`} fill={entry.color} />
-                            ))}
-                          </Pie>
-                          <Tooltip />
-                        </PieChart>
-                      </ResponsiveContainer>
-                    </div>
-                    <div className="w-full lg:w-1/2 space-y-3">
-                      {bookingStatusData.map((entry, index) => (
-                        <div
-                          key={index}
-                          className="flex items-center justify-between"
-                        >
-                          <div className="flex items-center space-x-2">
-                            <div
-                              className="w-4 h-4 rounded-full"
-                              style={{ backgroundColor: entry.color }}
-                            ></div>
-                            <span className="font-medium">{entry.name}</span>
+                            <div className="flex items-center space-x-2">
+                              <div
+                                className="w-4 h-4 rounded-full"
+                                style={{ backgroundColor: entry.color }}
+                              ></div>
+                              <span className="font-medium">{entry.name}</span>
+                            </div>
+                            <div className="font-medium">
+                              {entry.value} bookings
+                            </div>
                           </div>
-                          <div className="font-medium">
-                            {entry.value} bookings
-                          </div>
-                        </div>
-                      ))}
+                        ))}
+                      </div>
                     </div>
-                  </div>
-                </CardContent>
-              </Card>
+                  </CardContent>
+                </Card>
+              </motion.div>
             </>
           ) : (
             <div className="text-center text-gray-500 mt-8">
