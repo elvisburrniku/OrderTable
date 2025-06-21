@@ -11,7 +11,15 @@ import { Badge } from "@/components/ui/badge";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { Trash2, Calendar as CalendarIcon, ToggleRight, ToggleLeft, Clock, Search, ChevronDown, Edit, ChevronLeft, ChevronRight, Plus, Filter, Eye } from "lucide-react";
+import { 
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger
+} from "@/components/ui/dropdown-menu";
+import { Trash2, Calendar as CalendarIcon, ToggleRight, ToggleLeft, Clock, Search, ChevronDown, Edit, ChevronLeft, ChevronRight, Plus, Filter, Eye, MoreHorizontal, Users } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
 import { useScrollToTop } from "@/hooks/use-scroll-to-top";
 import { motion } from "framer-motion";
@@ -40,7 +48,7 @@ export default function SpecialPeriods() {
   const [dateFilter, setDateFilter] = useState("all");
   const [showFilters, setShowFilters] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
-  const [itemsPerPage, setItemsPerPage] = useState(7);
+  const [itemsPerPage, setItemsPerPage] = useState(5);
   const [showPeriodModal, setShowPeriodModal] = useState(false);
   const [selectedPeriod, setSelectedPeriod] = useState<SpecialPeriod | null>(null);
   const [isEditing, setIsEditing] = useState(false);
@@ -364,20 +372,51 @@ export default function SpecialPeriods() {
 
 
   return (
-    <div className="container mx-auto py-6 space-y-6">
-      {/* Main Card */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <CalendarIcon className="h-6 w-6 text-green-600" />
-            Special Periods
-          </CardTitle>
-          <CardDescription>
-            Define periods with different opening hours and closing times
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <h2 className="text-lg font-semibold text-gray-900 mb-6">Period Management</h2>
+    <div className="min-h-screen bg-gray-50">
+      <div className="p-6">
+        <div className="bg-white rounded-lg shadow">
+          {/* Header */}
+          <div className="p-6 border-b">
+            <div className="flex items-center justify-between">
+              <motion.h1 
+                initial={{ opacity: 0, x: -20 }}
+                animate={{ opacity: 1, x: 0 }}
+                transition={{ duration: 0.5, delay: 0.1 }}
+                className="text-2xl font-bold text-gray-900 flex items-center gap-2"
+              >
+                <CalendarIcon className="h-6 w-6 text-green-600" />
+                Special Periods
+              </motion.h1>
+              <motion.div
+                initial={{ opacity: 0, x: 20 }}
+                animate={{ opacity: 1, x: 0 }}
+                transition={{ duration: 0.5, delay: 0.2 }}
+              >
+                <Button
+                  onClick={() => {
+                    setSelectedPeriod({
+                      name: "",
+                      startDate: "",
+                      endDate: "",
+                      isOpen: true,
+                      openTime: "09:00",
+                      closeTime: "22:00"
+                    });
+                    setIsEditing(true);
+                    setShowPeriodModal(true);
+                  }}
+                  className="bg-green-600 hover:bg-green-700 text-white flex items-center space-x-2"
+                >
+                  <Plus className="w-4 h-4" />
+                  <span>New Period</span>
+                </Button>
+              </motion.div>
+            </div>
+          </div>
+
+          {/* Filters Section */}
+          <div className="p-6 border-b">
+            <h2 className="text-lg font-semibold text-gray-900 mb-6">Special Periods</h2>
 
           {/* Modern Filters Section */}
           <motion.div 
@@ -767,8 +806,8 @@ export default function SpecialPeriods() {
               </div>
             </motion.div>
           )}
-        </CardContent>
-      </Card>
+        </div>
+      </div>
 
       {/* Period Detail Modal */}
       <Dialog open={showPeriodModal} onOpenChange={setShowPeriodModal}>
@@ -782,14 +821,12 @@ export default function SpecialPeriods() {
           {selectedPeriod && (
             <div className="space-y-6">
               {/* Period Information */}
-              <Card>
-                <CardHeader>
-                  <CardTitle className="flex items-center gap-2 text-lg">
-                    <Clock className="w-5 h-5" />
-                    Period Information
-                  </CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-3">
+              <div className="border rounded-lg p-4">
+                <h3 className="flex items-center gap-2 text-lg font-semibold mb-4">
+                  <Clock className="w-5 h-5" />
+                  Period Information
+                </h3>
+                <div className="space-y-3">
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div>
                       <label className="text-sm font-medium text-gray-600">Period Name</label>
@@ -824,8 +861,8 @@ export default function SpecialPeriods() {
                       </>
                     )}
                   </div>
-                </CardContent>
-              </Card>
+                </div>
+              </div>
 
               {/* Actions */}
               <div className="flex gap-3 pt-4">
@@ -843,6 +880,7 @@ export default function SpecialPeriods() {
           )}
         </DialogContent>
       </Dialog>
+      </div>
     </div>
   );
 }
