@@ -395,7 +395,7 @@ export default function PrintOrders() {
                                 {[statusFilter !== 'all', paymentFilter !== 'all', searchTerm].filter(Boolean).length}
                               </span>
                             )}
-                            <ChevronDown className={`w-4 h-4 transform transition-transform duration-200 ${showFilters ? 'rotate-180' : ''}`} />
+                            <ChevronDown className={showFilters ? "w-4 h-4 transform transition-transform duration-200 rotate-180" : "w-4 h-4 transform transition-transform duration-200"} />
                           </Button>
                         </CollapsibleTrigger>
 
@@ -587,9 +587,7 @@ export default function PrintOrders() {
                           paginatedPrintOrders.map((order: PrintOrder, index: number) => (
                             <tr 
                               key={order.id} 
-                              className={`group hover:bg-blue-50 cursor-pointer transition-all duration-200 ${
-                                index % 2 === 0 ? 'bg-white' : 'bg-gray-50/50'
-                              }`}
+                              className={`group hover:bg-blue-50 cursor-pointer transition-all duration-200 ${index % 2 === 0 ? 'bg-white' : 'bg-gray-50/50'}`}
                               onClick={() => handleViewTracking(order)}
                             >
                               <td className="py-3 px-4">
@@ -706,7 +704,7 @@ export default function PrintOrders() {
                             if (totalPages <= 3) {
                               pageNum = i + 1;
                             } else if (currentPage <= 2) {
-                              ```text
+
 pageNum = i + 1;
                             } else if (currentPage >= totalPages - 1) {
                               pageNum = totalPages - 2 + i;
@@ -720,11 +718,7 @@ pageNum = i + 1;
                                 variant={currentPage === pageNum ? "default" : "outline"}
                                 size="sm"
                                 onClick={() => setCurrentPage(pageNum)}
-                                className={`w-8 h-8 p-0 ${
-                                  currentPage === pageNum 
-                                    ? "bg-green-600 hover:bg-green-700 text-white" 
-                                    : "hover:bg-green-50"
-                                }`}
+                                className={currentPage === pageNum ? "w-8 h-8 p-0 bg-green-600 hover:bg-green-700 text-white" : "w-8 h-8 p-0 hover:bg-green-50"}
                               >
                                 {pageNum}
                               </Button>

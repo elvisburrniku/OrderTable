@@ -610,7 +610,6 @@ export default function WaitingList() {
           )}
         </div>
       </div>
-    </div>
 
       {/* Add/Edit Entry Dialog */}
       <Dialog open={showForm} onOpenChange={(open) => {
