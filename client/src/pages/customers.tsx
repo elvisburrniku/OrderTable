@@ -406,7 +406,7 @@ export default function Customers() {
                           className={`group hover:bg-blue-50 cursor-pointer transition-all duration-200 ${
                             index % 2 === 0 ? 'bg-white' : 'bg-gray-50/50'
                           }`}
-                        ></motion.tr>
+                        >
                           <td className="py-3 px-4">
                             <div className="flex items-center">
                               <span className="text-blue-600 font-semibold text-sm bg-blue-50 px-2 py-1 rounded-md">
