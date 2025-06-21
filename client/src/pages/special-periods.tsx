@@ -641,14 +641,7 @@ export default function SpecialPeriods() {
                 </Collapsible>
               </div>
 
-              <Button
-                onClick={addPeriod}
-                className="bg-green-600 hover:bg-green-700 text-white h-10 px-4 flex items-center space-x-2"
-              >
-                <Plus className="w-4 h-4" />
-                <span>Add Period</span>
-              </Button>
-            </div>
+              </div>
           </motion.div>
 
           {/* Enhanced Table */}
