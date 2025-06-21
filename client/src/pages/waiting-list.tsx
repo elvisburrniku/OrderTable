@@ -477,7 +477,7 @@ export default function WaitingList() {
                       animate={{ opacity: 1, y: 0 }}
                       transition={{ duration: 0.3, delay: index * 0.05 }}
                       className="border-b border-gray-100 hover:bg-gray-50"
-                    ></motion.tr>
+                    >
                       <td className="py-4 px-4">
                         <span className="text-blue-600 font-medium">#{startIndex + index + 1}</span>
                       </td>
