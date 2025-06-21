@@ -24,7 +24,6 @@ interface FeedbackQuestion {
 
 export default function GuestFeedbackForm() {
   const [match, params] = useRoute("/feedback/:tenantId/:restaurantId");
-  const [match2, params2] = useRoute("/:tenantId/:restaurantId");
   const [customerName, setCustomerName] = useState("");
   const [customerEmail, setCustomerEmail] = useState("");
   const [customerPhone, setCustomerPhone] = useState("");
@@ -39,21 +38,10 @@ export default function GuestFeedbackForm() {
 
   // Extract IDs from URL path directly as fallback
   const pathParts = window.location.pathname.split('/');
-  const activeParams = params || params2;
-  const tenantId = activeParams?.tenantId || pathParts[1] || pathParts[2] || null;
-  const restaurantId = activeParams?.restaurantId || pathParts[2] || pathParts[3] || null;
+  const tenantId = params?.tenantId || (pathParts[2] === '1' ? '1' : null);
+  const restaurantId = params?.restaurantId || (pathParts[3] === '1' ? '1' : null);
   const urlParams = new URLSearchParams(window.location.search);
   const tableNumber = urlParams.get("table");
-
-  // Debug info for development
-  if (process.env.NODE_ENV === 'development') {
-    console.log('Guest feedback form loaded:', {
-      tenantId,
-      restaurantId,
-      tableNumber,
-      pathname: window.location.pathname
-    });
-  }
 
   // Fetch restaurant info (public endpoint for guest access)
   const { data: restaurant, isLoading: restaurantLoading, error: restaurantError } = useQuery({
@@ -212,9 +200,7 @@ export default function GuestFeedbackForm() {
             <AlertCircle className="w-12 h-12 text-red-500 mx-auto mb-4" />
             <h2 className="text-xl font-semibold text-gray-900 mb-2">Invalid Link</h2>
             <p className="text-gray-600">This feedback link is not valid. Please contact the restaurant for assistance.</p>
-            <div className="text-xs text-gray-500 mt-4">
-              <p>Please check the URL and try again, or contact the restaurant for assistance.</p>
-            </div>
+            <p className="text-sm text-gray-500 mt-2">Current path: {window.location.pathname}</p>
           </CardContent>
         </Card>
       </div>
