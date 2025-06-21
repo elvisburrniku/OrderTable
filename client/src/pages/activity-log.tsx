@@ -12,6 +12,13 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
 import { Link } from "wouter";
 import { 
   Activity, 
@@ -23,7 +30,8 @@ import {
   ChevronRight,
   User,
   Clock,
-  Shield
+  Shield,
+  Eye
 } from "lucide-react";
 import { motion } from "framer-motion";
 
@@ -41,6 +49,7 @@ export default function ActivityLog() {
   const [showFilters, setShowFilters] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage, setItemsPerPage] = useState(7);
+  const [selectedLogDetails, setSelectedLogDetails] = useState<any>(null);
 
   const { data: activityLog, isLoading } = useQuery({
     queryKey: [
@@ -75,6 +84,15 @@ export default function ActivityLog() {
       userEmail: user.email,
       details: "95.91.187.122.150",
       restaurantId: restaurant.id,
+      detailedInfo: {
+        method: "GET",
+        path: `/api/tenants/${restaurant.tenantId}/restaurants/${restaurant.id}/activity-log`,
+        statusCode: 200,
+        responseTime: 1050,
+        bodySize: 2,
+        userAgent: "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/137.0.0.0 Safari/537.36",
+        referer: `https://956c0aa1-3133-45f4-91e5-7913f55a3c0d-00-1r4pplstshkhm.riker.replit.dev/${restaurant.tenantId}/activity-log`
+      }
     },
     {
       id: "13581297",
@@ -85,6 +103,15 @@ export default function ActivityLog() {
       userEmail: user.email,
       details: `Booking for ${restaurant.name}`,
       restaurantId: restaurant.id,
+      detailedInfo: {
+        method: "POST",
+        path: `/api/tenants/${restaurant.tenantId}/restaurants/${restaurant.id}/bookings`,
+        statusCode: 201,
+        responseTime: 856,
+        bodySize: 145,
+        userAgent: "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/137.0.0.0 Safari/537.36",
+        referer: `https://956c0aa1-3133-45f4-91e5-7913f55a3c0d-00-1r4pplstshkhm.riker.replit.dev/${restaurant.tenantId}/bookings`
+      }
     },
     {
       id: "13581253",
@@ -95,6 +122,15 @@ export default function ActivityLog() {
       userEmail: user.email,
       details: `Table booking confirmed for ${restaurant.name}`,
       restaurantId: restaurant.id,
+      detailedInfo: {
+        method: "PATCH",
+        path: `/api/tenants/${restaurant.tenantId}/restaurants/${restaurant.id}/bookings/123`,
+        statusCode: 200,
+        responseTime: 634,
+        bodySize: 89,
+        userAgent: "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/137.0.0.0 Safari/537.36",
+        referer: `https://956c0aa1-3133-45f4-91e5-7913f55a3c0d-00-1r4pplstshkhm.riker.replit.dev/${restaurant.tenantId}/booking-manage/123`
+      }
     },
   ];
 
@@ -372,23 +408,23 @@ export default function ActivityLog() {
                 <table className="w-full">
                   <thead>
                     <tr className="bg-gray-50 border-b border-gray-200">
-                      <th className="text-left py-3 px-4 text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      <th className="text-left py-4 px-6 text-xs font-medium text-gray-500 uppercase tracking-wider">
                         Event ID
                       </th>
-                      <th className="text-left py-3 px-4 text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      <th className="text-left py-4 px-6 text-xs font-medium text-gray-500 uppercase tracking-wider">
                         Timestamp
                       </th>
-                      <th className="text-left py-3 px-4 text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      <th className="text-left py-4 px-6 text-xs font-medium text-gray-500 uppercase tracking-wider">
                         Source
                       </th>
-                      <th className="text-left py-3 px-4 text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      <th className="text-left py-4 px-6 text-xs font-medium text-gray-500 uppercase tracking-wider">
                         Event Type
                       </th>
-                      <th className="text-left py-3 px-4 text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      <th className="text-left py-4 px-6 text-xs font-medium text-gray-500 uppercase tracking-wider">
                         User
                       </th>
-                      <th className="text-left py-3 px-4 text-xs font-medium text-gray-500 uppercase tracking-wider">
-                        Details
+                      <th className="text-center py-4 px-6 text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Actions
                       </th>
                     </tr>
                   </thead>
@@ -423,40 +459,130 @@ export default function ActivityLog() {
                           initial={{ opacity: 0, y: 10 }}
                           animate={{ opacity: 1, y: 0 }}
                           transition={{ duration: 0.3, delay: index * 0.05 }}
-                          className={`group hover:bg-blue-50 cursor-pointer transition-all duration-200 ${
+                          className={`group hover:bg-blue-50 transition-all duration-200 ${
                             index % 2 === 0 ? 'bg-white' : 'bg-gray-50/50'
                           }`}
                         >
-                          <td className="py-3 px-4">
-                            <span className="text-blue-600 font-semibold text-sm bg-blue-50 px-2 py-1 rounded-md">
+                          <td className="py-4 px-6">
+                            <span className="text-blue-600 font-semibold text-sm bg-blue-50 px-3 py-1.5 rounded-md">
                               #{log.id}
                             </span>
                           </td>
-                          <td className="py-3 px-4">
+                          <td className="py-4 px-6">
                             <div className="flex items-center space-x-2">
                               <Clock className="w-4 h-4 text-gray-400" />
                               <span className="text-sm text-gray-900">{log.createdAt}</span>
                             </div>
                           </td>
-                          <td className="py-3 px-4">
+                          <td className="py-4 px-6">
                             {getSourceBadge(log.source)}
                           </td>
-                          <td className="py-3 px-4">
+                          <td className="py-4 px-6">
                             {getEventBadge(log.eventType)}
                           </td>
-                          <td className="py-3 px-4">
+                          <td className="py-4 px-6">
                             <div className="flex items-center space-x-3">
                               <div className="w-8 h-8 bg-gradient-to-br from-green-400 to-green-600 rounded-full flex items-center justify-center text-white font-medium text-sm">
                                 <User className="w-4 h-4" />
                               </div>
-                              <div>
-                                <div className="font-medium text-gray-900">{log.userEmail}</div>
-                                <div className="text-sm text-gray-500">{log.description}</div>
+                              <div className="min-w-0 flex-1">
+                                <div className="font-medium text-gray-900 truncate">{log.userEmail}</div>
+                                <div className="text-sm text-gray-500 truncate">{log.description}</div>
                               </div>
                             </div>
                           </td>
-                          <td className="py-3 px-4 text-sm text-gray-600">
-                            {log.details}
+                          <td className="py-4 px-6 text-center">
+                            <Dialog>
+                              <DialogTrigger asChild>
+                                <Button 
+                                  variant="ghost" 
+                                  size="sm"
+                                  className="h-8 w-8 p-0 hover:bg-blue-100 hover:text-blue-600 transition-colors duration-200"
+                                  onClick={() => setSelectedLogDetails(log)}
+                                >
+                                  <Eye className="h-4 w-4" />
+                                </Button>
+                              </DialogTrigger>
+                              <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
+                                <DialogHeader>
+                                  <DialogTitle className="flex items-center gap-2">
+                                    <Activity className="h-5 w-5 text-green-600" />
+                                    Activity Details - #{log.id}
+                                  </DialogTitle>
+                                </DialogHeader>
+                                <div className="space-y-6">
+                                  {/* Basic Info */}
+                                  <div className="grid grid-cols-2 gap-4">
+                                    <div className="space-y-2">
+                                      <h4 className="font-medium text-gray-900">Basic Information</h4>
+                                      <div className="bg-gray-50 p-3 rounded-lg space-y-2">
+                                        <div className="flex justify-between">
+                                          <span className="text-sm text-gray-600">Event ID:</span>
+                                          <span className="text-sm font-medium">#{log.id}</span>
+                                        </div>
+                                        <div className="flex justify-between">
+                                          <span className="text-sm text-gray-600">Timestamp:</span>
+                                          <span className="text-sm font-medium">{log.createdAt}</span>
+                                        </div>
+                                        <div className="flex justify-between">
+                                          <span className="text-sm text-gray-600">User:</span>
+                                          <span className="text-sm font-medium">{log.userEmail}</span>
+                                        </div>
+                                        <div className="flex justify-between">
+                                          <span className="text-sm text-gray-600">Event Type:</span>
+                                          <span className="text-sm">{getEventBadge(log.eventType)}</span>
+                                        </div>
+                                        <div className="flex justify-between">
+                                          <span className="text-sm text-gray-600">Source:</span>
+                                          <span className="text-sm">{getSourceBadge(log.source)}</span>
+                                        </div>
+                                      </div>
+                                    </div>
+                                    
+                                    <div className="space-y-2">
+                                      <h4 className="font-medium text-gray-900">Restaurant Context</h4>
+                                      <div className="bg-gray-50 p-3 rounded-lg space-y-2">
+                                        <div className="flex justify-between">
+                                          <span className="text-sm text-gray-600">Tenant ID:</span>
+                                          <span className="text-sm font-medium">{restaurant.tenantId}</span>
+                                        </div>
+                                        <div className="flex justify-between">
+                                          <span className="text-sm text-gray-600">Restaurant ID:</span>
+                                          <span className="text-sm font-medium">{restaurant.id}</span>
+                                        </div>
+                                        <div className="flex justify-between">
+                                          <span className="text-sm text-gray-600">Restaurant:</span>
+                                          <span className="text-sm font-medium">{restaurant.name}</span>
+                                        </div>
+                                      </div>
+                                    </div>
+                                  </div>
+
+                                  {/* Technical Details */}
+                                  {log.detailedInfo && (
+                                    <div className="space-y-2">
+                                      <h4 className="font-medium text-gray-900">Technical Details</h4>
+                                      <div className="bg-gray-900 text-green-400 p-4 rounded-lg font-mono text-sm overflow-x-auto">
+                                        <pre className="whitespace-pre-wrap">
+{JSON.stringify(log.detailedInfo, null, 2)}
+                                        </pre>
+                                      </div>
+                                    </div>
+                                  )}
+
+                                  {/* Description */}
+                                  <div className="space-y-2">
+                                    <h4 className="font-medium text-gray-900">Description</h4>
+                                    <div className="bg-blue-50 border border-blue-200 p-3 rounded-lg">
+                                      <p className="text-sm text-blue-800">{log.description}</p>
+                                      {log.details && (
+                                        <p className="text-xs text-blue-600 mt-1">{log.details}</p>
+                                      )}
+                                    </div>
+                                  </div>
+                                </div>
+                              </DialogContent>
+                            </Dialog>
                           </td>
                         </motion.tr>
                       ))
