@@ -247,7 +247,7 @@ export default function OpeningHours() {
                       transition={{ duration: 0.3 }}
                       className="bg-gray-50 rounded-xl p-6 border-2 border-gray-100"
                     >
-                      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                         {/* Search Input */}
                         <div className="relative">
                           <label className="block text-sm font-medium text-gray-700 mb-2">Search</label>
@@ -287,17 +287,7 @@ export default function OpeningHours() {
                           </Select>
                         </div>
 
-                        {/* Actions */}
-                        <div className="flex items-end space-x-2">
-                          <Button variant="outline" onClick={resetToDefaults} className="h-11 flex items-center space-x-2 hover:bg-blue-50 hover:border-blue-500 transition-all duration-200">
-                            <RotateCcw className="w-4 h-4" />
-                            <span>Reset</span>
-                          </Button>
-                          <Button variant="outline" onClick={applyToAllDays} className="h-11 flex items-center space-x-2 hover:bg-purple-50 hover:border-purple-500 transition-all duration-200">
-                            <CalendarIcon className="w-4 h-4" />
-                            <span>Copy to All</span>
-                          </Button>
-                        </div>
+
                       </div>
 
                       {/* Filter Actions */}
