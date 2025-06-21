@@ -3,12 +3,14 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useAuth } from "@/lib/auth.tsx";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
-import { Trash2 } from "lucide-react";
+import { Badge } from "@/components/ui/badge";
+import { Trash2, Calendar as CalendarIcon, ToggleRight, ToggleLeft, Clock } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
 import { useScrollToTop } from "@/hooks/use-scroll-to-top";
+import { motion } from "framer-motion";
 
 interface SpecialPeriod {
   id?: number;
