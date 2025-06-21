@@ -601,7 +601,7 @@ export default function ActivityLog() {
 
         {/* Detail Modal */}
         <Dialog open={showDetailModal} onOpenChange={setShowDetailModal}>
-          <DialogContent className="sm:max-w-[700px] max-h-[80vh] overflow-y-auto">
+          <DialogContent className="sm:max-w-[600px]">
             <DialogHeader>
               <DialogTitle className="flex items-center space-x-2">
                 <Info className="w-5 h-5 text-blue-600" />
@@ -636,40 +636,6 @@ export default function ActivityLog() {
                   </div>
                 </div>
 
-                {/* Tenant & Restaurant Information */}
-                <div className="border rounded-lg p-4 bg-blue-50">
-                  <h3 className="font-medium text-gray-900 mb-3 flex items-center space-x-2">
-                    <Shield className="w-4 h-4 text-blue-600" />
-                    <span>Tenant & Restaurant Information</span>
-                  </h3>
-                  <div className="grid grid-cols-2 gap-4">
-                    <div>
-                      <label className="text-sm font-medium text-gray-700">Tenant ID</label>
-                      <p className="text-sm text-gray-900 font-mono bg-white px-2 py-1 rounded border">
-                        {selectedLog.tenantId || restaurant?.tenantId || 'N/A'}
-                      </p>
-                    </div>
-                    <div>
-                      <label className="text-sm font-medium text-gray-700">Restaurant ID</label>
-                      <p className="text-sm text-gray-900 font-mono bg-white px-2 py-1 rounded border">
-                        {selectedLog.restaurantId || restaurant?.id || 'N/A'}
-                      </p>
-                    </div>
-                    <div>
-                      <label className="text-sm font-medium text-gray-700">Restaurant Name</label>
-                      <p className="text-sm text-gray-900 bg-white px-2 py-1 rounded border">
-                        {restaurant?.name || 'Current Restaurant'}
-                      </p>
-                    </div>
-                    <div>
-                      <label className="text-sm font-medium text-gray-700">Tenant Name</label>
-                      <p className="text-sm text-gray-900 bg-white px-2 py-1 rounded border">
-                        {restaurant?.tenantName || 'Current Tenant'}
-                      </p>
-                    </div>
-                  </div>
-                </div>
-
                 {/* User Information */}
                 <div className="border rounded-lg p-4">
                   <h3 className="font-medium text-gray-900 mb-3 flex items-center space-x-2">
@@ -677,27 +643,9 @@ export default function ActivityLog() {
                     <span>User Information</span>
                   </h3>
                   <div className="space-y-3">
-                    <div className="grid grid-cols-2 gap-4">
-                      <div>
-                        <label className="text-sm font-medium text-gray-700">User Email</label>
-                        <p className="text-sm text-gray-900">{selectedLog.userEmail || 'N/A'}</p>
-                      </div>
-                      <div>
-                        <label className="text-sm font-medium text-gray-700">User Login</label>
-                        <p className="text-sm text-gray-900">{selectedLog.userLogin || 'N/A'}</p>
-                      </div>
-                      {selectedLog.guestEmail && (
-                        <div>
-                          <label className="text-sm font-medium text-gray-700">Guest Email</label>
-                          <p className="text-sm text-gray-900">{selectedLog.guestEmail}</p>
-                        </div>
-                      )}
-                      {selectedLog.ipAddress && (
-                        <div>
-                          <label className="text-sm font-medium text-gray-700">IP Address</label>
-                          <p className="text-sm text-gray-900 font-mono">{selectedLog.ipAddress}</p>
-                        </div>
-                      )}
+                    <div>
+                      <label className="text-sm font-medium text-gray-700">Email</label>
+                      <p className="text-sm text-gray-900">{selectedLog.userEmail}</p>
                     </div>
                     <div>
                       <label className="text-sm font-medium text-gray-700">Description</label>
@@ -706,76 +654,26 @@ export default function ActivityLog() {
                   </div>
                 </div>
 
-                {/* Technical Details */}
-                {(selectedLog.userAgent || selectedLog.ipAddress) && (
-                  <div className="border rounded-lg p-4">
-                    <h3 className="font-medium text-gray-900 mb-3 flex items-center space-x-2">
-                      <Shield className="w-4 h-4" />
-                      <span>Technical Information</span>
-                    </h3>
-                    <div className="space-y-3">
-                      {selectedLog.ipAddress && (
-                        <div>
-                          <label className="text-sm font-medium text-gray-700">IP Address</label>
-                          <p className="text-sm text-gray-900 font-mono bg-gray-50 px-2 py-1 rounded">
-                            {selectedLog.ipAddress}
-                          </p>
-                        </div>
-                      )}
-                      {selectedLog.userAgent && (
-                        <div>
-                          <label className="text-sm font-medium text-gray-700">User Agent</label>
-                          <p className="text-sm text-gray-900 font-mono bg-gray-50 px-2 py-1 rounded break-all">
-                            {selectedLog.userAgent}
-                          </p>
-                        </div>
-                      )}
-                    </div>
+                {/* Additional Details */}
+                <div className="border rounded-lg p-4">
+                  <h3 className="font-medium text-gray-900 mb-3 flex items-center space-x-2">
+                    <Shield className="w-4 h-4" />
+                    <span>Additional Details</span>
+                  </h3>
+                  <div className="bg-gray-50 rounded p-3">
+                    <p className="text-sm text-gray-900 font-mono break-all">
+                      {selectedLog.details || 'No additional details available'}
+                    </p>
                   </div>
-                )}
+                </div>
 
-                {/* Event-Specific Details */}
-                {selectedLog.details && (
+                {/* Restaurant Info */}
+                {selectedLog.restaurantId && (
                   <div className="border rounded-lg p-4">
-                    <h3 className="font-medium text-gray-900 mb-3 flex items-center space-x-2">
-                      <Shield className="w-4 h-4" />
-                      <span>Event Details</span>
-                    </h3>
-                    <div className="bg-gray-50 rounded p-3">
-                      <pre className="text-sm text-gray-900 whitespace-pre-wrap break-all">
-                        {typeof selectedLog.details === 'object' 
-                          ? JSON.stringify(selectedLog.details, null, 2)
-                          : selectedLog.details || 'No additional details available'
-                        }
-                      </pre>
-                    </div>
-                  </div>
-                )}
-
-                {/* Related Entity IDs */}
-                {(selectedLog.bookingId || selectedLog.customerId) && (
-                  <div className="border rounded-lg p-4">
-                    <h3 className="font-medium text-gray-900 mb-3 flex items-center space-x-2">
-                      <Shield className="w-4 h-4" />
-                      <span>Related Entities</span>
-                    </h3>
-                    <div className="grid grid-cols-2 gap-4">
-                      {selectedLog.bookingId && (
-                        <div>
-                          <label className="text-sm font-medium text-gray-700">Booking ID</label>
-                          <p className="text-sm text-gray-900 font-mono bg-gray-50 px-2 py-1 rounded">
-                            #{selectedLog.bookingId}
-                          </p>
-                        </div>
-                      )}
-                      {selectedLog.customerId && (
-                        <div>
-                          <label className="text-sm font-medium text-gray-700">Customer ID</label>
-                          <p className="text-sm text-gray-900 font-mono bg-gray-50 px-2 py-1 rounded">
-                            #{selectedLog.customerId}
-                          </p>
-                        </div>
-                      )}
+                    <h3 className="font-medium text-gray-900 mb-3">Restaurant</h3>
+                    <div>
+                      <label className="text-sm font-medium text-gray-700">Restaurant ID</label>
+                      <p className="text-sm text-gray-900">{selectedLog.restaurantId}</p>
                     </div>
                   </div>
                 )}
