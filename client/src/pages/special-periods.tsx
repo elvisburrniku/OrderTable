@@ -667,14 +667,7 @@ export default function SpecialPeriods() {
                         </td>
                         <td className="py-3 px-4">
                           <div className="flex items-center space-x-2">
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              onClick={() => handleViewPeriodDetails(period)}
-                              className="h-8 w-8 p-0"
-                            >
-                              <Eye className="w-4 h-4" />
-                            </Button>
+
                             <Button
                               variant="outline"
                               size="sm"
@@ -815,65 +808,111 @@ export default function SpecialPeriods() {
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
               <CalendarIcon className="w-5 h-5 text-green-600" />
-              {isEditing ? "Edit" : "View"} Special Period - {selectedPeriod?.name}
+              {selectedPeriod?.id ? "Edit Special Period" : "Add New Special Period"}
             </DialogTitle>
           </DialogHeader>
           {selectedPeriod && (
             <div className="space-y-6">
-              {/* Period Information */}
-              <div className="border rounded-lg p-4">
-                <h3 className="flex items-center gap-2 text-lg font-semibold mb-4">
-                  <Clock className="w-5 h-5" />
-                  Period Information
-                </h3>
-                <div className="space-y-3">
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div>
-                      <label className="text-sm font-medium text-gray-600">Period Name</label>
-                      <p className="text-lg">{selectedPeriod.name}</p>
-                    </div>
-                    <div>
-                      <label className="text-sm font-medium text-gray-600">Status</label>
-                      <div className="mt-1">{getStatusBadge(selectedPeriod.isOpen, selectedPeriod.startDate, selectedPeriod.endDate)}</div>
-                    </div>
-                    <div>
-                      <label className="text-sm font-medium text-gray-600">Start Date</label>
-                      <p className="text-lg">
-                        {format(new Date(selectedPeriod.startDate), "MMM dd, yyyy")}
-                      </p>
-                    </div>
-                    <div>
-                      <label className="text-sm font-medium text-gray-600">End Date</label>
-                      <p className="text-lg">
-                        {format(new Date(selectedPeriod.endDate), "MMM dd, yyyy")}
-                      </p>
-                    </div>
-                    {selectedPeriod.isOpen && (
-                      <>
-                        <div>
-                          <label className="text-sm font-medium text-gray-600">Opening Time</label>
-                          <p className="text-lg">{selectedPeriod.openTime}</p>
-                        </div>
-                        <div>
-                          <label className="text-sm font-medium text-gray-600">Closing Time</label>
-                          <p className="text-lg">{selectedPeriod.closeTime}</p>
-                        </div>
-                      </>
-                    )}
+              {/* Period Form */}
+              <div className="space-y-4">
+                <div>
+                  <Label htmlFor="period-name">Period Name *</Label>
+                  <Input
+                    id="period-name"
+                    value={selectedPeriod.name}
+                    onChange={(e) => setSelectedPeriod({...selectedPeriod, name: e.target.value})}
+                    placeholder="Enter period name (e.g., Christmas Holiday)"
+                  />
+                </div>
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <Label htmlFor="start-date">Start Date *</Label>
+                    <Input
+                      id="start-date"
+                      type="date"
+                      value={selectedPeriod.startDate}
+                      onChange={(e) => setSelectedPeriod({...selectedPeriod, startDate: e.target.value})}
+                    />
+                  </div>
+                  <div>
+                    <Label htmlFor="end-date">End Date *</Label>
+                    <Input
+                      id="end-date"
+                      type="date"
+                      value={selectedPeriod.endDate}
+                      onChange={(e) => setSelectedPeriod({...selectedPeriod, endDate: e.target.value})}
+                    />
                   </div>
                 </div>
+                <div className="flex items-center space-x-2">
+                  <Switch
+                    id="is-open"
+                    checked={selectedPeriod.isOpen}
+                    onCheckedChange={(checked) => setSelectedPeriod({...selectedPeriod, isOpen: checked})}
+                  />
+                  <Label htmlFor="is-open">Restaurant is open during this period</Label>
+                </div>
+                {selectedPeriod.isOpen && (
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <Label htmlFor="open-time">Opening Time</Label>
+                      <Input
+                        id="open-time"
+                        type="time"
+                        value={selectedPeriod.openTime}
+                        onChange={(e) => setSelectedPeriod({...selectedPeriod, openTime: e.target.value})}
+                      />
+                    </div>
+                    <div>
+                      <Label htmlFor="close-time">Closing Time</Label>
+                      <Input
+                        id="close-time"
+                        type="time"
+                        value={selectedPeriod.closeTime}
+                        onChange={(e) => setSelectedPeriod({...selectedPeriod, closeTime: e.target.value})}
+                      />
+                    </div>
+                  </div>
+                )}
               </div>
 
               {/* Actions */}
               <div className="flex gap-3 pt-4">
-                {!isEditing && (
-                  <Button onClick={() => setIsEditing(true)} className="flex items-center gap-2">
-                    <Edit className="w-4 h-4" />
-                    Edit Period
-                  </Button>
-                )}
-                <Button onClick={handleClosePeriodModal} variant="outline" className="flex-1">
-                  Close
+                <Button 
+                  onClick={async () => {
+                    if (!selectedPeriod.name || !selectedPeriod.startDate || !selectedPeriod.endDate) {
+                      toast({
+                        title: "Error",
+                        description: "Please fill in all required fields.",
+                        variant: "destructive",
+                      });
+                      return;
+                    }
+                    
+                    if (selectedPeriod.id) {
+                      updatePeriodMutation.mutate({ periodId: selectedPeriod.id, periodData: selectedPeriod });
+                    } else {
+                      createPeriodMutation.mutate(selectedPeriod);
+                    }
+                    setShowPeriodModal(false);
+                    setSelectedPeriod(null);
+                    setIsEditing(false);
+                  }}
+                  className="flex items-center gap-2"
+                  disabled={createPeriodMutation.isPending || updatePeriodMutation.isPending}
+                >
+                  <Plus className="w-4 h-4" />
+                  {selectedPeriod.id ? "Update" : "Create"} Period
+                </Button>
+                <Button 
+                  onClick={() => {
+                    setShowPeriodModal(false);
+                    setSelectedPeriod(null);
+                    setIsEditing(false);
+                  }}
+                  variant="outline"
+                >
+                  Cancel
                 </Button>
               </div>
             </div>

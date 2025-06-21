@@ -28,7 +28,7 @@ A comprehensive restaurant booking management system with React frontend and Exp
 - **Component fixes**: Added missing imports for Collapsible, Select, Dialog, Search icons
 - **API testing**: Confirmed all CRUD operations working (GET/POST/PUT/DELETE)
 - **Security**: Implemented client/server separation and robust security practices
-- **Status**: Redesigned special periods page with modern booking-style layout, animations, and enhanced UX
+- **Status**: Fixed special periods Add/Edit functionality and removed eye icon as requested
 
 ## User Preferences
 - Language: English/French (auto-detected)
