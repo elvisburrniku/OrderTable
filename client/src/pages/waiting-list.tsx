@@ -267,7 +267,7 @@ export default function WaitingList() {
                   
                   <CollapsibleContent className="mt-4">
                     <div className="bg-gray-50 rounded-xl p-6 border-2 border-gray-100">
-                      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                         <div>
                           <Label className="text-sm font-medium text-gray-700 mb-2 block">Search</Label>
                           <div className="relative">
@@ -293,21 +293,6 @@ export default function WaitingList() {
                               <SelectItem value="contacted">Contacted</SelectItem>
                               <SelectItem value="seated">Seated</SelectItem>
                               <SelectItem value="cancelled">Cancelled</SelectItem>
-                            </SelectContent>
-                          </Select>
-                        </div>
-                        
-                        <div>
-                          <Label className="text-sm font-medium text-gray-700 mb-2 block">Items per page</Label>
-                          <Select value={itemsPerPage.toString()} onValueChange={(value) => setItemsPerPage(parseInt(value))}>
-                            <SelectTrigger>
-                              <SelectValue />
-                            </SelectTrigger>
-                            <SelectContent>
-                              <SelectItem value="7">7</SelectItem>
-                              <SelectItem value="10">10</SelectItem>
-                              <SelectItem value="20">20</SelectItem>
-                              <SelectItem value="50">50</SelectItem>
                             </SelectContent>
                           </Select>
                         </div>
@@ -406,79 +391,78 @@ export default function WaitingList() {
             </table>
           </div>
 
-          {/* Pagination Footer */}
-          <div className="p-6 border-t flex items-center justify-between">
-            <div className="text-sm text-gray-600">
-              Show <select 
-                className="mx-1 border rounded px-2 py-1"
-                value={itemsPerPage}
-                onChange={(e) => setItemsPerPage(parseInt(e.target.value))}
-              >
-                <option value={7}>7</option>
-                <option value={10}>10</option>
-                <option value={20}>20</option>
-              </select> entries
-            </div>
+          {/* Pagination Footer - Only show if there are entries */}
+          {filteredWaitingList.length > 0 && (
+            <div className="p-6 border-t flex items-center justify-between">
+              <div className="text-sm text-gray-600">
+                Show <select 
+                  className="mx-1 border rounded px-2 py-1"
+                  value={itemsPerPage}
+                  onChange={(e) => setItemsPerPage(parseInt(e.target.value))}
+                >
+                  <option value={7}>7</option>
+                  <option value={10}>10</option>
+                  <option value={20}>20</option>
+                </select> entries
+              </div>
 
-            <div className="text-sm text-gray-600">
-              {filteredWaitingList.length > 0 
-                ? `${startIndex + 1}-${Math.min(endIndex, filteredWaitingList.length)} of ${filteredWaitingList.length}`
-                : '0 entries'
-              }
-            </div>
+              <div className="text-sm text-gray-600">
+                {`${startIndex + 1}-${Math.min(endIndex, filteredWaitingList.length)} of ${filteredWaitingList.length}`}
+              </div>
 
-            <div className="flex items-center space-x-1">
-              <Button 
-                variant="outline" 
-                size="sm"
-                onClick={() => setCurrentPage(1)}
-                disabled={currentPage === 1}
-              >
-                First
-              </Button>
-              <Button 
-                variant="outline" 
-                size="sm"
-                onClick={() => setCurrentPage(Math.max(1, currentPage - 1))}
-                disabled={currentPage === 1}
-              >
-                <ChevronLeft className="w-4 h-4" />
-              </Button>
-              
-              {Array.from({ length: Math.min(3, totalPages) }, (_, i) => {
-                const pageNum = Math.max(1, currentPage - 1) + i;
-                if (pageNum > totalPages) return null;
-                return (
-                  <Button
-                    key={pageNum}
-                    variant={currentPage === pageNum ? "default" : "outline"}
-                    size="sm"
-                    onClick={() => setCurrentPage(pageNum)}
-                    className={`w-8 h-8 p-0 ${currentPage === pageNum ? 'bg-green-500 hover:bg-green-600' : ''}`}
-                  >
-                    {pageNum}
-                  </Button>
-                );
-              })}
-              
-              <Button 
-                variant="outline" 
-                size="sm"
-                onClick={() => setCurrentPage(Math.min(totalPages, currentPage + 1))}
-                disabled={currentPage === totalPages}
-              >
-                <ChevronRight className="w-4 h-4" />
-              </Button>
-              <Button 
-                variant="outline" 
-                size="sm"
-                onClick={() => setCurrentPage(totalPages)}
-                disabled={currentPage === totalPages}
-              >
-                Last
-              </Button>
+              <div className="flex items-center space-x-1">
+                <Button 
+                  variant="outline" 
+                  size="sm"
+                  onClick={() => setCurrentPage(1)}
+                  disabled={currentPage === 1}
+                >
+                  First
+                </Button>
+                <Button 
+                  variant="outline" 
+                  size="sm"
+                  onClick={() => setCurrentPage(Math.max(1, currentPage - 1))}
+                  disabled={currentPage === 1}
+                >
+                  <ChevronLeft className="w-4 h-4" />
+                </Button>
+                
+                {Array.from({ length: Math.min(3, totalPages) }, (_, i) => {
+                  const pageNum = Math.max(1, currentPage - 1) + i;
+                  if (pageNum > totalPages) return null;
+                  return (
+                    <Button
+                      key={pageNum}
+                      variant={currentPage === pageNum ? "default" : "outline"}
+                      size="sm"
+                      onClick={() => setCurrentPage(pageNum)}
+                      className={`w-8 h-8 p-0 ${currentPage === pageNum ? 'bg-green-500 hover:bg-green-600' : ''}`}
+                    >
+                      {pageNum}
+                    </Button>
+                  );
+                })}
+                
+                <Button 
+                  variant="outline" 
+                  size="sm"
+                  onClick={() => setCurrentPage(Math.min(totalPages, currentPage + 1))}
+                  disabled={currentPage === totalPages}
+                >
+                  <ChevronRight className="w-4 h-4" />
+                </Button>
+                <Button 
+                  variant="outline" 
+                  size="sm"
+                  onClick={() => setCurrentPage(totalPages)}
+                  disabled={currentPage === totalPages}
+                >
+                  Last
+                </Button>
+              </div>
             </div>
-          </div>
+          )}
         </div>
       </div>
 
