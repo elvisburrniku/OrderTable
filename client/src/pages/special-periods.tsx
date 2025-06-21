@@ -22,6 +22,7 @@ import {
 import { Trash2, Calendar as CalendarIcon, ToggleRight, ToggleLeft, Clock, Search, ChevronDown, Edit, ChevronLeft, ChevronRight, Plus, Filter, Eye, MoreHorizontal, Users } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
 import { useScrollToTop } from "@/hooks/use-scroll-to-top";
+import { useWebSocket } from "@/hooks/use-websocket";
 import { motion } from "framer-motion";
 
 interface SpecialPeriod {
@@ -41,6 +42,29 @@ export default function SpecialPeriods() {
 
   // Auto scroll to top when page loads
   useScrollToTop();
+
+  // WebSocket for real-time updates
+  const { isConnected } = useWebSocket({
+    restaurantId: restaurant?.id,
+    onMessage: (data) => {
+      if (data.type === 'special_period_updated' || 
+          data.type === 'special_period_created' || 
+          data.type === 'special_period_deleted') {
+        // Invalidate special periods query to refetch data
+        queryClient.invalidateQueries({
+          queryKey: [
+            `/api/tenants/${restaurant?.tenantId}/restaurants/${restaurant?.id}/special-periods`,
+          ],
+        });
+
+        // Show toast notification for real-time updates
+        toast({
+          title: "Special Periods Updated",
+          description: "Changes have been made to special periods and updated in real-time.",
+        });
+      }
+    }
+  });
 
   // Filter and pagination states
   const [searchTerm, setSearchTerm] = useState("");
@@ -76,32 +100,50 @@ export default function SpecialPeriods() {
       );
 
       if (!response.ok) {
-        throw new Error("Failed to create special period");
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.message || "Failed to create special period");
       }
 
       return response.json();
     },
-    onSuccess: () => {
+    onMutate: async (newPeriod) => {
+      // Cancel any outgoing refetches
+      await queryClient.cancelQueries({ 
+        queryKey: [`/api/tenants/${restaurant?.tenantId}/restaurants/${restaurant?.id}/special-periods`] 
+      });
+
+      // Snapshot the previous value
+      const previousPeriods = queryClient.getQueryData([
+        `/api/tenants/${restaurant?.tenantId}/restaurants/${restaurant?.id}/special-periods`
+      ]);
+
+      // Optimistically update to the new value
+      queryClient.setQueryData(
+        [`/api/tenants/${restaurant?.tenantId}/restaurants/${restaurant?.id}/special-periods`],
+        (old: any) => old ? [...old, { ...newPeriod, id: Date.now() }] : [{ ...newPeriod, id: Date.now() }]
+      );
+
+      return { previousPeriods };
+    },
+    onSuccess: (data) => {
       toast({
         title: "Success",
         description: "Special period created successfully!",
       });
-      // Invalidate both API path and any nested query patterns
+      // Invalidate to get the real data from server
       queryClient.invalidateQueries({
-        predicate: (query) => {
-          const queryKey = query.queryKey;
-          return (
-            Array.isArray(queryKey) &&
-            (queryKey.includes("special-periods") ||
-              (queryKey.length >= 3 && queryKey[0] === "specialPeriods"))
-          );
-        },
+        queryKey: [`/api/tenants/${restaurant?.tenantId}/restaurants/${restaurant?.id}/special-periods`]
       });
     },
-    onError: (error) => {
+    onError: (error, newPeriod, context) => {
+      // Rollback on error
+      queryClient.setQueryData(
+        [`/api/tenants/${restaurant?.tenantId}/restaurants/${restaurant?.id}/special-periods`],
+        context?.previousPeriods
+      );
       toast({
         title: "Error",
-        description: "Failed to create special period. Please try again.",
+        description: error.message || "Failed to create special period. Please try again.",
         variant: "destructive",
       });
     },
@@ -128,32 +170,52 @@ export default function SpecialPeriods() {
       );
 
       if (!response.ok) {
-        throw new Error("Failed to update special period");
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.message || "Failed to update special period");
       }
 
       return response.json();
+    },
+    onMutate: async ({ periodId, periodData }) => {
+      // Cancel any outgoing refetches
+      await queryClient.cancelQueries({ 
+        queryKey: [`/api/tenants/${restaurant?.tenantId}/restaurants/${restaurant?.id}/special-periods`] 
+      });
+
+      // Snapshot the previous value
+      const previousPeriods = queryClient.getQueryData([
+        `/api/tenants/${restaurant?.tenantId}/restaurants/${restaurant?.id}/special-periods`
+      ]);
+
+      // Optimistically update to the new value
+      queryClient.setQueryData(
+        [`/api/tenants/${restaurant?.tenantId}/restaurants/${restaurant?.id}/special-periods`],
+        (old: any) => old ? old.map((period: any) => 
+          period.id === periodId ? { ...period, ...periodData } : period
+        ) : []
+      );
+
+      return { previousPeriods, periodId };
     },
     onSuccess: () => {
       toast({
         title: "Success",
         description: "Special period updated successfully!",
       });
-      // Invalidate both API path and any nested query patterns
+      // Invalidate to get the real data from server
       queryClient.invalidateQueries({
-        predicate: (query) => {
-          const queryKey = query.queryKey;
-          return (
-            Array.isArray(queryKey) &&
-            (queryKey.includes("special-periods") ||
-              (queryKey.length >= 3 && queryKey[0] === "specialPeriods"))
-          );
-        },
+        queryKey: [`/api/tenants/${restaurant?.tenantId}/restaurants/${restaurant?.id}/special-periods`]
       });
     },
-    onError: (error) => {
+    onError: (error, variables, context) => {
+      // Rollback on error
+      queryClient.setQueryData(
+        [`/api/tenants/${restaurant?.tenantId}/restaurants/${restaurant?.id}/special-periods`],
+        context?.previousPeriods
+      );
       toast({
         title: "Error",
-        description: "Failed to update special period. Please try again.",
+        description: error.message || "Failed to update special period. Please try again.",
         variant: "destructive",
       });
     },
@@ -170,32 +232,50 @@ export default function SpecialPeriods() {
       );
 
       if (!response.ok) {
-        throw new Error("Failed to delete special period");
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.message || "Failed to delete special period");
       }
 
       return response.json();
+    },
+    onMutate: async (periodId) => {
+      // Cancel any outgoing refetches
+      await queryClient.cancelQueries({ 
+        queryKey: [`/api/tenants/${restaurant?.tenantId}/restaurants/${restaurant?.id}/special-periods`] 
+      });
+
+      // Snapshot the previous value
+      const previousPeriods = queryClient.getQueryData([
+        `/api/tenants/${restaurant?.tenantId}/restaurants/${restaurant?.id}/special-periods`
+      ]);
+
+      // Optimistically update to the new value
+      queryClient.setQueryData(
+        [`/api/tenants/${restaurant?.tenantId}/restaurants/${restaurant?.id}/special-periods`],
+        (old: any) => old ? old.filter((period: any) => period.id !== periodId) : []
+      );
+
+      return { previousPeriods, periodId };
     },
     onSuccess: () => {
       toast({
         title: "Success",
         description: "Special period deleted successfully!",
       });
-      // Invalidate both API path and any nested query patterns
+      // Invalidate to get the real data from server
       queryClient.invalidateQueries({
-        predicate: (query) => {
-          const queryKey = query.queryKey;
-          return (
-            Array.isArray(queryKey) &&
-            (queryKey.includes("special-periods") ||
-              (queryKey.length >= 3 && queryKey[0] === "specialPeriods"))
-          );
-        },
+        queryKey: [`/api/tenants/${restaurant?.tenantId}/restaurants/${restaurant?.id}/special-periods`]
       });
     },
-    onError: (error) => {
+    onError: (error, periodId, context) => {
+      // Rollback on error
+      queryClient.setQueryData(
+        [`/api/tenants/${restaurant?.tenantId}/restaurants/${restaurant?.id}/special-periods`],
+        context?.previousPeriods
+      );
       toast({
         title: "Error",
-        description: "Failed to delete special period. Please try again.",
+        description: error.message || "Failed to delete special period. Please try again.",
         variant: "destructive",
       });
     },
@@ -391,7 +471,15 @@ export default function SpecialPeriods() {
                 initial={{ opacity: 0, x: 20 }}
                 animate={{ opacity: 1, x: 0 }}
                 transition={{ duration: 0.5, delay: 0.2 }}
+                className="flex items-center space-x-3"
               >
+                {/* Real-time connection status */}
+                <div className="flex items-center space-x-2">
+                  <div className={`w-2 h-2 rounded-full ${isConnected ? 'bg-green-500' : 'bg-red-500'}`} />
+                  <span className="text-xs text-gray-600">
+                    {isConnected ? 'Live' : 'Offline'}
+                  </span>
+                </div>
                 <Button
                   onClick={() => {
                     setSelectedPeriod({
