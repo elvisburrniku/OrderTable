@@ -2683,15 +2683,20 @@ export async function registerRoutes(app: Express): Promise<Server> {
         const restaurantId = parseInt(req.params.restaurantId);
         const tenantId = parseInt(req.params.tenantId);
 
+        // Validate parameters
+        if (isNaN(restaurantId) || isNaN(tenantId)) {
+          return res.status(400).json({ message: "Invalid restaurant or tenant ID" });
+        }
+
         const restaurant = await storage.getRestaurantById(restaurantId);
         if (!restaurant || restaurant.tenantId !== tenantId) {
           return res.status(404).json({ message: "Restaurant not found" });
         }
 
-        const specialPeriods =
-          await storage.getSpecialPeriodsByRestaurant(restaurantId);
-        res.json(specialPeriods);
+        const specialPeriods = await storage.getSpecialPeriodsByRestaurant(restaurantId);
+        res.json(specialPeriods || []);
       } catch (error) {
+        console.error("Error fetching special periods:", error);
         res.status(500).json({ message: "Internal server error" });
       }
     },
