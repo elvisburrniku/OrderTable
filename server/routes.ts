@@ -2026,8 +2026,120 @@ export async function registerRoutes(app: Express): Promise<Server> {
         }
 
         const entry = await storage.updateWaitingListEntry(id, updates);
+
+        // If status is changed to "seated", create a booking in the calendar
+        if (updates.status === "seated" && existingEntry.status !== "seated") {
+          try {
+            const restaurant = await storage.getRestaurantById(existingEntry.restaurantId);
+            if (restaurant && existingEntry.requestedDate && existingEntry.requestedTime) {
+              // Parse the requested date and time to create a proper booking date
+              const bookingDate = new Date(existingEntry.requestedDate);
+              const [hours, minutes] = existingEntry.requestedTime.split(':');
+              bookingDate.setHours(parseInt(hours), parseInt(minutes), 0, 0);
+              
+              // Calculate end time (assume 2 hours duration)
+              const endTime = new Date(bookingDate);
+              endTime.setHours(endTime.getHours() + 2);
+
+              // Create booking
+              const bookingData = {
+                tenantId: existingEntry.tenantId,
+                restaurantId: existingEntry.restaurantId,
+                customerName: existingEntry.customerName,
+                customerEmail: existingEntry.customerEmail,
+                customerPhone: existingEntry.customerPhone,
+                guestCount: existingEntry.guestCount,
+                startTime: existingEntry.requestedTime,
+                endTime: `${String(endTime.getHours()).padStart(2, '0')}:${String(endTime.getMinutes()).padStart(2, '0')}`,
+                date: existingEntry.requestedDate,
+                status: 'confirmed',
+                source: 'waiting_list',
+                notes: existingEntry.notes || `Seated from waiting list`,
+                specialRequests: existingEntry.specialRequests || '',
+              };
+
+              const booking = await storage.createBooking(bookingData);
+              console.log(`Booking ${booking.id} created from waiting list entry ${id}`);
+
+              // Log the activity
+              await storage.createActivityLog({
+                tenantId: existingEntry.tenantId,
+                restaurantId: existingEntry.restaurantId,
+                eventType: "booking_created",
+                description: `Booking created from waiting list for ${existingEntry.customerName}`,
+                source: "waiting_list",
+                userEmail: null,
+                details: JSON.stringify({
+                  waitingListId: id,
+                  bookingId: booking.id,
+                  customerName: existingEntry.customerName,
+                  guestCount: existingEntry.guestCount,
+                  requestedDate: existingEntry.requestedDate,
+                  requestedTime: existingEntry.requestedTime,
+                }),
+              });
+            }
+          } catch (bookingError) {
+            console.error("Error creating booking from waiting list:", bookingError);
+            // Don't fail the waiting list update if booking creation fails
+          }
+        }
+
+        // If status is changed from "seated" to something else, remove the booking
+        if (existingEntry.status === "seated" && updates.status !== "seated") {
+          try {
+            const restaurant = await storage.getRestaurantById(existingEntry.restaurantId);
+            if (restaurant) {
+              // Find and delete the booking that was created from this waiting list entry
+              const bookingDate = new Date(existingEntry.requestedDate);
+              const existingBookings = await storage.getBookingsByDateRange(
+                existingEntry.tenantId,
+                existingEntry.restaurantId,
+                bookingDate,
+                bookingDate,
+              );
+
+              // Find the booking that matches this waiting list entry
+              const bookingToDelete = existingBookings.find(
+                (booking) =>
+                  booking.customerName === existingEntry.customerName &&
+                  booking.customerEmail === existingEntry.customerEmail &&
+                  booking.startTime === existingEntry.requestedTime &&
+                  booking.source === "waiting_list",
+              );
+
+              if (bookingToDelete) {
+                await storage.deleteBooking(bookingToDelete.id);
+                console.log(`Booking ${bookingToDelete.id} removed from calendar for waiting list entry ${id}`);
+
+                // Log the activity
+                await storage.createActivityLog({
+                  tenantId: existingEntry.tenantId,
+                  restaurantId: existingEntry.restaurantId,
+                  eventType: "booking_removed",
+                  description: `Booking removed from calendar for ${existingEntry.customerName} (status changed to ${updates.status})`,
+                  source: "waiting_list",
+                  userEmail: null,
+                  details: JSON.stringify({
+                    waitingListId: id,
+                    bookingId: bookingToDelete.id,
+                    customerName: existingEntry.customerName,
+                    newStatus: updates.status,
+                    requestedDate: existingEntry.requestedDate,
+                    requestedTime: existingEntry.requestedTime,
+                  }),
+                });
+              }
+            }
+          } catch (bookingError) {
+            console.error("Error removing booking from waiting list:", bookingError);
+            // Don't fail the waiting list update if booking removal fails
+          }
+        }
+
         res.json(entry);
       } catch (error) {
+        console.error("Error updating waiting list entry:", error);
         res.status(400).json({ message: "Invalid request" });
       }
     },
