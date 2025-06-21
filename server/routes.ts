@@ -2040,8 +2040,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
             if (restaurant && existingEntry.requestedDate && existingEntry.requestedTime) {
               // Parse the requested date and time to create a proper booking date
-              const bookingDate = new Date(existingEntry.requestedDate + 'T' + existingEntry.requestedTime + ':00');
-              console.log(`Parsed booking date:`, bookingDate);
+              const dateStr = existingEntry.requestedDate.includes('T') ? 
+                existingEntry.requestedDate : 
+                existingEntry.requestedDate + 'T' + existingEntry.requestedTime + ':00';
+              const bookingDate = new Date(dateStr);
+              console.log(`Parsed booking date from ${existingEntry.requestedDate} ${existingEntry.requestedTime}:`, bookingDate);
               
               // Calculate end time (assume 2 hours duration)
               const endTime = new Date(bookingDate);
@@ -2101,15 +2104,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
         if (existingEntry.status === "seated" && updates.status !== "seated") {
           try {
             const restaurant = await storage.getRestaurantById(existingEntry.restaurantId);
-            if (restaurant) {
+            console.log(`Removing booking for waiting list entry ${id} - status changed from seated to ${updates.status}`);
+            
+            if (restaurant && existingEntry.requestedDate) {
               // Find and delete the booking that was created from this waiting list entry
-              const bookingDate = new Date(existingEntry.requestedDate);
-              const existingBookings = await storage.getBookingsByDateRange(
-                existingEntry.tenantId,
+              const existingBookings = await storage.getBookingsByDate(
                 existingEntry.restaurantId,
-                bookingDate,
-                bookingDate,
+                existingEntry.requestedDate,
               );
+
+              console.log(`Found ${existingBookings.length} bookings for date ${existingEntry.requestedDate}`);
 
               // Find the booking that matches this waiting list entry
               const bookingToDelete = existingBookings.find(
@@ -2141,6 +2145,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
                     requestedTime: existingEntry.requestedTime,
                   }),
                 });
+              } else {
+                console.log(`No matching booking found to delete for waiting list entry ${id}`);
               }
             }
           } catch (bookingError) {
