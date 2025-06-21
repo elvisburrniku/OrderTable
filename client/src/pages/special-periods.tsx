@@ -8,6 +8,7 @@ import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
 import { Trash2 } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
+import { useScrollToTop } from "@/hooks/use-scroll-to-top";
 
 interface SpecialPeriod {
   id?: number;
