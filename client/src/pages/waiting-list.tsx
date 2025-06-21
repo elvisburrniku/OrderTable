@@ -45,7 +45,6 @@ import {
   X
 } from "lucide-react";
 import { format } from "date-fns";
-import { useToast } from "@/hooks/use-toast";
 
 export default function WaitingList() {
   const { user, restaurant } = useAuth();
