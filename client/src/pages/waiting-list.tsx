@@ -225,291 +225,258 @@ export default function WaitingList() {
   };
 
   return (
-    <div className="flex min-h-screen bg-gray-50">
-      <DashboardSidebar />
-      
-      <div className="flex-1 ml-64">
-        <div className="min-h-screen bg-gray-50">
-          <div className="p-6">
-            <div className="bg-white rounded-lg shadow">
-              {/* Top Header */}
-              <div className="p-6 border-b">
-                <div className="flex items-center justify-between">
-                  <h1 className="text-2xl font-bold text-gray-900">Waiting List</h1>
-                  <Button
-                    onClick={() => setShowForm(true)}
-                    className="bg-green-600 hover:bg-green-700 text-white flex items-center space-x-2"
-                  >
-                    <Plus className="w-4 h-4" />
-                    <span>Add to Waiting List</span>
-                  </Button>
-                </div>
-              </div>
+    <div className="min-h-screen bg-gray-50">
+      <div className="p-6">
+        <div className="bg-white rounded-lg shadow">
+          {/* Top Header */}
+          <div className="p-6 border-b">
+            <div className="flex items-center justify-between">
+              <h1 className="text-2xl font-bold text-gray-900">Waiting List</h1>
+              <Button
+                onClick={() => setShowForm(true)}
+                className="bg-green-600 hover:bg-green-700 text-white flex items-center space-x-2"
+              >
+                <Plus className="w-4 h-4" />
+                <span>Add to Waiting List</span>
+              </Button>
+            </div>
+          </div>
 
-              {/* Filters Section */}
-              <div className="p-6 border-b">
-                <h2 className="text-lg font-semibold text-gray-900 mb-6">Waiting List Entries</h2>
-                
-                <div className="flex items-center justify-between mb-4">
-                  <div className="flex items-center space-x-4">
-                    <div className="relative">
-                      <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
-                      <Input
-                        placeholder="Search by name or email..."
-                        value={searchTerm}
-                        onChange={(e) => setSearchTerm(e.target.value)}
-                        className="pl-10 w-80"
-                      />
-                    </div>
-                    <Button
-                      variant="outline"
-                      onClick={() => setShowFilters(!showFilters)}
-                      className="flex items-center space-x-2"
+          {/* Filters Section */}
+          <div className="p-6 border-b">
+            <h2 className="text-lg font-semibold text-gray-900 mb-6">Waiting List</h2>
+            
+            <div className="flex items-center justify-between mb-4">
+              <div className="flex items-center space-x-4">
+                <Collapsible open={showFilters} onOpenChange={setShowFilters}>
+                  <CollapsibleTrigger asChild>
+                    <Button 
+                      variant="outline" 
+                      className="h-10 px-4 border-2 border-gray-200 hover:border-green-500 hover:bg-green-50 transition-all duration-200 flex items-center space-x-2 font-medium"
                     >
                       <Filter className="w-4 h-4" />
                       <span>Filters</span>
-                      <ChevronDown className={`w-4 h-4 transition-transform ${showFilters ? 'rotate-180' : ''}`} />
+                      {(statusFilter !== 'all' || searchTerm) && (
+                        <span className="bg-green-500 text-white text-xs px-2 py-0.5 rounded-full ml-1">
+                          {[statusFilter !== 'all', searchTerm].filter(Boolean).length}
+                        </span>
+                      )}
+                      <ChevronDown className={`w-4 h-4 transform transition-transform duration-200 ${showFilters ? 'rotate-180' : ''}`} />
                     </Button>
-                  </div>
-                  <div className="text-sm text-gray-500">
-                    {filteredWaitingList.length} of {waitingList.length} entries
-                  </div>
-                </div>
-
-                <Collapsible open={showFilters} onOpenChange={setShowFilters}>
-                  <CollapsibleContent>
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4 p-4 bg-gray-50 rounded-lg">
-                      <div>
-                        <Label htmlFor="status-filter" className="text-sm font-medium text-gray-700">Status</Label>
-                        <Select value={statusFilter} onValueChange={setStatusFilter}>
-                          <SelectTrigger className="mt-1">
-                            <SelectValue placeholder="All statuses" />
-                          </SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value="all">All Statuses</SelectItem>
-                            <SelectItem value="waiting">Waiting</SelectItem>
-                            <SelectItem value="contacted">Contacted</SelectItem>
-                            <SelectItem value="seated">Seated</SelectItem>
-                            <SelectItem value="cancelled">Cancelled</SelectItem>
-                          </SelectContent>
-                        </Select>
-                      </div>
-                      <div>
-                        <Label htmlFor="items-per-page" className="text-sm font-medium text-gray-700">Items per page</Label>
-                        <Select value={itemsPerPage.toString()} onValueChange={(value) => setItemsPerPage(parseInt(value))}>
-                          <SelectTrigger className="mt-1">
-                            <SelectValue />
-                          </SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value="5">5</SelectItem>
-                            <SelectItem value="10">10</SelectItem>
-                            <SelectItem value="20">20</SelectItem>
-                            <SelectItem value="50">50</SelectItem>
-                          </SelectContent>
-                        </Select>
+                  </CollapsibleTrigger>
+                  
+                  <CollapsibleContent className="mt-4">
+                    <div className="bg-gray-50 rounded-xl p-6 border-2 border-gray-100">
+                      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                        <div>
+                          <Label className="text-sm font-medium text-gray-700 mb-2 block">Search</Label>
+                          <div className="relative">
+                            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
+                            <Input
+                              placeholder="Search by name or email..."
+                              value={searchTerm}
+                              onChange={(e) => setSearchTerm(e.target.value)}
+                              className="pl-10"
+                            />
+                          </div>
+                        </div>
+                        
+                        <div>
+                          <Label className="text-sm font-medium text-gray-700 mb-2 block">Status</Label>
+                          <Select value={statusFilter} onValueChange={setStatusFilter}>
+                            <SelectTrigger>
+                              <SelectValue placeholder="All statuses" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="all">All Statuses</SelectItem>
+                              <SelectItem value="waiting">Waiting</SelectItem>
+                              <SelectItem value="contacted">Contacted</SelectItem>
+                              <SelectItem value="seated">Seated</SelectItem>
+                              <SelectItem value="cancelled">Cancelled</SelectItem>
+                            </SelectContent>
+                          </Select>
+                        </div>
+                        
+                        <div>
+                          <Label className="text-sm font-medium text-gray-700 mb-2 block">Items per page</Label>
+                          <Select value={itemsPerPage.toString()} onValueChange={(value) => setItemsPerPage(parseInt(value))}>
+                            <SelectTrigger>
+                              <SelectValue />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="7">7</SelectItem>
+                              <SelectItem value="10">10</SelectItem>
+                              <SelectItem value="20">20</SelectItem>
+                              <SelectItem value="50">50</SelectItem>
+                            </SelectContent>
+                          </Select>
+                        </div>
                       </div>
                     </div>
                   </CollapsibleContent>
                 </Collapsible>
               </div>
+            </div>
+          </div>
 
-              {/* Table */}
-              <div className="overflow-x-auto">
-                <table className="w-full">
-                  <thead className="bg-gray-50">
-                    <tr>
-                      <th className="text-left py-3 px-4 font-medium text-gray-700">
-                        <div className="flex items-center space-x-2">
-                          <User className="w-4 h-4" />
-                          <span>Customer</span>
+          {/* Table */}
+          <div className="overflow-x-auto">
+            <table className="w-full table-fixed">
+              <thead>
+                <tr className="text-sm text-gray-500 border-b">
+                  <th className="w-20 text-left py-3 px-4 font-medium">ID</th>
+                  <th className="w-48 text-left py-3 px-4 font-medium">CUSTOMER</th>
+                  <th className="w-44 text-left py-3 px-4 font-medium">DATE & TIME</th>
+                  <th className="w-24 text-left py-3 px-4 font-medium">PARTY SIZE</th>
+                  <th className="w-28 text-left py-3 px-4 font-medium">STATUS</th>
+                  <th className="w-28 text-left py-3 px-4 font-medium">CREATED</th>
+                  <th className="w-28 text-left py-3 px-4 font-medium">SOURCE</th>
+                </tr>
+              </thead>
+              <tbody>
+                {isLoading ? (
+                  <tr>
+                    <td colSpan={7} className="py-8 text-center text-gray-500">
+                      Loading waiting list...
+                    </td>
+                  </tr>
+                ) : paginatedWaitingList.length === 0 ? (
+                  <tr>
+                    <td colSpan={7} className="py-8 text-center text-gray-500">
+                      No customers on waiting list
+                    </td>
+                  </tr>
+                ) : (
+                  paginatedWaitingList.map((item: any, index: number) => (
+                    <tr
+                      key={item.id}
+                      className="border-b border-gray-100 hover:bg-gray-50"
+                    >
+                      <td className="py-4 px-4">
+                        <span className="text-blue-600 font-medium">#{startIndex + index + 1}</span>
+                      </td>
+                      <td className="py-4 px-4">
+                        <div className="flex items-center space-x-3">
+                          <div className="w-8 h-8 bg-green-500 rounded-full flex items-center justify-center text-white font-medium text-sm">
+                            {item.customerName?.charAt(0)?.toUpperCase() || 'C'}
+                          </div>
+                          <div>
+                            <div className="font-medium text-gray-900">{item.customerName}</div>
+                            <div className="text-sm text-gray-500">{item.customerEmail}</div>
+                          </div>
                         </div>
-                      </th>
-                      <th className="text-left py-3 px-4 font-medium text-gray-700">
-                        <div className="flex items-center space-x-2">
-                          <Mail className="w-4 h-4" />
-                          <span>Contact</span>
+                      </td>
+                      <td className="py-4 px-4">
+                        <div className="text-sm">
+                          <div className="font-medium">{formatDate(item.requestedDate)}</div>
+                          <div className="text-gray-500 flex items-center">
+                            <Clock className="w-3 h-3 mr-1" />
+                            {formatTime(item.requestedTime)}
+                          </div>
                         </div>
-                      </th>
-                      <th className="text-left py-3 px-4 font-medium text-gray-700">
-                        <div className="flex items-center space-x-2">
-                          <Calendar className="w-4 h-4" />
-                          <span>Requested</span>
+                      </td>
+                      <td className="py-4 px-4">
+                        <div className="flex items-center text-sm">
+                          <Users className="w-4 h-4 text-gray-400 mr-1" />
+                          <span className="font-medium">{item.guestCount} guests</span>
                         </div>
-                      </th>
-                      <th className="text-left py-3 px-4 font-medium text-gray-700">
-                        <div className="flex items-center space-x-2">
-                          <Users className="w-4 h-4" />
-                          <span>Guests</span>
-                        </div>
-                      </th>
-                      <th className="text-left py-3 px-4 font-medium text-gray-700">Status</th>
-                      <th className="text-left py-3 px-4 font-medium text-gray-700">
-                        <div className="flex items-center space-x-2">
-                          <Clock className="w-4 h-4" />
-                          <span>Created</span>
-                        </div>
-                      </th>
-                      <th className="text-left py-3 px-4 font-medium text-gray-700">Actions</th>
+                      </td>
+                      <td className="py-4 px-4">
+                        <span className={`px-3 py-1 rounded-full text-sm font-medium ${
+                          item.status === 'waiting' ? 'bg-green-100 text-green-800' :
+                          item.status === 'contacted' ? 'bg-blue-100 text-blue-800' :
+                          item.status === 'seated' ? 'bg-purple-100 text-purple-800' :
+                          'bg-red-100 text-red-800'
+                        }`}>
+                          {item.status || 'waiting'}
+                        </span>
+                      </td>
+                      <td className="py-4 px-4 text-sm text-gray-500">
+                        {formatDate(item.createdAt)}
+                      </td>
+                      <td className="py-4 px-4">
+                        <span className="px-3 py-1 rounded-full text-sm font-medium bg-blue-100 text-blue-800">
+                          manual
+                        </span>
+                      </td>
                     </tr>
-                  </thead>
-                  <tbody>
-                    {isLoading ? (
-                      <tr>
-                        <td colSpan={7} className="py-8 text-center text-gray-500">
-                          Loading waiting list...
-                        </td>
-                      </tr>
-                    ) : paginatedWaitingList.length === 0 ? (
-                      <tr>
-                        <td colSpan={7} className="py-8 text-center text-gray-500">
-                          No customers on waiting list
-                        </td>
-                      </tr>
-                    ) : (
-                      paginatedWaitingList.map((item: any) => (
-                        <tr
-                          key={item.id}
-                          className="border-b border-gray-100 hover:bg-gray-50"
-                        >
-                          <td className="py-3 px-4">
-                            <div>
-                              <div className="font-medium text-gray-900">{item.customerName}</div>
-                              {item.notes && (
-                                <div className="text-xs text-gray-500 mt-1">
-                                  {item.notes}
-                                </div>
-                              )}
-                            </div>
-                          </td>
-                          <td className="py-3 px-4">
-                            <div className="text-sm">
-                              <div className="flex items-center space-x-1">
-                                <Mail className="w-3 h-3 text-gray-400" />
-                                <span>{item.customerEmail}</span>
-                              </div>
-                              {item.customerPhone && (
-                                <div className="flex items-center space-x-1 mt-1">
-                                  <Phone className="w-3 h-3 text-gray-400" />
-                                  <span className="text-gray-500">{item.customerPhone}</span>
-                                </div>
-                              )}
-                            </div>
-                          </td>
-                          <td className="py-3 px-4">
-                            <div className="text-sm">
-                              <div>{formatDate(item.requestedDate)}</div>
-                              <div className="text-gray-500">{formatTime(item.requestedTime)}</div>
-                            </div>
-                          </td>
-                          <td className="py-3 px-4">
-                            <div className="flex items-center space-x-1">
-                              <Users className="w-4 h-4 text-gray-400" />
-                              <span className="text-sm font-medium">{item.guestCount}</span>
-                            </div>
-                          </td>
-                          <td className="py-3 px-4">
-                            <Badge
-                              variant={
-                                item.status === "waiting"
-                                  ? "default"
-                                  : item.status === "contacted"
-                                  ? "secondary"
-                                  : item.status === "seated"
-                                  ? "destructive"
-                                  : "outline"
-                              }
-                            >
-                              {item.status}
-                            </Badge>
-                          </td>
-                          <td className="py-3 px-4 text-sm text-gray-500">
-                            {formatDate(item.createdAt)}
-                          </td>
-                          <td className="py-3 px-4">
-                            <DropdownMenu>
-                              <DropdownMenuTrigger asChild>
-                                <Button variant="ghost" className="h-8 w-8 p-0">
-                                  <MoreHorizontal className="h-4 w-4" />
-                                </Button>
-                              </DropdownMenuTrigger>
-                              <DropdownMenuContent align="end">
-                                <DropdownMenuLabel>Actions</DropdownMenuLabel>
-                                <DropdownMenuItem onClick={() => updateEntryMutation.mutate({ id: item.id, updates: { status: 'contacted' } })}>
-                                  <Eye className="mr-2 h-4 w-4" />
-                                  Mark as Contacted
-                                </DropdownMenuItem>
-                                <DropdownMenuItem onClick={() => updateEntryMutation.mutate({ id: item.id, updates: { status: 'seated' } })}>
-                                  <Edit className="mr-2 h-4 w-4" />
-                                  Mark as Seated
-                                </DropdownMenuItem>
-                                <DropdownMenuSeparator />
-                                <DropdownMenuItem onClick={() => updateEntryMutation.mutate({ id: item.id, updates: { status: 'cancelled' } })}>
-                                  <Trash2 className="mr-2 h-4 w-4" />
-                                  Cancel Entry
-                                </DropdownMenuItem>
-                              </DropdownMenuContent>
-                            </DropdownMenu>
-                          </td>
-                        </tr>
-                      ))
-                    )}
-                  </tbody>
-                </table>
-              </div>
+                  ))
+                )}
+              </tbody>
+            </table>
+          </div>
 
-              {/* Pagination Footer */}
-              <div className="p-6 border-t flex items-center justify-between">
-                <div className="text-sm text-gray-600">
-                  Showing {(currentPage - 1) * itemsPerPage + 1} to {Math.min(currentPage * itemsPerPage, filteredWaitingList.length)} of {filteredWaitingList.length} entries
-                  ({filteredWaitingList.reduce((sum: number, item: any) => sum + (item.guestCount || 0), 0)} total guests)
-                </div>
+          {/* Pagination Footer */}
+          <div className="p-6 border-t flex items-center justify-between">
+            <div className="text-sm text-gray-600">
+              Show <select 
+                className="mx-1 border rounded px-2 py-1"
+                value={itemsPerPage}
+                onChange={(e) => setItemsPerPage(parseInt(e.target.value))}
+              >
+                <option value={7}>7</option>
+                <option value={10}>10</option>
+                <option value={20}>20</option>
+              </select> entries
+            </div>
 
-                <div className="flex items-center space-x-4">
-                  <div className="flex items-center space-x-2">
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => setCurrentPage(Math.max(1, currentPage - 1))}
-                      disabled={currentPage === 1}
-                    >
-                      <ChevronLeft className="w-4 h-4" />
-                      Previous
-                    </Button>
-                    
-                    <div className="flex items-center space-x-1">
-                      {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
-                        const pageNum = i + 1;
-                        return (
-                          <Button
-                            key={pageNum}
-                            variant={currentPage === pageNum ? "default" : "outline"}
-                            size="sm"
-                            onClick={() => setCurrentPage(pageNum)}
-                            className="w-8 h-8 p-0"
-                          >
-                            {pageNum}
-                          </Button>
-                        );
-                      })}
-                    </div>
-                    
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => setCurrentPage(Math.min(totalPages, currentPage + 1))}
-                      disabled={currentPage === totalPages}
-                    >
-                      Next
-                      <ChevronRight className="w-4 h-4" />
-                    </Button>
-                  </div>
+            <div className="text-sm text-gray-600">
+              {filteredWaitingList.length > 0 
+                ? `${startIndex + 1}-${Math.min(endIndex, filteredWaitingList.length)} of ${filteredWaitingList.length}`
+                : '0 entries'
+              }
+            </div>
 
-                  <Button className="bg-green-600 hover:bg-green-700 text-white flex items-center space-x-2">
-                    <Download className="w-4 h-4" />
-                    <span>Export</span>
+            <div className="flex items-center space-x-1">
+              <Button 
+                variant="outline" 
+                size="sm"
+                onClick={() => setCurrentPage(1)}
+                disabled={currentPage === 1}
+              >
+                First
+              </Button>
+              <Button 
+                variant="outline" 
+                size="sm"
+                onClick={() => setCurrentPage(Math.max(1, currentPage - 1))}
+                disabled={currentPage === 1}
+              >
+                <ChevronLeft className="w-4 h-4" />
+              </Button>
+              
+              {Array.from({ length: Math.min(3, totalPages) }, (_, i) => {
+                const pageNum = Math.max(1, currentPage - 1) + i;
+                if (pageNum > totalPages) return null;
+                return (
+                  <Button
+                    key={pageNum}
+                    variant={currentPage === pageNum ? "default" : "outline"}
+                    size="sm"
+                    onClick={() => setCurrentPage(pageNum)}
+                    className={`w-8 h-8 p-0 ${currentPage === pageNum ? 'bg-green-500 hover:bg-green-600' : ''}`}
+                  >
+                    {pageNum}
                   </Button>
-                </div>
-              </div>
+                );
+              })}
+              
+              <Button 
+                variant="outline" 
+                size="sm"
+                onClick={() => setCurrentPage(Math.min(totalPages, currentPage + 1))}
+                disabled={currentPage === totalPages}
+              >
+                <ChevronRight className="w-4 h-4" />
+              </Button>
+              <Button 
+                variant="outline" 
+                size="sm"
+                onClick={() => setCurrentPage(totalPages)}
+                disabled={currentPage === totalPages}
+              >
+                Last
+              </Button>
             </div>
           </div>
         </div>
