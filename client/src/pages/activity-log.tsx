@@ -13,6 +13,12 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import { Link } from "wouter";
 import { 
   Activity, 
@@ -24,7 +30,9 @@ import {
   ChevronRight,
   User,
   Clock,
-  Shield
+  Shield,
+  Eye,
+  Info
 } from "lucide-react";
 import { motion } from "framer-motion";
 
@@ -42,6 +50,8 @@ export default function ActivityLog() {
   const [showFilters, setShowFilters] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage, setItemsPerPage] = useState(7);
+  const [showDetailModal, setShowDetailModal] = useState(false);
+  const [selectedLog, setSelectedLog] = useState<any>(null);
 
   const { data: activityLog, isLoading } = useQuery({
     queryKey: [
@@ -373,22 +383,22 @@ export default function ActivityLog() {
                 <table className="w-full">
                   <thead>
                     <tr className="bg-gray-50 border-b border-gray-200">
-                      <th className="text-left py-3 px-4 text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      <th className="text-left py-3 px-6 text-xs font-medium text-gray-500 uppercase tracking-wider w-24">
                         Event ID
                       </th>
-                      <th className="text-left py-3 px-4 text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      <th className="text-left py-3 px-6 text-xs font-medium text-gray-500 uppercase tracking-wider w-48">
                         Timestamp
                       </th>
-                      <th className="text-left py-3 px-4 text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      <th className="text-left py-3 px-6 text-xs font-medium text-gray-500 uppercase tracking-wider w-28">
                         Source
                       </th>
-                      <th className="text-left py-3 px-4 text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      <th className="text-left py-3 px-6 text-xs font-medium text-gray-500 uppercase tracking-wider w-40">
                         Event Type
                       </th>
-                      <th className="text-left py-3 px-4 text-xs font-medium text-gray-500 uppercase tracking-wider">
-                        User
+                      <th className="text-left py-3 px-6 text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        User & Description
                       </th>
-                      <th className="text-left py-3 px-4 text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      <th className="text-center py-3 px-4 text-xs font-medium text-gray-500 uppercase tracking-wider w-20">
                         Details
                       </th>
                     </tr>
@@ -424,40 +434,50 @@ export default function ActivityLog() {
                           initial={{ opacity: 0, y: 10 }}
                           animate={{ opacity: 1, y: 0 }}
                           transition={{ duration: 0.3, delay: index * 0.05 }}
-                          className={`group hover:bg-blue-50 cursor-pointer transition-all duration-200 ${
+                          className={`group hover:bg-blue-50 transition-all duration-200 ${
                             index % 2 === 0 ? 'bg-white' : 'bg-gray-50/50'
                           }`}
                         >
-                          <td className="py-3 px-4">
-                            <span className="text-blue-600 font-semibold text-sm bg-blue-50 px-2 py-1 rounded-md">
+                          <td className="py-4 px-6">
+                            <span className="text-blue-600 font-semibold text-sm bg-blue-50 px-3 py-1 rounded-md">
                               #{log.id}
                             </span>
                           </td>
-                          <td className="py-3 px-4">
+                          <td className="py-4 px-6">
                             <div className="flex items-center space-x-2">
                               <Clock className="w-4 h-4 text-gray-400" />
-                              <span className="text-sm text-gray-900">{log.createdAt}</span>
+                              <span className="text-sm text-gray-900 font-medium">{log.createdAt}</span>
                             </div>
                           </td>
-                          <td className="py-3 px-4">
+                          <td className="py-4 px-6">
                             {getSourceBadge(log.source)}
                           </td>
-                          <td className="py-3 px-4">
+                          <td className="py-4 px-6">
                             {getEventBadge(log.eventType)}
                           </td>
-                          <td className="py-3 px-4">
+                          <td className="py-4 px-6">
                             <div className="flex items-center space-x-3">
-                              <div className="w-8 h-8 bg-gradient-to-br from-green-400 to-green-600 rounded-full flex items-center justify-center text-white font-medium text-sm">
-                                <User className="w-4 h-4" />
+                              <div className="w-10 h-10 bg-gradient-to-br from-green-400 to-green-600 rounded-full flex items-center justify-center text-white font-medium">
+                                <User className="w-5 h-5" />
                               </div>
-                              <div>
-                                <div className="font-medium text-gray-900">{log.userEmail}</div>
-                                <div className="text-sm text-gray-500">{log.description}</div>
+                              <div className="min-w-0 flex-1">
+                                <div className="font-medium text-gray-900 truncate">{log.userEmail}</div>
+                                <div className="text-sm text-gray-500 truncate">{log.description}</div>
                               </div>
                             </div>
                           </td>
-                          <td className="py-3 px-4 text-sm text-gray-600">
-                            {log.details}
+                          <td className="py-4 px-4 text-center">
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => {
+                                setSelectedLog(log);
+                                setShowDetailModal(true);
+                              }}
+                              className="h-8 w-8 p-0 hover:bg-blue-100 hover:text-blue-600 transition-colors duration-200"
+                            >
+                              <Eye className="w-4 h-4" />
+                            </Button>
                           </td>
                         </motion.tr>
                       ))
@@ -578,6 +598,89 @@ export default function ActivityLog() {
             )}
           </div>
         </motion.div>
+
+        {/* Detail Modal */}
+        <Dialog open={showDetailModal} onOpenChange={setShowDetailModal}>
+          <DialogContent className="sm:max-w-[600px]">
+            <DialogHeader>
+              <DialogTitle className="flex items-center space-x-2">
+                <Info className="w-5 h-5 text-blue-600" />
+                <span>Activity Details</span>
+              </DialogTitle>
+            </DialogHeader>
+            {selectedLog && (
+              <div className="space-y-6">
+                {/* Header Info */}
+                <div className="bg-gray-50 rounded-lg p-4 border">
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <label className="text-sm font-medium text-gray-700">Event ID</label>
+                      <p className="text-sm text-gray-900 font-mono">#{selectedLog.id}</p>
+                    </div>
+                    <div>
+                      <label className="text-sm font-medium text-gray-700">Timestamp</label>
+                      <p className="text-sm text-gray-900">{selectedLog.createdAt}</p>
+                    </div>
+                    <div>
+                      <label className="text-sm font-medium text-gray-700">Source</label>
+                      <div className="mt-1">
+                        {getSourceBadge(selectedLog.source)}
+                      </div>
+                    </div>
+                    <div>
+                      <label className="text-sm font-medium text-gray-700">Event Type</label>
+                      <div className="mt-1">
+                        {getEventBadge(selectedLog.eventType)}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* User Information */}
+                <div className="border rounded-lg p-4">
+                  <h3 className="font-medium text-gray-900 mb-3 flex items-center space-x-2">
+                    <User className="w-4 h-4" />
+                    <span>User Information</span>
+                  </h3>
+                  <div className="space-y-3">
+                    <div>
+                      <label className="text-sm font-medium text-gray-700">Email</label>
+                      <p className="text-sm text-gray-900">{selectedLog.userEmail}</p>
+                    </div>
+                    <div>
+                      <label className="text-sm font-medium text-gray-700">Description</label>
+                      <p className="text-sm text-gray-900">{selectedLog.description}</p>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Additional Details */}
+                <div className="border rounded-lg p-4">
+                  <h3 className="font-medium text-gray-900 mb-3 flex items-center space-x-2">
+                    <Shield className="w-4 h-4" />
+                    <span>Additional Details</span>
+                  </h3>
+                  <div className="bg-gray-50 rounded p-3">
+                    <p className="text-sm text-gray-900 font-mono break-all">
+                      {selectedLog.details || 'No additional details available'}
+                    </p>
+                  </div>
+                </div>
+
+                {/* Restaurant Info */}
+                {selectedLog.restaurantId && (
+                  <div className="border rounded-lg p-4">
+                    <h3 className="font-medium text-gray-900 mb-3">Restaurant</h3>
+                    <div>
+                      <label className="text-sm font-medium text-gray-700">Restaurant ID</label>
+                      <p className="text-sm text-gray-900">{selectedLog.restaurantId}</p>
+                    </div>
+                  </div>
+                )}
+              </div>
+            )}
+          </DialogContent>
+        </Dialog>
       </div>
     </div>
   );
