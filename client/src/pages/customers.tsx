@@ -456,9 +456,34 @@ export default function Customers() {
               </div>
             </div>
 
-            {/* Enhanced Pagination */}
+            {/* Pagination */}
             {totalPages > 1 && (
-              <div className="flex items-center justify-center mt-6 px-2">
+              <div className="flex items-center justify-between px-6 py-4 border-t bg-gray-50">
+                <div className="flex items-center space-x-2">
+                  <span className="text-sm text-gray-600">Show</span>
+                  <Select
+                    value={itemsPerPage.toString()}
+                    onValueChange={(value) => {
+                      const newValue = parseInt(value);
+                      if (!isNaN(newValue)) {
+                        setItemsPerPage(newValue);
+                        setCurrentPage(1);
+                      }
+                    }}
+                  >
+                    <SelectTrigger className="w-16 h-8">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="7">7</SelectItem>
+                      <SelectItem value="10">10</SelectItem>
+                      <SelectItem value="20">20</SelectItem>
+                      <SelectItem value="50">50</SelectItem>
+                    </SelectContent>
+                  </Select>
+                  <span className="text-sm text-gray-600">entries</span>
+                </div>
+
                 <div className="flex items-center space-x-4">
                   <div className="text-sm text-gray-600">
                     {startIndex + 1}-{Math.min(endIndex, filteredCustomers.length)} of {filteredCustomers.length}
