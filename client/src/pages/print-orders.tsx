@@ -267,9 +267,6 @@ export default function PrintOrders() {
             <TabsContent value="orders">
               {/* Statistics Cards Section */}
               <div className="p-6 border-b">
-                <h2 className="text-lg font-semibold text-gray-900 mb-6">Print Orders</h2>
-                <div className="text-sm text-gray-500 mb-4">Manage professional printing services for your restaurant</div>
-                
                 {/* Enhanced Statistics Cards */}
                 <div className="relative bg-gradient-to-br from-white via-blue-50/30 to-green-50/30 rounded-xl p-8 mb-8 shadow-lg border-2 border-gray-100 overflow-hidden">
                   {/* Decorative Background Elements */}
@@ -363,6 +360,8 @@ export default function PrintOrders() {
 
               {/* Filters Section */}
               <div className="p-6 border-b">
+                <h2 className="text-lg font-semibold text-gray-900 mb-6">Print Orders</h2>
+                <div className="text-sm text-gray-500 mb-4">Manage professional printing services for your restaurant</div>
 
                 {/* Modern Filters Section */}
                 <div className="space-y-6 mb-8">
@@ -513,7 +512,10 @@ export default function PrintOrders() {
                     </div>
                   </div>
                 </div>
+              </div>
 
+              {/* Table Section */}
+              <div className="p-6">
                 {/* Enhanced Table */}
                 <div className="bg-white rounded-xl border-2 border-gray-100 overflow-hidden shadow-sm">
                   <div className="overflow-x-auto">
@@ -739,6 +741,10 @@ export default function PrintOrders() {
                 )}
               </div>
             </TabsContent>
+          </Tabs>
+        </div>
+      </div>
+    </div>
 
             <TabsContent value="new-order">
               <PrintOrderForm
