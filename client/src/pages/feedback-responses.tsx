@@ -11,6 +11,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
+import { Label } from "@/components/ui/label";
 import { 
   Download, 
   Eye, 
@@ -26,7 +27,10 @@ import {
   ChevronDown,
   ChevronLeft,
   ChevronRight,
-  Clock
+  Clock,
+  Plus,
+  Mail,
+  Phone
 } from "lucide-react";
 import { motion } from "framer-motion";
 
@@ -234,12 +238,7 @@ export default function FeedbackResponses() {
   return (
     <div className="min-h-screen bg-gray-50">
       <div className="p-6">
-        <motion.div 
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.5 }}
-          className="bg-white rounded-lg shadow"
-        >
+        <div className="bg-white rounded-lg shadow">
           {/* Header */}
           <div className="p-6 border-b">
             <div className="flex items-center justify-between">
@@ -258,28 +257,23 @@ export default function FeedbackResponses() {
                 transition={{ duration: 0.5, delay: 0.2 }}
               >
                 <Button variant="outline" className="flex items-center gap-2 hover:bg-green-50 hover:border-green-500 transition-all duration-200">
-                  <Users className="h-4 w-4" />
-                  View All Restaurants
+                  <Download className="h-4 w-4" />
+                  Export
                 </Button>
               </motion.div>
             </div>
-            <motion.p 
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              transition={{ duration: 0.5, delay: 0.3 }}
-              className="text-gray-600 mt-2"
-            >
-              Monitor your restaurant's performance and activity trends for {restaurant?.name}
-            </motion.p>
           </div>
 
           {/* Filters Section */}
           <div className="p-6 border-b">
+            <h2 className="text-lg font-semibold text-gray-900 mb-6">Customer Feedback</h2>
+
+            {/* Modern Filters Section */}
             <motion.div 
               initial={{ opacity: 0, y: 10 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.5, delay: 0.4 }}
-              className="space-y-6"
+              className="space-y-6 mb-8"
             >
               {/* Filter Controls Bar */}
               <div className="flex items-center justify-between">
@@ -404,27 +398,19 @@ export default function FeedbackResponses() {
                 <table className="w-full">
                   <thead>
                     <tr className="bg-gray-50 border-b border-gray-200">
-                      <th className="text-left py-4 px-6 text-xs font-medium text-gray-500 uppercase tracking-wider">
-                        Customer
-                      </th>
-                      <th className="text-left py-4 px-6 text-xs font-medium text-gray-500 uppercase tracking-wider">
-                        Source
-                      </th>
-                      <th className="text-left py-4 px-6 text-xs font-medium text-gray-500 uppercase tracking-wider">
-                        Event Type
-                      </th>
-                      <th className="text-left py-4 px-6 text-xs font-medium text-gray-500 uppercase tracking-wider">
-                        User
-                      </th>
-                      <th className="text-left py-4 px-6 text-xs font-medium text-gray-500 uppercase tracking-wider">
-                        Details
-                      </th>
+                      <th className="text-left py-3 px-4 font-medium text-gray-700 text-sm">CUSTOMER</th>
+                      <th className="text-left py-3 px-4 font-medium text-gray-700 text-sm">RATING</th>
+                      <th className="text-left py-3 px-4 font-medium text-gray-700 text-sm">NPS SCORE</th>
+                      <th className="text-left py-3 px-4 font-medium text-gray-700 text-sm">TABLE</th>
+                      <th className="text-left py-3 px-4 font-medium text-gray-700 text-sm">VISIT DATE</th>
+                      <th className="text-left py-3 px-4 font-medium text-gray-700 text-sm">STATUS</th>
+                      <th className="text-left py-3 px-4 font-medium text-gray-700 text-sm">ACTIONS</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-gray-100">
                     {isLoading ? (
                       <tr>
-                        <td colSpan={5} className="py-12 text-center">
+                        <td colSpan={7} className="py-12 text-center">
                           <div className="flex flex-col items-center space-y-4">
                             <div className="animate-spin rounded-full h-8 w-8 border-2 border-green-500 border-t-transparent"></div>
                             <span className="text-gray-500 font-medium">Loading feedback...</span>
@@ -433,7 +419,7 @@ export default function FeedbackResponses() {
                       </tr>
                     ) : paginatedFeedback.length === 0 ? (
                       <tr>
-                        <td colSpan={5} className="py-12 text-center">
+                        <td colSpan={7} className="py-12 text-center">
                           <div className="flex flex-col items-center space-y-4">
                             <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center">
                               <MessageCircle className="w-8 h-8 text-gray-400" />
@@ -456,38 +442,10 @@ export default function FeedbackResponses() {
                             index % 2 === 0 ? 'bg-white' : 'bg-gray-50/50'
                           }`}
                         >
-                          <td className="py-4 px-6">
-                            <div className="flex items-center space-x-2">
-                              <Clock className="w-4 h-4 text-gray-400" />
-                              <div className="text-sm">
-                                <div className="text-gray-900 font-medium">
-                                  {new Date(item.visitDate || item.createdAt).toLocaleDateString('en-US', {
-                                    year: 'numeric',
-                                    month: '2-digit',
-                                    day: '2-digit'
-                                  })}
-                                </div>
-                                <div className="text-gray-500 text-xs">
-                                  {new Date(item.visitDate || item.createdAt).toLocaleTimeString('en-US', {
-                                    hour12: false,
-                                    hour: '2-digit',
-                                    minute: '2-digit',
-                                    second: '2-digit'
-                                  })}
-                                </div>
-                              </div>
-                            </div>
-                          </td>
-                          <td className="py-4 px-6">
-                            {getStatusBadge(item.visited)}
-                          </td>
-                          <td className="py-4 px-6">
-                            {getSourceBadge()}
-                          </td>
-                          <td className="py-4 px-6">
+                          <td className="py-3 px-4">
                             <div className="flex items-center space-x-3">
                               <div className="w-8 h-8 bg-gradient-to-br from-green-400 to-green-600 rounded-full flex items-center justify-center text-white font-medium text-sm">
-                                <User className="w-4 h-4" />
+                                {item.customerName?.charAt(0)?.toUpperCase() || 'C'}
                               </div>
                               <div className="min-w-0 flex-1">
                                 <div className="font-medium text-gray-900 truncate">{item.customerName}</div>
@@ -495,37 +453,73 @@ export default function FeedbackResponses() {
                               </div>
                             </div>
                           </td>
-                          <td className="py-4 px-6">
-                            <div className="flex items-center justify-between">
-                              <div className="flex-1 min-w-0">
-                                <div className="flex items-center space-x-4 mb-2">
-                                  <div className="flex items-center space-x-1">
-                                    <span className="text-sm text-gray-600">Rating:</span>
-                                    <div className="flex">{renderStars(item.rating)}</div>
-                                    <span className="text-sm font-medium">{item.rating ? `${Math.min(Math.max(item.rating, 0), 5)}/5` : 'No rating'}</span>
-                                  </div>
-                                  {item.tableNumber && (
-                                    <Badge variant="outline">Table {item.tableNumber}</Badge>
-                                  )}
-                                  {!item.visited && new Date(item.createdAt).toDateString() === new Date().toDateString() && (
-                                    <Badge variant="destructive">New</Badge>
-                                  )}
-                                </div>
-                                
-                                {item.comments && (
-                                  <p className="text-sm text-gray-700 truncate max-w-md">
-                                    "{item.comments}"
-                                  </p>
-                                )}
+                          <td className="py-3 px-4">
+                            <div className="flex items-center space-x-1">
+                              <div className="flex">{renderStars(item.rating)}</div>
+                              <span className="text-sm font-medium text-gray-600">
+                                {item.rating ? `${Math.min(Math.max(item.rating, 0), 5)}/5` : 'No rating'}
+                              </span>
+                            </div>
+                          </td>
+                          <td className="py-3 px-4">
+                            {item.npsScore !== null ? (
+                              <span className={`font-medium ${getNpsColor(item.npsScore)}`}>
+                                {item.npsScore}/10
+                              </span>
+                            ) : (
+                              <span className="text-gray-400 text-sm">No score</span>
+                            )}
+                          </td>
+                          <td className="py-3 px-4">
+                            {item.tableNumber ? (
+                              <Badge variant="outline" className="text-xs">Table {item.tableNumber}</Badge>
+                            ) : (
+                              <span className="text-gray-400 text-sm">-</span>
+                            )}
+                          </td>
+                          <td className="py-3 px-4">
+                            <div className="text-sm">
+                              <div className="text-gray-900 font-medium">
+                                {new Date(item.visitDate || item.createdAt).toLocaleDateString('en-US', {
+                                  year: 'numeric',
+                                  month: 'short',
+                                  day: 'numeric'
+                                })}
                               </div>
-                              
+                              <div className="text-gray-500 flex items-center">
+                                <Clock className="w-3 h-3 mr-1" />
+                                {new Date(item.visitDate || item.createdAt).toLocaleTimeString('en-US', {
+                                  hour: '2-digit',
+                                  minute: '2-digit'
+                                })}
+                              </div>
+                            </div>
+                          </td>
+                          <td className="py-3 px-4">
+                            <div className="flex items-center space-x-2">
+                              {getStatusBadge(item.visited)}
+                              {!item.visited && new Date(item.createdAt).toDateString() === new Date().toDateString() && (
+                                <Badge variant="destructive" className="text-xs">New</Badge>
+                              )}
+                            </div>
+                          </td>
+                          <td className="py-3 px-4">
+                            <div className="flex items-center space-x-2">
                               <Button
-                                variant="ghost"
+                                variant="outline"
                                 size="sm"
                                 onClick={() => handleViewDetails(item)}
-                                className="ml-4 h-8 w-8 p-0 hover:bg-blue-100 hover:text-blue-600 transition-colors duration-200"
+                                className="h-8 w-8 p-0"
                               >
-                                <Eye className="h-4 w-4" />
+                                <Eye className="w-4 h-4" />
+                              </Button>
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() => deleteFeedbackMutation.mutate(item.id)}
+                                className="h-8 w-8 p-0 text-red-600 hover:text-red-700 hover:bg-red-50"
+                              >
+                                <Trash2 className="w-4 h-4" />
                               </Button>
                             </div>
                           </td>
@@ -612,11 +606,7 @@ export default function FeedbackResponses() {
                             variant={currentPage === pageNum ? "default" : "outline"}
                             size="sm"
                             onClick={() => setCurrentPage(pageNum)}
-                            className={`w-8 h-8 p-0 ${
-                              currentPage === pageNum 
-                                ? "bg-green-600 hover:bg-green-700 text-white" 
-                                : "hover:bg-green-50"
-                            }`}
+                            className={currentPage === pageNum ? "w-8 h-8 p-0 bg-green-600 hover:bg-green-700 text-white" : "w-8 h-8 p-0 hover:bg-green-50"}
                           >
                             {pageNum}
                           </Button>
@@ -647,7 +637,7 @@ export default function FeedbackResponses() {
               </motion.div>
             )}
           </div>
-        </motion.div>
+        </div>
       </div>
 
       {/* Detail Modal */}
