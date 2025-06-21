@@ -35,6 +35,7 @@ import {
 } from "@/components/ui/collapsible";
 import { Search, Plus, Mail, Phone, Calendar, Star, Filter, ChevronDown, ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight, User, Users } from "lucide-react";
 import { format } from "date-fns";
+import { motion } from "framer-motion";
 
 export default function Customers() {
   const { user, restaurant } = useAuth();
@@ -109,11 +110,11 @@ export default function Customers() {
     const matchesSearch = 
       customer.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
       customer.email.toLowerCase().includes(searchTerm.toLowerCase());
-    
+
     const customerStatus = (customer.totalBookings || 0) > 5 ? "VIP" : 
                           (customer.totalBookings || 0) > 2 ? "Regular" : "New";
     const matchesStatus = statusFilter === "all" || customerStatus === statusFilter;
-    
+
     return matchesSearch && matchesStatus;
   });
 
@@ -142,7 +143,14 @@ export default function Customers() {
           {/* Top Header */}
           <div className="p-6 border-b">
             <div className="flex items-center justify-between">
-              <h1 className="text-2xl font-bold text-gray-900">Customers</h1>
+              <motion.h1 
+                initial={{ opacity: 0, x: -20 }}
+                animate={{ opacity: 1, x: 0 }}
+                transition={{ duration: 0.5, delay: 0.1 }}
+                className="text-2xl font-bold text-gray-900"
+              >
+                Customers
+              </motion.h1>
               <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
                 <DialogTrigger asChild>
                   <Button className="bg-green-600 hover:bg-green-700 text-white">
@@ -488,7 +496,7 @@ export default function Customers() {
                   <div className="text-sm text-gray-600">
                     {startIndex + 1}-{Math.min(endIndex, filteredCustomers.length)} of {filteredCustomers.length}
                   </div>
-                  
+
                   <div className="flex items-center space-x-2">
                     <Button
                       variant="outline"

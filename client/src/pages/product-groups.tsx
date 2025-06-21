@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Plus, Edit2, Trash2, Package, Search, Filter, ChevronDown, ChevronLeft, ChevronRight } from "lucide-react";
@@ -16,6 +15,7 @@ import { z } from "zod";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
 import { useAuth } from "@/lib/auth";
+import { motion } from "framer-motion";
 
 const productGroupSchema = z.object({
   groupName: z.string().min(1, "Group name is required"),
@@ -38,11 +38,11 @@ export default function ProductGroups() {
   const { user, restaurant } = useAuth();
   const { toast } = useToast();
   const queryClient = useQueryClient();
-  
+
   // State for dialog and editing
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [editingGroup, setEditingGroup] = useState<ProductGroup | null>(null);
-  
+
   // State for filters and pagination
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
@@ -73,9 +73,9 @@ export default function ProductGroups() {
   const filteredGroups = (productGroups || []).filter((group: ProductGroup) => {
     const matchesSearch = !searchTerm || 
       group.groupName?.toLowerCase().includes(searchTerm.toLowerCase());
-    
+
     const matchesStatus = statusFilter === "all" || group.status === statusFilter;
-    
+
     return matchesSearch && matchesStatus;
   });
 
@@ -220,20 +220,40 @@ export default function ProductGroups() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <motion.div 
+      className="min-h-screen bg-gray-50"
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      exit={{ opacity: 0 }}
+      transition={{ duration: 0.5 }}
+    >
       <div className="p-6">
         <div className="bg-white rounded-lg shadow">
           {/* Top Header */}
           <div className="p-6 border-b">
             <div className="flex items-center justify-between">
-              <h1 className="text-2xl font-bold text-gray-900">Product Groups</h1>
-              <Button
-                onClick={handleNewGroup}
-                className="bg-green-600 hover:bg-green-700 text-white flex items-center space-x-2"
+              <motion.h1 
+                initial={{ opacity: 0, x: -20 }}
+                animate={{ opacity: 1, x: 0 }}
+                transition={{ duration: 0.5, delay: 0.1 }}
+                className="text-2xl font-bold text-gray-900 flex items-center gap-2"
               >
-                <Plus className="w-4 h-4" />
-                <span>Add Product Group</span>
-              </Button>
+                <Package className="h-6 w-6 text-green-600" />
+                Product Groups
+              </motion.h1>
+              <motion.div
+                initial={{ opacity: 0, x: 20 }}
+                animate={{ opacity: 1, x: 0 }}
+                transition={{ duration: 0.5, delay: 0.2 }}
+              >
+                <Button
+                onClick={handleNewGroup}
+                  className="bg-green-600 hover:bg-green-700 text-white flex items-center space-x-2"
+                >
+                  <Plus className="w-4 h-4" />
+                  <span>Add Product Group</span>
+                </Button>
+              </motion.div>
             </div>
           </div>
 
@@ -262,7 +282,7 @@ export default function ProductGroups() {
                         <ChevronDown className={`w-4 h-4 transform transition-transform duration-200 ${showFilters ? 'rotate-180' : ''}`} />
                       </Button>
                     </CollapsibleTrigger>
-                    
+
                     <CollapsibleContent className="mt-4">
                       <div className="bg-gray-50 rounded-xl p-6 border-2 border-gray-100">
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -394,11 +414,14 @@ export default function ProductGroups() {
                       </tr>
                     ) : (
                       paginatedGroups.map((group: ProductGroup, index: number) => (
-                        <tr 
-                          key={group.id} 
+                        <motion.tr
+                          key={group.id}
                           className={`group hover:bg-blue-50 cursor-pointer transition-all duration-200 ${
                             index % 2 === 0 ? 'bg-white' : 'bg-gray-50/50'
                           }`}
+                          initial={{ opacity: 0, y: 20 }}
+                          animate={{ opacity: 1, y: 0 }}
+                          transition={{ duration: 0.3, delay: index * 0.05 }}
                         >
                           <td className="py-3 px-4">
                             <div className="flex items-center">
@@ -459,7 +482,7 @@ export default function ProductGroups() {
                               </Button>
                             </div>
                           </td>
-                        </tr>
+                        </motion.tr>
                       ))
                     )}
                   </tbody>
@@ -496,7 +519,7 @@ export default function ProductGroups() {
                   <div className="text-sm text-gray-600">
                     {startIndex + 1}-{Math.min(endIndex, filteredGroups.length)} of {filteredGroups.length}
                   </div>
-                  
+
                   <div className="flex items-center space-x-2">
                     <Button
                       variant="outline"
@@ -665,6 +688,6 @@ export default function ProductGroups() {
           </Form>
         </DialogContent>
       </Dialog>
-    </div>
+    </motion.div>
   );
 }

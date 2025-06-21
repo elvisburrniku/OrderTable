@@ -39,11 +39,12 @@ import {
   ChevronRight
 } from "lucide-react";
 // import { InternationalPhoneInput } from "@/components/international-phone-input";
+import { motion } from "framer-motion";
 
 export default function Bookings() {
   const { user, restaurant } = useAuth();
   const queryClient = useQueryClient();
-  
+
   // Get restaurant info from authentication context
   const tenantId = restaurant?.tenantId;
   const restaurantId = restaurant?.id;
@@ -92,10 +93,10 @@ export default function Bookings() {
     const matchesSearch = !searchTerm || 
       booking.customerName?.toLowerCase().includes(searchTerm.toLowerCase()) ||
       booking.customerEmail?.toLowerCase().includes(searchTerm.toLowerCase());
-    
+
     const matchesStatus = statusFilter === "all" || booking.status === statusFilter;
     const matchesSource = sourceFilter === "all" || booking.source === sourceFilter;
-    
+
     return matchesSearch && matchesStatus && matchesSource;
   });
 
@@ -150,7 +151,7 @@ export default function Bookings() {
 
   const handleCreateBooking = (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     const bookingData = {
       tenantId,
       restaurantId,
@@ -204,17 +205,31 @@ export default function Bookings() {
     <div className="min-h-screen bg-gray-50">
       <div className="p-6">
         <div className="bg-white rounded-lg shadow">
-          {/* Top Header */}
+          {/* Header */}
           <div className="p-6 border-b">
             <div className="flex items-center justify-between">
-              <h1 className="text-2xl font-bold text-gray-900">Bookings</h1>
-              <Button
-                onClick={() => setIsNewBookingOpen(true)}
-                className="bg-green-600 hover:bg-green-700 text-white flex items-center space-x-2"
+              <motion.h1 
+                initial={{ opacity: 0, x: -20 }}
+                animate={{ opacity: 1, x: 0 }}
+                transition={{ duration: 0.5, delay: 0.1 }}
+                className="text-2xl font-bold text-gray-900 flex items-center gap-2"
               >
-                <Plus className="w-4 h-4" />
-                <span>New Booking</span>
-              </Button>
+                <Calendar className="h-6 w-6 text-green-600" />
+                Bookings
+              </motion.h1>
+              <motion.div
+                initial={{ opacity: 0, x: 20 }}
+                animate={{ opacity: 1, x: 0 }}
+                transition={{ duration: 0.5, delay: 0.2 }}
+              >
+                <Button
+                onClick={() => setIsNewBookingOpen(true)}
+                  className="bg-green-600 hover:bg-green-700 text-white flex items-center space-x-2"
+                >
+                  <Plus className="w-4 h-4" />
+                  <span>New Booking</span>
+                </Button>
+              </motion.div>
             </div>
           </div>
 
@@ -223,7 +238,12 @@ export default function Bookings() {
             <h2 className="text-lg font-semibold text-gray-900 mb-6">Bookings</h2>
 
             {/* Modern Filters Section */}
-            <div className="space-y-6 mb-8">
+            <motion.div 
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.5, delay: 0.4 }}
+              className="space-y-6 mb-8"
+            >
               {/* Filter Controls Bar */}
               <div className="flex items-center justify-between">
                 <div className="flex items-center space-x-4">
@@ -243,7 +263,7 @@ export default function Bookings() {
                         <ChevronDown className={`w-4 h-4 transform transition-transform duration-200 ${showFilters ? 'rotate-180' : ''}`} />
                       </Button>
                     </CollapsibleTrigger>
-                    
+
                     <CollapsibleContent className="mt-4">
                       <div className="bg-gray-50 rounded-xl p-6 border-2 border-gray-100">
                         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
@@ -365,10 +385,15 @@ export default function Bookings() {
 
                 </div>
               </div>
-            </div>
+            </motion.div>
 
             {/* Enhanced Table */}
-            <div className="bg-white rounded-xl border-2 border-gray-100 overflow-hidden shadow-sm">
+            <motion.div 
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.5, delay: 0.5 }}
+              className="bg-white rounded-xl border-2 border-gray-100 overflow-hidden shadow-sm mt-6"
+            >
               <div className="overflow-x-auto">
                 <table className="w-full">
                   <thead>
@@ -422,8 +447,11 @@ export default function Bookings() {
                       </tr>
                     ) : (
                       paginatedBookings.map((booking: any, index: number) => (
-                        <tr 
-                          key={booking.id} 
+                        <motion.tr 
+                          key={booking.id}
+                          initial={{ opacity: 0, y: 10 }}
+                          animate={{ opacity: 1, y: 0 }}
+                          transition={{ duration: 0.3, delay: index * 0.05 }}
                           className={`group hover:bg-blue-50 cursor-pointer transition-all duration-200 ${
                             index % 2 === 0 ? 'bg-white' : 'bg-gray-50/50'
                           }`}
@@ -476,17 +504,22 @@ export default function Bookings() {
                           <td className="py-3 px-4">
                             {getSourceBadge(booking.source || 'manual')}
                           </td>
-                        </tr>
+                        </motion.tr>
                       ))
                     )}
                   </tbody>
                 </table>
               </div>
-            </div>
+            </motion.div>
 
             {/* Pagination */}
             {totalPages > 1 && (
-              <div className="flex items-center justify-between px-6 py-4 border-t bg-gray-50">
+              <motion.div 
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.5, delay: 0.6 }}
+                className="flex items-center justify-between px-6 py-4 border-t bg-gray-50"
+              >
                 <div className="flex items-center space-x-2">
                   <span className="text-sm text-gray-600">Show</span>
                   <Select
@@ -513,7 +546,7 @@ export default function Bookings() {
                   <div className="text-sm text-gray-600">
                     {startIndex + 1}-{Math.min(endIndex, filteredBookings.length)} of {filteredBookings.length}
                   </div>
-                  
+
                   <div className="flex items-center space-x-2">
                     <Button
                       variant="outline"
@@ -586,10 +619,10 @@ export default function Bookings() {
                     </Button>
                   </div>
                 </div>
-              </div>
+              </motion.div>
             )}
           </div>
-        </div>
+        </motion.div>
       </div>
 
       {/* New Booking Dialog */}
@@ -725,6 +758,3 @@ export default function Bookings() {
           </form>
         </DialogContent>
       </Dialog>
-    </div>
-  );
-}

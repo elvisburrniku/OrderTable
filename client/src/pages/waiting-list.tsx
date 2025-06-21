@@ -1,6 +1,9 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { useToast } from "@/hooks/use-toast";
+import { apiRequest } from "@/lib/queryClient";
 import { useAuth } from "@/lib/auth.tsx";
+import { motion } from "framer-motion";
 import DashboardSidebar from "@/components/dashboard-sidebar";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -48,7 +51,7 @@ export default function WaitingList() {
   const { user, restaurant } = useAuth();
   const queryClient = useQueryClient();
   const { toast } = useToast();
-  
+
   // Get restaurant info from authentication context
   const tenantId = restaurant?.tenantId;
   const restaurantId = restaurant?.id;
@@ -84,9 +87,9 @@ export default function WaitingList() {
     const matchesSearch = !searchTerm || 
       entry.customerName?.toLowerCase().includes(searchTerm.toLowerCase()) ||
       entry.customerEmail?.toLowerCase().includes(searchTerm.toLowerCase());
-    
+
     const matchesStatus = statusFilter === "all" || entry.status === statusFilter;
-    
+
     return matchesSearch && matchesStatus;
   });
 
@@ -241,7 +244,7 @@ export default function WaitingList() {
 
   const handleEditSubmit = () => {
     if (!editingEntry) return;
-    
+
     updateEntryMutation.mutate({ 
       id: editingEntry.id, 
       updates: {
@@ -313,27 +316,45 @@ export default function WaitingList() {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      <div className="p-6">
-        <div className="bg-white rounded-lg shadow">
-          {/* Top Header */}
+    
+      
+        {/* Header */}
           <div className="p-6 border-b">
             <div className="flex items-center justify-between">
-              <h1 className="text-2xl font-bold text-gray-900">Waiting List</h1>
-              <Button
-                onClick={() => setShowForm(true)}
-                className="bg-green-600 hover:bg-green-700 text-white flex items-center space-x-2"
+              <motion.h1 
+                initial={{ opacity: 0, x: -20 }}
+                animate={{ opacity: 1, x: 0 }}
+                transition={{ duration: 0.5, delay: 0.1 }}
+                className="text-2xl font-bold text-gray-900 flex items-center gap-2"
               >
-                <Plus className="w-4 h-4" />
-                <span>Add to Waiting List</span>
-              </Button>
+                <Clock className="h-6 w-6 text-green-600" />
+                Waiting List
+              </motion.h1>
+              <motion.div
+                initial={{ opacity: 0, x: 20 }}
+                animate={{ opacity: 1, x: 0 }}
+                transition={{ duration: 0.5, delay: 0.2 }}
+              >
+                <Button className="bg-green-600 hover:bg-green-700 text-white flex items-center gap-2 transition-all duration-200">
+                  <Plus className="w-4 h-4" />
+                  Add to Waiting List
+                </Button>
+              </motion.div>
             </div>
+            <motion.p 
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{ duration: 0.5, delay: 0.3 }}
+              className="text-gray-600 mt-2"
+            >
+              Manage customers waiting for available tables
+            </motion.p>
           </div>
 
           {/* Filters Section */}
           <div className="p-6 border-b">
             <h2 className="text-lg font-semibold text-gray-900 mb-6">Waiting List</h2>
-            
+
             <div className="flex items-center justify-between mb-4">
               <div className="flex items-center space-x-4">
                 <Collapsible open={showFilters} onOpenChange={setShowFilters}>
@@ -352,7 +373,7 @@ export default function WaitingList() {
                       <ChevronDown className={`w-4 h-4 transform transition-transform duration-200 ${showFilters ? 'rotate-180' : ''}`} />
                     </Button>
                   </CollapsibleTrigger>
-                  
+
                   <CollapsibleContent className="mt-4">
                     <div className="bg-gray-50 rounded-xl p-6 border-2 border-gray-100">
                       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -368,7 +389,7 @@ export default function WaitingList() {
                             />
                           </div>
                         </div>
-                        
+
                         <div>
                           <Label className="text-sm font-medium text-gray-700 mb-2 block">Status</Label>
                           <Select value={statusFilter} onValueChange={setStatusFilter}>
@@ -551,7 +572,7 @@ export default function WaitingList() {
                 >
                   <ChevronLeft className="w-4 h-4" />
                 </Button>
-                
+
                 {Array.from({ length: Math.min(3, totalPages) }, (_, i) => {
                   const pageNum = Math.max(1, currentPage - 1) + i;
                   if (pageNum > totalPages) return null;
@@ -567,7 +588,7 @@ export default function WaitingList() {
                     </Button>
                   );
                 })}
-                
+
                 <Button 
                   variant="outline" 
                   size="sm"
@@ -587,8 +608,8 @@ export default function WaitingList() {
               </div>
             </div>
           )}
-        </div>
-      </div>
+        
+      
 
       {/* Add/Edit Entry Dialog */}
       <Dialog open={showForm} onOpenChange={(open) => {
@@ -734,6 +755,6 @@ export default function WaitingList() {
           </div>
         </DialogContent>
       </Dialog>
-    </div>
-  );
-}
+    
+</motion.div>
+      </div>

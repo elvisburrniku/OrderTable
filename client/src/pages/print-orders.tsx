@@ -1,5 +1,4 @@
-
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -34,6 +33,7 @@ import {
   Users
 } from "lucide-react";
 import { useAuth } from "@/lib/auth";
+import { motion } from "framer-motion";
 
 interface PrintOrder {
   id: number;
@@ -85,10 +85,10 @@ export default function PrintOrders() {
       order.customerName?.toLowerCase().includes(searchTerm.toLowerCase()) ||
       order.customerEmail?.toLowerCase().includes(searchTerm.toLowerCase()) ||
       order.orderNumber?.toLowerCase().includes(searchTerm.toLowerCase());
-    
+
     const matchesStatus = statusFilter === "all" || order.orderStatus === statusFilter;
     const matchesPayment = paymentFilter === "all" || order.paymentStatus === paymentFilter;
-    
+
     return matchesSearch && matchesStatus && matchesPayment;
   });
 
@@ -106,10 +106,10 @@ export default function PrintOrders() {
       cancelled: { color: "red", icon: AlertCircle },
       shipped: { color: "purple", icon: Truck },
     };
-    
+
     const config = statusConfig[status] || statusConfig.pending;
     const Icon = config.icon;
-    
+
     return (
       <Badge variant={config.color === "green" ? "default" : "secondary"} className="flex items-center gap-1">
         <Icon className="h-3 w-3" />
@@ -169,7 +169,7 @@ export default function PrintOrders() {
       }
 
       const { clientSecret, savedPaymentMethods } = await response.json();
-      
+
       setPaymentData({
         clientSecret,
         order: {
@@ -246,14 +246,28 @@ export default function PrintOrders() {
           {/* Top Header */}
           <div className="p-6 border-b">
             <div className="flex items-center justify-between">
-              <h1 className="text-2xl font-bold text-gray-900">Print Orders</h1>
-              <Button
+              <motion.h1 
+                initial={{ opacity: 0, x: -20 }}
+                animate={{ opacity: 1, x: 0 }}
+                transition={{ duration: 0.5, delay: 0.1 }}
+                className="text-2xl font-bold text-gray-900 flex items-center gap-2"
+              >
+                <Printer className="h-6 w-6 text-green-600" />
+                Print Orders
+              </motion.h1>
+              <motion.div
+                initial={{ opacity: 0, x: 20 }}
+                animate={{ opacity: 1, x: 0 }}
+                transition={{ duration: 0.5, delay: 0.2 }}
+              >
+                <Button
                 onClick={() => setActiveTab("new-order")}
-                className="bg-green-600 hover:bg-green-700 text-white flex items-center space-x-2"
+                 className="bg-green-600 hover:bg-green-700 text-white flex items-center space-x-2"
               >
                 <Plus className="w-4 h-4" />
                 <span>New Print Order</span>
               </Button>
+              </motion.div>
             </div>
           </div>
 
@@ -272,10 +286,10 @@ export default function PrintOrders() {
                   {/* Decorative Background Elements */}
                   <div className="absolute top-0 right-0 w-32 h-32 bg-gradient-to-br from-blue-400/10 to-green-400/10 rounded-full blur-3xl"></div>
                   <div className="absolute bottom-0 left-0 w-24 h-24 bg-gradient-to-tr from-purple-400/10 to-pink-400/10 rounded-full blur-2xl"></div>
-                  
+
                   {/* Top Accent Line */}
                   <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-blue-500 via-green-500 to-purple-500"></div>
-                  
+
                   <div className="relative z-10">
                     <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
                       {/* Total Orders */}
@@ -384,7 +398,7 @@ export default function PrintOrders() {
                             <ChevronDown className={`w-4 h-4 transform transition-transform duration-200 ${showFilters ? 'rotate-180' : ''}`} />
                           </Button>
                         </CollapsibleTrigger>
-                        
+
                         <CollapsibleContent className="mt-4">
                           <div className="bg-gray-50 rounded-xl p-6 border-2 border-gray-100">
                             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
@@ -664,7 +678,7 @@ export default function PrintOrders() {
                       <div className="text-sm text-gray-600">
                         {startIndex + 1}-{Math.min(endIndex, filteredPrintOrders.length)} of {filteredPrintOrders.length}
                       </div>
-                      
+
                       <div className="flex items-center space-x-2">
                         <Button
                           variant="outline"
@@ -692,7 +706,8 @@ export default function PrintOrders() {
                             if (totalPages <= 3) {
                               pageNum = i + 1;
                             } else if (currentPage <= 2) {
-                              pageNum = i + 1;
+                              ```text
+pageNum = i + 1;
                             } else if (currentPage >= totalPages - 1) {
                               pageNum = totalPages - 2 + i;
                             } else {
