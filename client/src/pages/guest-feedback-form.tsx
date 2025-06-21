@@ -24,6 +24,7 @@ interface FeedbackQuestion {
 
 export default function GuestFeedbackForm() {
   const [match, params] = useRoute("/feedback/:tenantId/:restaurantId");
+  const [match2, params2] = useRoute("/:tenantId/:restaurantId");
   const [customerName, setCustomerName] = useState("");
   const [customerEmail, setCustomerEmail] = useState("");
   const [customerPhone, setCustomerPhone] = useState("");
@@ -38,14 +39,18 @@ export default function GuestFeedbackForm() {
 
   // Extract IDs from URL path directly as fallback
   const pathParts = window.location.pathname.split('/');
-  const tenantId = params?.tenantId || pathParts[2] || null;
-  const restaurantId = params?.restaurantId || pathParts[3] || null;
+  const activeParams = params || params2;
+  const tenantId = activeParams?.tenantId || pathParts[1] || pathParts[2] || null;
+  const restaurantId = activeParams?.restaurantId || pathParts[2] || pathParts[3] || null;
   const urlParams = new URLSearchParams(window.location.search);
   const tableNumber = urlParams.get("table");
 
   console.log('Guest feedback form debug:', {
     match,
+    match2,
     params,
+    params2,
+    activeParams,
     pathParts,
     tenantId,
     restaurantId,

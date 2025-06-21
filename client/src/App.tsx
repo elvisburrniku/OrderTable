@@ -95,6 +95,7 @@ function App() {
         <Switch>
           {/* Public routes - standalone without guards */}
           <Route path="/feedback/:tenantId/:restaurantId" component={GuestFeedbackForm} />
+          <Route path="/:tenantId/:restaurantId" component={GuestFeedbackForm} />
           <Route path="/feedback-test" component={FeedbackTest} />
           <Route path="/guest-booking/:tenantId/:restaurantId" component={GuestBookingResponsive} />
           <Route path="/:tenantId/book/:restaurantId" component={GuestBookingResponsive} />
