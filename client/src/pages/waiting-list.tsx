@@ -147,7 +147,7 @@ export default function WaitingList() {
 
   const updateEntryMutation = useMutation({
     mutationFn: async ({ id, updates }: { id: number; updates: any }) => {
-      const response = await fetch(`/api/tenants/${tenantId}/restaurants/${restaurantId}/waiting-list/${id}`, {
+      const response = await fetch(`/api/tenants/${tenantId}/waiting-list/${id}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(updates)
