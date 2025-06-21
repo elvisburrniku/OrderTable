@@ -265,9 +265,75 @@ export default function PrintOrders() {
             </TabsList>
 
             <TabsContent value="orders">
-              {/* Filters Section */}
+              {/* Statistics Cards Section */}
               <div className="p-6 border-b">
                 <h2 className="text-lg font-semibold text-gray-900 mb-6">Print Orders</h2>
+                <div className="text-sm text-gray-500 mb-4">Manage professional printing services for your restaurant</div>
+                
+                {/* Statistics Cards with Red Border */}
+                <div className="border-2 border-red-500 rounded-lg p-6 mb-8 bg-white">
+                  <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+                    {/* Total Orders */}
+                    <div className="flex items-center space-x-3">
+                      <div className="w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-center">
+                        <Package className="w-5 h-5 text-blue-600" />
+                      </div>
+                      <div>
+                        <div className="text-2xl font-bold text-gray-900">
+                          {filteredPrintOrders.length}
+                        </div>
+                        <div className="text-sm text-gray-500">Total Orders</div>
+                      </div>
+                    </div>
+
+                    {/* Pending Orders */}
+                    <div className="flex items-center space-x-3">
+                      <div className="w-10 h-10 bg-yellow-100 rounded-lg flex items-center justify-center">
+                        <Clock className="w-5 h-5 text-yellow-600" />
+                      </div>
+                      <div>
+                        <div className="text-2xl font-bold text-gray-900">
+                          {filteredPrintOrders.filter((order: any) => order.orderStatus === 'pending').length}
+                        </div>
+                        <div className="text-sm text-gray-500">Pending Orders</div>
+                      </div>
+                    </div>
+
+                    {/* Completed Orders */}
+                    <div className="flex items-center space-x-3">
+                      <div className="w-10 h-10 bg-green-100 rounded-lg flex items-center justify-center">
+                        <CheckCircle className="w-5 h-5 text-green-600" />
+                      </div>
+                      <div>
+                        <div className="text-2xl font-bold text-gray-900">
+                          {filteredPrintOrders.filter((order: any) => order.orderStatus === 'completed').length}
+                        </div>
+                        <div className="text-sm text-gray-500">Completed Orders</div>
+                      </div>
+                    </div>
+
+                    {/* Total Revenue */}
+                    <div className="flex items-center space-x-3">
+                      <div className="w-10 h-10 bg-purple-100 rounded-lg flex items-center justify-center">
+                        <DollarSign className="w-5 h-5 text-purple-600" />
+                      </div>
+                      <div>
+                        <div className="text-2xl font-bold text-gray-900">
+                          {formatCurrency(
+                            filteredPrintOrders
+                              .filter((order: any) => order.paymentStatus === 'paid')
+                              .reduce((sum: number, order: any) => sum + (order.totalAmount || 0), 0)
+                          )}
+                        </div>
+                        <div className="text-sm text-gray-500">Total Revenue</div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Filters Section */}
+              <div className="p-6 border-b">
 
                 {/* Modern Filters Section */}
                 <div className="space-y-6 mb-8">
