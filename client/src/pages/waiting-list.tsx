@@ -27,6 +27,7 @@ import {
   MoreHorizontal, 
   Eye, 
   Edit, 
+  Edit2,
   Trash2,
   Users,
   Phone,
@@ -68,6 +69,9 @@ export default function WaitingList() {
     requestedTime: "",
     notes: "",
   });
+
+  const [editingEntry, setEditingEntry] = useState(null);
+  const [deletingEntry, setDeletingEntry] = useState(null);
 
   // Fetch waiting list
   const { data: waitingList = [], isLoading } = useQuery({
@@ -171,6 +175,32 @@ export default function WaitingList() {
     },
   });
 
+  // Delete mutation
+  const deleteEntryMutation = useMutation({
+    mutationFn: async (id: number) => {
+      const response = await fetch(`/api/tenants/${tenantId}/waiting-list/${id}`, {
+        method: 'DELETE',
+      });
+      if (!response.ok) throw new Error('Failed to delete waiting list entry');
+      return response.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: [`/api/tenants/${tenantId}/restaurants/${restaurantId}/waiting-list`] });
+      toast({
+        title: "Success",
+        description: "Waiting list entry deleted successfully",
+      });
+      setDeletingEntry(null);
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Error",
+        description: error.message || "Failed to delete waiting list entry",
+        variant: "destructive",
+      });
+    },
+  });
+
   if (!user || !restaurant) {
     return null;
   }
@@ -194,11 +224,69 @@ export default function WaitingList() {
       return;
     }
 
+    if (editingEntry) {
+      handleEditSubmit();
+    } else {
+      handleCreateSubmit();
+    }
+  };
+
+  const handleCreateSubmit = () => {
     createEntryMutation.mutate({
       ...formData,
       guestCount: parseInt(formData.guestCount),
       status: "waiting",
     });
+  };
+
+  const handleEditSubmit = () => {
+    if (!editingEntry) return;
+    
+    updateEntryMutation.mutate({ 
+      id: editingEntry.id, 
+      updates: {
+        ...formData,
+        guestCount: parseInt(formData.guestCount),
+      }
+    });
+  };
+
+  const handleEdit = (entry: any) => {
+    setEditingEntry(entry);
+    setFormData({
+      customerName: entry.customerName,
+      customerEmail: entry.customerEmail,
+      customerPhone: entry.customerPhone || "",
+      guestCount: entry.guestCount,
+      requestedDate: entry.requestedDate,
+      requestedTime: entry.requestedTime,
+      notes: entry.notes || "",
+    });
+    setShowForm(true);
+  };
+
+  const handleDelete = (entry: any) => {
+    setDeletingEntry(entry);
+  };
+
+  const confirmDelete = () => {
+    if (deletingEntry) {
+      deleteEntryMutation.mutate(deletingEntry.id);
+    }
+  };
+
+  const resetForm = () => {
+    setFormData({
+      customerName: "",
+      customerEmail: "",
+      customerPhone: "",
+      guestCount: 2,
+      requestedDate: "",
+      requestedTime: "",
+      notes: "",
+    });
+    setEditingEntry(null);
+    setShowForm(false);
   };
 
   const handleStatusUpdate = (id: number, status: string) => {
@@ -316,18 +404,19 @@ export default function WaitingList() {
                   <th className="w-28 text-left py-3 px-4 font-medium">STATUS</th>
                   <th className="w-28 text-left py-3 px-4 font-medium">CREATED</th>
                   <th className="w-28 text-left py-3 px-4 font-medium">SOURCE</th>
+                  <th className="w-32 text-left py-3 px-4 font-medium">ACTIONS</th>
                 </tr>
               </thead>
               <tbody>
                 {isLoading ? (
                   <tr>
-                    <td colSpan={7} className="py-8 text-center text-gray-500">
+                    <td colSpan={8} className="py-8 text-center text-gray-500">
                       Loading waiting list...
                     </td>
                   </tr>
                 ) : paginatedWaitingList.length === 0 ? (
                   <tr>
-                    <td colSpan={7} className="py-8 text-center text-gray-500">
+                    <td colSpan={8} className="py-8 text-center text-gray-500">
                       No customers on waiting list
                     </td>
                   </tr>
@@ -398,6 +487,26 @@ export default function WaitingList() {
                         <span className="px-3 py-1 rounded-full text-sm font-medium bg-blue-100 text-blue-800">
                           manual
                         </span>
+                      </td>
+                      <td className="py-4 px-4">
+                        <div className="flex items-center space-x-2">
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => handleEdit(item)}
+                            className="h-8 w-8 p-0"
+                          >
+                            <Edit2 className="w-4 h-4" />
+                          </Button>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => handleDelete(item)}
+                            className="h-8 w-8 p-0 text-red-600 hover:text-red-700 hover:bg-red-50"
+                          >
+                            <Trash2 className="w-4 h-4" />
+                          </Button>
+                        </div>
                       </td>
                     </tr>
                   ))
@@ -481,11 +590,14 @@ export default function WaitingList() {
         </div>
       </div>
 
-      {/* Add Entry Dialog */}
-      <Dialog open={showForm} onOpenChange={setShowForm}>
+      {/* Add/Edit Entry Dialog */}
+      <Dialog open={showForm} onOpenChange={(open) => {
+        if (!open) resetForm();
+        setShowForm(open);
+      }}>
         <DialogContent className="max-w-md">
           <DialogHeader>
-            <DialogTitle>Add to Waiting List</DialogTitle>
+            <DialogTitle>{editingEntry ? 'Edit Waiting List Entry' : 'Add to Waiting List'}</DialogTitle>
           </DialogHeader>
           <form onSubmit={handleSubmit} className="space-y-4">
             <div>
@@ -571,19 +683,55 @@ export default function WaitingList() {
               <Button
                 type="button"
                 variant="outline"
-                onClick={() => setShowForm(false)}
+                onClick={() => resetForm()}
               >
                 Cancel
               </Button>
               <Button
                 type="submit"
                 className="bg-green-600 hover:bg-green-700 text-white"
-                disabled={createEntryMutation.isPending}
+                disabled={createEntryMutation.isPending || updateEntryMutation.isPending}
               >
-                {createEntryMutation.isPending ? "Adding..." : "Add to List"}
+                {editingEntry ? 
+                  (updateEntryMutation.isPending ? "Updating..." : "Update Entry") :
+                  (createEntryMutation.isPending ? "Adding..." : "Add to List")
+                }
               </Button>
             </div>
           </form>
+        </DialogContent>
+      </Dialog>
+
+      {/* Delete Confirmation Dialog */}
+      <Dialog open={!!deletingEntry} onOpenChange={() => setDeletingEntry(null)}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>Delete Waiting List Entry</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            <p className="text-sm text-gray-600">
+              Are you sure you want to delete the waiting list entry for{" "}
+              <span className="font-medium">{deletingEntry?.customerName}</span>?
+              This action cannot be undone.
+            </p>
+            <div className="flex justify-end space-x-2">
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => setDeletingEntry(null)}
+              >
+                Cancel
+              </Button>
+              <Button
+                type="button"
+                variant="destructive"
+                onClick={confirmDelete}
+                disabled={deleteEntryMutation.isPending}
+              >
+                {deleteEntryMutation.isPending ? "Deleting..." : "Delete"}
+              </Button>
+            </div>
+          </div>
         </DialogContent>
       </Dialog>
     </div>

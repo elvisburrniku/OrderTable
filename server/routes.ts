@@ -2163,7 +2163,48 @@ export async function registerRoutes(app: Express): Promise<Server> {
     },
   );
 
+  app.delete(
+    "/api/tenants/:tenantId/waiting-list/:id",
+    validateTenant,
+    async (req, res) => {
+      try {
+        const id = parseInt(req.params.id);
+        const tenantId = parseInt(req.params.tenantId);
 
+        const existingEntry = await storage.getWaitingListEntryById(id);
+        if (!existingEntry || existingEntry.tenantId !== tenantId) {
+          return res
+            .status(404)
+            .json({ message: "Waiting list entry not found" });
+        }
+
+        await storage.deleteWaitingListEntry(id);
+        
+        // Log the activity
+        await storage.createActivityLog({
+          tenantId: existingEntry.tenantId,
+          restaurantId: existingEntry.restaurantId,
+          eventType: "waiting_list_deleted",
+          description: `Waiting list entry deleted for ${existingEntry.customerName}`,
+          source: "manual",
+          userEmail: null,
+          details: JSON.stringify({
+            waitingListId: id,
+            customerName: existingEntry.customerName,
+            customerEmail: existingEntry.customerEmail,
+            guestCount: existingEntry.guestCount,
+            requestedDate: existingEntry.requestedDate,
+            requestedTime: existingEntry.requestedTime,
+          }),
+        });
+
+        res.json({ message: "Waiting list entry deleted successfully" });
+      } catch (error) {
+        console.error("Error deleting waiting list entry:", error);
+        res.status(400).json({ message: "Invalid request" });
+      }
+    },
+  );
 
   // Public restaurant info (for customers via QR code)
   app.get(

@@ -623,6 +623,14 @@ export class MemoryStorage implements IStorage {
     this.waitingList[index] = { ...this.waitingList[index], ...updates };
     return this.waitingList[index];
   }
+
+  async deleteWaitingListEntry(id: number): Promise<boolean> {
+    const index = this.waitingList.findIndex(entry => entry.id === id);
+    if (index === -1) return false;
+    
+    this.waitingList.splice(index, 1);
+    return true;
+  }
   async getFeedbackByRestaurant(restaurantId: number): Promise<Feedback[]> { return []; }
   async createFeedback(feedback: InsertFeedback): Promise<Feedback> { 
     const newFeedback: Feedback = { id: this.nextId++, ...feedback, createdAt: new Date() };

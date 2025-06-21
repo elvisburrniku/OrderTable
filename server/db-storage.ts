@@ -1844,6 +1844,12 @@ export class DatabaseStorage implements IStorage {
     return updated;
   }
 
+  async deleteWaitingListEntry(id: number): Promise<boolean> {
+    if (!this.db) throw new Error("Database connection not available");
+    const result = await this.db.delete(waitingList).where(eq(waitingList.id, id));
+    return result.rowCount > 0;
+  }
+
 
 
   async getFeedbackByRestaurant(restaurantId: number): Promise<any[]> {
