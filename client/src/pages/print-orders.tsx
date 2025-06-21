@@ -270,62 +270,91 @@ export default function PrintOrders() {
                 <h2 className="text-lg font-semibold text-gray-900 mb-6">Print Orders</h2>
                 <div className="text-sm text-gray-500 mb-4">Manage professional printing services for your restaurant</div>
                 
-                {/* Statistics Cards with Red Border */}
-                <div className="border-2 border-red-500 rounded-lg p-6 mb-8 bg-white">
-                  <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-                    {/* Total Orders */}
-                    <div className="flex items-center space-x-3">
-                      <div className="w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-center">
-                        <Package className="w-5 h-5 text-blue-600" />
-                      </div>
-                      <div>
-                        <div className="text-2xl font-bold text-gray-900">
-                          {filteredPrintOrders.length}
+                {/* Enhanced Statistics Cards */}
+                <div className="relative bg-gradient-to-br from-white via-blue-50/30 to-green-50/30 rounded-xl p-8 mb-8 shadow-lg border border-gray-200/50 overflow-hidden">
+                  {/* Decorative Background Elements */}
+                  <div className="absolute top-0 right-0 w-32 h-32 bg-gradient-to-br from-blue-400/10 to-green-400/10 rounded-full blur-3xl"></div>
+                  <div className="absolute bottom-0 left-0 w-24 h-24 bg-gradient-to-tr from-purple-400/10 to-pink-400/10 rounded-full blur-2xl"></div>
+                  
+                  {/* Top Accent Line */}
+                  <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-blue-500 via-green-500 to-purple-500"></div>
+                  
+                  <div className="relative z-10">
+                    <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+                      {/* Total Orders */}
+                      <div className="group relative bg-white/60 backdrop-blur-sm rounded-xl p-4 border border-white/20 shadow-sm hover:shadow-md hover:bg-white/80 transition-all duration-300">
+                        <div className="flex items-center space-x-4">
+                          <div className="relative">
+                            <div className="w-12 h-12 bg-gradient-to-br from-blue-500 to-blue-600 rounded-xl flex items-center justify-center shadow-lg group-hover:shadow-xl transition-shadow duration-300">
+                              <Package className="w-6 h-6 text-white" />
+                            </div>
+                            <div className="absolute -top-1 -right-1 w-4 h-4 bg-blue-200 rounded-full opacity-60 group-hover:opacity-100 transition-opacity duration-300"></div>
+                          </div>
+                          <div>
+                            <div className="text-2xl font-bold text-gray-900 group-hover:text-blue-700 transition-colors duration-300">
+                              {filteredPrintOrders.length}
+                            </div>
+                            <div className="text-sm font-medium text-gray-600">Total Orders</div>
+                          </div>
                         </div>
-                        <div className="text-sm text-gray-500">Total Orders</div>
                       </div>
-                    </div>
 
-                    {/* Pending Orders */}
-                    <div className="flex items-center space-x-3">
-                      <div className="w-10 h-10 bg-yellow-100 rounded-lg flex items-center justify-center">
-                        <Clock className="w-5 h-5 text-yellow-600" />
-                      </div>
-                      <div>
-                        <div className="text-2xl font-bold text-gray-900">
-                          {filteredPrintOrders.filter((order: any) => order.orderStatus === 'pending').length}
+                      {/* Pending Orders */}
+                      <div className="group relative bg-white/60 backdrop-blur-sm rounded-xl p-4 border border-white/20 shadow-sm hover:shadow-md hover:bg-white/80 transition-all duration-300">
+                        <div className="flex items-center space-x-4">
+                          <div className="relative">
+                            <div className="w-12 h-12 bg-gradient-to-br from-amber-500 to-orange-600 rounded-xl flex items-center justify-center shadow-lg group-hover:shadow-xl transition-shadow duration-300">
+                              <Clock className="w-6 h-6 text-white" />
+                            </div>
+                            <div className="absolute -top-1 -right-1 w-4 h-4 bg-amber-200 rounded-full opacity-60 group-hover:opacity-100 transition-opacity duration-300"></div>
+                          </div>
+                          <div>
+                            <div className="text-2xl font-bold text-gray-900 group-hover:text-amber-700 transition-colors duration-300">
+                              {filteredPrintOrders.filter((order: any) => order.orderStatus === 'pending').length}
+                            </div>
+                            <div className="text-sm font-medium text-gray-600">Pending Orders</div>
+                          </div>
                         </div>
-                        <div className="text-sm text-gray-500">Pending Orders</div>
                       </div>
-                    </div>
 
-                    {/* Completed Orders */}
-                    <div className="flex items-center space-x-3">
-                      <div className="w-10 h-10 bg-green-100 rounded-lg flex items-center justify-center">
-                        <CheckCircle className="w-5 h-5 text-green-600" />
-                      </div>
-                      <div>
-                        <div className="text-2xl font-bold text-gray-900">
-                          {filteredPrintOrders.filter((order: any) => order.orderStatus === 'completed').length}
+                      {/* Completed Orders */}
+                      <div className="group relative bg-white/60 backdrop-blur-sm rounded-xl p-4 border border-white/20 shadow-sm hover:shadow-md hover:bg-white/80 transition-all duration-300">
+                        <div className="flex items-center space-x-4">
+                          <div className="relative">
+                            <div className="w-12 h-12 bg-gradient-to-br from-emerald-500 to-green-600 rounded-xl flex items-center justify-center shadow-lg group-hover:shadow-xl transition-shadow duration-300">
+                              <CheckCircle className="w-6 h-6 text-white" />
+                            </div>
+                            <div className="absolute -top-1 -right-1 w-4 h-4 bg-emerald-200 rounded-full opacity-60 group-hover:opacity-100 transition-opacity duration-300"></div>
+                          </div>
+                          <div>
+                            <div className="text-2xl font-bold text-gray-900 group-hover:text-emerald-700 transition-colors duration-300">
+                              {filteredPrintOrders.filter((order: any) => order.orderStatus === 'completed').length}
+                            </div>
+                            <div className="text-sm font-medium text-gray-600">Completed Orders</div>
+                          </div>
                         </div>
-                        <div className="text-sm text-gray-500">Completed Orders</div>
                       </div>
-                    </div>
 
-                    {/* Total Revenue */}
-                    <div className="flex items-center space-x-3">
-                      <div className="w-10 h-10 bg-purple-100 rounded-lg flex items-center justify-center">
-                        <DollarSign className="w-5 h-5 text-purple-600" />
-                      </div>
-                      <div>
-                        <div className="text-2xl font-bold text-gray-900">
-                          {formatCurrency(
-                            filteredPrintOrders
-                              .filter((order: any) => order.paymentStatus === 'paid')
-                              .reduce((sum: number, order: any) => sum + (order.totalAmount || 0), 0)
-                          )}
+                      {/* Total Revenue */}
+                      <div className="group relative bg-white/60 backdrop-blur-sm rounded-xl p-4 border border-white/20 shadow-sm hover:shadow-md hover:bg-white/80 transition-all duration-300">
+                        <div className="flex items-center space-x-4">
+                          <div className="relative">
+                            <div className="w-12 h-12 bg-gradient-to-br from-purple-500 to-violet-600 rounded-xl flex items-center justify-center shadow-lg group-hover:shadow-xl transition-shadow duration-300">
+                              <DollarSign className="w-6 h-6 text-white" />
+                            </div>
+                            <div className="absolute -top-1 -right-1 w-4 h-4 bg-purple-200 rounded-full opacity-60 group-hover:opacity-100 transition-opacity duration-300"></div>
+                          </div>
+                          <div>
+                            <div className="text-2xl font-bold text-gray-900 group-hover:text-purple-700 transition-colors duration-300">
+                              {formatCurrency(
+                                filteredPrintOrders
+                                  .filter((order: any) => order.paymentStatus === 'paid')
+                                  .reduce((sum: number, order: any) => sum + (order.totalAmount || 0), 0)
+                              )}
+                            </div>
+                            <div className="text-sm font-medium text-gray-600">Total Revenue</div>
+                          </div>
                         </div>
-                        <div className="text-sm text-gray-500">Total Revenue</div>
                       </div>
                     </div>
                   </div>
