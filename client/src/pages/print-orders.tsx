@@ -271,7 +271,7 @@ export default function PrintOrders() {
                 <div className="text-sm text-gray-500 mb-4">Manage professional printing services for your restaurant</div>
                 
                 {/* Enhanced Statistics Cards */}
-                <div className="relative bg-gradient-to-br from-white via-blue-50/30 to-green-50/30 rounded-xl p-8 mb-8 shadow-lg border-2 border-red-500 overflow-hidden"></div>
+                <div className="relative bg-gradient-to-br from-white via-blue-50/30 to-green-50/30 rounded-xl p-8 mb-8 shadow-lg border-2 border-red-500 overflow-hidden">
                   {/* Decorative Background Elements */}
                   <div className="absolute top-0 right-0 w-32 h-32 bg-gradient-to-br from-blue-400/10 to-green-400/10 rounded-full blur-3xl"></div>
                   <div className="absolute bottom-0 left-0 w-24 h-24 bg-gradient-to-tr from-purple-400/10 to-pink-400/10 rounded-full blur-2xl"></div>
