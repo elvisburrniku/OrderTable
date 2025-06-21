@@ -484,77 +484,68 @@ export default function Bookings() {
               </div>
             </div>
 
-            {/* Premium Pagination */}
-            <div className="bg-white border-t-2 border-gray-100 px-6 py-5">
-              <div className="flex flex-col sm:flex-row items-center justify-between space-y-4 sm:space-y-0">
-                {/* Items per page selector */}
-                <div className="flex items-center space-x-3">
-                  <span className="text-sm font-medium text-gray-700">Show</span>
-                  <Select 
-                    value={itemsPerPage.toString()} 
+            {/* Pagination */}
+            {totalPages > 1 && (
+              <div className="flex items-center justify-between px-6 py-4 border-t bg-gray-50">
+                <div className="flex items-center space-x-2">
+                  <span className="text-sm text-gray-600">Show</span>
+                  <Select
+                    value={itemsPerPage.toString()}
                     onValueChange={(value) => {
                       setItemsPerPage(parseInt(value));
                       setCurrentPage(1);
                     }}
                   >
-                    <SelectTrigger className="w-20 h-9 border-2 border-gray-200 focus:border-green-500 rounded-lg transition-all duration-200">
+                    <SelectTrigger className="w-16 h-8">
                       <SelectValue />
                     </SelectTrigger>
-                    <SelectContent className="rounded-lg border-2 border-gray-200">
-                      <SelectItem value="10" className="rounded-md">10</SelectItem>
-                      <SelectItem value="20" className="rounded-md">20</SelectItem>
-                      <SelectItem value="50" className="rounded-md">50</SelectItem>
-                      <SelectItem value="100" className="rounded-md">100</SelectItem>
+                    <SelectContent>
+                      <SelectItem value="7">7</SelectItem>
+                      <SelectItem value="10">10</SelectItem>
+                      <SelectItem value="20">20</SelectItem>
+                      <SelectItem value="50">50</SelectItem>
                     </SelectContent>
                   </Select>
-                  <span className="text-sm text-gray-600">of {filteredBookings.length} results</span>
+                  <span className="text-sm text-gray-600">entries</span>
                 </div>
 
-                {/* Advanced pagination controls */}
-                <div className="flex items-center space-x-6">
-                  {/* Results indicator */}
-                  <div className="text-sm text-gray-600 bg-gray-50 px-3 py-2 rounded-lg">
-                    <span className="font-medium text-gray-800">
-                      {startIndex + 1}-{Math.min(endIndex, filteredBookings.length)}
-                    </span> of <span className="font-medium text-gray-800">{filteredBookings.length}</span>
+                <div className="flex items-center space-x-4">
+                  <div className="text-sm text-gray-600">
+                    {startIndex + 1}-{Math.min(endIndex, filteredBookings.length)} of {filteredBookings.length}
                   </div>
                   
-                  {/* Navigation buttons */}
                   <div className="flex items-center space-x-2">
-                    {/* First page */}
                     <Button
                       variant="outline"
                       size="sm"
                       onClick={() => setCurrentPage(1)}
                       disabled={currentPage === 1}
-                      className="h-9 px-3 border-2 border-gray-200 hover:border-green-500 hover:bg-green-50 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200"
+                      className="px-3 py-1 h-8 text-sm"
                     >
-                      <span className="text-xs font-medium">First</span>
+                      First
                     </Button>
-
-                    {/* Previous page */}
                     <Button
                       variant="outline"
                       size="sm"
-                      onClick={() => setCurrentPage(Math.max(1, currentPage - 1))}
+                      onClick={() => setCurrentPage(currentPage - 1)}
                       disabled={currentPage === 1}
-                      className="h-9 w-9 p-0 border-2 border-gray-200 hover:border-green-500 hover:bg-green-50 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200"
+                      className="w-8 h-8 p-0"
                     >
                       <ChevronLeft className="w-4 h-4" />
                     </Button>
 
-                    {/* Page numbers */}
+                    {/* Page Numbers */}
                     <div className="flex items-center space-x-1">
-                      {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
+                      {Array.from({ length: Math.min(3, totalPages) }, (_, i) => {
                         let pageNum;
-                        if (totalPages <= 5) {
+                        if (totalPages <= 3) {
                           pageNum = i + 1;
-                        } else if (currentPage <= 3) {
+                        } else if (currentPage <= 2) {
                           pageNum = i + 1;
-                        } else if (currentPage >= totalPages - 2) {
-                          pageNum = totalPages - 4 + i;
+                        } else if (currentPage >= totalPages - 1) {
+                          pageNum = totalPages - 2 + i;
                         } else {
-                          pageNum = currentPage - 2 + i;
+                          pageNum = currentPage - 1 + i;
                         }
 
                         return (
@@ -563,57 +554,40 @@ export default function Bookings() {
                             variant={currentPage === pageNum ? "default" : "outline"}
                             size="sm"
                             onClick={() => setCurrentPage(pageNum)}
-                            className={`h-9 w-9 p-0 border-2 transition-all duration-200 ${
+                            className={`w-8 h-8 p-0 ${
                               currentPage === pageNum 
-                                ? 'bg-green-600 border-green-600 text-white hover:bg-green-700 shadow-md' 
-                                : 'border-gray-200 hover:border-green-500 hover:bg-green-50'
+                                ? "bg-green-600 hover:bg-green-700 text-white" 
+                                : "hover:bg-green-50"
                             }`}
                           >
-                            <span className="text-sm font-medium">{pageNum}</span>
+                            {pageNum}
                           </Button>
                         );
                       })}
-                      
-                      {totalPages > 5 && currentPage < totalPages - 2 && (
-                        <>
-                          <span className="text-gray-400 px-1">...</span>
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={() => setCurrentPage(totalPages)}
-                            className="h-9 w-9 p-0 border-2 border-gray-200 hover:border-green-500 hover:bg-green-50 transition-all duration-200"
-                          >
-                            <span className="text-sm font-medium">{totalPages}</span>
-                          </Button>
-                        </>
-                      )}
                     </div>
 
-                    {/* Next page */}
                     <Button
                       variant="outline"
                       size="sm"
-                      onClick={() => setCurrentPage(Math.min(totalPages, currentPage + 1))}
+                      onClick={() => setCurrentPage(currentPage + 1)}
                       disabled={currentPage === totalPages}
-                      className="h-9 w-9 p-0 border-2 border-gray-200 hover:border-green-500 hover:bg-green-50 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200"
+                      className="w-8 h-8 p-0"
                     >
                       <ChevronRight className="w-4 h-4" />
                     </Button>
-
-                    {/* Last page */}
                     <Button
                       variant="outline"
                       size="sm"
                       onClick={() => setCurrentPage(totalPages)}
                       disabled={currentPage === totalPages}
-                      className="h-9 px-3 border-2 border-gray-200 hover:border-green-500 hover:bg-green-50 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200"
+                      className="px-3 py-1 h-8 text-sm"
                     >
-                      <span className="text-xs font-medium">Last</span>
+                      Last
                     </Button>
                   </div>
                 </div>
               </div>
-            </div>
+            )}
           </div>
         </div>
       </div>
