@@ -10,7 +10,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { 
   Download, 
   Eye, 
@@ -22,8 +22,13 @@ import {
   Trash2,
   Filter,
   Search,
-  Users
+  Users,
+  ChevronDown,
+  ChevronLeft,
+  ChevronRight,
+  Clock
 } from "lucide-react";
+import { motion } from "framer-motion";
 
 interface FeedbackItem {
   id: number;
@@ -59,6 +64,9 @@ export default function FeedbackResponses() {
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedFeedback, setSelectedFeedback] = useState<FeedbackItem | null>(null);
   const [showDetailModal, setShowDetailModal] = useState(false);
+  const [showFilters, setShowFilters] = useState(false);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [itemsPerPage, setItemsPerPage] = useState(7);
   const [tenantId, setTenantId] = useState<number | null>(null);
   const [restaurantId, setRestaurantId] = useState<number | null>(null);
   const { toast } = useToast();
@@ -147,10 +155,9 @@ export default function FeedbackResponses() {
   if (!tenantId || !restaurantId) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <div className="text-center">
-          <MessageCircle className="w-12 h-12 text-gray-400 mx-auto mb-4" />
-          <h3 className="text-lg font-medium text-gray-900 mb-2">Loading feedback...</h3>
-          <p className="text-gray-600">Please wait while we load your feedback data.</p>
+        <div className="flex flex-col items-center space-y-4">
+          <div className="animate-spin rounded-full h-8 w-8 border-2 border-green-500 border-t-transparent"></div>
+          <span className="text-gray-500 font-medium">Loading feedback...</span>
         </div>
       </div>
     );
@@ -163,6 +170,12 @@ export default function FeedbackResponses() {
       item.customerEmail.toLowerCase().includes(searchTerm.toLowerCase());
     return matchesFilter && matchesSearch;
   }) || [];
+
+  // Pagination
+  const totalPages = Math.ceil(filteredFeedback.length / itemsPerPage);
+  const startIndex = (currentPage - 1) * itemsPerPage;
+  const endIndex = startIndex + itemsPerPage;
+  const paginatedFeedback = filteredFeedback.slice(startIndex, endIndex);
 
   const handleViewDetails = (feedbackItem: FeedbackItem) => {
     setSelectedFeedback(feedbackItem);
@@ -198,182 +211,443 @@ export default function FeedbackResponses() {
     return 'text-red-600';
   };
 
+  const getStatusBadge = (visited: boolean) => {
+    return visited ? (
+      <span className="bg-green-500 text-white px-2 py-1 rounded-full text-xs font-medium">
+        feedback
+      </span>
+    ) : (
+      <span className="bg-blue-500 text-white px-2 py-1 rounded-full text-xs font-medium">
+        feedback
+      </span>
+    );
+  };
+
+  const getSourceBadge = () => {
+    return (
+      <span className="bg-gray-500 text-white px-2 py-1 rounded-full text-xs font-medium">
+        Feedback
+      </span>
+    );
+  };
+
   return (
     <div className="min-h-screen bg-gray-50">
-      {/* Header */}
-      <div className="bg-white border-b border-gray-200">
-        <div className="flex items-center justify-between px-6 py-4">
-          <div className="flex items-center space-x-3">
-            <div className="p-2 bg-green-100 rounded-lg">
-              <MessageCircle className="w-6 h-6 text-green-600" />
-            </div>
-            <div>
-              <h1 className="text-xl font-semibold text-gray-900">Feedback Responses</h1>
-              <p className="text-sm text-gray-600">Monitor your restaurant's performance and activity trends for {restaurant?.name}</p>
-            </div>
-          </div>
-          <Button variant="outline" className="flex items-center space-x-2">
-            <Users className="w-4 h-4" />
-            <span>View All Restaurants</span>
-          </Button>
-        </div>
-      </div>
-
       <div className="p-6">
-        {/* Filters Bar */}
-        <div className="bg-white rounded-lg border border-gray-200 mb-6">
-          <div className="p-4">
-            <div className="flex items-center justify-between mb-4">
-              <Button variant="outline" size="sm" className="flex items-center space-x-2">
-                <Filter className="w-4 h-4" />
-                <span>Filters</span>
-              </Button>
+        <motion.div 
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.5 }}
+          className="bg-white rounded-lg shadow"
+        >
+          {/* Header */}
+          <div className="p-6 border-b">
+            <div className="flex items-center justify-between">
+              <motion.h1 
+                initial={{ opacity: 0, x: -20 }}
+                animate={{ opacity: 1, x: 0 }}
+                transition={{ duration: 0.5, delay: 0.1 }}
+                className="text-2xl font-bold text-gray-900 flex items-center gap-2"
+              >
+                <MessageCircle className="h-6 w-6 text-green-600" />
+                Feedback Responses
+              </motion.h1>
+              <motion.div
+                initial={{ opacity: 0, x: 20 }}
+                animate={{ opacity: 1, x: 0 }}
+                transition={{ duration: 0.5, delay: 0.2 }}
+              >
+                <Button variant="outline" className="flex items-center gap-2 hover:bg-green-50 hover:border-green-500 transition-all duration-200">
+                  <Users className="h-4 w-4" />
+                  View All Restaurants
+                </Button>
+              </motion.div>
             </div>
-            
-            <div className="flex items-center space-x-4">
-              <div className="flex-1">
-                <div className="relative">
-                  <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
-                  <Input
-                    placeholder="Search by customer name or email..."
-                    value={searchTerm}
-                    onChange={(e) => setSearchTerm(e.target.value)}
-                    className="pl-10"
-                  />
-                </div>
-              </div>
-              
-              <Select value={statusFilter} onValueChange={setStatusFilter}>
-                <SelectTrigger className="w-48">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">All Feedback</SelectItem>
-                  <SelectItem value="visited">Visited</SelectItem>
-                  <SelectItem value="not-visited">Not Visited</SelectItem>
-                </SelectContent>
-              </Select>
-              
-              <Button variant="outline" size="sm" className="flex items-center space-x-2">
-                <Download className="w-4 h-4" />
-                <span>Export</span>
-              </Button>
-            </div>
+            <motion.p 
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{ duration: 0.5, delay: 0.3 }}
+              className="text-gray-600 mt-2"
+            >
+              Monitor your restaurant's performance and activity trends for {restaurant?.name}
+            </motion.p>
           </div>
-        </div>
 
-        {/* Feedback Table */}
-        <div className="bg-white rounded-lg border border-gray-200">
-          <div className="overflow-x-auto">
-            {isLoading ? (
-              <div className="flex items-center justify-center py-8">
-                <div className="animate-spin w-8 h-8 border-4 border-primary border-t-transparent rounded-full" />
-              </div>
-            ) : filteredFeedback.length === 0 ? (
-              <div className="text-center py-8">
-                <MessageCircle className="w-12 h-12 text-gray-400 mx-auto mb-4" />
-                <h3 className="text-lg font-medium text-gray-900 mb-2">No feedback yet</h3>
-                <p className="text-gray-600">Guest feedback will appear here once customers leave reviews.</p>
-              </div>
-            ) : (
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead className="w-[200px]">CUSTOMER</TableHead>
-                    <TableHead className="w-[100px]">SOURCE</TableHead>
-                    <TableHead className="w-[150px]">EVENT TYPE</TableHead>
-                    <TableHead className="w-[200px]">USER</TableHead>
-                    <TableHead className="flex-1">DETAILS</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {filteredFeedback.map((item) => (
-                    <TableRow key={item.id} className="hover:bg-gray-50">
-                      <TableCell>
-                        <div className="text-sm">
-                          <div className="text-gray-500">
-                            {new Date(item.visitDate || item.createdAt).toLocaleDateString('en-US', {
-                              year: 'numeric',
-                              month: '2-digit',
-                              day: '2-digit'
-                            })}
+          {/* Filters Section */}
+          <div className="p-6 border-b">
+            <motion.div 
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.5, delay: 0.4 }}
+              className="space-y-6"
+            >
+              {/* Filter Controls Bar */}
+              <div className="flex items-center justify-between">
+                <div className="flex items-center space-x-4">
+                  <Collapsible open={showFilters} onOpenChange={setShowFilters}>
+                    <CollapsibleTrigger asChild>
+                      <Button 
+                        variant="outline" 
+                        className="h-10 px-4 border-2 border-gray-200 hover:border-green-500 hover:bg-green-50 transition-all duration-200 flex items-center space-x-2 font-medium"
+                      >
+                        <Filter className="w-4 h-4" />
+                        <span>Filters</span>
+                        {(statusFilter !== 'all' || searchTerm) && (
+                          <span className="bg-green-500 text-white text-xs px-2 py-0.5 rounded-full ml-1">
+                            {[statusFilter !== 'all', searchTerm].filter(Boolean).length}
+                          </span>
+                        )}
+                        <ChevronDown className={`w-4 h-4 transform transition-transform duration-200 ${showFilters ? 'rotate-180' : ''}`} />
+                      </Button>
+                    </CollapsibleTrigger>
+
+                    <CollapsibleContent className="mt-4">
+                      <motion.div 
+                        initial={{ opacity: 0, scale: 0.95 }}
+                        animate={{ opacity: 1, scale: 1 }}
+                        transition={{ duration: 0.3 }}
+                        className="bg-gray-50 rounded-xl p-6 border-2 border-gray-100"
+                      >
+                        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                          {/* Search Input */}
+                          <div className="relative">
+                            <label className="block text-sm font-medium text-gray-700 mb-2">Search</label>
+                            <div className="relative">
+                              <Search className="w-4 h-4 text-gray-400 absolute left-3 top-1/2 transform -translate-y-1/2" />
+                              <Input
+                                placeholder="Search by name or email..."
+                                value={searchTerm}
+                                onChange={(e) => setSearchTerm(e.target.value)}
+                                className="pl-10 h-11 border-2 border-gray-200 focus:border-green-500 focus:ring-0 rounded-lg transition-all duration-200"
+                              />
+                            </div>
                           </div>
-                          <div className="text-gray-500 text-xs">
-                            {new Date(item.visitDate || item.createdAt).toLocaleTimeString('en-US', {
-                              hour12: false,
-                              hour: '2-digit',
-                              minute: '2-digit',
-                              second: '2-digit'
-                            })}
-                          </div>
-                        </div>
-                      </TableCell>
-                      
-                      <TableCell>
-                        <Badge variant="secondary" className="bg-blue-100 text-blue-800">
-                          feedback
-                        </Badge>
-                      </TableCell>
-                      
-                      <TableCell>
-                        <Badge variant="outline" className="bg-gray-100 text-gray-700">
-                          Feedback
-                        </Badge>
-                      </TableCell>
-                      
-                      <TableCell>
-                        <div className="flex items-center space-x-3">
-                          <div className="w-8 h-8 bg-green-100 rounded-full flex items-center justify-center">
-                            <User className="w-4 h-4 text-green-600" />
-                          </div>
+
+                          {/* Status Filter */}
                           <div>
-                            <div className="font-medium text-gray-900">{item.customerName}</div>
-                            <div className="text-sm text-gray-500">{item.customerEmail}</div>
+                            <label className="block text-sm font-medium text-gray-700 mb-2">Status</label>
+                            <Select value={statusFilter} onValueChange={setStatusFilter}>
+                              <SelectTrigger className="h-11 border-2 border-gray-200 focus:border-green-500 rounded-lg transition-all duration-200">
+                                <SelectValue placeholder="All Feedback" />
+                              </SelectTrigger>
+                              <SelectContent className="rounded-lg border-2 border-gray-200">
+                                <SelectItem value="all" className="rounded-md">All Feedback</SelectItem>
+                                <SelectItem value="visited" className="rounded-md">
+                                  <div className="flex items-center space-x-2">
+                                    <div className="w-2 h-2 bg-green-500 rounded-full"></div>
+                                    <span>Visited</span>
+                                  </div>
+                                </SelectItem>
+                                <SelectItem value="not-visited" className="rounded-md">
+                                  <div className="flex items-center space-x-2">
+                                    <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
+                                    <span>Not Visited</span>
+                                  </div>
+                                </SelectItem>
+                              </SelectContent>
+                            </Select>
+                          </div>
+
+                          {/* Export */}
+                          <div className="flex items-end">
+                            <Button variant="outline" className="h-11 flex items-center space-x-2 hover:bg-green-50 hover:border-green-500 transition-all duration-200">
+                              <Download className="w-4 h-4" />
+                              <span>Export</span>
+                            </Button>
                           </div>
                         </div>
-                      </TableCell>
-                      
-                      <TableCell>
-                        <div className="flex items-center justify-between">
-                          <div className="flex-1 min-w-0">
-                            <div className="flex items-center space-x-4 mb-2">
-                              <div className="flex items-center space-x-1">
-                                <span className="text-sm text-gray-600">Rating:</span>
-                                <div className="flex">{renderStars(item.rating)}</div>
-                                <span className="text-sm font-medium">{item.rating ? `${Math.min(Math.max(item.rating, 0), 5)}/5` : 'No rating'}</span>
-                              </div>
-                              {item.tableNumber && (
-                                <Badge variant="outline">Table {item.tableNumber}</Badge>
+
+                        {/* Filter Actions */}
+                        {(statusFilter !== 'all' || searchTerm) && (
+                          <div className="flex items-center justify-between mt-4 pt-4 border-t border-gray-200">
+                            <div className="flex items-center space-x-2 text-sm text-gray-600">
+                              <span>Active filters:</span>
+                              {searchTerm && (
+                                <span className="bg-green-100 text-green-800 px-2 py-1 rounded-md text-xs font-medium">
+                                  Search: "{searchTerm}"
+                                </span>
                               )}
-                              {!item.visited && new Date(item.createdAt).toDateString() === new Date().toDateString() && (
-                                <Badge variant="destructive">New</Badge>
+                              {statusFilter !== 'all' && (
+                                <span className="bg-blue-100 text-blue-800 px-2 py-1 rounded-md text-xs font-medium">
+                                  Status: {statusFilter.replace('-', ' ')}
+                                </span>
                               )}
                             </div>
-                            
-                            {item.comments && (
-                              <p className="text-sm text-gray-700 truncate max-w-md">
-                                "{item.comments}"
-                              </p>
-                            )}
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => {
+                                setSearchTerm("");
+                                setStatusFilter("all");
+                              }}
+                              className="text-gray-500 hover:text-gray-700 hover:bg-gray-100"
+                            >
+                              Clear all
+                            </Button>
                           </div>
-                          
+                        )}
+                      </motion.div>
+                    </CollapsibleContent>
+                  </Collapsible>
+                </div>
+              </div>
+            </motion.div>
+
+            {/* Enhanced Table */}
+            <motion.div 
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.5, delay: 0.5 }}
+              className="bg-white rounded-xl border-2 border-gray-100 overflow-hidden shadow-sm mt-6"
+            >
+              <div className="overflow-x-auto">
+                <table className="w-full">
+                  <thead>
+                    <tr className="bg-gray-50 border-b border-gray-200">
+                      <th className="text-left py-4 px-6 text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Customer
+                      </th>
+                      <th className="text-left py-4 px-6 text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Source
+                      </th>
+                      <th className="text-left py-4 px-6 text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Event Type
+                      </th>
+                      <th className="text-left py-4 px-6 text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        User
+                      </th>
+                      <th className="text-left py-4 px-6 text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Details
+                      </th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-gray-100">
+                    {isLoading ? (
+                      <tr>
+                        <td colSpan={5} className="py-12 text-center">
+                          <div className="flex flex-col items-center space-y-4">
+                            <div className="animate-spin rounded-full h-8 w-8 border-2 border-green-500 border-t-transparent"></div>
+                            <span className="text-gray-500 font-medium">Loading feedback...</span>
+                          </div>
+                        </td>
+                      </tr>
+                    ) : paginatedFeedback.length === 0 ? (
+                      <tr>
+                        <td colSpan={5} className="py-12 text-center">
+                          <div className="flex flex-col items-center space-y-4">
+                            <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center">
+                              <MessageCircle className="w-8 h-8 text-gray-400" />
+                            </div>
+                            <div>
+                              <h3 className="text-gray-900 font-medium">No feedback found</h3>
+                              <p className="text-gray-500 text-sm mt-1">Try adjusting your filters or search terms</p>
+                            </div>
+                          </div>
+                        </td>
+                      </tr>
+                    ) : (
+                      paginatedFeedback.map((item: FeedbackItem, index: number) => (
+                        <motion.tr 
+                          key={item.id}
+                          initial={{ opacity: 0, y: 10 }}
+                          animate={{ opacity: 1, y: 0 }}
+                          transition={{ duration: 0.3, delay: index * 0.05 }}
+                          className={`group hover:bg-blue-50 transition-all duration-200 ${
+                            index % 2 === 0 ? 'bg-white' : 'bg-gray-50/50'
+                          }`}
+                        >
+                          <td className="py-4 px-6">
+                            <div className="flex items-center space-x-2">
+                              <Clock className="w-4 h-4 text-gray-400" />
+                              <div className="text-sm">
+                                <div className="text-gray-900 font-medium">
+                                  {new Date(item.visitDate || item.createdAt).toLocaleDateString('en-US', {
+                                    year: 'numeric',
+                                    month: '2-digit',
+                                    day: '2-digit'
+                                  })}
+                                </div>
+                                <div className="text-gray-500 text-xs">
+                                  {new Date(item.visitDate || item.createdAt).toLocaleTimeString('en-US', {
+                                    hour12: false,
+                                    hour: '2-digit',
+                                    minute: '2-digit',
+                                    second: '2-digit'
+                                  })}
+                                </div>
+                              </div>
+                            </div>
+                          </td>
+                          <td className="py-4 px-6">
+                            {getStatusBadge(item.visited)}
+                          </td>
+                          <td className="py-4 px-6">
+                            {getSourceBadge()}
+                          </td>
+                          <td className="py-4 px-6">
+                            <div className="flex items-center space-x-3">
+                              <div className="w-8 h-8 bg-gradient-to-br from-green-400 to-green-600 rounded-full flex items-center justify-center text-white font-medium text-sm">
+                                <User className="w-4 h-4" />
+                              </div>
+                              <div className="min-w-0 flex-1">
+                                <div className="font-medium text-gray-900 truncate">{item.customerName}</div>
+                                <div className="text-sm text-gray-500 truncate">{item.customerEmail}</div>
+                              </div>
+                            </div>
+                          </td>
+                          <td className="py-4 px-6">
+                            <div className="flex items-center justify-between">
+                              <div className="flex-1 min-w-0">
+                                <div className="flex items-center space-x-4 mb-2">
+                                  <div className="flex items-center space-x-1">
+                                    <span className="text-sm text-gray-600">Rating:</span>
+                                    <div className="flex">{renderStars(item.rating)}</div>
+                                    <span className="text-sm font-medium">{item.rating ? `${Math.min(Math.max(item.rating, 0), 5)}/5` : 'No rating'}</span>
+                                  </div>
+                                  {item.tableNumber && (
+                                    <Badge variant="outline">Table {item.tableNumber}</Badge>
+                                  )}
+                                  {!item.visited && new Date(item.createdAt).toDateString() === new Date().toDateString() && (
+                                    <Badge variant="destructive">New</Badge>
+                                  )}
+                                </div>
+                                
+                                {item.comments && (
+                                  <p className="text-sm text-gray-700 truncate max-w-md">
+                                    "{item.comments}"
+                                  </p>
+                                )}
+                              </div>
+                              
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => handleViewDetails(item)}
+                                className="ml-4 h-8 w-8 p-0 hover:bg-blue-100 hover:text-blue-600 transition-colors duration-200"
+                              >
+                                <Eye className="h-4 w-4" />
+                              </Button>
+                            </div>
+                          </td>
+                        </motion.tr>
+                      ))
+                    )}
+                  </tbody>
+                </table>
+              </div>
+            </motion.div>
+
+            {/* Pagination */}
+            {totalPages > 1 && (
+              <motion.div 
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.5, delay: 0.6 }}
+                className="flex items-center justify-between px-6 py-4 border-t bg-gray-50"
+              >
+                <div className="flex items-center space-x-2">
+                  <span className="text-sm text-gray-600">Show</span>
+                  <Select
+                    value={itemsPerPage.toString()}
+                    onValueChange={(value) => {
+                      setItemsPerPage(parseInt(value));
+                      setCurrentPage(1);
+                    }}
+                  >
+                    <SelectTrigger className="w-16 h-8">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="7">7</SelectItem>
+                      <SelectItem value="10">10</SelectItem>
+                      <SelectItem value="20">20</SelectItem>
+                      <SelectItem value="50">50</SelectItem>
+                    </SelectContent>
+                  </Select>
+                  <span className="text-sm text-gray-600">entries</span>
+                </div>
+
+                <div className="flex items-center space-x-4">
+                  <div className="text-sm text-gray-600">
+                    {startIndex + 1}-{Math.min(endIndex, filteredFeedback.length)} of {filteredFeedback.length}
+                  </div>
+
+                  <div className="flex items-center space-x-2">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => setCurrentPage(1)}
+                      disabled={currentPage === 1}
+                      className="px-3 py-1 h-8 text-sm"
+                    >
+                      First
+                    </Button>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => setCurrentPage(currentPage - 1)}
+                      disabled={currentPage === 1}
+                      className="w-8 h-8 p-0"
+                    >
+                      <ChevronLeft className="w-4 h-4" />
+                    </Button>
+
+                    {/* Page Numbers */}
+                    <div className="flex items-center space-x-1">
+                      {Array.from({ length: Math.min(3, totalPages) }, (_, i) => {
+                        let pageNum;
+                        if (totalPages <= 3) {
+                          pageNum = i + 1;
+                        } else if (currentPage <= 2) {
+                          pageNum = i + 1;
+                        } else if (currentPage >= totalPages - 1) {
+                          pageNum = totalPages - 2 + i;
+                        } else {
+                          pageNum = currentPage - 1 + i;
+                        }
+
+                        return (
                           <Button
-                            variant="ghost"
+                            key={pageNum}
+                            variant={currentPage === pageNum ? "default" : "outline"}
                             size="sm"
-                            onClick={() => handleViewDetails(item)}
-                            className="ml-4"
+                            onClick={() => setCurrentPage(pageNum)}
+                            className={`w-8 h-8 p-0 ${
+                              currentPage === pageNum 
+                                ? "bg-green-600 hover:bg-green-700 text-white" 
+                                : "hover:bg-green-50"
+                            }`}
                           >
-                            <Eye className="w-4 h-4" />
+                            {pageNum}
                           </Button>
-                        </div>
-                      </TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
+                        );
+                      })}
+                    </div>
+
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => setCurrentPage(currentPage + 1)}
+                      disabled={currentPage === totalPages}
+                      className="w-8 h-8 p-0"
+                    >
+                      <ChevronRight className="w-4 h-4" />
+                    </Button>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => setCurrentPage(totalPages)}
+                      disabled={currentPage === totalPages}
+                      className="px-3 py-1 h-8 text-sm"
+                    >
+                      Last
+                    </Button>
+                  </div>
+                </div>
+              </motion.div>
             )}
           </div>
-        </div>
+        </motion.div>
       </div>
 
       {/* Detail Modal */}
@@ -381,7 +655,7 @@ export default function FeedbackResponses() {
         <DialogContent className="sm:max-w-[600px] max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
-              <MessageCircle className="w-5 h-5" />
+              <MessageCircle className="w-5 h-5 text-green-600" />
               Feedback Details - #{selectedFeedback?.id}
             </DialogTitle>
           </DialogHeader>
