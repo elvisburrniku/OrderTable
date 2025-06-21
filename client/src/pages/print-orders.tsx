@@ -741,10 +741,6 @@ export default function PrintOrders() {
                 )}
               </div>
             </TabsContent>
-          </Tabs>
-        </div>
-      </div>
-    </div>
 
             <TabsContent value="new-order">
               <PrintOrderForm
