@@ -560,7 +560,7 @@ export default function WaitingList() {
                           </Button>
                         </div>
                       </td>
-                    </tr>
+                    </motion.tr>
                   ))
                 )}
               </tbody>
