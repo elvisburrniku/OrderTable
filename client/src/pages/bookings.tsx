@@ -622,7 +622,7 @@ export default function Bookings() {
               </motion.div>
             )}
           </div>
-        </motion.div>
+        </div>
       </div>
 
       {/* New Booking Dialog */}
@@ -758,3 +758,6 @@ export default function Bookings() {
           </form>
         </DialogContent>
       </Dialog>
+    </div>
+  );
+}

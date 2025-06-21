@@ -315,9 +315,10 @@ export default function WaitingList() {
   };
 
   return (
-    
-      
-        {/* Header */}
+    <div className="min-h-screen bg-gray-50">
+      <div className="p-6">
+        <div className="bg-white rounded-lg shadow">
+          {/* Header */}
           <div className="p-6 border-b">
             <div className="flex items-center justify-between">
               <motion.h1 
@@ -607,8 +608,9 @@ export default function WaitingList() {
               </div>
             </div>
           )}
-        
-      
+        </div>
+      </div>
+    </div>
 
       {/* Add/Edit Entry Dialog */}
       <Dialog open={showForm} onOpenChange={(open) => {
@@ -754,6 +756,6 @@ export default function WaitingList() {
           </div>
         </DialogContent>
       </Dialog>
-    
-</motion.div>
-      </div>
+    </div>
+  );
+}
