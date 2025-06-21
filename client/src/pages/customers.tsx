@@ -366,11 +366,16 @@ export default function Customers() {
                   <tbody className="divide-y divide-gray-100">
                     {isLoading ? (
                       <tr>
-                        <td colSpan={5} className="py-12 text-center">
-                          <div className="flex flex-col items-center space-y-4">
+                        <td colSpan={7} className="py-12 text-center">
+                          <motion.div 
+                            initial={{ opacity: 0, y: 20 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            transition={{ duration: 0.5 }}
+                            className="flex flex-col items-center space-y-4"
+                          >
                             <div className="animate-spin rounded-full h-8 w-8 border-2 border-green-500 border-t-transparent"></div>
                             <span className="text-gray-500 font-medium">Loading customers...</span>
-                          </div>
+                          </motion.div>
                         </td>
                       </tr>
                     ) : currentCustomers.length === 0 ? (
@@ -393,12 +398,15 @@ export default function Customers() {
                       </tr>
                     ) : (
                       currentCustomers.map((customer: any, index: number) => (
-                        <tr 
-                          key={customer.id} 
+                        <motion.tr 
+                          key={customer.id}
+                          initial={{ opacity: 0, y: 10 }}
+                          animate={{ opacity: 1, y: 0 }}
+                          transition={{ duration: 0.3, delay: index * 0.05 }}
                           className={`group hover:bg-blue-50 cursor-pointer transition-all duration-200 ${
                             index % 2 === 0 ? 'bg-white' : 'bg-gray-50/50'
                           }`}
-                        >
+                        ></motion.tr>
                           <td className="py-3 px-4">
                             <div className="flex items-center">
                               <span className="text-blue-600 font-semibold text-sm bg-blue-50 px-2 py-1 rounded-md">

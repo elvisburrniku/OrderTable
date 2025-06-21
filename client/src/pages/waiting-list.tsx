@@ -414,7 +414,12 @@ export default function WaitingList() {
           </div>
 
           {/* Table */}
-          <div className="overflow-x-auto">
+          <motion.div 
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.5, delay: 0.3 }}
+            className="overflow-x-auto"
+          >
             <table className="w-full table-fixed">
               <thead>
                 <tr className="text-sm text-gray-500 border-b">
@@ -431,22 +436,48 @@ export default function WaitingList() {
               <tbody>
                 {isLoading ? (
                   <tr>
-                    <td colSpan={8} className="py-8 text-center text-gray-500">
-                      Loading waiting list...
+                    <td colSpan={8} className="py-12 text-center">
+                      <motion.div 
+                        initial={{ opacity: 0, y: 20 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ duration: 0.5 }}
+                        className="flex flex-col items-center space-y-4"
+                      >
+                        <div className="animate-spin rounded-full h-8 w-8 border-2 border-green-500 border-t-transparent"></div>
+                        <span className="text-gray-500 font-medium">Loading waiting list...</span>
+                      </motion.div>
                     </td>
                   </tr>
                 ) : paginatedWaitingList.length === 0 ? (
                   <tr>
-                    <td colSpan={8} className="py-8 text-center text-gray-500">
-                      No customers on waiting list
+                    <td colSpan={8} className="py-12 text-center">
+                      <motion.div 
+                        initial={{ opacity: 0, y: 20 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ duration: 0.5 }}
+                        className="flex flex-col items-center space-y-4"
+                      >
+                        <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center">
+                          <Clock className="w-8 h-8 text-gray-400" />
+                        </div>
+                        <div>
+                          <h3 className="text-gray-900 font-medium">No customers on waiting list</h3>
+                          <p className="text-gray-500 text-sm mt-1">
+                            The waiting list is currently empty
+                          </p>
+                        </div>
+                      </motion.div>
                     </td>
                   </tr>
                 ) : (
                   paginatedWaitingList.map((item: any, index: number) => (
-                    <tr
+                    <motion.tr
                       key={item.id}
+                      initial={{ opacity: 0, y: 10 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{ duration: 0.3, delay: index * 0.05 }}
                       className="border-b border-gray-100 hover:bg-gray-50"
-                    >
+                    ></motion.tr>
                       <td className="py-4 px-4">
                         <span className="text-blue-600 font-medium">#{startIndex + index + 1}</span>
                       </td>
@@ -534,7 +565,7 @@ export default function WaitingList() {
                 )}
               </tbody>
             </table>
-          </div>
+          </motion.div>
 
           {/* Pagination Footer - Only show if there are entries */}
           {filteredWaitingList.length > 0 && (
