@@ -10,7 +10,7 @@ import { Badge } from "@/components/ui/badge";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { Trash2, Calendar as CalendarIcon, ToggleRight, ToggleLeft, Clock, Search, ChevronDown, Edit } from "lucide-react";
+import { Trash2, Calendar as CalendarIcon, ToggleRight, ToggleLeft, Clock, Search, ChevronDown, Edit, ChevronLeft, ChevronRight, Plus, Filter, Eye } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
 import { useScrollToTop } from "@/hooks/use-scroll-to-top";
 import { motion } from "framer-motion";
@@ -359,6 +359,8 @@ export default function SpecialPeriods() {
   const isExistingPeriod = (period: SpecialPeriod) => {
     return period.id !== undefined;
   };
+
+
 
   return (
     <div className="container mx-auto py-6 space-y-6">
