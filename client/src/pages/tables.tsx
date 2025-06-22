@@ -269,6 +269,7 @@ export default function Tables() {
         ],
       });
       setIsDialogOpen(false);
+      setEditingTable(null);
       setNewTable({ tableNumber: "", capacity: 4, isActive: true });
     },
   });
@@ -310,6 +311,9 @@ export default function Tables() {
           "tables",
         ],
       });
+      setIsDialogOpen(false);
+      setEditingTable(null);
+      setNewTable({ tableNumber: "", capacity: 4, isActive: true });
     },
   });
 
@@ -368,6 +372,16 @@ export default function Tables() {
       return;
     }
     createTableMutation.mutate(newTable);
+  };
+
+  const handleUpdateTable = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (editingTable) {
+      updateTableMutation.mutate({
+        id: editingTable.id,
+        ...newTable,
+      });
+    }
   };
 
   const handleToggleActive = (tableId: number, isActive: boolean) => {
@@ -468,6 +482,10 @@ export default function Tables() {
                     <Button
                       className="bg-green-600 hover:bg-green-700 text-white"
                       disabled={!canCreateTable(tables.length)}
+                      onClick={() => {
+                        setEditingTable(null);
+                        setNewTable({ tableNumber: "", capacity: 4, isActive: true });
+                      }}
                     >
                       <Plus className="h-4 w-4 mr-2" />
                       Add Table
@@ -475,9 +493,9 @@ export default function Tables() {
                   </DialogTrigger>
                   <DialogContent>
                     <DialogHeader>
-                      <DialogTitle>Add New Table</DialogTitle>
+                      <DialogTitle>{editingTable ? 'Edit Table' : 'Add New Table'}</DialogTitle>
                     </DialogHeader>
-                    <form onSubmit={handleCreateTable} className="space-y-4">
+                    <form onSubmit={editingTable ? handleUpdateTable : handleCreateTable} className="space-y-4">
                       <div>
                         <Label htmlFor="tableNumber">Table Number</Label>
                         <Input
@@ -522,11 +540,11 @@ export default function Tables() {
                       <Button
                         type="submit"
                         className="w-full"
-                        disabled={createTableMutation.isPending}
+                        disabled={createTableMutation.isPending || updateTableMutation.isPending}
                       >
-                        {createTableMutation.isPending
-                          ? "Adding..."
-                          : "Add Table"}
+                        {createTableMutation.isPending || updateTableMutation.isPending
+                          ? (editingTable ? "Updating..." : "Adding...")
+                          : (editingTable ? "Update Table" : "Add Table")}
                       </Button>
                     </form>
                   </DialogContent>
