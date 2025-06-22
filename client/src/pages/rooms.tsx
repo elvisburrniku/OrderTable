@@ -548,209 +548,207 @@ export default function Rooms() {
               </motion.div>
             </div>
 
-            {/* Rooms Table */}
             <div className="p-6">
-              {paginatedRooms.length > 0 ? (
-                <>
-                  <motion.div 
-                    initial={{ opacity: 0, y: 20 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ duration: 0.5, delay: 0.5 }}
-                    className="bg-white rounded-xl border-2 border-gray-100 overflow-hidden shadow-sm"
-                  >
-                    <div className="overflow-x-auto">
-                      <table className="w-full">
-                        <thead>
-                          <tr className="bg-gray-50 border-b border-gray-200">
-                            <th className="text-left py-3 px-4 text-xs font-medium text-gray-500 uppercase tracking-wider">
-                              Room ID
-                            </th>
-                            <th className="text-left py-3 px-4 text-xs font-medium text-gray-500 uppercase tracking-wider">
-                              Room Name
-                            </th>
-                            <th className="text-left py-3 px-4 text-xs font-medium text-gray-500 uppercase tracking-wider">
-                              Priority
-                            </th>
-                            <th className="text-left py-3 px-4 text-xs font-medium text-gray-500 uppercase tracking-wider">
-                              Status
-                            </th>
-                            <th className="text-left py-3 px-4 text-xs font-medium text-gray-500 uppercase tracking-wider">
-                              Tables
-                            </th>
-                            <th className="text-left py-3 px-4 text-xs font-medium text-gray-500 uppercase tracking-wider">
-                              Actions
-                            </th>
-                          </tr>
-                        </thead>
-                        <tbody className="divide-y divide-gray-100">
-                          {paginatedRooms.map((room, index) => (
-                            <motion.tr
-                              key={room.id || index}
-                              initial={{ opacity: 0, x: -20 }}
-                              animate={{ opacity: 1, x: 0 }}
-                              transition={{ duration: 0.5, delay: 0.6 + index * 0.1 }}
-                              className="group hover:bg-green-50 transition-all duration-200 hover:shadow-sm"
-                            >
-                              <td className="py-4 px-4">
-                                <div className="text-sm font-medium text-gray-900">
-                                  #{room.id}
-                                </div>
-                              </td>
-                              <td className="py-4 px-4">
-                                <div className="flex items-center space-x-3">
-                                  <div className="w-10 h-10 bg-green-100 rounded-lg border-2 border-green-200 flex items-center justify-center group-hover:bg-green-200 group-hover:border-green-300 transition-all duration-200">
-                                    <MapPin className="w-5 h-5 text-green-600" />
-                                  </div>
-                                  <div>
-                                    <div className="text-sm font-medium text-gray-900">
-                                      {room.name}
-                                    </div>
-                                    <div className="text-xs text-gray-500">
-                                      Room area
-                                    </div>
-                                  </div>
-                                </div>
-                              </td>
-                              <td className="py-4 px-4">
-                                {getPriorityBadge(room.priority)}
-                              </td>
-                              <td className="py-4 px-4">
-                                <Badge variant="outline" className="bg-green-100 text-green-800 border-green-200 text-xs font-medium">
-                                  Active
-                                </Badge>
-                              </td>
-                              <td className="py-4 px-4">
-                                <div className="flex items-center text-sm text-gray-500">
-                                  <Users className="w-4 h-4 mr-1" />
-                                  <span>0 tables</span>
-                                </div>
-                              </td>
-                              <td className="py-4 px-4">
-                                <div className="flex items-center space-x-2">
-                                  <Button
-                                    variant="ghost"
-                                    size="sm"
-                                    onClick={() => handleEditRoom(room)}
-                                    className="h-8 px-3 text-gray-600 hover:text-green-600 hover:bg-green-50 transition-colors duration-200"
-                                  >
-                                    <Edit className="w-4 h-4 mr-1" />
-                                    Edit
-                                  </Button>
-                                  <DropdownMenu>
-                                    <DropdownMenuTrigger asChild>
-                                      <Button variant="ghost" className="h-8 w-8 p-0 text-gray-400 hover:text-gray-600">
-                                        <MoreHorizontal className="h-4 w-4" />
-                                      </Button>
-                                    </DropdownMenuTrigger>
-                                    <DropdownMenuContent align="end" className="w-48">
-                                      <DropdownMenuLabel>Actions</DropdownMenuLabel>
-                                      <DropdownMenuItem onClick={() => handleEditRoom(room)}>
-                                        <Edit className="mr-2 h-4 w-4" />
-                                        Edit Room
-                                      </DropdownMenuItem>
-                                      <DropdownMenuItem>
-                                        <Eye className="mr-2 h-4 w-4" />
-                                        View Details
-                                      </DropdownMenuItem>
-                                      <DropdownMenuSeparator />
-                                      <DropdownMenuItem 
-                                        onClick={() => removeRoom(rooms.findIndex(r => r.id === room.id))}
-                                        className="text-red-600"
-                                      >
-                                        <Trash2 className="mr-2 h-4 w-4" />
-                                        Delete Room
-                                      </DropdownMenuItem>
-                                    </DropdownMenuContent>
-                                  </DropdownMenu>
-                                </div>
-                              </td>
-                            </motion.tr>
-                          ))}
-                        </tbody>
-                      </table>
-                    </div>
-                  </motion.div>
+              {/* Enhanced Table */}
+              <motion.div 
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.5, delay: 0.5 }}
+                className="bg-white rounded-xl border-2 border-gray-100 overflow-hidden shadow-sm"
+              >
+              <div className="overflow-x-auto">
+                <table className="w-full">
+                  <thead>
+                    <tr className="bg-gray-50 border-b border-gray-200">
+                      <th className="text-left py-3 px-4 text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Room ID
+                      </th>
+                      <th className="text-left py-3 px-4 text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Room Name
+                      </th>
+                      <th className="text-left py-3 px-4 text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Priority
+                      </th>
+                      <th className="text-left py-3 px-4 text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Status
+                      </th>
+                      <th className="text-left py-3 px-4 text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Tables
+                      </th>
+                      <th className="text-left py-3 px-4 text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Source
+                      </th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-gray-100">
+                    {isLoading ? (
+                      <tr>
+                        <td colSpan={6} className="py-12 text-center">
+                          <div className="flex flex-col items-center space-y-4">
+                            <div className="animate-spin rounded-full h-8 w-8 border-2 border-green-500 border-t-transparent"></div>
+                            <span className="text-gray-500 font-medium">Loading rooms...</span>
+                          </div>
+                        </td>
+                      </tr>
+                    ) : paginatedRooms.length === 0 ? (
+                      <tr>
+                        <td colSpan={6} className="py-12 text-center">
+                          <div className="flex flex-col items-center space-y-4">
+                            <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center">
+                              <MapPin className="w-8 h-8 text-gray-400" />
+                            </div>
+                            <div>
+                              <h3 className="text-gray-900 font-medium">No rooms found</h3>
+                              <p className="text-gray-500 text-sm mt-1">Try adjusting your filters or search terms</p>
+                            </div>
+                          </div>
+                        </td>
+                      </tr>
+                    ) : (
+                      paginatedRooms.map((room, index) => (
+                        <motion.tr
+                          key={room.id || index}
+                          initial={{ opacity: 0, x: -20 }}
+                          animate={{ opacity: 1, x: 0 }}
+                          transition={{ duration: 0.3, delay: index * 0.05 }}
+                          className="hover:bg-gray-50 transition-colors duration-150 cursor-pointer"
+                        >
+                          <td className="py-4 px-4 text-sm font-medium text-green-600">
+                            #{room.id}
+                          </td>
+                          <td className="py-4 px-4">
+                            <div className="flex items-center space-x-3">
+                              <div className="w-8 h-8 bg-green-100 rounded-full flex items-center justify-center">
+                                <span className="text-green-600 font-semibold text-xs">
+                                  {room.name?.charAt(0)?.toUpperCase() || 'R'}
+                                </span>
+                              </div>
+                              <div>
+                                <div className="text-sm font-medium text-gray-900">{room.name}</div>
+                                <div className="text-xs text-gray-500">Room area</div>
+                              </div>
+                            </div>
+                          </td>
+                          <td className="py-4 px-4">
+                            <div className="flex items-center">
+                              <Users className="w-4 h-4 mr-1 text-gray-400" />
+                              <span className="text-sm text-gray-900">0 tables</span>
+                            </div>
+                          </td>
+                          <td className="py-4 px-4">
+                            {getPriorityBadge(room.priority)}
+                          </td>
+                          <td className="py-4 px-4">
+                            <Badge variant="outline" className="bg-green-100 text-green-800 border-green-200">
+                              active
+                            </Badge>
+                          </td>
+                          <td className="py-4 px-4">
+                            <Badge variant="outline" className="bg-blue-100 text-blue-800 border-blue-200">
+                              manual
+                            </Badge>
+                          </td>
+                        </motion.tr>
+                      ))
+                    )}
+                  </tbody>
+                </table>
+              </div>
+            </motion.div>
 
-                  {/* Pagination */}
-                  {totalPages > 1 && (
-                    <motion.div 
-                      initial={{ opacity: 0, y: 20 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      transition={{ duration: 0.5, delay: 0.8 }}
-                      className="flex items-center justify-between mt-8 pt-6 border-t border-gray-200"
-                    >
-                      <div className="flex items-center space-x-2">
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => setCurrentPage(Math.max(1, currentPage - 1))}
-                          disabled={currentPage === 1}
-                          className="h-9 px-3 border-2 border-gray-200 hover:border-green-500 hover:bg-green-50"
-                        >
-                          <ChevronLeft className="h-4 w-4" />
-                          Previous
-                        </Button>
-                        <div className="flex items-center space-x-1">
-                          {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
-                            <Button
-                              key={page}
-                              variant={page === currentPage ? "default" : "outline"}
-                              size="sm"
-                              onClick={() => setCurrentPage(page)}
-                              className={`h-9 w-9 ${page === currentPage ? 'bg-green-600 hover:bg-green-700 text-white' : 'border-2 border-gray-200 hover:border-green-500 hover:bg-green-50'}`}
-                            >
-                              {page}
-                            </Button>
-                          ))}
-                        </div>
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => setCurrentPage(Math.min(totalPages, currentPage + 1))}
-                          disabled={currentPage === totalPages}
-                          className="h-9 px-3 border-2 border-gray-200 hover:border-green-500 hover:bg-green-50"
-                        >
-                          Next
-                          <ChevronRight className="h-4 w-4" />
-                        </Button>
-                      </div>
-                      <p className="text-sm text-gray-600">
-                        Page {currentPage} of {totalPages}
-                      </p>
-                    </motion.div>
-                  )}
-                </>
-              ) : (
-                <motion.div 
-                  initial={{ opacity: 0, y: 20 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ duration: 0.5, delay: 0.5 }}
-                  className="bg-white rounded-xl border-2 border-gray-100 overflow-hidden shadow-sm"
-                >
-                  <div className="py-12 text-center">
-                    <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                      <MapPin className="w-8 h-8 text-gray-400" />
-                    </div>
-                    <div>
-                      <h3 className="text-gray-900 font-medium">No rooms found</h3>
-                      <p className="text-gray-500 text-sm mt-1">
-                        {searchTerm || priorityFilter !== 'all' 
-                          ? "Try adjusting your filters to see more rooms." 
-                          : "Get started by creating your first room."}
-                      </p>
+            {paginatedRooms.length > 0 && (
+              <motion.div 
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.5, delay: 0.8 }}
+                className="flex items-center justify-between px-4 py-3 border-t border-gray-200 bg-gray-50"
+              >
+                <div className="flex items-center space-x-2 text-sm text-gray-600">
+                  <span>Show</span>
+                  <Select value={itemsPerPage.toString()} onValueChange={(value) => setItemsPerPage(Number(value))}>
+                    <SelectTrigger className="w-16 h-8 text-xs">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="7">7</SelectItem>
+                      <SelectItem value="10">10</SelectItem>
+                      <SelectItem value="25">25</SelectItem>
+                    </SelectContent>
+                  </Select>
+                  <span>entries</span>
+                </div>
+
+                <div className="text-sm text-gray-600">
+                  {startIndex + 1}-{Math.min(endIndex, filteredRooms.length)} of {filteredRooms.length}
+                </div>
+
+                <div className="flex items-center space-x-2">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setCurrentPage(1)}
+                    disabled={currentPage === 1}
+                    className="h-8 px-3 text-xs"
+                  >
+                    First
+                  </Button>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setCurrentPage(Math.max(1, currentPage - 1))}
+                    disabled={currentPage === 1}
+                    className="h-8 w-8 p-0"
+                  >
+                    <ChevronLeft className="h-4 w-4" />
+                  </Button>
+                  
+                  {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
+                    let page;
+                    if (totalPages <= 5) {
+                      page = i + 1;
+                    } else if (currentPage <= 3) {
+                      page = i + 1;
+                    } else if (currentPage >= totalPages - 2) {
+                      page = totalPages - 4 + i;
+                    } else {
+                      page = currentPage - 2 + i;
+                    }
+                    
+                    return (
                       <Button
-                        onClick={() => setIsNewRoomOpen(true)}
-                        className="mt-4 bg-green-600 hover:bg-green-700 text-white flex items-center space-x-2 mx-auto"
+                        key={page}
+                        variant={page === currentPage ? "default" : "outline"}
+                        size="sm"
+                        onClick={() => setCurrentPage(page)}
+                        className={`h-8 w-8 text-xs ${page === currentPage ? 'bg-green-600 hover:bg-green-700 text-white' : ''}`}
                       >
-                        <Plus className="w-4 h-4" />
-                        <span>Create Room</span>
+                        {page}
                       </Button>
-                    </div>
-                  </div>
-                </motion.div>
-              )}
+                    );
+                  })}
+
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setCurrentPage(Math.min(totalPages, currentPage + 1))}
+                    disabled={currentPage === totalPages}
+                    className="h-8 w-8 p-0"
+                  >
+                    <ChevronRight className="h-4 w-4" />
+                  </Button>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setCurrentPage(totalPages)}
+                    disabled={currentPage === totalPages}
+                    className="h-8 px-3 text-xs"
+                  >
+                    Last
+                  </Button>
+                </div>
+              </motion.div>
+            )}
             </div>
-          </div>
         </div>
 
         {/* New Room Dialog */}
