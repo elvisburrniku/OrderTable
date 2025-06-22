@@ -749,6 +749,7 @@ export default function Rooms() {
               </motion.div>
             )}
             </div>
+          </div>
         </div>
 
         {/* New Room Dialog */}
