@@ -802,53 +802,59 @@ export default function Tables() {
                             </Button>
                           </td>
                           <td className="py-3 px-4">
-                            <DropdownMenu>
-                              <DropdownMenuTrigger asChild>
-                                <Button variant="ghost" className="h-8 w-8 p-0">
-                                  <span className="sr-only">Open menu</span>
-                                  <MoreHorizontal className="h-4 w-4" />
-                                </Button>
-                              </DropdownMenuTrigger>
-                              <DropdownMenuContent align="end" className="w-[160px]">
-                                <DropdownMenuLabel>Actions</DropdownMenuLabel>
-                                <DropdownMenuSeparator />
-                                <DropdownMenuItem
-                                  onClick={() => {
-                                    setEditingTable(table);
-                                    setNewTable({
-                                      tableNumber: table.tableNumber,
-                                      capacity: table.capacity,
-                                      isActive: table.isActive,
-                                    });
-                                    setIsDialogOpen(true);
-                                  }}
-                                >
-                                  <Edit className="mr-2 h-4 w-4" />
-                                  Edit
-                                </DropdownMenuItem>
-                                <DropdownMenuItem
-                                  onClick={() => {
-                                    setSelectedTableForFeedback(table);
-                                    setShowFeedbackModal(true);
-                                  }}
-                                >
-                                  <MessageSquare className="mr-2 h-4 w-4" />
-                                  Feedback
-                                </DropdownMenuItem>
-                                <DropdownMenuSeparator />
-                                <DropdownMenuItem
-                                  onClick={() => {
-                                    if (confirm(`Are you sure you want to delete Table ${table.tableNumber}?`)) {
-                                      deleteTableMutation.mutate(table.id);
-                                    }
-                                  }}
-                                  className="text-red-600"
-                                >
-                                  <Trash2 className="mr-2 h-4 w-4" />
-                                  Delete
-                                </DropdownMenuItem>
-                              </DropdownMenuContent>
-                            </DropdownMenu>
+                            <div className="flex items-center space-x-2">
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() => {
+                                  setEditingTable(table);
+                                  setNewTable({
+                                    tableNumber: table.tableNumber,
+                                    capacity: table.capacity,
+                                    isActive: table.isActive,
+                                  });
+                                  setIsDialogOpen(true);
+                                }}
+                                className="text-blue-600 border-blue-600 hover:bg-blue-50"
+                              >
+                                <Edit className="h-3 w-3 mr-1" />
+                                Edit
+                              </Button>
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() => {
+                                  if (confirm(`Are you sure you want to delete Table ${table.tableNumber}?`)) {
+                                    deleteTableMutation.mutate(table.id);
+                                  }
+                                }}
+                                className="text-red-600 border-red-600 hover:bg-red-50"
+                              >
+                                <Trash2 className="h-3 w-3 mr-1" />
+                                Delete
+                              </Button>
+                              <DropdownMenu>
+                                <DropdownMenuTrigger asChild>
+                                  <Button variant="ghost" className="h-8 w-8 p-0">
+                                    <span className="sr-only">More options</span>
+                                    <MoreHorizontal className="h-4 w-4" />
+                                  </Button>
+                                </DropdownMenuTrigger>
+                                <DropdownMenuContent align="end" className="w-[160px]">
+                                  <DropdownMenuLabel>More Actions</DropdownMenuLabel>
+                                  <DropdownMenuSeparator />
+                                  <DropdownMenuItem
+                                    onClick={() => {
+                                      setSelectedTableForFeedback(table);
+                                      setShowFeedbackModal(true);
+                                    }}
+                                  >
+                                    <MessageSquare className="mr-2 h-4 w-4" />
+                                    Feedback
+                                  </DropdownMenuItem>
+                                </DropdownMenuContent>
+                              </DropdownMenu>
+                            </div>
                           </td>
                         </motion.tr>
                       ))
