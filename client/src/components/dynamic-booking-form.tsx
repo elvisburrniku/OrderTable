@@ -1,0 +1,366 @@
+import { useState, useEffect } from "react";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Switch } from "@/components/ui/switch";
+import { Textarea } from "@/components/ui/textarea";
+import { Checkbox } from "@/components/ui/checkbox";
+import { useQuery } from "@tanstack/react-query";
+import { useAuth } from "@/lib/auth.tsx";
+
+interface FormField {
+  id: string;
+  fieldType: "default" | "custom";
+  fieldId: string;
+  customFieldId?: number;
+  label: string;
+  inputType: string;
+  isRequired: boolean;
+  isActive: boolean;
+  sortOrder: number;
+  placeholder?: string;
+  options?: string;
+  validation?: string;
+  width: "full" | "half" | "third" | "quarter";
+}
+
+interface DynamicBookingFormProps {
+  formData: Record<string, any>;
+  onFormDataChange: (data: Record<string, any>) => void;
+  tables?: any[];
+  combinedTables?: any[];
+  onSubmit: (e: React.FormEvent) => void;
+  isLoading?: boolean;
+  submitButtonText?: string;
+  showCancel?: boolean;
+  onCancel?: () => void;
+}
+
+const defaultFields: FormField[] = [
+  {
+    id: "customerName",
+    fieldType: "default",
+    fieldId: "customerName",
+    label: "Customer Name",
+    inputType: "text",
+    isRequired: true,
+    isActive: true,
+    sortOrder: 1,
+    placeholder: "Enter customer name",
+    width: "full"
+  },
+  {
+    id: "customerEmail",
+    fieldType: "default",
+    fieldId: "customerEmail",
+    label: "Email",
+    inputType: "email",
+    isRequired: true,
+    isActive: true,
+    sortOrder: 2,
+    placeholder: "customer@example.com",
+    width: "full"
+  },
+  {
+    id: "customerPhone",
+    fieldType: "default",
+    fieldId: "customerPhone",
+    label: "Phone",
+    inputType: "tel",
+    isRequired: false,
+    isActive: true,
+    sortOrder: 3,
+    placeholder: "+1 (555) 123-4567",
+    width: "full"
+  },
+  {
+    id: "guestCount",
+    fieldType: "default",
+    fieldId: "guestCount",
+    label: "Guest Count",
+    inputType: "number",
+    isRequired: true,
+    isActive: true,
+    sortOrder: 4,
+    placeholder: "2",
+    width: "full"
+  },
+  {
+    id: "startTime",
+    fieldType: "default",
+    fieldId: "startTime",
+    label: "Start Time",
+    inputType: "time",
+    isRequired: true,
+    isActive: true,
+    sortOrder: 5,
+    placeholder: "10:30 AM",
+    width: "half"
+  },
+  {
+    id: "endTime",
+    fieldType: "default",
+    fieldId: "endTime",
+    label: "End Time",
+    inputType: "time",
+    isRequired: false,
+    isActive: true,
+    sortOrder: 6,
+    placeholder: "11:30 AM",
+    width: "half"
+  },
+  {
+    id: "availableTables",
+    fieldType: "default",
+    fieldId: "availableTables",
+    label: "Available Tables",
+    inputType: "select",
+    isRequired: true,
+    isActive: true,
+    sortOrder: 7,
+    placeholder: "Select an available table",
+    width: "full"
+  },
+  {
+    id: "notes",
+    fieldType: "default",
+    fieldId: "notes",
+    label: "Notes",
+    inputType: "textarea",
+    isRequired: false,
+    isActive: true,
+    sortOrder: 8,
+    placeholder: "Special requests or notes...",
+    width: "full"
+  }
+];
+
+export default function DynamicBookingForm({
+  formData,
+  onFormDataChange,
+  tables = [],
+  combinedTables = [],
+  onSubmit,
+  isLoading = false,
+  submitButtonText = "Create Booking",
+  showCancel = true,
+  onCancel
+}: DynamicBookingFormProps) {
+  const { restaurant } = useAuth();
+  const [fields, setFields] = useState<FormField[]>(defaultFields);
+
+  // Fetch form configuration
+  const { data: formConfig, isLoading: configLoading } = useQuery({
+    queryKey: [`/api/tenants/${restaurant?.tenantId}/restaurants/${restaurant?.id}/booking-form-fields`],
+    enabled: !!restaurant?.id && !!restaurant?.tenantId,
+  });
+
+  // Fetch custom fields
+  const { data: customFields = [] } = useQuery({
+    queryKey: [`/api/tenants/${restaurant?.tenantId}/restaurants/${restaurant?.id}/custom-fields`],
+    enabled: !!restaurant?.id && !!restaurant?.tenantId,
+  });
+
+  useEffect(() => {
+    if (formConfig && formConfig.fields && Array.isArray(formConfig.fields)) {
+      setFields(formConfig.fields);
+    }
+  }, [formConfig]);
+
+  const handleInputChange = (fieldId: string, value: any) => {
+    onFormDataChange({
+      ...formData,
+      [fieldId]: value
+    });
+  };
+
+  const renderField = (field: FormField) => {
+    const widthClass = {
+      full: "col-span-2",
+      half: "col-span-1",
+      third: "col-span-2 md:col-span-1",
+      quarter: "col-span-1"
+    }[field.width];
+
+    const fieldValue = formData[field.fieldId] || "";
+
+    switch (field.inputType) {
+      case "textarea":
+        return (
+          <div key={field.id} className={widthClass}>
+            <Label htmlFor={field.fieldId}>
+              {field.label} {field.isRequired && <span className="text-red-500">*</span>}
+            </Label>
+            <Textarea
+              id={field.fieldId}
+              placeholder={field.placeholder}
+              value={fieldValue}
+              onChange={(e) => handleInputChange(field.fieldId, e.target.value)}
+              required={field.isRequired}
+              className="mt-1"
+            />
+          </div>
+        );
+      
+      case "select":
+        if (field.fieldId === "availableTables") {
+          return (
+            <div key={field.id} className={widthClass}>
+              <Label htmlFor={field.fieldId}>
+                {field.label} {field.isRequired && <span className="text-red-500">*</span>}
+              </Label>
+              <Select 
+                value={fieldValue} 
+                onValueChange={(value) => handleInputChange(field.fieldId, value)}
+                required={field.isRequired}
+              >
+                <SelectTrigger className="mt-1">
+                  <SelectValue placeholder={field.placeholder} />
+                </SelectTrigger>
+                <SelectContent>
+                  {tables && tables.length > 0 ? (
+                    tables.map((table) => (
+                      <SelectItem key={`table-${table.id}`} value={table.id.toString()}>
+                        Table {table.tableNumber} ({table.capacity} seats)
+                      </SelectItem>
+                    ))
+                  ) : null}
+                  {combinedTables && combinedTables.length > 0 ? (
+                    combinedTables.map((combinedTable) => (
+                      <SelectItem key={`combined-${combinedTable.id}`} value={`combined-${combinedTable.id}`}>
+                        Combined Table {combinedTable.name} ({combinedTable.totalCapacity} seats)
+                      </SelectItem>
+                    ))
+                  ) : null}
+                </SelectContent>
+              </Select>
+              {tables && tables.length === 0 && (
+                <p className="text-xs text-gray-500 mt-1">
+                  No tables configured. Tables will be auto-assigned if available.
+                </p>
+              )}
+            </div>
+          );
+        } else {
+          // Custom select field
+          const options = field.options ? field.options.split('\n').filter(opt => opt.trim()) : [];
+          return (
+            <div key={field.id} className={widthClass}>
+              <Label htmlFor={field.fieldId}>
+                {field.label} {field.isRequired && <span className="text-red-500">*</span>}
+              </Label>
+              <Select 
+                value={fieldValue} 
+                onValueChange={(value) => handleInputChange(field.fieldId, value)}
+                required={field.isRequired}
+              >
+                <SelectTrigger className="mt-1">
+                  <SelectValue placeholder={field.placeholder} />
+                </SelectTrigger>
+                <SelectContent>
+                  {options.map((option, index) => (
+                    <SelectItem key={index} value={option.trim()}>
+                      {option.trim()}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          );
+        }
+      
+      case "checkbox":
+        return (
+          <div key={field.id} className={`${widthClass} flex items-center space-x-2 mt-6`}>
+            <Checkbox
+              id={field.fieldId}
+              checked={!!fieldValue}
+              onCheckedChange={(checked) => handleInputChange(field.fieldId, checked)}
+              required={field.isRequired}
+            />
+            <Label htmlFor={field.fieldId}>
+              {field.label} {field.isRequired && <span className="text-red-500">*</span>}
+            </Label>
+          </div>
+        );
+      
+      case "switch":
+        return (
+          <div key={field.id} className={`${widthClass} flex items-center justify-between mt-6`}>
+            <Label htmlFor={field.fieldId}>
+              {field.label} {field.isRequired && <span className="text-red-500">*</span>}
+            </Label>
+            <Switch
+              id={field.fieldId}
+              checked={!!fieldValue}
+              onCheckedChange={(checked) => handleInputChange(field.fieldId, checked)}
+            />
+          </div>
+        );
+      
+      case "number":
+        return (
+          <div key={field.id} className={widthClass}>
+            <Label htmlFor={field.fieldId}>
+              {field.label} {field.isRequired && <span className="text-red-500">*</span>}
+            </Label>
+            <Input
+              id={field.fieldId}
+              type="number"
+              placeholder={field.placeholder}
+              value={fieldValue}
+              onChange={(e) => handleInputChange(field.fieldId, parseInt(e.target.value) || 0)}
+              required={field.isRequired}
+              className="mt-1"
+            />
+          </div>
+        );
+      
+      default:
+        return (
+          <div key={field.id} className={widthClass}>
+            <Label htmlFor={field.fieldId}>
+              {field.label} {field.isRequired && <span className="text-red-500">*</span>}
+            </Label>
+            <Input
+              id={field.fieldId}
+              type={field.inputType}
+              placeholder={field.placeholder}
+              value={fieldValue}
+              onChange={(e) => handleInputChange(field.fieldId, e.target.value)}
+              required={field.isRequired}
+              className="mt-1"
+            />
+          </div>
+        );
+    }
+  };
+
+  const activeFields = fields
+    .filter(field => field.isActive)
+    .sort((a, b) => a.sortOrder - b.sortOrder);
+
+  return (
+    <form onSubmit={onSubmit} className="space-y-4">
+      <div className="grid grid-cols-2 gap-4">
+        {activeFields.map(renderField)}
+      </div>
+      
+      <div className="flex justify-end space-x-2 pt-4">
+        {showCancel && (
+          <Button type="button" variant="outline" onClick={onCancel}>
+            Cancel
+          </Button>
+        )}
+        <Button
+          type="submit"
+          disabled={isLoading}
+          className="bg-green-600 hover:bg-green-700 text-white"
+        >
+          {isLoading ? "Loading..." : submitButtonText}
+        </Button>
+      </div>
+    </form>
+  );
+}

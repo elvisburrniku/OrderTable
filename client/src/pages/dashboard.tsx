@@ -7,6 +7,7 @@ import BookingCalendar from "@/components/booking-calendar";
 import EnhancedGoogleCalendar from "@/components/enhanced-google-calendar";
 import WalkInBookingButton from "@/components/walk-in-booking";
 import RealTimeTableStatus from "@/components/real-time-table-status";
+import DynamicBookingForm from "@/components/dynamic-booking-form";
 import WelcomeAnimation from "@/components/welcome-animation";
 import ActiveSeasonalThemeDisplay from "@/components/active-seasonal-theme-display";
 import ReservationCountdown from "@/components/reservation-countdown";
@@ -1201,164 +1202,16 @@ export default function Dashboard() {
               Create Booking for Table {selectedTableForBooking?.tableNumber}
             </DialogTitle>
           </DialogHeader>
-          <form onSubmit={handleCreateBooking} className="space-y-4">
-            <div>
-              <Label htmlFor="customerName">Customer Name</Label>
-              <Input
-                id="customerName"
-                value={newBooking.customerName}
-                onChange={(e) =>
-                  setNewBooking({ ...newBooking, customerName: e.target.value })
-                }
-                required
-              />
-            </div>
-            <div>
-              <Label htmlFor="customerEmail">Email</Label>
-              <Input
-                id="customerEmail"
-                type="email"
-                value={newBooking.customerEmail}
-                onChange={(e) =>
-                  setNewBooking({
-                    ...newBooking,
-                    customerEmail: e.target.value,
-                  })
-                }
-                required
-              />
-            </div>
-            <div>
-              <Label htmlFor="customerPhone">Phone</Label>
-              <Input
-                id="customerPhone"
-                value={newBooking.customerPhone}
-                onChange={(e) =>
-                  setNewBooking({
-                    ...newBooking,
-                    customerPhone: e.target.value,
-                  })
-                }
-              />
-            </div>
-            <div>
-              <Label htmlFor="guestCount">Number of Guests</Label>
-              <Input
-                id="guestCount"
-                type="number"
-                min="1"
-                max={selectedTableForBooking?.capacity || 12}
-                value={newBooking.guestCount}
-                onChange={(e) =>
-                  setNewBooking({
-                    ...newBooking,
-                    guestCount: parseInt(e.target.value),
-                  })
-                }
-                required
-              />
-              <p className="text-xs text-gray-500 mt-1">
-                Table capacity: {selectedTableForBooking?.capacity} guests
-              </p>
-            </div>
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <Label htmlFor="startTime">Start Time</Label>
-                <Select
-                  value={newBooking.startTime}
-                  onValueChange={(value) =>
-                    setNewBooking({ ...newBooking, startTime: value })
-                  }
-                >
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {[
-                      "10:00",
-                      "11:00",
-                      "12:00",
-                      "13:00",
-                      "14:00",
-                      "15:00",
-                      "16:00",
-                      "17:00",
-                      "18:00",
-                      "19:00",
-                      "20:00",
-                      "21:00",
-                    ].map((time) => (
-                      <SelectItem key={time} value={time}>
-                        {time}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-              <div>
-                <Label htmlFor="endTime">End Time</Label>
-                <Select
-                  value={newBooking.endTime}
-                  onValueChange={(value) =>
-                    setNewBooking({ ...newBooking, endTime: value })
-                  }
-                >
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {[
-                      "10:00",
-                      "11:00",
-                      "12:00",
-                      "13:00",
-                      "14:00",
-                      "15:00",
-                      "16:00",
-                      "17:00",
-                      "18:00",
-                      "19:00",
-                      "20:00",
-                      "21:00",
-                    ].map((time) => (
-                      <SelectItem key={time} value={time}>
-                        {time}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-            </div>
-            <div>
-              <Label htmlFor="notes">Notes (Optional)</Label>
-              <Input
-                id="notes"
-                value={newBooking.notes}
-                onChange={(e) =>
-                  setNewBooking({ ...newBooking, notes: e.target.value })
-                }
-                placeholder="Any special requests or notes"
-              />
-            </div>
-            <div className="flex justify-end gap-2 pt-4">
-              <Button
-                type="button"
-                variant="outline"
-                onClick={() => setIsNewBookingOpen(false)}
-              >
-                Cancel
-              </Button>
-              <Button
-                type="submit"
-                className="bg-green-600 hover:bg-green-700"
-                disabled={createBookingMutation.isPending}
-              >
-                {createBookingMutation.isPending
-                  ? "Creating..."
-                  : "Create Booking"}
-              </Button>
-            </div>
-          </form>
+          <DynamicBookingForm
+            formData={newBooking}
+            onFormDataChange={setNewBooking}
+            tables={[]}
+            combinedTables={[]}
+            onSubmit={handleCreateBooking}
+            isLoading={createBookingMutation.isPending}
+            submitButtonText={createBookingMutation.isPending ? "Creating..." : "Create Booking"}
+            onCancel={() => setIsNewBookingOpen(false)}
+          />
         </DialogContent>
       </Dialog>
 

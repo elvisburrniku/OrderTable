@@ -61,6 +61,7 @@ import {
   List,
 } from "lucide-react";
 import { Booking, Table as TableType } from "@shared/schema";
+import DynamicBookingForm from "@/components/dynamic-booking-form";
 
 interface EnhancedGoogleCalendarProps {
   selectedDate: Date;
