@@ -794,10 +794,35 @@ export const customFields = pgTable("custom_fields", {
   tenantId: integer("tenant_id").notNull().references(() => tenants.id, { onDelete: "cascade" }),
   name: text("name").notNull(),
   title: text("title").notNull(),
-  inputType: text("input_type").notNull().default("single_line"), // "single_line", "multi_line"
+  inputType: text("input_type").notNull().default("single_line"), // "single_line", "multi_line", "number", "select", "checkbox", "switch"
+  options: text("options"), // JSON array for select options
   translations: text("translations"), // JSON field for language translations
   isActive: boolean("is_active").default(true),
   isOnline: boolean("is_online").default(false),
+  sortOrder: integer("sort_order").default(0),
+  isRequired: boolean("is_required").default(false),
+  placeholder: text("placeholder"),
+  validation: text("validation"), // JSON field for validation rules
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+});
+
+export const bookingFormFields = pgTable("booking_form_fields", {
+  id: serial("id").primaryKey(),
+  restaurantId: integer("restaurant_id").notNull().references(() => restaurants.id, { onDelete: "cascade" }),
+  tenantId: integer("tenant_id").notNull().references(() => tenants.id, { onDelete: "cascade" }),
+  fieldType: text("field_type").notNull(), // "default" or "custom"
+  fieldId: text("field_id").notNull(), // field identifier (customerName, email, phone, etc. or custom field id)
+  customFieldId: integer("custom_field_id").references(() => customFields.id, { onDelete: "cascade" }),
+  label: text("label").notNull(),
+  inputType: text("input_type").notNull(), // text, email, tel, number, select, checkbox, switch, textarea
+  isRequired: boolean("is_required").default(false),
+  isActive: boolean("is_active").default(true),
+  sortOrder: integer("sort_order").default(0),
+  placeholder: text("placeholder"),
+  options: text("options"), // JSON array for select options
+  validation: text("validation"), // JSON field for validation rules
+  width: text("width").default("full"), // full, half, third, quarter
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
 });
