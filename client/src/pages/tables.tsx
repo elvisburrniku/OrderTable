@@ -815,10 +815,9 @@ export default function Tables() {
                                   });
                                   setIsDialogOpen(true);
                                 }}
-                                className="text-blue-600 border-blue-600 hover:bg-blue-50"
+                                className="text-blue-600 border-blue-600 hover:bg-blue-50 h-8 w-8 p-0"
                               >
-                                <Edit className="h-3 w-3 mr-1" />
-                                Edit
+                                <Edit className="h-4 w-4" />
                               </Button>
                               <Button
                                 variant="outline"
@@ -828,10 +827,9 @@ export default function Tables() {
                                     deleteTableMutation.mutate(table.id);
                                   }
                                 }}
-                                className="text-red-600 border-red-600 hover:bg-red-50"
+                                className="text-red-600 border-red-600 hover:bg-red-50 h-8 w-8 p-0"
                               >
-                                <Trash2 className="h-3 w-3 mr-1" />
-                                Delete
+                                <Trash2 className="h-4 w-4" />
                               </Button>
                             </div>
                           </td>
