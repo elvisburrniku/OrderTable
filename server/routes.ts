@@ -11307,7 +11307,7 @@ NEXT STEPS:
           return res.status(404).json({ message: "Restaurant not found" });
         }
 
-        const fields = await storage.getCustomFieldsByRestaurant(restaurantId);
+        const fields = await storage.getCustomFieldsByRestaurant(restaurantId, tenantId);
         res.json(fields);
       } catch (error) {
         console.error("Error fetching custom fields:", error);
