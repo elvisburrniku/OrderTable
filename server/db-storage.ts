@@ -936,8 +936,7 @@ export class DatabaseStorage implements IStorage {
           updatedAt: new Date()
         }));
 
-        await this.db.insert(openingHours).values(```python
-hoursToInsert);
+        await this.db.insert(openingHours).values(hoursToInsert);
       }
 
       return { success: true, message: "Opening hours updated successfully" };
@@ -1630,7 +1629,7 @@ hoursToInsert);
   async getFeedbackResponses(restaurantId: number, tenantId: number): Promise<any[]> {
     if (!this.db) throw new Error("Database connection not available");
 
-    console.log(`Fetching feedback for restaurant ${restaurantId}, tenant ${tenantId}`);
+    console.log("Fetching feedback for restaurant", restaurantId, "tenant", tenantId);
 
     const result = await this.db
       .select({
@@ -1653,7 +1652,7 @@ hoursToInsert);
       ))
       .orderBy(desc(feedback.createdAt));
 
-    console.log(`Found ${result.length} feedback responses:`, result);
+    console.log("Found", result.length, "feedback responses:", result);
     return result;
   }
 
@@ -1818,9 +1817,7 @@ hoursToInsert);
     return [];
   }
 
-  async createSmsMessage(message: any): Promise<any> {
-    throw new Error("Method not implemented");
-  }
+
 
   async getWaitingListByRestaurant(restaurantId: number): Promise<any[]> {
     if (!this.db) throw new Error("Database connection not available");
@@ -1895,7 +1892,7 @@ hoursToInsert);
     // Transform the results to include restaurant name
     return logs.map(log => ({
       ...log.activity_log,
-      restaurantName: log.restaurants?.name || `Restaurant ${log.activity_log.restaurantId}`
+      restaurantName: log.restaurants?.name || "Restaurant " + log.activity_log.restaurantId
     }));
   }
 
@@ -2274,17 +2271,7 @@ hoursToInsert);
     // Simplified implementation
   }
 
-  async getAllUsers(): Promise<any[]> {
-    if (!this.db) return [];
-    const result = await this.db.select({
-      id: users.id,
-      email: users.email,
-      name: users.name,
-      restaurantName: users.restaurantName,
-      createdAt: users.createdAt
-    }).from(users);
-    return result;
-  }
+
 
   // Additional subscription-related methods
   async getSubscriptionPlanById(id: number): Promise<any> {

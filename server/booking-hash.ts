@@ -1,5 +1,5 @@
 
-import crypto from 'crypto';
+import * as crypto from 'crypto';
 
 const SECRET_KEY = process.env.BOOKING_HASH_SECRET || 'your-secret-key-change-in-production';
 

@@ -612,9 +612,7 @@ export class MemoryStorage implements IStorage {
     this.waitingList.push(newEntry);
     return newEntry;
   }
-  async getWaitingListEntryById(id: number): Promise<WaitingList | undefined> {
-    return this.waitingList.find(entry => entry.id === id);
-  }
+
 
   async updateWaitingListEntry(id: number, updates: Partial<WaitingList>): Promise<WaitingList | undefined> {
     const index = this.waitingList.findIndex(entry => entry.id === id);

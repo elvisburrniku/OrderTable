@@ -1193,11 +1193,7 @@ export const productGroups = pgTable("product_groups", {
 export type ProductGroup = InferSelectModel<typeof productGroups>;
 export type InsertProductGroup = InferInsertModel<typeof productGroups>;
 
-export const insertProductGroupSchema = createInsertSchema(productGroups).omit({
-  id: true,
-  createdAt: true,
-  updatedAt: true,
-});
+export const insertProductGroupSchema = createInsertSchema(productGroups);
 export const selectProductGroupSchema = createSelectSchema(productGroups);
 
 // Products table
@@ -1216,11 +1212,7 @@ export const products = pgTable("products", {
 export type Product = InferSelectModel<typeof products>;
 export type InsertProduct = InferInsertModel<typeof products>;
 
-export const insertProductSchema = createInsertSchema(products).omit({
-  id: true,
-  createdAt: true,
-  updatedAt: true,
-});
+export const insertProductSchema = createInsertSchema(products);
 export const selectProductSchema = createSelectSchema(products);
 
 // Payment Setups table
@@ -1247,9 +1239,5 @@ export const paymentSetups = pgTable("payment_setups", {
 export type PaymentSetup = InferSelectModel<typeof paymentSetups>;
 export type InsertPaymentSetup = InferInsertModel<typeof paymentSetups>;
 
-export const insertPaymentSetupSchema = createInsertSchema(paymentSetups).omit({
-  id: true,
-  createdAt: true,
-  updatedAt: true,
-});
+export const insertPaymentSetupSchema = createInsertSchema(paymentSetups);
 export const selectPaymentSetupSchema = createSelectSchema(paymentSetups);
