@@ -247,7 +247,7 @@ export default function Rooms() {
   const totalPages = Math.ceil(filteredRooms.length / itemsPerPage);
   const startIndex = (currentPage - 1) * itemsPerPage;
   const endIndex = startIndex + itemsPerPage;
-  const paginatedRooms = filteredRooms.slice(startIndex, endIndex);
+  const paginatedRooms = filteredRooms;
 
   // Reset pagination when filters change
   useEffect(() => {
@@ -559,7 +559,7 @@ export default function Rooms() {
                 <div className="overflow-x-auto">
                 <table className="w-full">
                   <thead>
-                    <tr className="bg-gray-50 border-b border-gray-200">
+                    <tr className="bg-gray-50">
                       <th className="text-left py-3 px-4 text-xs font-medium text-gray-500 uppercase tracking-wider">
                         Room ID
                       </th>
@@ -656,98 +656,7 @@ export default function Rooms() {
                 </div>
               </motion.div>
 
-            {paginatedRooms.length > 0 && (
-              <motion.div 
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.5, delay: 0.8 }}
-                className="flex items-center justify-between px-4 py-3 border-t border-gray-200 bg-gray-50"
-              >
-                <div className="flex items-center space-x-2 text-sm text-gray-600">
-                  <span>Show</span>
-                  <Select value={itemsPerPage.toString()} onValueChange={(value) => setItemsPerPage(Number(value))}>
-                    <SelectTrigger className="w-16 h-8 text-xs">
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="7">7</SelectItem>
-                      <SelectItem value="10">10</SelectItem>
-                      <SelectItem value="25">25</SelectItem>
-                    </SelectContent>
-                  </Select>
-                  <span>entries</span>
-                </div>
 
-                <div className="text-sm text-gray-600">
-                  {startIndex + 1}-{Math.min(endIndex, filteredRooms.length)} of {filteredRooms.length}
-                </div>
-
-                <div className="flex items-center space-x-2">
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => setCurrentPage(1)}
-                    disabled={currentPage === 1}
-                    className="h-8 px-3 text-xs"
-                  >
-                    First
-                  </Button>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => setCurrentPage(Math.max(1, currentPage - 1))}
-                    disabled={currentPage === 1}
-                    className="h-8 w-8 p-0"
-                  >
-                    <ChevronLeft className="h-4 w-4" />
-                  </Button>
-                  
-                  {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
-                    let page;
-                    if (totalPages <= 5) {
-                      page = i + 1;
-                    } else if (currentPage <= 3) {
-                      page = i + 1;
-                    } else if (currentPage >= totalPages - 2) {
-                      page = totalPages - 4 + i;
-                    } else {
-                      page = currentPage - 2 + i;
-                    }
-                    
-                    return (
-                      <Button
-                        key={page}
-                        variant={page === currentPage ? "default" : "outline"}
-                        size="sm"
-                        onClick={() => setCurrentPage(page)}
-                        className={`h-8 w-8 text-xs ${page === currentPage ? 'bg-green-600 hover:bg-green-700 text-white' : ''}`}
-                      >
-                        {page}
-                      </Button>
-                    );
-                  })}
-
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => setCurrentPage(Math.min(totalPages, currentPage + 1))}
-                    disabled={currentPage === totalPages}
-                    className="h-8 w-8 p-0"
-                  >
-                    <ChevronRight className="h-4 w-4" />
-                  </Button>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => setCurrentPage(totalPages)}
-                    disabled={currentPage === totalPages}
-                    className="h-8 px-3 text-xs"
-                  >
-                    Last
-                  </Button>
-                </div>
-              </motion.div>
-            )}
             </div>
           </div>
         </div>
