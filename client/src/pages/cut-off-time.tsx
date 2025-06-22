@@ -11,6 +11,9 @@ import {
 } from "@/components/ui/select";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { toast } from "@/hooks/use-toast";
+import { motion } from "framer-motion";
+import { Clock, Save } from "lucide-react";
+import { useScrollToTop } from "@/hooks/use-scroll-to-top";
 
 export default function CutOffTime() {
   const {
@@ -20,6 +23,9 @@ export default function CutOffTime() {
     restaurant,
   } = useAuthGuard();
   const queryClient = useQueryClient();
+
+  // Auto scroll to top when page loads
+  useScrollToTop();
 
   const [cutOffTimes, setCutOffTimes] = useState({
     Sunday: "None",
@@ -183,51 +189,97 @@ export default function CutOffTime() {
 
   return (
     <div className="min-h-screen bg-gray-50">
-      {/* Main Content */}
       <div className="p-6">
-        <Card>
-          <CardHeader>
-            <CardTitle>Cut-off time</CardTitle>
-            <p className="text-sm text-gray-600">
-              Here you can specify until when online booking should be closed
-              for bookings for the same day.
-            </p>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            {Object.entries(cutOffTimes).map(([day, time]) => (
-              <div key={day} className="flex items-center justify-between">
-                <label className="text-sm font-medium text-gray-700 w-24">
-                  {day}
-                </label>
-                <Select
-                  value={time}
-                  onValueChange={(value) => updateCutOffTime(day, value)}
-                >
-                  <SelectTrigger className="w-48">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {timeOptions.map((option) => (
-                      <SelectItem key={option} value={option}>
-                        {option}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-            ))}
-
-            <div className="pt-6">
-              <Button
-                onClick={handleSave}
-                disabled={saveCutOffTimesMutation.isPending || isLoading}
-                className="bg-green-600 hover:bg-green-700 text-white"
+        <div className="bg-white rounded-lg shadow">
+          {/* Header */}
+          <div className="p-6 border-b">
+            <div className="flex items-center justify-between">
+              <motion.h1 
+                initial={{ opacity: 0, x: -20 }}
+                animate={{ opacity: 1, x: 0 }}
+                transition={{ duration: 0.5, delay: 0.1 }}
+                className="text-2xl font-bold text-gray-900 flex items-center gap-2"
               >
-                {saveCutOffTimesMutation.isPending ? "Saving..." : "Save"}
-              </Button>
+                <Clock className="h-6 w-6 text-green-600" />
+                Cut-off time
+              </motion.h1>
+              <motion.div
+                initial={{ opacity: 0, x: 20 }}
+                animate={{ opacity: 1, x: 0 }}
+                transition={{ duration: 0.5, delay: 0.2 }}
+              >
+                <Button
+                  onClick={handleSave}
+                  disabled={saveCutOffTimesMutation.isPending || isLoading}
+                  className="bg-green-600 hover:bg-green-700 text-white flex items-center space-x-2"
+                >
+                  <Save className="w-4 h-4" />
+                  <span>{saveCutOffTimesMutation.isPending ? "Saving..." : "Save"}</span>
+                </Button>
+              </motion.div>
             </div>
-          </CardContent>
-        </Card>
+          </div>
+
+          {/* Description Section */}
+          <motion.div 
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.5, delay: 0.3 }}
+            className="p-6 border-b"
+          >
+            <h2 className="text-lg font-semibold text-gray-900 mb-2">Booking Cut-off Times</h2>
+            <p className="text-sm text-gray-600">
+              Here you can specify until when online booking should be closed for bookings for the same day.
+            </p>
+          </motion.div>
+
+          {/* Cut-off Times List */}
+          <div className="p-6">
+            <motion.div 
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.5, delay: 0.4 }}
+              className="space-y-4"
+            >
+              {Object.entries(cutOffTimes).map(([day, time], index) => (
+                <motion.div
+                  key={day}
+                  initial={{ opacity: 0, x: -20 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  transition={{ duration: 0.5, delay: 0.5 + index * 0.1 }}
+                  className="flex items-center justify-between p-4 bg-gray-50 rounded-xl border-2 border-gray-100 hover:border-green-200 hover:bg-green-50 transition-all duration-200"
+                >
+                  <div className="flex items-center space-x-4">
+                    <div className="w-12 h-12 bg-white rounded-lg border-2 border-gray-200 flex items-center justify-center">
+                      <Clock className="w-5 h-5 text-green-600" />
+                    </div>
+                    <div>
+                      <label className="text-sm font-medium text-gray-900 block">
+                        {day}
+                      </label>
+                      <p className="text-xs text-gray-500">Cut-off time for {day.toLowerCase()}</p>
+                    </div>
+                  </div>
+                  <Select
+                    value={time}
+                    onValueChange={(value) => updateCutOffTime(day, value)}
+                  >
+                    <SelectTrigger className="w-48 h-11 border-2 border-gray-200 focus:border-green-500 rounded-lg transition-all duration-200">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent className="rounded-lg border-2 border-gray-200">
+                      {timeOptions.map((option) => (
+                        <SelectItem key={option} value={option} className="rounded-md">
+                          {option}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </motion.div>
+              ))}
+            </motion.div>
+          </div>
+        </div>
       </div>
     </div>
   );
