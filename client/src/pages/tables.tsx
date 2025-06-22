@@ -833,27 +833,6 @@ export default function Tables() {
                                 <Trash2 className="h-3 w-3 mr-1" />
                                 Delete
                               </Button>
-                              <DropdownMenu>
-                                <DropdownMenuTrigger asChild>
-                                  <Button variant="ghost" className="h-8 w-8 p-0">
-                                    <span className="sr-only">More options</span>
-                                    <MoreHorizontal className="h-4 w-4" />
-                                  </Button>
-                                </DropdownMenuTrigger>
-                                <DropdownMenuContent align="end" className="w-[160px]">
-                                  <DropdownMenuLabel>More Actions</DropdownMenuLabel>
-                                  <DropdownMenuSeparator />
-                                  <DropdownMenuItem
-                                    onClick={() => {
-                                      setSelectedTableForFeedback(table);
-                                      setShowFeedbackModal(true);
-                                    }}
-                                  >
-                                    <MessageSquare className="mr-2 h-4 w-4" />
-                                    Feedback
-                                  </DropdownMenuItem>
-                                </DropdownMenuContent>
-                              </DropdownMenu>
                             </div>
                           </td>
                         </motion.tr>
