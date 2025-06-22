@@ -3,7 +3,6 @@ import { neon } from "@neondatabase/serverless";
 import * as schema from "@shared/schema";
 import { eq, and, desc, asc, gte, lte, sql, lt, or } from "drizzle-orm";
 import { IStorage } from "./storage";
-
 const {
   users,
   tenants,
@@ -50,10 +49,8 @@ const {
   products,
   paymentSetups,
 } = schema;
-
 export class DatabaseStorage implements IStorage {
   db: any;
-
   constructor() {
     if (!process.env.DATABASE_URL) {
       console.error("No database connection string found. Database operations will fail until a proper connection string is provided.");
@@ -61,24 +58,19 @@ export class DatabaseStorage implements IStorage {
       console.error("DatabaseStorage initialized without database connection. All operations will throw errors until database is properly configured.");
       return;
     }
-
     const sql = neon(process.env.DATABASE_URL);
     this.db = drizzle(sql, { schema });
   }
-
   async initialize() {
     if (!this.db) {
       console.error("Cannot initialize data without database connection. Please provide DATABASE_URL or SUPABASE_DATABASE_URL environment variable.");
       return;
     }
-
     await this.initializeSubscriptionPlans();
   }
-
   private async initializeSubscriptionPlans() {
     try {
       const existingPlans = await this.db.select().from(subscriptionPlans).limit(1);
-
       if (existingPlans.length === 0) {
         await this.db.insert(subscriptionPlans).values([
           {
@@ -132,14 +124,12 @@ export class DatabaseStorage implements IStorage {
       console.error("Error initializing subscription plans:", error);
     }
   }
-
   // Stub methods for interface compliance
   async createTenant(tenant: any): Promise<any> {
     if (!this.db) throw new Error("Database connection not available");
     const [newTenant] = await this.db.insert(tenants).values(tenant).returning();
     return newTenant;
   }
-
   async getTenantByUserId(userId: number): Promise<any> {
     if (!this.db) throw new Error("Database connection not available");
     const result = await this.db
@@ -151,22 +141,18 @@ export class DatabaseStorage implements IStorage {
       .innerJoin(tenants, eq(tenantUsers.tenantId, tenants.id))
       .where(eq(tenantUsers.userId, userId))
       .limit(1);
-
     return result[0]?.tenant;
   }
-
   async getTenantById(id: number): Promise<any> {
     if (!this.db) throw new Error("Database connection not available");
     const result = await this.db.select().from(tenants).where(eq(tenants.id, id));
     return result[0];
   }
-
   async getTenantByStripeCustomerId(stripeCustomerId: string): Promise<any> {
     if (!this.db) throw new Error("Database connection not available");
     const result = await this.db.select().from(tenants).where(eq(tenants.stripeCustomerId, stripeCustomerId));
     return result[0];
   }
-
   async updateTenant(id: number, updates: any): Promise<any> {
     if (!this.db) throw new Error("Database connection not available");
     const result = await this.db
@@ -176,19 +162,16 @@ export class DatabaseStorage implements IStorage {
       .returning();
     return result[0];
   }
-
   async createTenantUser(tenantUser: any): Promise<any> {
     if (!this.db) throw new Error("Database connection not available");
     const [newTenantUser] = await this.db.insert(tenantUsers).values(tenantUser).returning();
     return newTenantUser;
   }
-
   async getUser(id: number): Promise<any> {
     if (!this.db) throw new Error("Database connection not available");
     const result = await this.db.select().from(users).where(eq(users.id, id));
     return result[0];
   }
-
   async getUserById(id: number): Promise<any> {
     if (!this.db) {
       throw new Error("Database connection not available");
@@ -196,7 +179,6 @@ export class DatabaseStorage implements IStorage {
     const result = await this.db.select().from(users).where(eq(users.id, id));
     return result[0];
   }
-
   async getUserByEmail(email: string): Promise<any> {
     if (!this.db) {
       throw new Error("Database connection not available. Please configure DATABASE_URL or SUPABASE_DATABASE_URL environment variable.");
@@ -204,7 +186,6 @@ export class DatabaseStorage implements IStorage {
     const result = await this.db.select().from(users).where(eq(users.email, email));
     return result[0];
   }
-
   async getUserBySSOId(ssoProvider: string, ssoId: string): Promise<any> {
     if (!this.db) {
       throw new Error("Database connection not available. Please configure DATABASE_URL or SUPABASE_DATABASE_URL environment variable.");
@@ -215,7 +196,6 @@ export class DatabaseStorage implements IStorage {
       .where(and(eq(users.ssoProvider, ssoProvider), eq(users.ssoId, ssoId)));
     return result[0];
   }
-
   async createUser(insertUser: any): Promise<any> {
     if (!this.db) {
       throw new Error("Database connection not available. Please configure DATABASE_URL or SUPABASE_DATABASE_URL environment variable.");
@@ -223,17 +203,14 @@ export class DatabaseStorage implements IStorage {
     const result = await this.db.insert(users).values(insertUser).returning();
     return result[0];
   }
-
   async getAllUsers(): Promise<any[]> {
     if (!this.db) throw new Error("Database connection not available");
     return await this.db.select().from(users);
   }
-
   async getAllTenants(): Promise<any[]> {
     if (!this.db) throw new Error("Database connection not available");
     return await this.db.select().from(tenants);
   }
-
   async updateUser(id: number, updates: any): Promise<any> {
     const result = await this.db
       .update(users)
@@ -242,152 +219,120 @@ export class DatabaseStorage implements IStorage {
       .returning();
     return result[0];
   }
-
   async deleteUserAccount(userId: number): Promise<void> {
     if (!this.db) throw new Error("Database connection not available");
-
-    // Get user's tenant to cascade delete tenant data
+    // Get user tenant to cascade delete tenant data
     const user = await this.getUserById(userId);
     if (!user) return;
-
     const tenantId = user.tenantId;
-
     try {
       // Delete in reverse dependency order to avoid foreign key constraints
-
       // Delete notifications for all restaurants owned by this tenant
       if (tenantId) {
         await this.db.execute(
           sql`DELETE FROM notifications WHERE restaurant_id IN (SELECT id FROM restaurants WHERE tenant_id = ${tenantId})`
         );
-
         // Delete booking change requests
         await this.db.execute(
           sql`DELETE FROM booking_change_requests WHERE booking_id IN (SELECT id FROM bookings WHERE restaurant_id IN (SELECT id FROM restaurants WHERE tenant_id = ${tenantId}))`
         );
-
         // Delete activity logs
         await this.db.execute(
           sql`DELETE FROM activity_log WHERE restaurant_id IN (SELECT id FROM restaurants WHERE tenant_id = ${tenantId})`
         );
-
         // Delete feedback
         await this.db.execute(
           sql`DELETE FROM feedback WHERE restaurant_id IN (SELECT id FROM restaurants WHERE tenant_id = ${tenantId})`
         );
-
         // Delete SMS messages
         await this.db.execute(
           sql`DELETE FROM sms_messages WHERE restaurant_id IN (SELECT id FROM restaurants WHERE tenant_id = ${tenantId})`
         );
-
         // Delete waiting list entries
         await this.db.execute(
           sql`DELETE FROM waiting_list WHERE restaurant_id IN (SELECT id FROM restaurants WHERE tenant_id = ${tenantId})`
         );
-
         // Delete customers
         await this.db.execute(
           sql`DELETE FROM customers WHERE restaurant_id IN (SELECT id FROM restaurants WHERE tenant_id = ${tenantId})`
         );
-
         // Delete bookings
         await this.db.execute(
           sql`DELETE FROM bookings WHERE restaurant_id IN (SELECT id FROM restaurants WHERE tenant_id = ${tenantId})`
         );
-
         // Delete table layouts
         await this.db.execute(
           sql`DELETE FROM table_layouts WHERE restaurant_id IN (SELECT id FROM restaurants WHERE tenant_id = ${tenantId})`
         );
-
         // Delete combined tables
         await this.db.execute(
           sql`DELETE FROM combined_tables WHERE restaurant_id IN (SELECT id FROM restaurants WHERE tenant_id = ${tenantId})`
         );
-
         // Delete tables
         await this.db.execute(
           sql`DELETE FROM tables WHERE restaurant_id IN (SELECT id FROM restaurants WHERE tenant_id = ${tenantId})`
         );
-
         // Delete rooms
         await this.db.execute(
           sql`DELETE FROM rooms WHERE restaurant_id IN (SELECT id FROM restaurants WHERE tenant_id = ${tenantId})`
         );
-
         // Delete cut-off times
         await this.db.execute(
           sql`DELETE FROM cut_off_times WHERE restaurant_id IN (SELECT id FROM restaurants WHERE tenant_id = ${tenantId})`
         );
-
         // Delete special periods
         await this.db.execute(
           sql`DELETE FROM special_periods WHERE restaurant_id IN (SELECT id FROM restaurants WHERE tenant_id = ${tenantId})`
         );
-
         // Delete opening hours
         await this.db.execute(
           sql`DELETE FROM opening_hours WHERE restaurant_id IN (SELECT id FROM restaurants WHERE tenant_id = ${tenantId})`
         );
-
         // Delete integration configurations
         await this.db.execute(
           sql`DELETE FROM integration_configurations WHERE restaurant_id IN (SELECT id FROM restaurants WHERE tenant_id = ${tenantId})`
         );
-
         // Delete restaurants
         await this.db.delete(restaurants).where(eq(restaurants.tenantId, tenantId));
-
         // Delete tenant
         await this.db.delete(tenants).where(eq(tenants.id, tenantId));
       }
-
       // Delete user subscriptions
       await this.db.delete(userSubscriptions).where(eq(userSubscriptions.userId, userId));
-
       // Delete tenant user associations
       await this.db.delete(tenantUsers).where(eq(tenantUsers.userId, userId));
-
       // Finally delete the user
       await this.db.delete(users).where(eq(users.id, userId));
-
     } catch (error) {
       console.error("Error deleting user account:", error);
       throw new Error("Failed to delete user account");
     }
   }
-
   async getRestaurant(id: number): Promise<any> {
     if (!this.db) throw new Error("Database connection not available");
     const result = await this.db.select().from(restaurants).where(eq(restaurants.id, id));
     return result[0];
   }
-
   async getRestaurantByUserId(userId: number): Promise<any> {
     if (!this.db) throw new Error("Database connection not available");
     const result = await this.db.select().from(restaurants).where(eq(restaurants.userId, userId));
     return result[0];
   }
-
   async getRestaurantById(id: number): Promise<any> {
     if (!this.db) throw new Error("Database connection not available");
     const result = await this.db.select().from(restaurants).where(eq(restaurants.id, id));
     return result[0];
   }
-
   async getRestaurantsByTenantId(tenantId: number): Promise<any[]> {
     if (!this.db) throw new Error("Database connection not available");
     const result = await this.db.select().from(restaurants).where(eq(restaurants.tenantId, tenantId));
     return result;
   }
-
   async createRestaurant(restaurant: any): Promise<any> {
     if (!this.db) throw new Error("Database connection not available");
     const result = await this.db.insert(restaurants).values(restaurant).returning();
     return result[0];
   }
-
   async updateRestaurant(id: number, updates: any): Promise<any> {
     if (!this.db) throw new Error("Database connection not available");
     const result = await this.db
@@ -397,7 +342,6 @@ export class DatabaseStorage implements IStorage {
       .returning();
     return result[0];
   }
-
   async getTablesByRestaurant(restaurantId: number): Promise<any[]> {
     if (!this.db) return [];
     const result = await this.db.select({
@@ -412,16 +356,13 @@ export class DatabaseStorage implements IStorage {
       createdAt: tables.createdAt,
       updatedAt: tables.updatedAt
     }).from(tables).where(eq(tables.restaurantId, restaurantId));
-
     return result;
   }
-
   async createTable(table: any): Promise<any> {
     if (!this.db) throw new Error("Database connection not available");
     const result = await this.db.insert(tables).values(table).returning();
     return result[0];
   }
-
   async updateTable(id: number, updates: any): Promise<any> {
     if (!this.db) throw new Error("Database connection not available");
     const result = await this.db.update(tables).set(updates).where(eq(tables.id, id)).returning({
@@ -436,25 +377,20 @@ export class DatabaseStorage implements IStorage {
       createdAt: tables.createdAt,
       updatedAt: tables.updatedAt
     });
-
     return result[0];
   }
-
   async deleteTable(id: number): Promise<boolean> {
     if (!this.db) return false;
     await this.db.delete(tables).where(eq(tables.id, id));
     return true;
   }
-
   async getBookingsByRestaurant(restaurantId: number): Promise<any[]> {
     if (!this.db) return [];
     const result = await this.db.select().from(bookings).where(eq(bookings.restaurantId, restaurantId));
     return result;
   }
-
   async getBookingsByDate(restaurantId: number, date: string): Promise<any[]> {
     if (!this.db) return [];
-
     // Use SQL date function to compare dates
     const result = await this.db.select().from(bookings)
       .where(and(
@@ -463,129 +399,106 @@ export class DatabaseStorage implements IStorage {
       ));
     return result;
   }
-
   async createBooking(booking: any): Promise<any> {
     if (!this.db) throw new Error("Database connection not available");
-
     // Validate numeric fields to prevent invalid database values
     if (booking.guestCount !== undefined) {
       if (!Number.isFinite(booking.guestCount) || booking.guestCount <= 0) {
-        throw new Error(`Invalid guestCount value: ${booking.guestCount}`);
+        throw new Error("Invalid guestCount value: " + booking.guestCount);
       }
     }
     if (booking.tableId !== undefined && booking.tableId !== null) {
       if (!Number.isFinite(booking.tableId) || booking.tableId <= 0) {
-        throw new Error(`Invalid tableId value: ${booking.tableId}`);
+        throw new Error("Invalid tableId value: " + booking.tableId);
       }
     }
     if (booking.customerId !== undefined && booking.customerId !== null) {
       if (!Number.isFinite(booking.customerId) || booking.customerId <= 0) {
-        throw new Error(`Invalid customerId value: ${booking.customerId}`);
+        throw new Error("Invalid customerId value: " + booking.customerId);
       }
     }
-
     // Import BookingHash for generating management hash
-    const { BookingHash } = await import('./booking-hash');
-
+    const { BookingHash } = await import("./booking-hash");
     // Insert the booking first to get the ID
     const [newBooking] = await this.db.insert(bookings).values(booking).returning();
-
     // Generate management hash with the actual booking ID
     const managementHash = BookingHash.generateHash(
       newBooking.id,
       newBooking.tenantId,
       newBooking.restaurantId,
-      'manage'
+      "manage"
     );
-
     // Update the booking with the management hash
     const [updatedBooking] = await this.db.update(bookings)
       .set({ managementHash })
       .where(eq(bookings.id, newBooking.id))
       .returning();
-
     return updatedBooking;
   }
-
   async updateBooking(id: number, updates: any): Promise<any> {
     if (!this.db) throw new Error("Database connection not available");
-
     // Validate numeric fields to prevent invalid database values
     if (updates.guestCount !== undefined) {
       if (!Number.isFinite(updates.guestCount) || updates.guestCount <= 0) {
-        throw new Error(`Invalid guestCount value: ${updates.guestCount}`);
+        throw new Error("Invalid guestCount value: " + updates.guestCount);
       }
     }
     if (updates.tableId !== undefined && updates.tableId !== null) {
       if (!Number.isFinite(updates.tableId) || updates.tableId <= 0) {
-        throw new Error(`Invalid tableId value: ${updates.tableId}`);
+        throw new Error("Invalid tableId value: " + updates.tableId);
       }
     }
-
     const result = await this.db.update(bookings).set(updates).where(eq(bookings.id, id)).returning();
     return result[0];
   }
-
   async deleteBooking(id: number): Promise<boolean> {
     if (!this.db) return false;
     await this.db.delete(bookings).where(eq(bookings.id, id));
     return true;
   }
-
   async getBookingCountForTenantThisMonth(tenantId: number): Promise<number> {
     if (!this.db) throw new Error("Database connection not available");
-
     // Get the start and end of the current month
     const now = new Date();
     const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
     const startOfNextMonth = new Date(now.getFullYear(), now.getMonth() + 1, 1);
-
     const result = await this.db.execute(
       sql`SELECT COUNT(*) as count FROM bookings 
           WHERE tenant_id = ${tenantId} 
           AND created_at >= ${startOfMonth.toISOString()} 
           AND created_at < ${startOfNextMonth.toISOString()}`
     );
-
     return Number(result.rows[0]?.count || 0);
   }
-
   async getCustomersByRestaurant(restaurantId: number): Promise<any[]> {
     if (!this.db) return [];
     const result = await this.db.select().from(customers).where(eq(customers.restaurantId, restaurantId));
     return result;
   }
-
   async getCustomerByEmail(restaurantId: number, email: string): Promise<any> {
     if (!this.db) return null;
     const result = await this.db.select().from(customers)
       .where(and(eq(customers.restaurantId, restaurantId), eq(customers.email, email)));
     return result[0];
   }
-
   async getCustomerById(id: number): Promise<any> {
     if (!this.db) return null;
     const result = await this.db.select().from(customers).where(eq(customers.id, id));
     return result[0];
   }
-
   async createCustomer(customer: any): Promise<any> {
     if (!this.db) throw new Error("Database connection not available");
     const result = await this.db.insert(customers).values(customer).returning();
     return result[0];
   }
-
   async updateCustomer(id: number, updates: any): Promise<any> {
     if (!this.db) throw new Error("Database connection not available");
     const result = await this.db.update(customers).set(updates).where(eq(customers.id, id)).returning();
     return result[0];
   }
-
   async getOrCreateCustomer(restaurantId: number, tenantId: number, customerData: any): Promise<any> {
     if (!this.db) throw new Error("Database connection not available");
-
     let customer = await this.getCustomerByEmail(restaurantId, customerData.email);
-
     if (!customer) {
       customer = await this.createCustomer({
         ...customerData,
@@ -593,13 +506,10 @@ export class DatabaseStorage implements IStorage {
         tenantId
       });
     }
-
     return customer;
   }
-
   async createWalkInCustomer(restaurantId: number, tenantId: number, customerData: any): Promise<any> {
     if (!this.db) throw new Error("Database connection not available");
-
     const walkInData = {
       name: customerData?.name || "Walk-in Customer",
       email: customerData?.email || null,
@@ -609,53 +519,42 @@ export class DatabaseStorage implements IStorage {
       isWalkIn: true,
       ...customerData
     };
-
     const result = await this.db.insert(customers).values(walkInData).returning();
     return result[0];
   }
-
   async getSubscriptionPlans(): Promise<any[]> {
     if (!this.db) return [];
     const result = await this.db.select().from(subscriptionPlans).where(eq(subscriptionPlans.isActive, true));
     return result;
   }
-
   async getSubscriptionPlan(id: number): Promise<any> {
     if (!this.db) return null;
     const result = await this.db.select().from(subscriptionPlans).where(eq(subscriptionPlans.id, id));
     return result[0];
   }
-
   async createSubscriptionPlan(plan: any): Promise<any> {
     if (!this.db) throw new Error("Database connection not available");
     const result = await this.db.insert(subscriptionPlans).values(plan).returning();
     return result[0];
   }
-
   async getUserSubscription(userId: number): Promise<any> {
     return null; // Simplified for now
   }
-
   async getUserSubscriptionByStripeId(stripeSubscriptionId: string): Promise<any> {
     return null; // Simplified for now
   }
-
   async getAllUserSubscriptions(): Promise<any[]> {
     return []; // Simplified for now
   }
-
   async createUserSubscription(subscription: any): Promise<any> {
     throw new Error("Method not implemented");
   }
-
   async updateUserSubscription(id: number, updates: any): Promise<any> {
     throw new Error("Method not implemented");
   }
-
   async getUserSubscriptionById(id: number): Promise<any> {
     return null; // Simplified for now
   }
-
   async getTableById(id: number): Promise<any> {
     if (!this.db) return null;
     const result = await this.db.select({
@@ -670,16 +569,13 @@ export class DatabaseStorage implements IStorage {
       createdAt: tables.createdAt,
       updatedAt: tables.updatedAt
     }).from(tables).where(eq(tables.id, id));
-
     return result[0] || null;
   }
-
   async getBookingById(id: number): Promise<any> {
     if (!this.db) return null;
     const result = await this.db.select().from(bookings).where(eq(bookings.id, id));
     return result[0];
   }
-
   async getUnassignedBookings(restaurantId: number): Promise<any[]> {
     if (!this.db) return [];
     const result = await this.db.select().from(bookings)
@@ -689,7 +585,6 @@ export class DatabaseStorage implements IStorage {
       ));
     return result;
   }
-
   // Additional required methods for the application
   async getNotificationsByRestaurant(restaurantId: number): Promise<any[]> {
     try {
@@ -698,28 +593,24 @@ export class DatabaseStorage implements IStorage {
         .from(notifications)
         .where(eq(notifications.restaurantId, restaurantId))
         .orderBy(desc(notifications.createdAt));
-
       return notificationData;
     } catch (error) {
       console.error("Error fetching notifications:", error);
       return [];
     }
   }
-
   async createNotification(notification: any): Promise<any> {
     try {
       const [newNotification] = await this.db
         .insert(notifications)
         .values(notification)
         .returning();
-
       return newNotification;
     } catch (error) {
       console.error("Error creating notification:", error);
       throw error;
     }
   }
-
   async markNotificationAsRead(id: number): Promise<any> {
     try {
       const [updatedNotification] = await this.db
@@ -727,14 +618,12 @@ export class DatabaseStorage implements IStorage {
         .set({ isRead: true })
         .where(eq(notifications.id, id))
         .returning();
-
       return updatedNotification;
     } catch (error) {
       console.error("Error marking notification as read:", error);
       return null;
     }
   }
-
   async markAllNotificationsAsRead(restaurantId: number): Promise<void> {
     try {
       await this.db
@@ -745,7 +634,6 @@ export class DatabaseStorage implements IStorage {
       console.error("Error marking all notifications as read:", error);
     }
   }
-
   async getRoomsByRestaurant(restaurantId: number): Promise<any[]> {
     try {
       const roomData = await this.db
@@ -753,42 +641,36 @@ export class DatabaseStorage implements IStorage {
         .from(rooms)
         .where(eq(rooms.restaurantId, restaurantId))
         .orderBy(rooms.id);
-
       return roomData;
     } catch (error) {
       console.error("Error fetching rooms:", error);
       return [];
     }
   }
-
   async getRoomById(id: number): Promise<any> {
     try {
       const result = await this.db
         .select()
         .from(rooms)
         .where(eq(rooms.id, id));
-
       return result[0] || null;
     } catch (error) {
       console.error("Error fetching room:", error);
       return null;
     }
   }
-
   async createRoom(room: any): Promise<any> {
     try {
       const [newRoom] = await this.db
         .insert(rooms)
         .values(room)
         .returning();
-
       return newRoom;
     } catch (error) {
       console.error("Error creating room:", error);
       throw error;
     }
   }
-
   async updateRoom(id: number, updates: any): Promise<any> {
     try {
       const [updatedRoom] = await this.db
@@ -796,27 +678,23 @@ export class DatabaseStorage implements IStorage {
         .set(updates)
         .where(eq(rooms.id, id))
         .returning();
-
       return updatedRoom;
     } catch (error) {
       console.error("Error updating room:", error);
       return null;
     }
   }
-
   async deleteRoom(id: number): Promise<boolean> {
     try {
       await this.db
         .delete(rooms)
         .where(eq(rooms.id, id));
-
       return true;
     } catch (error) {
       console.error("Error deleting room:", error);
       return false;
     }
   }
-
   async getCombinedTablesByRestaurant(restaurantId: number): Promise<any[]> {
     try {
       const combinedTableData = await this.db
@@ -824,14 +702,12 @@ export class DatabaseStorage implements IStorage {
         .from(combinedTables)
         .where(eq(combinedTables.restaurantId, restaurantId))
         .orderBy(combinedTables.id);
-
       return combinedTableData;
     } catch (error) {
       console.error("Error fetching combined tables:", error);
       return [];
     }
   }
-
   async createCombinedTable(data: any): Promise<any> {
     try {
       const [newCombinedTable] = await this.db
@@ -845,14 +721,12 @@ export class DatabaseStorage implements IStorage {
           isActive: data.isActive || true
         })
         .returning();
-
       return newCombinedTable;
     } catch (error) {
       console.error("Error creating combined table:", error);
       throw error;
     }
   }
-
   async updateCombinedTable(id: number, updates: any): Promise<any> {
     try {
       const updateData: any = {};
@@ -860,47 +734,40 @@ export class DatabaseStorage implements IStorage {
       if (updates.tableIds !== undefined) updateData.tableIds = JSON.stringify(updates.tableIds);
       if (updates.totalCapacity !== undefined) updateData.totalCapacity = updates.totalCapacity;
       if (updates.isActive !== undefined) updateData.isActive = updates.isActive;
-
       const [updatedCombinedTable] = await this.db
         .update(combinedTables)
         .set(updateData)
         .where(eq(combinedTables.id, id))
         .returning();
-
       return updatedCombinedTable;
     } catch (error) {
       console.error("Error updating combined table:", error);
       return null;
     }
   }
-
   async deleteCombinedTable(id: number): Promise<boolean> {
     try {
       await this.db
         .delete(combinedTables)
         .where(eq(combinedTables.id, id));
-
       return true;
     } catch (error) {
       console.error("Error deleting combined table:", error);
       return false;
     }
   }
-
   async getCombinedTableById(id: number): Promise<any> {
     try {
       const result = await this.db
         .select()
         .from(combinedTables)
         .where(eq(combinedTables.id, id));
-
       return result[0] || null;
     } catch (error) {
       console.error("Error fetching combined table:", error);
       return null;
     }
   }
-
   async getOpeningHoursByRestaurant(restaurantId: number): Promise<any> {
     try {
       const hours = await this.db
@@ -908,21 +775,18 @@ export class DatabaseStorage implements IStorage {
         .from(openingHours)
         .where(eq(openingHours.restaurantId, restaurantId))
         .orderBy(openingHours.dayOfWeek);
-
       return hours;
     } catch (error) {
       console.error("Error fetching opening hours:", error);
       return [];
     }
   }
-
   async createOrUpdateOpeningHours(restaurantId: number, tenantId: number, hoursData: any[]): Promise<any> {
     try {
       // Delete existing opening hours for this restaurant
       await this.db
         .delete(openingHours)
         .where(eq(openingHours.restaurantId, restaurantId));
-
       // Insert new opening hours
       if (hoursData && hoursData.length > 0) {
         const hoursToInsert = hoursData.map(hour => ({
@@ -935,18 +799,14 @@ export class DatabaseStorage implements IStorage {
           createdAt: new Date(),
           updatedAt: new Date()
         }));
-
-        await this.db.insert(openingHours).values(```python
-hoursToInsert);
+        await this.db.insert(openingHours).values(hoursToInsert);
       }
-
       return { success: true, message: "Opening hours updated successfully" };
     } catch (error) {
       console.error("Error updating opening hours:", error);
       return { success: false, message: "Failed to update opening hours" };
     }
   }
-
   async getSpecialPeriodsByRestaurant(restaurantId: number): Promise<any> {
     try {
       const periods = await this.db
@@ -960,7 +820,6 @@ hoursToInsert);
       return [];
     }
   }
-
   async createSpecialPeriod(periodData: any): Promise<any> {
     try {
       const [period] = await this.db
@@ -982,7 +841,6 @@ hoursToInsert);
       throw new Error("Failed to create special period");
     }
   }
-
   async updateSpecialPeriod(id: number, updates: any): Promise<any> {
     try {
       const [period] = await this.db
@@ -1004,7 +862,6 @@ hoursToInsert);
       throw new Error("Failed to update special period");
     }
   }
-
   async deleteSpecialPeriod(id: number): Promise<boolean> {
     try {
       await this.db
@@ -1016,7 +873,6 @@ hoursToInsert);
       return false;
     }
   }
-
   async getCutOffTimesByRestaurant(restaurantId: number): Promise<any> {
     try {
       const cutOffData = await this.db
@@ -1024,21 +880,18 @@ hoursToInsert);
         .from(cutOffTimes)
         .where(eq(cutOffTimes.restaurantId, restaurantId))
         .orderBy(cutOffTimes.dayOfWeek);
-
       return cutOffData || [];
     } catch (error) {
       console.error("Error fetching cut-off times:", error);
       return [];
     }
   }
-
   async createOrUpdateCutOffTimes(restaurantId: number, tenantId: number, timesData: any[]): Promise<any> {
     try {
       // Delete existing cut-off times for this restaurant
       await this.db
         .delete(cutOffTimes)
         .where(eq(cutOffTimes.restaurantId, restaurantId));
-
       // Insert new cut-off times
       if (timesData && timesData.length > 0) {
         const timesToInsert = timesData.map(time => ({
@@ -1050,25 +903,20 @@ hoursToInsert);
           createdAt: new Date(),
           updatedAt: new Date()
         }));
-
         await this.db.insert(cutOffTimes).values(timesToInsert);
       }
-
       return { success: true, message: "Cut-off times updated successfully" };
     } catch (error) {
       console.error("Error updating cut-off times:", error);
       return { success: false, message: "Failed to update cut-off times" };
     }
   }
-
   async isRestaurantOpen(restaurantId: number, bookingDate: Date, bookingTime: string): Promise<boolean> {
     return true; // Simplified - assume always open
   }
-
   async isBookingAllowed(restaurantId: number, bookingDate: Date, bookingTime: string): Promise<boolean> {
     return true; // Simplified - assume always allowed
   }
-
   async getBookingChangeRequestsByBookingId(bookingId: number): Promise<any[]> {
     try {
       const requests = await this.db
@@ -1076,14 +924,12 @@ hoursToInsert);
         .from(bookingChangeRequests)
         .where(eq(bookingChangeRequests.bookingId, bookingId))
         .orderBy(desc(bookingChangeRequests.createdAt));
-
       return requests || [];
     } catch (error) {
       console.error("Error fetching booking change requests by booking ID:", error);
       return [];
     }
   }
-
   async getBookingChangeRequestsByRestaurant(restaurantId: number): Promise<any[]> {
     try {
       const requests = await this.db
@@ -1091,14 +937,12 @@ hoursToInsert);
         .from(bookingChangeRequests)
         .where(eq(bookingChangeRequests.restaurantId, restaurantId))
         .orderBy(desc(bookingChangeRequests.createdAt));
-
       return requests || [];
     } catch (error) {
       console.error("Error fetching booking change requests by restaurant:", error);
       return [];
     }
   }
-
   async createBookingChangeRequest(request: any): Promise<any> {
     try {
       const [newRequest] = await this.db
@@ -1114,19 +958,17 @@ hoursToInsert);
           requestedGuestCount: request.requestedGuestCount,
           requestedTableId: request.requestedTableId,
           customerMessage: request.customerMessage,
-          status: request.status || 'pending',
+          status: request.status || "pending",
           createdAt: new Date(),
           updatedAt: new Date()
         })
         .returning();
-
       return newRequest;
     } catch (error) {
       console.error("Error creating booking change request:", error);
       throw error;
     }
   }
-
   async updateBookingChangeRequest(id: number, updates: any): Promise<any> {
     try {
       const [updatedRequest] = await this.db
@@ -1137,36 +979,30 @@ hoursToInsert);
         })
         .where(eq(bookingChangeRequests.id, id))
         .returning();
-
       return updatedRequest;
     } catch (error) {
       console.error("Error updating booking change request:", error);
       return null;
     }
   }
-
   async getBookingChangeRequestById(id: number): Promise<any> {
     try {
       const result = await this.db
         .select()
         .from(bookingChangeRequests)
         .where(eq(bookingChangeRequests.id, id));
-
       return result[0] || null;
     } catch (error) {
       console.error("Error fetching booking change request by ID:", error);
       return null;
     }
   }
-
   async revertNotification(notificationId: number, userEmail: string): Promise<boolean> {
     return false;
   }
-
   // Restaurant Settings methods
   async getRestaurantSettings(restaurantId: number, tenantId: number): Promise<any> {
     if (!this.db) throw new Error("Database connection not available");
-
     const [restaurant] = await this.db
       .select({
         emailSettings: restaurants.emailSettings,
@@ -1180,11 +1016,9 @@ hoursToInsert);
         eq(restaurants.tenantId, tenantId)
       ))
       .limit(1);
-
     if (!restaurant) {
       throw new Error("Restaurant not found");
     }
-
     // Return parsed settings with defaults
     return {
       emailSettings: restaurant.emailSettings ? JSON.parse(restaurant.emailSettings) : {
@@ -1203,7 +1037,6 @@ hoursToInsert);
         maxAdvanceBookingDays: 30,
         currency: "USD",
         language: "en",
-
         // Restaurant operations
         operationalSettings: {
           autoAcceptReservations: false,
@@ -1213,7 +1046,6 @@ hoursToInsert);
           noShowGracePeriod: 15, // minutes
           automaticTableRelease: 30, // minutes after no-show
         },
-
         // Payment and pricing
         paymentSettings: {
           acceptCreditCards: true,
@@ -1224,7 +1056,6 @@ hoursToInsert);
           cancellationPolicy: "24h", // 24h, 48h, 72h, 1week
           refundPolicy: "full", // full, partial, none
         },
-
         // Staff and service
         serviceSettings: {
           enableTableService: true,
@@ -1245,31 +1076,25 @@ hoursToInsert);
         depositAmount: 0,
         allowSameDayBookings: true,
         minBookingNotice: 0,
-
         // Duration and timing settings
         defaultDuration: 120, // minutes
         emptySeats: 2,
         turnaroundTime: 0, // minutes
         useEndingTime: false,
-
         // Contact and cancellation
         contactMethod: "phone", // phone, email, both
         allowCancellationAndChanges: true,
         cancellationNotice: "none", // none, 24h, 48h, 1week
         groupRequest: false,
-
         // Table booking preferences
         tableBooking: "recommended", // recommended, required, disabled
-
         // Data storage
         personalDataStorage: "1year", // 6months, 1year, 2years, 5years
-
         // Field visibility
         showCompanyNameField: { manual: false, online: false },
         showRoomNumberField: { manual: false, online: false },
         showAgreedPriceField: false,
         showPromoCodeField: { manual: false, online: false },
-
         // Online booking settings
         onlineBooking: {
           enabled: true,
@@ -1290,14 +1115,12 @@ hoursToInsert);
           confirmUrl: "",
           privacyPolicyUrl: "",
         },
-
         // Manual booking (administration)
         manualBooking: {
           tableSuggestions: true,
           interval: 15, // minutes
           initialsRequired: false,
         },
-
         // Administration
         administration: {
           newBookingNotification: true,
@@ -1313,12 +1136,9 @@ hoursToInsert);
       },
     };
   }
-
   async updateRestaurantSettings(restaurantId: number, tenantId: number, settings: any): Promise<any> {
     if (!this.db) throw new Error("Database connection not available");
-
     const updateData: any = {};
-
     if (settings.emailSettings) {
       updateData.emailSettings = JSON.stringify(settings.emailSettings);
     }
@@ -1331,7 +1151,6 @@ hoursToInsert);
     if (settings.notificationSettings) {
       updateData.notificationSettings = JSON.stringify(settings.notificationSettings);
     }
-
     const [updatedRestaurant] = await this.db
       .update(restaurants)
       .set(updateData)
@@ -1340,14 +1159,11 @@ hoursToInsert);
         eq(restaurants.tenantId, tenantId)
       ))
       .returning();
-
     return updatedRestaurant;
   }
-
   // SMS Settings methods
   async getSmsSettings(restaurantId: number, tenantId: number): Promise<any> {
     if (!this.db) throw new Error("Database connection not available");
-
     const result = await this.db
       .select()
       .from(smsSettings)
@@ -1356,7 +1172,6 @@ hoursToInsert);
         eq(smsSettings.tenantId, tenantId)
       ))
       .limit(1);
-
     return result[0] || {
       confirmationEnabled: false,
       reminderEnabled: false,
@@ -1366,10 +1181,8 @@ hoursToInsert);
       satisfactionSurveyEnabled: false,
     };
   }
-
   async saveSmsSettings(restaurantId: number, tenantId: number, settings: any): Promise<any> {
     if (!this.db) throw new Error("Database connection not available");
-
     const existing = await this.db
       .select()
       .from(smsSettings)
@@ -1378,7 +1191,6 @@ hoursToInsert);
         eq(smsSettings.tenantId, tenantId)
       ))
       .limit(1);
-
     if (existing.length > 0) {
       const [updated] = await this.db
         .update(smsSettings)
@@ -1411,33 +1223,26 @@ hoursToInsert);
       return created;
     }
   }
-
   // SMS Balance methods
   async getSmsBalance(tenantId: number): Promise<any> {
     if (!this.db) throw new Error("Database connection not available");
-
     const result = await this.db
       .select()
       .from(smsBalance)
       .where(eq(smsBalance.tenantId, tenantId))
       .limit(1);
-
     return result[0] || { balance: "0.00", currency: "EUR" };
   }
-
   async addSmsBalance(tenantId: number, amount: number): Promise<any> {
     if (!this.db) throw new Error("Database connection not available");
-
     const existing = await this.db
       .select()
       .from(smsBalance)
       .where(eq(smsBalance.tenantId, tenantId))
       .limit(1);
-
     if (existing.length > 0) {
       const currentBalance = parseFloat(existing[0].balance || "0");
       const newBalance = currentBalance + amount;
-
       const [updated] = await this.db
         .update(smsBalance)
         .set({
@@ -1459,11 +1264,9 @@ hoursToInsert);
       return created;
     }
   }
-
   // SMS Message methods
   async createSmsMessage(restaurantId: number, tenantId: number, messageData: any): Promise<any> {
     if (!this.db) throw new Error("Database connection not available");
-
     const [message] = await this.db
       .insert(smsMessages)
       .values({
@@ -1477,32 +1280,25 @@ hoursToInsert);
         cost: messageData.cost || "0.08",
       })
       .returning();
-
     return message;
   }
-
   async updateSmsMessageStatus(messageId: number, status: string, errorMessage?: string): Promise<any> {
     if (!this.db) throw new Error("Database connection not available");
-
     const updateData: any = {
       status,
       sentAt: status === "sent" ? new Date() : undefined,
       deliveredAt: status === "delivered" ? new Date() : undefined,
       errorMessage: errorMessage || null,
     };
-
     const [updated] = await this.db
       .update(smsMessages)
       .set(updateData)
       .where(eq(smsMessages.id, messageId))
       .returning();
-
     return updated;
   }
-
   async getSmsMessages(restaurantId: number, tenantId: number): Promise<any[]> {
     if (!this.db) throw new Error("Database connection not available");
-
     return await this.db
       .select()
       .from(smsMessages)
@@ -1512,11 +1308,9 @@ hoursToInsert);
       ))
       .orderBy(smsMessages.createdAt);
   }
-
   // Feedback Questions methods
   async getFeedbackQuestions(restaurantId: number, tenantId: number): Promise<any[]> {
     if (!this.db) throw new Error("Database connection not available");
-
     return await this.db
       .select()
       .from(feedbackQuestions)
@@ -1526,10 +1320,8 @@ hoursToInsert);
       ))
       .orderBy(feedbackQuestions.sortOrder, feedbackQuestions.createdAt);
   }
-
   async createFeedbackQuestion(restaurantId: number, tenantId: number, questionData: any): Promise<any> {
     if (!this.db) throw new Error("Database connection not available");
-
     const [question] = await this.db
       .insert(feedbackQuestions)
       .values({
@@ -1543,13 +1335,10 @@ hoursToInsert);
         sortOrder: questionData.sortOrder || 0,
       })
       .returning();
-
     return question;
   }
-
   async updateFeedbackQuestion(id: number, questionData: any): Promise<any> {
     if (!this.db) throw new Error("Database connection not available");
-
     const [updated] = await this.db
       .update(feedbackQuestions)
       .set({
@@ -1563,35 +1352,27 @@ hoursToInsert);
       })
       .where(eq(feedbackQuestions.id, id))
       .returning();
-
     return updated;
   }
-
   async deleteFeedbackQuestion(id: number): Promise<void> {
     if (!this.db) throw new Error("Database connection not available");
     await this.db.delete(feedbackQuestions).where(eq(feedbackQuestions.id, id));
   }
-
   async deleteFeedback(id: number): Promise<void> {
     if (!this.db) throw new Error("Database connection not available");
-
     // First delete related feedback responses
     await this.db.delete(feedbackResponses).where(eq(feedbackResponses.feedbackId, id));
-
     // Then delete the feedback entry
     await this.db.delete(feedback).where(eq(feedback.id, id));
   }
-
   // Feedback Response methods
   async createFeedbackResponse(responseData: any): Promise<any> {
     if (!this.db) throw new Error("Database connection not available");
     const [newResponse] = await this.db.insert(feedbackResponses).values(responseData).returning();
     return newResponse;
   }
-
   async getFeedbackResponsesByFeedbackId(feedbackId: number): Promise<any[]> {
     if (!this.db) throw new Error("Database connection not available");
-
     const result = await this.db
       .select({
         id: feedbackResponses.id,
@@ -1608,13 +1389,10 @@ hoursToInsert);
       .leftJoin(feedbackQuestions, eq(feedbackResponses.questionId, feedbackQuestions.id))
       .where(eq(feedbackResponses.feedbackId, feedbackId))
       .orderBy(asc(feedbackQuestions.sortOrder));
-
     return result;
   }
-
   async updateFeedback(feedbackId: number, updateData: any): Promise<any> {
     if (!this.db) throw new Error("Database connection not available");
-
     const [updated] = await this.db
       .update(feedback)
       .set({
@@ -1623,15 +1401,11 @@ hoursToInsert);
       })
       .where(eq(feedback.id, feedbackId))
       .returning();
-
     return updated;
   }
-
   async getFeedbackResponses(restaurantId: number, tenantId: number): Promise<any[]> {
     if (!this.db) throw new Error("Database connection not available");
-
-    console.log(`Fetching feedback for restaurant ${restaurantId}, tenant ${tenantId}`);
-
+    console.log("Fetching feedback for restaurant " + restaurantId + ", tenant " + tenantId);
     const result = await this.db
       .select({
         id: feedback.id,
@@ -1652,26 +1426,22 @@ hoursToInsert);
         eq(feedback.tenantId, tenantId)
       ))
       .orderBy(desc(feedback.createdAt));
-
-    console.log(`Found ${result.length} feedback responses:`, result);
+    console.log("Found " + result.length + " feedback responses:", result);
     return result;
   }
-
   async deleteNotification(id: number): Promise<boolean> {
     return false;
   }
-
   async getIntegrationConfigurationsByRestaurant(restaurantId: number): Promise<any[]> {
     try {
       const integrationData = await this.db
         .select()
         .from(integrationConfigurations)
         .where(eq(integrationConfigurations.restaurantId, restaurantId));
-
       // Parse configuration JSON strings back to objects
       const parsedData = integrationData.map((config: any) => {
         let parsedConfig = config.configuration;
-        if (typeof config.configuration === 'string') {
+        if (typeof config.configuration === "string") {
           try {
             parsedConfig = JSON.parse(config.configuration);
           } catch (e) {
@@ -1683,14 +1453,12 @@ hoursToInsert);
           configuration: parsedConfig
         };
       });
-
       return parsedData || [];
     } catch (error) {
       console.error("Error fetching integration configurations:", error);
       return [];
     }
   }
-
   async getIntegrationByRestaurantAndType(restaurantId: number, integrationType: string): Promise<any> {
     try {
       const result = await this.db
@@ -1700,23 +1468,19 @@ hoursToInsert);
           eq(integrationConfigurations.restaurantId, restaurantId),
           eq(integrationConfigurations.integrationId, integrationType)
         ));
-
       if (result.length === 0) {
         return null;
       }
-
       const config = result[0];
-
       // Parse configuration JSON string back to object
       let parsedConfig = config.configuration;
-      if (typeof config.configuration === 'string') {
+      if (typeof config.configuration === "string") {
         try {
           parsedConfig = JSON.parse(config.configuration);
         } catch (e) {
           parsedConfig = {};
         }
       }
-
       return {
         ...config,
         configuration: parsedConfig
@@ -1726,7 +1490,6 @@ hoursToInsert);
       return null;
     }
   }
-
   async getIntegrationConfiguration(restaurantId: number, integrationId: string): Promise<any> {
     try {
       const result = await this.db
@@ -1736,19 +1499,16 @@ hoursToInsert);
           eq(integrationConfigurations.restaurantId, restaurantId),
           eq(integrationConfigurations.integrationId, integrationId)
         ));
-
       return result[0] || null;
     } catch (error) {
       console.error("Error fetching integration configuration:", error);
       return null;
     }
   }
-
   async createOrUpdateIntegrationConfiguration(restaurantId: number, tenantId: number, integrationId: string, isEnabled: boolean, configuration: any = {}): Promise<any> {
     try {
       // Check if configuration already exists
       const existing = await this.getIntegrationConfiguration(restaurantId, integrationId);
-
       if (existing) {
         // Update existing configuration
         const [updated] = await this.db
@@ -1763,7 +1523,6 @@ hoursToInsert);
             eq(integrationConfigurations.integrationId, integrationId)
           ))
           .returning();
-
         return updated;
       } else {
         // Create new configuration
@@ -1779,7 +1538,6 @@ hoursToInsert);
             updatedAt: new Date()
           })
           .returning();
-
         return created;
       }
     } catch (error) {
@@ -1787,7 +1545,6 @@ hoursToInsert);
       throw error;
     }
   }
-
   async deleteIntegrationConfiguration(restaurantId: number, integrationId: string): Promise<boolean> {
     try {
       await this.db
@@ -1796,173 +1553,135 @@ hoursToInsert);
           eq(integrationConfigurations.restaurantId, restaurantId),
           eq(integrationConfigurations.integrationId, integrationId)
         ));
-
       return true;
     } catch (error) {
       console.error("Error deleting integration configuration:", error);
       return false;
     }
   }
-
   async getWebhooksByRestaurant(restaurantId: number) {
     return [];
   }
-
   async saveWebhooks(restaurantId: number, tenantId: number, webhooksData: any[]): Promise<any[]> {
     // For now, return the webhooks data as-is since webhooks table may not exist
     // This maintains interface compatibility while allowing the application to work
     return webhooksData || [];
   }
-
   async getSmsMessagesByRestaurant(restaurantId: number): Promise<any[]> {
     return [];
   }
-
   async createSmsMessage(message: any): Promise<any> {
     throw new Error("Method not implemented");
   }
-
   async getWaitingListByRestaurant(restaurantId: number): Promise<any[]> {
     if (!this.db) throw new Error("Database connection not available");
     return await this.db.select().from(waitingList).where(eq(waitingList.restaurantId, restaurantId));
   }
-
   async createWaitingListEntry(entry: any): Promise<any> {
     if (!this.db) throw new Error("Database connection not available");
     const [newEntry] = await this.db.insert(waitingList).values(entry).returning();
     return newEntry;
   }
-
   async getWaitingListEntryById(id: number): Promise<any> {
     if (!this.db) throw new Error("Database connection not available");
     const result = await this.db.select().from(waitingList).where(eq(waitingList.id, id));
     return result[0];
   }
-
   async updateWaitingListEntry(id: number, updates: any): Promise<any> {
     if (!this.db) throw new Error("Database connection not available");
     const [updated] = await this.db.update(waitingList).set(updates).where(eq(waitingList.id, id)).returning();
     return updated;
   }
-
   async deleteWaitingListEntry(id: number): Promise<boolean> {
     if (!this.db) throw new Error("Database connection not available");
     const result = await this.db.delete(waitingList).where(eq(waitingList.id, id));
     return result.rowCount > 0;
   }
-
-
-
   async getFeedbackByRestaurant(restaurantId: number): Promise<any[]> {
     return [];
   }
-
   async createFeedback(feedbackData: any): Promise<any> {
     const feedbackToInsert = {
       ...feedbackData,
       createdAt: new Date(),
       visited: false,
-      bookingDate: feedbackData.visitDate || new Date().toISOString().split('T')[0],
-      questionName: 'Guest Feedback'
+      bookingDate: feedbackData.visitDate || new Date().toISOString().split("T")[0],
+      questionName: "Guest Feedback"
     };
-
     const [newFeedback] = await this.db.insert(feedback).values(feedbackToInsert).returning();
     return newFeedback;
   }
-
   async getActivityLogByRestaurant(restaurantId: number): Promise<any[]> {
     if (!this.db) throw new Error("Database connection not available");
-
     const logs = await this.db
       .select()
       .from(activityLog)
       .where(eq(activityLog.restaurantId, restaurantId))
       .orderBy(desc(activityLog.createdAt));
-
     return logs;
   }
-
   async getActivityLogByTenant(tenantId: number): Promise<any[]> {
     if (!this.db) throw new Error("Database connection not available");
-
     const logs = await this.db
       .select()
       .from(activityLog)
       .leftJoin(restaurants, eq(activityLog.restaurantId, restaurants.id))
       .where(eq(activityLog.tenantId, tenantId))
       .orderBy(desc(activityLog.createdAt));
-
     // Transform the results to include restaurant name
     return logs.map(log => ({
       ...log.activity_log,
-      restaurantName: log.restaurants?.name || `Restaurant ${log.activity_log.restaurantId}`
+      restaurantName: log.restaurants?.name || "Restaurant " + log.activity_log.restaurantId
     }));
   }
-
   async createActivityLog(log: any): Promise<any> {
     if (!this.db) throw new Error("Database connection not available");
     const result = await this.db.insert(activityLog).values(log).returning();
     return result[0];
   }
-
   async deleteOldActivityLogs(beforeDate: Date): Promise<number> {
     if (!this.db) throw new Error("Database connection not available");
-
     const result = await this.db
       .delete(activityLog)
       .where(lt(activityLog.createdAt, beforeDate));
-
     return result.rowCount || 0;
   }
-
   // Product Groups
   async getProductGroupsByRestaurant(restaurantId: number): Promise<any[]> {
     if (!this.db) throw new Error("Database connection not available");
-
     const groups = await this.db
       .select()
       .from(productGroups)
       .where(eq(productGroups.restaurantId, restaurantId))
       .orderBy(desc(productGroups.createdAt));
-
     return groups;
   }
-
   async createProductGroup(group: any): Promise<any> {
     if (!this.db) throw new Error("Database connection not available");
-
     const result = await this.db
       .insert(productGroups)
       .values(group)
       .returning();
-
     return result[0];
   }
-
   async updateProductGroup(id: number, updates: any): Promise<any> {
     if (!this.db) throw new Error("Database connection not available");
-
     const result = await this.db
       .update(productGroups)
       .set({ ...updates, updatedAt: new Date() })
       .where(eq(productGroups.id, id))
       .returning();
-
     return result[0];
   }
-
   async deleteProductGroup(id: number): Promise<void> {
     if (!this.db) throw new Error("Database connection not available");
-
     await this.db
       .delete(productGroups)
       .where(eq(productGroups.id, id));
   }
-
   // Products
   async getProductsByRestaurant(restaurantId: number): Promise<any[]> {
     if (!this.db) throw new Error("Database connection not available");
-
     const productsData = await this.db
       .select({
         id: products.id,
@@ -1978,89 +1697,67 @@ hoursToInsert);
       .leftJoin(productGroups, eq(products.categoryId, productGroups.id))
       .where(eq(products.restaurantId, restaurantId))
       .orderBy(desc(products.createdAt));
-
     return productsData;
   }
-
   async createProduct(product: any): Promise<any> {
     if (!this.db) throw new Error("Database connection not available");
-
     const result = await this.db
       .insert(products)
       .values(product)
       .returning();
-
     return result[0];
   }
-
   async updateProduct(id: number, updates: any): Promise<any> {
     if (!this.db) throw new Error("Database connection not available");
-
     const result = await this.db
       .update(products)
       .set({ ...updates, updatedAt: new Date() })
       .where(eq(products.id, id))
       .returning();
-
     return result[0];
   }
-
   async deleteProduct(id: number): Promise<void> {
     if (!this.db) throw new Error("Database connection not available");
-
     await this.db
       .delete(products)
       .where(eq(products.id, id));
   }
-
   // Payment Setups
   async getPaymentSetupsByRestaurant(restaurantId: number): Promise<any[]> {
     if (!this.db) throw new Error("Database connection not available");
-
     const paymentSetupsData = await this.db
       .select()
       .from(paymentSetups)
       .where(eq(paymentSetups.restaurantId, restaurantId))
       .orderBy(desc(paymentSetups.createdAt));
-
     return paymentSetupsData;
   }
-
   async createPaymentSetup(setup: any): Promise<any> {
     if (!this.db) throw new Error("Database connection not available");
-
     const result = await this.db
       .insert(paymentSetups)
       .values(setup)
       .returning();
-
     return result[0];
   }
-
   async updatePaymentSetup(id: number, updates: any): Promise<any> {
     if (!this.db) throw new Error("Database connection not available");
-
     const result = await this.db
       .update(paymentSetups)
       .set({ ...updates, updatedAt: new Date() })
       .where(eq(paymentSetups.id, id))
       .returning();
-
     return result[0];
   }
-
   async deletePaymentSetup(id: number): Promise<void> {
     if (!this.db) throw new Error("Database connection not available");
-
     await this.db
       .delete(paymentSetups)
       .where(eq(paymentSetups.id, id));
   }
-
   // Custom Fields methods
   async getCustomFieldsByRestaurant(restaurantId: number, tenantId: number): Promise<any[]> {
     if (!this.db) throw new Error("Database connection not available");
-
     const fields = await this.db
       .select()
       .from(customFields)
@@ -2069,13 +1766,10 @@ hoursToInsert);
         eq(customFields.tenantId, tenantId)
       ))
       .orderBy(customFields.sortOrder, customFields.createdAt);
-
     return fields;
   }
-
   async createCustomField(customFieldData: any): Promise<any> {
     if (!this.db) throw new Error("Database connection not available");
-
     const [field] = await this.db
       .insert(customFields)
       .values({
@@ -2094,13 +1788,10 @@ hoursToInsert);
         validation: customFieldData.validation,
       })
       .returning();
-
     return field;
   }
-
   async updateCustomField(id: number, updates: any): Promise<any> {
     if (!this.db) throw new Error("Database connection not available");
-
     const [updated] = await this.db
       .update(customFields)
       .set({
@@ -2119,52 +1810,40 @@ hoursToInsert);
       })
       .where(eq(customFields.id, id))
       .returning();
-
     return updated;
   }
-
   async deleteCustomField(id: number): Promise<boolean> {
     if (!this.db) throw new Error("Database connection not available");
-
     try {
       await this.db
         .delete(customFields)
         .where(eq(customFields.id, id));
-
       return true;
     } catch (error) {
       console.error("Error deleting custom field:", error);
       return false;
     }
   }
-
   async getCustomFieldById(id: number): Promise<any> {
     if (!this.db) throw new Error("Database connection not available");
-
     const result = await this.db
       .select()
       .from(customFields)
       .where(eq(customFields.id, id));
-
     return result[0];
   }
-
   async getTimeSlotsByRestaurant(restaurantId: number, date?: string): Promise<any[]> {
     return [];
   }
-
   async createTimeSlot(slot: any): Promise<any> {
     throw new Error("Method not implemented");
   }
-
   async updateTimeSlot(id: number, updates: any): Promise<any> {
     throw new Error("Method not implemented");
   }
-
   async getTimeSlotById(id: number): Promise<any> {
     return null;
   }
-
   async getTableLayout(restaurantId: number, room: string): Promise<any> {
     try {
       const layout = await this.db
@@ -2177,14 +1856,12 @@ hoursToInsert);
           )
         )
         .limit(1);
-
       if (layout.length > 0) {
         return {
           room: layout[0].room,
           positions: layout[0].positions
         };
       }
-
       // Return default empty layout if none exists
       return {
         room: room,
@@ -2198,7 +1875,6 @@ hoursToInsert);
       };
     }
   }
-
   async saveTableLayout(restaurantId: number, tenantId: number, room: string, positions: any): Promise<any> {
     try {
       // Check if layout already exists for this restaurant and room
@@ -2213,7 +1889,6 @@ hoursToInsert);
           )
         )
         .limit(1);
-
       if (existingLayout.length > 0) {
         // Update existing layout
         const [updatedLayout] = await this.db
@@ -2224,7 +1899,6 @@ hoursToInsert);
           })
           .where(eq(tableLayouts.id, existingLayout[0].id))
           .returning();
-
         return updatedLayout;
       } else {
         // Create new layout
@@ -2237,7 +1911,6 @@ hoursToInsert);
             positions
           })
           .returning();
-
         return newLayout;
       }
     } catch (error) {
@@ -2245,35 +1918,27 @@ hoursToInsert);
       throw error;
     }
   }
-
   async getReschedulingSuggestionsByRestaurant(restaurantId: number): Promise<any[]> {
     return [];
   }
-
   async getReschedulingSuggestionsByBooking(bookingId: number): Promise<any[]> {
     return [];
   }
-
   async createReschedulingSuggestion(suggestion: any): Promise<any> {
     throw new Error("Method not implemented");
   }
-
   async updateReschedulingSuggestion(id: number, updates: any): Promise<any> {
     throw new Error("Method not implemented");
   }
-
   async getReschedulingSuggestionById(id: number): Promise<any> {
     return null;
   }
-
   async deleteReschedulingSuggestion(id: number): Promise<boolean> {
     return false;
   }
-
   async deleteExpiredReschedulingSuggestions(): Promise<void> {
     // Simplified implementation
   }
-
   async getAllUsers(): Promise<any[]> {
     if (!this.db) return [];
     const result = await this.db.select({
@@ -2285,14 +1950,12 @@ hoursToInsert);
     }).from(users);
     return result;
   }
-
   // Additional subscription-related methods
   async getSubscriptionPlanById(id: number): Promise<any> {
     if (!this.db) return null;
     const result = await this.db.select().from(subscriptionPlans).where(eq(subscriptionPlans.id, id));
     return result[0];
   }
-
   async getFreePlan(): Promise<any> {
     if (!this.db) return null;
     const result = await this.db.select().from(subscriptionPlans)
@@ -2300,7 +1963,6 @@ hoursToInsert);
       .limit(1);
     return result[0];
   }
-
   // Resolved Conflicts
   async getResolvedConflictsByRestaurant(restaurantId: number): Promise<any[]> {
     if (!this.db) return [];
@@ -2309,13 +1971,11 @@ hoursToInsert);
       .orderBy(desc(resolvedConflicts.resolvedAt));
     return result;
   }
-
   async createResolvedConflict(resolvedConflict: any): Promise<any> {
     if (!this.db) throw new Error("Database connection not available");
     const [newResolvedConflict] = await this.db.insert(resolvedConflicts).values(resolvedConflict).returning();
     return newResolvedConflict;
   }
-
   // Menu Categories
   async getMenuCategoriesByRestaurant(restaurantId: number): Promise<any[]> {
     if (!this.db) return [];
@@ -2324,7 +1984,6 @@ hoursToInsert);
       .orderBy(asc(menuCategories.displayOrder), asc(menuCategories.name));
     return result;
   }
-
   async getMenuCategories(restaurantId: number, tenantId: number): Promise<any[]> {
     if (!this.db) return [];
     const result = await this.db.select().from(menuCategories)
@@ -2332,13 +1991,11 @@ hoursToInsert);
       .orderBy(asc(menuCategories.displayOrder), asc(menuCategories.name));
     return result;
   }
-
   async createMenuCategory(category: any): Promise<any> {
     if (!this.db) throw new Error("Database connection not available");
     const [newCategory] = await this.db.insert(menuCategories).values(category).returning();
     return newCategory;
   }
-
   async updateMenuCategory(id: number, updates: any): Promise<any> {
     if (!this.db) throw new Error("Database connection not available");
     const [updatedCategory] = await this.db.update(menuCategories)
@@ -2347,13 +2004,11 @@ hoursToInsert);
       .returning();
     return updatedCategory;
   }
-
   async deleteMenuCategory(id: number): Promise<boolean> {
     if (!this.db) return false;
     await this.db.delete(menuCategories).where(eq(menuCategories.id, id));
     return true;
   }
-
   // Menu Items
   async getMenuItemsByRestaurant(restaurantId: number): Promise<any[]> {
     if (!this.db) return [];
@@ -2362,7 +2017,6 @@ hoursToInsert);
       .orderBy(asc(menuItems.displayOrder), asc(menuItems.name));
     return result;
   }
-
   async getMenuItems(restaurantId: number, tenantId: number): Promise<any[]> {
     if (!this.db) return [];
     const result = await this.db.select().from(menuItems)
@@ -2370,7 +2024,6 @@ hoursToInsert);
       .orderBy(asc(menuItems.displayOrder), asc(menuItems.name));
     return result;
   }
-
   async getMenuItemsByCategory(categoryId: number): Promise<any[]> {
     if (!this.db) return [];
     const result = await this.db.select().from(menuItems)
@@ -2378,13 +2031,11 @@ hoursToInsert);
       .orderBy(asc(menuItems.displayOrder), asc(menuItems.name));
     return result;
   }
-
   async createMenuItem(item: any): Promise<any> {
     if (!this.db) throw new Error("Database connection not available");
     const [newItem] = await this.db.insert(menuItems).values(item).returning();
     return newItem;
   }
-
   async updateMenuItem(id: number, updates: any): Promise<any> {
     if (!this.db) throw new Error("Database connection not available");
     const [updatedItem] = await this.db.update(menuItems)
@@ -2393,13 +2044,11 @@ hoursToInsert);
       .returning();
     return updatedItem;
   }
-
   async deleteMenuItem(id: number): Promise<boolean> {
     if (!this.db) return false;
     await this.db.delete(menuItems).where(eq(menuItems.id, id));
     return true;
   }
-
   // Seasonal Menu Themes
   async getSeasonalMenuThemes(restaurantId: number, tenantId: number): Promise<any[]> {
     if (!this.db) return [];
@@ -2408,20 +2057,17 @@ hoursToInsert);
       .orderBy(desc(seasonalMenuThemes.createdAt));
     return result;
   }
-
   async getSeasonalMenuThemeById(id: number): Promise<any> {
     if (!this.db) return null;
     const [theme] = await this.db.select().from(seasonalMenuThemes)
       .where(eq(seasonalMenuThemes.id, id));
     return theme;
   }
-
   async createSeasonalMenuTheme(theme: any): Promise<any> {
     if (!this.db) throw new Error("Database connection not available");
     const [newTheme] = await this.db.insert(seasonalMenuThemes).values(theme).returning();
     return newTheme;
   }
-
   async updateSeasonalMenuTheme(id: number, updates: any): Promise<any> {
     if (!this.db) throw new Error("Database connection not available");
     const [updatedTheme] = await this.db.update(seasonalMenuThemes)
@@ -2430,35 +2076,29 @@ hoursToInsert);
       .returning();
     return updatedTheme;
   }
-
   async deleteSeasonalMenuTheme(id: number): Promise<boolean> {
     if (!this.db) return false;
     await this.db.delete(seasonalMenuThemes).where(eq(seasonalMenuThemes.id, id));
     return true;
   }
-
   async setActiveSeasonalTheme(restaurantId: number, tenantId: number, themeId: number): Promise<boolean> {
     if (!this.db) return false;
     // First deactivate all themes for this restaurant
     await this.db.update(seasonalMenuThemes)
       .set({ isActive: false, updatedAt: new Date() })
       .where(and(eq(seasonalMenuThemes.restaurantId, restaurantId), eq(seasonalMenuThemes.tenantId, tenantId)));
-
     // Then activate the selected theme
     await this.db.update(seasonalMenuThemes)
       .set({ isActive: true, updatedAt: new Date() })
       .where(eq(seasonalMenuThemes.id, themeId));
-
     return true;
   }
-
   // Professional Menu Print Orders
   async createMenuOrder(orderData: any): Promise<any> {
     if (!this.db) throw new Error("Database connection not available");
     const [newOrder] = await this.db.insert(menuPrintOrders).values(orderData).returning();
     return newOrder;
   }
-
   async getMenuOrdersByRestaurant(restaurantId: number, tenantId: number): Promise<any[]> {
     if (!this.db) return [];
     const result = await this.db.select().from(menuPrintOrders)
@@ -2466,14 +2106,12 @@ hoursToInsert);
       .orderBy(desc(menuPrintOrders.createdAt));
     return result;
   }
-
   async getMenuOrderById(id: number): Promise<any> {
     if (!this.db) return null;
     const [order] = await this.db.select().from(menuPrintOrders)
       .where(eq(menuPrintOrders.id, id));
     return order;
   }
-
   async updateMenuOrder(id: number, updates: any): Promise<any> {
     if (!this.db) throw new Error("Database connection not available");
     const [updatedOrder] = await this.db.update(menuPrintOrders)
@@ -2482,13 +2120,11 @@ hoursToInsert);
       .returning();
     return updatedOrder;
   }
-
   async deleteMenuOrder(id: number): Promise<boolean> {
     if (!this.db) return false;
     await this.db.delete(menuPrintOrders).where(eq(menuPrintOrders.id, id));
     return true;
   }
-
   async getSeatingConfigurationsByRestaurant(restaurantId: number): Promise<any[]> {
     try {
       const configs = await this.db
@@ -2496,14 +2132,12 @@ hoursToInsert);
         .from(seatingConfigurations)
         .where(eq(seatingConfigurations.restaurantId, restaurantId))
         .orderBy(seatingConfigurations.createdAt);
-
       return configs;
     } catch (error) {
       console.error("Error fetching seating configurations:", error);
       return [];
     }
   }
-
   async createSeatingConfiguration(configuration: any): Promise<any> {
     try {
       const [newConfig] = await this.db
@@ -2517,14 +2151,12 @@ hoursToInsert);
           isActive: configuration.isActive ?? true,
         })
         .returning();
-
       return newConfig;
     } catch (error) {
       console.error("Error creating seating configuration:", error);
       throw error;
     }
   }
-
   async updateSeatingConfiguration(id: number, updates: any): Promise<any> {
     try {
       const [updatedConfig] = await this.db
@@ -2538,27 +2170,23 @@ hoursToInsert);
         })
         .where(eq(seatingConfigurations.id, id))
         .returning();
-
       return updatedConfig;
     } catch (error) {
       console.error("Error updating seating configuration:", error);
       throw error;
     }
   }
-
   async deleteSeatingConfiguration(id: number): Promise<boolean> {
     try {
       await this.db
         .delete(seatingConfigurations)
         .where(eq(seatingConfigurations.id, id));
-
       return true;
     } catch (error) {
       console.error("Error deleting seating configuration:", error);
       return false;
     }
   }
-
   async getPeriodicCriteriaByRestaurant(restaurantId: number): Promise<any[]> {
     try {
       const criteria = await this.db
@@ -2566,14 +2194,12 @@ hoursToInsert);
         .from(periodicCriteria)
         .where(eq(periodicCriteria.restaurantId, restaurantId))
         .orderBy(periodicCriteria.createdAt);
-
       return criteria;
     } catch (error) {
       console.error("Error fetching periodic criteria:", error);
       return [];
     }
   }
-
   async createPeriodicCriteria(criteria: any): Promise<any> {
     try {
       const [newCriteria] = await this.db
@@ -2588,14 +2214,12 @@ hoursToInsert);
           isActive: criteria.isActive ?? true,
         })
         .returning();
-
       return newCriteria;
     } catch (error) {
       console.error("Error creating periodic criteria:", error);
       throw error;
     }
   }
-
   async updatePeriodicCriteria(id: number, updates: any): Promise<any> {
     try {
       const [updatedCriteria] = await this.db
@@ -2610,27 +2234,23 @@ hoursToInsert);
         })
         .where(eq(periodicCriteria.id, id))
         .returning();
-
       return updatedCriteria;
     } catch (error) {
       console.error("Error updating periodic criteria:", error);
       throw error;
     }
   }
-
   async deletePeriodicCriteria(id: number): Promise<boolean> {
     try {
       await this.db
         .delete(periodicCriteria)
         .where(eq(periodicCriteria.id, id));
-
       return true;
     } catch (error) {
       console.error("Error deleting periodic criteria:", error);
       return false;
     }
   }
-
   async getBookingAgentsByRestaurant(restaurantId: number): Promise<any[]> {
     try {
       const agents = await this.db
@@ -2638,14 +2258,12 @@ hoursToInsert);
         .from(bookingAgents)
         .where(eq(bookingAgents.restaurantId, restaurantId))
         .orderBy(bookingAgents.createdAt);
-
       return agents;
     } catch (error) {
       console.error("Error fetching booking agents:", error);
       return [];
     }
   }
-
   async createBookingAgent(agent: any): Promise<any> {
     try {
       const [newAgent] = await this.db
@@ -2661,14 +2279,12 @@ hoursToInsert);
           notes: agent.notes || null,
         })
         .returning();
-
       return newAgent;
     } catch (error) {
       console.error("Error creating booking agent:", error);
       throw error;
     }
   }
-
   async updateBookingAgent(id: number, updates: any): Promise<any> {
     try {
       const [updatedAgent] = await this.db
@@ -2684,27 +2300,23 @@ hoursToInsert);
         })
         .where(eq(bookingAgents.id, id))
         .returning();
-
       return updatedAgent;
     } catch (error) {
       console.error("Error updating booking agent:", error);
       throw error;
     }
   }
-
   async deleteBookingAgent(id: number): Promise<boolean> {
     try {
       await this.db
         .delete(bookingAgents)
         .where(eq(bookingAgents.id, id));
-
       return true;
     } catch (error) {
       console.error("Error deleting booking agent:", error);
       return false;
     }
   }
-
   async isBookingAgent(email: string, phone: string, restaurantId: number): Promise<any | null> {
     try {
       const agent = await this.db
@@ -2721,54 +2333,45 @@ hoursToInsert);
           )
         )
         .limit(1);
-
       return agent.length > 0 ? agent[0] : null;
     } catch (error) {
       console.error("Error checking booking agent:", error);
       return null;
     }
   }
-
   // Kitchen Dashboard Methods
-
   // Kitchen Orders
   async createKitchenOrder(orderData: any): Promise<any> {
     if (!this.db) throw new Error("Database connection not available");
     const [newOrder] = await this.db.insert(kitchenOrders).values(orderData).returning();
     return newOrder;
   }
-
   async getKitchenOrders(restaurantId: number, tenantId: number, timeRange?: string): Promise<any[]> {
     if (!this.db) return [];
-
     let query = this.db.select().from(kitchenOrders)
       .where(and(eq(kitchenOrders.restaurantId, restaurantId), eq(kitchenOrders.tenantId, tenantId)));
-
-    if (timeRange === 'today') {
+    if (timeRange === "today") {
       const today = new Date();
       today.setHours(0, 0, 0, 0);
       query = query.where(gte(kitchenOrders.createdAt, today));
-    } else if (timeRange === 'week') {
+    } else if (timeRange === "week") {
       const weekAgo = new Date();
       weekAgo.setDate(weekAgo.getDate() - 7);
       query = query.where(gte(kitchenOrders.createdAt, weekAgo));
-    } else if (timeRange === 'month') {
+    } else if (timeRange === "month") {
       const monthAgo = new Date();
       monthAgo.setDate(monthAgo.getDate() - 30);
       query = query.where(gte(kitchenOrders.createdAt, monthAgo));
     }
-
     const result = await query.orderBy(desc(kitchenOrders.createdAt));
     return result;
   }
-
   async getKitchenOrderById(id: number): Promise<any> {
     if (!this.db) return null;
     const [order] = await this.db.select().from(kitchenOrders)
       .where(eq(kitchenOrders.id, id));
     return order;
   }
-
   async updateKitchenOrder(id: number, updates: any): Promise<any> {
     if (!this.db) throw new Error("Database connection not available");
     const [updatedOrder] = await this.db.update(kitchenOrders)
@@ -2777,20 +2380,17 @@ hoursToInsert);
       .returning();
     return updatedOrder;
   }
-
   async deleteKitchenOrder(id: number): Promise<boolean> {
     if (!this.db) return false;
     await this.db.delete(kitchenOrders).where(eq(kitchenOrders.id, id));
     return true;
   }
-
   // Kitchen Stations
   async createKitchenStation(stationData: any): Promise<any> {
     if (!this.db) throw new Error("Database connection not available");
     const [newStation] = await this.db.insert(kitchenStations).values(stationData).returning();
     return newStation;
   }
-
   async getKitchenStations(restaurantId: number, tenantId: number): Promise<any[]> {
     if (!this.db) return [];
     const result = await this.db.select().from(kitchenStations)
@@ -2798,7 +2398,6 @@ hoursToInsert);
       .orderBy(asc(kitchenStations.name));
     return result;
   }
-
   async updateKitchenStation(id: number, updates: any): Promise<any> {
     if (!this.db) throw new Error("Database connection not available");
     const [updatedStation] = await this.db.update(kitchenStations)
@@ -2807,20 +2406,17 @@ hoursToInsert);
       .returning();
     return updatedStation;
   }
-
   async deleteKitchenStation(id: number): Promise<boolean> {
     if (!this.db) return false;
     await this.db.delete(kitchenStations).where(eq(kitchenStations.id, id));
     return true;
   }
-
   // Kitchen Staff
   async createKitchenStaff(staffData: any): Promise<any> {
     if (!this.db) throw new Error("Database connection not available");
     const [newStaff] = await this.db.insert(kitchenStaff).values(staffData).returning();
     return newStaff;
   }
-
   async getKitchenStaff(restaurantId: number, tenantId: number): Promise<any[]> {
     if (!this.db) return [];
     const result = await this.db.select().from(kitchenStaff)
@@ -2828,7 +2424,6 @@ hoursToInsert);
       .orderBy(asc(kitchenStaff.name));
     return result;
   }
-
   async updateKitchenStaff(id: number, updates: any): Promise<any> {
     if (!this.db) throw new Error("Database connection not available");
     const [updatedStaff] = await this.db.update(kitchenStaff)
@@ -2837,42 +2432,34 @@ hoursToInsert);
       .returning();
     return updatedStaff;
   }
-
   async deleteKitchenStaff(id: number): Promise<boolean> {
     if (!this.db) return false;
     await this.db.delete(kitchenStaff).where(eq(kitchenStaff.id, id));
     return true;
   }
-
   // Kitchen Performance Sparkline Data
-  async getKitchenPerformanceSparkline(restaurantId: number, tenantId: number, timeRange: string = '4h'): Promise<any[]> {
+  async getKitchenPerformanceSparkline(restaurantId: number, tenantId: number, timeRange: string = "4h"): Promise<any[]> {
     if (!this.db) return [];
-
     // Generate time-series performance data based on current orders and historical patterns
     const now = new Date();
     const intervals = this.getTimeIntervals(timeRange, now);
-
-    const orders = await this.getKitchenOrders(restaurantId, tenantId, 'today');
+    const orders = await this.getKitchenOrders(restaurantId, tenantId, "today");
     const stations = await this.getKitchenStations(restaurantId, tenantId);
     const staff = await this.getKitchenStaff(restaurantId, tenantId);
-
     return intervals.map((timestamp, index) => {
       // Calculate performance metrics for each time interval
       const baseEfficiency = 75 + Math.sin(index * 0.5) * 15; // Base wave pattern
       const orderInfluence = Math.min(orders.length * 2, 20); // More orders = higher efficiency up to a point
       const timeOfDayFactor = this.getTimeOfDayFactor(new Date(timestamp));
-
       const efficiency = Math.max(50, Math.min(100, baseEfficiency + orderInfluence + timeOfDayFactor + (Math.random() * 10 - 5)));
-
       // Calculate other metrics based on efficiency and current state
       const orderThroughput = Math.round((efficiency / 100) * 25 + Math.random() * 5);
       const averageTime = Math.round(30 - (efficiency / 100) * 8 + Math.random() * 4);
-      const activeOrders = Math.round(orders.filter(o => ['pending', 'preparing'].includes(o.status)).length * (0.8 + Math.random() * 0.4));
+      const activeOrders = Math.round(orders.filter(o => ["pending", "preparing"].includes(o.status)).length * (0.8 + Math.random() * 0.4));
       const completionRate = Math.max(70, Math.min(100, efficiency + Math.random() * 10 - 5));
-      const staffUtilization = Math.max(40, Math.min(100, (staff.filter((s: any) => s.status === 'active').length / Math.max(staff.length, 1)) * 100 + Math.random() * 15 - 7.5));
+      const staffUtilization = Math.max(40, Math.min(100, (staff.filter((s: any) => s.status === "active").length / Math.max(staff.length, 1)) * 100 + Math.random() * 15 - 7.5));
       const stationEfficiency = Math.max(60, Math.min(100, stations.reduce((sum: number, station: any) => sum + station.efficiency, 0) / Math.max(stations.length, 1) + Math.random() * 10 - 5));
       const customerSatisfaction = Math.max(70, Math.min(100, 85 + (efficiency - 75) * 0.5 + Math.random() * 8 - 4));
-
       return {
         timestamp,
         efficiency: Math.round(efficiency * 10) / 10,
@@ -2886,20 +2473,16 @@ hoursToInsert);
       };
     });
   }
-
   private getTimeIntervals(timeRange: string, endTime: Date): string[] {
     const intervals: string[] = [];
-    const intervalMinutes = timeRange === '1h' ? 5 : timeRange === '4h' ? 15 : timeRange === '12h' ? 30 : 60;
-    const totalMinutes = timeRange === '1h' ? 60 : timeRange === '4h' ? 240 : timeRange === '12h' ? 720 : 1440;
-
+    const intervalMinutes = timeRange === "1h" ? 5 : timeRange === "4h" ? 15 : timeRange === "12h" ? 30 : 60;
+    const totalMinutes = timeRange === "1h" ? 60 : timeRange === "4h" ? 240 : timeRange === "12h" ? 720 : 1440;
     for (let i = totalMinutes; i >= 0; i -= intervalMinutes) {
       const time = new Date(endTime.getTime() - i * 60 * 1000);
       intervals.push(time.toISOString());
     }
-
     return intervals;
   }
-
   private getTimeOfDayFactor(time: Date): number {
     const hour = time.getHours();
     // Peak hours: 11-13 and 18-20, slower early morning and late night
@@ -2915,39 +2498,33 @@ hoursToInsert);
       return -10; // Night/early morning
     }
   }
-
   // Kitchen Metrics
   async createKitchenMetrics(metricsData: any): Promise<any> {
     if (!this.db) throw new Error("Database connection not available");
     const [newMetrics] = await this.db.insert(kitchenMetrics).values(metricsData).returning();
     return newMetrics;
   }
-
   async getKitchenMetrics(restaurantId: number, tenantId: number, timeRange?: string): Promise<any> {
     if (!this.db) return null;
-
     let query = this.db.select().from(kitchenMetrics)
       .where(and(eq(kitchenMetrics.restaurantId, restaurantId), eq(kitchenMetrics.tenantId, tenantId)));
-
-    if (timeRange === 'today') {
-      const today = new Date().toISOString().split('T')[0];
+    if (timeRange === "today") {
+      const today = new Date().toISOString().split("T")[0];
       query = query.where(eq(kitchenMetrics.date, today));
-    } else if (timeRange === 'week') {
+    } else if (timeRange === "week") {
       const weekAgo = new Date();
       weekAgo.setDate(weekAgo.getDate() - 7);
-      const weekAgoStr = weekAgo.toISOString().split('T')[0];
+      const weekAgoStr = weekAgo.toISOString().split("T")[0];
       query = query.where(gte(kitchenMetrics.date, weekAgoStr));
-    } else if (timeRange === 'month') {
+    } else if (timeRange === "month") {
       const monthAgo = new Date();
       monthAgo.setDate(monthAgo.getDate() - 30);
-      const monthAgoStr = monthAgo.toISOString().split('T')[0];
+      const monthAgoStr = monthAgo.toISOString().split("T")[0];
       query = query.where(gte(kitchenMetrics.date, monthAgoStr));
     }
-
     const result = await query.orderBy(desc(kitchenMetrics.date)).limit(1);
     return result[0] || null;
   }
-
   async updateKitchenMetrics(id: number, updates: any): Promise<any> {
     if (!this.db) throw new Error("Database connection not available");
     const [updatedMetrics] = await this.db.update(kitchenMetrics)
@@ -2956,14 +2533,11 @@ hoursToInsert);
       .returning();
     return updatedMetrics;
   }
-
   // Calculate real-time metrics from orders
-  async calculateKitchenMetrics(restaurantId: number, tenantId: number, timeRange: string = 'today'): Promise<any> {
+  async calculateKitchenMetrics(restaurantId: number, tenantId: number, timeRange: string = "today"): Promise<any> {
     if (!this.db) return null;
-
     const orders = await this.getKitchenOrders(restaurantId, tenantId, timeRange);
-    const completedOrders = orders.filter((order: any) => order.status === 'served');
-
+    const completedOrders = orders.filter((order: any) => order.status === "served");
     if (completedOrders.length === 0) {
       return {
         ordersToday: 0,
@@ -2976,13 +2550,11 @@ hoursToInsert);
         waitTimes: []
       };
     }
-
     // Calculate metrics
     const ordersToday = completedOrders.length;
     const totalTime = completedOrders.reduce((sum: number, order: any) => sum + (order.actualTime || 0), 0);
     const averageTime = totalTime / completedOrders.length;
     const totalRevenue = completedOrders.reduce((sum: number, order: any) => sum + order.totalAmount, 0);
-
     // Calculate efficiency (actual vs estimated time)
     const efficiencySum = completedOrders.reduce((sum: number, order: any) => {
       if (order.actualTime && order.estimatedTime) {
@@ -2991,7 +2563,6 @@ hoursToInsert);
       return sum + 100;
     }, 0);
     const efficiency = Math.round(efficiencySum / completedOrders.length);
-
     // Calculate peak hours
     const hourCounts: { [key: number]: number } = {};
     completedOrders.forEach((order: any) => {
@@ -3002,7 +2573,6 @@ hoursToInsert);
       .map(([hour, orders]) => ({ hour: parseInt(hour), orders }))
       .sort((a, b) => b.orders - a.orders)
       .slice(0, 5);
-
     // Calculate popular items
     const itemCounts: { [key: string]: { count: number; totalTime: number } } = {};
     completedOrders.forEach((order: any) => {
@@ -3025,7 +2595,6 @@ hoursToInsert);
       }))
       .sort((a, b) => b.orders - a.orders)
       .slice(0, 10);
-
     return {
       ordersToday,
       averageTime: Math.round(averageTime),
@@ -3037,7 +2606,6 @@ hoursToInsert);
       waitTimes: [] // Would need detailed timing data
     };
   }
-
   // Print Orders Methods
   async createPrintOrder(orderData: any) {
     const [printOrder] = await this.db
@@ -3046,7 +2614,6 @@ hoursToInsert);
       .returning();
     return printOrder;
   }
-
   async getPrintOrdersByRestaurant(restaurantId: number, tenantId: number) {
     return await this.db
       .select()
@@ -3057,7 +2624,6 @@ hoursToInsert);
       ))
       .orderBy(desc(printOrders.createdAt));
   }
-
   async getPrintOrderById(orderId: number) {
     const [printOrder] = await this.db
       .select()
@@ -3065,7 +2631,6 @@ hoursToInsert);
       .where(eq(printOrders.id, orderId));
     return printOrder;
   }
-
   async updatePrintOrder(orderId: number, updates: any) {
     const [updatedOrder] = await this.db
       .update(printOrders)
@@ -3077,7 +2642,6 @@ hoursToInsert);
       .returning();
     return updatedOrder;
   }
-
   async updatePrintOrderByPaymentIntent(paymentIntentId: string, updates: any) {
     const [updatedOrder] = await this.db
       .update(printOrders)
@@ -3089,7 +2653,6 @@ hoursToInsert);
       .returning();
     return updatedOrder;
   }
-
   async getPrintOrderByOrderNumber(orderNumber: string) {
     const [printOrder] = await this.db
       .select()
@@ -3097,7 +2660,6 @@ hoursToInsert);
       .where(eq(printOrders.orderNumber, orderNumber));
     return printOrder;
   }
-
   async deletePrintOrder(orderId: number) {
     const [deletedOrder] = await this.db
       .delete(printOrders)
