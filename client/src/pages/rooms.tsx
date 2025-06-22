@@ -556,7 +556,7 @@ export default function Rooms() {
                 transition={{ duration: 0.5, delay: 0.5 }}
                 className="bg-white rounded-xl border-2 border-gray-100 overflow-hidden shadow-sm"
               >
-              <div className="overflow-x-auto">
+                <div className="overflow-x-auto">
                 <table className="w-full">
                   <thead>
                     <tr className="bg-gray-50 border-b border-gray-200">
@@ -653,8 +653,8 @@ export default function Rooms() {
                     )}
                   </tbody>
                 </table>
-              </div>
-            </motion.div>
+                </div>
+              </motion.div>
 
             {paginatedRooms.length > 0 && (
               <motion.div 
