@@ -664,7 +664,7 @@ export default function Rooms() {
                                   </DropdownMenu>
                                 </div>
                               </td>
-                            </tr>
+                            </motion.tr>
                           ))}
                         </tbody>
                       </table>
