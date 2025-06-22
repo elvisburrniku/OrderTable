@@ -879,6 +879,7 @@ export const smsMessages = pgTable("sms_messages", {
   sentAt: timestamp("sent_at"),
   deliveredAt: timestamp("delivered_at"),
   createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
 });
 
 export const feedbackQuestions = pgTable("feedback_questions", {

@@ -2056,6 +2056,61 @@ export class DatabaseStorage implements IStorage {
       .where(eq(paymentSetups.id, id));
   }
 
+  // Custom Fields methods
+  async getCustomFieldsByRestaurant(restaurantId: number): Promise<any[]> {
+    if (!this.db) throw new Error("Database connection not available");
+    
+    const customFieldsData = await this.db
+      .select()
+      .from(customFields)
+      .where(eq(customFields.restaurantId, restaurantId))
+      .orderBy(asc(customFields.sortOrder), asc(customFields.createdAt));
+    
+    return customFieldsData;
+  }
+
+  async createCustomField(field: any): Promise<any> {
+    if (!this.db) throw new Error("Database connection not available");
+    
+    const result = await this.db
+      .insert(customFields)
+      .values(field)
+      .returning();
+    
+    return result[0];
+  }
+
+  async updateCustomField(id: number, updates: any): Promise<any> {
+    if (!this.db) throw new Error("Database connection not available");
+    
+    const result = await this.db
+      .update(customFields)
+      .set({ ...updates, updatedAt: new Date() })
+      .where(eq(customFields.id, id))
+      .returning();
+    
+    return result[0];
+  }
+
+  async deleteCustomField(id: number): Promise<void> {
+    if (!this.db) throw new Error("Database connection not available");
+    
+    await this.db
+      .delete(customFields)
+      .where(eq(customFields.id, id));
+  }
+
+  async getCustomFieldById(id: number): Promise<any> {
+    if (!this.db) throw new Error("Database connection not available");
+    
+    const result = await this.db
+      .select()
+      .from(customFields)
+      .where(eq(customFields.id, id));
+    
+    return result[0];
+  }
+
   async getTimeSlotsByRestaurant(restaurantId: number, date?: string): Promise<any[]> {
     return [];
   }
