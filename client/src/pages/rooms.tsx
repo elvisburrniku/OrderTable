@@ -6,8 +6,36 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Trash2, Plus, HelpCircle } from "lucide-react";
+import { Badge } from "@/components/ui/badge";
+import { 
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger
+} from "@/components/ui/dropdown-menu";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
+import { 
+  Trash2, 
+  Plus, 
+  HelpCircle, 
+  Search, 
+  Filter, 
+  MoreHorizontal, 
+  Eye, 
+  Edit, 
+  MapPin,
+  Users,
+  ChevronDown,
+  ChevronLeft,
+  ChevronRight
+} from "lucide-react";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
+import { motion } from "framer-motion";
+import { useScrollToTop } from "@/hooks/use-scroll-to-top";
+import { toast } from "@/hooks/use-toast";
 
 interface Room {
   id?: number;
@@ -22,8 +50,23 @@ interface Room {
 export default function Rooms() {
   const { user, restaurant } = useAuth();
   const queryClient = useQueryClient();
+  
+  // Auto scroll to top when page loads
+  useScrollToTop();
+  
   const [rooms, setRooms] = useState<Room[]>([]);
   const [originalRooms, setOriginalRooms] = useState<Room[]>([]);
+  const [searchTerm, setSearchTerm] = useState("");
+  const [priorityFilter, setPriorityFilter] = useState("all");
+  const [showFilters, setShowFilters] = useState(false);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [itemsPerPage, setItemsPerPage] = useState(6);
+  const [isNewRoomOpen, setIsNewRoomOpen] = useState(false);
+  const [editingRoom, setEditingRoom] = useState<Room | null>(null);
+  const [newRoom, setNewRoom] = useState({
+    name: "",
+    priority: "Medium"
+  });
 
   // Fetch rooms from API - all hooks must be called before any conditional returns
   const { data: fetchedRooms = [], isLoading, error } = useQuery({
@@ -185,11 +228,45 @@ export default function Rooms() {
       setRooms(fetchedRooms);
       setOriginalRooms(fetchedRooms);
     } else if (!isLoading && fetchedRooms.length === 0) {
-      // If no rooms exist, start with default room
-      setRooms([{ name: "The restaurant", priority: "Medium", isNew: true }]);
+      // If no rooms exist, start with empty array
+      setRooms([]);
       setOriginalRooms([]);
     }
   }, [fetchedRooms, isLoading]);
+
+  // Filter rooms
+  const filteredRooms = (rooms || []).filter((room: Room) => {
+    const matchesSearch = !searchTerm || 
+      room.name?.toLowerCase().includes(searchTerm.toLowerCase());
+    const matchesPriority = priorityFilter === "all" || room.priority === priorityFilter;
+    
+    return matchesSearch && matchesPriority;
+  });
+
+  // Pagination
+  const totalPages = Math.ceil(filteredRooms.length / itemsPerPage);
+  const startIndex = (currentPage - 1) * itemsPerPage;
+  const endIndex = startIndex + itemsPerPage;
+  const paginatedRooms = filteredRooms.slice(startIndex, endIndex);
+
+  // Reset pagination when filters change
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [searchTerm, priorityFilter]);
+
+  // Priority badge style
+  const getPriorityBadge = (priority: string) => {
+    const variants = {
+      High: "bg-red-100 text-red-800 border-red-200",
+      Medium: "bg-yellow-100 text-yellow-800 border-yellow-200", 
+      Low: "bg-green-100 text-green-800 border-green-200"
+    };
+    return (
+      <Badge variant="outline" className={variants[priority as keyof typeof variants] || variants.Medium}>
+        {priority} Priority
+      </Badge>
+    );
+  };
 
   // Early return if restaurant data is not available
   if (!restaurant?.id || !restaurant?.tenantId) {
@@ -273,155 +350,453 @@ export default function Rooms() {
     saveRoomsMutation.mutate(validRooms);
   };
 
+  // Create new room mutation
+  const createRoomMutation = useMutation({
+    mutationFn: async (roomData: { name: string; priority: string }) => {
+      const currentTenantId = restaurant?.tenantId;
+      if (!currentTenantId || !restaurant?.id) {
+        throw new Error("Missing tenant or restaurant information");
+      }
+
+      const response = await fetch(
+        `/api/tenants/${currentTenantId}/restaurants/${restaurant.id}/rooms`,
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            name: roomData.name,
+            priority: roomData.priority,
+            restaurantId: restaurant.id,
+            tenantId: currentTenantId,
+          }),
+        },
+      );
+      if (!response.ok) throw new Error("Failed to create room");
+      return response.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ 
+        queryKey: ["/api/tenants", restaurant?.tenantId, "restaurants", restaurant?.id, "rooms"] 
+      });
+      setIsNewRoomOpen(false);
+      setNewRoom({ name: "", priority: "Medium" });
+      toast({
+        title: "Success",
+        description: "Room created successfully!",
+      });
+    },
+    onError: (error) => {
+      toast({
+        title: "Error", 
+        description: "Failed to create room. Please try again.",
+        variant: "destructive",
+      });
+    },
+  });
+
+  const handleCreateRoom = () => {
+    if (newRoom.name.trim()) {
+      createRoomMutation.mutate(newRoom);
+    }
+  };
+
+  const handleEditRoom = (room: Room) => {
+    setEditingRoom(room);
+  };
+
+  const handleUpdateRoom = () => {
+    if (editingRoom) {
+      saveIndividualRoomMutation.mutate(editingRoom);
+      setEditingRoom(null);
+    }
+  };
+
   return (
     <TooltipProvider>
       <div className="min-h-screen bg-gray-50">
-        <div className="max-w-7xl mx-auto py-6 px-4 sm:px-6 lg:px-8">
-          <div className="space-y-6">
-            <Card>
-              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <div className="flex items-center space-x-2">
-                  <CardTitle className="text-2xl font-bold">Room Management</CardTitle>
-                  <Tooltip>
-                    <TooltipTrigger asChild>
-                      <HelpCircle className="h-4 w-4 text-gray-400" />
-                    </TooltipTrigger>
-                    <TooltipContent>
-                      <p>Organize your restaurant into different dining areas or rooms. Each room can have tables assigned to it for better management.</p>
-                    </TooltipContent>
-                  </Tooltip>
-                </div>
-                <Button onClick={addRoom} className="flex items-center space-x-2">
-                  <Plus className="h-4 w-4" />
-                  <span>Add Room</span>
-                </Button>
-              </CardHeader>
-              <CardContent>
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                  {rooms.map((room, index) => (
-                    <Card key={index} className="relative">
-                      <CardContent className="p-4 space-y-4">
-                        <div className="flex items-center justify-between">
-                          <div className="flex items-center space-x-2">
-                            <Label htmlFor={`room-${index}`} className="text-sm font-medium">
-                              Room Name
-                            </Label>
-                            <Tooltip>
-                              <TooltipTrigger asChild>
-                                <HelpCircle className="h-3 w-3 text-gray-400" />
-                              </TooltipTrigger>
-                              <TooltipContent>
-                                <p>Give each room a descriptive name like "Main Dining", "Patio", "Private Room", etc.</p>
-                              </TooltipContent>
-                            </Tooltip>
+        <div className="p-6">
+          <div className="bg-white rounded-lg shadow">
+            {/* Header */}
+            <div className="p-6 border-b">
+              <div className="flex items-center justify-between">
+                <motion.h1 
+                  initial={{ opacity: 0, x: -20 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  transition={{ duration: 0.5, delay: 0.1 }}
+                  className="text-2xl font-bold text-gray-900 flex items-center gap-2"
+                >
+                  <MapPin className="h-6 w-6 text-green-600" />
+                  Rooms
+                </motion.h1>
+                <motion.div
+                  initial={{ opacity: 0, x: 20 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  transition={{ duration: 0.5, delay: 0.2 }}
+                >
+                  <Button
+                    onClick={() => setIsNewRoomOpen(true)}
+                    className="bg-green-600 hover:bg-green-700 text-white flex items-center space-x-2"
+                  >
+                    <Plus className="w-4 h-4" />
+                    <span>New Room</span>
+                  </Button>
+                </motion.div>
+              </div>
+            </div>
+
+            {/* Filters Section */}
+            <div className="p-6 border-b">
+              <h2 className="text-lg font-semibold text-gray-900 mb-6">Room Management</h2>
+
+              {/* Modern Filters Section */}
+              <motion.div 
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.5, delay: 0.4 }}
+                className="space-y-6 mb-8"
+              >
+                {/* Filter Controls Bar */}
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center space-x-4">
+                    <Collapsible open={showFilters} onOpenChange={setShowFilters}>
+                      <CollapsibleTrigger asChild>
+                        <Button 
+                          variant="outline" 
+                          className="h-10 px-4 border-2 border-gray-200 hover:border-green-500 hover:bg-green-50 transition-all duration-200 flex items-center space-x-2 font-medium"
+                        >
+                          <Filter className="w-4 h-4" />
+                          <span>Filters</span>
+                          {(priorityFilter !== 'all' || searchTerm) && (
+                            <span className="bg-green-500 text-white text-xs px-2 py-0.5 rounded-full ml-1">
+                              {[priorityFilter !== 'all', searchTerm].filter(Boolean).length}
+                            </span>
+                          )}
+                          <ChevronDown className={`w-4 h-4 transform transition-transform duration-200 ${showFilters ? 'rotate-180' : ''}`} />
+                        </Button>
+                      </CollapsibleTrigger>
+
+                      <CollapsibleContent className="mt-4">
+                        <div className="bg-gray-50 rounded-xl p-6 border-2 border-gray-100">
+                          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            {/* Search Input */}
+                            <div className="relative">
+                              <label className="block text-sm font-medium text-gray-700 mb-2">Search</label>
+                              <div className="relative">
+                                <Search className="w-4 h-4 text-gray-400 absolute left-3 top-1/2 transform -translate-y-1/2" />
+                                <Input
+                                  placeholder="Search by room name..."
+                                  value={searchTerm}
+                                  onChange={(e) => setSearchTerm(e.target.value)}
+                                  className="pl-10 h-11 border-2 border-gray-200 focus:border-green-500 focus:ring-0 rounded-lg transition-all duration-200"
+                                />
+                              </div>
+                            </div>
+
+                            {/* Priority Filter */}
+                            <div>
+                              <label className="block text-sm font-medium text-gray-700 mb-2">Priority</label>
+                              <Select value={priorityFilter} onValueChange={setPriorityFilter}>
+                                <SelectTrigger className="h-11 border-2 border-gray-200 focus:border-green-500 rounded-lg transition-all duration-200">
+                                  <SelectValue placeholder="All Priorities" />
+                                </SelectTrigger>
+                                <SelectContent className="rounded-lg border-2 border-gray-200">
+                                  <SelectItem value="all" className="rounded-md">All Priorities</SelectItem>
+                                  <SelectItem value="High" className="rounded-md">
+                                    <div className="flex items-center space-x-2">
+                                      <div className="w-2 h-2 bg-red-500 rounded-full"></div>
+                                      <span>High Priority</span>
+                                    </div>
+                                  </SelectItem>
+                                  <SelectItem value="Medium" className="rounded-md">
+                                    <div className="flex items-center space-x-2">
+                                      <div className="w-2 h-2 bg-yellow-500 rounded-full"></div>
+                                      <span>Medium Priority</span>
+                                    </div>
+                                  </SelectItem>
+                                  <SelectItem value="Low" className="rounded-md">
+                                    <div className="flex items-center space-x-2">
+                                      <div className="w-2 h-2 bg-green-500 rounded-full"></div>
+                                      <span>Low Priority</span>
+                                    </div>
+                                  </SelectItem>
+                                </SelectContent>
+                              </Select>
+                            </div>
                           </div>
-                          <Tooltip>
-                            <TooltipTrigger asChild>
-                              <Button
-                                variant="ghost"
-                                size="sm"
-                                onClick={() => removeRoom(index)}
-                                className="text-red-600 hover:text-red-700 hover:bg-red-50"
-                              >
-                                <Trash2 className="h-4 w-4" />
-                              </Button>
-                            </TooltipTrigger>
-                            <TooltipContent>
-                              <p>Delete this room. This will also remove any tables assigned to it.</p>
-                            </TooltipContent>
-                          </Tooltip>
                         </div>
-                        
-                        <Input
-                          id={`room-${index}`}
-                          value={room.name}
-                          onChange={(e) => updateRoom(index, "name", e.target.value)}
-                          placeholder="Enter room name"
-                          className="w-full"
-                        />
-
-                        <div className="space-y-2">
-                          <div className="flex items-center space-x-2">
-                            <Label htmlFor={`priority-${index}`} className="text-sm font-medium">
-                              Priority Level
-                            </Label>
-                            <Tooltip>
-                              <TooltipTrigger asChild>
-                                <HelpCircle className="h-3 w-3 text-gray-400" />
-                              </TooltipTrigger>
-                              <TooltipContent>
-                                <p>Set booking priority: High priority rooms get filled first, Low priority rooms are used when others are full.</p>
-                              </TooltipContent>
-                            </Tooltip>
-                          </div>
-                          <Select
-                            value={room.priority}
-                            onValueChange={(value) => updateRoom(index, "priority", value)}
-                          >
-                            <SelectTrigger>
-                              <SelectValue placeholder="Select priority" />
-                            </SelectTrigger>
-                            <SelectContent>
-                              <SelectItem value="High">High Priority</SelectItem>
-                              <SelectItem value="Medium">Medium Priority</SelectItem>
-                              <SelectItem value="Low">Low Priority</SelectItem>
-                            </SelectContent>
-                          </Select>
-                        </div>
-
-                        {hasRoomChanges(room, index) && (
-                          <div className="flex justify-end">
-                            {room.isNew ? (
-                              <Tooltip>
-                                <TooltipTrigger asChild>
-                                  <Button
-                                    onClick={() => saveRoom(room)}
-                                    disabled={!room.name.trim() || saveIndividualRoomMutation.isPending}
-                                    className="bg-green-600 hover:bg-green-700 text-white"
-                                  >
-                                    {saveIndividualRoomMutation.isPending ? "Saving..." : "Save"}
-                                  </Button>
-                                </TooltipTrigger>
-                                <TooltipContent>
-                                  <p>Save this new room to your restaurant</p>
-                                </TooltipContent>
-                              </Tooltip>
-                            ) : (
-                              <Tooltip>
-                                <TooltipTrigger asChild>
-                                  <Button
-                                    onClick={() => saveRoom(room)}
-                                    disabled={!room.name.trim() || saveIndividualRoomMutation.isPending}
-                                    className="bg-blue-600 hover:bg-blue-700 text-white"
-                                  >
-                                    {saveIndividualRoomMutation.isPending ? "Updating..." : "Update"}
-                                  </Button>
-                                </TooltipTrigger>
-                                <TooltipContent>
-                                  <p>Save changes to this existing room</p>
-                                </TooltipContent>
-                              </Tooltip>
-                            )}
-                          </div>
-                        )}
-                      </CardContent>
-                    </Card>
-                  ))}
-                </div>
-
-                {rooms.length === 0 && (
-                  <div className="text-center py-8">
-                    <p className="text-gray-500 mb-4">No rooms configured yet.</p>
-                    <Button onClick={addRoom} className="flex items-center space-x-2">
-                      <Plus className="h-4 w-4" />
-                      <span>Add Your First Room</span>
-                    </Button>
+                      </CollapsibleContent>
+                    </Collapsible>
                   </div>
-                )}
-              </CardContent>
-            </Card>
+
+                  {/* View Options */}
+                  <div className="flex items-center space-x-3">
+                    <span className="text-sm text-gray-600">
+                      Showing {startIndex + 1}-{Math.min(endIndex, filteredRooms.length)} of {filteredRooms.length} rooms
+                    </span>
+                    <Select value={itemsPerPage.toString()} onValueChange={(value) => setItemsPerPage(Number(value))}>
+                      <SelectTrigger className="w-20 h-9 border-2 border-gray-200 rounded-lg">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="6">6</SelectItem>
+                        <SelectItem value="12">12</SelectItem>
+                        <SelectItem value="24">24</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </div>
+              </motion.div>
+            </div>
+
+            {/* Rooms Grid */}
+            <div className="p-6">
+              {paginatedRooms.length > 0 ? (
+                <>
+                  <motion.div 
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ duration: 0.5, delay: 0.5 }}
+                    className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"
+                  >
+                    {paginatedRooms.map((room, index) => (
+                      <motion.div
+                        key={room.id || index}
+                        initial={{ opacity: 0, y: 20 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ duration: 0.5, delay: 0.6 + index * 0.1 }}
+                        className="bg-white border-2 border-gray-100 rounded-xl p-6 hover:border-green-200 hover:shadow-md transition-all duration-200"
+                      >
+                        <div className="flex items-start justify-between mb-4">
+                          <div className="flex items-center space-x-3">
+                            <div className="w-12 h-12 bg-green-100 rounded-lg border-2 border-green-200 flex items-center justify-center">
+                              <MapPin className="w-5 h-5 text-green-600" />
+                            </div>
+                            <div>
+                              <h3 className="font-semibold text-gray-900">{room.name}</h3>
+                              <p className="text-sm text-gray-500">Room #{room.id}</p>
+                            </div>
+                          </div>
+                          <DropdownMenu>
+                            <DropdownMenuTrigger asChild>
+                              <Button variant="ghost" className="h-8 w-8 p-0">
+                                <MoreHorizontal className="h-4 w-4" />
+                              </Button>
+                            </DropdownMenuTrigger>
+                            <DropdownMenuContent align="end" className="w-48">
+                              <DropdownMenuLabel>Actions</DropdownMenuLabel>
+                              <DropdownMenuItem onClick={() => handleEditRoom(room)}>
+                                <Edit className="mr-2 h-4 w-4" />
+                                Edit Room
+                              </DropdownMenuItem>
+                              <DropdownMenuSeparator />
+                              <DropdownMenuItem 
+                                onClick={() => removeRoom(rooms.findIndex(r => r.id === room.id))}
+                                className="text-red-600"
+                              >
+                                <Trash2 className="mr-2 h-4 w-4" />
+                                Delete Room
+                              </DropdownMenuItem>
+                            </DropdownMenuContent>
+                          </DropdownMenu>
+                        </div>
+
+                        <div className="space-y-3">
+                          <div className="flex items-center justify-between">
+                            <span className="text-sm text-gray-600">Priority:</span>
+                            {getPriorityBadge(room.priority)}
+                          </div>
+                          <div className="flex items-center justify-between">
+                            <span className="text-sm text-gray-600">Status:</span>
+                            <Badge variant="outline" className="bg-green-100 text-green-800 border-green-200">
+                              Active
+                            </Badge>
+                          </div>
+                        </div>
+                      </motion.div>
+                    ))}
+                  </motion.div>
+
+                  {/* Pagination */}
+                  {totalPages > 1 && (
+                    <motion.div 
+                      initial={{ opacity: 0, y: 20 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{ duration: 0.5, delay: 0.8 }}
+                      className="flex items-center justify-between mt-8 pt-6 border-t border-gray-200"
+                    >
+                      <div className="flex items-center space-x-2">
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => setCurrentPage(Math.max(1, currentPage - 1))}
+                          disabled={currentPage === 1}
+                          className="h-9 px-3 border-2 border-gray-200 hover:border-green-500 hover:bg-green-50"
+                        >
+                          <ChevronLeft className="h-4 w-4" />
+                          Previous
+                        </Button>
+                        <div className="flex items-center space-x-1">
+                          {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
+                            <Button
+                              key={page}
+                              variant={page === currentPage ? "default" : "outline"}
+                              size="sm"
+                              onClick={() => setCurrentPage(page)}
+                              className={`h-9 w-9 ${page === currentPage ? 'bg-green-600 hover:bg-green-700 text-white' : 'border-2 border-gray-200 hover:border-green-500 hover:bg-green-50'}`}
+                            >
+                              {page}
+                            </Button>
+                          ))}
+                        </div>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => setCurrentPage(Math.min(totalPages, currentPage + 1))}
+                          disabled={currentPage === totalPages}
+                          className="h-9 px-3 border-2 border-gray-200 hover:border-green-500 hover:bg-green-50"
+                        >
+                          Next
+                          <ChevronRight className="h-4 w-4" />
+                        </Button>
+                      </div>
+                      <p className="text-sm text-gray-600">
+                        Page {currentPage} of {totalPages}
+                      </p>
+                    </motion.div>
+                  )}
+                </>
+              ) : (
+                <motion.div 
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.5, delay: 0.5 }}
+                  className="text-center py-12"
+                >
+                  <MapPin className="w-16 h-16 text-gray-300 mx-auto mb-4" />
+                  <h3 className="text-lg font-medium text-gray-900 mb-2">No rooms found</h3>
+                  <p className="text-gray-500 mb-6">
+                    {searchTerm || priorityFilter !== 'all' 
+                      ? "Try adjusting your filters to see more rooms." 
+                      : "Get started by creating your first room."}
+                  </p>
+                  <Button
+                    onClick={() => setIsNewRoomOpen(true)}
+                    className="bg-green-600 hover:bg-green-700 text-white flex items-center space-x-2"
+                  >
+                    <Plus className="w-4 h-4" />
+                    <span>Create Room</span>
+                  </Button>
+                </motion.div>
+              )}
+            </div>
           </div>
         </div>
+
+        {/* New Room Dialog */}
+        <Dialog open={isNewRoomOpen} onOpenChange={setIsNewRoomOpen}>
+          <DialogContent className="sm:max-w-md">
+            <DialogHeader>
+              <DialogTitle>Create New Room</DialogTitle>
+            </DialogHeader>
+            <div className="space-y-4">
+              <div>
+                <Label htmlFor="room-name">Room Name</Label>
+                <Input
+                  id="room-name"
+                  value={newRoom.name}
+                  onChange={(e) => setNewRoom({ ...newRoom, name: e.target.value })}
+                  placeholder="Enter room name"
+                  className="mt-1"
+                />
+              </div>
+              <div>
+                <Label htmlFor="room-priority">Priority Level</Label>
+                <Select
+                  value={newRoom.priority}
+                  onValueChange={(value) => setNewRoom({ ...newRoom, priority: value })}
+                >
+                  <SelectTrigger className="mt-1">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="High">High Priority</SelectItem>
+                    <SelectItem value="Medium">Medium Priority</SelectItem>
+                    <SelectItem value="Low">Low Priority</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="flex justify-end space-x-2 pt-4">
+                <Button
+                  variant="outline"
+                  onClick={() => setIsNewRoomOpen(false)}
+                >
+                  Cancel
+                </Button>
+                <Button
+                  onClick={handleCreateRoom}
+                  disabled={!newRoom.name.trim() || createRoomMutation.isPending}
+                  className="bg-green-600 hover:bg-green-700"
+                >
+                  {createRoomMutation.isPending ? "Creating..." : "Create Room"}
+                </Button>
+              </div>
+            </div>
+          </DialogContent>
+        </Dialog>
+
+        {/* Edit Room Dialog */}
+        <Dialog open={!!editingRoom} onOpenChange={() => setEditingRoom(null)}>
+          <DialogContent className="sm:max-w-md">
+            <DialogHeader>
+              <DialogTitle>Edit Room</DialogTitle>
+            </DialogHeader>
+            {editingRoom && (
+              <div className="space-y-4">
+                <div>
+                  <Label htmlFor="edit-room-name">Room Name</Label>
+                  <Input
+                    id="edit-room-name"
+                    value={editingRoom.name}
+                    onChange={(e) => setEditingRoom({ ...editingRoom, name: e.target.value })}
+                    placeholder="Enter room name"
+                    className="mt-1"
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="edit-room-priority">Priority Level</Label>
+                  <Select
+                    value={editingRoom.priority}
+                    onValueChange={(value) => setEditingRoom({ ...editingRoom, priority: value })}
+                  >
+                    <SelectTrigger className="mt-1">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="High">High Priority</SelectItem>
+                      <SelectItem value="Medium">Medium Priority</SelectItem>
+                      <SelectItem value="Low">Low Priority</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="flex justify-end space-x-2 pt-4">
+                  <Button
+                    variant="outline"
+                    onClick={() => setEditingRoom(null)}
+                  >
+                    Cancel
+                  </Button>
+                  <Button
+                    onClick={handleUpdateRoom}
+                    disabled={!editingRoom.name.trim() || saveIndividualRoomMutation.isPending}
+                    className="bg-green-600 hover:bg-green-700"
+                  >
+                    {saveIndividualRoomMutation.isPending ? "Updating..." : "Update Room"}
+                  </Button>
+                </div>
+              </div>
+            )}
+          </DialogContent>
+        </Dialog>
       </div>
     </TooltipProvider>
   );
