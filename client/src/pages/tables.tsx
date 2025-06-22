@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import {
   Dialog,
   DialogContent,
@@ -13,15 +14,16 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog";
 import { Badge } from "@/components/ui/badge";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
 import { Switch } from "@/components/ui/switch";
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
+import { 
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger
+} from "@/components/ui/dropdown-menu";
 import {
   Plus,
   Users,
@@ -30,8 +32,19 @@ import {
   QrCode,
   Download,
   MessageSquare,
+  Search,
+  Filter,
+  ChevronDown,
+  ChevronLeft,
+  ChevronRight,
+  MoreHorizontal,
+  Eye,
+  MapPin,
+  Activity
 } from "lucide-react";
+import { motion } from "framer-motion";
 import { useSubscription } from "@/hooks/use-subscription";
+import { useScrollToTop } from "@/hooks/use-scroll-to-top";
 import { FeedbackModal } from "./table-feedback";
 
 export default function Tables() {
@@ -43,6 +56,11 @@ export default function Tables() {
   } = useAuthGuard();
   const { canCreateTable } = useSubscription();
   const queryClient = useQueryClient();
+  
+  // Auto scroll to top when page loads
+  useScrollToTop();
+
+  // State management
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [editingTable, setEditingTable] = useState<any>(null);
   const [newTable, setNewTable] = useState({
@@ -53,8 +71,15 @@ export default function Tables() {
   const [showQRDialog, setShowQRDialog] = useState(false);
   const [selectedTableQR, setSelectedTableQR] = useState<any>(null);
   const [showFeedbackModal, setShowFeedbackModal] = useState(false);
-  const [selectedTableForFeedback, setSelectedTableForFeedback] =
-    useState<any>(null);
+  const [selectedTableForFeedback, setSelectedTableForFeedback] = useState<any>(null);
+
+  // Filter and pagination states
+  const [searchTerm, setSearchTerm] = useState("");
+  const [statusFilter, setStatusFilter] = useState("all");
+  const [capacityFilter, setCapacityFilter] = useState("all");
+  const [showFilters, setShowFilters] = useState(false);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [itemsPerPage, setItemsPerPage] = useState(10);
 
   // Function to fetch QR code for a specific table
   const fetchTableQR = async (tableId: number) => {
@@ -173,6 +198,29 @@ export default function Tables() {
     enabled: !!restaurant?.id,
   });
 
+  // Filter tables
+  const filteredTables = (tables || []).filter((table: any) => {
+    const matchesSearch = !searchTerm || 
+      table.tableNumber?.toLowerCase().includes(searchTerm.toLowerCase());
+    
+    const matchesStatus = statusFilter === "all" || 
+      (statusFilter === "active" && table.isActive) ||
+      (statusFilter === "inactive" && !table.isActive);
+    
+    const matchesCapacity = capacityFilter === "all" ||
+      (capacityFilter === "small" && table.capacity <= 2) ||
+      (capacityFilter === "medium" && table.capacity >= 3 && table.capacity <= 6) ||
+      (capacityFilter === "large" && table.capacity > 6);
+
+    return matchesSearch && matchesStatus && matchesCapacity;
+  });
+
+  // Pagination
+  const totalPages = Math.ceil(filteredTables.length / itemsPerPage);
+  const startIndex = (currentPage - 1) * itemsPerPage;
+  const endIndex = startIndex + itemsPerPage;
+  const paginatedTables = filteredTables.slice(startIndex, endIndex);
+
   const createTableMutation = useMutation({
     mutationFn: async (tableData: any) => {
       const tenantId = restaurant?.tenantId || 1;
@@ -195,7 +243,6 @@ export default function Tables() {
       return response.json();
     },
     onSuccess: () => {
-      // Comprehensive cache invalidation to ensure all components refresh
       queryClient.invalidateQueries({
         predicate: (query) => {
           const queryKey = query.queryKey as string[];
@@ -212,7 +259,6 @@ export default function Tables() {
         },
       });
 
-      // Force refetch of current page data
       queryClient.refetchQueries({
         queryKey: [
           "/api/tenants",
@@ -239,7 +285,6 @@ export default function Tables() {
       return response.json();
     },
     onSuccess: () => {
-      // Comprehensive cache invalidation to ensure all components refresh
       queryClient.invalidateQueries({
         predicate: (query) => {
           const queryKey = query.queryKey as string[];
@@ -256,7 +301,6 @@ export default function Tables() {
         },
       });
 
-      // Force refetch of current page data
       queryClient.refetchQueries({
         queryKey: [
           "/api/tenants",
@@ -279,7 +323,6 @@ export default function Tables() {
       return response.json();
     },
     onSuccess: () => {
-      // Comprehensive cache invalidation to ensure all components refresh
       queryClient.invalidateQueries({
         predicate: (query) => {
           const queryKey = query.queryKey as string[];
@@ -296,7 +339,6 @@ export default function Tables() {
         },
       });
 
-      // Force refetch of current page data
       queryClient.refetchQueries({
         queryKey: [
           "/api/tenants",
@@ -335,6 +377,28 @@ export default function Tables() {
     updateTableMutation.mutate({ id: tableId, isActive });
   };
 
+  const getStatusBadge = (isActive: boolean) => {
+    return (
+      <span className={`px-2 py-1 rounded-full text-xs font-medium ${
+        isActive 
+          ? "bg-green-500 text-white" 
+          : "bg-gray-500 text-white"
+      }`}>
+        {isActive ? "Active" : "Inactive"}
+      </span>
+    );
+  };
+
+  const getCapacityBadge = (capacity: number) => {
+    if (capacity <= 2) {
+      return "bg-blue-500 text-white px-2 py-1 rounded-full text-xs font-medium";
+    } else if (capacity <= 6) {
+      return "bg-orange-500 text-white px-2 py-1 rounded-full text-xs font-medium";
+    } else {
+      return "bg-purple-500 text-white px-2 py-1 rounded-full text-xs font-medium";
+    }
+  };
+
   // Isolated switch component to prevent cross-switching
   const TableSwitch = ({
     tableId,
@@ -362,18 +426,32 @@ export default function Tables() {
 
   return (
     <div className="min-h-screen bg-gray-50">
-      {/* Navigation */}
       <div className="p-6">
-        <Card>
-          <CardHeader>
+        <div className="bg-white rounded-lg shadow">
+          {/* Header */}
+          <div className="p-6 border-b">
             <div className="flex items-center justify-between">
-              <CardTitle>Table Management</CardTitle>
-              <div className="flex gap-2">
+              <motion.h1 
+                initial={{ opacity: 0, x: -20 }}
+                animate={{ opacity: 1, x: 0 }}
+                transition={{ duration: 0.5, delay: 0.1 }}
+                className="text-2xl font-bold text-gray-900 flex items-center gap-2"
+              >
+                <Users className="h-6 w-6 text-green-600" />
+                Table Management
+              </motion.h1>
+              <motion.div
+                initial={{ opacity: 0, x: 20 }}
+                animate={{ opacity: 1, x: 0 }}
+                transition={{ duration: 0.5, delay: 0.2 }}
+                className="flex gap-2"
+              >
                 <Button
                   variant="outline"
                   onClick={() => (window.location.href = "/table-plan")}
                   className="border-green-600 text-green-600 hover:bg-green-50"
                 >
+                  <MapPin className="h-4 w-4 mr-2" />
                   View Table Plan
                 </Button>
                 <Button
@@ -453,185 +531,446 @@ export default function Tables() {
                     </form>
                   </DialogContent>
                 </Dialog>
-              </div>
+              </motion.div>
             </div>
-          </CardHeader>
-          <CardContent>
-            {isLoading ? (
-              <div className="text-center py-8">Loading tables...</div>
-            ) : tables.length === 0 ? (
-              <div className="text-center py-8 text-gray-500">
-                No tables configured yet. Add your first table to get started.
-              </div>
-            ) : (
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Table Number</TableHead>
-                    <TableHead>Capacity</TableHead>
-                    <TableHead>Status</TableHead>
-                    <TableHead>QR Code</TableHead>
-                    <TableHead>Actions</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {tables.map((table: any) => (
-                    <TableRow key={table.id}>
-                      <TableCell className="font-medium">
-                        Table {table.tableNumber}
-                      </TableCell>
-                      <TableCell>
-                        <div className="flex items-center gap-2">
-                          <Users className="h-4 w-4" />
-                          {table.capacity} people
-                        </div>
-                      </TableCell>
-                      <TableCell>
-                        <Badge
-                          variant={
-                            Boolean(table.isActive) ? "default" : "secondary"
-                          }
-                        >
-                          {Boolean(table.isActive) ? "Active" : "Inactive"}
-                        </Badge>
-                      </TableCell>
-                      <TableCell>
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={async () => {
-                            try {
-                              const qrData = await fetchTableQR(table.id);
-                              setSelectedTableQR({
-                                ...table,
-                                qrCode: qrData.qrCode,
-                              });
-                              setShowQRDialog(true);
-                            } catch (error) {
-                              console.error("Failed to fetch QR code:", error);
-                            }
-                          }}
-                        >
-                          <QrCode className="h-4 w-4 mr-1" />
-                          View QR
-                        </Button>
-                      </TableCell>
-                      <TableCell>
-                        <div className="flex items-center gap-2">
-                          <div className="flex items-center gap-1">
-                            <TableSwitch
-                              tableId={table.id}
-                              isActive={table.isActive}
-                              onToggle={handleToggleActive}
-                              disabled={updateTableMutation.isPending}
-                            />
-                            <span className="text-xs text-gray-600">
-                              {Boolean(table.isActive) ? "Active" : "Inactive"}
-                            </span>
-                          </div>
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={() => {
-                              setSelectedTableForFeedback(table);
-                              setShowFeedbackModal(true);
-                            }}
-                            className="text-blue-600 hover:text-blue-700"
-                            title="Test Customer Feedback"
-                          >
-                            <MessageSquare className="h-4 w-4" />
-                          </Button>
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={() => deleteTableMutation.mutate(table.id)}
-                            disabled={deleteTableMutation.isPending}
-                          >
-                            <Trash2 className="h-4 w-4" />
-                          </Button>
-                        </div>
-                      </TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-            )}
-          </CardContent>
-        </Card>
+          </div>
 
-        {/* QR Code Display Dialog */}
-        <Dialog open={showQRDialog} onOpenChange={setShowQRDialog}>
-          <DialogContent className="max-w-md">
-            <DialogHeader>
-              <DialogTitle>
-                QR Code - Table {selectedTableQR?.tableNumber}
-              </DialogTitle>
-            </DialogHeader>
-            <div className="space-y-4">
-              {selectedTableQR?.qrCode ? (
-                <div className="text-center">
-                  <div className="bg-white p-4 rounded-lg border inline-block">
-                    <img
-                      src={selectedTableQR.qrCode}
-                      alt={`QR Code for Table ${selectedTableQR.tableNumber}`}
-                      className="w-48 h-48 mx-auto"
-                    />
-                  </div>
-                  <p className="text-sm text-gray-600 mt-4">
-                    Customers can scan this QR code to leave feedback for Table{" "}
-                    {selectedTableQR.tableNumber}
-                  </p>
-                  <div className="mt-4 p-3 bg-gray-50 rounded text-sm">
-                    <p>
-                      <strong>Table:</strong> {selectedTableQR.tableNumber}
-                    </p>
-                    <p>
-                      <strong>Capacity:</strong> {selectedTableQR.capacity}{" "}
-                      people
-                    </p>
-                    <p>
-                      <strong>Status:</strong>{" "}
-                      {selectedTableQR.isActive ? "Active" : "Inactive"}
-                    </p>
-                  </div>
-                  <Button
-                    className="mt-4 w-full"
-                    onClick={() => {
-                      const link = document.createElement("a");
-                      link.href = selectedTableQR.qrCode;
-                      link.download = `Table_${selectedTableQR.tableNumber}_QR.png`;
-                      link.click();
-                    }}
-                  >
-                    <Download className="h-4 w-4 mr-2" />
-                    Download QR Code
-                  </Button>
+          {/* Filters Section */}
+          <div className="p-6 border-b">
+            <h2 className="text-lg font-semibold text-gray-900 mb-6">Tables</h2>
+
+            {/* Modern Filters Section */}
+            <motion.div 
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.5, delay: 0.4 }}
+              className="space-y-6 mb-8"
+            >
+              {/* Filter Controls Bar */}
+              <div className="flex items-center justify-between">
+                <div className="flex items-center space-x-4">
+                  <Collapsible open={showFilters} onOpenChange={setShowFilters}>
+                    <CollapsibleTrigger asChild>
+                      <Button 
+                        variant="outline" 
+                        className="h-10 px-4 border-2 border-gray-200 hover:border-green-500 hover:bg-green-50 transition-all duration-200 flex items-center space-x-2 font-medium"
+                      >
+                        <Filter className="w-4 h-4" />
+                        <span>Filters</span>
+                        {(statusFilter !== 'all' || capacityFilter !== 'all' || searchTerm) && (
+                          <span className="bg-green-500 text-white text-xs px-2 py-0.5 rounded-full ml-1">
+                            {[statusFilter !== 'all', capacityFilter !== 'all', searchTerm].filter(Boolean).length}
+                          </span>
+                        )}
+                        <ChevronDown className={`w-4 h-4 transform transition-transform duration-200 ${showFilters ? 'rotate-180' : ''}`} />
+                      </Button>
+                    </CollapsibleTrigger>
+
+                    <CollapsibleContent className="mt-4">
+                      <div className="bg-gray-50 rounded-xl p-6 border-2 border-gray-100">
+                        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                          {/* Search Input */}
+                          <div className="relative">
+                            <label className="block text-sm font-medium text-gray-700 mb-2">Search</label>
+                            <div className="relative">
+                              <Search className="w-4 h-4 text-gray-400 absolute left-3 top-1/2 transform -translate-y-1/2" />
+                              <Input
+                                placeholder="Search by table number..."
+                                value={searchTerm}
+                                onChange={(e) => setSearchTerm(e.target.value)}
+                                className="pl-10 h-11 border-2 border-gray-200 focus:border-green-500 focus:ring-0 rounded-lg transition-all duration-200"
+                              />
+                            </div>
+                          </div>
+
+                          {/* Status Filter */}
+                          <div>
+                            <label className="block text-sm font-medium text-gray-700 mb-2">Status</label>
+                            <Select value={statusFilter} onValueChange={setStatusFilter}>
+                              <SelectTrigger className="h-11 border-2 border-gray-200 focus:border-green-500 rounded-lg transition-all duration-200">
+                                <SelectValue placeholder="All Status" />
+                              </SelectTrigger>
+                              <SelectContent className="rounded-lg border-2 border-gray-200">
+                                <SelectItem value="all" className="rounded-md">All Status</SelectItem>
+                                <SelectItem value="active" className="rounded-md">
+                                  <div className="flex items-center space-x-2">
+                                    <div className="w-2 h-2 bg-green-500 rounded-full"></div>
+                                    <span>Active</span>
+                                  </div>
+                                </SelectItem>
+                                <SelectItem value="inactive" className="rounded-md">
+                                  <div className="flex items-center space-x-2">
+                                    <div className="w-2 h-2 bg-gray-500 rounded-full"></div>
+                                    <span>Inactive</span>
+                                  </div>
+                                </SelectItem>
+                              </SelectContent>
+                            </Select>
+                          </div>
+
+                          {/* Capacity Filter */}
+                          <div>
+                            <label className="block text-sm font-medium text-gray-700 mb-2">Capacity</label>
+                            <Select value={capacityFilter} onValueChange={setCapacityFilter}>
+                              <SelectTrigger className="h-11 border-2 border-gray-200 focus:border-green-500 rounded-lg transition-all duration-200">
+                                <SelectValue placeholder="All Capacities" />
+                              </SelectTrigger>
+                              <SelectContent className="rounded-lg border-2 border-gray-200">
+                                <SelectItem value="all" className="rounded-md">All Capacities</SelectItem>
+                                <SelectItem value="small" className="rounded-md">
+                                  <div className="flex items-center space-x-2">
+                                    <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
+                                    <span>Small (1-2 people)</span>
+                                  </div>
+                                </SelectItem>
+                                <SelectItem value="medium" className="rounded-md">
+                                  <div className="flex items-center space-x-2">
+                                    <div className="w-2 h-2 bg-orange-500 rounded-full"></div>
+                                    <span>Medium (3-6 people)</span>
+                                  </div>
+                                </SelectItem>
+                                <SelectItem value="large" className="rounded-md">
+                                  <div className="flex items-center space-x-2">
+                                    <div className="w-2 h-2 bg-purple-500 rounded-full"></div>
+                                    <span>Large (7+ people)</span>
+                                  </div>
+                                </SelectItem>
+                              </SelectContent>
+                            </Select>
+                          </div>
+                        </div>
+
+                        {/* Filter Actions */}
+                        {(statusFilter !== 'all' || capacityFilter !== 'all' || searchTerm) && (
+                          <div className="flex items-center justify-between mt-4 pt-4 border-t border-gray-200">
+                            <div className="flex items-center space-x-2 text-sm text-gray-600">
+                              <span>Active filters:</span>
+                              {searchTerm && (
+                                <span className="bg-green-100 text-green-800 px-2 py-1 rounded-md text-xs font-medium">
+                                  Search: "{searchTerm}"
+                                </span>
+                              )}
+                              {statusFilter !== 'all' && (
+                                <span className="bg-blue-100 text-blue-800 px-2 py-1 rounded-md text-xs font-medium">
+                                  Status: {statusFilter}
+                                </span>
+                              )}
+                              {capacityFilter !== 'all' && (
+                                <span className="bg-purple-100 text-purple-800 px-2 py-1 rounded-md text-xs font-medium">
+                                  Capacity: {capacityFilter}
+                                </span>
+                              )}
+                            </div>
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => {
+                                setSearchTerm("");
+                                setStatusFilter("all");
+                                setCapacityFilter("all");
+                              }}
+                              className="text-gray-500 hover:text-gray-700 hover:bg-gray-100"
+                            >
+                              Clear all
+                            </Button>
+                          </div>
+                        )}
+                      </div>
+                    </CollapsibleContent>
+                  </Collapsible>
                 </div>
-              ) : (
-                <div className="text-center py-8">
-                  <p>Loading QR code...</p>
+              </div>
+            </motion.div>
+
+            {/* Enhanced Table */}
+            <motion.div 
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.5, delay: 0.5 }}
+              className="bg-white rounded-xl border-2 border-gray-100 overflow-hidden shadow-sm mt-6"
+            >
+              <div className="overflow-x-auto">
+                <table className="w-full">
+                  <thead>
+                    <tr className="bg-gray-50 border-b border-gray-200">
+                      <th className="text-left py-3 px-4 text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Table Number
+                      </th>
+                      <th className="text-left py-3 px-4 text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Capacity
+                      </th>
+                      <th className="text-left py-3 px-4 text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Status
+                      </th>
+                      <th className="text-left py-3 px-4 text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        QR Code
+                      </th>
+                      <th className="text-left py-3 px-4 text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Actions
+                      </th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-gray-100">
+                    {isLoading ? (
+                      <tr>
+                        <td colSpan={5} className="py-12 text-center">
+                          <div className="flex flex-col items-center space-y-4">
+                            <div className="animate-spin rounded-full h-8 w-8 border-2 border-green-500 border-t-transparent"></div>
+                            <span className="text-gray-500 font-medium">Loading tables...</span>
+                          </div>
+                        </td>
+                      </tr>
+                    ) : paginatedTables.length === 0 ? (
+                      <tr>
+                        <td colSpan={5} className="py-12 text-center">
+                          <div className="flex flex-col items-center space-y-4">
+                            <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center">
+                              <Users className="w-8 h-8 text-gray-400" />
+                            </div>
+                            <div>
+                              <h3 className="text-gray-900 font-medium">No tables found</h3>
+                              <p className="text-gray-500 text-sm mt-1">Try adjusting your filters or search terms</p>
+                            </div>
+                          </div>
+                        </td>
+                      </tr>
+                    ) : (
+                      paginatedTables.map((table: any, index: number) => (
+                        <motion.tr 
+                          key={table.id}
+                          initial={{ opacity: 0, y: 10 }}
+                          animate={{ opacity: 1, y: 0 }}
+                          transition={{ duration: 0.3, delay: index * 0.05 }}
+                          className={`group hover:bg-blue-50 transition-all duration-200 ${
+                            index % 2 === 0 ? 'bg-white' : 'bg-gray-50/50'
+                          }`}
+                        >
+                          <td className="py-3 px-4">
+                            <div className="flex items-center space-x-3">
+                              <div className="w-8 h-8 bg-gradient-to-br from-green-400 to-green-600 rounded-full flex items-center justify-center text-white font-medium text-sm">
+                                {table.tableNumber?.charAt(0)?.toUpperCase() || 'T'}
+                              </div>
+                              <div>
+                                <div className="font-medium text-gray-900">Table {table.tableNumber}</div>
+                              </div>
+                            </div>
+                          </td>
+                          <td className="py-3 px-4">
+                            <div className="flex items-center space-x-2">
+                              <Users className="w-4 h-4 text-gray-400" />
+                              <span className="font-medium text-gray-900">{table.capacity}</span>
+                              <span className="text-sm text-gray-500">
+                                {table.capacity === 1 ? 'person' : 'people'}
+                              </span>
+                              <span className={getCapacityBadge(table.capacity)}>
+                                {table.capacity <= 2 ? 'Small' : table.capacity <= 6 ? 'Medium' : 'Large'}
+                              </span>
+                            </div>
+                          </td>
+                          <td className="py-3 px-4">
+                            <div className="flex items-center space-x-2">
+                              {getStatusBadge(table.isActive)}
+                              <TableSwitch
+                                tableId={table.id}
+                                isActive={table.isActive}
+                                onToggle={handleToggleActive}
+                                disabled={updateTableMutation.isPending}
+                              />
+                            </div>
+                          </td>
+                          <td className="py-3 px-4">
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={async () => {
+                                try {
+                                  const qrData = await fetchTableQR(table.id);
+                                  setSelectedTableQR({
+                                    ...table,
+                                    qrCode: qrData.qrCode,
+                                  });
+                                  setShowQRDialog(true);
+                                } catch (error) {
+                                  console.error("Failed to fetch QR code:", error);
+                                  alert("Failed to load QR code. Please try again.");
+                                }
+                              }}
+                              className="text-blue-600 border-blue-600 hover:bg-blue-50"
+                            >
+                              <QrCode className="h-3 w-3 mr-1" />
+                              View QR
+                            </Button>
+                          </td>
+                          <td className="py-3 px-4">
+                            <DropdownMenu>
+                              <DropdownMenuTrigger asChild>
+                                <Button variant="ghost" className="h-8 w-8 p-0">
+                                  <span className="sr-only">Open menu</span>
+                                  <MoreHorizontal className="h-4 w-4" />
+                                </Button>
+                              </DropdownMenuTrigger>
+                              <DropdownMenuContent align="end" className="w-[160px]">
+                                <DropdownMenuLabel>Actions</DropdownMenuLabel>
+                                <DropdownMenuSeparator />
+                                <DropdownMenuItem
+                                  onClick={() => {
+                                    setEditingTable(table);
+                                    setNewTable({
+                                      tableNumber: table.tableNumber,
+                                      capacity: table.capacity,
+                                      isActive: table.isActive,
+                                    });
+                                    setIsDialogOpen(true);
+                                  }}
+                                >
+                                  <Edit className="mr-2 h-4 w-4" />
+                                  Edit
+                                </DropdownMenuItem>
+                                <DropdownMenuItem
+                                  onClick={() => {
+                                    setSelectedTableForFeedback(table);
+                                    setShowFeedbackModal(true);
+                                  }}
+                                >
+                                  <MessageSquare className="mr-2 h-4 w-4" />
+                                  Feedback
+                                </DropdownMenuItem>
+                                <DropdownMenuSeparator />
+                                <DropdownMenuItem
+                                  onClick={() => {
+                                    if (confirm(`Are you sure you want to delete Table ${table.tableNumber}?`)) {
+                                      deleteTableMutation.mutate(table.id);
+                                    }
+                                  }}
+                                  className="text-red-600"
+                                >
+                                  <Trash2 className="mr-2 h-4 w-4" />
+                                  Delete
+                                </DropdownMenuItem>
+                              </DropdownMenuContent>
+                            </DropdownMenu>
+                          </td>
+                        </motion.tr>
+                      ))
+                    )}
+                  </tbody>
+                </table>
+              </div>
+
+              {/* Pagination */}
+              {totalPages > 1 && (
+                <div className="px-6 py-4 border-t border-gray-200">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center space-x-2 text-sm text-gray-600">
+                      <span>
+                        Showing {startIndex + 1} to {Math.min(endIndex, filteredTables.length)} of {filteredTables.length} tables
+                      </span>
+                      <Select value={itemsPerPage.toString()} onValueChange={(value) => {
+                        setItemsPerPage(parseInt(value));
+                        setCurrentPage(1);
+                      }}>
+                        <SelectTrigger className="w-20 h-8">
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="5">5</SelectItem>
+                          <SelectItem value="10">10</SelectItem>
+                          <SelectItem value="20">20</SelectItem>
+                          <SelectItem value="50">50</SelectItem>
+                        </SelectContent>
+                      </Select>
+                      <span>per page</span>
+                    </div>
+                    
+                    <div className="flex items-center space-x-2">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => setCurrentPage(Math.max(1, currentPage - 1))}
+                        disabled={currentPage === 1}
+                        className="h-8 w-8 p-0"
+                      >
+                        <ChevronLeft className="h-4 w-4" />
+                      </Button>
+                      
+                      <div className="flex items-center space-x-1">
+                        {Array.from({ length: totalPages }, (_, i) => i + 1)
+                          .filter(page => 
+                            page === 1 || 
+                            page === totalPages || 
+                            Math.abs(page - currentPage) <= 1
+                          )
+                          .map((page, index, array) => (
+                            <div key={page} className="flex items-center">
+                              {index > 0 && array[index - 1] !== page - 1 && (
+                                <span className="px-2 text-gray-400">...</span>
+                              )}
+                              <Button
+                                variant={currentPage === page ? "default" : "outline"}
+                                size="sm"
+                                onClick={() => setCurrentPage(page)}
+                                className="h-8 w-8 p-0"
+                              >
+                                {page}
+                              </Button>
+                            </div>
+                          ))
+                        }
+                      </div>
+                      
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => setCurrentPage(Math.min(totalPages, currentPage + 1))}
+                        disabled={currentPage === totalPages}
+                        className="h-8 w-8 p-0"
+                      >
+                        <ChevronRight className="h-4 w-4" />
+                      </Button>
+                    </div>
+                  </div>
                 </div>
               )}
-            </div>
-          </DialogContent>
-        </Dialog>
-
-        {/* Customer Feedback Modal */}
-        {selectedTableForFeedback && (
-          <FeedbackModal
-            isOpen={showFeedbackModal}
-            onClose={() => {
-              setShowFeedbackModal(false);
-              setSelectedTableForFeedback(null);
-            }}
-            restaurantId={restaurant?.id || 0}
-            tenantId={restaurant?.tenantId || 0}
-            tableId={selectedTableForFeedback.id}
-            restaurantName={restaurant?.name}
-            tableNumber={selectedTableForFeedback.tableNumber}
-          />
-        )}
+            </motion.div>
+          </div>
+        </div>
       </div>
+
+      {/* QR Code Dialog */}
+      <Dialog open={showQRDialog} onOpenChange={setShowQRDialog}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>QR Code - Table {selectedTableQR?.tableNumber}</DialogTitle>
+          </DialogHeader>
+          <div className="flex flex-col items-center space-y-4">
+            {selectedTableQR?.qrCode && (
+              <div className="p-4 bg-white rounded-lg border">
+                <img
+                  src={selectedTableQR.qrCode}
+                  alt={`QR Code for Table ${selectedTableQR.tableNumber}`}
+                  className="w-64 h-64"
+                />
+              </div>
+            )}
+            <div className="text-center text-sm text-gray-600">
+              <p>Capacity: {selectedTableQR?.capacity} people</p>
+              <p>Status: {selectedTableQR?.isActive ? "Active" : "Inactive"}</p>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Feedback Modal */}
+      {showFeedbackModal && selectedTableForFeedback && (
+        <FeedbackModal
+          table={selectedTableForFeedback}
+          restaurant={restaurant}
+          onClose={() => {
+            setShowFeedbackModal(false);
+            setSelectedTableForFeedback(null);
+          }}
+        />
+      )}
     </div>
   );
 }
