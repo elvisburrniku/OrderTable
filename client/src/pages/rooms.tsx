@@ -548,7 +548,7 @@ export default function Rooms() {
               </motion.div>
             </div>
 
-            {/* Rooms Grid */}
+            {/* Rooms Table */}
             <div className="p-6">
               {paginatedRooms.length > 0 ? (
                 <>
@@ -556,64 +556,119 @@ export default function Rooms() {
                     initial={{ opacity: 0, y: 20 }}
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ duration: 0.5, delay: 0.5 }}
-                    className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"
+                    className="bg-white rounded-xl border-2 border-gray-100 overflow-hidden shadow-sm"
                   >
-                    {paginatedRooms.map((room, index) => (
-                      <motion.div
-                        key={room.id || index}
-                        initial={{ opacity: 0, y: 20 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        transition={{ duration: 0.5, delay: 0.6 + index * 0.1 }}
-                        className="bg-white border-2 border-gray-100 rounded-xl p-6 hover:border-green-200 hover:shadow-md transition-all duration-200"
-                      >
-                        <div className="flex items-start justify-between mb-4">
-                          <div className="flex items-center space-x-3">
-                            <div className="w-12 h-12 bg-green-100 rounded-lg border-2 border-green-200 flex items-center justify-center">
-                              <MapPin className="w-5 h-5 text-green-600" />
-                            </div>
-                            <div>
-                              <h3 className="font-semibold text-gray-900">{room.name}</h3>
-                              <p className="text-sm text-gray-500">Room #{room.id}</p>
-                            </div>
-                          </div>
-                          <DropdownMenu>
-                            <DropdownMenuTrigger asChild>
-                              <Button variant="ghost" className="h-8 w-8 p-0">
-                                <MoreHorizontal className="h-4 w-4" />
-                              </Button>
-                            </DropdownMenuTrigger>
-                            <DropdownMenuContent align="end" className="w-48">
-                              <DropdownMenuLabel>Actions</DropdownMenuLabel>
-                              <DropdownMenuItem onClick={() => handleEditRoom(room)}>
-                                <Edit className="mr-2 h-4 w-4" />
-                                Edit Room
-                              </DropdownMenuItem>
-                              <DropdownMenuSeparator />
-                              <DropdownMenuItem 
-                                onClick={() => removeRoom(rooms.findIndex(r => r.id === room.id))}
-                                className="text-red-600"
-                              >
-                                <Trash2 className="mr-2 h-4 w-4" />
-                                Delete Room
-                              </DropdownMenuItem>
-                            </DropdownMenuContent>
-                          </DropdownMenu>
-                        </div>
-
-                        <div className="space-y-3">
-                          <div className="flex items-center justify-between">
-                            <span className="text-sm text-gray-600">Priority:</span>
-                            {getPriorityBadge(room.priority)}
-                          </div>
-                          <div className="flex items-center justify-between">
-                            <span className="text-sm text-gray-600">Status:</span>
-                            <Badge variant="outline" className="bg-green-100 text-green-800 border-green-200">
-                              Active
-                            </Badge>
-                          </div>
-                        </div>
-                      </motion.div>
-                    ))}
+                    <div className="overflow-x-auto">
+                      <table className="w-full">
+                        <thead>
+                          <tr className="bg-gray-50 border-b border-gray-200">
+                            <th className="text-left py-3 px-4 text-xs font-medium text-gray-500 uppercase tracking-wider">
+                              Room ID
+                            </th>
+                            <th className="text-left py-3 px-4 text-xs font-medium text-gray-500 uppercase tracking-wider">
+                              Room Name
+                            </th>
+                            <th className="text-left py-3 px-4 text-xs font-medium text-gray-500 uppercase tracking-wider">
+                              Priority
+                            </th>
+                            <th className="text-left py-3 px-4 text-xs font-medium text-gray-500 uppercase tracking-wider">
+                              Status
+                            </th>
+                            <th className="text-left py-3 px-4 text-xs font-medium text-gray-500 uppercase tracking-wider">
+                              Tables
+                            </th>
+                            <th className="text-left py-3 px-4 text-xs font-medium text-gray-500 uppercase tracking-wider">
+                              Actions
+                            </th>
+                          </tr>
+                        </thead>
+                        <tbody className="divide-y divide-gray-100">
+                          {paginatedRooms.map((room, index) => (
+                            <motion.tr
+                              key={room.id || index}
+                              initial={{ opacity: 0, x: -20 }}
+                              animate={{ opacity: 1, x: 0 }}
+                              transition={{ duration: 0.5, delay: 0.6 + index * 0.1 }}
+                              className="group hover:bg-green-50 transition-all duration-200 hover:shadow-sm"
+                            >
+                              <td className="py-4 px-4">
+                                <div className="text-sm font-medium text-gray-900">
+                                  #{room.id}
+                                </div>
+                              </td>
+                              <td className="py-4 px-4">
+                                <div className="flex items-center space-x-3">
+                                  <div className="w-10 h-10 bg-green-100 rounded-lg border-2 border-green-200 flex items-center justify-center group-hover:bg-green-200 group-hover:border-green-300 transition-all duration-200">
+                                    <MapPin className="w-5 h-5 text-green-600" />
+                                  </div>
+                                  <div>
+                                    <div className="text-sm font-medium text-gray-900">
+                                      {room.name}
+                                    </div>
+                                    <div className="text-xs text-gray-500">
+                                      Room area
+                                    </div>
+                                  </div>
+                                </div>
+                              </td>
+                              <td className="py-4 px-4">
+                                {getPriorityBadge(room.priority)}
+                              </td>
+                              <td className="py-4 px-4">
+                                <Badge variant="outline" className="bg-green-100 text-green-800 border-green-200 text-xs font-medium">
+                                  Active
+                                </Badge>
+                              </td>
+                              <td className="py-4 px-4">
+                                <div className="flex items-center text-sm text-gray-500">
+                                  <Users className="w-4 h-4 mr-1" />
+                                  <span>0 tables</span>
+                                </div>
+                              </td>
+                              <td className="py-4 px-4">
+                                <div className="flex items-center space-x-2">
+                                  <Button
+                                    variant="ghost"
+                                    size="sm"
+                                    onClick={() => handleEditRoom(room)}
+                                    className="h-8 px-3 text-gray-600 hover:text-green-600 hover:bg-green-50 transition-colors duration-200"
+                                  >
+                                    <Edit className="w-4 h-4 mr-1" />
+                                    Edit
+                                  </Button>
+                                  <DropdownMenu>
+                                    <DropdownMenuTrigger asChild>
+                                      <Button variant="ghost" className="h-8 w-8 p-0 text-gray-400 hover:text-gray-600">
+                                        <MoreHorizontal className="h-4 w-4" />
+                                      </Button>
+                                    </DropdownMenuTrigger>
+                                    <DropdownMenuContent align="end" className="w-48">
+                                      <DropdownMenuLabel>Actions</DropdownMenuLabel>
+                                      <DropdownMenuItem onClick={() => handleEditRoom(room)}>
+                                        <Edit className="mr-2 h-4 w-4" />
+                                        Edit Room
+                                      </DropdownMenuItem>
+                                      <DropdownMenuItem>
+                                        <Eye className="mr-2 h-4 w-4" />
+                                        View Details
+                                      </DropdownMenuItem>
+                                      <DropdownMenuSeparator />
+                                      <DropdownMenuItem 
+                                        onClick={() => removeRoom(rooms.findIndex(r => r.id === room.id))}
+                                        className="text-red-600"
+                                      >
+                                        <Trash2 className="mr-2 h-4 w-4" />
+                                        Delete Room
+                                      </DropdownMenuItem>
+                                    </DropdownMenuContent>
+                                  </DropdownMenu>
+                                </div>
+                              </td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
                   </motion.div>
 
                   {/* Pagination */}
@@ -670,22 +725,28 @@ export default function Rooms() {
                   initial={{ opacity: 0, y: 20 }}
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ duration: 0.5, delay: 0.5 }}
-                  className="text-center py-12"
+                  className="bg-white rounded-xl border-2 border-gray-100 overflow-hidden shadow-sm"
                 >
-                  <MapPin className="w-16 h-16 text-gray-300 mx-auto mb-4" />
-                  <h3 className="text-lg font-medium text-gray-900 mb-2">No rooms found</h3>
-                  <p className="text-gray-500 mb-6">
-                    {searchTerm || priorityFilter !== 'all' 
-                      ? "Try adjusting your filters to see more rooms." 
-                      : "Get started by creating your first room."}
-                  </p>
-                  <Button
-                    onClick={() => setIsNewRoomOpen(true)}
-                    className="bg-green-600 hover:bg-green-700 text-white flex items-center space-x-2"
-                  >
-                    <Plus className="w-4 h-4" />
-                    <span>Create Room</span>
-                  </Button>
+                  <div className="py-12 text-center">
+                    <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                      <MapPin className="w-8 h-8 text-gray-400" />
+                    </div>
+                    <div>
+                      <h3 className="text-gray-900 font-medium">No rooms found</h3>
+                      <p className="text-gray-500 text-sm mt-1">
+                        {searchTerm || priorityFilter !== 'all' 
+                          ? "Try adjusting your filters to see more rooms." 
+                          : "Get started by creating your first room."}
+                      </p>
+                      <Button
+                        onClick={() => setIsNewRoomOpen(true)}
+                        className="mt-4 bg-green-600 hover:bg-green-700 text-white flex items-center space-x-2 mx-auto"
+                      >
+                        <Plus className="w-4 h-4" />
+                        <span>Create Room</span>
+                      </Button>
+                    </div>
+                  </div>
                 </motion.div>
               )}
             </div>
