@@ -327,20 +327,38 @@ export default function Bookings() {
                                 <SelectItem value="all" className="rounded-md">All Sources</SelectItem>
                                 <SelectItem value="manual" className="rounded-md">
                                   <div className="flex items-center space-x-2">
-                                    <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
+                                    <div className="w-2 h-2 bg-gray-500 rounded-full"></div>
                                     <span>Manual</span>
+                                  </div>
+                                </SelectItem>
+                                <SelectItem value="guest_booking" className="rounded-md">
+                                  <div className="flex items-center space-x-2">
+                                    <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
+                                    <span>Guest Booking</span>
                                   </div>
                                 </SelectItem>
                                 <SelectItem value="online" className="rounded-md">
                                   <div className="flex items-center space-x-2">
-                                    <div className="w-2 h-2 bg-purple-500 rounded-full"></div>
+                                    <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
                                     <span>Online</span>
+                                  </div>
+                                </SelectItem>
+                                <SelectItem value="agent" className="rounded-md">
+                                  <div className="flex items-center space-x-2">
+                                    <div className="w-2 h-2 bg-purple-500 rounded-full"></div>
+                                    <span>Agent</span>
                                   </div>
                                 </SelectItem>
                                 <SelectItem value="google" className="rounded-md">
                                   <div className="flex items-center space-x-2">
-                                    <div className="w-2 h-2 bg-orange-500 rounded-full"></div>
+                                    <div className="w-2 h-2 bg-green-500 rounded-full"></div>
                                     <span>Google</span>
+                                  </div>
+                                </SelectItem>
+                                <SelectItem value="walk_in" className="rounded-md">
+                                  <div className="flex items-center space-x-2">
+                                    <div className="w-2 h-2 bg-orange-500 rounded-full"></div>
+                                    <span>Walk-in</span>
                                   </div>
                                 </SelectItem>
                               </SelectContent>
@@ -506,16 +524,19 @@ export default function Bookings() {
                             </div>
                           </td>
                           <td className="py-3 px-4">
-                            <Badge variant={booking.source === "online" ? "default" : booking.source === "agent" ? "default" : "secondary"} 
+                            <Badge variant={booking.source === "online" || booking.source === "guest_booking" ? "default" : booking.source === "agent" ? "default" : "secondary"} 
                                className={
-                                 booking.source === "online" ? "bg-blue-500 text-white" : 
+                                 booking.source === "online" || booking.source === "guest_booking" ? "bg-blue-500 text-white" : 
                                  booking.source === "agent" ? "bg-purple-500 text-white" :
                                  booking.source === "google" ? "bg-green-500 text-white" : 
+                                 booking.source === "walk_in" ? "bg-orange-500 text-white" :
                                  "bg-gray-500 text-white"
                                }>
-                          {booking.source === "online" ? "Online" : 
+                          {booking.source === "online" || booking.source === "guest_booking" ? "Guest Booking" : 
                            booking.source === "agent" ? "Agent" :
-                           booking.source === "google" ? "Google" : "Manual"}
+                           booking.source === "google" ? "Google" : 
+                           booking.source === "walk_in" ? "Walk-in" :
+                           "Manual"}
                         </Badge>
                           </td>
                         </motion.tr>
