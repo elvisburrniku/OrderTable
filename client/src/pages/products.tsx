@@ -67,13 +67,13 @@ export default function Products() {
   // Filter products
   const filteredProducts = (products || []).filter((product: any) => {
     const matchesSearch = !searchTerm || 
-      product.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      (product.productName || product.name)?.toLowerCase().includes(searchTerm.toLowerCase()) ||
       product.description?.toLowerCase().includes(searchTerm.toLowerCase());
 
     const matchesCategory = categoryFilter === "all" || product.categoryName === categoryFilter || product.category === categoryFilter;
     const matchesStatus = statusFilter === "all" || 
-      (statusFilter === "available" && product.isAvailable) ||
-      (statusFilter === "unavailable" && !product.isAvailable);
+      (statusFilter === "available" && (product.status === 'active' || product.isAvailable)) ||
+      (statusFilter === "unavailable" && (product.status !== 'active' && !product.isAvailable));
 
     return matchesSearch && matchesCategory && matchesStatus;
   });
@@ -421,10 +421,10 @@ export default function Products() {
                           <td className="py-3 px-4">
                             <div className="flex items-center space-x-3">
                               <div className="w-8 h-8 bg-gradient-to-br from-green-400 to-green-600 rounded-full flex items-center justify-center text-white font-medium text-sm">
-                                {product.name?.charAt(0)?.toUpperCase() || 'P'}
+                                {(product.productName || product.name)?.charAt(0)?.toUpperCase() || 'P'}
                               </div>
                               <div>
-                                <div className="font-medium text-gray-900">{product.name}</div>
+                                <div className="font-medium text-gray-900">{product.productName || product.name}</div>
                               </div>
                             </div>
                           </td>
@@ -446,14 +446,14 @@ export default function Products() {
                           </td>
                           <td className="py-3 px-4">
                             <Badge 
-                              variant={product.isAvailable ? "default" : "secondary"}
+                              variant={(product.status === 'active' || product.isAvailable) ? "default" : "secondary"}
                               className={
-                                product.isAvailable 
+                                (product.status === 'active' || product.isAvailable)
                                   ? "bg-green-500 text-white" 
                                   : "bg-red-500 text-white"
                               }
                             >
-                              {product.isAvailable ? 'Available' : 'Unavailable'}
+                              {(product.status === 'active' || product.isAvailable) ? 'Available' : 'Unavailable'}
                             </Badge>
                           </td>
                           <td className="py-3 px-4">
@@ -461,7 +461,12 @@ export default function Products() {
                               <Button
                                 variant="ghost"
                                 size="sm"
-                                onClick={() => setEditingProduct(product)}
+                                onClick={() => setEditingProduct({
+                                  ...product,
+                                  name: product.productName || product.name,
+                                  category: product.categoryName || product.category,
+                                  isAvailable: product.status === 'active' || product.isAvailable
+                                })}
                                 className="h-8 w-8 p-0 hover:bg-blue-100"
                               >
                                 <Edit className="h-4 w-4 text-blue-600" />
@@ -656,6 +661,17 @@ export default function Products() {
                   ))}
                 </SelectContent>
               </Select>
+            </div>
+
+            <div className="flex items-center space-x-2">
+              <input
+                type="checkbox"
+                id="productAvailable"
+                checked={newProduct.isAvailable}
+                onChange={(e) => setNewProduct({ ...newProduct, isAvailable: e.target.checked })}
+                className="rounded"
+              />
+              <Label htmlFor="productAvailable">Available</Label>
             </div>
 
             <div className="flex justify-end space-x-2">
