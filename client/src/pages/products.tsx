@@ -261,10 +261,10 @@ export default function Products() {
                               <SelectContent className="rounded-lg border-2 border-gray-200">
                                 <SelectItem value="all" className="rounded-md">All Categories</SelectItem>
                                 {(productGroups || []).map((group: any) => (
-                                  <SelectItem key={group.id} value={group.name} className="rounded-md">
+                                  <SelectItem key={group.id} value={group.groupName} className="rounded-md">
                                     <div className="flex items-center space-x-2">
                                       <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
-                                      <span>{group.name}</span>
+                                      <span>{group.groupName}</span>
                                     </div>
                                   </SelectItem>
                                 ))}
@@ -638,8 +638,8 @@ export default function Products() {
                 </SelectTrigger>
                 <SelectContent>
                   {(productGroups || []).map((group: any) => (
-                    <SelectItem key={group.id} value={group.name}>
-                      {group.name}
+                    <SelectItem key={group.id} value={group.groupName}>
+                      {group.groupName}
                     </SelectItem>
                   ))}
                 </SelectContent>
@@ -719,8 +719,8 @@ export default function Products() {
                   </SelectTrigger>
                   <SelectContent>
                     {(productGroups || []).map((group: any) => (
-                      <SelectItem key={group.id} value={group.name}>
-                        {group.name}
+                      <SelectItem key={group.id} value={group.groupName}>
+                        {group.groupName}
                       </SelectItem>
                     ))}
                   </SelectContent>
