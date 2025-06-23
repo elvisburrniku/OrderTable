@@ -247,7 +247,11 @@ export default function ProductGroups() {
                 transition={{ duration: 0.5, delay: 0.2 }}
               >
                 <Button
-                onClick={handleNewGroup}
+                  type="button"
+                  onClick={(e) => {
+                    e.preventDefault();
+                    handleNewGroup();
+                  }}
                   className="bg-green-600 hover:bg-green-700 text-white flex items-center space-x-2"
                 >
                   <Plus className="w-4 h-4" />
@@ -270,6 +274,7 @@ export default function ProductGroups() {
                     <CollapsibleTrigger asChild>
                       <Button 
                         variant="outline" 
+                        type="button"
                         className="h-10 px-4 border-2 border-gray-200 hover:border-green-500 hover:bg-green-50 transition-all duration-200 flex items-center space-x-2 font-medium"
                       >
                         <Filter className="w-4 h-4" />
@@ -460,7 +465,9 @@ export default function ProductGroups() {
                               <Button
                                 variant="outline"
                                 size="sm"
+                                type="button"
                                 onClick={(e) => {
+                                  e.preventDefault();
                                   e.stopPropagation();
                                   handleEdit(group);
                                 }}
@@ -471,7 +478,9 @@ export default function ProductGroups() {
                               <Button
                                 variant="outline"
                                 size="sm"
+                                type="button"
                                 onClick={(e) => {
+                                  e.preventDefault();
                                   e.stopPropagation();
                                   handleDelete(group.id);
                                 }}
@@ -524,7 +533,11 @@ export default function ProductGroups() {
                     <Button
                       variant="outline"
                       size="sm"
-                      onClick={() => setCurrentPage(1)}
+                      type="button"
+                      onClick={(e) => {
+                        e.preventDefault();
+                        setCurrentPage(1);
+                      }}
                       disabled={currentPage === 1}
                       className="px-3 py-1 h-8 text-sm"
                     >
@@ -533,7 +546,11 @@ export default function ProductGroups() {
                     <Button
                       variant="outline"
                       size="sm"
-                      onClick={() => setCurrentPage(currentPage - 1)}
+                      type="button"
+                      onClick={(e) => {
+                        e.preventDefault();
+                        setCurrentPage(currentPage - 1);
+                      }}
                       disabled={currentPage === 1}
                       className="w-8 h-8 p-0"
                     >
@@ -559,7 +576,11 @@ export default function ProductGroups() {
                             key={pageNum}
                             variant={currentPage === pageNum ? "default" : "outline"}
                             size="sm"
-                            onClick={() => setCurrentPage(pageNum)}
+                            type="button"
+                            onClick={(e) => {
+                              e.preventDefault();
+                              setCurrentPage(pageNum);
+                            }}
                             className={`w-8 h-8 p-0 ${
                               currentPage === pageNum 
                                 ? "bg-green-600 hover:bg-green-700 text-white" 
@@ -575,7 +596,11 @@ export default function ProductGroups() {
                     <Button
                       variant="outline"
                       size="sm"
-                      onClick={() => setCurrentPage(currentPage + 1)}
+                      type="button"
+                      onClick={(e) => {
+                        e.preventDefault();
+                        setCurrentPage(currentPage + 1);
+                      }}
                       disabled={currentPage === totalPages}
                       className="w-8 h-8 p-0"
                     >
@@ -584,7 +609,11 @@ export default function ProductGroups() {
                     <Button
                       variant="outline"
                       size="sm"
-                      onClick={() => setCurrentPage(totalPages)}
+                      type="button"
+                      onClick={(e) => {
+                        e.preventDefault();
+                        setCurrentPage(totalPages);
+                      }}
                       disabled={currentPage === totalPages}
                       className="px-3 py-1 h-8 text-sm"
                     >
