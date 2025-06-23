@@ -428,10 +428,7 @@ export default function BookingAgents() {
                   </Collapsible>
                 </div>
 
-                {/* Results count */}
-                <div className="text-sm text-gray-600">
-                  {filteredAgents.length} {filteredAgents.length === 1 ? 'agent' : 'agents'} found
-                </div>
+                
               </div>
             </motion.div>
           </div>
@@ -449,15 +446,7 @@ export default function BookingAgents() {
                 transition={{ duration: 0.5, delay: 0.5 }}
                 className="space-y-4"
               >
-                {/* Table Header */}
-                <div className="hidden md:grid md:grid-cols-12 gap-4 p-4 bg-gray-50 rounded-lg text-sm font-medium text-gray-600 border">
-                  <div className="col-span-3">Agent</div>
-                  <div className="col-span-2">Contact</div>
-                  <div className="col-span-2">Role</div>
-                  <div className="col-span-2">Status</div>
-                  <div className="col-span-2">Created</div>
-                  <div className="col-span-1">Actions</div>
-                </div>
+                
 
                 {/* Agent List */}
                 {paginatedAgents.map((agent: BookingAgent, index: number) => (
