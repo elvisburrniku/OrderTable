@@ -794,64 +794,41 @@ export default function Products() {
 
       {/* Delete Confirmation Dialog */}
       <Dialog open={!!deletingProduct} onOpenChange={() => setDeletingProduct(null)}>
-        <DialogContent className="max-w-md">
+        <DialogContent className="max-w-sm">
           <DialogHeader>
-            <DialogTitle className="flex items-center space-x-2 text-red-600">
-              <Trash2 className="w-5 h-5" />
-              <span>Delete Product</span>
-            </DialogTitle>
+            <DialogTitle className="text-gray-900">Confirm Delete</DialogTitle>
           </DialogHeader>
           {deletingProduct && (
-            <div className="space-y-4">
-              <div className="bg-red-50 border border-red-200 rounded-lg p-4">
-                <p className="text-gray-800 font-medium mb-2">
-                  Are you sure you want to delete this product?
-                </p>
-                <div className="bg-white rounded-md p-3 border border-red-100">
-                  <div className="flex items-center space-x-3">
-                    <div className="w-10 h-10 bg-gradient-to-br from-red-400 to-red-600 rounded-full flex items-center justify-center text-white font-medium">
-                      {(deletingProduct.productName || deletingProduct.name)?.charAt(0)?.toUpperCase() || 'P'}
-                    </div>
-                    <div>
-                      <div className="font-medium text-gray-900">
-                        {deletingProduct.productName || deletingProduct.name}
-                      </div>
-                      <div className="text-sm text-gray-500">
-                        {deletingProduct.categoryName || deletingProduct.category || 'Uncategorized'} • ${parseFloat(deletingProduct.price || '0').toFixed(2)}
-                      </div>
-                    </div>
-                  </div>
+            <div className="space-y-6">
+              <div className="text-center">
+                <div className="mx-auto flex items-center justify-center h-12 w-12 rounded-full bg-red-100 mb-4">
+                  <Trash2 className="h-6 w-6 text-red-600" />
                 </div>
-                <p className="text-red-700 text-sm mt-3">
-                  <strong>Warning:</strong> This action cannot be undone. The product will be permanently removed from your system.
+                <p className="text-gray-900 mb-2">
+                  Are you sure you want to delete
+                </p>
+                <p className="font-semibold text-gray-900">
+                  "{deletingProduct.productName || deletingProduct.name}"?
+                </p>
+                <p className="text-gray-500 text-sm mt-2">
+                  This action cannot be undone.
                 </p>
               </div>
               
-              <div className="flex justify-end space-x-3">
+              <div className="flex space-x-3">
                 <Button 
                   variant="outline" 
                   onClick={() => setDeletingProduct(null)}
-                  className="border-gray-300 hover:bg-gray-50"
+                  className="flex-1"
                 >
                   Cancel
                 </Button>
                 <Button 
-                  variant="destructive"
                   onClick={confirmDeleteProduct}
                   disabled={deleteProductMutation.isPending}
-                  className="bg-red-600 hover:bg-red-700 text-white"
+                  className="flex-1 bg-red-600 hover:bg-red-700 text-white"
                 >
-                  {deleteProductMutation.isPending ? (
-                    <div className="flex items-center space-x-2">
-                      <div className="animate-spin rounded-full h-4 w-4 border-2 border-white border-t-transparent"></div>
-                      <span>Deleting...</span>
-                    </div>
-                  ) : (
-                    <div className="flex items-center space-x-2">
-                      <Trash2 className="w-4 h-4" />
-                      <span>Delete Product</span>
-                    </div>
-                  )}
+                  {deleteProductMutation.isPending ? "Deleting..." : "Delete"}
                 </Button>
               </div>
             </div>
