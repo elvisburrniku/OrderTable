@@ -141,21 +141,33 @@ export default function Products() {
 
   const handleCreateProduct = (e: React.FormEvent) => {
     e.preventDefault();
+    
+    // Find the selected product group to get its ID
+    const selectedGroup = productGroups?.find((group: any) => group.groupName === newProduct.category);
+    
     createProductMutation.mutate({
-      ...newProduct,
+      productName: newProduct.name,
+      categoryId: selectedGroup?.id,
       price: parseFloat(newProduct.price),
-      restaurantId: parseInt(restaurantId!)
+      description: newProduct.description,
+      status: newProduct.isAvailable ? "active" : "inactive"
     });
   };
 
   const handleUpdateProduct = (e: React.FormEvent) => {
     e.preventDefault();
     if (editingProduct) {
+      // Find the selected product group to get its ID
+      const selectedGroup = productGroups?.find((group: any) => group.groupName === editingProduct.category);
+      
       updateProductMutation.mutate({
         id: editingProduct.id,
         productData: {
-          ...editingProduct,
-          price: parseFloat(editingProduct.price.toString())
+          productName: editingProduct.name,
+          categoryId: selectedGroup?.id,
+          price: parseFloat(editingProduct.price.toString()),
+          description: editingProduct.description,
+          status: editingProduct.isAvailable ? "active" : "inactive"
         }
       });
     }
