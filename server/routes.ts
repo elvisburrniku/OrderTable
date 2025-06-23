@@ -15270,6 +15270,50 @@ NEXT STEPS:
     }
   });
 
+  // Stripe invoice endpoint for print orders
+  app.get("/api/stripe/invoice/:paymentId", async (req, res) => {
+    try {
+      const { paymentId } = req.params;
+
+      // Retrieve the payment intent from Stripe
+      const paymentIntent = await stripe.paymentIntents.retrieve(paymentId);
+
+      if (!paymentIntent) {
+        return res.status(404).json({ 
+          error: "Payment not found",
+          message: "Payment intent not found in Stripe"
+        });
+      }
+
+      // Get the invoice if it exists
+      let invoiceUrl = null;
+      if (paymentIntent.invoice) {
+        const invoice = await stripe.invoices.retrieve(paymentIntent.invoice as string);
+        invoiceUrl = invoice.hosted_invoice_url;
+      }
+
+      // Return payment details and invoice information
+      res.json({
+        paymentId: paymentIntent.id,
+        amount: paymentIntent.amount,
+        currency: paymentIntent.currency,
+        status: paymentIntent.status,
+        created: paymentIntent.created,
+        invoiceUrl: invoiceUrl,
+        receiptUrl: paymentIntent.charges?.data?.[0]?.receipt_url || null,
+        description: paymentIntent.description,
+        metadata: paymentIntent.metadata
+      });
+
+    } catch (error: any) {
+      console.error("Error retrieving Stripe invoice:", error);
+      res.status(500).json({ 
+        error: "Failed to retrieve invoice",
+        message: error.message 
+      });
+    }
+  });
+
   // Initialize feedback reminder service
   console.log("Starting feedback reminder service...");
   feedbackReminderService.start();
