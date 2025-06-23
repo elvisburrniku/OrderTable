@@ -30,7 +30,9 @@ import {
   ChevronDown,
   ChevronLeft,
   ChevronRight,
-  Users
+  Users,
+  FileText,
+  Receipt
 } from "lucide-react";
 import { useAuth } from "@/lib/auth";
 import { motion } from "framer-motion";
@@ -155,6 +157,53 @@ export default function PrintOrders() {
   const handleCloseTracking = () => {
     setShowTracking(false);
     setSelectedOrder(null);
+  };
+
+  const handleViewDetails = (order: PrintOrder) => {
+    setSelectedOrder(order);
+    setShowTracking(true);
+  };
+
+  const handleViewInvoice = async (order: PrintOrder) => {
+    if (!order.stripePaymentId) {
+      toast({
+        title: "Error",
+        description: "No Stripe payment ID found for this order",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    try {
+      const response = await fetch(`/api/stripe/invoice/${order.stripePaymentId}`, {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to retrieve invoice');
+      }
+
+      const data = await response.json();
+      
+      if (data.invoiceUrl) {
+        window.open(data.invoiceUrl, '_blank');
+      } else {
+        toast({
+          title: "Invoice Details",
+          description: `Order #${order.orderNumber} - Amount: $${(order.totalAmount / 100).toFixed(2)} - Payment ID: ${order.stripePaymentId}`,
+        });
+      }
+    } catch (error) {
+      console.error('Error fetching invoice:', error);
+      toast({
+        title: "Error",
+        description: "Failed to retrieve invoice. Please try again.",
+        variant: "destructive",
+      });
+    }
   };
 
   const handlePayNow = async (order: PrintOrder) => {
@@ -557,12 +606,15 @@ export default function PrintOrders() {
                           <th className="text-left py-3 px-4 text-xs font-medium text-gray-500 uppercase tracking-wider">
                             Created
                           </th>
+                          <th className="text-left py-3 px-4 text-xs font-medium text-gray-500 uppercase tracking-wider">
+                            Actions
+                          </th>
                         </tr>
                       </thead>
                       <tbody className="divide-y divide-gray-100">
                         {isLoading ? (
                           <tr>
-                            <td colSpan={7} className="py-12 text-center">
+                            <td colSpan={8} className="py-12 text-center">
                               <div className="flex flex-col items-center space-y-4">
                                 <div className="animate-spin rounded-full h-8 w-8 border-2 border-green-500 border-t-transparent"></div>
                                 <span className="text-gray-500 font-medium">Loading print orders...</span>
@@ -571,7 +623,7 @@ export default function PrintOrders() {
                           </tr>
                         ) : paginatedPrintOrders.length === 0 ? (
                           <tr>
-                            <td colSpan={7} className="py-12 text-center">
+                            <td colSpan={8} className="py-12 text-center">
                               <div className="flex flex-col items-center space-y-4">
                                 <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center">
                                   <Printer className="w-8 h-8 text-gray-400" />
@@ -637,6 +689,40 @@ export default function PrintOrders() {
                               <td className="py-3 px-4">
                                 <div className="text-sm text-gray-600">
                                   {formatDate(order.createdAt)}
+                                </div>
+                              </td>
+                              <td className="py-3 px-4">
+                                <div className="flex items-center space-x-2">
+                                  <Button
+                                    variant="outline"
+                                    size="sm"
+                                    type="button"
+                                    onClick={(e) => {
+                                      e.preventDefault();
+                                      e.stopPropagation();
+                                      handleViewDetails(order);
+                                    }}
+                                    className="h-8 px-3 text-xs"
+                                  >
+                                    <FileText className="h-3 w-3 mr-1" />
+                                    Details
+                                  </Button>
+                                  {order.paymentStatus === 'paid' && order.stripePaymentId && (
+                                    <Button
+                                      variant="outline"
+                                      size="sm"
+                                      type="button"
+                                      onClick={(e) => {
+                                        e.preventDefault();
+                                        e.stopPropagation();
+                                        handleViewInvoice(order);
+                                      }}
+                                      className="h-8 px-3 text-xs text-blue-600 hover:text-blue-700 hover:bg-blue-50"
+                                    >
+                                      <Receipt className="h-3 w-3 mr-1" />
+                                      Invoice
+                                    </Button>
+                                  )}
                                 </div>
                               </td>
                             </tr>
