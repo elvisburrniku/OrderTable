@@ -187,9 +187,16 @@ export default function ProductGroups() {
     setIsDialogOpen(true);
   };
 
-  const handleDelete = (id: number) => {
-    if (confirm("Are you sure you want to delete this product group?")) {
-      deleteMutation.mutate(id);
+  const [deletingGroup, setDeletingGroup] = useState<ProductGroup | null>(null);
+
+  const handleDelete = (group: ProductGroup) => {
+    setDeletingGroup(group);
+  };
+
+  const confirmDelete = () => {
+    if (deletingGroup) {
+      deleteMutation.mutate(deletingGroup.id);
+      setDeletingGroup(null);
     }
   };
 
@@ -482,7 +489,7 @@ export default function ProductGroups() {
                                 onClick={(e) => {
                                   e.preventDefault();
                                   e.stopPropagation();
-                                  handleDelete(group.id);
+                                  handleDelete(group);
                                 }}
                                 disabled={deleteMutation.isPending}
                                 className="h-8 w-8 p-0 text-red-600 hover:text-red-700 hover:bg-red-50"
@@ -715,6 +722,83 @@ export default function ProductGroups() {
               </div>
             </form>
           </Form>
+        </DialogContent>
+      </Dialog>
+
+      {/* Delete Confirmation Dialog */}
+      <Dialog open={!!deletingGroup} onOpenChange={() => setDeletingGroup(null)}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle className="text-gray-900 text-xl">Delete Product Group</DialogTitle>
+          </DialogHeader>
+          {deletingGroup && (
+            <div className="space-y-6">
+              {/* Warning Icon and Message */}
+              <div className="text-center">
+                <div className="mx-auto flex items-center justify-center h-16 w-16 rounded-full bg-red-100 mb-4">
+                  <Trash2 className="h-8 w-8 text-red-600" />
+                </div>
+                <h3 className="text-lg font-medium text-gray-900 mb-2">
+                  Delete "{deletingGroup.groupName}"?
+                </h3>
+                <p className="text-gray-600 text-sm leading-relaxed">
+                  This action cannot be undone. The product group and all its associated data will be permanently removed from your system.
+                </p>
+              </div>
+
+              {/* Product Group Details */}
+              <div className="bg-gray-50 rounded-lg p-4 border border-gray-200">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center space-x-3">
+                    <div className="w-10 h-10 bg-gradient-to-br from-green-400 to-green-600 rounded-full flex items-center justify-center text-white font-medium">
+                      {deletingGroup.groupName?.charAt(0)?.toUpperCase() || 'P'}
+                    </div>
+                    <div>
+                      <div className="font-medium text-gray-900">
+                        {deletingGroup.groupName}
+                      </div>
+                      <div className="text-sm text-gray-500 flex items-center space-x-2">
+                        <Package className="w-3 h-3" />
+                        <span>{deletingGroup.quantity} items</span>
+                        <span>•</span>
+                        <span className={deletingGroup.status === 'active' ? 'text-green-600' : 'text-red-600'}>
+                          {deletingGroup.status}
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+              
+              {/* Action Buttons */}
+              <div className="flex space-x-3">
+                <Button 
+                  variant="outline" 
+                  onClick={() => setDeletingGroup(null)}
+                  className="flex-1 border-gray-300 hover:bg-gray-50"
+                >
+                  Cancel
+                </Button>
+                <Button 
+                  onClick={confirmDelete}
+                  disabled={deleteMutation.isPending}
+                  className="flex-1 bg-red-600 hover:bg-red-700 text-white"
+                >
+                  {deleteMutation.isPending ? (
+                    <div className="flex items-center justify-center space-x-2">
+                      <div className="animate-spin rounded-full h-4 w-4 border-2 border-white border-t-transparent"></div>
+                      <span>Deleting...</span>
+                    </div>
+                  ) : (
+                    <div className="flex items-center justify-center space-x-2">
+                      <Trash2 className="w-4 h-4" />
+                      <span>Delete</span>
+                    </div>
+                  )}
+                </Button>
+              </div>
+            </div>
+          )}
         </DialogContent>
       </Dialog>
     </motion.div>
