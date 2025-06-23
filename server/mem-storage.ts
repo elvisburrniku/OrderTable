@@ -60,6 +60,8 @@ export class MemoryStorage implements IStorage {
   private webhooks: any[] = [];
   private reschedulingSuggestions: any[] = [];
   private printOrders: any[] = [];
+  private menuCategories: any[] = [];
+  private menuItems: any[] = [];
 
   private nextId = 1;
 
@@ -612,9 +614,7 @@ export class MemoryStorage implements IStorage {
     this.waitingList.push(newEntry);
     return newEntry;
   }
-  async getWaitingListEntryById(id: number): Promise<WaitingList | undefined> {
-    return this.waitingList.find(entry => entry.id === id);
-  }
+
 
   async updateWaitingListEntry(id: number, updates: Partial<WaitingList>): Promise<WaitingList | undefined> {
     const index = this.waitingList.findIndex(entry => entry.id === id);
@@ -1080,5 +1080,71 @@ export class MemoryStorage implements IStorage {
       const bookingDate = new Date(booking.bookingDate).toISOString().split('T')[0];
       return bookingDate === date && booking.restaurantId === restaurantId;
     });
+  }
+
+  // Menu Categories
+  async getMenuCategoriesByRestaurant(restaurantId: number): Promise<any[]> {
+    return this.menuCategories.filter(category => category.restaurantId === restaurantId);
+  }
+
+  async getMenuCategories(restaurantId: number, tenantId: number): Promise<any[]> {
+    return this.menuCategories.filter(category => 
+      category.restaurantId === restaurantId && category.tenantId === tenantId
+    );
+  }
+
+  async createMenuCategory(category: any): Promise<any> {
+    const newCategory = { id: this.nextId++, ...category, createdAt: new Date(), updatedAt: new Date() };
+    this.menuCategories.push(newCategory);
+    return newCategory;
+  }
+
+  async updateMenuCategory(id: number, updates: any): Promise<any> {
+    const index = this.menuCategories.findIndex(c => c.id === id);
+    if (index === -1) return null;
+    this.menuCategories[index] = { ...this.menuCategories[index], ...updates, updatedAt: new Date() };
+    return this.menuCategories[index];
+  }
+
+  async deleteMenuCategory(id: number): Promise<boolean> {
+    const index = this.menuCategories.findIndex(c => c.id === id);
+    if (index === -1) return false;
+    this.menuCategories.splice(index, 1);
+    return true;
+  }
+
+  // Menu Items
+  async getMenuItemsByRestaurant(restaurantId: number): Promise<any[]> {
+    return this.menuItems.filter(item => item.restaurantId === restaurantId);
+  }
+
+  async getMenuItems(restaurantId: number, tenantId: number): Promise<any[]> {
+    return this.menuItems.filter(item => 
+      item.restaurantId === restaurantId && item.tenantId === tenantId
+    );
+  }
+
+  async getMenuItemsByCategory(categoryId: number): Promise<any[]> {
+    return this.menuItems.filter(item => item.categoryId === categoryId);
+  }
+
+  async createMenuItem(item: any): Promise<any> {
+    const newItem = { id: this.nextId++, ...item, createdAt: new Date(), updatedAt: new Date() };
+    this.menuItems.push(newItem);
+    return newItem;
+  }
+
+  async updateMenuItem(id: number, updates: any): Promise<any> {
+    const index = this.menuItems.findIndex(i => i.id === id);
+    if (index === -1) return null;
+    this.menuItems[index] = { ...this.menuItems[index], ...updates, updatedAt: new Date() };
+    return this.menuItems[index];
+  }
+
+  async deleteMenuItem(id: number): Promise<boolean> {
+    const index = this.menuItems.findIndex(i => i.id === id);
+    if (index === -1) return false;
+    this.menuItems.splice(index, 1);
+    return true;
   }
 }
