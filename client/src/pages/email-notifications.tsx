@@ -56,6 +56,11 @@ export default function EmailNotifications() {
     rating: "3.0",
   });
 
+  // Scroll to top on component mount
+  useEffect(() => {
+    window.scrollTo(0, 0);
+  }, []);
+
   // Load email settings
   const { data: emailSettings, isLoading: isQueryLoading } = useQuery({
     queryKey: ["email-settings", restaurant?.tenantId, restaurant?.id],
@@ -196,7 +201,7 @@ export default function EmailNotifications() {
 
   if (isLoading || isQueryLoading) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50 flex items-center justify-center">
+      <div className="min-h-screen bg-white flex items-center justify-center">
         <motion.div
           initial={{ opacity: 0, scale: 0.8 }}
           animate={{ opacity: 1, scale: 1 }}
@@ -214,7 +219,7 @@ export default function EmailNotifications() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50">
+    <div className="min-h-screen bg-white">
       {/* Animated Background Elements */}
       <div className="fixed inset-0 overflow-hidden pointer-events-none">
         {[...Array(6)].map((_, i) => (
@@ -227,7 +232,7 @@ export default function EmailNotifications() {
               y: Math.random() * window.innerHeight
             }}
             animate={{ 
-              opacity: [0, 0.1, 0],
+              opacity: [0, 0.05, 0],
               scale: [0, 1, 0],
               rotate: [0, 360]
             }}
@@ -237,7 +242,7 @@ export default function EmailNotifications() {
               repeat: Infinity,
               repeatDelay: 3
             }}
-            className="absolute w-6 h-6 bg-blue-200 rounded-full"
+            className="absolute w-6 h-6 bg-blue-100 rounded-full"
           />
         ))}
       </div>
@@ -247,7 +252,7 @@ export default function EmailNotifications() {
         initial={{ opacity: 0, y: -50 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.8, ease: "easeOut" }}
-        className="relative z-10 bg-white/80 backdrop-blur-md border-b border-blue-100 shadow-sm"
+        className="relative z-10 bg-white border-b border-gray-200 shadow-sm"
       >
         <div className="max-w-7xl mx-auto px-6 py-8">
           <div className="flex items-center space-x-4">
@@ -269,7 +274,7 @@ export default function EmailNotifications() {
                 initial={{ opacity: 0, x: -30 }}
                 animate={{ opacity: 1, x: 0 }}
                 transition={{ duration: 0.6, delay: 0.4 }}
-                className="text-3xl font-bold bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent"
+                className="text-3xl font-bold text-gray-900"
               >
                 Email Notifications
               </motion.h1>
@@ -293,10 +298,10 @@ export default function EmailNotifications() {
         animate="visible"
         className="relative z-10 max-w-7xl mx-auto px-6 py-8"
       >
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-12">
           {/* Guest Settings Card */}
           <motion.div variants={cardVariants}>
-            <Card className="bg-white/80 backdrop-blur-md border-0 shadow-xl hover:shadow-2xl transition-all duration-300">
+            <Card className="bg-white border border-gray-200 shadow-lg hover:shadow-xl transition-all duration-300">
               <CardHeader className="bg-gradient-to-r from-green-500 to-emerald-600 text-white rounded-t-lg">
                 <CardTitle className="flex items-center space-x-3">
                   <motion.div
@@ -318,7 +323,7 @@ export default function EmailNotifications() {
                 {/* Email Confirmation */}
                 <motion.div 
                   variants={settingVariants}
-                  className="group p-4 rounded-lg bg-gradient-to-r from-green-50 to-emerald-50 hover:from-green-100 hover:to-emerald-100 transition-all duration-300"
+                  className="group p-4 rounded-lg bg-green-50 hover:bg-green-100 transition-all duration-300"
                 >
                   <div className="flex items-center justify-between">
                     <div className="flex items-center space-x-3">
@@ -352,7 +357,7 @@ export default function EmailNotifications() {
                 {/* Reminder Settings */}
                 <motion.div 
                   variants={settingVariants}
-                  className="group p-4 rounded-lg bg-gradient-to-r from-blue-50 to-indigo-50 hover:from-blue-100 hover:to-indigo-100 transition-all duration-300"
+                  className="group p-4 rounded-lg bg-blue-50 hover:bg-blue-100 transition-all duration-300"
                 >
                   <div className="space-y-3">
                     <div className="flex items-center justify-between">
@@ -422,7 +427,7 @@ export default function EmailNotifications() {
                 {/* Rescheduling */}
                 <motion.div 
                   variants={settingVariants}
-                  className="group p-4 rounded-lg bg-gradient-to-r from-purple-50 to-pink-50 hover:from-purple-100 hover:to-pink-100 transition-all duration-300"
+                  className="group p-4 rounded-lg bg-purple-50 hover:bg-purple-100 transition-all duration-300"
                 >
                   <div className="flex items-center justify-between">
                     <div className="flex items-center space-x-3">
@@ -456,7 +461,7 @@ export default function EmailNotifications() {
                 {/* Satisfaction Survey */}
                 <motion.div 
                   variants={settingVariants}
-                  className="group p-4 rounded-lg bg-gradient-to-r from-orange-50 to-red-50 hover:from-orange-100 hover:to-red-100 transition-all duration-300"
+                  className="group p-4 rounded-lg bg-orange-50 hover:bg-orange-100 transition-all duration-300"
                 >
                   <div className="space-y-3">
                     <div className="flex items-center justify-between">
@@ -523,7 +528,7 @@ export default function EmailNotifications() {
 
           {/* Restaurant Settings Card */}
           <motion.div variants={cardVariants}>
-            <Card className="bg-white/80 backdrop-blur-md border-0 shadow-xl hover:shadow-2xl transition-all duration-300">
+            <Card className="bg-white border border-gray-200 shadow-lg hover:shadow-xl transition-all duration-300">
               <CardHeader className="bg-gradient-to-r from-blue-500 to-indigo-600 text-white rounded-t-lg">
                 <CardTitle className="flex items-center space-x-3">
                   <motion.div
@@ -545,7 +550,7 @@ export default function EmailNotifications() {
                 {/* Email Address */}
                 <motion.div 
                   variants={settingVariants}
-                  className="group p-4 rounded-lg bg-gradient-to-r from-gray-50 to-slate-50 hover:from-gray-100 hover:to-slate-100 transition-all duration-300"
+                  className="group p-4 rounded-lg bg-gray-50 hover:bg-gray-100 transition-all duration-300"
                 >
                   <label className="text-sm font-medium text-gray-800 block mb-2">
                     Notification Email
@@ -566,7 +571,7 @@ export default function EmailNotifications() {
                 {/* Booking Notifications */}
                 <motion.div 
                   variants={settingVariants}
-                  className="group p-4 rounded-lg bg-gradient-to-r from-green-50 to-emerald-50 hover:from-green-100 hover:to-emerald-100 transition-all duration-300"
+                  className="group p-4 rounded-lg bg-green-50 hover:bg-green-100 transition-all duration-300"
                 >
                   <div className="flex items-center justify-between">
                     <div className="flex items-center space-x-3">
@@ -600,7 +605,7 @@ export default function EmailNotifications() {
                 {/* Survey Notifications */}
                 <motion.div 
                   variants={settingVariants}
-                  className="group p-4 rounded-lg bg-gradient-to-r from-yellow-50 to-orange-50 hover:from-yellow-100 hover:to-orange-100 transition-all duration-300"
+                  className="group p-4 rounded-lg bg-yellow-50 hover:bg-yellow-100 transition-all duration-300"
                 >
                   <div className="space-y-3">
                     <div className="flex items-center justify-between">
@@ -676,16 +681,16 @@ export default function EmailNotifications() {
           initial={{ opacity: 0, y: 50 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.6, delay: 0.8 }}
-          className="mt-8 flex justify-center"
+          className="mt-12 flex justify-center"
         >
           <motion.div
-            whileHover={{ scale: 1.05 }}
-            whileTap={{ scale: 0.95 }}
+            whileHover={{ scale: 1.02 }}
+            whileTap={{ scale: 0.98 }}
           >
             <Button
               onClick={handleSave}
               disabled={saveSettingsMutation.isPending}
-              className="px-8 py-3 bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700 text-white font-semibold rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 disabled:opacity-50"
+              className="px-8 py-3 bg-green-600 hover:bg-green-700 text-white font-medium rounded-lg shadow-md hover:shadow-lg transition-all duration-200 disabled:opacity-50"
             >
               <AnimatePresence mode="wait">
                 {saveSettingsMutation.isPending ? (
