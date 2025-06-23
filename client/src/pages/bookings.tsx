@@ -506,7 +506,17 @@ export default function Bookings() {
                             </div>
                           </td>
                           <td className="py-3 px-4">
-                            {getSourceBadge(booking.source || 'manual')}
+                            <Badge variant={booking.source === "online" ? "default" : booking.source === "agent" ? "default" : "secondary"} 
+                               className={
+                                 booking.source === "online" ? "bg-blue-500 text-white" : 
+                                 booking.source === "agent" ? "bg-purple-500 text-white" :
+                                 booking.source === "google" ? "bg-green-500 text-white" : 
+                                 "bg-gray-500 text-white"
+                               }>
+                          {booking.source === "online" ? "Online" : 
+                           booking.source === "agent" ? "Agent" :
+                           booking.source === "google" ? "Google" : "Manual"}
+                        </Badge>
                           </td>
                         </motion.tr>
                       ))
