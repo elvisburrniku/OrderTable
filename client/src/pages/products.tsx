@@ -70,7 +70,7 @@ export default function Products() {
       product.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
       product.description?.toLowerCase().includes(searchTerm.toLowerCase());
 
-    const matchesCategory = categoryFilter === "all" || product.category === categoryFilter;
+    const matchesCategory = categoryFilter === "all" || product.categoryName === categoryFilter || product.category === categoryFilter;
     const matchesStatus = statusFilter === "all" || 
       (statusFilter === "available" && product.isAvailable) ||
       (statusFilter === "unavailable" && !product.isAvailable);
@@ -436,12 +436,12 @@ export default function Products() {
                           <td className="py-3 px-4">
                             <div className="flex items-center space-x-1">
                               <DollarSign className="w-4 h-4 text-gray-400" />
-                              <span className="font-medium text-gray-900">{product.price?.toFixed(2) || '0.00'}</span>
+                              <span className="font-medium text-gray-900">{parseFloat(product.price || '0').toFixed(2)}</span>
                             </div>
                           </td>
                           <td className="py-3 px-4">
                             <Badge variant="secondary" className="bg-blue-100 text-blue-800">
-                              {product.category || 'Uncategorized'}
+                              {product.categoryName || product.category || 'Uncategorized'}
                             </Badge>
                           </td>
                           <td className="py-3 px-4">
