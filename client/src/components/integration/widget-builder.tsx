@@ -354,52 +354,55 @@ export function WidgetBuilder() {
                           {config.headerText}
                         </h3>
                         
-                        {/* OpenTable-style horizontal form */}
-                        <div className="flex flex-wrap gap-2 items-end justify-center mb-4">
-                          {config.showDate && (
-                            <div className="flex flex-col">
-                              <label className="text-xs font-medium text-gray-600 mb-1">Date</label>
-                              <div className="border-2 rounded-lg px-4 py-3 bg-white min-w-[120px] flex items-center gap-2">
-                                <span className="text-sm">📅</span>
-                                <span className="text-sm font-medium">Jun 24</span>
+                        {/* Premium booking interface */}
+                        <div className="bg-gradient-to-br from-gray-50 to-white p-6 rounded-2xl border-2 border-gray-100 shadow-sm mb-6">
+                          <div className="flex flex-wrap gap-3 items-end justify-center mb-4">
+                            {config.showDate && (
+                              <div className="flex flex-col">
+                                <label className="text-sm font-semibold text-gray-700 mb-2">Date</label>
+                                <div className="border-2 border-gray-200 rounded-xl px-4 py-4 bg-white min-w-[130px] flex items-center gap-3 shadow-sm hover:border-blue-300 transition-colors">
+                                  <span className="text-lg">📅</span>
+                                  <span className="text-sm font-semibold text-gray-800">Jun 24</span>
+                                </div>
                               </div>
-                            </div>
-                          )}
-                          
-                          {config.showTime && (
-                            <div className="flex flex-col">
-                              <label className="text-xs font-medium text-gray-600 mb-1">Time</label>
-                              <div className="border-2 rounded-lg px-4 py-3 bg-white min-w-[100px] flex items-center gap-2">
-                                <span className="text-sm">🕐</span>
-                                <span className="text-sm font-medium">7:00 PM</span>
+                            )}
+                            
+                            {config.showTime && (
+                              <div className="flex flex-col">
+                                <label className="text-sm font-semibold text-gray-700 mb-2">Time</label>
+                                <div className="border-2 border-gray-200 rounded-xl px-4 py-4 bg-white min-w-[110px] flex items-center gap-3 shadow-sm hover:border-blue-300 transition-colors">
+                                  <span className="text-lg">🕐</span>
+                                  <span className="text-sm font-semibold text-gray-800">7:00 PM</span>
+                                </div>
                               </div>
-                            </div>
-                          )}
-                          
-                          {config.showGuests && (
-                            <div className="flex flex-col">
-                              <label className="text-xs font-medium text-gray-600 mb-1">Party Size</label>
-                              <div className="border-2 rounded-lg px-4 py-3 bg-white min-w-[100px] flex items-center gap-2">
-                                <span className="text-sm">👥</span>
-                                <span className="text-sm font-medium">2 people</span>
+                            )}
+                            
+                            {config.showGuests && (
+                              <div className="flex flex-col">
+                                <label className="text-sm font-semibold text-gray-700 mb-2">Party Size</label>
+                                <div className="border-2 border-gray-200 rounded-xl px-4 py-4 bg-white min-w-[120px] flex items-center gap-3 shadow-sm hover:border-blue-300 transition-colors">
+                                  <span className="text-lg">👥</span>
+                                  <span className="text-sm font-semibold text-gray-800">2 people</span>
+                                </div>
                               </div>
-                            </div>
-                          )}
-                          
-                          <button
-                            className="px-6 py-3 rounded-lg text-white font-semibold text-sm shadow-md hover:shadow-lg transition-shadow"
-                            style={{
-                              backgroundColor: config.backgroundColor,
-                              borderRadius: `${config.borderRadius}px`
-                            }}
-                          >
-                            {config.buttonText}
-                          </button>
+                            )}
+                            
+                            <button
+                              className="px-8 py-4 rounded-xl text-white font-bold text-sm shadow-lg hover:shadow-xl transition-all transform hover:-translate-y-0.5 flex items-center gap-2"
+                              style={{
+                                background: `linear-gradient(135deg, ${config.backgroundColor} 0%, ${config.backgroundColor}dd 100%)`,
+                                borderRadius: `${config.borderRadius}px`
+                              }}
+                            >
+                              <span>🔍</span>
+                              <span>Find Table</span>
+                            </button>
+                          </div>
                         </div>
                         
-                        <div className="text-center">
-                          <p className="text-xs text-gray-500">
-                            Powered by Your Restaurant • Free cancellation
+                        <div className="text-center pt-4 border-t border-gray-100">
+                          <p className="text-sm text-gray-500 font-medium">
+                            🔒 Secure booking • ✨ Free cancellation up to 24 hours
                           </p>
                         </div>
                       </div>

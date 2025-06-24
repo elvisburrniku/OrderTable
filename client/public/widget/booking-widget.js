@@ -46,9 +46,10 @@
   // Widget styles
   const widgetStyles = `
     .rbw-widget {
-      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
       z-index: 999999;
       box-sizing: border-box;
+      line-height: 1.5;
     }
     
     .rbw-widget * {
@@ -60,20 +61,22 @@
       cursor: pointer;
       border: none;
       font-weight: 600;
-      box-shadow: 0 4px 12px rgba(0,0,0,0.15);
-      transition: all 0.3s ease;
+      box-shadow: 0 8px 32px rgba(0,0,0,0.12), 0 2px 8px rgba(0,0,0,0.08);
+      transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
       user-select: none;
+      backdrop-filter: blur(10px);
+      border: 1px solid rgba(255,255,255,0.2);
     }
     
     .rbw-button:hover {
-      transform: translateY(-2px);
-      box-shadow: 0 6px 20px rgba(0,0,0,0.2);
+      transform: translateY(-3px) scale(1.02);
+      box-shadow: 0 12px 40px rgba(0,0,0,0.15), 0 4px 12px rgba(0,0,0,0.1);
     }
     
     .rbw-inline {
       width: 100%;
-      max-width: 400px;
-      margin: 20px auto;
+      max-width: 480px;
+      margin: 24px auto;
     }
     
     .rbw-modal {
@@ -82,7 +85,8 @@
       left: 0;
       width: 100%;
       height: 100%;
-      background: rgba(0,0,0,0.7);
+      background: rgba(0,0,0,0.6);
+      backdrop-filter: blur(8px);
       display: flex;
       align-items: center;
       justify-content: center;
@@ -91,101 +95,166 @@
     
     .rbw-modal-content {
       background: white;
-      padding: 30px;
-      border-radius: 12px;
+      padding: 0;
+      border-radius: 20px;
       width: 90%;
-      max-width: 500px;
+      max-width: 520px;
       max-height: 90vh;
-      overflow-y: auto;
+      overflow: hidden;
       position: relative;
+      box-shadow: 0 20px 60px rgba(0,0,0,0.2), 0 8px 32px rgba(0,0,0,0.1);
+      border: 1px solid rgba(255,255,255,0.2);
     }
     
     .rbw-close {
       position: absolute;
-      top: 15px;
+      top: 20px;
       right: 20px;
-      background: none;
+      background: rgba(255,255,255,0.9);
       border: none;
-      font-size: 24px;
+      font-size: 20px;
       cursor: pointer;
       color: #666;
-      width: 30px;
-      height: 30px;
+      width: 36px;
+      height: 36px;
       display: flex;
       align-items: center;
       justify-content: center;
       border-radius: 50%;
+      transition: all 0.2s ease;
+      backdrop-filter: blur(10px);
+      z-index: 10;
     }
     
     .rbw-close:hover {
-      background: #f5f5f5;
+      background: rgba(255,255,255,1);
+      transform: scale(1.1);
+      color: #333;
     }
     
     .rbw-form {
-      background: white;
-      border: 1px solid #e5e7eb;
-      border-radius: 12px;
-      padding: 24px;
-      box-shadow: 0 10px 25px rgba(0,0,0,0.1);
+      background: linear-gradient(135deg, #ffffff 0%, #f8fafc 100%);
+      border: none;
+      border-radius: 20px;
+      padding: 0;
+      box-shadow: 0 20px 60px rgba(0,0,0,0.08), 0 8px 32px rgba(0,0,0,0.04);
+      overflow: hidden;
     }
     
     .rbw-title {
-      margin: 0 0 20px 0;
-      font-size: 24px;
-      font-weight: 700;
+      margin: 0;
+      font-size: 32px;
+      font-weight: 800;
       color: #111827;
+      text-align: center;
+      letter-spacing: -0.02em;
+    }
+    
+    .rbw-header {
+      background: linear-gradient(135deg, ${config.backgroundColor} 0%, ${adjustBrightness(config.backgroundColor, -15)} 100%);
+      padding: 32px 32px 24px;
+      position: relative;
+      overflow: hidden;
+    }
+    
+    .rbw-header::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: radial-gradient(circle at 30% 30%, rgba(255,255,255,0.2) 0%, transparent 50%);
+      pointer-events: none;
+    }
+    
+    .rbw-content {
+      padding: 32px;
     }
     
     .rbw-field {
-      margin-bottom: 16px;
+      margin-bottom: 20px;
     }
     
     .rbw-label {
       display: block;
-      margin-bottom: 6px;
-      font-weight: 500;
-      color: #374151;
-      font-size: 14px;
+      margin-bottom: 8px;
+      font-weight: 600;
+      color: #1f2937;
+      font-size: 15px;
+      letter-spacing: -0.01em;
     }
     
     .rbw-input, .rbw-select, .rbw-textarea {
       width: 100%;
-      padding: 12px;
-      border: 1px solid #d1d5db;
-      border-radius: 6px;
-      font-size: 14px;
+      padding: 16px 18px;
+      border: 2px solid #e5e7eb;
+      border-radius: 12px;
+      font-size: 16px;
       background: white;
       color: #111827;
+      transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+      font-weight: 500;
     }
     
     .rbw-input:focus, .rbw-select:focus, .rbw-textarea:focus {
       outline: none;
       border-color: ${config.backgroundColor};
-      box-shadow: 0 0 0 3px ${config.backgroundColor}20;
+      box-shadow: 0 0 0 4px ${config.backgroundColor}15, 0 4px 12px rgba(0,0,0,0.1);
+      transform: translateY(-1px);
+    }
+    
+    .rbw-input::placeholder {
+      color: #9ca3af;
+      font-weight: 400;
     }
     
     .rbw-submit {
       width: 100%;
-      padding: 12px 24px;
+      padding: 18px 32px;
       border: none;
-      border-radius: 6px;
-      font-weight: 600;
-      font-size: 16px;
+      border-radius: 14px;
+      font-weight: 700;
+      font-size: 17px;
       cursor: pointer;
-      transition: all 0.2s ease;
-      background: ${config.backgroundColor};
+      transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+      background: linear-gradient(135deg, ${config.backgroundColor} 0%, ${adjustBrightness(config.backgroundColor, -10)} 100%);
       color: ${config.color};
+      box-shadow: 0 8px 24px ${config.backgroundColor}30, 0 4px 12px rgba(0,0,0,0.1);
+      letter-spacing: -0.01em;
+      position: relative;
+      overflow: hidden;
+    }
+    
+    .rbw-submit::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: -100%;
+      width: 100%;
+      height: 100%;
+      background: linear-gradient(90deg, transparent, rgba(255,255,255,0.2), transparent);
+      transition: left 0.5s;
+    }
+    
+    .rbw-submit:hover::before {
+      left: 100%;
     }
     
     .rbw-submit:hover {
-      opacity: 0.9;
-      transform: translateY(-1px);
+      transform: translateY(-2px);
+      box-shadow: 0 12px 32px ${config.backgroundColor}40, 0 8px 16px rgba(0,0,0,0.15);
+    }
+    
+    .rbw-submit:active {
+      transform: translateY(0);
     }
     
     .rbw-submit:disabled {
-      opacity: 0.6;
+      opacity: 0.7;
       cursor: not-allowed;
       transform: none;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.1);
     }
     
     .rbw-grid {
@@ -275,21 +344,37 @@
     const form = document.createElement('div');
     form.className = 'rbw-form';
     
+    // Header section
+    const header = document.createElement('div');
+    header.className = 'rbw-header';
+    
     const title = document.createElement('h2');
     title.className = 'rbw-title';
     title.textContent = config.headerText;
-    title.style.cssText = `
-      margin: 0 0 24px 0;
-      font-size: 28px;
-      font-weight: 700;
-      color: #111827;
+    title.style.color = config.color;
+    title.style.position = 'relative';
+    title.style.zIndex = '2';
+    header.appendChild(title);
+    
+    const subtitle = document.createElement('p');
+    subtitle.style.cssText = `
+      margin: 8px 0 0 0;
+      font-size: 16px;
+      color: ${config.color};
+      opacity: 0.9;
       text-align: center;
-      background: linear-gradient(135deg, ${config.backgroundColor} 0%, ${adjustBrightness(config.backgroundColor, -20)} 100%);
-      -webkit-background-clip: text;
-      -webkit-text-fill-color: transparent;
-      background-clip: text;
+      position: relative;
+      z-index: 2;
+      font-weight: 400;
     `;
-    form.appendChild(title);
+    subtitle.textContent = 'Book your table in just a few clicks';
+    header.appendChild(subtitle);
+    
+    form.appendChild(header);
+    
+    // Content section
+    const content = document.createElement('div');
+    content.className = 'rbw-content';
 
     // Date field
     if (config.showDate) {
@@ -323,14 +408,15 @@
       horizontalGroup.style.cssText = `
         display: flex;
         flex-wrap: wrap;
-        gap: 8px;
+        gap: 12px;
         align-items: end;
         justify-content: center;
-        margin-bottom: 20px;
-        padding: 16px;
-        background: #f8fafc;
-        border-radius: 12px;
+        margin-bottom: 28px;
+        padding: 24px;
+        background: linear-gradient(135deg, #f8fafc 0%, #ffffff 100%);
+        border-radius: 16px;
         border: 2px solid #e2e8f0;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.05);
       `;
 
       // Date field (styled like OpenTable)
@@ -350,19 +436,32 @@
         const dateInputWrapper = document.createElement('div');
         dateInputWrapper.style.cssText = `
           border: 2px solid #e2e8f0;
-          border-radius: 8px;
-          padding: 12px;
+          border-radius: 12px;
+          padding: 16px;
           background: white;
           display: flex;
           align-items: center;
-          gap: 8px;
+          gap: 12px;
           cursor: pointer;
-          transition: border-color 0.2s;
+          transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+          box-shadow: 0 2px 8px rgba(0,0,0,0.04);
         `;
         
+        dateInputWrapper.addEventListener('mouseenter', () => {
+          dateInputWrapper.style.borderColor = config.backgroundColor;
+          dateInputWrapper.style.transform = 'translateY(-1px)';
+          dateInputWrapper.style.boxShadow = '0 4px 16px rgba(0,0,0,0.08)';
+        });
+        
+        dateInputWrapper.addEventListener('mouseleave', () => {
+          dateInputWrapper.style.borderColor = '#e2e8f0';
+          dateInputWrapper.style.transform = 'translateY(0)';
+          dateInputWrapper.style.boxShadow = '0 2px 8px rgba(0,0,0,0.04)';
+        });
+        
         const dateIcon = document.createElement('span');
-        dateIcon.textContent = '📅';
-        dateIcon.style.fontSize = '14px';
+        dateIcon.innerHTML = '📅';
+        dateIcon.style.cssText = 'font-size: 18px; filter: grayscale(0.2);';
         dateInputWrapper.appendChild(dateIcon);
         
         const dateInput = document.createElement('input');
@@ -370,7 +469,7 @@
         dateInput.type = 'date';
         dateInput.name = 'date';
         dateInput.required = true;
-        dateInput.style.cssText = 'border: none; outline: none; background: transparent; font-weight: 500; font-size: 14px;';
+        dateInput.style.cssText = 'border: none; outline: none; background: transparent; font-weight: 600; font-size: 15px; color: #374151;';
         
         const today = new Date().toISOString().split('T')[0];
         dateInput.min = today;
@@ -484,31 +583,53 @@
       // Search/Book button in the horizontal group
       const searchButton = document.createElement('button');
       searchButton.type = 'button';
-      searchButton.textContent = 'Find a Table';
+      searchButton.innerHTML = `
+        <span style="display: flex; align-items: center; gap: 8px; position: relative; z-index: 2;">
+          <span>🔍</span>
+          <span>Find a Table</span>
+        </span>
+      `;
       searchButton.style.cssText = `
-        padding: 12px 24px;
+        padding: 16px 28px;
         border: none;
-        border-radius: 8px;
-        font-weight: 600;
-        font-size: 14px;
+        border-radius: 12px;
+        font-weight: 700;
+        font-size: 15px;
         cursor: pointer;
-        transition: all 0.2s ease;
-        background: linear-gradient(135deg, ${config.backgroundColor} 0%, ${adjustBrightness(config.backgroundColor, -10)} 100%);
+        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        background: linear-gradient(135deg, ${config.backgroundColor} 0%, ${adjustBrightness(config.backgroundColor, -15)} 100%);
         color: ${config.color};
-        box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+        box-shadow: 0 6px 20px ${config.backgroundColor}25, 0 2px 8px rgba(0,0,0,0.1);
         align-self: stretch;
         position: relative;
         overflow: hidden;
+        letter-spacing: -0.01em;
+        min-width: 140px;
       `;
+      
+      // Add shimmer effect to button
+      const shimmer = document.createElement('div');
+      shimmer.style.cssText = `
+        position: absolute;
+        top: 0;
+        left: -100%;
+        width: 100%;
+        height: 100%;
+        background: linear-gradient(90deg, transparent, rgba(255,255,255,0.3), transparent);
+        transition: left 0.6s ease;
+        pointer-events: none;
+      `;
+      searchButton.appendChild(shimmer);
       
       // Add hover effects
       searchButton.addEventListener('mouseover', () => {
-        searchButton.style.transform = 'translateY(-2px)';
-        searchButton.style.boxShadow = '0 8px 20px rgba(0,0,0,0.2)';
+        searchButton.style.transform = 'translateY(-3px) scale(1.02)';
+        searchButton.style.boxShadow = `0 12px 32px ${config.backgroundColor}35, 0 6px 16px rgba(0,0,0,0.15)`;
+        shimmer.style.left = '100%';
       });
-      searchButton.addEventListener('mouseout', () => {
-        searchButton.style.transform = 'translateY(0)';
-        searchButton.style.boxShadow = '0 4px 12px rgba(0,0,0,0.15)';
+      searchButton.addEventListener('mouseleave', () => {
+        searchButton.style.transform = 'translateY(0) scale(1)';
+        searchButton.style.boxShadow = `0 6px 20px ${config.backgroundColor}25, 0 2px 8px rgba(0,0,0,0.1)`;
       });
       
       // Add ripple effect
@@ -537,7 +658,7 @@
       });
       
       horizontalGroup.appendChild(searchButton);
-      form.appendChild(horizontalGroup);
+      content.appendChild(horizontalGroup);
     }
 
     // Customer details
@@ -556,7 +677,7 @@
     nameInput.placeholder = 'Your full name';
     nameInput.required = true;
     nameField.appendChild(nameInput);
-    form.appendChild(nameField);
+    content.appendChild(nameField);
 
     const emailField = document.createElement('div');
     emailField.className = 'rbw-field';
@@ -573,7 +694,7 @@
     emailInput.placeholder = 'your@email.com';
     emailInput.required = true;
     emailField.appendChild(emailInput);
-    form.appendChild(emailField);
+    content.appendChild(emailField);
 
     const phoneField = document.createElement('div');
     phoneField.className = 'rbw-field';
@@ -589,7 +710,7 @@
     phoneInput.name = 'phone';
     phoneInput.placeholder = 'Your phone number';
     phoneField.appendChild(phoneInput);
-    form.appendChild(phoneField);
+    content.appendChild(phoneField);
 
     // Special requests
     if (config.showSpecialRequests) {
@@ -607,17 +728,28 @@
       requestsTextarea.placeholder = 'Any special requests or dietary requirements...';
       requestsTextarea.rows = 3;
       requestsField.appendChild(requestsTextarea);
-      form.appendChild(requestsField);
+      content.appendChild(requestsField);
     }
 
     // Divider
     const divider = document.createElement('div');
-    divider.style.cssText = 'border-top: 1px solid #e2e8f0; margin: 20px 0; position: relative;';
+    divider.style.cssText = 'border-top: 2px solid #f1f5f9; margin: 32px 0 24px; position: relative;';
     const dividerText = document.createElement('span');
     dividerText.textContent = 'Contact Information';
-    dividerText.style.cssText = 'position: absolute; top: -10px; left: 50%; transform: translateX(-50%); background: white; padding: 0 16px; font-size: 12px; color: #64748b; font-weight: 500;';
+    dividerText.style.cssText = `
+      position: absolute; 
+      top: -12px; 
+      left: 50%; 
+      transform: translateX(-50%); 
+      background: linear-gradient(135deg, #ffffff 0%, #f8fafc 100%); 
+      padding: 0 20px; 
+      font-size: 14px; 
+      color: #64748b; 
+      font-weight: 600;
+      letter-spacing: -0.01em;
+    `;
     divider.appendChild(dividerText);
-    form.appendChild(divider);
+    content.appendChild(divider);
 
     // Submit button
     const submitButton = document.createElement('button');
@@ -634,17 +766,19 @@
       margin-top: 8px;
     `;
     submitButton.addEventListener('click', handleSubmit);
-    form.appendChild(submitButton);
+    content.appendChild(submitButton);
     
     // Footer text
     const footer = document.createElement('div');
-    footer.style.cssText = 'text-align: center; margin-top: 16px;';
+    footer.style.cssText = 'text-align: center; margin-top: 24px; padding-top: 20px; border-top: 1px solid #f1f5f9;';
     footer.innerHTML = `
-      <p style="font-size: 12px; color: #64748b; margin: 0;">
-        Powered by Your Restaurant • Free cancellation up to 24 hours
+      <p style="font-size: 13px; color: #64748b; margin: 0; font-weight: 500;">
+        🔒 Secure booking • ✨ Free cancellation up to 24 hours
       </p>
     `;
-    form.appendChild(footer);
+    content.appendChild(footer);
+    
+    form.appendChild(content);
 
     return form;
   }
