@@ -11,12 +11,16 @@ export default function WidgetDemo() {
   const { restaurant } = useAuth();
   const { tenant } = useTenant();
   const [activeDemo, setActiveDemo] = useState<'button' | 'inline' | 'popup'>('inline');
+  
+  // For demo purposes, use default values if no auth context
+  const demoRestaurant = restaurant || { id: 1, name: 'Demo Restaurant' };
+  const demoTenant = tenant || { id: 1 };
 
   useEffect(() => {
     // Load the widget script for demo
     const script = document.createElement('script');
     script.src = '/widget/booking-widget.js';
-    script.setAttribute('data-restaurant-id', restaurant?.id?.toString() || '1');
+    script.setAttribute('data-restaurant-id', demoRestaurant.id?.toString() || '1');
     script.setAttribute('data-config', encodeURIComponent(JSON.stringify({
       type: activeDemo,
       size: 'medium',
@@ -48,7 +52,7 @@ export default function WidgetDemo() {
       const widgets = document.querySelectorAll('.rbw-widget');
       widgets.forEach(w => w.remove());
     };
-  }, [activeDemo, restaurant?.id]);
+  }, [activeDemo, demoRestaurant.id]);
 
   const demoConfigs = {
     inline: {
@@ -75,7 +79,7 @@ export default function WidgetDemo() {
         <div className="mb-8">
           <div className="flex items-center mb-4">
             <a 
-              href={`/${tenant?.id}/integrations/widget`}
+              href={`/${demoTenant.id}/integrations/widget`}
               className="flex items-center text-blue-600 hover:text-blue-800 mr-4"
             >
               <ArrowLeft className="w-4 h-4 mr-2" />
@@ -182,7 +186,7 @@ export default function WidgetDemo() {
                   {/* Mock Website Header */}
                   <div className="bg-gray-800 text-white p-4">
                     <div className="flex items-center justify-between">
-                      <h2 className="text-xl font-bold">{restaurant?.name || 'Your Restaurant'}</h2>
+                      <h2 className="text-xl font-bold">{demoRestaurant.name || 'Your Restaurant'}</h2>
                       <div className="flex space-x-4 text-sm">
                         <span>Menu</span>
                         <span>About</span>
@@ -196,7 +200,7 @@ export default function WidgetDemo() {
                   <div className="p-8 min-h-[500px] relative">
                     <div className="max-w-4xl mx-auto">
                       <h1 className="text-3xl font-bold text-gray-900 mb-4">
-                        Welcome to {restaurant?.name || 'Your Restaurant'}
+                        Welcome to {demoRestaurant.name || 'Your Restaurant'}
                       </h1>
                       <p className="text-lg text-gray-600 mb-8">
                         Experience exceptional dining with our carefully crafted menu and warm atmosphere.
@@ -266,7 +270,7 @@ export default function WidgetDemo() {
 
                   {/* Mock Website Footer */}
                   <div className="bg-gray-100 p-6 text-center text-gray-600 text-sm">
-                    <p>&copy; 2024 {restaurant?.name || 'Your Restaurant'}. All rights reserved.</p>
+                    <p>&copy; 2024 {demoRestaurant.name || 'Your Restaurant'}. All rights reserved.</p>
                   </div>
                 </div>
               </CardContent>

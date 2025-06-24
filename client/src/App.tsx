@@ -101,6 +101,7 @@ function App() {
           <Route path="/guest-booking/:tenantId/:restaurantId" component={GuestBookingResponsive} />
           <Route path="/:tenantId/book/:restaurantId" component={GuestBookingResponsive} />
           <Route path="/booking-manage/:id" component={BookingManage} />
+          <Route path="/:tenantId/widget-demo" component={WidgetDemo} />
           
           {/* All other routes with authentication */}
           <Route>
@@ -127,7 +128,6 @@ function App() {
                 <Route path="/:tenantId/menu" component={MenuManagementPage} />
                 <Route path="/:tenantId/integrations" component={Integrations} />
                 <Route path="/:tenantId/integrations/widget" component={WidgetIntegration} />
-                <Route path="/:tenantId/widget-demo" component={WidgetDemo} />
         <Route path="/:tenantId/integrations/google" component={GoogleIntegration} />
                 <Route path="/:tenantId/integrations/activecampaign" component={ActiveCampaignIntegration} />
                 <Route path="/:tenantId/integrations/klaviyo" component={KlaviyoIntegration} />
