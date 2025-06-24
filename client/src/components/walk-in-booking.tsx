@@ -153,6 +153,9 @@ function WalkInBookingButton() {
 
     // Check for time conflicts
     return !tableBookings.some((booking: any) => {
+      // Skip bookings without proper time data
+      if (!booking.startTime) return false;
+      
       const existingStart = timeToMinutes(booking.startTime);
       const existingEnd = timeToMinutes(booking.endTime || "23:59");
       
@@ -169,7 +172,8 @@ function WalkInBookingButton() {
   };
 
   // Convert time string to minutes (e.g., "14:30" -> 870)
-  const timeToMinutes = (timeStr: string): number => {
+  const timeToMinutes = (timeStr: string | null | undefined): number => {
+    if (!timeStr) return 0;
     const [hours, minutes] = timeStr.split(':').map(Number);
     return hours * 60 + minutes;
   };
