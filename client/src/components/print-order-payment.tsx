@@ -11,7 +11,7 @@ import { CheckCircle, CreditCard, Clock, Printer, ArrowLeft } from "lucide-react
 // Initialize Stripe
 const stripePromise = import.meta.env.VITE_STRIPE_PUBLIC_KEY 
   ? loadStripe(import.meta.env.VITE_STRIPE_PUBLIC_KEY)
-  : null;
+  : Promise.resolve(null);
 
 interface PrintOrderPaymentProps {
   clientSecret: string;

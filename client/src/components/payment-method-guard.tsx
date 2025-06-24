@@ -11,7 +11,9 @@ import { useToast } from '@/hooks/use-toast';
 import { useMutation } from '@tanstack/react-query';
 import { apiRequest } from '@/lib/queryClient';
 
-const stripePromise = loadStripe(import.meta.env.VITE_STRIPE_PUBLIC_KEY);
+const stripePromise = import.meta.env.VITE_STRIPE_PUBLIC_KEY 
+  ? loadStripe(import.meta.env.VITE_STRIPE_PUBLIC_KEY)
+  : Promise.resolve(null);
 
 interface PaymentMethodGuardProps {
   children: React.ReactNode;
@@ -191,11 +193,12 @@ export function PaymentMethodGuard({
               </ul>
             </div>
 
-            <Dialog open={showAddPaymentDialog} onOpenChange={handleDialogOpenChange}>
-              <DialogTrigger asChild>
-                <Button className="w-full">
-                  <Plus className="h-4 w-4 mr-2" />
-                  Add Payment Method
+            {import.meta.env.VITE_STRIPE_PUBLIC_KEY ? (
+              <Dialog open={showAddPaymentDialog} onOpenChange={handleDialogOpenChange}>
+                <DialogTrigger asChild>
+                  <Button className="w-full">
+                    <Plus className="h-4 w-4 mr-2" />
+                    Add Payment Method
                 </Button>
               </DialogTrigger>
               <DialogContent className="max-w-md">
@@ -211,6 +214,13 @@ export function PaymentMethodGuard({
                 </Elements>
               </DialogContent>
             </Dialog>
+            ) : (
+              <div className="p-4 bg-yellow-50 border border-yellow-200 rounded-lg">
+                <p className="text-sm text-yellow-800">
+                  Payment processing is not configured. Please contact support to set up billing.
+                </p>
+              </div>
+            )}
 
             <p className="text-xs text-gray-600 text-center">
               We use Stripe for secure payment processing. Your card information is encrypted and never stored on our servers.
