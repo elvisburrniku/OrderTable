@@ -22,7 +22,7 @@ import {
   bookingChangeRequests,
   notifications,
   resolvedConflicts,
-} from "@shared/schema";
+} from "../shared/schema";
 import type {
   User,
   Restaurant,
@@ -61,7 +61,7 @@ import type {
   InsertProductGroup,
   Product,
   InsertProduct,
-} from "@shared/schema";
+} from "../shared/schema";
 import { neon } from "@neondatabase/serverless";
 import { drizzle } from "drizzle-orm/neon-http";
 import { drizzle as drizzlePostgres } from "drizzle-orm/postgres-js";
