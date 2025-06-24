@@ -57,10 +57,8 @@ app.use((req, res, next) => {
 });
 
 (async () => {
-  // Initialize database with subscription plans and demo data
-  if (storage instanceof DatabaseStorage) {
-    await storage.initialize();
-  }
+  // Initialize storage with demo data
+  await storage.initialize();
 
   // Start reminder service for email notifications
   const reminderService = new ReminderService();

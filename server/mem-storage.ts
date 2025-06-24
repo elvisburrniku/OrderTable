@@ -141,12 +141,12 @@ export class MemoryStorage implements IStorage {
       this.tenants.push(testTenant);
     }
 
-    // Create demo user
+    // Create demo user with proper bcrypt hash for password "demo123"
     if (this.users.length === 0) {
       const demoUser = {
         id: 1,
         email: "demo@restaurant.com",
-        password: "$2b$10$demohashedpassword",
+        password: "$2b$10$SYXuJ0H.4joKwG2NpJdc1eacXyRizRRIKVEKALurvGWn0IzBUmNI6", // "demo123"
         name: "Demo User",
         restaurantName: "Demo Restaurant",
         ssoProvider: null,
