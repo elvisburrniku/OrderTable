@@ -101,6 +101,16 @@ const integrations: Integration[] = [
     category: 'Reviews',
     features: ['Review management', 'Photo uploads', 'Business insights'],
     price: 'Free'
+  },
+  {
+    id: 'widget',
+    name: 'Booking Widget',
+    description: 'Embeddable booking widget for your website',
+    icon: '🎨',
+    connected: false,
+    category: 'Website',
+    features: ['Customizable design', 'Multiple widget types', 'Real-time booking'],
+    price: 'Free'
   }
 ];
 
