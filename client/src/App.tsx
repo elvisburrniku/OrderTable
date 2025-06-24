@@ -101,7 +101,15 @@ function App() {
           <Route path="/guest-booking/:tenantId/:restaurantId" component={GuestBookingResponsive} />
           <Route path="/:tenantId/book/:restaurantId" component={GuestBookingResponsive} />
           <Route path="/booking-manage/:id" component={BookingManage} />
-          <Route path="/:tenantId/widget-demo" component={WidgetDemo} />
+          
+          {/* Widget demo with auth context */}
+          <Route path="/:tenantId/widget-demo">
+            <AuthProvider>
+              <TenantProvider>
+                <WidgetDemo />
+              </TenantProvider>
+            </AuthProvider>
+          </Route>
           
           {/* All other routes with authentication */}
           <Route>

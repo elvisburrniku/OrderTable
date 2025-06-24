@@ -12,7 +12,7 @@ export default function WidgetDemo() {
   const { tenant } = useTenant();
   const [activeDemo, setActiveDemo] = useState<'button' | 'inline' | 'popup'>('inline');
   
-  // For demo purposes, use default values if no auth context
+  // For demo purposes, use fallback values
   const demoRestaurant = restaurant || { id: 1, name: 'Demo Restaurant' };
   const demoTenant = tenant || { id: 1 };
 
