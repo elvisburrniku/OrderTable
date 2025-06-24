@@ -239,6 +239,13 @@
       100% { transform: scale(1); opacity: 1; }
     }
     
+    @keyframes ripple {
+      to {
+        transform: scale(2);
+        opacity: 0;
+      }
+    }
+    
     @media (max-width: 768px) {
       .rbw-grid {
         grid-template-columns: 1fr;
@@ -271,6 +278,17 @@
     const title = document.createElement('h2');
     title.className = 'rbw-title';
     title.textContent = config.headerText;
+    title.style.cssText = `
+      margin: 0 0 24px 0;
+      font-size: 28px;
+      font-weight: 700;
+      color: #111827;
+      text-align: center;
+      background: linear-gradient(135deg, ${config.backgroundColor} 0%, ${adjustBrightness(config.backgroundColor, -20)} 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    `;
     form.appendChild(title);
 
     // Date field
@@ -475,18 +493,47 @@
         font-size: 14px;
         cursor: pointer;
         transition: all 0.2s ease;
-        background: ${config.backgroundColor};
+        background: linear-gradient(135deg, ${config.backgroundColor} 0%, ${adjustBrightness(config.backgroundColor, -10)} 100%);
         color: ${config.color};
-        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        box-shadow: 0 4px 12px rgba(0,0,0,0.15);
         align-self: stretch;
+        position: relative;
+        overflow: hidden;
       `;
+      
+      // Add hover effects
       searchButton.addEventListener('mouseover', () => {
-        searchButton.style.transform = 'translateY(-1px)';
-        searchButton.style.boxShadow = '0 4px 8px rgba(0,0,0,0.15)';
+        searchButton.style.transform = 'translateY(-2px)';
+        searchButton.style.boxShadow = '0 8px 20px rgba(0,0,0,0.2)';
       });
       searchButton.addEventListener('mouseout', () => {
         searchButton.style.transform = 'translateY(0)';
-        searchButton.style.boxShadow = '0 2px 4px rgba(0,0,0,0.1)';
+        searchButton.style.boxShadow = '0 4px 12px rgba(0,0,0,0.15)';
+      });
+      
+      // Add ripple effect
+      searchButton.addEventListener('click', function(e) {
+        const ripple = document.createElement('span');
+        const rect = this.getBoundingClientRect();
+        const size = Math.max(rect.width, rect.height);
+        const x = e.clientX - rect.left - size / 2;
+        const y = e.clientY - rect.top - size / 2;
+        
+        ripple.style.cssText = `
+          position: absolute;
+          width: ${size}px;
+          height: ${size}px;
+          left: ${x}px;
+          top: ${y}px;
+          background: rgba(255,255,255,0.4);
+          border-radius: 50%;
+          transform: scale(0);
+          animation: ripple 0.6s ease-out;
+          pointer-events: none;
+        `;
+        
+        this.appendChild(ripple);
+        setTimeout(() => ripple.remove(), 600);
       });
       
       horizontalGroup.appendChild(searchButton);

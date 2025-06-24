@@ -45,6 +45,7 @@ import GuestFeedbackForm from "./pages/guest-feedback-form";
 import OpeningHours from "./pages/opening-hours";
 import Integrations from "./pages/integrations";
 import WidgetIntegration from "./pages/integrations/widget";
+import WidgetDemo from "./pages/widget-demo";
 import ActiveCampaignIntegration from "./pages/integrations/activecampaign";
 import GoogleIntegration from "./pages/google-integration";
 import KlaviyoIntegration from "./pages/integrations/klaviyo";
@@ -126,6 +127,7 @@ function App() {
                 <Route path="/:tenantId/menu" component={MenuManagementPage} />
                 <Route path="/:tenantId/integrations" component={Integrations} />
                 <Route path="/:tenantId/integrations/widget" component={WidgetIntegration} />
+                <Route path="/:tenantId/widget-demo" component={WidgetDemo} />
         <Route path="/:tenantId/integrations/google" component={GoogleIntegration} />
                 <Route path="/:tenantId/integrations/activecampaign" component={ActiveCampaignIntegration} />
                 <Route path="/:tenantId/integrations/klaviyo" component={KlaviyoIntegration} />

@@ -6,7 +6,7 @@ import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
-import { Copy, Eye } from 'lucide-react';
+import { Copy, Eye, ExternalLink } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 
 interface WidgetConfig {
@@ -27,6 +27,8 @@ interface WidgetConfig {
 
 export function WidgetBuilder() {
   const { toast } = useToast();
+  const { user, restaurant } = useAuth();
+  const { tenant } = useTenant();
   const [config, setConfig] = useState<WidgetConfig>({
     type: 'button',
     size: 'medium',
@@ -419,10 +421,20 @@ export function WidgetBuilder() {
                   className="font-mono text-sm"
                   rows={10}
                 />
-                <Button onClick={copyToClipboard} className="w-full">
-                  <Copy className="w-4 h-4 mr-2" />
-                  Copy Widget Code
-                </Button>
+                <div className="flex gap-2">
+                  <Button onClick={copyToClipboard} className="flex-1">
+                    <Copy className="w-4 h-4 mr-2" />
+                    Copy Code
+                  </Button>
+                  <Button 
+                    variant="outline" 
+                    className="flex-1"
+                    onClick={() => window.open(`/${tenant?.id}/widget-demo`, '_blank')}
+                  >
+                    <ExternalLink className="w-4 h-4 mr-2" />
+                    Live Demo
+                  </Button>
+                </div>
               </div>
             </CardContent>
           </Card>
