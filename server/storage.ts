@@ -472,16 +472,11 @@ export interface IStorage {
 import { DatabaseStorage } from "./db-storage";
 import { MemoryStorage } from "./mem-storage";
 
-// Use database storage if connection is available, fallback to memory storage
+// Force memory storage to avoid database connection issues
 let storage: IStorage;
 
-if (db) {
-  console.log("Using database storage");
-  storage = new DatabaseStorage();
-} else {
-  console.log("Using in-memory storage for development");
-  storage = new MemoryStorage();
-}
+console.log("Using in-memory storage for development");
+storage = new MemoryStorage();
 
 // Initialize storage with default data
 storage.initialize().catch(console.error);

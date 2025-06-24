@@ -60,16 +60,16 @@ app.use((req, res, next) => {
   // Initialize storage with demo data
   await storage.initialize();
 
-  // Start reminder service for email notifications
-  const reminderService = new ReminderService();
-  reminderService.startReminderScheduler();
-
-  // Start auto-assignment service for unassigned bookings
-  const autoAssignmentService = new AutoAssignmentService(storage);
-  autoAssignmentService.start();
-
-  // Start activity cleanup service to auto-delete old activity logs
-  activityCleanupService.start();
+  // Only start services if using memory storage to avoid database connection errors
+  if (storage.constructor.name === 'MemoryStorage') {
+    console.log('Starting services with memory storage...');
+    
+    // Start auto-assignment service for unassigned bookings
+    const autoAssignmentService = new AutoAssignmentService(storage);
+    autoAssignmentService.start();
+  } else {
+    console.log('Skipping services to avoid database connection issues');
+  }
 
   const server = await registerRoutes(app);
 
