@@ -33,7 +33,7 @@ import {
   CollapsibleContent,
   CollapsibleTrigger,
 } from "@/components/ui/collapsible";
-import { Search, Plus, Mail, Phone, Calendar, Star, Filter, ChevronDown, ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight, User, Users } from "lucide-react";
+import { Search, Plus, Mail, Phone, Calendar, Star, Filter, ChevronDown, ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight, User, Users, Edit, Trash2 } from "lucide-react";
 import { format } from "date-fns";
 import { motion } from "framer-motion";
 
@@ -51,6 +51,10 @@ export default function Customers() {
     email: "",
     phone: "",
   });
+  const [editingCustomer, setEditingCustomer] = useState<any>(null);
+  const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
+  const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
+  const [customerToDelete, setCustomerToDelete] = useState<any>(null);
 
   const { data: customers = [], isLoading } = useQuery({
     queryKey: [
@@ -106,6 +110,80 @@ export default function Customers() {
     },
   });
 
+  // Update customer mutation
+  const updateCustomerMutation = useMutation({
+    mutationFn: async ({ id, updates }: { id: number; updates: any }) => {
+      const response = await fetch(
+        `/api/tenants/${restaurant?.tenantId}/restaurants/${restaurant?.id}/customers/${id}`,
+        {
+          method: 'PUT',
+          headers: {
+            'Content-Type': 'application/json',
+            "x-tenant-id": restaurant?.tenantId?.toString() || "1",
+          },
+          body: JSON.stringify(updates)
+        }
+      );
+      if (!response.ok) {
+        const errorText = await response.text();
+        throw new Error(errorText || 'Failed to update customer');
+      }
+      return response.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({
+        queryKey: [
+          "/api/tenants",
+          restaurant?.tenantId,
+          "restaurants",
+          restaurant?.id,
+          "customers",
+        ],
+      });
+      setIsEditDialogOpen(false);
+      setEditingCustomer(null);
+    },
+    onError: (error: any) => {
+      console.error('Update customer error:', error);
+    }
+  });
+
+  // Delete customer mutation
+  const deleteCustomerMutation = useMutation({
+    mutationFn: async (id: number) => {
+      const response = await fetch(
+        `/api/tenants/${restaurant?.tenantId}/restaurants/${restaurant?.id}/customers/${id}`,
+        {
+          method: 'DELETE',
+          headers: {
+            "x-tenant-id": restaurant?.tenantId?.toString() || "1",
+          }
+        }
+      );
+      if (!response.ok) {
+        const errorText = await response.text();
+        throw new Error(errorText || 'Failed to delete customer');
+      }
+      return response.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({
+        queryKey: [
+          "/api/tenants",
+          restaurant?.tenantId,
+          "restaurants",
+          restaurant?.id,
+          "customers",
+        ],
+      });
+      setIsDeleteDialogOpen(false);
+      setCustomerToDelete(null);
+    },
+    onError: (error: any) => {
+      console.error('Delete customer error:', error);
+    }
+  });
+
   const filteredCustomers = customers.filter((customer: any) => {
     const matchesSearch = 
       customer.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -130,6 +208,43 @@ export default function Customers() {
   const handleCreateCustomer = (e: React.FormEvent) => {
     e.preventDefault();
     createCustomerMutation.mutate(newCustomer);
+  };
+
+  const handleEditCustomer = (customer: any) => {
+    setEditingCustomer({
+      ...customer
+    });
+    setIsEditDialogOpen(true);
+  };
+
+  const handleUpdateCustomer = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!editingCustomer) return;
+
+    // Validate required fields
+    if (!editingCustomer.name || !editingCustomer.email) {
+      console.error('Missing required fields');
+      return;
+    }
+
+    const updates = {
+      name: editingCustomer.name.trim(),
+      email: editingCustomer.email.trim(),
+      phone: editingCustomer.phone?.trim() || null,
+    };
+
+    updateCustomerMutation.mutate({ id: editingCustomer.id, updates });
+  };
+
+  const handleDeleteCustomer = (customer: any) => {
+    setCustomerToDelete(customer);
+    setIsDeleteDialogOpen(true);
+  };
+
+  const confirmDeleteCustomer = () => {
+    if (customerToDelete) {
+      deleteCustomerMutation.mutate(customerToDelete.id);
+    }
   };
 
   if (!user || !restaurant) {
@@ -361,12 +476,15 @@ export default function Customers() {
                       <th className="text-left py-3 px-4 text-xs font-medium text-gray-500 uppercase tracking-wider">
                         Source
                       </th>
+                      <th className="text-left py-3 px-4 text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Actions
+                      </th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-gray-100">
                     {isLoading ? (
                       <tr>
-                        <td colSpan={7} className="py-12 text-center">
+                        <td colSpan={8} className="py-12 text-center">
                           <motion.div 
                             initial={{ opacity: 0, y: 20 }}
                             animate={{ opacity: 1, y: 0 }}
@@ -380,7 +498,7 @@ export default function Customers() {
                       </tr>
                     ) : currentCustomers.length === 0 ? (
                       <tr>
-                        <td colSpan={7} className="py-12 text-center">
+                        <td colSpan={8} className="py-12 text-center">
                           <div className="flex flex-col items-center space-y-4">
                             <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center">
                               <User className="w-8 h-8 text-gray-400" />
@@ -581,6 +699,80 @@ export default function Customers() {
             )}
           </div>
         </div>
+
+        {/* Edit Customer Dialog */}
+        <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
+          <DialogContent className="max-w-md">
+            <DialogHeader>
+              <DialogTitle>Edit Customer</DialogTitle>
+            </DialogHeader>
+            <form onSubmit={handleUpdateCustomer} className="space-y-4">
+              <div>
+                <Label htmlFor="edit-name">Name</Label>
+                <Input
+                  id="edit-name"
+                  value={editingCustomer?.name || ""}
+                  onChange={(e) => setEditingCustomer(prev => prev ? {...prev, name: e.target.value} : null)}
+                  required
+                />
+              </div>
+              <div>
+                <Label htmlFor="edit-email">Email</Label>
+                <Input
+                  id="edit-email"
+                  type="email"
+                  value={editingCustomer?.email || ""}
+                  onChange={(e) => setEditingCustomer(prev => prev ? {...prev, email: e.target.value} : null)}
+                  required
+                />
+              </div>
+              <div>
+                <Label htmlFor="edit-phone">Phone</Label>
+                <Input
+                  id="edit-phone"
+                  value={editingCustomer?.phone || ""}
+                  onChange={(e) => setEditingCustomer(prev => prev ? {...prev, phone: e.target.value} : null)}
+                />
+              </div>
+              <div className="flex justify-end space-x-2">
+                <Button type="button" variant="outline" onClick={() => setIsEditDialogOpen(false)}>
+                  Cancel
+                </Button>
+                <Button type="submit" disabled={updateCustomerMutation.isPending}>
+                  {updateCustomerMutation.isPending ? "Updating..." : "Update Customer"}
+                </Button>
+              </div>
+            </form>
+          </DialogContent>
+        </Dialog>
+
+        {/* Delete Confirmation Dialog */}
+        <Dialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
+          <DialogContent className="max-w-md">
+            <DialogHeader>
+              <DialogTitle>Delete Customer</DialogTitle>
+            </DialogHeader>
+            <div className="py-4">
+              <p className="text-gray-600">
+                Are you sure you want to delete <strong>{customerToDelete?.name}</strong>?
+              </p>
+              <p className="text-red-600 text-sm mt-2">This action cannot be undone and will also delete all associated bookings.</p>
+            </div>
+            <div className="flex justify-end space-x-2">
+              <Button type="button" variant="outline" onClick={() => setIsDeleteDialogOpen(false)}>
+                Cancel
+              </Button>
+              <Button 
+                type="button" 
+                variant="destructive" 
+                onClick={confirmDeleteCustomer}
+                disabled={deleteCustomerMutation.isPending}
+              >
+                {deleteCustomerMutation.isPending ? "Deleting..." : "Delete Customer"}
+              </Button>
+            </div>
+          </DialogContent>
+        </Dialog>
       </div>
     </div>
   );
