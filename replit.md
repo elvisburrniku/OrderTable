@@ -27,7 +27,7 @@ A comprehensive restaurant booking management system with React frontend and Exp
 - **Data persistence**: Login credentials and bookings now properly saved to database
 - **Bug fixes**: Resolved JavaScript errors in bookings component and heat map generation
 - **Print orders fixes**: Added missing DELETE endpoint for print orders API, fixed JSON error
-- **UI improvements**: Updated Details button to icon-only display in print orders table
+- **UI improvements**: Updated Details button to icon-only display and removed Invoice button from print orders table
 - **Sample data**: Added 22+ realistic bookings with past and future dates for testing
 - **Security**: Implemented client/server separation and robust security practices
 

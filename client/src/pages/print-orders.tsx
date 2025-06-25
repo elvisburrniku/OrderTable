@@ -756,22 +756,7 @@ export default function PrintOrders() {
                                   >
                                     <FileText className="h-4 w-4" />
                                   </Button>
-                                  {order.paymentStatus === 'paid' && order.stripePaymentId && (
-                                    <Button
-                                      variant="outline"
-                                      size="sm"
-                                      type="button"
-                                      onClick={(e) => {
-                                        e.preventDefault();
-                                        e.stopPropagation();
-                                        handleViewInvoice(order);
-                                      }}
-                                      className="h-8 px-3 text-xs text-blue-600 hover:text-blue-700 hover:bg-blue-50"
-                                    >
-                                      <Receipt className="h-3 w-3 mr-1" />
-                                      Invoice
-                                    </Button>
-                                  )}
+
                                   <Button
                                     variant="outline"
                                     size="sm"
