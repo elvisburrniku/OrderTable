@@ -23,12 +23,16 @@ A comprehensive restaurant booking management system with React frontend and Exp
 
 ## Recent Changes
 - **2025-06-25**: Migration from Replit Agent to Replit environment completed successfully
-- **Database connection**: Fixed and switched from memory storage to PostgreSQL 
+- **2025-06-25**: Fixed database connection – switched from memory storage to PostgreSQL
 - **Data persistence**: Login credentials and bookings now properly saved to database
 - **Bug fixes**: Resolved JavaScript errors in bookings component and heat map generation
 - **Print orders fixes**: Added missing DELETE endpoint for print orders API, fixed JSON error
 - **UI improvements**: Updated Details button to icon-only display, removed Invoice button, and enhanced entire print orders page with premium animations and modern glassmorphism design
 - **Sample data**: Added 22+ realistic bookings with past and future dates for testing
+- **Widget Integration**: Implemented embeddable booking widget system with OpenTable-style design
+- **Widget Features**: Customizable booking widget with modern UI, multiple widget types (button, inline, popup)
+- **Integration System**: Added widget builder in integrations page with live preview and code generation
+- **Product management**: Fixed product category dropdown, creation/update API data mapping, and display issues
 - **Security**: Implemented client/server separation and robust security practices
 
 ## User Preferences

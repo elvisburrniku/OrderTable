@@ -1,0 +1,469 @@
+@stripe_stripe-js.js?v=441c00d5:115 Uncaught (in promise) TypeError: Cannot read properties of undefined (reading 'match')
+    at initStripe2 (@stripe_stripe-js.js?v=441c00d5:115:22)
+    at @stripe_stripe-js.js?v=441c00d5:151:12
+initStripe2 @ @stripe_stripe-js.js?v=441c00d5:115
+(anonymous) @ @stripe_stripe-js.js?v=441c00d5:151
+Promise.then
+loadStripe2 @ @stripe_stripe-js.js?v=441c00d5:150
+(anonymous) @ payment-method-guard.tsx:14Understand this error
+@stripe_stripe-js.js?v=441c00d5:115 Uncaught (in promise) TypeError: Cannot read properties of undefined (reading 'match')
+    at initStripe2 (@stripe_stripe-js.js?v=441c00d5:115:22)
+    at @stripe_stripe-js.js?v=441c00d5:151:12
+initStripe2 @ @stripe_stripe-js.js?v=441c00d5:115
+(anonymous) @ @stripe_stripe-js.js?v=441c00d5:151
+Promise.then
+loadStripe2 @ @stripe_stripe-js.js?v=441c00d5:150
+(anonymous) @ restaurant-management.tsx:21Understand this error
+chunk-RPCDYKBN.js?v=441c00d5:19659 Uncaught Error: Maximum update depth exceeded. This can happen when a component repeatedly calls setState inside componentWillUpdate or componentDidUpdate. React limits the number of nested updates to prevent infinite loops.
+    at checkForNestedUpdates (chunk-RPCDYKBN.js?v=441c00d5:19659:19)
+    at scheduleUpdateOnFiber (chunk-RPCDYKBN.js?v=441c00d5:18533:11)
+    at dispatchSetState (chunk-RPCDYKBN.js?v=441c00d5:12403:15)
+    at @radix-ui_react-checkbox.js?v=441c00d5:56:66
+    at setRef (chunk-2K77HOHX.js?v=441c00d5:18:12)
+    at chunk-2K77HOHX.js?v=441c00d5:27:23
+    at Array.map (<anonymous>)
+    at chunk-2K77HOHX.js?v=441c00d5:26:27
+    at safelyDetachRef (chunk-RPCDYKBN.js?v=441c00d5:16726:30)
+    at commitDeletionEffectsOnFiber (chunk-RPCDYKBN.js?v=441c00d5:17495:17)
+checkForNestedUpdates @ chunk-RPCDYKBN.js?v=441c00d5:19659
+scheduleUpdateOnFiber @ chunk-RPCDYKBN.js?v=441c00d5:18533
+dispatchSetState @ chunk-RPCDYKBN.js?v=441c00d5:12403
+(anonymous) @ @radix-ui_react-checkbox.js?v=441c00d5:56
+setRef @ chunk-2K77HOHX.js?v=441c00d5:18
+(anonymous) @ chunk-2K77HOHX.js?v=441c00d5:27
+(anonymous) @ chunk-2K77HOHX.js?v=441c00d5:26
+safelyDetachRef @ chunk-RPCDYKBN.js?v=441c00d5:16726
+commitDeletionEffectsOnFiber @ chunk-RPCDYKBN.js?v=441c00d5:17495
+recursivelyTraverseDeletionEffects @ chunk-RPCDYKBN.js?v=441c00d5:17486
+commitDeletionEffectsOnFiber @ chunk-RPCDYKBN.js?v=441c00d5:17577
+recursivelyTraverseDeletionEffects @ chunk-RPCDYKBN.js?v=441c00d5:17486
+commitDeletionEffectsOnFiber @ chunk-RPCDYKBN.js?v=441c00d5:17610
+recursivelyTraverseDeletionEffects @ chunk-RPCDYKBN.js?v=441c00d5:17486
+commitDeletionEffectsOnFiber @ chunk-RPCDYKBN.js?v=441c00d5:17577
+recursivelyTraverseDeletionEffects @ chunk-RPCDYKBN.js?v=441c00d5:17486
+commitDeletionEffectsOnFiber @ chunk-RPCDYKBN.js?v=441c00d5:17577
+recursivelyTraverseDeletionEffects @ chunk-RPCDYKBN.js?v=441c00d5:17486
+commitDeletionEffectsOnFiber @ chunk-RPCDYKBN.js?v=441c00d5:17577
+recursivelyTraverseDeletionEffects @ chunk-RPCDYKBN.js?v=441c00d5:17486
+commitDeletionEffectsOnFiber @ chunk-RPCDYKBN.js?v=441c00d5:17503
+recursivelyTraverseDeletionEffects @ chunk-RPCDYKBN.js?v=441c00d5:17486
+commitDeletionEffectsOnFiber @ chunk-RPCDYKBN.js?v=441c00d5:17503
+recursivelyTraverseDeletionEffects @ chunk-RPCDYKBN.js?v=441c00d5:17486
+commitDeletionEffectsOnFiber @ chunk-RPCDYKBN.js?v=441c00d5:17503
+recursivelyTraverseDeletionEffects @ chunk-RPCDYKBN.js?v=441c00d5:17486
+commitDeletionEffectsOnFiber @ chunk-RPCDYKBN.js?v=441c00d5:17503
+recursivelyTraverseDeletionEffects @ chunk-RPCDYKBN.js?v=441c00d5:17486
+commitDeletionEffectsOnFiber @ chunk-RPCDYKBN.js?v=441c00d5:17503
+recursivelyTraverseDeletionEffects @ chunk-RPCDYKBN.js?v=441c00d5:17486
+commitDeletionEffectsOnFiber @ chunk-RPCDYKBN.js?v=441c00d5:17503
+recursivelyTraverseDeletionEffects @ chunk-RPCDYKBN.js?v=441c00d5:17486
+commitDeletionEffectsOnFiber @ chunk-RPCDYKBN.js?v=441c00d5:17503
+recursivelyTraverseDeletionEffects @ chunk-RPCDYKBN.js?v=441c00d5:17486
+commitDeletionEffectsOnFiber @ chunk-RPCDYKBN.js?v=441c00d5:17503
+recursivelyTraverseDeletionEffects @ chunk-RPCDYKBN.js?v=441c00d5:17486
+commitDeletionEffectsOnFiber @ chunk-RPCDYKBN.js?v=441c00d5:17577
+recursivelyTraverseDeletionEffects @ chunk-RPCDYKBN.js?v=441c00d5:17486
+commitDeletionEffectsOnFiber @ chunk-RPCDYKBN.js?v=441c00d5:17610
+recursivelyTraverseDeletionEffects @ chunk-RPCDYKBN.js?v=441c00d5:17486
+commitDeletionEffectsOnFiber @ chunk-RPCDYKBN.js?v=441c00d5:17577
+recursivelyTraverseDeletionEffects @ chunk-RPCDYKBN.js?v=441c00d5:17486
+commitDeletionEffectsOnFiber @ chunk-RPCDYKBN.js?v=441c00d5:17577
+recursivelyTraverseDeletionEffects @ chunk-RPCDYKBN.js?v=441c00d5:17486
+commitDeletionEffectsOnFiber @ chunk-RPCDYKBN.js?v=441c00d5:17610
+commitDeletionEffects @ chunk-RPCDYKBN.js?v=441c00d5:17477
+recursivelyTraverseMutationEffects @ chunk-RPCDYKBN.js?v=441c00d5:17674
+commitMutationEffectsOnFiber @ chunk-RPCDYKBN.js?v=441c00d5:17699
+recursivelyTraverseMutationEffects @ chunk-RPCDYKBN.js?v=441c00d5:17685
+commitMutationEffectsOnFiber @ chunk-RPCDYKBN.js?v=441c00d5:17699
+recursivelyTraverseMutationEffects @ chunk-RPCDYKBN.js?v=441c00d5:17685
+commitMutationEffectsOnFiber @ chunk-RPCDYKBN.js?v=441c00d5:17896
+recursivelyTraverseMutationEffects @ chunk-RPCDYKBN.js?v=441c00d5:17685
+commitMutationEffectsOnFiber @ chunk-RPCDYKBN.js?v=441c00d5:17699
+recursivelyTraverseMutationEffects @ chunk-RPCDYKBN.js?v=441c00d5:17685
+commitMutationEffectsOnFiber @ chunk-RPCDYKBN.js?v=441c00d5:17896
+recursivelyTraverseMutationEffects @ chunk-RPCDYKBN.js?v=441c00d5:17685
+commitMutationEffectsOnFiber @ chunk-RPCDYKBN.js?v=441c00d5:17699
+recursivelyTraverseMutationEffects @ chunk-RPCDYKBN.js?v=441c00d5:17685
+commitMutationEffectsOnFiber @ chunk-RPCDYKBN.js?v=441c00d5:17896
+recursivelyTraverseMutationEffects @ chunk-RPCDYKBN.js?v=441c00d5:17685
+commitMutationEffectsOnFiber @ chunk-RPCDYKBN.js?v=441c00d5:17699
+recursivelyTraverseMutationEffects @ chunk-RPCDYKBN.js?v=441c00d5:17685
+commitMutationEffectsOnFiber @ chunk-RPCDYKBN.js?v=441c00d5:17699
+recursivelyTraverseMutationEffects @ chunk-RPCDYKBN.js?v=441c00d5:17685
+commitMutationEffectsOnFiber @ chunk-RPCDYKBN.js?v=441c00d5:17896
+recursivelyTraverseMutationEffects @ chunk-RPCDYKBN.js?v=441c00d5:17685
+commitMutationEffectsOnFiber @ chunk-RPCDYKBN.js?v=441c00d5:17699
+recursivelyTraverseMutationEffects @ chunk-RPCDYKBN.js?v=441c00d5:17685
+commitMutationEffectsOnFiber @ chunk-RPCDYKBN.js?v=441c00d5:17896
+recursivelyTraverseMutationEffects @ chunk-RPCDYKBN.js?v=441c00d5:17685
+commitMutationEffectsOnFiber @ chunk-RPCDYKBN.js?v=441c00d5:17699
+recursivelyTraverseMutationEffects @ chunk-RPCDYKBN.js?v=441c00d5:17685
+commitMutationEffectsOnFiber @ chunk-RPCDYKBN.js?v=441c00d5:17727
+recursivelyTraverseMutationEffects @ chunk-RPCDYKBN.js?v=441c00d5:17685
+commitMutationEffectsOnFiber @ chunk-RPCDYKBN.js?v=441c00d5:17699
+recursivelyTraverseMutationEffects @ chunk-RPCDYKBN.js?v=441c00d5:17685
+commitMutationEffectsOnFiber @ chunk-RPCDYKBN.js?v=441c00d5:17794
+commitMutationEffects @ chunk-RPCDYKBN.js?v=441c00d5:17663
+commitRootImpl @ chunk-RPCDYKBN.js?v=441c00d5:19347
+commitRoot @ chunk-RPCDYKBN.js?v=441c00d5:19277
+performSyncWorkOnRoot @ chunk-RPCDYKBN.js?v=441c00d5:18895
+flushSyncCallbacks @ chunk-RPCDYKBN.js?v=441c00d5:9119
+(anonymous) @ chunk-RPCDYKBN.js?v=441c00d5:18627
+setTimeout
+scheduleFn @ @tanstack_react-query.js?v=441c00d5:555
+flush @ @tanstack_react-query.js?v=441c00d5:569
+batch @ @tanstack_react-query.js?v=441c00d5:587
+dispatch_fn @ @tanstack_react-query.js?v=441c00d5:996
+setData @ @tanstack_react-query.js?v=441c00d5:696
+onSuccess @ @tanstack_react-query.js?v=441c00d5:897
+resolve @ @tanstack_react-query.js?v=441c00d5:456
+Promise.then
+run @ @tanstack_react-query.js?v=441c00d5:498
+start @ @tanstack_react-query.js?v=441c00d5:536
+fetch @ @tanstack_react-query.js?v=441c00d5:926
+executeFetch_fn @ @tanstack_react-query.js?v=441c00d5:2211
+onSubscribe @ @tanstack_react-query.js?v=441c00d5:1898
+subscribe @ @tanstack_react-query.js?v=441c00d5:24
+(anonymous) @ @tanstack_react-query.js?v=441c00d5:3022
+subscribeToStore @ chunk-RPCDYKBN.js?v=441c00d5:11984
+commitHookEffectListMount @ chunk-RPCDYKBN.js?v=441c00d5:16915
+commitPassiveMountOnFiber @ chunk-RPCDYKBN.js?v=441c00d5:18156
+commitPassiveMountEffects_complete @ chunk-RPCDYKBN.js?v=441c00d5:18129
+commitPassiveMountEffects_begin @ chunk-RPCDYKBN.js?v=441c00d5:18119
+commitPassiveMountEffects @ chunk-RPCDYKBN.js?v=441c00d5:18109
+flushPassiveEffectsImpl @ chunk-RPCDYKBN.js?v=441c00d5:19490
+flushPassiveEffects @ chunk-RPCDYKBN.js?v=441c00d5:19447
+performSyncWorkOnRoot @ chunk-RPCDYKBN.js?v=441c00d5:18868
+flushSyncCallbacks @ chunk-RPCDYKBN.js?v=441c00d5:9119
+commitRootImpl @ chunk-RPCDYKBN.js?v=441c00d5:19432
+commitRoot @ chunk-RPCDYKBN.js?v=441c00d5:19277
+finishConcurrentRender @ chunk-RPCDYKBN.js?v=441c00d5:18805
+performConcurrentWorkOnRoot @ chunk-RPCDYKBN.js?v=441c00d5:18718
+workLoop @ chunk-RPCDYKBN.js?v=441c00d5:197
+flushWork @ chunk-RPCDYKBN.js?v=441c00d5:176
+performWorkUntilDeadline @ chunk-RPCDYKBN.js?v=441c00d5:384Understand this error
+hook.js:608 Warning: Maximum update depth exceeded. This can happen when a component calls setState inside useEffect, but useEffect either doesn't have a dependency array, or one of the dependencies changes on every render. Error Component Stack
+    at ErrorBoundary (error-boundary.tsx:15:5)
+    at App (<anonymous>)
+overrideMethod @ hook.js:608
+printWarning @ chunk-RPCDYKBN.js?v=441c00d5:521
+error @ chunk-RPCDYKBN.js?v=441c00d5:505
+checkForNestedUpdates @ chunk-RPCDYKBN.js?v=441c00d5:19665
+scheduleUpdateOnFiber @ chunk-RPCDYKBN.js?v=441c00d5:18533
+dispatchSetState @ chunk-RPCDYKBN.js?v=441c00d5:12403
+setRef @ chunk-2K77HOHX.js?v=441c00d5:18
+(anonymous) @ chunk-2K77HOHX.js?v=441c00d5:27
+(anonymous) @ chunk-2K77HOHX.js?v=441c00d5:26
+setRef @ chunk-2K77HOHX.js?v=441c00d5:18
+(anonymous) @ chunk-2K77HOHX.js?v=441c00d5:27
+(anonymous) @ chunk-2K77HOHX.js?v=441c00d5:26
+safelyDetachRef @ chunk-RPCDYKBN.js?v=441c00d5:16726
+commitDeletionEffectsOnFiber @ chunk-RPCDYKBN.js?v=441c00d5:17495
+recursivelyTraverseDeletionEffects @ chunk-RPCDYKBN.js?v=441c00d5:17486
+commitDeletionEffectsOnFiber @ chunk-RPCDYKBN.js?v=441c00d5:17577
+recursivelyTraverseDeletionEffects @ chunk-RPCDYKBN.js?v=441c00d5:17486
+commitDeletionEffectsOnFiber @ chunk-RPCDYKBN.js?v=441c00d5:17577
+recursivelyTraverseDeletionEffects @ chunk-RPCDYKBN.js?v=441c00d5:17486
+commitDeletionEffectsOnFiber @ chunk-RPCDYKBN.js?v=441c00d5:17577
+recursivelyTraverseDeletionEffects @ chunk-RPCDYKBN.js?v=441c00d5:17486
+commitDeletionEffectsOnFiber @ chunk-RPCDYKBN.js?v=441c00d5:17577
+recursivelyTraverseDeletionEffects @ chunk-RPCDYKBN.js?v=441c00d5:17486
+commitDeletionEffectsOnFiber @ chunk-RPCDYKBN.js?v=441c00d5:17503
+recursivelyTraverseDeletionEffects @ chunk-RPCDYKBN.js?v=441c00d5:17486
+commitDeletionEffectsOnFiber @ chunk-RPCDYKBN.js?v=441c00d5:17577
+recursivelyTraverseDeletionEffects @ chunk-RPCDYKBN.js?v=441c00d5:17486
+commitDeletionEffectsOnFiber @ chunk-RPCDYKBN.js?v=441c00d5:17577
+recursivelyTraverseDeletionEffects @ chunk-RPCDYKBN.js?v=441c00d5:17486
+commitDeletionEffectsOnFiber @ chunk-RPCDYKBN.js?v=441c00d5:17577
+recursivelyTraverseDeletionEffects @ chunk-RPCDYKBN.js?v=441c00d5:17486
+commitDeletionEffectsOnFiber @ chunk-RPCDYKBN.js?v=441c00d5:17577
+recursivelyTraverseDeletionEffects @ chunk-RPCDYKBN.js?v=441c00d5:17486
+commitDeletionEffectsOnFiber @ chunk-RPCDYKBN.js?v=441c00d5:17610
+recursivelyTraverseDeletionEffects @ chunk-RPCDYKBN.js?v=441c00d5:17486
+commitDeletionEffectsOnFiber @ chunk-RPCDYKBN.js?v=441c00d5:17577
+recursivelyTraverseDeletionEffects @ chunk-RPCDYKBN.js?v=441c00d5:17486
+commitDeletionEffectsOnFiber @ chunk-RPCDYKBN.js?v=441c00d5:17610
+recursivelyTraverseDeletionEffects @ chunk-RPCDYKBN.js?v=441c00d5:17486
+commitDeletionEffectsOnFiber @ chunk-RPCDYKBN.js?v=441c00d5:17577
+recursivelyTraverseDeletionEffects @ chunk-RPCDYKBN.js?v=441c00d5:17486
+commitDeletionEffectsOnFiber @ chunk-RPCDYKBN.js?v=441c00d5:17577
+recursivelyTraverseDeletionEffects @ chunk-RPCDYKBN.js?v=441c00d5:17486
+commitDeletionEffectsOnFiber @ chunk-RPCDYKBN.js?v=441c00d5:17577
+recursivelyTraverseDeletionEffects @ chunk-RPCDYKBN.js?v=441c00d5:17486
+commitDeletionEffectsOnFiber @ chunk-RPCDYKBN.js?v=441c00d5:17577
+recursivelyTraverseDeletionEffects @ chunk-RPCDYKBN.js?v=441c00d5:17486
+commitDeletionEffectsOnFiber @ chunk-RPCDYKBN.js?v=441c00d5:17610
+recursivelyTraverseDeletionEffects @ chunk-RPCDYKBN.js?v=441c00d5:17486
+commitDeletionEffectsOnFiber @ chunk-RPCDYKBN.js?v=441c00d5:17577
+recursivelyTraverseDeletionEffects @ chunk-RPCDYKBN.js?v=441c00d5:17486
+commitDeletionEffectsOnFiber @ chunk-RPCDYKBN.js?v=441c00d5:17610
+recursivelyTraverseDeletionEffects @ chunk-RPCDYKBN.js?v=441c00d5:17486
+commitDeletionEffectsOnFiber @ chunk-RPCDYKBN.js?v=441c00d5:17577
+commitDeletionEffects @ chunk-RPCDYKBN.js?v=441c00d5:17477
+recursivelyTraverseMutationEffects @ chunk-RPCDYKBN.js?v=441c00d5:17674
+commitMutationEffectsOnFiber @ chunk-RPCDYKBN.js?v=441c00d5:17727
+recursivelyTraverseMutationEffects @ chunk-RPCDYKBN.js?v=441c00d5:17685
+commitMutationEffectsOnFiber @ chunk-RPCDYKBN.js?v=441c00d5:17699
+recursivelyTraverseMutationEffects @ chunk-RPCDYKBN.js?v=441c00d5:17685
+commitMutationEffectsOnFiber @ chunk-RPCDYKBN.js?v=441c00d5:17794
+commitMutationEffects @ chunk-RPCDYKBN.js?v=441c00d5:17663
+commitRootImpl @ chunk-RPCDYKBN.js?v=441c00d5:19347
+commitRoot @ chunk-RPCDYKBN.js?v=441c00d5:19277
+performSyncWorkOnRoot @ chunk-RPCDYKBN.js?v=441c00d5:18895
+flushSyncCallbacks @ chunk-RPCDYKBN.js?v=441c00d5:9119
+(anonymous) @ chunk-RPCDYKBN.js?v=441c00d5:18627
+setTimeout
+scheduleFn @ @tanstack_react-query.js?v=441c00d5:555
+flush @ @tanstack_react-query.js?v=441c00d5:569
+batch @ @tanstack_react-query.js?v=441c00d5:587
+dispatch_fn @ @tanstack_react-query.js?v=441c00d5:996
+setData @ @tanstack_react-query.js?v=441c00d5:696
+onSuccess @ @tanstack_react-query.js?v=441c00d5:897
+resolve @ @tanstack_react-query.js?v=441c00d5:456
+Promise.then
+run @ @tanstack_react-query.js?v=441c00d5:498
+start @ @tanstack_react-query.js?v=441c00d5:536
+fetch @ @tanstack_react-query.js?v=441c00d5:926
+executeFetch_fn @ @tanstack_react-query.js?v=441c00d5:2211
+onSubscribe @ @tanstack_react-query.js?v=441c00d5:1898
+subscribe @ @tanstack_react-query.js?v=441c00d5:24
+(anonymous) @ @tanstack_react-query.js?v=441c00d5:3022
+subscribeToStore @ chunk-RPCDYKBN.js?v=441c00d5:11984
+commitHookEffectListMount @ chunk-RPCDYKBN.js?v=441c00d5:16915
+commitPassiveMountOnFiber @ chunk-RPCDYKBN.js?v=441c00d5:18156
+commitPassiveMountEffects_complete @ chunk-RPCDYKBN.js?v=441c00d5:18129
+commitPassiveMountEffects_begin @ chunk-RPCDYKBN.js?v=441c00d5:18119
+commitPassiveMountEffects @ chunk-RPCDYKBN.js?v=441c00d5:18109
+flushPassiveEffectsImpl @ chunk-RPCDYKBN.js?v=441c00d5:19490
+flushPassiveEffects @ chunk-RPCDYKBN.js?v=441c00d5:19447
+performSyncWorkOnRoot @ chunk-RPCDYKBN.js?v=441c00d5:18868
+flushSyncCallbacks @ chunk-RPCDYKBN.js?v=441c00d5:9119
+commitRootImpl @ chunk-RPCDYKBN.js?v=441c00d5:19432
+commitRoot @ chunk-RPCDYKBN.js?v=441c00d5:19277
+finishConcurrentRender @ chunk-RPCDYKBN.js?v=441c00d5:18805
+performConcurrentWorkOnRoot @ chunk-RPCDYKBN.js?v=441c00d5:18718
+workLoop @ chunk-RPCDYKBN.js?v=441c00d5:197
+flushWork @ chunk-RPCDYKBN.js?v=441c00d5:176
+performWorkUntilDeadline @ chunk-RPCDYKBN.js?v=441c00d5:384Understand this error
+hook.js:608 The above error occurred in the <button> component:
+
+    at button
+    at https://2b8fb90c-6ec2-4421-9f86-af41bf96de45-00-si6go84o3jg4.kirk.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/chunk-Q6YJROYD.js?v=441c00d5:42:13
+    at Provider (https://2b8fb90c-6ec2-4421-9f86-af41bf96de45-00-si6go84o3jg4.kirk.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/chunk-OXZDJRWN.js?v=441c00d5:38:15)
+    at https://2b8fb90c-6ec2-4421-9f86-af41bf96de45-00-si6go84o3jg4.kirk.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/@radix-ui_react-checkbox.js?v=441c00d5:44:7
+    at _c (https://2b8fb90c-6ec2-4421-9f86-af41bf96de45-00-si6go84o3jg4.kirk.replit.dev/src/components/ui/checkbox.tsx:22:11)
+    at div
+    at div
+    at form
+    at div
+    at div
+    at div
+    at div
+    at div
+    at Login (https://2b8fb90c-6ec2-4421-9f86-af41bf96de45-00-si6go84o3jg4.kirk.replit.dev/src/pages/login.tsx:34:27)
+    at Route (https://2b8fb90c-6ec2-4421-9f86-af41bf96de45-00-si6go84o3jg4.kirk.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/wouter.js?v=441c00d5:323:16)
+    at Switch (https://2b8fb90c-6ec2-4421-9f86-af41bf96de45-00-si6go84o3jg4.kirk.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/wouter.js?v=441c00d5:379:17)
+    at LayoutWrapper (https://2b8fb90c-6ec2-4421-9f86-af41bf96de45-00-si6go84o3jg4.kirk.replit.dev/src/components/layout-wrapper.tsx:23:33)
+    at RouteGuard (https://2b8fb90c-6ec2-4421-9f86-af41bf96de45-00-si6go84o3jg4.kirk.replit.dev/src/components/route-guard.tsx:21:30)
+    at TenantProvider (https://2b8fb90c-6ec2-4421-9f86-af41bf96de45-00-si6go84o3jg4.kirk.replit.dev/src/lib/tenant.tsx:22:34)
+    at AuthProvider (https://2b8fb90c-6ec2-4421-9f86-af41bf96de45-00-si6go84o3jg4.kirk.replit.dev/src/lib/auth.tsx:25:32)
+    at Route (https://2b8fb90c-6ec2-4421-9f86-af41bf96de45-00-si6go84o3jg4.kirk.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/wouter.js?v=441c00d5:323:16)
+    at Switch (https://2b8fb90c-6ec2-4421-9f86-af41bf96de45-00-si6go84o3jg4.kirk.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/wouter.js?v=441c00d5:379:17)
+    at QueryClientProvider (https://2b8fb90c-6ec2-4421-9f86-af41bf96de45-00-si6go84o3jg4.kirk.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/@tanstack_react-query.js?v=441c00d5:2805:3)
+    at LanguageProvider (https://2b8fb90c-6ec2-4421-9f86-af41bf96de45-00-si6go84o3jg4.kirk.replit.dev/src/contexts/language-context.tsx:21:36)
+    at ErrorBoundary (https://2b8fb90c-6ec2-4421-9f86-af41bf96de45-00-si6go84o3jg4.kirk.replit.dev/src/components/error-boundary.tsx:7:5)
+    at App
+
+React will try to recreate this component tree from scratch using the error boundary you provided, ErrorBoundary.
+overrideMethod @ hook.js:608
+logCapturedError @ chunk-RPCDYKBN.js?v=441c00d5:14032
+callback @ chunk-RPCDYKBN.js?v=441c00d5:14078
+callCallback @ chunk-RPCDYKBN.js?v=441c00d5:11248
+commitUpdateQueue @ chunk-RPCDYKBN.js?v=441c00d5:11265
+commitLayoutEffectOnFiber @ chunk-RPCDYKBN.js?v=441c00d5:17075
+commitLayoutMountEffects_complete @ chunk-RPCDYKBN.js?v=441c00d5:17980
+commitLayoutEffects_begin @ chunk-RPCDYKBN.js?v=441c00d5:17969
+commitLayoutEffects @ chunk-RPCDYKBN.js?v=441c00d5:17920
+commitRootImpl @ chunk-RPCDYKBN.js?v=441c00d5:19353
+commitRoot @ chunk-RPCDYKBN.js?v=441c00d5:19277
+performSyncWorkOnRoot @ chunk-RPCDYKBN.js?v=441c00d5:18895
+flushSyncCallbacks @ chunk-RPCDYKBN.js?v=441c00d5:9119
+(anonymous) @ chunk-RPCDYKBN.js?v=441c00d5:18627
+setTimeout
+scheduleFn @ @tanstack_react-query.js?v=441c00d5:555
+flush @ @tanstack_react-query.js?v=441c00d5:569
+batch @ @tanstack_react-query.js?v=441c00d5:587
+dispatch_fn @ @tanstack_react-query.js?v=441c00d5:996
+setData @ @tanstack_react-query.js?v=441c00d5:696
+onSuccess @ @tanstack_react-query.js?v=441c00d5:897
+resolve @ @tanstack_react-query.js?v=441c00d5:456
+Promise.then
+run @ @tanstack_react-query.js?v=441c00d5:498
+start @ @tanstack_react-query.js?v=441c00d5:536
+fetch @ @tanstack_react-query.js?v=441c00d5:926
+executeFetch_fn @ @tanstack_react-query.js?v=441c00d5:2211
+onSubscribe @ @tanstack_react-query.js?v=441c00d5:1898
+subscribe @ @tanstack_react-query.js?v=441c00d5:24
+(anonymous) @ @tanstack_react-query.js?v=441c00d5:3022
+subscribeToStore @ chunk-RPCDYKBN.js?v=441c00d5:11984
+commitHookEffectListMount @ chunk-RPCDYKBN.js?v=441c00d5:16915
+commitPassiveMountOnFiber @ chunk-RPCDYKBN.js?v=441c00d5:18156
+commitPassiveMountEffects_complete @ chunk-RPCDYKBN.js?v=441c00d5:18129
+commitPassiveMountEffects_begin @ chunk-RPCDYKBN.js?v=441c00d5:18119
+commitPassiveMountEffects @ chunk-RPCDYKBN.js?v=441c00d5:18109
+flushPassiveEffectsImpl @ chunk-RPCDYKBN.js?v=441c00d5:19490
+flushPassiveEffects @ chunk-RPCDYKBN.js?v=441c00d5:19447
+performSyncWorkOnRoot @ chunk-RPCDYKBN.js?v=441c00d5:18868
+flushSyncCallbacks @ chunk-RPCDYKBN.js?v=441c00d5:9119
+commitRootImpl @ chunk-RPCDYKBN.js?v=441c00d5:19432
+commitRoot @ chunk-RPCDYKBN.js?v=441c00d5:19277
+finishConcurrentRender @ chunk-RPCDYKBN.js?v=441c00d5:18805
+performConcurrentWorkOnRoot @ chunk-RPCDYKBN.js?v=441c00d5:18718
+workLoop @ chunk-RPCDYKBN.js?v=441c00d5:197
+flushWork @ chunk-RPCDYKBN.js?v=441c00d5:176
+performWorkUntilDeadline @ chunk-RPCDYKBN.js?v=441c00d5:384Understand this error
+error-boundary.tsx:24 Error caught by boundary: Error: Maximum update depth exceeded. This can happen when a component repeatedly calls setState inside componentWillUpdate or componentDidUpdate. React limits the number of nested updates to prevent infinite loops.
+    at checkForNestedUpdates (chunk-RPCDYKBN.js?v=441c00d5:19659:19)
+    at scheduleUpdateOnFiber (chunk-RPCDYKBN.js?v=441c00d5:18533:11)
+    at dispatchSetState (chunk-RPCDYKBN.js?v=441c00d5:12403:15)
+    at @radix-ui_react-checkbox.js?v=441c00d5:56:66
+    at setRef (chunk-2K77HOHX.js?v=441c00d5:18:12)
+    at chunk-2K77HOHX.js?v=441c00d5:27:23
+    at Array.map (<anonymous>)
+    at chunk-2K77HOHX.js?v=441c00d5:26:27
+    at safelyDetachRef (chunk-RPCDYKBN.js?v=441c00d5:16726:30)
+    at commitDeletionEffectsOnFiber (chunk-RPCDYKBN.js?v=441c00d5:17495:17) {componentStack: '\n    at button\n    at https://2b8fb90c-6ec2-4421-9…src/components/error-boundary.tsx:7:5)\n    at App'} Error Component Stack
+    at ErrorBoundary (error-boundary.tsx:15:5)
+    at App (<anonymous>)
+overrideMethod @ hook.js:608
+componentDidCatch @ error-boundary.tsx:24
+callback @ chunk-RPCDYKBN.js?v=441c00d5:14084
+callCallback @ chunk-RPCDYKBN.js?v=441c00d5:11248
+commitUpdateQueue @ chunk-RPCDYKBN.js?v=441c00d5:11265
+commitLayoutEffectOnFiber @ chunk-RPCDYKBN.js?v=441c00d5:17075
+commitLayoutMountEffects_complete @ chunk-RPCDYKBN.js?v=441c00d5:17980
+commitLayoutEffects_begin @ chunk-RPCDYKBN.js?v=441c00d5:17969
+commitLayoutEffects @ chunk-RPCDYKBN.js?v=441c00d5:17920
+commitRootImpl @ chunk-RPCDYKBN.js?v=441c00d5:19353
+commitRoot @ chunk-RPCDYKBN.js?v=441c00d5:19277
+performSyncWorkOnRoot @ chunk-RPCDYKBN.js?v=441c00d5:18895
+flushSyncCallbacks @ chunk-RPCDYKBN.js?v=441c00d5:9119
+(anonymous) @ chunk-RPCDYKBN.js?v=441c00d5:18627
+setTimeout
+scheduleFn @ @tanstack_react-query.js?v=441c00d5:555
+flush @ @tanstack_react-query.js?v=441c00d5:569
+batch @ @tanstack_react-query.js?v=441c00d5:587
+dispatch_fn @ @tanstack_react-query.js?v=441c00d5:996
+setData @ @tanstack_react-query.js?v=441c00d5:696
+onSuccess @ @tanstack_react-query.js?v=441c00d5:897
+resolve @ @tanstack_react-query.js?v=441c00d5:456
+Promise.then
+run @ @tanstack_react-query.js?v=441c00d5:498
+start @ @tanstack_react-query.js?v=441c00d5:536
+fetch @ @tanstack_react-query.js?v=441c00d5:926
+executeFetch_fn @ @tanstack_react-query.js?v=441c00d5:2211
+onSubscribe @ @tanstack_react-query.js?v=441c00d5:1898
+subscribe @ @tanstack_react-query.js?v=441c00d5:24
+(anonymous) @ @tanstack_react-query.js?v=441c00d5:3022
+subscribeToStore @ chunk-RPCDYKBN.js?v=441c00d5:11984
+commitHookEffectListMount @ chunk-RPCDYKBN.js?v=441c00d5:16915
+commitPassiveMountOnFiber @ chunk-RPCDYKBN.js?v=441c00d5:18156
+commitPassiveMountEffects_complete @ chunk-RPCDYKBN.js?v=441c00d5:18129
+commitPassiveMountEffects_begin @ chunk-RPCDYKBN.js?v=441c00d5:18119
+commitPassiveMountEffects @ chunk-RPCDYKBN.js?v=441c00d5:18109
+flushPassiveEffectsImpl @ chunk-RPCDYKBN.js?v=441c00d5:19490
+flushPassiveEffects @ chunk-RPCDYKBN.js?v=441c00d5:19447
+performSyncWorkOnRoot @ chunk-RPCDYKBN.js?v=441c00d5:18868
+flushSyncCallbacks @ chunk-RPCDYKBN.js?v=441c00d5:9119
+commitRootImpl @ chunk-RPCDYKBN.js?v=441c00d5:19432
+commitRoot @ chunk-RPCDYKBN.js?v=441c00d5:19277
+finishConcurrentRender @ chunk-RPCDYKBN.js?v=441c00d5:18805
+performConcurrentWorkOnRoot @ chunk-RPCDYKBN.js?v=441c00d5:18718
+workLoop @ chunk-RPCDYKBN.js?v=441c00d5:197
+flushWork @ chunk-RPCDYKBN.js?v=441c00d5:176
+performWorkUntilDeadline @ chunk-RPCDYKBN.js?v=441c00d5:384Understand this error
+error-boundary.tsx:25 Error stack: Error: Maximum update depth exceeded. This can happen when a component repeatedly calls setState inside componentWillUpdate or componentDidUpdate. React limits the number of nested updates to prevent infinite loops.
+    at checkForNestedUpdates (https://2b8fb90c-6ec2-4421-9f86-af41bf96de45-00-si6go84o3jg4.kirk.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/chunk-RPCDYKBN.js?v=441c00d5:19659:19)
+    at scheduleUpdateOnFiber (https://2b8fb90c-6ec2-4421-9f86-af41bf96de45-00-si6go84o3jg4.kirk.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/chunk-RPCDYKBN.js?v=441c00d5:18533:11)
+    at dispatchSetState (https://2b8fb90c-6ec2-4421-9f86-af41bf96de45-00-si6go84o3jg4.kirk.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/chunk-RPCDYKBN.js?v=441c00d5:12403:15)
+    at https://2b8fb90c-6ec2-4421-9f86-af41bf96de45-00-si6go84o3jg4.kirk.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/@radix-ui_react-checkbox.js?v=441c00d5:56:66
+    at setRef (https://2b8fb90c-6ec2-4421-9f86-af41bf96de45-00-si6go84o3jg4.kirk.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/chunk-2K77HOHX.js?v=441c00d5:18:12)
+    at https://2b8fb90c-6ec2-4421-9f86-af41bf96de45-00-si6go84o3jg4.kirk.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/chunk-2K77HOHX.js?v=441c00d5:27:23
+    at Array.map (<anonymous>)
+    at https://2b8fb90c-6ec2-4421-9f86-af41bf96de45-00-si6go84o3jg4.kirk.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/chunk-2K77HOHX.js?v=441c00d5:26:27
+    at safelyDetachRef (https://2b8fb90c-6ec2-4421-9f86-af41bf96de45-00-si6go84o3jg4.kirk.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/chunk-RPCDYKBN.js?v=441c00d5:16726:30)
+    at commitDeletionEffectsOnFiber (https://2b8fb90c-6ec2-4421-9f86-af41bf96de45-00-si6go84o3jg4.kirk.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/chunk-RPCDYKBN.js?v=441c00d5:17495:17)
+overrideMethod @ hook.js:608
+componentDidCatch @ error-boundary.tsx:25
+callback @ chunk-RPCDYKBN.js?v=441c00d5:14084
+callCallback @ chunk-RPCDYKBN.js?v=441c00d5:11248
+commitUpdateQueue @ chunk-RPCDYKBN.js?v=441c00d5:11265
+commitLayoutEffectOnFiber @ chunk-RPCDYKBN.js?v=441c00d5:17075
+commitLayoutMountEffects_complete @ chunk-RPCDYKBN.js?v=441c00d5:17980
+commitLayoutEffects_begin @ chunk-RPCDYKBN.js?v=441c00d5:17969
+commitLayoutEffects @ chunk-RPCDYKBN.js?v=441c00d5:17920
+commitRootImpl @ chunk-RPCDYKBN.js?v=441c00d5:19353
+commitRoot @ chunk-RPCDYKBN.js?v=441c00d5:19277
+performSyncWorkOnRoot @ chunk-RPCDYKBN.js?v=441c00d5:18895
+flushSyncCallbacks @ chunk-RPCDYKBN.js?v=441c00d5:9119
+(anonymous) @ chunk-RPCDYKBN.js?v=441c00d5:18627
+setTimeout
+scheduleFn @ @tanstack_react-query.js?v=441c00d5:555
+flush @ @tanstack_react-query.js?v=441c00d5:569
+batch @ @tanstack_react-query.js?v=441c00d5:587
+dispatch_fn @ @tanstack_react-query.js?v=441c00d5:996
+setData @ @tanstack_react-query.js?v=441c00d5:696
+onSuccess @ @tanstack_react-query.js?v=441c00d5:897
+resolve @ @tanstack_react-query.js?v=441c00d5:456
+Promise.then
+run @ @tanstack_react-query.js?v=441c00d5:498
+start @ @tanstack_react-query.js?v=441c00d5:536
+fetch @ @tanstack_react-query.js?v=441c00d5:926
+executeFetch_fn @ @tanstack_react-query.js?v=441c00d5:2211
+onSubscribe @ @tanstack_react-query.js?v=441c00d5:1898
+subscribe @ @tanstack_react-query.js?v=441c00d5:24
+(anonymous) @ @tanstack_react-query.js?v=441c00d5:3022
+subscribeToStore @ chunk-RPCDYKBN.js?v=441c00d5:11984
+commitHookEffectListMount @ chunk-RPCDYKBN.js?v=441c00d5:16915
+commitPassiveMountOnFiber @ chunk-RPCDYKBN.js?v=441c00d5:18156
+commitPassiveMountEffects_complete @ chunk-RPCDYKBN.js?v=441c00d5:18129
+commitPassiveMountEffects_begin @ chunk-RPCDYKBN.js?v=441c00d5:18119
+commitPassiveMountEffects @ chunk-RPCDYKBN.js?v=441c00d5:18109
+flushPassiveEffectsImpl @ chunk-RPCDYKBN.js?v=441c00d5:19490
+flushPassiveEffects @ chunk-RPCDYKBN.js?v=441c00d5:19447
+performSyncWorkOnRoot @ chunk-RPCDYKBN.js?v=441c00d5:18868
+flushSyncCallbacks @ chunk-RPCDYKBN.js?v=441c00d5:9119
+commitRootImpl @ chunk-RPCDYKBN.js?v=441c00d5:19432
+commitRoot @ chunk-RPCDYKBN.js?v=441c00d5:19277
+finishConcurrentRender @ chunk-RPCDYKBN.js?v=441c00d5:18805
+performConcurrentWorkOnRoot @ chunk-RPCDYKBN.js?v=441c00d5:18718
+workLoop @ chunk-RPCDYKBN.js?v=441c00d5:197
+flushWork @ chunk-RPCDYKBN.js?v=441c00d5:176
+performWorkUntilDeadline @ chunk-RPCDYKBN.js?v=441c00d5:384Understand this error
+error-boundary.tsx:26 Component stack: 
+    at button
+    at https://2b8fb90c-6ec2-4421-9f86-af41bf96de45-00-si6go84o3jg4.kirk.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/chunk-Q6YJROYD.js?v=441c00d5:42:13
+    at Provider (https://2b8fb90c-6ec2-4421-9f86-af41bf96de45-00-si6go84o3jg4.kirk.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/chunk-OXZDJRWN.js?v=441c00d5:38:15)
+    at https://2b8fb90c-6ec2-4421-9f86-af41bf96de45-00-si6go84o3jg4.kirk.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/@radix-ui_react-checkbox.js?v=441c00d5:44:7
+    at _c (https://2b8fb90c-6ec2-4421-9f86-af41bf96de45-00-si6go84o3jg4.kirk.replit.dev/src/components/ui/checkbox.tsx:22:11)
+    at div
+    at div
+    at form
+    at div
+    at div
+    at div
+    at div
+    at div
+    at Login (https://2b8fb90c-6ec2-4421-9f86-af41bf96de45-00-si6go84o3jg4.kirk.replit.dev/src/pages/login.tsx:34:27)
+    at Route (https://2b8fb90c-6ec2-4421-9f86-af41bf96de45-00-si6go84o3jg4.kirk.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/wouter.js?v=441c00d5:323:16)
+    at Switch (https://2b8fb90c-6ec2-4421-9f86-af41bf96de45-00-si6go84o3jg4.kirk.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/wouter.js?v=441c00d5:379:17)
+    at LayoutWrapper (https://2b8fb90c-6ec2-4421-9f86-af41bf96de45-00-si6go84o3jg4.kirk.replit.dev/src/components/layout-wrapper.tsx:23:33)
+    at RouteGuard (https://2b8fb90c-6ec2-4421-9f86-af41bf96de45-00-si6go84o3jg4.kirk.replit.dev/src/components/route-guard.tsx:21:30)
+    at TenantProvider (https://2b8fb90c-6ec2-4421-9f86-af41bf96de45-00-si6go84o3jg4.kirk.replit.dev/src/lib/tenant.tsx:22:34)
+    at AuthProvider (https://2b8fb90c-6ec2-4421-9f86-af41bf96de45-00-si6go84o3jg4.kirk.replit.dev/src/lib/auth.tsx:25:32)
+    at Route (https://2b8fb90c-6ec2-4421-9f86-af41bf96de45-00-si6go84o3jg4.kirk.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/wouter.js?v=441c00d5:323:16)
+    at Switch (https://2b8fb90c-6ec2-4421-9f86-af41bf96de45-00-si6go84o3jg4.kirk.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/wouter.js?v=441c00d5:379:17)
+    at QueryClientProvider (https://2b8fb90c-6ec2-4421-9f86-af41bf96de45-00-si6go84o3jg4.kirk.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/@tanstack_react-query.js?v=441c00d5:2805:3)
+    at LanguageProvider (https://2b8fb90c-6ec2-4421-9f86-af41bf96de45-00-si6go84o3jg4.kirk.replit.dev/src/contexts/language-context.tsx:21:36)
+    at ErrorBoundary (https://2b8fb90c-6ec2-4421-9f86-af41bf96de45-00-si6go84o3jg4.kirk.replit.dev/src/components/error-boundary.tsx:7:5)
+    at App

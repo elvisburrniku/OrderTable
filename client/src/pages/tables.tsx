@@ -328,22 +328,6 @@ export default function Tables() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({
-        predicate: (query) => {
-          const queryKey = query.queryKey as string[];
-          return queryKey.some(
-            (key) =>
-              typeof key === "string" &&
-              (key.includes("tables") ||
-                key.includes("statistics") ||
-                key.includes("dashboard") ||
-                key.includes("restaurant") ||
-                key.includes("rooms") ||
-                key.includes(`tenants/${restaurant?.tenantId}`)),
-          );
-        },
-      });
-
-      queryClient.refetchQueries({
         queryKey: [
           "/api/tenants",
           restaurant?.tenantId || 1,

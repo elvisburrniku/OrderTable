@@ -44,6 +44,8 @@ import FeedbackResponses from "./pages/feedback-responses";
 import GuestFeedbackForm from "./pages/guest-feedback-form";
 import OpeningHours from "./pages/opening-hours";
 import Integrations from "./pages/integrations";
+import WidgetIntegration from "./pages/integrations/widget";
+import WidgetDemo from "./pages/widget-demo";
 import ActiveCampaignIntegration from "./pages/integrations/activecampaign";
 import GoogleIntegration from "./pages/google-integration";
 import KlaviyoIntegration from "./pages/integrations/klaviyo";
@@ -100,6 +102,15 @@ function App() {
           <Route path="/:tenantId/book/:restaurantId" component={GuestBookingResponsive} />
           <Route path="/booking-manage/:id" component={BookingManage} />
           
+          {/* Widget demo with auth context */}
+          <Route path="/:tenantId/widget-demo">
+            <AuthProvider>
+              <TenantProvider>
+                <WidgetDemo />
+              </TenantProvider>
+            </AuthProvider>
+          </Route>
+          
           {/* All other routes with authentication */}
           <Route>
             <AuthProvider>
@@ -124,6 +135,7 @@ function App() {
                 <Route path="/:tenantId/customers" component={Customers} />
                 <Route path="/:tenantId/menu" component={MenuManagementPage} />
                 <Route path="/:tenantId/integrations" component={Integrations} />
+                <Route path="/:tenantId/integrations/widget" component={WidgetIntegration} />
         <Route path="/:tenantId/integrations/google" component={GoogleIntegration} />
                 <Route path="/:tenantId/integrations/activecampaign" component={ActiveCampaignIntegration} />
                 <Route path="/:tenantId/integrations/klaviyo" component={KlaviyoIntegration} />

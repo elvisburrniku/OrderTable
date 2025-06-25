@@ -54,9 +54,9 @@ import { format } from "date-fns";
 import { motion } from "framer-motion";
 import { useScrollToTop } from "@/hooks/use-scroll-to-top";
 
-const stripePromise = loadStripe(
-  import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY || "pk_test_your_publishable_key",
-);
+const stripePromise = import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY 
+  ? loadStripe(import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY)
+  : Promise.resolve(null);
 
 interface PaymentMethod {
   id: string;
