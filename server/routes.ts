@@ -10061,8 +10061,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
           // Generate peak hours based on booking patterns
           const hourCounts = {};
           tableBookings.forEach(b => {
-            const hour = parseInt(b.startTime.split(':')[0]);
-            hourCounts[hour] = (hourCounts[hour] || 0) + 1;
+            if (b.startTime && typeof b.startTime === 'string') {
+              const hour = parseInt(b.startTime.split(':')[0]);
+              hourCounts[hour] = (hourCounts[hour] || 0) + 1;
+            }
           });
           const peakHours = Object.entries(hourCounts)
             .sort(([,a], [,b]) => b - a)

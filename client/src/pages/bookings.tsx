@@ -121,7 +121,8 @@ export default function Bookings() {
   };
 
   // Format time helper
-  const formatTime = (timeString: string) => {
+  const formatTime = (timeString: string | null | undefined) => {
+    if (!timeString) return '-';
     return timeString.substring(0, 5); // Extract HH:MM from HH:MM:SS
   };
 
