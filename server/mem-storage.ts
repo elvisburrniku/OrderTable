@@ -519,6 +519,14 @@ export class MemoryStorage implements IStorage {
   async deleteCustomer(id: number): Promise<boolean> {
     const index = this.customers.findIndex(c => c.id === id);
     if (index !== -1) {
+      // First, update any bookings that reference this customer to set customerId to null
+      this.bookings.forEach(booking => {
+        if (booking.customerId === id) {
+          booking.customerId = null;
+        }
+      });
+      
+      // Now delete the customer
       this.customers.splice(index, 1);
       return true;
     }

@@ -800,6 +800,55 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
 
 
+  // Customer delete route
+  app.delete(
+    "/api/tenants/:tenantId/restaurants/:restaurantId/customers/:id",
+    validateTenant,
+    async (req, res) => {
+      try {
+        const customerId = parseInt(req.params.id);
+        const restaurantId = parseInt(req.params.restaurantId);
+        const tenantId = parseInt(req.params.tenantId);
+
+        // Verify customer belongs to this restaurant and tenant
+        const customer = await storage.getCustomerById(customerId);
+        if (!customer || customer.restaurantId !== restaurantId || customer.tenantId !== tenantId) {
+          return res.status(404).json({ message: "Customer not found" });
+        }
+
+        const success = await storage.deleteCustomer(customerId);
+        
+        if (success) {
+          // Log customer deletion
+          const sessionUser = (req as any).session?.user;
+          await logActivity({
+            restaurantId: restaurantId,
+            tenantId: tenantId,
+            eventType: "customer_delete",
+            description: `Customer "${customer.name}" deleted`,
+            source: "manual",
+            userEmail: sessionUser?.email,
+            userLogin: sessionUser?.email,
+            ipAddress: req.ip,
+            userAgent: req.get('User-Agent'),
+            customerId: customerId,
+            details: {
+              customerName: customer.name,
+              customerEmail: customer.email
+            }
+          });
+
+          res.json({ message: "Customer deleted successfully" });
+        } else {
+          res.status(500).json({ message: "Failed to delete customer" });
+        }
+      } catch (error) {
+        console.error("Error deleting customer:", error);
+        res.status(500).json({ message: "Internal server error" });
+      }
+    },
+  );
+
   // All tenant-restaurant routes now properly namespaced
   app.get(
     "/api/tenants/:tenantId/restaurants/:restaurantId/bookings",

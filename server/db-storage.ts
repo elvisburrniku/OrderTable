@@ -894,7 +894,8 @@ export class DatabaseStorage implements IStorage {
     }
   }
   async getCombinedTableById(id: number): Promise<any> {
-    try {
+    try```python
+ {
       const result = await this.db
         .select()
         .from(combinedTables)
@@ -1887,7 +1888,8 @@ export class DatabaseStorage implements IStorage {
       visited: false,
       bookingDate:
         feedbackData.visitDate || new Date().toISOString().split("T")[0],
-      questionName: "Guest Feedback",
+      questionName:```python
+ "Guest Feedback",
     };
     const [newFeedback] = await this.db
       .insert(feedback)
@@ -2105,8 +2107,24 @@ export class DatabaseStorage implements IStorage {
   }
 
   async deleteCustomer(id: number): Promise<boolean> {
-    if (!this.db) throw new Error("Database connection not available");
+    if (!this.db) return false;
+
     try {
+      // First, check if customer has any bookings
+      const customerBookings = await this.db
+        .select()
+        .from(bookings)
+        .where(eq(bookings.customerId, id));
+
+      if (customerBookings.length > 0) {
+        // Option 1: Set customer_id to null in bookings (soft delete approach)
+        await this.db
+          .update(bookings)
+          .set({ customerId: null })
+          .where(eq(bookings.customerId, id));
+      }
+
+      // Now delete the customer
       await this.db.delete(customers).where(eq(customers.id, id));
       return true;
     } catch (error) {
