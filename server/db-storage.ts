@@ -894,8 +894,7 @@ export class DatabaseStorage implements IStorage {
     }
   }
   async getCombinedTableById(id: number): Promise<any> {
-    try```python
- {
+    try {
       const result = await this.db
         .select()
         .from(combinedTables)
@@ -1888,8 +1887,7 @@ export class DatabaseStorage implements IStorage {
       visited: false,
       bookingDate:
         feedbackData.visitDate || new Date().toISOString().split("T")[0],
-      questionName:```python
- "Guest Feedback",
+      questionName: "Guest Feedback",
     };
     const [newFeedback] = await this.db
       .insert(feedback)
