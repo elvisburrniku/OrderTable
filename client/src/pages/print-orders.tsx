@@ -7,6 +7,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 
 import { useToast } from "@/hooks/use-toast";
 import { PrintOrderForm } from "@/components/print-order-form";
@@ -73,6 +74,8 @@ export default function PrintOrders() {
   const [showFilters, setShowFilters] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage, setItemsPerPage] = useState(7);
+  const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
+  const [orderToDelete, setOrderToDelete] = useState<PrintOrder | null>(null);
   const { user, restaurant } = useAuth();
   const { toast } = useToast();
   const queryClient = useQueryClient();
@@ -272,9 +275,11 @@ export default function PrintOrders() {
     }
   };
 
-  const handleDeleteOrder = (order: PrintOrder) => {
-    if (window.confirm(`Are you sure you want to delete order #${order.orderNumber}? This action cannot be undone.`)) {
-      deletePrintOrderMutation.mutate(order.id);
+  const confirmDeleteOrder = () => {
+    if (orderToDelete) {
+      deletePrintOrderMutation.mutate(orderToDelete.id);
+      setIsDeleteDialogOpen(false);
+      setOrderToDelete(null);
     }
   };
 
@@ -765,13 +770,13 @@ export default function PrintOrders() {
                                     onClick={(e) => {
                                       e.preventDefault();
                                       e.stopPropagation();
-                                      handleDeleteOrder(order);
+                                      setOrderToDelete(order);
+                                      setIsDeleteDialogOpen(true);
                                     }}
                                     disabled={deletePrintOrderMutation.isPending}
-                                    className="h-8 px-3 text-xs text-red-600 hover:text-red-700 hover:bg-red-50"
+                                    className="h-8 w-8 p-0 text-red-600 hover:text-red-700 hover:bg-red-50"
                                   >
-                                    <Trash2 className="h-3 w-3 mr-1" />
-                                    Delete
+                                    <Trash2 className="h-4 w-4" />
                                   </Button>
                                 </div>
                               </td>
@@ -907,6 +912,42 @@ pageNum = i + 1;
           </Tabs>
         </div>
       </div>
+
+      {/* Delete Confirmation Dialog */}
+      <Dialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>Delete Print Order</DialogTitle>
+          </DialogHeader>
+          <div className="py-4">
+            <p className="text-gray-600">
+              Are you sure you want to delete order <strong>#{orderToDelete?.orderNumber}</strong> for{" "}
+              <strong>{orderToDelete?.customerName}</strong>?
+            </p>
+            <p className="text-red-600 text-sm mt-2">This action cannot be undone.</p>
+          </div>
+          <div className="flex justify-end space-x-2">
+            <Button 
+              type="button" 
+              variant="outline" 
+              onClick={() => {
+                setIsDeleteDialogOpen(false);
+                setOrderToDelete(null);
+              }}
+            >
+              Cancel
+            </Button>
+            <Button 
+              type="button" 
+              variant="destructive" 
+              onClick={confirmDeleteOrder}
+              disabled={deletePrintOrderMutation.isPending}
+            >
+              {deletePrintOrderMutation.isPending ? "Deleting..." : "Delete Order"}
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
