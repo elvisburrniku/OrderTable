@@ -351,7 +351,7 @@ export default function Login() {
                                 <h4 className="font-semibold text-white">{plan.name}</h4>
                                 <div className="flex items-center">
                                   <span className="text-lg font-bold text-emerald-400">
-                                    {plan.price === 0 ? 'Free' : `$${plan.price}`}
+                                    {plan.price === 0 ? 'Free' : `$${(plan.price / 100).toFixed(0)}`}
                                   </span>
                                   {plan.price > 0 && (
                                     <span className="text-sm text-white/60 ml-1">/month</span>
