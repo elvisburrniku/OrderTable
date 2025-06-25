@@ -742,10 +742,9 @@ export default function PrintOrders() {
                                       e.stopPropagation();
                                       handleViewDetails(order);
                                     }}
-                                    className="h-8 px-3 text-xs"
+                                    className="h-8 w-8 p-0 text-gray-600 hover:text-gray-700 hover:bg-gray-50"
                                   >
-                                    <FileText className="h-3 w-3 mr-1" />
-                                    Details
+                                    <FileText className="h-4 w-4" />
                                   </Button>
                                   {order.paymentStatus === 'paid' && order.stripePaymentId && (
                                     <Button

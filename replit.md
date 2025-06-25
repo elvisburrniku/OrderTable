@@ -22,10 +22,12 @@ A comprehensive restaurant booking management system with React frontend and Exp
 - Kitchen order management
 
 ## Recent Changes
-- **2025-06-25**: Fixed database connection - switched from memory storage to PostgreSQL
-- **Migration completed**: All dependencies installed, workflows configured, database connected
+- **2025-06-25**: Migration from Replit Agent to Replit environment completed successfully
+- **Database connection**: Fixed and switched from memory storage to PostgreSQL 
 - **Data persistence**: Login credentials and bookings now properly saved to database
 - **Bug fixes**: Resolved JavaScript errors in bookings component and heat map generation
+- **Print orders fixes**: Added missing DELETE endpoint for print orders API, fixed JSON error
+- **UI improvements**: Updated Details button to icon-only display in print orders table
 - **Sample data**: Added 22+ realistic bookings with past and future dates for testing
 - **Security**: Implemented client/server separation and robust security practices
 
