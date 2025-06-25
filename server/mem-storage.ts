@@ -245,7 +245,7 @@ export class MemoryStorage implements IStorage {
   async updateUser(id: number, updates: Partial<User>): Promise<User | undefined> {
     const index = this.users.findIndex(u => u.id === id);
     if (index === -1) return undefined;
-    
+
     this.users[index] = { ...this.users[index], ...updates };
     return this.users[index];
   }
@@ -255,7 +255,7 @@ export class MemoryStorage implements IStorage {
     if (userIndex !== -1) {
       this.users.splice(userIndex, 1);
     }
-    
+
     // Remove related data
     this.restaurants = this.restaurants.filter(r => r.userId !== userId);
     this.tenantUsers = this.tenantUsers.filter(tu => tu.userId !== userId);
@@ -294,7 +294,7 @@ export class MemoryStorage implements IStorage {
   async updateTenant(id: number, updates: any): Promise<any> {
     const index = this.tenants.findIndex(t => t.id === id);
     if (index === -1) return undefined;
-    
+
     this.tenants[index] = { ...this.tenants[index], ...updates };
     return this.tenants[index];
   }
@@ -346,7 +346,7 @@ export class MemoryStorage implements IStorage {
   async updateRestaurant(id: number, updates: Partial<Restaurant>): Promise<Restaurant | undefined> {
     const index = this.restaurants.findIndex(r => r.id === id);
     if (index === -1) return undefined;
-    
+
     this.restaurants[index] = { ...this.restaurants[index], ...updates };
     return this.restaurants[index];
   }
@@ -409,7 +409,7 @@ export class MemoryStorage implements IStorage {
   async updateTable(id: number, updates: Partial<Table>): Promise<Table | undefined> {
     const index = this.tables.findIndex(t => t.id === id);
     if (index === -1) return undefined;
-    
+
     this.tables[index] = { ...this.tables[index], ...updates };
     return this.tables[index];
   }
@@ -417,7 +417,7 @@ export class MemoryStorage implements IStorage {
   async deleteTable(id: number): Promise<boolean> {
     const index = this.tables.findIndex(t => t.id === id);
     if (index === -1) return false;
-    
+
     this.tables.splice(index, 1);
     return true;
   }
@@ -455,7 +455,7 @@ export class MemoryStorage implements IStorage {
   async updateBooking(id: number, updates: Partial<Booking>): Promise<Booking | undefined> {
     const index = this.bookings.findIndex(b => b.id === id);
     if (index === -1) return undefined;
-    
+
     this.bookings[index] = { ...this.bookings[index], ...updates };
     return this.bookings[index];
   }
@@ -463,7 +463,7 @@ export class MemoryStorage implements IStorage {
   async deleteBooking(id: number): Promise<boolean> {
     const index = this.bookings.findIndex(b => b.id === id);
     if (index === -1) return false;
-    
+
     this.bookings.splice(index, 1);
     return true;
   }
@@ -472,7 +472,7 @@ export class MemoryStorage implements IStorage {
     const now = new Date();
     const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
     const startOfNextMonth = new Date(now.getFullYear(), now.getMonth() + 1, 1);
-    
+
     return this.bookings.filter(booking => 
       booking.tenantId === tenantId &&
       booking.createdAt >= startOfMonth &&
@@ -509,10 +509,20 @@ export class MemoryStorage implements IStorage {
 
   async updateCustomer(id: number, updates: Partial<Customer>): Promise<Customer | undefined> {
     const index = this.customers.findIndex(c => c.id === id);
-    if (index === -1) return undefined;
-    
-    this.customers[index] = { ...this.customers[index], ...updates };
-    return this.customers[index];
+    if (index !== -1) {
+      this.customers[index] = { ...this.customers[index], ...updates };
+      return this.customers[index];
+    }
+    return undefined;
+  }
+
+  async deleteCustomer(id: number): Promise<boolean> {
+    const index = this.customers.findIndex(c => c.id === id);
+    if (index !== -1) {
+      this.customers.splice(index, 1);
+      return true;
+    }
+    return false;
   }
 
   async getOrCreateCustomer(restaurantId: number, tenantId: number, customerData: { name: string; email: string; phone?: string }): Promise<Customer> {
@@ -573,7 +583,7 @@ export class MemoryStorage implements IStorage {
   async updateUserSubscription(id: number, updates: Partial<UserSubscription>): Promise<UserSubscription | undefined> {
     const index = this.userSubscriptions.findIndex(s => s.id === id);
     if (index === -1) return undefined;
-    
+
     this.userSubscriptions[index] = { ...this.userSubscriptions[index], ...updates };
     return this.userSubscriptions[index];
   }
@@ -619,7 +629,7 @@ export class MemoryStorage implements IStorage {
   async updateWaitingListEntry(id: number, updates: Partial<WaitingList>): Promise<WaitingList | undefined> {
     const index = this.waitingList.findIndex(entry => entry.id === id);
     if (index === -1) return undefined;
-    
+
     this.waitingList[index] = { ...this.waitingList[index], ...updates };
     return this.waitingList[index];
   }
@@ -627,7 +637,7 @@ export class MemoryStorage implements IStorage {
   async deleteWaitingListEntry(id: number): Promise<boolean> {
     const index = this.waitingList.findIndex(entry => entry.id === id);
     if (index === -1) return false;
-    
+
     this.waitingList.splice(index, 1);
     return true;
   }
@@ -649,7 +659,7 @@ export class MemoryStorage implements IStorage {
 
   async getActivityLogByTenant(tenantId: number): Promise<any[]> {
     const tenantLogs = this.activityLog.filter(log => log.tenantId === tenantId);
-    
+
     // Add restaurant names to the logs
     return tenantLogs.map(log => {
       const restaurant = this.restaurants.find(r => r.id === log.restaurantId);
@@ -673,7 +683,7 @@ export class MemoryStorage implements IStorage {
 
   // Product Groups
   private productGroups: any[] = [];
-  
+
   async getProductGroupsByRestaurant(restaurantId: number): Promise<any[]> {
     return this.productGroups.filter(group => group.restaurantId === restaurantId);
   }
@@ -711,7 +721,7 @@ export class MemoryStorage implements IStorage {
 
   // Products
   private products: any[] = [];
-  
+
   async getProductsByRestaurant(restaurantId: number): Promise<any[]> {
     return this.products
       .filter(product => product.restaurantId === restaurantId)
@@ -757,7 +767,7 @@ export class MemoryStorage implements IStorage {
 
   // Payment Setups
   private paymentSetups: any[] = [];
-  
+
   async getPaymentSetupsByRestaurant(restaurantId: number): Promise<any[]> {
     return this.paymentSetups
       .filter(setup => setup.restaurantId === restaurantId)
@@ -817,7 +827,7 @@ export class MemoryStorage implements IStorage {
     if (roomIndex === -1) {
       return undefined;
     }
-    
+
     this.rooms[roomIndex] = { ...this.rooms[roomIndex], ...updates };
     return this.rooms[roomIndex];
   }
@@ -826,7 +836,7 @@ export class MemoryStorage implements IStorage {
     if (roomIndex === -1) {
       return false;
     }
-    
+
     this.rooms.splice(roomIndex, 1);
     return true;
   }
@@ -844,11 +854,11 @@ export class MemoryStorage implements IStorage {
   async getOpeningHoursByRestaurant(restaurantId: number): Promise<any> { 
     return this.openingHours.filter(h => h.restaurantId === restaurantId).sort((a, b) => a.dayOfWeek - b.dayOfWeek);
   }
-  
+
   async createOrUpdateOpeningHours(restaurantId: number, tenantId: number, hoursData: any[]): Promise<any> { 
     // Remove existing hours for this restaurant
     this.openingHours = this.openingHours.filter(h => h.restaurantId !== restaurantId);
-    
+
     // Add new hours
     if (hoursData && hoursData.length > 0) {
       const newHours = hoursData.map(hour => ({
@@ -862,11 +872,11 @@ export class MemoryStorage implements IStorage {
         createdAt: new Date(),
         updatedAt: new Date()
       }));
-      
+
       this.openingHours.push(...newHours);
       return newHours;
     }
-    
+
     return [];
   }
 
@@ -926,7 +936,7 @@ export class MemoryStorage implements IStorage {
   async createOrUpdateCutOffTimes(restaurantId: number, tenantId: number, timesData: any[]): Promise<any> { 
     // Remove existing cut-off times for this restaurant
     this.cutOffTimes = this.cutOffTimes.filter(time => time.restaurantId !== restaurantId);
-    
+
     // Add new cut-off times
     const newCutOffTimes = timesData.map((timeData) => ({
       id: this.nextId++,
@@ -938,7 +948,7 @@ export class MemoryStorage implements IStorage {
       createdAt: new Date(),
       updatedAt: new Date()
     }));
-    
+
     this.cutOffTimes.push(...newCutOffTimes);
     return { success: true, data: newCutOffTimes };
   }
@@ -946,30 +956,30 @@ export class MemoryStorage implements IStorage {
   async isBookingAllowed(restaurantId: number, bookingDate: Date, bookingTime: string): Promise<boolean> { 
     // Get cut-off times for this restaurant
     const cutOffTimes = this.cutOffTimes.filter(time => time.restaurantId === restaurantId && time.isEnabled);
-    
+
     if (cutOffTimes.length === 0) {
       return true; // No cut-off times configured, allow booking
     }
-    
+
     // Get the day of week for the booking date (0 = Sunday, 1 = Monday, etc.)
     const bookingDayOfWeek = bookingDate.getDay();
-    
+
     // Find cut-off time for this day
     const cutOffTime = cutOffTimes.find(time => time.dayOfWeek === bookingDayOfWeek);
-    
+
     if (!cutOffTime || cutOffTime.cutOffHours === 0) {
       return true; // No cut-off time for this day or set to "None"
     }
-    
+
     // Create booking datetime by combining date and time
     const [hours, minutes] = bookingTime.split(':').map(Number);
     const bookingDateTime = new Date(bookingDate);
     bookingDateTime.setHours(hours, minutes, 0, 0);
-    
+
     // Calculate cut-off datetime (current time + cut-off hours)
     const now = new Date();
     const cutOffDateTime = new Date(now.getTime() + (cutOffTime.cutOffHours * 60 * 60 * 1000));
-    
+
     // Check if booking time is after the cut-off time
     return bookingDateTime > cutOffDateTime;
   }
@@ -987,7 +997,7 @@ export class MemoryStorage implements IStorage {
   async getIntegrationConfigurationsByRestaurant(restaurantId: number): Promise<any[]> { 
     return this.integrationConfigurations.filter(config => config.restaurantId === restaurantId);
   }
-  
+
   async getIntegrationConfiguration(restaurantId: number, integrationId: string): Promise<any> { 
     return this.integrationConfigurations.find(config => 
       config.restaurantId === restaurantId && config.integrationId === integrationId
@@ -999,12 +1009,12 @@ export class MemoryStorage implements IStorage {
       config.restaurantId === restaurantId && config.integrationId === integrationType
     );
   }
-  
+
   async createOrUpdateIntegrationConfiguration(restaurantId: number, tenantId: number, integrationId: string, isEnabled: boolean, configuration?: any): Promise<any> { 
     const existingIndex = this.integrationConfigurations.findIndex(config => 
       config.restaurantId === restaurantId && config.integrationId === integrationId
     );
-    
+
     const configData = {
       id: existingIndex >= 0 ? this.integrationConfigurations[existingIndex].id : this.nextId++,
       restaurantId,
@@ -1015,36 +1025,36 @@ export class MemoryStorage implements IStorage {
       createdAt: existingIndex >= 0 ? this.integrationConfigurations[existingIndex].createdAt : new Date(),
       updatedAt: new Date()
     };
-    
+
     if (existingIndex >= 0) {
       this.integrationConfigurations[existingIndex] = configData;
     } else {
       this.integrationConfigurations.push(configData);
     }
-    
+
     return configData;
   }
-  
+
   async deleteIntegrationConfiguration(restaurantId: number, integrationId: string): Promise<boolean> { 
     const index = this.integrationConfigurations.findIndex(config => 
       config.restaurantId === restaurantId && config.integrationId === integrationId
     );
-    
+
     if (index >= 0) {
       this.integrationConfigurations.splice(index, 1);
       return true;
     }
     return false;
   }
-  
+
   async getWebhooksByRestaurant(restaurantId: number): Promise<any[]> { 
     return this.webhooks.filter(webhook => webhook.restaurantId === restaurantId);
   }
-  
+
   async saveWebhooks(restaurantId: number, tenantId: number, webhooksData: any[]): Promise<any[]> { 
     // Remove existing webhooks for this restaurant
     this.webhooks = this.webhooks.filter(webhook => webhook.restaurantId !== restaurantId);
-    
+
     // Add new webhooks
     const savedWebhooks = webhooksData.map(webhook => ({
       id: this.nextId++,
@@ -1055,7 +1065,7 @@ export class MemoryStorage implements IStorage {
       createdAt: new Date(),
       updatedAt: new Date()
     }));
-    
+
     this.webhooks.push(...savedWebhooks);
     return savedWebhooks;
   }

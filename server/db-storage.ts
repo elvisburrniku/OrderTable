@@ -2103,6 +2103,17 @@ export class DatabaseStorage implements IStorage {
       return false;
     }
   }
+
+  async deleteCustomer(id: number): Promise<boolean> {
+    if (!this.db) throw new Error("Database connection not available");
+    try {
+      await this.db.delete(customers).where(eq(customers.id, id));
+      return true;
+    } catch (error) {
+      console.error("Error deleting customer:", error);
+      return false;
+    }
+  }
   async getCustomFieldById(id: number): Promise<any> {
     if (!this.db) throw new Error("Database connection not available");
     const result = await this.db

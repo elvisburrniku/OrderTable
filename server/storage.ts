@@ -160,6 +160,7 @@ export interface IStorage {
     id: number,
     updates: Partial<Customer>,
   ): Promise<Customer | undefined>;
+  deleteCustomer(id: number): Promise<boolean>;
   getOrCreateCustomer(
     restaurantId: number,
     tenantId: number,
