@@ -164,50 +164,66 @@ class SystemSettingsService {
       this.lastFetch = now;
       return this.settings;
     } catch (error) {
-      console.error("Error fetching system settings:", error);
+      // Check if it's a database connection error
+      const errorMessage = error?.message || '';
+      const isConnectionError = errorMessage.includes('endpoint is disabled') || 
+                               errorMessage.includes('Control plane request failed') ||
+                               errorMessage.includes('Connection refused') ||
+                               errorMessage.includes('ECONNREFUSED');
       
-      // Return default settings if fetch fails
+      if (isConnectionError) {
+        console.warn("Database connection unavailable - using cached/default settings");
+      } else {
+        console.error("Error fetching system settings:", error);
+      }
+      
+      // Return cached settings if available, otherwise return defaults
       if (!this.settings) {
-        this.settings = {
-          system_name: "Restaurant Booking Platform",
-          system_version: "1.0.0",
-          support_email: "support@replit.com",
-          max_trial_days: 14,
-          auto_approve_signups: true,
-          max_restaurants_per_tenant: 5,
-          max_users_per_tenant: 25,
-          default_subscription_plan: "Free",
-          enable_email_notifications: true,
-          enable_sms_notifications: false,
-          booking_confirmation_emails: true,
-          reminder_emails_enabled: true,
-          reminder_hours_before: 24,
-          default_currency: "USD",
-          enable_stripe_payments: true,
-          subscription_grace_period_days: 7,
-          max_advance_booking_days: 90,
-          min_advance_booking_hours: 2,
-          default_booking_duration_minutes: 120,
-          enable_guest_bookings: true,
-          require_phone_for_bookings: true,
-          maintenance_mode: false,
-          maintenance_message: "System is temporarily under maintenance. Please try again later.",
-          enable_debug_logging: false,
-          log_retention_days: 30,
-          session_timeout_hours: 24,
-          enable_calendar_integration: true,
-          enable_widgets: true,
-          enable_kitchen_management: true,
-          enable_analytics: true,
-          enable_multi_language: true,
-          api_rate_limit_per_minute: 100,
-          webhook_timeout_seconds: 30,
-          enable_api_access: true,
-        };
+        console.log("Initializing with default system settings due to database unavailability");
+        this.settings = this.getDefaultSettings();
       }
       
       return this.settings;
     }
+  }
+
+  private getDefaultSettings(): SystemSettings {
+    return {
+      system_name: "Restaurant Booking Platform",
+      system_version: "1.0.0",
+      support_email: "support@replit.com",
+      max_trial_days: 14,
+      auto_approve_signups: true,
+      max_restaurants_per_tenant: 5,
+      max_users_per_tenant: 25,
+      default_subscription_plan: "Free",
+      enable_email_notifications: true,
+      enable_sms_notifications: false,
+      booking_confirmation_emails: true,
+      reminder_emails_enabled: true,
+      reminder_hours_before: 24,
+      default_currency: "USD",
+      enable_stripe_payments: true,
+      subscription_grace_period_days: 7,
+      max_advance_booking_days: 90,
+      min_advance_booking_hours: 2,
+      default_booking_duration_minutes: 120,
+      enable_guest_bookings: true,
+      require_phone_for_bookings: true,
+      maintenance_mode: false,
+      maintenance_message: "System is temporarily under maintenance. Please try again later.",
+      enable_debug_logging: false,
+      log_retention_days: 30,
+      session_timeout_hours: 24,
+      enable_calendar_integration: true,
+      enable_widgets: true,
+      enable_kitchen_management: true,
+      enable_analytics: true,
+      enable_multi_language: true,
+      api_rate_limit_per_minute: 100,
+      webhook_timeout_seconds: 30,
+      enable_api_access: true,
+    };
   }
 
   // Clear cache to force refresh

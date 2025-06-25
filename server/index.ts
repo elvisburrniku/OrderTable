@@ -59,10 +59,19 @@ app.use(async (req, res, next) => {
       return next();
     }
 
-    const isMaintenanceMode = await systemSettings.isMaintenanceMode();
+    // Use timeout to prevent hanging on database issues
+    const timeoutPromise = new Promise((_, reject) => 
+      setTimeout(() => reject(new Error('Maintenance check timeout')), 5000)
+    );
+
+    const maintenancePromise = systemSettings.isMaintenanceMode();
+    
+    const isMaintenanceMode = await Promise.race([maintenancePromise, timeoutPromise])
+      .catch(() => false); // Default to not in maintenance mode if check fails
     
     if (isMaintenanceMode) {
-      const message = await systemSettings.getSetting('maintenance_message');
+      const message = await systemSettings.getSetting('maintenance_message')
+        .catch(() => "System is temporarily under maintenance. Please try again later.");
       
       return res.status(503).json({
         error: "Service Unavailable",
@@ -73,7 +82,7 @@ app.use(async (req, res, next) => {
 
     next();
   } catch (error) {
-    console.error("Error checking maintenance mode:", error);
+    console.warn("Maintenance mode check failed, continuing:", error.message);
     next();
   }
 });
