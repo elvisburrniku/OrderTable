@@ -206,11 +206,12 @@ export function registerAdminRoutes(app: Express) {
       const updatedTenant = await adminStorage.updateTenant(tenantId, updateData);
       
       // Log the action
-      await adminStorage.createSystemLog({
+      await adminStorage.addSystemLog({
         level: "info",
-        category: "tenant_management",
         message: `Tenant ${tenantId} updated by admin ${req.adminUser!.email}`,
-        metadata: { tenantId, updatedFields: Object.keys(updateData), adminUserId: req.adminUser!.id },
+        data: JSON.stringify({ tenantId, updatedFields: Object.keys(updateData), adminUserId: req.adminUser!.id }),
+        source: 'admin_panel',
+        adminUserId: req.adminUser!.id,
       });
       
       res.json(updatedTenant);
@@ -229,11 +230,12 @@ export function registerAdminRoutes(app: Express) {
       await adminStorage.suspendTenant(tenantId, reason);
       
       // Additional log with admin context
-      await adminStorage.createSystemLog({
+      await adminStorage.addSystemLog({
         level: "warning",
-        category: "tenant_management",
         message: `Tenant ${tenantId} suspended by admin ${req.adminUser!.email}`,
-        metadata: { tenantId, reason, adminUserId: req.adminUser!.id },
+        data: JSON.stringify({ tenantId, reason, adminUserId: req.adminUser!.id }),
+        source: 'admin_panel',
+        adminUserId: req.adminUser!.id,
       });
       
       res.json({ success: true, message: "Tenant suspended successfully" });
@@ -251,11 +253,12 @@ export function registerAdminRoutes(app: Express) {
       await adminStorage.unsuspendTenant(tenantId);
       
       // Additional log with admin context
-      await adminStorage.createSystemLog({
+      await adminStorage.addSystemLog({
         level: "info",
-        category: "tenant_management",
         message: `Tenant ${tenantId} unsuspended by admin ${req.adminUser!.email}`,
-        metadata: { tenantId, adminUserId: req.adminUser!.id },
+        data: JSON.stringify({ tenantId, adminUserId: req.adminUser!.id }),
+        source: 'admin_panel',
+        adminUserId: req.adminUser!.id,
       });
       
       res.json({ success: true, message: "Tenant unsuspended successfully" });
@@ -275,11 +278,12 @@ export function registerAdminRoutes(app: Express) {
       await adminStorage.pauseTenant(tenantId, pauseDate);
       
       // Additional log with admin context
-      await adminStorage.createSystemLog({
+      await adminStorage.addSystemLog({
         level: "info",
-        category: "tenant_management",
         message: `Tenant ${tenantId} paused by admin ${req.adminUser!.email}`,
-        metadata: { tenantId, pauseUntil: pauseDate, adminUserId: req.adminUser!.id },
+        data: JSON.stringify({ tenantId, pauseUntil: pauseDate, adminUserId: req.adminUser!.id }),
+        source: 'admin_panel',
+        adminUserId: req.adminUser!.id,
       });
       
       res.json({ success: true, message: "Tenant paused successfully" });

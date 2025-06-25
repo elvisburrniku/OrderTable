@@ -1,0 +1,40 @@
+Pause tenant error: TypeError: this.createSystemLog is not a function
+    at AdminStorage.pauseTenant (/home/runner/workspace/server/admin-storage.ts:428:16)
+    at process.processTicksAndRejections (node:internal/process/task_queues:95:5)
+    at async <anonymous> (/home/runner/workspace/server/admin-routes.ts:275:7)
+10:30:29 PM [express] POST /api/admin/tenants/2/pause 500 in 550ms :: {"message":"Failed to pause ten…
+Suspend tenant error: TypeError: this.createSystemLog is not a function
+    at AdminStorage.suspendTenant (/home/runner/workspace/server/admin-storage.ts:384:16)
+    at process.processTicksAndRejections (node:internal/process/task_queues:95:5)
+    at async <anonymous> (/home/runner/workspace/server/admin-routes.ts:229:7)
+10:31:02 PM [express] POST /api/admin/tenants/2/suspend 500 in 612ms :: {"message":"Failed to suspend…
+Get tenant error: error: syntax error at or near "="
+    at file:///home/runner/workspace/node_modules/@neondatabase/serverless/index.mjs:1345:74
+    at process.processTicksAndRejections (node:internal/process/task_queues:95:5)
+    at async NeonPreparedQuery.execute (/home/runner/workspace/node_modules/src/neon-serverless/session.ts:102:18)
+    at async AdminStorage.getTenantById (/home/runner/workspace/server/admin-storage.ts:326:29)
+    at async <anonymous> (/home/runner/workspace/server/admin-routes.ts:164:22) {
+  length: 90,
+  severity: 'ERROR',
+  code: '42601',
+  detail: undefined,
+  hint: undefined,
+  position: '99',
+  internalPosition: undefined,
+  internalQuery: undefined,
+  where: undefined,
+  schema: undefined,
+  table: undefined,
+  column: undefined,
+  dataType: undefined,
+  constraint: undefined,
+  file: 'scan.l',
+  line: '1244',
+  routine: 'scanner_yyerror'
+}
+10:31:07 PM [express] GET /api/admin/tenants/2 500 in 424ms :: {"message":"Failed to fetch tenant"}
+Pause tenant error: TypeError: this.createSystemLog is not a function
+    at AdminStorage.pauseTenant (/home/runner/workspace/server/admin-storage.ts:428:16)
+    at process.processTicksAndRejections (node:internal/process/task_queues:95:5)
+    at async <anonymous> (/home/runner/workspace/server/admin-routes.ts:275:7)
+10:31:12 PM [express] POST /api/admin/tenants/2/pause 500 in 531ms :: {"message":"Failed to pause ten…
