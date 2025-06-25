@@ -165,15 +165,16 @@ export default function PrintOrders() {
   };
 
   const getPaymentStatusBadge = (status: string) => {
-    const colors = {
-      paid: "bg-green-500 text-white px-2 py-1 rounded-full text-xs font-medium",
-      pending: "bg-yellow-500 text-white px-2 py-1 rounded-full text-xs font-medium",
-      failed: "bg-red-500 text-white px-2 py-1 rounded-full text-xs font-medium"
-    };
     return (
-      <span className={colors[status as keyof typeof colors] || "bg-gray-500 text-white px-2 py-1 rounded-full text-xs font-medium"}>
+      <Badge variant={status === "paid" ? "default" : status === "pending" ? "secondary" : "destructive"}
+             className={
+               status === "paid" ? "bg-green-500 text-white" : 
+               status === "pending" ? "bg-yellow-500 text-white" :
+               status === "failed" ? "bg-red-500 text-white" :
+               "bg-gray-500 text-white"
+             }>
         {status}
-      </span>
+      </Badge>
     );
   };
 
@@ -768,330 +769,282 @@ export default function PrintOrders() {
                 </div>
               </div>
 
-              {/* Table Section */}
+              {/* Enhanced Table */}
               <motion.div 
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.7, delay: 0.6 }}
-                className="p-6"
+                transition={{ duration: 0.5, delay: 0.5 }}
+                className="bg-white rounded-xl border-2 border-gray-100 overflow-hidden shadow-sm mt-6"
               >
-                {/* Enhanced Table */}
-                <div className="bg-white/80 backdrop-blur-xl rounded-2xl border border-white/20 overflow-hidden shadow-2xl">
-                  <div className="overflow-x-auto">
-                    <table className="w-full">
-                      <thead>
-                        <tr className="bg-gradient-to-r from-gray-50/90 to-gray-100/90 backdrop-blur-sm border-b border-gray-200/50">
-                          <th className="text-left py-3 px-4 text-xs font-medium text-gray-500 uppercase tracking-wider">
-                            Order ID
-                          </th>
-                          <th className="text-left py-3 px-4 text-xs font-medium text-gray-500 uppercase tracking-wider">
-                            Customer
-                          </th>
-                          <th className="text-left py-3 px-4 text-xs font-medium text-gray-500 uppercase tracking-wider">
-                            Print Details
-                          </th>
-                          <th className="text-left py-3 px-4 text-xs font-medium text-gray-500 uppercase tracking-wider">
-                            Amount
-                          </th>
-                          <th className="text-left py-3 px-4 text-xs font-medium text-gray-500 uppercase tracking-wider">
-                            Payment
-                          </th>
-                          <th className="text-left py-3 px-4 text-xs font-medium text-gray-500 uppercase tracking-wider">
-                            Status
-                          </th>
-                          <th className="text-left py-3 px-4 text-xs font-medium text-gray-500 uppercase tracking-wider">
-                            Created
-                          </th>
-                          <th className="text-left py-3 px-4 text-xs font-medium text-gray-500 uppercase tracking-wider">
-                            Actions
-                          </th>
+                <div className="overflow-x-auto">
+                  <table className="w-full">
+                    <thead>
+                      <tr className="bg-gray-50 border-b border-gray-200">
+                        <th className="text-left py-3 px-4 text-xs font-medium text-gray-500 uppercase tracking-wider">
+                          Order ID
+                        </th>
+                        <th className="text-left py-3 px-4 text-xs font-medium text-gray-500 uppercase tracking-wider">
+                          Customer
+                        </th>
+                        <th className="text-left py-3 px-4 text-xs font-medium text-gray-500 uppercase tracking-wider">
+                          Print Details
+                        </th>
+                        <th className="text-left py-3 px-4 text-xs font-medium text-gray-500 uppercase tracking-wider">
+                          Amount
+                        </th>
+                        <th className="text-left py-3 px-4 text-xs font-medium text-gray-500 uppercase tracking-wider">
+                          Payment
+                        </th>
+                        <th className="text-left py-3 px-4 text-xs font-medium text-gray-500 uppercase tracking-wider">
+                          Status
+                        </th>
+                        <th className="text-left py-3 px-4 text-xs font-medium text-gray-500 uppercase tracking-wider">
+                          Created
+                        </th>
+                        <th className="text-left py-3 px-4 text-xs font-medium text-gray-500 uppercase tracking-wider">
+                          Actions
+                        </th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-gray-100">
+                      {isLoading ? (
+                        <tr>
+                          <td colSpan={8} className="py-12 text-center">
+                            <div className="flex flex-col items-center space-y-4">
+                              <div className="animate-spin rounded-full h-8 w-8 border-2 border-green-500 border-t-transparent"></div>
+                              <span className="text-gray-500 font-medium">Loading print orders...</span>
+                            </div>
+                          </td>
                         </tr>
-                      </thead>
-                      <tbody className="divide-y divide-gray-100">
-                        {isLoading ? (
-                          <tr>
-                            <td colSpan={8} className="py-16 text-center">
-                              <motion.div 
-                                initial={{ opacity: 0 }}
-                                animate={{ opacity: 1 }}
-                                className="flex flex-col items-center space-y-6"
-                              >
-                                <motion.div 
-                                  className="relative"
-                                  animate={{ rotate: 360 }}
-                                  transition={{ duration: 2, repeat: Infinity, ease: "linear" }}
-                                >
-                                  <div className="w-12 h-12 border-4 border-gradient-to-r from-green-500 to-blue-500 border-t-transparent rounded-full"></div>
-                                  <motion.div
-                                    className="absolute inset-2 border-2 border-purple-300 border-b-transparent rounded-full"
-                                    animate={{ rotate: -360 }}
-                                    transition={{ duration: 1.5, repeat: Infinity, ease: "linear" }}
-                                  />
-                                </motion.div>
-                                <motion.span 
-                                  animate={{ opacity: [0.5, 1, 0.5] }}
-                                  transition={{ duration: 2, repeat: Infinity }}
-                                  className="text-gray-600 font-medium text-lg"
-                                >
-                                  Loading print orders...
-                                </motion.span>
-                              </motion.div>
+                      ) : paginatedPrintOrders.length === 0 ? (
+                        <tr>
+                          <td colSpan={8} className="py-12 text-center">
+                            <div className="flex flex-col items-center space-y-4">
+                              <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center">
+                                <Printer className="w-8 h-8 text-gray-400" />
+                              </div>
+                              <div>
+                                <h3 className="text-gray-900 font-medium">No print orders found</h3>
+                                <p className="text-gray-500 text-sm mt-1">Try adjusting your filters or search terms</p>
+                              </div>
+                            </div>
+                          </td>
+                        </tr>
+                      ) : (
+                        paginatedPrintOrders.map((order: PrintOrder, index: number) => (
+                          <motion.tr 
+                            key={order.id}
+                            initial={{ opacity: 0, y: 10 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            transition={{ duration: 0.3, delay: index * 0.05 }}
+                            className={`group hover:bg-blue-50 transition-all duration-200 ${
+                              index % 2 === 0 ? 'bg-white' : 'bg-gray-50/50'
+                            }`}
+                            onClick={() => handleViewTracking(order)}
+                          >
+                            <td className="py-3 px-4">
+                              <div className="flex items-center">
+                                <span className="text-blue-600 font-semibold text-sm bg-blue-50 px-2 py-1 rounded-md">
+                                  #{order.orderNumber}
+                                </span>
+                              </div>
                             </td>
-                          </tr>
-                        ) : paginatedPrintOrders.length === 0 ? (
-                          <tr>
-                            <td colSpan={8} className="py-16 text-center">
-                              <motion.div 
-                                initial={{ opacity: 0, y: 20 }}
-                                animate={{ opacity: 1, y: 0 }}
-                                transition={{ duration: 0.6 }}
-                                className="flex flex-col items-center space-y-6"
-                              >
-                                <motion.div 
-                                  className="relative"
-                                  whileHover={{ scale: 1.1 }}
-                                  animate={{ y: [0, -10, 0] }}
-                                  transition={{ duration: 3, repeat: Infinity }}
-                                >
-                                  <div className="w-20 h-20 bg-gradient-to-br from-gray-100 to-gray-200 rounded-2xl flex items-center justify-center shadow-lg">
-                                    <Printer className="w-10 h-10 text-gray-400" />
-                                  </div>
-                                  <motion.div
-                                    className="absolute -top-2 -right-2 w-6 h-6 bg-blue-100 rounded-full flex items-center justify-center"
-                                    animate={{ scale: [1, 1.2, 1] }}
-                                    transition={{ duration: 2, repeat: Infinity }}
-                                  >
-                                    <div className="w-2 h-2 bg-blue-400 rounded-full"></div>
-                                  </motion.div>
-                                </motion.div>
-                                <div className="space-y-2">
-                                  <h3 className="text-xl font-semibold text-gray-900">No print orders found</h3>
-                                  <p className="text-gray-500 max-w-sm">Try adjusting your filters or search terms to find the orders you're looking for</p>
+                            <td className="py-3 px-4">
+                              <div className="flex items-center space-x-3">
+                                <div className="w-8 h-8 bg-gradient-to-br from-green-400 to-green-600 rounded-full flex items-center justify-center text-white font-medium text-sm">
+                                  {order.customerName?.charAt(0)?.toUpperCase() || 'G'}
                                 </div>
-                              </motion.div>
+                                <div>
+                                  <div className="font-medium text-gray-900">{order.customerName}</div>
+                                  <div className="text-sm text-gray-500">{order.customerEmail}</div>
+                                </div>
+                              </div>
                             </td>
-                          </tr>
-                        ) : (
-                          paginatedPrintOrders.map((order: PrintOrder, index: number) => (
-                            <motion.tr 
-                              key={order.id}
-                              initial={{ opacity: 0, x: -20 }}
-                              animate={{ opacity: 1, x: 0 }}
-                              transition={{ duration: 0.4, delay: index * 0.1 }}
-                              whileHover={{ scale: 1.01, backgroundColor: "rgba(59, 130, 246, 0.05)" }}
-                              className={`group cursor-pointer transition-all duration-300 ${index % 2 === 0 ? 'bg-white/70' : 'bg-gray-50/30'} hover:shadow-lg border-b border-gray-100/50`}
-                              onClick={() => handleViewTracking(order)}
-                            >
-                              <td className="py-3 px-4">
-                                <div className="flex items-center">
-                                  <span className="text-blue-600 font-semibold text-sm bg-blue-50 px-2 py-1 rounded-md">
-                                    #{order.orderNumber}
-                                  </span>
+                            <td className="py-3 px-4">
+                              <div className="space-y-1">
+                                <div className="font-medium text-gray-900 capitalize">
+                                  {order.printType}
                                 </div>
-                              </td>
-                              <td className="py-3 px-4">
-                                <div className="flex items-center space-x-3">
-                                  <div className="w-8 h-8 bg-gradient-to-br from-green-400 to-green-600 rounded-full flex items-center justify-center text-white font-medium text-sm">
-                                    {order.customerName?.charAt(0)?.toUpperCase() || 'G'}
-                                  </div>
-                                  <div>
-                                    <div className="font-medium text-gray-900">{order.customerName}</div>
-                                    <div className="text-sm text-gray-500">{order.customerEmail}</div>
-                                  </div>
+                                <div className="text-sm text-gray-500">
+                                  {order.printSize} - {order.printQuality}
                                 </div>
-                              </td>
-                              <td className="py-3 px-4">
-                                <div className="space-y-1">
-                                  <div className="font-medium text-gray-900 capitalize">
-                                    {order.printType}
-                                  </div>
-                                  <div className="text-sm text-gray-500">
-                                    {order.printSize} - {order.printQuality}
-                                  </div>
-                                  <div className="text-sm text-gray-500 flex items-center">
-                                    <Package className="w-3 h-3 mr-1" />
-                                    {order.quantity} copies
-                                    {order.rushOrder && <Badge variant="secondary" className="ml-2 text-xs">Rush</Badge>}
-                                  </div>
+                                <div className="text-sm text-gray-500 flex items-center">
+                                  <Package className="w-3 h-3 mr-1" />
+                                  {order.quantity} copies
+                                  {order.rushOrder && <Badge variant="secondary" className="ml-2 text-xs">Rush</Badge>}
                                 </div>
-                              </td>
-                              <td className="py-3 px-4">
-                                <div className="font-medium text-gray-900">
-                                  {formatCurrency(order.totalAmount)}
-                                </div>
-                              </td>
-                              <td className="py-3 px-4">
-                                {getPaymentStatusBadge(order.paymentStatus)}
-                              </td>
-                              <td className="py-3 px-4">
-                                {getStatusBadge(order.orderStatus)}
-                              </td>
-                              <td className="py-3 px-4">
-                                <div className="text-sm text-gray-600">
-                                  {formatDate(order.createdAt)}
-                                </div>
-                              </td>
-                              <td className="py-3 px-4">
-                                <div className="flex items-center space-x-3">
-                                  <motion.div
-                                    whileHover={{ scale: 1.1 }}
-                                    whileTap={{ scale: 0.95 }}
-                                  >
-                                    <Button
-                                      variant="outline"
-                                      size="sm"
-                                      type="button"
-                                      onClick={(e) => {
-                                        e.preventDefault();
-                                        e.stopPropagation();
-                                        handleViewDetails(order);
-                                      }}
-                                      className="h-10 w-10 p-0 rounded-xl border-2 border-gray-200/50 text-gray-600 hover:text-blue-600 hover:bg-blue-50/50 hover:border-blue-200 transition-all duration-300 shadow-sm hover:shadow-md backdrop-blur-sm"
-                                    >
-                                      <FileText className="h-4 w-4" />
-                                    </Button>
-                                  </motion.div>
-
-                                  <motion.div
-                                    whileHover={{ scale: 1.1 }}
-                                    whileTap={{ scale: 0.95 }}
-                                  >
-                                    <Button
-                                      variant="outline"
-                                      size="sm"
-                                      type="button"
-                                      onClick={(e) => {
-                                        e.preventDefault();
-                                        e.stopPropagation();
-                                        setOrderToDelete(order);
-                                        setIsDeleteDialogOpen(true);
-                                      }}
-                                      disabled={deletePrintOrderMutation.isPending}
-                                      className="h-10 w-10 p-0 rounded-xl border-2 border-red-200/50 text-red-500 hover:text-red-600 hover:bg-red-50/50 hover:border-red-300 transition-all duration-300 shadow-sm hover:shadow-md backdrop-blur-sm disabled:opacity-50"
-                                    >
-                                      {deletePrintOrderMutation.isPending ? (
-                                        <motion.div
-                                          animate={{ rotate: 360 }}
-                                          transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
-                                          className="h-4 w-4 border-2 border-red-500 border-t-transparent rounded-full"
-                                        />
-                                      ) : (
-                                        <Trash2 className="h-4 w-4" />
-                                      )}
-                                    </Button>
-                                  </motion.div>
-                                </div>
-                              </td>
-                            </motion.tr>
-                          ))
-                        )}
-                      </tbody>
-                    </table>
-                  </div>
+                              </div>
+                            </td>
+                            <td className="py-3 px-4">
+                              <div className="font-medium text-gray-900">
+                                {formatCurrency(order.totalAmount)}
+                              </div>
+                            </td>
+                            <td className="py-3 px-4">
+                              <Badge variant={order.paymentStatus === "paid" ? "default" : order.paymentStatus === "pending" ? "secondary" : "destructive"}
+                                     className={
+                                       order.paymentStatus === "paid" ? "bg-green-500 text-white" : 
+                                       order.paymentStatus === "pending" ? "bg-yellow-500 text-white" :
+                                       order.paymentStatus === "failed" ? "bg-red-500 text-white" :
+                                       "bg-gray-500 text-white"
+                                     }>
+                                {order.paymentStatus}
+                              </Badge>
+                            </td>
+                            <td className="py-3 px-4">
+                              {getStatusBadge(order.orderStatus)}
+                            </td>
+                            <td className="py-3 px-4">
+                              <div className="text-sm text-gray-600">
+                                {formatDate(order.createdAt)}
+                              </div>
+                            </td>
+                            <td className="py-3 px-4">
+                              <div className="flex items-center space-x-2">
+                                <Button
+                                  variant="outline"
+                                  size="sm"
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    handleViewDetails(order);
+                                  }}
+                                  className="h-8 w-8 p-0"
+                                >
+                                  <Eye className="h-4 w-4" />
+                                </Button>
+                                <Button
+                                  variant="outline"
+                                  size="sm"
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    setOrderToDelete(order);
+                                    setIsDeleteDialogOpen(true);
+                                  }}
+                                  disabled={deletePrintOrderMutation.isPending}
+                                  className="h-8 w-8 p-0 text-red-600 hover:text-red-700 hover:bg-red-50"
+                                >
+                                  <Trash2 className="h-4 w-4" />
+                                </Button>
+                              </div>
+                            </td>
+                          </motion.tr>
+                        ))
+                      )}
+                    </tbody>
+                  </table>
                 </div>
+              </motion.div>
 
-                {/* Pagination */}
-                {totalPages > 1 && (
-                  <div className="flex items-center justify-between px-6 py-4 border-t bg-gray-50">
-                    <div className="flex items-center space-x-2">
-                      <span className="text-sm text-gray-600">Show</span>
-                      <Select
-                        value={itemsPerPage.toString()}
-                        onValueChange={(value) => {
-                          setItemsPerPage(parseInt(value));
-                          setCurrentPage(1);
-                        }}
-                      >
-                        <SelectTrigger className="w-16 h-8">
-                          <SelectValue />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="7">7</SelectItem>
-                          <SelectItem value="10">10</SelectItem>
-                          <SelectItem value="20">20</SelectItem>
-                          <SelectItem value="50">50</SelectItem>
-                        </SelectContent>
-                      </Select>
-                      <span className="text-sm text-gray-600">entries</span>
+              {/* Pagination */}
+              {totalPages > 1 && (
+                <motion.div 
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.5, delay: 0.6 }}
+                  className="flex items-center justify-between px-6 py-4 border-t bg-gray-50"
+                >
+                  <div className="flex items-center space-x-2">
+                    <span className="text-sm text-gray-600">Show</span>
+                    <Select
+                      value={itemsPerPage.toString()}
+                      onValueChange={(value) => {
+                        setItemsPerPage(parseInt(value));
+                        setCurrentPage(1);
+                      }}
+                    >
+                      <SelectTrigger className="w-16 h-8">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="7">7</SelectItem>
+                        <SelectItem value="10">10</SelectItem>
+                        <SelectItem value="20">20</SelectItem>
+                        <SelectItem value="50">50</SelectItem>
+                      </SelectContent>
+                    </Select>
+                    <span className="text-sm text-gray-600">entries</span>
+                  </div>
+
+                  <div className="flex items-center space-x-4">
+                    <div className="text-sm text-gray-600">
+                      {startIndex + 1}-{Math.min(endIndex, filteredPrintOrders.length)} of {filteredPrintOrders.length}
                     </div>
 
-                    <div className="flex items-center space-x-4">
-                      <div className="text-sm text-gray-600">
-                        {startIndex + 1}-{Math.min(endIndex, filteredPrintOrders.length)} of {filteredPrintOrders.length}
+                    <div className="flex items-center space-x-2">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => setCurrentPage(1)}
+                        disabled={currentPage === 1}
+                        className="px-3 py-1 h-8 text-sm"
+                      >
+                        First
+                      </Button>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => setCurrentPage(currentPage - 1)}
+                        disabled={currentPage === 1}
+                        className="w-8 h-8 p-0"
+                      >
+                        <ChevronLeft className="w-4 h-4" />
+                      </Button>
+
+                      {/* Page Numbers */}
+                      <div className="flex items-center space-x-1">
+                        {Array.from({ length: Math.min(3, totalPages) }, (_, i) => {
+                          let pageNum;
+                          if (totalPages <= 3) {
+                            pageNum = i + 1;
+                          } else if (currentPage <= 2) {
+                            pageNum = i + 1;
+                          } else if (currentPage >= totalPages - 1) {
+                            pageNum = totalPages - 2 + i;
+                          } else {
+                            pageNum = currentPage - 1 + i;
+                          }
+
+                          return (
+                            <Button
+                              key={pageNum}
+                              variant={currentPage === pageNum ? "default" : "outline"}
+                              size="sm"
+                              onClick={() => setCurrentPage(pageNum)}
+                              className={`w-8 h-8 p-0 ${
+                                currentPage === pageNum 
+                                  ? "bg-green-600 hover:bg-green-700 text-white" 
+                                  : "hover:bg-green-50"
+                              }`}
+                            >
+                              {pageNum}
+                            </Button>
+                          );
+                        })}
                       </div>
 
-                      <div className="flex items-center space-x-2">
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => setCurrentPage(1)}
-                          disabled={currentPage === 1}
-                          className="px-3 py-1 h-8 text-sm"
-                        >
-                          First
-                        </Button>
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => setCurrentPage(currentPage - 1)}
-                          disabled={currentPage === 1}
-                          className="w-8 h-8 p-0"
-                        >
-                          <ChevronLeft className="w-4 h-4" />
-                        </Button>
-
-                        {/* Page Numbers */}
-                        <div className="flex items-center space-x-1">
-                          {Array.from({ length: Math.min(3, totalPages) }, (_, i) => {
-                            let pageNum;
-                            if (totalPages <= 3) {
-                              pageNum = i + 1;
-                            } else if (currentPage <= 2) {
-
-pageNum = i + 1;
-                            } else if (currentPage >= totalPages - 1) {
-                              pageNum = totalPages - 2 + i;
-                            } else {
-                              pageNum = currentPage - 1 + i;
-                            }
-
-                            return (
-                              <Button
-                                key={pageNum}
-                                variant={currentPage === pageNum ? "default" : "outline"}
-                                size="sm"
-                                onClick={() => setCurrentPage(pageNum)}
-                                className={currentPage === pageNum ? "w-8 h-8 p-0 bg-green-600 hover:bg-green-700 text-white" : "w-8 h-8 p-0 hover:bg-green-50"}
-                              >
-                                {pageNum}
-                              </Button>
-                            );
-                          })}
-                        </div>
-
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => setCurrentPage(currentPage + 1)}
-                          disabled={currentPage === totalPages}
-                          className="w-8 h-8 p-0"
-                        >
-                          <ChevronRight className="w-4 h-4" />
-                        </Button>
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => setCurrentPage(totalPages)}
-                          disabled={currentPage === totalPages}
-                          className="px-3 py-1 h-8 text-sm"
-                        >
-                          Last
-                        </Button>
-                      </div>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => setCurrentPage(currentPage + 1)}
+                        disabled={currentPage === totalPages}
+                        className="w-8 h-8 p-0"
+                      >
+                        <ChevronRight className="w-4 h-4" />
+                      </Button>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => setCurrentPage(totalPages)}
+                        disabled={currentPage === totalPages}
+                        className="px-3 py-1 h-8 text-sm"
+                      >
+                        Last
+                      </Button>
                     </div>
                   </div>
-                )}
-              </motion.div>
+                </motion.div>
+              )}
+            </div>
             </TabsContent>
 
             <TabsContent value="new-order">
