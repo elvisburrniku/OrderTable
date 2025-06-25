@@ -209,96 +209,97 @@ export class AdminStorage {
 
   // Tenant management
   async getAllTenants() {
-    const tenantsWithStats = await db
-      .select({
-        id: tenants.id,
-        name: tenants.name,
-        slug: tenants.slug,
-        subscriptionStatus: tenants.subscriptionStatus,
-        subscriptionPlanId: tenants.subscriptionPlanId,
-        trialStartDate: tenants.trialStartDate,
-        trialEndDate: tenants.trialEndDate,
-        subscriptionStartDate: tenants.subscriptionStartDate,
-        subscriptionEndDate: tenants.subscriptionEndDate,
-        stripeCustomerId: tenants.stripeCustomerId,
-        stripeSubscriptionId: tenants.stripeSubscriptionId,
-        maxRestaurants: tenants.maxRestaurants,
-        additionalRestaurants: tenants.additionalRestaurants,
-        additionalRestaurantsCost: tenants.additionalRestaurantsCost,
-        createdAt: tenants.createdAt,
-        planName: subscriptionPlans.name,
-        planPrice: subscriptionPlans.price,
-        planMaxTables: subscriptionPlans.maxTables,
-        planMaxBookingsPerMonth: subscriptionPlans.maxBookingsPerMonth,
-        planMaxRestaurants: subscriptionPlans.maxRestaurants,
-      })
-      .from(tenants)
-      .leftJoin(subscriptionPlans, eq(tenants.subscriptionPlanId, subscriptionPlans.id))
-      .orderBy(desc(tenants.createdAt));
+    try {
+      // Get all tenants with their subscription plans
+      const tenantsWithPlans = await db
+        .select({
+          // Tenant fields
+          tenantId: tenants.id,
+          tenantName: tenants.name,
+          tenantSlug: tenants.slug,
+          subscriptionStatus: tenants.subscriptionStatus,
+          subscriptionPlanId: tenants.subscriptionPlanId,
+          trialStartDate: tenants.trialStartDate,
+          trialEndDate: tenants.trialEndDate,
+          subscriptionStartDate: tenants.subscriptionStartDate,
+          subscriptionEndDate: tenants.subscriptionEndDate,
+          stripeCustomerId: tenants.stripeCustomerId,
+          stripeSubscriptionId: tenants.stripeSubscriptionId,
+          maxRestaurants: tenants.maxRestaurants,
+          additionalRestaurants: tenants.additionalRestaurants,
+          additionalRestaurantsCost: tenants.additionalRestaurantsCost,
+          tenantCreatedAt: tenants.createdAt,
+          // Plan fields
+          planId: subscriptionPlans.id,
+          planName: subscriptionPlans.name,
+          planPrice: subscriptionPlans.price,
+          planInterval: subscriptionPlans.interval,
+          planFeatures: subscriptionPlans.features,
+          planMaxTables: subscriptionPlans.maxTables,
+          planMaxBookingsPerMonth: subscriptionPlans.maxBookingsPerMonth,
+          planMaxRestaurants: subscriptionPlans.maxRestaurants,
+          planTrialDays: subscriptionPlans.trialDays,
+          planIsActive: subscriptionPlans.isActive,
+        })
+        .from(tenants)
+        .leftJoin(subscriptionPlans, eq(tenants.subscriptionPlanId, subscriptionPlans.id))
+        .orderBy(desc(tenants.createdAt));
 
-    // Get counts for each tenant
-    const tenantsWithCounts = await Promise.all(
-      tenantsWithStats.map(async (tenant) => {
-        const [restaurantCount] = await db
-          .select({ count: count() })
-          .from(restaurants)
-          .where(eq(restaurants.tenantId, tenant.id));
+      // Build the response with proper structure
+      const result = tenantsWithPlans.map(row => ({
+        tenant: {
+          id: row.tenantId,
+          name: row.tenantName,
+          slug: row.tenantSlug,
+          subscriptionStatus: row.subscriptionStatus,
+          subscriptionPlanId: row.subscriptionPlanId,
+          trialStartDate: row.trialStartDate,
+          trialEndDate: row.trialEndDate,
+          subscriptionStartDate: row.subscriptionStartDate,
+          subscriptionEndDate: row.subscriptionEndDate,
+          stripeCustomerId: row.stripeCustomerId,
+          stripeSubscriptionId: row.stripeSubscriptionId,
+          maxRestaurants: row.maxRestaurants,
+          additionalRestaurants: row.additionalRestaurants,
+          additionalRestaurantsCost: row.additionalRestaurantsCost,
+          createdAt: row.tenantCreatedAt,
+        },
+        subscriptionPlan: row.planId ? {
+          id: row.planId,
+          name: row.planName,
+          price: row.planPrice,
+          interval: row.planInterval,
+          features: row.planFeatures,
+          maxTables: row.planMaxTables,
+          maxBookingsPerMonth: row.planMaxBookingsPerMonth,
+          maxRestaurants: row.planMaxRestaurants,
+          trialDays: row.planTrialDays,
+          isActive: row.planIsActive,
+        } : null,
+        restaurantCount: 0,
+        userCount: 0,
+        bookingCount: 0,
+      }));
 
-        const [userCount] = await db
-          .select({ count: count() })
-          .from(users)
-          .where(eq(users.tenantId, tenant.id));
-
-        const [bookingCount] = await db
-          .select({ count: count() })
-          .from(bookings)
-          .where(eq(bookings.tenantId, tenant.id));
-
-        return {
-          ...tenant,
-          restaurantCount: restaurantCount.count,
-          userCount: userCount.count,
-          bookingCount: bookingCount.count,
-        };
-      })
-    );
-
-    return tenantsWithCounts;
+      return result;
+    } catch (error) {
+      console.error("Error in getAllTenants:", error);
+      throw error;
+    }
   }
 
   async getTenantById(id: number) {
-    const [tenant] = await db
-      .select({
-        id: tenants.id,
-        name: tenants.name,
-        slug: tenants.slug,
-        subscriptionStatus: tenants.subscriptionStatus,
-        subscriptionPlanId: tenants.subscriptionPlanId,
-        trialStartDate: tenants.trialStartDate,
-        trialEndDate: tenants.trialEndDate,
-        subscriptionStartDate: tenants.subscriptionStartDate,
-        subscriptionEndDate: tenants.subscriptionEndDate,
-        stripeCustomerId: tenants.stripeCustomerId,
-        stripeSubscriptionId: tenants.stripeSubscriptionId,
-        maxRestaurants: tenants.maxRestaurants,
-        additionalRestaurants: tenants.additionalRestaurants,
-        additionalRestaurantsCost: tenants.additionalRestaurantsCost,
-        createdAt: tenants.createdAt,
-        planName: subscriptionPlans.name,
-        planPrice: subscriptionPlans.price,
-        planInterval: subscriptionPlans.interval,
-        planFeatures: subscriptionPlans.features,
-        planMaxTables: subscriptionPlans.maxTables,
-        planMaxBookingsPerMonth: subscriptionPlans.maxBookingsPerMonth,
-        planMaxRestaurants: subscriptionPlans.maxRestaurants,
-        planTrialDays: subscriptionPlans.trialDays,
-      })
+    const [result] = await db
+      .select()
       .from(tenants)
       .leftJoin(subscriptionPlans, eq(tenants.subscriptionPlanId, subscriptionPlans.id))
       .where(eq(tenants.id, id))
       .limit(1);
 
-    if (!tenant) return null;
+    if (!result) return null;
+    
+    const tenant = result.tenants;
+    const plan = result.subscription_plans;
 
     // Get tenant's restaurants with details
     const tenantRestaurants = await db
@@ -330,11 +331,9 @@ export class AdminStorage {
         restaurantName: users.restaurantName,
         ssoProvider: users.ssoProvider,
         createdAt: users.createdAt,
-        role: tenantUsers.role,
       })
       .from(users)
-      .innerJoin(tenantUsers, eq(users.id, tenantUsers.userId))
-      .where(eq(tenantUsers.tenantId, id))
+      .where(eq(users.tenantId, id))
       .orderBy(users.createdAt);
 
     // Get recent bookings count
@@ -349,7 +348,8 @@ export class AdminStorage {
       );
 
     return {
-      ...tenant,
+      tenant,
+      subscriptionPlan: plan,
       restaurants: tenantRestaurants,
       users: tenantUsersList,
       recentBookingsCount: recentBookingsCount.count,
