@@ -525,7 +525,7 @@ export class MemoryStorage implements IStorage {
           booking.customerId = null;
         }
       });
-      
+
       // Now delete the customer
       this.customers.splice(index, 1);
       return true;
@@ -1164,5 +1164,23 @@ export class MemoryStorage implements IStorage {
     if (index === -1) return false;
     this.menuItems.splice(index, 1);
     return true;
+  }
+
+  async updatePrintOrder(id: number, updates: Partial<InsertPrintOrder>): Promise<InsertPrintOrder | null> {
+    const orderIndex = this.printOrders.findIndex(order => order.id === id);
+    if (orderIndex === -1) return null;
+
+    this.printOrders[orderIndex] = { ...this.printOrders[orderIndex], ...updates };
+    return this.printOrders[orderIndex];
+  }
+
+  async deletePrintOrder(orderId: number): Promise<void> {
+    const orderIndex = this.printOrders.findIndex(order => order.id === orderId);
+    if (orderIndex === -1) {
+      throw new Error(`Print order with ID ${orderId} not found`);
+    }
+
+    this.printOrders.splice(orderIndex, 1);
+    console.log(`Deleted print order ${orderId} from memory storage`);
   }
 }

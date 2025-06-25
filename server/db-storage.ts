@@ -895,7 +895,7 @@ export class DatabaseStorage implements IStorage {
   }
   async getCombinedTableById(id: number): Promise<any> {
     try {
-      const result = await this.db
+      const result = awaitthis.db
         .select()
         .from(combinedTables)
         .where(eq(combinedTables.id, id));
@@ -2805,8 +2805,7 @@ export class DatabaseStorage implements IStorage {
   }
   async deleteKitchenOrder(id: number): Promise<boolean> {
     if (!this.db) return false;
-    await this.db.delete(kitchenOrders).where(eq(kitchenOrders.id, id));
-    return true;
+    await this.db.delete(kitchenOrders).where(eq(kitchenOrders.id, id));    return true;
   }
   // Kitchen Stations
   async createKitchenStation(stationData: any): Promise<any> {
@@ -3210,11 +3209,13 @@ export class DatabaseStorage implements IStorage {
       .where(eq(printOrders.orderNumber, orderNumber));
     return printOrder;
   }
-  async deletePrintOrder(orderId: number) {
-    const [deletedOrder] = await this.db
-      .delete(printOrders)
-      .where(eq(printOrders.id, orderId))
-      .returning();
-    return deletedOrder;
+  async deletePrintOrder(orderId: number): Promise<void> {
+    try {
+      const result = await this.db.delete(printOrders).where(eq(printOrders.id, orderId));
+      console.log(`Deleted print order ${orderId}`);
+    } catch (error) {
+      console.error(`Error deleting print order ${orderId}:`, error);
+      throw new Error(`Failed to delete print order: ${error.message}`);
+    }
   }
 }
