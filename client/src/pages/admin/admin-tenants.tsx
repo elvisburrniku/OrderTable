@@ -31,36 +31,42 @@ import {
 import { useToast } from "@/hooks/use-toast";
 import { format } from "date-fns";
 
-interface Tenant {
-  id: number;
-  name: string;
-  slug: string;
-  subscriptionStatus: string;
-  subscriptionPlanId: number;
-  trialStartDate: string;
-  trialEndDate: string;
-  subscriptionStartDate: string;
-  subscriptionEndDate: string;
-  stripeCustomerId: string;
-  stripeSubscriptionId: string;
-  maxRestaurants: number;
-  additionalRestaurants: number;
-  additionalRestaurantsCost: number;
-  createdAt: string;
-  planName: string;
-  planPrice: number;
-  planMaxTables: number;
-  planMaxBookingsPerMonth: number;
-  planMaxRestaurants: number;
+interface TenantData {
+  tenant: {
+    id: number;
+    name: string;
+    slug: string;
+    subscriptionStatus: string;
+    subscriptionPlanId: number;
+    trialStartDate: string;
+    trialEndDate: string;
+    subscriptionStartDate: string;
+    subscriptionEndDate: string;
+    stripeCustomerId: string;
+    stripeSubscriptionId: string;
+    maxRestaurants: number;
+    additionalRestaurants: number;
+    additionalRestaurantsCost: number;
+    createdAt: string;
+  };
+  subscriptionPlan: {
+    id: number;
+    name: string;
+    price: number;
+    interval: string;
+    features: string;
+    maxTables: number;
+    maxBookingsPerMonth: number;
+    maxRestaurants: number;
+    trialDays: number;
+    isActive: boolean;
+  } | null;
   restaurantCount: number;
   userCount: number;
   bookingCount: number;
 }
 
-interface TenantDetail extends Tenant {
-  planInterval: string;
-  planFeatures: string;
-  planTrialDays: number;
+interface TenantDetail extends TenantData {
   restaurants: Array<{
     id: number;
     name: string;
@@ -103,11 +109,11 @@ interface AdminTenantsProps {
 }
 
 export function AdminTenants({ token }: AdminTenantsProps) {
-  const [tenants, setTenants] = useState<Tenant[]>([]);
-  const [filteredTenants, setFilteredTenants] = useState<Tenant[]>([]);
+  const [tenants, setTenants] = useState<TenantData[]>([]);
+  const [filteredTenants, setFilteredTenants] = useState<TenantData[]>([]);
   const [subscriptionPlans, setSubscriptionPlans] = useState<SubscriptionPlan[]>([]);
   const [selectedTenant, setSelectedTenant] = useState<TenantDetail | null>(null);
-  const [editingTenant, setEditingTenant] = useState<Partial<Tenant> | null>(null);
+  const [editingTenant, setEditingTenant] = useState<Partial<TenantData> | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isLoadingTenant, setIsLoadingTenant] = useState(false);
   const [isUpdating, setIsUpdating] = useState(false);
@@ -370,13 +376,13 @@ export function AdminTenants({ token }: AdminTenantsProps) {
 
     if (searchTerm) {
       filtered = filtered.filter(t => 
-        t.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        t.slug.toLowerCase().includes(searchTerm.toLowerCase())
+        t.tenant.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        t.tenant.slug.toLowerCase().includes(searchTerm.toLowerCase())
       );
     }
 
     if (statusFilter !== "all") {
-      filtered = filtered.filter(t => t.subscriptionStatus === statusFilter);
+      filtered = filtered.filter(t => t.tenant.subscriptionStatus === statusFilter);
     }
 
     setFilteredTenants(filtered);
@@ -396,23 +402,35 @@ export function AdminTenants({ token }: AdminTenantsProps) {
     return <Badge variant={config.variant}>{config.label}</Badge>;
   };
 
-  const handleEditTenant = (tenant: Tenant) => {
+  const handleEditTenant = (tenantData: TenantData) => {
     setEditingTenant({
-      id: tenant.id,
-      name: tenant.name,
-      subscriptionStatus: tenant.subscriptionStatus,
-      subscriptionPlanId: tenant.subscriptionPlanId,
-      maxRestaurants: tenant.maxRestaurants,
-      additionalRestaurants: tenant.additionalRestaurants,
-      additionalRestaurantsCost: tenant.additionalRestaurantsCost,
-      stripeCustomerId: tenant.stripeCustomerId,
-      stripeSubscriptionId: tenant.stripeSubscriptionId,
+      tenant: {
+        id: tenantData.tenant.id,
+        name: tenantData.tenant.name,
+        subscriptionStatus: tenantData.tenant.subscriptionStatus,
+        subscriptionPlanId: tenantData.tenant.subscriptionPlanId,
+        maxRestaurants: tenantData.tenant.maxRestaurants,
+        additionalRestaurants: tenantData.tenant.additionalRestaurants,
+        additionalRestaurantsCost: tenantData.tenant.additionalRestaurantsCost,
+        stripeCustomerId: tenantData.tenant.stripeCustomerId,
+        stripeSubscriptionId: tenantData.tenant.stripeSubscriptionId,
+        slug: tenantData.tenant.slug,
+        trialStartDate: tenantData.tenant.trialStartDate,
+        trialEndDate: tenantData.tenant.trialEndDate,
+        subscriptionStartDate: tenantData.tenant.subscriptionStartDate,
+        subscriptionEndDate: tenantData.tenant.subscriptionEndDate,
+        createdAt: tenantData.tenant.createdAt,
+      },
+      subscriptionPlan: tenantData.subscriptionPlan,
+      restaurantCount: tenantData.restaurantCount,
+      userCount: tenantData.userCount,
+      bookingCount: tenantData.bookingCount,
     });
     setShowEditDialog(true);
   };
 
-  const handleViewTenant = async (tenant: Tenant) => {
-    await fetchTenantDetail(tenant.id);
+  const handleViewTenant = async (tenantData: TenantData) => {
+    await fetchTenantDetail(tenantData.tenant.id);
     setShowDetailDialog(true);
   };
 
@@ -524,27 +542,27 @@ export function AdminTenants({ token }: AdminTenantsProps) {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {filteredTenants.map((tenant) => (
-                  <TableRow key={tenant.id}>
+                {filteredTenants.map((tenantData) => (
+                  <TableRow key={tenantData.tenant.id}>
                     <TableCell>
                       <div>
-                        <div className="font-medium">{tenant.name}</div>
+                        <div className="font-medium">{tenantData.tenant.name}</div>
                         <div className="text-sm text-muted-foreground">
-                          {tenant.slug}
+                          /{tenantData.tenant.slug}
                         </div>
                       </div>
                     </TableCell>
                     <TableCell>
-                      {getStatusBadge(tenant.subscriptionStatus)}
+                      {getStatusBadge(tenantData.tenant.subscriptionStatus)}
                     </TableCell>
                     <TableCell>
                       <div>
                         <div className="font-medium">
-                          {tenant.planName || "No Plan"}
+                          {tenantData.subscriptionPlan?.name || "No Plan"}
                         </div>
-                        {tenant.planPrice && (
+                        {tenantData.subscriptionPlan?.price && (
                           <div className="text-sm text-muted-foreground">
-                            ${(tenant.planPrice / 100).toFixed(2)}/month
+                            ${(tenantData.subscriptionPlan.price / 100).toFixed(2)}/month
                           </div>
                         )}
                       </div>
@@ -553,39 +571,39 @@ export function AdminTenants({ token }: AdminTenantsProps) {
                       <div className="flex gap-4 text-sm">
                         <div className="flex items-center gap-1">
                           <Building className="h-3 w-3" />
-                          {tenant.restaurantCount}
+                          {tenantData.restaurantCount}
                         </div>
                         <div className="flex items-center gap-1">
                           <Users className="h-3 w-3" />
-                          {tenant.userCount}
+                          {tenantData.userCount}
                         </div>
                         <div className="flex items-center gap-1">
                           <Calendar className="h-3 w-3" />
-                          {tenant.bookingCount}
+                          {tenantData.bookingCount}
                         </div>
                       </div>
                     </TableCell>
                     <TableCell>
-                      {formatDate(tenant.createdAt)}
+                      {formatDate(tenantData.tenant.createdAt)}
                     </TableCell>
                     <TableCell>
                       <div className="flex items-center gap-2">
                         <Button
                           variant="outline"
                           size="sm"
-                          onClick={() => handleViewTenant(tenant)}
+                          onClick={() => handleViewTenant(tenantData)}
                         >
                           <Eye className="h-4 w-4" />
                         </Button>
                         <Button
                           variant="outline"
                           size="sm"
-                          onClick={() => handleEditTenant(tenant)}
+                          onClick={() => handleEditTenant(tenantData)}
                         >
                           <Edit className="h-4 w-4" />
                         </Button>
                         
-                        {tenant.subscriptionStatus === 'suspended' ? (
+                        {tenantData.tenant.subscriptionStatus === 'suspended' ? (
                           <AlertDialog>
                             <AlertDialogTrigger asChild>
                               <Button variant="outline" size="sm">
@@ -596,14 +614,14 @@ export function AdminTenants({ token }: AdminTenantsProps) {
                               <AlertDialogHeader>
                                 <AlertDialogTitle>Unsuspend Tenant</AlertDialogTitle>
                                 <AlertDialogDescription>
-                                  Are you sure you want to unsuspend {tenant.name}? 
+                                  Are you sure you want to unsuspend {tenantData.tenant.name}? 
                                   Their service will be restored immediately.
                                 </AlertDialogDescription>
                               </AlertDialogHeader>
                               <AlertDialogFooter>
                                 <AlertDialogCancel>Cancel</AlertDialogCancel>
                                 <AlertDialogAction
-                                  onClick={() => unsuspendTenant(tenant.id)}
+                                  onClick={() => unsuspendTenant(tenantData.tenant.id)}
                                   disabled={isUpdating}
                                 >
                                   Unsuspend
@@ -611,7 +629,7 @@ export function AdminTenants({ token }: AdminTenantsProps) {
                               </AlertDialogFooter>
                             </AlertDialogContent>
                           </AlertDialog>
-                        ) : tenant.subscriptionStatus === 'paused' ? (
+                        ) : tenantData.tenant.subscriptionStatus === 'paused' ? (
                           <AlertDialog>
                             <AlertDialogTrigger asChild>
                               <Button variant="outline" size="sm">
@@ -622,14 +640,14 @@ export function AdminTenants({ token }: AdminTenantsProps) {
                               <AlertDialogHeader>
                                 <AlertDialogTitle>Resume Tenant</AlertDialogTitle>
                                 <AlertDialogDescription>
-                                  Are you sure you want to resume {tenant.name}? 
+                                  Are you sure you want to resume {tenantData.tenant.name}? 
                                   Their service will be restored and billing will continue.
                                 </AlertDialogDescription>
                               </AlertDialogHeader>
                               <AlertDialogFooter>
                                 <AlertDialogCancel>Cancel</AlertDialogCancel>
                                 <AlertDialogAction
-                                  onClick={() => unsuspendTenant(tenant.id)}
+                                  onClick={() => unsuspendTenant(tenantData.tenant.id)}
                                   disabled={isUpdating}
                                 >
                                   Resume
@@ -649,7 +667,7 @@ export function AdminTenants({ token }: AdminTenantsProps) {
                                 <AlertDialogHeader>
                                   <AlertDialogTitle>Suspend Tenant</AlertDialogTitle>
                                   <AlertDialogDescription>
-                                    This will immediately suspend {tenant.name} and block access to their system.
+                                    This will immediately suspend {tenantData.tenant.name} and block access to their system.
                                   </AlertDialogDescription>
                                 </AlertDialogHeader>
                                 <div className="py-4">
@@ -665,7 +683,7 @@ export function AdminTenants({ token }: AdminTenantsProps) {
                                 <AlertDialogFooter>
                                   <AlertDialogCancel>Cancel</AlertDialogCancel>
                                   <AlertDialogAction
-                                    onClick={() => suspendTenant(tenant.id, suspendReason)}
+                                    onClick={() => suspendTenant(tenantData.tenant.id, suspendReason)}
                                     disabled={isUpdating}
                                     className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
                                   >
@@ -685,7 +703,7 @@ export function AdminTenants({ token }: AdminTenantsProps) {
                                 <AlertDialogHeader>
                                   <AlertDialogTitle>Pause Tenant</AlertDialogTitle>
                                   <AlertDialogDescription>
-                                    This will pause {tenant.name}'s service. They can be resumed later.
+                                    This will pause {tenantData.tenant.name}'s service. They can be resumed later.
                                   </AlertDialogDescription>
                                 </AlertDialogHeader>
                                 <div className="py-4">
@@ -701,7 +719,7 @@ export function AdminTenants({ token }: AdminTenantsProps) {
                                 <AlertDialogFooter>
                                   <AlertDialogCancel>Cancel</AlertDialogCancel>
                                   <AlertDialogAction
-                                    onClick={() => pauseTenant(tenant.id, pauseUntil)}
+                                    onClick={() => pauseTenant(tenantData.tenant.id, pauseUntil)}
                                     disabled={isUpdating}
                                   >
                                     Pause
@@ -738,16 +756,22 @@ export function AdminTenants({ token }: AdminTenantsProps) {
                   <Label htmlFor="tenant-name">Organization Name</Label>
                   <Input
                     id="tenant-name"
-                    value={editingTenant.name || ""}
-                    onChange={(e) => setEditingTenant(prev => prev ? {...prev, name: e.target.value} : null)}
+                    value={editingTenant.tenant?.name || ""}
+                    onChange={(e) => setEditingTenant(prev => prev ? {
+                      ...prev, 
+                      tenant: { ...prev.tenant!, name: e.target.value }
+                    } : null)}
                   />
                 </div>
                 
                 <div>
                   <Label htmlFor="subscription-status">Status</Label>
                   <Select
-                    value={editingTenant.subscriptionStatus || ""}
-                    onValueChange={(value) => setEditingTenant(prev => prev ? {...prev, subscriptionStatus: value} : null)}
+                    value={editingTenant.tenant?.subscriptionStatus || ""}
+                    onValueChange={(value) => setEditingTenant(prev => prev ? {
+                      ...prev,
+                      tenant: { ...prev.tenant!, subscriptionStatus: value }
+                    } : null)}
                   >
                     <SelectTrigger>
                       <SelectValue placeholder="Select status" />
@@ -768,8 +792,11 @@ export function AdminTenants({ token }: AdminTenantsProps) {
                 <div>
                   <Label htmlFor="subscription-plan">Subscription Plan</Label>
                   <Select
-                    value={editingTenant.subscriptionPlanId?.toString() || ""}
-                    onValueChange={(value) => setEditingTenant(prev => prev ? {...prev, subscriptionPlanId: parseInt(value)} : null)}
+                    value={editingTenant.tenant?.subscriptionPlanId?.toString() || ""}
+                    onValueChange={(value) => setEditingTenant(prev => prev ? {
+                      ...prev,
+                      tenant: { ...prev.tenant!, subscriptionPlanId: parseInt(value) }
+                    } : null)}
                   >
                     <SelectTrigger>
                       <SelectValue placeholder="Select plan" />
@@ -789,8 +816,11 @@ export function AdminTenants({ token }: AdminTenantsProps) {
                   <Input
                     id="max-restaurants"
                     type="number"
-                    value={editingTenant.maxRestaurants || ""}
-                    onChange={(e) => setEditingTenant(prev => prev ? {...prev, maxRestaurants: parseInt(e.target.value) || 0} : null)}
+                    value={editingTenant.tenant?.maxRestaurants || ""}
+                    onChange={(e) => setEditingTenant(prev => prev ? {
+                      ...prev,
+                      tenant: { ...prev.tenant!, maxRestaurants: parseInt(e.target.value) || 0 }
+                    } : null)}
                   />
                 </div>
               </div>
@@ -801,8 +831,11 @@ export function AdminTenants({ token }: AdminTenantsProps) {
                   <Input
                     id="additional-restaurants"
                     type="number"
-                    value={editingTenant.additionalRestaurants || ""}
-                    onChange={(e) => setEditingTenant(prev => prev ? {...prev, additionalRestaurants: parseInt(e.target.value) || 0} : null)}
+                    value={editingTenant.tenant?.additionalRestaurants || ""}
+                    onChange={(e) => setEditingTenant(prev => prev ? {
+                      ...prev,
+                      tenant: { ...prev.tenant!, additionalRestaurants: parseInt(e.target.value) || 0 }
+                    } : null)}
                   />
                 </div>
                 
@@ -811,8 +844,11 @@ export function AdminTenants({ token }: AdminTenantsProps) {
                   <Input
                     id="additional-cost"
                     type="number"
-                    value={editingTenant.additionalRestaurantsCost || ""}
-                    onChange={(e) => setEditingTenant(prev => prev ? {...prev, additionalRestaurantsCost: parseInt(e.target.value) || 0} : null)}
+                    value={editingTenant.tenant?.additionalRestaurantsCost || ""}
+                    onChange={(e) => setEditingTenant(prev => prev ? {
+                      ...prev,
+                      tenant: { ...prev.tenant!, additionalRestaurantsCost: parseInt(e.target.value) || 0 }
+                    } : null)}
                   />
                 </div>
               </div>
@@ -822,8 +858,11 @@ export function AdminTenants({ token }: AdminTenantsProps) {
                   <Label htmlFor="stripe-customer">Stripe Customer ID</Label>
                   <Input
                     id="stripe-customer"
-                    value={editingTenant.stripeCustomerId || ""}
-                    onChange={(e) => setEditingTenant(prev => prev ? {...prev, stripeCustomerId: e.target.value} : null)}
+                    value={editingTenant.tenant?.stripeCustomerId || ""}
+                    onChange={(e) => setEditingTenant(prev => prev ? {
+                      ...prev,
+                      tenant: { ...prev.tenant!, stripeCustomerId: e.target.value }
+                    } : null)}
                   />
                 </div>
                 
@@ -831,8 +870,11 @@ export function AdminTenants({ token }: AdminTenantsProps) {
                   <Label htmlFor="stripe-subscription">Stripe Subscription ID</Label>
                   <Input
                     id="stripe-subscription"
-                    value={editingTenant.stripeSubscriptionId || ""}
-                    onChange={(e) => setEditingTenant(prev => prev ? {...prev, stripeSubscriptionId: e.target.value} : null)}
+                    value={editingTenant.tenant?.stripeSubscriptionId || ""}
+                    onChange={(e) => setEditingTenant(prev => prev ? {
+                      ...prev,
+                      tenant: { ...prev.tenant!, stripeSubscriptionId: e.target.value }
+                    } : null)}
                   />
                 </div>
               </div>
