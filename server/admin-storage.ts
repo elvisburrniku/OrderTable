@@ -223,6 +223,10 @@ export class AdminStorage {
           trialEndDate: tenants.trialEndDate,
           subscriptionStartDate: tenants.subscriptionStartDate,
           subscriptionEndDate: tenants.subscriptionEndDate,
+          pauseStartDate: tenants.pauseStartDate,
+          pauseEndDate: tenants.pauseEndDate,
+          pauseReason: tenants.pauseReason,
+          suspendReason: tenants.suspendReason,
           stripeCustomerId: tenants.stripeCustomerId,
           stripeSubscriptionId: tenants.stripeSubscriptionId,
           maxRestaurants: tenants.maxRestaurants,
@@ -257,6 +261,10 @@ export class AdminStorage {
           trialEndDate: row.trialEndDate,
           subscriptionStartDate: row.subscriptionStartDate,
           subscriptionEndDate: row.subscriptionEndDate,
+          pauseStartDate: row.pauseStartDate,
+          pauseEndDate: row.pauseEndDate,
+          pauseReason: row.pauseReason,
+          suspendReason: row.suspendReason,
           stripeCustomerId: row.stripeCustomerId,
           stripeSubscriptionId: row.stripeSubscriptionId,
           maxRestaurants: row.maxRestaurants,
@@ -552,8 +560,14 @@ export class AdminStorage {
         FROM tenants 
         WHERE subscription_status = 'paused' 
           AND pause_end_date IS NOT NULL 
-          AND pause_end_date <= NOW()
+          AND pause_end_date AT TIME ZONE 'UTC' <= NOW() AT TIME ZONE 'UTC'
       `);
+      
+      console.log(`Checking for expired pauses: Found ${expiredPausedTenants.rows.length} expired tenant(s)`);
+      
+      if (expiredPausedTenants.rows.length > 0) {
+        console.log('Expired tenants:', expiredPausedTenants.rows.map(t => `${t.name} (ID: ${t.id})`));
+      }
 
       for (const tenant of expiredPausedTenants.rows) {
         try {

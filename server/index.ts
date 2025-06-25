@@ -164,7 +164,7 @@ app.use((req, res, next) => {
       } catch (error) {
         console.error('Error in automatic unpause check:', error);
       }
-    }, 2 * 60 * 1000); // Run every 2 minutes for faster response
+    }, 30 * 1000); // Run every 30 seconds for testing
     
     console.log('Admin system and automatic unpause service initialized');
   } catch (error) {
