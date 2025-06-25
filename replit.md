@@ -24,9 +24,16 @@ A comprehensive restaurant booking management system with React frontend and Exp
 ## Recent Changes
 - **2025-06-25**: Fixed database connection - switched from memory storage to PostgreSQL
 - **Migration completed**: All dependencies installed, workflows configured, database connected
+<<<<<<< HEAD
 - **Data persistence**: Login credentials and bookings now properly saved to database
 - **Bug fixes**: Resolved JavaScript errors in bookings component and heat map generation
 - **Sample data**: Added 22+ realistic bookings with past and future dates for testing
+=======
+- **Widget Integration**: Implemented embeddable booking widget system with OpenTable-style design
+- **Widget Features**: Customizable booking widget with modern UI, multiple widget types (button, inline, popup)
+- **Integration System**: Added widget builder in integrations page with live preview and code generation
+- **Product management**: Fixed product category dropdown, creation/update API data mapping, and display issues
+>>>>>>> 88dd08f (Improve design of booking widget and add new configuration options)
 - **Security**: Implemented client/server separation and robust security practices
 
 ## User Preferences

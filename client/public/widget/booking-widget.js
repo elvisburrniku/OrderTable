@@ -124,8 +124,9 @@
     .rbw-form {
       background: white;
       border: 1px solid #e5e7eb;
-      border-radius: 8px;
+      border-radius: 12px;
       padding: 24px;
+      box-shadow: 0 10px 25px rgba(0,0,0,0.1);
     }
     
     .rbw-title {
@@ -297,27 +298,108 @@
       form.appendChild(dateField);
     }
 
-    // Time and Guests grid
-    if (config.showTime || config.showGuests) {
-      const gridDiv = document.createElement('div');
-      gridDiv.className = 'rbw-grid';
+    // OpenTable-style horizontal layout for main booking fields
+    if (config.showDate || config.showTime || config.showGuests) {
+      const horizontalGroup = document.createElement('div');
+      horizontalGroup.className = 'rbw-horizontal-group';
+      horizontalGroup.style.cssText = `
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+        align-items: end;
+        justify-content: center;
+        margin-bottom: 20px;
+        padding: 16px;
+        background: #f8fafc;
+        border-radius: 12px;
+        border: 2px solid #e2e8f0;
+      `;
+
+      // Date field (styled like OpenTable)
+      if (config.showDate) {
+        const dateContainer = document.createElement('div');
+        dateContainer.style.cssText = 'display: flex; flex-direction: column; min-width: 120px;';
+        
+        const dateLabel = document.createElement('label');
+        dateLabel.className = 'rbw-label';
+        dateLabel.textContent = 'Date';
+        dateLabel.style.fontSize = '12px';
+        dateLabel.style.fontWeight = '500';
+        dateLabel.style.color = '#64748b';
+        dateLabel.style.marginBottom = '4px';
+        dateContainer.appendChild(dateLabel);
+        
+        const dateInputWrapper = document.createElement('div');
+        dateInputWrapper.style.cssText = `
+          border: 2px solid #e2e8f0;
+          border-radius: 8px;
+          padding: 12px;
+          background: white;
+          display: flex;
+          align-items: center;
+          gap: 8px;
+          cursor: pointer;
+          transition: border-color 0.2s;
+        `;
+        
+        const dateIcon = document.createElement('span');
+        dateIcon.textContent = '📅';
+        dateIcon.style.fontSize = '14px';
+        dateInputWrapper.appendChild(dateIcon);
+        
+        const dateInput = document.createElement('input');
+        dateInput.className = 'rbw-input';
+        dateInput.type = 'date';
+        dateInput.name = 'date';
+        dateInput.required = true;
+        dateInput.style.cssText = 'border: none; outline: none; background: transparent; font-weight: 500; font-size: 14px;';
+        
+        const today = new Date().toISOString().split('T')[0];
+        dateInput.min = today;
+        dateInput.value = today;
+        
+        dateInputWrapper.appendChild(dateInput);
+        dateContainer.appendChild(dateInputWrapper);
+        horizontalGroup.appendChild(dateContainer);
+      }
 
       // Time field
       if (config.showTime) {
-        const timeField = document.createElement('div');
-        timeField.className = 'rbw-field';
+        const timeContainer = document.createElement('div');
+        timeContainer.style.cssText = 'display: flex; flex-direction: column; min-width: 100px;';
         
         const timeLabel = document.createElement('label');
         timeLabel.className = 'rbw-label';
         timeLabel.textContent = 'Time';
-        timeField.appendChild(timeLabel);
+        timeLabel.style.fontSize = '12px';
+        timeLabel.style.fontWeight = '500';
+        timeLabel.style.color = '#64748b';
+        timeLabel.style.marginBottom = '4px';
+        timeContainer.appendChild(timeLabel);
+        
+        const timeSelectWrapper = document.createElement('div');
+        timeSelectWrapper.style.cssText = `
+          border: 2px solid #e2e8f0;
+          border-radius: 8px;
+          padding: 12px;
+          background: white;
+          display: flex;
+          align-items: center;
+          gap: 8px;
+          cursor: pointer;
+        `;
+        
+        const timeIcon = document.createElement('span');
+        timeIcon.textContent = '🕐';
+        timeIcon.style.fontSize = '14px';
+        timeSelectWrapper.appendChild(timeIcon);
         
         const timeSelect = document.createElement('select');
         timeSelect.className = 'rbw-select';
         timeSelect.name = 'time';
         timeSelect.required = true;
+        timeSelect.style.cssText = 'border: none; outline: none; background: transparent; font-weight: 500; font-size: 14px; cursor: pointer;';
         
-        // Generate time slots
         const timeSlots = generateTimeSlots();
         timeSlots.forEach(slot => {
           const option = document.createElement('option');
@@ -326,24 +408,47 @@
           timeSelect.appendChild(option);
         });
         
-        timeField.appendChild(timeSelect);
-        gridDiv.appendChild(timeField);
+        timeSelectWrapper.appendChild(timeSelect);
+        timeContainer.appendChild(timeSelectWrapper);
+        horizontalGroup.appendChild(timeContainer);
       }
 
       // Guests field
       if (config.showGuests) {
-        const guestsField = document.createElement('div');
-        guestsField.className = 'rbw-field';
+        const guestsContainer = document.createElement('div');
+        guestsContainer.style.cssText = 'display: flex; flex-direction: column; min-width: 100px;';
         
         const guestsLabel = document.createElement('label');
         guestsLabel.className = 'rbw-label';
-        guestsLabel.textContent = 'Guests';
-        guestsField.appendChild(guestsLabel);
+        guestsLabel.textContent = 'Party Size';
+        guestsLabel.style.fontSize = '12px';
+        guestsLabel.style.fontWeight = '500';
+        guestsLabel.style.color = '#64748b';
+        guestsLabel.style.marginBottom = '4px';
+        guestsContainer.appendChild(guestsLabel);
+        
+        const guestsSelectWrapper = document.createElement('div');
+        guestsSelectWrapper.style.cssText = `
+          border: 2px solid #e2e8f0;
+          border-radius: 8px;
+          padding: 12px;
+          background: white;
+          display: flex;
+          align-items: center;
+          gap: 8px;
+          cursor: pointer;
+        `;
+        
+        const guestsIcon = document.createElement('span');
+        guestsIcon.textContent = '👥';
+        guestsIcon.style.fontSize = '14px';
+        guestsSelectWrapper.appendChild(guestsIcon);
         
         const guestsSelect = document.createElement('select');
         guestsSelect.className = 'rbw-select';
         guestsSelect.name = 'guests';
         guestsSelect.required = true;
+        guestsSelect.style.cssText = 'border: none; outline: none; background: transparent; font-weight: 500; font-size: 14px; cursor: pointer;';
         
         for (let i = 1; i <= 12; i++) {
           const option = document.createElement('option');
@@ -353,11 +458,39 @@
           guestsSelect.appendChild(option);
         }
         
-        guestsField.appendChild(guestsSelect);
-        gridDiv.appendChild(guestsField);
+        guestsSelectWrapper.appendChild(guestsSelect);
+        guestsContainer.appendChild(guestsSelectWrapper);
+        horizontalGroup.appendChild(guestsContainer);
       }
 
-      form.appendChild(gridDiv);
+      // Search/Book button in the horizontal group
+      const searchButton = document.createElement('button');
+      searchButton.type = 'button';
+      searchButton.textContent = 'Find a Table';
+      searchButton.style.cssText = `
+        padding: 12px 24px;
+        border: none;
+        border-radius: 8px;
+        font-weight: 600;
+        font-size: 14px;
+        cursor: pointer;
+        transition: all 0.2s ease;
+        background: ${config.backgroundColor};
+        color: ${config.color};
+        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        align-self: stretch;
+      `;
+      searchButton.addEventListener('mouseover', () => {
+        searchButton.style.transform = 'translateY(-1px)';
+        searchButton.style.boxShadow = '0 4px 8px rgba(0,0,0,0.15)';
+      });
+      searchButton.addEventListener('mouseout', () => {
+        searchButton.style.transform = 'translateY(0)';
+        searchButton.style.boxShadow = '0 2px 4px rgba(0,0,0,0.1)';
+      });
+      
+      horizontalGroup.appendChild(searchButton);
+      form.appendChild(horizontalGroup);
     }
 
     // Customer details
@@ -430,13 +563,41 @@
       form.appendChild(requestsField);
     }
 
+    // Divider
+    const divider = document.createElement('div');
+    divider.style.cssText = 'border-top: 1px solid #e2e8f0; margin: 20px 0; position: relative;';
+    const dividerText = document.createElement('span');
+    dividerText.textContent = 'Contact Information';
+    dividerText.style.cssText = 'position: absolute; top: -10px; left: 50%; transform: translateX(-50%); background: white; padding: 0 16px; font-size: 12px; color: #64748b; font-weight: 500;';
+    divider.appendChild(dividerText);
+    form.appendChild(divider);
+
     // Submit button
     const submitButton = document.createElement('button');
     submitButton.className = 'rbw-submit';
     submitButton.type = 'button';
-    submitButton.textContent = 'Book Table';
+    submitButton.textContent = 'Complete Reservation';
+    submitButton.style.cssText += `
+      background: linear-gradient(135deg, ${config.backgroundColor} 0%, ${adjustBrightness(config.backgroundColor, -10)} 100%);
+      box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+      border-radius: 8px;
+      font-size: 16px;
+      font-weight: 600;
+      padding: 16px 24px;
+      margin-top: 8px;
+    `;
     submitButton.addEventListener('click', handleSubmit);
     form.appendChild(submitButton);
+    
+    // Footer text
+    const footer = document.createElement('div');
+    footer.style.cssText = 'text-align: center; margin-top: 16px;';
+    footer.innerHTML = `
+      <p style="font-size: 12px; color: #64748b; margin: 0;">
+        Powered by Your Restaurant • Free cancellation up to 24 hours
+      </p>
+    `;
+    form.appendChild(footer);
 
     return form;
   }
@@ -458,6 +619,16 @@
       }
     }
     return slots;
+  }
+
+  // Utility function to adjust color brightness
+  function adjustBrightness(color, percent) {
+    const num = parseInt(color.replace("#",""), 16);
+    const amt = Math.round(2.55 * percent);
+    const R = (num >> 16) + amt;
+    const G = (num >> 8 & 0x00FF) + amt;
+    const B = (num & 0x0000FF) + amt;
+    return "#" + (0x1000000 + (R<255?R<1?0:R:255)*0x10000 + (G<255?G<1?0:G:255)*0x100 + (B<255?B<1?0:B:255)).toString(16).slice(1);
   }
 
   // Handle form submission

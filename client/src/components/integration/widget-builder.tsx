@@ -340,43 +340,64 @@ export function WidgetBuilder() {
                 {config.type === 'inline' && (
                   <div className="p-4">
                     <div 
-                      className="border rounded-lg p-4"
+                      className="bg-white rounded-lg shadow-lg border"
                       style={{
                         borderRadius: `${config.borderRadius}px`,
-                        backgroundColor: 'white'
                       }}
                     >
-                      <h3 className="font-semibold mb-4" style={{ color: config.backgroundColor }}>
-                        {config.headerText}
-                      </h3>
-                      <div className="space-y-3">
-                        {config.showDate && (
-                          <div>
-                            <label className="block text-sm font-medium mb-1">Date</label>
-                            <div className="border rounded px-3 py-2 bg-gray-50">Select date</div>
-                          </div>
-                        )}
-                        {config.showTime && (
-                          <div>
-                            <label className="block text-sm font-medium mb-1">Time</label>
-                            <div className="border rounded px-3 py-2 bg-gray-50">Select time</div>
-                          </div>
-                        )}
-                        {config.showGuests && (
-                          <div>
-                            <label className="block text-sm font-medium mb-1">Guests</label>
-                            <div className="border rounded px-3 py-2 bg-gray-50">2 guests</div>
-                          </div>
-                        )}
-                        <button
-                          className="w-full py-2 rounded text-white font-medium"
-                          style={{
-                            backgroundColor: config.backgroundColor,
-                            borderRadius: `${config.borderRadius}px`
-                          }}
-                        >
-                          Book Now
-                        </button>
+                      <div className="p-6">
+                        <h3 className="text-xl font-semibold mb-6 text-center" style={{ color: config.backgroundColor }}>
+                          {config.headerText}
+                        </h3>
+                        
+                        {/* OpenTable-style horizontal form */}
+                        <div className="flex flex-wrap gap-2 items-end justify-center mb-4">
+                          {config.showDate && (
+                            <div className="flex flex-col">
+                              <label className="text-xs font-medium text-gray-600 mb-1">Date</label>
+                              <div className="border-2 rounded-lg px-4 py-3 bg-white min-w-[120px] flex items-center gap-2">
+                                <span className="text-sm">📅</span>
+                                <span className="text-sm font-medium">Jun 24</span>
+                              </div>
+                            </div>
+                          )}
+                          
+                          {config.showTime && (
+                            <div className="flex flex-col">
+                              <label className="text-xs font-medium text-gray-600 mb-1">Time</label>
+                              <div className="border-2 rounded-lg px-4 py-3 bg-white min-w-[100px] flex items-center gap-2">
+                                <span className="text-sm">🕐</span>
+                                <span className="text-sm font-medium">7:00 PM</span>
+                              </div>
+                            </div>
+                          )}
+                          
+                          {config.showGuests && (
+                            <div className="flex flex-col">
+                              <label className="text-xs font-medium text-gray-600 mb-1">Party Size</label>
+                              <div className="border-2 rounded-lg px-4 py-3 bg-white min-w-[100px] flex items-center gap-2">
+                                <span className="text-sm">👥</span>
+                                <span className="text-sm font-medium">2 people</span>
+                              </div>
+                            </div>
+                          )}
+                          
+                          <button
+                            className="px-6 py-3 rounded-lg text-white font-semibold text-sm shadow-md hover:shadow-lg transition-shadow"
+                            style={{
+                              backgroundColor: config.backgroundColor,
+                              borderRadius: `${config.borderRadius}px`
+                            }}
+                          >
+                            {config.buttonText}
+                          </button>
+                        </div>
+                        
+                        <div className="text-center">
+                          <p className="text-xs text-gray-500">
+                            Powered by Your Restaurant • Free cancellation
+                          </p>
+                        </div>
                       </div>
                     </div>
                   </div>
