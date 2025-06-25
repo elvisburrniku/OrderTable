@@ -31,6 +31,52 @@ import {
 import { useToast } from "@/hooks/use-toast";
 import { format } from "date-fns";
 
+// Countdown component for paused tenants
+function PauseCountdown({ pauseEndDate }: { pauseEndDate: string }) {
+  const [timeLeft, setTimeLeft] = useState<string>("");
+  const [isExpired, setIsExpired] = useState(false);
+
+  useEffect(() => {
+    const updateCountdown = () => {
+      const now = new Date().getTime();
+      const endTime = new Date(pauseEndDate).getTime();
+      const difference = endTime - now;
+
+      if (difference > 0) {
+        const days = Math.floor(difference / (1000 * 60 * 60 * 24));
+        const hours = Math.floor((difference % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+        const minutes = Math.floor((difference % (1000 * 60 * 60)) / (1000 * 60));
+        const seconds = Math.floor((difference % (1000 * 60)) / 1000);
+
+        if (days > 0) {
+          setTimeLeft(`${days}d ${hours}h ${minutes}m`);
+        } else if (hours > 0) {
+          setTimeLeft(`${hours}h ${minutes}m ${seconds}s`);
+        } else if (minutes > 0) {
+          setTimeLeft(`${minutes}m ${seconds}s`);
+        } else {
+          setTimeLeft(`${seconds}s`);
+        }
+        setIsExpired(false);
+      } else {
+        setTimeLeft("Expired - Auto unpause pending");
+        setIsExpired(true);
+      }
+    };
+
+    updateCountdown();
+    const interval = setInterval(updateCountdown, 1000);
+
+    return () => clearInterval(interval);
+  }, [pauseEndDate]);
+
+  return (
+    <div className={`text-sm font-mono ${isExpired ? 'text-orange-600' : 'text-blue-600'}`}>
+      {timeLeft}
+    </div>
+  );
+}
+
 interface TenantData {
   tenant: {
     id: number;
@@ -42,6 +88,10 @@ interface TenantData {
     trialEndDate: string;
     subscriptionStartDate: string;
     subscriptionEndDate: string;
+    pauseStartDate?: string;
+    pauseEndDate?: string;
+    pauseReason?: string;
+    suspendReason?: string;
     stripeCustomerId: string;
     stripeSubscriptionId: string;
     maxRestaurants: number;
@@ -553,7 +603,14 @@ export function AdminTenants({ token }: AdminTenantsProps) {
                       </div>
                     </TableCell>
                     <TableCell>
-                      {getStatusBadge(tenantData.tenant.subscriptionStatus)}
+                      <div className="space-y-1">
+                        {getStatusBadge(tenantData.tenant.subscriptionStatus)}
+                        {tenantData.tenant.subscriptionStatus === 'paused' && tenantData.tenant.pauseEndDate && (
+                          <div className="text-xs text-muted-foreground">
+                            Auto unpause: <PauseCountdown pauseEndDate={tenantData.tenant.pauseEndDate} />
+                          </div>
+                        )}
+                      </div>
                     </TableCell>
                     <TableCell>
                       <div>

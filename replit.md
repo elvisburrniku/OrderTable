@@ -31,6 +31,8 @@ A comprehensive restaurant booking management system with React frontend and Exp
 - **Authentication Guards**: Updated all authentication endpoints to handle pause expiration and provide clear user messaging
 - **Admin Panel**: Enhanced pause functionality requires end date and reason, with improved validation and logging
 - **Console Monitoring**: Server startup shows pending schedules and tracks completion with detailed logging
+- **Real-time Countdown**: Admin panel displays live countdown timers showing exactly when each paused tenant will be automatically reactivated
+- **Immediate Startup Check**: System runs automatic unpause check on server startup plus every 2 minutes for responsive reactivation
 - **Session Management**: Added automatic session cleanup and reactivation for expired pause periods during validation
 - **2025-06-25**: Enhanced admin tenant management system with comprehensive CRUD operations
 - **Tenant Management**: Added ability to view detailed tenant information, edit tenant data, and manage subscription status

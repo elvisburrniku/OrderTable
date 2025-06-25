@@ -140,11 +140,17 @@ app.use((req, res, next) => {
       console.log('📅 Unpause scheduler initialized - no pending schedules');
     }
     
+    // Run immediate check on startup
+    const unpaused = await adminStorage.checkAndUnpauseExpiredTenants();
+    if (unpaused > 0) {
+      console.log(`🎉 Startup check: Automatically unpaused ${unpaused} tenant(s) with expired pause periods`);
+    }
+    
     setInterval(async () => {
       try {
         const unpaused = await adminStorage.checkAndUnpauseExpiredTenants();
         if (unpaused > 0) {
-          console.log(`Automatically unpaused ${unpaused} tenant(s) with expired pause periods`);
+          console.log(`🎉 Automatically unpaused ${unpaused} tenant(s) with expired pause periods`);
           
           // Show remaining schedules after unpause
           const remainingSchedules = await adminStorage.getUpcomingUnpauseSchedules();
@@ -158,7 +164,7 @@ app.use((req, res, next) => {
       } catch (error) {
         console.error('Error in automatic unpause check:', error);
       }
-    }, 5 * 60 * 1000); // Run every 5 minutes
+    }, 2 * 60 * 1000); // Run every 2 minutes for faster response
     
     console.log('Admin system and automatic unpause service initialized');
   } catch (error) {
