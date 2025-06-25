@@ -111,7 +111,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Setup SSO authentication first
   setupSSO(app);
 
-  // Middleware to extract and validate tenant ID
+  // Middleware to extract and validate tenant ID and status
   const validateTenant = async (req: any, res: any, next: any) => {
     const tenantId =
       req.params.tenantId ||
@@ -123,8 +123,53 @@ export async function registerRoutes(app: Express): Promise<Server> {
       return res.status(400).json({ message: "Tenant ID is required" });
     }
 
-    req.tenantId = parseInt(tenantId as string);
-    next();
+    const parsedTenantId = parseInt(tenantId as string);
+    
+    // Get tenant details to check status
+    try {
+      const tenant = await storage.getTenantById(parsedTenantId);
+      if (!tenant) {
+        return res.status(404).json({ message: "Tenant not found" });
+      }
+
+      // Check if tenant is suspended or paused
+      if (tenant.subscriptionStatus === 'suspended') {
+        // Clear any existing session
+        if ((req as any).session) {
+          (req as any).session.destroy((err: any) => {
+            if (err) console.error("Error destroying session:", err);
+          });
+        }
+        return res.status(403).json({ 
+          message: "Account suspended",
+          details: "This tenant account has been suspended. Please contact support for assistance.",
+          supportEmail: "support@replit.com",
+          status: "suspended"
+        });
+      }
+
+      if (tenant.subscriptionStatus === 'paused') {
+        // Clear any existing session
+        if ((req as any).session) {
+          (req as any).session.destroy((err: any) => {
+            if (err) console.error("Error destroying session:", err);
+          });
+        }
+        return res.status(403).json({ 
+          message: "Account paused",
+          details: "This tenant account is temporarily paused. Please contact support for assistance.",
+          supportEmail: "support@replit.com",
+          status: "paused"
+        });
+      }
+
+      req.tenantId = parsedTenantId;
+      req.tenant = tenant;
+      next();
+    } catch (error) {
+      console.error("Error validating tenant:", error);
+      return res.status(500).json({ message: "Internal server error" });
+    }
   };
 
   // Middleware to attach user from session to request
@@ -341,12 +386,43 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get("/api/auth/validate", async (req, res) => {
     try {
       const sessionUser = (req as any).session?.user;
-      if (sessionUser) {
+      const sessionTenant = (req as any).session?.tenant;
+      
+      if (sessionUser && sessionTenant) {
+        // Check if tenant is suspended or paused
+        if (sessionTenant.subscriptionStatus === 'suspended') {
+          // Clear session for suspended tenant
+          (req as any).session.destroy((err: any) => {
+            if (err) console.error("Error destroying session:", err);
+          });
+          return res.status(403).json({ 
+            valid: false, 
+            message: "Account suspended",
+            details: "Your account has been suspended. Please contact support for assistance.",
+            supportEmail: "support@replit.com",
+            status: "suspended"
+          });
+        }
+
+        if (sessionTenant.subscriptionStatus === 'paused') {
+          // Clear session for paused tenant
+          (req as any).session.destroy((err: any) => {
+            if (err) console.error("Error destroying session:", err);
+          });
+          return res.status(403).json({ 
+            valid: false, 
+            message: "Account paused",
+            details: "Your account is temporarily paused. Please contact support for assistance.",
+            supportEmail: "support@replit.com",
+            status: "paused"
+          });
+        }
+        
         res.json({
           valid: true,
           message: "Session valid",
           user: sessionUser,
-          tenant: (req as any).session.tenant,
+          tenant: sessionTenant,
           restaurant: (req as any).session.restaurant,
         });
       } else {
@@ -389,6 +465,25 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res
           .status(401)
           .json({ message: "User not associated with any tenant" });
+      }
+
+      // Check if tenant is suspended or paused
+      if (tenantUser.subscriptionStatus === 'suspended') {
+        return res.status(403).json({ 
+          message: "Account suspended",
+          details: "Your account has been suspended. Please contact support for assistance.",
+          supportEmail: "support@replit.com",
+          status: "suspended"
+        });
+      }
+
+      if (tenantUser.subscriptionStatus === 'paused') {
+        return res.status(403).json({ 
+          message: "Account paused", 
+          details: "Your account is temporarily paused. Please contact support for assistance.",
+          supportEmail: "support@replit.com",
+          status: "paused"
+        });
       }
 
       const restaurant = await storage.getRestaurantByUserId(user.id);

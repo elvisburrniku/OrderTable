@@ -184,6 +184,15 @@ function setupSSORoutes(app: Express) {
     async (req: Request, res: Response) => {
       const sessionData = req.user as any;
       
+      // Check if tenant is suspended or paused
+      if (sessionData.tenant?.subscriptionStatus === 'suspended') {
+        return res.redirect('/login?error=account_suspended&message=Your account has been suspended. Please contact support for assistance.');
+      }
+
+      if (sessionData.tenant?.subscriptionStatus === 'paused') {
+        return res.redirect('/login?error=account_paused&message=Your account is temporarily paused. Please contact support for assistance.');
+      }
+      
       // Store session data
       (req.session as any).user = sessionData.user;
       (req.session as any).tenant = sessionData.tenant;
@@ -207,6 +216,15 @@ function setupSSORoutes(app: Express) {
     passport.authenticate('apple', { failureRedirect: '/login?error=sso_failed' }),
     async (req: Request, res: Response) => {
       const sessionData = req.user as any;
+      
+      // Check if tenant is suspended or paused
+      if (sessionData.tenant?.subscriptionStatus === 'suspended') {
+        return res.redirect('/login?error=account_suspended&message=Your account has been suspended. Please contact support for assistance.');
+      }
+
+      if (sessionData.tenant?.subscriptionStatus === 'paused') {
+        return res.redirect('/login?error=account_paused&message=Your account is temporarily paused. Please contact support for assistance.');
+      }
       
       // Store session data
       (req.session as any).user = sessionData.user;

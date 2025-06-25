@@ -46,7 +46,7 @@ export default function Login() {
     type: null
   });
 
-  // Initialize form with remembered data
+  // Initialize form with remembered data and handle URL error parameters
   useEffect(() => {
     const rememberMe = localStorage.getItem("rememberMe") === "true";
     const lastLoginEmail = localStorage.getItem("lastLoginEmail");
@@ -61,7 +61,38 @@ export default function Login() {
       // Hide notice after 3 seconds
       setTimeout(() => setShowRememberNotice(false), 3000);
     }
-  }, []);
+
+    // Handle URL error parameters for SSO failures
+    const urlParams = new URLSearchParams(window.location.search);
+    const error = urlParams.get('error');
+    const message = urlParams.get('message');
+    
+    if (error === 'account_suspended') {
+      toast({
+        title: "Account Suspended",
+        description: message || "Your account has been suspended. Please contact support for assistance.",
+        variant: "destructive",
+      });
+    } else if (error === 'account_paused') {
+      toast({
+        title: "Account Paused", 
+        description: message || "Your account is temporarily paused. Please contact support for assistance.",
+        variant: "destructive",
+      });
+    } else if (error === 'sso_failed') {
+      toast({
+        title: "Authentication Failed",
+        description: "SSO authentication failed. Please try again or use email/password login.",
+        variant: "destructive",
+      });
+    }
+    
+    // Clear URL parameters after showing toast
+    if (error) {
+      const newUrl = window.location.pathname;
+      window.history.replaceState({}, document.title, newUrl);
+    }
+  }, [toast]);
 
   // Check if user is already authenticated
   const { data: session, isLoading: sessionLoading } = useQuery<any>({

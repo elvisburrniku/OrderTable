@@ -69,6 +69,18 @@ export function AuthProvider({ children }: { children: ReactNode }) {
                   }
                 }
               } else {
+                // Handle suspended/paused account responses
+                if (response.status === 403) {
+                  const errorData = await response.json().catch(() => ({}));
+                  if (errorData.status === 'suspended' || errorData.status === 'paused') {
+                    // Clear session but keep user informed
+                    localStorage.removeItem("user");
+                    localStorage.removeItem("restaurant");
+                    localStorage.removeItem("tenant");
+                    // Don't throw error here, let login page handle the display
+                    return;
+                  }
+                }
                 // Session invalid, clear stored data
                 localStorage.removeItem("user");
                 localStorage.removeItem("restaurant");
@@ -126,7 +138,19 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     });
 
     if (!res.ok) {
-      throw new Error("Login failed");
+      const errorData = await res.json().catch(() => ({}));
+      
+      // Handle specific account status errors
+      if (res.status === 403) {
+        if (errorData.status === 'suspended') {
+          throw new Error(`Account Suspended: ${errorData.details || 'Your account has been suspended. Please contact support for assistance.'}`);
+        }
+        if (errorData.status === 'paused') {
+          throw new Error(`Account Paused: ${errorData.details || 'Your account is temporarily paused. Please contact support for assistance.'}`);
+        }
+      }
+      
+      throw new Error(errorData.message || "Login failed");
     }
 
     const data = await res.json();
