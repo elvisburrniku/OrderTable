@@ -73,6 +73,10 @@ export default function Bookings() {
     tableId: "",
     notes: ""
   });
+  const [editingBooking, setEditingBooking] = useState<any>(null);
+  const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
+  const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
+  const [bookingToDelete, setBookingToDelete] = useState<any>(null);
 
   // Fetch restaurant data
   const { data: restaurantData } = useQuery({
@@ -154,6 +158,40 @@ export default function Bookings() {
     }
   });
 
+  // Update booking mutation
+  const updateBookingMutation = useMutation({
+    mutationFn: async ({ id, updates }: { id: number; updates: any }) => {
+      const response = await fetch(`/api/tenants/${tenantId}/bookings/${id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(updates)
+      });
+      if (!response.ok) throw new Error('Failed to update booking');
+      return response.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: [`/api/tenants/${tenantId}/restaurants/${restaurantId}/bookings`] });
+      setIsEditDialogOpen(false);
+      setEditingBooking(null);
+    }
+  });
+
+  // Delete booking mutation
+  const deleteBookingMutation = useMutation({
+    mutationFn: async (id: number) => {
+      const response = await fetch(`/api/tenants/${tenantId}/bookings/${id}`, {
+        method: 'DELETE'
+      });
+      if (!response.ok) throw new Error('Failed to delete booking');
+      return response.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: [`/api/tenants/${tenantId}/restaurants/${restaurantId}/bookings`] });
+      setIsDeleteDialogOpen(false);
+      setBookingToDelete(null);
+    }
+  });
+
   const handleCreateBooking = (e: React.FormEvent) => {
     e.preventDefault();
 
@@ -174,6 +212,46 @@ export default function Bookings() {
     };
 
     createBookingMutation.mutate(bookingData);
+  };
+
+  const handleEditBooking = (booking: any) => {
+    setEditingBooking({
+      ...booking,
+      bookingDate: new Date(booking.bookingDate).toISOString().split('T')[0],
+      tableId: booking.tableId?.toString() || ""
+    });
+    setIsEditDialogOpen(true);
+  };
+
+  const handleUpdateBooking = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!editingBooking) return;
+
+    const updates = {
+      customerName: editingBooking.customerName,
+      customerEmail: editingBooking.customerEmail,
+      customerPhone: editingBooking.customerPhone,
+      guestCount: editingBooking.guestCount,
+      bookingDate: editingBooking.bookingDate,
+      startTime: editingBooking.startTime,
+      endTime: editingBooking.endTime,
+      tableId: editingBooking.tableId ? parseInt(editingBooking.tableId) : null,
+      notes: editingBooking.notes,
+      status: editingBooking.status
+    };
+
+    updateBookingMutation.mutate({ id: editingBooking.id, updates });
+  };
+
+  const handleDeleteBooking = (booking: any) => {
+    setBookingToDelete(booking);
+    setIsDeleteDialogOpen(true);
+  };
+
+  const confirmDeleteBooking = () => {
+    if (bookingToDelete) {
+      deleteBookingMutation.mutate(bookingToDelete.id);
+    }
   };
 
   const getStatusBadge = (status: string) => {
@@ -442,12 +520,15 @@ export default function Bookings() {
                       <th className="text-left py-3 px-4 text-xs font-medium text-gray-500 uppercase tracking-wider">
                         Source
                       </th>
+                      <th className="text-left py-3 px-4 text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Actions
+                      </th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-gray-100">
                     {isLoading ? (
                       <tr>
-                        <td colSpan={7} className="py-12 text-center">
+                        <td colSpan={8} className="py-12 text-center">
                           <div className="flex flex-col items-center space-y-4">
                             <div className="animate-spin rounded-full h-8 w-8 border-2 border-green-500 border-t-transparent"></div>
                             <span className="text-gray-500 font-medium">Loading bookings...</span>
@@ -456,7 +537,7 @@ export default function Bookings() {
                       </tr>
                     ) : paginatedBookings.length === 0 ? (
                       <tr>
-                        <td colSpan={7} className="py-12 text-center">
+                        <td colSpan={8} className="py-12 text-center">
                           <div className="flex flex-col items-center space-y-4">
                             <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center">
                               <Calendar className="w-8 h-8 text-gray-400" />
@@ -475,10 +556,9 @@ export default function Bookings() {
                           initial={{ opacity: 0, y: 10 }}
                           animate={{ opacity: 1, y: 0 }}
                           transition={{ duration: 0.3, delay: index * 0.05 }}
-                          className={`group hover:bg-blue-50 cursor-pointer transition-all duration-200 ${
+                          className={`group hover:bg-blue-50 transition-all duration-200 ${
                             index % 2 === 0 ? 'bg-white' : 'bg-gray-50/50'
                           }`}
-                          onClick={() => window.location.href = `/${tenantId}/bookings/${booking.id}`}
                         >
                           <td className="py-3 px-4">
                             <div className="flex items-center">
@@ -539,6 +619,43 @@ export default function Bookings() {
                            booking.source === "walk_in" ? "Walk-in" :
                            "Manual"}
                         </Badge>
+                          </td>
+                          <td className="py-3 px-4">
+                            <div className="flex items-center space-x-2">
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  window.location.href = `/${tenantId}/bookings/${booking.id}`;
+                                }}
+                                className="h-8 w-8 p-0"
+                              >
+                                <Eye className="h-4 w-4" />
+                              </Button>
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  handleEditBooking(booking);
+                                }}
+                                className="h-8 w-8 p-0"
+                              >
+                                <Edit className="h-4 w-4" />
+                              </Button>
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  handleDeleteBooking(booking);
+                                }}
+                                className="h-8 w-8 p-0 text-red-600 hover:text-red-700 hover:bg-red-50"
+                              >
+                                <Trash2 className="h-4 w-4" />
+                              </Button>
+                            </div>
                           </td>
                         </motion.tr>
                       ))
@@ -660,6 +777,157 @@ export default function Bookings() {
           </div>
         </div>
       </div>
+
+      {/* Edit Booking Dialog */}
+      <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>Edit Booking</DialogTitle>
+          </DialogHeader>
+          <form onSubmit={handleUpdateBooking} className="space-y-4">
+            <div>
+              <Label htmlFor="edit-customerName">Customer Name</Label>
+              <Input
+                id="edit-customerName"
+                value={editingBooking?.customerName || ""}
+                onChange={(e) => setEditingBooking(prev => prev ? {...prev, customerName: e.target.value} : null)}
+                required
+              />
+            </div>
+            <div>
+              <Label htmlFor="edit-customerEmail">Email</Label>
+              <Input
+                id="edit-customerEmail"
+                type="email"
+                value={editingBooking?.customerEmail || ""}
+                onChange={(e) => setEditingBooking(prev => prev ? {...prev, customerEmail: e.target.value} : null)}
+                required
+              />
+            </div>
+            <div>
+              <Label htmlFor="edit-customerPhone">Phone</Label>
+              <Input
+                id="edit-customerPhone"
+                value={editingBooking?.customerPhone || ""}
+                onChange={(e) => setEditingBooking(prev => prev ? {...prev, customerPhone: e.target.value} : null)}
+              />
+            </div>
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <Label htmlFor="edit-guestCount">Guest Count</Label>
+                <Input
+                  id="edit-guestCount"
+                  type="number"
+                  min="1"
+                  value={editingBooking?.guestCount || 1}
+                  onChange={(e) => setEditingBooking(prev => prev ? {...prev, guestCount: parseInt(e.target.value)} : null)}
+                  required
+                />
+              </div>
+              <div>
+                <Label htmlFor="edit-status">Status</Label>
+                <Select value={editingBooking?.status || "confirmed"} onValueChange={(value) => setEditingBooking(prev => prev ? {...prev, status: value} : null)}>
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="confirmed">Confirmed</SelectItem>
+                    <SelectItem value="pending">Pending</SelectItem>
+                    <SelectItem value="cancelled">Cancelled</SelectItem>
+                    <SelectItem value="completed">Completed</SelectItem>
+                    <SelectItem value="no-show">No Show</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <Label htmlFor="edit-bookingDate">Date</Label>
+                <Input
+                  id="edit-bookingDate"
+                  type="date"
+                  value={editingBooking?.bookingDate || ""}
+                  onChange={(e) => setEditingBooking(prev => prev ? {...prev, bookingDate: e.target.value} : null)}
+                  required
+                />
+              </div>
+              <div>
+                <Label htmlFor="edit-startTime">Time</Label>
+                <Input
+                  id="edit-startTime"
+                  type="time"
+                  value={editingBooking?.startTime || ""}
+                  onChange={(e) => setEditingBooking(prev => prev ? {...prev, startTime: e.target.value} : null)}
+                  required
+                />
+              </div>
+            </div>
+            <div>
+              <Label htmlFor="edit-tableId">Table</Label>
+              <Select value={editingBooking?.tableId || ""} onValueChange={(value) => setEditingBooking(prev => prev ? {...prev, tableId: value} : null)}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Auto-assign table" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="">Auto-assign</SelectItem>
+                  {tables?.map((table: any) => (
+                    <SelectItem key={table.id} value={table.id.toString()}>
+                      Table {table.tableNumber} ({table.capacity} seats)
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div>
+              <Label htmlFor="edit-notes">Notes</Label>
+              <Input
+                id="edit-notes"
+                value={editingBooking?.notes || ""}
+                onChange={(e) => setEditingBooking(prev => prev ? {...prev, notes: e.target.value} : null)}
+                placeholder="Special requests or notes"
+              />
+            </div>
+            <div className="flex justify-end space-x-2">
+              <Button type="button" variant="outline" onClick={() => setIsEditDialogOpen(false)}>
+                Cancel
+              </Button>
+              <Button type="submit" disabled={updateBookingMutation.isPending}>
+                {updateBookingMutation.isPending ? "Updating..." : "Update Booking"}
+              </Button>
+            </div>
+          </form>
+        </DialogContent>
+      </Dialog>
+
+      {/* Delete Confirmation Dialog */}
+      <Dialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>Delete Booking</DialogTitle>
+          </DialogHeader>
+          <div className="py-4">
+            <p className="text-gray-600">
+              Are you sure you want to delete the booking for <strong>{bookingToDelete?.customerName}</strong> on{" "}
+              <strong>{bookingToDelete ? formatDate(bookingToDelete.bookingDate) : ""}</strong> at{" "}
+              <strong>{bookingToDelete ? formatTime(bookingToDelete.startTime) : ""}</strong>?
+            </p>
+            <p className="text-red-600 text-sm mt-2">This action cannot be undone.</p>
+          </div>
+          <div className="flex justify-end space-x-2">
+            <Button type="button" variant="outline" onClick={() => setIsDeleteDialogOpen(false)}>
+              Cancel
+            </Button>
+            <Button 
+              type="button" 
+              variant="destructive" 
+              onClick={confirmDeleteBooking}
+              disabled={deleteBookingMutation.isPending}
+            >
+              {deleteBookingMutation.isPending ? "Deleting..." : "Delete Booking"}
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
 
       {/* New Booking Dialog */}
       <Dialog open={isNewBookingOpen} onOpenChange={setIsNewBookingOpen}>
