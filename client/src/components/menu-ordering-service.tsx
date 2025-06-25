@@ -10,8 +10,9 @@ import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { useToast } from '@/hooks/use-toast';
-import { ShoppingCart, Package, Truck, CreditCard, CheckCircle, Star, Award } from 'lucide-react';
+import { ShoppingCart, Package, Truck, CreditCard, CheckCircle, Star, Award, Palette, Clock, Shield, Zap } from 'lucide-react';
 import { apiRequest } from '@/lib/queryClient';
+import { motion } from 'framer-motion';
 
 interface MenuOrderingServiceProps {
   restaurantId: number;
@@ -46,7 +47,7 @@ const printingOptions: PrintingOption[] = [
     id: 'standard',
     name: 'Standard Print',
     description: 'High-quality digital printing on premium paper',
-    paperType: '24lb Bond Paper',
+    paperType: '14lb Bond Paper',
     finish: 'Matte',
     durability: '3-6 months',
     pricePerMenu: 2.50,
@@ -67,21 +68,11 @@ const printingOptions: PrintingOption[] = [
     id: 'deluxe',
     name: 'Deluxe Laminated',
     description: 'Waterproof laminated menus for heavy use',
-    paperType: '14pt Card Stock',
-    finish: 'Gloss Lamination',
+    paperType: '32lb Cover Stock',
+    finish: 'Laminated',
     durability: '12+ months',
     pricePerMenu: 7.25,
-    minimumOrder: 25
-  },
-  {
-    id: 'luxury',
-    name: 'Luxury Hardcover',
-    description: 'Premium bound menus with leather-like covers',
-    paperType: 'Premium Paper + Cover',
-    finish: 'Leather-texture Cover',
-    durability: '2+ years',
-    pricePerMenu: 15.50,
-    minimumOrder: 10
+    minimumOrder: 50
   }
 ];
 
@@ -135,361 +126,498 @@ export default function MenuOrderingService({
   const selectedPrintOption = printingOptions.find(opt => opt.id === selectedPrinting);
   const selectedShipOption = shippingOptions.find(opt => opt.id === selectedShipping);
 
-  const subtotal = selectedPrintOption ? selectedPrintOption.pricePerMenu * quantity : 0;
-  const shippingCost = selectedShipOption?.price || 0;
-  const tax = subtotal * 0.08; // 8% tax
-  const total = subtotal + shippingCost + tax;
-
-  const createOrderMutation = useMutation({
-    mutationFn: async (orderData: any) => {
-      return apiRequest('POST', `/api/tenants/${tenantId}/restaurants/${restaurantId}/print-orders`, {
-        customerName: orderData.contactName,
-        customerEmail: orderData.contactEmail,
-        customerPhone: orderData.contactPhone,
-        printType: 'menu',
-        printSize: orderData.menuLayout || 'A4',
-        printQuality: orderData.printingOption,
-        quantity: orderData.quantity,
-        design: `Menu Theme: ${orderData.menuTheme}`,
-        specialInstructions: orderData.specialInstructions,
-        rushOrder: orderData.shippingOption === 'overnight',
-        deliveryMethod: 'delivery',
-        deliveryAddress: `${orderData.shippingAddress}, ${orderData.city}, ${orderData.state} ${orderData.zipCode}`,
-        useSavedPaymentMethod: false
-      });
-    },
-    onSuccess: (data: any) => {
-      if (data.clientSecret && onOrderCreated) {
-        onOrderCreated(data.clientSecret, data.printOrder, data.savedPaymentMethods);
-      }
-      setShowOrderForm(false);
-      // Reset form
-      setOrderDetails({
-        contactName: '',
-        contactEmail: '',
-        contactPhone: '',
-        shippingAddress: '',
-        city: '',
-        state: '',
-        zipCode: '',
-        specialInstructions: ''
-      });
-    },
-    onError: (error: any) => {
-      toast({
-        title: "Order Failed",
-        description: error.message || "Failed to create order. Please try again.",
-        variant: "destructive"
-      });
-    },
-  });
-
-  const handlePlaceOrder = () => {
-    if (!selectedPrintOption || !selectedShipOption) return;
-
-    const orderData = {
-      printingOption: selectedPrinting,
-      shippingOption: selectedShipping,
-      quantity,
-      menuTheme: selectedTheme,
-      menuLayout,
-      subtotal,
-      shippingCost,
-      tax,
-      total,
-      ...orderDetails
-    };
-
-    createOrderMutation.mutate(orderData);
-  };
-
-  const isFormValid = () => {
-    return orderDetails.contactName && 
-           orderDetails.contactEmail && 
-           orderDetails.contactPhone && 
-           orderDetails.shippingAddress && 
-           orderDetails.city && 
-           orderDetails.state && 
-           orderDetails.zipCode;
-  };
-
   return (
-    <div className="space-y-6">
-      <div className="text-center">
-        <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-2">
-          Professional Menu Printing Service
-        </h2>
-        <p className="text-gray-600 dark:text-gray-400">
-          Order high-quality printed menus delivered directly to your restaurant
-        </p>
+    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50 relative overflow-hidden">
+      {/* Floating Background Elements */}
+      <div className="absolute inset-0 overflow-hidden pointer-events-none">
+        {[...Array(6)].map((_, i) => (
+          <motion.div
+            key={i}
+            className="absolute bg-gradient-to-r from-blue-200/20 to-purple-200/20 rounded-full"
+            style={{
+              width: `${120 + i * 40}px`,
+              height: `${120 + i * 40}px`,
+              left: `${Math.random() * 100}%`,
+              top: `${Math.random() * 100}%`,
+            }}
+            animate={{
+              x: [0, 100, 0],
+              y: [0, -100, 0],
+              rotate: [0, 180, 360],
+            }}
+            transition={{
+              duration: 20 + i * 5,
+              repeat: Infinity,
+              ease: "linear",
+            }}
+          />
+        ))}
       </div>
 
-      {/* Service Features */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
-        <Card className="text-center">
-          <CardContent className="pt-6">
-            <Award className="h-8 w-8 text-blue-600 mx-auto mb-2" />
-            <h3 className="font-semibold">Professional Quality</h3>
-            <p className="text-sm text-gray-600">Restaurant-grade printing with premium materials</p>
-          </CardContent>
-        </Card>
-        <Card className="text-center">
-          <CardContent className="pt-6">
-            <Truck className="h-8 w-8 text-green-600 mx-auto mb-2" />
-            <h3 className="font-semibold">Fast Delivery</h3>
-            <p className="text-sm text-gray-600">Quick turnaround with multiple shipping options</p>
-          </CardContent>
-        </Card>
-        <Card className="text-center">
-          <CardContent className="pt-6">
-            <Star className="h-8 w-8 text-yellow-600 mx-auto mb-2" />
-            <h3 className="font-semibold">Custom Design</h3>
-            <p className="text-sm text-gray-600">Your menu design with professional formatting</p>
-          </CardContent>
-        </Card>
-      </div>
+      <div className="relative z-10 p-8">
+        {/* Header Section */}
+        <motion.div
+          initial={{ opacity: 0, y: -30 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.8 }}
+          className="text-center mb-12"
+        >
+          <motion.h1 
+            className="text-4xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent mb-4"
+            animate={{ scale: [1, 1.02, 1] }}
+            transition={{ duration: 3, repeat: Infinity }}
+          >
+            Professional Menu Printing Service
+          </motion.h1>
+          <p className="text-gray-600 text-lg max-w-2xl mx-auto">
+            Order high-quality printed menus delivered directly to your restaurant
+          </p>
+        </motion.div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-        {/* Printing Options */}
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Package className="h-5 w-5" />
-              Printing Options
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            {printingOptions.map((option) => (
-              <div
-                key={option.id}
-                className={`border rounded-lg p-4 cursor-pointer transition-all ${
-                  selectedPrinting === option.id
-                    ? 'border-blue-500 bg-blue-50 dark:bg-blue-900/20'
-                    : 'border-gray-200 hover:border-gray-300'
-                }`}
-                onClick={() => setSelectedPrinting(option.id)}
+        {/* Service Features */}
+        <motion.div 
+          initial={{ opacity: 0, y: 30 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.8, delay: 0.2 }}
+          className="grid md:grid-cols-3 gap-8 mb-12"
+        >
+          {[
+            {
+              icon: Shield,
+              title: "Professional Quality",
+              description: "Restaurant-grade printing with premium materials",
+              color: "from-blue-500 to-blue-600"
+            },
+            {
+              icon: Zap,
+              title: "Fast Delivery",
+              description: "Quick turnaround with multiple shipping options",
+              color: "from-green-500 to-green-600"
+            },
+            {
+              icon: Palette,
+              title: "Custom Design",
+              description: "Your menu design with professional formatting",
+              color: "from-purple-500 to-purple-600"
+            }
+          ].map((feature, index) => (
+            <motion.div
+              key={index}
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.6, delay: 0.3 + index * 0.1 }}
+              whileHover={{ scale: 1.05, y: -5 }}
+              className="bg-white/80 backdrop-blur-xl rounded-2xl p-6 border border-white/20 shadow-xl hover:shadow-2xl transition-all duration-300"
+            >
+              <motion.div
+                className={`w-16 h-16 rounded-2xl bg-gradient-to-br ${feature.color} flex items-center justify-center mb-4 mx-auto`}
+                whileHover={{ rotate: 10 }}
+                transition={{ duration: 0.3 }}
               >
-                <div className="flex items-start justify-between">
-                  <div className="flex-1">
-                    <div className="flex items-center gap-2 mb-1">
-                      <h4 className="font-semibold">{option.name}</h4>
-                      {option.recommended && (
-                        <Badge className="bg-green-100 text-green-800">Recommended</Badge>
-                      )}
+                <feature.icon className="w-8 h-8 text-white" />
+              </motion.div>
+              <h3 className="text-xl font-semibold text-gray-800 mb-2 text-center">{feature.title}</h3>
+              <p className="text-gray-600 text-center">{feature.description}</p>
+            </motion.div>
+          ))}
+        </motion.div>
+
+        {/* Main Content Grid */}
+        <div className="grid lg:grid-cols-2 gap-8">
+          {/* Printing Options */}
+          <motion.div
+            initial={{ opacity: 0, x: -30 }}
+            animate={{ opacity: 1, x: 0 }}
+            transition={{ duration: 0.8, delay: 0.4 }}
+          >
+            <Card className="bg-white/80 backdrop-blur-xl border-white/20 shadow-2xl">
+              <CardHeader className="pb-4">
+                <CardTitle className="flex items-center gap-3 text-2xl">
+                  <motion.div
+                    animate={{ rotate: [0, 5, -5, 0] }}
+                    transition={{ duration: 2, repeat: Infinity }}
+                  >
+                    <Package className="w-6 h-6 text-blue-600" />
+                  </motion.div>
+                  Printing Options
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                {printingOptions.map((option) => (
+                  <motion.div
+                    key={option.id}
+                    initial={{ opacity: 0, y: 10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ duration: 0.5 }}
+                    whileHover={{ scale: 1.02 }}
+                    onClick={() => setSelectedPrinting(option.id)}
+                    className={`relative p-4 rounded-xl border-2 cursor-pointer transition-all duration-300 ${
+                      selectedPrinting === option.id
+                        ? 'border-blue-500 bg-blue-50/50'
+                        : 'border-gray-200 hover:border-blue-300 bg-gray-50/50'
+                    }`}
+                  >
+                    {option.recommended && (
+                      <Badge className="absolute -top-2 -right-2 bg-gradient-to-r from-green-500 to-green-600 text-white">
+                        Recommended
+                      </Badge>
+                    )}
+                    <div className="flex justify-between items-start mb-2">
+                      <h4 className="font-semibold text-lg">{option.name}</h4>
+                      <motion.div
+                        className="text-right"
+                        animate={{ scale: selectedPrinting === option.id ? [1, 1.1, 1] : 1 }}
+                        transition={{ duration: 0.5 }}
+                      >
+                        <div className="text-2xl font-bold text-blue-600">
+                          ${option.pricePerMenu.toFixed(2)}
+                        </div>
+                        <div className="text-sm text-gray-500">per menu</div>
+                      </motion.div>
                     </div>
-                    <p className="text-sm text-gray-600 mb-2">{option.description}</p>
+                    <p className="text-gray-600 text-sm mb-3">{option.description}</p>
                     <div className="grid grid-cols-2 gap-2 text-xs text-gray-500">
                       <div>Paper: {option.paperType}</div>
                       <div>Finish: {option.finish}</div>
                       <div>Durability: {option.durability}</div>
                       <div>Min Order: {option.minimumOrder}</div>
                     </div>
+                  </motion.div>
+                ))}
+              </CardContent>
+            </Card>
+          </motion.div>
+
+          {/* Order Configuration */}
+          <motion.div
+            initial={{ opacity: 0, x: 30 }}
+            animate={{ opacity: 1, x: 0 }}
+            transition={{ duration: 0.8, delay: 0.6 }}
+          >
+            <Card className="bg-white/80 backdrop-blur-xl border-white/20 shadow-2xl">
+              <CardHeader className="pb-4">
+                <CardTitle className="flex items-center gap-3 text-2xl">
+                  <motion.div
+                    animate={{ rotate: [0, 360] }}
+                    transition={{ duration: 4, repeat: Infinity, ease: "linear" }}
+                  >
+                    <ShoppingCart className="w-6 h-6 text-purple-600" />
+                  </motion.div>
+                  Order Configuration
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-6">
+                {/* Quantity */}
+                <div>
+                  <Label className="text-base font-medium mb-3 block">Quantity</Label>
+                  <Input
+                    type="number"
+                    value={quantity}
+                    onChange={(e) => setQuantity(Number(e.target.value))}
+                    min={selectedPrintOption?.minimumOrder}
+                    className="text-lg p-3 border-2 focus:border-purple-500"
+                  />
+                </div>
+
+                {/* Shipping Method */}
+                <div>
+                  <Label className="text-base font-medium mb-3 block">Shipping Method</Label>
+                  <div className="space-y-3">
+                    {shippingOptions.map((option) => (
+                      <motion.div
+                        key={option.id}
+                        whileHover={{ scale: 1.02 }}
+                        onClick={() => setSelectedShipping(option.id)}
+                        className={`p-4 rounded-xl border-2 cursor-pointer transition-all duration-300 ${
+                          selectedShipping === option.id
+                            ? 'border-purple-500 bg-purple-50/50'
+                            : 'border-gray-200 hover:border-purple-300 bg-gray-50/50'
+                        }`}
+                      >
+                        <div className="flex justify-between items-center">
+                          <div>
+                            <h4 className="font-semibold">{option.name}</h4>
+                            <p className="text-sm text-gray-600">{option.description}</p>
+                            <p className="text-xs text-gray-500 mt-1">{option.estimatedDays}</p>
+                          </div>
+                          <motion.div
+                            className="text-right"
+                            animate={{ scale: selectedShipping === option.id ? [1, 1.1, 1] : 1 }}
+                            transition={{ duration: 0.5 }}
+                          >
+                            <div className="text-xl font-bold text-purple-600">
+                              ${option.price.toFixed(2)}
+                            </div>
+                          </motion.div>
+                        </div>
+                      </motion.div>
+                    ))}
                   </div>
-                  <div className="text-right">
-                    <div className="font-bold text-lg">${option.pricePerMenu}</div>
-                    <div className="text-xs text-gray-500">per menu</div>
+                </div>
+
+                {/* Order Summary */}
+                <motion.div
+                  className="bg-gradient-to-r from-blue-50 to-purple-50 rounded-xl p-4 border border-blue-200"
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  transition={{ delay: 1 }}
+                >
+                  <h4 className="font-semibold mb-3 text-lg">Order Summary</h4>
+                  <div className="space-y-2 text-sm">
+                    <div className="flex justify-between">
+                      <span>Subtotal ({quantity} menus)</span>
+                      <span>${(selectedPrintOption ? selectedPrintOption.pricePerMenu * quantity : 0).toFixed(2)}</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span>Shipping</span>
+                      <span>${selectedShipOption?.price.toFixed(2)}</span>
+                    </div>
+                    <Separator />
+                    <motion.div 
+                      className="flex justify-between font-bold text-lg"
+                      animate={{ scale: [1, 1.02, 1] }}
+                      transition={{ duration: 2, repeat: Infinity }}
+                    >
+                      <span>Total</span>
+                      <span className="text-blue-600">
+                        ${((selectedPrintOption ? selectedPrintOption.pricePerMenu * quantity : 0) + (selectedShipOption?.price || 0)).toFixed(2)}
+                      </span>
+                    </motion.div>
+                  </div>
+                </motion.div>
+
+                {/* Order Button */}
+                <motion.div
+                  whileHover={{ scale: 1.05 }}
+                  whileTap={{ scale: 0.95 }}
+                >
+                  <Button
+                    onClick={() => setShowOrderForm(true)}
+                    className="w-full bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white p-4 text-lg font-semibold rounded-xl shadow-lg hover:shadow-xl transition-all duration-300"
+                  >
+                    <CreditCard className="w-5 h-5 mr-2" />
+                    Place Order
+                  </Button>
+                </motion.div>
+              </CardContent>
+            </Card>
+          </motion.div>
+        </div>
+      </div>
+
+      {/* Order Form Dialog */}
+      <Dialog open={showOrderForm} onOpenChange={setShowOrderForm}>
+        <DialogContent className="max-w-2xl max-h-[90vh] overflow-auto">
+          <DialogHeader>
+            <DialogTitle className="text-2xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
+              Complete Your Order
+            </DialogTitle>
+          </DialogHeader>
+          
+          <div className="space-y-6">
+            {/* Contact Information */}
+            <div className="space-y-4">
+              <h3 className="text-lg font-semibold">Contact Information</h3>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <Label htmlFor="contactName">Full Name *</Label>
+                  <Input
+                    id="contactName"
+                    value={orderDetails.contactName}
+                    onChange={(e) => setOrderDetails(prev => ({ ...prev, contactName: e.target.value }))}
+                    placeholder="Enter your full name"
+                    className="mt-1"
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="contactEmail">Email Address *</Label>
+                  <Input
+                    id="contactEmail"
+                    type="email"
+                    value={orderDetails.contactEmail}
+                    onChange={(e) => setOrderDetails(prev => ({ ...prev, contactEmail: e.target.value }))}
+                    placeholder="Enter your email"
+                    className="mt-1"
+                  />
+                </div>
+                <div className="md:col-span-2">
+                  <Label htmlFor="contactPhone">Phone Number *</Label>
+                  <Input
+                    id="contactPhone"
+                    value={orderDetails.contactPhone}
+                    onChange={(e) => setOrderDetails(prev => ({ ...prev, contactPhone: e.target.value }))}
+                    placeholder="Enter your phone number"
+                    className="mt-1"
+                  />
+                </div>
+              </div>
+            </div>
+
+            {/* Shipping Address */}
+            <div className="space-y-4">
+              <h3 className="text-lg font-semibold">Shipping Address</h3>
+              <div className="space-y-4">
+                <div>
+                  <Label htmlFor="shippingAddress">Street Address *</Label>
+                  <Input
+                    id="shippingAddress"
+                    value={orderDetails.shippingAddress}
+                    onChange={(e) => setOrderDetails(prev => ({ ...prev, shippingAddress: e.target.value }))}
+                    placeholder="Enter street address"
+                    className="mt-1"
+                  />
+                </div>
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  <div>
+                    <Label htmlFor="city">City *</Label>
+                    <Input
+                      id="city"
+                      value={orderDetails.city}
+                      onChange={(e) => setOrderDetails(prev => ({ ...prev, city: e.target.value }))}
+                      placeholder="City"
+                      className="mt-1"
+                    />
+                  </div>
+                  <div>
+                    <Label htmlFor="state">State *</Label>
+                    <Input
+                      id="state"
+                      value={orderDetails.state}
+                      onChange={(e) => setOrderDetails(prev => ({ ...prev, state: e.target.value }))}
+                      placeholder="State"
+                      className="mt-1"
+                    />
+                  </div>
+                  <div>
+                    <Label htmlFor="zipCode">ZIP Code *</Label>
+                    <Input
+                      id="zipCode"
+                      value={orderDetails.zipCode}
+                      onChange={(e) => setOrderDetails(prev => ({ ...prev, zipCode: e.target.value }))}
+                      placeholder="ZIP"
+                      className="mt-1"
+                    />
                   </div>
                 </div>
               </div>
-            ))}
-          </CardContent>
-        </Card>
-
-        {/* Order Configuration */}
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <ShoppingCart className="h-5 w-5" />
-              Order Configuration
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-6">
-            {/* Quantity */}
-            <div>
-              <Label htmlFor="quantity">Quantity</Label>
-              <Input
-                id="quantity"
-                type="number"
-                value={quantity}
-                onChange={(e) => setQuantity(Math.max(1, parseInt(e.target.value) || 1))}
-                min={selectedPrintOption?.minimumOrder || 1}
-                className="mt-1"
-              />
-              {selectedPrintOption && quantity < selectedPrintOption.minimumOrder && (
-                <p className="text-sm text-red-600 mt-1">
-                  Minimum order: {selectedPrintOption.minimumOrder} menus
-                </p>
-              )}
             </div>
 
-            {/* Shipping Options */}
+            {/* Special Instructions */}
             <div>
-              <Label>Shipping Method</Label>
-              <div className="mt-2 space-y-2">
-                {shippingOptions.map((option) => (
-                  <div
-                    key={option.id}
-                    className={`border rounded-lg p-3 cursor-pointer transition-all ${
-                      selectedShipping === option.id
-                        ? 'border-blue-500 bg-blue-50 dark:bg-blue-900/20'
-                        : 'border-gray-200 hover:border-gray-300'
-                    }`}
-                    onClick={() => setSelectedShipping(option.id)}
-                  >
-                    <div className="flex justify-between items-start">
-                      <div>
-                        <h5 className="font-medium">{option.name}</h5>
-                        <p className="text-sm text-gray-600">{option.description}</p>
-                        <p className="text-xs text-gray-500">{option.estimatedDays}</p>
-                      </div>
-                      <div className="font-semibold">${option.price}</div>
-                    </div>
-                  </div>
-                ))}
-              </div>
+              <Label htmlFor="specialInstructions">Special Instructions (Optional)</Label>
+              <Textarea
+                id="specialInstructions"
+                value={orderDetails.specialInstructions}
+                onChange={(e) => setOrderDetails(prev => ({ ...prev, specialInstructions: e.target.value }))}
+                placeholder="Any special requirements or notes..."
+                rows={3}
+                className="mt-1"
+              />
             </div>
 
             {/* Order Summary */}
-            <div className="bg-gray-50 dark:bg-gray-800 rounded-lg p-4">
+            <div className="bg-gradient-to-r from-blue-50 to-purple-50 rounded-xl p-4 border border-blue-200">
               <h4 className="font-semibold mb-3">Order Summary</h4>
               <div className="space-y-2 text-sm">
                 <div className="flex justify-between">
-                  <span>{quantity} × {selectedPrintOption?.name}</span>
-                  <span>${subtotal.toFixed(2)}</span>
+                  <span>{selectedPrintOption?.name} ({quantity} menus)</span>
+                  <span>${(selectedPrintOption ? selectedPrintOption.pricePerMenu * quantity : 0).toFixed(2)}</span>
                 </div>
                 <div className="flex justify-between">
-                  <span>Shipping ({selectedShipOption?.name})</span>
-                  <span>${shippingCost.toFixed(2)}</span>
+                  <span>{selectedShipOption?.name}</span>
+                  <span>${selectedShipOption?.price.toFixed(2)}</span>
                 </div>
                 <div className="flex justify-between">
                   <span>Tax (8%)</span>
-                  <span>${tax.toFixed(2)}</span>
+                  <span>${((selectedPrintOption ? selectedPrintOption.pricePerMenu * quantity : 0) * 0.08).toFixed(2)}</span>
                 </div>
                 <Separator />
                 <div className="flex justify-between font-bold text-lg">
                   <span>Total</span>
-                  <span>${total.toFixed(2)}</span>
+                  <span className="text-blue-600">
+                    ${(
+                      (selectedPrintOption ? selectedPrintOption.pricePerMenu * quantity : 0) + 
+                      (selectedShipOption?.price || 0) + 
+                      ((selectedPrintOption ? selectedPrintOption.pricePerMenu * quantity : 0) * 0.08)
+                    ).toFixed(2)}
+                  </span>
                 </div>
               </div>
             </div>
 
-            {/* Order Button */}
-            <Dialog open={showOrderForm} onOpenChange={setShowOrderForm}>
-              <DialogTrigger asChild>
-                <Button 
-                  className="w-full" 
-                  size="lg"
-                  disabled={!selectedPrintOption || (selectedPrintOption && quantity < selectedPrintOption.minimumOrder)}
-                >
-                  <CreditCard className="h-4 w-4 mr-2" />
-                  Place Order - ${total.toFixed(2)}
-                </Button>
-              </DialogTrigger>
-              <DialogContent className="max-w-2xl">
-                <DialogHeader>
-                  <DialogTitle>Complete Your Order</DialogTitle>
-                </DialogHeader>
-                <div className="space-y-4 max-h-96 overflow-y-auto">
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div>
-                      <Label htmlFor="contactName">Contact Name *</Label>
-                      <Input
-                        id="contactName"
-                        value={orderDetails.contactName}
-                        onChange={(e) => setOrderDetails({...orderDetails, contactName: e.target.value})}
-                        placeholder="Full name"
-                      />
-                    </div>
-                    <div>
-                      <Label htmlFor="contactEmail">Email Address *</Label>
-                      <Input
-                        id="contactEmail"
-                        type="email"
-                        value={orderDetails.contactEmail}
-                        onChange={(e) => setOrderDetails({...orderDetails, contactEmail: e.target.value})}
-                        placeholder="email@restaurant.com"
-                      />
-                    </div>
-                    <div>
-                      <Label htmlFor="contactPhone">Phone Number *</Label>
-                      <Input
-                        id="contactPhone"
-                        type="tel"
-                        value={orderDetails.contactPhone}
-                        onChange={(e) => setOrderDetails({...orderDetails, contactPhone: e.target.value})}
-                        placeholder="(555) 123-4567"
-                      />
-                    </div>
-                    <div>
-                      <Label htmlFor="shippingAddress">Shipping Address *</Label>
-                      <Input
-                        id="shippingAddress"
-                        value={orderDetails.shippingAddress}
-                        onChange={(e) => setOrderDetails({...orderDetails, shippingAddress: e.target.value})}
-                        placeholder="Street address"
-                      />
-                    </div>
-                    <div>
-                      <Label htmlFor="city">City *</Label>
-                      <Input
-                        id="city"
-                        value={orderDetails.city}
-                        onChange={(e) => setOrderDetails({...orderDetails, city: e.target.value})}
-                        placeholder="City"
-                      />
-                    </div>
-                    <div>
-                      <Label htmlFor="state">State *</Label>
-                      <Input
-                        id="state"
-                        value={orderDetails.state}
-                        onChange={(e) => setOrderDetails({...orderDetails, state: e.target.value})}
-                        placeholder="State"
-                      />
-                    </div>
-                    <div>
-                      <Label htmlFor="zipCode">ZIP Code *</Label>
-                      <Input
-                        id="zipCode"
-                        value={orderDetails.zipCode}
-                        onChange={(e) => setOrderDetails({...orderDetails, zipCode: e.target.value})}
-                        placeholder="12345"
-                      />
-                    </div>
-                  </div>
-                  <div>
-                    <Label htmlFor="specialInstructions">Special Instructions</Label>
-                    <Textarea
-                      id="specialInstructions"
-                      value={orderDetails.specialInstructions}
-                      onChange={(e) => setOrderDetails({...orderDetails, specialInstructions: e.target.value})}
-                      placeholder="Any special requests or delivery instructions..."
-                      rows={3}
-                    />
-                  </div>
-                </div>
-                <div className="flex justify-between items-center pt-4 border-t">
-                  <div className="text-lg font-bold">Total: ${total.toFixed(2)}</div>
-                  <Button 
-                    onClick={handlePlaceOrder}
-                    disabled={!isFormValid() || createOrderMutation.isPending}
-                    size="lg"
-                  >
-                    {createOrderMutation.isPending ? (
-                      "Processing..."
-                    ) : (
-                      <>
-                        <CheckCircle className="h-4 w-4 mr-2" />
-                        Confirm Order
-                      </>
-                    )}
-                  </Button>
-                </div>
-              </DialogContent>
-            </Dialog>
-          </CardContent>
-        </Card>
-      </div>
+            {/* Action Buttons */}
+            <div className="flex gap-4">
+              <Button
+                variant="outline"
+                onClick={() => setShowOrderForm(false)}
+                className="flex-1"
+              >
+                Cancel
+              </Button>
+              <Button
+                onClick={async () => {
+                  if (!selectedPrintOption || !selectedShipOption) return;
+                  
+                  const subtotal = selectedPrintOption.pricePerMenu * quantity;
+                  const shippingCost = selectedShipOption.price;
+                  const tax = subtotal * 0.08;
+                  const total = subtotal + shippingCost + tax;
+
+                  try {
+                    const response = await apiRequest('POST', `/api/tenants/${tenantId}/restaurants/${restaurantId}/print-orders`, {
+                      customerName: orderDetails.contactName,
+                      customerEmail: orderDetails.contactEmail,
+                      customerPhone: orderDetails.contactPhone,
+                      printType: 'menu',
+                      printSize: menuLayout || 'A4',
+                      printQuality: selectedPrinting,
+                      quantity: quantity,
+                      design: `Menu Theme: ${selectedTheme}`,
+                      specialInstructions: orderDetails.specialInstructions,
+                      rushOrder: selectedShipping === 'overnight',
+                      deliveryMethod: 'delivery',
+                      deliveryAddress: `${orderDetails.shippingAddress}, ${orderDetails.city}, ${orderDetails.state} ${orderDetails.zipCode}`,
+                      useSavedPaymentMethod: false
+                    });
+
+                    if (response.clientSecret && onOrderCreated) {
+                      onOrderCreated(response.clientSecret, response.printOrder, response.savedPaymentMethods);
+                    }
+                    
+                    setShowOrderForm(false);
+                    setOrderDetails({
+                      contactName: '',
+                      contactEmail: '',
+                      contactPhone: '',
+                      shippingAddress: '',
+                      city: '',
+                      state: '',
+                      zipCode: '',
+                      specialInstructions: ''
+                    });
+
+                    toast({
+                      title: "Order Created",
+                      description: "Your menu printing order has been created successfully!"
+                    });
+                  } catch (error: any) {
+                    toast({
+                      title: "Order Failed",
+                      description: error.message || "Failed to create order. Please try again.",
+                      variant: "destructive"
+                    });
+                  }
+                }}
+                disabled={!orderDetails.contactName || !orderDetails.contactEmail || !orderDetails.contactPhone || !orderDetails.shippingAddress || !orderDetails.city || !orderDetails.state || !orderDetails.zipCode}
+                className="flex-1 bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700"
+              >
+                <CreditCard className="w-4 h-4 mr-2" />
+                Place Order
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
