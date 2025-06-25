@@ -32,7 +32,8 @@ import {
   ChevronRight,
   Users,
   FileText,
-  Receipt
+  Receipt,
+  Trash2
 } from "lucide-react";
 import { useAuth } from "@/lib/auth";
 import { motion } from "framer-motion";
@@ -79,6 +80,34 @@ export default function PrintOrders() {
   const { data: printOrders = [], isLoading } = useQuery({
     queryKey: [`/api/tenants/${restaurant?.tenantId}/restaurants/${restaurant?.id}/print-orders`],
     enabled: !!restaurant?.tenantId && !!restaurant?.id,
+  });
+
+  const deletePrintOrderMutation = useMutation({
+    mutationFn: async (orderId: number) => {
+      const response = await fetch(`/api/tenants/${restaurant?.tenantId}/restaurants/${restaurant?.id}/print-orders/${orderId}`, {
+        method: "DELETE",
+      });
+      if (!response.ok) {
+        throw new Error("Failed to delete print order");
+      }
+      return response.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ 
+        queryKey: [`/api/tenants/${restaurant?.tenantId}/restaurants/${restaurant?.id}/print-orders`] 
+      });
+      toast({
+        title: "Print Order Deleted",
+        description: "The print order has been successfully deleted.",
+      });
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Error",
+        description: error.message || "Failed to delete print order",
+        variant: "destructive",
+      });
+    },
   });
 
   // Filter print orders
@@ -240,6 +269,12 @@ export default function PrintOrders() {
         description: "Could not prepare payment. Please try again.",
         variant: "destructive",
       });
+    }
+  };
+
+  const handleDeleteOrder = (order: PrintOrder) => {
+    if (window.confirm(`Are you sure you want to delete order #${order.orderNumber}? This action cannot be undone.`)) {
+      deletePrintOrderMutation.mutate(order.id);
     }
   };
 
@@ -723,6 +758,21 @@ export default function PrintOrders() {
                                       Invoice
                                     </Button>
                                   )}
+                                  <Button
+                                    variant="outline"
+                                    size="sm"
+                                    type="button"
+                                    onClick={(e) => {
+                                      e.preventDefault();
+                                      e.stopPropagation();
+                                      handleDeleteOrder(order);
+                                    }}
+                                    disabled={deletePrintOrderMutation.isPending}
+                                    className="h-8 px-3 text-xs text-red-600 hover:text-red-700 hover:bg-red-50"
+                                  >
+                                    <Trash2 className="h-3 w-3 mr-1" />
+                                    Delete
+                                  </Button>
                                 </div>
                               </td>
                             </tr>
