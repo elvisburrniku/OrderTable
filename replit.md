@@ -22,6 +22,12 @@ A comprehensive restaurant booking management system with React frontend and Exp
 - Kitchen order management
 
 ## Recent Changes
+- **2025-06-25**: Enhanced admin tenant management system with comprehensive CRUD operations
+- **Tenant Management**: Added ability to view detailed tenant information, edit tenant data, and manage subscription status
+- **Suspend/Pause Features**: Implemented tenant suspension and pause functionality with reason tracking and automatic logging
+- **Admin UI Enhancement**: Created detailed tenant view with tabbed interface showing overview, subscription details, restaurants, and users
+- **API Enhancements**: Added PUT /api/admin/tenants/:id for editing, POST suspend/unsuspend/pause endpoints with proper audit logging
+- **Data Integrity**: Improved tenant data retrieval with comprehensive statistics and related entity information
 - **2025-06-25**: Comprehensive admin panel system implemented under /admin
 - **Admin System**: Complete separation from tenant system with dedicated authentication
 - **Admin Features**: Dashboard with system stats, tenant management, subscription plans, admin users, system logs, and settings
