@@ -246,8 +246,8 @@ export class AdminStorage {
 
         const [userCount] = await db
           .select({ count: count() })
-          .from(tenantUsers)
-          .where(eq(tenantUsers.tenantId, tenant.id));
+          .from(users)
+          .where(eq(users.tenantId, tenant.id));
 
         const [bookingCount] = await db
           .select({ count: count() })
