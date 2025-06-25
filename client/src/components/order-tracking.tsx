@@ -1,3 +1,4 @@
+
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -11,10 +12,19 @@ import {
   Calendar,
   Eye,
   Copy,
-  ExternalLink
+  ExternalLink,
+  ArrowLeft,
+  User,
+  Mail,
+  Phone,
+  FileText,
+  Star,
+  AlertCircle,
+  Printer
 } from "lucide-react";
 import { format } from "date-fns";
 import { useToast } from "@/hooks/use-toast";
+import { motion } from "framer-motion";
 
 interface OrderTrackingProps {
   order: {
@@ -101,7 +111,7 @@ export function OrderTracking({ order, onClose }: OrderTrackingProps) {
       {
         status: "Printing",
         date: order.printingStartedAt,
-        icon: Package,
+        icon: Printer,
         completed: !!order.printingStartedAt,
         description: "Your order is currently being printed"
       }
@@ -146,236 +156,408 @@ export function OrderTracking({ order, onClose }: OrderTrackingProps) {
   const timeline = getOrderTimeline();
 
   return (
-    <div className="max-w-4xl mx-auto space-y-6">
-      {/* Header */}
-      <div className="flex justify-between items-start">
-        <div>
-          <h1 className="text-2xl font-bold">Order Tracking</h1>
-          <p className="text-gray-600 dark:text-gray-400">
-            Track your print order status and delivery information
-          </p>
-        </div>
-        {onClose && (
-          <Button variant="outline" onClick={onClose}>
-            <Eye className="h-4 w-4 mr-2" />
-            Back to Orders
-          </Button>
-        )}
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50 relative overflow-hidden">
+      {/* Animated Background Elements */}
+      <div className="absolute inset-0 overflow-hidden pointer-events-none">
+        <motion.div
+          initial={{ opacity: 0, scale: 0.8 }}
+          animate={{ opacity: 0.1, scale: 1 }}
+          transition={{ duration: 8, repeat: Infinity, repeatType: "reverse" }}
+          className="absolute -top-24 -right-24 w-96 h-96 bg-gradient-to-br from-blue-400 to-purple-500 rounded-full blur-3xl"
+        />
+        <motion.div
+          initial={{ opacity: 0, scale: 0.6 }}
+          animate={{ opacity: 0.08, scale: 1.1 }}
+          transition={{ duration: 10, repeat: Infinity, repeatType: "reverse", delay: 2 }}
+          className="absolute -bottom-32 -left-32 w-80 h-80 bg-gradient-to-tr from-green-400 to-blue-500 rounded-full blur-3xl"
+        />
       </div>
 
-      {/* Order Summary */}
-      <Card>
-        <CardHeader>
-          <div className="flex justify-between items-start">
+      <div className="relative z-10 p-8">
+        <div className="max-w-6xl mx-auto space-y-8">
+          {/* Header */}
+          <motion.div
+            initial={{ opacity: 0, y: -30 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.8 }}
+            className="flex justify-between items-start"
+          >
             <div>
-              <CardTitle className="flex items-center gap-2">
-                Order #{order.orderNumber}
-                <Badge className={getStatusColor(order.orderStatus)}>
-                  {order.orderStatus.replace('_', ' ').toUpperCase()}
-                </Badge>
-              </CardTitle>
-              <CardDescription>
-                Placed on {format(new Date(order.createdAt), 'MMMM d, yyyy')} at {format(new Date(order.createdAt), 'h:mm a')}
-              </CardDescription>
-            </div>
-            <Badge className={getPaymentStatusColor(order.paymentStatus)}>
-              Payment {order.paymentStatus.toUpperCase()}
-            </Badge>
-          </div>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div className="space-y-2">
-              <h3 className="font-medium">Order Details</h3>
-              <div className="text-sm space-y-1">
-                <div className="flex justify-between">
-                  <span>Print Type:</span>
-                  <span className="capitalize">{order.printType}</span>
-                </div>
-                <div className="flex justify-between">
-                  <span>Size & Quality:</span>
-                  <span>{order.printSize} - {order.printQuality}</span>
-                </div>
-                <div className="flex justify-between">
-                  <span>Quantity:</span>
-                  <span>{order.quantity} copies</span>
-                </div>
-                <div className="flex justify-between">
-                  <span>Delivery Method:</span>
-                  <span className="capitalize">{order.deliveryMethod}</span>
-                </div>
-                <div className="flex justify-between font-semibold">
-                  <span>Total:</span>
-                  <span>{formatCurrency(order.totalAmount)}</span>
-                </div>
-              </div>
-            </div>
-            <div className="space-y-2">
-              <h3 className="font-medium">Customer Information</h3>
-              <div className="text-sm space-y-1">
-                <div className="flex justify-between">
-                  <span>Name:</span>
-                  <span>{order.customerName}</span>
-                </div>
-                <div className="flex justify-between">
-                  <span>Email:</span>
-                  <span>{order.customerEmail}</span>
-                </div>
-                {order.customerPhone && (
-                  <div className="flex justify-between">
-                    <span>Phone:</span>
-                    <span>{order.customerPhone}</span>
-                  </div>
-                )}
-              </div>
-            </div>
-          </div>
-
-          {/* Tracking Information */}
-          {order.trackingNumber && (
-            <div className="p-4 bg-blue-50 dark:bg-blue-950 rounded-lg border border-blue-200">
-              <div className="flex items-center justify-between">
-                <div>
-                  <h3 className="font-medium text-blue-900 dark:text-blue-100">Tracking Number</h3>
-                  <p className="text-blue-700 dark:text-blue-300 font-mono text-lg">
-                    {order.trackingNumber}
-                  </p>
-                </div>
-                <div className="flex gap-2">
-                  <Button 
-                    variant="outline" 
-                    size="sm" 
-                    onClick={copyTrackingNumber}
-                    className="border-blue-300 text-blue-700 hover:bg-blue-100 dark:border-blue-700 dark:text-blue-300"
-                  >
-                    <Copy className="h-4 w-4" />
-                  </Button>
-                  <Button 
-                    variant="outline" 
-                    size="sm"
-                    className="border-blue-300 text-blue-700 hover:bg-blue-100 dark:border-blue-700 dark:text-blue-300"
-                  >
-                    <ExternalLink className="h-4 w-4" />
-                  </Button>
-                </div>
-              </div>
-            </div>
-          )}
-
-          {/* Estimated Delivery */}
-          {order.estimatedDeliveryDate && (
-            <div className="flex items-center gap-2 p-3 bg-green-50 dark:bg-green-950 rounded-lg">
-              <Calendar className="h-4 w-4 text-green-600" />
-              <span className="text-green-700 dark:text-green-300">
-                Estimated delivery: {format(new Date(order.estimatedDeliveryDate), 'EEEE, MMMM d, yyyy')}
-              </span>
-            </div>
-          )}
-
-          {/* Delivery Address */}
-          {order.deliveryAddress && (
-            <div className="space-y-2">
-              <h3 className="font-medium flex items-center gap-2">
-                <MapPin className="h-4 w-4" />
-                Delivery Address
-              </h3>
-              <div className="text-sm p-3 bg-gray-50 dark:bg-gray-900 rounded-lg">
-                {typeof order.deliveryAddress === 'string' 
-                  ? order.deliveryAddress 
-                  : (
-                    <div className="space-y-1">
-                      <div>{order.deliveryAddress.street}</div>
-                      <div>{order.deliveryAddress.city}, {order.deliveryAddress.state} {order.deliveryAddress.zipCode}</div>
-                    </div>
-                  )
-                }
-              </div>
-            </div>
-          )}
-
-          {/* Special Instructions */}
-          {order.specialInstructions && (
-            <div className="space-y-2">
-              <h3 className="font-medium">Special Instructions</h3>
-              <p className="text-sm p-3 bg-gray-50 dark:bg-gray-900 rounded-lg">
-                {order.specialInstructions}
+              <motion.h1 
+                className="text-4xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent mb-2"
+                animate={{ scale: [1, 1.02, 1] }}
+                transition={{ duration: 3, repeat: Infinity }}
+              >
+                Order Tracking
+              </motion.h1>
+              <p className="text-gray-600 text-lg">
+                Track your print order status and delivery information
               </p>
             </div>
-          )}
+            {onClose && (
+              <motion.div
+                whileHover={{ scale: 1.05 }}
+                whileTap={{ scale: 0.95 }}
+              >
+                <Button 
+                  variant="outline" 
+                  onClick={onClose}
+                  className="bg-white/80 backdrop-blur-sm border-gray-200 hover:bg-gray-50 shadow-lg"
+                >
+                  <ArrowLeft className="h-4 w-4 mr-2" />
+                  Back to Orders
+                </Button>
+              </motion.div>
+            )}
+          </motion.div>
 
-          {/* Delivery Notes */}
-          {order.deliveryNotes && (
-            <div className="space-y-2">
-              <h3 className="font-medium">Delivery Notes</h3>
-              <p className="text-sm p-3 bg-blue-50 dark:bg-blue-950 rounded-lg text-blue-700 dark:text-blue-300">
-                {order.deliveryNotes}
-              </p>
-            </div>
-          )}
-        </CardContent>
-      </Card>
-
-      {/* Order Timeline */}
-      <Card>
-        <CardHeader>
-          <CardTitle>Order Progress</CardTitle>
-          <CardDescription>
-            Track your order through each stage of processing and delivery
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <div className="space-y-6">
-            {timeline.map((step, index) => {
-              const Icon = step.icon;
-              const isLast = index === timeline.length - 1;
-              
-              return (
-                <div key={step.status} className="flex items-start gap-4">
-                  <div className="flex flex-col items-center">
-                    <div className={`
-                      w-10 h-10 rounded-full flex items-center justify-center
-                      ${step.completed 
-                        ? 'bg-green-100 text-green-600 dark:bg-green-900 dark:text-green-400' 
-                        : 'bg-gray-100 text-gray-400 dark:bg-gray-800 dark:text-gray-600'
-                      }
-                    `}>
-                      <Icon className="h-5 w-5" />
+          {/* Order Summary Card */}
+          <motion.div
+            initial={{ opacity: 0, y: 30 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.8, delay: 0.2 }}
+          >
+            <Card className="bg-white/80 backdrop-blur-xl border-white/20 shadow-2xl">
+              <CardHeader className="pb-4">
+                <div className="flex justify-between items-start">
+                  <div className="space-y-2">
+                    <div className="flex items-center gap-3">
+                      <motion.div
+                        animate={{ rotate: [0, 5, -5, 0] }}
+                        transition={{ duration: 2, repeat: Infinity }}
+                        className="w-12 h-12 bg-gradient-to-br from-blue-500 to-purple-600 rounded-xl flex items-center justify-center shadow-lg"
+                      >
+                        <Package className="h-6 w-6 text-white" />
+                      </motion.div>
+                      <div>
+                        <CardTitle className="text-2xl flex items-center gap-3">
+                          Order #{order.orderNumber}
+                          <Badge className={getStatusColor(order.orderStatus)}>
+                            {order.orderStatus.replace('_', ' ').toUpperCase()}
+                          </Badge>
+                        </CardTitle>
+                        <CardDescription className="text-base">
+                          Placed on {format(new Date(order.createdAt), 'MMMM d, yyyy')} at {format(new Date(order.createdAt), 'h:mm a')}
+                        </CardDescription>
+                      </div>
                     </div>
-                    {!isLast && (
-                      <div className={`
-                        w-0.5 h-12 mt-2
-                        ${step.completed 
-                          ? 'bg-green-200 dark:bg-green-800' 
-                          : 'bg-gray-200 dark:bg-gray-700'
-                        }
-                      `} />
-                    )}
                   </div>
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center justify-between">
-                      <h3 className={`font-medium ${
-                        step.completed 
-                          ? 'text-gray-900 dark:text-gray-100' 
-                          : 'text-gray-500 dark:text-gray-400'
-                      }`}>
-                        {step.status}
-                      </h3>
-                      {step.date && (
-                        <span className="text-sm text-gray-500 dark:text-gray-400">
-                          {format(new Date(step.date), 'MMM d, h:mm a')}
-                        </span>
+                  <motion.div
+                    whileHover={{ scale: 1.05 }}
+                    transition={{ duration: 0.2 }}
+                  >
+                    <Badge className={getPaymentStatusColor(order.paymentStatus) + " text-base px-4 py-2"}>
+                      Payment {order.paymentStatus.toUpperCase()}
+                    </Badge>
+                  </motion.div>
+                </div>
+              </CardHeader>
+              <CardContent className="space-y-6">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                  {/* Order Details */}
+                  <motion.div
+                    initial={{ opacity: 0, x: -20 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    transition={{ duration: 0.6, delay: 0.4 }}
+                    className="space-y-4"
+                  >
+                    <div className="flex items-center gap-2 mb-3">
+                      <FileText className="h-5 w-5 text-blue-600" />
+                      <h3 className="text-lg font-semibold">Order Details</h3>
+                    </div>
+                    <div className="bg-gradient-to-r from-blue-50 to-purple-50 rounded-xl p-6 space-y-3 border border-blue-100">
+                      <div className="flex justify-between items-center">
+                        <span className="text-gray-600">Print Type:</span>
+                        <span className="capitalize font-medium">{order.printType}</span>
+                      </div>
+                      <div className="flex justify-between items-center">
+                        <span className="text-gray-600">Size & Quality:</span>
+                        <span className="font-medium">{order.printSize} - {order.printQuality}</span>
+                      </div>
+                      <div className="flex justify-between items-center">
+                        <span className="text-gray-600">Quantity:</span>
+                        <span className="font-medium">{order.quantity} copies</span>
+                      </div>
+                      <div className="flex justify-between items-center">
+                        <span className="text-gray-600">Delivery Method:</span>
+                        <span className="capitalize font-medium">{order.deliveryMethod}</span>
+                      </div>
+                      <Separator className="my-3" />
+                      <div className="flex justify-between items-center text-lg">
+                        <span className="font-semibold text-gray-900">Total:</span>
+                        <span className="font-bold text-green-600">{formatCurrency(order.totalAmount)}</span>
+                      </div>
+                    </div>
+                  </motion.div>
+
+                  {/* Customer Information */}
+                  <motion.div
+                    initial={{ opacity: 0, x: 20 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    transition={{ duration: 0.6, delay: 0.5 }}
+                    className="space-y-4"
+                  >
+                    <div className="flex items-center gap-2 mb-3">
+                      <User className="h-5 w-5 text-green-600" />
+                      <h3 className="text-lg font-semibold">Customer Information</h3>
+                    </div>
+                    <div className="bg-gradient-to-r from-green-50 to-emerald-50 rounded-xl p-6 space-y-3 border border-green-100">
+                      <div className="flex items-center gap-3">
+                        <div className="w-10 h-10 bg-gradient-to-br from-green-500 to-emerald-600 rounded-full flex items-center justify-center text-white font-medium">
+                          {order.customerName?.charAt(0)?.toUpperCase() || 'G'}
+                        </div>
+                        <div>
+                          <div className="font-medium text-gray-900">{order.customerName}</div>
+                          <div className="text-sm text-gray-500 flex items-center gap-1">
+                            <Mail className="h-3 w-3" />
+                            {order.customerEmail}
+                          </div>
+                        </div>
+                      </div>
+                      {order.customerPhone && (
+                        <div className="flex items-center gap-2 mt-3">
+                          <Phone className="h-4 w-4 text-gray-500" />
+                          <span className="text-gray-700">{order.customerPhone}</span>
+                        </div>
                       )}
                     </div>
-                    <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">
-                      {step.description}
-                    </p>
-                  </div>
+                  </motion.div>
                 </div>
-              );
-            })}
-          </div>
-        </CardContent>
-      </Card>
+
+                {/* Tracking Information */}
+                {order.trackingNumber && (
+                  <motion.div
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ duration: 0.6, delay: 0.6 }}
+                    className="bg-gradient-to-r from-blue-50 via-indigo-50 to-purple-50 rounded-xl p-6 border-2 border-blue-200"
+                  >
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-4">
+                        <motion.div
+                          animate={{ rotate: [0, 360] }}
+                          transition={{ duration: 4, repeat: Infinity, ease: "linear" }}
+                          className="w-12 h-12 bg-gradient-to-br from-blue-500 to-purple-600 rounded-xl flex items-center justify-center shadow-lg"
+                        >
+                          <Truck className="h-6 w-6 text-white" />
+                        </motion.div>
+                        <div>
+                          <h3 className="text-lg font-semibold text-blue-900">Tracking Number</h3>
+                          <p className="text-blue-700 font-mono text-xl font-bold">
+                            {order.trackingNumber}
+                          </p>
+                        </div>
+                      </div>
+                      <div className="flex gap-3">
+                        <motion.div
+                          whileHover={{ scale: 1.1 }}
+                          whileTap={{ scale: 0.95 }}
+                        >
+                          <Button 
+                            variant="outline" 
+                            size="sm" 
+                            onClick={copyTrackingNumber}
+                            className="border-blue-300 text-blue-700 hover:bg-blue-100"
+                          >
+                            <Copy className="h-4 w-4" />
+                          </Button>
+                        </motion.div>
+                        <motion.div
+                          whileHover={{ scale: 1.1 }}
+                          whileTap={{ scale: 0.95 }}
+                        >
+                          <Button 
+                            variant="outline" 
+                            size="sm"
+                            className="border-blue-300 text-blue-700 hover:bg-blue-100"
+                          >
+                            <ExternalLink className="h-4 w-4" />
+                          </Button>
+                        </motion.div>
+                      </div>
+                    </div>
+                  </motion.div>
+                )}
+
+                {/* Estimated Delivery */}
+                {order.estimatedDeliveryDate && (
+                  <motion.div
+                    initial={{ opacity: 0, scale: 0.9 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                    transition={{ duration: 0.6, delay: 0.7 }}
+                    className="flex items-center gap-3 p-4 bg-gradient-to-r from-green-50 to-emerald-50 rounded-xl border border-green-200"
+                  >
+                    <Calendar className="h-5 w-5 text-green-600" />
+                    <span className="text-green-700 font-medium">
+                      Estimated delivery: {format(new Date(order.estimatedDeliveryDate), 'EEEE, MMMM d, yyyy')}
+                    </span>
+                  </motion.div>
+                )}
+
+                {/* Delivery Address */}
+                {order.deliveryAddress && (
+                  <motion.div
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ duration: 0.6, delay: 0.8 }}
+                    className="space-y-3"
+                  >
+                    <h3 className="text-lg font-semibold flex items-center gap-2">
+                      <MapPin className="h-5 w-5 text-orange-600" />
+                      Delivery Address
+                    </h3>
+                    <div className="bg-gradient-to-r from-orange-50 to-red-50 rounded-xl p-4 border border-orange-200">
+                      {typeof order.deliveryAddress === 'string' 
+                        ? order.deliveryAddress 
+                        : (
+                          <div className="space-y-1 text-gray-700">
+                            <div>{order.deliveryAddress.street}</div>
+                            <div>{order.deliveryAddress.city}, {order.deliveryAddress.state} {order.deliveryAddress.zipCode}</div>
+                          </div>
+                        )
+                      }
+                    </div>
+                  </motion.div>
+                )}
+
+                {/* Special Instructions */}
+                {order.specialInstructions && (
+                  <motion.div
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ duration: 0.6, delay: 0.9 }}
+                    className="space-y-3"
+                  >
+                    <h3 className="text-lg font-semibold flex items-center gap-2">
+                      <Star className="h-5 w-5 text-purple-600" />
+                      Special Instructions
+                    </h3>
+                    <div className="bg-gradient-to-r from-purple-50 to-pink-50 rounded-xl p-4 border border-purple-200">
+                      <p className="text-gray-700">{order.specialInstructions}</p>
+                    </div>
+                  </motion.div>
+                )}
+
+                {/* Delivery Notes */}
+                {order.deliveryNotes && (
+                  <motion.div
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ duration: 0.6, delay: 1.0 }}
+                    className="space-y-3"
+                  >
+                    <h3 className="text-lg font-semibold flex items-center gap-2">
+                      <AlertCircle className="h-5 w-5 text-blue-600" />
+                      Delivery Notes
+                    </h3>
+                    <div className="bg-gradient-to-r from-blue-50 to-cyan-50 rounded-xl p-4 border border-blue-200">
+                      <p className="text-blue-700">{order.deliveryNotes}</p>
+                    </div>
+                  </motion.div>
+                )}
+              </CardContent>
+            </Card>
+          </motion.div>
+
+          {/* Order Timeline */}
+          <motion.div
+            initial={{ opacity: 0, y: 30 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.8, delay: 1.2 }}
+          >
+            <Card className="bg-white/80 backdrop-blur-xl border-white/20 shadow-2xl">
+              <CardHeader>
+                <CardTitle className="text-2xl flex items-center gap-3">
+                  <motion.div
+                    animate={{ rotate: [0, 360] }}
+                    transition={{ duration: 8, repeat: Infinity, ease: "linear" }}
+                    className="w-8 h-8 bg-gradient-to-br from-indigo-500 to-purple-600 rounded-lg flex items-center justify-center"
+                  >
+                    <Clock className="h-4 w-4 text-white" />
+                  </motion.div>
+                  Order Progress
+                </CardTitle>
+                <CardDescription className="text-base">
+                  Track your order through each stage of processing and delivery
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-8">
+                  {timeline.map((step, index) => {
+                    const Icon = step.icon;
+                    const isLast = index === timeline.length - 1;
+                    
+                    return (
+                      <motion.div 
+                        key={step.status} 
+                        className="flex items-start gap-6"
+                        initial={{ opacity: 0, x: -30 }}
+                        animate={{ opacity: 1, x: 0 }}
+                        transition={{ duration: 0.6, delay: 1.4 + index * 0.2 }}
+                      >
+                        <div className="flex flex-col items-center">
+                          <motion.div 
+                            className={`
+                              w-14 h-14 rounded-2xl flex items-center justify-center shadow-lg
+                              ${step.completed 
+                                ? 'bg-gradient-to-br from-green-500 to-emerald-600 text-white' 
+                                : 'bg-gradient-to-br from-gray-100 to-gray-200 text-gray-400'
+                              }
+                            `}
+                            whileHover={{ scale: 1.1, rotate: 5 }}
+                            animate={step.completed ? { scale: [1, 1.05, 1] } : {}}
+                            transition={{ duration: 2, repeat: step.completed ? Infinity : 0 }}
+                          >
+                            <Icon className="h-7 w-7" />
+                          </motion.div>
+                          {!isLast && (
+                            <motion.div 
+                              className={`
+                                w-1 h-16 mt-4 rounded-full
+                                ${step.completed 
+                                  ? 'bg-gradient-to-b from-green-400 to-emerald-500' 
+                                  : 'bg-gradient-to-b from-gray-200 to-gray-300'
+                                }
+                              `}
+                              initial={{ height: 0 }}
+                              animate={{ height: 64 }}
+                              transition={{ duration: 0.8, delay: 1.6 + index * 0.2 }}
+                            />
+                          )}
+                        </div>
+                        <div className="flex-1 min-w-0 pb-8">
+                          <div className="flex items-center justify-between mb-2">
+                            <h3 className={`text-xl font-semibold ${
+                              step.completed 
+                                ? 'text-gray-900' 
+                                : 'text-gray-500'
+                            }`}>
+                              {step.status}
+                            </h3>
+                            {step.date && (
+                              <motion.div
+                                initial={{ opacity: 0 }}
+                                animate={{ opacity: 1 }}
+                                transition={{ delay: 1.8 + index * 0.2 }}
+                                className="text-sm text-gray-500 bg-gray-100 px-3 py-1 rounded-full"
+                              >
+                                {format(new Date(step.date), 'MMM d, h:mm a')}
+                              </motion.div>
+                            )}
+                          </div>
+                          <p className="text-gray-600 text-base leading-relaxed">
+                            {step.description}
+                          </p>
+                        </div>
+                      </motion.div>
+                    );
+                  })}
+                </div>
+              </CardContent>
+            </Card>
+          </motion.div>
+        </div>
+      </div>
     </div>
   );
 }

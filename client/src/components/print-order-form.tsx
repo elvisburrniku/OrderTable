@@ -27,7 +27,8 @@ import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { useToast } from "@/hooks/use-toast";
 import { PaymentMethodSelector } from "@/components/payment-method-selector";
-import { Printer, Clock, Truck, Mail, MapPin, CreditCard } from "lucide-react";
+import { Printer, Clock, Truck, Mail, MapPin, CreditCard, Zap, Shield, Star, Palette, Package, User, Phone, FileText, Settings } from "lucide-react";
+import { motion } from "framer-motion";
 
 const printOrderSchema = z.object({
   customerName: z.string().min(2, "Name must be at least 2 characters"),
@@ -189,221 +190,380 @@ export function PrintOrderForm({
   };
 
   return (
-    <div className="space-y-6">
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Printer className="h-5 w-5" />
-            Professional Print Order
-          </CardTitle>
-          <CardDescription>
-            Create high-quality printed materials for your restaurant
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <Form {...form}>
-            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
-              {/* Customer Information */}
-              <div className="space-y-4">
-                <h3 className="text-lg font-semibold">Customer Information</h3>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <FormField
-                    control={form.control}
-                    name="customerName"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Full Name *</FormLabel>
-                        <FormControl>
-                          <Input placeholder="John Doe" {...field} />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                  <FormField
-                    control={form.control}
-                    name="customerEmail"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Email Address *</FormLabel>
-                        <FormControl>
-                          <Input type="email" placeholder="john@example.com" {...field} />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                  <FormField
-                    control={form.control}
-                    name="customerPhone"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Phone Number</FormLabel>
-                        <FormControl>
-                          <Input placeholder="+1 (555) 123-4567" {...field} />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                </div>
-              </div>
+    <div className="min-h-screen bg-gradient-to-br from-emerald-50 via-teal-50 to-cyan-50 relative overflow-hidden">
+      {/* Floating Background Elements */}
+      <div className="absolute inset-0 overflow-hidden pointer-events-none">
+        {[...Array(8)].map((_, i) => (
+          <motion.div
+            key={i}
+            className="absolute bg-gradient-to-r from-emerald-200/20 to-cyan-200/20 rounded-full"
+            style={{
+              width: `${100 + i * 30}px`,
+              height: `${100 + i * 30}px`,
+              left: `${Math.random() * 100}%`,
+              top: `${Math.random() * 100}%`,
+            }}
+            animate={{
+              x: [0, 80, 0],
+              y: [0, -80, 0],
+              rotate: [0, 360],
+            }}
+            transition={{
+              duration: 15 + i * 3,
+              repeat: Infinity,
+              ease: "linear",
+            }}
+          />
+        ))}
+      </div>
 
-              <Separator />
+      <div className="relative z-10 p-8">
+        {/* Header Section */}
+        <motion.div
+          initial={{ opacity: 0, y: -30 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.8 }}
+          className="text-center mb-12"
+        >
+          <motion.h1 
+            className="text-4xl font-bold bg-gradient-to-r from-emerald-600 to-cyan-600 bg-clip-text text-transparent mb-4"
+            animate={{ scale: [1, 1.02, 1] }}
+            transition={{ duration: 3, repeat: Infinity }}
+          >
+            Create Professional Print Order
+          </motion.h1>
+          <p className="text-gray-600 text-lg max-w-2xl mx-auto">
+            Design and order custom printed materials for your restaurant with professional quality and fast delivery
+          </p>
+        </motion.div>
 
-              {/* Print Specifications */}
-              <div className="space-y-4">
-                <h3 className="text-lg font-semibold">Print Specifications</h3>
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                  <FormField
-                    control={form.control}
-                    name="printType"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Print Type *</FormLabel>
-                        <Select onValueChange={field.onChange} defaultValue={field.value}>
+        {/* Service Features */}
+        <motion.div 
+          initial={{ opacity: 0, y: 30 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.8, delay: 0.2 }}
+          className="grid md:grid-cols-4 gap-6 mb-12"
+        >
+          {[
+            {
+              icon: Zap,
+              title: "Fast Turnaround",
+              description: "2-3 business days standard",
+              color: "from-yellow-500 to-orange-500"
+            },
+            {
+              icon: Shield,
+              title: "Premium Quality",
+              description: "Professional-grade materials",
+              color: "from-emerald-500 to-teal-500"
+            },
+            {
+              icon: Star,
+              title: "Custom Design",
+              description: "Tailored to your brand",
+              color: "from-purple-500 to-pink-500"
+            },
+            {
+              icon: Truck,
+              title: "Fast Delivery",
+              description: "Multiple shipping options",
+              color: "from-blue-500 to-cyan-500"
+            }
+          ].map((feature, index) => (
+            <motion.div
+              key={index}
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.6, delay: 0.3 + index * 0.1 }}
+              whileHover={{ scale: 1.05, y: -5 }}
+              className="bg-white/80 backdrop-blur-xl rounded-2xl p-6 border border-white/20 shadow-xl hover:shadow-2xl transition-all duration-300"
+            >
+              <motion.div
+                className={`w-12 h-12 rounded-xl bg-gradient-to-br ${feature.color} flex items-center justify-center mb-4 mx-auto`}
+                whileHover={{ rotate: 10 }}
+                transition={{ duration: 0.3 }}
+              >
+                <feature.icon className="w-6 h-6 text-white" />
+              </motion.div>
+              <h3 className="text-lg font-semibold text-gray-800 mb-2 text-center">{feature.title}</h3>
+              <p className="text-gray-600 text-center text-sm">{feature.description}</p>
+            </motion.div>
+          ))}
+        </motion.div>
+
+      <Form {...form}>
+        <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
+          {/* Customer Information Section */}
+          <motion.div
+            initial={{ opacity: 0, x: -30 }}
+            animate={{ opacity: 1, x: 0 }}
+            transition={{ duration: 0.8, delay: 0.4 }}
+          >
+            <Card className="bg-white/80 backdrop-blur-xl border-white/20 shadow-2xl">
+              <CardHeader className="pb-4">
+                <CardTitle className="flex items-center gap-3 text-2xl">
+                  <motion.div
+                    animate={{ rotate: [0, 5, -5, 0] }}
+                    transition={{ duration: 2, repeat: Infinity }}
+                  >
+                    <User className="w-6 h-6 text-emerald-600" />
+                  </motion.div>
+                  Customer Information
+                </CardTitle>
+                <CardDescription>
+                  Enter your contact details and delivery preferences
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <FormField
+                  control={form.control}
+                  name="customerName"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel className="flex items-center gap-2 text-base font-medium">
+                        <User className="w-4 h-4 text-emerald-600" />
+                        Full Name
+                      </FormLabel>
+                      <FormControl>
+                        <Input {...field} placeholder="Enter your full name" className="h-12 border-2 focus:border-emerald-500" />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                <FormField
+                  control={form.control}
+                  name="customerEmail"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel className="flex items-center gap-2 text-base font-medium">
+                        <Mail className="w-4 h-4 text-emerald-600" />
+                        Email Address
+                      </FormLabel>
+                      <FormControl>
+                        <Input {...field} type="email" placeholder="your.email@restaurant.com" className="h-12 border-2 focus:border-emerald-500" />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                <FormField
+                  control={form.control}
+                  name="customerPhone"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel className="flex items-center gap-2 text-base font-medium">
+                        <Phone className="w-4 h-4 text-emerald-600" />
+                        Phone Number
+                      </FormLabel>
+                      <FormControl>
+                        <Input {...field} type="tel" placeholder="(555) 123-4567" className="h-12 border-2 focus:border-emerald-500" />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                <FormField
+                  control={form.control}
+                  name="deliveryMethod"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel className="flex items-center gap-2 text-base font-medium">
+                        <Truck className="w-4 h-4 text-emerald-600" />
+                        Delivery Method
+                      </FormLabel>
+                      <Select onValueChange={field.onChange} defaultValue={field.value}>
+                        <FormControl>
+                          <SelectTrigger className="h-12 border-2 focus:border-emerald-500">
+                            <SelectValue placeholder="Select delivery method" />
+                          </SelectTrigger>
+                        </FormControl>
+                        <SelectContent>
+                          <SelectItem value="pickup">Store Pickup (Free)</SelectItem>
+                          <SelectItem value="delivery">Home Delivery (+$5.00)</SelectItem>
+                          <SelectItem value="mail">Mail Shipping (+$3.00)</SelectItem>
+                        </SelectContent>
+                      </Select>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                {form.watch("deliveryMethod") !== "pickup" && (
+                  <motion.div
+                    initial={{ opacity: 0, height: 0 }}
+                    animate={{ opacity: 1, height: "auto" }}
+                    exit={{ opacity: 0, height: 0 }}
+                    className="md:col-span-2"
+                  >
+                    <FormField
+                      control={form.control}
+                      name="deliveryAddress"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel className="flex items-center gap-2 text-base font-medium">
+                            <MapPin className="w-4 h-4 text-emerald-600" />
+                            Delivery Address
+                          </FormLabel>
                           <FormControl>
-                            <SelectTrigger>
-                              <SelectValue placeholder="Select print type" />
-                            </SelectTrigger>
+                            <Textarea 
+                              {...field} 
+                              placeholder="Enter your complete delivery address including street, city, state, and zip code"
+                              className="border-2 focus:border-emerald-500"
+                              rows={3}
+                            />
                           </FormControl>
-                          <SelectContent>
-                            <SelectItem value="menu">Restaurant Menu</SelectItem>
-                            <SelectItem value="flyer">Marketing Flyer</SelectItem>
-                            <SelectItem value="poster">Poster</SelectItem>
-                            <SelectItem value="banner">Banner</SelectItem>
-                            <SelectItem value="business_card">Business Cards</SelectItem>
-                          </SelectContent>
-                        </Select>
-                        <FormDescription>
-                          {getPrintTypeDescription(field.value)}
-                        </FormDescription>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                  <FormField
-                    control={form.control}
-                    name="printSize"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Size *</FormLabel>
-                        <Select onValueChange={field.onChange} defaultValue={field.value}>
-                          <FormControl>
-                            <SelectTrigger>
-                              <SelectValue placeholder="Select size" />
-                            </SelectTrigger>
-                          </FormControl>
-                          <SelectContent>
-                            <SelectItem value="A4">A4 (8.3" × 11.7")</SelectItem>
-                            <SelectItem value="A3">A3 (11.7" × 16.5")</SelectItem>
-                            <SelectItem value="A2">A2 (16.5" × 23.4")</SelectItem>
-                            <SelectItem value="A1">A1 (23.4" × 33.1")</SelectItem>
-                            <SelectItem value="custom">Custom Size</SelectItem>
-                          </SelectContent>
-                        </Select>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                  <FormField
-                    control={form.control}
-                    name="printQuality"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Quality *</FormLabel>
-                        <Select onValueChange={field.onChange} defaultValue={field.value}>
-                          <FormControl>
-                            <SelectTrigger>
-                              <SelectValue placeholder="Select quality" />
-                            </SelectTrigger>
-                          </FormControl>
-                          <SelectContent>
-                            <SelectItem value="draft">Draft Quality</SelectItem>
-                            <SelectItem value="standard">Standard Quality</SelectItem>
-                            <SelectItem value="high">High Quality</SelectItem>
-                            <SelectItem value="premium">Premium Quality</SelectItem>
-                          </SelectContent>
-                        </Select>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                </div>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                  </motion.div>
+                )}
+              </CardContent>
+            </Card>
+          </motion.div>
+
+          {/* Print Specifications Section */}
+          <motion.div
+            initial={{ opacity: 0, x: 30 }}
+            animate={{ opacity: 1, x: 0 }}
+            transition={{ duration: 0.8, delay: 0.6 }}
+          >
+            <Card className="bg-white/80 backdrop-blur-xl border-white/20 shadow-2xl">
+              <CardHeader className="pb-4">
+                <CardTitle className="flex items-center gap-3 text-2xl">
+                  <motion.div
+                    animate={{ rotate: [0, 360] }}
+                    transition={{ duration: 4, repeat: Infinity, ease: "linear" }}
+                  >
+                    <Settings className="w-6 h-6 text-cyan-600" />
+                  </motion.div>
+                  Print Specifications
+                </CardTitle>
+                <CardDescription>
+                  Configure your print job details and quality preferences
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                <FormField
+                  control={form.control}
+                  name="printType"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel className="flex items-center gap-2 text-base font-medium">
+                        <Package className="w-4 h-4 text-cyan-600" />
+                        Print Type
+                      </FormLabel>
+                      <Select onValueChange={field.onChange} defaultValue={field.value}>
+                        <FormControl>
+                          <SelectTrigger className="h-12 border-2 focus:border-cyan-500">
+                            <SelectValue placeholder="Select print type" />
+                          </SelectTrigger>
+                        </FormControl>
+                        <SelectContent>
+                          <SelectItem value="menu">Restaurant Menu</SelectItem>
+                          <SelectItem value="flyer">Promotional Flyer</SelectItem>
+                          <SelectItem value="poster">Event Poster</SelectItem>
+                          <SelectItem value="banner">Display Banner</SelectItem>
+                          <SelectItem value="business_card">Business Cards</SelectItem>
+                        </SelectContent>
+                      </Select>
+                      <FormDescription className="text-sm text-gray-600">
+                        {getPrintTypeDescription(field.value)}
+                      </FormDescription>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                <FormField
+                  control={form.control}
+                  name="printSize"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel className="flex items-center gap-2 text-base font-medium">
+                        <FileText className="w-4 h-4 text-cyan-600" />
+                        Print Size
+                      </FormLabel>
+                      <Select onValueChange={field.onChange} defaultValue={field.value}>
+                        <FormControl>
+                          <SelectTrigger className="h-12 border-2 focus:border-cyan-500">
+                            <SelectValue placeholder="Select size" />
+                          </SelectTrigger>
+                        </FormControl>
+                        <SelectContent>
+                          <SelectItem value="A4">A4 (8.3" × 11.7")</SelectItem>
+                          <SelectItem value="A3">A3 (11.7" × 16.5")</SelectItem>
+                          <SelectItem value="A2">A2 (16.5" × 23.4")</SelectItem>
+                          <SelectItem value="A1">A1 (23.4" × 33.1")</SelectItem>
+                          <SelectItem value="custom">Custom Size</SelectItem>
+                        </SelectContent>
+                      </Select>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                <FormField
+                  control={form.control}
+                  name="printQuality"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel className="flex items-center gap-2 text-base font-medium">
+                        <Star className="w-4 h-4 text-cyan-600" />
+                        Print Quality
+                      </FormLabel>
+                      <Select onValueChange={field.onChange} defaultValue={field.value}>
+                        <FormControl>
+                          <SelectTrigger className="h-12 border-2 focus:border-cyan-500">
+                            <SelectValue placeholder="Select quality" />
+                          </SelectTrigger>
+                        </FormControl>
+                        <SelectContent>
+                          <SelectItem value="draft">Draft Quality</SelectItem>
+                          <SelectItem value="standard">Standard Quality</SelectItem>
+                          <SelectItem value="high">High Quality</SelectItem>
+                          <SelectItem value="premium">Premium Quality</SelectItem>
+                        </SelectContent>
+                      </Select>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
                 <FormField
                   control={form.control}
                   name="quantity"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Quantity *</FormLabel>
+                      <FormLabel className="flex items-center gap-2 text-base font-medium">
+                        <Package className="w-4 h-4 text-cyan-600" />
+                        Quantity
+                      </FormLabel>
                       <FormControl>
                         <Input 
                           type="number" 
-                          min="1" 
-                          max="1000" 
-                          {...field}
+                          {...field} 
                           onChange={(e) => field.onChange(parseInt(e.target.value) || 1)}
-                        />
-                      </FormControl>
-                      <FormDescription>
-                        Number of copies to print (1-1000)
-                      </FormDescription>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-              </div>
-
-              <Separator />
-
-              {/* Design and Instructions */}
-              <div className="space-y-4">
-                <h3 className="text-lg font-semibold">Design & Instructions</h3>
-                <FormField
-                  control={form.control}
-                  name="design"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Design File URL or Description</FormLabel>
-                      <FormControl>
-                        <Input placeholder="https://example.com/design.pdf or describe your design" {...field} />
-                      </FormControl>
-                      <FormDescription>
-                        Provide a link to your design file or describe what you want printed
-                      </FormDescription>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                <FormField
-                  control={form.control}
-                  name="specialInstructions"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Special Instructions</FormLabel>
-                      <FormControl>
-                        <Textarea 
-                          placeholder="Any special requirements, finishing options, or notes..."
-                          className="resize-none"
-                          {...field}
+                          placeholder="Enter quantity"
+                          className="h-12 border-2 focus:border-cyan-500"
+                          min={1}
+                          max={1000}
                         />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
                   )}
                 />
-              </div>
 
-              <Separator />
-
-              {/* Delivery Options */}
-              <div className="space-y-4">
-                <h3 className="text-lg font-semibold">Delivery & Timing</h3>
                 <FormField
                   control={form.control}
                   name="rushOrder"
                   render={({ field }) => (
-                    <FormItem className="flex flex-row items-start space-x-3 space-y-0">
+                    <FormItem className="flex flex-row items-start space-x-3 space-y-0 rounded-md border-2 border-orange-200 p-4 bg-orange-50/50">
                       <FormControl>
                         <Checkbox
                           checked={field.value}
@@ -411,142 +571,155 @@ export function PrintOrderForm({
                         />
                       </FormControl>
                       <div className="space-y-1 leading-none">
-                        <FormLabel className="flex items-center gap-2">
-                          <Clock className="h-4 w-4" />
-                          Rush Order (+50% fee)
+                        <FormLabel className="flex items-center gap-2 text-base font-medium text-orange-700">
+                          <Clock className="w-4 h-4" />
+                          Rush Order (+50%)
                         </FormLabel>
-                        <FormDescription>
-                          Complete within 24 hours instead of 2-3 business days
+                        <FormDescription className="text-orange-600">
+                          Delivery in {getDeliveryTime(field.value)}
                         </FormDescription>
                       </div>
                     </FormItem>
                   )}
                 />
+
                 <FormField
                   control={form.control}
-                  name="deliveryMethod"
+                  name="design"
                   render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Delivery Method *</FormLabel>
-                      <Select onValueChange={field.onChange} defaultValue={field.value}>
-                        <FormControl>
-                          <SelectTrigger>
-                            <SelectValue placeholder="Select delivery method" />
-                          </SelectTrigger>
-                        </FormControl>
-                        <SelectContent>
-                          <SelectItem value="pickup">
-                            <div className="flex items-center gap-2">
-                              <MapPin className="h-4 w-4" />
-                              Pickup (Free)
-                            </div>
-                          </SelectItem>
-                          <SelectItem value="delivery">
-                            <div className="flex items-center gap-2">
-                              <Truck className="h-4 w-4" />
-                              Local Delivery (+$5.00)
-                            </div>
-                          </SelectItem>
-                          <SelectItem value="mail">
-                            <div className="flex items-center gap-2">
-                              <Mail className="h-4 w-4" />
-                              Mail Shipping (+$3.00)
-                            </div>
-                          </SelectItem>
-                        </SelectContent>
-                      </Select>
+                    <FormItem className="md:col-span-2 lg:col-span-3">
+                      <FormLabel className="flex items-center gap-2 text-base font-medium">
+                        <Palette className="w-4 h-4 text-cyan-600" />
+                        Design Requirements
+                      </FormLabel>
+                      <FormControl>
+                        <Textarea 
+                          {...field} 
+                          placeholder="Describe your design requirements, brand colors, logos, specific text, etc."
+                          className="border-2 focus:border-cyan-500"
+                          rows={3}
+                        />
+                      </FormControl>
                       <FormMessage />
                     </FormItem>
                   )}
                 />
-                {(form.watch("deliveryMethod") === "delivery" || form.watch("deliveryMethod") === "mail") && (
-                  <FormField
-                    control={form.control}
-                    name="deliveryAddress"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Delivery Address *</FormLabel>
-                        <FormControl>
-                          <Textarea 
-                            placeholder="Enter full delivery address..."
-                            className="resize-none"
-                            {...field}
-                          />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                )}
-              </div>
 
-              <Separator />
+                <FormField
+                  control={form.control}
+                  name="specialInstructions"
+                  render={({ field }) => (
+                    <FormItem className="md:col-span-2 lg:col-span-3">
+                      <FormLabel className="flex items-center gap-2 text-base font-medium">
+                        <FileText className="w-4 h-4 text-cyan-600" />
+                        Special Instructions
+                      </FormLabel>
+                      <FormControl>
+                        <Textarea 
+                          {...field} 
+                          placeholder="Any additional notes, special handling requirements, or specific deadlines..."
+                          className="border-2 focus:border-cyan-500"
+                          rows={3}
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              </CardContent>
+            </Card>
+          </motion.div>
 
-              {/* Payment Method Selection - Only show for authenticated users */}
-              {tenantId && (
-                <div className="space-y-4">
-                  <h3 className="text-lg font-semibold">Payment Method</h3>
+          {/* Price Estimate and Payment Section */}
+          <motion.div
+            initial={{ opacity: 0, y: 30 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.8, delay: 0.8 }}
+          >
+            <Card className="bg-white/80 backdrop-blur-xl border-white/20 shadow-2xl">
+              <CardHeader className="pb-4">
+                <CardTitle className="flex items-center gap-3 text-2xl">
+                  <motion.div
+                    animate={{ scale: [1, 1.1, 1] }}
+                    transition={{ duration: 2, repeat: Infinity }}
+                  >
+                    <CreditCard className="w-6 h-6 text-green-600" />
+                  </motion.div>
+                  Order Summary & Payment
+                </CardTitle>
+                <CardDescription>
+                  Review your order details and payment information
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-6">
+                {/* Price Estimate */}
+                <motion.div
+                  className="bg-gradient-to-r from-green-50 to-emerald-50 rounded-xl p-6 border border-green-200"
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  transition={{ delay: 1 }}
+                >
+                  <div className="flex items-center justify-between mb-4">
+                    <h4 className="text-lg font-semibold text-green-800">Estimated Price</h4>
+                    <motion.div 
+                      className="text-3xl font-bold text-green-600"
+                      animate={{ scale: [1, 1.05, 1] }}
+                      transition={{ duration: 2, repeat: Infinity }}
+                    >
+                      ${estimatedPrice.toFixed(2)}
+                    </motion.div>
+                  </div>
+                  <div className="grid grid-cols-2 gap-4 text-sm text-green-700">
+                    <div>Type: {form.watch("printType")}</div>
+                    <div>Size: {form.watch("printSize")}</div>
+                    <div>Quality: {form.watch("printQuality")}</div>
+                    <div>Quantity: {form.watch("quantity")}</div>
+                    <div>Rush: {form.watch("rushOrder") ? "Yes (+50%)" : "No"}</div>
+                    <div>Delivery: {form.watch("deliveryMethod")}</div>
+                  </div>
+                </motion.div>
+
+                {/* Payment Method Selection */}
+                <div>
+                  <h4 className="text-lg font-semibold mb-4 flex items-center gap-2">
+                    <CreditCard className="w-5 h-5 text-green-600" />
+                    Payment Method
+                  </h4>
                   <PaymentMethodSelector
                     onSelectionChange={handlePaymentMethodChange}
-                    selectedMethod={selectedPaymentMethodId}
                   />
                 </div>
-              )}
 
-              <Separator />
-
-              {/* Order Summary */}
-              <Card className="bg-gray-50 dark:bg-gray-900">
-                <CardHeader>
-                  <CardTitle className="text-lg">Order Summary</CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-3">
-                  <div className="flex justify-between items-center">
-                    <span>Print Type:</span>
-                    <Badge variant="secondary">{form.watch("printType")}</Badge>
-                  </div>
-                  <div className="flex justify-between items-center">
-                    <span>Size & Quality:</span>
-                    <span>{form.watch("printSize")} - {form.watch("printQuality")}</span>
-                  </div>
-                  <div className="flex justify-between items-center">
-                    <span>Quantity:</span>
-                    <span>{form.watch("quantity")} copies</span>
-                  </div>
-                  <div className="flex justify-between items-center">
-                    <span>Delivery Time:</span>
-                    <span className="flex items-center gap-1">
-                      <Clock className="h-4 w-4" />
-                      {getDeliveryTime(form.watch("rushOrder"))}
-                    </span>
-                  </div>
-                  <Separator />
-                  <div className="flex justify-between items-center text-lg font-semibold">
-                    <span>Estimated Total:</span>
-                    <span>${estimatedPrice.toFixed(2)}</span>
-                  </div>
-                </CardContent>
-              </Card>
-
-              <Button 
-                type="submit" 
-                className="w-full" 
-                size="lg"
-                disabled={isSubmitting}
-              >
-                {isSubmitting ? (
-                  "Creating Order..."
-                ) : (
-                  <div className="flex items-center gap-2">
-                    <CreditCard className="h-4 w-4" />
-                    Proceed to Payment
-                  </div>
-                )}
-              </Button>
-            </form>
-          </Form>
-        </CardContent>
-      </Card>
+                {/* Submit Button */}
+                <motion.div
+                  whileHover={{ scale: 1.02 }}
+                  whileTap={{ scale: 0.98 }}
+                  className="pt-4"
+                >
+                  <Button
+                    type="submit"
+                    disabled={isSubmitting}
+                    className="w-full h-14 bg-gradient-to-r from-emerald-600 to-cyan-600 hover:from-emerald-700 hover:to-cyan-700 text-white text-lg font-semibold rounded-xl shadow-lg hover:shadow-xl transition-all duration-300"
+                  >
+                    {isSubmitting ? (
+                      <motion.div
+                        animate={{ rotate: 360 }}
+                        transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
+                      >
+                        <Settings className="w-6 h-6 mr-3" />
+                      </motion.div>
+                    ) : (
+                      <Printer className="w-6 h-6 mr-3" />
+                    )}
+                    {isSubmitting ? "Creating Order..." : `Create Order - $${estimatedPrice.toFixed(2)}`}
+                  </Button>
+                </motion.div>
+              </CardContent>
+            </Card>
+          </motion.div>
+        </form>
+      </Form>
+      </div>
     </div>
   );
 }

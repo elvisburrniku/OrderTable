@@ -14570,6 +14570,39 @@ NEXT STEPS:
     }
   );
 
+  // Delete print order
+  app.delete(
+    "/api/tenants/:tenantId/restaurants/:restaurantId/print-orders/:orderId",
+    validateTenant,
+    async (req, res) => {
+      try {
+        const restaurantId = parseInt(req.params.restaurantId);
+        const tenantId = parseInt(req.params.tenantId);
+        const orderId = parseInt(req.params.orderId);
+
+        const restaurant = await storage.getRestaurantById(restaurantId);
+        if (!restaurant || restaurant.tenantId !== tenantId) {
+          return res.status(404).json({ message: "Restaurant not found" });
+        }
+
+        // Check if print order exists
+        const printOrder = await storage.getPrintOrderById(orderId);
+        if (!printOrder) {
+          return res.status(404).json({ message: "Print order not found" });
+        }
+
+        // Delete the print order
+        await storage.deletePrintOrder(orderId);
+        
+        res.json({ message: "Print order deleted successfully" });
+
+      } catch (error) {
+        console.error("Error deleting print order:", error);
+        res.status(500).json({ message: "Failed to delete print order" });
+      }
+    }
+  );
+
   // Public endpoint to create print order (for external customers)
   app.post("/api/restaurants/:restaurantId/print-orders/public", async (req, res) => {
     try {
