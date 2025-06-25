@@ -88,6 +88,7 @@ import CountdownDemoPage from "./pages/countdown-demo";
 import { SetupGuard } from "./components/setup-guard";
 import { OverduePaymentGuard } from "./components/overdue-payment-guard";
 import ErrorBoundary from "./components/error-boundary";
+import { AdminPanel } from "./pages/admin/admin-panel";
 
 function App() {
   return (
@@ -95,6 +96,10 @@ function App() {
       <LanguageProvider>
         <QueryClientProvider client={queryClient}>
         <Switch>
+          {/* Admin Panel - completely separate from tenant system */}
+          <Route path="/admin" component={AdminPanel} />
+          <Route path="/admin/*" component={AdminPanel} />
+          
           {/* Public routes - standalone without guards */}
           <Route path="/feedback/:tenantId/:restaurantId" component={GuestFeedbackForm} />
           <Route path="/feedback-test" component={FeedbackTest} />

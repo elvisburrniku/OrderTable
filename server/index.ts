@@ -7,6 +7,7 @@ import { DatabaseStorage } from "./db-storage";
 import { ReminderService } from "./reminder-service";
 import { AutoAssignmentService } from "./auto-assignment-service";
 import { activityCleanupService } from "./activity-cleanup-service";
+import { initializeAdminSystem } from "./init-admin";
 
 const app = express();
 app.use(express.json());
@@ -59,6 +60,13 @@ app.use((req, res, next) => {
 (async () => {
   // Initialize storage with demo data
   await storage.initialize();
+
+  // Initialize admin system
+  try {
+    await initializeAdminSystem();
+  } catch (error) {
+    console.error('Failed to initialize admin system:', error);
+  }
 
   // Only start services if using memory storage to avoid database connection errors
   if (storage.constructor.name === 'MemoryStorage') {

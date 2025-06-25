@@ -882,6 +882,47 @@ export const smsMessages = pgTable("sms_messages", {
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
 });
 
+// Admin system tables - completely separate from tenant system
+export const adminUsers = pgTable("admin_users", {
+  id: serial("id").primaryKey(),
+  email: text("email").notNull().unique(),
+  password: text("password").notNull(),
+  name: text("name").notNull(),
+  role: varchar("role", { length: 20 }).default("admin"), // admin, super_admin
+  isActive: boolean("is_active").default(true),
+  lastLoginAt: timestamp("last_login_at"),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+export const adminSessions = pgTable("admin_sessions", {
+  id: text("id").primaryKey(),
+  adminUserId: integer("admin_user_id").notNull().references(() => adminUsers.id, { onDelete: "cascade" }),
+  expiresAt: timestamp("expires_at").notNull(),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+export const systemSettings = pgTable("system_settings", {
+  id: serial("id").primaryKey(),
+  key: text("key").notNull().unique(),
+  value: text("value"),
+  description: text("description"),
+  type: varchar("type", { length: 20 }).default("string"), // string, number, boolean, json
+  updatedBy: integer("updated_by").references(() => adminUsers.id),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+export const systemLogs = pgTable("system_logs", {
+  id: serial("id").primaryKey(),
+  level: varchar("level", { length: 10 }).notNull(), // info, warn, error, debug
+  message: text("message").notNull(),
+  data: text("data"), // JSON string for additional log data
+  source: text("source"), // component or service that generated the log
+  adminUserId: integer("admin_user_id").references(() => adminUsers.id),
+  tenantId: integer("tenant_id").references(() => tenants.id),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
 export const feedbackQuestions = pgTable("feedback_questions", {
   id: serial("id").primaryKey(),
   restaurantId: integer("restaurant_id").notNull().references(() => restaurants.id, { onDelete: "cascade" }),
@@ -1214,6 +1255,35 @@ export type InsertProduct = InferInsertModel<typeof products>;
 
 export const insertProductSchema = createInsertSchema(products);
 export const selectProductSchema = createSelectSchema(products);
+
+// Admin system type exports
+export type AdminUser = InferSelectModel<typeof adminUsers>;
+export type InsertAdminUser = InferInsertModel<typeof adminUsers>;
+
+export type AdminSession = InferSelectModel<typeof adminSessions>;
+export type InsertAdminSession = InferInsertModel<typeof adminSessions>;
+
+export type SystemSetting = InferSelectModel<typeof systemSettings>;
+export type InsertSystemSetting = InferInsertModel<typeof systemSettings>;
+
+export type SystemLog = InferSelectModel<typeof systemLogs>;
+export type InsertSystemLog = InferInsertModel<typeof systemLogs>;
+
+export const insertAdminUserSchema = createInsertSchema(adminUsers).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
+export const insertSystemSettingSchema = createInsertSchema(systemSettings).omit({
+  id: true,
+  updatedAt: true,
+});
+
+export const insertSystemLogSchema = createInsertSchema(systemLogs).omit({
+  id: true,
+  createdAt: true,
+});
 
 // Payment Setups table
 export const paymentSetups = pgTable("payment_setups", {
