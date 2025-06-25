@@ -686,9 +686,7 @@ export function PrintOrderForm({
                     Payment Method
                   </h4>
                   <PaymentMethodSelector
-                    restaurantId={restaurantId}
-                    tenantId={tenantId}
-                    onPaymentMethodChange={handlePaymentMethodChange}
+                    onSelectionChange={handlePaymentMethodChange}
                   />
                 </div>
 
