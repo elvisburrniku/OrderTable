@@ -339,43 +339,108 @@ export default function PrintOrders() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      <div className="p-6">
-        <div className="bg-white rounded-lg shadow">
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50 relative overflow-hidden">
+      {/* Animated Background Elements */}
+      <div className="absolute inset-0 overflow-hidden pointer-events-none">
+        <motion.div
+          initial={{ opacity: 0, scale: 0.8 }}
+          animate={{ opacity: 0.1, scale: 1 }}
+          transition={{ duration: 8, repeat: Infinity, repeatType: "reverse" }}
+          className="absolute -top-24 -right-24 w-96 h-96 bg-gradient-to-br from-blue-400 to-purple-500 rounded-full blur-3xl"
+        />
+        <motion.div
+          initial={{ opacity: 0, scale: 0.6 }}
+          animate={{ opacity: 0.08, scale: 1.1 }}
+          transition={{ duration: 10, repeat: Infinity, repeatType: "reverse", delay: 2 }}
+          className="absolute -bottom-32 -left-32 w-80 h-80 bg-gradient-to-tr from-green-400 to-blue-500 rounded-full blur-3xl"
+        />
+      </div>
+
+      <div className="relative z-10 p-6">
+        <motion.div 
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.6 }}
+          className="bg-white/80 backdrop-blur-xl rounded-2xl shadow-2xl border border-white/20"
+        >
           {/* Top Header */}
-          <div className="p-6 border-b">
+          <div className="p-8 border-b border-gray-100/50">
             <div className="flex items-center justify-between">
-              <motion.h1 
-                initial={{ opacity: 0, x: -20 }}
-                animate={{ opacity: 1, x: 0 }}
-                transition={{ duration: 0.5, delay: 0.1 }}
-                className="text-2xl font-bold text-gray-900 flex items-center gap-2"
-              >
-                <Printer className="h-6 w-6 text-green-600" />
-                Print Orders
-              </motion.h1>
               <motion.div
-                initial={{ opacity: 0, x: 20 }}
+                initial={{ opacity: 0, x: -30 }}
                 animate={{ opacity: 1, x: 0 }}
-                transition={{ duration: 0.5, delay: 0.2 }}
+                transition={{ duration: 0.7, delay: 0.1 }}
+                className="flex items-center gap-4"
               >
-                <Button
-                onClick={() => setActiveTab("new-order")}
-                 className="bg-green-600 hover:bg-green-700 text-white flex items-center space-x-2"
+                <motion.div
+                  whileHover={{ rotate: 360, scale: 1.1 }}
+                  transition={{ duration: 0.6 }}
+                  className="w-14 h-14 bg-gradient-to-br from-green-500 to-emerald-600 rounded-2xl flex items-center justify-center shadow-lg"
+                >
+                  <Printer className="h-7 w-7 text-white" />
+                </motion.div>
+                <div>
+                  <h1 className="text-3xl font-bold bg-gradient-to-r from-gray-900 to-gray-700 bg-clip-text text-transparent">
+                    Print Orders
+                  </h1>
+                  <p className="text-gray-500 mt-1">Manage your printing requests and orders</p>
+                </div>
+              </motion.div>
+              
+              <motion.div
+                initial={{ opacity: 0, x: 30 }}
+                animate={{ opacity: 1, x: 0 }}
+                transition={{ duration: 0.7, delay: 0.3 }}
               >
-                <Plus className="w-4 h-4" />
-                <span>New Print Order</span>
-              </Button>
+                <motion.div
+                  whileHover={{ scale: 1.05 }}
+                  whileTap={{ scale: 0.95 }}
+                >
+                  <Button
+                    onClick={() => setActiveTab("new-order")}
+                    className="bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 text-white px-6 py-3 rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 flex items-center space-x-3"
+                  >
+                    <motion.div
+                      animate={{ rotate: [0, 90, 0] }}
+                      transition={{ duration: 2, repeat: Infinity, ease: "easeInOut" }}
+                    >
+                      <Plus className="w-5 h-5" />
+                    </motion.div>
+                    <span className="font-medium">New Print Order</span>
+                  </Button>
+                </motion.div>
               </motion.div>
             </div>
           </div>
 
           <Tabs value={activeTab} onValueChange={setActiveTab}>
-            <TabsList className="ml-6 mt-6">
-              <TabsTrigger value="orders">Print Orders</TabsTrigger>
-              <TabsTrigger value="new-order">Create Order</TabsTrigger>
-              <TabsTrigger value="menu-printing">Menu Printing</TabsTrigger>
-            </TabsList>
+            <motion.div 
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.5, delay: 0.5 }}
+              className="ml-6 mt-6"
+            >
+              <TabsList className="bg-gray-50/80 backdrop-blur-sm rounded-2xl p-2 border border-gray-200/50 shadow-lg">
+                <TabsTrigger 
+                  value="orders" 
+                  className="rounded-xl font-medium transition-all duration-300 data-[state=active]:bg-white data-[state=active]:shadow-lg data-[state=active]:scale-105 px-6 py-2"
+                >
+                  Print Orders
+                </TabsTrigger>
+                <TabsTrigger 
+                  value="new-order"
+                  className="rounded-xl font-medium transition-all duration-300 data-[state=active]:bg-white data-[state=active]:shadow-lg data-[state=active]:scale-105 px-6 py-2"
+                >
+                  Create Order
+                </TabsTrigger>
+                <TabsTrigger 
+                  value="menu-printing"
+                  className="rounded-xl font-medium transition-all duration-300 data-[state=active]:bg-white data-[state=active]:shadow-lg data-[state=active]:scale-105 px-6 py-2"
+                >
+                  Menu Printing
+                </TabsTrigger>
+              </TabsList>
+            </motion.div>
 
             <TabsContent value="orders">
               {/* Statistics Cards Section */}
@@ -392,80 +457,156 @@ export default function PrintOrders() {
                   <div className="relative z-10">
                     <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
                       {/* Total Orders */}
-                      <div className="group relative bg-white/60 backdrop-blur-sm rounded-xl p-4 border border-white/20 shadow-sm hover:shadow-md hover:bg-white/80 transition-all duration-300">
-                        <div className="flex items-center space-x-4">
-                          <div className="relative">
-                            <div className="w-12 h-12 bg-gradient-to-br from-blue-500 to-blue-600 rounded-xl flex items-center justify-center shadow-lg group-hover:shadow-xl transition-shadow duration-300">
-                              <Package className="w-6 h-6 text-white" />
+                      <motion.div
+                        initial={{ opacity: 0, y: 20 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ duration: 0.6, delay: 0.1 }}
+                        whileHover={{ scale: 1.05, y: -5 }}
+                        className="group relative bg-white/70 backdrop-blur-md rounded-2xl p-6 border border-white/30 shadow-lg hover:shadow-2xl transition-all duration-500 overflow-hidden"
+                      >
+                        <div className="absolute inset-0 bg-gradient-to-br from-blue-500/5 to-purple-500/5 rounded-2xl"></div>
+                        <div className="relative flex items-center space-x-4">
+                          <motion.div 
+                            className="relative"
+                            whileHover={{ rotate: 360 }}
+                            transition={{ duration: 0.8 }}
+                          >
+                            <div className="w-16 h-16 bg-gradient-to-br from-blue-500 to-blue-600 rounded-2xl flex items-center justify-center shadow-xl group-hover:shadow-2xl transition-all duration-500">
+                              <Package className="w-8 h-8 text-white" />
                             </div>
-                            <div className="absolute -top-1 -right-1 w-4 h-4 bg-blue-200 rounded-full opacity-60 group-hover:opacity-100 transition-opacity duration-300"></div>
-                          </div>
+                            <motion.div 
+                              className="absolute -top-1 -right-1 w-5 h-5 bg-blue-200 rounded-full"
+                              animate={{ scale: [1, 1.2, 1] }}
+                              transition={{ duration: 2, repeat: Infinity }}
+                            />
+                          </motion.div>
                           <div>
-                            <div className="text-2xl font-bold text-gray-900 group-hover:text-blue-700 transition-colors duration-300">
+                            <motion.div 
+                              className="text-3xl font-bold text-gray-900 group-hover:text-blue-700 transition-colors duration-300"
+                              animate={{ scale: [1, 1.1, 1] }}
+                              transition={{ duration: 3, repeat: Infinity }}
+                            >
                               {filteredPrintOrders.length}
-                            </div>
+                            </motion.div>
                             <div className="text-sm font-medium text-gray-600">Total Orders</div>
                           </div>
                         </div>
-                      </div>
+                      </motion.div>
 
                       {/* Pending Orders */}
-                      <div className="group relative bg-white/60 backdrop-blur-sm rounded-xl p-4 border border-white/20 shadow-sm hover:shadow-md hover:bg-white/80 transition-all duration-300">
-                        <div className="flex items-center space-x-4">
-                          <div className="relative">
-                            <div className="w-12 h-12 bg-gradient-to-br from-amber-500 to-orange-600 rounded-xl flex items-center justify-center shadow-lg group-hover:shadow-xl transition-shadow duration-300">
-                              <Clock className="w-6 h-6 text-white" />
+                      <motion.div
+                        initial={{ opacity: 0, y: 20 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ duration: 0.6, delay: 0.2 }}
+                        whileHover={{ scale: 1.05, y: -5 }}
+                        className="group relative bg-white/70 backdrop-blur-md rounded-2xl p-6 border border-white/30 shadow-lg hover:shadow-2xl transition-all duration-500 overflow-hidden"
+                      >
+                        <div className="absolute inset-0 bg-gradient-to-br from-amber-500/5 to-orange-500/5 rounded-2xl"></div>
+                        <div className="relative flex items-center space-x-4">
+                          <motion.div 
+                            className="relative"
+                            whileHover={{ rotate: 360 }}
+                            transition={{ duration: 0.8 }}
+                          >
+                            <div className="w-16 h-16 bg-gradient-to-br from-amber-500 to-orange-600 rounded-2xl flex items-center justify-center shadow-xl group-hover:shadow-2xl transition-all duration-500">
+                              <Clock className="w-8 h-8 text-white" />
                             </div>
-                            <div className="absolute -top-1 -right-1 w-4 h-4 bg-amber-200 rounded-full opacity-60 group-hover:opacity-100 transition-opacity duration-300"></div>
-                          </div>
+                            <motion.div 
+                              className="absolute -top-1 -right-1 w-5 h-5 bg-amber-200 rounded-full"
+                              animate={{ scale: [1, 1.2, 1], rotate: [0, 180, 360] }}
+                              transition={{ duration: 2, repeat: Infinity }}
+                            />
+                          </motion.div>
                           <div>
-                            <div className="text-2xl font-bold text-gray-900 group-hover:text-amber-700 transition-colors duration-300">
+                            <motion.div 
+                              className="text-3xl font-bold text-gray-900 group-hover:text-amber-700 transition-colors duration-300"
+                              animate={{ scale: [1, 1.1, 1] }}
+                              transition={{ duration: 3, repeat: Infinity, delay: 0.5 }}
+                            >
                               {filteredPrintOrders.filter((order: any) => order.orderStatus === 'pending').length}
-                            </div>
+                            </motion.div>
                             <div className="text-sm font-medium text-gray-600">Pending Orders</div>
                           </div>
                         </div>
-                      </div>
+                      </motion.div>
 
                       {/* Completed Orders */}
-                      <div className="group relative bg-white/60 backdrop-blur-sm rounded-xl p-4 border border-white/20 shadow-sm hover:shadow-md hover:bg-white/80 transition-all duration-300">
-                        <div className="flex items-center space-x-4">
-                          <div className="relative">
-                            <div className="w-12 h-12 bg-gradient-to-br from-emerald-500 to-green-600 rounded-xl flex items-center justify-center shadow-lg group-hover:shadow-xl transition-shadow duration-300">
-                              <CheckCircle className="w-6 h-6 text-white" />
+                      <motion.div
+                        initial={{ opacity: 0, y: 20 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ duration: 0.6, delay: 0.3 }}
+                        whileHover={{ scale: 1.05, y: -5 }}
+                        className="group relative bg-white/70 backdrop-blur-md rounded-2xl p-6 border border-white/30 shadow-lg hover:shadow-2xl transition-all duration-500 overflow-hidden"
+                      >
+                        <div className="absolute inset-0 bg-gradient-to-br from-emerald-500/5 to-green-500/5 rounded-2xl"></div>
+                        <div className="relative flex items-center space-x-4">
+                          <motion.div 
+                            className="relative"
+                            whileHover={{ rotate: 360 }}
+                            transition={{ duration: 0.8 }}
+                          >
+                            <div className="w-16 h-16 bg-gradient-to-br from-emerald-500 to-green-600 rounded-2xl flex items-center justify-center shadow-xl group-hover:shadow-2xl transition-all duration-500">
+                              <CheckCircle className="w-8 h-8 text-white" />
                             </div>
-                            <div className="absolute -top-1 -right-1 w-4 h-4 bg-emerald-200 rounded-full opacity-60 group-hover:opacity-100 transition-opacity duration-300"></div>
-                          </div>
+                            <motion.div 
+                              className="absolute -top-1 -right-1 w-5 h-5 bg-emerald-200 rounded-full"
+                              animate={{ scale: [1, 1.3, 1], opacity: [0.7, 1, 0.7] }}
+                              transition={{ duration: 2, repeat: Infinity }}
+                            />
+                          </motion.div>
                           <div>
-                            <div className="text-2xl font-bold text-gray-900 group-hover:text-emerald-700 transition-colors duration-300">
+                            <motion.div 
+                              className="text-3xl font-bold text-gray-900 group-hover:text-emerald-700 transition-colors duration-300"
+                              animate={{ scale: [1, 1.1, 1] }}
+                              transition={{ duration: 3, repeat: Infinity, delay: 1 }}
+                            >
                               {filteredPrintOrders.filter((order: any) => order.orderStatus === 'completed').length}
-                            </div>
+                            </motion.div>
                             <div className="text-sm font-medium text-gray-600">Completed Orders</div>
                           </div>
                         </div>
-                      </div>
+                      </motion.div>
 
                       {/* Total Revenue */}
-                      <div className="group relative bg-white/60 backdrop-blur-sm rounded-xl p-4 border border-white/20 shadow-sm hover:shadow-md hover:bg-white/80 transition-all duration-300">
-                        <div className="flex items-center space-x-4">
-                          <div className="relative">
-                            <div className="w-12 h-12 bg-gradient-to-br from-purple-500 to-violet-600 rounded-xl flex items-center justify-center shadow-lg group-hover:shadow-xl transition-shadow duration-300">
-                              <DollarSign className="w-6 h-6 text-white" />
+                      <motion.div
+                        initial={{ opacity: 0, y: 20 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ duration: 0.6, delay: 0.4 }}
+                        whileHover={{ scale: 1.05, y: -5 }}
+                        className="group relative bg-white/70 backdrop-blur-md rounded-2xl p-6 border border-white/30 shadow-lg hover:shadow-2xl transition-all duration-500 overflow-hidden"
+                      >
+                        <div className="absolute inset-0 bg-gradient-to-br from-purple-500/5 to-violet-500/5 rounded-2xl"></div>
+                        <div className="relative flex items-center space-x-4">
+                          <motion.div 
+                            className="relative"
+                            whileHover={{ rotate: 360 }}
+                            transition={{ duration: 0.8 }}
+                          >
+                            <div className="w-16 h-16 bg-gradient-to-br from-purple-500 to-violet-600 rounded-2xl flex items-center justify-center shadow-xl group-hover:shadow-2xl transition-all duration-500">
+                              <DollarSign className="w-8 h-8 text-white" />
                             </div>
-                            <div className="absolute -top-1 -right-1 w-4 h-4 bg-purple-200 rounded-full opacity-60 group-hover:opacity-100 transition-opacity duration-300"></div>
-                          </div>
+                            <motion.div 
+                              className="absolute -top-1 -right-1 w-5 h-5 bg-purple-200 rounded-full"
+                              animate={{ y: [-2, 2, -2], rotate: [0, 360] }}
+                              transition={{ duration: 3, repeat: Infinity }}
+                            />
+                          </motion.div>
                           <div>
-                            <div className="text-2xl font-bold text-gray-900 group-hover:text-purple-700 transition-colors duration-300">
+                            <motion.div 
+                              className="text-3xl font-bold text-gray-900 group-hover:text-purple-700 transition-colors duration-300"
+                              animate={{ scale: [1, 1.1, 1] }}
+                              transition={{ duration: 3, repeat: Infinity, delay: 1.5 }}
+                            >
                               {formatCurrency(
                                 filteredPrintOrders
                                   .filter((order: any) => order.paymentStatus === 'paid')
                                   .reduce((sum: number, order: any) => sum + (order.totalAmount || 0), 0)
                               )}
-                            </div>
+                            </motion.div>
                             <div className="text-sm font-medium text-gray-600">Total Revenue</div>
                           </div>
                         </div>
-                      </div>
+                      </motion.div>
                     </div>
                   </div>
                 </div>
@@ -628,13 +769,18 @@ export default function PrintOrders() {
               </div>
 
               {/* Table Section */}
-              <div className="p-6">
+              <motion.div 
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.7, delay: 0.6 }}
+                className="p-6"
+              >
                 {/* Enhanced Table */}
-                <div className="bg-white rounded-xl border-2 border-gray-100 overflow-hidden shadow-sm">
+                <div className="bg-white/80 backdrop-blur-xl rounded-2xl border border-white/20 overflow-hidden shadow-2xl">
                   <div className="overflow-x-auto">
                     <table className="w-full">
                       <thead>
-                        <tr className="bg-gray-50 border-b border-gray-200">
+                        <tr className="bg-gradient-to-r from-gray-50/90 to-gray-100/90 backdrop-blur-sm border-b border-gray-200/50">
                           <th className="text-left py-3 px-4 text-xs font-medium text-gray-500 uppercase tracking-wider">
                             Order ID
                           </th>
@@ -664,32 +810,76 @@ export default function PrintOrders() {
                       <tbody className="divide-y divide-gray-100">
                         {isLoading ? (
                           <tr>
-                            <td colSpan={8} className="py-12 text-center">
-                              <div className="flex flex-col items-center space-y-4">
-                                <div className="animate-spin rounded-full h-8 w-8 border-2 border-green-500 border-t-transparent"></div>
-                                <span className="text-gray-500 font-medium">Loading print orders...</span>
-                              </div>
+                            <td colSpan={8} className="py-16 text-center">
+                              <motion.div 
+                                initial={{ opacity: 0 }}
+                                animate={{ opacity: 1 }}
+                                className="flex flex-col items-center space-y-6"
+                              >
+                                <motion.div 
+                                  className="relative"
+                                  animate={{ rotate: 360 }}
+                                  transition={{ duration: 2, repeat: Infinity, ease: "linear" }}
+                                >
+                                  <div className="w-12 h-12 border-4 border-gradient-to-r from-green-500 to-blue-500 border-t-transparent rounded-full"></div>
+                                  <motion.div
+                                    className="absolute inset-2 border-2 border-purple-300 border-b-transparent rounded-full"
+                                    animate={{ rotate: -360 }}
+                                    transition={{ duration: 1.5, repeat: Infinity, ease: "linear" }}
+                                  />
+                                </motion.div>
+                                <motion.span 
+                                  animate={{ opacity: [0.5, 1, 0.5] }}
+                                  transition={{ duration: 2, repeat: Infinity }}
+                                  className="text-gray-600 font-medium text-lg"
+                                >
+                                  Loading print orders...
+                                </motion.span>
+                              </motion.div>
                             </td>
                           </tr>
                         ) : paginatedPrintOrders.length === 0 ? (
                           <tr>
-                            <td colSpan={8} className="py-12 text-center">
-                              <div className="flex flex-col items-center space-y-4">
-                                <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center">
-                                  <Printer className="w-8 h-8 text-gray-400" />
+                            <td colSpan={8} className="py-16 text-center">
+                              <motion.div 
+                                initial={{ opacity: 0, y: 20 }}
+                                animate={{ opacity: 1, y: 0 }}
+                                transition={{ duration: 0.6 }}
+                                className="flex flex-col items-center space-y-6"
+                              >
+                                <motion.div 
+                                  className="relative"
+                                  whileHover={{ scale: 1.1 }}
+                                  animate={{ y: [0, -10, 0] }}
+                                  transition={{ duration: 3, repeat: Infinity }}
+                                >
+                                  <div className="w-20 h-20 bg-gradient-to-br from-gray-100 to-gray-200 rounded-2xl flex items-center justify-center shadow-lg">
+                                    <Printer className="w-10 h-10 text-gray-400" />
+                                  </div>
+                                  <motion.div
+                                    className="absolute -top-2 -right-2 w-6 h-6 bg-blue-100 rounded-full flex items-center justify-center"
+                                    animate={{ scale: [1, 1.2, 1] }}
+                                    transition={{ duration: 2, repeat: Infinity }}
+                                  >
+                                    <div className="w-2 h-2 bg-blue-400 rounded-full"></div>
+                                  </motion.div>
+                                </motion.div>
+                                <div className="space-y-2">
+                                  <h3 className="text-xl font-semibold text-gray-900">No print orders found</h3>
+                                  <p className="text-gray-500 max-w-sm">Try adjusting your filters or search terms to find the orders you're looking for</p>
                                 </div>
-                                <div>
-                                  <h3 className="text-gray-900 font-medium">No print orders found</h3>
-                                  <p className="text-gray-500 text-sm mt-1">Try adjusting your filters or search terms</p>
-                                </div>
-                              </div>
+                              </motion.div>
                             </td>
                           </tr>
                         ) : (
                           paginatedPrintOrders.map((order: PrintOrder, index: number) => (
-                            <tr 
-                              key={order.id} 
-                              className={`group hover:bg-blue-50 cursor-pointer transition-all duration-200 ${index % 2 === 0 ? 'bg-white' : 'bg-gray-50/50'}`}
+                            <motion.tr 
+                              key={order.id}
+                              initial={{ opacity: 0, x: -20 }}
+                              animate={{ opacity: 1, x: 0 }}
+                              transition={{ duration: 0.4, delay: index * 0.1 }}
+                              whileHover={{ scale: 1.01, backgroundColor: "rgba(59, 130, 246, 0.05)" }}
+                              className={`group cursor-pointer transition-all duration-300 ${index % 2 === 0 ? 'bg-white/70' : 'bg-gray-50/30'} hover:shadow-lg border-b border-gray-100/50`}
                               onClick={() => handleViewTracking(order)}
                             >
                               <td className="py-3 px-4">
@@ -742,39 +932,57 @@ export default function PrintOrders() {
                                 </div>
                               </td>
                               <td className="py-3 px-4">
-                                <div className="flex items-center space-x-2">
-                                  <Button
-                                    variant="outline"
-                                    size="sm"
-                                    type="button"
-                                    onClick={(e) => {
-                                      e.preventDefault();
-                                      e.stopPropagation();
-                                      handleViewDetails(order);
-                                    }}
-                                    className="h-8 w-8 p-0 text-gray-600 hover:text-gray-700 hover:bg-gray-50"
+                                <div className="flex items-center space-x-3">
+                                  <motion.div
+                                    whileHover={{ scale: 1.1 }}
+                                    whileTap={{ scale: 0.95 }}
                                   >
-                                    <FileText className="h-4 w-4" />
-                                  </Button>
+                                    <Button
+                                      variant="outline"
+                                      size="sm"
+                                      type="button"
+                                      onClick={(e) => {
+                                        e.preventDefault();
+                                        e.stopPropagation();
+                                        handleViewDetails(order);
+                                      }}
+                                      className="h-10 w-10 p-0 rounded-xl border-2 border-gray-200/50 text-gray-600 hover:text-blue-600 hover:bg-blue-50/50 hover:border-blue-200 transition-all duration-300 shadow-sm hover:shadow-md backdrop-blur-sm"
+                                    >
+                                      <FileText className="h-4 w-4" />
+                                    </Button>
+                                  </motion.div>
 
-                                  <Button
-                                    variant="outline"
-                                    size="sm"
-                                    type="button"
-                                    onClick={(e) => {
-                                      e.preventDefault();
-                                      e.stopPropagation();
-                                      setOrderToDelete(order);
-                                      setIsDeleteDialogOpen(true);
-                                    }}
-                                    disabled={deletePrintOrderMutation.isPending}
-                                    className="h-8 w-8 p-0 text-red-600 hover:text-red-700 hover:bg-red-50"
+                                  <motion.div
+                                    whileHover={{ scale: 1.1 }}
+                                    whileTap={{ scale: 0.95 }}
                                   >
-                                    <Trash2 className="h-4 w-4" />
-                                  </Button>
+                                    <Button
+                                      variant="outline"
+                                      size="sm"
+                                      type="button"
+                                      onClick={(e) => {
+                                        e.preventDefault();
+                                        e.stopPropagation();
+                                        setOrderToDelete(order);
+                                        setIsDeleteDialogOpen(true);
+                                      }}
+                                      disabled={deletePrintOrderMutation.isPending}
+                                      className="h-10 w-10 p-0 rounded-xl border-2 border-red-200/50 text-red-500 hover:text-red-600 hover:bg-red-50/50 hover:border-red-300 transition-all duration-300 shadow-sm hover:shadow-md backdrop-blur-sm disabled:opacity-50"
+                                    >
+                                      {deletePrintOrderMutation.isPending ? (
+                                        <motion.div
+                                          animate={{ rotate: 360 }}
+                                          transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
+                                          className="h-4 w-4 border-2 border-red-500 border-t-transparent rounded-full"
+                                        />
+                                      ) : (
+                                        <Trash2 className="h-4 w-4" />
+                                      )}
+                                    </Button>
+                                  </motion.div>
                                 </div>
                               </td>
-                            </tr>
+                            </motion.tr>
                           ))
                         )}
                       </tbody>
@@ -883,7 +1091,7 @@ pageNum = i + 1;
                     </div>
                   </div>
                 )}
-              </div>
+              </motion.div>
             </TabsContent>
 
             <TabsContent value="new-order">
@@ -904,7 +1112,7 @@ pageNum = i + 1;
               />
             </TabsContent>
           </Tabs>
-        </div>
+        </motion.div>
       </div>
 
       {/* Delete Confirmation Dialog */}
