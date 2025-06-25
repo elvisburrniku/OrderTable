@@ -1830,6 +1830,65 @@ export async function registerRoutes(app: Express): Promise<Server> {
     },
   );
 
+  app.put(
+    "/api/tenants/:tenantId/restaurants/:restaurantId/customers/:id",
+    validateTenant,
+    async (req, res) => {
+      try {
+        const id = parseInt(req.params.id);
+        const restaurantId = parseInt(req.params.restaurantId);
+        const tenantId = parseInt(req.params.tenantId);
+
+        const restaurant = await storage.getRestaurantById(restaurantId);
+        if (!restaurant || restaurant.tenantId !== tenantId) {
+          return res.status(404).json({ message: "Restaurant not found" });
+        }
+
+        // Verify customer exists and belongs to this restaurant/tenant
+        const existingCustomer = await storage.getCustomerById(id);
+        if (!existingCustomer || existingCustomer.restaurantId !== restaurantId || existingCustomer.tenantId !== tenantId) {
+          return res.status(404).json({ message: "Customer not found" });
+        }
+
+        const updates = req.body;
+        const customer = await storage.updateCustomer(id, updates);
+        res.json(customer);
+      } catch (error) {
+        console.error("Customer update error:", error);
+        res.status(500).json({ message: "Failed to update customer" });
+      }
+    },
+  );
+
+  app.delete(
+    "/api/tenants/:tenantId/restaurants/:restaurantId/customers/:id",
+    validateTenant,
+    async (req, res) => {
+      try {
+        const id = parseInt(req.params.id);
+        const restaurantId = parseInt(req.params.restaurantId);
+        const tenantId = parseInt(req.params.tenantId);
+
+        const restaurant = await storage.getRestaurantById(restaurantId);
+        if (!restaurant || restaurant.tenantId !== tenantId) {
+          return res.status(404).json({ message: "Restaurant not found" });
+        }
+
+        // Verify customer exists and belongs to this restaurant/tenant
+        const existingCustomer = await storage.getCustomerById(id);
+        if (!existingCustomer || existingCustomer.restaurantId !== restaurantId || existingCustomer.tenantId !== tenantId) {
+          return res.status(404).json({ message: "Customer not found" });
+        }
+
+        await storage.deleteCustomer(id);
+        res.json({ message: "Customer deleted successfully" });
+      } catch (error) {
+        console.error("Customer delete error:", error);
+        res.status(500).json({ message: "Failed to delete customer" });
+      }
+    },
+  );
+
   // Opening hours routes
   app.get(
     "/api/tenants/:tenantId/restaurants/:restaurantId/opening-hours",
