@@ -533,7 +533,10 @@
 
   function createInlineCard() {
     const container = document.getElementById('restaurant-booking-widget');
-    if (!container) return null;
+    if (!container) {
+      console.warn('Restaurant Booking Widget: Container element #restaurant-booking-widget not found');
+      return null;
+    }
     
     const card = document.createElement('div');
     card.className = `rbw-widget rbw-inline-card ${getAnimation(config.animation)}`;
@@ -576,7 +579,10 @@
 
   function createBanner() {
     const container = document.getElementById('restaurant-booking-widget');
-    if (!container) return null;
+    if (!container) {
+      console.warn('Restaurant Booking Widget: Container element #restaurant-booking-widget not found');
+      return null;
+    }
     
     const banner = document.createElement('div');
     banner.className = `rbw-widget rbw-banner ${getAnimation(config.animation)}`;

@@ -10,37 +10,41 @@ import { useTenant } from '@/lib/tenant';
 export default function WidgetDemo() {
   const { restaurant } = useAuth();
   const { tenant } = useTenant();
-  const [activeDemo, setActiveDemo] = useState<'button' | 'inline' | 'popup'>('inline');
+  const [activeDemo, setActiveDemo] = useState<'floating-button' | 'inline-card' | 'banner' | 'sidebar'>('inline-card');
   
   // For demo purposes, use fallback values
   const demoRestaurant = restaurant || { id: 1, name: 'Demo Restaurant' };
   const demoTenant = tenant || { id: 1 };
 
   useEffect(() => {
+    // Clean up any existing widgets first
+    const existingWidgets = document.querySelectorAll('.rbw-widget');
+    existingWidgets.forEach(widget => widget.remove());
+    
+    const existingScripts = document.querySelectorAll('script[src="/widget/booking-widget.js"]');
+    existingScripts.forEach(s => s.remove());
+
     // Load the widget script for demo
     const script = document.createElement('script');
     script.src = '/widget/booking-widget.js';
     script.setAttribute('data-restaurant-id', demoRestaurant.id?.toString() || '1');
     script.setAttribute('data-config', encodeURIComponent(JSON.stringify({
       type: activeDemo,
-      size: 'medium',
-      color: '#ffffff',
-      backgroundColor: '#dc2626',
-      borderRadius: 12,
-      showDate: true,
-      showTime: true,
-      showGuests: true,
-      showSpecialRequests: false,
-      buttonText: 'Reserve Table',
-      headerText: 'Book Your Table',
+      theme: 'modern',
+      size: 'standard',
+      primaryColor: '#2563eb',
+      accentColor: '#1d4ed8',
+      cornerRadius: 'medium',
+      shadow: 'medium',
+      buttonText: 'Book Table',
+      headerText: 'Reserve Your Table',
+      description: 'Quick and easy online reservations',
       placement: 'bottom-right',
-      animation: 'fade'
+      animation: 'slide-up',
+      showBranding: true,
+      customCSS: ''
     })));
     script.async = true;
-    
-    // Clean up any existing widget scripts
-    const existingScripts = document.querySelectorAll('script[src="/widget/booking-widget.js"]');
-    existingScripts.forEach(s => s.remove());
     
     document.head.appendChild(script);
 
@@ -55,20 +59,29 @@ export default function WidgetDemo() {
   }, [activeDemo, demoRestaurant.id]);
 
   const demoConfigs = {
-    inline: {
-      name: 'Inline Widget',
-      description: 'Embeds directly into your webpage content',
-      features: ['Seamless integration', 'Responsive design', 'Custom styling']
-    },
-    button: {
+    'floating-button': {
       name: 'Floating Button',
       description: 'Sticky button that opens booking form',
-      features: ['Non-intrusive', 'Always visible', 'High conversion']
+      features: ['Non-intrusive', 'Always visible', 'High conversion'],
+      icon: '🎯'
     },
-    popup: {
-      name: 'Popup Modal',
-      description: 'Opens booking form in a modal overlay',
-      features: ['Full-screen experience', 'Focus on booking', 'Professional appearance']
+    'inline-card': {
+      name: 'Inline Card',
+      description: 'Embeds directly into your webpage content',
+      features: ['Seamless integration', 'Responsive design', 'Custom styling'],
+      icon: '📋'
+    },
+    'banner': {
+      name: 'Banner Widget',
+      description: 'Horizontal banner for promotions',
+      features: ['Eye-catching', 'Call-to-action', 'Promotional display'],
+      icon: '📢'
+    },
+    'sidebar': {
+      name: 'Sidebar Panel',
+      description: 'Slide-out booking panel',
+      features: ['Full-screen experience', 'Focus on booking', 'Professional appearance'],
+      icon: '📌'
     }
   };
 
@@ -120,7 +133,10 @@ export default function WidgetDemo() {
                     onClick={() => setActiveDemo(type as any)}
                   >
                     <div className="flex items-center justify-between mb-2">
-                      <h3 className="font-semibold text-gray-900">{config.name}</h3>
+                      <div className="flex items-center">
+                        <span className="text-lg mr-2">{config.icon}</span>
+                        <h3 className="font-semibold text-gray-900">{config.name}</h3>
+                      </div>
                       {activeDemo === type && (
                         <Badge variant="default" className="text-xs">Active</Badge>
                       )}
@@ -208,7 +224,7 @@ export default function WidgetDemo() {
                       </p>
 
                       {/* Inline Widget Demo Area */}
-                      {activeDemo === 'inline' && (
+                      {(activeDemo === 'inline-card' || activeDemo === 'banner') && (
                         <div className="mb-8">
                           <h2 className="text-2xl font-semibold mb-4">Make a Reservation</h2>
                           <div id="restaurant-booking-widget"></div>
