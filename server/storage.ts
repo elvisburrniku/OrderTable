@@ -472,11 +472,15 @@ export interface IStorage {
 import { DatabaseStorage } from "./db-storage";
 import { MemoryStorage } from "./mem-storage";
 
-// Force memory storage to avoid database connection issues
 let storage: IStorage;
 
-console.log("Using in-memory storage for development");
-storage = new MemoryStorage();
+if (db) {
+  console.log("Using database storage with PostgreSQL");
+  storage = new DatabaseStorage(db);
+} else {
+  console.log("Using in-memory storage for development");
+  storage = new MemoryStorage();
+}
 
 // Initialize storage with default data
 storage.initialize().catch(console.error);
