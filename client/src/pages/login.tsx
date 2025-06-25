@@ -74,9 +74,14 @@ export default function Login() {
         variant: "destructive",
       });
     } else if (error === 'account_paused') {
+      const pauseEndDate = urlParams.get('pauseEndDate');
+      const pauseMessage = pauseEndDate 
+        ? `Your account is paused until ${new Date(pauseEndDate).toLocaleDateString()}. It will be automatically reactivated after this date.`
+        : message || "Your account is temporarily paused. Please contact support for assistance.";
+      
       toast({
         title: "Account Paused", 
-        description: message || "Your account is temporarily paused. Please contact support for assistance.",
+        description: pauseMessage,
         variant: "destructive",
       });
     } else if (error === 'sso_failed') {

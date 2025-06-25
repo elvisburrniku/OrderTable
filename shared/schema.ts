@@ -37,11 +37,15 @@ export const tenants = pgTable("tenants", {
   name: text("name").notNull(),
   slug: text("slug").notNull().unique(),
   subscriptionPlanId: integer("subscription_plan_id").references(() => subscriptionPlans.id),
-  subscriptionStatus: varchar("subscription_status", { length: 20 }).default("trial"), // trial, active, expired, cancelled
+  subscriptionStatus: varchar("subscription_status", { length: 20 }).default("trial"), // trial, active, expired, cancelled, suspended, paused
   trialStartDate: timestamp("trial_start_date").defaultNow(),
   trialEndDate: timestamp("trial_end_date"),
   subscriptionStartDate: timestamp("subscription_start_date"),
   subscriptionEndDate: timestamp("subscription_end_date"),
+  pauseStartDate: timestamp("pause_start_date"),
+  pauseEndDate: timestamp("pause_end_date"),
+  pauseReason: text("pause_reason"),
+  suspendReason: text("suspend_reason"),
   stripeCustomerId: text("stripe_customer_id"),
   stripeSubscriptionId: text("stripe_subscription_id"),
   maxRestaurants: integer("max_restaurants").default(1),

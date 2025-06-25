@@ -9,6 +9,7 @@ import { AutoAssignmentService } from "./auto-assignment-service";
 import { activityCleanupService } from "./activity-cleanup-service";
 import { initializeAdminSystem } from "./init-admin";
 import { systemSettings } from "./system-settings";
+import { AdminStorage } from "./admin-storage";
 
 const app = express();
 app.use(express.json());
@@ -124,6 +125,21 @@ app.use((req, res, next) => {
   // Initialize admin system
   try {
     await initializeAdminSystem();
+    
+    // Start scheduled task to check for expired pauses every 5 minutes
+    const adminStorage = new AdminStorage();
+    setInterval(async () => {
+      try {
+        const unpaused = await adminStorage.checkAndUnpauseExpiredTenants();
+        if (unpaused > 0) {
+          console.log(`Automatically unpaused ${unpaused} tenant(s) with expired pause periods`);
+        }
+      } catch (error) {
+        console.error('Error in automatic unpause check:', error);
+      }
+    }, 5 * 60 * 1000); // Run every 5 minutes
+    
+    console.log('Admin system and automatic unpause service initialized');
   } catch (error) {
     console.error('Failed to initialize admin system:', error);
   }

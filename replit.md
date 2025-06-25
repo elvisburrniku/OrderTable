@@ -22,6 +22,13 @@ A comprehensive restaurant booking management system with React frontend and Exp
 - Kitchen order management
 
 ## Recent Changes
+- **2025-06-25**: Enhanced pause functionality with automatic unpause and user-friendly messaging
+- **Automatic Unpause**: Implemented scheduled task that checks every 5 minutes for expired pause periods and automatically reactivates accounts
+- **Enhanced User Experience**: Paused users now see exact pause end dates and automatic reactivation messages
+- **Database Schema**: Added pause_start_date, pause_end_date, pause_reason, and suspend_reason fields to tenants table
+- **Authentication Guards**: Updated all authentication endpoints to handle pause expiration and provide clear user messaging
+- **Admin Panel**: Enhanced pause functionality requires end date and reason, with improved validation and logging
+- **Session Management**: Added automatic session cleanup and reactivation for expired pause periods during validation
 - **2025-06-25**: Enhanced admin tenant management system with comprehensive CRUD operations
 - **Tenant Management**: Added ability to view detailed tenant information, edit tenant data, and manage subscription status
 - **Suspend/Pause Features**: Implemented tenant suspension and pause functionality with reason tracking and automatic logging

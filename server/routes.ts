@@ -142,24 +142,49 @@ export async function registerRoutes(app: Express): Promise<Server> {
         }
         return res.status(403).json({ 
           message: "Account suspended",
-          details: "This tenant account has been suspended. Please contact support for assistance.",
+          details: tenant.suspendReason || "This tenant account has been suspended. Please contact support for assistance.",
           supportEmail: "support@replit.com",
           status: "suspended"
         });
       }
 
       if (tenant.subscriptionStatus === 'paused') {
+        // Check if pause period has expired
+        if (tenant.pauseEndDate && new Date() >= new Date(tenant.pauseEndDate)) {
+          // Automatically unpause the tenant
+          try {
+            await storage.updateTenant(tenant.id, {
+              subscriptionStatus: 'active',
+              pauseStartDate: null,
+              pauseEndDate: null,
+              pauseReason: null
+            });
+            // Continue to allow access
+            req.tenantId = parsedTenantId;
+            req.tenant = { ...tenant, subscriptionStatus: 'active' };
+            return next();
+          } catch (error) {
+            console.error("Error auto-unpausing tenant:", error);
+          }
+        }
+
         // Clear any existing session
         if ((req as any).session) {
           (req as any).session.destroy((err: any) => {
             if (err) console.error("Error destroying session:", err);
           });
         }
+
+        const pauseEndMessage = tenant.pauseEndDate 
+          ? `Your account will be automatically reactivated on ${new Date(tenant.pauseEndDate).toLocaleDateString()}.`
+          : "Please contact support for assistance.";
+
         return res.status(403).json({ 
           message: "Account paused",
-          details: "This tenant account is temporarily paused. Please contact support for assistance.",
+          details: `${tenant.pauseReason || "This tenant account is temporarily paused."} ${pauseEndMessage}`,
           supportEmail: "support@replit.com",
-          status: "paused"
+          status: "paused",
+          pauseEndDate: tenant.pauseEndDate
         });
       }
 
@@ -405,16 +430,46 @@ export async function registerRoutes(app: Express): Promise<Server> {
         }
 
         if (sessionTenant.subscriptionStatus === 'paused') {
+          // Check if pause period has expired
+          if (sessionTenant.pauseEndDate && new Date() >= new Date(sessionTenant.pauseEndDate)) {
+            // Automatically unpause the tenant
+            try {
+              await storage.updateTenant(sessionTenant.id, {
+                subscriptionStatus: 'active',
+                pauseStartDate: null,
+                pauseEndDate: null,
+                pauseReason: null
+              });
+              // Update session with new status
+              (req as any).session.tenant.subscriptionStatus = 'active';
+              return res.json({
+                valid: true,
+                message: "Session valid - account automatically reactivated",
+                user: sessionUser,
+                tenant: { ...sessionTenant, subscriptionStatus: 'active' },
+                restaurant: (req as any).session.restaurant,
+              });
+            } catch (error) {
+              console.error("Error auto-unpausing tenant during validation:", error);
+            }
+          }
+
           // Clear session for paused tenant
           (req as any).session.destroy((err: any) => {
             if (err) console.error("Error destroying session:", err);
           });
+
+          const pauseEndMessage = sessionTenant.pauseEndDate 
+            ? `Your account will be automatically reactivated on ${new Date(sessionTenant.pauseEndDate).toLocaleDateString()}.`
+            : "Please contact support for assistance.";
+
           return res.status(403).json({ 
             valid: false, 
             message: "Account paused",
-            details: "Your account is temporarily paused. Please contact support for assistance.",
+            details: `${sessionTenant.pauseReason || "Your account is temporarily paused."} ${pauseEndMessage}`,
             supportEmail: "support@replit.com",
-            status: "paused"
+            status: "paused",
+            pauseEndDate: sessionTenant.pauseEndDate
           });
         }
         

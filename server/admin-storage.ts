@@ -331,6 +331,10 @@ export class AdminStorage {
           trialEndDate: tenant.trial_end_date,
           subscriptionStartDate: tenant.subscription_start_date,
           subscriptionEndDate: tenant.subscription_end_date,
+          pauseStartDate: tenant.pause_start_date,
+          pauseEndDate: tenant.pause_end_date,
+          pauseReason: tenant.pause_reason,
+          suspendReason: tenant.suspend_reason,
           stripeCustomerId: tenant.stripe_customer_id,
           stripeSubscriptionId: tenant.stripe_subscription_id,
           maxRestaurants: tenant.max_restaurants,
@@ -466,24 +470,81 @@ export class AdminStorage {
     });
   }
 
-  async pauseTenant(tenantId: number, pauseUntil?: Date) {
-    const updateData: any = { subscriptionStatus: 'paused' };
-    
-    if (pauseUntil) {
-      // Store pause end date in a metadata field or extend schema
-      updateData.subscriptionEndDate = pauseUntil;
+  async pauseTenant(tenantId: number, pauseUntil?: Date, reason?: string) {
+    try {
+      // Update tenant with pause information
+      await db.execute(sql`
+        UPDATE tenants 
+        SET 
+          subscription_status = 'paused',
+          pause_start_date = NOW(),
+          pause_end_date = ${pauseUntil || null},
+          pause_reason = ${reason || null}
+        WHERE id = ${tenantId}
+      `);
+      
+      // Log the pause
+      await this.addSystemLog({
+        level: 'info',
+        message: `Tenant ${tenantId} paused${pauseUntil ? ' until ' + pauseUntil.toISOString() : ''}${reason ? ' - Reason: ' + reason : ''}`,
+        data: JSON.stringify({ tenantId, pauseUntil, reason }),
+        source: 'admin_panel',
+        adminUserId: 1, // Should be passed from context
+      });
+    } catch (error) {
+      console.error("Error pausing tenant:", error);
+      throw error;
     }
+  }
 
-    await this.updateTenant(tenantId, updateData);
-    
-    // Log the pause
-    await this.addSystemLog({
-      level: 'info',
-      message: `Tenant ${tenantId} paused${pauseUntil ? ' until ' + pauseUntil : ''}`,
-      data: JSON.stringify({ tenantId, pauseUntil }),
-      source: 'admin_panel',
-      adminUserId: 1, // Should be passed from context
-    });
+  async checkAndUnpauseExpiredTenants() {
+    try {
+      // Find all paused tenants with expired pause periods
+      const expiredPausedTenants = await db.execute(sql`
+        SELECT id, name, pause_end_date, pause_reason
+        FROM tenants 
+        WHERE subscription_status = 'paused' 
+          AND pause_end_date IS NOT NULL 
+          AND pause_end_date <= NOW()
+      `);
+
+      for (const tenant of expiredPausedTenants.rows) {
+        try {
+          // Unpause the tenant
+          await db.execute(sql`
+            UPDATE tenants 
+            SET 
+              subscription_status = 'active',
+              pause_start_date = NULL,
+              pause_end_date = NULL,
+              pause_reason = NULL
+            WHERE id = ${tenant.id}
+          `);
+
+          // Log the automatic unpause
+          await this.addSystemLog({
+            level: 'info',
+            message: `Tenant ${tenant.id} (${tenant.name}) automatically unpaused after pause period expired`,
+            data: JSON.stringify({ 
+              tenantId: tenant.id, 
+              pauseEndDate: tenant.pause_end_date,
+              previousReason: tenant.pause_reason 
+            }),
+            source: 'system_automation',
+            adminUserId: null,
+          });
+
+          console.log(`Automatically unpaused tenant ${tenant.id} (${tenant.name})`);
+        } catch (error) {
+          console.error(`Error auto-unpausing tenant ${tenant.id}:`, error);
+        }
+      }
+
+      return expiredPausedTenants.rows.length;
+    } catch (error) {
+      console.error("Error checking for expired paused tenants:", error);
+      return 0;
+    }
   }
 
   async getTenantStats(tenantId: number) {

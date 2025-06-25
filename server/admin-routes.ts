@@ -272,21 +272,38 @@ export function registerAdminRoutes(app: Express) {
   app.post("/api/admin/tenants/:id/pause", requireAdminAuth, async (req: Request, res: Response) => {
     try {
       const tenantId = parseInt(req.params.id);
-      const { pauseUntil } = req.body;
+      const { pauseUntil, reason } = req.body;
       
-      const pauseDate = pauseUntil ? new Date(pauseUntil) : undefined;
-      await adminStorage.pauseTenant(tenantId, pauseDate);
+      if (!pauseUntil) {
+        return res.status(400).json({ message: "Pause end date is required" });
+      }
+
+      const pauseDate = new Date(pauseUntil);
+      if (pauseDate <= new Date()) {
+        return res.status(400).json({ message: "Pause end date must be in the future" });
+      }
+
+      await adminStorage.pauseTenant(tenantId, pauseDate, reason);
       
       // Additional log with admin context
       await adminStorage.addSystemLog({
         level: "info",
-        message: `Tenant ${tenantId} paused by admin ${req.adminUser!.email}`,
-        data: JSON.stringify({ tenantId, pauseUntil: pauseDate, adminUserId: req.adminUser!.id }),
+        message: `Tenant ${tenantId} paused by admin ${req.adminUser!.email} until ${pauseDate.toISOString()}`,
+        data: JSON.stringify({ 
+          tenantId, 
+          pauseUntil: pauseDate, 
+          reason: reason || 'No reason provided',
+          adminUserId: req.adminUser!.id 
+        }),
         source: 'admin_panel',
         adminUserId: req.adminUser!.id,
       });
       
-      res.json({ success: true, message: "Tenant paused successfully" });
+      res.json({ 
+        success: true, 
+        message: `Tenant paused successfully until ${pauseDate.toLocaleDateString()}`,
+        pauseEndDate: pauseDate
+      });
     } catch (error) {
       console.error("Pause tenant error:", error);
       res.status(500).json({ message: "Failed to pause tenant" });

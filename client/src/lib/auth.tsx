@@ -146,7 +146,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           throw new Error(`Account Suspended: ${errorData.details || 'Your account has been suspended. Please contact support for assistance.'}`);
         }
         if (errorData.status === 'paused') {
-          throw new Error(`Account Paused: ${errorData.details || 'Your account is temporarily paused. Please contact support for assistance.'}`);
+          const pauseMessage = errorData.pauseEndDate 
+            ? `Account Paused: Your account is paused until ${new Date(errorData.pauseEndDate).toLocaleDateString()}. It will be automatically reactivated after this date.`
+            : `Account Paused: ${errorData.details || 'Your account is temporarily paused. Please contact support for assistance.'}`;
+          throw new Error(pauseMessage);
         }
       }
       
