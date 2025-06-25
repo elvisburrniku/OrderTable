@@ -1044,7 +1044,6 @@ export default function PrintOrders() {
                   </div>
                 </motion.div>
               )}
-            </div>
             </TabsContent>
 
             <TabsContent value="new-order">
