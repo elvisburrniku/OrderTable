@@ -89,16 +89,28 @@ export default function PrintOrders() {
     mutationFn: async (orderId: number) => {
       const response = await fetch(`/api/tenants/${restaurant?.tenantId}/restaurants/${restaurant?.id}/print-orders/${orderId}`, {
         method: "DELETE",
+        headers: {
+          "Content-Type": "application/json",
+        },
       });
       if (!response.ok) {
-        throw new Error("Failed to delete print order");
+        const errorData = await response.text();
+        throw new Error(errorData || "Failed to delete print order");
       }
-      return response.json();
+      
+      // Handle both JSON and empty responses
+      const contentType = response.headers.get("content-type");
+      if (contentType && contentType.includes("application/json")) {
+        return response.json();
+      }
+      return { success: true };
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ 
         queryKey: [`/api/tenants/${restaurant?.tenantId}/restaurants/${restaurant?.id}/print-orders`] 
       });
+      setIsDeleteDialogOpen(false);
+      setOrderToDelete(null);
       toast({
         title: "Print Order Deleted",
         description: "The print order has been successfully deleted.",
@@ -278,8 +290,6 @@ export default function PrintOrders() {
   const confirmDeleteOrder = () => {
     if (orderToDelete) {
       deletePrintOrderMutation.mutate(orderToDelete.id);
-      setIsDeleteDialogOpen(false);
-      setOrderToDelete(null);
     }
   };
 
