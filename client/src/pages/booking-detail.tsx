@@ -310,395 +310,433 @@ export default function BookingDetail() {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      <div className="p-6">
-        <div className="max-w-4xl mx-auto">
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between">
-              <CardTitle>Booking Details</CardTitle>
-              <div className="flex items-center space-x-2">
-                {!isEditing ? (
-                  <>
-                    <Button variant="outline" size="sm" onClick={handleEdit}>
-                      <Edit className="w-4 h-4 mr-2" />
-                      Edit
-                    </Button>
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={handleDelete}
-                      className="text-red-600 hover:text-red-700"
-                    >
-                      <Trash2 className="w-4 h-4 mr-2" />
-                      Delete
-                    </Button>
-                  </>
-                ) : (
-                  <>
-                    <Button
-                      size="sm"
-                      onClick={handleSave}
-                      disabled={updateMutation.isPending}
-                    >
-                      <Save className="w-4 h-4 mr-2" />
-                      Save
-                    </Button>
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => setIsEditing(false)}
-                    >
-                      <X className="w-4 h-4 mr-2" />
-                      Cancel
-                    </Button>
-                  </>
-                )}
-              </div>
-            </CardHeader>
-            <CardContent className="space-y-6">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                {/* Customer Information */}
-                <div className="space-y-4">
-                  <h3 className="text-lg font-medium">Customer Information</h3>
+    <div className="min-h-screen bg-gradient-to-br from-emerald-50 via-white to-blue-50">
+      {/* Header Section */}
+      <div className="bg-white shadow-sm border-b">
+        <div className="max-w-4xl mx-auto p-6">
+          <div className="flex items-center justify-between">
+            <Button
+              variant="ghost"
+              onClick={() => (window.location.href = `/${restaurant.tenantId}/bookings`)}
+              className="flex items-center text-gray-600 hover:text-gray-900"
+            >
+              <ArrowLeft className="w-4 h-4 mr-2" />
+              Back to Bookings
+            </Button>
+            <div className="text-center">
+              <h1 className="text-2xl font-bold text-gray-900">Booking Confirmation</h1>
+              <p className="text-gray-600">Reservation #{booking.id}</p>
+            </div>
+            <div className="w-20"></div> {/* Spacer for centering */}
+          </div>
+        </div>
+      </div>
 
-                  <div>
-                    <Label htmlFor="customerName">Name</Label>
-                    {isEditing ? (
-                      <Input
-                        id="customerName"
-                        value={editData.customerName}
-                        onChange={(e) =>
-                          setEditData({
-                            ...editData,
-                            customerName: e.target.value,
-                          })
-                        }
-                      />
-                    ) : (
-                      <p className="mt-1 text-sm text-gray-900">
-                        {booking.customerName}
-                      </p>
-                    )}
-                  </div>
+      <div className="max-w-4xl mx-auto p-6">
+        {/* Main Confirmation Card */}
+        <div className="bg-white rounded-2xl shadow-xl border border-gray-100 overflow-hidden mb-6">
+          {/* Status Banner */}
+          <div className={`px-6 py-4 ${
+            booking.status === 'confirmed' ? 'bg-gradient-to-r from-green-500 to-emerald-600' :
+            booking.status === 'cancelled' ? 'bg-gradient-to-r from-red-500 to-red-600' :
+            booking.status === 'completed' ? 'bg-gradient-to-r from-blue-500 to-blue-600' :
+            'bg-gradient-to-r from-yellow-500 to-orange-500'
+          }`}>
+            <div className="flex items-center justify-center text-white">
+              {booking.status === 'confirmed' && <CheckCircle className="w-6 h-6 mr-2" />}
+              {booking.status === 'cancelled' && <XCircle className="w-6 h-6 mr-2" />}
+              {booking.status === 'completed' && <CheckCircle className="w-6 h-6 mr-2" />}
+              {booking.status === 'pending' && <AlertCircle className="w-6 h-6 mr-2" />}
+              <span className="text-lg font-semibold capitalize">
+                {booking.status === 'confirmed' ? 'Reservation Confirmed' :
+                 booking.status === 'cancelled' ? 'Reservation Cancelled' :
+                 booking.status === 'completed' ? 'Reservation Completed' :
+                 'Reservation Pending'}
+              </span>
+            </div>
+          </div>
 
-                  <div>
-                    <Label htmlFor="customerEmail">Email</Label>
-                    {isEditing ? (
-                      <Input
-                        id="customerEmail"
-                        type="email"
-                        value={editData.customerEmail}
-                        onChange={(e) =>
-                          setEditData({
-                            ...editData,
-                            customerEmail: e.target.value,
-                          })
-                        }
-                      />
-                    ) : (
-                      <p className="mt-1 text-sm text-gray-900">
-                        {booking.customerEmail}
-                      </p>
-                    )}
-                  </div>
+          <div className="p-8">
+            {/* Restaurant Info */}
+            <div className="text-center mb-8">
+              <h2 className="text-3xl font-bold text-gray-900 mb-2">{restaurant.name}</h2>
+              <p className="text-gray-600">{restaurant.address}</p>
+            </div>
 
-                  <div>
-                    <Label htmlFor="customerPhone">Phone</Label>
-                    {isEditing ? (
-                      <Input
-                        id="customerPhone"
-                        value={editData.customerPhone}
-                        onChange={(e) =>
-                          setEditData({
-                            ...editData,
-                            customerPhone: e.target.value,
-                          })
-                        }
-                      />
-                    ) : (
-                      <p className="mt-1 text-sm text-gray-900">
-                        {booking.customerPhone || "Not provided"}
-                      </p>
-                    )}
+            {/* Booking Details Grid */}
+            <div className="grid md:grid-cols-2 gap-8 mb-8">
+              {/* Date & Time Section */}
+              <div className="space-y-6">
+                <div className="bg-gray-50 rounded-xl p-6">
+                  <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center">
+                    <Calendar className="w-5 h-5 mr-2 text-blue-600" />
+                    Date & Time
+                  </h3>
+                  <div className="space-y-3">
+                    <div className="flex justify-between items-center">
+                      <span className="text-gray-600">Date:</span>
+                      <span className="font-semibold text-gray-900">
+                        {new Date(booking.bookingDate).toLocaleDateString('en-US', {
+                          weekday: 'long',
+                          year: 'numeric',
+                          month: 'long',
+                          day: 'numeric'
+                        })}
+                      </span>
+                    </div>
+                    <div className="flex justify-between items-center">
+                      <span className="text-gray-600">Time:</span>
+                      <span className="font-semibold text-gray-900 flex items-center">
+                        <Clock className="w-4 h-4 mr-1 text-blue-600" />
+                        {booking.startTime} - {booking.endTime}
+                      </span>
+                    </div>
                   </div>
                 </div>
 
-                {/* Booking Information */}
-                <div className="space-y-4">
-                  <h3 className="text-lg font-medium">Booking Information</h3>
-
-                  <div>
-                    <Label>Date</Label>
-                    <p className="mt-1 text-sm text-gray-900">
-                      {new Date(booking.bookingDate).toLocaleDateString()}
-                    </p>
-                  </div>
-
-                  <div className="grid grid-cols-2 gap-4">
-                    <div>
-                      <Label htmlFor="startTime">Start Time</Label>
-                      {isEditing ? (
-                        <Input
-                          id="startTime"
-                          value={editData.startTime}
-                          onChange={(e) =>
-                            setEditData({
-                              ...editData,
-                              startTime: e.target.value,
-                            })
-                          }
-                        />
-                      ) : (
-                        <p className="mt-1 text-sm text-gray-900">
-                          {booking.startTime}
-                        </p>
-                      )}
+                {/* Party Details */}
+                <div className="bg-gray-50 rounded-xl p-6">
+                  <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center">
+                    <Users className="w-5 h-5 mr-2 text-blue-600" />
+                    Party Details
+                  </h3>
+                  <div className="space-y-3">
+                    <div className="flex justify-between items-center">
+                      <span className="text-gray-600">Guest Count:</span>
+                      <span className="font-semibold text-gray-900">{booking.guestCount} guests</span>
                     </div>
-
-                    <div>
-                      <Label htmlFor="endTime">End Time</Label>
-                      {isEditing ? (
-                        <Input
-                          id="endTime"
-                          value={editData.endTime}
-                          onChange={(e) =>
-                            setEditData({
-                              ...editData,
-                              endTime: e.target.value,
-                            })
-                          }
-                        />
-                      ) : (
-                        <p className="mt-1 text-sm text-gray-900">
-                          {booking.endTime}
-                        </p>
-                      )}
-                    </div>
-                  </div>
-
-                  <div>
-                    <Label htmlFor="guestCount">Guest Count</Label>
-                    {isEditing ? (
-                      <Input
-                        id="guestCount"
-                        type="number"
-                        value={editData.guestCount}
-                        onChange={(e) =>
-                          setEditData({
-                            ...editData,
-                            guestCount: parseInt(e.target.value) || 0,
-                          })
-                        }
-                      />
-                    ) : (
-                      <p className="mt-1 text-sm text-gray-900">
-                        {booking.guestCount} guests
-                      </p>
-                    )}
-                  </div>
-
-                  <div>
-                    <Label htmlFor="status">Status</Label>
-                    {isEditing ? (
-                      <Select
-                        value={editData.status}
-                        onValueChange={(value) =>
-                          setEditData({ ...editData, status: value })
-                        }
-                      >
-                        <SelectTrigger>
-                          <SelectValue />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="confirmed">Active</SelectItem>
-                          <SelectItem value="completed">Completed</SelectItem>
-                          <SelectItem value="cancelled">Cancelled</SelectItem>
-                          <SelectItem value="no-show">No Show</SelectItem>
-                        </SelectContent>
-                      </Select>
-                    ) : (
-                      <div className="mt-1">
-                        {getStatusBadge(booking.status)}
+                    {booking.tableId && (
+                      <div className="flex justify-between items-center">
+                        <span className="text-gray-600">Table:</span>
+                        <span className="font-semibold text-gray-900">Table #{booking.tableId}</span>
                       </div>
                     )}
                   </div>
                 </div>
               </div>
 
-              {/* Notes */}
-              <div>
-                <Label htmlFor="notes">Notes</Label>
-                {isEditing ? (
+              {/* Customer Information */}
+              <div className="space-y-6">
+                <div className="bg-blue-50 rounded-xl p-6">
+                  <h3 className="text-lg font-semibold text-gray-900 mb-4">Customer Information</h3>
+                  <div className="space-y-3">
+                    <div>
+                      <span className="text-gray-600 text-sm">Name:</span>
+                      <p className="font-semibold text-gray-900">{booking.customerName}</p>
+                    </div>
+                    <div>
+                      <span className="text-gray-600 text-sm">Email:</span>
+                      <p className="font-medium text-gray-900">{booking.customerEmail}</p>
+                    </div>
+                    {booking.customerPhone && (
+                      <div>
+                        <span className="text-gray-600 text-sm">Phone:</span>
+                        <p className="font-medium text-gray-900">{booking.customerPhone}</p>
+                      </div>
+                    )}
+                  </div>
+                </div>
+
+                {booking.notes && (
+                  <div className="bg-amber-50 rounded-xl p-6">
+                    <h3 className="text-lg font-semibold text-gray-900 mb-3">Special Requests</h3>
+                    <p className="text-gray-700">{booking.notes}</p>
+                  </div>
+                )}
+              </div>
+            </div>
+
+            {/* Action Buttons */}
+            <div className="flex justify-center space-x-4 pt-6 border-t border-gray-200">
+              {!isEditing ? (
+                <>
+                  <Button 
+                    onClick={handleEdit}
+                    className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2"
+                  >
+                    <Edit className="w-4 h-4 mr-2" />
+                    Edit Booking
+                  </Button>
+                  <Button
+                    variant="outline"
+                    onClick={handleDelete}
+                    className="text-red-600 border-red-300 hover:bg-red-50 px-6 py-2"
+                  >
+                    <Trash2 className="w-4 h-4 mr-2" />
+                    Cancel Booking
+                  </Button>
+                </>
+              ) : (
+                <>
+                  <Button
+                    onClick={handleSave}
+                    disabled={updateMutation.isPending}
+                    className="bg-green-600 hover:bg-green-700 text-white px-6 py-2"
+                  >
+                    <Save className="w-4 h-4 mr-2" />
+                    {updateMutation.isPending ? "Saving..." : "Save Changes"}
+                  </Button>
+                  <Button
+                    variant="outline"
+                    onClick={() => setIsEditing(false)}
+                    className="px-6 py-2"
+                  >
+                    <X className="w-4 h-4 mr-2" />
+                    Cancel
+                  </Button>
+                </>
+              )}
+            </div>
+          </div>
+        </div>
+
+        {/* Edit Form Modal Overlay */}
+        {isEditing && (
+          <div className="bg-white rounded-2xl shadow-xl border border-gray-100 p-8">
+            <h3 className="text-xl font-bold text-gray-900 mb-6">Edit Booking Details</h3>
+            <div className="grid md:grid-cols-2 gap-6">
+              {/* Customer Information */}
+              <div className="space-y-4">
+                <h4 className="text-lg font-medium text-gray-900">Customer Information</h4>
+
+                <div>
+                  <Label htmlFor="customerName">Name</Label>
+                  <Input
+                    id="customerName"
+                    value={editData.customerName}
+                    onChange={(e) =>
+                      setEditData({
+                        ...editData,
+                        customerName: e.target.value,
+                      })
+                    }
+                    className="mt-1"
+                  />
+                </div>
+
+                <div>
+                  <Label htmlFor="customerEmail">Email</Label>
+                  <Input
+                    id="customerEmail"
+                    type="email"
+                    value={editData.customerEmail}
+                    onChange={(e) =>
+                      setEditData({
+                        ...editData,
+                        customerEmail: e.target.value,
+                      })
+                    }
+                    className="mt-1"
+                  />
+                </div>
+
+                <div>
+                  <Label htmlFor="customerPhone">Phone</Label>
+                  <Input
+                    id="customerPhone"
+                    value={editData.customerPhone}
+                    onChange={(e) =>
+                      setEditData({
+                        ...editData,
+                        customerPhone: e.target.value,
+                      })
+                    }
+                    className="mt-1"
+                  />
+                </div>
+              </div>
+
+              {/* Booking Information */}
+              <div className="space-y-4">
+                <h4 className="text-lg font-medium text-gray-900">Booking Information</h4>
+
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <Label htmlFor="startTime">Start Time</Label>
+                    <Input
+                      id="startTime"
+                      type="time"
+                      value={editData.startTime}
+                      onChange={(e) =>
+                        setEditData({
+                          ...editData,
+                          startTime: e.target.value,
+                        })
+                      }
+                      className="mt-1"
+                    />
+                  </div>
+
+                  <div>
+                    <Label htmlFor="endTime">End Time</Label>
+                    <Input
+                      id="endTime"
+                      type="time"
+                      value={editData.endTime}
+                      onChange={(e) =>
+                        setEditData({
+                          ...editData,
+                          endTime: e.target.value,
+                        })
+                      }
+                      className="mt-1"
+                    />
+                  </div>
+                </div>
+
+                <div>
+                  <Label htmlFor="guestCount">Guest Count</Label>
+                  <Input
+                    id="guestCount"
+                    type="number"
+                    value={editData.guestCount}
+                    onChange={(e) =>
+                      setEditData({
+                        ...editData,
+                        guestCount: parseInt(e.target.value) || 0,
+                      })
+                    }
+                    className="mt-1"
+                  />
+                </div>
+
+                <div>
+                  <Label htmlFor="status">Status</Label>
+                  <Select
+                    value={editData.status}
+                    onValueChange={(value) =>
+                      setEditData({ ...editData, status: value })
+                    }
+                  >
+                    <SelectTrigger className="mt-1">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="confirmed">Confirmed</SelectItem>
+                      <SelectItem value="pending">Pending</SelectItem>
+                      <SelectItem value="cancelled">Cancelled</SelectItem>
+                      <SelectItem value="completed">Completed</SelectItem>
+                      <SelectItem value="no-show">No Show</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <div>
+                  <Label htmlFor="notes">Special Requests</Label>
                   <Textarea
                     id="notes"
                     value={editData.notes}
                     onChange={(e) =>
                       setEditData({ ...editData, notes: e.target.value })
                     }
-                    rows={4}
+                    rows={3}
+                    className="mt-1"
+                    placeholder="Any special requests or notes..."
                   />
-                ) : (
-                  <p className="mt-1 text-sm text-gray-900 whitespace-pre-wrap">
-                    {booking.notes || "No notes"}
-                  </p>
-                )}
+                </div>
               </div>
+            </div>
+          </div>
+        )}
 
-              {/* Change Requests */}
-              {changeRequests && changeRequests.length > 0 && (
-                <div className="border-t pt-6">
-                  <h3 className="text-lg font-medium mb-4 flex items-center gap-2">
-                    <Clock className="w-5 h-5" />
-                    Change Requests
-                  </h3>
-                  <div className="space-y-4">
-                    {changeRequests.map((request: any) => (
-                      <Card
-                        key={request.id}
-                        className="border-l-4 border-l-orange-400"
-                      >
-                        <CardContent className="p-4">
-                          <div className="flex items-start justify-between mb-3">
-                            <div className="flex items-center gap-2">
-                              <AlertCircle className="w-4 h-4 text-orange-500" />
-                              <span className="font-medium text-sm">
-                                Request #{request.id}
-                              </span>
-                              {getChangeRequestStatusBadge(request.status)}
-                            </div>
-                            <span className="text-xs text-gray-500">
-                              {new Date(request.createdAt).toLocaleDateString()}{" "}
-                              at{" "}
-                              {new Date(request.createdAt).toLocaleTimeString(
-                                [],
-                                { hour: "2-digit", minute: "2-digit" },
-                              )}
-                            </span>
-                          </div>
+        {/* Change Requests Section */}
+        {changeRequests && changeRequests.length > 0 && (
+          <Card className="mt-6">
+            <CardHeader>
+              <CardTitle className="flex items-center">
+                <AlertCircle className="w-5 h-5 mr-2 text-amber-600" />
+                Change Requests
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-4">
+                {changeRequests.map((request: any) => (
+                  <div
+                    key={request.id}
+                    className="p-6 border border-gray-200 rounded-xl bg-gray-50 space-y-4"
+                  >
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center space-x-3">
+                        <h4 className="font-semibold text-gray-900">Change Request #{request.id}</h4>
+                        {getChangeRequestStatusBadge(request.status)}
+                      </div>
+                      <span className="text-sm text-gray-500">
+                        {new Date(request.requestDate).toLocaleDateString('en-US', {
+                          month: 'short',
+                          day: 'numeric',
+                          year: 'numeric'
+                        })}
+                      </span>
+                    </div>
 
-                          {/* Requested Changes */}
-                          <div className="bg-orange-50 rounded-lg p-3 mb-3">
-                            <h4 className="font-medium text-sm mb-2 flex items-center gap-1">
-                              <Calendar className="w-3 h-3" />
-                              Requested Changes:
-                            </h4>
-                            <div className="space-y-1">
-                              {formatChangeDetails(request).map(
-                                (change, idx) => (
-                                  <div
-                                    key={idx}
-                                    className="text-sm text-gray-700 flex items-center gap-2"
-                                  >
-                                    <span className="w-1 h-1 bg-orange-400 rounded-full"></span>
-                                    {change}
-                                  </div>
-                                ),
-                              )}
-                            </div>
-                          </div>
-
-                          {/* Customer Note */}
-                          {request.requestNotes && (
-                            <div className="bg-gray-50 rounded-lg p-3 mb-3">
-                              <h4 className="font-medium text-sm mb-1">
-                                Customer Note:
-                              </h4>
-                              <p className="text-sm text-gray-700">
-                                {request.requestNotes}
-                              </p>
+                    {request.status === "pending" && (
+                      <div className="space-y-4">
+                        <div className="bg-white rounded-lg p-4">
+                          <p className="text-sm font-medium text-gray-700 mb-2">Requested Changes:</p>
+                          <ul className="text-sm text-gray-600 space-y-1">
+                            {formatChangeDetails(request).map((change, index) => (
+                              <li key={index} className="flex items-center">
+                                <div className="w-2 h-2 bg-blue-500 rounded-full mr-2"></div>
+                                {change}
+                              </li>
+                            ))}
+                          </ul>
+                          {request.reason && (
+                            <div className="mt-3 pt-3 border-t border-gray-200">
+                              <p className="text-sm font-medium text-gray-700">Reason:</p>
+                              <p className="text-sm text-gray-600 mt-1">{request.reason}</p>
                             </div>
                           )}
+                        </div>
+                        <div className="flex space-x-3">
+                          <Button
+                            size="sm"
+                            onClick={() => handleChangeRequest(request.id, "approve")}
+                            disabled={changeRequestMutation.isPending}
+                            className="bg-green-600 hover:bg-green-700 text-white"
+                          >
+                            <CheckCircle className="w-4 h-4 mr-2" />
+                            Approve Changes
+                          </Button>
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            onClick={() => handleChangeRequest(request.id, "reject")}
+                            disabled={changeRequestMutation.isPending}
+                            className="text-red-600 border-red-300 hover:bg-red-50"
+                          >
+                            <XCircle className="w-4 h-4 mr-2" />
+                            Reject Changes
+                          </Button>
+                        </div>
+                      </div>
+                    )}
 
-                          {/* Restaurant Response */}
-                          {request.restaurantResponse && (
-                            <div className="bg-blue-50 rounded-lg p-3 mb-3">
-                              <h4 className="font-medium text-sm mb-1">
-                                Restaurant Response:
-                              </h4>
-                              <p className="text-sm text-gray-700">
-                                {request.restaurantResponse}
-                              </p>
-                              {request.respondedAt && (
-                                <p className="text-xs text-gray-500 mt-1">
-                                  Responded on{" "}
-                                  {new Date(
-                                    request.respondedAt,
-                                  ).toLocaleDateString()}{" "}
-                                  at{" "}
-                                  {new Date(
-                                    request.respondedAt,
-                                  ).toLocaleTimeString([], {
-                                    hour: "2-digit",
-                                    minute: "2-digit",
-                                  })}
-                                </p>
-                              )}
-                            </div>
-                          )}
-
-                          {/* Action Buttons for Pending Requests */}
-                          {request.status === "pending" && (
-                            <div className="flex gap-2 pt-2">
-                              <Button
-                                size="sm"
-                                onClick={() =>
-                                  handleChangeRequest(request.id, "approve")
-                                }
-                                disabled={changeRequestMutation.isPending}
-                                className="bg-green-600 hover:bg-green-700"
-                              >
-                                <CheckCircle className="w-4 h-4 mr-1" />
-                                Approve
-                              </Button>
-                              <Button
-                                size="sm"
-                                variant="destructive"
-                                onClick={() =>
-                                  handleChangeRequest(request.id, "reject")
-                                }
-                                disabled={changeRequestMutation.isPending}
-                              >
-                                <XCircle className="w-4 h-4 mr-1" />
-                                Reject
-                              </Button>
-                            </div>
-                          )}
-                        </CardContent>
-                      </Card>
-                    ))}
+                    {request.status !== "pending" && (
+                      <div className="bg-white rounded-lg p-4">
+                        <p className="text-sm font-medium text-gray-700">Response:</p>
+                        <p className="text-sm text-gray-600 mt-1">
+                          {request.response || "No response provided"}
+                        </p>
+                        {request.responseDate && (
+                          <p className="text-xs text-gray-500 mt-2">
+                            Responded on {new Date(request.responseDate).toLocaleDateString('en-US', {
+                              month: 'short',
+                              day: 'numeric',
+                              year: 'numeric',
+                              hour: '2-digit',
+                              minute: '2-digit'
+                            })}
+                          </p>
+                        )}
+                      </div>
+                    )}
                   </div>
-                </div>
-              )}
-
-              {/* Metadata */}
-              <div className="border-t pt-4">
-                <h3 className="text-lg font-medium mb-4">Booking Metadata</h3>
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm">
-                  <div>
-                    <Label>Created</Label>
-                    <p className="text-gray-900">
-                      {new Date(booking.createdAt).toLocaleDateString()} at{" "}
-                      {new Date(booking.createdAt).toLocaleTimeString([], {
-                        hour: "2-digit",
-                        minute: "2-digit",
-                      })}
-                    </p>
-                  </div>
-                  <div>
-                    <Label>Source</Label>
-                    <p className="text-gray-900">
-                      {booking.source || "Manual"}
-                    </p>
-                  </div>
-                  <div>
-                    <Label>Booking ID</Label>
-                    <p className="text-gray-900">#{booking.id}</p>
-                  </div>
-                </div>
+                ))}
               </div>
             </CardContent>
           </Card>
-        </div>
+        )}
       </div>
     </div>
   );
