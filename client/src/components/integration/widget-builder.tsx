@@ -58,7 +58,7 @@ export function WidgetBuilder() {
   const generateWidgetCode = () => {
     const baseUrl = window.location.origin;
     const widgetConfig = encodeURIComponent(JSON.stringify(config));
-    
+
     const code = `<!-- Restaurant Booking Widget -->
 <div id="restaurant-booking-widget"></div>
 <script>
@@ -353,7 +353,7 @@ export function WidgetBuilder() {
                         <h3 className="text-xl font-semibold mb-6 text-center" style={{ color: config.backgroundColor }}>
                           {config.headerText}
                         </h3>
-                        
+
                         {/* Premium booking interface */}
                         <div className="bg-gradient-to-br from-gray-50 to-white p-6 rounded-2xl border-2 border-gray-100 shadow-sm mb-6">
                           <div className="flex flex-wrap gap-3 items-end justify-center mb-4">
@@ -366,7 +366,7 @@ export function WidgetBuilder() {
                                 </div>
                               </div>
                             )}
-                            
+
                             {config.showTime && (
                               <div className="flex flex-col">
                                 <label className="text-sm font-semibold text-gray-700 mb-2">Time</label>
@@ -376,7 +376,7 @@ export function WidgetBuilder() {
                                 </div>
                               </div>
                             )}
-                            
+
                             {config.showGuests && (
                               <div className="flex flex-col">
                                 <label className="text-sm font-semibold text-gray-700 mb-2">Party Size</label>
@@ -386,7 +386,7 @@ export function WidgetBuilder() {
                                 </div>
                               </div>
                             )}
-                            
+
                             <button
                               className="px-8 py-4 rounded-xl text-white font-bold text-sm shadow-lg hover:shadow-xl transition-all transform hover:-translate-y-0.5 flex items-center gap-2"
                               style={{
@@ -399,7 +399,7 @@ export function WidgetBuilder() {
                             </button>
                           </div>
                         </div>
-                        
+
                         <div className="text-center pt-4 border-t border-gray-100">
                           <p className="text-sm text-gray-500 font-medium">
                             🔒 Secure booking • ✨ Free cancellation up to 24 hours

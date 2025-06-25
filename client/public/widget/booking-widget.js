@@ -60,17 +60,25 @@
       position: fixed;
       cursor: pointer;
       border: none;
-      font-weight: 600;
-      box-shadow: 0 8px 32px rgba(0,0,0,0.12), 0 2px 8px rgba(0,0,0,0.08);
+      font-weight: 700;
+      box-shadow: 0 12px 40px rgba(0,0,0,0.15), 0 4px 16px rgba(0,0,0,0.08);
       transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
       user-select: none;
-      backdrop-filter: blur(10px);
+      backdrop-filter: blur(16px);
       border: 1px solid rgba(255,255,255,0.2);
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      letter-spacing: -0.01em;
     }
     
     .rbw-button:hover {
-      transform: translateY(-3px) scale(1.02);
-      box-shadow: 0 12px 40px rgba(0,0,0,0.15), 0 4px 12px rgba(0,0,0,0.1);
+      transform: translateY(-4px) scale(1.03);
+      box-shadow: 0 16px 50px rgba(0,0,0,0.2), 0 8px 20px rgba(0,0,0,0.15);
+    }
+    
+    .rbw-button:active {
+      transform: translateY(-2px) scale(1.01);
     }
     
     .rbw-inline {
@@ -953,19 +961,25 @@
     
     // Apply styling
     const sizeStyles = {
-      small: { padding: '8px 16px', fontSize: '14px' },
-      medium: { padding: '12px 24px', fontSize: '16px' },
-      large: { padding: '16px 32px', fontSize: '18px' }
+      small: { padding: '12px 20px', fontSize: '14px' },
+      medium: { padding: '16px 28px', fontSize: '16px' },
+      large: { padding: '20px 36px', fontSize: '18px' }
     };
     
     const size = sizeStyles[config.size];
     Object.assign(button.style, {
-      backgroundColor: config.backgroundColor,
+      background: `linear-gradient(135deg, ${config.backgroundColor} 0%, ${adjustBrightness(config.backgroundColor, -10)} 100%)`,
       color: config.color,
       borderRadius: `${config.borderRadius}px`,
       padding: size.padding,
       fontSize: size.fontSize
     });
+
+    // Add icon to button
+    const icon = document.createElement('span');
+    icon.innerHTML = '🎯';
+    icon.style.fontSize = '16px';
+    button.insertBefore(icon, button.firstChild);
 
     // Position button
     const positions = {
