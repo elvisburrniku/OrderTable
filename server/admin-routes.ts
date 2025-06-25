@@ -174,6 +174,133 @@ export function registerAdminRoutes(app: Express) {
     }
   });
 
+  // Update tenant details
+  app.put("/api/admin/tenants/:id", requireAdminAuth, async (req: Request, res: Response) => {
+    try {
+      const tenantId = parseInt(req.params.id);
+      const {
+        name,
+        subscriptionStatus,
+        subscriptionPlanId,
+        maxRestaurants,
+        additionalRestaurants,
+        additionalRestaurantsCost,
+        subscriptionStartDate,
+        subscriptionEndDate,
+        stripeCustomerId,
+        stripeSubscriptionId,
+      } = req.body;
+
+      const updateData: any = {};
+      if (name !== undefined) updateData.name = name;
+      if (subscriptionStatus !== undefined) updateData.subscriptionStatus = subscriptionStatus;
+      if (subscriptionPlanId !== undefined) updateData.subscriptionPlanId = subscriptionPlanId;
+      if (maxRestaurants !== undefined) updateData.maxRestaurants = maxRestaurants;
+      if (additionalRestaurants !== undefined) updateData.additionalRestaurants = additionalRestaurants;
+      if (additionalRestaurantsCost !== undefined) updateData.additionalRestaurantsCost = additionalRestaurantsCost;
+      if (subscriptionStartDate !== undefined) updateData.subscriptionStartDate = new Date(subscriptionStartDate);
+      if (subscriptionEndDate !== undefined) updateData.subscriptionEndDate = new Date(subscriptionEndDate);
+      if (stripeCustomerId !== undefined) updateData.stripeCustomerId = stripeCustomerId;
+      if (stripeSubscriptionId !== undefined) updateData.stripeSubscriptionId = stripeSubscriptionId;
+
+      const updatedTenant = await adminStorage.updateTenant(tenantId, updateData);
+      
+      // Log the action
+      await adminStorage.createSystemLog({
+        level: "info",
+        category: "tenant_management",
+        message: `Tenant ${tenantId} updated by admin ${req.adminUser!.email}`,
+        metadata: { tenantId, updatedFields: Object.keys(updateData), adminUserId: req.adminUser!.id },
+      });
+      
+      res.json(updatedTenant);
+    } catch (error) {
+      console.error("Update tenant error:", error);
+      res.status(500).json({ message: "Failed to update tenant" });
+    }
+  });
+
+  // Suspend tenant
+  app.post("/api/admin/tenants/:id/suspend", requireAdminAuth, async (req: Request, res: Response) => {
+    try {
+      const tenantId = parseInt(req.params.id);
+      const { reason } = req.body;
+      
+      await adminStorage.suspendTenant(tenantId, reason);
+      
+      // Additional log with admin context
+      await adminStorage.createSystemLog({
+        level: "warning",
+        category: "tenant_management",
+        message: `Tenant ${tenantId} suspended by admin ${req.adminUser!.email}`,
+        metadata: { tenantId, reason, adminUserId: req.adminUser!.id },
+      });
+      
+      res.json({ success: true, message: "Tenant suspended successfully" });
+    } catch (error) {
+      console.error("Suspend tenant error:", error);
+      res.status(500).json({ message: "Failed to suspend tenant" });
+    }
+  });
+
+  // Unsuspend tenant
+  app.post("/api/admin/tenants/:id/unsuspend", requireAdminAuth, async (req: Request, res: Response) => {
+    try {
+      const tenantId = parseInt(req.params.id);
+      
+      await adminStorage.unsuspendTenant(tenantId);
+      
+      // Additional log with admin context
+      await adminStorage.createSystemLog({
+        level: "info",
+        category: "tenant_management",
+        message: `Tenant ${tenantId} unsuspended by admin ${req.adminUser!.email}`,
+        metadata: { tenantId, adminUserId: req.adminUser!.id },
+      });
+      
+      res.json({ success: true, message: "Tenant unsuspended successfully" });
+    } catch (error) {
+      console.error("Unsuspend tenant error:", error);
+      res.status(500).json({ message: "Failed to unsuspend tenant" });
+    }
+  });
+
+  // Pause tenant
+  app.post("/api/admin/tenants/:id/pause", requireAdminAuth, async (req: Request, res: Response) => {
+    try {
+      const tenantId = parseInt(req.params.id);
+      const { pauseUntil } = req.body;
+      
+      const pauseDate = pauseUntil ? new Date(pauseUntil) : undefined;
+      await adminStorage.pauseTenant(tenantId, pauseDate);
+      
+      // Additional log with admin context
+      await adminStorage.createSystemLog({
+        level: "info",
+        category: "tenant_management",
+        message: `Tenant ${tenantId} paused by admin ${req.adminUser!.email}`,
+        metadata: { tenantId, pauseUntil: pauseDate, adminUserId: req.adminUser!.id },
+      });
+      
+      res.json({ success: true, message: "Tenant paused successfully" });
+    } catch (error) {
+      console.error("Pause tenant error:", error);
+      res.status(500).json({ message: "Failed to pause tenant" });
+    }
+  });
+
+  // Get tenant statistics
+  app.get("/api/admin/tenants/:id/stats", requireAdminAuth, async (req: Request, res: Response) => {
+    try {
+      const tenantId = parseInt(req.params.id);
+      const stats = await adminStorage.getTenantStats(tenantId);
+      res.json(stats);
+    } catch (error) {
+      console.error("Get tenant stats error:", error);
+      res.status(500).json({ message: "Failed to fetch tenant statistics" });
+    }
+  });
+
   app.put("/api/admin/tenants/:id/subscription", requireAdminAuth, async (req: Request, res: Response) => {
     try {
       const tenantId = parseInt(req.params.id);

@@ -209,24 +209,89 @@ export class AdminStorage {
 
   // Tenant management
   async getAllTenants() {
-    return await db
+    const tenantsWithStats = await db
       .select({
-        tenant: tenants,
-        subscriptionPlan: subscriptionPlans,
-        userCount: count(users.id),
+        id: tenants.id,
+        name: tenants.name,
+        slug: tenants.slug,
+        subscriptionStatus: tenants.subscriptionStatus,
+        subscriptionPlanId: tenants.subscriptionPlanId,
+        trialStartDate: tenants.trialStartDate,
+        trialEndDate: tenants.trialEndDate,
+        subscriptionStartDate: tenants.subscriptionStartDate,
+        subscriptionEndDate: tenants.subscriptionEndDate,
+        stripeCustomerId: tenants.stripeCustomerId,
+        stripeSubscriptionId: tenants.stripeSubscriptionId,
+        maxRestaurants: tenants.maxRestaurants,
+        additionalRestaurants: tenants.additionalRestaurants,
+        additionalRestaurantsCost: tenants.additionalRestaurantsCost,
+        createdAt: tenants.createdAt,
+        planName: subscriptionPlans.name,
+        planPrice: subscriptionPlans.price,
+        planMaxTables: subscriptionPlans.maxTables,
+        planMaxBookingsPerMonth: subscriptionPlans.maxBookingsPerMonth,
+        planMaxRestaurants: subscriptionPlans.maxRestaurants,
       })
       .from(tenants)
       .leftJoin(subscriptionPlans, eq(tenants.subscriptionPlanId, subscriptionPlans.id))
-      .leftJoin(users, eq(tenants.id, users.id))
-      .groupBy(tenants.id, subscriptionPlans.id)
       .orderBy(desc(tenants.createdAt));
+
+    // Get counts for each tenant
+    const tenantsWithCounts = await Promise.all(
+      tenantsWithStats.map(async (tenant) => {
+        const [restaurantCount] = await db
+          .select({ count: count() })
+          .from(restaurants)
+          .where(eq(restaurants.tenantId, tenant.id));
+
+        const [userCount] = await db
+          .select({ count: count() })
+          .from(tenantUsers)
+          .where(eq(tenantUsers.tenantId, tenant.id));
+
+        const [bookingCount] = await db
+          .select({ count: count() })
+          .from(bookings)
+          .where(eq(bookings.tenantId, tenant.id));
+
+        return {
+          ...tenant,
+          restaurantCount: restaurantCount.count,
+          userCount: userCount.count,
+          bookingCount: bookingCount.count,
+        };
+      })
+    );
+
+    return tenantsWithCounts;
   }
 
   async getTenantById(id: number) {
     const [tenant] = await db
       .select({
-        tenant: tenants,
-        subscriptionPlan: subscriptionPlans,
+        id: tenants.id,
+        name: tenants.name,
+        slug: tenants.slug,
+        subscriptionStatus: tenants.subscriptionStatus,
+        subscriptionPlanId: tenants.subscriptionPlanId,
+        trialStartDate: tenants.trialStartDate,
+        trialEndDate: tenants.trialEndDate,
+        subscriptionStartDate: tenants.subscriptionStartDate,
+        subscriptionEndDate: tenants.subscriptionEndDate,
+        stripeCustomerId: tenants.stripeCustomerId,
+        stripeSubscriptionId: tenants.stripeSubscriptionId,
+        maxRestaurants: tenants.maxRestaurants,
+        additionalRestaurants: tenants.additionalRestaurants,
+        additionalRestaurantsCost: tenants.additionalRestaurantsCost,
+        createdAt: tenants.createdAt,
+        planName: subscriptionPlans.name,
+        planPrice: subscriptionPlans.price,
+        planInterval: subscriptionPlans.interval,
+        planFeatures: subscriptionPlans.features,
+        planMaxTables: subscriptionPlans.maxTables,
+        planMaxBookingsPerMonth: subscriptionPlans.maxBookingsPerMonth,
+        planMaxRestaurants: subscriptionPlans.maxRestaurants,
+        planTrialDays: subscriptionPlans.trialDays,
       })
       .from(tenants)
       .leftJoin(subscriptionPlans, eq(tenants.subscriptionPlanId, subscriptionPlans.id))
@@ -235,36 +300,182 @@ export class AdminStorage {
 
     if (!tenant) return null;
 
-    // Get tenant's restaurants and users
-    const restaurants = await db
-      .select()
+    // Get tenant's restaurants with details
+    const tenantRestaurants = await db
+      .select({
+        id: restaurants.id,
+        name: restaurants.name,
+        address: restaurants.address,
+        phone: restaurants.phone,
+        email: restaurants.email,
+        description: restaurants.description,
+        setupCompleted: restaurants.setupCompleted,
+        guestBookingEnabled: restaurants.guestBookingEnabled,
+        createdAt: restaurants.createdAt,
+        userId: restaurants.userId,
+        userName: users.name,
+        userEmail: users.email,
+      })
       .from(restaurants)
-      .where(eq(restaurants.tenantId, id));
+      .leftJoin(users, eq(restaurants.userId, users.id))
+      .where(eq(restaurants.tenantId, id))
+      .orderBy(restaurants.createdAt);
 
-    const tenantUsers = await db
-      .select()
+    // Get tenant's users
+    const tenantUsersList = await db
+      .select({
+        id: users.id,
+        email: users.email,
+        name: users.name,
+        restaurantName: users.restaurantName,
+        ssoProvider: users.ssoProvider,
+        createdAt: users.createdAt,
+        role: tenantUsers.role,
+      })
       .from(users)
-      .where(eq(users.id, id)); // This might need adjustment based on your tenant-user relationship
+      .innerJoin(tenantUsers, eq(users.id, tenantUsers.userId))
+      .where(eq(tenantUsers.tenantId, id))
+      .orderBy(users.createdAt);
+
+    // Get recent bookings count
+    const [recentBookingsCount] = await db
+      .select({ count: count() })
+      .from(bookings)
+      .where(
+        and(
+          eq(bookings.tenantId, id),
+          sql`${bookings.createdAt} >= NOW() - INTERVAL '30 days'`
+        )
+      );
 
     return {
       ...tenant,
-      restaurants,
-      users: tenantUsers,
+      restaurants: tenantRestaurants,
+      users: tenantUsersList,
+      recentBookingsCount: recentBookingsCount.count,
     };
   }
 
-  async updateTenantSubscription(tenantId: number, subscriptionData: any) {
-    await db
+  async updateTenant(tenantId: number, updateData: {
+    name?: string;
+    subscriptionStatus?: string;
+    subscriptionPlanId?: number;
+    maxRestaurants?: number;
+    additionalRestaurants?: number;
+    additionalRestaurantsCost?: number;
+    subscriptionStartDate?: Date;
+    subscriptionEndDate?: Date;
+    stripeCustomerId?: string;
+    stripeSubscriptionId?: string;
+  }) {
+    const [updatedTenant] = await db
       .update(tenants)
-      .set({
-        subscriptionStatus: subscriptionData.status,
-        subscriptionPlanId: subscriptionData.planId,
-        subscriptionStartDate: subscriptionData.startDate,
-        subscriptionEndDate: subscriptionData.endDate,
-        stripeCustomerId: subscriptionData.stripeCustomerId,
-        stripeSubscriptionId: subscriptionData.stripeSubscriptionId,
-      })
-      .where(eq(tenants.id, tenantId));
+      .set(updateData)
+      .where(eq(tenants.id, tenantId))
+      .returning();
+    
+    return updatedTenant;
+  }
+
+  async suspendTenant(tenantId: number, reason?: string) {
+    await this.updateTenant(tenantId, { subscriptionStatus: 'suspended' });
+    
+    // Log the suspension
+    await this.createSystemLog({
+      level: 'info',
+      category: 'tenant_management',
+      message: `Tenant ${tenantId} suspended${reason ? ': ' + reason : ''}`,
+      metadata: { tenantId, reason },
+    });
+  }
+
+  async unsuspendTenant(tenantId: number) {
+    // Determine appropriate status based on subscription dates
+    const tenant = await this.getTenantById(tenantId);
+    if (!tenant) throw new Error('Tenant not found');
+
+    let newStatus = 'active';
+    const now = new Date();
+    
+    if (tenant.trialEndDate && now < new Date(tenant.trialEndDate)) {
+      newStatus = 'trial';
+    } else if (tenant.subscriptionEndDate && now > new Date(tenant.subscriptionEndDate)) {
+      newStatus = 'expired';
+    }
+
+    await this.updateTenant(tenantId, { subscriptionStatus: newStatus });
+    
+    // Log the unsuspension
+    await this.createSystemLog({
+      level: 'info',
+      category: 'tenant_management',
+      message: `Tenant ${tenantId} unsuspended, status set to ${newStatus}`,
+      metadata: { tenantId, newStatus },
+    });
+  }
+
+  async pauseTenant(tenantId: number, pauseUntil?: Date) {
+    const updateData: any = { subscriptionStatus: 'paused' };
+    
+    if (pauseUntil) {
+      // Store pause end date in a metadata field or extend schema
+      updateData.subscriptionEndDate = pauseUntil;
+    }
+
+    await this.updateTenant(tenantId, updateData);
+    
+    // Log the pause
+    await this.createSystemLog({
+      level: 'info',
+      category: 'tenant_management',
+      message: `Tenant ${tenantId} paused${pauseUntil ? ' until ' + pauseUntil.toISOString() : ''}`,
+      metadata: { tenantId, pauseUntil },
+    });
+  }
+
+  async getTenantStats(tenantId: number) {
+    const [restaurantCount] = await db
+      .select({ count: count() })
+      .from(restaurants)
+      .where(eq(restaurants.tenantId, tenantId));
+
+    const [userCount] = await db
+      .select({ count: count() })
+      .from(tenantUsers)
+      .where(eq(tenantUsers.tenantId, tenantId));
+
+    const [totalBookings] = await db
+      .select({ count: count() })
+      .from(bookings)
+      .where(eq(bookings.tenantId, tenantId));
+
+    const [thisMonthBookings] = await db
+      .select({ count: count() })
+      .from(bookings)
+      .where(
+        and(
+          eq(bookings.tenantId, tenantId),
+          sql`${bookings.createdAt} >= DATE_TRUNC('month', CURRENT_DATE)`
+        )
+      );
+
+    const [upcomingBookings] = await db
+      .select({ count: count() })
+      .from(bookings)
+      .where(
+        and(
+          eq(bookings.tenantId, tenantId),
+          sql`${bookings.dateFrom} >= CURRENT_DATE`
+        )
+      );
+
+    return {
+      restaurantCount: restaurantCount.count,
+      userCount: userCount.count,
+      totalBookings: totalBookings.count,
+      thisMonthBookings: thisMonthBookings.count,
+      upcomingBookings: upcomingBookings.count,
+    };
   }
 
   // Subscription plan management
