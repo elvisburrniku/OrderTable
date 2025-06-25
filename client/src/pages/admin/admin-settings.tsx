@@ -160,6 +160,49 @@ export function AdminSettings({ token }: AdminSettingsProps) {
     return value;
   };
 
+  // Categorize settings for better organization
+  const categorizeSettings = (settings: SystemSetting[]) => {
+    const categories = {
+      "Platform Identity": ["system_name", "system_version", "support_email"],
+      "Tenant Management": ["max_trial_days", "auto_approve_signups", "max_restaurants_per_tenant", "max_users_per_tenant", "default_subscription_plan"],
+      "Communication": ["enable_email_notifications", "enable_sms_notifications", "booking_confirmation_emails", "reminder_emails_enabled", "reminder_hours_before"],
+      "Billing & Payments": ["default_currency", "enable_stripe_payments", "subscription_grace_period_days"],
+      "Booking Settings": ["max_advance_booking_days", "min_advance_booking_hours", "default_booking_duration_minutes", "enable_guest_bookings", "require_phone_for_bookings"],
+      "System Operations": ["maintenance_mode", "maintenance_message", "enable_debug_logging", "log_retention_days", "session_timeout_hours"],
+      "Features": ["enable_calendar_integration", "enable_widgets", "enable_kitchen_management", "enable_analytics", "enable_multi_language"],
+      "API & Integration": ["api_rate_limit_per_minute", "webhook_timeout_seconds", "enable_api_access"]
+    };
+
+    const categorized: Record<string, SystemSetting[]> = {};
+    const uncategorized: SystemSetting[] = [];
+
+    // Initialize categories
+    Object.keys(categories).forEach(category => {
+      categorized[category] = [];
+    });
+
+    settings.forEach(setting => {
+      let foundCategory = false;
+      for (const [category, keys] of Object.entries(categories)) {
+        if (keys.includes(setting.key)) {
+          categorized[category].push(setting);
+          foundCategory = true;
+          break;
+        }
+      }
+      if (!foundCategory) {
+        uncategorized.push(setting);
+      }
+    });
+
+    // Add uncategorized settings if any
+    if (uncategorized.length > 0) {
+      categorized["Other Settings"] = uncategorized;
+    }
+
+    return categorized;
+  };
+
   if (isLoading) {
     return (
       <div className="p-6">
@@ -171,13 +214,15 @@ export function AdminSettings({ token }: AdminSettingsProps) {
     );
   }
 
+  const categorizedSettings = categorizeSettings(settings);
+
   return (
     <div className="p-6 space-y-6">
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-3xl font-bold tracking-tight">System Settings</h1>
           <p className="text-muted-foreground">
-            Configure global system parameters and features
+            Configure global system parameters and features ({settings.length} settings)
           </p>
         </div>
         <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
@@ -302,82 +347,93 @@ export function AdminSettings({ token }: AdminSettingsProps) {
         </Dialog>
       </div>
 
-      <Card>
-        <CardHeader>
-          <CardTitle>Configuration Settings ({settings.length})</CardTitle>
-          <CardDescription>
-            Global system parameters and feature flags
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Key</TableHead>
-                <TableHead>Type</TableHead>
-                <TableHead>Value</TableHead>
-                <TableHead>Description</TableHead>
-                <TableHead>Last Updated</TableHead>
-                <TableHead>Actions</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {settings.map((setting) => (
-                <TableRow key={setting.id}>
-                  <TableCell>
-                    <code className="px-2 py-1 bg-slate-100 dark:bg-slate-800 rounded text-sm">
-                      {setting.key}
-                    </code>
-                  </TableCell>
-                  <TableCell>
-                    {getTypeBadge(setting.type)}
-                  </TableCell>
-                  <TableCell>
-                    <div className="max-w-xs">
-                      {setting.type === "json" ? (
-                        <pre className="text-xs bg-slate-50 dark:bg-slate-800 p-2 rounded overflow-x-auto">
-                          {formatValue(setting.value, setting.type)}
-                        </pre>
-                      ) : (
-                        <span className="font-mono text-sm">
-                          {formatValue(setting.value, setting.type)}
-                        </span>
-                      )}
+      {/* Display categorized settings */}
+      <div className="space-y-6">
+        {Object.entries(categorizedSettings).map(([category, categorySettings]) => {
+          if (categorySettings.length === 0) return null;
+          
+          return (
+            <Card key={category}>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Settings className="h-5 w-5" />
+                  {category}
+                  <Badge variant="secondary" className="ml-auto">
+                    {categorySettings.length} settings
+                  </Badge>
+                </CardTitle>
+                <CardDescription>
+                  {category === "Platform Identity" && "Basic platform information and branding"}
+                  {category === "Tenant Management" && "Control tenant limits and default settings"}
+                  {category === "Communication" && "Email, SMS, and notification preferences"}
+                  {category === "Billing & Payments" && "Payment processing and subscription settings"}
+                  {category === "Booking Settings" && "Default booking rules and constraints"}
+                  {category === "System Operations" && "Maintenance, logging, and session management"}
+                  {category === "Features" && "Feature flags and integrations"}
+                  {category === "API & Integration" && "API limits and external service settings"}
+                  {category === "Other Settings" && "Additional custom settings"}
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="grid gap-4">
+                  {categorySettings.map((setting) => (
+                    <div key={setting.id} className="flex items-center justify-between p-4 border rounded-lg">
+                      <div className="flex-1 space-y-1">
+                        <div className="flex items-center gap-2">
+                          <code className="px-2 py-1 bg-slate-100 dark:bg-slate-800 rounded text-sm font-mono">
+                            {setting.key}
+                          </code>
+                          {getTypeBadge(setting.type)}
+                        </div>
+                        <p className="text-sm text-muted-foreground">
+                          {setting.description || "No description"}
+                        </p>
+                      </div>
+                      <div className="flex items-center gap-4">
+                        <div className="text-right">
+                          <div className="font-mono text-sm">
+                            {setting.type === "boolean" ? (
+                              <Badge variant={setting.value === "true" ? "default" : "secondary"}>
+                                {setting.value === "true" ? "Enabled" : "Disabled"}
+                              </Badge>
+                            ) : (
+                              <span className="max-w-[200px] truncate block">
+                                {formatValue(setting.value, setting.type)}
+                              </span>
+                            )}
+                          </div>
+                          <div className="text-xs text-muted-foreground">
+                            Updated {new Date(setting.updatedAt).toLocaleDateString()}
+                          </div>
+                        </div>
+                        <Button 
+                          variant="ghost" 
+                          size="sm"
+                          onClick={() => handleEdit(setting)}
+                        >
+                          <Edit className="h-4 w-4" />
+                        </Button>
+                      </div>
                     </div>
-                  </TableCell>
-                  <TableCell>
-                    <div className="max-w-xs text-sm text-muted-foreground">
-                      {setting.description || "No description"}
-                    </div>
-                  </TableCell>
-                  <TableCell>
-                    <div className="text-sm text-muted-foreground">
-                      {new Date(setting.updatedAt).toLocaleDateString()}
-                    </div>
-                  </TableCell>
-                  <TableCell>
-                    <Button 
-                      variant="ghost" 
-                      size="sm"
-                      onClick={() => handleEdit(setting)}
-                    >
-                      <Edit className="h-4 w-4" />
-                    </Button>
-                  </TableCell>
-                </TableRow>
-              ))}
-            </TableBody>
-          </Table>
+                  ))}
+                </div>
+              </CardContent>
+            </Card>
+          );
+        })}
 
-          {settings.length === 0 && (
-            <div className="text-center py-8">
-              <Settings className="h-8 w-8 text-muted-foreground mx-auto mb-2" />
-              <p className="text-muted-foreground">No system settings found</p>
-              <p className="text-sm text-muted-foreground">Create your first setting to get started</p>
-            </div>
-          )}
-        </CardContent>
-      </Card>
+        {settings.length === 0 && (
+          <Card>
+            <CardContent className="text-center py-12">
+              <Settings className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+              <h3 className="text-lg font-semibold mb-2">No System Settings Found</h3>
+              <p className="text-muted-foreground mb-4">
+                System settings should be automatically initialized. Try restarting the server.
+              </p>
+            </CardContent>
+          </Card>
+        )}
+      </div>
     </div>
   );
 }
