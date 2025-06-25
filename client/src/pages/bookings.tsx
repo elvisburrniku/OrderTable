@@ -161,34 +161,46 @@ export default function Bookings() {
   // Update booking mutation
   const updateBookingMutation = useMutation({
     mutationFn: async ({ id, updates }: { id: number; updates: any }) => {
-      const response = await fetch(`/api/tenants/${tenantId}/bookings/${id}`, {
+      const response = await fetch(`/api/tenants/${tenantId}/restaurants/${restaurantId}/bookings/${id}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(updates)
       });
-      if (!response.ok) throw new Error('Failed to update booking');
+      if (!response.ok) {
+        const errorText = await response.text();
+        throw new Error(errorText || 'Failed to update booking');
+      }
       return response.json();
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: [`/api/tenants/${tenantId}/restaurants/${restaurantId}/bookings`] });
       setIsEditDialogOpen(false);
       setEditingBooking(null);
+    },
+    onError: (error: any) => {
+      console.error('Update booking error:', error);
     }
   });
 
   // Delete booking mutation
   const deleteBookingMutation = useMutation({
     mutationFn: async (id: number) => {
-      const response = await fetch(`/api/tenants/${tenantId}/bookings/${id}`, {
+      const response = await fetch(`/api/tenants/${tenantId}/restaurants/${restaurantId}/bookings/${id}`, {
         method: 'DELETE'
       });
-      if (!response.ok) throw new Error('Failed to delete booking');
+      if (!response.ok) {
+        const errorText = await response.text();
+        throw new Error(errorText || 'Failed to delete booking');
+      }
       return response.json();
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: [`/api/tenants/${tenantId}/restaurants/${restaurantId}/bookings`] });
       setIsDeleteDialogOpen(false);
       setBookingToDelete(null);
+    },
+    onError: (error: any) => {
+      console.error('Delete booking error:', error);
     }
   });
 
@@ -227,17 +239,23 @@ export default function Bookings() {
     e.preventDefault();
     if (!editingBooking) return;
 
+    // Validate required fields
+    if (!editingBooking.customerName || !editingBooking.customerEmail || !editingBooking.bookingDate || !editingBooking.startTime) {
+      console.error('Missing required fields');
+      return;
+    }
+
     const updates = {
-      customerName: editingBooking.customerName,
-      customerEmail: editingBooking.customerEmail,
-      customerPhone: editingBooking.customerPhone,
-      guestCount: editingBooking.guestCount,
+      customerName: editingBooking.customerName.trim(),
+      customerEmail: editingBooking.customerEmail.trim(),
+      customerPhone: editingBooking.customerPhone?.trim() || null,
+      guestCount: Number(editingBooking.guestCount) || 1,
       bookingDate: editingBooking.bookingDate,
       startTime: editingBooking.startTime,
-      endTime: editingBooking.endTime,
+      endTime: editingBooking.endTime || null,
       tableId: editingBooking.tableId ? parseInt(editingBooking.tableId) : null,
-      notes: editingBooking.notes,
-      status: editingBooking.status
+      notes: editingBooking.notes?.trim() || null,
+      status: editingBooking.status || 'confirmed'
     };
 
     updateBookingMutation.mutate({ id: editingBooking.id, updates });
