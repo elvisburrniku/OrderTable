@@ -12,19 +12,20 @@ import { useAuth } from '@/lib/auth';
 import { useTenant } from '@/lib/tenant';
 
 interface WidgetConfig {
-  type: 'button' | 'inline' | 'popup';
-  size: 'small' | 'medium' | 'large';
-  color: string;
-  backgroundColor: string;
-  borderRadius: number;
-  showDate: boolean;
-  showTime: boolean;
-  showGuests: boolean;
-  showSpecialRequests: boolean;
+  type: 'floating-button' | 'inline-card' | 'banner' | 'sidebar';
+  theme: 'modern' | 'minimal' | 'elegant' | 'vibrant' | 'dark';
+  size: 'compact' | 'standard' | 'large';
+  primaryColor: string;
+  accentColor: string;
+  cornerRadius: 'none' | 'small' | 'medium' | 'large' | 'full';
+  shadow: 'none' | 'subtle' | 'medium' | 'strong';
   buttonText: string;
   headerText: string;
-  placement: 'bottom-right' | 'bottom-left' | 'top-right' | 'top-left';
-  animation: 'none' | 'fade' | 'slide' | 'bounce';
+  description: string;
+  placement: 'bottom-right' | 'bottom-left' | 'top-right' | 'top-left' | 'center';
+  animation: 'none' | 'fade' | 'slide-up' | 'slide-right' | 'scale' | 'bounce';
+  showBranding: boolean;
+  customCSS: string;
 }
 
 export function WidgetBuilder() {
@@ -32,19 +33,20 @@ export function WidgetBuilder() {
   const { user, restaurant } = useAuth();
   const { tenant } = useTenant();
   const [config, setConfig] = useState<WidgetConfig>({
-    type: 'button',
-    size: 'medium',
-    color: '#ffffff',
-    backgroundColor: '#3b82f6',
-    borderRadius: 8,
-    showDate: true,
-    showTime: true,
-    showGuests: true,
-    showSpecialRequests: false,
-    buttonText: 'Reserve Table',
-    headerText: 'Make a Reservation',
+    type: 'floating-button',
+    theme: 'modern',
+    size: 'standard',
+    primaryColor: '#2563eb',
+    accentColor: '#1d4ed8',
+    cornerRadius: 'medium',
+    shadow: 'medium',
+    buttonText: 'Book Table',
+    headerText: 'Reserve Your Table',
+    description: 'Quick and easy online reservations',
     placement: 'bottom-right',
-    animation: 'fade'
+    animation: 'slide-up',
+    showBranding: true,
+    customCSS: ''
   });
 
   const [restaurantId, setRestaurantId] = useState<string>('');
@@ -88,6 +90,82 @@ export function WidgetBuilder() {
     setConfig(prev => ({ ...prev, [key]: value }));
   };
 
+  // Helper functions for styling
+  const getThemeStyles = (theme: string, primaryColor: string) => {
+    const themes = {
+      modern: {
+        background: `linear-gradient(135deg, ${primaryColor}dd, ${primaryColor}bb)`,
+        cardBackground: 'rgba(255, 255, 255, 0.95)',
+        color: '#ffffff',
+        border: '1px solid rgba(255, 255, 255, 0.2)'
+      },
+      minimal: {
+        background: '#ffffff',
+        cardBackground: '#ffffff',
+        color: primaryColor,
+        border: `2px solid ${primaryColor}`
+      },
+      elegant: {
+        background: `linear-gradient(135deg, #1a1a1a, #2a2a2a)`,
+        cardBackground: 'linear-gradient(135deg, #f8f9fa, #ffffff)',
+        color: '#ffffff',
+        border: '1px solid #333'
+      },
+      vibrant: {
+        background: `linear-gradient(135deg, ${primaryColor}, #ff6b6b, #4ecdc4)`,
+        cardBackground: 'linear-gradient(135deg, #fff5f5, #ffffff)',
+        color: '#ffffff',
+        border: 'none'
+      },
+      dark: {
+        background: 'linear-gradient(135deg, #1a1a1a, #2d3748)',
+        cardBackground: 'linear-gradient(135deg, #2d3748, #4a5568)',
+        color: '#ffffff',
+        border: '1px solid #4a5568'
+      }
+    };
+    return themes[theme] || themes.modern;
+  };
+
+  const getCornerRadius = (radius: string) => {
+    const radiusMap = {
+      none: '0px',
+      small: '4px',
+      medium: '8px',
+      large: '16px',
+      full: '9999px'
+    };
+    return radiusMap[radius] || '8px';
+  };
+
+  const getSizePadding = (size: string) => {
+    const sizeMap = {
+      compact: '8px 16px',
+      standard: '12px 24px',
+      large: '16px 32px'
+    };
+    return sizeMap[size] || '12px 24px';
+  };
+
+  const getSizeFontSize = (size: string) => {
+    const sizeMap = {
+      compact: '14px',
+      standard: '16px',
+      large: '18px'
+    };
+    return sizeMap[size] || '16px';
+  };
+
+  const getShadow = (shadow: string) => {
+    const shadowMap = {
+      none: 'none',
+      subtle: '0 1px 3px rgba(0,0,0,0.1)',
+      medium: '0 4px 12px rgba(0,0,0,0.15)',
+      strong: '0 10px 25px rgba(0,0,0,0.25)'
+    };
+    return shadowMap[shadow] || '0 4px 12px rgba(0,0,0,0.15)';
+  };
+
   return (
     <div className="space-y-6">
       <div>
@@ -123,9 +201,26 @@ export function WidgetBuilder() {
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="button">Floating Button</SelectItem>
-                    <SelectItem value="inline">Inline Form</SelectItem>
-                    <SelectItem value="popup">Popup Modal</SelectItem>
+                    <SelectItem value="floating-button">🎯 Floating Button</SelectItem>
+                    <SelectItem value="inline-card">📋 Inline Card</SelectItem>
+                    <SelectItem value="banner">📢 Banner</SelectItem>
+                    <SelectItem value="sidebar">📌 Sidebar</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="theme">Theme</Label>
+                <Select value={config.theme} onValueChange={(value: any) => updateConfig('theme', value)}>
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="modern">✨ Modern</SelectItem>
+                    <SelectItem value="minimal">⚪ Minimal</SelectItem>
+                    <SelectItem value="elegant">💎 Elegant</SelectItem>
+                    <SelectItem value="vibrant">🌈 Vibrant</SelectItem>
+                    <SelectItem value="dark">🌙 Dark Mode</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
@@ -163,48 +258,66 @@ export function WidgetBuilder() {
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="small">Small</SelectItem>
-                    <SelectItem value="medium">Medium</SelectItem>
-                    <SelectItem value="large">Large</SelectItem>
+                    <SelectItem value="compact">📦 Compact</SelectItem>
+                    <SelectItem value="standard">📐 Standard</SelectItem>
+                    <SelectItem value="large">📏 Large</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
 
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-2">
-                  <Label htmlFor="color">Text Color</Label>
+                  <Label htmlFor="primary-color">Primary Color</Label>
                   <Input
-                    id="color"
+                    id="primary-color"
                     type="color"
-                    value={config.color}
-                    onChange={(e) => updateConfig('color', e.target.value)}
+                    value={config.primaryColor}
+                    onChange={(e) => updateConfig('primaryColor', e.target.value)}
                   />
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="bg-color">Background Color</Label>
+                  <Label htmlFor="accent-color">Accent Color</Label>
                   <Input
-                    id="bg-color"
+                    id="accent-color"
                     type="color"
-                    value={config.backgroundColor}
-                    onChange={(e) => updateConfig('backgroundColor', e.target.value)}
+                    value={config.accentColor}
+                    onChange={(e) => updateConfig('accentColor', e.target.value)}
                   />
                 </div>
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="border-radius">Border Radius: {config.borderRadius}px</Label>
-                <input
-                  id="border-radius"
-                  type="range"
-                  min="0"
-                  max="50"
-                  value={config.borderRadius}
-                  onChange={(e) => updateConfig('borderRadius', parseInt(e.target.value))}
-                  className="w-full"
-                />
+                <Label htmlFor="corner-radius">Corner Radius</Label>
+                <Select value={config.cornerRadius} onValueChange={(value: any) => updateConfig('cornerRadius', value)}>
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="none">⬜ None</SelectItem>
+                    <SelectItem value="small">▢ Small</SelectItem>
+                    <SelectItem value="medium">◻️ Medium</SelectItem>
+                    <SelectItem value="large">⬛ Large</SelectItem>
+                    <SelectItem value="full">⭕ Full</SelectItem>
+                  </SelectContent>
+                </Select>
               </div>
 
-              {config.type === 'button' && (
+              <div className="space-y-2">
+                <Label htmlFor="shadow">Shadow</Label>
+                <Select value={config.shadow} onValueChange={(value: any) => updateConfig('shadow', value)}>
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="none">None</SelectItem>
+                    <SelectItem value="subtle">Subtle</SelectItem>
+                    <SelectItem value="medium">Medium</SelectItem>
+                    <SelectItem value="strong">Strong</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+
+              {config.type === 'floating-button' && (
                 <div className="space-y-2">
                   <Label htmlFor="placement">Placement</Label>
                   <Select value={config.placement} onValueChange={(value: any) => updateConfig('placement', value)}>
@@ -212,10 +325,11 @@ export function WidgetBuilder() {
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="bottom-right">Bottom Right</SelectItem>
-                      <SelectItem value="bottom-left">Bottom Left</SelectItem>
-                      <SelectItem value="top-right">Top Right</SelectItem>
-                      <SelectItem value="top-left">Top Left</SelectItem>
+                      <SelectItem value="bottom-right">↘️ Bottom Right</SelectItem>
+                      <SelectItem value="bottom-left">↙️ Bottom Left</SelectItem>
+                      <SelectItem value="top-right">↗️ Top Right</SelectItem>
+                      <SelectItem value="top-left">↖️ Top Left</SelectItem>
+                      <SelectItem value="center">🎯 Center</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
@@ -228,10 +342,12 @@ export function WidgetBuilder() {
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="none">None</SelectItem>
-                    <SelectItem value="fade">Fade</SelectItem>
-                    <SelectItem value="slide">Slide</SelectItem>
-                    <SelectItem value="bounce">Bounce</SelectItem>
+                    <SelectItem value="none">⚪ None</SelectItem>
+                    <SelectItem value="fade">🌟 Fade</SelectItem>
+                    <SelectItem value="slide-up">⬆️ Slide Up</SelectItem>
+                    <SelectItem value="slide-right">➡️ Slide Right</SelectItem>
+                    <SelectItem value="scale">🔍 Scale</SelectItem>
+                    <SelectItem value="bounce">🏀 Bounce</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
@@ -240,40 +356,42 @@ export function WidgetBuilder() {
 
           <Card>
             <CardHeader>
-              <CardTitle>Form Fields</CardTitle>
-              <CardDescription>Choose which fields to display</CardDescription>
+              <CardTitle>Content & Branding</CardTitle>
+              <CardDescription>Customize text and branding options</CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
-              <div className="flex items-center justify-between">
-                <Label htmlFor="show-date">Show Date Picker</Label>
-                <Switch
-                  id="show-date"
-                  checked={config.showDate}
-                  onCheckedChange={(checked) => updateConfig('showDate', checked)}
+              <div className="space-y-2">
+                <Label htmlFor="description">Description</Label>
+                <Textarea
+                  id="description"
+                  value={config.description}
+                  onChange={(e) => updateConfig('description', e.target.value)}
+                  placeholder="Brief description shown in the widget"
+                  rows={2}
                 />
               </div>
+
               <div className="flex items-center justify-between">
-                <Label htmlFor="show-time">Show Time Picker</Label>
+                <div>
+                  <Label htmlFor="show-branding">Show Branding</Label>
+                  <p className="text-sm text-muted-foreground">Display "Powered by" text</p>
+                </div>
                 <Switch
-                  id="show-time"
-                  checked={config.showTime}
-                  onCheckedChange={(checked) => updateConfig('showTime', checked)}
+                  id="show-branding"
+                  checked={config.showBranding}
+                  onCheckedChange={(checked) => updateConfig('showBranding', checked)}
                 />
               </div>
-              <div className="flex items-center justify-between">
-                <Label htmlFor="show-guests">Show Guest Count</Label>
-                <Switch
-                  id="show-guests"
-                  checked={config.showGuests}
-                  onCheckedChange={(checked) => updateConfig('showGuests', checked)}
-                />
-              </div>
-              <div className="flex items-center justify-between">
-                <Label htmlFor="show-requests">Show Special Requests</Label>
-                <Switch
-                  id="show-requests"
-                  checked={config.showSpecialRequests}
-                  onCheckedChange={(checked) => updateConfig('showSpecialRequests', checked)}
+
+              <div className="space-y-2">
+                <Label htmlFor="custom-css">Custom CSS</Label>
+                <Textarea
+                  id="custom-css"
+                  value={config.customCSS}
+                  onChange={(e) => updateConfig('customCSS', e.target.value)}
+                  placeholder="Add custom CSS styles"
+                  rows={3}
+                  className="font-mono text-sm"
                 />
               </div>
             </CardContent>
@@ -318,97 +436,155 @@ export function WidgetBuilder() {
                   <p className="text-sm">Configure settings to see changes</p>
                 </div>
 
-                {/* Simulated Widget */}
-                {config.type === 'button' && (
+                {/* Modern Widget Previews */}
+                {config.type === 'floating-button' && (
                   <div 
                     className={`fixed ${
                       config.placement.includes('bottom') ? 'bottom-4' : 'top-4'
                     } ${
                       config.placement.includes('right') ? 'right-4' : 'left-4'
-                    }`}
+                    } ${config.placement === 'center' ? 'top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2' : ''}`}
                     style={{
                       position: 'absolute',
-                      backgroundColor: config.backgroundColor,
-                      color: config.color,
-                      borderRadius: `${config.borderRadius}px`,
-                      padding: config.size === 'small' ? '8px 16px' : config.size === 'medium' ? '12px 24px' : '16px 32px',
-                      fontSize: config.size === 'small' ? '14px' : config.size === 'medium' ? '16px' : '18px',
-                      boxShadow: '0 4px 12px rgba(0,0,0,0.15)',
-                      cursor: 'pointer'
+                      background: getThemeStyles(config.theme, config.primaryColor).background,
+                      color: getThemeStyles(config.theme, config.primaryColor).color,
+                      borderRadius: getCornerRadius(config.cornerRadius),
+                      padding: getSizePadding(config.size),
+                      fontSize: getSizeFontSize(config.size),
+                      boxShadow: getShadow(config.shadow),
+                      cursor: 'pointer',
+                      border: getThemeStyles(config.theme, config.primaryColor).border,
+                      backdropFilter: config.theme === 'modern' ? 'blur(10px)' : 'none'
                     }}
                   >
-                    {config.buttonText}
+                    <div className="flex items-center gap-2">
+                      <span>🍽️</span>
+                      <span className="font-semibold">{config.buttonText}</span>
+                    </div>
                   </div>
                 )}
 
-                {config.type === 'inline' && (
+                {config.type === 'inline-card' && (
                   <div className="p-4">
                     <div 
-                      className="bg-white rounded-lg shadow-lg border"
+                      className="bg-white rounded-lg shadow-lg border overflow-hidden"
                       style={{
-                        borderRadius: `${config.borderRadius}px`,
+                        borderRadius: getCornerRadius(config.cornerRadius),
+                        boxShadow: getShadow(config.shadow),
+                        background: getThemeStyles(config.theme, config.primaryColor).cardBackground
                       }}
                     >
                       <div className="p-6">
-                        <h3 className="text-xl font-semibold mb-6 text-center" style={{ color: config.backgroundColor }}>
-                          {config.headerText}
-                        </h3>
+                        <div className="text-center mb-6">
+                          <h3 className="text-xl font-bold mb-2" style={{ color: config.primaryColor }}>
+                            {config.headerText}
+                          </h3>
+                          <p className="text-gray-600 text-sm">{config.description}</p>
+                        </div>
 
-                        {/* Premium booking interface */}
-                        <div className="bg-gradient-to-br from-gray-50 to-white p-6 rounded-2xl border-2 border-gray-100 shadow-sm mb-6">
-                          <div className="flex flex-wrap gap-3 items-end justify-center mb-4">
-                            {config.showDate && (
-                              <div className="flex flex-col">
-                                <label className="text-sm font-semibold text-gray-700 mb-2">Date</label>
-                                <div className="border-2 border-gray-200 rounded-xl px-4 py-4 bg-white min-w-[130px] flex items-center gap-3 shadow-sm hover:border-blue-300 transition-colors">
-                                  <span className="text-lg">📅</span>
-                                  <span className="text-sm font-semibold text-gray-800">Jun 24</span>
-                                </div>
-                              </div>
-                            )}
-
-                            {config.showTime && (
-                              <div className="flex flex-col">
-                                <label className="text-sm font-semibold text-gray-700 mb-2">Time</label>
-                                <div className="border-2 border-gray-200 rounded-xl px-4 py-4 bg-white min-w-[110px] flex items-center gap-3 shadow-sm hover:border-blue-300 transition-colors">
-                                  <span className="text-lg">🕐</span>
-                                  <span className="text-sm font-semibold text-gray-800">7:00 PM</span>
-                                </div>
-                              </div>
-                            )}
-
-                            {config.showGuests && (
-                              <div className="flex flex-col">
-                                <label className="text-sm font-semibold text-gray-700 mb-2">Party Size</label>
-                                <div className="border-2 border-gray-200 rounded-xl px-4 py-4 bg-white min-w-[120px] flex items-center gap-3 shadow-sm hover:border-blue-300 transition-colors">
-                                  <span className="text-lg">👥</span>
-                                  <span className="text-sm font-semibold text-gray-800">2 people</span>
-                                </div>
-                              </div>
-                            )}
-
-                            <button
-                              className="px-8 py-4 rounded-xl text-white font-bold text-sm shadow-lg hover:shadow-xl transition-all transform hover:-translate-y-0.5 flex items-center gap-2"
-                              style={{
-                                background: `linear-gradient(135deg, ${config.backgroundColor} 0%, ${config.backgroundColor}dd 100%)`,
-                                borderRadius: `${config.borderRadius}px`
-                              }}
-                            >
-                              <span>🔍</span>
-                              <span>Find Table</span>
-                            </button>
+                        <div className="flex flex-wrap gap-3 items-center justify-center mb-4">
+                          <div className="flex items-center gap-2 bg-gray-50 px-4 py-3 rounded-lg border">
+                            <span>📅</span>
+                            <span className="text-sm font-medium">Jun 25</span>
+                          </div>
+                          <div className="flex items-center gap-2 bg-gray-50 px-4 py-3 rounded-lg border">
+                            <span>🕐</span>
+                            <span className="text-sm font-medium">7:00 PM</span>
+                          </div>
+                          <div className="flex items-center gap-2 bg-gray-50 px-4 py-3 rounded-lg border">
+                            <span>👥</span>
+                            <span className="text-sm font-medium">2 guests</span>
                           </div>
                         </div>
 
-                        <div className="text-center pt-4 border-t border-gray-100">
-                          <p className="text-sm text-gray-500 font-medium">
-                            🔒 Secure booking • ✨ Free cancellation up to 24 hours
-                          </p>
-                        </div>
+                        <button
+                          className="w-full py-3 rounded-lg text-white font-semibold transition-all hover:scale-105"
+                          style={{
+                            background: `linear-gradient(135deg, ${config.primaryColor}, ${config.accentColor})`,
+                            borderRadius: getCornerRadius(config.cornerRadius)
+                          }}
+                        >
+                          {config.buttonText}
+                        </button>
+
+                        {config.showBranding && (
+                          <div className="text-center mt-4 pt-4 border-t">
+                            <p className="text-xs text-gray-400">Powered by BookingSystem</p>
+                          </div>
+                        )}
                       </div>
                     </div>
                   </div>
                 )}
+
+                {config.type === 'banner' && (
+                  <div 
+                    className="w-full p-4"
+                    style={{
+                      background: `linear-gradient(135deg, ${config.primaryColor}20, ${config.accentColor}20)`,
+                      borderRadius: getCornerRadius(config.cornerRadius)
+                    }}
+                  >
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <h4 className="font-bold text-lg" style={{ color: config.primaryColor }}>
+                          {config.headerText}
+                        </h4>
+                        <p className="text-sm text-gray-600">{config.description}</p>
+                      </div>
+                      <button
+                        className="px-6 py-2 rounded-lg text-white font-semibold"
+                        style={{
+                          background: config.primaryColor,
+                          borderRadius: getCornerRadius(config.cornerRadius)
+                        }}
+                      >
+                        {config.buttonText}
+                      </button>
+                    </div>
+                  </div>
+                )}
+
+                {config.type === 'sidebar' && (
+                  <div 
+                    className="absolute right-0 top-0 h-full w-64 bg-white shadow-lg border-l"
+                    style={{
+                      background: getThemeStyles(config.theme, config.primaryColor).cardBackground,
+                      boxShadow: getShadow(config.shadow)
+                    }}
+                  >
+                    <div className="p-6">
+                      <h3 className="text-lg font-bold mb-2" style={{ color: config.primaryColor }}>
+                        {config.headerText}
+                      </h3>
+                      <p className="text-sm text-gray-600 mb-6">{config.description}</p>
+                      
+                      <div className="space-y-3 mb-6">
+                        <div className="border rounded-lg p-3">
+                          <span className="text-sm font-medium">📅 Select Date</span>
+                        </div>
+                        <div className="border rounded-lg p-3">
+                          <span className="text-sm font-medium">🕐 Choose Time</span>
+                        </div>
+                        <div className="border rounded-lg p-3">
+                          <span className="text-sm font-medium">👥 Party Size</span>
+                        </div>
+                      </div>
+
+                      <button
+                        className="w-full py-3 rounded-lg text-white font-semibold"
+                        style={{
+                          background: config.primaryColor,
+                          borderRadius: getCornerRadius(config.cornerRadius)
+                        }}
+                      >
+                        {config.buttonText}
+                      </button>
+                    </div>
+                  </div>
+                )}
+
+
               </div>
             </CardContent>
           </Card>

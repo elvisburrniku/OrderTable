@@ -25,23 +25,102 @@
 
   // Default configuration
   const defaultConfig = {
-    type: 'button',
-    size: 'medium',
-    color: '#ffffff',
-    backgroundColor: '#3b82f6',
-    borderRadius: 8,
-    showDate: true,
-    showTime: true,
-    showGuests: true,
-    showSpecialRequests: false,
-    buttonText: 'Reserve Table',
-    headerText: 'Make a Reservation',
+    type: 'floating-button',
+    theme: 'modern',
+    size: 'standard',
+    primaryColor: '#2563eb',
+    accentColor: '#1d4ed8',
+    cornerRadius: 'medium',
+    shadow: 'medium',
+    buttonText: 'Book Table',
+    headerText: 'Reserve Your Table',
+    description: 'Quick and easy online reservations',
     placement: 'bottom-right',
-    animation: 'fade'
+    animation: 'slide-up',
+    showBranding: true,
+    customCSS: ''
   };
 
   // Merge configurations
   config = Object.assign({}, defaultConfig, config);
+
+  // Helper functions for styling
+  const getThemeStyles = (theme) => {
+    const themes = {
+      modern: {
+        background: `linear-gradient(135deg, ${config.primaryColor}dd, ${config.primaryColor}bb)`,
+        cardBackground: 'rgba(255, 255, 255, 0.95)',
+        color: '#ffffff',
+        border: '1px solid rgba(255, 255, 255, 0.2)'
+      },
+      minimal: {
+        background: '#ffffff',
+        cardBackground: '#ffffff',
+        color: config.primaryColor,
+        border: `2px solid ${config.primaryColor}`
+      },
+      elegant: {
+        background: 'linear-gradient(135deg, #1a1a1a, #2a2a2a)',
+        cardBackground: 'linear-gradient(135deg, #f8f9fa, #ffffff)',
+        color: '#ffffff',
+        border: '1px solid #333'
+      },
+      vibrant: {
+        background: `linear-gradient(135deg, ${config.primaryColor}, #ff6b6b, #4ecdc4)`,
+        cardBackground: 'linear-gradient(135deg, #fff5f5, #ffffff)',
+        color: '#ffffff',
+        border: 'none'
+      },
+      dark: {
+        background: 'linear-gradient(135deg, #1a1a1a, #2d3748)',
+        cardBackground: 'linear-gradient(135deg, #2d3748, #4a5568)',
+        color: '#ffffff',
+        border: '1px solid #4a5568'
+      }
+    };
+    return themes[theme] || themes.modern;
+  };
+
+  const getCornerRadius = (radius) => {
+    const radiusMap = {
+      none: '0px',
+      small: '4px',
+      medium: '8px',
+      large: '16px',
+      full: '9999px'
+    };
+    return radiusMap[radius] || '8px';
+  };
+
+  const getSizePadding = (size) => {
+    const sizeMap = {
+      compact: '8px 16px',
+      standard: '12px 24px',
+      large: '16px 32px'
+    };
+    return sizeMap[size] || '12px 24px';
+  };
+
+  const getShadow = (shadow) => {
+    const shadowMap = {
+      none: 'none',
+      subtle: '0 1px 3px rgba(0,0,0,0.1)',
+      medium: '0 4px 12px rgba(0,0,0,0.15)',
+      strong: '0 10px 25px rgba(0,0,0,0.25)'
+    };
+    return shadowMap[shadow] || '0 4px 12px rgba(0,0,0,0.15)';
+  };
+
+  const getAnimation = (animation) => {
+    const animations = {
+      'fade': 'rbw-fade-in',
+      'slide-up': 'rbw-slide-up',
+      'slide-right': 'rbw-slide-right',
+      'scale': 'rbw-scale-in',
+      'bounce': 'rbw-bounce-in'
+    };
+    return animations[animation] || '';
+  };
 
   // Widget styles
   const widgetStyles = `
@@ -50,41 +129,80 @@
       z-index: 999999;
       box-sizing: border-box;
       line-height: 1.5;
+      --primary-color: ${config.primaryColor};
+      --accent-color: ${config.accentColor};
+      --corner-radius: ${getCornerRadius(config.cornerRadius)};
+      --shadow: ${getShadow(config.shadow)};
     }
     
     .rbw-widget * {
       box-sizing: border-box;
     }
     
-    .rbw-button {
+    .rbw-floating-button {
       position: fixed;
       cursor: pointer;
       border: none;
-      font-weight: 700;
-      box-shadow: 0 12px 40px rgba(0,0,0,0.15), 0 4px 16px rgba(0,0,0,0.08);
+      font-weight: 600;
+      box-shadow: var(--shadow);
       transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
       user-select: none;
-      backdrop-filter: blur(16px);
-      border: 1px solid rgba(255,255,255,0.2);
       display: flex;
       align-items: center;
       gap: 8px;
       letter-spacing: -0.01em;
+      border-radius: var(--corner-radius);
+      padding: ${getSizePadding(config.size)};
+      background: ${getThemeStyles(config.theme).background};
+      color: ${getThemeStyles(config.theme).color};
+      border: ${getThemeStyles(config.theme).border};
+      font-size: ${config.size === 'compact' ? '14px' : config.size === 'standard' ? '16px' : '18px'};
     }
     
-    .rbw-button:hover {
-      transform: translateY(-4px) scale(1.03);
-      box-shadow: 0 16px 50px rgba(0,0,0,0.2), 0 8px 20px rgba(0,0,0,0.15);
+    .rbw-floating-button:hover {
+      transform: translateY(-2px) scale(1.02);
+      box-shadow: 0 8px 25px rgba(0,0,0,0.2);
     }
     
-    .rbw-button:active {
-      transform: translateY(-2px) scale(1.01);
+    .rbw-floating-button:active {
+      transform: translateY(0px) scale(1.0);
     }
     
-    .rbw-inline {
+    .rbw-inline-card {
       width: 100%;
-      max-width: 480px;
-      margin: 24px auto;
+      max-width: 400px;
+      margin: 16px auto;
+      background: ${getThemeStyles(config.theme).cardBackground};
+      border-radius: var(--corner-radius);
+      box-shadow: var(--shadow);
+      overflow: hidden;
+    }
+    
+    .rbw-banner {
+      width: 100%;
+      padding: 16px;
+      background: linear-gradient(135deg, ${config.primaryColor}20, ${config.accentColor}20);
+      border-radius: var(--corner-radius);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+    
+    .rbw-sidebar {
+      position: fixed;
+      top: 0;
+      right: 0;
+      height: 100vh;
+      width: 320px;
+      background: ${getThemeStyles(config.theme).cardBackground};
+      box-shadow: var(--shadow);
+      padding: 24px;
+      transform: translateX(100%);
+      transition: transform 0.3s ease;
+    }
+    
+    .rbw-sidebar.active {
+      transform: translateX(0);
     }
     
     .rbw-modal {
@@ -93,10 +211,142 @@
       left: 0;
       width: 100%;
       height: 100%;
-      background: rgba(0,0,0,0.6);
+      background: rgba(0,0,0,0.5);
       backdrop-filter: blur(8px);
-      display: flex;
+      display: none;
       align-items: center;
+      justify-content: center;
+      z-index: 1000000;
+    }
+    
+    .rbw-modal.active {
+      display: flex;
+    }
+    
+    .rbw-modal-content {
+      background: ${getThemeStyles(config.theme).cardBackground};
+      border-radius: var(--corner-radius);
+      max-width: 90vw;
+      max-height: 90vh;
+      overflow-y: auto;
+      box-shadow: var(--shadow);
+      animation: rbw-modal-enter 0.3s ease;
+      padding: 24px;
+    }
+    
+    .rbw-form-field {
+      margin-bottom: 16px;
+    }
+    
+    .rbw-form-field label {
+      display: block;
+      margin-bottom: 6px;
+      font-weight: 500;
+      color: #374151;
+    }
+    
+    .rbw-form-field input,
+    .rbw-form-field select {
+      width: 100%;
+      padding: 12px;
+      border: 2px solid #e5e7eb;
+      border-radius: var(--corner-radius);
+      font-size: 16px;
+      transition: all 0.2s ease;
+    }
+    
+    .rbw-form-field input:focus,
+    .rbw-form-field select:focus {
+      outline: none;
+      border-color: var(--primary-color);
+      box-shadow: 0 0 0 3px ${config.primaryColor}20;
+    }
+    
+    .rbw-button-primary {
+      background: linear-gradient(135deg, var(--primary-color), var(--accent-color));
+      color: white;
+      border: none;
+      padding: 14px 28px;
+      border-radius: var(--corner-radius);
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      width: 100%;
+      font-size: 16px;
+    }
+    
+    .rbw-button-primary:hover {
+      transform: translateY(-1px);
+      box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+    }
+    
+    .rbw-branding {
+      text-align: center;
+      margin-top: 16px;
+      padding-top: 16px;
+      border-top: 1px solid #e5e7eb;
+      font-size: 12px;
+      color: #9ca3af;
+    }
+    
+    /* Animations */
+    @keyframes rbw-fade-in {
+      from { opacity: 0; }
+      to { opacity: 1; }
+    }
+    
+    @keyframes rbw-slide-up {
+      from { transform: translateY(20px); opacity: 0; }
+      to { transform: translateY(0); opacity: 1; }
+    }
+    
+    @keyframes rbw-slide-right {
+      from { transform: translateX(-20px); opacity: 0; }
+      to { transform: translateX(0); opacity: 1; }
+    }
+    
+    @keyframes rbw-scale-in {
+      from { transform: scale(0.9); opacity: 0; }
+      to { transform: scale(1); opacity: 1; }
+    }
+    
+    @keyframes rbw-bounce-in {
+      0% { transform: scale(0.3); opacity: 0; }
+      50% { transform: scale(1.05); }
+      70% { transform: scale(0.9); }
+      100% { transform: scale(1); opacity: 1; }
+    }
+    
+    @keyframes rbw-modal-enter {
+      from { transform: scale(0.9); opacity: 0; }
+      to { transform: scale(1); opacity: 1; }
+    }
+    
+    /* Responsive design */
+    @media (max-width: 768px) {
+      .rbw-floating-button {
+        padding: 12px 20px;
+        font-size: 14px;
+      }
+      
+      .rbw-inline-card {
+        margin: 8px;
+        max-width: none;
+      }
+      
+      .rbw-sidebar {
+        width: 100vw;
+      }
+      
+      .rbw-modal-content {
+        margin: 16px;
+        max-width: calc(100vw - 32px);
+      }
+    }
+    
+    /* Custom CSS from config */
+    ${config.customCSS || ''}
+  `;
       justify-content: center;
       z-index: 1000000;
     }
@@ -248,6 +498,337 @@
     .rbw-submit:hover::before {
       left: 100%;
     }
+  `;
+
+  // Create and inject styles
+  const styleSheet = document.createElement('style');
+  styleSheet.textContent = widgetStyles;
+  document.head.appendChild(styleSheet);
+
+  // Widget creation functions
+  function createFloatingButton() {
+    const button = document.createElement('div');
+    button.className = `rbw-widget rbw-floating-button ${getAnimation(config.animation)}`;
+    
+    // Position the button
+    const positions = {
+      'bottom-right': { bottom: '20px', right: '20px' },
+      'bottom-left': { bottom: '20px', left: '20px' },
+      'top-right': { top: '20px', right: '20px' },
+      'top-left': { top: '20px', left: '20px' },
+      'center': { top: '50%', left: '50%', transform: 'translate(-50%, -50%)' }
+    };
+    
+    Object.assign(button.style, positions[config.placement] || positions['bottom-right']);
+    
+    button.innerHTML = `
+      <span style="font-size: 18px;">🍽️</span>
+      <span>${config.buttonText}</span>
+    `;
+    
+    button.addEventListener('click', openBookingModal);
+    document.body.appendChild(button);
+    return button;
+  }
+
+  function createInlineCard() {
+    const container = document.getElementById('restaurant-booking-widget');
+    if (!container) return null;
+    
+    const card = document.createElement('div');
+    card.className = `rbw-widget rbw-inline-card ${getAnimation(config.animation)}`;
+    
+    card.innerHTML = `
+      <div style="padding: 24px; text-align: center;">
+        <h3 style="color: ${config.primaryColor}; margin-bottom: 8px; font-size: 20px; font-weight: 700;">
+          ${config.headerText}
+        </h3>
+        <p style="color: #6b7280; margin-bottom: 20px; font-size: 14px;">
+          ${config.description}
+        </p>
+        
+        <div style="display: flex; flex-wrap: wrap; gap: 12px; justify-content: center; margin-bottom: 20px;">
+          <div style="display: flex; align-items: center; gap: 8px; background: #f9fafb; padding: 8px 12px; border-radius: ${getCornerRadius(config.cornerRadius)}; border: 1px solid #e5e7eb;">
+            <span>📅</span>
+            <span style="font-size: 14px; font-weight: 500;">Select Date</span>
+          </div>
+          <div style="display: flex; align-items: center; gap: 8px; background: #f9fafb; padding: 8px 12px; border-radius: ${getCornerRadius(config.cornerRadius)}; border: 1px solid #e5e7eb;">
+            <span>🕐</span>
+            <span style="font-size: 14px; font-weight: 500;">Choose Time</span>
+          </div>
+          <div style="display: flex; align-items: center; gap: 8px; background: #f9fafb; padding: 8px 12px; border-radius: ${getCornerRadius(config.cornerRadius)}; border: 1px solid #e5e7eb;">
+            <span>👥</span>
+            <span style="font-size: 14px; font-weight: 500;">Party Size</span>
+          </div>
+        </div>
+        
+        <button class="rbw-button-primary" onclick="window.restaurantBookingWidget.openBookingModal()">
+          ${config.buttonText}
+        </button>
+        
+        ${config.showBranding ? '<div class="rbw-branding">Powered by BookingSystem</div>' : ''}
+      </div>
+    `;
+    
+    container.appendChild(card);
+    return card;
+  }
+
+  function createBanner() {
+    const container = document.getElementById('restaurant-booking-widget');
+    if (!container) return null;
+    
+    const banner = document.createElement('div');
+    banner.className = `rbw-widget rbw-banner ${getAnimation(config.animation)}`;
+    
+    banner.innerHTML = `
+      <div>
+        <h4 style="color: ${config.primaryColor}; margin: 0 0 4px 0; font-size: 18px; font-weight: 700;">
+          ${config.headerText}
+        </h4>
+        <p style="color: #6b7280; margin: 0; font-size: 14px;">
+          ${config.description}
+        </p>
+      </div>
+      <button class="rbw-button-primary" style="width: auto; padding: 12px 24px;" onclick="window.restaurantBookingWidget.openBookingModal()">
+        ${config.buttonText}
+      </button>
+    `;
+    
+    container.appendChild(banner);
+    return banner;
+  }
+
+  function createSidebar() {
+    const sidebar = document.createElement('div');
+    sidebar.className = `rbw-widget rbw-sidebar ${getAnimation(config.animation)}`;
+    sidebar.id = 'rbw-sidebar';
+    
+    sidebar.innerHTML = `
+      <div style="margin-bottom: 24px;">
+        <h3 style="color: ${config.primaryColor}; margin-bottom: 8px; font-size: 18px; font-weight: 700;">
+          ${config.headerText}
+        </h3>
+        <p style="color: #6b7280; margin: 0; font-size: 14px;">
+          ${config.description}
+        </p>
+      </div>
+      
+      <div style="space-y: 12px; margin-bottom: 24px;">
+        <div class="rbw-form-field">
+          <label>📅 Select Date</label>
+          <input type="date" style="width: 100%; padding: 12px; border: 2px solid #e5e7eb; border-radius: ${getCornerRadius(config.cornerRadius)};">
+        </div>
+        <div class="rbw-form-field">
+          <label>🕐 Choose Time</label>
+          <select style="width: 100%; padding: 12px; border: 2px solid #e5e7eb; border-radius: ${getCornerRadius(config.cornerRadius)};">
+            <option>7:00 PM</option>
+            <option>7:30 PM</option>
+            <option>8:00 PM</option>
+          </select>
+        </div>
+        <div class="rbw-form-field">
+          <label>👥 Party Size</label>
+          <select style="width: 100%; padding: 12px; border: 2px solid #e5e7eb; border-radius: ${getCornerRadius(config.cornerRadius)};">
+            <option>2 guests</option>
+            <option>4 guests</option>
+            <option>6 guests</option>
+          </select>
+        </div>
+      </div>
+      
+      <button class="rbw-button-primary" onclick="window.restaurantBookingWidget.openBookingModal()">
+        ${config.buttonText}
+      </button>
+      
+      ${config.showBranding ? '<div class="rbw-branding">Powered by BookingSystem</div>' : ''}
+      
+      <button onclick="window.restaurantBookingWidget.closeSidebar()" style="position: absolute; top: 16px; right: 16px; background: none; border: none; font-size: 20px; cursor: pointer; color: #6b7280;">×</button>
+    `;
+    
+    document.body.appendChild(sidebar);
+    
+    // Add trigger button
+    const triggerButton = document.createElement('div');
+    triggerButton.className = 'rbw-floating-button';
+    triggerButton.style.cssText = `
+      position: fixed;
+      bottom: 20px;
+      right: 20px;
+      background: ${getThemeStyles(config.theme).background};
+      color: ${getThemeStyles(config.theme).color};
+      border: ${getThemeStyles(config.theme).border};
+      border-radius: ${getCornerRadius(config.cornerRadius)};
+      padding: ${getSizePadding(config.size)};
+      cursor: pointer;
+      box-shadow: ${getShadow(config.shadow)};
+    `;
+    
+    triggerButton.innerHTML = `
+      <span>📋</span>
+      <span>Reservations</span>
+    `;
+    
+    triggerButton.addEventListener('click', () => {
+      sidebar.classList.add('active');
+    });
+    
+    document.body.appendChild(triggerButton);
+    return sidebar;
+  }
+
+  function openBookingModal() {
+    const existingModal = document.getElementById('rbw-modal');
+    if (existingModal) return;
+    
+    const modal = document.createElement('div');
+    modal.className = 'rbw-modal active';
+    modal.id = 'rbw-modal';
+    
+    modal.innerHTML = `
+      <div class="rbw-modal-content">
+        <h3 style="color: ${config.primaryColor}; margin-bottom: 16px; font-size: 24px; font-weight: 700; text-align: center;">
+          ${config.headerText}
+        </h3>
+        <p style="color: #6b7280; margin-bottom: 24px; text-align: center; font-size: 14px;">
+          ${config.description}
+        </p>
+        
+        <form id="rbw-booking-form">
+          <div class="rbw-form-field">
+            <label>Full Name</label>
+            <input type="text" required placeholder="Enter your name">
+          </div>
+          <div class="rbw-form-field">
+            <label>Email</label>
+            <input type="email" required placeholder="Enter your email">
+          </div>
+          <div class="rbw-form-field">
+            <label>Phone</label>
+            <input type="tel" required placeholder="Enter your phone">
+          </div>
+          <div class="rbw-form-field">
+            <label>Date</label>
+            <input type="date" required>
+          </div>
+          <div class="rbw-form-field">
+            <label>Time</label>
+            <select required>
+              <option value="">Select time</option>
+              <option value="18:00">6:00 PM</option>
+              <option value="18:30">6:30 PM</option>
+              <option value="19:00">7:00 PM</option>
+              <option value="19:30">7:30 PM</option>
+              <option value="20:00">8:00 PM</option>
+              <option value="20:30">8:30 PM</option>
+            </select>
+          </div>
+          <div class="rbw-form-field">
+            <label>Party Size</label>
+            <select required>
+              <option value="">Select party size</option>
+              <option value="1">1 person</option>
+              <option value="2">2 people</option>
+              <option value="3">3 people</option>
+              <option value="4">4 people</option>
+              <option value="5">5 people</option>
+              <option value="6">6 people</option>
+              <option value="7">7+ people</option>
+            </select>
+          </div>
+          
+          <button type="submit" class="rbw-button-primary">
+            Complete Reservation
+          </button>
+        </form>
+        
+        ${config.showBranding ? '<div class="rbw-branding">Powered by BookingSystem</div>' : ''}
+        
+        <button onclick="window.restaurantBookingWidget.closeModal()" style="position: absolute; top: 16px; right: 16px; background: none; border: none; font-size: 24px; cursor: pointer; color: #6b7280;">×</button>
+      </div>
+    `;
+    
+    document.body.appendChild(modal);
+    
+    // Handle form submission
+    const form = document.getElementById('rbw-booking-form');
+    form.addEventListener('submit', handleBookingSubmission);
+    
+    // Close modal when clicking outside
+    modal.addEventListener('click', (e) => {
+      if (e.target === modal) {
+        closeModal();
+      }
+    });
+  }
+
+  function handleBookingSubmission(e) {
+    e.preventDefault();
+    const formData = new FormData(e.target);
+    const bookingData = Object.fromEntries(formData.entries());
+    
+    // Get tenant and restaurant IDs from URL or config
+    const urlParts = window.location.pathname.split('/');
+    const tenantId = urlParts.find((part, index) => urlParts[index - 1] === 'tenants');
+    
+    // Redirect to booking page with pre-filled data
+    const bookingUrl = `${window.location.origin}/guest-booking/${tenantId}/${restaurantId}?` + 
+      new URLSearchParams(bookingData).toString();
+    
+    window.open(bookingUrl, '_blank');
+    closeModal();
+  }
+
+  function closeModal() {
+    const modal = document.getElementById('rbw-modal');
+    if (modal) {
+      modal.remove();
+    }
+  }
+
+  function closeSidebar() {
+    const sidebar = document.getElementById('rbw-sidebar');
+    if (sidebar) {
+      sidebar.classList.remove('active');
+    }
+  }
+
+  // Initialize widget based on type
+  function initializeWidget() {
+    switch (config.type) {
+      case 'floating-button':
+        createFloatingButton();
+        break;
+      case 'inline-card':
+        createInlineCard();
+        break;
+      case 'banner':
+        createBanner();
+        break;
+      case 'sidebar':
+        createSidebar();
+        break;
+      default:
+        createFloatingButton();
+    }
+  }
+
+  // Expose functions globally for onclick handlers
+  window.restaurantBookingWidget = {
+    openBookingModal,
+    closeModal,
+    closeSidebar,
+    config
+  };
+
+  // Initialize widget when DOM is ready
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', initializeWidget);
+  } else {
+    initializeWidget();
+  }
+
+})();
     
     .rbw-submit:hover {
       transform: translateY(-2px);
