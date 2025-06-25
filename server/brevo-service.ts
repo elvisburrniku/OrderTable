@@ -1,5 +1,6 @@
 import { TransactionalEmailsApi, SendSmtpEmail } from '@getbrevo/brevo';
 import { BookingHash } from './booking-hash';
+import { systemSettings } from './system-settings';
 
 export class BrevoEmailService {
   private apiInstance: TransactionalEmailsApi | null = null;
@@ -20,11 +21,19 @@ export class BrevoEmailService {
     }
   }
 
-  private checkEnabled(): boolean {
+  private async checkEnabled(): Promise<boolean> {
     if (!this.isEnabled || !this.apiInstance) {
       console.log('Email service not enabled - skipping email notification');
       return false;
     }
+    
+    // Check system settings for email notifications
+    const emailNotificationsEnabled = await systemSettings.isFeatureEnabled('enable_email_notifications');
+    if (!emailNotificationsEnabled) {
+      console.log('Email notifications disabled in system settings');
+      return false;
+    }
+    
     return true;
   }
 

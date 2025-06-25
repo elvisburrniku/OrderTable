@@ -8,24 +8,75 @@ import { ReminderService } from "./reminder-service";
 import { AutoAssignmentService } from "./auto-assignment-service";
 import { activityCleanupService } from "./activity-cleanup-service";
 import { initializeAdminSystem } from "./init-admin";
+import { systemSettings } from "./system-settings";
 
 const app = express();
 app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
 
-// Configure session middleware with dynamic cookie settings
-app.use(session({
-  secret: process.env.SESSION_SECRET || 'your-secret-key-here',
-  resave: false,
-  saveUninitialized: false,
-  name: 'restaurant.sid',
-  cookie: {
-    secure: false, // Set to true if using HTTPS
-    httpOnly: true,
-    maxAge: 24 * 60 * 60 * 1000, // Default 24 hours, will be extended for "remember me"
-    sameSite: 'lax'
+// Configure session middleware with dynamic timeout from system settings
+const configureSessionMiddleware = async () => {
+  const sessionTimeoutHours = await systemSettings.getSetting('session_timeout_hours').catch(() => 24);
+  return session({
+    secret: process.env.SESSION_SECRET || 'your-secret-key-here',
+    resave: false,
+    saveUninitialized: false,
+    name: 'restaurant.sid',
+    cookie: {
+      secure: false, // Set to true if using HTTPS
+      httpOnly: true,
+      maxAge: sessionTimeoutHours * 60 * 60 * 1000, // Use system setting for timeout
+      sameSite: 'lax'
+    }
+  });
+};
+
+// Apply session middleware with dynamic configuration
+configureSessionMiddleware().then(sessionMiddleware => {
+  app.use(sessionMiddleware);
+}).catch(error => {
+  console.error("Error configuring session middleware:", error);
+  // Fallback to default configuration
+  app.use(session({
+    secret: process.env.SESSION_SECRET || 'your-secret-key-here',
+    resave: false,
+    saveUninitialized: false,
+    name: 'restaurant.sid',
+    cookie: {
+      secure: false,
+      httpOnly: true,
+      maxAge: 24 * 60 * 60 * 1000, // Default 24 hours
+      sameSite: 'lax'
+    }
+  }));
+});
+
+// Maintenance mode middleware
+app.use(async (req, res, next) => {
+  try {
+    // Skip maintenance check for admin routes
+    if (req.path.startsWith('/api/admin')) {
+      return next();
+    }
+
+    const isMaintenanceMode = await systemSettings.isMaintenanceMode();
+    
+    if (isMaintenanceMode) {
+      const message = await systemSettings.getSetting('maintenance_message');
+      
+      return res.status(503).json({
+        error: "Service Unavailable",
+        message: message,
+        maintenanceMode: true
+      });
+    }
+
+    next();
+  } catch (error) {
+    console.error("Error checking maintenance mode:", error);
+    next();
   }
-}));
+});
 
 app.use((req, res, next) => {
   const start = Date.now();

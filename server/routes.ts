@@ -39,6 +39,8 @@ import { feedbackReminderService } from "./feedback-reminder-service";
 import { activityLogger } from "./activity-logger";
 import { activityCleanupService } from "./activity-cleanup-service";
 import { registerAdminRoutes } from "./admin-routes";
+import { systemSettings } from "./system-settings";
+import { SystemSettingsValidator } from "./system-settings-validator";
 
 const stripe = new Stripe(
   process.env.STRIPE_SECRET_KEY || "sk_test_your_stripe_secret_key",
@@ -8593,23 +8595,22 @@ export async function registerRoutes(app: Express): Promise<Server> {
           return res.status(404).json({ message: "Restaurant not found" });
         }
 
-        // Check if Google integration is enabled for guest bookings
-        const googleConfig = await storage.getIntegrationConfiguration(
-          restaurantId,
-          "google",
-        );
-        if (!googleConfig || !googleConfig.isEnabled) {
+        // Check if guest bookings are enabled in system settings
+        const guestBookingsEnabled = await systemSettings.isFeatureEnabled('enable_guest_bookings');
+        if (!guestBookingsEnabled) {
           return res.status(403).json({
-            message:
-              "Guest bookings are currently disabled. Please contact the restaurant directly.",
+            message: "Guest bookings are currently disabled. Please contact the restaurant directly.",
           });
         }
 
-        // Validate booking data
+        // Check if phone is required based on system settings
+        const requirePhone = await systemSettings.getSetting('require_phone_for_bookings');
+        
+        // Validate booking data with dynamic phone requirement
         const bookingSchema = z.object({
           customerName: z.string().min(1, "Customer name is required"),
           customerEmail: z.string().email("Valid email is required"),
-          customerPhone: z.string().optional(),
+          customerPhone: requirePhone ? z.string().min(1, "Phone number is required") : z.string().optional(),
           guestCount: z.number().min(1, "Guest count must be at least 1"),
           bookingDate: z.string().datetime("Valid booking date is required"),
           startTime: z.string().min(1, "Start time is required"),
@@ -15319,6 +15320,12 @@ NEXT STEPS:
         return res.status(404).json({ message: "Tenant not found" });
       }
 
+      // Validate tenant restaurant limit using system settings
+      const restaurantLimitValidation = await SystemSettingsValidator.validateTenantRestaurantLimit(tenantId);
+      if (!restaurantLimitValidation.valid) {
+        return res.status(400).json({ message: restaurantLimitValidation.message });
+      }
+
       const subscriptionPlan = await storage.getSubscriptionPlanById(tenant.subscriptionPlanId);
       if (!subscriptionPlan) {
         return res.status(404).json({ message: "Subscription plan not found" });
@@ -15461,6 +15468,35 @@ NEXT STEPS:
   // Initialize feedback reminder service
   console.log("Starting feedback reminder service...");
   feedbackReminderService.start();
+
+  // System settings endpoint for frontend
+  app.get("/api/system-settings", async (req, res) => {
+    try {
+      const settings = await systemSettings.getSettings();
+      
+      // Only expose safe settings to frontend (not admin-only settings)
+      const publicSettings = {
+        system_name: settings.system_name,
+        enable_guest_bookings: settings.enable_guest_bookings,
+        require_phone_for_bookings: settings.require_phone_for_bookings,
+        max_advance_booking_days: settings.max_advance_booking_days,
+        min_advance_booking_hours: settings.min_advance_booking_hours,
+        default_booking_duration_minutes: settings.default_booking_duration_minutes,
+        enable_calendar_integration: settings.enable_calendar_integration,
+        enable_widgets: settings.enable_widgets,
+        enable_kitchen_management: settings.enable_kitchen_management,
+        enable_analytics: settings.enable_analytics,
+        default_currency: settings.default_currency,
+        maintenance_mode: settings.maintenance_mode,
+        maintenance_message: settings.maintenance_message,
+      };
+      
+      res.json(publicSettings);
+    } catch (error) {
+      console.error("Error fetching system settings:", error);
+      res.status(500).json({ message: "Internal server error" });
+    }
+  });
 
   // Register admin routes (completely separate from tenant system)
   registerAdminRoutes(app);

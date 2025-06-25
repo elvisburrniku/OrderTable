@@ -2,6 +2,7 @@ import { Request, Response } from "express";
 import { tenants, users, tenantUsers, restaurants } from "../shared/schema";
 import { eq, and } from "drizzle-orm";
 import { storage } from "./storage";
+import { systemSettings } from "./system-settings";
 
 // Get tenant information
 export async function getTenant(req: Request, res: Response) {
@@ -51,12 +52,25 @@ export async function createTenant(req: Request, res: Response) {
       return res.status(401).json({ message: "Unauthorized" });
     }
 
-    // Create the tenant
+    // Get default subscription plan from system settings
+    const defaultPlanName = await systemSettings.getSetting('default_subscription_plan');
+    const defaultPlan = await storage.getSubscriptionPlanByName(defaultPlanName);
+    const subscriptionPlanId = defaultPlan?.id || 1; // Fallback to plan ID 1 if not found
+
+    // Get trial days from system settings
+    const trialDays = await systemSettings.getSetting('max_trial_days');
+    const trialEndDate = new Date();
+    trialEndDate.setDate(trialEndDate.getDate() + trialDays);
+
+    // Create the tenant with default values from system settings
     const [newTenant] = await storage.db
       .insert(tenants)
       .values({
         name,
         slug,
+        subscriptionPlanId,
+        trialEndDate,
+        status: 'trial',
       })
       .returning();
 
