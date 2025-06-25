@@ -483,6 +483,11 @@ export class AdminStorage {
         WHERE id = ${tenantId}
       `);
       
+      // Create unpause schedule entry if end date is provided
+      if (pauseUntil) {
+        await this.createUnpauseSchedule(tenantId, pauseUntil, reason);
+      }
+      
       // Log the pause
       await this.addSystemLog({
         level: 'info',
@@ -494,6 +499,48 @@ export class AdminStorage {
     } catch (error) {
       console.error("Error pausing tenant:", error);
       throw error;
+    }
+  }
+
+  async createUnpauseSchedule(tenantId: number, unpauseDate: Date, reason?: string) {
+    try {
+      // Create a scheduled task entry
+      await db.execute(sql`
+        INSERT INTO system_logs (level, message, data, source, created_at)
+        VALUES (
+          'scheduled',
+          ${`Tenant ${tenantId} scheduled for automatic unpause`},
+          ${JSON.stringify({ 
+            tenantId, 
+            unpauseDate: unpauseDate.toISOString(),
+            reason,
+            scheduleType: 'auto_unpause',
+            status: 'pending'
+          })},
+          'scheduler',
+          NOW()
+        )
+      `);
+
+      // Get tenant info for better logging
+      const tenantInfo = await this.getTenantById(tenantId);
+      const tenantName = tenantInfo?.tenant?.name || `Tenant ${tenantId}`;
+
+      console.log(`📅 Unpause scheduled: ${tenantName} will be automatically unpaused on ${unpauseDate.toLocaleString()}`);
+      
+      // Calculate time until unpause for immediate feedback
+      const timeUntilUnpause = unpauseDate.getTime() - Date.now();
+      const hoursUntilUnpause = Math.round(timeUntilUnpause / (1000 * 60 * 60));
+      
+      if (hoursUntilUnpause > 0) {
+        console.log(`⏱️  Time until automatic unpause: ${hoursUntilUnpause} hours`);
+      } else {
+        console.log(`⚠️  Unpause date is in the past - tenant will be unpaused on next check cycle`);
+      }
+
+    } catch (error) {
+      console.error("Error creating unpause schedule:", error);
+      // Don't throw here to avoid breaking the pause operation
     }
   }
 
@@ -521,20 +568,41 @@ export class AdminStorage {
             WHERE id = ${tenant.id}
           `);
 
+          // Update the scheduled task status
+          await db.execute(sql`
+            UPDATE system_logs 
+            SET 
+              level = 'completed',
+              message = ${`Tenant ${tenant.id} (${tenant.name}) automatically unpaused - schedule completed`},
+              data = ${JSON.stringify({ 
+                tenantId: tenant.id, 
+                pauseEndDate: tenant.pause_end_date,
+                previousReason: tenant.pause_reason,
+                scheduleType: 'auto_unpause',
+                status: 'completed',
+                completedAt: new Date().toISOString()
+              })}
+            WHERE source = 'scheduler' 
+              AND data LIKE ${`%"tenantId":${tenant.id}%`}
+              AND data LIKE '%"scheduleType":"auto_unpause"%'
+              AND level = 'scheduled'
+          `);
+
           // Log the automatic unpause
           await this.addSystemLog({
             level: 'info',
-            message: `Tenant ${tenant.id} (${tenant.name}) automatically unpaused after pause period expired`,
+            message: `🎉 Tenant ${tenant.id} (${tenant.name}) automatically unpaused after pause period expired`,
             data: JSON.stringify({ 
               tenantId: tenant.id, 
               pauseEndDate: tenant.pause_end_date,
-              previousReason: tenant.pause_reason 
+              previousReason: tenant.pause_reason,
+              unpausedAt: new Date().toISOString()
             }),
             source: 'system_automation',
             adminUserId: null,
           });
 
-          console.log(`Automatically unpaused tenant ${tenant.id} (${tenant.name})`);
+          console.log(`🎉 Automatically unpaused tenant ${tenant.id} (${tenant.name}) - schedule completed`);
         } catch (error) {
           console.error(`Error auto-unpausing tenant ${tenant.id}:`, error);
         }
@@ -544,6 +612,45 @@ export class AdminStorage {
     } catch (error) {
       console.error("Error checking for expired paused tenants:", error);
       return 0;
+    }
+  }
+
+  async getUpcomingUnpauseSchedules() {
+    try {
+      // Get all pending unpause schedules
+      const upcomingSchedules = await db.execute(sql`
+        SELECT 
+          t.id as tenant_id,
+          t.name as tenant_name,
+          t.pause_start_date,
+          t.pause_end_date,
+          t.pause_reason,
+          sl.created_at as scheduled_at,
+          sl.data as schedule_data
+        FROM tenants t
+        LEFT JOIN system_logs sl ON sl.data LIKE CONCAT('%"tenantId":', t.id, '%')
+          AND sl.source = 'scheduler' 
+          AND sl.level = 'scheduled'
+          AND sl.data LIKE '%"scheduleType":"auto_unpause"%'
+        WHERE t.subscription_status = 'paused' 
+          AND t.pause_end_date IS NOT NULL 
+          AND t.pause_end_date > NOW()
+        ORDER BY t.pause_end_date ASC
+      `);
+
+      return upcomingSchedules.rows.map(schedule => ({
+        tenantId: schedule.tenant_id,
+        tenantName: schedule.tenant_name,
+        pauseStartDate: schedule.pause_start_date,
+        pauseEndDate: schedule.pause_end_date,
+        pauseReason: schedule.pause_reason,
+        scheduledAt: schedule.scheduled_at,
+        timeUntilUnpause: Math.max(0, new Date(schedule.pause_end_date).getTime() - Date.now()),
+        hoursUntilUnpause: Math.max(0, Math.round((new Date(schedule.pause_end_date).getTime() - Date.now()) / (1000 * 60 * 60)))
+      }));
+    } catch (error) {
+      console.error("Error getting upcoming unpause schedules:", error);
+      return [];
     }
   }
 

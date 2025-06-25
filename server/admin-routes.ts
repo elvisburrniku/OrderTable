@@ -322,6 +322,21 @@ export function registerAdminRoutes(app: Express) {
     }
   });
 
+  // Get upcoming unpause schedules
+  app.get("/api/admin/schedules/unpause", requireAdminAuth, async (req: Request, res: Response) => {
+    try {
+      const upcomingSchedules = await adminStorage.getUpcomingUnpauseSchedules();
+      res.json({
+        schedules: upcomingSchedules,
+        count: upcomingSchedules.length,
+        nextUnpause: upcomingSchedules.length > 0 ? upcomingSchedules[0] : null
+      });
+    } catch (error) {
+      console.error("Get unpause schedules error:", error);
+      res.status(500).json({ message: "Failed to fetch unpause schedules" });
+    }
+  });
+
   app.put("/api/admin/tenants/:id/subscription", requireAdminAuth, async (req: Request, res: Response) => {
     try {
       const tenantId = parseInt(req.params.id);

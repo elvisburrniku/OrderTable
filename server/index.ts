@@ -128,11 +128,32 @@ app.use((req, res, next) => {
     
     // Start scheduled task to check for expired pauses every 5 minutes
     const adminStorage = new AdminStorage();
+    
+    // Display current upcoming schedules on startup
+    const upcomingSchedules = await adminStorage.getUpcomingUnpauseSchedules();
+    if (upcomingSchedules.length > 0) {
+      console.log(`📅 Unpause scheduler initialized with ${upcomingSchedules.length} pending schedules:`);
+      upcomingSchedules.forEach(schedule => {
+        console.log(`   • ${schedule.tenantName} → ${new Date(schedule.pauseEndDate).toLocaleString()} (${schedule.hoursUntilUnpause}h remaining)`);
+      });
+    } else {
+      console.log('📅 Unpause scheduler initialized - no pending schedules');
+    }
+    
     setInterval(async () => {
       try {
         const unpaused = await adminStorage.checkAndUnpauseExpiredTenants();
         if (unpaused > 0) {
           console.log(`Automatically unpaused ${unpaused} tenant(s) with expired pause periods`);
+          
+          // Show remaining schedules after unpause
+          const remainingSchedules = await adminStorage.getUpcomingUnpauseSchedules();
+          if (remainingSchedules.length > 0) {
+            console.log(`📅 Remaining schedules: ${remainingSchedules.length}`);
+            remainingSchedules.slice(0, 3).forEach(schedule => {
+              console.log(`   • ${schedule.tenantName} → ${new Date(schedule.pauseEndDate).toLocaleString()}`);
+            });
+          }
         }
       } catch (error) {
         console.error('Error in automatic unpause check:', error);
