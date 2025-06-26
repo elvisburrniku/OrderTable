@@ -4,11 +4,37 @@ import { queryClient, apiRequest } from "@/lib/queryClient";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
-import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
+import {
+  Form,
+  FormControl,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+} from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
 import { useToast } from "@/hooks/use-toast";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -61,7 +87,9 @@ interface TenantUsersManagementProps {
   tenantId: number;
 }
 
-export default function TenantUsersManagement({ tenantId }: TenantUsersManagementProps) {
+export default function TenantUsersManagement({
+  tenantId,
+}: TenantUsersManagementProps) {
   const { toast } = useToast();
   const [editingUser, setEditingUser] = useState<TenantUser | null>(null);
   const [inviteDialogOpen, setInviteDialogOpen] = useState(false);
@@ -74,7 +102,11 @@ export default function TenantUsersManagement({ tenantId }: TenantUsersManagemen
   });
 
   // Fetch available roles
-  const { data: roles, isLoading: rolesLoading, error: rolesError } = useQuery<Role[]>({
+  const {
+    data: roles,
+    isLoading: rolesLoading,
+    error: rolesError,
+  } = useQuery<Role[]>({
     queryKey: [`/api/tenants/${tenantId}/roles`],
     enabled: !!tenantId,
   });
@@ -85,7 +117,7 @@ export default function TenantUsersManagement({ tenantId }: TenantUsersManagemen
     rolesLoading,
     rolesError,
     roles,
-    rolesLength: roles?.length
+    rolesLength: roles?.length,
   });
 
   // Form setup
@@ -110,7 +142,11 @@ export default function TenantUsersManagement({ tenantId }: TenantUsersManagemen
   // Mutations
   const inviteUserMutation = useMutation({
     mutationFn: async (data: InviteUserForm) => {
-      return await apiRequest("POST", `/api/tenants/${tenantId}/users/invite`, data);
+      return await apiRequest(
+        "POST",
+        `/api/tenants/${tenantId}/users/invite`,
+        data,
+      );
     },
     onSuccess: () => {
       toast({
@@ -119,7 +155,9 @@ export default function TenantUsersManagement({ tenantId }: TenantUsersManagemen
       });
       inviteForm.reset();
       setInviteDialogOpen(false);
-      queryClient.invalidateQueries({ queryKey: [`/api/tenants/${tenantId}/users`] });
+      queryClient.invalidateQueries({
+        queryKey: [`/api/tenants/${tenantId}/users`],
+      });
     },
     onError: (error: Error) => {
       toast({
@@ -133,7 +171,11 @@ export default function TenantUsersManagement({ tenantId }: TenantUsersManagemen
   const updateUserMutation = useMutation({
     mutationFn: async (data: UpdateUserForm & { userId: number }) => {
       const { userId, ...updateData } = data;
-      return await apiRequest("PUT", `/api/tenants/${tenantId}/users/${userId}`, updateData);
+      return await apiRequest(
+        "PUT",
+        `/api/tenants/${tenantId}/users/${userId}`,
+        updateData,
+      );
     },
     onSuccess: () => {
       toast({
@@ -143,7 +185,9 @@ export default function TenantUsersManagement({ tenantId }: TenantUsersManagemen
       updateForm.reset();
       setEditDialogOpen(false);
       setEditingUser(null);
-      queryClient.invalidateQueries({ queryKey: [`/api/tenants/${tenantId}/users`] });
+      queryClient.invalidateQueries({
+        queryKey: [`/api/tenants/${tenantId}/users`],
+      });
     },
     onError: (error: Error) => {
       toast({
@@ -156,14 +200,19 @@ export default function TenantUsersManagement({ tenantId }: TenantUsersManagemen
 
   const removeUserMutation = useMutation({
     mutationFn: async (userId: number) => {
-      return await apiRequest("DELETE", `/api/tenants/${tenantId}/users/${userId}`);
+      return await apiRequest(
+        "DELETE",
+        `/api/tenants/${tenantId}/users/${userId}`,
+      );
     },
     onSuccess: () => {
       toast({
         title: "User Removed",
         description: "User has been successfully removed from the team.",
       });
-      queryClient.invalidateQueries({ queryKey: [`/api/tenants/${tenantId}/users`] });
+      queryClient.invalidateQueries({
+        queryKey: [`/api/tenants/${tenantId}/users`],
+      });
     },
     onError: (error: Error) => {
       toast({
@@ -201,7 +250,7 @@ export default function TenantUsersManagement({ tenantId }: TenantUsersManagemen
   };
 
   const getRoleDisplayName = (roleName: string) => {
-    const role = roles?.find(r => r.name === roleName);
+    const role = roles?.find((r) => r.name === roleName);
     return role?.displayName || roleName;
   };
 
@@ -235,7 +284,7 @@ export default function TenantUsersManagement({ tenantId }: TenantUsersManagemen
             <CardTitle>Team Members</CardTitle>
           </div>
           <div className="flex items-center space-x-2">
-            <Link href={`/${tenantId}/guard-management`}>
+            <Link href={`/${tenantId}/role-permissions`}>
               <Button variant="outline" size="sm">
                 <Settings className="h-4 w-4 mr-2" />
                 Guard Management
@@ -248,74 +297,89 @@ export default function TenantUsersManagement({ tenantId }: TenantUsersManagemen
                   Invite User
                 </Button>
               </DialogTrigger>
-            <DialogContent>
-              <DialogHeader>
-                <DialogTitle>Invite New Team Member</DialogTitle>
-              </DialogHeader>
-              <Form {...inviteForm}>
-                <form onSubmit={inviteForm.handleSubmit(handleInviteUser)} className="space-y-4">
-                  <FormField
-                    control={inviteForm.control}
-                    name="email"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Email</FormLabel>
-                        <FormControl>
-                          <Input placeholder="user@example.com" {...field} />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                  <FormField
-                    control={inviteForm.control}
-                    name="name"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Full Name</FormLabel>
-                        <FormControl>
-                          <Input placeholder="John Doe" {...field} />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                  <FormField
-                    control={inviteForm.control}
-                    name="role"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Role</FormLabel>
-                        <Select onValueChange={field.onChange} defaultValue={field.value}>
+              <DialogContent>
+                <DialogHeader>
+                  <DialogTitle>Invite New Team Member</DialogTitle>
+                </DialogHeader>
+                <Form {...inviteForm}>
+                  <form
+                    onSubmit={inviteForm.handleSubmit(handleInviteUser)}
+                    className="space-y-4"
+                  >
+                    <FormField
+                      control={inviteForm.control}
+                      name="email"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Email</FormLabel>
                           <FormControl>
-                            <SelectTrigger>
-                              <SelectValue placeholder="Select a role" />
-                            </SelectTrigger>
+                            <Input placeholder="user@example.com" {...field} />
                           </FormControl>
-                          <SelectContent>
-                            {roles?.map((role) => (
-                              <SelectItem key={role.id} value={role.name}>
-                                {role.displayName}
-                              </SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                  <div className="flex justify-end space-x-2">
-                    <Button type="button" variant="outline" onClick={() => setInviteDialogOpen(false)}>
-                      Cancel
-                    </Button>
-                    <Button type="submit" disabled={inviteUserMutation.isPending}>
-                      {inviteUserMutation.isPending ? "Inviting..." : "Send Invitation"}
-                    </Button>
-                  </div>
-                </form>
-              </Form>
-            </DialogContent>
-          </Dialog>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                    <FormField
+                      control={inviteForm.control}
+                      name="name"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Full Name</FormLabel>
+                          <FormControl>
+                            <Input placeholder="John Doe" {...field} />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                    <FormField
+                      control={inviteForm.control}
+                      name="role"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Role</FormLabel>
+                          <Select
+                            onValueChange={field.onChange}
+                            defaultValue={field.value}
+                          >
+                            <FormControl>
+                              <SelectTrigger>
+                                <SelectValue placeholder="Select a role" />
+                              </SelectTrigger>
+                            </FormControl>
+                            <SelectContent>
+                              {roles?.map((role) => (
+                                <SelectItem key={role.id} value={role.name}>
+                                  {role.displayName}
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                    <div className="flex justify-end space-x-2">
+                      <Button
+                        type="button"
+                        variant="outline"
+                        onClick={() => setInviteDialogOpen(false)}
+                      >
+                        Cancel
+                      </Button>
+                      <Button
+                        type="submit"
+                        disabled={inviteUserMutation.isPending}
+                      >
+                        {inviteUserMutation.isPending
+                          ? "Inviting..."
+                          : "Send Invitation"}
+                      </Button>
+                    </div>
+                  </form>
+                </Form>
+              </DialogContent>
+            </Dialog>
           </div>
         </CardHeader>
         <CardContent>
@@ -334,14 +398,18 @@ export default function TenantUsersManagement({ tenantId }: TenantUsersManagemen
               <TableBody>
                 {users.map((user) => (
                   <TableRow key={user.userId}>
-                    <TableCell className="font-medium">{user.user.name}</TableCell>
+                    <TableCell className="font-medium">
+                      {user.user.name}
+                    </TableCell>
                     <TableCell>{user.user.email}</TableCell>
                     <TableCell>
                       <Badge variant={getRoleBadgeVariant(user.role)}>
                         {getRoleDisplayName(user.role)}
                       </Badge>
                     </TableCell>
-                    <TableCell>{new Date(user.createdAt).toLocaleDateString()}</TableCell>
+                    <TableCell>
+                      {new Date(user.createdAt).toLocaleDateString()}
+                    </TableCell>
                     <TableCell>
                       {user.user.ssoProvider ? (
                         <Badge variant="outline">{user.user.ssoProvider}</Badge>
@@ -375,7 +443,9 @@ export default function TenantUsersManagement({ tenantId }: TenantUsersManagemen
           ) : (
             <div className="text-center py-8">
               <Users className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
-              <h3 className="text-lg font-semibold mb-2">No team members yet</h3>
+              <h3 className="text-lg font-semibold mb-2">
+                No team members yet
+              </h3>
               <p className="text-muted-foreground mb-4">
                 Start building your team by inviting new members.
               </p>
@@ -395,7 +465,10 @@ export default function TenantUsersManagement({ tenantId }: TenantUsersManagemen
             <DialogTitle>Edit Team Member</DialogTitle>
           </DialogHeader>
           <Form {...updateForm}>
-            <form onSubmit={updateForm.handleSubmit(handleUpdateUser)} className="space-y-4">
+            <form
+              onSubmit={updateForm.handleSubmit(handleUpdateUser)}
+              className="space-y-4"
+            >
               <FormField
                 control={updateForm.control}
                 name="name"
@@ -447,7 +520,11 @@ export default function TenantUsersManagement({ tenantId }: TenantUsersManagemen
                 )}
               />
               <div className="flex justify-end space-x-2">
-                <Button type="button" variant="outline" onClick={() => setEditDialogOpen(false)}>
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => setEditDialogOpen(false)}
+                >
                   Cancel
                 </Button>
                 <Button type="submit" disabled={updateUserMutation.isPending}>
@@ -473,7 +550,10 @@ export default function TenantUsersManagement({ tenantId }: TenantUsersManagemen
               {roles.map((role) => (
                 <div key={role.id} className="border rounded-lg p-4">
                   <h4 className="font-semibold mb-2">{role.displayName}</h4>
-                  <Badge variant={role.isSystem ? "default" : "secondary"} className="mb-2">
+                  <Badge
+                    variant={role.isSystem ? "default" : "secondary"}
+                    className="mb-2"
+                  >
                     {role.isSystem ? "System Role" : "Custom Role"}
                   </Badge>
                   <p className="text-sm text-muted-foreground">
