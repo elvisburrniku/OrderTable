@@ -28,7 +28,7 @@ import { BrevoEmailService } from "./brevo-service";
 import { BookingHash } from "./booking-hash";
 import { QRCodeService } from "./qr-service";
 import { WebhookService } from "./webhook-service";
-import { requirePermission, requireAnyPermission, PERMISSIONS, getUserPermissions } from "./permissions-middleware";
+import { requirePermission, requireAnyPermission, PERMISSIONS, getUserPermissions, getUserRole, getRoleRedirect } from "./permissions-middleware";
 import { MetaIntegrationService } from "./meta-service";
 import { metaInstallService } from "./meta-install-service";
 import { setupSSO } from "./sso-auth";
@@ -658,6 +658,32 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error("Logout error:", error);
       res.status(500).json({ message: "Logout failed" });
+    }
+  });
+
+  // Get current user permissions and role info
+  app.get("/api/user/permissions", async (req, res) => {
+    try {
+      const sessionUser = (req as any).session?.user;
+      const sessionTenant = (req as any).session?.tenant;
+
+      if (!sessionUser || !sessionTenant) {
+        return res.status(401).json({ error: "Authentication required" });
+      }
+
+      // Get user role and permissions
+      const userRole = await getUserRole(sessionUser.id, sessionTenant.id);
+      const permissions = await getUserPermissions(sessionUser.id, sessionTenant.id);
+      const defaultRedirect = getRoleRedirect(userRole || "agent");
+
+      res.json({
+        permissions,
+        role: userRole || "agent",
+        redirect: defaultRedirect
+      });
+    } catch (error) {
+      console.error("Error getting user permissions:", error);
+      res.status(500).json({ error: "Internal server error" });
     }
   });
 

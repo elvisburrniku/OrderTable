@@ -8,7 +8,15 @@ import bcrypt from "bcrypt";
 import { z } from "zod";
 import crypto from "crypto";
 import { BrevoEmailService } from "./brevo-service";
-import { requirePermission, PERMISSIONS } from "./permissions-middleware";
+import { 
+  requirePermission, 
+  PERMISSIONS, 
+  ROLE_PERMISSIONS, 
+  ROLE_REDIRECTS,
+  getAllPermissions,
+  updateRolePermissions,
+  updateRoleRedirect 
+} from "./permissions-middleware";
 
 // User invitation schema
 const inviteUserSchema = z.object({
@@ -625,6 +633,55 @@ export async function removeUserFromTenant(req: Request, res: Response) {
   }
 }
 
+// Get role permissions
+export async function getRolePermissions(req: Request, res: Response) {
+  try {
+    const roles = Object.keys(ROLE_PERMISSIONS);
+    const rolePermissions = Object.entries(ROLE_PERMISSIONS).map(([role, permissions]) => ({
+      role,
+      permissions,
+      redirect: ROLE_REDIRECTS[role as keyof typeof ROLE_REDIRECTS] || "dashboard"
+    }));
+
+    const availablePermissions = getAllPermissions();
+
+    res.json({
+      roles: rolePermissions,
+      availablePermissions
+    });
+  } catch (error) {
+    console.error("Error getting role permissions:", error);
+    res.status(500).json({ message: "Internal server error" });
+  }
+}
+
+// Update role permissions
+export async function updateRolePermissionsEndpoint(req: Request, res: Response) {
+  try {
+    const { role, permissions, redirect } = req.body;
+
+    if (!role || !permissions) {
+      return res.status(400).json({ message: "Role and permissions are required" });
+    }
+
+    // Update permissions
+    const permissionsUpdated = updateRolePermissions(role, permissions);
+    if (!permissionsUpdated) {
+      return res.status(400).json({ message: "Invalid role or cannot update owner permissions" });
+    }
+
+    // Update redirect if provided
+    if (redirect) {
+      updateRoleRedirect(role, redirect);
+    }
+
+    res.json({ message: "Role permissions updated successfully" });
+  } catch (error) {
+    console.error("Error updating role permissions:", error);
+    res.status(500).json({ message: "Internal server error" });
+  }
+}
+
 // Setup function to register all tenant routes
 export function setupTenantRoutes(app: any) {
   app.get("/api/tenant/:tenantId", getTenant);
@@ -632,4 +689,8 @@ export function setupTenantRoutes(app: any) {
   app.put("/api/tenant/:tenantId", updateTenant);
   app.post("/api/tenant/:tenantId/invite", inviteUserToTenant);
   app.delete("/api/tenant/:tenantId/users/:userId", removeUserFromTenant);
+  
+  // Role permissions management (owner only)
+  app.get("/api/tenants/:tenantId/role-permissions", requirePermission(PERMISSIONS.MANAGE_USERS), getRolePermissions);
+  app.put("/api/tenants/:tenantId/role-permissions", requirePermission(PERMISSIONS.MANAGE_USERS), updateRolePermissionsEndpoint);
 }

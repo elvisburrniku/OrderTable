@@ -13,7 +13,8 @@ import { useToast } from "@/hooks/use-toast";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
-import { Users, UserPlus, Edit, Trash2, Shield } from "lucide-react";
+import { Users, UserPlus, Edit, Trash2, Shield, Settings } from "lucide-react";
+import { Link } from "wouter";
 
 // Types for tenant user management
 interface TenantUser {
@@ -233,13 +234,20 @@ export default function TenantUsersManagement({ tenantId }: TenantUsersManagemen
             <Users className="h-5 w-5" />
             <CardTitle>Team Members</CardTitle>
           </div>
-          <Dialog open={inviteDialogOpen} onOpenChange={setInviteDialogOpen}>
-            <DialogTrigger asChild>
-              <Button>
-                <UserPlus className="h-4 w-4 mr-2" />
-                Invite User
+          <div className="flex items-center space-x-2">
+            <Link href={`/${tenantId}/role-permissions`}>
+              <Button variant="outline" size="sm">
+                <Settings className="h-4 w-4 mr-2" />
+                Role Permissions
               </Button>
-            </DialogTrigger>
+            </Link>
+            <Dialog open={inviteDialogOpen} onOpenChange={setInviteDialogOpen}>
+              <DialogTrigger asChild>
+                <Button>
+                  <UserPlus className="h-4 w-4 mr-2" />
+                  Invite User
+                </Button>
+              </DialogTrigger>
             <DialogContent>
               <DialogHeader>
                 <DialogTitle>Invite New Team Member</DialogTitle>
@@ -308,6 +316,7 @@ export default function TenantUsersManagement({ tenantId }: TenantUsersManagemen
               </Form>
             </DialogContent>
           </Dialog>
+          </div>
         </CardHeader>
         <CardContent>
           {users && users.length > 0 ? (

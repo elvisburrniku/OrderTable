@@ -91,9 +91,11 @@ import CountdownDemoPage from "./pages/countdown-demo";
 import { SetupGuard } from "./components/setup-guard";
 import { OverduePaymentGuard } from "./components/overdue-payment-guard";
 import ErrorBoundary from "./components/error-boundary";
+import { AutoPermissionGuard } from "./components/permission-guard";
 import { AdminPanel } from "./pages/admin/admin-panel";
 import TenantUsersManagement from "./pages/tenant-users-management";
 import AcceptInvitation from "./pages/accept-invitation";
+import RolePermissions from "./pages/role-permissions";
 
 function App() {
   return (
@@ -148,7 +150,8 @@ function App() {
             <Route path="/setup" component={SetupWizard} />
             <SetupGuard>
               <OverduePaymentGuard>
-                <Route path="/:tenantId/dashboard" component={Dashboard} />
+                <AutoPermissionGuard>
+                  <Route path="/:tenantId/dashboard" component={Dashboard} />
                 <Route path="/:tenantId/bookings" component={Bookings} />
                 <Route path="/:tenantId/calendar" component={Calendar} />
                 <Route path="/:tenantId/heat-map" component={HeatMap} />
@@ -178,6 +181,7 @@ function App() {
                 <Route path="/:tenantId/users">
                   {(params) => <TenantUsersManagement tenantId={parseInt(params.tenantId || "1")} />}
                 </Route>
+                <Route path="/:tenantId/role-permissions" component={RolePermissions} />
                 <Route path="/:tenantId/email-notifications" component={EmailNotifications} />
                 <Route path="/:tenantId/sms-notifications" component={SmsNotifications} />
                 <Route path="/:tenantId/feedback" component={FeedbackResponses} />
@@ -214,6 +218,7 @@ function App() {
                 <Route path="/:tenantId/email-test" component={EmailTest} />
                 <Route path="/:tenantId/test-tools" component={TestTools} />
                 <Route path="/:tenantId/feedbacks" component={FeedbackResponses} />
+                </AutoPermissionGuard>
               </OverduePaymentGuard>
             </SetupGuard>
             

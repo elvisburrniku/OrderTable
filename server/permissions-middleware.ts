@@ -3,6 +3,20 @@ import { storage } from "./storage";
 
 // Define role-based permissions
 export const PERMISSIONS = {
+  // Page-level permissions
+  ACCESS_DASHBOARD: "access_dashboard",
+  ACCESS_BOOKINGS: "access_bookings",
+  ACCESS_CUSTOMERS: "access_customers",
+  ACCESS_MENU: "access_menu",
+  ACCESS_TABLES: "access_tables",
+  ACCESS_KITCHEN: "access_kitchen",
+  ACCESS_USERS: "access_users",
+  ACCESS_BILLING: "access_billing",
+  ACCESS_REPORTS: "access_reports",
+  ACCESS_NOTIFICATIONS: "access_notifications",
+  ACCESS_INTEGRATIONS: "access_integrations",
+  ACCESS_SETTINGS: "access_settings",
+  
   // Booking management
   VIEW_BOOKINGS: "view_bookings",
   CREATE_BOOKINGS: "create_bookings", 
@@ -53,6 +67,16 @@ export const PERMISSIONS = {
 export const ROLE_PERMISSIONS = {
   owner: Object.values(PERMISSIONS), // Owners have all permissions
   manager: [
+    PERMISSIONS.ACCESS_DASHBOARD,
+    PERMISSIONS.ACCESS_BOOKINGS,
+    PERMISSIONS.ACCESS_CUSTOMERS,
+    PERMISSIONS.ACCESS_MENU,
+    PERMISSIONS.ACCESS_TABLES,
+    PERMISSIONS.ACCESS_KITCHEN,
+    PERMISSIONS.ACCESS_REPORTS,
+    PERMISSIONS.ACCESS_NOTIFICATIONS,
+    PERMISSIONS.ACCESS_INTEGRATIONS,
+    PERMISSIONS.ACCESS_SETTINGS,
     PERMISSIONS.VIEW_BOOKINGS,
     PERMISSIONS.CREATE_BOOKINGS,
     PERMISSIONS.EDIT_BOOKINGS,
@@ -73,6 +97,12 @@ export const ROLE_PERMISSIONS = {
     PERMISSIONS.VIEW_INTEGRATIONS,
   ],
   agent: [
+    PERMISSIONS.ACCESS_DASHBOARD,
+    PERMISSIONS.ACCESS_BOOKINGS,
+    PERMISSIONS.ACCESS_CUSTOMERS,
+    PERMISSIONS.ACCESS_MENU,
+    PERMISSIONS.ACCESS_TABLES,
+    PERMISSIONS.ACCESS_REPORTS,
     PERMISSIONS.VIEW_BOOKINGS,
     PERMISSIONS.CREATE_BOOKINGS,
     PERMISSIONS.EDIT_BOOKINGS,
@@ -83,6 +113,8 @@ export const ROLE_PERMISSIONS = {
     PERMISSIONS.VIEW_REPORTS,
   ],
   kitchen_staff: [
+    PERMISSIONS.ACCESS_KITCHEN,
+    PERMISSIONS.ACCESS_MENU,
     PERMISSIONS.VIEW_KITCHEN,
     PERMISSIONS.MANAGE_KITCHEN,
     PERMISSIONS.VIEW_BOOKINGS,
@@ -90,8 +122,16 @@ export const ROLE_PERMISSIONS = {
   ],
 } as const;
 
+// Define default redirect paths for each role
+export const ROLE_REDIRECTS = {
+  owner: "dashboard",
+  manager: "dashboard", 
+  agent: "bookings",
+  kitchen_staff: "kitchen",
+} as const;
+
 // Get user role from session or tenant_users table
-async function getUserRole(userId: number, tenantId: number): Promise<string | null> {
+export async function getUserRole(userId: number, tenantId: number): Promise<string | null> {
   try {
     // Check if user is the restaurant owner
     const restaurant = await storage.getRestaurantByUserId(userId);
@@ -200,4 +240,80 @@ export async function getUserPermissions(userId: number, tenantId: number): Prom
   if (!userRole) return [];
   
   return getPermissionsForRole(userRole);
+}
+
+// Get role's default redirect URL
+export function getRoleRedirect(role: string): string {
+  return ROLE_REDIRECTS[role as keyof typeof ROLE_REDIRECTS] || "dashboard";
+}
+
+// Update role permissions (for admin management)
+export function updateRolePermissions(role: string, permissions: string[]): boolean {
+  if (!(role in ROLE_PERMISSIONS)) {
+    return false;
+  }
+  
+  // For safety, owners always keep all permissions
+  if (role === 'owner') {
+    return false;
+  }
+  
+  // Update the role permissions
+  (ROLE_PERMISSIONS as any)[role] = permissions;
+  return true;
+}
+
+// Update role redirect
+export function updateRoleRedirect(role: string, redirectPath: string): boolean {
+  if (!(role in ROLE_REDIRECTS)) {
+    return false;
+  }
+  
+  (ROLE_REDIRECTS as any)[role] = redirectPath;
+  return true;
+}
+
+// Get all available permissions grouped by category
+export function getAllPermissions() {
+  return {
+    pageAccess: [
+      { key: PERMISSIONS.ACCESS_DASHBOARD, label: "Dashboard" },
+      { key: PERMISSIONS.ACCESS_BOOKINGS, label: "Bookings" },
+      { key: PERMISSIONS.ACCESS_CUSTOMERS, label: "Customers" },
+      { key: PERMISSIONS.ACCESS_MENU, label: "Menu" },
+      { key: PERMISSIONS.ACCESS_TABLES, label: "Tables" },
+      { key: PERMISSIONS.ACCESS_KITCHEN, label: "Kitchen" },
+      { key: PERMISSIONS.ACCESS_USERS, label: "Users" },
+      { key: PERMISSIONS.ACCESS_BILLING, label: "Billing" },
+      { key: PERMISSIONS.ACCESS_REPORTS, label: "Reports" },
+      { key: PERMISSIONS.ACCESS_NOTIFICATIONS, label: "Notifications" },
+      { key: PERMISSIONS.ACCESS_INTEGRATIONS, label: "Integrations" },
+      { key: PERMISSIONS.ACCESS_SETTINGS, label: "Settings" },
+    ],
+    features: [
+      { key: PERMISSIONS.VIEW_BOOKINGS, label: "View Bookings" },
+      { key: PERMISSIONS.CREATE_BOOKINGS, label: "Create Bookings" },
+      { key: PERMISSIONS.EDIT_BOOKINGS, label: "Edit Bookings" },
+      { key: PERMISSIONS.DELETE_BOOKINGS, label: "Delete Bookings" },
+      { key: PERMISSIONS.VIEW_CUSTOMERS, label: "View Customers" },
+      { key: PERMISSIONS.EDIT_CUSTOMERS, label: "Edit Customers" },
+      { key: PERMISSIONS.VIEW_SETTINGS, label: "View Settings" },
+      { key: PERMISSIONS.EDIT_SETTINGS, label: "Edit Settings" },
+      { key: PERMISSIONS.VIEW_MENU, label: "View Menu" },
+      { key: PERMISSIONS.EDIT_MENU, label: "Edit Menu" },
+      { key: PERMISSIONS.VIEW_TABLES, label: "View Tables" },
+      { key: PERMISSIONS.EDIT_TABLES, label: "Edit Tables" },
+      { key: PERMISSIONS.VIEW_KITCHEN, label: "View Kitchen" },
+      { key: PERMISSIONS.MANAGE_KITCHEN, label: "Manage Kitchen" },
+      { key: PERMISSIONS.VIEW_USERS, label: "View Users" },
+      { key: PERMISSIONS.MANAGE_USERS, label: "Manage Users" },
+      { key: PERMISSIONS.VIEW_BILLING, label: "View Billing" },
+      { key: PERMISSIONS.MANAGE_BILLING, label: "Manage Billing" },
+      { key: PERMISSIONS.VIEW_REPORTS, label: "View Reports" },
+      { key: PERMISSIONS.VIEW_NOTIFICATIONS, label: "View Notifications" },
+      { key: PERMISSIONS.MANAGE_NOTIFICATIONS, label: "Manage Notifications" },
+      { key: PERMISSIONS.VIEW_INTEGRATIONS, label: "View Integrations" },
+      { key: PERMISSIONS.MANAGE_INTEGRATIONS, label: "Manage Integrations" },
+    ]
+  };
 }
