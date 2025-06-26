@@ -130,7 +130,7 @@ export function usePermissions() {
 // Auto permission guard based on current route
 export function AutoPermissionGuard({ children }: { children: React.ReactNode }) {
   const [location] = useLocation();
-  const { getUserRole } = usePermissions();
+  const { getUserRole, isLoading } = usePermissions();
   
   // Extract the page name from the current route
   const getPageFromRoute = (path: string): string => {
@@ -146,16 +146,30 @@ export function AutoPermissionGuard({ children }: { children: React.ReactNode })
   const requiredPermission = PAGE_PERMISSION_MAP[currentPage];
   const userRole = getUserRole();
 
+  console.log("AutoPermissionGuard:", { currentPage, requiredPermission, userRole, isLoading });
+
+  // Wait for user data to load
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center h-64">
+        <div className="animate-spin w-8 h-8 border-4 border-primary border-t-transparent rounded-full" />
+      </div>
+    );
+  }
+
   // If user is owner, allow access to all pages (subscription limits will be checked on the backend)
   if (userRole === 'owner') {
+    console.log("Owner access granted");
     return <>{children}</>;
   }
 
   // If no specific permission is required for this page, allow access
   if (!requiredPermission) {
+    console.log("No permission required, allowing access");
     return <>{children}</>;
   }
 
+  console.log("Using PermissionGuard for:", requiredPermission);
   return (
     <PermissionGuard requiredPermission={requiredPermission}>
       {children}
