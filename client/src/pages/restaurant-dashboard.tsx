@@ -11,6 +11,7 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useToast } from '@/hooks/use-toast';
 import { useLocation } from 'wouter';
+import UsersManagement from './users-management';
 import { 
   Plus, 
   Users, 
@@ -614,74 +615,7 @@ export default function RestaurantDashboard() {
 
             {hasPermission(PERMISSIONS.USERS_VIEW) && (
               <TabsContent value="users" className="space-y-6">
-                <div className="flex justify-between items-center">
-                  <h2 className="text-3xl font-bold">Team Members</h2>
-                  {hasPermission(PERMISSIONS.USERS_CREATE) && (
-                    <Button
-                      onClick={() => {
-                        const email = prompt('Email:');
-                        const name = prompt('Name:');
-                        const roleId = prompt(`Role ID (${roles?.map((r: Role) => `${r.id}: ${r.displayName}`).join(', ')}):`);
-                        if (email && name && roleId) {
-                          inviteUserMutation.mutate({
-                            email,
-                            name,
-                            roleId: parseInt(roleId),
-                          });
-                        }
-                      }}
-                    >
-                      <UserPlus className="h-4 w-4 mr-2" />
-                      Invite User
-                    </Button>
-                  )}
-                </div>
-
-                <div className="grid gap-4">
-                  {restaurantUsers?.map((user: any) => (
-                    <Card key={user.id}>
-                      <CardContent className="p-4">
-                        <div className="flex justify-between items-start">
-                          <div className="flex items-start space-x-3">
-                            <div className="p-2 bg-primary/10 rounded-full">
-                              {getRoleIcon(user.role?.name)}
-                            </div>
-                            <div>
-                              <h3 className="font-semibold">{user.name}</h3>
-                              <p className="text-sm text-muted-foreground">{user.email}</p>
-                              <Badge variant="outline" className="mt-1">
-                                {user.role?.displayName}
-                              </Badge>
-                              {user.role?.permissions && (
-                                <div className="flex flex-wrap gap-1 mt-2">
-                                  {JSON.parse(user.role.permissions).slice(0, 3).map((permission: string) => (
-                                    <Badge key={permission} variant={getPermissionBadgeColor(permission)} className="text-xs">
-                                      {permission.split('.')[1]}
-                                    </Badge>
-                                  ))}
-                                  {JSON.parse(user.role.permissions).length > 3 && (
-                                    <Badge variant="secondary" className="text-xs">
-                                      +{JSON.parse(user.role.permissions).length - 3} more
-                                    </Badge>
-                                  )}
-                                </div>
-                              )}
-                            </div>
-                          </div>
-                          <Badge variant={user.isActive ? 'default' : 'secondary'}>
-                            {user.isActive ? 'Active' : 'Inactive'}
-                          </Badge>
-                        </div>
-                      </CardContent>
-                    </Card>
-                  ))}
-
-                  {restaurantUsers?.length === 0 && (
-                    <div className="text-center py-12 text-muted-foreground">
-                      No team members found
-                    </div>
-                  )}
-                </div>
+                <UsersManagement restaurantId={selectedRestaurant!} />
               </TabsContent>
             )}
 

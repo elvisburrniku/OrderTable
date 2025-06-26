@@ -220,10 +220,10 @@ export class RestaurantStorage implements IRestaurantStorage {
 
   // Role and permission management
   async getRoles(): Promise<Role[]> {
-    return await restaurantDb.select().from(roles).orderBy(roles.name);
+    return await restaurantDb.select().from(roles).orderBy(roles.displayName);
   }
 
-  async createRole(roleData: InsertRole): Promise<Role> {
+  async createRole(roleData: Omit<InsertRole, 'id' | 'createdAt'>): Promise<Role> {
     const [role] = await restaurantDb
       .insert(roles)
       .values(roleData)
@@ -271,7 +271,7 @@ export class RestaurantStorage implements IRestaurantStorage {
   }
 
   async getRestaurantUsers(restaurantId: number): Promise<(RestaurantUser & { role: Role })[]> {
-    return await restaurantDb
+    const users = await restaurantDb
       .select({
         id: restaurantUsers.id,
         restaurantId: restaurantUsers.restaurantId,
@@ -284,19 +284,14 @@ export class RestaurantStorage implements IRestaurantStorage {
         invitedAt: restaurantUsers.invitedAt,
         acceptedAt: restaurantUsers.acceptedAt,
         createdAt: restaurantUsers.createdAt,
-        role: {
-          id: roles.id,
-          name: roles.name,
-          displayName: roles.displayName,
-          permissions: roles.permissions,
-          isSystem: roles.isSystem,
-          createdAt: roles.createdAt,
-        },
+        role: roles,
       })
       .from(restaurantUsers)
-      .leftJoin(roles, eq(restaurantUsers.roleId, roles.id))
+      .innerJoin(roles, eq(restaurantUsers.roleId, roles.id))
       .where(eq(restaurantUsers.restaurantId, restaurantId))
       .orderBy(desc(restaurantUsers.createdAt));
+
+    return users as (RestaurantUser & { role: Role })[];
   }
 
   async getRestaurantUserByEmail(restaurantId: number, email: string): Promise<RestaurantUser | null> {
@@ -344,6 +339,8 @@ export class RestaurantStorage implements IRestaurantStorage {
       return [];
     }
   }
+
+
 
   // Booking management
   async createBooking(bookingData: InsertBooking): Promise<Booking> {

@@ -317,10 +317,84 @@ export function registerRestaurantRoutes(app: Express) {
 
         res.json(user);
       } catch (error) {
-        if (error instanceof z.ZodError) {
-          return res.status(400).json({ message: "Validation failed", errors: error.errors });
-        }
+        console.error('Error inviting user:', error);
         res.status(500).json({ message: "Failed to invite user" });
+      }
+    }
+  );
+
+  // Update user
+  app.put("/api/restaurant/:restaurantId/users/:userId",
+    authenticateRestaurantUser,
+    requirePermission(PERMISSIONS.USERS_EDIT),
+    async (req, res) => {
+      try {
+        const restaurantId = parseInt(req.params.restaurantId);
+        const userId = parseInt(req.params.userId);
+        const updateData = req.body;
+
+        const updatedUser = await restaurantStorage.updateRestaurantUser(userId, {
+          name: updateData.name,
+          email: updateData.email,
+          roleId: parseInt(updateData.roleId),
+          isActive: updateData.isActive,
+        });
+
+        res.json(updatedUser);
+      } catch (error) {
+        console.error('Error updating user:', error);
+        res.status(500).json({ message: "Failed to update user" });
+      }
+    }
+  );
+
+  // Delete user
+  app.delete("/api/restaurant/:restaurantId/users/:userId",
+    authenticateRestaurantUser,
+    requirePermission(PERMISSIONS.USERS_DELETE),
+    async (req, res) => {
+      try {
+        const userId = parseInt(req.params.userId);
+        await restaurantStorage.deleteRestaurantUser(userId);
+        res.json({ message: "User removed successfully" });
+      } catch (error) {
+        console.error('Error deleting user:', error);
+        res.status(500).json({ message: "Failed to remove user" });
+      }
+    }
+  );
+
+  // Get available roles
+  app.get("/api/restaurant/roles",
+    authenticateRestaurantUser,
+    async (req, res) => {
+      try {
+        const roles = await restaurantStorage.getRoles();
+        res.json(roles);
+      } catch (error) {
+        console.error('Error fetching roles:', error);
+        res.status(500).json({ message: "Failed to fetch roles" });
+      }
+    }
+  );
+
+  // Create custom role
+  app.post("/api/restaurant/roles",
+    authenticateRestaurantUser,
+    requirePermission(PERMISSIONS.USERS_CREATE),
+    async (req, res) => {
+      try {
+        const roleData = req.body;
+        const role = await restaurantStorage.createRole({
+          name: roleData.name,
+          displayName: roleData.displayName,
+          permissions: roleData.permissions,
+          isSystem: false,
+        });
+        res.json(role);
+      } catch (error) {
+        console.error('Error creating role:', error);
+        res.status(500).json({ message: "Failed to create role" });
       }
     }
   );
