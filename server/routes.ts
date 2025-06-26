@@ -688,7 +688,87 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Get role permissions
+  app.get("/api/tenants/:tenantId/role-permissions", validateTenant, async (req, res) => {
+    try {
+      const tenantId = parseInt(req.params.tenantId);
+      const sessionUser = (req as any).session?.user;
+      const sessionTenant = (req as any).session?.tenant;
 
+      if (!sessionUser || !sessionTenant) {
+        return res.status(401).json({ error: "Authentication required" });
+      }
+
+      // Check if user has permission to view role permissions
+      const userRole = await getUserRole(sessionUser.id, tenantId);
+      const userPermissions = await getUserPermissions(sessionUser.id, tenantId);
+      
+      // Allow owners and users with ACCESS_USERS permission
+      if (userRole !== 'owner' && !userPermissions.includes(PERMISSIONS.ACCESS_USERS)) {
+        return res.status(403).json({ 
+          error: "Access denied",
+          message: "You don't have permission to view role permissions" 
+        });
+      }
+
+      // Get role permissions data
+      const rolePermissions = Object.entries(ROLE_PERMISSIONS).map(([role, permissions]) => ({
+        role,
+        permissions: Array.isArray(permissions) ? permissions : [],
+        redirect: getRoleRedirect(role) || "dashboard"
+      }));
+
+      const availablePermissions = {
+        pageAccess: [
+          { key: "access_dashboard", label: "Dashboard Access" },
+          { key: "access_bookings", label: "Bookings Access" },
+          { key: "access_customers", label: "Customers Access" },
+          { key: "access_menu", label: "Menu Management Access" },
+          { key: "access_tables", label: "Table Management Access" },
+          { key: "access_kitchen", label: "Kitchen Access" },
+          { key: "access_users", label: "User Management Access" },
+          { key: "access_billing", label: "Billing Access" },
+          { key: "access_reports", label: "Reports Access" },
+          { key: "access_notifications", label: "Notifications Access" },
+          { key: "access_integrations", label: "Integrations Access" },
+          { key: "access_settings", label: "Settings Access" }
+        ],
+        features: [
+          { key: "view_bookings", label: "View Bookings" },
+          { key: "create_bookings", label: "Create Bookings" },
+          { key: "edit_bookings", label: "Edit Bookings" },
+          { key: "delete_bookings", label: "Delete Bookings" },
+          { key: "view_customers", label: "View Customers" },
+          { key: "edit_customers", label: "Edit Customers" },
+          { key: "view_menu", label: "View Menu" },
+          { key: "edit_menu", label: "Edit Menu" },
+          { key: "view_tables", label: "View Tables" },
+          { key: "edit_tables", label: "Edit Tables" },
+          { key: "view_kitchen", label: "View Kitchen" },
+          { key: "manage_kitchen", label: "Manage Kitchen" },
+          { key: "view_users", label: "View Users" },
+          { key: "manage_users", label: "Manage Users" },
+          { key: "view_settings", label: "View Settings" },
+          { key: "edit_settings", label: "Edit Settings" },
+          { key: "view_reports", label: "View Reports" },
+          { key: "view_notifications", label: "View Notifications" },
+          { key: "manage_notifications", label: "Manage Notifications" },
+          { key: "view_integrations", label: "View Integrations" },
+          { key: "manage_integrations", label: "Manage Integrations" }
+        ]
+      };
+
+      const result = {
+        roles: rolePermissions,
+        availablePermissions
+      };
+
+      res.json(result);
+    } catch (error) {
+      console.error("Error getting role permissions:", error);
+      res.status(500).json({ error: "Internal server error" });
+    }
+  });
 
   // Update role permissions
   app.put("/api/tenants/:tenantId/role-permissions", validateTenant, async (req, res) => {
