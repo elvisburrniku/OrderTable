@@ -22,6 +22,11 @@ A comprehensive restaurant booking management system with React frontend and Exp
 - Kitchen order management
 
 ## Recent Changes
+- **2025-06-26**: Completed comprehensive role-based access control system with page-level permissions and role-based redirects
+- **Permission System**: Implemented AutoPermissionGuard wrapping all authenticated routes for automatic access control
+- **Role Permissions Interface**: Created dedicated role permissions management page accessible via Users → Role Permissions button
+- **Access Control Fix**: Added ACCESS_USERS permission to manager role enabling access to user management and role configuration pages
+- **Page-Level Security**: Permission guard validates access to each page based on user role and redirects unauthorized users to appropriate pages
 - **2025-06-26**: Completed comprehensive role-based access control system with endpoint-level security
 - **Security Implementation**: Applied permission middleware to all critical endpoints to enforce role-based access control
 - **Agent Restrictions**: Agents now blocked from user management, billing, subscription management, and administrative functions
