@@ -811,25 +811,6 @@ export const periodicCriteria = pgTable("periodic_criteria", {
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
 });
 
-export const customFields = pgTable("custom_fields", {
-  id: serial("id").primaryKey(),
-  restaurantId: integer("restaurant_id").notNull().references(() => restaurants.id, { onDelete: "cascade" }),
-  tenantId: integer("tenant_id").notNull().references(() => tenants.id, { onDelete: "cascade" }),
-  name: text("name").notNull(),
-  title: text("title").notNull(),
-  inputType: text("input_type").notNull().default("single_line"), // "single_line", "multi_line", "number", "select", "checkbox", "switch"
-  options: text("options"), // JSON array for select options
-  translations: text("translations"), // JSON field for language translations
-  isActive: boolean("is_active").default(true),
-  isOnline: boolean("is_online").default(false),
-  sortOrder: integer("sort_order").default(0),
-  isRequired: boolean("is_required").default(false),
-  placeholder: text("placeholder"),
-  validation: text("validation"), // JSON field for validation rules
-  createdAt: timestamp("created_at").defaultNow().notNull(),
-  updatedAt: timestamp("updated_at").defaultNow().notNull(),
-});
-
 export const bookingFormFields = pgTable("booking_form_fields", {
   id: serial("id").primaryKey(),
   restaurantId: integer("restaurant_id").notNull().references(() => restaurants.id, { onDelete: "cascade" }),
