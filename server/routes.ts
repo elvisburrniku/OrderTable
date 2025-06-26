@@ -755,16 +755,22 @@ export async function registerRoutes(app: Express): Promise<Server> {
           tenantId,
         );
 
-        // Allow owners and users with ACCESS_USERS permission
-        if (
-          userRole !== "owner" &&
-          !userPermissions.includes(PERMISSIONS.ACCESS_USERS)
-        ) {
+        console.log("🔍 ROLE PERMISSIONS API ACCESS CHECK:", {
+          userRole,
+          hasAccessUsers: userPermissions.includes(PERMISSIONS.ACCESS_USERS),
+          allPermissions: userPermissions
+        });
+
+        // Allow owners (who have all permissions) and users with ACCESS_USERS permission
+        if (userRole !== "owner" && !userPermissions.includes(PERMISSIONS.ACCESS_USERS)) {
+          console.log("🚨 ACCESS DENIED for role permissions:", { userRole, permissions: userPermissions });
           return res.status(403).json({
             error: "Access denied",
             message: "You don't have permission to view role permissions",
           });
         }
+
+        console.log("✅ ROLE PERMISSIONS ACCESS GRANTED for user role:", userRole);
 
         // Get role permissions data
         const rolePermissions = Object.entries(ROLE_PERMISSIONS).map(
