@@ -99,6 +99,7 @@ export function RouteGuard({ children }: RouteGuardProps) {
         /^\/\d+\/combined-tables$/,
         /^\/\d+\/rooms$/,
         /^\/\d+\/booking-agents$/,
+        /^\/\d+\/users$/,
         /^\/\d+\/table-plan$/,
         /^\/\d+\/profile$/,
         /^\/\d+\/settings$/,
