@@ -48,20 +48,26 @@ export function PermissionGuard({ children, requiredPermission, fallbackPath }: 
   });
 
   useEffect(() => {
+    console.log("PermissionGuard check:", { requiredPermission, userPermissions, isLoading });
+    
     if (isLoading || !userPermissions) return;
 
     const hasPermission = userPermissions.permissions.includes(requiredPermission);
+    console.log("PermissionGuard result:", { hasPermission, userRole: userPermissions.role });
+    
     setHasAccess(hasPermission);
 
     if (!hasPermission) {
+      console.log("PermissionGuard: Access denied, redirecting...");
       toast({
         title: "Access Denied",
         description: "You don't have permission to access this page.",
         variant: "destructive",
       });
 
-      // Redirect to user's default page or fallback
-      const redirectTo = fallbackPath || `/${userPermissions.redirect}` || "/dashboard";
+      // Redirect to user's default page or fallback with tenant context
+      const currentTenantId = window.location.pathname.split('/')[1];
+      const redirectTo = fallbackPath || `/${currentTenantId}/${userPermissions.redirect}` || `/${currentTenantId}/dashboard`;
       setTimeout(() => {
         setLocation(redirectTo);
       }, 1000);
