@@ -702,3 +702,30 @@ export function setupTenantRoutes(app: any) {
   app.get("/api/tenants/:tenantId/role-permissions", validateTenant, requirePermission(PERMISSIONS.ACCESS_USERS), getRolePermissions);
   app.put("/api/tenants/:tenantId/role-permissions", validateTenant, requirePermission(PERMISSIONS.ACCESS_USERS), updateRolePermissionsEndpoint);
 }
+// Middleware to validate tenant access
+function validateTenant(req: Request, res: Response, next: NextFunction) {
+  try {
+    const tenantId = parseInt(req.params.tenantId);
+    const sessionTenant = (req as any).session?.tenant;
+
+    if (!sessionTenant) {
+      return res.status(401).json({ 
+        error: "No tenant session",
+        message: "Please log in to access tenant resources" 
+      });
+    }
+
+    if (sessionTenant.id !== tenantId) {
+      return res.status(403).json({ 
+        error: "Tenant access denied", 
+        message: "You don't have access to this tenant" 
+      });
+    }
+
+    next();
+  } catch (error) {
+    console.error("Tenant validation error:", error);
+    res.status(500).json({ error: "Internal server error" });
+  }
+}
+
