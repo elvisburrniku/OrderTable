@@ -68,11 +68,11 @@ export default function SeatingHeatMap({ restaurantId, tenantId }: SeatingHeatMa
   // Auto-refresh every 30 seconds when enabled
   useEffect(() => {
     if (!autoRefresh) return;
-    
+
     const interval = setInterval(() => {
       refetch();
     }, 30000);
-    
+
     return () => clearInterval(interval);
   }, [autoRefresh, refetch]);
 
@@ -81,7 +81,7 @@ export default function SeatingHeatMap({ restaurantId, tenantId }: SeatingHeatMa
 
   const getHeatColor = (score: number, mode: string) => {
     const intensity = score / 100;
-    
+
     switch (mode) {
       case "heat":
         // Enhanced gradient with glow effects
@@ -224,7 +224,7 @@ export default function SeatingHeatMap({ restaurantId, tenantId }: SeatingHeatMa
             </motion.div>
           </motion.p>
         </div>
-        
+
         <motion.div 
           className="flex items-center space-x-4"
           initial={{ opacity: 0, x: 20 }}
@@ -246,7 +246,7 @@ export default function SeatingHeatMap({ restaurantId, tenantId }: SeatingHeatMa
               </SelectContent>
             </Select>
           </motion.div>
-          
+
           {/* Enhanced Auto Refresh Button */}
           <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
             <Button
@@ -559,7 +559,7 @@ export default function SeatingHeatMap({ restaurantId, tenantId }: SeatingHeatMa
                     animate={{ opacity: 1 }}
                     transition={{ delay: 0.2, duration: 0.6 }}
                   />
-                  
+
                   {/* Animated kitchen area */}
                   <motion.rect 
                     x="400" y="40" width="70" height="100" 
@@ -581,7 +581,7 @@ export default function SeatingHeatMap({ restaurantId, tenantId }: SeatingHeatMa
                   >
                     Kitchen
                   </motion.text>
-                  
+
                   {/* Animated entrance with glow */}
                   <motion.rect 
                     x="220" y="20" width="60" height="8" 
@@ -602,7 +602,7 @@ export default function SeatingHeatMap({ restaurantId, tenantId }: SeatingHeatMa
                   >
                     Entrance
                   </motion.text>
-                  
+
                   {/* Animated tables with enhanced effects */}
                   <AnimatePresence>
                     {heatData.map((table, index) => {
@@ -610,7 +610,7 @@ export default function SeatingHeatMap({ restaurantId, tenantId }: SeatingHeatMa
                       const colorData = getHeatColor(heatScore, viewMode);
                       const isHovered = hoveredTable?.tableId === table.tableId;
                       const isSelected = selectedTable?.tableId === table.tableId;
-                      
+
                       return (
                         <motion.g 
                           key={table.tableId}
@@ -641,7 +641,7 @@ export default function SeatingHeatMap({ restaurantId, tenantId }: SeatingHeatMa
                               ease: "easeInOut"
                             }}
                           />
-                          
+
                           {/* Main table circle with enhanced effects */}
                           <motion.circle
                             cx={table.position.x}
@@ -666,7 +666,7 @@ export default function SeatingHeatMap({ restaurantId, tenantId }: SeatingHeatMa
                               strokeWidth: { duration: 0.8, repeat: isSelected ? Infinity : 0 }
                             }}
                           />
-                          
+
                           {/* Table number with animation */}
                           <motion.text
                             x={table.position.x}
@@ -679,7 +679,7 @@ export default function SeatingHeatMap({ restaurantId, tenantId }: SeatingHeatMa
                           >
                             {table.tableId}
                           </motion.text>
-                          
+
                           {/* Capacity indicator with animation */}
                           <motion.text
                             x={table.position.x}
@@ -692,7 +692,7 @@ export default function SeatingHeatMap({ restaurantId, tenantId }: SeatingHeatMa
                           >
                             {table.capacity}p
                           </motion.text>
-                          
+
                           {/* Animated status indicator with pulse */}
                           <motion.circle
                             cx={table.position.x + 20}
@@ -715,7 +715,7 @@ export default function SeatingHeatMap({ restaurantId, tenantId }: SeatingHeatMa
                             animate={{ scale: 1 }}
                             transition={{ delay: 1.4 + index * 0.1, duration: 0.3 }}
                           />
-                          
+
                           {/* Heat score indicator */}
                           {viewMode === 'heat' && heatScore > 70 && (
                             <motion.g
@@ -827,7 +827,7 @@ export default function SeatingHeatMap({ restaurantId, tenantId }: SeatingHeatMa
                         <div className="text-xs text-green-600 font-medium mt-1">Occupancy</div>
                       </motion.div>
                     </motion.div>
-                
+
                 <div className="space-y-3">
                   <div className="flex justify-between">
                     <span className="text-sm text-muted-foreground">Capacity:</span>
@@ -846,7 +846,7 @@ export default function SeatingHeatMap({ restaurantId, tenantId }: SeatingHeatMa
                     <span className="text-sm font-medium">{selectedTable.averageStayDuration}min</span>
                   </div>
                 </div>
-                
+
                 <div>
                   <div className="text-sm font-medium mb-2">Peak Hours:</div>
                   <div className="flex flex-wrap gap-1">
@@ -911,8 +911,8 @@ export default function SeatingHeatMap({ restaurantId, tenantId }: SeatingHeatMa
               </div>
             </CardContent>
           </Card>
+          </motion.div>
         </div>
-      </div>
         </TabsContent>
 
         <TabsContent value="analytics" className="space-y-6">
