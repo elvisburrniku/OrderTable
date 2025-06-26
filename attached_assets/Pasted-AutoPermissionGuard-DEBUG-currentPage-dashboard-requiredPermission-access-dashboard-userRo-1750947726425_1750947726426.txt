@@ -1,0 +1,19 @@
+AutoPermissionGuard DEBUG: {currentPage: 'dashboard', requiredPermission: 'access_dashboard', userRole: '', isLoading: true, hasRequiredPermission: false, …}
+Console.js:61 🔄 AutoPermissionGuard: Still loading permissions, showing loading state
+Console.js:61 AutoPermissionGuard DEBUG: {currentPage: 'dashboard', requiredPermission: 'access_dashboard', userRole: 'owner', isLoading: false, hasRequiredPermission: true, …}
+Console.js:61 Owner access granted for all pages
+Console.js:61 WebSocket connected
+Console.js:61 AutoPermissionGuard DEBUG: {currentPage: 'users', requiredPermission: 'access_users', userRole: 'owner', isLoading: false, hasRequiredPermission: true, …}
+Console.js:61 Owner access granted for all pages
+Console.js:61 TenantUsersManagement Debug: {tenantId: 3, rolesLoading: true, rolesError: null, roles: undefined, rolesLength: undefined}
+Console.js:61 WebSocket disconnected
+Console.js:61 TenantUsersManagement Debug: {tenantId: 3, rolesLoading: true, rolesError: null, roles: undefined, rolesLength: undefined}
+Console.js:61 TenantUsersManagement Debug: {tenantId: 3, rolesLoading: false, rolesError: null, roles: Array(4), rolesLength: 4}
+Console.js:61 AutoPermissionGuard DEBUG: {currentPage: 'role-permissions', requiredPermission: 'access_users', userRole: 'owner', isLoading: false, hasRequiredPermission: true, …}
+Console.js:61 Owner access granted for all pages
+Console.js:61 🔍 ROLE PERMISSIONS DEBUG: {tenantId: 3, selectedRole: 'manager', rolePermissions: {…}, roleRedirects: {…}, hasChanges: false}
+Console.js:61 🔍 API RESPONSE DEBUG: {permissionsData: undefined, isLoading: true, error: undefined, enabled: true, queryKey: Array(1), …}
+Console.js:61 🔄 ROLE PERMISSIONS: Loading data...
+Console.js:61 🔍 USE_EFFECT PERMISSIONS DATA: undefined
+Console.js:61 AutoPermissionGuard DEBUG: {currentPage: 'dashboard', requiredPermission: 'access_dashboard', userRole: 'owner', isLoading: false, hasRequiredPermission: true, …}
+Console.js:61 Owner access granted for all pages
