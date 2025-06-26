@@ -176,12 +176,7 @@ export default function DashboardSidebar({
       href: `/${tenantId}/print-orders`,
       color: "text-indigo-600",
     },
-    {
-      name: "Product Groups",
-      icon: Package,
-      href: `/${tenantId}/product-groups`,
-      color: "text-emerald-600",
-    },
+    
     {
       name: "Waiting List",
       icon: Clock,
@@ -284,7 +279,7 @@ export default function DashboardSidebar({
 
         {/* Navigation */}
         <nav className="space-y-1">
-          {menuItems.map((item) => {
+          {menuItems.filter(item => item.name !== "Product Groups").map((item) => {
             const Icon = item.icon;
             const active = isActive(item.href);
 
