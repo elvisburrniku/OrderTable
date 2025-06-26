@@ -1885,9 +1885,7 @@ export class DatabaseStorage implements IStorage {
       ...feedbackData,
       createdAt: new Date(),
       visited: false,
-      bookingDate:This update includes adding `integrationConfigurations` to the schema import and adding the `getIntegrationConfigurations` method to the `DatabaseStorage` class.
-```python
-feedbackData.visitDate || new Date().toISOString().split("T")[0],
+      bookingDate: feedbackData.visitDate || new Date().toISOString().split("T")[0],
       questionName: "Guest Feedback",
     };
     const [newFeedback] = await this.db
