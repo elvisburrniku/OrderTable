@@ -1,10 +1,4 @@
-` tags. I will pay close attention to maintaining the original code's structure and indentation.
 
-```text
-The code changes replace the webhooks table definition with a new one that also includes the integrationConfigurations table.
-```
-
-```replit_final_file}
 import {
   pgTable,
   text,
@@ -19,6 +13,8 @@ import {
   json,
   unique,
   decimal,
+  jsonb,
+  sql,
 } from "drizzle-orm/pg-core";
 import { createInsertSchema, createSelectSchema } from "drizzle-zod";
 import { z } from "zod";
