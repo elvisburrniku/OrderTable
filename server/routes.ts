@@ -7081,6 +7081,49 @@ export async function registerRoutes(app: Express): Promise<Server> {
   );
 
   app.post(
+    "/api/tenants/:tenantId/restaurants/:restaurantId/integrations",
+    validateTenant,
+    async (req, res) => {
+      try {
+        const restaurantId = parseInt(req.params.restaurantId);
+        const tenantId = parseInt(req.params.tenantId);
+        const { integrationId, isEnabled, configuration } = req.body;
+
+        if (isNaN(restaurantId) || isNaN(tenantId)) {
+          return res
+            .status(400)
+            .json({ message: "Invalid restaurant ID or tenant ID" });
+        }
+
+        if (!integrationId) {
+          return res
+            .status(400)
+            .json({ message: "Integration ID is required" });
+        }
+
+        // Verify restaurant belongs to tenant
+        const restaurant = await storage.getRestaurantById(restaurantId);
+        if (!restaurant || restaurant.tenantId !== tenantId) {
+          return res.status(404).json({ message: "Restaurant not found" });
+        }
+
+        const savedConfig = await storage.createOrUpdateIntegrationConfiguration(
+          restaurantId,
+          tenantId,
+          integrationId,
+          isEnabled,
+          configuration || {}
+        );
+
+        res.json(savedConfig);
+      } catch (error) {
+        console.error("Error saving integration configuration:", error);
+        res.status(500).json({ message: "Internal server error" });
+      }
+    },
+  );
+
+  app.post(
     "/api/tenants/:tenantId/restaurants/:restaurantId/integrations/:integrationId",
     validateTenant,
     async (req, res) => {
