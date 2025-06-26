@@ -173,7 +173,9 @@ function App() {
                 <Route path="/:tenantId/billing" component={Billing} />
                 <Route path="/:tenantId/sms-messages" component={SmsMessages} />
                 <Route path="/:tenantId/tenant-settings" component={TenantSettings} />
-                <Route path="/:tenantId/tenant-users" component={() => <TenantUsersManagement tenantId={1} />} />
+                <Route path="/:tenantId/users">
+                  {(params) => <TenantUsersManagement tenantId={parseInt(params.tenantId)} />}
+                </Route>
                 <Route path="/:tenantId/email-notifications" component={EmailNotifications} />
                 <Route path="/:tenantId/sms-notifications" component={SmsNotifications} />
                 <Route path="/:tenantId/feedback" component={FeedbackResponses} />
