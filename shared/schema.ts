@@ -1,4 +1,3 @@
-
 import {
   pgTable,
   text,
@@ -303,8 +302,8 @@ export const bookingChangeRequests = pgTable("booking_change_requests", {
     .references(() => restaurants.id)
     .notNull(),
   tenantId: integer("tenant_id")
-    .references(() => tenants.id)
-    .notNull(),
+    .notNull()
+    .references(() => tenants.id),
   requestedDate: timestamp("requested_date"),
   requestedTime: text("requested_time"),
   requestedGuestCount: integer("requested_guest_count"),
@@ -555,18 +554,32 @@ export const webhooks = pgTable('webhooks', {
   updatedAt: timestamp('updated_at').default(sql`now()`),
 });
 
-export const integrationConfigurations = pgTable('integration_configurations', {
-  id: serial('id').primaryKey(),
-  tenantId: integer('tenant_id').notNull().references(() => tenants.id, { onDelete: 'cascade' }),
-  restaurantId: integer('restaurant_id').notNull().references(() => restaurants.id, { onDelete: 'cascade' }),
-  integrationId: varchar('integration_id', { length: 255 }).notNull(),
-  isEnabled: boolean('is_enabled').default(true),
-  configuration: jsonb('configuration').default({}),
-  createdAt: timestamp('created_at').default(sql`now()`),
-  updatedAt: timestamp('updated_at').default(sql`now()`),
-}, (table) => ({
-  uniqueConfig: unique().on(table.tenantId, table.restaurantId, table.integrationId),
-}));
+export const customFields = pgTable("custom_fields", {
+  id: serial("id").primaryKey(),
+  tenantId: integer("tenant_id").references(() => tenants.id, { onDelete: "cascade" }),
+  restaurantId: integer("restaurant_id").references(() => restaurants.id, { onDelete: "cascade" }),
+  fieldName: varchar("field_name", { length: 100 }).notNull(),
+  fieldType: varchar("field_type", { length: 50 }).notNull(), // text, number, select, checkbox
+  isRequired: boolean("is_required").default(false),
+  options: jsonb("options"), // For select type fields
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+export const integrationConfigurations = pgTable("integration_configurations", {
+  id: serial("id").primaryKey(),
+  tenantId: integer("tenant_id").references(() => tenants.id, { onDelete: "cascade" }),
+  restaurantId: integer("restaurant_id").references(() => restaurants.id, { onDelete: "cascade" }),
+  integrationId: varchar("integration_id", { length: 50 }).notNull(),
+  isEnabled: boolean("is_enabled").default(false),
+  configuration: jsonb("configuration"),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+}, (table) => {
+  return {
+    uniqueIntegration: unique().on(table.tenantId, table.restaurantId, table.integrationId),
+  };
+});
 
 // Resolved Conflicts table
 export const resolvedConflicts = pgTable("resolved_conflicts", {
@@ -749,7 +762,8 @@ export const menuPrintOrders = pgTable("menu_print_orders", {
   restaurantId: integer("restaurant_id").notNull().references(() => restaurants.id, { onDelete: "cascade" }),
   tenantId: integer("tenant_id").notNull().references(() => tenants.id, { onDelete: "cascade" }),
   orderNumber: text("order_number").notNull().unique(),
-  printingOption: text("printing_option").notNull(), // standard, premium, deluxe, luxury
+  printingOption: text("printing_option").notNull(), // standard,```text
+premium, deluxe, luxury
   shippingOption: text("shipping_option").notNull(), // standard, expedited, overnight
   quantity: integer("quantity").notNull(),
   menuTheme: text("menu_theme").notNull(),
