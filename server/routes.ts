@@ -28,6 +28,7 @@ import { BrevoEmailService } from "./brevo-service";
 import { BookingHash } from "./booking-hash";
 import { QRCodeService } from "./qr-service";
 import { WebhookService } from "./webhook-service";
+import { getUserRole, getUserPermissions, getRoleRedirect } from "./permissions-middleware";
 import { requirePermission, requireAnyPermission, PERMISSIONS, getUserPermissions, getUserRole, getRoleRedirect } from "./permissions-middleware";
 import { MetaIntegrationService } from "./meta-service";
 import { metaInstallService } from "./meta-install-service";
@@ -15846,6 +15847,35 @@ NEXT STEPS:
   // Role permissions management routes
   app.get("/api/tenants/:tenantId/role-permissions", validateTenant, requirePermission(PERMISSIONS.ACCESS_USERS), tenantRoutes.getRolePermissions);
   app.put("/api/tenants/:tenantId/role-permissions", validateTenant, requirePermission(PERMISSIONS.ACCESS_USERS), tenantRoutes.updateRolePermissionsEndpoint);
+
+  // User permissions endpoint for client-side permission checks
+  app.get("/api/user/permissions", async (req, res) => {
+    try {
+      const sessionUser = (req as any).session?.user;
+      const sessionTenant = (req as any).session?.tenant;
+
+      if (!sessionUser || !sessionTenant) {
+        return res.status(401).json({ error: "Authentication required" });
+      }
+
+      const userId = sessionUser.id;
+      const tenantId = sessionTenant.id;
+
+      // Get user's role and permissions
+      const userRole = await getUserRole(userId, tenantId);
+      const permissions = await getUserPermissions(userId, tenantId);
+      const redirect = getRoleRedirect(userRole);
+
+      res.json({
+        permissions,
+        role: userRole,
+        redirect
+      });
+    } catch (error) {
+      console.error("Error getting user permissions:", error);
+      res.status(500).json({ error: "Internal server error" });
+    }
+  });
 
   // Invitation management routes (public - no auth required)
   app.get("/api/invitations/validate/:token", tenantRoutes.validateInvitationToken);
