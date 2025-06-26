@@ -174,9 +174,11 @@ export default function Integrations() {
   const [searchTerm, setSearchTerm] = useState('');
 
   // Fetch integration configurations from database
-  const { data: savedConfigurations = [], isLoading } = useQuery({
+  const { data: savedConfigurations = [], isLoading, error } = useQuery({
     queryKey: [`/api/tenants/${tenant?.id}/restaurants/${restaurant?.id}/integrations`],
-    enabled: !!(tenant?.id && restaurant?.id),
+    enabled: !!(tenant?.id && restaurant?.id && user),
+    retry: 3,
+    staleTime: 30000, // Consider data fresh for 30 seconds
   });
 
   // Save integration configuration
@@ -643,7 +645,7 @@ export default function Integrations() {
       </div>
 
       {/* Loading State */}
-      {isLoading && (
+      {isLoading && (!tenant?.id || !restaurant?.id || !user) && (
         <motion.div 
           className="fixed inset-0 bg-black/20 backdrop-blur-sm z-50 flex items-center justify-center"
           initial={{ opacity: 0 }}
@@ -657,6 +659,32 @@ export default function Integrations() {
               <RefreshCw className="w-6 h-6 text-blue-600 mx-auto mb-3" />
             </motion.div>
             <p className="text-slate-600">Loading integrations...</p>
+          </div>
+        </motion.div>
+      )}
+
+      {/* Error State */}
+      {error && (
+        <motion.div 
+          className="fixed inset-0 bg-black/20 backdrop-blur-sm z-50 flex items-center justify-center"
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+        >
+          <div className="bg-white rounded-xl p-6 shadow-xl max-w-md">
+            <div className="flex items-center space-x-3 mb-4">
+              <X className="w-6 h-6 text-red-500" />
+              <h3 className="font-semibold text-slate-800">Connection Error</h3>
+            </div>
+            <p className="text-slate-600 mb-4">Unable to load integrations. Please check your connection and try again.</p>
+            <Button 
+              onClick={() => queryClient.invalidateQueries({
+                queryKey: [`/api/tenants/${tenant?.id}/restaurants/${restaurant?.id}/integrations`]
+              })}
+              className="w-full"
+            >
+              <RefreshCw className="w-4 h-4 mr-2" />
+              Retry
+            </Button>
           </div>
         </motion.div>
       )}
