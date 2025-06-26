@@ -859,7 +859,8 @@ export default function SeatingHeatMap({ restaurantId, tenantId }: SeatingHeatMa
                 </div>
               </CardContent>
             </Card>
-          ) : (
+              </motion.div>
+            ) : (
             <Card>
               <CardHeader>
                 <CardTitle className="flex items-center space-x-2">
@@ -874,51 +875,67 @@ export default function SeatingHeatMap({ restaurantId, tenantId }: SeatingHeatMa
               </CardContent>
             </Card>
           )}
+          </AnimatePresence>
 
-          {/* Quick Stats */}
-          <Card>
-            <CardHeader>
-              <CardTitle className="text-lg">Quick Stats</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-3">
-              <div className="flex justify-between">
-                <span className="text-sm text-muted-foreground">Total Tables:</span>
-                <span className="text-sm font-medium">{heatData.length}</span>
-              </div>
-              <div className="flex justify-between">
-                <span className="text-sm text-muted-foreground">Currently Occupied:</span>
-                <span className="text-sm font-medium">
-                  {heatData.filter(t => t.status === 'occupied').length}
-                </span>
-              </div>
-              <div className="flex justify-between">
-                <span className="text-sm text-muted-foreground">Reserved:</span>
-                <span className="text-sm font-medium">
-                  {heatData.filter(t => t.status === 'reserved').length}
-                </span>
-              </div>
-              <div className="flex justify-between">
-                <span className="text-sm text-muted-foreground">Average Occupancy:</span>
-                <span className="text-sm font-medium">
-                  {Math.round(heatData.reduce((sum, t) => sum + t.occupancyRate, 0) / heatData.length)}%
-                </span>
-              </div>
-              <div className="flex justify-between">
-                <span className="text-sm text-muted-foreground">Total Revenue:</span>
-                <span className="text-sm font-medium">
-                  ${heatData.reduce((sum, t) => sum + t.revenueGenerated, 0).toLocaleString()}
-                </span>
-              </div>
-            </CardContent>
-          </Card>
+          {/* Premium Quick Stats */}
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 3, duration: 0.5 }}
+          >
+            <Card className="bg-white/80 backdrop-blur-lg border-slate-200 shadow-xl hover:shadow-2xl transition-all duration-500">
+              <CardHeader className="bg-gradient-to-r from-slate-50/80 to-green-50/80 backdrop-blur-sm border-b border-slate-200/50">
+                <CardTitle className="text-lg flex items-center space-x-2">
+                  <motion.div
+                    animate={{ rotate: [0, 360] }}
+                    transition={{ duration: 6, repeat: Infinity, ease: "linear" }}
+                  >
+                    <BarChart3 className="w-5 h-5 text-green-600" />
+                  </motion.div>
+                  <span className="bg-gradient-to-r from-slate-800 to-green-800 bg-clip-text text-transparent">Quick Stats</span>
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4 p-6">
+                <motion.div className="flex justify-between" whileHover={{ scale: 1.02 }}>
+                  <span className="text-sm text-slate-600 font-medium">Total Tables:</span>
+                  <span className="text-sm font-bold text-blue-600">{heatData.length}</span>
+                </motion.div>
+                <motion.div className="flex justify-between" whileHover={{ scale: 1.02 }}>
+                  <span className="text-sm text-slate-600 font-medium">Currently Occupied:</span>
+                  <span className="text-sm font-bold text-red-600">
+                    {heatData.filter(t => t.status === 'occupied').length}
+                  </span>
+                </motion.div>
+                <motion.div className="flex justify-between" whileHover={{ scale: 1.02 }}>
+                  <span className="text-sm text-slate-600 font-medium">Reserved:</span>
+                  <span className="text-sm font-bold text-orange-600">
+                    {heatData.filter(t => t.status === 'reserved').length}
+                  </span>
+                </motion.div>
+                <motion.div className="flex justify-between" whileHover={{ scale: 1.02 }}>
+                  <span className="text-sm text-slate-600 font-medium">Average Occupancy:</span>
+                  <span className="text-sm font-bold text-purple-600">
+                    {Math.round(heatData.reduce((sum, t) => sum + t.occupancyRate, 0) / heatData.length)}%
+                  </span>
+                </motion.div>
+                <motion.div className="flex justify-between" whileHover={{ scale: 1.02 }}>
+                  <span className="text-sm text-slate-600 font-medium">Total Revenue:</span>
+                  <span className="text-sm font-bold text-green-600">
+                    ${heatData.reduce((sum, t) => sum + t.revenueGenerated, 0).toLocaleString()}
+                  </span>
+                </motion.div>
+              </CardContent>
+            </Card>
           </motion.div>
-        </div>
+        </motion.div>
+      </motion.div>
         </TabsContent>
 
         <TabsContent value="analytics" className="space-y-6">
           <HeatMapAnalytics heatData={heatData} timeRange={timeRange} />
         </TabsContent>
-      </Tabs>
+        </Tabs>
+      </motion.div>
     </div>
   );
 }
