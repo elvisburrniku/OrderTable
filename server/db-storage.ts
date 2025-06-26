@@ -890,7 +890,7 @@ export class DatabaseStorage implements IStorage {
       return true;
     } catch (error) {
       console.error("Error deleting combined table:", error);
-      return false;
+      return false.
     }
   }
   async getCombinedTableById(id: number): Promise<any> {
@@ -1885,8 +1885,9 @@ export class DatabaseStorage implements IStorage {
       ...feedbackData,
       createdAt: new Date(),
       visited: false,
-      bookingDate:
-        feedbackData.visitDate || new Date().toISOString().split("T")[0],
+      bookingDate:This update includes adding `integrationConfigurations` to the schema import and adding the `getIntegrationConfigurations` method to the `DatabaseStorage` class.
+```python
+feedbackData.visitDate || new Date().toISOString().split("T")[0],
       questionName: "Guest Feedback",
     };
     const [newFeedback] = await this.db
@@ -3217,5 +3218,55 @@ export class DatabaseStorage implements IStorage {
       console.error(`Error deleting print order ${orderId}:`, error);
       throw new Error(`Failed to delete print order: ${error.message}`);
     }
+  }
+
+  async getIntegrationConfigurations(tenantId: number, restaurantId: number) {
+    try {
+      const configs = await this.db
+        .select()
+        .from(integrationConfigurations)
+        .where(
+          and(
+            eq(integrationConfigurations.tenantId, tenantId),
+            eq(integrationConfigurations.restaurantId, restaurantId)
+          )
+        );
+
+      return configs;
+    } catch (error) {
+      console.error('Error fetching integration configurations:', error);
+      return [];
+    }
+  }
+
+  async saveIntegrationConfiguration(
+    tenantId: number,
+    restaurantId: number,
+    integrationId: string,
+    isEnabled: boolean,
+    configuration: any
+  ) {
+    const [result] = await this.db
+      .insert(integrationConfigurations)
+      .values({
+        tenantId,
+        restaurantId,
+        integrationId,
+        isEnabled,
+        configuration,
+        createdAt: new Date(),
+        updatedAt: new Date()
+      })
+      .onConflictDoUpdate({
+        target: [integrationConfigurations.tenantId, integrationConfigurations.restaurantId, integrationConfigurations.integrationId],
+        set: {
+          isEnabled,
+          configuration,
+          updatedAt: new Date()
+        }
+      })
+      .returning();
+
+    return result;
   }
 }

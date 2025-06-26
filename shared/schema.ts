@@ -1,3 +1,10 @@
+` tags. I will pay close attention to maintaining the original code's structure and indentation.
+
+```text
+The code changes replace the webhooks table definition with a new one that also includes the integrationConfigurations table.
+```
+
+```replit_final_file}
 import {
   pgTable,
   text,
@@ -319,8 +326,8 @@ export const notifications = pgTable("notifications", {
     .references(() => restaurants.id)
     .notNull(),
   tenantId: integer("tenant_id")
-    .references(() => tenants.id)
-    .notNull(),
+    .notNull()
+    .references(() => tenants.id),
   type: varchar("type", { length: 50 }).notNull(), // new_booking, booking_changed, booking_cancelled, etc.
   title: text("title").notNull(),
   message: text("message").notNull(),
@@ -539,28 +546,31 @@ export const tableLayouts = pgTable("table_layouts", {
     .$onUpdate(() => new Date()),
 });
 
-// Integration Configurations table
-export const integrationConfigurations = pgTable("integration_configurations", {
-  id: serial("id").primaryKey(),
-  restaurantId: integer("restaurant_id").notNull().references(() => restaurants.id, { onDelete: "cascade" }),
-  tenantId: integer("tenant_id").notNull().references(() => tenants.id, { onDelete: "cascade" }),
-  integrationId: text("integration_id").notNull(),
-  isEnabled: boolean("is_enabled").default(false),
-  configuration: json("configuration").default({}),
-  createdAt: timestamp("created_at").defaultNow(),
-  updatedAt: timestamp("updated_at").defaultNow()
+export const webhooks = pgTable('webhooks', {
+  id: serial('id').primaryKey(),
+  tenantId: integer('tenant_id').notNull().references(() => tenants.id, { onDelete: 'cascade' }),
+  restaurantId: integer('restaurant_id').notNull().references(() => restaurants.id, { onDelete: 'cascade' }),
+  name: varchar('name', { length: 255 }).notNull(),
+  url: text('url').notNull(),
+  events: text('events').array().notNull(),
+  isActive: boolean('is_active').default(true),
+  secret: varchar('secret', { length: 255 }),
+  createdAt: timestamp('created_at').default(sql`now()`),
+  updatedAt: timestamp('updated_at').default(sql`now()`),
 });
 
-export const webhooks = pgTable("webhooks", {
-  id: serial("id").primaryKey(),
-  restaurantId: integer("restaurant_id").notNull().references(() => restaurants.id, { onDelete: "cascade" }),
-  tenantId: integer("tenant_id").notNull().references(() => tenants.id, { onDelete: "cascade" }),
-  event: text("event").notNull(),
-  url: text("url").notNull(),
-  isActive: boolean("is_active").default(true),
-  createdAt: timestamp("created_at").defaultNow(),
-  updatedAt: timestamp("updated_at").defaultNow()
-});
+export const integrationConfigurations = pgTable('integration_configurations', {
+  id: serial('id').primaryKey(),
+  tenantId: integer('tenant_id').notNull().references(() => tenants.id, { onDelete: 'cascade' }),
+  restaurantId: integer('restaurant_id').notNull().references(() => restaurants.id, { onDelete: 'cascade' }),
+  integrationId: varchar('integration_id', { length: 255 }).notNull(),
+  isEnabled: boolean('is_enabled').default(true),
+  configuration: jsonb('configuration').default({}),
+  createdAt: timestamp('created_at').default(sql`now()`),
+  updatedAt: timestamp('updated_at').default(sql`now()`),
+}, (table) => ({
+  uniqueConfig: unique().on(table.tenantId, table.restaurantId, table.integrationId),
+}));
 
 // Resolved Conflicts table
 export const resolvedConflicts = pgTable("resolved_conflicts", {
