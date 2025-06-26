@@ -890,12 +890,12 @@ export class DatabaseStorage implements IStorage {
       return true;
     } catch (error) {
       console.error("Error deleting combined table:", error);
-      return false.
+      return false;
     }
   }
   async getCombinedTableById(id: number): Promise<any> {
     try {
-      const result = awaitthis.db
+      const result = await this.db
         .select()
         .from(combinedTables)
         .where(eq(combinedTables.id, id));
