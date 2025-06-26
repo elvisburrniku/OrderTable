@@ -745,7 +745,7 @@ export default function SeatingHeatMap({ restaurantId, tenantId }: SeatingHeatMa
                   position={mousePosition}
                   visible={!!hoveredTable}
                 />
-              </div>
+              </motion.div>
             </CardContent>
           </Card>
         </div>
