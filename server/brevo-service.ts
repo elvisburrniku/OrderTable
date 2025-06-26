@@ -9,7 +9,7 @@ export class BrevoEmailService {
   constructor() {
     const apiKey = process.env.BREVO_API_KEY;
     this.isEnabled = !!apiKey;
-    
+
     if (apiKey) {
       this.apiInstance = new TransactionalEmailsApi();
       // Set the default headers for authentication
@@ -26,14 +26,14 @@ export class BrevoEmailService {
       console.log('Email service not enabled - skipping email notification');
       return false;
     }
-    
+
     // Check system settings for email notifications
     const emailNotificationsEnabled = await systemSettings.isFeatureEnabled('enable_email_notifications');
     if (!emailNotificationsEnabled) {
       console.log('Email notifications disabled in system settings');
       return false;
     }
-    
+
     return true;
   }
 
@@ -84,7 +84,7 @@ export class BrevoEmailService {
 
   async sendBookingConfirmation(customerEmail: string, customerName: string, bookingDetails: any) {
     if (!this.checkEnabled()) return;
-    
+
     const sendSmtpEmail = new SendSmtpEmail();
 
     // Ensure booking ID is properly set
@@ -98,7 +98,7 @@ export class BrevoEmailService {
       ? `https://${process.env.REPLIT_DEV_DOMAIN}` 
       : 'http://localhost:5000';
     let manageUrl, cancelUrl;
-    
+
     if (bookingDetails.managementHash) {
       // Use stored management hash
       manageUrl = `${baseUrl}/booking-manage/${bookingId}?hash=${bookingDetails.managementHash}`;
@@ -243,7 +243,7 @@ export class BrevoEmailService {
 
   async sendBookingChangeRequest(restaurantEmail: string, changeRequestDetails: any, bookingDetails: any) {
     if (!this.checkEnabled()) return;
-    
+
     const sendSmtpEmail = new SendSmtpEmail();
 
     const baseUrl = process.env.APP_BASE_URL || process.env.REPLIT_DEV_DOMAIN 
@@ -373,13 +373,13 @@ export class BrevoEmailService {
 
   async sendChangeRequestResponse(customerEmail: string, customerName: string, approved: boolean, bookingDetails: any, changeDetails: any, restaurantResponse?: string) {
     if (!this.checkEnabled()) return;
-    
+
     const sendSmtpEmail = new SendSmtpEmail();
 
     const baseUrl = process.env.APP_BASE_URL || process.env.REPLIT_DEV_DOMAIN 
       ? `https://${process.env.REPLIT_DEV_DOMAIN}` 
       : 'http://localhost:5000';
-    
+
     // Use stored management hash for cancel URL
     let cancelUrl = '';
     if (bookingDetails.managementHash) {
@@ -509,7 +509,7 @@ export class BrevoEmailService {
 
   async sendBookingReminder(customerEmail: string, customerName: string, bookingDetails: any, hoursBeforeVisit: number) {
     if (!this.checkEnabled()) return;
-    
+
     const sendSmtpEmail = new SendSmtpEmail();
 
     sendSmtpEmail.subject = `Reminder: Your reservation is in ${hoursBeforeVisit} hours`;
@@ -547,13 +547,13 @@ export class BrevoEmailService {
       return result;
     } catch (error) {
       console.error('Error sending booking reminder email:', error);
-      throw error;
+      return false;
     }
   }
 
   async sendContactFormNotification(contactData: any) {
     if (!this.checkEnabled()) return;
-    
+
     const sendSmtpEmail = new SendSmtpEmail();
 
     sendSmtpEmail.subject = `New Contact Form Submission: ${contactData.subject}`;
@@ -562,11 +562,11 @@ export class BrevoEmailService {
       <html>
         <head>
           <meta charset="utf-8">
-          <meta name="viewport" content="width=device-width, initial-scale=1.0">
+          <meta name="viewport          <meta name="viewport" content="width=device-width, initial-scale=1.0">
         </head>
         <body style="margin: 0; padding: 20px; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Arial, sans-serif; background-color: #f5f5f5;">
           <div style="max-width: 600px; margin: 0 auto; background-color: white; border-radius: 8px; overflow: hidden; box-shadow: 0 2px 10px rgba(0,0,0,0.1);">
-            
+
             <!-- Header -->
             <div style="background-color: #007bff; padding: 30px 30px 20px; text-align: center;">
               <h1 style="margin: 0; font-size: 28px; font-weight: 600; color: white; letter-spacing: -0.5px;">New Contact Form Submission</h1>
@@ -576,37 +576,37 @@ export class BrevoEmailService {
             <div style="padding: 30px;">
               <div style="background-color: #f8f9fa; border-radius: 8px; padding: 25px; margin: 25px 0;">
                 <h3 style="margin: 0 0 20px; font-size: 18px; color: #333; font-weight: 600;">Contact Details</h3>
-                
+
                 <div style="display: grid; gap: 15px;">
                   <div style="display: flex; justify-content: space-between; padding: 10px 0; border-bottom: 1px solid #e9ecef;">
                     <span style="color: #666; font-weight: 500;">Name:</span>
                     <span style="color: #333; font-weight: 600;">${contactData.name}</span>
                   </div>
-                  
+
                   <div style="display: flex; justify-content: space-between; padding: 10px 0; border-bottom: 1px solid #e9ecef;">
                     <span style="color: #666; font-weight: 500;">Email:</span>
                     <span style="color: #333; font-weight: 600;">${contactData.email}</span>
                   </div>
-                  
+
                   ${contactData.company ? `
                     <div style="display: flex; justify-content: space-between; padding: 10px 0; border-bottom: 1px solid #e9ecef;">
                       <span style="color: #666; font-weight: 500;">Company:</span>
                       <span style="color: #333; font-weight: 600;">${contactData.company}</span>
                     </div>
                   ` : ''}
-                  
+
                   ${contactData.phone ? `
                     <div style="display: flex; justify-content: space-between; padding: 10px 0; border-bottom: 1px solid #e9ecef;">
                       <span style="color: #666; font-weight: 500;">Phone:</span>
                       <span style="color: #333; font-weight: 600;">${contactData.phone}</span>
                     </div>
                   ` : ''}
-                  
+
                   <div style="display: flex; justify-content: space-between; padding: 10px 0; border-bottom: 1px solid #e9ecef;">
                     <span style="color: #666; font-weight: 500;">Category:</span>
                     <span style="color: #333; font-weight: 600;">${contactData.category}</span>
                   </div>
-                  
+
                   <div style="display: flex; justify-content: space-between; padding: 10px 0; border-bottom: 1px solid #e9ecef;">
                     <span style="color: #666; font-weight: 500;">Subject:</span>
                     <span style="color: #333; font-weight: 600;">${contactData.subject}</span>
@@ -650,18 +650,18 @@ export class BrevoEmailService {
         <body style="margin: 0; padding: 20px; font-family: Arial, sans-serif; background-color: #f5f5f5;">
           <div style="max-width: 600px; margin: 0 auto; background-color: white; border-radius: 8px; padding: 30px;">
             <h2 style="color: #007bff; margin-bottom: 20px;">Thank you for contacting us!</h2>
-            
+
             <p>Hi ${contactData.name},</p>
-            
+
             <p>We've received your message regarding: <strong>${contactData.subject}</strong></p>
-            
+
             <p>Our team will review your inquiry and respond within 24 hours. If your matter is urgent, please call us directly.</p>
-            
+
             <div style="background-color: #f8f9fa; padding: 20px; border-radius: 8px; margin: 20px 0;">
               <h3 style="margin: 0 0 10px;">Your message:</h3>
               <p style="margin: 0; color: #666; font-style: italic;">"${contactData.message}"</p>
             </div>
-            
+
             <p>Best regards,<br>The MozRest Team</p>
           </div>
         </body>
@@ -696,7 +696,7 @@ export class BrevoEmailService {
 
   async sendRestaurantNotification(restaurantEmail: string, bookingDetails: any) {
     if (!this.checkEnabled()) return;
-    
+
     const sendSmtpEmail = new SendSmtpEmail();
 
     sendSmtpEmail.subject = "New Booking Received";
@@ -751,9 +751,9 @@ export class BrevoEmailService {
     }
   ) {
     if (!this.checkEnabled()) return;
-    
+
     const sendSmtpEmail = new SendSmtpEmail();
-    
+
     const actionText = {
       upgrade: 'upgraded',
       downgrade: 'downgraded', 
@@ -775,7 +775,7 @@ export class BrevoEmailService {
         </head>
         <body style="margin: 0; padding: 20px; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Arial, sans-serif; background-color: #f5f5f5;">
           <div style="max-width: 600px; margin: 0 auto; background-color: white; border-radius: 8px; overflow: hidden; box-shadow: 0 2px 10px rgba(0,0,0,0.1);">
-            
+
             <!-- Header -->
             <div style="background-color: #e3f2fd; padding: 30px 30px 20px; text-align: center; border-bottom: 1px solid #e5e5e5;">
               <h1 style="margin: 0; font-size: 28px; font-weight: 600; color: #1976d2; letter-spacing: -0.5px;">Subscription ${actionText}</h1>
@@ -784,7 +784,7 @@ export class BrevoEmailService {
             <!-- Content -->
             <div style="padding: 30px;">
               <p style="margin: 0 0 20px; font-size: 16px; color: #333; line-height: 1.5;">A customer has ${actionText} their subscription:</p>
-              
+
               <div style="background-color: #f8f9fa; border-radius: 8px; padding: 20px; margin: 20px 0;">
                 <h3 style="margin: 0 0 15px; font-size: 18px; color: #1976d2;">Customer Details</h3>
                 <p style="margin: 0 0 8px; color: #333;"><strong>Restaurant:</strong> ${subscriptionData.tenantName}</p>
@@ -853,16 +853,16 @@ export class BrevoEmailService {
 
     const sendSmtpEmail = new SendSmtpEmail();
     const senderEmail = process.env.BREVO_SENDER_EMAIL || "noreply@restaurant.com";
-    
+
     sendSmtpEmail.sender = { email: senderEmail, name: "Restaurant System" };
     sendSmtpEmail.to = emailData.to;
     sendSmtpEmail.subject = emailData.subject;
     sendSmtpEmail.htmlContent = emailData.htmlContent;
-    
+
     if (emailData.textContent) {
       sendSmtpEmail.textContent = emailData.textContent;
     }
-    
+
     if (emailData.attachment) {
       sendSmtpEmail.attachment = emailData.attachment;
     }
@@ -888,11 +888,11 @@ export class BrevoEmailService {
 
     const sendSmtpEmail = new SendSmtpEmail();
     const senderEmail = process.env.BREVO_SENDER_EMAIL || "noreply@restaurant.com";
-    
+
     sendSmtpEmail.sender = { email: senderEmail, name: "Restaurant Print Services" };
     sendSmtpEmail.to = [{ email: customerEmail, name: orderDetails.customerName }];
     sendSmtpEmail.subject = `Print Order Confirmation - ${orderDetails.orderNumber}`;
-    
+
     const estimatedCompletion = new Date(orderDetails.estimatedCompletion).toLocaleDateString();
     const totalAmount = (orderDetails.totalAmount / 100).toFixed(2);
 
@@ -904,7 +904,7 @@ export class BrevoEmailService {
               <h1 style="color: #2563eb; margin-bottom: 10px;">Print Order Confirmed</h1>
               <p style="font-size: 18px; color: #666;">Order #${orderDetails.orderNumber}</p>
             </div>
-            
+
             <div style="background-color: #f8f9fa; padding: 20px; border-radius: 8px; margin-bottom: 20px;">
               <h2 style="color: #1f2937; margin-top: 0;">Order Details</h2>
               <table style="width: 100%; border-collapse: collapse;">
@@ -931,7 +931,7 @@ export class BrevoEmailService {
                 </tr>
               </table>
             </div>
-            
+
             <div style="background-color: #ecfdf5; padding: 20px; border-radius: 8px; border-left: 4px solid #10b981; margin-bottom: 20px;">
               <h3 style="color: #065f46; margin-top: 0;">Production Timeline</h3>
               <p style="margin: 0; color: #047857;">
@@ -939,21 +939,21 @@ export class BrevoEmailService {
                 ${orderDetails.rushOrder ? 'Your rush order will be prioritized and completed within 24 hours.' : 'Standard processing time is 2-3 business days.'}
               </p>
             </div>
-            
+
             ${orderDetails.deliveryAddress ? `
             <div style="background-color: #f3f4f6; padding: 20px; border-radius: 8px; margin-bottom: 20px;">
               <h3 style="color: #374151; margin-top: 0;">Delivery Information</h3>
               <p style="margin: 0; color: #6b7280;">${orderDetails.deliveryAddress}</p>
             </div>
             ` : ''}
-            
+
             ${orderDetails.specialInstructions ? `
             <div style="background-color: #fef3c7; padding: 20px; border-radius: 8px; margin-bottom: 20px;">
               <h3 style="color: #92400e; margin-top: 0;">Special Instructions</h3>
               <p style="margin: 0; color: #b45309;">${orderDetails.specialInstructions}</p>
             </div>
             ` : ''}
-            
+
             <div style="text-align: center; padding: 20px; background-color: #f9fafb; border-radius: 8px;">
               <h3 style="color: #374151; margin-top: 0;">What's Next?</h3>
               <p style="margin-bottom: 15px; color: #6b7280;">
@@ -963,7 +963,7 @@ export class BrevoEmailService {
                 Questions? Contact us at <a href="mailto:support@restaurant.com" style="color: #2563eb;">support@restaurant.com</a>
               </p>
             </div>
-            
+
             <div style="text-align: center; margin-top: 30px; padding-top: 20px; border-top: 1px solid #e5e7eb;">
               <p style="margin: 0; font-size: 12px; color: #9ca3af;">
                 Thank you for choosing our professional print services!
@@ -990,7 +990,7 @@ export class BrevoEmailService {
 
   async sendBookingCancellationNotification(restaurantEmail: string, restaurantName: string, bookingDetails: any) {
     if (!this.checkEnabled()) return;
-    
+
     const sendSmtpEmail = new SendSmtpEmail();
 
     sendSmtpEmail.subject = `Booking Cancellation - ${bookingDetails.customerName}`;
