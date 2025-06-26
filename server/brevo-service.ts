@@ -561,8 +561,7 @@ export class BrevoEmailService {
       <!DOCTYPE html>
       <html>
         <head>
-          <meta charset="utf-8">
-          <meta name="viewport          <meta name="viewport" content="width=device-width, initial-scale=1.0">
+          <meta charset="utf-8">          <meta name="viewport          <meta name="viewport" content="width=device-width, initial-scale=1.0">
         </head>
         <body style="margin: 0; padding: 20px; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Arial, sans-serif; background-color: #f5f5f5;">
           <div style="max-width: 600px; margin: 0 auto; background-color: white; border-radius: 8px; overflow: hidden; box-shadow: 0 2px 10px rgba(0,0,0,0.1);">
@@ -786,6 +785,930 @@ export class BrevoEmailService {
               <p style="margin: 0 0 20px; font-size: 16px; color: #333; line-height: 1.5;">A customer has ${actionText} their subscription:</p>
 
               <div style="background-color: #f8f9fa; border-radius: 8px; padding: 20px; margin: 20px 0;">
+                <h3 style="margin: 0 0 15px; font-size: 18px; color: #1976d2;">Customer Details</h3>
+                <p style="margin: 0 0 8px; color: #333;"><strong>Restaurant:</strong> ${subscriptionData.tenantName}</p>
+                <p style="margin: 0 0 8px; color: #333;"><strong>Customer:</strong> ${subscriptionData.customerName}</p>
+                <p style="margin: 0 0 8px; color: #333;"><strong>Email:</strong> ${subscriptionData.customerEmail}</p>
+                <p style="margin: 0 0 8px; color: #333;"><strong>Action:</strong> ${planChangeText}</p>
+                ${subscriptionData.amount ? `<p style="margin: 0; color: #333;"><strong>Amount:</strong> ${subscriptionData.currency || '$'}${subscriptionData.amount}</p>` : ''}
+              </div>
+
+              <p style="margin: 30px 0 10px; font-size: 16px; color: #333;">This notification was sent automatically from the subscription management system.</p>
+            </div>
+          </div>
+        </body>
+      </html>
+    `;
+
+    const senderEmail = process.env.BREVO_SENDER_EMAIL || "noreply@restaurant.com";
+
+    sendSmtpEmail.sender = {
+      name: "Restaurant Management System",
+      email: senderEmail
+    };
+
+    const adminEmail = process.env.ADMIN_EMAIL || "admin@restaurant.com";
+
+    sendSmtpEmail.to = [{
+      email: adminEmail,
+      name: "System Administrator"
+    }];
+
+    console.log(`Sending subscription notification email:`, {
+      to: adminEmail,
+      from: senderEmail,
+      action: subscriptionData.action,
+      restaurant: subscriptionData.tenantName,
+      subject: sendSmtpEmail.subject
+    });
+
+    try {
+      const result = await this.apiInstance!.sendTransacEmail(sendSmtpEmail);
+      console.log(`Subscription change notification sent successfully to ${adminEmail}:`, {
+        messageId: result.body?.messageId,
+        action: subscriptionData.action,
+        restaurant: subscriptionData.tenantName,
+        from: senderEmail,
+        subject: sendSmtpEmail.subject,
+        brevoResponse: result.response?.statusCode
+      });
+      return result;
+    } catch (error) {
+      console.error(`Error sending subscription change notification to ${adminEmail}:`, error);
+      throw error;
+    }
+  }
+
+  async sendEmail(emailData: {
+    to: Array<{email: string, name?: string}>;
+    subject: string;
+    htmlContent: string;
+    textContent?: string;
+    attachment?: Array<{content: string, name: string}>;
+  }) {
+    if (!this.checkEnabled()) {
+      return;
+    }
+
+    const sendSmtpEmail = new SendSmtpEmail();
+    const senderEmail = process.env.BREVO_SENDER_EMAIL || "noreply@restaurant.com";
+
+    sendSmtpEmail.sender = { email: senderEmail, name: "Restaurant System" };
+    sendSmtpEmail.to = emailData.to;
+    sendSmtpEmail.subject = emailData.subject;
+    sendSmtpEmail.htmlContent = emailData.htmlContent;
+
+    if (emailData.textContent) {
+      sendSmtpEmail.textContent = emailData.textContent;
+    }
+
+    if (emailData.attachment) {
+      sendSmtpEmail.attachment = emailData.attachment;
+    }
+
+    try {
+      const result = await this.apiInstance!.sendTransacEmail(sendSmtpEmail);
+      console.log(`Email sent successfully to ${emailData.to.map(t => t.email).join(', ')}:`, {
+        messageId: result.body?.messageId,
+        subject: emailData.subject,
+        brevoResponse: result.response?.statusCode
+      });
+      return result;
+    } catch (error) {
+      console.error(`Error sending email to ${emailData.to.map(t => t.email).join(', ')}:`, error);
+      throw error;
+    }
+  }
+
+  async sendPrintOrderConfirmation(customerEmail: string, orderDetails: any) {
+    if (!this.checkEnabled()) {
+      return;
+    }
+
+    const sendSmtpEmail = new SendSmtpEmail();
+    const senderEmail = process.env.BREVO_SENDER_EMAIL || "noreply@restaurant.com";
+
+    sendSmtpEmail.sender = { email: senderEmail, name: "Restaurant Print Services" };
+    sendSmtpEmail.to = [{ email: customerEmail, name: orderDetails.customerName }];
+    sendSmtpEmail.subject = `Print Order Confirmation - ${orderDetails.orderNumber}`;
+
+    const estimatedCompletion = new Date(orderDetails.estimatedCompletion).toLocaleDateString();
+    const totalAmount = (orderDetails.totalAmount / 100).toFixed(2);
+
+    sendSmtpEmail.htmlContent = `
+      <html>
+        <body style="font-family: Arial, sans-serif; line-height: 1.6; color: #333;">
+          <div style="max-width: 600px; margin: 0 auto; padding: 20px;">
+            <div style="text-align: center; margin-bottom: 30px;">
+              <h1 style="color: #2563eb; margin-bottom: 10px;">Print Order Confirmed</h1>
+              <p style="font-size: 18px; color: #666;">Order #${orderDetails.orderNumber}</p>
+            </div>
+
+            <div style="background-color: #f8f9fa; padding: 20px; border-radius: 8px; margin-bottom: 20px;">
+              <h2 style="color: #1f2937; margin-top: 0;">Order Details</h2>
+              <table style="width: 100%; border-collapse: collapse;">
+                <tr style="border-bottom: 1px solid #e5e7eb;">
+                  <td style="padding: 8px 0; font-weight: bold;">Print Type:</td>
+                  <td style="padding: 8px 0; text-transform: capitalize;">${orderDetails.printType}</td>
+                </tr>
+                <tr style="border-bottom: 1px solid #e5e7eb;">
+                  <td style="padding: 8px 0; font-weight: bold;">Size & Quality:</td>
+                  <td style="padding: 8px 0;">${orderDetails.printSize} - ${orderDetails.printQuality}</td>
+                </tr>
+                <tr style="border-bottom: 1px solid #e5e7eb;">
+                  <td style="padding: 8px 0; font-weight: bold;">Quantity:</td>
+                  <td style="padding: 8px 0;">${orderDetails.quantity} copies</td>
+                </tr>
+                <tr style="border-bottom: 1px solid #e5e7eb;">
+                  <td style="padding: 8px 0; font-weight: bold;">Delivery Method:</td>
+                  <td style="padding: 8px 0; text-transform: capitalize;">${orderDetails.deliveryMethod}</td>
+                </tr>
+                ${orderDetails.rushOrder ? '<tr style="border-bottom: 1px solid #e5e7eb;"><td style="padding: 8px 0; font-weight: bold;">Rush Order:</td><td style="padding: 8px 0; color: #dc2626;">Yes (+50% fee)</td></tr>' : ''}
+                <tr>
+                  <td style="padding: 8px 0; font-weight: bold; font-size: 18px;">Total Paid:</td>
+                  <td style="padding: 8px 0; font-size: 18px; font-weight: bold; color: #059669;">$${totalAmount}</td>
+                </tr>
+              </table>
+            </div>
+
+            <div style="background-color: #ecfdf5; padding: 20px; border-radius: 8px; border-left: 4px solid #10b981; margin-bottom: 20px;">
+              <h3 style="color: #065f46; margin-top: 0;">Production Timeline</h3>
+              <p style="margin: 0; color: #047857;">
+                <strong>Estimated Completion:</strong> ${estimatedCompletion}<br>
+                ${orderDetails.rushOrder ? 'Your rush order will be prioritized and completed within 24 hours.' : 'Standard processing time is 2-3 business days.'}
+              </p>
+            </div>
+
+            ${orderDetails.deliveryAddress ? `
+            <div style="background-color: #f3f4f6; padding: 20px; border-radius: 8px; margin-bottom: 20px;">
+              <h3 style="color: #374151; margin-top: 0;">Delivery Information</h3>
+              <p style="margin: 0; color: #6b7280;">${orderDetails.deliveryAddress}</p>
+            </div>
+            ` : ''}
+
+            ${orderDetails.specialInstructions ? `
+            <div style="background-color: #fef3c7; padding: 20px; border-radius: 8px; margin-bottom: 20px;">
+              <h3 style="color: #92400e; margin-top: 0;">Special Instructions</h3>
+              <p style="margin: 0; color: #b45309;">${orderDetails.specialInstructions}</p>
+            </div>
+            ` : ''}
+
+            <div style="text-align: center; padding: 20px; background-color: #f9fafb; border-radius: 8px;">
+              <h3 style="color: #374151; margin-top: 0;">What's Next?</h3>
+              <p style="margin-bottom: 15px; color: #6b7280;">
+                Our print specialists will review your order and begin production. You'll receive updates as your order progresses.
+              </p>
+              <p style="margin: 0; color: #6b7280;">
+                Questions? Contact us at <a href="mailto:support@restaurant.com" style="color: #2563eb;">support@restaurant.com</a>
+              </p>
+            </div>
+
+            <div style="text-align: center; margin-top: 30px; padding-top: 20px; border-top: 1px solid #e5e7eb;">
+              <p style="margin: 0; font-size: 12px; color: #9ca3af;">
+                Thank you for choosing our professional print services!
+              </p>
+            </div>
+          </div>
+        </body>
+      </html>
+    `;
+
+    try {
+      const result = await this.apiInstance!.sendTransacEmail(sendSmtpEmail);
+      console.log(`Print order confirmation sent successfully to ${customerEmail}:`, {
+        messageId: result.body?.messageId,
+        orderNumber: orderDetails.orderNumber,
+        brevoResponse: result.response?.statusCode
+      });
+      return result;
+    } catch (error) {
+      console.error(`Error sending print order confirmation to ${customerEmail}:`, error);
+      throw error;
+    }
+  }
+
+  async sendBookingCancellationNotification(restaurantEmail: string, restaurantName: string, bookingDetails: any) {
+    if (!this.checkEnabled()) return;
+
+    const sendSmtpEmail = new SendSmtpEmail();
+
+    sendSmtpEmail.subject = `Booking Cancellation - ${bookingDetails.customerName}`;
+    sendSmtpEmail.htmlContent = `
+      <!DOCTYPE html>
+      <html>
+        <head>
+          <meta charset="utf-8">
+          <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        </head>
+        <body style="margin: 0; padding: 20px; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Arial, sans-serif; background-color: #f5f5f5;">
+          <div style="max-width: 600px; margin: 0 auto; background-color: white; border-radius: 8px; overflow: hidden; box-shadow: 0 2px 10px rgba(0,0,0,0.1);">
+
+            <!-- Header -->
+            <div style="background-color: #f8d7da; padding: 30px 30px 20px; text-align: center; border-bottom: 1px solid #e5e5e5;">
+              <h1 style="margin: 0; font-size: 28px; font-weight: 600; color: #721c24; letter-spacing: -0.5px;">Booking Cancelled</h1>
+            </div>
+
+            <!-- Content -->
+            <div style="padding: 30px;">
+              <p style="margin: 0 0 20px; font-size: 16px; color: #333; line-height: 1.5;">Dear ${restaurantName} Team,</p>
+
+              <p style="margin: 0 0 30px; font-size: 16px; color: #666; line-height: 1.6;">
+                A customer has cancelled their booking. Here are the details:
+              </p>
+
+              <!-- Cancelled Booking Details -->
+              <div style="background-color: #f8d7da; border-radius: 8px; padding: 25px; margin: 25px 0; border-left: 4px solid #dc3545;">
+                <h3 style="margin: 0 0 15px; font-size: 18px; color: #333; font-weight: 600;">Cancelled Booking</h3>
+                <div style="display: grid; gap: 10px;">
+                  <div style="display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid #f1aeb5;">
+                    <span style="color: #666; font-weight: 500;">Customer:</span>
+                    <span style="color: #333; font-weight: 600;">${bookingDetails.customerName}</span>
+                  </div>
+                  ${bookingDetails.customerEmail ? `
+                    <div style="display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid #f1aeb5;">
+                      <span style="color: #666; font-weight: 500;">Email:</span>
+                      <span style="color: #333; font-weight: 600;">${bookingDetails.customerEmail}</span>
+                    </div>
+                  ` : ''}
+                  ${bookingDetails.customerPhone ? `
+                    <div style="display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid #f1aeb5;">
+                      <span style="color: #666; font-weight: 500;">Phone:</span>
+                      <span style="color: #333; font-weight: 600;">${bookingDetails.customerPhone}</span>
+                    </div>
+                  ` : ''}
+                  <div style="display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid #f1aeb5;">
+                    <span style="color: #666; font-weight: 500;">Date:</span>
+                    <span style="color: #333; font-weight: 600;">${new Date(bookingDetails.bookingDate).toLocaleDateString()}</span>
+                  </div>
+                  <div style="display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid #f1aeb5;">
+                    <span style="color: #666; font-weight: 500;">Time:</span>
+                    <span style="color: #333; font-weight: 600;">${bookingDetails.startTime}${bookingDetails.endTime ? ` - ${bookingDetails.endTime}` : ''}</span>
+                  </div>
+                  <div style="display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid #f1aeb5;">
+                    <span style="color: #666; font-weight: 500;">Party Size:</span>
+                    <span style="color: #333; font-weight: 600;">${bookingDetails.guestCount} guests</span>
+                  </div>
+                  <div style="display: flex; justify-content: space-between; padding: 8px 0;">
+                    <span style="color: #666; font-weight: 500;">Cancellation Time:</span>
+                    <span style="color: #333; font-weight: 600;">${new Date().toLocaleString()}</span>
+                  </div>
+                </div>
+              </div>
+
+              ${bookingDetails.notes ? `
+                <div style="background-color: #f8f9fa; border-radius: 8px; padding: 20px; margin: 25px 0;">
+                  <h4 style="margin: 0 0 10px; color: #333;">Original Notes:</h4>
+                  <p style="margin: 0; color: #666; font-style: italic;">"${bookingDetails.notes}"</p>
+                </div>
+              ` : ''}
+
+              <div style="background-color: #d1ecf1; border-radius: 8px; padding: 20px; margin: 25px 0; border-left: 4px solid #17a2b8;">
+                <p style="margin: 0; color: #0c5460; font-weight: 500;">
+                  📅 This table is now available for other bookings at this time slot.
+                </p>
+              </div>
+
+              <p style="margin: 30px 0 10px; font-size: 16px; color: #333;">Best regards,</p>
+              <p style="margin: 0; font-size: 16px; color: #333; font-weight: 600;">Trofta Booking System</p>
+            </div>
+          </div>
+        </body>
+      </html>
+    `;
+
+    const senderEmail = process.env.BREVO_SENDER_EMAIL || "noreply@restaurant.com";
+    console.log('Using sender email:', senderEmail);
+
+    sendSmtpEmail.sender = {
+      name: "Trofta",
+      email: senderEmail
+    };
+
+    sendSmtpEmail.to = [{
+      email: restaurantEmail,
+      name: restaurantName
+    }];
+
+    try {
+      const result = await this.apiInstance!.sendTransacEmail(sendSmtpEmail);
+      console.log('Booking cancellation notification email sent:', result);
+      return result;
+    } catch (error) {
+      console.error('Error sending booking cancellation notification email:', error);
+      throw error;
+    }
+  }
+
+  async sendSubscriptionChangeNotification(
+    subscriptionData: {
+      tenantName: string;
+      customerEmail: string;
+      customerName: string;
+      action: 'upgrade' | 'downgrade' | 'cancel' | 'reactivate';
+      fromPlan: string;
+      toPlan?: string;
+      amount?: number;
+      currency?: string;
+    }
+  ) {
+    if (!this.checkEnabled()) return;
+
+    const sendSmtpEmail = new SendSmtpEmail();
+
+    const actionText = {
+      upgrade: 'upgraded',
+      downgrade: 'downgraded', 
+      cancel: 'cancelled',
+      reactivate: 'reactivated'
+    }[subscriptionData.action];
+
+    const planChangeText = subscriptionData.toPlan 
+      ? `from ${subscriptionData.fromPlan} to ${subscriptionData.toPlan}`
+      : `their ${subscriptionData.fromPlan} subscription`;
+
+    sendSmtpEmail.subject = `Subscription ${actionText} - ${subscriptionData.tenantName}`;
+    sendSmtpEmail.htmlContent = `
+      <!DOCTYPE html>
+      <html>
+        <head>
+          <meta charset="utf-8">
+          <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        </head>
+        <body style="margin: 0; padding: 20px; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Arial, sans-serif; background-color: #f5f5f5;">
+          <div style="max-width: 600px; margin: 0 auto; background-color: white; border-radius: 8px; overflow: hidden; box-shadow: 0 2px 10px rgba(0,0,0,0.1);">
+
+            <!-- Header -->
+            <div style="background-color: #e3f2fd; padding: 30px 30px 20px; text-align: center; border-bottom: 1px solid #e5e5e5;">
+              <h1 style="margin: 0; font-size: 28px; font-weight: 600; color: #1976d2; letter-spacing: -0.5px;">Subscription ${actionText}</h1>
+            </div>
+
+            <!-- Content -->
+            <div style="padding: 30px;">
+              <p style="margin: 0 0 20px; font-size: 16px; color: #333; line-height: 1.5;">A customer has ${actionText} their subscription:</p>
+
+              <div style="background-color: #f8f9fa; border-radius: 8px; padding: 20px; margin: 20px 0;">
+                <h3 style="margin: 0 0 15px; font-size: 18px; color: #1976d2;">Customer Details</h3>
+                <p style="margin: 0 0 8px; color: #333;"><strong>Restaurant:</strong> ${subscriptionData.tenantName}</p>
+                <p style="margin: 0 0 8px; color: #333;"><strong>Customer:</strong> ${subscriptionData.customerName}</p>
+                <p style="margin: 0 0 8px; color: #333;"><strong>Email:</strong> ${subscriptionData.customerEmail}</p>
+                <p style="margin: 0 0 8px; color: #333;"><strong>Action:</strong> ${planChangeText}</p>
+                ${subscriptionData.amount ? `<p style="margin: 0; color: #333;"><strong>Amount:</strong> ${subscriptionData.currency || '$'}${subscriptionData.amount}</p>` : ''}
+              </div>
+
+              <p style="margin: 30px 0 10px; font-size: 16px; color: #333;">This notification was sent automatically from the subscription management system.</p>
+            </div>
+          </div>
+        </body>
+      </html>
+    `;
+
+    const senderEmail = process.env.BREVO_SENDER_EMAIL || "noreply@restaurant.com";
+
+    sendSmtpEmail.sender = {
+      name: "Restaurant Management System",
+      email: senderEmail
+    };
+
+    const adminEmail = process.env.ADMIN_EMAIL || "admin@restaurant.com";
+
+    sendSmtpEmail.to = [{
+      email: adminEmail,
+      name: "System Administrator"
+    }];
+
+    console.log(`Sending subscription notification email:`, {
+      to: adminEmail,
+      from: senderEmail,
+      action: subscriptionData.action,
+      restaurant: subscriptionData.tenantName,
+      subject: sendSmtpEmail.subject
+    });
+
+    try {
+      const result = await this.apiInstance!.sendTransacEmail(sendSmtpEmail);
+      console.log(`Subscription change notification sent successfully to ${adminEmail}:`, {
+        messageId: result.body?.messageId,
+        action: subscriptionData.action,
+        restaurant: subscriptionData.tenantName,
+        from: senderEmail,
+        subject: sendSmtpEmail.subject,
+        brevoResponse: result.response?.statusCode
+      });
+      return result;
+    } catch (error) {
+      console.error(`Error sending subscription change notification to ${adminEmail}:`, error);
+      throw error;
+    }
+  }
+  async sendFeedbackRequest(
+    customerEmail: string,
+    customerName: string,
+    restaurantName: string,
+    feedbackUrl: string
+  ) {
+    if (!this.checkEnabled()) return;
+
+    const sendSmtpEmail = new SendSmtpEmail();
+    sendSmtpEmail.subject = `How was your experience at ${restaurantName}?`;
+    sendSmtpEmail.htmlContent = `
+          <!DOCTYPE html>
+          <html>
+            <head>
+              <meta charset="utf-8">
+              <meta name="viewport" content="width=device-width, initial-scale=1.0">
+            </head>
+            <body style="margin: 0; padding: 20px; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Arial, sans-serif; background-color: #f5f5f5;">
+              <div style="max-width: 600px; margin: 0 auto; background-color: white; border-radius: 8px; overflow: hidden; box-shadow: 0 2px 10px rgba(0,0,0,0.1);">
+    
+                <!-- Header -->
+                <div style="background-color: #f0f9ff; padding: 30px 30px 20px; text-align: center; border-bottom: 1px solid #e5e5e5;">
+                  <h1 style="margin: 0; font-size: 28px; font-weight: 600; color: #1e40af; letter-spacing: -0.5px;">Share Your Experience</h1>
+                </div>
+    
+                <!-- Content -->
+                <div style="padding: 30px;">
+                  <p style="margin: 0 0 20px; font-size: 16px; color: #333; line-height: 1.5;">Dear ${customerName},</p>
+    
+                  <p style="margin: 0 0 30px; font-size: 16px; color: #666; line-height: 1.6;">
+                    We hope you enjoyed your recent visit to ${restaurantName}! We're always looking for ways to improve and would value your feedback.
+                  </p>
+    
+                  <!-- Feedback Button -->
+                  <div style="text-align: center; margin: 30px 0;">
+                    <a href="${feedbackUrl}" style="background-color: #3b82f6; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; font-weight: 600; display: inline-block;">
+                      Share Your Feedback
+                    </a>
+                  </div>
+    
+                  <p style="margin: 20px 0; font-size: 14px; color: #666; line-height: 1.6; text-align: center;">
+                    Your feedback helps us make every dining experience even better.
+                  </p>
+    
+                  <p style="margin: 30px 0 10px; font-size: 16px; color: #333;">Best regards,</p>
+                  <p style="margin: 0; font-size: 16px; color: #333; font-weight: 600;">The ${restaurantName} Team</p>
+                </div>
+    
+                <!-- Footer -->
+                <div style="background-color: #f8f9fa; padding: 20px 30px; border-top: 1px solid #e5e5e5;">
+                  <p style="margin: 0; font-size: 12px; color: #666; line-height: 1.5; text-align: center;">
+                    This email was sent to gather feedback and improve our services.
+                  </p>
+                </div>
+              </div>
+            </body>
+          </html>
+        `;
+
+    sendSmtpEmail.textContent = `
+          Dear ${customerName},
+    
+          We hope you enjoyed your recent visit to ${restaurantName}! We're always looking for ways to improve and would value your feedback.
+    
+          Please click on the link below to share your feedback:
+          ${feedbackUrl}
+    
+          Your feedback helps us make every dining experience even better.
+    
+          Best regards,
+          The ${restaurantName} Team
+        `;
+    const senderEmail = process.env.BREVO_SENDER_EMAIL || "noreply@restaurant.com";
+
+    sendSmtpEmail.sender = {
+      name: "Restaurant Management System",
+      email: senderEmail
+    };
+
+    sendSmtpEmail.to = [{
+      email: customerEmail,
+      name: customerName
+    }];
+
+    try {
+      const result = await this.apiInstance!.sendTransacEmail(sendSmtpEmail);
+      console.log(`Feedback request sent successfully to ${customerEmail}`);
+      return result;
+    } catch (error) {
+      console.error(`Error sending feedback request to ${customerEmail}:`, error);
+      throw error;
+    }
+  }
+
+  async sendEmail(emailData: {
+    to: Array<{email: string, name?: string}>;
+    subject: string;
+    htmlContent: string;
+    textContent?: string;
+    attachment?: Array<{content: string, name: string}>;
+  }) {
+    if (!this.checkEnabled()) {
+      return;
+    }
+
+    const sendSmtpEmail = new SendSmtpEmail();
+    const senderEmail = process.env.BREVO_SENDER_EMAIL || "noreply@restaurant.com";
+
+    sendSmtpEmail.sender = { email: senderEmail, name: "Restaurant System" };
+    sendSmtpEmail.to = emailData.to;
+    sendSmtpEmail.subject = emailData.subject;
+    sendSmtpEmail.htmlContent = emailData.htmlContent;
+
+    if (emailData.textContent) {
+      sendSmtpEmail.textContent = emailData.textContent;
+    }
+
+    if (emailData.attachment) {
+      sendSmtpEmail.attachment = emailData.attachment;
+    }
+
+    try {
+      const result = await this.apiInstance!.sendTransacEmail(sendSmtpEmail);
+      console.log(`Email sent successfully to ${emailData.to.map(t => t.email).join(', ')}:`, {
+        messageId: result.body?.messageId,
+        subject: emailData.subject,
+        brevoResponse: result.response?.statusCode
+      });
+      return result;
+    } catch (error) {
+      console.error(`Error sending email to ${emailData.to.map(t => t.email).join(', ')}:`, error);
+      throw error;
+    }
+  }
+
+  async sendPrintOrderConfirmation(customerEmail: string, orderDetails: any) {
+    if (!this.checkEnabled()) {
+      return;
+    }
+
+    const sendSmtpEmail = new SendSmtpEmail();
+    const senderEmail = process.env.BREVO_SENDER_EMAIL || "noreply@restaurant.com";
+
+    sendSmtpEmail.sender = { email: senderEmail, name: "Restaurant Print Services" };
+    sendSmtpEmail.to = [{ email: customerEmail, name: orderDetails.customerName }];
+    sendSmtpEmail.subject = `Print Order Confirmation - ${orderDetails.orderNumber}`;
+
+    const estimatedCompletion = new Date(orderDetails.estimatedCompletion).toLocaleDateString();
+    const totalAmount = (orderDetails.totalAmount / 100).toFixed(2);
+
+    sendSmtpEmail.htmlContent = `
+      <html>
+        <body style="font-family: Arial, sans-serif; line-height: 1.6; color: #333;">
+          <div style="max-width: 600px; margin: 0 auto; padding: 20px;">
+            <div style="text-align: center; margin-bottom: 30px;">
+              <h1 style="color: #2563eb; margin-bottom: 10px;">Print Order Confirmed</h1>
+              <p style="font-size: 18px; color: #666;">Order #${orderDetails.orderNumber}</p>
+            </div>
+
+            <div style="background-color: #f8f9fa; padding: 20px; border-radius: 8px; margin-bottom: 20px;">
+              <h2 style="color: #1f2937; margin-top: 0;">Order Details</h2>
+              <table style="width: 100%; border-collapse: collapse;">
+                <tr style="border-bottom: 1px solid #e5e7eb;">
+                  <td style="padding: 8px 0; font-weight: bold;">Print Type:</td>
+                  <td style="padding: 8px 0; text-transform: capitalize;">${orderDetails.printType}</td>
+                </tr>
+                <tr style="border-bottom: 1px solid #e5e7eb;">
+                  <td style="padding: 8px 0; font-weight: bold;">Size & Quality:</td>
+                  <td style="padding: 8px 0;">${orderDetails.printSize} - ${orderDetails.printQuality}</td>
+                </tr>
+                <tr style="border-bottom: 1px solid #e5e7eb;">
+                  <td style="padding: 8px 0; font-weight: bold;">Quantity:</td>
+                  <td style="padding: 8px 0;">${orderDetails.quantity} copies</td>
+                </tr>
+                <tr style="border-bottom: 1px solid #e5e7eb;">
+                  <td style="padding: 8px 0; font-weight: bold;">Delivery Method:</td>
+                  <td style="padding: 8px 0; text-transform: capitalize;">${orderDetails.deliveryMethod}</td>
+                </tr>
+                ${orderDetails.rushOrder ? '<tr style="border-bottom: 1px solid #e5e7eb;"><td style="padding: 8px 0; font-weight: bold;">Rush Order:</td><td style="padding: 8px 0; color: #dc2626;">Yes (+50% fee)</td></tr>' : ''}
+                <tr>
+                  <td style="padding: 8px 0; font-weight: bold; font-size: 18px;">Total Paid:</td>
+                  <td style="padding: 8px 0; font-size: 18px; font-weight: bold; color: #059669;">$${totalAmount}</td>
+                </tr>
+              </table>
+            </div>
+
+            <div style="background-color: #ecfdf5; padding: 20px; border-radius: 8px; border-left: 4px solid #10b981; margin-bottom: 20px;">
+              <h3 style="color: #065f46; margin-top: 0;">Production Timeline</h3>
+              <p style="margin: 0; color: #047857;">
+                <strong>Estimated Completion:</strong> ${estimatedCompletion}<br>
+                ${orderDetails.rushOrder ? 'Your rush order will be prioritized and completed within 24 hours.' : 'Standard processing time is 2-3 business days.'}
+              </p>
+            </div>
+
+            ${orderDetails.deliveryAddress ? `
+            <div style="background-color: #f3f4f6; padding: 20px; border-radius: 8px; margin-bottom: 20px;">
+              <h3 style="color: #374151; margin-top: 0;">Delivery Information</h3>
+              <p style="margin: 0; color: #6b7280;">${orderDetails.deliveryAddress}</p>
+            </div>
+            ` : ''}
+
+            ${orderDetails.specialInstructions ? `
+            <div style="background-color: #fef3c7; padding: 20px; border-radius: 8px; margin-bottom: 20px;">
+              <h3 style="color: #92400e; margin-top: 0;">Special Instructions</h3>
+              <p style="margin: 0; color: #b45309;">${orderDetails.specialInstructions}</p>
+            </div>
+            ` : ''}
+
+            <div style="text-align: center; padding: 20px; background-color: #f9fafb; border-radius: 8px;">
+              <h3 style="color: #374151; margin-top: 0;">What's Next?</h3>
+              <p style="margin-bottom: 15px; color: #6b7280;">
+                Our print specialists will review your order and begin production. You'll receive updates as your order progresses.
+              </p>
+              <p style="margin: 0; color: #6b7280;">
+                Questions? Contact us at <a href="mailto:support@restaurant.com" style="color: #2563eb;">support@restaurant.com</a>
+              </p>
+            </div>
+
+            <div style="text-align: center; margin-top: 30px; padding-top: 20px; border-top: 1px solid #e5e7eb;">
+              <p style="margin: 0; font-size: 12px; color: #9ca3af;">
+                Thank you for choosing our professional print services!
+              </p>
+            </div>
+          </div>
+        </body>
+      </html>
+    `;
+
+    try {
+      const result = await this.apiInstance!.sendTransacEmail(sendSmtpEmail);
+      console.log(`Print order confirmation sent successfully to ${customerEmail}:`, {
+        messageId: result.body?.messageId,
+        orderNumber: orderDetails.orderNumber,
+        brevoResponse: result.response?.statusCode
+      });
+      return result;
+    } catch (error) {
+      console.error(`Error sending print order confirmation to ${customerEmail}:`, error);
+      throw error;
+    }
+  }
+
+  async sendBookingCancellationNotification(restaurantEmail: string, restaurantName: string, bookingDetails: any) {
+    if (!this.checkEnabled()) return;
+
+    const sendSmtpEmail = new SendSmtpEmail();
+
+    sendSmtpEmail.subject = `Booking Cancellation - ${bookingDetails.customerName}`;
+    sendSmtpEmail.htmlContent = `
+      <!DOCTYPE html>
+      <html>
+        <head>
+          <meta charset="utf-8">
+          <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        </head>
+        <body style="margin: 0; padding: 20px; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Arial, sans-serif; background-color: #f5f5f5;">
+          <div style="max-width: 600px; margin: 0 auto; background-color: white; border-radius: 8px; overflow: hidden; box-shadow: 0 2px 10px rgba(0,0,0,0.1);">
+
+            <!-- Header -->
+            <div style="background-color: #f8d7da; padding: 30px 30px 20px; text-align: center; border-bottom: 1px solid #e5e5e5;">
+              <h1 style="margin: 0; font-size: 28px; font-weight: 600; color: #721c24; letter-spacing: -0.5px;">Booking Cancelled</h1>
+            </div>
+
+            <!-- Content -->
+            <div style="padding: 30px;">
+              <p style="margin: 0 0 20px; font-size: 16px; color: #333; line-height: 1.5;">Dear ${restaurantName} Team,</p>
+
+              <p style="margin: 0 0 30px; font-size: 16px; color: #666; line-height: 1.6;">
+                A customer has cancelled their booking. Here are the details:
+              </p>
+
+              <!-- Cancelled Booking Details -->
+              <div style="background-color: #f8d7da; border-radius: 8px; padding: 25px; margin: 25px 0; border-left: 4px solid #dc3545;">
+                <h3 style="margin: 0 0 15px; font-size: 18px; color: #333; font-weight: 600;">Cancelled Booking</h3>
+                <div style="display: grid; gap: 10px;">
+                  <div style="display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid #f1aeb5;">
+                    <span style="color: #666; font-weight: 500;">Customer:</span>
+                    <span style="color: #333; font-weight: 600;">${bookingDetails.customerName}</span>
+                  </div>
+                  ${bookingDetails.customerEmail ? `
+                    <div style="display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid #f1aeb5;">
+                      <span style="color: #666; font-weight: 500;">Email:</span>
+                      <span style="color: #333; font-weight: 600;">${bookingDetails.customerEmail}</span>
+                    </div>
+                  ` : ''}
+                  ${bookingDetails.customerPhone ? `
+                    <div style="display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid #f1aeb5;">
+                      <span style="color: #666; font-weight: 500;">Phone:</span>
+                      <span style="color: #333; font-weight: 600;">${bookingDetails.customerPhone}</span>
+                    </div>
+                  ` : ''}
+                  <div style="display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid #f1aeb5;">
+                    <span style="color: #666; font-weight: 500;">Date:</span>
+                    <span style="color: #333; font-weight: 600;">${new Date(bookingDetails.bookingDate).toLocaleDateString()}</span>
+                  </div>
+                  <div style="display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid #f1aeb5;">
+                    <span style="color: #666; font-weight: 500;">Time:</span>
+                    <span style="color: #333; font-weight: 600;">${bookingDetails.startTime}${bookingDetails.endTime ? ` - ${bookingDetails.endTime}` : ''}</span>
+                  </div>
+                  <div style="display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid #f1aeb5;">
+                    <span style="color: #666; font-weight: 500;">Party Size:</span>
+                    <span style="color: #333; font-weight: 600;">${bookingDetails.guestCount} guests</span>
+                  </div>
+                  <div style="display: flex; justify-content: space-between; padding: 8px 0;">
+                    <span style="color: #666; font-weight: 500;">Cancellation Time:</span>
+                    <span style="color: #333; font-weight: 600;">${new Date().toLocaleString()}</span>
+                  </div>
+                </div>
+              </div>
+
+              ${bookingDetails.notes ? `
+                <div style="background-color: #f8f9fa; border-radius: 8px; padding: 20px; margin: 25px 0;">
+                  <h4 style="margin: 0 0 10px; color: #333;">Original Notes:</h4>
+                  <p style="margin: 0; color: #666; font-style: italic;">"${bookingDetails.notes}"</p>
+                </div>
+              ` : ''}
+
+              <div style="background-color: #d1ecf1; border-radius: 8px; padding: 20px; margin: 25px 0; border-left: 4px solid #17a2b8;">
+                <p style="margin: 0; color: #0c5460; font-weight: 500;">
+                  📅 This table is now available for other bookings at this time slot.
+                </p>
+              </div>
+
+              <p style="margin: 30px 0 10px; font-size: 16px; color: #333;">Best regards,</p>
+              <p style="margin: 0; font-size: 16px; color: #333; font-weight: 600;">Trofta Booking System</p>
+            </div>
+          </div>
+        </body>
+      </html>
+    `;
+
+    const senderEmail = process.env.BREVO_SENDER_EMAIL || "noreply@restaurant.com";
+    console.log('Using sender email:', senderEmail);
+
+    sendSmtpEmail.sender = {
+      name: "Trofta",
+      email: senderEmail
+    };
+
+    sendSmtpEmail.to = [{
+      email: restaurantEmail,
+      name: restaurantName
+    }];
+
+    try {
+      const result = await this.apiInstance!.sendTransacEmail(sendSmtpEmail);
+      console.log('Booking cancellation notification email sent:', result);
+      return result;
+    } catch (error) {
+      console.error('Error sending booking cancellation notification email:', error);
+      throw error;
+    }
+  }
+
+  async sendRestaurantNotification(restaurantEmail: string, bookingDetails: any) {
+    if (!this.checkEnabled()) return;
+
+    const sendSmtpEmail = new SendSmtpEmail();
+
+    sendSmtpEmail.subject = "New Booking Received";
+    sendSmtpEmail.htmlContent = `
+      <!DOCTYPE html>
+      <html>
+        <head>
+          <meta charset="utf-8">
+          <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        </head>
+        <body style="margin: 0; padding: 20px; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Arial, sans-serif; background-color: #f5f5f5;">
+          <div style="max-width: 600px; margin: 0 auto; background-color: white; border-radius: 8px; overflow: hidden; box-shadow: 0 2px 10px rgba(0,0,0,0.1);">
+
+            <!-- Header -->
+            <div style="background-color: #28a745; padding: 30px 30px 20px; text-align: center; border-bottom: 1px solid #e5e5e5;">
+              <h1 style="margin: 0; font-size: 28px; font-weight: 600; color: white; letter-spacing: -0.5px;">New Booking Alert</h1>
+            </div>
+
+            <!-- Content -->
+            <div style="padding: 30px;">
+              <p style="margin: 0 0 20px; font-size: 16px; color: #333; line-height: 1.5;">Dear Restaurant Team,</p>
+
+              <p style="margin: 0 0 30px; font-size: 16px; color: #666; line-height: 1.6;">
+                A new booking has been received. Here are the details:
+              </p>
+
+              <!-- Booking Details -->
+              <div style="background-color: #f8f9fa; border-radius: 8px; padding: 25px; margin: 25px 0; border-left: 4px solid #28a745;">
+                <h3 style="margin: 0 0 15px; font-size: 18px; color: #333; font-weight: 600;">Booking Details</h3>
+                <div style="display: grid; gap: 10px;">
+                  <div style="display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid #e9ecef;">
+                    <span style="color: #666; font-weight: 500;">Customer:</span>
+                    <span style="color: #333; font-weight: 600;">${bookingDetails.customerName}</span>
+                  </div>
+                  ${bookingDetails.customerEmail ? `
+                    <div style="display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid #e9ecef;">
+                      <span style="color: #666; font-weight: 500;">Email:</span>
+                      <span style="color: #333; font-weight: 600;">${bookingDetails.customerEmail}</span>
+                    </div>
+                  ` : ''}
+                  ${bookingDetails.customerPhone ? `
+                    <div style="display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid #e9ecef;">
+                      <span style="color: #666; font-weight: 500;">Phone:</span>
+                      <span style="color: #333; font-weight: 600;">${bookingDetails.customerPhone}</span>
+                    </div>
+                  ` : ''}
+                  <div style="display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid #e9ecef;">
+                    <span style="color: #666; font-weight: 500;">Date:</span>
+                    <span style="color: #333; font-weight: 600;">${new Date(bookingDetails.bookingDate).toLocaleDateString()}</span>
+                  </div>
+                  <div style="display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid #e9ecef;">
+                    <span style="color: #666; font-weight: 500;">Time:</span>
+                    <span style="color: #333; font-weight: 600;">${bookingDetails.startTime}${bookingDetails.endTime ? ` - ${bookingDetails.endTime}` : ''}</span>
+                  </div>
+                  <div style="display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid #e9ecef;">
+                    <span style="color: #666; font-weight: 500;">Party Size:</span>
+                    <span style="color: #333; font-weight: 600;">${bookingDetails.guestCount} guests</span>
+                  </div>
+                  ${bookingDetails.specialRequests ? `
+                    <div style="display: flex; justify-content: space-between; padding: 8px 0;">
+                      <span style="color: #666; font-weight: 500;">Special Requests:</span>
+                      <span style="color: #333; font-weight: 600;">${bookingDetails.specialRequests}</span>
+                    </div>
+                  ` : ''}
+                </div>
+              </div>
+
+              <div style="background-color: #d4edda; border-radius: 8px; padding: 20px; margin: 25px 0; border-left: 4px solid #28a745;">
+                <p style="margin: 0; color: #155724; font-weight: 500;">
+                  ✅ Please confirm the booking and prepare for the customer's visit.
+                </p>
+              </div>
+
+              <p style="margin: 30px 0 10px; font-size: 16px; color: #333;">Best regards,</p>
+              <p style="margin: 0; font-size: 16px; color: #333; font-weight: 600;">Trofta Booking System</p>
+            </div>
+          </div>
+        </body>
+      </html>
+    `;
+
+    const senderEmail = process.env.BREVO_SENDER_EMAIL || "noreply@restaurant.com";
+    console.log('Using sender email:', senderEmail);
+
+    sendSmtpEmail.sender = {
+      name: "Trofta",
+      email: senderEmail
+    };
+
+    sendSmtpEmail.to = [{
+      email: restaurantEmail,
+      name: "Restaurant Team"
+    }];
+
+    try {
+      const result = await this.apiInstance!.sendTransacEmail(sendSmtpEmail);
+      console.log('Restaurant notification email sent:', result);
+      return result;
+    } catch (error) {
+      console.error('Error sending restaurant notification email:', error);
+      throw error;
+    }
+  }
+
+  async sendSubscriptionChangeNotification(
+    subscriptionData: {
+      tenantName: string;
+      customerEmail: string;
+      customerName: string;
+      action: 'upgrade' | 'downgrade' | 'cancel' | 'reactivate';
+      fromPlan: string;
+      toPlan?: string;
+      amount?: number;
+      currency?: string;
+    }
+  ) {
+    if (!this.checkEnabled()) return;
+
+    const sendSmtpEmail = new SendSmtpEmail();
+
+    const actionText = {
+      upgrade: 'upgraded',
+      downgrade: 'downgraded', 
+      cancel: 'cancelled',
+      reactivate: 'reactivated'
+    }[subscriptionData.action];
+
+    const planChangeText = subscriptionData.toPlan 
+      ? `from ${subscriptionData.fromPlan} to ${subscriptionData.toPlan}`
+      : `their ${subscriptionData.fromPlan} subscription`;
+
+    sendSmtpEmail.subject = `Subscription ${actionText} - ${subscriptionData.tenantName}`;
+    sendSmtpEmail.htmlContent = `
+      <!DOCTYPE html>
+      <html>
+        <head>
+          <meta charset="utf-8">
+          <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        </head>
+        <body style="margin: 0; padding: 20px; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Arial, sans-serif; background-color: #f5f5f5;">
+          <div style="max-width: 600px; margin: 0 auto; background-color: white; border-radius: 8px; overflow: hidden; box-shadow: 0 2px 10px rgba(0,0,0,0.1);">
+
+            <!-- Header -->
+            <div style="background-color: #e3f2fd; padding: 30px 30px 20px; text-align: center; border-bottom: 1px solid #e5e5e5;">
+              <h1 style="margin: 0; font-size: 28px; font-weight: 600; color: #1976d2; letter-spacing: -0.5px;">Subscription ${actionText}</h1>
+            </div>
+
+            <!-- Content -->
+            <div style="padding: 30px;">
+              <p style="margin: 0 0 20px; font-size: 16px; color: #333; line-height: 1.5;">A customer has ${actionText} their subscription:</p>
+
+              <div style="background-color: #f8f9fa; border-radius: 8px; padding: 20px, margin: 20px 0;">
                 <h3 style="margin: 0 0 15px; font-size: 18px; color: #1976d2;">Customer Details</h3>
                 <p style="margin: 0 0 8px; color: #333;"><strong>Restaurant:</strong> ${subscriptionData.tenantName}</p>
                 <p style="margin: 0 0 8px; color: #333;"><strong>Customer:</strong> ${subscriptionData.customerName}</p>
