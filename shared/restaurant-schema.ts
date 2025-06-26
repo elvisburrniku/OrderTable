@@ -13,46 +13,45 @@ import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
 
 // Subscription Plans - defines what each user can access
-export const subscriptionPlans = pgTable("subscription_plans", {
+export const subscriptionPlans = pgTable("restaurant_subscription_plans", {
   id: serial("id").primaryKey(),
   name: text("name").notNull(),
-  price: integer("price").notNull(), // price in cents
   maxRestaurants: integer("max_restaurants").notNull(),
+  priceMonthly: integer("price_monthly").notNull(), // price in cents
   features: text("features").notNull(), // JSON array of features
   isActive: boolean("is_active").default(true),
   createdAt: timestamp("created_at").defaultNow(),
 });
 
 // Main users (owners) who subscribe to plans
-export const users = pgTable("users", {
+export const users = pgTable("restaurant_management_users", {
   id: serial("id").primaryKey(),
   email: text("email").notNull().unique(),
   password: text("password").notNull(),
   name: text("name").notNull(),
   subscriptionPlanId: integer("subscription_plan_id").references(() => subscriptionPlans.id),
-  subscriptionStatus: varchar("subscription_status", { length: 20 }).default("trial"),
   maxRestaurants: integer("max_restaurants").default(1),
   stripeCustomerId: text("stripe_customer_id"),
   stripeSubscriptionId: text("stripe_subscription_id"),
+  isActive: boolean("is_active").default(true),
   createdAt: timestamp("created_at").defaultNow(),
 });
 
 // Restaurants - each main user can create multiple restaurants
-export const restaurants = pgTable("restaurants", {
+export const restaurants = pgTable("restaurant_management_restaurants", {
   id: serial("id").primaryKey(),
   ownerId: integer("owner_id")
     .notNull()
     .references(() => users.id),
   name: text("name").notNull(),
-  address: text("address"),
-  phone: text("phone"),
-  email: text("email"),
-  description: text("description"),
+  subscriptionPlanId: integer("subscription_plan_id").references(() => subscriptionPlans.id),
+  stripeCustomerId: text("stripe_customer_id"),
+  stripeSubscriptionId: text("stripe_subscription_id"),
   createdAt: timestamp("created_at").defaultNow(),
 });
 
 // Role definitions with permissions
-export const roles = pgTable("roles", {
+export const roles = pgTable("restaurant_roles", {
   id: serial("id").primaryKey(),
   name: varchar("name", { length: 50 }).notNull(),
   displayName: text("display_name").notNull(),

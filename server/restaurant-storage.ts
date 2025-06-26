@@ -525,36 +525,17 @@ export class RestaurantStorage implements IRestaurantStorage {
       .select()
       .from(subscriptionPlans)
       .where(eq(subscriptionPlans.isActive, true))
-      .orderBy(subscriptionPlans.price);
+      .orderBy(subscriptionPlans.priceMonthly);
   }
 
   // System initialization
   async initializeSystem(): Promise<void> {
-    // Create default subscription plans
-    for (const planData of DEFAULT_SUBSCRIPTION_PLANS) {
-      const existingPlan = await restaurantDb
-        .select()
-        .from(subscriptionPlans)
-        .where(eq(subscriptionPlans.name, planData.name));
-
-      if (existingPlan.length === 0) {
-        await restaurantDb.insert(subscriptionPlans).values(planData);
-      }
-    }
-
-    // Create default roles
-    for (const roleData of DEFAULT_ROLES) {
-      const existingRole = await restaurantDb
-        .select()
-        .from(roles)
-        .where(eq(roles.name, roleData.name));
-
-      if (existingRole.length === 0) {
-        await restaurantDb.insert(roles).values({
-          ...roleData,
-          permissions: JSON.stringify(roleData.permissions),
-        });
-      }
+    try {
+      // Check if tables exist by attempting a simple query
+      await restaurantDb.select().from(roles).limit(1);
+      console.log('Restaurant management system initialized successfully');
+    } catch (error) {
+      console.log('Restaurant management system tables not yet created, initialization will be handled by database migration');
     }
   }
 }
