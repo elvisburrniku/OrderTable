@@ -127,6 +127,21 @@ export const restaurantUsers = pgTable(
   },
 );
 
+// User invitation tokens
+export const invitationTokens = pgTable("invitation_tokens", {
+  id: serial("id").primaryKey(),
+  token: text("token").notNull().unique(),
+  email: text("email").notNull(),
+  name: text("name").notNull(),
+  tenantId: integer("tenant_id").notNull().references(() => tenants.id),
+  role: text("role").notNull(),
+  invitedByUserId: integer("invited_by_user_id").references(() => users.id),
+  expiresAt: timestamp("expires_at").notNull(),
+  used: boolean("used").default(false),
+  usedAt: timestamp("used_at"),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
 export const restaurants = pgTable("restaurants", {
   id: serial("id").primaryKey(),
   tenantId: integer("tenant_id")
@@ -900,6 +915,14 @@ export type InsertIntegrationConfiguration = InferInsertModel<typeof integration
 
 export type ReschedulingSuggestion = InferSelectModel<typeof reschedulingSuggestions>;
 export type InsertReschedulingSuggestion = InferInsertModel<typeof reschedulingSuggestions>;
+
+export type InvitationToken = InferSelectModel<typeof invitationTokens>;
+export type InsertInvitationToken = InferInsertModel<typeof invitationTokens>;
+
+export const insertInvitationTokenSchema = createInsertSchema(invitationTokens).omit({
+  id: true,
+  createdAt: true,
+});
 
 export const insertIntegrationConfigurationSchema = createInsertSchema(integrationConfigurations);
 export const selectIntegrationConfigurationSchema = createSelectSchema(integrationConfigurations);

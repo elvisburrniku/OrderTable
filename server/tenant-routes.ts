@@ -1,11 +1,13 @@
 import { Request, Response } from "express";
-import { tenants, users, tenantUsers, restaurants, roles } from "../shared/schema";
+import { tenants, users, tenantUsers, restaurants, roles, invitationTokens } from "../shared/schema";
 import { eq, and } from "drizzle-orm";
 import { storage } from "./storage";
 import { db } from "./db";
 import { systemSettings } from "./system-settings";
 import bcrypt from "bcrypt";
 import { z } from "zod";
+import crypto from "crypto";
+import { BrevoEmailService } from "./brevo-service";
 
 // User invitation schema
 const inviteUserSchema = z.object({
@@ -101,40 +103,208 @@ export async function inviteTenantUser(req: Request, res: Response) {
     const inviteData = inviteUserSchema.parse(req.body);
 
     // Check if user already exists
-    let user = await storage.getUserByEmail(inviteData.email);
+    const existingUser = await db.select().from(users).where(eq(users.email, inviteData.email));
     
-    if (!user) {
-      // Create new user
-      user = await storage.createUser({
-        email: inviteData.email,
-        name: inviteData.name,
-        password: '', // Will be set when user accepts invitation
+    if (existingUser.length > 0) {
+      // Check if user is already in this tenant
+      const existingTenantUser = await db
+        .select()
+        .from(tenantUsers)
+        .where(and(
+          eq(tenantUsers.tenantId, tenantId),
+          eq(tenantUsers.userId, existingUser[0].id)
+        ));
+
+      if (existingTenantUser.length > 0) {
+        return res.status(400).json({ message: "User is already a member of this tenant" });
+      }
+
+      // Add existing user to tenant
+      await db.insert(tenantUsers).values({
+        tenantId,
+        userId: existingUser[0].id,
+        role: inviteData.role,
       });
+
+      return res.json({ message: "Existing user added to tenant successfully" });
     }
 
-    // Check if user is already in this tenant
-    const existingTenantUser = await db
+    // Generate invitation token for new user
+    const token = crypto.randomBytes(32).toString('hex');
+    const expiresAt = new Date();
+    expiresAt.setHours(expiresAt.getHours() + 48); // Token expires in 48 hours
+
+    // Store invitation token
+    await db.insert(invitationTokens).values({
+      token,
+      email: inviteData.email,
+      name: inviteData.name,
+      tenantId,
+      role: inviteData.role,
+      invitedByUserId: (req as any).user?.id,
+      expiresAt,
+    });
+
+    // Get tenant information for email
+    const [tenant] = await db.select().from(tenants).where(eq(tenants.id, tenantId));
+    
+    // Send invitation email
+    const emailService = new BrevoEmailService();
+    const inviteUrl = `${req.protocol}://${req.get('host')}/accept-invitation?token=${token}`;
+    
+    const emailSent = await emailService.sendEmail({
+      to: [{ email: inviteData.email, name: inviteData.name }],
+      subject: `You're invited to join ${tenant?.name || 'Restaurant Team'}`,
+      htmlContent: `
+        <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
+          <h2 style="color: #333;">You're invited to join ${tenant?.name || 'Restaurant Team'}</h2>
+          <p>Hello ${inviteData.name},</p>
+          <p>You've been invited to join the team at ${tenant?.name || 'our restaurant'}. Click the link below to set up your account and choose your password.</p>
+          <div style="text-align: center; margin: 30px 0;">
+            <a href="${inviteUrl}" style="background-color: #3B82F6; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; display: inline-block; font-weight: bold;">Accept Invitation & Set Password</a>
+          </div>
+          <p>Your role will be: <strong>${inviteData.role}</strong></p>
+          <p style="color: #666;">This invitation will expire in 48 hours.</p>
+          <hr style="margin: 20px 0; border: none; border-top: 1px solid #eee;">
+          <p style="font-size: 12px; color: #999;">If the button doesn't work, copy and paste this link into your browser:<br>
+          <span style="word-break: break-all;">${inviteUrl}</span></p>
+        </div>
+      `,
+      textContent: `You're invited to join ${tenant?.name || 'Restaurant Team'}
+
+Hello ${inviteData.name},
+
+You've been invited to join the team at ${tenant?.name || 'our restaurant'}. Visit this link to set up your account and choose your password:
+${inviteUrl}
+
+Your role will be: ${inviteData.role}
+
+This invitation will expire in 48 hours.`,
+    });
+
+    if (!emailSent) {
+      return res.status(500).json({ message: "Failed to send invitation email" });
+    }
+
+    res.json({ 
+      message: "Invitation sent successfully",
+      email: inviteData.email,
+      expiresAt: expiresAt.toISOString()
+    });
+  } catch (error) {
+    console.error("Error inviting user:", error);
+    res.status(500).json({ message: "Internal server error" });
+  }
+}
+
+// Validate invitation token
+export async function validateInvitationToken(req: Request, res: Response) {
+  try {
+    const { token } = req.params;
+
+    const [invitation] = await db
       .select()
-      .from(tenantUsers)
-      .where(and(
-        eq(tenantUsers.tenantId, tenantId),
-        eq(tenantUsers.userId, user.id)
-      ));
+      .from(invitationTokens)
+      .where(eq(invitationTokens.token, token));
 
-    if (existingTenantUser.length > 0) {
-      return res.status(400).json({ message: "User is already a member of this tenant" });
+    if (!invitation) {
+      return res.status(404).json({ message: "Invalid invitation token" });
     }
+
+    if (invitation.used) {
+      return res.status(400).json({ message: "Invitation has already been used" });
+    }
+
+    if (new Date() > invitation.expiresAt) {
+      return res.status(400).json({ message: "Invitation has expired", expired: true });
+    }
+
+    // Get tenant information
+    const [tenant] = await db.select().from(tenants).where(eq(tenants.id, invitation.tenantId));
+
+    res.json({
+      email: invitation.email,
+      name: invitation.name,
+      tenantName: tenant?.name || 'Restaurant Team',
+      role: invitation.role,
+      expired: false
+    });
+  } catch (error) {
+    console.error("Error validating invitation token:", error);
+    res.status(500).json({ message: "Internal server error" });
+  }
+}
+
+// Accept invitation and create user account
+export async function acceptInvitation(req: Request, res: Response) {
+  try {
+    const { token, password } = req.body;
+
+    if (!token || !password) {
+      return res.status(400).json({ message: "Token and password are required" });
+    }
+
+    const [invitation] = await db
+      .select()
+      .from(invitationTokens)
+      .where(eq(invitationTokens.token, token));
+
+    if (!invitation) {
+      return res.status(404).json({ message: "Invalid invitation token" });
+    }
+
+    if (invitation.used) {
+      return res.status(400).json({ message: "Invitation has already been used" });
+    }
+
+    if (new Date() > invitation.expiresAt) {
+      return res.status(400).json({ message: "Invitation has expired" });
+    }
+
+    // Check if user already exists
+    const existingUser = await db.select().from(users).where(eq(users.email, invitation.email));
+    
+    if (existingUser.length > 0) {
+      return res.status(400).json({ message: "User with this email already exists" });
+    }
+
+    // Hash password
+    const hashedPassword = await bcrypt.hash(password, 10);
+
+    // Create new user
+    const [newUser] = await db.insert(users).values({
+      email: invitation.email,
+      name: invitation.name,
+      password: hashedPassword,
+      restaurantName: null,
+    }).returning();
 
     // Add user to tenant
     await db.insert(tenantUsers).values({
-      tenantId,
-      userId: user.id,
-      role: inviteData.role,
+      tenantId: invitation.tenantId,
+      userId: newUser.id,
+      role: invitation.role,
     });
 
-    res.json({ message: "User invited successfully", user: { id: user.id, email: user.email, name: user.name } });
+    // Mark invitation as used
+    await db
+      .update(invitationTokens)
+      .set({ 
+        used: true, 
+        usedAt: new Date() 
+      })
+      .where(eq(invitationTokens.token, token));
+
+    res.json({ 
+      message: "Account created successfully",
+      user: { 
+        id: newUser.id, 
+        email: newUser.email, 
+        name: newUser.name 
+      }
+    });
   } catch (error) {
-    console.error("Error inviting user:", error);
+    console.error("Error accepting invitation:", error);
     res.status(500).json({ message: "Internal server error" });
   }
 }

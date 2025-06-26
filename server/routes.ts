@@ -15702,6 +15702,10 @@ NEXT STEPS:
   app.get("/api/tenants/:tenantId/roles", validateTenant, tenantRoutes.getTenantRoles);
   app.post("/api/tenants/:tenantId/roles", validateTenant, tenantRoutes.createTenantRole);
 
+  // Invitation management routes (public - no auth required)
+  app.get("/api/invitations/validate/:token", tenantRoutes.validateInvitationToken);
+  app.post("/api/invitations/accept", tenantRoutes.acceptInvitation);
+
   // Register restaurant management routes (new role-based permission system)
   const { registerRestaurantRoutes } = await import("./restaurant-routes");
   registerRestaurantRoutes(app);

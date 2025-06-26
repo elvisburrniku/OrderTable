@@ -93,6 +93,7 @@ import { OverduePaymentGuard } from "./components/overdue-payment-guard";
 import ErrorBoundary from "./components/error-boundary";
 import { AdminPanel } from "./pages/admin/admin-panel";
 import TenantUsersManagement from "./pages/tenant-users-management";
+import AcceptInvitation from "./pages/accept-invitation";
 
 function App() {
   return (
@@ -122,6 +123,7 @@ function App() {
           <Route path="/guest-booking/:tenantId/:restaurantId" component={GuestBookingResponsive} />
           <Route path="/:tenantId/book/:restaurantId" component={GuestBookingResponsive} />
           <Route path="/booking-manage/:id" component={BookingManage} />
+          <Route path="/accept-invitation" component={AcceptInvitation} />
           
           {/* Widget demo with auth context */}
           <Route path="/:tenantId/widget-demo">
