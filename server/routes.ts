@@ -543,6 +543,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       const restaurant = await storage.getRestaurantByUserId(user.id);
 
+      // Determine user role - simple approach
+      let userRole = null;
+      let isOwner = false;
+      
+      // Check if user is the restaurant owner
+      if (restaurant && restaurant.userId === user.id) {
+        isOwner = true;
+        userRole = 'owner';
+      }
+
       // Handle "Remember me" functionality
       if (rememberMe) {
         // Extend session to 30 days for remembered users
@@ -571,12 +581,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
         userAgent: req.get('User-Agent'),
         details: {
           rememberMe,
-          sessionDuration: rememberMe ? "30 days" : "24 hours"
+          sessionDuration: rememberMe ? "30 days" : "24 hours",
+          role: userRole
         }
       });
 
       res.json({
-        user: { ...user, password: undefined },
+        user: { ...user, password: undefined, role: userRole, isOwner },
         tenant: tenantUser,
         restaurant: restaurant
           ? { ...restaurant, tenantId: restaurant.tenantId || tenantUser.id }

@@ -128,7 +128,14 @@ export default function Login() {
   useEffect(() => {
     if (session && !sessionLoading && session.valid) {
       if (session.user && session.restaurant) {
-        if (session.restaurant?.setupCompleted) {
+        const userRole = session.user?.role;
+        const isOwner = session.user?.isOwner;
+        
+        // If user is not an owner and has a specific role, skip setup
+        if (userRole && !isOwner) {
+          const tenantId = session.tenant?.id || session.restaurant?.id;
+          setLocation(`/${tenantId}/dashboard`);
+        } else if (session.restaurant?.setupCompleted) {
           const tenantId = session.tenant?.id || session.restaurant?.id;
           setLocation(`/${tenantId}/dashboard`);
         } else {
@@ -164,8 +171,16 @@ export default function Login() {
             description: "You have successfully logged in.",
           });
           
-          // Check if setup is completed
-          if (!result.restaurant?.setupCompleted) {
+          // Check user role and redirect appropriately
+          const userRole = result.user?.role;
+          const isOwner = result.user?.isOwner;
+          
+          // If user is not an owner and has a specific role, skip setup
+          if (userRole && !isOwner) {
+            const tenantId = result.tenant?.id || result.restaurant?.id;
+            setLocation(`/${tenantId}/dashboard`);
+          } else if (!result.restaurant?.setupCompleted) {
+            // Only owners or users without roles need to complete setup
             setLocation('/setup');
           } else {
             const tenantId = result.tenant?.id || result.restaurant?.id;
