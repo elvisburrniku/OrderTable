@@ -324,6 +324,7 @@ export default function RolePermissions() {
   };
 
   if (!tenantId) {
+    console.log("🚨 NO TENANT ID - Will show error");
     return (
       <div className="text-center py-8">
         <p className="text-muted-foreground">No tenant context available. Please refresh the page.</p>
@@ -332,9 +333,11 @@ export default function RolePermissions() {
   }
 
   if (isLoading) {
+    console.log("🔄 ROLE PERMISSIONS: Loading data...");
     return (
       <div className="flex items-center justify-center h-64">
         <div className="animate-spin w-8 h-8 border-4 border-primary border-t-transparent rounded-full" />
+        <span className="ml-2">Loading role permissions...</span>
       </div>
     );
   }

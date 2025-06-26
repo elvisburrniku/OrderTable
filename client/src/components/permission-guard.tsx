@@ -102,7 +102,7 @@ export function PermissionGuard({ children, requiredPermission, fallbackPath }: 
 
 // Hook to check permissions for specific actions
 export function usePermissions() {
-  const { data: userPermissions } = useQuery<UserPermissions>({
+  const { data: userPermissions, isLoading: queryLoading, error } = useQuery<UserPermissions>({
     queryKey: ["/api/user/permissions"],
     retry: false,
   });
@@ -129,7 +129,8 @@ export function usePermissions() {
     getUserRole,
     getDefaultRedirect,
     permissions: userPermissions?.permissions || [],
-    isLoading: !userPermissions
+    isLoading: queryLoading || !userPermissions,
+    error
   };
 }
 
@@ -161,8 +162,9 @@ export function AutoPermissionGuard({ children }: { children: React.ReactNode })
     allPermissions: permissions
   });
 
-  // Wait for user data to load
-  if (isLoading) {
+  // Wait for user data to load - CRITICAL: Don't redirect while loading
+  if (isLoading || !userRole) {
+    console.log("🔄 AutoPermissionGuard: Still loading permissions, showing loading state");
     return (
       <div className="flex items-center justify-center h-64">
         <div className="animate-spin w-8 h-8 border-4 border-primary border-t-transparent rounded-full" />
