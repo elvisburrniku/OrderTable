@@ -1059,7 +1059,7 @@ export default function ConflictResolutionSystem({
           )}
         </DialogContent>
       </Dialog>
-        </Tabs>
+      </Tabs>
       </motion.div>
     </motion.div>
   );
