@@ -1,22 +1,44 @@
 import { Request, Response } from "express";
-import { tenants, users, tenantUsers, restaurants } from "../shared/schema";
+import { tenants, users, tenantUsers, restaurants, roles } from "../shared/schema";
 import { eq, and } from "drizzle-orm";
 import { storage } from "./storage";
+import { db } from "./db";
 import { systemSettings } from "./system-settings";
+import bcrypt from "bcrypt";
+import { z } from "zod";
+
+// User invitation schema
+const inviteUserSchema = z.object({
+  email: z.string().email(),
+  name: z.string().min(2),
+  role: z.string().min(1),
+});
+
+const updateUserSchema = z.object({
+  name: z.string().min(2).optional(),
+  email: z.string().email().optional(),
+  role: z.string().min(1).optional(),
+});
+
+const createRoleSchema = z.object({
+  name: z.string().min(2),
+  displayName: z.string().min(2),
+  permissions: z.array(z.string()).min(1),
+});
 
 // Get tenant information
 export async function getTenant(req: Request, res: Response) {
   try {
     const tenantId = parseInt(req.params.tenantId);
 
-    const tenant = await storage.db.select().from(tenants).where(eq(tenants.id, tenantId));
+    const tenant = await db.select().from(tenants).where(eq(tenants.id, tenantId));
 
     if (!tenant.length) {
       return res.status(404).json({ message: "Tenant not found" });
     }
 
     // Get tenant users
-    const tenantUsersList = await storage.db
+    const tenantUsersList = await db
       .select({
         tenantId: tenantUsers.tenantId,
         userId: tenantUsers.userId,
@@ -38,6 +60,183 @@ export async function getTenant(req: Request, res: Response) {
     });
   } catch (error) {
     console.error("Error fetching tenant:", error);
+    res.status(500).json({ message: "Internal server error" });
+  }
+}
+
+// Get tenant users (dedicated endpoint)
+export async function getTenantUsers(req: Request, res: Response) {
+  try {
+    const tenantId = parseInt(req.params.tenantId);
+
+    const tenantUsersList = await db
+      .select({
+        tenantId: tenantUsers.tenantId,
+        userId: tenantUsers.userId,
+        role: tenantUsers.role,
+        createdAt: tenantUsers.createdAt,
+        user: {
+          id: users.id,
+          email: users.email,
+          name: users.name,
+          restaurantName: users.restaurantName,
+          ssoProvider: users.ssoProvider,
+        }
+      })
+      .from(tenantUsers)
+      .leftJoin(users, eq(tenantUsers.userId, users.id))
+      .where(eq(tenantUsers.tenantId, tenantId));
+
+    res.json(tenantUsersList);
+  } catch (error) {
+    console.error("Error fetching tenant users:", error);
+    res.status(500).json({ message: "Internal server error" });
+  }
+}
+
+// Invite user to tenant
+export async function inviteTenantUser(req: Request, res: Response) {
+  try {
+    const tenantId = parseInt(req.params.tenantId);
+    const inviteData = inviteUserSchema.parse(req.body);
+
+    // Check if user already exists
+    let user = await storage.getUserByEmail(inviteData.email);
+    
+    if (!user) {
+      // Create new user
+      user = await storage.createUser({
+        email: inviteData.email,
+        name: inviteData.name,
+        password: '', // Will be set when user accepts invitation
+      });
+    }
+
+    // Check if user is already in this tenant
+    const existingTenantUser = await db
+      .select()
+      .from(tenantUsers)
+      .where(and(
+        eq(tenantUsers.tenantId, tenantId),
+        eq(tenantUsers.userId, user.id)
+      ));
+
+    if (existingTenantUser.length > 0) {
+      return res.status(400).json({ message: "User is already a member of this tenant" });
+    }
+
+    // Add user to tenant
+    await db.insert(tenantUsers).values({
+      tenantId,
+      userId: user.id,
+      role: inviteData.role,
+    });
+
+    res.json({ message: "User invited successfully", user: { id: user.id, email: user.email, name: user.name } });
+  } catch (error) {
+    console.error("Error inviting user:", error);
+    res.status(500).json({ message: "Internal server error" });
+  }
+}
+
+// Update tenant user
+export async function updateTenantUser(req: Request, res: Response) {
+  try {
+    const tenantId = parseInt(req.params.tenantId);
+    const userId = parseInt(req.params.userId);
+    const updateData = updateUserSchema.parse(req.body);
+
+    // Update user basic info if provided
+    if (updateData.name || updateData.email) {
+      await storage.updateUser(userId, {
+        name: updateData.name,
+        email: updateData.email,
+      });
+    }
+
+    // Update tenant role if provided
+    if (updateData.role) {
+      await db
+        .update(tenantUsers)
+        .set({ role: updateData.role })
+        .where(and(
+          eq(tenantUsers.tenantId, tenantId),
+          eq(tenantUsers.userId, userId)
+        ));
+    }
+
+    res.json({ message: "User updated successfully" });
+  } catch (error) {
+    console.error("Error updating user:", error);
+    res.status(500).json({ message: "Internal server error" });
+  }
+}
+
+// Remove user from tenant
+export async function removeTenantUser(req: Request, res: Response) {
+  try {
+    const tenantId = parseInt(req.params.tenantId);
+    const userId = parseInt(req.params.userId);
+
+    await db
+      .delete(tenantUsers)
+      .where(and(
+        eq(tenantUsers.tenantId, tenantId),
+        eq(tenantUsers.userId, userId)
+      ));
+
+    res.json({ message: "User removed from tenant successfully" });
+  } catch (error) {
+    console.error("Error removing user:", error);
+    res.status(500).json({ message: "Internal server error" });
+  }
+}
+
+// Get tenant roles
+export async function getTenantRoles(req: Request, res: Response) {
+  try {
+    const tenantId = parseInt(req.params.tenantId);
+
+    const tenantRoles = await db
+      .select()
+      .from(roles)
+      .where(eq(roles.tenantId, tenantId));
+
+    // Include system roles (not tenant-specific)
+    const systemRoles = await db
+      .select()
+      .from(roles)
+      .where(eq(roles.isSystem, true));
+
+    const allRoles = [...systemRoles, ...tenantRoles];
+
+    res.json(allRoles);
+  } catch (error) {
+    console.error("Error fetching roles:", error);
+    res.status(500).json({ message: "Internal server error" });
+  }
+}
+
+// Create custom role for tenant
+export async function createTenantRole(req: Request, res: Response) {
+  try {
+    const tenantId = parseInt(req.params.tenantId);
+    const roleData = createRoleSchema.parse(req.body);
+
+    const [newRole] = await db
+      .insert(roles)
+      .values({
+        tenantId,
+        name: roleData.name,
+        displayName: roleData.displayName,
+        permissions: JSON.stringify(roleData.permissions),
+        isSystem: false,
+      })
+      .returning();
+
+    res.json(newRole);
+  } catch (error) {
+    console.error("Error creating role:", error);
     res.status(500).json({ message: "Internal server error" });
   }
 }

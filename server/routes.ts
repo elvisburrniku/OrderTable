@@ -15694,6 +15694,14 @@ NEXT STEPS:
   // Register admin routes (completely separate from tenant system)
   registerAdminRoutes(app);
 
+  // Tenant user management routes
+  app.get("/api/tenants/:tenantId/users", validateTenant, tenantRoutes.getTenantUsers);
+  app.post("/api/tenants/:tenantId/users/invite", validateTenant, tenantRoutes.inviteTenantUser);
+  app.put("/api/tenants/:tenantId/users/:userId", validateTenant, tenantRoutes.updateTenantUser);
+  app.delete("/api/tenants/:tenantId/users/:userId", validateTenant, tenantRoutes.removeTenantUser);
+  app.get("/api/tenants/:tenantId/roles", validateTenant, tenantRoutes.getTenantRoles);
+  app.post("/api/tenants/:tenantId/roles", validateTenant, tenantRoutes.createTenantRole);
+
   // Register restaurant management routes (new role-based permission system)
   const { registerRestaurantRoutes } = await import("./restaurant-routes");
   registerRestaurantRoutes(app);

@@ -92,6 +92,7 @@ import { SetupGuard } from "./components/setup-guard";
 import { OverduePaymentGuard } from "./components/overdue-payment-guard";
 import ErrorBoundary from "./components/error-boundary";
 import { AdminPanel } from "./pages/admin/admin-panel";
+import TenantUsersManagement from "./pages/tenant-users-management";
 
 function App() {
   return (
@@ -172,6 +173,7 @@ function App() {
                 <Route path="/:tenantId/billing" component={Billing} />
                 <Route path="/:tenantId/sms-messages" component={SmsMessages} />
                 <Route path="/:tenantId/tenant-settings" component={TenantSettings} />
+                <Route path="/:tenantId/tenant-users" component={() => <TenantUsersManagement tenantId={1} />} />
                 <Route path="/:tenantId/email-notifications" component={EmailNotifications} />
                 <Route path="/:tenantId/sms-notifications" component={SmsNotifications} />
                 <Route path="/:tenantId/feedback" component={FeedbackResponses} />
