@@ -28,6 +28,7 @@ import { BrevoEmailService } from "./brevo-service";
 import { BookingHash } from "./booking-hash";
 import { QRCodeService } from "./qr-service";
 import { WebhookService } from "./webhook-service";
+import { requirePermission, requireAnyPermission, PERMISSIONS, getUserPermissions } from "./permissions-middleware";
 import { MetaIntegrationService } from "./meta-service";
 import { metaInstallService } from "./meta-install-service";
 import { setupSSO } from "./sso-auth";
@@ -4177,10 +4178,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
     },
   );
 
-  // Settings routes
+  // Settings routes - only managers and owners can view settings
   app.get(
     "/api/tenants/:tenantId/restaurants/:restaurantId/settings",
     validateTenant,
+    requirePermission(PERMISSIONS.VIEW_SETTINGS),
     async (req, res) => {
       try {
         const restaurantId = parseInt(req.params.restaurantId);
@@ -4203,6 +4205,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.put(
     "/api/tenants/:tenantId/restaurants/:restaurantId/settings",
     validateTenant,
+    requirePermission(PERMISSIONS.EDIT_SETTINGS),
     async (req, res) => {
       try {
         const restaurantId = parseInt(req.params.restaurantId);
@@ -12269,6 +12272,7 @@ NEXT STEPS:
   app.post(
     "/api/subscription/checkout",
     attachUser,
+    requirePermission(PERMISSIONS.MANAGE_BILLING),
     async (req: Request, res: Response) => {
       if (!req.user) {
         return res.status(401).json({ error: "Not authenticated" });
@@ -13062,7 +13066,7 @@ NEXT STEPS:
   );
 
   // Purchase additional restaurant slot
-  app.post('/api/billing/purchase-additional-restaurant', attachUser, async (req: Request, res: Response) => {
+  app.post('/api/billing/purchase-additional-restaurant', attachUser, requirePermission(PERMISSIONS.MANAGE_BILLING), async (req: Request, res: Response) => {
     if (!req.user) {
       return res.status(401).json({ error: 'Not authenticated' });
     }
@@ -13144,6 +13148,7 @@ NEXT STEPS:
   app.get(
     "/api/billing/info",
     attachUser,
+    requirePermission(PERMISSIONS.VIEW_BILLING),
     async (req: Request, res: Response) => {
       if (!req.user) {
         return res.status(401).json({ error: "Not authenticated" });
@@ -13208,6 +13213,7 @@ NEXT STEPS:
   app.post(
     "/api/billing/setup-intent",
     attachUser,
+    requirePermission(PERMISSIONS.MANAGE_BILLING),
     async (req: Request, res: Response) => {
       console.log("Setup intent endpoint called, user:", req.user?.id);
 
@@ -13272,6 +13278,7 @@ NEXT STEPS:
   app.get(
     "/api/billing/invoices",
     attachUser,
+    requirePermission(PERMISSIONS.VIEW_BILLING),
     async (req: Request, res: Response) => {
       if (!req.user) {
         return res.status(401).json({ error: "Not authenticated" });
@@ -13364,6 +13371,7 @@ NEXT STEPS:
   app.delete(
     "/api/billing/payment-method/:id",
     attachUser,
+    requirePermission(PERMISSIONS.MANAGE_BILLING),
     async (req: Request, res: Response) => {
       if (!req.user) {
         return res.status(401).json({ error: "Not authenticated" });
@@ -13386,6 +13394,7 @@ NEXT STEPS:
   app.put(
     "/api/billing/default-payment-method",
     attachUser,
+    requirePermission(PERMISSIONS.MANAGE_BILLING),
     async (req: Request, res: Response) => {
       if (!req.user) {
         return res.status(401).json({ error: "Not authenticated" });
@@ -13433,6 +13442,7 @@ NEXT STEPS:
   app.post(
     "/api/billing/cancel-subscription",
     attachUser,
+    requirePermission(PERMISSIONS.MANAGE_BILLING),
     async (req: Request, res: Response) => {
       if (!req.user) {
         return res.status(401).json({ error: "Not authenticated" });
@@ -13528,6 +13538,7 @@ NEXT STEPS:
   app.post(
     "/api/billing/reactivate-subscription",
     attachUser,
+    requirePermission(PERMISSIONS.MANAGE_BILLING),
     async (req: Request, res: Response) => {
       if (!req.user) {
         return res.status(401).json({ error: "Not authenticated" });
@@ -15729,13 +15740,13 @@ NEXT STEPS:
   // Register admin routes (completely separate from tenant system)
   registerAdminRoutes(app);
 
-  // Tenant user management routes
-  app.get("/api/tenants/:tenantId/users", validateTenant, tenantRoutes.getTenantUsers);
-  app.post("/api/tenants/:tenantId/users/invite", validateTenant, tenantRoutes.inviteTenantUser);
-  app.put("/api/tenants/:tenantId/users/:userId", validateTenant, tenantRoutes.updateTenantUser);
-  app.delete("/api/tenants/:tenantId/users/:userId", validateTenant, tenantRoutes.removeTenantUser);
-  app.get("/api/tenants/:tenantId/roles", validateTenant, tenantRoutes.getTenantRoles);
-  app.post("/api/tenants/:tenantId/roles", validateTenant, tenantRoutes.createTenantRole);
+  // Tenant user management routes - restricted to managers and owners only
+  app.get("/api/tenants/:tenantId/users", validateTenant, requirePermission(PERMISSIONS.VIEW_USERS), tenantRoutes.getTenantUsers);
+  app.post("/api/tenants/:tenantId/users/invite", validateTenant, requirePermission(PERMISSIONS.MANAGE_USERS), tenantRoutes.inviteTenantUser);
+  app.put("/api/tenants/:tenantId/users/:userId", validateTenant, requirePermission(PERMISSIONS.MANAGE_USERS), tenantRoutes.updateTenantUser);
+  app.delete("/api/tenants/:tenantId/users/:userId", validateTenant, requirePermission(PERMISSIONS.MANAGE_USERS), tenantRoutes.removeTenantUser);
+  app.get("/api/tenants/:tenantId/roles", validateTenant, requirePermission(PERMISSIONS.VIEW_USERS), tenantRoutes.getTenantRoles);
+  app.post("/api/tenants/:tenantId/roles", validateTenant, requirePermission(PERMISSIONS.MANAGE_USERS), tenantRoutes.createTenantRole);
 
   // Invitation management routes (public - no auth required)
   app.get("/api/invitations/validate/:token", tenantRoutes.validateInvitationToken);

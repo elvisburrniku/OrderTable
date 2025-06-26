@@ -22,6 +22,11 @@ A comprehensive restaurant booking management system with React frontend and Exp
 - Kitchen order management
 
 ## Recent Changes
+- **2025-06-26**: Completed comprehensive role-based access control system with endpoint-level security
+- **Security Implementation**: Applied permission middleware to all critical endpoints to enforce role-based access control
+- **Agent Restrictions**: Agents now blocked from user management, billing, subscription management, and administrative functions
+- **Permission Matrix**: Full enforcement of granular permissions across user operations, financial management, and tenant administration
+- **Endpoint Security**: Systematically secured billing, subscription, user invitation, role management, and administrative endpoints
 - **2025-06-26**: Completed comprehensive user management system with full CRUD operations and role-based permissions
 - **User Management System**: Built complete team member management with invite system, role assignment, and permission matrix
 - **Database Structure**: Created proper restaurant management data model with users, roles, and permissions tables

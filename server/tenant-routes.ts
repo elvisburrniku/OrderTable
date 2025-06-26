@@ -8,6 +8,7 @@ import bcrypt from "bcrypt";
 import { z } from "zod";
 import crypto from "crypto";
 import { BrevoEmailService } from "./brevo-service";
+import { requirePermission, PERMISSIONS } from "./permissions-middleware";
 
 // User invitation schema
 const inviteUserSchema = z.object({
