@@ -23,7 +23,11 @@ import {
   BarChart3,
   Sparkles,
   Zap,
-  Target
+  Target,
+  DollarSign,
+  Flame,
+  PieChart,
+  Timer
 } from "lucide-react";
 
 interface TableHeatData {
@@ -932,7 +936,379 @@ export default function SeatingHeatMap({ restaurantId, tenantId }: SeatingHeatMa
         </TabsContent>
 
         <TabsContent value="analytics" className="space-y-6">
-          <HeatMapAnalytics heatData={heatData} timeRange={timeRange} />
+          {/* Premium Analytics Dashboard */}
+          <motion.div
+            initial={{ opacity: 0, y: 30 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.3, duration: 0.8 }}
+            className="space-y-6"
+          >
+            {/* Analytics Header */}
+            <motion.div
+              initial={{ opacity: 0, x: -20 }}
+              animate={{ opacity: 1, x: 0 }}
+              transition={{ delay: 0.5, duration: 0.6 }}
+              className="flex items-center justify-between"
+            >
+              <div className="flex items-center space-x-3">
+                <motion.div
+                  animate={{ 
+                    rotate: [0, 360],
+                    scale: [1, 1.1, 1]
+                  }}
+                  transition={{ 
+                    duration: 3, 
+                    repeat: Infinity, 
+                    ease: "easeInOut" 
+                  }}
+                >
+                  <TrendingUp className="w-8 h-8 text-blue-600" />
+                </motion.div>
+                <div>
+                  <h3 className="text-2xl font-bold bg-gradient-to-r from-slate-800 to-blue-800 bg-clip-text text-transparent">
+                    Analytics Dashboard
+                  </h3>
+                  <p className="text-slate-600 flex items-center space-x-2">
+                    <BarChart3 className="w-4 h-4 text-green-500" />
+                    <span>Performance metrics and insights for {timeRange}</span>
+                  </p>
+                </div>
+              </div>
+              
+              <motion.div
+                initial={{ opacity: 0, scale: 0.8 }}
+                animate={{ opacity: 1, scale: 1 }}
+                transition={{ delay: 0.7, duration: 0.4 }}
+                whileHover={{ scale: 1.05 }}
+              >
+                <Badge className="bg-gradient-to-r from-blue-500 to-purple-600 text-white shadow-lg">
+                  Live Data
+                </Badge>
+              </motion.div>
+            </motion.div>
+
+            {/* Key Performance Indicators Grid */}
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.9, duration: 0.6 }}
+              className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6"
+            >
+              {/* Total Revenue KPI */}
+              <motion.div whileHover={{ scale: 1.02, y: -5 }}>
+                <Card className="bg-gradient-to-br from-green-50 to-emerald-100 border-green-200 shadow-lg hover:shadow-xl transition-all duration-500">
+                  <CardContent className="p-6">
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <motion.div 
+                          className="text-3xl font-bold text-green-700"
+                          animate={{ scale: [1, 1.05, 1] }}
+                          transition={{ duration: 2, repeat: Infinity, ease: "easeInOut" }}
+                        >
+                          ${heatData.reduce((sum, t) => sum + t.revenueGenerated, 0).toLocaleString()}
+                        </motion.div>
+                        <p className="text-sm text-green-600 font-medium">Total Revenue</p>
+                      </div>
+                      <motion.div
+                        animate={{ rotate: [0, 10, -10, 0] }}
+                        transition={{ duration: 2, repeat: Infinity, ease: "easeInOut" }}
+                      >
+                        <DollarSign className="w-8 h-8 text-green-600" />
+                      </motion.div>
+                    </div>
+                  </CardContent>
+                </Card>
+              </motion.div>
+
+              {/* Average Occupancy KPI */}
+              <motion.div whileHover={{ scale: 1.02, y: -5 }}>
+                <Card className="bg-gradient-to-br from-blue-50 to-cyan-100 border-blue-200 shadow-lg hover:shadow-xl transition-all duration-500">
+                  <CardContent className="p-6">
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <motion.div 
+                          className="text-3xl font-bold text-blue-700"
+                          animate={{ scale: [1, 1.05, 1] }}
+                          transition={{ duration: 2, repeat: Infinity, ease: "easeInOut", delay: 0.5 }}
+                        >
+                          {Math.round(heatData.reduce((sum, t) => sum + t.occupancyRate, 0) / heatData.length)}%
+                        </motion.div>
+                        <p className="text-sm text-blue-600 font-medium">Avg Occupancy</p>
+                      </div>
+                      <motion.div
+                        animate={{ scale: [1, 1.2, 1] }}
+                        transition={{ duration: 2, repeat: Infinity, ease: "easeInOut" }}
+                      >
+                        <Users className="w-8 h-8 text-blue-600" />
+                      </motion.div>
+                    </div>
+                  </CardContent>
+                </Card>
+              </motion.div>
+
+              {/* Total Bookings KPI */}
+              <motion.div whileHover={{ scale: 1.02, y: -5 }}>
+                <Card className="bg-gradient-to-br from-purple-50 to-violet-100 border-purple-200 shadow-lg hover:shadow-xl transition-all duration-500">
+                  <CardContent className="p-6">
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <motion.div 
+                          className="text-3xl font-bold text-purple-700"
+                          animate={{ scale: [1, 1.05, 1] }}
+                          transition={{ duration: 2, repeat: Infinity, ease: "easeInOut", delay: 1 }}
+                        >
+                          {heatData.reduce((sum, t) => sum + t.bookingCount, 0)}
+                        </motion.div>
+                        <p className="text-sm text-purple-600 font-medium">Total Bookings</p>
+                      </div>
+                      <motion.div
+                        animate={{ rotate: [0, 360] }}
+                        transition={{ duration: 4, repeat: Infinity, ease: "linear" }}
+                      >
+                        <Calendar className="w-8 h-8 text-purple-600" />
+                      </motion.div>
+                    </div>
+                  </CardContent>
+                </Card>
+              </motion.div>
+
+              {/* Peak Performance KPI */}
+              <motion.div whileHover={{ scale: 1.02, y: -5 }}>
+                <Card className="bg-gradient-to-br from-orange-50 to-amber-100 border-orange-200 shadow-lg hover:shadow-xl transition-all duration-500">
+                  <CardContent className="p-6">
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <motion.div 
+                          className="text-3xl font-bold text-orange-700"
+                          animate={{ scale: [1, 1.05, 1] }}
+                          transition={{ duration: 2, repeat: Infinity, ease: "easeInOut", delay: 1.5 }}
+                        >
+                          {Math.max(...heatData.map(t => t.heatScore)).toFixed(0)}
+                        </motion.div>
+                        <p className="text-sm text-orange-600 font-medium">Peak Score</p>
+                      </div>
+                      <motion.div
+                        animate={{ 
+                          y: [0, -5, 0],
+                          rotate: [0, 5, -5, 0]
+                        }}
+                        transition={{ duration: 2, repeat: Infinity, ease: "easeInOut" }}
+                      >
+                        <Flame className="w-8 h-8 text-orange-600" />
+                      </motion.div>
+                    </div>
+                  </CardContent>
+                </Card>
+              </motion.div>
+            </motion.div>
+
+            {/* Performance Charts Section */}
+            <motion.div
+              initial={{ opacity: 0, y: 30 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 1.3, duration: 0.8 }}
+              className="grid grid-cols-1 lg:grid-cols-2 gap-6"
+            >
+              {/* Table Performance Chart */}
+              <Card className="bg-white/80 backdrop-blur-lg border-slate-200 shadow-xl hover:shadow-2xl transition-all duration-500">
+                <CardHeader className="bg-gradient-to-r from-slate-50/80 to-blue-50/80 backdrop-blur-sm border-b border-slate-200/50">
+                  <CardTitle className="flex items-center space-x-2">
+                    <motion.div
+                      animate={{ rotate: [0, 360] }}
+                      transition={{ duration: 8, repeat: Infinity, ease: "linear" }}
+                    >
+                      <PieChart className="w-6 h-6 text-blue-600" />
+                    </motion.div>
+                    <span className="bg-gradient-to-r from-slate-800 to-blue-800 bg-clip-text text-transparent">
+                      Table Performance
+                    </span>
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="p-6">
+                  <div className="space-y-4">
+                    {heatData.map((table, index) => (
+                      <motion.div
+                        key={table.tableId}
+                        initial={{ opacity: 0, x: -20 }}
+                        animate={{ opacity: 1, x: 0 }}
+                        transition={{ delay: 1.5 + index * 0.1, duration: 0.4 }}
+                        whileHover={{ scale: 1.02, x: 5 }}
+                        className="flex items-center justify-between p-3 rounded-lg bg-gradient-to-r from-slate-50 to-blue-50 border border-slate-200/50"
+                      >
+                        <div className="flex items-center space-x-3">
+                          <motion.div
+                            animate={{ 
+                              boxShadow: [
+                                '0 0 5px rgba(59, 130, 246, 0.3)', 
+                                '0 0 15px rgba(59, 130, 246, 0.6)', 
+                                '0 0 5px rgba(59, 130, 246, 0.3)'
+                              ]
+                            }}
+                            transition={{ duration: 2, repeat: Infinity, delay: index * 0.2 }}
+                            className="w-4 h-4 rounded-full bg-gradient-to-r from-blue-400 to-blue-600"
+                          />
+                          <span className="font-medium text-slate-700">{table.tableName}</span>
+                        </div>
+                        <div className="text-right">
+                          <div className="text-lg font-bold text-slate-800">${table.revenueGenerated}</div>
+                          <div className="text-xs text-slate-500">{table.bookingCount} bookings</div>
+                        </div>
+                      </motion.div>
+                    ))}
+                  </div>
+                </CardContent>
+              </Card>
+
+              {/* Occupancy Analytics */}
+              <Card className="bg-white/80 backdrop-blur-lg border-slate-200 shadow-xl hover:shadow-2xl transition-all duration-500">
+                <CardHeader className="bg-gradient-to-r from-slate-50/80 to-green-50/80 backdrop-blur-sm border-b border-slate-200/50">
+                  <CardTitle className="flex items-center space-x-2">
+                    <motion.div
+                      animate={{ scale: [1, 1.2, 1] }}
+                      transition={{ duration: 2, repeat: Infinity, ease: "easeInOut" }}
+                    >
+                      <Activity className="w-6 h-6 text-green-600" />
+                    </motion.div>
+                    <span className="bg-gradient-to-r from-slate-800 to-green-800 bg-clip-text text-transparent">
+                      Occupancy Analytics
+                    </span>
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="p-6">
+                  <div className="space-y-6">
+                    {/* Occupancy Distribution */}
+                    <div>
+                      <h4 className="text-sm font-semibold text-slate-700 mb-3">Occupancy Distribution</h4>
+                      <div className="space-y-3">
+                        {[
+                          { label: 'High (80%+)', count: heatData.filter(t => t.occupancyRate >= 80).length, color: 'from-red-400 to-red-600' },
+                          { label: 'Medium (50-79%)', count: heatData.filter(t => t.occupancyRate >= 50 && t.occupancyRate < 80).length, color: 'from-yellow-400 to-orange-500' },
+                          { label: 'Low (<50%)', count: heatData.filter(t => t.occupancyRate < 50).length, color: 'from-blue-400 to-blue-600' }
+                        ].map((item, index) => (
+                          <motion.div
+                            key={item.label}
+                            initial={{ opacity: 0, width: 0 }}
+                            animate={{ opacity: 1, width: '100%' }}
+                            transition={{ delay: 1.8 + index * 0.2, duration: 0.6 }}
+                            className="flex items-center justify-between"
+                          >
+                            <div className="flex items-center space-x-3">
+                              <motion.div
+                                animate={{ 
+                                  boxShadow: [
+                                    '0 0 5px rgba(59, 130, 246, 0.3)', 
+                                    '0 0 15px rgba(59, 130, 246, 0.6)', 
+                                    '0 0 5px rgba(59, 130, 246, 0.3)'
+                                  ]
+                                }}
+                                transition={{ duration: 2, repeat: Infinity, delay: index * 0.3 }}
+                                className={`w-4 h-4 rounded-full bg-gradient-to-r ${item.color}`}
+                              />
+                              <span className="text-sm text-slate-600">{item.label}</span>
+                            </div>
+                            <motion.span 
+                              className="text-sm font-bold text-slate-800"
+                              animate={{ scale: [1, 1.1, 1] }}
+                              transition={{ duration: 1.5, repeat: Infinity, delay: index * 0.2 }}
+                            >
+                              {item.count} tables
+                            </motion.span>
+                          </motion.div>
+                        ))}
+                      </div>
+                    </div>
+
+                    {/* Average Stay Duration */}
+                    <div>
+                      <h4 className="text-sm font-semibold text-slate-700 mb-3">Average Stay Duration</h4>
+                      <motion.div
+                        initial={{ opacity: 0, scale: 0.8 }}
+                        animate={{ opacity: 1, scale: 1 }}
+                        transition={{ delay: 2.4, duration: 0.6 }}
+                        className="text-center p-4 bg-gradient-to-br from-purple-50 to-pink-50 rounded-lg border border-purple-200/50"
+                      >
+                        <motion.div
+                          animate={{ 
+                            scale: [1, 1.1, 1],
+                            color: ['#8b5cf6', '#ec4899', '#8b5cf6']
+                          }}
+                          transition={{ duration: 2, repeat: Infinity, ease: "easeInOut" }}
+                          className="text-3xl font-bold text-purple-600"
+                        >
+                          {Math.round(heatData.reduce((sum, t) => sum + t.averageStayDuration, 0) / heatData.length)} min
+                        </motion.div>
+                        <p className="text-sm text-purple-600 font-medium">Per Table</p>
+                      </motion.div>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            </motion.div>
+
+            {/* Peak Hours Analysis */}
+            <motion.div
+              initial={{ opacity: 0, y: 30 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 1.7, duration: 0.8 }}
+            >
+              <Card className="bg-white/80 backdrop-blur-lg border-slate-200 shadow-xl hover:shadow-2xl transition-all duration-500">
+                <CardHeader className="bg-gradient-to-r from-slate-50/80 to-orange-50/80 backdrop-blur-sm border-b border-slate-200/50">
+                  <CardTitle className="flex items-center space-x-2">
+                    <motion.div
+                      animate={{ 
+                        rotate: [0, 15, -15, 0],
+                        scale: [1, 1.1, 1]
+                      }}
+                      transition={{ duration: 3, repeat: Infinity, ease: "easeInOut" }}
+                    >
+                      <Clock className="w-6 h-6 text-orange-600" />
+                    </motion.div>
+                    <span className="bg-gradient-to-r from-slate-800 to-orange-800 bg-clip-text text-transparent">
+                      Peak Hours Analysis
+                    </span>
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="p-6">
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                    {heatData.map((table, index) => (
+                      <motion.div
+                        key={table.tableId}
+                        initial={{ opacity: 0, scale: 0.9 }}
+                        animate={{ opacity: 1, scale: 1 }}
+                        transition={{ delay: 2 + index * 0.1, duration: 0.4 }}
+                        whileHover={{ scale: 1.05, y: -3 }}
+                        className="p-4 bg-gradient-to-br from-orange-50 to-amber-50 rounded-lg border border-orange-200/50 shadow-sm"
+                      >
+                        <div className="flex items-center justify-between mb-3">
+                          <h5 className="font-semibold text-slate-800">{table.tableName}</h5>
+                          <motion.div
+                            animate={{ rotate: [0, 360] }}
+                            transition={{ duration: 6, repeat: Infinity, ease: "linear", delay: index * 0.5 }}
+                          >
+                            <Timer className="w-4 h-4 text-orange-600" />
+                          </motion.div>
+                        </div>
+                        <div className="flex flex-wrap gap-1">
+                          {table.peakHours.map((hour, hourIndex) => (
+                            <motion.span
+                              key={hourIndex}
+                              initial={{ opacity: 0, scale: 0.8 }}
+                              animate={{ opacity: 1, scale: 1 }}
+                              transition={{ delay: 2.2 + index * 0.1 + hourIndex * 0.05, duration: 0.3 }}
+                              whileHover={{ scale: 1.1 }}
+                              className="px-2 py-1 text-xs font-medium bg-gradient-to-r from-orange-500 to-amber-500 text-white rounded-full shadow-sm"
+                            >
+                              {hour}
+                            </motion.span>
+                          ))}
+                        </div>
+                      </motion.div>
+                    ))}
+                  </div>
+                </CardContent>
+              </Card>
+            </motion.div>
+          </motion.div>
         </TabsContent>
         </Tabs>
       </motion.div>
