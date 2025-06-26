@@ -24,6 +24,7 @@ import {
   subscriptionPlans,
 } from "@shared/schema";
 import { eq, and } from "drizzle-orm";
+import { PERMISSIONS, ROLE_PERMISSIONS, ROLE_REDIRECTS, getUserRole, getUserPermissions, getRoleRedirect } from "./permissions-middleware";
 import { BrevoEmailService } from "./brevo-service";
 import { BookingHash } from "./booking-hash";
 import { QRCodeService } from "./qr-service";
