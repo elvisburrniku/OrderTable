@@ -12,7 +12,24 @@ import { useToast } from "@/hooks/use-toast";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { apiRequest } from "@/lib/queryClient";
 import { useTenant } from "@/lib/tenant";
-import { Settings, Users, Shield, ArrowRight, Save, RotateCcw } from "lucide-react";
+import { Settings, Users, Shield, ArrowRight, Save, RotateCcw, Grip, Plus, X } from "lucide-react";
+import {
+  DndContext,
+  DragEndEvent,
+  DragOverlay,
+  DragStartEvent,
+  PointerSensor,
+  useSensor,
+  useSensors,
+  closestCorners,
+  useDroppable,
+} from "@dnd-kit/core";
+import {
+  SortableContext,
+  verticalListSortingStrategy,
+  useSortable,
+} from "@dnd-kit/sortable";
+import { CSS } from "@dnd-kit/utilities";
 
 interface Permission {
   key: string;
@@ -48,6 +65,92 @@ const redirectOptions = [
   { value: "settings", label: "Settings" },
 ];
 
+// Draggable Permission Item Component
+interface DraggablePermissionProps {
+  permission: Permission;
+  isActive?: boolean;
+}
+
+function DraggablePermission({ permission, isActive }: DraggablePermissionProps) {
+  const {
+    attributes,
+    listeners,
+    setNodeRef,
+    transform,
+    transition,
+    isDragging,
+  } = useSortable({
+    id: permission.key,
+    data: {
+      type: "permission",
+      permission,
+    },
+  });
+
+  const style = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+  };
+
+  return (
+    <div
+      ref={setNodeRef}
+      style={style}
+      {...attributes}
+      {...listeners}
+      className={`
+        flex items-center gap-2 p-2 rounded-lg border cursor-grab
+        ${isDragging ? 'opacity-50' : ''}
+        ${isActive ? 'bg-primary text-primary-foreground border-primary' : 'bg-background hover:bg-muted border-border'}
+        transition-colors duration-200
+      `}
+    >
+      <Grip className="h-4 w-4 text-muted-foreground" />
+      <span className="text-sm font-medium">{permission.label}</span>
+    </div>
+  );
+}
+
+// Droppable Zone Component
+interface DroppableZoneProps {
+  id: string;
+  title: string;
+  permissions: Permission[];
+  children: React.ReactNode;
+  className?: string;
+}
+
+function DroppableZone({ id, title, permissions, children, className = "" }: DroppableZoneProps) {
+  const { isOver, setNodeRef } = useDroppable({
+    id: id,
+  });
+
+  return (
+    <div className={`space-y-3 ${className}`}>
+      <div className="flex items-center justify-between">
+        <h4 className="font-medium text-sm text-muted-foreground">{title}</h4>
+        <Badge variant="secondary" className="text-xs">
+          {permissions.length}
+        </Badge>
+      </div>
+      <div
+        ref={setNodeRef}
+        className={`
+          min-h-[200px] p-4 border-2 border-dashed rounded-lg transition-all duration-200
+          ${isOver 
+            ? 'border-primary bg-primary/10 border-solid' 
+            : 'border-muted-foreground/25 bg-muted/10'
+          }
+        `}
+      >
+        <div className="space-y-2">
+          {children}
+        </div>
+      </div>
+    </div>
+  );
+}
+
 export default function RolePermissions() {
   const { toast } = useToast();
   const queryClient = useQueryClient();
@@ -56,6 +159,16 @@ export default function RolePermissions() {
   const [rolePermissions, setRolePermissions] = useState<{ [key: string]: string[] }>({});
   const [roleRedirects, setRoleRedirects] = useState<{ [key: string]: string }>({});
   const [hasChanges, setHasChanges] = useState(false);
+  const [activeId, setActiveId] = useState<string | null>(null);
+
+  // Drag and drop sensors
+  const sensors = useSensors(
+    useSensor(PointerSensor, {
+      activationConstraint: {
+        distance: 8,
+      },
+    })
+  );
 
   const { data: permissionsData, isLoading, error } = useQuery<RolePermissionsData>({
     queryKey: [`/api/tenants/${tenantId}/role-permissions`],
@@ -144,6 +257,47 @@ export default function RolePermissions() {
         [selectedRole]: originalRole.redirect
       }));
       setHasChanges(false);
+    }
+  };
+
+  // Drag and drop handlers
+  const handleDragStart = (event: DragStartEvent) => {
+    setActiveId(event.active.id as string);
+  };
+
+  const handleDragEnd = (event: DragEndEvent) => {
+    const { active, over } = event;
+    setActiveId(null);
+
+    if (!over || !permissionsData) return;
+
+    const activePermission = active.data.current?.permission as Permission;
+    const overId = over.id as string;
+
+    if (!activePermission) return;
+
+    const currentRolePermissions = rolePermissions[selectedRole] || [];
+    const isCurrentlyAssigned = currentRolePermissions.includes(activePermission.key);
+
+    // Handle dropping on assigned permissions zones (both pages and features)
+    if (overId === `assigned-${selectedRole}` || overId === `assigned-features-${selectedRole}`) {
+      if (!isCurrentlyAssigned) {
+        setRolePermissions(prev => ({
+          ...prev,
+          [selectedRole]: [...currentRolePermissions, activePermission.key]
+        }));
+        setHasChanges(true);
+      }
+    }
+    // Handle dropping on available permissions zones (both pages and features)
+    else if (overId === `available-${selectedRole}` || overId === `available-features-${selectedRole}`) {
+      if (isCurrentlyAssigned) {
+        setRolePermissions(prev => ({
+          ...prev,
+          [selectedRole]: currentRolePermissions.filter(p => p !== activePermission.key)
+        }));
+        setHasChanges(true);
+      }
     }
   };
 
@@ -278,36 +432,258 @@ export default function RolePermissions() {
                 </TabsList>
 
                 <TabsContent value="pages" className="space-y-4">
-                  <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
-                    {permissionsData.availablePermissions.pageAccess.map((permission) => (
-                      <div key={permission.key} className="flex items-center space-x-2">
-                        <Switch
-                          id={permission.key}
-                          checked={currentRolePermissions.includes(permission.key)}
-                          onCheckedChange={() => handlePermissionToggle(selectedRole, permission.key)}
+                  <DndContext
+                    sensors={sensors}
+                    onDragStart={handleDragStart}
+                    onDragEnd={handleDragEnd}
+                    collisionDetection={closestCorners}
+                  >
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                      {/* Available Permissions */}
+                      <DroppableZone
+                        id={`available-${selectedRole}`}
+                        title="Available Permissions"
+                        permissions={permissionsData.availablePermissions.pageAccess.filter(p => 
+                          !currentRolePermissions.includes(p.key)
+                        )}
+                      >
+                        <SortableContext
+                          items={permissionsData.availablePermissions.pageAccess
+                            .filter(p => !currentRolePermissions.includes(p.key))
+                            .map(p => p.key)}
+                          strategy={verticalListSortingStrategy}
+                        >
+                          {permissionsData.availablePermissions.pageAccess
+                            .filter(p => !currentRolePermissions.includes(p.key))
+                            .map((permission) => (
+                              <DraggablePermission
+                                key={permission.key}
+                                permission={permission}
+                                isActive={false}
+                              />
+                            ))}
+                        </SortableContext>
+                        
+                        {permissionsData.availablePermissions.pageAccess.filter(p => 
+                          !currentRolePermissions.includes(p.key)
+                        ).length === 0 && (
+                          <div className="text-center py-8 text-muted-foreground">
+                            <Users className="h-8 w-8 mx-auto mb-2 opacity-50" />
+                            <p className="text-sm">All permissions assigned</p>
+                          </div>
+                        )}
+                      </DroppableZone>
+
+                      {/* Assigned Permissions */}
+                      <DroppableZone
+                        id={`assigned-${selectedRole}`}
+                        title="Assigned Permissions"
+                        permissions={permissionsData.availablePermissions.pageAccess.filter(p => 
+                          currentRolePermissions.includes(p.key)
+                        )}
+                      >
+                        <SortableContext
+                          items={currentRolePermissions}
+                          strategy={verticalListSortingStrategy}
+                        >
+                          {permissionsData.availablePermissions.pageAccess
+                            .filter(p => currentRolePermissions.includes(p.key))
+                            .map((permission) => (
+                              <DraggablePermission
+                                key={permission.key}
+                                permission={permission}
+                                isActive={true}
+                              />
+                            ))}
+                        </SortableContext>
+                        
+                        {currentRolePermissions.filter(p => p.startsWith('access_')).length === 0 && (
+                          <div className="text-center py-8 text-muted-foreground">
+                            <Shield className="h-8 w-8 mx-auto mb-2 opacity-50" />
+                            <p className="text-sm">No permissions assigned</p>
+                            <p className="text-xs mt-1">Drag permissions here</p>
+                          </div>
+                        )}
+                      </DroppableZone>
+                    </div>
+
+                    <DragOverlay>
+                      {activeId ? (
+                        <DraggablePermission
+                          permission={
+                            [...permissionsData.availablePermissions.pageAccess, ...permissionsData.availablePermissions.features]
+                              .find(p => p.key === activeId)!
+                          }
+                          isActive={false}
                         />
-                        <Label htmlFor={permission.key} className="flex-1 cursor-pointer">
-                          {permission.label}
-                        </Label>
-                      </div>
-                    ))}
+                      ) : null}
+                    </DragOverlay>
+                  </DndContext>
+
+                  {/* Quick Actions */}
+                  <div className="flex items-center gap-2 pt-4 border-t">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => {
+                        // Assign all page permissions
+                        const allPagePermissions = permissionsData.availablePermissions.pageAccess.map(p => p.key);
+                        setRolePermissions(prev => ({
+                          ...prev,
+                          [selectedRole]: [...new Set([...currentRolePermissions, ...allPagePermissions])]
+                        }));
+                        setHasChanges(true);
+                      }}
+                    >
+                      <Plus className="h-4 w-4 mr-1" />
+                      Assign All
+                    </Button>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => {
+                        // Remove all page permissions
+                        const pagePermissions = permissionsData.availablePermissions.pageAccess.map(p => p.key);
+                        setRolePermissions(prev => ({
+                          ...prev,
+                          [selectedRole]: currentRolePermissions.filter(p => !pagePermissions.includes(p))
+                        }));
+                        setHasChanges(true);
+                      }}
+                    >
+                      <X className="h-4 w-4 mr-1" />
+                      Remove All
+                    </Button>
                   </div>
                 </TabsContent>
 
                 <TabsContent value="features" className="space-y-4">
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    {permissionsData.availablePermissions.features.map((permission) => (
-                      <div key={permission.key} className="flex items-center space-x-2">
-                        <Switch
-                          id={permission.key}
-                          checked={currentRolePermissions.includes(permission.key)}
-                          onCheckedChange={() => handlePermissionToggle(selectedRole, permission.key)}
+                  <DndContext
+                    sensors={sensors}
+                    onDragStart={handleDragStart}
+                    onDragEnd={handleDragEnd}
+                    collisionDetection={closestCorners}
+                  >
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                      {/* Available Feature Permissions */}
+                      <DroppableZone
+                        id={`available-features-${selectedRole}`}
+                        title="Available Features"
+                        permissions={permissionsData.availablePermissions.features.filter(p => 
+                          !currentRolePermissions.includes(p.key)
+                        )}
+                      >
+                        <SortableContext
+                          items={permissionsData.availablePermissions.features
+                            .filter(p => !currentRolePermissions.includes(p.key))
+                            .map(p => p.key)}
+                          strategy={verticalListSortingStrategy}
+                        >
+                          {permissionsData.availablePermissions.features
+                            .filter(p => !currentRolePermissions.includes(p.key))
+                            .map((permission) => (
+                              <DraggablePermission
+                                key={permission.key}
+                                permission={permission}
+                                isActive={false}
+                              />
+                            ))}
+                        </SortableContext>
+                        
+                        {permissionsData.availablePermissions.features.filter(p => 
+                          !currentRolePermissions.includes(p.key)
+                        ).length === 0 && (
+                          <div className="text-center py-8 text-muted-foreground">
+                            <Settings className="h-8 w-8 mx-auto mb-2 opacity-50" />
+                            <p className="text-sm">All features assigned</p>
+                          </div>
+                        )}
+                      </DroppableZone>
+
+                      {/* Assigned Feature Permissions */}
+                      <DroppableZone
+                        id={`assigned-features-${selectedRole}`}
+                        title="Assigned Features"
+                        permissions={permissionsData.availablePermissions.features.filter(p => 
+                          currentRolePermissions.includes(p.key)
+                        )}
+                      >
+                        <SortableContext
+                          items={currentRolePermissions.filter(p => 
+                            permissionsData.availablePermissions.features.some(f => f.key === p)
+                          )}
+                          strategy={verticalListSortingStrategy}
+                        >
+                          {permissionsData.availablePermissions.features
+                            .filter(p => currentRolePermissions.includes(p.key))
+                            .map((permission) => (
+                              <DraggablePermission
+                                key={permission.key}
+                                permission={permission}
+                                isActive={true}
+                              />
+                            ))}
+                        </SortableContext>
+                        
+                        {currentRolePermissions.filter(p => 
+                          permissionsData.availablePermissions.features.some(f => f.key === p)
+                        ).length === 0 && (
+                          <div className="text-center py-8 text-muted-foreground">
+                            <Settings className="h-8 w-8 mx-auto mb-2 opacity-50" />
+                            <p className="text-sm">No features assigned</p>
+                            <p className="text-xs mt-1">Drag features here</p>
+                          </div>
+                        )}
+                      </DroppableZone>
+                    </div>
+
+                    <DragOverlay>
+                      {activeId ? (
+                        <DraggablePermission
+                          permission={
+                            [...permissionsData.availablePermissions.pageAccess, ...permissionsData.availablePermissions.features]
+                              .find(p => p.key === activeId)!
+                          }
+                          isActive={false}
                         />
-                        <Label htmlFor={permission.key} className="flex-1 cursor-pointer">
-                          {permission.label}
-                        </Label>
-                      </div>
-                    ))}
+                      ) : null}
+                    </DragOverlay>
+                  </DndContext>
+
+                  {/* Quick Actions for Features */}
+                  <div className="flex items-center gap-2 pt-4 border-t">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => {
+                        // Assign all feature permissions
+                        const allFeaturePermissions = permissionsData.availablePermissions.features.map(p => p.key);
+                        setRolePermissions(prev => ({
+                          ...prev,
+                          [selectedRole]: [...new Set([...currentRolePermissions, ...allFeaturePermissions])]
+                        }));
+                        setHasChanges(true);
+                      }}
+                    >
+                      <Plus className="h-4 w-4 mr-1" />
+                      Assign All
+                    </Button>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => {
+                        // Remove all feature permissions
+                        const featurePermissions = permissionsData.availablePermissions.features.map(p => p.key);
+                        setRolePermissions(prev => ({
+                          ...prev,
+                          [selectedRole]: currentRolePermissions.filter(p => !featurePermissions.includes(p))
+                        }));
+                        setHasChanges(true);
+                      }}
+                    >
+                      <X className="h-4 w-4 mr-1" />
+                      Remove All
+                    </Button>
                   </div>
                 </TabsContent>
 
