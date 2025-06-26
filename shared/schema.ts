@@ -96,9 +96,7 @@ export const tenantUsers = pgTable(
     userId: integer("user_id")
       .notNull()
       .references(() => users.id),
-    roleId: integer("role_id")
-      .references(() => roles.id),
-    isOwner: boolean("is_owner").default(false), // Tenant owner has all permissions
+    role: varchar("role", { length: 20 }).default("administrator"),
     createdAt: timestamp("created_at").defaultNow(),
   },
   (table) => {
@@ -507,7 +505,7 @@ export const insertPermissionSchema = createInsertSchema(permissions).omit({
   createdAt: true,
 });
 
-export const insertTenantUserSchemaNew = createInsertSchema(tenantUsers).omit({
+export const insertTenantUserSchema = createInsertSchema(tenantUsers).omit({
   createdAt: true,
 });
 
@@ -626,7 +624,7 @@ export type InsertRole = z.infer<typeof insertRoleSchema>;
 export type Permission = typeof permissions.$inferSelect;
 export type InsertPermission = z.infer<typeof insertPermissionSchema>;
 export type TenantUser = typeof tenantUsers.$inferSelect;
-export type InsertTenantUser = z.infer<typeof insertTenantUserSchemaNew>;
+export type InsertTenantUser = z.infer<typeof insertTenantUserSchema>;
 export type RestaurantUser = typeof restaurantUsers.$inferSelect;
 export type InsertRestaurantUser = z.infer<typeof insertRestaurantUserSchema>;
 
