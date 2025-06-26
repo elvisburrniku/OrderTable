@@ -282,7 +282,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   };
 
-  const isAuthenticated = !!(user && restaurant);
+  // Team members may not have restaurant ownership but should still be authenticated if they have tenant access
+  const isAuthenticated = !!(user && (restaurant || (user && localStorage.getItem("tenant"))));
 
   return (
     <AuthContext.Provider

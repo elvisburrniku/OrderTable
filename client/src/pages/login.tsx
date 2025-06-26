@@ -127,19 +127,26 @@ export default function Login() {
   // Redirect if already authenticated
   useEffect(() => {
     if (session && !sessionLoading && session.valid) {
-      if (session.user && session.restaurant) {
+      if (session.user) {
         const userRole = session.user?.role;
         const isOwner = session.user?.isOwner;
+        const hasTenant = !!session.tenant?.id;
         
-        // If user is not an owner and has a specific role, skip setup
-        if (userRole && !isOwner) {
-          const tenantId = session.tenant?.id || session.restaurant?.id;
+        // Team members without restaurant ownership should go to dashboard
+        if (!isOwner && hasTenant) {
+          const tenantId = session.tenant.id;
           setLocation(`/${tenantId}/dashboard`);
         } else if (session.restaurant?.setupCompleted) {
+          // Owners with completed setup go to dashboard
           const tenantId = session.tenant?.id || session.restaurant?.id;
           setLocation(`/${tenantId}/dashboard`);
-        } else {
+        } else if (isOwner || !hasTenant) {
+          // Only owners or users without tenant access need to complete setup
           setLocation('/setup');
+        } else {
+          // Fallback to dashboard
+          const tenantId = session.tenant?.id;
+          setLocation(`/${tenantId}/dashboard`);
         }
       }
     }
@@ -174,16 +181,22 @@ export default function Login() {
           // Check user role and redirect appropriately
           const userRole = result.user?.role;
           const isOwner = result.user?.isOwner;
+          const hasTenant = !!result.tenant?.id;
           
-          // If user is not an owner and has a specific role, skip setup
-          if (userRole && !isOwner) {
+          // Team members without restaurant ownership should go to dashboard
+          if (!isOwner && hasTenant) {
+            const tenantId = result.tenant.id;
+            setLocation(`/${tenantId}/dashboard`);
+          } else if (result.restaurant?.setupCompleted) {
+            // Owners with completed setup go to dashboard
             const tenantId = result.tenant?.id || result.restaurant?.id;
             setLocation(`/${tenantId}/dashboard`);
-          } else if (!result.restaurant?.setupCompleted) {
-            // Only owners or users without roles need to complete setup
+          } else if (isOwner || !hasTenant) {
+            // Only owners or users without tenant access need to complete setup
             setLocation('/setup');
           } else {
-            const tenantId = result.tenant?.id || result.restaurant?.id;
+            // Fallback to dashboard
+            const tenantId = result.tenant?.id;
             setLocation(`/${tenantId}/dashboard`);
           }
         } else {

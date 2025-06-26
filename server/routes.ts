@@ -541,9 +541,22 @@ export async function registerRoutes(app: Express): Promise<Server> {
         });
       }
 
-      const restaurant = await storage.getRestaurantByUserId(user.id);
+      // Get restaurant data - either owned by user or associated with tenant
+      let restaurant = await storage.getRestaurantByUserId(user.id);
+      
+      // If user doesn't own a restaurant, try to get the tenant's restaurant
+      if (!restaurant && tenantUser.id) {
+        try {
+          const tenantRestaurants = await storage.getRestaurantsByTenantId(tenantUser.id);
+          if (tenantRestaurants && tenantRestaurants.length > 0) {
+            restaurant = tenantRestaurants[0]; // Use first restaurant for the tenant
+          }
+        } catch (error) {
+          console.log("No restaurants found for tenant, user may be a team member");
+        }
+      }
 
-      // Determine user role - simple approach
+      // Determine user role and ownership
       let userRole = null;
       let isOwner = false;
       
@@ -551,6 +564,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
       if (restaurant && restaurant.userId === user.id) {
         isOwner = true;
         userRole = 'owner';
+      } else if (tenantUser.id) {
+        // For team members, check if they have a role in the tenant
+        try {
+          const tenantUserRelation = await storage.getTenantUsers(tenantUser.id);
+          const userInTenant = tenantUserRelation?.find(tu => tu.userId === user.id);
+          if (userInTenant?.role) {
+            userRole = userInTenant.role;
+          }
+        } catch (error) {
+          console.log("Could not fetch tenant user role, treating as basic team member");
+        }
       }
 
       // Handle "Remember me" functionality
