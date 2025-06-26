@@ -4,6 +4,7 @@ import { queryClient } from "./lib/queryClient";
 import { Toaster } from "@/components/ui/toaster";
 import { AuthProvider } from "./lib/auth.tsx";
 import { TenantProvider } from "./lib/tenant";
+import { RestaurantAuthProvider } from "./lib/restaurant-auth";
 import { RouteGuard } from "./components/route-guard";
 import { LayoutWrapper } from "./components/layout-wrapper";
 import { SessionTimeoutHandler } from "./components/session-timeout-handler";
@@ -13,6 +14,8 @@ import { useLanguage } from "./contexts/language-context";
 import Home from "./pages/home";
 import Login from "./pages/login";
 import Register from "./pages/register";
+import RestaurantLogin from "./pages/restaurant-login";
+import RestaurantDashboard from "./pages/restaurant-dashboard";
 import Dashboard from "./pages/dashboard";
 import Bookings from "./pages/bookings";
 import Calendar from "./pages/calendar";
@@ -96,6 +99,18 @@ function App() {
       <LanguageProvider>
         <QueryClientProvider client={queryClient}>
         <Switch>
+          {/* Restaurant Management System - role-based permissions */}
+          <Route path="/restaurant-login">
+            <RestaurantAuthProvider>
+              <RestaurantLogin />
+            </RestaurantAuthProvider>
+          </Route>
+          <Route path="/restaurant-dashboard">
+            <RestaurantAuthProvider>
+              <RestaurantDashboard />
+            </RestaurantAuthProvider>
+          </Route>
+
           {/* Admin Panel - completely separate from tenant system */}
           <Route path="/admin" component={AdminPanel} />
           <Route path="/admin/*" component={AdminPanel} />

@@ -15694,5 +15694,18 @@ NEXT STEPS:
   // Register admin routes (completely separate from tenant system)
   registerAdminRoutes(app);
 
+  // Register restaurant management routes (new role-based permission system)
+  const { registerRestaurantRoutes } = await import("./restaurant-routes");
+  registerRestaurantRoutes(app);
+
+  // Initialize restaurant management system
+  try {
+    const { restaurantStorage } = await import("./restaurant-storage");
+    await restaurantStorage.initializeSystem();
+    console.log("Restaurant management system initialized successfully");
+  } catch (error) {
+    console.error("Failed to initialize restaurant management system:", error);
+  }
+
   return httpServer;
 }

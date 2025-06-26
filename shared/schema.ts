@@ -67,6 +67,26 @@ export const users = pgTable("users", {
   createdAt: timestamp("created_at").defaultNow(),
 });
 
+// Role-based permission system
+export const roles = pgTable("roles", {
+  id: serial("id").primaryKey(),
+  tenantId: integer("tenant_id").references(() => tenants.id),
+  name: varchar("name", { length: 50 }).notNull(),
+  displayName: text("display_name").notNull(),
+  permissions: text("permissions").notNull(), // JSON array of permissions
+  isSystem: boolean("is_system").default(false), // System roles cannot be deleted
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+export const permissions = pgTable("permissions", {
+  id: serial("id").primaryKey(),
+  name: varchar("name", { length: 100 }).notNull().unique(),
+  displayName: text("display_name").notNull(),
+  description: text("description"),
+  category: varchar("category", { length: 50 }).notNull(),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
 export const tenantUsers = pgTable(
   "tenant_users",
   {
@@ -76,12 +96,35 @@ export const tenantUsers = pgTable(
     userId: integer("user_id")
       .notNull()
       .references(() => users.id),
-    role: varchar("role", { length: 20 }).default("administrator"),
+    roleId: integer("role_id")
+      .references(() => roles.id),
+    isOwner: boolean("is_owner").default(false), // Tenant owner has all permissions
     createdAt: timestamp("created_at").defaultNow(),
   },
   (table) => {
     return {
       pk: primaryKey(table.tenantId, table.userId),
+    };
+  },
+);
+
+// Restaurant-level user assignments
+export const restaurantUsers = pgTable(
+  "restaurant_users",
+  {
+    restaurantId: integer("restaurant_id")
+      .notNull()
+      .references(() => restaurants.id),
+    userId: integer("user_id")
+      .notNull()
+      .references(() => users.id),
+    roleId: integer("role_id")
+      .references(() => roles.id),
+    createdAt: timestamp("created_at").defaultNow(),
+  },
+  (table) => {
+    return {
+      pk: primaryKey(table.restaurantId, table.userId),
     };
   },
 );
@@ -379,7 +422,7 @@ export const insertUserSchema = createInsertSchema(users).pick({
   restaurantName: true,
 });
 
-export const insertTenantUserSchema = createInsertSchema(tenantUsers);
+
 
 export const insertRestaurantSchema = createInsertSchema(restaurants).omit({
   id: true,
@@ -453,9 +496,139 @@ export const insertUserSubscriptionSchema =
 export const selectUserSubscriptionSchema =
   createSelectSchema(userSubscriptions);
 
+// Role-based permission schemas
+export const insertRoleSchema = createInsertSchema(roles).omit({
+  id: true,
+  createdAt: true,
+});
+
+export const insertPermissionSchema = createInsertSchema(permissions).omit({
+  id: true,
+  createdAt: true,
+});
+
+export const insertTenantUserSchemaNew = createInsertSchema(tenantUsers).omit({
+  createdAt: true,
+});
+
+export const insertRestaurantUserSchema = createInsertSchema(restaurantUsers).omit({
+  createdAt: true,
+});
+
+// User invitation schema
+export const inviteUserSchema = z.object({
+  email: z.string().email("Valid email is required"),
+  name: z.string().min(1, "Name is required"),
+  roleId: z.number().min(1, "Role is required"),
+  restaurantIds: z.array(z.number()).optional(),
+});
+
+// Permission categories
+export const PERMISSION_CATEGORIES = {
+  BOOKINGS: 'bookings',
+  ORDERS: 'orders',
+  CUSTOMERS: 'customers',
+  TABLES: 'tables',
+  REPORTS: 'reports',
+  SETTINGS: 'settings',
+  USERS: 'users',
+} as const;
+
+// Default permissions
+export const DEFAULT_PERMISSIONS = [
+  // Booking permissions
+  { name: 'bookings.view', displayName: 'View Bookings', category: 'bookings' },
+  { name: 'bookings.create', displayName: 'Create Bookings', category: 'bookings' },
+  { name: 'bookings.edit', displayName: 'Edit Bookings', category: 'bookings' },
+  { name: 'bookings.delete', displayName: 'Delete Bookings', category: 'bookings' },
+  
+  // Order permissions
+  { name: 'orders.view', displayName: 'View Orders', category: 'orders' },
+  { name: 'orders.create', displayName: 'Create Orders', category: 'orders' },
+  { name: 'orders.edit', displayName: 'Edit Orders', category: 'orders' },
+  { name: 'orders.delete', displayName: 'Delete Orders', category: 'orders' },
+  
+  // Customer permissions
+  { name: 'customers.view', displayName: 'View Customers', category: 'customers' },
+  { name: 'customers.create', displayName: 'Create Customers', category: 'customers' },
+  { name: 'customers.edit', displayName: 'Edit Customers', category: 'customers' },
+  { name: 'customers.delete', displayName: 'Delete Customers', category: 'customers' },
+  
+  // Table permissions
+  { name: 'tables.view', displayName: 'View Tables', category: 'tables' },
+  { name: 'tables.create', displayName: 'Create Tables', category: 'tables' },
+  { name: 'tables.edit', displayName: 'Edit Tables', category: 'tables' },
+  { name: 'tables.delete', displayName: 'Delete Tables', category: 'tables' },
+  
+  // Report permissions
+  { name: 'reports.view', displayName: 'View Reports', category: 'reports' },
+  { name: 'reports.export', displayName: 'Export Reports', category: 'reports' },
+  
+  // Settings permissions
+  { name: 'settings.view', displayName: 'View Settings', category: 'settings' },
+  { name: 'settings.edit', displayName: 'Edit Settings', category: 'settings' },
+  
+  // User management permissions
+  { name: 'users.view', displayName: 'View Users', category: 'users' },
+  { name: 'users.create', displayName: 'Create Users', category: 'users' },
+  { name: 'users.edit', displayName: 'Edit Users', category: 'users' },
+  { name: 'users.delete', displayName: 'Delete Users', category: 'users' },
+] as const;
+
+// Default roles with permissions
+export const DEFAULT_ROLES = [
+  {
+    name: 'owner',
+    displayName: 'Owner',
+    permissions: DEFAULT_PERMISSIONS.map(p => p.name),
+    isSystem: true,
+  },
+  {
+    name: 'manager',
+    displayName: 'Manager',
+    permissions: [
+      'bookings.view', 'bookings.create', 'bookings.edit', 'bookings.delete',
+      'orders.view', 'orders.create', 'orders.edit', 'orders.delete',
+      'customers.view', 'customers.create', 'customers.edit',
+      'tables.view', 'tables.create', 'tables.edit',
+      'reports.view', 'reports.export',
+      'settings.view',
+    ],
+    isSystem: true,
+  },
+  {
+    name: 'agent',
+    displayName: 'Agent',
+    permissions: [
+      'bookings.view', 'bookings.create', 'bookings.edit',
+      'customers.view', 'customers.create', 'customers.edit',
+      'tables.view',
+    ],
+    isSystem: true,
+  },
+  {
+    name: 'kitchen_staff',
+    displayName: 'Kitchen Staff',
+    permissions: [
+      'orders.view', 'orders.edit',
+    ],
+    isSystem: true,
+  },
+] as const;
+
 // Notification types
 export type InsertNotification = typeof notifications.$inferInsert;
 export type Notification = typeof notifications.$inferSelect;
+
+// Role and permission types
+export type Role = typeof roles.$inferSelect;
+export type InsertRole = z.infer<typeof insertRoleSchema>;
+export type Permission = typeof permissions.$inferSelect;
+export type InsertPermission = z.infer<typeof insertPermissionSchema>;
+export type TenantUser = typeof tenantUsers.$inferSelect;
+export type InsertTenantUser = z.infer<typeof insertTenantUserSchemaNew>;
+export type RestaurantUser = typeof restaurantUsers.$inferSelect;
+export type InsertRestaurantUser = z.infer<typeof insertRestaurantUserSchema>;
 
 // Login schema
 export const loginSchema = z.object({
