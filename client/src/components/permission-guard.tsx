@@ -136,7 +136,7 @@ export function usePermissions() {
 // Auto permission guard based on current route
 export function AutoPermissionGuard({ children }: { children: React.ReactNode }) {
   const [location] = useLocation();
-  const { getUserRole, isLoading } = usePermissions();
+  const { getUserRole, hasPermission, isLoading, permissions } = usePermissions();
   
   // Extract the page name from the current route
   const getPageFromRoute = (path: string): string => {
@@ -152,7 +152,14 @@ export function AutoPermissionGuard({ children }: { children: React.ReactNode })
   const requiredPermission = PAGE_PERMISSION_MAP[currentPage];
   const userRole = getUserRole();
 
-  console.log("AutoPermissionGuard:", { currentPage, requiredPermission, userRole, isLoading });
+  console.log("AutoPermissionGuard DEBUG:", { 
+    currentPage, 
+    requiredPermission, 
+    userRole, 
+    isLoading,
+    hasRequiredPermission: requiredPermission ? hasPermission(requiredPermission) : true,
+    allPermissions: permissions
+  });
 
   // Wait for user data to load
   if (isLoading) {
@@ -163,9 +170,9 @@ export function AutoPermissionGuard({ children }: { children: React.ReactNode })
     );
   }
 
-  // If user is owner, allow access to all pages (subscription limits will be checked on the backend)
+  // If user is owner, allow access to all pages
   if (userRole === 'owner') {
-    console.log("Owner access granted");
+    console.log("Owner access granted for all pages");
     return <>{children}</>;
   }
 
@@ -175,7 +182,13 @@ export function AutoPermissionGuard({ children }: { children: React.ReactNode })
     return <>{children}</>;
   }
 
-  console.log("Using PermissionGuard for:", requiredPermission);
+  // Check if user has the required permission
+  if (hasPermission(requiredPermission)) {
+    console.log("Permission granted:", requiredPermission);
+    return <>{children}</>;
+  }
+
+  console.log("Permission denied, using PermissionGuard fallback");
   return (
     <PermissionGuard requiredPermission={requiredPermission}>
       {children}
