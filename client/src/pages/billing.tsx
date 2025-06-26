@@ -1241,7 +1241,7 @@ export default function BillingPage() {
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.5, delay: 0.7 }}
-              className="bg-white rounded-xl border-2 border-gray-100 overflow-hidden shadow-sm"
+              className="bg-white rounded-xl border-2 border-gray-100 overflow-hidden shadow-sm mt-6 mx-4"
             >
               <div className="overflow-x-auto">
                 <table className="w-full">
