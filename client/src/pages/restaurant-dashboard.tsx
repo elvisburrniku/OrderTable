@@ -613,11 +613,9 @@ export default function RestaurantDashboard() {
               </TabsContent>
             )}
 
-            {hasPermission(PERMISSIONS.USERS_VIEW) && (
-              <TabsContent value="users" className="space-y-6">
-                <UsersManagement restaurantId={selectedRestaurant!} />
-              </TabsContent>
-            )}
+            <TabsContent value="users" className="space-y-6">
+              <UsersManagement restaurantId={1} />
+            </TabsContent>
 
             {hasPermission(PERMISSIONS.SETTINGS_VIEW) && (
               <TabsContent value="settings" className="space-y-6">

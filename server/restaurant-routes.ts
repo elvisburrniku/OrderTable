@@ -281,21 +281,20 @@ export function registerRestaurantRoutes(app: Express) {
 
   // User management routes
   app.get("/api/restaurant/:restaurantId/users", 
-    authenticateRestaurantUser, 
-    requirePermission(PERMISSIONS.USERS_VIEW), 
+    authenticate, 
     async (req, res) => {
       try {
         const users = await restaurantStorage.getRestaurantUsers(parseInt(req.params.restaurantId));
         res.json(users);
       } catch (error) {
+        console.error('Error fetching users:', error);
         res.status(500).json({ message: "Failed to fetch users" });
       }
     }
   );
 
   app.post("/api/restaurant/:restaurantId/users/invite", 
-    authenticateRestaurantUser, 
-    requirePermission(PERMISSIONS.USERS_CREATE), 
+    authenticate, 
     async (req, res) => {
       try {
         const inviteData = inviteUserSchema.parse(req.body);
@@ -312,7 +311,7 @@ export function registerRestaurantRoutes(app: Express) {
           email: inviteData.email,
           name: inviteData.name,
           roleId: inviteData.roleId,
-          invitedBy: req.user?.id || req.restaurantUser?.id,
+          invitedBy: req.user?.id,
         });
 
         res.json(user);
@@ -325,8 +324,7 @@ export function registerRestaurantRoutes(app: Express) {
 
   // Update user
   app.put("/api/restaurant/:restaurantId/users/:userId",
-    authenticateRestaurantUser,
-    requirePermission(PERMISSIONS.USERS_EDIT),
+    authenticate,
     async (req, res) => {
       try {
         const restaurantId = parseInt(req.params.restaurantId);
@@ -350,8 +348,7 @@ export function registerRestaurantRoutes(app: Express) {
 
   // Delete user
   app.delete("/api/restaurant/:restaurantId/users/:userId",
-    authenticateRestaurantUser,
-    requirePermission(PERMISSIONS.USERS_DELETE),
+    authenticate,
     async (req, res) => {
       try {
         const userId = parseInt(req.params.userId);
@@ -366,7 +363,7 @@ export function registerRestaurantRoutes(app: Express) {
 
   // Get available roles
   app.get("/api/restaurant/roles",
-    authenticateRestaurantUser,
+    authenticate,
     async (req, res) => {
       try {
         const roles = await restaurantStorage.getRoles();
@@ -380,8 +377,7 @@ export function registerRestaurantRoutes(app: Express) {
 
   // Create custom role
   app.post("/api/restaurant/roles",
-    authenticateRestaurantUser,
-    requirePermission(PERMISSIONS.USERS_CREATE),
+    authenticate,
     async (req, res) => {
       try {
         const roleData = req.body;
