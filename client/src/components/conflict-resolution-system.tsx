@@ -8,6 +8,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Progress } from "@/components/ui/progress";
+import { motion, AnimatePresence } from "framer-motion";
 import { 
   AlertTriangle, 
   CheckCircle, 
@@ -22,7 +23,14 @@ import {
   Mail,
   AlertCircle,
   RefreshCw,
-  Target
+  Target,
+  Shield,
+  Zap,
+  Activity,
+  TrendingUp,
+  Sparkles,
+  Eye,
+  BarChart3
 } from "lucide-react";
 import { format, parseISO, addMinutes, isBefore, isAfter } from "date-fns";
 import { useAuth } from "@/lib/auth";
@@ -262,196 +270,577 @@ export default function ConflictResolutionSystem({
   const activeConflicts = conflicts.filter(c => c.type !== 'resolved');
 
   return (
-    <div className="space-y-6">
-      {/* Header */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h2 className="text-2xl font-bold tracking-tight">Smart Conflict Resolution</h2>
-          <p className="text-muted-foreground">
-            AI-powered system to detect and resolve booking conflicts automatically
-          </p>
-        </div>
-        <div className="flex items-center space-x-4">
-          <Button
-            onClick={() => scanConflictsMutation.mutate()}
-            variant="outline"
-            disabled={scanConflictsMutation.isPending}
+    <motion.div 
+      className="space-y-8"
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      transition={{ duration: 0.6 }}
+    >
+      {/* Premium Header */}
+      <motion.div 
+        className="flex items-center justify-between"
+        initial={{ opacity: 0, y: -20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.6 }}
+      >
+        <div className="space-y-2">
+          <motion.h2 
+            className="text-3xl font-bold tracking-tight flex items-center space-x-3"
+            initial={{ opacity: 0, x: -20 }}
+            animate={{ opacity: 1, x: 0 }}
+            transition={{ delay: 0.2, duration: 0.6 }}
           >
-            <RefreshCw className={`w-4 h-4 mr-2 ${scanConflictsMutation.isPending ? 'animate-spin' : ''}`} />
-            Scan for Conflicts
-          </Button>
-          {activeConflicts.length > 0 && (
-            <Badge variant="destructive" className="text-sm">
-              {activeConflicts.length} Active Conflict{activeConflicts.length !== 1 ? 's' : ''}
-            </Badge>
-          )}
-        </div>
-      </div>
-
-      {/* Auto-resolve toggle */}
-      <Card>
-        <CardContent className="pt-6">
-          <div className="flex items-center justify-between">
-            <div>
-              <h3 className="font-medium">Auto-Resolution</h3>
-              <p className="text-sm text-muted-foreground">
-                Automatically resolve low-risk conflicts using AI recommendations
-              </p>
-            </div>
-            <Button
-              variant={autoResolveEnabled ? "default" : "outline"}
-              onClick={() => setAutoResolveEnabled(!autoResolveEnabled)}
+            <motion.div
+              animate={{ 
+                rotate: [0, 10, -10, 0],
+                scale: [1, 1.1, 1]
+              }}
+              transition={{ 
+                duration: 3, 
+                repeat: Infinity, 
+                ease: "easeInOut" 
+              }}
             >
-              <Target className="w-4 h-4 mr-2" />
-              {autoResolveEnabled ? "Enabled" : "Disabled"}
+              <Shield className="w-8 h-8 text-red-600" />
+            </motion.div>
+            <span className="bg-gradient-to-r from-slate-900 via-red-900 to-slate-900 bg-clip-text text-transparent">
+              Smart Conflict Resolution
+            </span>
+            <motion.div
+              animate={{ opacity: [0.5, 1, 0.5] }}
+              transition={{ duration: 1.5, repeat: Infinity }}
+            >
+              <Sparkles className="w-6 h-6 text-yellow-500" />
+            </motion.div>
+          </motion.h2>
+          <motion.p 
+            className="text-slate-600 flex items-center space-x-2"
+            initial={{ opacity: 0, x: -20 }}
+            animate={{ opacity: 1, x: 0 }}
+            transition={{ delay: 0.4, duration: 0.6 }}
+          >
+            <Activity className="w-4 h-4 text-blue-500" />
+            <span>AI-powered system to detect and resolve booking conflicts automatically</span>
+            <motion.div
+              animate={{ scale: [1, 1.2, 1] }}
+              transition={{ duration: 2, repeat: Infinity, ease: "easeInOut" }}
+            >
+              <Zap className="w-4 h-4 text-yellow-500" />
+            </motion.div>
+          </motion.p>
+        </div>
+        
+        <motion.div 
+          className="flex items-center space-x-4"
+          initial={{ opacity: 0, x: 20 }}
+          animate={{ opacity: 1, x: 0 }}
+          transition={{ delay: 0.6, duration: 0.6 }}
+        >
+          <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
+            <Button
+              onClick={() => scanConflictsMutation.mutate()}
+              variant="outline"
+              disabled={scanConflictsMutation.isPending}
+              className="bg-white/80 backdrop-blur-sm border-slate-200 shadow-lg hover:shadow-xl transition-all duration-300 hover:border-blue-300"
+            >
+              <motion.div
+                animate={{ rotate: scanConflictsMutation.isPending ? 360 : 0 }}
+                transition={{ duration: 2, repeat: scanConflictsMutation.isPending ? Infinity : 0, ease: "linear" }}
+              >
+                <RefreshCw className="w-4 h-4 mr-2" />
+              </motion.div>
+              Scan for Conflicts
             </Button>
-          </div>
-        </CardContent>
-      </Card>
+          </motion.div>
+          
+          <AnimatePresence>
+            {activeConflicts.length > 0 && (
+              <motion.div
+                initial={{ opacity: 0, scale: 0.8 }}
+                animate={{ opacity: 1, scale: 1 }}
+                exit={{ opacity: 0, scale: 0.8 }}
+                transition={{ duration: 0.4 }}
+                whileHover={{ scale: 1.05 }}
+              >
+                <Badge 
+                  variant="destructive" 
+                  className="text-sm shadow-lg bg-gradient-to-r from-red-500 to-red-600 border-red-400 animate-pulse"
+                >
+                  <motion.span
+                    animate={{ scale: [1, 1.1, 1] }}
+                    transition={{ duration: 1.5, repeat: Infinity }}
+                  >
+                    {activeConflicts.length} Active Conflict{activeConflicts.length !== 1 ? 's' : ''}
+                  </motion.span>
+                </Badge>
+              </motion.div>
+            )}
+          </AnimatePresence>
+        </motion.div>
+      </motion.div>
 
-      {/* Conflicts Tabs */}
-      <Tabs value={activeTab} onValueChange={setActiveTab}>
-        <TabsList className="grid w-full grid-cols-2">
-          <TabsTrigger value="active">
-            Active Conflicts ({activeConflicts.length})
-          </TabsTrigger>
-          <TabsTrigger value="resolved">
-            Resolved ({resolvedConflicts.length})
-          </TabsTrigger>
-        </TabsList>
-
-        <TabsContent value="active" className="space-y-4">
-          {conflictsLoading ? (
-            <div className="text-center py-8">
-              <RefreshCw className="w-8 h-8 animate-spin mx-auto mb-4 text-muted-foreground" />
-              <p className="text-muted-foreground">Scanning for conflicts...</p>
+      {/* Premium Auto-resolve toggle */}
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 0.8, duration: 0.6 }}
+      >
+        <Card className="bg-white/80 backdrop-blur-lg border-slate-200 shadow-xl hover:shadow-2xl transition-all duration-500">
+          <CardContent className="pt-6">
+            <div className="flex items-center justify-between">
+              <div className="space-y-2">
+                <motion.h3 
+                  className="font-semibold text-lg flex items-center space-x-2"
+                  initial={{ opacity: 0, x: -10 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  transition={{ delay: 1, duration: 0.4 }}
+                >
+                  <motion.div
+                    animate={{ rotate: [0, 360] }}
+                    transition={{ duration: 4, repeat: Infinity, ease: "linear" }}
+                  >
+                    <Target className="w-5 h-5 text-blue-600" />
+                  </motion.div>
+                  <span className="bg-gradient-to-r from-slate-800 to-blue-800 bg-clip-text text-transparent">
+                    Auto-Resolution
+                  </span>
+                </motion.h3>
+                <motion.p 
+                  className="text-sm text-slate-600 flex items-center space-x-2"
+                  initial={{ opacity: 0, x: -10 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  transition={{ delay: 1.2, duration: 0.4 }}
+                >
+                  <Zap className="w-4 h-4 text-yellow-500" />
+                  <span>Automatically resolve low-risk conflicts using AI recommendations</span>
+                </motion.p>
+              </div>
+              <motion.div
+                initial={{ opacity: 0, scale: 0.8 }}
+                animate={{ opacity: 1, scale: 1 }}
+                transition={{ delay: 1.4, duration: 0.4 }}
+                whileHover={{ scale: 1.05 }}
+                whileTap={{ scale: 0.95 }}
+              >
+                <Button
+                  variant={autoResolveEnabled ? "default" : "outline"}
+                  onClick={() => setAutoResolveEnabled(!autoResolveEnabled)}
+                  className={`shadow-lg transition-all duration-300 ${
+                    autoResolveEnabled 
+                      ? 'bg-gradient-to-r from-green-500 to-green-600 hover:from-green-600 hover:to-green-700 border-green-400' 
+                      : 'bg-white/80 backdrop-blur-sm border-slate-200 hover:border-blue-300'
+                  }`}
+                >
+                  <motion.div
+                    animate={{ 
+                      rotate: autoResolveEnabled ? [0, 360] : 0,
+                      scale: autoResolveEnabled ? [1, 1.1, 1] : 1
+                    }}
+                    transition={{ 
+                      duration: 2, 
+                      repeat: autoResolveEnabled ? Infinity : 0, 
+                      ease: "easeInOut" 
+                    }}
+                  >
+                    <Target className="w-4 h-4 mr-2" />
+                  </motion.div>
+                  {autoResolveEnabled ? "Enabled" : "Disabled"}
+                </Button>
+              </motion.div>
             </div>
-          ) : activeConflicts.length === 0 ? (
-            <Card>
-              <CardContent className="text-center py-8">
-                <CheckCircle className="w-12 h-12 mx-auto mb-4 text-green-500" />
-                <h3 className="text-lg font-medium mb-2">No Active Conflicts</h3>
-                <p className="text-muted-foreground">
-                  All bookings are properly scheduled without conflicts.
-                </p>
-              </CardContent>
-            </Card>
-          ) : (
-            <div className="space-y-4">
-              {activeConflicts.map((conflict) => (
-                <Card key={conflict.id} className="border-l-4 border-l-red-500">
-                  <CardHeader>
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center space-x-3">
-                        {getConflictTypeIcon(conflict.type)}
-                        <div>
-                          <CardTitle className="text-lg">
-                            {getConflictTypeLabel(conflict.type)}
-                          </CardTitle>
-                          <p className="text-sm text-muted-foreground">
-                            {conflict.bookings.length} bookings affected • 
-                            {format(parseISO(conflict.createdAt), 'MMM dd, HH:mm')}
-                          </p>
-                        </div>
-                      </div>
-                      <div className="flex items-center space-x-2">
-                        <Badge className={getSeverityColor(conflict.severity)}>
-                          {conflict.severity.toUpperCase()}
-                        </Badge>
-                        {conflict.autoResolvable && autoResolveEnabled && (
-                          <Button
-                            size="sm"
-                            onClick={() => handleAutoResolve(conflict)}
-                            disabled={isResolving}
-                          >
-                            <Shuffle className="w-4 h-4 mr-2" />
-                            Auto-Resolve
-                          </Button>
-                        )}
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => setSelectedConflict(conflict)}
-                        >
-                          Review
-                        </Button>
+          </CardContent>
+        </Card>
+      </motion.div>
+
+      {/* Premium Conflicts Tabs */}
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 1.6, duration: 0.6 }}
+      >
+        <Tabs value={activeTab} onValueChange={setActiveTab}>
+          <TabsList className="grid w-full grid-cols-2 bg-white/60 backdrop-blur-md border border-slate-200 shadow-lg rounded-xl p-1">
+            <TabsTrigger 
+              value="active" 
+              className="flex items-center space-x-2 data-[state=active]:bg-white data-[state=active]:shadow-md data-[state=active]:border data-[state=active]:border-slate-200 rounded-lg transition-all duration-300"
+            >
+              <motion.div
+                animate={{ 
+                  rotate: activeTab === "active" ? [0, 10, -10, 0] : 0,
+                  scale: activeTab === "active" ? [1, 1.1, 1] : 1
+                }}
+                transition={{ duration: 0.5 }}
+              >
+                <AlertTriangle className="w-4 h-4" />
+              </motion.div>
+              <span>Active Conflicts ({activeConflicts.length})</span>
+            </TabsTrigger>
+            <TabsTrigger 
+              value="resolved" 
+              className="flex items-center space-x-2 data-[state=active]:bg-white data-[state=active]:shadow-md data-[state=active]:border data-[state=active]:border-slate-200 rounded-lg transition-all duration-300"
+            >
+              <motion.div
+                animate={{ 
+                  rotate: activeTab === "resolved" ? [0, 360] : 0,
+                  scale: activeTab === "resolved" ? [1, 1.1, 1] : 1
+                }}
+                transition={{ duration: 0.5 }}
+              >
+                <CheckCircle className="w-4 h-4" />
+              </motion.div>
+              <span>Resolved ({resolvedConflicts.length})</span>
+            </TabsTrigger>
+          </TabsList>
+
+        <TabsContent value="active" className="space-y-6">
+          <AnimatePresence mode="wait">
+            {conflictsLoading ? (
+              <motion.div 
+                className="text-center py-12"
+                initial={{ opacity: 0, scale: 0.9 }}
+                animate={{ opacity: 1, scale: 1 }}
+                exit={{ opacity: 0, scale: 0.9 }}
+                transition={{ duration: 0.4 }}
+              >
+                <motion.div
+                  animate={{ rotate: 360 }}
+                  transition={{ duration: 2, repeat: Infinity, ease: "linear" }}
+                >
+                  <RefreshCw className="w-12 h-12 mx-auto mb-6 text-blue-600" />
+                </motion.div>
+                <motion.p 
+                  className="text-slate-600 text-lg font-medium"
+                  animate={{ opacity: [0.5, 1, 0.5] }}
+                  transition={{ duration: 1.5, repeat: Infinity }}
+                >
+                  Scanning for conflicts...
+                </motion.p>
+              </motion.div>
+            ) : activeConflicts.length === 0 ? (
+              <motion.div
+                initial={{ opacity: 0, scale: 0.9 }}
+                animate={{ opacity: 1, scale: 1 }}
+                exit={{ opacity: 0, scale: 0.9 }}
+                transition={{ duration: 0.5 }}
+              >
+                <Card className="bg-gradient-to-br from-green-50 to-emerald-50 border-green-200 shadow-xl">
+                  <CardContent className="text-center py-12">
+                    <motion.div
+                      animate={{ 
+                        scale: [1, 1.1, 1],
+                        rotate: [0, 5, -5, 0]
+                      }}
+                      transition={{ duration: 2, repeat: Infinity, ease: "easeInOut" }}
+                    >
+                      <CheckCircle className="w-16 h-16 mx-auto mb-6 text-green-600" />
+                    </motion.div>
+                    <motion.h3 
+                      className="text-xl font-bold mb-3 text-green-800"
+                      initial={{ opacity: 0, y: 10 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{ delay: 0.2, duration: 0.4 }}
+                    >
+                      No Active Conflicts
+                    </motion.h3>
+                    <motion.p 
+                      className="text-green-700 flex items-center justify-center space-x-2"
+                      initial={{ opacity: 0, y: 10 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{ delay: 0.4, duration: 0.4 }}
+                    >
+                      <Shield className="w-4 h-4" />
+                      <span>All bookings are properly scheduled without conflicts.</span>
+                    </motion.p>
+                  </CardContent>
+                </Card>
+              </motion.div>
+            ) : (
+              <motion.div 
+                className="space-y-6"
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                transition={{ duration: 0.5 }}
+              >
+                {activeConflicts.map((conflict, index) => (
+                  <motion.div
+                    key={conflict.id}
+                    initial={{ opacity: 0, x: -20, scale: 0.95 }}
+                    animate={{ opacity: 1, x: 0, scale: 1 }}
+                    transition={{ delay: index * 0.1, duration: 0.5 }}
+                    whileHover={{ scale: 1.02, y: -5 }}
+                  >
+                    <Card className="border-l-4 border-l-red-500 bg-white/80 backdrop-blur-lg shadow-xl hover:shadow-2xl transition-all duration-500 overflow-hidden">
+                      <CardHeader className="bg-gradient-to-r from-red-50/80 to-orange-50/80 backdrop-blur-sm border-b border-red-200/50">
+                        <div className="flex items-center justify-between">
+                          <div className="flex items-center space-x-4">
+                            <motion.div
+                              animate={{ 
+                                rotate: [0, 10, -10, 0],
+                                scale: [1, 1.1, 1]
+                              }}
+                              transition={{ duration: 2, repeat: Infinity, ease: "easeInOut" }}
+                            >
+                              {getConflictTypeIcon(conflict.type)}
+                            </motion.div>
+                            <div>
+                              <motion.div
+                                initial={{ opacity: 0, y: 5 }}
+                                animate={{ opacity: 1, y: 0 }}
+                                transition={{ delay: 0.2, duration: 0.4 }}
+                              >
+                                <CardTitle className="text-xl font-bold bg-gradient-to-r from-red-800 to-orange-800 bg-clip-text text-transparent">
+                                  {getConflictTypeLabel(conflict.type)}
+                                </CardTitle>
+                              </motion.div>
+                              <motion.p 
+                                className="text-sm text-red-600 flex items-center space-x-2 mt-1"
+                                initial={{ opacity: 0, y: 5 }}
+                                animate={{ opacity: 1, y: 0 }}
+                                transition={{ delay: 0.4, duration: 0.4 }}
+                              >
+                                <Users className="w-4 h-4" />
+                                <span>{conflict.bookings.length} bookings affected</span>
+                                <Clock className="w-4 h-4 ml-2" />
+                                <span>{format(parseISO(conflict.createdAt), 'MMM dd, HH:mm')}</span>
+                              </motion.p>
+                            </div>
+                          </div>
+                          <div className="flex items-center space-x-3">
+                            <motion.div
+                              initial={{ opacity: 0, scale: 0.8 }}
+                              animate={{ opacity: 1, scale: 1 }}
+                              transition={{ delay: 0.6, duration: 0.4 }}
+                              whileHover={{ scale: 1.05 }}
+                            >
+                              <Badge className={`${getSeverityColor(conflict.severity)} shadow-lg`}>
+                                {conflict.severity.toUpperCase()}
+                              </Badge>
+                            </motion.div>
+                            
+                            <AnimatePresence>
+                              {conflict.autoResolvable && autoResolveEnabled && (
+                                <motion.div
+                                  initial={{ opacity: 0, scale: 0.8 }}
+                                  animate={{ opacity: 1, scale: 1 }}
+                                  exit={{ opacity: 0, scale: 0.8 }}
+                                  transition={{ delay: 0.8, duration: 0.3 }}
+                                  whileHover={{ scale: 1.05 }}
+                                  whileTap={{ scale: 0.95 }}
+                                >
+                                  <Button
+                                    size="sm"
+                                    onClick={() => handleAutoResolve(conflict)}
+                                    disabled={isResolving}
+                                    className="bg-gradient-to-r from-green-500 to-green-600 hover:from-green-600 hover:to-green-700 text-white shadow-lg"
+                                  >
+                                    <motion.div
+                                      animate={{ rotate: isResolving ? 360 : 0 }}
+                                      transition={{ duration: 1, repeat: isResolving ? Infinity : 0, ease: "linear" }}
+                                    >
+                                      <Shuffle className="w-4 h-4 mr-2" />
+                                    </motion.div>
+                                    Auto-Resolve
+                                  </Button>
+                                </motion.div>
+                              )}
+                            </AnimatePresence>
+                            
+                            <motion.div
+                              initial={{ opacity: 0, scale: 0.8 }}
+                              animate={{ opacity: 1, scale: 1 }}
+                              transition={{ delay: 1, duration: 0.3 }}
+                              whileHover={{ scale: 1.05 }}
+                              whileTap={{ scale: 0.95 }}
+                            >
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() => setSelectedConflict(conflict)}
+                                className="bg-white/80 backdrop-blur-sm border-slate-200 shadow-lg hover:shadow-xl transition-all duration-300 hover:border-blue-300"
+                              >
+                                <Eye className="w-4 h-4 mr-2" />
+                                Review
+                              </Button>
+                            </motion.div>
                       </div>
                     </div>
                   </CardHeader>
-                  <CardContent>
-                    <div className="space-y-3">
+                  <CardContent className="p-6">
+                    <motion.div 
+                      className="space-y-6"
+                      initial={{ opacity: 0, y: 10 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{ delay: 0.3, duration: 0.5 }}
+                    >
                       {/* Affected bookings */}
                       <div>
-                        <h4 className="font-medium mb-2">Affected Bookings:</h4>
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                          {conflict.bookings.map((booking) => (
-                            <div key={booking.id} className="border rounded-lg p-3 space-y-2">
+                        <motion.h4 
+                          className="font-semibold text-lg mb-4 flex items-center space-x-2"
+                          initial={{ opacity: 0, x: -10 }}
+                          animate={{ opacity: 1, x: 0 }}
+                          transition={{ delay: 0.5, duration: 0.4 }}
+                        >
+                          <Users className="w-5 h-5 text-red-600" />
+                          <span className="bg-gradient-to-r from-red-800 to-orange-800 bg-clip-text text-transparent">
+                            Affected Bookings:
+                          </span>
+                        </motion.h4>
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                          {conflict.bookings.map((booking, bookingIndex) => (
+                            <motion.div 
+                              key={booking.id} 
+                              className="bg-gradient-to-br from-red-50 to-orange-50 border border-red-200 rounded-lg p-4 space-y-3 shadow-sm hover:shadow-md transition-all duration-300"
+                              initial={{ opacity: 0, scale: 0.95 }}
+                              animate={{ opacity: 1, scale: 1 }}
+                              transition={{ delay: 0.7 + bookingIndex * 0.1, duration: 0.4 }}
+                              whileHover={{ scale: 1.02, y: -2 }}
+                            >
                               <div className="flex items-center justify-between">
-                                <div className="flex items-center space-x-2">
-                                  <User className="w-4 h-4" />
-                                  <span className="font-medium">{booking.customerName}</span>
+                                <div className="flex items-center space-x-3">
+                                  <motion.div
+                                    animate={{ scale: [1, 1.1, 1] }}
+                                    transition={{ duration: 2, repeat: Infinity, ease: "easeInOut", delay: bookingIndex * 0.3 }}
+                                  >
+                                    <User className="w-5 h-5 text-red-600" />
+                                  </motion.div>
+                                  <span className="font-semibold text-red-800">{booking.customerName}</span>
                                 </div>
-                                <Badge variant={booking.priority > 1 ? "default" : "secondary"}>
-                                  {booking.priority > 1 ? "VIP" : "Regular"}
-                                </Badge>
+                                <motion.div
+                                  initial={{ opacity: 0, scale: 0.8 }}
+                                  animate={{ opacity: 1, scale: 1 }}
+                                  transition={{ delay: 0.9 + bookingIndex * 0.1, duration: 0.3 }}
+                                  whileHover={{ scale: 1.05 }}
+                                >
+                                  <Badge variant={booking.priority > 1 ? "default" : "secondary"} className="shadow-sm">
+                                    {booking.priority > 1 ? "VIP" : "Regular"}
+                                  </Badge>
+                                </motion.div>
                               </div>
-                              <div className="text-sm text-muted-foreground space-y-1">
-                                <div className="flex items-center space-x-2">
+                              <div className="text-sm text-red-700 space-y-2">
+                                <motion.div 
+                                  className="flex items-center space-x-2"
+                                  whileHover={{ x: 5 }}
+                                >
                                   <Calendar className="w-4 h-4" />
                                   <span>{format(parseISO(booking.bookingDate), 'MMM dd, yyyy')}</span>
-                                </div>
-                                <div className="flex items-center space-x-2">
+                                </motion.div>
+                                <motion.div 
+                                  className="flex items-center space-x-2"
+                                  whileHover={{ x: 5 }}
+                                >
                                   <Clock className="w-4 h-4" />
                                   <span>{booking.startTime} - {booking.endTime}</span>
-                                </div>
-                                <div className="flex items-center space-x-2">
+                                </motion.div>
+                                <motion.div 
+                                  className="flex items-center space-x-2"
+                                  whileHover={{ x: 5 }}
+                                >
                                   <Users className="w-4 h-4" />
                                   <span>{booking.guestCount} guests</span>
-                                </div>
+                                </motion.div>
                                 {booking.tableName && (
-                                  <div className="flex items-center space-x-2">
+                                  <motion.div 
+                                    className="flex items-center space-x-2"
+                                    whileHover={{ x: 5 }}
+                                  >
                                     <MapPin className="w-4 h-4" />
                                     <span>{booking.tableName}</span>
-                                  </div>
+                                  </motion.div>
                                 )}
                               </div>
-                            </div>
+                            </motion.div>
                           ))}
                         </div>
                       </div>
 
-                      {/* Top resolution preview */}
-                      {conflict.suggestedResolutions && conflict.suggestedResolutions.length > 0 && (
-                        <div>
-                          <h4 className="font-medium mb-2">Recommended Resolution:</h4>
-                          <div className="bg-green-50 border border-green-200 rounded-lg p-3">
-                            <div className="flex items-center justify-between mb-2">
-                              <span className="font-medium text-green-800">
-                                {conflict.suggestedResolutions[0].description}
+                      {/* Premium Resolution Preview */}
+                      <AnimatePresence>
+                        {conflict.suggestedResolutions && conflict.suggestedResolutions.length > 0 && (
+                          <motion.div
+                            initial={{ opacity: 0, y: 10 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            exit={{ opacity: 0, y: -10 }}
+                            transition={{ delay: 1.2, duration: 0.5 }}
+                          >
+                            <motion.h4 
+                              className="font-semibold text-lg mb-4 flex items-center space-x-2"
+                              initial={{ opacity: 0, x: -10 }}
+                              animate={{ opacity: 1, x: 0 }}
+                              transition={{ delay: 1.4, duration: 0.4 }}
+                            >
+                              <motion.div
+                                animate={{ rotate: [0, 360] }}
+                                transition={{ duration: 3, repeat: Infinity, ease: "linear" }}
+                              >
+                                <Target className="w-5 h-5 text-green-600" />
+                              </motion.div>
+                              <span className="bg-gradient-to-r from-green-800 to-emerald-800 bg-clip-text text-transparent">
+                                Recommended Resolution:
                               </span>
-                              <div className="flex items-center space-x-2">
-                                <Progress 
-                                  value={conflict.suggestedResolutions[0].estimatedCustomerSatisfaction} 
-                                  className="w-20 h-2"
-                                />
-                                <span className="text-sm text-green-700">
-                                  {conflict.suggestedResolutions[0].estimatedCustomerSatisfaction}%
-                                </span>
+                            </motion.h4>
+                            <motion.div 
+                              className="bg-gradient-to-br from-green-50 to-emerald-50 border border-green-200 rounded-lg p-4 shadow-sm hover:shadow-md transition-all duration-300"
+                              whileHover={{ scale: 1.01, y: -2 }}
+                            >
+                              <div className="flex items-center justify-between mb-3">
+                                <motion.span 
+                                  className="font-semibold text-green-800 text-lg"
+                                  initial={{ opacity: 0, x: -10 }}
+                                  animate={{ opacity: 1, x: 0 }}
+                                  transition={{ delay: 1.6, duration: 0.4 }}
+                                >
+                                  {conflict.suggestedResolutions[0].description}
+                                </motion.span>
+                                <motion.div 
+                                  className="flex items-center space-x-3"
+                                  initial={{ opacity: 0, scale: 0.8 }}
+                                  animate={{ opacity: 1, scale: 1 }}
+                                  transition={{ delay: 1.8, duration: 0.4 }}
+                                >
+                                  <motion.div 
+                                    className="w-24 h-3 bg-gray-200 rounded-full overflow-hidden"
+                                    whileHover={{ scale: 1.05 }}
+                                  >
+                                    <motion.div
+                                      className="h-full bg-gradient-to-r from-green-500 to-emerald-600 rounded-full"
+                                      initial={{ width: 0 }}
+                                      animate={{ width: `${conflict.suggestedResolutions[0].estimatedCustomerSatisfaction}%` }}
+                                      transition={{ delay: 2, duration: 1, ease: "easeOut" }}
+                                    />
+                                  </motion.div>
+                                  <motion.span 
+                                    className="text-sm font-bold text-green-700"
+                                    animate={{ scale: [1, 1.1, 1] }}
+                                    transition={{ duration: 2, repeat: Infinity, ease: "easeInOut" }}
+                                  >
+                                    {conflict.suggestedResolutions[0].estimatedCustomerSatisfaction}%
+                                  </motion.span>
+                                </motion.div>
                               </div>
-                            </div>
-                            <p className="text-sm text-green-700">
-                              Impact: {conflict.suggestedResolutions[0].impact} • 
-                              Customer satisfaction: {conflict.suggestedResolutions[0].estimatedCustomerSatisfaction}%
-                            </p>
-                          </div>
-                        </div>
-                      )}
-                    </div>
+                              <motion.p 
+                                className="text-sm text-green-700 flex items-center space-x-2"
+                                initial={{ opacity: 0, y: 5 }}
+                                animate={{ opacity: 1, y: 0 }}
+                                transition={{ delay: 2.2, duration: 0.4 }}
+                              >
+                                <TrendingUp className="w-4 h-4" />
+                                <span>
+                                  Impact: {conflict.suggestedResolutions[0].impact} • 
+                                  Customer satisfaction: {conflict.suggestedResolutions[0].estimatedCustomerSatisfaction}%
+                                </span>
+                              </motion.p>
+                            </motion.div>
+                          </motion.div>
+                        )}
+                      </AnimatePresence>
+                    </motion.div>
                   </CardContent>
                 </Card>
-              ))}
-            </div>
-          )}
+                  </motion.div>
+                ))}
+              </motion.div>
+            )}
+          </AnimatePresence>
         </TabsContent>
 
         <TabsContent value="resolved" className="space-y-4">
@@ -670,6 +1059,8 @@ export default function ConflictResolutionSystem({
           )}
         </DialogContent>
       </Dialog>
-    </div>
+        </Tabs>
+      </motion.div>
+    </motion.div>
   );
 }
