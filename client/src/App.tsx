@@ -181,9 +181,9 @@ function App() {
                 <Route path="/:tenantId/users">
                   {(params) => <TenantUsersManagement tenantId={parseInt(params.tenantId || "1")} />}
                 </Route>
-                {/* TEMPORARY: Remove permission guard to test role-permissions page */}
+                {/* TEMPORARY: Remove permission guard to test guard-management page */}
                 </AutoPermissionGuard>
-                <Route path="/:tenantId/role-permissions" component={RolePermissions} />
+                <Route path="/:tenantId/guard-management" component={RolePermissions} />
                 <AutoPermissionGuard>
                 <Route path="/:tenantId/email-notifications" component={EmailNotifications} />
                 <Route path="/:tenantId/sms-notifications" component={SmsNotifications} />

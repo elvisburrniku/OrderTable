@@ -24,7 +24,7 @@ const PAGE_PERMISSION_MAP: { [key: string]: string } = {
   "tables": "access_tables",
   "kitchen-dashboard": "access_kitchen",
   "users": "access_users",
-  "role-permissions": "access_users",
+  "guard-management": "access_users",
   "billing": "access_billing",
   "statistics": "access_reports",
   "activity-log": "access_reports",

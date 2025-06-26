@@ -404,10 +404,10 @@ export default function RolePermissions() {
         <div>
           <h1 className="text-3xl font-bold tracking-tight flex items-center gap-2">
             <Shield className="h-8 w-8" />
-            Role Permissions
+            Guard Management
           </h1>
           <p className="text-muted-foreground">
-            Configure page access and permissions for each user role
+            Configure access controls and permissions for user roles
           </p>
         </div>
         

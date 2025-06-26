@@ -235,10 +235,10 @@ export default function TenantUsersManagement({ tenantId }: TenantUsersManagemen
             <CardTitle>Team Members</CardTitle>
           </div>
           <div className="flex items-center space-x-2">
-            <Link href={`/${tenantId}/role-permissions`}>
+            <Link href={`/${tenantId}/guard-management`}>
               <Button variant="outline" size="sm">
                 <Settings className="h-4 w-4 mr-2" />
-                Role Permissions
+                Guard Management
               </Button>
             </Link>
             <Dialog open={inviteDialogOpen} onOpenChange={setInviteDialogOpen}>
