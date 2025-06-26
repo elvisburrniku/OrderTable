@@ -97,7 +97,7 @@ export default function ConflictResolutionSystem({
   const { restaurant } = useAuth();
   const { toast } = useToast();
   const queryClient = useQueryClient();
-  
+
   const [selectedConflict, setSelectedConflict] = useState<ConflictType | null>(null);
   const [selectedResolution, setSelectedResolution] = useState<Resolution | null>(null);
   const [isResolving, setIsResolving] = useState(false);
@@ -245,7 +245,7 @@ export default function ConflictResolutionSystem({
 
   const handleAutoResolve = (conflict: ConflictType) => {
     if (!conflict.suggestedResolutions || conflict.suggestedResolutions.length === 0) return;
-    
+
     const resolution = conflict.suggestedResolutions.find(r => r.autoExecutable);
     if (!resolution || !resolution.bookingId || !resolution.newTableId) return;
 
@@ -329,7 +329,7 @@ export default function ConflictResolutionSystem({
             </motion.div>
           </motion.p>
         </div>
-        
+
         <motion.div 
           className="flex items-center space-x-4"
           initial={{ opacity: 0, x: 20 }}
@@ -352,7 +352,7 @@ export default function ConflictResolutionSystem({
               Scan for Conflicts
             </Button>
           </motion.div>
-          
+
           <AnimatePresence>
             {activeConflicts.length > 0 && (
               <motion.div
@@ -616,7 +616,7 @@ export default function ConflictResolutionSystem({
                                 {conflict.severity.toUpperCase()}
                               </Badge>
                             </motion.div>
-                            
+
                             <AnimatePresence>
                               {conflict.autoResolvable && autoResolveEnabled && (
                                 <motion.div
@@ -644,7 +644,7 @@ export default function ConflictResolutionSystem({
                                 </motion.div>
                               )}
                             </AnimatePresence>
-                            
+
                             <motion.div
                               initial={{ opacity: 0, scale: 0.8 }}
                               animate={{ opacity: 1, scale: 1 }}
@@ -740,7 +740,7 @@ export default function ConflictResolutionSystem({
                                 </motion.div>
                                 {booking.tableName && (
                                   <motion.div 
-                                    className="flex items-center space-x-2"
+                                    className="flex items-center space```x-2"
                                     whileHover={{ x: 5 }}
                                   >
                                     <MapPin className="w-4 h-4" />
@@ -896,7 +896,7 @@ export default function ConflictResolutionSystem({
                           {resolvedConflict.resolutionType.replace('_', ' ').toUpperCase()}
                         </Badge>
                       </div>
-                      
+
                       <div className="bg-muted/50 p-3 rounded-lg">
                         <p className="text-sm font-medium mb-1">Resolution Details:</p>
                         <p className="text-sm text-muted-foreground">
@@ -930,8 +930,6 @@ export default function ConflictResolutionSystem({
         </TabsContent>
       </Tabs>
 
-      </Tabs>
-
       {/* Conflict Detail Dialog */}
       <Dialog open={!!selectedConflict} onOpenChange={() => setSelectedConflict(null)}>
         <DialogContent className="max-w-4xl max-h-[80vh] overflow-y-auto">
@@ -943,7 +941,7 @@ export default function ConflictResolutionSystem({
               </span>
             </DialogTitle>
           </DialogHeader>
-          
+
           {selectedConflict && (
             <div className="space-y-6">
               {/* Conflict Summary */}
