@@ -130,6 +130,7 @@ export function usePermissions() {
 // Auto permission guard based on current route
 export function AutoPermissionGuard({ children }: { children: React.ReactNode }) {
   const [location] = useLocation();
+  const { getUserRole } = usePermissions();
   
   // Extract the page name from the current route
   const getPageFromRoute = (path: string): string => {
@@ -143,6 +144,12 @@ export function AutoPermissionGuard({ children }: { children: React.ReactNode })
 
   const currentPage = getPageFromRoute(location);
   const requiredPermission = PAGE_PERMISSION_MAP[currentPage];
+  const userRole = getUserRole();
+
+  // If user is owner, allow access to all pages (subscription limits will be checked on the backend)
+  if (userRole === 'owner') {
+    return <>{children}</>;
+  }
 
   // If no specific permission is required for this page, allow access
   if (!requiredPermission) {

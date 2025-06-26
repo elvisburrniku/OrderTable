@@ -137,9 +137,9 @@ export const ROLE_REDIRECTS = {
 // Get user role from session or tenant_users table
 export async function getUserRole(userId: number, tenantId: number): Promise<string | null> {
   try {
-    // Check if user is the restaurant owner
+    // Check if user is the restaurant owner - this takes precedence
     const restaurant = await storage.getRestaurantByUserId(userId);
-    if (restaurant && restaurant.userId === userId) {
+    if (restaurant && restaurant.userId === userId && restaurant.tenantId === tenantId) {
       return 'owner';
     }
 
@@ -157,6 +157,16 @@ export async function getUserRole(userId: number, tenantId: number): Promise<str
       }
     } catch (error) {
       console.log("Could not query tenant_users table directly:", error);
+    }
+
+    // Final fallback: check if user owns any restaurant in this tenant
+    try {
+      const tenantRestaurants = await storage.getRestaurantsByTenantId(tenantId);
+      if (tenantRestaurants && tenantRestaurants.some((r: any) => r.userId === userId)) {
+        return 'owner';
+      }
+    } catch (error) {
+      console.log("Could not check tenant restaurants:", error);
     }
 
     return null;
@@ -193,6 +203,22 @@ export function requirePermission(permission: string) {
           error: "Authentication required",
           message: "Please log in to access this resource" 
         });
+      }
+
+      // Check if tenant subscription is active and allows this feature
+      try {
+        const subscriptionStatus = await checkSubscriptionAccess(sessionTenant.id, permission);
+        if (!subscriptionStatus.allowed) {
+          return res.status(403).json({ 
+            error: "Subscription required", 
+            message: subscriptionStatus.message || "Your current subscription plan does not include this feature",
+            requiredPermission: permission,
+            subscriptionStatus: subscriptionStatus.status
+          });
+        }
+      } catch (error) {
+        console.log("Could not check subscription status:", error);
+        // Continue with permission check even if subscription check fails
       }
 
       const hasAccess = await hasPermission(sessionUser.id, sessionTenant.id, permission);
@@ -284,6 +310,53 @@ export function updateRoleRedirect(role: string, redirectPath: string): boolean 
   
   (ROLE_REDIRECTS as any)[role] = redirectPath;
   return true;
+}
+
+// Check if tenant's subscription allows access to a specific feature
+async function checkSubscriptionAccess(tenantId: number, permission: string): Promise<{allowed: boolean, status?: string, message?: string}> {
+  try {
+    // Get tenant subscription status
+    const tenant = await storage.getTenantById(tenantId);
+    if (!tenant) {
+      return { allowed: false, status: "no_tenant", message: "Tenant not found" };
+    }
+
+    // If tenant is paused, only allow basic access
+    if (tenant.status === 'paused') {
+      const allowedDuringPause = [
+        PERMISSIONS.ACCESS_DASHBOARD,
+        PERMISSIONS.ACCESS_BILLING,
+        PERMISSIONS.ACCESS_SETTINGS,
+        PERMISSIONS.VIEW_BILLING
+      ];
+      
+      if (!allowedDuringPause.includes(permission)) {
+        return { allowed: false, status: "paused", message: "Your account is paused. Please contact support or update your billing information." };
+      }
+    }
+
+    // If tenant is suspended, deny all access except billing
+    if (tenant.status === 'suspended') {
+      const allowedDuringSuspension = [
+        PERMISSIONS.ACCESS_BILLING,
+        PERMISSIONS.VIEW_BILLING
+      ];
+      
+      if (!allowedDuringSuspension.includes(permission)) {
+        return { allowed: false, status: "suspended", message: "Your account is suspended. Please contact support." };
+      }
+    }
+
+    // Check if subscription is active
+    if (tenant.subscriptionStatus !== 'active') {
+      return { allowed: false, status: tenant.subscriptionStatus, message: "Your subscription is not active. Please update your billing information." };
+    }
+
+    return { allowed: true };
+  } catch (error) {
+    console.error("Error checking subscription access:", error);
+    return { allowed: true }; // Allow access if we can't check subscription
+  }
 }
 
 // Get all available permissions grouped by category
