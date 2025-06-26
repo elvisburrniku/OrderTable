@@ -128,8 +128,8 @@ export default function Login() {
   useEffect(() => {
     if (session && !sessionLoading && session.valid) {
       if (session.user && session.restaurant) {
-        if (session.restaurant.setupCompleted) {
-          const tenantId = session.tenant?.id || session.restaurant.id;
+        if (session.restaurant?.setupCompleted) {
+          const tenantId = session.tenant?.id || session.restaurant?.id;
           setLocation(`/${tenantId}/dashboard`);
         } else {
           setLocation('/setup');
@@ -165,10 +165,10 @@ export default function Login() {
           });
           
           // Check if setup is completed
-          if (!result.restaurant.setupCompleted) {
+          if (!result.restaurant?.setupCompleted) {
             setLocation('/setup');
           } else {
-            const tenantId = result.tenant?.id || result.restaurant.id;
+            const tenantId = result.tenant?.id || result.restaurant?.id;
             setLocation(`/${tenantId}/dashboard`);
           }
         } else {
