@@ -56,7 +56,7 @@ export default function RolePermissions() {
   const [hasChanges, setHasChanges] = useState(false);
 
   const { data: permissionsData, isLoading, error } = useQuery<RolePermissionsData>({
-    queryKey: ["/api/tenants/3/role-permissions"],
+    queryKey: ["/api/user/tenant/role-permissions"],
     retry: false,
   });
 
@@ -77,7 +77,7 @@ export default function RolePermissions() {
 
   const updatePermissionsMutation = useMutation({
     mutationFn: async (data: { role: string; permissions: string[]; redirect: string }) => {
-      return apiRequest("PUT", "/api/tenants/3/role-permissions", data);
+      return apiRequest("PUT", "/api/user/tenant/role-permissions", data);
     },
     onSuccess: () => {
       toast({
@@ -85,7 +85,7 @@ export default function RolePermissions() {
         description: "Role permissions have been updated successfully.",
       });
       setHasChanges(false);
-      queryClient.invalidateQueries({ queryKey: ["/api/tenants/3/role-permissions"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/user/tenant/role-permissions"] });
     },
     onError: (error: any) => {
       toast({
