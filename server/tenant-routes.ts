@@ -636,19 +636,25 @@ export async function removeUserFromTenant(req: Request, res: Response) {
 // Get role permissions
 export async function getRolePermissions(req: Request, res: Response) {
   try {
-    const roles = Object.keys(ROLE_PERMISSIONS);
+    console.log("Getting role permissions...");
+    console.log("ROLE_PERMISSIONS:", ROLE_PERMISSIONS);
+    console.log("ROLE_REDIRECTS:", ROLE_REDIRECTS);
+
     const rolePermissions = Object.entries(ROLE_PERMISSIONS).map(([role, permissions]) => ({
       role,
-      permissions,
+      permissions: Array.isArray(permissions) ? permissions : [],
       redirect: ROLE_REDIRECTS[role as keyof typeof ROLE_REDIRECTS] || "dashboard"
     }));
 
     const availablePermissions = getAllPermissions();
 
-    res.json({
+    const result = {
       roles: rolePermissions,
       availablePermissions
-    });
+    };
+
+    console.log("Sending role permissions result:", JSON.stringify(result, null, 2));
+    res.json(result);
   } catch (error) {
     console.error("Error getting role permissions:", error);
     res.status(500).json({ message: "Internal server error" });
@@ -690,7 +696,7 @@ export function setupTenantRoutes(app: any) {
   app.post("/api/tenant/:tenantId/invite", inviteUserToTenant);
   app.delete("/api/tenant/:tenantId/users/:userId", removeUserFromTenant);
   
-  // Role permissions management (owner only)
-  app.get("/api/tenants/:tenantId/role-permissions", requirePermission(PERMISSIONS.MANAGE_USERS), getRolePermissions);
-  app.put("/api/tenants/:tenantId/role-permissions", requirePermission(PERMISSIONS.MANAGE_USERS), updateRolePermissionsEndpoint);
+  // Role permissions management (users with access_users permission)
+  app.get("/api/tenants/:tenantId/role-permissions", requirePermission(PERMISSIONS.ACCESS_USERS), getRolePermissions);
+  app.put("/api/tenants/:tenantId/role-permissions", requirePermission(PERMISSIONS.ACCESS_USERS), updateRolePermissionsEndpoint);
 }
