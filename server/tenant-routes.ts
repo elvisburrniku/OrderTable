@@ -637,9 +637,10 @@ export async function removeUserFromTenant(req: Request, res: Response) {
 export async function getRolePermissions(req: Request, res: Response) {
   try {
     console.log("Getting role permissions...");
-    console.log("ROLE_PERMISSIONS:", ROLE_PERMISSIONS);
-    console.log("ROLE_REDIRECTS:", ROLE_REDIRECTS);
-
+    
+    // Set proper headers for JSON response
+    res.setHeader('Content-Type', 'application/json');
+    
     const rolePermissions = Object.entries(ROLE_PERMISSIONS).map(([role, permissions]) => ({
       role,
       permissions: Array.isArray(permissions) ? permissions : [],
@@ -653,11 +654,12 @@ export async function getRolePermissions(req: Request, res: Response) {
       availablePermissions
     };
 
-    console.log("Sending role permissions result:", JSON.stringify(result, null, 2));
-    res.json(result);
+    console.log("Sending role permissions result with", rolePermissions.length, "roles");
+    return res.status(200).json(result);
   } catch (error) {
     console.error("Error getting role permissions:", error);
-    res.status(500).json({ message: "Internal server error" });
+    res.setHeader('Content-Type', 'application/json');
+    return res.status(500).json({ message: "Internal server error" });
   }
 }
 

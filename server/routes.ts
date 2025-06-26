@@ -15773,6 +15773,10 @@ NEXT STEPS:
   app.delete("/api/tenants/:tenantId/users/:userId", validateTenant, requirePermission(PERMISSIONS.MANAGE_USERS), tenantRoutes.removeTenantUser);
   app.get("/api/tenants/:tenantId/roles", validateTenant, requirePermission(PERMISSIONS.VIEW_USERS), tenantRoutes.getTenantRoles);
   app.post("/api/tenants/:tenantId/roles", validateTenant, requirePermission(PERMISSIONS.MANAGE_USERS), tenantRoutes.createTenantRole);
+  
+  // Role permissions management routes
+  app.get("/api/tenants/:tenantId/role-permissions", validateTenant, requirePermission(PERMISSIONS.ACCESS_USERS), tenantRoutes.getRolePermissions);
+  app.put("/api/tenants/:tenantId/role-permissions", validateTenant, requirePermission(PERMISSIONS.ACCESS_USERS), tenantRoutes.updateRolePermissionsEndpoint);
 
   // Invitation management routes (public - no auth required)
   app.get("/api/invitations/validate/:token", tenantRoutes.validateInvitationToken);
