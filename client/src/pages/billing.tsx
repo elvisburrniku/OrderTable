@@ -872,7 +872,8 @@ export default function BillingPage() {
                               <div className="flex justify-center mb-4">
                                 <Badge className="bg-gray-900 text-white">
                                   Current Plan
-                                </Badge                              </div>
+                                </Badge>
+                              </div>
                             )}
 
                             <div className="text-center mb-6">
