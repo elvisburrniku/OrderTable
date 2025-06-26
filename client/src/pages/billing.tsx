@@ -667,13 +667,11 @@ export default function BillingPage() {
     billingInfo?.customer?.invoice_settings?.default_payment_method;
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white via-purple-50 to-pink-50 relative overflow-hidden">
-      {/* Enhanced animated background */}
+    <div className="min-h-screen bg-gray-50 relative overflow-hidden">
+      {/* Subtle background pattern */}
       <div className="absolute inset-0">
-        <div className="absolute top-20 left-20 w-72 h-72 bg-blue-500/10 rounded-full blur-3xl animate-pulse"></div>
-        <div className="absolute bottom-20 right-20 w-96 h-96 bg-purple-500/10 rounded-full blur-3xl animate-pulse delay-1000"></div>
-        <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-80 h-80 bg-pink-500/10 rounded-full blur-3xl animate-pulse delay-2000"></div>
-        <div className="absolute top-40 right-40 w-64 h-64 bg-green-500/5 rounded-full blur-2xl animate-pulse delay-3000"></div>
+        <div className="absolute top-20 left-20 w-72 h-72 bg-gray-200/30 rounded-full blur-3xl"></div>
+        <div className="absolute bottom-20 right-20 w-96 h-96 bg-gray-200/20 rounded-full blur-3xl"></div>
       </div>
       
       <div className="container mx-auto py-12 space-y-12 relative z-10">
@@ -684,37 +682,37 @@ export default function BillingPage() {
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.8 }}
         >
-          <div className="space-y-4">
-            <h1 className="text-5xl font-bold bg-gradient-to-r from-blue-600 via-purple-600 to-pink-600 bg-clip-text text-transparent">
+          <div className="space-y-3">
+            <h1 className="text-3xl font-bold text-gray-900">
               Billing & Subscription Center
             </h1>
-            <p className="text-gray-600 text-lg font-medium max-w-2xl">
-              Manage your subscription plans, payment methods, and billing history with enterprise-grade security
+            <p className="text-gray-600 text-base max-w-2xl">
+              Manage your subscription plans, payment methods, and billing history
             </p>
             <div className="flex items-center space-x-4 text-sm text-gray-500">
               <div className="flex items-center space-x-2">
-                <Shield className="w-4 h-4 text-green-600" />
-                <span>256-bit SSL encryption</span>
+                <Shield className="w-4 h-4 text-gray-600" />
+                <span>SSL encryption</span>
               </div>
               <div className="flex items-center space-x-2">
-                <Globe className="w-4 h-4 text-blue-600" />
-                <span>Global payment processing</span>
+                <Globe className="w-4 h-4 text-gray-600" />
+                <span>Global processing</span>
               </div>
               <div className="flex items-center space-x-2">
-                <Lock className="w-4 h-4 text-purple-600" />
-                <span>PCI DSS compliant</span>
+                <Lock className="w-4 h-4 text-gray-600" />
+                <span>PCI compliant</span>
               </div>
             </div>
           </div>
-          <div className="flex items-center space-x-6">
-            <div className="bg-white/80 backdrop-blur-sm rounded-2xl p-4 shadow-lg border border-white/20">
-              <DollarSign className="w-8 h-8 text-green-600" />
+          <div className="flex items-center space-x-4">
+            <div className="bg-white rounded-xl p-3 shadow-md border">
+              <DollarSign className="w-6 h-6 text-gray-700" />
             </div>
-            <div className="bg-white/80 backdrop-blur-sm rounded-2xl p-4 shadow-lg border border-white/20">
-              <BarChart3 className="w-8 h-8 text-blue-600" />
+            <div className="bg-white rounded-xl p-3 shadow-md border">
+              <BarChart3 className="w-6 h-6 text-gray-700" />
             </div>
-            <div className="bg-white/80 backdrop-blur-sm rounded-2xl p-4 shadow-lg border border-white/20">
-              <Wallet className="w-8 h-8 text-purple-600" />
+            <div className="bg-white rounded-xl p-3 shadow-md border">
+              <Wallet className="w-6 h-6 text-gray-700" />
             </div>
           </div>
         </motion.div>
@@ -728,22 +726,22 @@ export default function BillingPage() {
           >
             <Card className="border-0 shadow-2xl bg-white/80 backdrop-blur-sm overflow-hidden relative">
               <div className="absolute inset-0 bg-gradient-to-r from-blue-500/5 via-purple-500/5 to-pink-500/5"></div>
-              <CardHeader className="relative z-10 pb-6">
+              <CardHeader className="relative z-10 pb-4">
                 <div className="flex items-center justify-between">
-                  <div className="flex items-center space-x-4">
-                    <div className="bg-gradient-to-br from-blue-500 to-purple-500 rounded-2xl p-4 shadow-lg">
-                      <Crown className="h-8 w-8 text-white" />
+                  <div className="flex items-center space-x-3">
+                    <div className="bg-gray-100 rounded-lg p-3">
+                      <Crown className="h-5 w-5 text-gray-700" />
                     </div>
                     <div>
-                      <CardTitle className="text-3xl font-bold text-gray-900">Current Subscription</CardTitle>
-                      <CardDescription className="text-gray-600 text-lg">
-                        Professional restaurant management platform
+                      <CardTitle className="text-xl font-semibold text-gray-900">Current Subscription</CardTitle>
+                      <CardDescription className="text-gray-600 text-sm">
+                        Restaurant management platform
                       </CardDescription>
                     </div>
                   </div>
                   <div className="text-right space-y-2">
                     <Badge
-                      className={`px-6 py-3 text-lg font-bold rounded-xl ${
+                      className={`px-4 py-2 text-sm font-medium rounded-lg ${
                         subscriptionDetails.tenant.subscriptionStatus === "active"
                           ? "bg-green-100 text-green-800 border-green-200"
                           : subscriptionDetails.tenant.subscriptionStatus === "trial"
@@ -751,13 +749,13 @@ export default function BillingPage() {
                             : "bg-red-100 text-red-800 border-red-200"
                       }`}
                     >
-                      <Activity className="w-4 h-4 mr-2" />
+                      <Activity className="w-3 h-3 mr-1" />
                       {subscriptionDetails.tenant.subscriptionStatus.toUpperCase()}
                     </Badge>
                     {subscriptionDetails.tenant.subscriptionEndDate && (
                       <div className="flex items-center space-x-2 text-gray-600">
-                        <CalendarIcon className="w-4 h-4" />
-                        <span className="text-sm font-medium">
+                        <CalendarIcon className="w-3 h-3" />
+                        <span className="text-xs">
                           {subscriptionDetails.tenant.subscriptionStatus === "cancelled"
                             ? "Expires"
                             : "Next billing"}
@@ -773,29 +771,28 @@ export default function BillingPage() {
                 </div>
               </CardHeader>
               <CardContent className="space-y-8 relative z-10">
-                <div className="flex items-center justify-between p-6 bg-gradient-to-r from-gray-50 to-white rounded-2xl border border-gray-100">
-                  <div className="space-y-3">
-                    <div className="flex items-center space-x-3">
-                      <div className="font-bold text-3xl text-gray-900">
+                <div className="flex items-center justify-between p-4 bg-gray-50 rounded-lg border">
+                  <div className="space-y-2">
+                    <div className="flex items-center space-x-2">
+                      <div className="font-semibold text-lg text-gray-900">
                         {subscriptionDetails.plan?.name || "Free Trial"}
                       </div>
-                      <Sparkles className="w-6 h-6 text-yellow-500" />
                     </div>
-                    <div className="text-xl text-gray-600 font-semibold">
+                    <div className="text-base text-gray-600">
                       {subscriptionDetails.plan
                         ? `$${(subscriptionDetails.plan.price / 100).toFixed(2)}/${subscriptionDetails.plan.interval}`
                         : "No active subscription"}
                     </div>
                   </div>
-                  <div className="flex items-center space-x-4">
+                  <div className="flex items-center space-x-6">
                     <div className="text-center">
-                      <div className="text-2xl font-bold text-blue-600">{subscriptionDetails.usage?.totalTables || 0}</div>
-                      <div className="text-sm text-gray-500">Tables</div>
+                      <div className="text-lg font-semibold text-gray-900">{subscriptionDetails.usage?.totalTables || 0}</div>
+                      <div className="text-xs text-gray-500">Tables</div>
                     </div>
-                    <div className="w-px h-12 bg-gray-300"></div>
+                    <div className="w-px h-8 bg-gray-300"></div>
                     <div className="text-center">
-                      <div className="text-2xl font-bold text-green-600">{subscriptionDetails.usage?.bookingsThisMonth || 0}</div>
-                      <div className="text-sm text-gray-500">Bookings</div>
+                      <div className="text-lg font-semibold text-gray-900">{subscriptionDetails.usage?.bookingsThisMonth || 0}</div>
+                      <div className="text-xs text-gray-500">Bookings</div>
                     </div>
                   </div>
                 </div>
@@ -807,12 +804,12 @@ export default function BillingPage() {
                       variant="outline"
                       onClick={() => cancelSubscriptionMutation.mutate()}
                       disabled={cancelSubscriptionMutation.isPending}
-                      className="hover:bg-red-50 hover:border-red-300 hover:text-red-600 transition-all duration-300 rounded-xl px-6 py-3"
+                      className="hover:bg-red-50 hover:border-red-300 hover:text-red-600 text-sm px-4 py-2"
                     >
                       {cancelSubscriptionMutation.isPending ? (
-                        <RefreshCw className="w-4 h-4 mr-2 animate-spin" />
+                        <RefreshCw className="w-3 h-3 mr-2 animate-spin" />
                       ) : (
-                        <AlertCircle className="w-4 h-4 mr-2" />
+                        <AlertCircle className="w-3 h-3 mr-2" />
                       )}
                       {cancelSubscriptionMutation.isPending ? "Cancelling..." : "Cancel Subscription"}
                     </Button>
