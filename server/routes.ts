@@ -24,13 +24,31 @@ import {
   subscriptionPlans,
 } from "@shared/schema";
 import { eq, and } from "drizzle-orm";
-import { PERMISSIONS, ROLE_PERMISSIONS, ROLE_REDIRECTS, getUserRole, getUserPermissions, getRoleRedirect } from "./permissions-middleware";
+import {
+  PERMISSIONS,
+  ROLE_PERMISSIONS,
+  ROLE_REDIRECTS,
+  getUserRole,
+  getUserPermissions,
+  getRoleRedirect,
+} from "./permissions-middleware";
 import { BrevoEmailService } from "./brevo-service";
 import { BookingHash } from "./booking-hash";
 import { QRCodeService } from "./qr-service";
 import { WebhookService } from "./webhook-service";
-import { getUserRole, getUserPermissions, getRoleRedirect } from "./permissions-middleware";
-import { requirePermission, requireAnyPermission, PERMISSIONS, getUserPermissions, getUserRole, getRoleRedirect } from "./permissions-middleware";
+import {
+  getUserRole,
+  getUserPermissions,
+  getRoleRedirect,
+} from "./permissions-middleware";
+import {
+  requirePermission,
+  requireAnyPermission,
+  PERMISSIONS,
+  getUserPermissions,
+  getUserRole,
+  getRoleRedirect,
+} from "./permissions-middleware";
 import { MetaIntegrationService } from "./meta-service";
 import { metaInstallService } from "./meta-install-service";
 import { setupSSO } from "./sso-auth";
@@ -127,7 +145,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
 
     const parsedTenantId = parseInt(tenantId as string);
-    
+
     // Get tenant details to check status
     try {
       const tenant = await storage.getTenantById(parsedTenantId);
@@ -136,35 +154,40 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
 
       // Check if tenant is suspended or paused
-      if (tenant.subscriptionStatus === 'suspended') {
+      if (tenant.subscriptionStatus === "suspended") {
         // Clear any existing session
         if ((req as any).session) {
           (req as any).session.destroy((err: any) => {
             if (err) console.error("Error destroying session:", err);
           });
         }
-        return res.status(403).json({ 
+        return res.status(403).json({
           message: "Account suspended",
-          details: tenant.suspendReason || "This tenant account has been suspended. Please contact support for assistance.",
+          details:
+            tenant.suspendReason ||
+            "This tenant account has been suspended. Please contact support for assistance.",
           supportEmail: "support@replit.com",
-          status: "suspended"
+          status: "suspended",
         });
       }
 
-      if (tenant.subscriptionStatus === 'paused') {
+      if (tenant.subscriptionStatus === "paused") {
         // Check if pause period has expired
-        if (tenant.pauseEndDate && new Date() >= new Date(tenant.pauseEndDate)) {
+        if (
+          tenant.pauseEndDate &&
+          new Date() >= new Date(tenant.pauseEndDate)
+        ) {
           // Automatically unpause the tenant
           try {
             await storage.updateTenant(tenant.id, {
-              subscriptionStatus: 'active',
+              subscriptionStatus: "active",
               pauseStartDate: null,
               pauseEndDate: null,
-              pauseReason: null
+              pauseReason: null,
             });
             // Continue to allow access
             req.tenantId = parsedTenantId;
-            req.tenant = { ...tenant, subscriptionStatus: 'active' };
+            req.tenant = { ...tenant, subscriptionStatus: "active" };
             return next();
           } catch (error) {
             console.error("Error auto-unpausing tenant:", error);
@@ -178,16 +201,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
           });
         }
 
-        const pauseEndMessage = tenant.pauseEndDate 
+        const pauseEndMessage = tenant.pauseEndDate
           ? `Your account will be automatically reactivated on ${new Date(tenant.pauseEndDate).toLocaleDateString()}.`
           : "Please contact support for assistance.";
 
-        return res.status(403).json({ 
+        return res.status(403).json({
           message: "Account paused",
           details: `${tenant.pauseReason || "This tenant account is temporarily paused."} ${pauseEndMessage}`,
           supportEmail: "support@replit.com",
           status: "paused",
-          pauseEndDate: tenant.pauseEndDate
+          pauseEndDate: tenant.pauseEndDate,
         });
       }
 
@@ -329,13 +352,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
         userEmail: email,
         userLogin: email,
         ipAddress: req.ip,
-        userAgent: req.get('User-Agent'),
+        userAgent: req.get("User-Agent"),
         details: {
           companyName,
           restaurantName,
           planName: plan.name,
-          subscriptionStatus: "trial"
-        }
+          subscriptionStatus: "trial",
+        },
       });
 
       // If this is a paid plan, create Stripe checkout session
@@ -415,45 +438,52 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const sessionUser = (req as any).session?.user;
       const sessionTenant = (req as any).session?.tenant;
-      
+
       if (sessionUser && sessionTenant) {
         // Check if tenant is suspended or paused
-        if (sessionTenant.subscriptionStatus === 'suspended') {
+        if (sessionTenant.subscriptionStatus === "suspended") {
           // Clear session for suspended tenant
           (req as any).session.destroy((err: any) => {
             if (err) console.error("Error destroying session:", err);
           });
-          return res.status(403).json({ 
-            valid: false, 
+          return res.status(403).json({
+            valid: false,
             message: "Account suspended",
-            details: "Your account has been suspended. Please contact support for assistance.",
+            details:
+              "Your account has been suspended. Please contact support for assistance.",
             supportEmail: "support@replit.com",
-            status: "suspended"
+            status: "suspended",
           });
         }
 
-        if (sessionTenant.subscriptionStatus === 'paused') {
+        if (sessionTenant.subscriptionStatus === "paused") {
           // Check if pause period has expired
-          if (sessionTenant.pauseEndDate && new Date() >= new Date(sessionTenant.pauseEndDate)) {
+          if (
+            sessionTenant.pauseEndDate &&
+            new Date() >= new Date(sessionTenant.pauseEndDate)
+          ) {
             // Automatically unpause the tenant
             try {
               await storage.updateTenant(sessionTenant.id, {
-                subscriptionStatus: 'active',
+                subscriptionStatus: "active",
                 pauseStartDate: null,
                 pauseEndDate: null,
-                pauseReason: null
+                pauseReason: null,
               });
               // Update session with new status
-              (req as any).session.tenant.subscriptionStatus = 'active';
+              (req as any).session.tenant.subscriptionStatus = "active";
               return res.json({
                 valid: true,
                 message: "Session valid - account automatically reactivated",
                 user: sessionUser,
-                tenant: { ...sessionTenant, subscriptionStatus: 'active' },
+                tenant: { ...sessionTenant, subscriptionStatus: "active" },
                 restaurant: (req as any).session.restaurant,
               });
             } catch (error) {
-              console.error("Error auto-unpausing tenant during validation:", error);
+              console.error(
+                "Error auto-unpausing tenant during validation:",
+                error,
+              );
             }
           }
 
@@ -462,20 +492,20 @@ export async function registerRoutes(app: Express): Promise<Server> {
             if (err) console.error("Error destroying session:", err);
           });
 
-          const pauseEndMessage = sessionTenant.pauseEndDate 
+          const pauseEndMessage = sessionTenant.pauseEndDate
             ? `Your account will be automatically reactivated on ${new Date(sessionTenant.pauseEndDate).toLocaleDateString()}.`
             : "Please contact support for assistance.";
 
-          return res.status(403).json({ 
-            valid: false, 
+          return res.status(403).json({
+            valid: false,
             message: "Account paused",
             details: `${sessionTenant.pauseReason || "Your account is temporarily paused."} ${pauseEndMessage}`,
             supportEmail: "support@replit.com",
             status: "paused",
-            pauseEndDate: sessionTenant.pauseEndDate
+            pauseEndDate: sessionTenant.pauseEndDate,
           });
         }
-        
+
         res.json({
           valid: true,
           message: "Session valid",
@@ -526,57 +556,69 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
 
       // Check if tenant is suspended or paused
-      if (tenantUser.subscriptionStatus === 'suspended') {
-        return res.status(403).json({ 
+      if (tenantUser.subscriptionStatus === "suspended") {
+        return res.status(403).json({
           message: "Account suspended",
-          details: "Your account has been suspended. Please contact support for assistance.",
+          details:
+            "Your account has been suspended. Please contact support for assistance.",
           supportEmail: "support@replit.com",
-          status: "suspended"
+          status: "suspended",
         });
       }
 
-      if (tenantUser.subscriptionStatus === 'paused') {
-        return res.status(403).json({ 
-          message: "Account paused", 
-          details: "Your account is temporarily paused. Please contact support for assistance.",
+      if (tenantUser.subscriptionStatus === "paused") {
+        return res.status(403).json({
+          message: "Account paused",
+          details:
+            "Your account is temporarily paused. Please contact support for assistance.",
           supportEmail: "support@replit.com",
-          status: "paused"
+          status: "paused",
         });
       }
 
       // Get restaurant data - either owned by user or associated with tenant
       let restaurant = await storage.getRestaurantByUserId(user.id);
-      
+
       // If user doesn't own a restaurant, try to get the tenant's restaurant
       if (!restaurant && tenantUser.id) {
         try {
-          const tenantRestaurants = await storage.getRestaurantsByTenantId(tenantUser.id);
+          const tenantRestaurants = await storage.getRestaurantsByTenantId(
+            tenantUser.id,
+          );
           if (tenantRestaurants && tenantRestaurants.length > 0) {
             restaurant = tenantRestaurants[0]; // Use first restaurant for the tenant
           }
         } catch (error) {
-          console.log("No restaurants found for tenant, user may be a team member");
+          console.log(
+            "No restaurants found for tenant, user may be a team member",
+          );
         }
       }
 
       // Determine user role and ownership
       let userRole = null;
       let isOwner = false;
-      
+
       // Check if user is the restaurant owner
       if (restaurant && restaurant.userId === user.id) {
         isOwner = true;
-        userRole = 'owner';
+        userRole = "owner";
       } else if (tenantUser.id) {
         // For team members, check if they have a role in the tenant
         try {
-          const tenantUserRelation = await storage.getTenantUsers(tenantUser.id);
-          const userInTenant = tenantUserRelation?.find(tu => tu.userId === user.id);
+          const tenantUserRelation = await storage.getTenantUsers(
+            tenantUser.id,
+          );
+          const userInTenant = tenantUserRelation?.find(
+            (tu) => tu.userId === user.id,
+          );
           if (userInTenant?.role) {
             userRole = userInTenant.role;
           }
         } catch (error) {
-          console.log("Could not fetch tenant user role, treating as basic team member");
+          console.log(
+            "Could not fetch tenant user role, treating as basic team member",
+          );
         }
       }
 
@@ -605,12 +647,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
         userEmail: user.email,
         userLogin: user.email,
         ipAddress: req.ip,
-        userAgent: req.get('User-Agent'),
+        userAgent: req.get("User-Agent"),
         details: {
           rememberMe,
           sessionDuration: rememberMe ? "30 days" : "24 hours",
-          role: userRole
-        }
+          role: userRole,
+        },
       });
 
       res.json({
@@ -644,7 +686,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           userEmail: sessionUser.email,
           userLogin: sessionUser.email,
           ipAddress: req.ip,
-          userAgent: req.get('User-Agent')
+          userAgent: req.get("User-Agent"),
         });
       }
 
@@ -675,13 +717,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       // Get user role and permissions
       const userRole = await getUserRole(sessionUser.id, sessionTenant.id);
-      const permissions = await getUserPermissions(sessionUser.id, sessionTenant.id);
+      const permissions = await getUserPermissions(
+        sessionUser.id,
+        sessionTenant.id,
+      );
       const defaultRedirect = getRoleRedirect(userRole || "agent");
 
       res.json({
         permissions,
         role: userRole || "agent",
-        redirect: defaultRedirect
+        redirect: defaultRedirect,
       });
     } catch (error) {
       console.error("Error getting user permissions:", error);
@@ -690,123 +735,147 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Get role permissions
-  app.get("/api/tenants/:tenantId/role-permissions", validateTenant, async (req, res) => {
-    try {
-      const tenantId = parseInt(req.params.tenantId);
-      const sessionUser = (req as any).session?.user;
-      const sessionTenant = (req as any).session?.tenant;
+  app.get(
+    "/api/tenants/:tenantId/role-permissions",
+    validateTenant,
+    async (req, res) => {
+      try {
+        const tenantId = parseInt(req.params.tenantId);
+        const sessionUser = (req as any).session?.user;
+        const sessionTenant = (req as any).session?.tenant;
 
-      if (!sessionUser || !sessionTenant) {
-        return res.status(401).json({ error: "Authentication required" });
+        if (!sessionUser || !sessionTenant) {
+          return res.status(401).json({ error: "Authentication required" });
+        }
+
+        // Check if user has permission to view role permissions
+        const userRole = await getUserRole(sessionUser.id, tenantId);
+        const userPermissions = await getUserPermissions(
+          sessionUser.id,
+          tenantId,
+        );
+
+        // Allow owners and users with ACCESS_USERS permission
+        if (
+          userRole !== "owner" &&
+          !userPermissions.includes(PERMISSIONS.ACCESS_USERS)
+        ) {
+          return res.status(403).json({
+            error: "Access denied",
+            message: "You don't have permission to view role permissions",
+          });
+        }
+
+        // Get role permissions data
+        const rolePermissions = Object.entries(ROLE_PERMISSIONS).map(
+          ([role, permissions]) => ({
+            role,
+            permissions: Array.isArray(permissions) ? permissions : [],
+            redirect: getRoleRedirect(role) || "dashboard",
+          }),
+        );
+
+        const availablePermissions = {
+          pageAccess: [
+            { key: "access_dashboard", label: "Dashboard Access" },
+            { key: "access_bookings", label: "Bookings Access" },
+            { key: "access_customers", label: "Customers Access" },
+            { key: "access_menu", label: "Menu Management Access" },
+            { key: "access_tables", label: "Table Management Access" },
+            { key: "access_kitchen", label: "Kitchen Access" },
+            { key: "access_users", label: "User Management Access" },
+            { key: "access_billing", label: "Billing Access" },
+            { key: "access_reports", label: "Reports Access" },
+            { key: "access_notifications", label: "Notifications Access" },
+            { key: "access_integrations", label: "Integrations Access" },
+            { key: "access_settings", label: "Settings Access" },
+          ],
+          features: [
+            { key: "view_bookings", label: "View Bookings" },
+            { key: "create_bookings", label: "Create Bookings" },
+            { key: "edit_bookings", label: "Edit Bookings" },
+            { key: "delete_bookings", label: "Delete Bookings" },
+            { key: "view_customers", label: "View Customers" },
+            { key: "edit_customers", label: "Edit Customers" },
+            { key: "view_menu", label: "View Menu" },
+            { key: "edit_menu", label: "Edit Menu" },
+            { key: "view_tables", label: "View Tables" },
+            { key: "edit_tables", label: "Edit Tables" },
+            { key: "view_kitchen", label: "View Kitchen" },
+            { key: "manage_kitchen", label: "Manage Kitchen" },
+            { key: "view_users", label: "View Users" },
+            { key: "manage_users", label: "Manage Users" },
+            { key: "view_settings", label: "View Settings" },
+            { key: "edit_settings", label: "Edit Settings" },
+            { key: "view_reports", label: "View Reports" },
+            { key: "view_notifications", label: "View Notifications" },
+            { key: "manage_notifications", label: "Manage Notifications" },
+            { key: "view_integrations", label: "View Integrations" },
+            { key: "manage_integrations", label: "Manage Integrations" },
+          ],
+        };
+
+        const result = {
+          roles: rolePermissions,
+          availablePermissions,
+        };
+
+        res.json(result);
+      } catch (error) {
+        console.error("Error getting role permissions:", error);
+        res.status(500).json({ error: "Internal server error" });
       }
-
-      // Check if user has permission to view role permissions
-      const userRole = await getUserRole(sessionUser.id, tenantId);
-      const userPermissions = await getUserPermissions(sessionUser.id, tenantId);
-      
-      // Allow owners and users with ACCESS_USERS permission
-      if (userRole !== 'owner' && !userPermissions.includes(PERMISSIONS.ACCESS_USERS)) {
-        return res.status(403).json({ 
-          error: "Access denied",
-          message: "You don't have permission to view role permissions" 
-        });
-      }
-
-      // Get role permissions data
-      const rolePermissions = Object.entries(ROLE_PERMISSIONS).map(([role, permissions]) => ({
-        role,
-        permissions: Array.isArray(permissions) ? permissions : [],
-        redirect: getRoleRedirect(role) || "dashboard"
-      }));
-
-      const availablePermissions = {
-        pageAccess: [
-          { key: "access_dashboard", label: "Dashboard Access" },
-          { key: "access_bookings", label: "Bookings Access" },
-          { key: "access_customers", label: "Customers Access" },
-          { key: "access_menu", label: "Menu Management Access" },
-          { key: "access_tables", label: "Table Management Access" },
-          { key: "access_kitchen", label: "Kitchen Access" },
-          { key: "access_users", label: "User Management Access" },
-          { key: "access_billing", label: "Billing Access" },
-          { key: "access_reports", label: "Reports Access" },
-          { key: "access_notifications", label: "Notifications Access" },
-          { key: "access_integrations", label: "Integrations Access" },
-          { key: "access_settings", label: "Settings Access" }
-        ],
-        features: [
-          { key: "view_bookings", label: "View Bookings" },
-          { key: "create_bookings", label: "Create Bookings" },
-          { key: "edit_bookings", label: "Edit Bookings" },
-          { key: "delete_bookings", label: "Delete Bookings" },
-          { key: "view_customers", label: "View Customers" },
-          { key: "edit_customers", label: "Edit Customers" },
-          { key: "view_menu", label: "View Menu" },
-          { key: "edit_menu", label: "Edit Menu" },
-          { key: "view_tables", label: "View Tables" },
-          { key: "edit_tables", label: "Edit Tables" },
-          { key: "view_kitchen", label: "View Kitchen" },
-          { key: "manage_kitchen", label: "Manage Kitchen" },
-          { key: "view_users", label: "View Users" },
-          { key: "manage_users", label: "Manage Users" },
-          { key: "view_settings", label: "View Settings" },
-          { key: "edit_settings", label: "Edit Settings" },
-          { key: "view_reports", label: "View Reports" },
-          { key: "view_notifications", label: "View Notifications" },
-          { key: "manage_notifications", label: "Manage Notifications" },
-          { key: "view_integrations", label: "View Integrations" },
-          { key: "manage_integrations", label: "Manage Integrations" }
-        ]
-      };
-
-      const result = {
-        roles: rolePermissions,
-        availablePermissions
-      };
-
-      res.json(result);
-    } catch (error) {
-      console.error("Error getting role permissions:", error);
-      res.status(500).json({ error: "Internal server error" });
-    }
-  });
+    },
+  );
 
   // Update role permissions
-  app.put("/api/tenants/:tenantId/role-permissions", validateTenant, async (req, res) => {
-    try {
-      const tenantId = parseInt(req.params.tenantId);
-      const sessionUser = (req as any).session?.user;
-      const sessionTenant = (req as any).session?.tenant;
-      const { role, permissions, redirect } = req.body;
+  app.put(
+    "/api/tenants/:tenantId/role-permissions",
+    validateTenant,
+    async (req, res) => {
+      try {
+        const tenantId = parseInt(req.params.tenantId);
+        const sessionUser = (req as any).session?.user;
+        const sessionTenant = (req as any).session?.tenant;
+        const { role, permissions, redirect } = req.body;
 
-      if (!sessionUser || !sessionTenant) {
-        return res.status(401).json({ error: "Authentication required" });
-      }
+        if (!sessionUser || !sessionTenant) {
+          return res.status(401).json({ error: "Authentication required" });
+        }
 
-      // Check if user has permission to manage users/roles
-      const userPermissions = await getUserPermissions(sessionUser.id, tenantId);
-      
-      if (!userPermissions.includes(PERMISSIONS.MANAGE_USERS)) {
-        return res.status(403).json({ 
-          error: "Access denied",
-          message: "You don't have permission to update role permissions" 
+        // Check if user has permission to manage users/roles
+        const userPermissions = await getUserPermissions(
+          sessionUser.id,
+          tenantId,
+        );
+
+        if (!userPermissions.includes(PERMISSIONS.MANAGE_USERS)) {
+          return res.status(403).json({
+            error: "Access denied",
+            message: "You don't have permission to update role permissions",
+          });
+        }
+
+        // Update role permissions
+        await storage.updateRolePermissions(
+          tenantId,
+          role,
+          permissions,
+          redirect,
+        );
+
+        res.json({
+          message: "Role permissions updated successfully",
+          role,
+          permissions,
+          redirect,
         });
+      } catch (error) {
+        console.error("Error updating role permissions:", error);
+        res.status(500).json({ error: "Internal server error" });
       }
-
-      // Update role permissions
-      await storage.updateRolePermissions(tenantId, role, permissions, redirect);
-      
-      res.json({ 
-        message: "Role permissions updated successfully",
-        role,
-        permissions,
-        redirect
-      });
-    } catch (error) {
-      console.error("Error updating role permissions:", error);
-      res.status(500).json({ error: "Internal server error" });
-    }
-  });
+    },
+  );
 
   // User password change route
   app.put("/api/users/:userId/change-password", async (req, res) => {
@@ -863,7 +932,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         userEmail: user.email,
         userLogin: user.email,
         ipAddress: req.ip,
-        userAgent: req.get('User-Agent')
+        userAgent: req.get("User-Agent"),
       });
 
       res.json({ message: "Password updated successfully" });
@@ -906,12 +975,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
         userEmail: email,
         userLogin: email,
         ipAddress: req.ip,
-        userAgent: req.get('User-Agent'),
+        userAgent: req.get("User-Agent"),
         details: {
-          oldEmail: existingUser?.email !== email ? existingUser?.email : undefined,
+          oldEmail:
+            existingUser?.email !== email ? existingUser?.email : undefined,
           newEmail: email,
-          nameChanged: true
-        }
+          nameChanged: true,
+        },
       });
 
       if (!updatedUser) {
@@ -1047,12 +1117,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
           return res.status(400).json({ message: "Email already exists" });
         }
         if (error.constraint === "tenants_slug_unique") {
-          return res
-            .status(400)
-            .json({
-              message:
-                "Restaurant name already exists, please try a different name",
-            });
+          return res.status(400).json({
+            message:
+              "Restaurant name already exists, please try a different name",
+          });
         }
         return res.status(400).json({ message: "Registration data conflict" });
       }
@@ -1090,51 +1158,47 @@ export async function registerRoutes(app: Express): Promise<Server> {
   );
 
   // Update tenant subscription plan
-  app.put(
-    "/api/tenants/:tenantId",
-    validateTenant,
-    async (req, res) => {
-      try {
-        const tenantId = parseInt(req.params.tenantId);
-        const { subscriptionPlanId } = req.body;
+  app.put("/api/tenants/:tenantId", validateTenant, async (req, res) => {
+    try {
+      const tenantId = parseInt(req.params.tenantId);
+      const { subscriptionPlanId } = req.body;
 
-        if (!subscriptionPlanId) {
-          return res.status(400).json({ message: "Subscription plan ID is required" });
-        }
-
-        // Verify the subscription plan exists
-        const plan = await db
-          .select()
-          .from(subscriptionPlans)
-          .where(eq(subscriptionPlans.id, subscriptionPlanId));
-
-        if (!plan.length) {
-          return res.status(404).json({ message: "Subscription plan not found" });
-        }
-
-        // Update the tenant's subscription plan
-        const updatedTenant = await db
-          .update(tenants)
-          .set({ 
-            subscriptionPlanId,
-            maxRestaurants: plan[0].maxRestaurants,
-          })
-          .where(eq(tenants.id, tenantId))
-          .returning();
-
-        if (!updatedTenant.length) {
-          return res.status(404).json({ message: "Tenant not found" });
-        }
-
-        res.json(updatedTenant[0]);
-      } catch (error) {
-        console.error("Error updating tenant subscription:", error);
-        res.status(500).json({ message: "Internal server error" });
+      if (!subscriptionPlanId) {
+        return res
+          .status(400)
+          .json({ message: "Subscription plan ID is required" });
       }
-    },
-  );
 
+      // Verify the subscription plan exists
+      const plan = await db
+        .select()
+        .from(subscriptionPlans)
+        .where(eq(subscriptionPlans.id, subscriptionPlanId));
 
+      if (!plan.length) {
+        return res.status(404).json({ message: "Subscription plan not found" });
+      }
+
+      // Update the tenant's subscription plan
+      const updatedTenant = await db
+        .update(tenants)
+        .set({
+          subscriptionPlanId,
+          maxRestaurants: plan[0].maxRestaurants,
+        })
+        .where(eq(tenants.id, tenantId))
+        .returning();
+
+      if (!updatedTenant.length) {
+        return res.status(404).json({ message: "Tenant not found" });
+      }
+
+      res.json(updatedTenant[0]);
+    } catch (error) {
+      console.error("Error updating tenant subscription:", error);
+      res.status(500).json({ message: "Internal server error" });
+    }
+  });
 
   // Customer delete route
   app.delete(
@@ -1148,12 +1212,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
         // Verify customer belongs to this restaurant and tenant
         const customer = await storage.getCustomerById(customerId);
-        if (!customer || customer.restaurantId !== restaurantId || customer.tenantId !== tenantId) {
+        if (
+          !customer ||
+          customer.restaurantId !== restaurantId ||
+          customer.tenantId !== tenantId
+        ) {
           return res.status(404).json({ message: "Customer not found" });
         }
 
         const success = await storage.deleteCustomer(customerId);
-        
+
         if (success) {
           // Log customer deletion
           const sessionUser = (req as any).session?.user;
@@ -1166,12 +1234,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
             userEmail: sessionUser?.email,
             userLogin: sessionUser?.email,
             ipAddress: req.ip,
-            userAgent: req.get('User-Agent'),
+            userAgent: req.get("User-Agent"),
             customerId: customerId,
             details: {
               customerName: customer.name,
-              customerEmail: customer.email
-            }
+              customerEmail: customer.email,
+            },
           });
 
           res.json({ message: "Customer deleted successfully" });
@@ -1422,7 +1490,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           userLogin: sessionUser?.email,
           guestEmail: booking.customerEmail,
           ipAddress: req.ip,
-          userAgent: req.get('User-Agent'),
+          userAgent: req.get("User-Agent"),
           bookingId: booking.id,
           customerId: booking.customerId,
           details: {
@@ -1431,8 +1499,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
             endTime: booking.endTime,
             guestCount: booking.guestCount,
             tableId: booking.tableId,
-            status: booking.status
-          }
+            status: booking.status,
+          },
         });
 
         // Send email notifications if Brevo is configured
@@ -1596,8 +1664,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
         // Validate table availability for updates that might cause conflicts
         // Only check conflicts if a table is actually assigned (not null)
-        const tableId = updates.tableId !== undefined ? updates.tableId : existingBooking.tableId;
-        if ((updates.tableId || updates.bookingDate || updates.startTime) && tableId !== null) {
+        const tableId =
+          updates.tableId !== undefined
+            ? updates.tableId
+            : existingBooking.tableId;
+        if (
+          (updates.tableId || updates.bookingDate || updates.startTime) &&
+          tableId !== null
+        ) {
           const bookingDate = updates.bookingDate
             ? new Date(updates.bookingDate).toISOString().split("T")[0]
             : new Date(existingBooking.bookingDate).toISOString().split("T")[0];
@@ -1721,7 +1795,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           userLogin: sessionUser?.email,
           guestEmail: updatedBooking.customerEmail,
           ipAddress: req.ip,
-          userAgent: req.get('User-Agent'),
+          userAgent: req.get("User-Agent"),
           bookingId: updatedBooking.id,
           customerId: updatedBooking.customerId,
           details: {
@@ -1729,8 +1803,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
             newStatus: updates.status,
             newTableId: updates.tableId,
             newBookingDate: updates.bookingDate,
-            newStartTime: updates.startTime
-          }
+            newStartTime: updates.startTime,
+          },
         });
 
         // Send webhook notifications for booking update
@@ -1784,14 +1858,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
         console.log(
           `Found ${tables.length} tables for restaurant ${restaurantId}`,
         );
-        
+
         // Add cache-control headers to ensure fresh data
         res.set({
-          'Cache-Control': 'no-cache, no-store, must-revalidate',
-          'Pragma': 'no-cache',
-          'Expires': '0'
+          "Cache-Control": "no-cache, no-store, must-revalidate",
+          Pragma: "no-cache",
+          Expires: "0",
         });
-        
+
         res.json(tables);
       } catch (error) {
         console.error("Error fetching tables for tenant/restaurant:", error);
@@ -2013,15 +2087,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
         const bookings = await storage.getBookingsByRestaurant(restaurantId);
         const rooms = await storage.getRoomsByRestaurant(restaurantId);
 
-        // Get current time in the restaurant's timezone 
+        // Get current time in the restaurant's timezone
         const now = new Date();
         // Calculate timezone offset based on user's reported time vs server time
         // User says it's 18:09, server shows 16:13, so +2 hours difference
         const timeZoneOffset = 2; // UTC+2 hours
-        const localNow = new Date(now.getTime() + (timeZoneOffset * 60 * 60 * 1000));
-        const currentTime = localNow.getUTCHours() * 60 + localNow.getUTCMinutes(); // Use UTC methods for adjusted time
+        const localNow = new Date(
+          now.getTime() + timeZoneOffset * 60 * 60 * 1000,
+        );
+        const currentTime =
+          localNow.getUTCHours() * 60 + localNow.getUTCMinutes(); // Use UTC methods for adjusted time
         const today = localNow.toISOString().split("T")[0]; // Today's date in local timezone
-        
+
         // Optional debug logging (can be removed in production)
         // console.log(`Real-time status check - Local time: ${localNow.getUTCHours()}:${localNow.getUTCMinutes().toString().padStart(2, '0')} (${currentTime} minutes)`);
 
@@ -2200,15 +2277,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
         res.json(customer);
       } catch (error) {
         console.error("Customer creation error:", error);
-        if (error.name === 'ZodError') {
-          res.status(400).json({ 
-            message: "Invalid customer data", 
-            details: error.errors 
+        if (error.name === "ZodError") {
+          res.status(400).json({
+            message: "Invalid customer data",
+            details: error.errors,
           });
         } else {
-          res.status(400).json({ 
+          res.status(400).json({
             message: "Invalid customer data",
-            error: error.message 
+            error: error.message,
           });
         }
       }
@@ -2231,7 +2308,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
         // Verify customer exists and belongs to this restaurant/tenant
         const existingCustomer = await storage.getCustomerById(id);
-        if (!existingCustomer || existingCustomer.restaurantId !== restaurantId || existingCustomer.tenantId !== tenantId) {
+        if (
+          !existingCustomer ||
+          existingCustomer.restaurantId !== restaurantId ||
+          existingCustomer.tenantId !== tenantId
+        ) {
           return res.status(404).json({ message: "Customer not found" });
         }
 
@@ -2261,7 +2342,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
         // Verify customer exists and belongs to this restaurant/tenant
         const existingCustomer = await storage.getCustomerById(id);
-        if (!existingCustomer || existingCustomer.restaurantId !== restaurantId || existingCustomer.tenantId !== tenantId) {
+        if (
+          !existingCustomer ||
+          existingCustomer.restaurantId !== restaurantId ||
+          existingCustomer.tenantId !== tenantId
+        ) {
           return res.status(404).json({ message: "Customer not found" });
         }
 
@@ -2321,9 +2406,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
         // Sync with Google Calendar after updating opening hours
         try {
           await googleCalendarService.syncOpeningHours(restaurantId, tenantId);
-          console.log(`Google Calendar sync completed for restaurant ${restaurantId} opening hours`);
+          console.log(
+            `Google Calendar sync completed for restaurant ${restaurantId} opening hours`,
+          );
         } catch (error) {
-          console.error('Google Calendar sync failed for opening hours:', error);
+          console.error(
+            "Google Calendar sync failed for opening hours:",
+            error,
+          );
           // Don't fail the request if calendar sync fails
         }
 
@@ -2474,22 +2564,34 @@ export async function registerRoutes(app: Express): Promise<Server> {
         // If status is changed to "seated", create a booking in the calendar
         if (updates.status === "seated" && existingEntry.status !== "seated") {
           try {
-            const restaurant = await storage.getRestaurantById(existingEntry.restaurantId);
+            const restaurant = await storage.getRestaurantById(
+              existingEntry.restaurantId,
+            );
             console.log(`Creating booking from waiting list entry ${id}:`, {
               requestedDate: existingEntry.requestedDate,
               requestedTime: existingEntry.requestedTime,
               customerName: existingEntry.customerName,
-              guestCount: existingEntry.guestCount
+              guestCount: existingEntry.guestCount,
             });
 
-            if (restaurant && existingEntry.requestedDate && existingEntry.requestedTime) {
+            if (
+              restaurant &&
+              existingEntry.requestedDate &&
+              existingEntry.requestedTime
+            ) {
               // Parse the requested date and time to create a proper booking date
-              const dateStr = existingEntry.requestedDate.includes('T') ? 
-                existingEntry.requestedDate : 
-                existingEntry.requestedDate + 'T' + existingEntry.requestedTime + ':00';
+              const dateStr = existingEntry.requestedDate.includes("T")
+                ? existingEntry.requestedDate
+                : existingEntry.requestedDate +
+                  "T" +
+                  existingEntry.requestedTime +
+                  ":00";
               const bookingDate = new Date(dateStr);
-              console.log(`Parsed booking date from ${existingEntry.requestedDate} ${existingEntry.requestedTime}:`, bookingDate);
-              
+              console.log(
+                `Parsed booking date from ${existingEntry.requestedDate} ${existingEntry.requestedTime}:`,
+                bookingDate,
+              );
+
               // Calculate end time (assume 2 hours duration)
               const endTime = new Date(bookingDate);
               endTime.setHours(endTime.getHours() + 2);
@@ -2504,15 +2606,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
                 guestCount: existingEntry.guestCount,
                 bookingDate: bookingDate,
                 startTime: existingEntry.requestedTime,
-                endTime: `${String(endTime.getHours()).padStart(2, '0')}:${String(endTime.getMinutes()).padStart(2, '0')}`,
-                status: 'confirmed',
-                source: 'waiting_list',
+                endTime: `${String(endTime.getHours()).padStart(2, "0")}:${String(endTime.getMinutes()).padStart(2, "0")}`,
+                status: "confirmed",
+                source: "waiting_list",
                 notes: existingEntry.notes || `Seated from waiting list`,
               };
 
               console.log(`Creating booking with data:`, bookingData);
               const booking = await storage.createBooking(bookingData);
-              console.log(`Booking ${booking.id} created from waiting list entry ${id}`);
+              console.log(
+                `Booking ${booking.id} created from waiting list entry ${id}`,
+              );
 
               // Log the activity
               await storage.createActivityLog({
@@ -2535,11 +2639,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
               console.log(`Cannot create booking - missing data:`, {
                 restaurant: !!restaurant,
                 requestedDate: existingEntry.requestedDate,
-                requestedTime: existingEntry.requestedTime
+                requestedTime: existingEntry.requestedTime,
               });
             }
           } catch (bookingError) {
-            console.error("Error creating booking from waiting list:", bookingError);
+            console.error(
+              "Error creating booking from waiting list:",
+              bookingError,
+            );
             // Don't fail the waiting list update if booking creation fails
           }
         }
@@ -2547,9 +2654,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
         // If status is changed from "seated" to something else, remove the booking
         if (existingEntry.status === "seated" && updates.status !== "seated") {
           try {
-            const restaurant = await storage.getRestaurantById(existingEntry.restaurantId);
-            console.log(`Removing booking for waiting list entry ${id} - status changed from seated to ${updates.status}`);
-            
+            const restaurant = await storage.getRestaurantById(
+              existingEntry.restaurantId,
+            );
+            console.log(
+              `Removing booking for waiting list entry ${id} - status changed from seated to ${updates.status}`,
+            );
+
             if (restaurant && existingEntry.requestedDate) {
               // Find and delete the booking that was created from this waiting list entry
               const existingBookings = await storage.getBookingsByDate(
@@ -2557,7 +2668,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
                 existingEntry.requestedDate,
               );
 
-              console.log(`Found ${existingBookings.length} bookings for date ${existingEntry.requestedDate}`);
+              console.log(
+                `Found ${existingBookings.length} bookings for date ${existingEntry.requestedDate}`,
+              );
 
               // Find the booking that matches this waiting list entry
               const bookingToDelete = existingBookings.find(
@@ -2570,7 +2683,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
               if (bookingToDelete) {
                 await storage.deleteBooking(bookingToDelete.id);
-                console.log(`Booking ${bookingToDelete.id} removed from calendar for waiting list entry ${id}`);
+                console.log(
+                  `Booking ${bookingToDelete.id} removed from calendar for waiting list entry ${id}`,
+                );
 
                 // Log the activity
                 await storage.createActivityLog({
@@ -2590,11 +2705,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
                   }),
                 });
               } else {
-                console.log(`No matching booking found to delete for waiting list entry ${id}`);
+                console.log(
+                  `No matching booking found to delete for waiting list entry ${id}`,
+                );
               }
             }
           } catch (bookingError) {
-            console.error("Error removing booking from waiting list:", bookingError);
+            console.error(
+              "Error removing booking from waiting list:",
+              bookingError,
+            );
             // Don't fail the waiting list update if booking removal fails
           }
         }
@@ -2623,7 +2743,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         }
 
         await storage.deleteWaitingListEntry(id);
-        
+
         // Log the activity
         await storage.createActivityLog({
           tenantId: existingEntry.tenantId,
@@ -2763,7 +2883,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
           return res.status(404).json({ message: "Restaurant not found" });
         }
 
-        const { customerName, customerEmail, customerPhone, questionResponses } = req.body;
+        const {
+          customerName,
+          customerEmail,
+          customerPhone,
+          questionResponses,
+        } = req.body;
 
         // Create main feedback entry
         const feedbackData = {
@@ -2774,7 +2899,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           tenantId,
           rating: null, // Will be calculated from responses
           nps: null, // Will be set from NPS response
-          comments: '', // Will be combined from text responses
+          comments: "", // Will be combined from text responses
         };
 
         const feedback = await storage.createFeedback(feedbackData);
@@ -2788,24 +2913,24 @@ export async function registerRoutes(app: Express): Promise<Server> {
           source: "guest_form",
           guestEmail: feedbackData.customerEmail,
           ipAddress: req.ip,
-          userAgent: req.get('User-Agent'),
+          userAgent: req.get("User-Agent"),
           details: {
             feedbackId: feedback.id,
             customerName: feedbackData.customerName,
             customerEmail: feedbackData.customerEmail,
             overallRating: feedbackData.rating,
-            hasQuestionResponses: !!(questionResponses && questionResponses.length > 0),
-            responseCount: questionResponses ? questionResponses.length : 0
-          }
+            hasQuestionResponses: !!(
+              questionResponses && questionResponses.length > 0
+            ),
+            responseCount: questionResponses ? questionResponses.length : 0,
+          },
         });
 
         // Store individual question responses and aggregate data
         let aggregatedRating = null;
         let aggregatedNps = null;
-        let aggregatedComments = '';
-        
+        let aggregatedComments = "";
 
-        
         if (questionResponses && Array.isArray(questionResponses)) {
           // First, store all individual responses
           for (const response of questionResponses) {
@@ -2827,7 +2952,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
               aggregatedNps = response.npsScore;
             }
             if (response.textResponse && response.textResponse.trim()) {
-              aggregatedComments = aggregatedComments 
+              aggregatedComments = aggregatedComments
                 ? `${aggregatedComments}; ${response.textResponse}`
                 : response.textResponse;
             }
@@ -2839,7 +2964,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
             nps: aggregatedNps,
             comments: aggregatedComments || null,
           });
-          
+
           res.json(updatedFeedback);
         } else {
           res.json(feedback);
@@ -2866,7 +2991,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
           return res.status(404).json({ message: "Restaurant not found" });
         }
 
-        const responses = await storage.getFeedbackResponsesByFeedbackId(feedbackId);
+        const responses =
+          await storage.getFeedbackResponsesByFeedbackId(feedbackId);
         res.json(responses);
       } catch (error) {
         console.error("Error fetching feedback responses:", error);
@@ -3037,7 +3163,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
         res.json(logs);
       } catch (error) {
         console.error("Global activity log fetch error:", error);
-        res.status(500).json({ message: "Failed to fetch global activity log" });
+        res
+          .status(500)
+          .json({ message: "Failed to fetch global activity log" });
       }
     },
   );
@@ -3129,7 +3257,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
         // Validate parameters
         if (isNaN(restaurantId) || isNaN(tenantId)) {
-          return res.status(400).json({ message: "Invalid restaurant or tenant ID" });
+          return res
+            .status(400)
+            .json({ message: "Invalid restaurant or tenant ID" });
         }
 
         const restaurant = await storage.getRestaurantById(restaurantId);
@@ -3137,7 +3267,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
           return res.status(404).json({ message: "Restaurant not found" });
         }
 
-        const specialPeriods = await storage.getSpecialPeriodsByRestaurant(restaurantId);
+        const specialPeriods =
+          await storage.getSpecialPeriodsByRestaurant(restaurantId);
         res.json(specialPeriods || []);
       } catch (error) {
         console.error("Error fetching special periods:", error);
@@ -3159,33 +3290,41 @@ export async function registerRoutes(app: Express): Promise<Server> {
           return res.status(404).json({ message: "Restaurant not found" });
         }
 
-        console.log('Special period creation request:', JSON.stringify(req.body, null, 2));
-        
+        console.log(
+          "Special period creation request:",
+          JSON.stringify(req.body, null, 2),
+        );
+
         const periodData = {
           ...req.body,
           restaurantId,
           tenantId,
         };
 
-        console.log('Final period data:', JSON.stringify(periodData, null, 2));
-        
+        console.log("Final period data:", JSON.stringify(periodData, null, 2));
+
         const period = await storage.createSpecialPeriod(periodData);
 
         // Sync with Google Calendar after creating special period
         try {
           await googleCalendarService.syncSpecialPeriods(restaurantId);
-          console.log(`Google Calendar sync completed for restaurant ${restaurantId} special periods`);
+          console.log(
+            `Google Calendar sync completed for restaurant ${restaurantId} special periods`,
+          );
         } catch (error) {
-          console.error('Google Calendar sync failed for special periods:', error);
+          console.error(
+            "Google Calendar sync failed for special periods:",
+            error,
+          );
           // Don't fail the request if calendar sync fails
         }
 
         res.json(period);
       } catch (error) {
-        console.error('Special period creation error:', error);
-        res.status(400).json({ 
+        console.error("Special period creation error:", error);
+        res.status(400).json({
           message: "Invalid special period data",
-          error: error.message 
+          error: error.message,
         });
       }
     },
@@ -3214,9 +3353,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
         // Sync with Google Calendar after updating special period
         try {
           await googleCalendarService.syncSpecialPeriods(restaurantId);
-          console.log(`Google Calendar sync completed for restaurant ${restaurantId} special periods update`);
+          console.log(
+            `Google Calendar sync completed for restaurant ${restaurantId} special periods update`,
+          );
         } catch (error) {
-          console.error('Google Calendar sync failed for special periods update:', error);
+          console.error(
+            "Google Calendar sync failed for special periods update:",
+            error,
+          );
         }
 
         res.json(period);
@@ -3345,9 +3489,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
         // Sync with Google Calendar after updating cut-off times
         try {
           await googleCalendarService.syncCutOffTimes(restaurantId);
-          console.log(`Google Calendar sync completed for restaurant ${restaurantId} cut-off times`);
+          console.log(
+            `Google Calendar sync completed for restaurant ${restaurantId} cut-off times`,
+          );
         } catch (error) {
-          console.error('Google Calendar sync failed for cut-off times:', error);
+          console.error(
+            "Google Calendar sync failed for cut-off times:",
+            error,
+          );
           // Don't fail the request if calendar sync fails
         }
 
@@ -4340,7 +4489,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
           return res.status(404).json({ message: "Restaurant not found" });
         }
 
-        const settings = await storage.getRestaurantSettings(restaurantId, tenantId);
+        const settings = await storage.getRestaurantSettings(
+          restaurantId,
+          tenantId,
+        );
         res.json(settings);
       } catch (error) {
         console.error("Error fetching settings:", error);
@@ -4366,10 +4518,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
         const updatedSettings = await storage.updateRestaurantSettings(
           restaurantId,
           tenantId,
-          req.body
+          req.body,
         );
 
-        res.json({ message: "Settings updated successfully", settings: updatedSettings });
+        res.json({
+          message: "Settings updated successfully",
+          settings: updatedSettings,
+        });
       } catch (error) {
         console.error("Error updating settings:", error);
         res.status(500).json({ message: "Internal server error" });
@@ -4489,7 +4644,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
         // Verify table belongs to tenant before updating
         const existingTable = await storage.getTableById(id);
         if (!existingTable || existingTable.tenantId !== tenantId) {
-          console.log(`Table ${id} not found or doesn't belong to tenant ${tenantId}`);
+          console.log(
+            `Table ${id} not found or doesn't belong to tenant ${tenantId}`,
+          );
           return res.status(404).json({ message: "Table not found" });
         }
 
@@ -4499,7 +4656,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
         res.json(table);
       } catch (error) {
         console.error("Error updating table:", error);
-        res.status(500).json({ message: "Failed to update table", error: error.message });
+        res
+          .status(500)
+          .json({ message: "Failed to update table", error: error.message });
       }
     },
   );
@@ -4663,20 +4822,20 @@ export async function registerRoutes(app: Express): Promise<Server> {
         }
 
         // Import settings integration
-        const { settingsIntegration } = await import('./settings-integration');
-        
+        const { settingsIntegration } = await import("./settings-integration");
+
         // Validate booking against settings
         const validation = await settingsIntegration.validateBookingRequest(
-          restaurantId, 
-          tenantId, 
+          restaurantId,
+          tenantId,
           {
             date: req.body.bookingDate,
             time: req.body.startTime,
             guests: req.body.guestCount,
-            source: req.body.source || 'manual'
-          }
+            source: req.body.source || "manual",
+          },
         );
-        
+
         if (!validation.valid) {
           return res.status(400).json({ message: validation.message });
         }
@@ -4846,16 +5005,29 @@ export async function registerRoutes(app: Express): Promise<Server> {
         );
 
         // Get settings-based defaults
-        const duration = await settingsIntegration.getBookingDuration(restaurantId, tenantId);
-        const shouldAutoConfirm = await settingsIntegration.shouldAutoConfirmBookings(restaurantId, tenantId);
-        const depositInfo = await settingsIntegration.isDepositRequired(restaurantId, tenantId, req.body.guestCount);
+        const duration = await settingsIntegration.getBookingDuration(
+          restaurantId,
+          tenantId,
+        );
+        const shouldAutoConfirm =
+          await settingsIntegration.shouldAutoConfirmBookings(
+            restaurantId,
+            tenantId,
+          );
+        const depositInfo = await settingsIntegration.isDepositRequired(
+          restaurantId,
+          tenantId,
+          req.body.guestCount,
+        );
 
         // Calculate end time based on duration setting
-        const startTimeMinutes = parseInt(req.body.startTime.split(':')[0]) * 60 + parseInt(req.body.startTime.split(':')[1]);
+        const startTimeMinutes =
+          parseInt(req.body.startTime.split(":")[0]) * 60 +
+          parseInt(req.body.startTime.split(":")[1]);
         const endTimeMinutes = startTimeMinutes + duration;
         const endHours = Math.floor(endTimeMinutes / 60);
         const endMins = endTimeMinutes % 60;
-        const endTime = `${endHours.toString().padStart(2, '0')}:${endMins.toString().padStart(2, '0')}`;
+        const endTime = `${endHours.toString().padStart(2, "0")}:${endMins.toString().padStart(2, "0")}`;
 
         const bookingData = insertBookingSchema.parse({
           ...req.body,
@@ -4865,7 +5037,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
           bookingDate: bookingDate,
           tableId: assignedTableId,
           endTime: endTime,
-          status: shouldAutoConfirm ? 'confirmed' : (req.body.status || 'pending'),
+          status: shouldAutoConfirm
+            ? "confirmed"
+            : req.body.status || "pending",
           depositRequired: depositInfo.required,
           depositAmount: depositInfo.amount || 0,
         });
@@ -5702,7 +5876,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
       });
 
       // Get restaurant and tenant information for email notification
-      const restaurant = await storage.getRestaurantById(updatedBooking.restaurantId);
+      const restaurant = await storage.getRestaurantById(
+        updatedBooking.restaurantId,
+      );
       const tenant = await storage.getTenantById(updatedBooking.tenantId);
 
       // Send email notification to restaurant
@@ -5715,9 +5891,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
               ...updatedBooking,
               restaurantName: restaurant.name,
               tenantName: tenant.name,
-            }
+            },
           );
-          console.log(`Cancellation email sent to restaurant: ${restaurant.email}`);
+          console.log(
+            `Cancellation email sent to restaurant: ${restaurant.email}`,
+          );
         } catch (emailError) {
           console.error("Failed to send cancellation email:", emailError);
           // Don't fail the cancellation if email fails
@@ -5736,7 +5914,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
           isRead: false,
         });
       } catch (notificationError) {
-        console.error("Failed to create notification record:", notificationError);
+        console.error(
+          "Failed to create notification record:",
+          notificationError,
+        );
         // Don't fail the cancellation if notification creation fails
       }
 
@@ -6975,12 +7156,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
         const { bookingId, newTableId, resolutionType } = req.body;
 
         if (!bookingId || !newTableId || !resolutionType) {
-          return res
-            .status(400)
-            .json({
-              message:
-                "Missing required fields: bookingId, newTableId, resolutionType",
-            });
+          return res.status(400).json({
+            message:
+              "Missing required fields: bookingId, newTableId, resolutionType",
+          });
         }
 
         // Get the booking to be moved
@@ -7021,11 +7200,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
         });
 
         if (conflictingBookings.length > 0) {
-          return res
-            .status(400)
-            .json({
-              message: "Target table is not available at the requested time",
-            });
+          return res.status(400).json({
+            message: "Target table is not available at the requested time",
+          });
         }
 
         // Update the booking with new table assignment
@@ -7139,8 +7316,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
     },
   );
 
-
-
   // Webhook Management Routes
   app.get(
     "/api/tenants/:tenantId/restaurants/:restaurantId/webhooks",
@@ -7209,12 +7384,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
           "webhooks",
         );
         if (!webhooksConfig?.isEnabled) {
-          return res
-            .status(403)
-            .json({
-              message:
-                "Webhooks integration is not enabled. Please enable it first in the integrations settings.",
-            });
+          return res.status(403).json({
+            message:
+              "Webhooks integration is not enabled. Please enable it first in the integrations settings.",
+          });
         }
 
         if (!Array.isArray(webhooks)) {
@@ -7678,11 +7851,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
           "google",
         );
         if (!googleConfig || !googleConfig.isEnabled) {
-          return res
-            .status(403)
-            .json({
-              message: "Google booking not enabled for this restaurant",
-            });
+          return res.status(403).json({
+            message: "Google booking not enabled for this restaurant",
+          });
         }
 
         // Get available time slots for the date
@@ -7791,43 +7962,41 @@ export async function registerRoutes(app: Express): Promise<Server> {
   );
 
   // Google Calendar Integration Routes
-  app.get(
-    "/api/google-calendar/auth-url",
-    async (req, res) => {
-      try {
-        const authUrl = await googleCalendarService.getAuthUrl();
-        res.json({ authUrl });
-      } catch (error) {
-        console.error('Error generating Google Calendar auth URL:', error);
-        res.status(500).json({ message: "Failed to generate authentication URL" });
-      }
+  app.get("/api/google-calendar/auth-url", async (req, res) => {
+    try {
+      const authUrl = await googleCalendarService.getAuthUrl();
+      res.json({ authUrl });
+    } catch (error) {
+      console.error("Error generating Google Calendar auth URL:", error);
+      res
+        .status(500)
+        .json({ message: "Failed to generate authentication URL" });
     }
-  );
+  });
 
-  app.post(
-    "/api/google-calendar/auth-callback",
-    async (req, res) => {
-      try {
-        const { code } = req.body;
-        if (!code) {
-          return res.status(400).json({ message: "Authorization code is required" });
-        }
-
-        const tokens = await googleCalendarService.handleAuthCallback(code);
-        res.json({ 
-          message: "Google Calendar authentication successful",
-          tokens: {
-            access_token: tokens.access_token ? "***" : null,
-            refresh_token: tokens.refresh_token ? "***" : null,
-            expiry_date: tokens.expiry_date
-          }
-        });
-      } catch (error) {
-        console.error('Error handling Google Calendar auth callback:', error);
-        res.status(500).json({ message: "Authentication failed" });
+  app.post("/api/google-calendar/auth-callback", async (req, res) => {
+    try {
+      const { code } = req.body;
+      if (!code) {
+        return res
+          .status(400)
+          .json({ message: "Authorization code is required" });
       }
+
+      const tokens = await googleCalendarService.handleAuthCallback(code);
+      res.json({
+        message: "Google Calendar authentication successful",
+        tokens: {
+          access_token: tokens.access_token ? "***" : null,
+          refresh_token: tokens.refresh_token ? "***" : null,
+          expiry_date: tokens.expiry_date,
+        },
+      });
+    } catch (error) {
+      console.error("Error handling Google Calendar auth callback:", error);
+      res.status(500).json({ message: "Authentication failed" });
     }
-  );
+  });
 
   app.post(
     "/api/tenants/:tenantId/restaurants/:restaurantId/google-calendar/sync",
@@ -7844,19 +8013,19 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
         // Perform full calendar sync
         await googleCalendarService.fullSync(restaurantId, tenantId);
-        
-        res.json({ 
+
+        res.json({
           message: "Google Calendar sync completed successfully",
-          timestamp: new Date().toISOString()
+          timestamp: new Date().toISOString(),
         });
       } catch (error) {
-        console.error('Error syncing with Google Calendar:', error);
-        res.status(500).json({ 
+        console.error("Error syncing with Google Calendar:", error);
+        res.status(500).json({
           message: "Calendar sync failed",
-          error: error.message 
+          error: error.message,
         });
       }
-    }
+    },
   );
 
   app.post(
@@ -7873,19 +8042,19 @@ export async function registerRoutes(app: Express): Promise<Server> {
         }
 
         await googleCalendarService.syncOpeningHours(restaurantId, tenantId);
-        
-        res.json({ 
+
+        res.json({
           message: "Opening hours synced to Google Calendar successfully",
-          timestamp: new Date().toISOString()
+          timestamp: new Date().toISOString(),
         });
       } catch (error) {
-        console.error('Error syncing opening hours to Google Calendar:', error);
-        res.status(500).json({ 
+        console.error("Error syncing opening hours to Google Calendar:", error);
+        res.status(500).json({
           message: "Opening hours sync failed",
-          error: error.message 
+          error: error.message,
         });
       }
-    }
+    },
   );
 
   app.post(
@@ -7902,19 +8071,22 @@ export async function registerRoutes(app: Express): Promise<Server> {
         }
 
         await googleCalendarService.syncSpecialPeriods(restaurantId);
-        
-        res.json({ 
+
+        res.json({
           message: "Special periods synced to Google Calendar successfully",
-          timestamp: new Date().toISOString()
+          timestamp: new Date().toISOString(),
         });
       } catch (error) {
-        console.error('Error syncing special periods to Google Calendar:', error);
-        res.status(500).json({ 
+        console.error(
+          "Error syncing special periods to Google Calendar:",
+          error,
+        );
+        res.status(500).json({
           message: "Special periods sync failed",
-          error: error.message 
+          error: error.message,
         });
       }
-    }
+    },
   );
 
   app.post(
@@ -7931,19 +8103,19 @@ export async function registerRoutes(app: Express): Promise<Server> {
         }
 
         await googleCalendarService.syncCutOffTimes(restaurantId);
-        
-        res.json({ 
+
+        res.json({
           message: "Cut-off times synced to Google Calendar successfully",
-          timestamp: new Date().toISOString()
+          timestamp: new Date().toISOString(),
         });
       } catch (error) {
-        console.error('Error syncing cut-off times to Google Calendar:', error);
-        res.status(500).json({ 
+        console.error("Error syncing cut-off times to Google Calendar:", error);
+        res.status(500).json({
           message: "Cut-off times sync failed",
-          error: error.message 
+          error: error.message,
         });
       }
-    }
+    },
   );
 
   // Generate Meta install link
@@ -8272,8 +8444,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
         );
 
         // Check for special periods that apply to this date
-        const specialPeriods = await storage.getSpecialPeriodsByRestaurant(restaurantId);
-        const activeSpecialPeriod = specialPeriods.find(period => {
+        const specialPeriods =
+          await storage.getSpecialPeriodsByRestaurant(restaurantId);
+        const activeSpecialPeriod = specialPeriods.find((period) => {
           const periodStart = new Date(period.startDate);
           const periodEnd = new Date(period.endDate);
           const checkDate = new Date(dateStr);
@@ -8283,15 +8456,23 @@ export async function registerRoutes(app: Express): Promise<Server> {
         // Special periods completely override opening hours for specific dates
         let openTime = null;
         let closeTime = null;
-        
+
         if (activeSpecialPeriod) {
           // Special period exists for this date - completely disable opening hours
-          console.log(`Special period found for ${dateStr} - opening hours disabled`);
-          
-          if (activeSpecialPeriod.isOpen && activeSpecialPeriod.openTime && activeSpecialPeriod.closeTime) {
+          console.log(
+            `Special period found for ${dateStr} - opening hours disabled`,
+          );
+
+          if (
+            activeSpecialPeriod.isOpen &&
+            activeSpecialPeriod.openTime &&
+            activeSpecialPeriod.closeTime
+          ) {
             openTime = activeSpecialPeriod.openTime;
             closeTime = activeSpecialPeriod.closeTime;
-            console.log(`Using special period hours: ${openTime} - ${closeTime}`);
+            console.log(
+              `Using special period hours: ${openTime} - ${closeTime}`,
+            );
           } else {
             // Special period exists but restaurant is closed for this period
             console.log(`Special period: Restaurant closed`);
@@ -8299,19 +8480,31 @@ export async function registerRoutes(app: Express): Promise<Server> {
           }
         } else {
           // No special period - use regular opening hours
-          console.log(`No special period for ${dateStr}, using regular opening hours`);
-          
+          console.log(
+            `No special period for ${dateStr}, using regular opening hours`,
+          );
+
           try {
-            const openingHours = await storage.getOpeningHoursByRestaurant(restaurantId);
-            
+            const openingHours =
+              await storage.getOpeningHoursByRestaurant(restaurantId);
+
             if (openingHours && openingHours.length > 0) {
               const targetDayOfWeek = targetDate.getDay(); // 0 = Sunday, 1 = Monday, etc.
-              const dayOpeningHours = openingHours.find(oh => oh.dayOfWeek === targetDayOfWeek);
-              
-              if (dayOpeningHours && dayOpeningHours.isOpen && dayOpeningHours.openTime && dayOpeningHours.closeTime) {
+              const dayOpeningHours = openingHours.find(
+                (oh) => oh.dayOfWeek === targetDayOfWeek,
+              );
+
+              if (
+                dayOpeningHours &&
+                dayOpeningHours.isOpen &&
+                dayOpeningHours.openTime &&
+                dayOpeningHours.closeTime
+              ) {
                 openTime = dayOpeningHours.openTime;
                 closeTime = dayOpeningHours.closeTime;
-                console.log(`Regular opening hours: ${openTime} - ${closeTime}`);
+                console.log(
+                  `Regular opening hours: ${openTime} - ${closeTime}`,
+                );
               } else {
                 console.log(`Restaurant closed on day ${targetDayOfWeek}`);
                 return res.json({ slots: [] });
@@ -8328,7 +8521,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
         // Helper function to convert time string to minutes
         const timeToMinutes = (timeStr) => {
-          const [hours, minutes] = timeStr.split(':').map(Number);
+          const [hours, minutes] = timeStr.split(":").map(Number);
           return hours * 60 + minutes;
         };
 
@@ -8343,7 +8536,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         const openMinutes = timeToMinutes(openTime);
         const closeMinutes = timeToMinutes(closeTime);
         const timeSlots = [];
-        
+
         for (let minutes = openMinutes; minutes < closeMinutes; minutes += 15) {
           const time = minutesToTime(minutes);
           timeSlots.push(time);
@@ -8603,7 +8796,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
         const dayOfWeek = bookingDate.getDay();
 
         // Check special periods first
-        const specialPeriods = await storage.getSpecialPeriodsByRestaurant(restaurantId);
+        const specialPeriods =
+          await storage.getSpecialPeriodsByRestaurant(restaurantId);
         const specialPeriod = specialPeriods.find(
           (sp: any) => dateStr >= sp.startDate && dateStr <= sp.endDate,
         );
@@ -8623,8 +8817,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
           }
         } else {
           // Check regular opening hours
-          const openingHours = await storage.getOpeningHoursByRestaurant(restaurantId);
-          const dayHours = openingHours.find((oh: any) => oh.dayOfWeek === dayOfWeek);
+          const openingHours =
+            await storage.getOpeningHoursByRestaurant(restaurantId);
+          const dayHours = openingHours.find(
+            (oh: any) => oh.dayOfWeek === dayOfWeek,
+          );
 
           if (!dayHours || !dayHours.isOpen) {
             isOpen = false;
@@ -8643,7 +8840,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
             availableSlots: [],
             allTimeSlots: [],
             openTime: null,
-            closeTime: null
+            closeTime: null,
           });
         }
 
@@ -8651,8 +8848,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
         const openTimeMinutes = timeToMinutes(openTime);
         const closeTimeMinutes = timeToMinutes(closeTime);
         const allTimeSlots = [];
-        
-        for (let minutes = openTimeMinutes; minutes <= closeTimeMinutes - 60; minutes += 30) {
+
+        for (
+          let minutes = openTimeMinutes;
+          minutes <= closeTimeMinutes - 60;
+          minutes += 30
+        ) {
           const hours = Math.floor(minutes / 60);
           const mins = minutes % 60;
           const timeStr = `${hours.toString().padStart(2, "0")}:${mins.toString().padStart(2, "0")}`;
@@ -8660,15 +8861,26 @@ export async function registerRoutes(app: Express): Promise<Server> {
         }
 
         // Get cut-off times and existing bookings
-        const cutOffTimes = await storage.getCutOffTimesByRestaurant(restaurantId);
-        const cutOffTime = cutOffTimes.find((ct: any) => ct.dayOfWeek === dayOfWeek);
-        
-        const tables = await storage.getTablesByRestaurant(restaurantId);
-        const combinedTables = await storage.getCombinedTablesByRestaurant(restaurantId);
-        const suitableTables = tables.filter((table) => table.capacity >= guestCount);
-        const suitableCombinedTables = combinedTables.filter((table) => table.capacity >= guestCount);
+        const cutOffTimes =
+          await storage.getCutOffTimesByRestaurant(restaurantId);
+        const cutOffTime = cutOffTimes.find(
+          (ct: any) => ct.dayOfWeek === dayOfWeek,
+        );
 
-        if (suitableTables.length === 0 && suitableCombinedTables.length === 0) {
+        const tables = await storage.getTablesByRestaurant(restaurantId);
+        const combinedTables =
+          await storage.getCombinedTablesByRestaurant(restaurantId);
+        const suitableTables = tables.filter(
+          (table) => table.capacity >= guestCount,
+        );
+        const suitableCombinedTables = combinedTables.filter(
+          (table) => table.capacity >= guestCount,
+        );
+
+        if (
+          suitableTables.length === 0 &&
+          suitableCombinedTables.length === 0
+        ) {
           return res.json({
             date: dateStr,
             isOpen: true,
@@ -8677,17 +8889,22 @@ export async function registerRoutes(app: Express): Promise<Server> {
             allTimeSlots,
             openTime,
             closeTime,
-            noTablesAvailable: true
+            noTablesAvailable: true,
           });
         }
 
-        const existingBookings = await storage.getBookingsByDate(restaurantId, dateStr);
-        const activeBookings = existingBookings.filter((booking) => booking.status !== "cancelled");
+        const existingBookings = await storage.getBookingsByDate(
+          restaurantId,
+          dateStr,
+        );
+        const activeBookings = existingBookings.filter(
+          (booking) => booking.status !== "cancelled",
+        );
         const now = new Date();
 
         // Filter available slots
         const availableSlots = allTimeSlots.filter((timeStr) => {
-          const [hours, mins] = timeStr.split(':').map(Number);
+          const [hours, mins] = timeStr.split(":").map(Number);
           const minutes = hours * 60 + mins;
 
           // Apply cut-off time validation
@@ -8695,7 +8912,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
             const bookingDateTime = new Date(bookingDate);
             bookingDateTime.setHours(hours, mins, 0, 0);
             const cutOffMilliseconds = cutOffTime.cutOffHours * 60 * 60 * 1000;
-            const cutOffDeadline = new Date(bookingDateTime.getTime() - cutOffMilliseconds);
+            const cutOffDeadline = new Date(
+              bookingDateTime.getTime() - cutOffMilliseconds,
+            );
 
             if (now > cutOffDeadline) return false;
           }
@@ -8706,27 +8925,34 @@ export async function registerRoutes(app: Express): Promise<Server> {
           if (bookingDateTime <= now) return false;
 
           // Check if any suitable table is available
-          return [...suitableTables, ...suitableCombinedTables].some((table) => {
-            const bookingStart = minutes;
-            const bookingEnd = minutes + 120;
-            const bufferMinutes = 60;
+          return [...suitableTables, ...suitableCombinedTables].some(
+            (table) => {
+              const bookingStart = minutes;
+              const bookingEnd = minutes + 120;
+              const bufferMinutes = 60;
 
-            const hasConflict = activeBookings.some((booking) => {
-              if (booking.tableId !== table.id) return false;
+              const hasConflict = activeBookings.some((booking) => {
+                if (booking.tableId !== table.id) return false;
 
-              const existingStart = timeToMinutes(booking.startTime);
-              const existingEnd = booking.endTime ? timeToMinutes(booking.endTime) : existingStart + 120;
+                const existingStart = timeToMinutes(booking.startTime);
+                const existingEnd = booking.endTime
+                  ? timeToMinutes(booking.endTime)
+                  : existingStart + 120;
 
-              const requestedStart = bookingStart - bufferMinutes;
-              const requestedEnd = bookingEnd + bufferMinutes;
-              const existingStartWithBuffer = existingStart - bufferMinutes;
-              const existingEndWithBuffer = existingEnd + bufferMinutes;
+                const requestedStart = bookingStart - bufferMinutes;
+                const requestedEnd = bookingEnd + bufferMinutes;
+                const existingStartWithBuffer = existingStart - bufferMinutes;
+                const existingEndWithBuffer = existingEnd + bufferMinutes;
 
-              return requestedStart < existingEndWithBuffer && existingStartWithBuffer < requestedEnd;
-            });
+                return (
+                  requestedStart < existingEndWithBuffer &&
+                  existingStartWithBuffer < requestedEnd
+                );
+              });
 
-            return !hasConflict;
-          });
+              return !hasConflict;
+            },
+          );
         });
 
         res.json({
@@ -8737,14 +8963,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
           allTimeSlots,
           openTime,
           closeTime,
-          noTablesAvailable: false
+          noTablesAvailable: false,
         });
-
       } catch (error) {
         console.error("Error fetching calendar availability:", error);
         res.status(500).json({ message: "Internal server error" });
       }
-    }
+    },
   );
 
   // Get available time slots for a specific date
@@ -8774,7 +8999,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
         const guestCount = parseInt(guests as string);
 
         // Check special periods first - they completely disable opening hours for specific dates
-        const specialPeriods = await storage.getSpecialPeriodsByRestaurant(restaurantId);
+        const specialPeriods =
+          await storage.getSpecialPeriodsByRestaurant(restaurantId);
         const dateStr = bookingDate.toISOString().split("T")[0];
         const specialPeriod = specialPeriods.find(
           (sp: any) => dateStr >= sp.startDate && dateStr <= sp.endDate,
@@ -8786,31 +9012,46 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
         if (specialPeriod) {
           // Special period exists - completely disable opening hours
-          console.log(`Restaurant ${restaurantId}: Special period active for ${dateStr} - opening hours disabled`);
-          
+          console.log(
+            `Restaurant ${restaurantId}: Special period active for ${dateStr} - opening hours disabled`,
+          );
+
           if (!specialPeriod.isOpen) {
-            console.log(`Restaurant ${restaurantId}: Closed due to special period`);
+            console.log(
+              `Restaurant ${restaurantId}: Closed due to special period`,
+            );
             return res.json([]);
           }
-          
+
           actualOpenTime = specialPeriod.openTime;
           actualCloseTime = specialPeriod.closeTime;
-          console.log(`Restaurant ${restaurantId}: Using special period hours ${actualOpenTime} - ${actualCloseTime}`);
+          console.log(
+            `Restaurant ${restaurantId}: Using special period hours ${actualOpenTime} - ${actualCloseTime}`,
+          );
         } else {
           // No special period - use regular opening hours
-          console.log(`Restaurant ${restaurantId}: No special period for ${dateStr}, checking regular opening hours`);
-          
-          const openingHours = await storage.getOpeningHoursByRestaurant(restaurantId);
-          const dayHours = openingHours.find((oh: any) => oh.dayOfWeek === dayOfWeek);
+          console.log(
+            `Restaurant ${restaurantId}: No special period for ${dateStr}, checking regular opening hours`,
+          );
+
+          const openingHours =
+            await storage.getOpeningHoursByRestaurant(restaurantId);
+          const dayHours = openingHours.find(
+            (oh: any) => oh.dayOfWeek === dayOfWeek,
+          );
 
           if (!dayHours || !dayHours.isOpen) {
-            console.log(`Restaurant ${restaurantId}: Closed on day ${dayOfWeek}`);
+            console.log(
+              `Restaurant ${restaurantId}: Closed on day ${dayOfWeek}`,
+            );
             return res.json([]);
           }
 
           actualOpenTime = dayHours.openTime;
           actualCloseTime = dayHours.closeTime;
-          console.log(`Restaurant ${restaurantId}: Using regular opening hours ${actualOpenTime} - ${actualCloseTime}`);
+          console.log(
+            `Restaurant ${restaurantId}: Using regular opening hours ${actualOpenTime} - ${actualCloseTime}`,
+          );
         }
 
         // Get cut-off times for the restaurant
@@ -8974,21 +9215,28 @@ export async function registerRoutes(app: Express): Promise<Server> {
         }
 
         // Check if guest bookings are enabled in system settings
-        const guestBookingsEnabled = await systemSettings.isFeatureEnabled('enable_guest_bookings');
+        const guestBookingsEnabled = await systemSettings.isFeatureEnabled(
+          "enable_guest_bookings",
+        );
         if (!guestBookingsEnabled) {
           return res.status(403).json({
-            message: "Guest bookings are currently disabled. Please contact the restaurant directly.",
+            message:
+              "Guest bookings are currently disabled. Please contact the restaurant directly.",
           });
         }
 
         // Check if phone is required based on system settings
-        const requirePhone = await systemSettings.getSetting('require_phone_for_bookings');
-        
+        const requirePhone = await systemSettings.getSetting(
+          "require_phone_for_bookings",
+        );
+
         // Validate booking data with dynamic phone requirement
         const bookingSchema = z.object({
           customerName: z.string().min(1, "Customer name is required"),
           customerEmail: z.string().email("Valid email is required"),
-          customerPhone: requirePhone ? z.string().min(1, "Phone number is required") : z.string().optional(),
+          customerPhone: requirePhone
+            ? z.string().min(1, "Phone number is required")
+            : z.string().optional(),
           guestCount: z.number().min(1, "Guest count must be at least 1"),
           bookingDate: z.string().datetime("Valid booking date is required"),
           startTime: z.string().min(1, "Start time is required"),
@@ -9028,11 +9276,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
         // Apply special period rules
         if (specialPeriod) {
           if (specialPeriod.isClosed) {
-            return res
-              .status(400)
-              .json({
-                message: "Restaurant is closed during this special period",
-              });
+            return res.status(400).json({
+              message: "Restaurant is closed during this special period",
+            });
           } else if (specialPeriod.openTime && specialPeriod.closeTime) {
             actualOpenTime = specialPeriod.openTime;
             actualCloseTime = specialPeriod.closeTime;
@@ -9172,15 +9418,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
         const isAgent = await storage.isBookingAgent(
           bookingData.customerEmail,
           bookingData.customerPhone || "",
-          restaurantId
+          restaurantId,
         );
 
         let customer;
         if (isAgent) {
           // For booking agents, always create a new customer profile to prevent overwrites
           // The actual guest information should be provided separately from the agent's contact info
-          console.log(`Booking agent detected: ${isAgent.name} (${isAgent.email})`);
-          
+          console.log(
+            `Booking agent detected: ${isAgent.name} (${isAgent.email})`,
+          );
+
           // Create a new customer profile without checking for existing ones
           customer = await storage.createCustomer(
             restaurantId,
@@ -9189,11 +9437,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
               name: bookingData.customerName,
               email: bookingData.customerEmail,
               phone: bookingData.customerPhone,
-            }
+            },
           );
-          
+
           // Add a note to the booking indicating it was made by an agent
-          bookingData.notes = bookingData.notes 
+          bookingData.notes = bookingData.notes
             ? `${bookingData.notes} [Booked by agent: ${isAgent.name}]`
             : `[Booked by agent: ${isAgent.name}]`;
         } else {
@@ -9771,18 +10019,23 @@ export async function registerRoutes(app: Express): Promise<Server> {
     async (req: Request, res: Response) => {
       try {
         const { tenantId, restaurantId } = req.params;
-        const restaurant = await storage.getRestaurantById(parseInt(restaurantId));
+        const restaurant = await storage.getRestaurantById(
+          parseInt(restaurantId),
+        );
         if (!restaurant || restaurant.tenantId !== parseInt(tenantId)) {
           return res.status(404).json({ message: "Restaurant not found" });
         }
 
-        const resolvedConflicts = await storage.getResolvedConflictsByRestaurant(parseInt(restaurantId));
+        const resolvedConflicts =
+          await storage.getResolvedConflictsByRestaurant(
+            parseInt(restaurantId),
+          );
         res.json(resolvedConflicts);
       } catch (error) {
         console.error("Error fetching resolved conflicts:", error);
         res.status(500).json({ error: "Failed to fetch resolved conflicts" });
       }
-    }
+    },
   );
 
   // Menu Categories endpoints
@@ -9792,18 +10045,22 @@ export async function registerRoutes(app: Express): Promise<Server> {
     async (req: Request, res: Response) => {
       try {
         const { tenantId, restaurantId } = req.params;
-        const restaurant = await storage.getRestaurantById(parseInt(restaurantId));
+        const restaurant = await storage.getRestaurantById(
+          parseInt(restaurantId),
+        );
         if (!restaurant || restaurant.tenantId !== parseInt(tenantId)) {
           return res.status(404).json({ message: "Restaurant not found" });
         }
 
-        const categories = await storage.getMenuCategoriesByRestaurant(parseInt(restaurantId));
+        const categories = await storage.getMenuCategoriesByRestaurant(
+          parseInt(restaurantId),
+        );
         res.json(categories);
       } catch (error) {
         console.error("Error fetching menu categories:", error);
         res.status(500).json({ error: "Failed to fetch menu categories" });
       }
-    }
+    },
   );
 
   app.post(
@@ -9812,7 +10069,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
     async (req: Request, res: Response) => {
       try {
         const { tenantId, restaurantId } = req.params;
-        const restaurant = await storage.getRestaurantById(parseInt(restaurantId));
+        const restaurant = await storage.getRestaurantById(
+          parseInt(restaurantId),
+        );
         if (!restaurant || restaurant.tenantId !== parseInt(tenantId)) {
           return res.status(404).json({ message: "Restaurant not found" });
         }
@@ -9829,7 +10088,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         console.error("Error creating menu category:", error);
         res.status(500).json({ error: "Failed to create menu category" });
       }
-    }
+    },
   );
 
   app.put(
@@ -9838,12 +10097,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
     async (req: Request, res: Response) => {
       try {
         const { tenantId, restaurantId, categoryId } = req.params;
-        const restaurant = await storage.getRestaurantById(parseInt(restaurantId));
+        const restaurant = await storage.getRestaurantById(
+          parseInt(restaurantId),
+        );
         if (!restaurant || restaurant.tenantId !== parseInt(tenantId)) {
           return res.status(404).json({ message: "Restaurant not found" });
         }
 
-        const category = await storage.updateMenuCategory(parseInt(categoryId), req.body);
+        const category = await storage.updateMenuCategory(
+          parseInt(categoryId),
+          req.body,
+        );
         if (!category) {
           return res.status(404).json({ message: "Category not found" });
         }
@@ -9852,7 +10116,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         console.error("Error updating menu category:", error);
         res.status(500).json({ error: "Failed to update menu category" });
       }
-    }
+    },
   );
 
   app.delete(
@@ -9861,7 +10125,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
     async (req: Request, res: Response) => {
       try {
         const { tenantId, restaurantId, categoryId } = req.params;
-        const restaurant = await storage.getRestaurantById(parseInt(restaurantId));
+        const restaurant = await storage.getRestaurantById(
+          parseInt(restaurantId),
+        );
         if (!restaurant || restaurant.tenantId !== parseInt(tenantId)) {
           return res.status(404).json({ message: "Restaurant not found" });
         }
@@ -9875,7 +10141,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         console.error("Error deleting menu category:", error);
         res.status(500).json({ error: "Failed to delete menu category" });
       }
-    }
+    },
   );
 
   // Menu Items endpoints
@@ -9886,23 +10152,29 @@ export async function registerRoutes(app: Express): Promise<Server> {
       try {
         const { tenantId, restaurantId } = req.params;
         const { categoryId } = req.query;
-        const restaurant = await storage.getRestaurantById(parseInt(restaurantId));
+        const restaurant = await storage.getRestaurantById(
+          parseInt(restaurantId),
+        );
         if (!restaurant || restaurant.tenantId !== parseInt(tenantId)) {
           return res.status(404).json({ message: "Restaurant not found" });
         }
 
         let items;
         if (categoryId) {
-          items = await storage.getMenuItemsByCategory(parseInt(categoryId as string));
+          items = await storage.getMenuItemsByCategory(
+            parseInt(categoryId as string),
+          );
         } else {
-          items = await storage.getMenuItemsByRestaurant(parseInt(restaurantId));
+          items = await storage.getMenuItemsByRestaurant(
+            parseInt(restaurantId),
+          );
         }
         res.json(items);
       } catch (error) {
         console.error("Error fetching menu items:", error);
         res.status(500).json({ error: "Failed to fetch menu items" });
       }
-    }
+    },
   );
 
   app.post(
@@ -9911,7 +10183,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
     async (req: Request, res: Response) => {
       try {
         const { tenantId, restaurantId } = req.params;
-        const restaurant = await storage.getRestaurantById(parseInt(restaurantId));
+        const restaurant = await storage.getRestaurantById(
+          parseInt(restaurantId),
+        );
         if (!restaurant || restaurant.tenantId !== parseInt(tenantId)) {
           return res.status(404).json({ message: "Restaurant not found" });
         }
@@ -9930,7 +10204,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         console.error("Error creating menu item:", error);
         res.status(500).json({ error: "Failed to create menu item" });
       }
-    }
+    },
   );
 
   app.put(
@@ -9939,7 +10213,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
     async (req: Request, res: Response) => {
       try {
         const { tenantId, restaurantId, itemId } = req.params;
-        const restaurant = await storage.getRestaurantById(parseInt(restaurantId));
+        const restaurant = await storage.getRestaurantById(
+          parseInt(restaurantId),
+        );
         if (!restaurant || restaurant.tenantId !== parseInt(tenantId)) {
           return res.status(404).json({ message: "Restaurant not found" });
         }
@@ -9958,7 +10234,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         console.error("Error updating menu item:", error);
         res.status(500).json({ error: "Failed to update menu item" });
       }
-    }
+    },
   );
 
   app.delete(
@@ -9967,7 +10243,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
     async (req: Request, res: Response) => {
       try {
         const { tenantId, restaurantId, itemId } = req.params;
-        const restaurant = await storage.getRestaurantById(parseInt(restaurantId));
+        const restaurant = await storage.getRestaurantById(
+          parseInt(restaurantId),
+        );
         if (!restaurant || restaurant.tenantId !== parseInt(tenantId)) {
           return res.status(404).json({ message: "Restaurant not found" });
         }
@@ -9981,7 +10259,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         console.error("Error deleting menu item:", error);
         res.status(500).json({ error: "Failed to delete menu item" });
       }
-    }
+    },
   );
 
   // Seasonal Menu Themes Routes
@@ -9991,18 +10269,23 @@ export async function registerRoutes(app: Express): Promise<Server> {
     async (req: Request, res: Response) => {
       try {
         const { tenantId, restaurantId } = req.params;
-        const restaurant = await storage.getRestaurantById(parseInt(restaurantId));
+        const restaurant = await storage.getRestaurantById(
+          parseInt(restaurantId),
+        );
         if (!restaurant || restaurant.tenantId !== parseInt(tenantId)) {
           return res.status(404).json({ message: "Restaurant not found" });
         }
 
-        const themes = await storage.getSeasonalMenuThemes(parseInt(restaurantId), parseInt(tenantId));
+        const themes = await storage.getSeasonalMenuThemes(
+          parseInt(restaurantId),
+          parseInt(tenantId),
+        );
         res.json(themes);
       } catch (error) {
         console.error("Error fetching seasonal themes:", error);
         res.status(500).json({ error: "Failed to fetch seasonal themes" });
       }
-    }
+    },
   );
 
   app.post(
@@ -10012,36 +10295,44 @@ export async function registerRoutes(app: Express): Promise<Server> {
       try {
         const { tenantId, restaurantId } = req.params;
         const { season, customPrompt } = req.body;
-        
-        const restaurant = await storage.getRestaurantById(parseInt(restaurantId));
+
+        const restaurant = await storage.getRestaurantById(
+          parseInt(restaurantId),
+        );
         if (!restaurant || restaurant.tenantId !== parseInt(tenantId)) {
           return res.status(404).json({ message: "Restaurant not found" });
         }
 
         // Get existing menu items for context
-        const menuItems = await storage.getMenuItems(parseInt(restaurantId), parseInt(tenantId));
-        const categories = await storage.getMenuCategories(parseInt(restaurantId), parseInt(tenantId));
-        
-        const menuItemsWithCategories = menuItems.map(item => {
-          const category = categories.find(cat => cat.id === item.categoryId);
+        const menuItems = await storage.getMenuItems(
+          parseInt(restaurantId),
+          parseInt(tenantId),
+        );
+        const categories = await storage.getMenuCategories(
+          parseInt(restaurantId),
+          parseInt(tenantId),
+        );
+
+        const menuItemsWithCategories = menuItems.map((item) => {
+          const category = categories.find((cat) => cat.id === item.categoryId);
           return {
             name: item.name,
             description: item.description,
-            category: category?.name || 'Other',
+            category: category?.name || "Other",
             allergens: item.allergens,
-            dietary: item.dietary
+            dietary: item.dietary,
           };
         });
 
-        const { AISeasonalMenuService } = await import('./ai-seasonal-menu');
+        const { AISeasonalMenuService } = await import("./ai-seasonal-menu");
         const aiService = new AISeasonalMenuService();
-        
+
         const aiResult = await aiService.generateSeasonalTheme({
           season,
           year: new Date().getFullYear(),
           restaurantName: restaurant.name,
           existingMenuItems: menuItemsWithCategories,
-          customPrompt
+          customPrompt,
         });
 
         // Save the generated theme to database
@@ -10059,7 +10350,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           suggestedMenuItems: aiResult.suggestedMenuItems,
           marketingCopy: aiResult.marketingCopy,
           targetIngredients: aiResult.targetIngredients,
-          moodKeywords: aiResult.moodKeywords
+          moodKeywords: aiResult.moodKeywords,
         };
 
         const savedTheme = await storage.createSeasonalMenuTheme(themeData);
@@ -10068,7 +10359,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         console.error("Error generating seasonal theme:", error);
         res.status(500).json({ error: "Failed to generate seasonal theme" });
       }
-    }
+    },
   );
 
   app.put(
@@ -10077,17 +10368,19 @@ export async function registerRoutes(app: Express): Promise<Server> {
     async (req: Request, res: Response) => {
       try {
         const { tenantId, restaurantId, themeId } = req.params;
-        const restaurant = await storage.getRestaurantById(parseInt(restaurantId));
+        const restaurant = await storage.getRestaurantById(
+          parseInt(restaurantId),
+        );
         if (!restaurant || restaurant.tenantId !== parseInt(tenantId)) {
           return res.status(404).json({ message: "Restaurant not found" });
         }
 
         const success = await storage.setActiveSeasonalTheme(
-          parseInt(restaurantId), 
-          parseInt(tenantId), 
-          parseInt(themeId)
+          parseInt(restaurantId),
+          parseInt(tenantId),
+          parseInt(themeId),
         );
-        
+
         if (!success) {
           return res.status(404).json({ message: "Theme not found" });
         }
@@ -10097,7 +10390,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         console.error("Error activating theme:", error);
         res.status(500).json({ error: "Failed to activate theme" });
       }
-    }
+    },
   );
 
   app.delete(
@@ -10106,12 +10399,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
     async (req: Request, res: Response) => {
       try {
         const { tenantId, restaurantId, themeId } = req.params;
-        const restaurant = await storage.getRestaurantById(parseInt(restaurantId));
+        const restaurant = await storage.getRestaurantById(
+          parseInt(restaurantId),
+        );
         if (!restaurant || restaurant.tenantId !== parseInt(tenantId)) {
           return res.status(404).json({ message: "Restaurant not found" });
         }
 
-        const success = await storage.deleteSeasonalMenuTheme(parseInt(themeId));
+        const success = await storage.deleteSeasonalMenuTheme(
+          parseInt(themeId),
+        );
         if (!success) {
           return res.status(404).json({ message: "Theme not found" });
         }
@@ -10121,7 +10418,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         console.error("Error deleting theme:", error);
         res.status(500).json({ error: "Failed to delete theme" });
       }
-    }
+    },
   );
 
   // Test webhook endpoint for debugging
@@ -10375,36 +10672,41 @@ export async function registerRoutes(app: Express): Promise<Server> {
     detectCapacityExceeded: (bookings: any[], tables: any[]) => {
       const conflicts: any[] = [];
       const tableCapacities = new Map(tables.map((t) => [t.id, t.capacity]));
-      const maxRestaurantCapacity = Math.max(...tables.map(t => t.capacity), 0);
+      const maxRestaurantCapacity = Math.max(
+        ...tables.map((t) => t.capacity),
+        0,
+      );
 
       bookings.forEach((booking) => {
         // Skip cancelled bookings
-        if (booking.status === 'cancelled') return;
+        if (booking.status === "cancelled") return;
 
         let hasCapacityConflict = false;
-        let conflictType = 'assigned_table_exceeded';
+        let conflictType = "assigned_table_exceeded";
 
         if (booking.tableId && tableCapacities.has(booking.tableId)) {
           // Check assigned table capacity
           const tableCapacity = tableCapacities.get(booking.tableId);
           if (booking.guestCount > tableCapacity) {
             hasCapacityConflict = true;
-            conflictType = 'assigned_table_exceeded';
+            conflictType = "assigned_table_exceeded";
           }
         } else if (!booking.tableId) {
           // Check if unassigned booking exceeds any available table capacity
           if (booking.guestCount > maxRestaurantCapacity) {
             hasCapacityConflict = true;
-            conflictType = 'no_suitable_table';
+            conflictType = "no_suitable_table";
           }
         }
 
         if (hasCapacityConflict) {
-          const suitableTables = tables.filter(t => t.capacity >= booking.guestCount);
+          const suitableTables = tables.filter(
+            (t) => t.capacity >= booking.guestCount,
+          );
           conflicts.push({
             id: `capacity-conflict-${booking.id}`,
             type: "capacity_exceeded",
-            severity: conflictType === 'no_suitable_table' ? "high" : "medium",
+            severity: conflictType === "no_suitable_table" ? "high" : "medium",
             bookings: [booking],
             autoResolvable: suitableTables.length > 0,
             createdAt: new Date().toISOString(),
@@ -10413,10 +10715,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
               guestCount: booking.guestCount,
               maxTableCapacity: maxRestaurantCapacity,
               suitableTablesAvailable: suitableTables.length,
-              currentTableId: booking.tableId
+              currentTableId: booking.tableId,
             },
-            suggestedResolutions:
-              ConflictResolver.generateCapacityResolutions(booking, tables),
+            suggestedResolutions: ConflictResolver.generateCapacityResolutions(
+              booking,
+              tables,
+            ),
           });
         }
       });
@@ -10475,11 +10779,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
     "/api/tenants/:tenantId/restaurants/:restaurantId/heat-map",
     validateTenant,
     async (req, res) => {
-      console.log('Heat map endpoint reached');
+      console.log("Heat map endpoint reached");
       try {
         const tenantId = parseInt(req.params.tenantId);
         const restaurantId = parseInt(req.params.restaurantId);
-        console.log(`Heat map: Processing tenant ${tenantId}, restaurant ${restaurantId}`);
+        console.log(
+          `Heat map: Processing tenant ${tenantId}, restaurant ${restaurantId}`,
+        );
 
         const restaurant = await storage.getRestaurantById(restaurantId);
         if (!restaurant || restaurant.tenantId !== tenantId) {
@@ -10488,9 +10794,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
         const tables = await storage.getTablesByRestaurant(restaurantId);
         const bookings = await storage.getBookingsByRestaurant(restaurantId);
-        
-        console.log(`Heat map: Found ${tables.length} tables and ${bookings.length} bookings for restaurant ${restaurantId}`);
-        
+
+        console.log(
+          `Heat map: Found ${tables.length} tables and ${bookings.length} bookings for restaurant ${restaurantId}`,
+        );
+
         // Get table layout positions (using default room "1")
         const tableLayout = await storage.getTableLayout(restaurantId, "1");
         const positions = tableLayout?.positions || {};
@@ -10510,52 +10818,64 @@ export async function registerRoutes(app: Express): Promise<Server> {
               : 0;
 
           // Calculate heat score based on multiple factors
-          const occupancyRate = table.capacity > 0 ? Math.round((avgGuestCount / table.capacity) * 100) : 0;
-          const revenueScore = Math.min(100, Math.round((totalRevenue || 0) / 100));
+          const occupancyRate =
+            table.capacity > 0
+              ? Math.round((avgGuestCount / table.capacity) * 100)
+              : 0;
+          const revenueScore = Math.min(
+            100,
+            Math.round((totalRevenue || 0) / 100),
+          );
           const bookingScore = Math.min(100, totalBookings * 10);
-          const heatScore = Math.round((occupancyRate + revenueScore + bookingScore) / 3);
+          const heatScore = Math.round(
+            (occupancyRate + revenueScore + bookingScore) / 3,
+          );
 
           // Get position from saved layout or use default grid position
           const savedPosition = positions[table.id.toString()];
           const defaultPosition = {
             x: 60 + (index % 4) * 120,
-            y: 60 + Math.floor(index / 4) * 100
+            y: 60 + Math.floor(index / 4) * 100,
           };
 
           // Determine table status based on current time and bookings
           const now = new Date();
           const currentHour = now.getHours();
-          const todayBookings = tableBookings.filter(b => {
+          const todayBookings = tableBookings.filter((b) => {
             const bookingDate = new Date(b.bookingDate);
             return bookingDate.toDateString() === now.toDateString();
           });
-          
-          let status = 'available';
-          const currentTimeSlot = todayBookings.find(b => {
-            const startHour = parseInt(b.startTime.split(':')[0]);
-            const endHour = b.endTime ? parseInt(b.endTime.split(':')[0]) : startHour + 2;
+
+          let status = "available";
+          const currentTimeSlot = todayBookings.find((b) => {
+            const startHour = parseInt(b.startTime.split(":")[0]);
+            const endHour = b.endTime
+              ? parseInt(b.endTime.split(":")[0])
+              : startHour + 2;
             return currentHour >= startHour && currentHour < endHour;
           });
-          
+
           if (currentTimeSlot) {
-            status = 'occupied';
-          } else if (todayBookings.some(b => {
-            const startHour = parseInt(b.startTime.split(':')[0]);
-            return Math.abs(currentHour - startHour) <= 1;
-          })) {
-            status = 'reserved';
+            status = "occupied";
+          } else if (
+            todayBookings.some((b) => {
+              const startHour = parseInt(b.startTime.split(":")[0]);
+              return Math.abs(currentHour - startHour) <= 1;
+            })
+          ) {
+            status = "reserved";
           }
 
           // Generate peak hours based on booking patterns
           const hourCounts = {};
-          tableBookings.forEach(b => {
-            if (b.startTime && typeof b.startTime === 'string') {
-              const hour = parseInt(b.startTime.split(':')[0]);
+          tableBookings.forEach((b) => {
+            if (b.startTime && typeof b.startTime === "string") {
+              const hour = parseInt(b.startTime.split(":")[0]);
               hourCounts[hour] = (hourCounts[hour] || 0) + 1;
             }
           });
           const peakHours = Object.entries(hourCounts)
-            .sort(([,a], [,b]) => b - a)
+            .sort(([, a], [, b]) => b - a)
             .slice(0, 3)
             .map(([hour]) => `${hour}:00`);
 
@@ -10570,7 +10890,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
             revenueGenerated: totalRevenue || 0,
             averageStayDuration: 90, // Default 90 minutes
             peakHours,
-            status: status as 'available' | 'occupied' | 'reserved' | 'maintenance'
+            status: status as
+              | "available"
+              | "occupied"
+              | "reserved"
+              | "maintenance",
           };
         });
 
@@ -10583,52 +10907,60 @@ export async function registerRoutes(app: Express): Promise<Server> {
   );
 
   // Working conflicts endpoint (bypasses routing issues)
-  app.get(
-    "/conflicts-check/:tenantId/:restaurantId",
-    async (req, res) => {
-      try {
-        const restaurantId = parseInt(req.params.restaurantId);
-        const tenantId = parseInt(req.params.tenantId);
+  app.get("/conflicts-check/:tenantId/:restaurantId", async (req, res) => {
+    try {
+      const restaurantId = parseInt(req.params.restaurantId);
+      const tenantId = parseInt(req.params.tenantId);
 
-        console.log(`CONFLICTS CHECK: Starting for restaurant ${restaurantId}, tenant ${tenantId}`);
+      console.log(
+        `CONFLICTS CHECK: Starting for restaurant ${restaurantId}, tenant ${tenantId}`,
+      );
 
-        const restaurant = await storage.getRestaurantById(restaurantId);
-        if (!restaurant || restaurant.tenantId !== tenantId) {
-          console.log(`CONFLICTS CHECK: Restaurant not found or tenant mismatch`);
-          return res.status(404).json({ message: "Restaurant not found" });
-        }
-
-        const bookings = await storage.getBookingsByRestaurant(restaurantId);
-        const tables = await storage.getTablesByRestaurant(restaurantId);
-
-        // Filter bookings by tenant for security
-        const tenantBookings = bookings.filter(
-          (booking) => booking.tenantId === tenantId,
-        );
-        const tenantTables = tables.filter(
-          (table) => table.tenant_id === tenantId,
-        );
-
-        console.log(`CONFLICTS CHECK: Found ${tenantBookings.length} bookings, ${tenantTables.length} tables`);
-        
-        // Detect all types of conflicts
-        const capacityConflicts = ConflictDetector.detectCapacityExceeded(tenantBookings, tenantTables);
-        console.log(`CONFLICTS CHECK: Capacity conflicts detected: ${capacityConflicts.length}`);
-        
-        const conflicts = [
-          ...ConflictDetector.detectTableDoubleBookings(tenantBookings),
-          ...capacityConflicts,
-          ...ConflictDetector.detectTimeOverlaps(tenantBookings),
-        ];
-
-        console.log(`CONFLICTS CHECK: Total conflicts: ${conflicts.length}`);
-        res.json(conflicts);
-      } catch (error) {
-        console.error("CONFLICTS CHECK: Error fetching conflicts:", error);
-        res.status(500).json({ message: "Internal server error", error: error.message });
+      const restaurant = await storage.getRestaurantById(restaurantId);
+      if (!restaurant || restaurant.tenantId !== tenantId) {
+        console.log(`CONFLICTS CHECK: Restaurant not found or tenant mismatch`);
+        return res.status(404).json({ message: "Restaurant not found" });
       }
-    },
-  );
+
+      const bookings = await storage.getBookingsByRestaurant(restaurantId);
+      const tables = await storage.getTablesByRestaurant(restaurantId);
+
+      // Filter bookings by tenant for security
+      const tenantBookings = bookings.filter(
+        (booking) => booking.tenantId === tenantId,
+      );
+      const tenantTables = tables.filter(
+        (table) => table.tenant_id === tenantId,
+      );
+
+      console.log(
+        `CONFLICTS CHECK: Found ${tenantBookings.length} bookings, ${tenantTables.length} tables`,
+      );
+
+      // Detect all types of conflicts
+      const capacityConflicts = ConflictDetector.detectCapacityExceeded(
+        tenantBookings,
+        tenantTables,
+      );
+      console.log(
+        `CONFLICTS CHECK: Capacity conflicts detected: ${capacityConflicts.length}`,
+      );
+
+      const conflicts = [
+        ...ConflictDetector.detectTableDoubleBookings(tenantBookings),
+        ...capacityConflicts,
+        ...ConflictDetector.detectTimeOverlaps(tenantBookings),
+      ];
+
+      console.log(`CONFLICTS CHECK: Total conflicts: ${conflicts.length}`);
+      res.json(conflicts);
+    } catch (error) {
+      console.error("CONFLICTS CHECK: Error fetching conflicts:", error);
+      res
+        .status(500)
+        .json({ message: "Internal server error", error: error.message });
+    }
+  });
 
   // Working conflict resolution endpoint (bypasses routing issues)
   app.post(
@@ -10640,11 +10972,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
         const conflictId = req.params.conflictId;
         const { resolutionId, bookingId, newTableId, notes } = req.body;
 
-        console.log(`CONFLICTS RESOLVE: Starting for conflict ${conflictId}, restaurant ${restaurantId}`);
+        console.log(
+          `CONFLICTS RESOLVE: Starting for conflict ${conflictId}, restaurant ${restaurantId}`,
+        );
 
         const restaurant = await storage.getRestaurantById(restaurantId);
         if (!restaurant || restaurant.tenantId !== tenantId) {
-          console.log(`CONFLICTS RESOLVE: Restaurant not found or tenant mismatch`);
+          console.log(
+            `CONFLICTS RESOLVE: Restaurant not found or tenant mismatch`,
+          );
           return res.status(404).json({ message: "Restaurant not found" });
         }
 
@@ -10652,12 +10988,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
         const bookings = await storage.getBookingsByRestaurant(restaurantId);
         const tables = await storage.getTablesByRestaurant(restaurantId);
 
-        const tenantBookings = bookings.filter(b => b.tenantId === tenantId);
-        const tenantTables = tables.filter(t => t.tenant_id === tenantId);
+        const tenantBookings = bookings.filter((b) => b.tenantId === tenantId);
+        const tenantTables = tables.filter((t) => t.tenant_id === tenantId);
 
         const allConflicts = [
           ...ConflictDetector.detectTableDoubleBookings(tenantBookings),
-          ...ConflictDetector.detectCapacityExceeded(tenantBookings, tenantTables),
+          ...ConflictDetector.detectCapacityExceeded(
+            tenantBookings,
+            tenantTables,
+          ),
           ...ConflictDetector.detectTimeOverlaps(tenantBookings),
         ];
 
@@ -10671,11 +11010,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
           (r: any) => r.id === resolutionId,
         );
         if (!resolution) {
-          console.log(`CONFLICTS RESOLVE: Resolution ${resolutionId} not found`);
+          console.log(
+            `CONFLICTS RESOLVE: Resolution ${resolutionId} not found`,
+          );
           return res.status(404).json({ message: "Resolution not found" });
         }
 
-        console.log(`CONFLICTS RESOLVE: Applying resolution type: ${resolution.type}`);
+        console.log(
+          `CONFLICTS RESOLVE: Applying resolution type: ${resolution.type}`,
+        );
 
         // Apply the resolution based on type
         let resolutionDescription = "";
@@ -10683,48 +11026,70 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
         if (resolution.type === "split_party") {
           // Actually split the large party into multiple bookings to resolve the conflict
-          const tableCapacities = tenantTables.map(t => t.capacity).filter(c => c && c > 0);
-          const maxCapacity = tableCapacities.length > 0 ? Math.max(...tableCapacities) : 4; // Default to 4 if no valid capacities
-          
+          const tableCapacities = tenantTables
+            .map((t) => t.capacity)
+            .filter((c) => c && c > 0);
+          const maxCapacity =
+            tableCapacities.length > 0 ? Math.max(...tableCapacities) : 4; // Default to 4 if no valid capacities
+
           // Validate guest count and capacity
           if (!booking.guestCount || booking.guestCount <= 0) {
-            console.log(`CONFLICTS RESOLVE: Invalid guest count: ${booking.guestCount}`);
+            console.log(
+              `CONFLICTS RESOLVE: Invalid guest count: ${booking.guestCount}`,
+            );
             return res.status(400).json({ message: "Invalid guest count" });
           }
-          
-          const tablesNeeded = Math.max(1, Math.ceil(booking.guestCount / maxCapacity));
-          
+
+          const tablesNeeded = Math.max(
+            1,
+            Math.ceil(booking.guestCount / maxCapacity),
+          );
+
           // Calculate guest distribution across tables
           const guestsPerTable = Math.floor(booking.guestCount / tablesNeeded);
           const remainderGuests = booking.guestCount % tablesNeeded;
-          
+
           // Debug logging to identify the source of invalid values
-          console.log(`CONFLICTS RESOLVE: Debug values - guestCount: ${booking.guestCount}, maxCapacity: ${maxCapacity}, tablesNeeded: ${tablesNeeded}, guestsPerTable: ${guestsPerTable}, remainderGuests: ${remainderGuests}`);
-          
+          console.log(
+            `CONFLICTS RESOLVE: Debug values - guestCount: ${booking.guestCount}, maxCapacity: ${maxCapacity}, tablesNeeded: ${tablesNeeded}, guestsPerTable: ${guestsPerTable}, remainderGuests: ${remainderGuests}`,
+          );
+
           // Update the original booking to first portion
-          const firstPortionGuests = guestsPerTable + (remainderGuests > 0 ? 1 : 0);
-          
+          const firstPortionGuests =
+            guestsPerTable + (remainderGuests > 0 ? 1 : 0);
+
           // Validate calculated values before database update
           if (!Number.isFinite(firstPortionGuests) || firstPortionGuests <= 0) {
-            console.log(`CONFLICTS RESOLVE: Invalid firstPortionGuests: ${firstPortionGuests}`);
-            return res.status(400).json({ message: "Invalid guest count calculation" });
+            console.log(
+              `CONFLICTS RESOLVE: Invalid firstPortionGuests: ${firstPortionGuests}`,
+            );
+            return res
+              .status(400)
+              .json({ message: "Invalid guest count calculation" });
           }
-          
+
           await storage.updateBooking(booking.id, {
             guestCount: firstPortionGuests,
-            notes: `Split party - Part 1 of ${tablesNeeded} (${firstPortionGuests} guests)`
+            notes: `Split party - Part 1 of ${tablesNeeded} (${firstPortionGuests} guests)`,
           });
-          
+
           // Create additional bookings for remaining guests
           for (let i = 1; i < tablesNeeded; i++) {
-            const portionGuests = guestsPerTable + (i < remainderGuests ? 1 : 0);
-            
+            const portionGuests =
+              guestsPerTable + (i < remainderGuests ? 1 : 0);
+
             // Validate calculated values before database operation
             if (!Number.isFinite(portionGuests) || portionGuests <= 0) {
-              console.log(`CONFLICTS RESOLVE: Invalid portionGuests: ${portionGuests} for booking ${i + 1}`);
-              return res.status(400).json({ message: "Invalid guest count calculation for split booking" });
+              console.log(
+                `CONFLICTS RESOLVE: Invalid portionGuests: ${portionGuests} for booking ${i + 1}`,
+              );
+              return res
+                .status(400)
+                .json({
+                  message: "Invalid guest count calculation for split booking",
+                });
             }
-            
+
             await storage.createBooking({
               restaurantId,
               tenantId,
@@ -10739,31 +11104,41 @@ export async function registerRoutes(app: Express): Promise<Server> {
               status: "confirmed",
               source: "split_party",
               notes: `Split party - Part ${i + 1} of ${tablesNeeded} (${portionGuests} guests)`,
-              tableId: null // Will be assigned by staff
+              tableId: null, // Will be assigned by staff
             });
           }
-          
+
           resolutionDescription = `Split party of ${booking.guestCount} guests into ${tablesNeeded} separate bookings for table assignment`;
-          
+
           // Create detailed notification for staff to assign tables after split bookings are created
           const splitBookingDetails = [];
-          const baseCustomerName = booking.customerName.replace(/ - Part \d+$/, '');
-          
+          const baseCustomerName = booking.customerName.replace(
+            / - Part \d+$/,
+            "",
+          );
+
           // Calculate actual guest distribution
           const totalGuests = booking.guestCount;
           const actualTablesNeeded = Math.ceil(totalGuests / maxCapacity);
-          const baseGuestsPerTable = Math.floor(totalGuests / actualTablesNeeded);
+          const baseGuestsPerTable = Math.floor(
+            totalGuests / actualTablesNeeded,
+          );
           const extraGuests = totalGuests % actualTablesNeeded;
-          
+
           // Show the main booking (updated)
-          splitBookingDetails.push(`• Booking #${booking.id}: ${firstPortionGuests} guests (${baseCustomerName})`);
-          
+          splitBookingDetails.push(
+            `• Booking #${booking.id}: ${firstPortionGuests} guests (${baseCustomerName})`,
+          );
+
           // Show additional bookings that will be created
           for (let i = 2; i <= actualTablesNeeded; i++) {
-            const guestsForThisTable = baseGuestsPerTable + (i <= extraGuests + 1 ? 1 : 0);
-            splitBookingDetails.push(`• New booking: ${guestsForThisTable} guests (${baseCustomerName} - Part ${i})`);
+            const guestsForThisTable =
+              baseGuestsPerTable + (i <= extraGuests + 1 ? 1 : 0);
+            splitBookingDetails.push(
+              `• New booking: ${guestsForThisTable} guests (${baseCustomerName} - Part ${i})`,
+            );
           }
-          
+
           const detailedMessage = `SPLIT PARTY ACTION REQUIRED:
 Customer: ${baseCustomerName}
 Original Party: ${booking.guestCount} guests
@@ -10771,7 +11146,7 @@ Date: ${new Date(booking.bookingDate).toLocaleDateString()}
 Time: ${booking.startTime}
 
 Split into ${tablesNeeded} bookings:
-${splitBookingDetails.join('\n')}
+${splitBookingDetails.join("\n")}
 
 NEXT STEPS:
 1. Assign ${tablesNeeded} adjacent tables (capacity 6+ each)
@@ -10794,20 +11169,19 @@ NEXT STEPS:
               totalGuests: booking.guestCount,
               bookingsCreated: tablesNeeded,
               originalCustomerName: booking.customerName,
-              actionRequired: true
+              actionRequired: true,
             },
           };
 
           await storage.createNotification(notification);
           broadcastNotification(restaurantId, notification);
-
         } else if (resolution.type === "reassign_table" && newTableId) {
           // Reassign to specific table
           await storage.updateBooking(booking.id, {
             tableId: newTableId,
           });
-          
-          const newTable = tenantTables.find(t => t.id === newTableId);
+
+          const newTable = tenantTables.find((t) => t.id === newTableId);
           resolutionDescription = `Reassigned to Table ${newTable?.table_number} (capacity: ${newTable?.capacity})`;
         }
 
@@ -10822,7 +11196,10 @@ NEXT STEPS:
             createdAt: new Date(),
           });
         } catch (logError) {
-          console.log(`CONFLICTS RESOLVE: Could not create activity log:`, logError);
+          console.log(
+            `CONFLICTS RESOLVE: Could not create activity log:`,
+            logError,
+          );
         }
 
         // Save resolved conflict to database for tracking
@@ -10836,28 +11213,35 @@ NEXT STEPS:
             bookingIds: conflict.bookings.map((b: any) => b.id),
             resolutionType: resolution.type,
             resolutionDetails: resolutionDescription,
-            appliedBy: 'manual',
+            appliedBy: "manual",
             originalData: {
               conflict: conflict,
               resolution: resolution,
-              bookingData: conflict.bookings
-            }
+              bookingData: conflict.bookings,
+            },
           });
         } catch (saveError) {
-          console.log(`CONFLICTS RESOLVE: Could not save resolved conflict:`, saveError);
+          console.log(
+            `CONFLICTS RESOLVE: Could not save resolved conflict:`,
+            saveError,
+          );
         }
 
-        console.log(`CONFLICTS RESOLVE: Successfully resolved conflict ${conflictId}`);
+        console.log(
+          `CONFLICTS RESOLVE: Successfully resolved conflict ${conflictId}`,
+        );
 
         res.json({
           message: "Conflict resolved successfully",
           resolution: resolutionDescription,
           conflictId,
-          applied: resolution.type
+          applied: resolution.type,
         });
       } catch (error) {
         console.error("CONFLICTS RESOLVE: Error resolving conflict:", error);
-        res.status(500).json({ message: "Internal server error", error: error.message });
+        res
+          .status(500)
+          .json({ message: "Internal server error", error: error.message });
       }
     },
   );
@@ -10870,7 +11254,9 @@ NEXT STEPS:
         const restaurantId = parseInt(req.params.restaurantId);
         const tenantId = parseInt(req.params.tenantId);
 
-        console.log(`CONFLICTS GET: Starting for restaurant ${restaurantId}, tenant ${tenantId}`);
+        console.log(
+          `CONFLICTS GET: Starting for restaurant ${restaurantId}, tenant ${tenantId}`,
+        );
 
         const restaurant = await storage.getRestaurantById(restaurantId);
         if (!restaurant || restaurant.tenantId !== tenantId) {
@@ -10889,12 +11275,19 @@ NEXT STEPS:
           (table) => table.tenant_id === tenantId,
         );
 
-        console.log(`CONFLICTS GET: Found ${tenantBookings.length} bookings, ${tenantTables.length} tables`);
-        
+        console.log(
+          `CONFLICTS GET: Found ${tenantBookings.length} bookings, ${tenantTables.length} tables`,
+        );
+
         // Detect all types of conflicts
-        const capacityConflicts = ConflictDetector.detectCapacityExceeded(tenantBookings, tenantTables);
-        console.log(`CONFLICTS GET: Capacity conflicts detected: ${capacityConflicts.length}`);
-        
+        const capacityConflicts = ConflictDetector.detectCapacityExceeded(
+          tenantBookings,
+          tenantTables,
+        );
+        console.log(
+          `CONFLICTS GET: Capacity conflicts detected: ${capacityConflicts.length}`,
+        );
+
         const conflicts = [
           ...ConflictDetector.detectTableDoubleBookings(tenantBookings),
           ...capacityConflicts,
@@ -10905,7 +11298,9 @@ NEXT STEPS:
         res.json(conflicts);
       } catch (error) {
         console.error("CONFLICTS GET: Error fetching conflicts:", error);
-        res.status(500).json({ message: "Internal server error", error: error.message });
+        res
+          .status(500)
+          .json({ message: "Internal server error", error: error.message });
       }
     },
   );
@@ -11595,13 +11990,14 @@ NEXT STEPS:
           return res.status(404).json({ message: "Restaurant not found" });
         }
 
-        const configurations = await storage.getSeatingConfigurationsByRestaurant(restaurantId);
+        const configurations =
+          await storage.getSeatingConfigurationsByRestaurant(restaurantId);
         res.json(configurations);
       } catch (error) {
         console.error("Error fetching seating configurations:", error);
         res.status(500).json({ message: "Internal server error" });
       }
-    }
+    },
   );
 
   app.post(
@@ -11623,13 +12019,16 @@ NEXT STEPS:
           tenantId,
         };
 
-        const newConfiguration = await storage.createSeatingConfiguration(configurationData);
+        const newConfiguration =
+          await storage.createSeatingConfiguration(configurationData);
         res.json(newConfiguration);
       } catch (error) {
         console.error("Error creating seating configuration:", error);
-        res.status(500).json({ message: "Failed to create seating configuration" });
+        res
+          .status(500)
+          .json({ message: "Failed to create seating configuration" });
       }
-    }
+    },
   );
 
   app.put(
@@ -11646,13 +12045,18 @@ NEXT STEPS:
           return res.status(404).json({ message: "Restaurant not found" });
         }
 
-        const updatedConfiguration = await storage.updateSeatingConfiguration(configId, req.body);
+        const updatedConfiguration = await storage.updateSeatingConfiguration(
+          configId,
+          req.body,
+        );
         res.json(updatedConfiguration);
       } catch (error) {
         console.error("Error updating seating configuration:", error);
-        res.status(500).json({ message: "Failed to update seating configuration" });
+        res
+          .status(500)
+          .json({ message: "Failed to update seating configuration" });
       }
-    }
+    },
   );
 
   app.delete(
@@ -11677,9 +12081,11 @@ NEXT STEPS:
         res.json({ message: "Seating configuration deleted successfully" });
       } catch (error) {
         console.error("Error deleting seating configuration:", error);
-        res.status(500).json({ message: "Failed to delete seating configuration" });
+        res
+          .status(500)
+          .json({ message: "Failed to delete seating configuration" });
       }
-    }
+    },
   );
 
   // Periodic Criteria API routes
@@ -11696,13 +12102,14 @@ NEXT STEPS:
           return res.status(404).json({ message: "Restaurant not found" });
         }
 
-        const criteria = await storage.getPeriodicCriteriaByRestaurant(restaurantId);
+        const criteria =
+          await storage.getPeriodicCriteriaByRestaurant(restaurantId);
         res.json(criteria);
       } catch (error) {
         console.error("Error fetching periodic criteria:", error);
         res.status(500).json({ message: "Internal server error" });
       }
-    }
+    },
   );
 
   app.post(
@@ -11730,7 +12137,7 @@ NEXT STEPS:
         console.error("Error creating periodic criteria:", error);
         res.status(500).json({ message: "Failed to create periodic criteria" });
       }
-    }
+    },
   );
 
   app.put(
@@ -11747,13 +12154,16 @@ NEXT STEPS:
           return res.status(404).json({ message: "Restaurant not found" });
         }
 
-        const updatedCriteria = await storage.updatePeriodicCriteria(criteriaId, req.body);
+        const updatedCriteria = await storage.updatePeriodicCriteria(
+          criteriaId,
+          req.body,
+        );
         res.json(updatedCriteria);
       } catch (error) {
         console.error("Error updating periodic criteria:", error);
         res.status(500).json({ message: "Failed to update periodic criteria" });
       }
-    }
+    },
   );
 
   app.delete(
@@ -11780,7 +12190,7 @@ NEXT STEPS:
         console.error("Error deleting periodic criteria:", error);
         res.status(500).json({ message: "Failed to delete periodic criteria" });
       }
-    }
+    },
   );
 
   // Custom Fields API routes
@@ -11797,13 +12207,16 @@ NEXT STEPS:
           return res.status(404).json({ message: "Restaurant not found" });
         }
 
-        const fields = await storage.getCustomFieldsByRestaurant(restaurantId, tenantId);
+        const fields = await storage.getCustomFieldsByRestaurant(
+          restaurantId,
+          tenantId,
+        );
         res.json(fields);
       } catch (error) {
         console.error("Error fetching custom fields:", error);
         res.status(500).json({ message: "Internal server error" });
       }
-    }
+    },
   );
 
   app.post(
@@ -11831,7 +12244,7 @@ NEXT STEPS:
         console.error("Error creating custom field:", error);
         res.status(500).json({ message: "Failed to create custom field" });
       }
-    }
+    },
   );
 
   app.put(
@@ -11854,7 +12267,7 @@ NEXT STEPS:
         console.error("Error updating custom field:", error);
         res.status(500).json({ message: "Failed to update custom field" });
       }
-    }
+    },
   );
 
   app.delete(
@@ -11881,7 +12294,7 @@ NEXT STEPS:
         console.error("Error deleting custom field:", error);
         res.status(500).json({ message: "Failed to delete custom field" });
       }
-    }
+    },
   );
 
   // Booking Agents API routes
@@ -11904,7 +12317,7 @@ NEXT STEPS:
         console.error("Error fetching booking agents:", error);
         res.status(500).json({ message: "Internal server error" });
       }
-    }
+    },
   );
 
   app.post(
@@ -11932,7 +12345,7 @@ NEXT STEPS:
         console.error("Error creating booking agent:", error);
         res.status(500).json({ message: "Failed to create booking agent" });
       }
-    }
+    },
   );
 
   app.put(
@@ -11949,13 +12362,16 @@ NEXT STEPS:
           return res.status(404).json({ message: "Restaurant not found" });
         }
 
-        const updatedAgent = await storage.updateBookingAgent(agentId, req.body);
+        const updatedAgent = await storage.updateBookingAgent(
+          agentId,
+          req.body,
+        );
         res.json(updatedAgent);
       } catch (error) {
         console.error("Error updating booking agent:", error);
         res.status(500).json({ message: "Failed to update booking agent" });
       }
-    }
+    },
   );
 
   app.delete(
@@ -11982,359 +12398,422 @@ NEXT STEPS:
         console.error("Error deleting booking agent:", error);
         res.status(500).json({ message: "Failed to delete booking agent" });
       }
-    }
+    },
   );
 
   // Product Groups API Routes
-  app.get("/api/tenants/:tenantId/restaurants/:restaurantId/product-groups", validateTenant, async (req, res) => {
-    try {
-      const restaurantId = parseInt(req.params.restaurantId);
-      const tenantId = parseInt(req.params.tenantId);
-      
-      // Verify restaurant belongs to tenant
-      const restaurant = await storage.getRestaurantById(restaurantId);
-      if (!restaurant || restaurant.tenantId !== tenantId) {
-        return res.status(404).json({ message: "Restaurant not found" });
-      }
-      
-      const productGroups = await storage.getProductGroupsByRestaurant(restaurantId);
-      res.json(productGroups);
-    } catch (error) {
-      console.error("Error fetching product groups:", error);
-      res.status(500).json({ message: "Failed to fetch product groups" });
-    }
-  });
+  app.get(
+    "/api/tenants/:tenantId/restaurants/:restaurantId/product-groups",
+    validateTenant,
+    async (req, res) => {
+      try {
+        const restaurantId = parseInt(req.params.restaurantId);
+        const tenantId = parseInt(req.params.tenantId);
 
-  app.post("/api/tenants/:tenantId/restaurants/:restaurantId/product-groups", validateTenant, async (req, res) => {
-    try {
-      const restaurantId = parseInt(req.params.restaurantId);
-      const tenantId = parseInt(req.params.tenantId);
-      const { groupName, quantity, status } = req.body;
-      
-      if (!groupName) {
-        return res.status(400).json({ message: "Group name is required" });
-      }
-      
-      // Verify restaurant belongs to tenant
-      const restaurant = await storage.getRestaurantById(restaurantId);
-      if (!restaurant || restaurant.tenantId !== tenantId) {
-        return res.status(404).json({ message: "Restaurant not found" });
-      }
-      
-      const productGroup = await storage.createProductGroup({
-        restaurantId,
-        tenantId,
-        groupName,
-        quantity: quantity || 0,
-        status: status || "active"
-      });
-      
-      res.status(201).json(productGroup);
-    } catch (error) {
-      console.error("Error creating product group:", error);
-      res.status(500).json({ message: "Failed to create product group" });
-    }
-  });
+        // Verify restaurant belongs to tenant
+        const restaurant = await storage.getRestaurantById(restaurantId);
+        if (!restaurant || restaurant.tenantId !== tenantId) {
+          return res.status(404).json({ message: "Restaurant not found" });
+        }
 
-  app.put("/api/tenants/:tenantId/restaurants/:restaurantId/product-groups/:id", validateTenant, async (req, res) => {
-    try {
-      const id = parseInt(req.params.id);
-      const restaurantId = parseInt(req.params.restaurantId);
-      const tenantId = parseInt(req.params.tenantId);
-      const { groupName, quantity, status } = req.body;
-      
-      // Verify restaurant belongs to tenant
-      const restaurant = await storage.getRestaurantById(restaurantId);
-      if (!restaurant || restaurant.tenantId !== tenantId) {
-        return res.status(404).json({ message: "Restaurant not found" });
+        const productGroups =
+          await storage.getProductGroupsByRestaurant(restaurantId);
+        res.json(productGroups);
+      } catch (error) {
+        console.error("Error fetching product groups:", error);
+        res.status(500).json({ message: "Failed to fetch product groups" });
       }
-      
-      const updatedGroup = await storage.updateProductGroup(id, {
-        groupName,
-        quantity,
-        status
-      });
-      
-      if (!updatedGroup) {
-        return res.status(404).json({ message: "Product group not found" });
-      }
-      
-      res.json(updatedGroup);
-    } catch (error) {
-      console.error("Error updating product group:", error);
-      res.status(500).json({ message: "Failed to update product group" });
-    }
-  });
+    },
+  );
 
-  app.delete("/api/tenants/:tenantId/restaurants/:restaurantId/product-groups/:id", validateTenant, async (req, res) => {
-    try {
-      const id = parseInt(req.params.id);
-      const restaurantId = parseInt(req.params.restaurantId);
-      const tenantId = parseInt(req.params.tenantId);
-      
-      // Verify restaurant belongs to tenant
-      const restaurant = await storage.getRestaurantById(restaurantId);
-      if (!restaurant || restaurant.tenantId !== tenantId) {
-        return res.status(404).json({ message: "Restaurant not found" });
+  app.post(
+    "/api/tenants/:tenantId/restaurants/:restaurantId/product-groups",
+    validateTenant,
+    async (req, res) => {
+      try {
+        const restaurantId = parseInt(req.params.restaurantId);
+        const tenantId = parseInt(req.params.tenantId);
+        const { groupName, quantity, status } = req.body;
+
+        if (!groupName) {
+          return res.status(400).json({ message: "Group name is required" });
+        }
+
+        // Verify restaurant belongs to tenant
+        const restaurant = await storage.getRestaurantById(restaurantId);
+        if (!restaurant || restaurant.tenantId !== tenantId) {
+          return res.status(404).json({ message: "Restaurant not found" });
+        }
+
+        const productGroup = await storage.createProductGroup({
+          restaurantId,
+          tenantId,
+          groupName,
+          quantity: quantity || 0,
+          status: status || "active",
+        });
+
+        res.status(201).json(productGroup);
+      } catch (error) {
+        console.error("Error creating product group:", error);
+        res.status(500).json({ message: "Failed to create product group" });
       }
-      
-      await storage.deleteProductGroup(id);
-      res.json({ message: "Product group deleted successfully" });
-    } catch (error) {
-      console.error("Error deleting product group:", error);
-      res.status(500).json({ message: "Failed to delete product group" });
-    }
-  });
+    },
+  );
+
+  app.put(
+    "/api/tenants/:tenantId/restaurants/:restaurantId/product-groups/:id",
+    validateTenant,
+    async (req, res) => {
+      try {
+        const id = parseInt(req.params.id);
+        const restaurantId = parseInt(req.params.restaurantId);
+        const tenantId = parseInt(req.params.tenantId);
+        const { groupName, quantity, status } = req.body;
+
+        // Verify restaurant belongs to tenant
+        const restaurant = await storage.getRestaurantById(restaurantId);
+        if (!restaurant || restaurant.tenantId !== tenantId) {
+          return res.status(404).json({ message: "Restaurant not found" });
+        }
+
+        const updatedGroup = await storage.updateProductGroup(id, {
+          groupName,
+          quantity,
+          status,
+        });
+
+        if (!updatedGroup) {
+          return res.status(404).json({ message: "Product group not found" });
+        }
+
+        res.json(updatedGroup);
+      } catch (error) {
+        console.error("Error updating product group:", error);
+        res.status(500).json({ message: "Failed to update product group" });
+      }
+    },
+  );
+
+  app.delete(
+    "/api/tenants/:tenantId/restaurants/:restaurantId/product-groups/:id",
+    validateTenant,
+    async (req, res) => {
+      try {
+        const id = parseInt(req.params.id);
+        const restaurantId = parseInt(req.params.restaurantId);
+        const tenantId = parseInt(req.params.tenantId);
+
+        // Verify restaurant belongs to tenant
+        const restaurant = await storage.getRestaurantById(restaurantId);
+        if (!restaurant || restaurant.tenantId !== tenantId) {
+          return res.status(404).json({ message: "Restaurant not found" });
+        }
+
+        await storage.deleteProductGroup(id);
+        res.json({ message: "Product group deleted successfully" });
+      } catch (error) {
+        console.error("Error deleting product group:", error);
+        res.status(500).json({ message: "Failed to delete product group" });
+      }
+    },
+  );
 
   // Products API Routes
-  app.get("/api/tenants/:tenantId/restaurants/:restaurantId/products", validateTenant, async (req, res) => {
-    try {
-      const restaurantId = parseInt(req.params.restaurantId);
-      const tenantId = parseInt(req.params.tenantId);
-      
-      // Verify restaurant belongs to tenant
-      const restaurant = await storage.getRestaurantById(restaurantId);
-      if (!restaurant || restaurant.tenantId !== tenantId) {
-        return res.status(404).json({ message: "Restaurant not found" });
-      }
-      
-      const products = await storage.getProductsByRestaurant(restaurantId);
-      res.json(products);
-    } catch (error) {
-      console.error("Error fetching products:", error);
-      res.status(500).json({ message: "Failed to fetch products" });
-    }
-  });
+  app.get(
+    "/api/tenants/:tenantId/restaurants/:restaurantId/products",
+    validateTenant,
+    async (req, res) => {
+      try {
+        const restaurantId = parseInt(req.params.restaurantId);
+        const tenantId = parseInt(req.params.tenantId);
 
-  app.post("/api/tenants/:tenantId/restaurants/:restaurantId/products", validateTenant, async (req, res) => {
-    try {
-      const restaurantId = parseInt(req.params.restaurantId);
-      const tenantId = parseInt(req.params.tenantId);
-      const { productName, categoryId, price, status } = req.body;
-      
-      if (!productName || !categoryId || !price) {
-        return res.status(400).json({ message: "Product name, category, and price are required" });
-      }
-      
-      // Verify restaurant belongs to tenant
-      const restaurant = await storage.getRestaurantById(restaurantId);
-      if (!restaurant || restaurant.tenantId !== tenantId) {
-        return res.status(404).json({ message: "Restaurant not found" });
-      }
-      
-      const product = await storage.createProduct({
-        restaurantId,
-        tenantId,
-        productName,
-        categoryId: parseInt(categoryId),
-        price: parseFloat(price),
-        status: status || "active"
-      });
-      
-      res.status(201).json(product);
-    } catch (error) {
-      console.error("Error creating product:", error);
-      res.status(500).json({ message: "Failed to create product" });
-    }
-  });
+        // Verify restaurant belongs to tenant
+        const restaurant = await storage.getRestaurantById(restaurantId);
+        if (!restaurant || restaurant.tenantId !== tenantId) {
+          return res.status(404).json({ message: "Restaurant not found" });
+        }
 
-  app.put("/api/tenants/:tenantId/restaurants/:restaurantId/products/:id", validateTenant, async (req, res) => {
-    try {
-      const id = parseInt(req.params.id);
-      const restaurantId = parseInt(req.params.restaurantId);
-      const tenantId = parseInt(req.params.tenantId);
-      const { productName, categoryId, price, status } = req.body;
-      
-      // Verify restaurant belongs to tenant
-      const restaurant = await storage.getRestaurantById(restaurantId);
-      if (!restaurant || restaurant.tenantId !== tenantId) {
-        return res.status(404).json({ message: "Restaurant not found" });
+        const products = await storage.getProductsByRestaurant(restaurantId);
+        res.json(products);
+      } catch (error) {
+        console.error("Error fetching products:", error);
+        res.status(500).json({ message: "Failed to fetch products" });
       }
-      
-      const updates: any = {};
-      if (productName !== undefined) updates.productName = productName;
-      if (categoryId !== undefined) updates.categoryId = parseInt(categoryId);
-      if (price !== undefined) updates.price = parseFloat(price);
-      if (status !== undefined) updates.status = status;
-      
-      const updatedProduct = await storage.updateProduct(id, updates);
-      
-      if (!updatedProduct) {
-        return res.status(404).json({ message: "Product not found" });
-      }
-      
-      res.json(updatedProduct);
-    } catch (error) {
-      console.error("Error updating product:", error);
-      res.status(500).json({ message: "Failed to update product" });
-    }
-  });
+    },
+  );
 
-  app.delete("/api/tenants/:tenantId/restaurants/:restaurantId/products/:id", validateTenant, async (req, res) => {
-    try {
-      const id = parseInt(req.params.id);
-      const restaurantId = parseInt(req.params.restaurantId);
-      const tenantId = parseInt(req.params.tenantId);
-      
-      // Verify restaurant belongs to tenant
-      const restaurant = await storage.getRestaurantById(restaurantId);
-      if (!restaurant || restaurant.tenantId !== tenantId) {
-        return res.status(404).json({ message: "Restaurant not found" });
+  app.post(
+    "/api/tenants/:tenantId/restaurants/:restaurantId/products",
+    validateTenant,
+    async (req, res) => {
+      try {
+        const restaurantId = parseInt(req.params.restaurantId);
+        const tenantId = parseInt(req.params.tenantId);
+        const { productName, categoryId, price, status } = req.body;
+
+        if (!productName || !categoryId || !price) {
+          return res
+            .status(400)
+            .json({
+              message: "Product name, category, and price are required",
+            });
+        }
+
+        // Verify restaurant belongs to tenant
+        const restaurant = await storage.getRestaurantById(restaurantId);
+        if (!restaurant || restaurant.tenantId !== tenantId) {
+          return res.status(404).json({ message: "Restaurant not found" });
+        }
+
+        const product = await storage.createProduct({
+          restaurantId,
+          tenantId,
+          productName,
+          categoryId: parseInt(categoryId),
+          price: parseFloat(price),
+          status: status || "active",
+        });
+
+        res.status(201).json(product);
+      } catch (error) {
+        console.error("Error creating product:", error);
+        res.status(500).json({ message: "Failed to create product" });
       }
-      
-      await storage.deleteProduct(id);
-      res.json({ message: "Product deleted successfully" });
-    } catch (error) {
-      console.error("Error deleting product:", error);
-      res.status(500).json({ message: "Failed to delete product" });
-    }
-  });
+    },
+  );
+
+  app.put(
+    "/api/tenants/:tenantId/restaurants/:restaurantId/products/:id",
+    validateTenant,
+    async (req, res) => {
+      try {
+        const id = parseInt(req.params.id);
+        const restaurantId = parseInt(req.params.restaurantId);
+        const tenantId = parseInt(req.params.tenantId);
+        const { productName, categoryId, price, status } = req.body;
+
+        // Verify restaurant belongs to tenant
+        const restaurant = await storage.getRestaurantById(restaurantId);
+        if (!restaurant || restaurant.tenantId !== tenantId) {
+          return res.status(404).json({ message: "Restaurant not found" });
+        }
+
+        const updates: any = {};
+        if (productName !== undefined) updates.productName = productName;
+        if (categoryId !== undefined) updates.categoryId = parseInt(categoryId);
+        if (price !== undefined) updates.price = parseFloat(price);
+        if (status !== undefined) updates.status = status;
+
+        const updatedProduct = await storage.updateProduct(id, updates);
+
+        if (!updatedProduct) {
+          return res.status(404).json({ message: "Product not found" });
+        }
+
+        res.json(updatedProduct);
+      } catch (error) {
+        console.error("Error updating product:", error);
+        res.status(500).json({ message: "Failed to update product" });
+      }
+    },
+  );
+
+  app.delete(
+    "/api/tenants/:tenantId/restaurants/:restaurantId/products/:id",
+    validateTenant,
+    async (req, res) => {
+      try {
+        const id = parseInt(req.params.id);
+        const restaurantId = parseInt(req.params.restaurantId);
+        const tenantId = parseInt(req.params.tenantId);
+
+        // Verify restaurant belongs to tenant
+        const restaurant = await storage.getRestaurantById(restaurantId);
+        if (!restaurant || restaurant.tenantId !== tenantId) {
+          return res.status(404).json({ message: "Restaurant not found" });
+        }
+
+        await storage.deleteProduct(id);
+        res.json({ message: "Product deleted successfully" });
+      } catch (error) {
+        console.error("Error deleting product:", error);
+        res.status(500).json({ message: "Failed to delete product" });
+      }
+    },
+  );
 
   // Payment Setups API Routes
-  app.get("/api/tenants/:tenantId/restaurants/:restaurantId/payment-setups", validateTenant, async (req, res) => {
-    try {
-      const restaurantId = parseInt(req.params.restaurantId);
-      const tenantId = parseInt(req.params.tenantId);
-      
-      // Verify restaurant belongs to tenant
-      const restaurant = await storage.getRestaurantById(restaurantId);
-      if (!restaurant || restaurant.tenantId !== tenantId) {
-        return res.status(404).json({ message: "Restaurant not found" });
-      }
-      
-      const paymentSetups = await storage.getPaymentSetupsByRestaurant(restaurantId);
-      res.json(paymentSetups);
-    } catch (error) {
-      console.error("Error fetching payment setups:", error);
-      res.status(500).json({ message: "Failed to fetch payment setups" });
-    }
-  });
+  app.get(
+    "/api/tenants/:tenantId/restaurants/:restaurantId/payment-setups",
+    validateTenant,
+    async (req, res) => {
+      try {
+        const restaurantId = parseInt(req.params.restaurantId);
+        const tenantId = parseInt(req.params.tenantId);
 
-  app.post("/api/tenants/:tenantId/restaurants/:restaurantId/payment-setups", validateTenant, async (req, res) => {
-    try {
-      const restaurantId = parseInt(req.params.restaurantId);
-      const tenantId = parseInt(req.params.tenantId);
-      const { 
-        name, 
-        method, 
-        type, 
-        priceType, 
-        amount, 
-        currency, 
-        priceUnit, 
-        allowResidual, 
-        residualAmount, 
-        cancellationNotice, 
-        description, 
-        language 
-      } = req.body;
-      
-      if (!name || !method || !type || !amount) {
-        return res.status(400).json({ message: "Name, method, type, and amount are required" });
-      }
-      
-      // Verify restaurant belongs to tenant
-      const restaurant = await storage.getRestaurantById(restaurantId);
-      if (!restaurant || restaurant.tenantId !== tenantId) {
-        return res.status(404).json({ message: "Restaurant not found" });
-      }
-      
-      const paymentSetup = await storage.createPaymentSetup({
-        restaurantId,
-        tenantId,
-        name,
-        method,
-        type,
-        priceType: priceType || "one_price",
-        amount: parseFloat(amount),
-        currency: currency || "EUR",
-        priceUnit: priceUnit || "per_guest",
-        allowResidual: allowResidual || false,
-        residualAmount: residualAmount ? parseFloat(residualAmount) : null,
-        cancellationNotice: cancellationNotice || "24_hours",
-        description: description || null,
-        language: language || "en"
-      });
-      
-      res.status(201).json(paymentSetup);
-    } catch (error) {
-      console.error("Error creating payment setup:", error);
-      res.status(500).json({ message: "Failed to create payment setup" });
-    }
-  });
+        // Verify restaurant belongs to tenant
+        const restaurant = await storage.getRestaurantById(restaurantId);
+        if (!restaurant || restaurant.tenantId !== tenantId) {
+          return res.status(404).json({ message: "Restaurant not found" });
+        }
 
-  app.put("/api/tenants/:tenantId/restaurants/:restaurantId/payment-setups/:id", validateTenant, async (req, res) => {
-    try {
-      const id = parseInt(req.params.id);
-      const restaurantId = parseInt(req.params.restaurantId);
-      const tenantId = parseInt(req.params.tenantId);
-      const { 
-        name, 
-        method, 
-        type, 
-        priceType, 
-        amount, 
-        currency, 
-        priceUnit, 
-        allowResidual, 
-        residualAmount, 
-        cancellationNotice, 
-        description, 
-        language 
-      } = req.body;
-      
-      // Verify restaurant belongs to tenant
-      const restaurant = await storage.getRestaurantById(restaurantId);
-      if (!restaurant || restaurant.tenantId !== tenantId) {
-        return res.status(404).json({ message: "Restaurant not found" });
+        const paymentSetups =
+          await storage.getPaymentSetupsByRestaurant(restaurantId);
+        res.json(paymentSetups);
+      } catch (error) {
+        console.error("Error fetching payment setups:", error);
+        res.status(500).json({ message: "Failed to fetch payment setups" });
       }
-      
-      const updates: any = {};
-      if (name !== undefined) updates.name = name;
-      if (method !== undefined) updates.method = method;
-      if (type !== undefined) updates.type = type;
-      if (priceType !== undefined) updates.priceType = priceType;
-      if (amount !== undefined) updates.amount = parseFloat(amount);
-      if (currency !== undefined) updates.currency = currency;
-      if (priceUnit !== undefined) updates.priceUnit = priceUnit;
-      if (allowResidual !== undefined) updates.allowResidual = allowResidual;
-      if (residualAmount !== undefined) updates.residualAmount = residualAmount ? parseFloat(residualAmount) : null;
-      if (cancellationNotice !== undefined) updates.cancellationNotice = cancellationNotice;
-      if (description !== undefined) updates.description = description;
-      if (language !== undefined) updates.language = language;
-      
-      const updatedPaymentSetup = await storage.updatePaymentSetup(id, updates);
-      
-      if (!updatedPaymentSetup) {
-        return res.status(404).json({ message: "Payment setup not found" });
-      }
-      
-      res.json(updatedPaymentSetup);
-    } catch (error) {
-      console.error("Error updating payment setup:", error);
-      res.status(500).json({ message: "Failed to update payment setup" });
-    }
-  });
+    },
+  );
 
-  app.delete("/api/tenants/:tenantId/restaurants/:restaurantId/payment-setups/:id", validateTenant, async (req, res) => {
-    try {
-      const id = parseInt(req.params.id);
-      const restaurantId = parseInt(req.params.restaurantId);
-      const tenantId = parseInt(req.params.tenantId);
-      
-      // Verify restaurant belongs to tenant
-      const restaurant = await storage.getRestaurantById(restaurantId);
-      if (!restaurant || restaurant.tenantId !== tenantId) {
-        return res.status(404).json({ message: "Restaurant not found" });
+  app.post(
+    "/api/tenants/:tenantId/restaurants/:restaurantId/payment-setups",
+    validateTenant,
+    async (req, res) => {
+      try {
+        const restaurantId = parseInt(req.params.restaurantId);
+        const tenantId = parseInt(req.params.tenantId);
+        const {
+          name,
+          method,
+          type,
+          priceType,
+          amount,
+          currency,
+          priceUnit,
+          allowResidual,
+          residualAmount,
+          cancellationNotice,
+          description,
+          language,
+        } = req.body;
+
+        if (!name || !method || !type || !amount) {
+          return res
+            .status(400)
+            .json({ message: "Name, method, type, and amount are required" });
+        }
+
+        // Verify restaurant belongs to tenant
+        const restaurant = await storage.getRestaurantById(restaurantId);
+        if (!restaurant || restaurant.tenantId !== tenantId) {
+          return res.status(404).json({ message: "Restaurant not found" });
+        }
+
+        const paymentSetup = await storage.createPaymentSetup({
+          restaurantId,
+          tenantId,
+          name,
+          method,
+          type,
+          priceType: priceType || "one_price",
+          amount: parseFloat(amount),
+          currency: currency || "EUR",
+          priceUnit: priceUnit || "per_guest",
+          allowResidual: allowResidual || false,
+          residualAmount: residualAmount ? parseFloat(residualAmount) : null,
+          cancellationNotice: cancellationNotice || "24_hours",
+          description: description || null,
+          language: language || "en",
+        });
+
+        res.status(201).json(paymentSetup);
+      } catch (error) {
+        console.error("Error creating payment setup:", error);
+        res.status(500).json({ message: "Failed to create payment setup" });
       }
-      
-      await storage.deletePaymentSetup(id);
-      res.json({ message: "Payment setup deleted successfully" });
-    } catch (error) {
-      console.error("Error deleting payment setup:", error);
-      res.status(500).json({ message: "Failed to delete payment setup" });
-    }
-  });
+    },
+  );
+
+  app.put(
+    "/api/tenants/:tenantId/restaurants/:restaurantId/payment-setups/:id",
+    validateTenant,
+    async (req, res) => {
+      try {
+        const id = parseInt(req.params.id);
+        const restaurantId = parseInt(req.params.restaurantId);
+        const tenantId = parseInt(req.params.tenantId);
+        const {
+          name,
+          method,
+          type,
+          priceType,
+          amount,
+          currency,
+          priceUnit,
+          allowResidual,
+          residualAmount,
+          cancellationNotice,
+          description,
+          language,
+        } = req.body;
+
+        // Verify restaurant belongs to tenant
+        const restaurant = await storage.getRestaurantById(restaurantId);
+        if (!restaurant || restaurant.tenantId !== tenantId) {
+          return res.status(404).json({ message: "Restaurant not found" });
+        }
+
+        const updates: any = {};
+        if (name !== undefined) updates.name = name;
+        if (method !== undefined) updates.method = method;
+        if (type !== undefined) updates.type = type;
+        if (priceType !== undefined) updates.priceType = priceType;
+        if (amount !== undefined) updates.amount = parseFloat(amount);
+        if (currency !== undefined) updates.currency = currency;
+        if (priceUnit !== undefined) updates.priceUnit = priceUnit;
+        if (allowResidual !== undefined) updates.allowResidual = allowResidual;
+        if (residualAmount !== undefined)
+          updates.residualAmount = residualAmount
+            ? parseFloat(residualAmount)
+            : null;
+        if (cancellationNotice !== undefined)
+          updates.cancellationNotice = cancellationNotice;
+        if (description !== undefined) updates.description = description;
+        if (language !== undefined) updates.language = language;
+
+        const updatedPaymentSetup = await storage.updatePaymentSetup(
+          id,
+          updates,
+        );
+
+        if (!updatedPaymentSetup) {
+          return res.status(404).json({ message: "Payment setup not found" });
+        }
+
+        res.json(updatedPaymentSetup);
+      } catch (error) {
+        console.error("Error updating payment setup:", error);
+        res.status(500).json({ message: "Failed to update payment setup" });
+      }
+    },
+  );
+
+  app.delete(
+    "/api/tenants/:tenantId/restaurants/:restaurantId/payment-setups/:id",
+    validateTenant,
+    async (req, res) => {
+      try {
+        const id = parseInt(req.params.id);
+        const restaurantId = parseInt(req.params.restaurantId);
+        const tenantId = parseInt(req.params.tenantId);
+
+        // Verify restaurant belongs to tenant
+        const restaurant = await storage.getRestaurantById(restaurantId);
+        if (!restaurant || restaurant.tenantId !== tenantId) {
+          return res.status(404).json({ message: "Restaurant not found" });
+        }
+
+        await storage.deletePaymentSetup(id);
+        res.json({ message: "Payment setup deleted successfully" });
+      } catch (error) {
+        console.error("Error deleting payment setup:", error);
+        res.status(500).json({ message: "Failed to delete payment setup" });
+      }
+    },
+  );
 
   const httpServer = createServer(app);
 
@@ -13213,81 +13692,100 @@ NEXT STEPS:
   );
 
   // Purchase additional restaurant slot
-  app.post('/api/billing/purchase-additional-restaurant', attachUser, requirePermission(PERMISSIONS.MANAGE_BILLING), async (req: Request, res: Response) => {
-    if (!req.user) {
-      return res.status(401).json({ error: 'Not authenticated' });
-    }
-
-    try {
-      const tenantUser = await storage.getTenantByUserId(req.user.id);
-      if (!tenantUser) {
-        return res.status(404).json({ error: 'Tenant not found' });
+  app.post(
+    "/api/billing/purchase-additional-restaurant",
+    attachUser,
+    requirePermission(PERMISSIONS.MANAGE_BILLING),
+    async (req: Request, res: Response) => {
+      if (!req.user) {
+        return res.status(401).json({ error: "Not authenticated" });
       }
 
-      const tenant = await storage.getTenantById(tenantUser.id);
-      if (!tenant) {
-        return res.status(404).json({ error: 'Tenant not found' });
-      }
+      try {
+        const tenantUser = await storage.getTenantByUserId(req.user.id);
+        if (!tenantUser) {
+          return res.status(404).json({ error: "Tenant not found" });
+        }
 
-      // Check if user is on Enterprise plan
-      const plan = tenant.subscriptionPlanId 
-        ? await storage.getSubscriptionPlanById(tenant.subscriptionPlanId)
-        : null;
-        
-      if (!plan || !plan.name.toLowerCase().includes('enterprise')) {
-        return res.status(400).json({ error: 'Additional restaurants are only available for Enterprise plans' });
-      }
+        const tenant = await storage.getTenantById(tenantUser.id);
+        if (!tenant) {
+          return res.status(404).json({ error: "Tenant not found" });
+        }
 
-      // Get current restaurant count
-      const restaurants = await storage.getRestaurantsByTenantId(tenant.id);
-      const currentCount = restaurants.length;
-      const includedRestaurants = 3; // Enterprise includes 3 restaurants
-      
-      if (currentCount < includedRestaurants) {
-        return res.status(400).json({ error: 'You have not reached the included restaurant limit yet' });
-      }
+        // Check if user is on Enterprise plan
+        const plan = tenant.subscriptionPlanId
+          ? await storage.getSubscriptionPlanById(tenant.subscriptionPlanId)
+          : null;
 
-      // Create additional restaurant charge in Stripe
-      const additionalCost = 5000; // $50.00 in cents
-      
-      if (tenant.stripeCustomerId && tenant.stripeSubscriptionId) {
-        // Add recurring charge for additional restaurant
-        const subscriptionItem = await stripe.subscriptionItems.create({
-          subscription: tenant.stripeSubscriptionId,
-          price_data: {
-            currency: 'usd',
-            product_data: {
-              name: 'Additional Restaurant',
-              description: 'Extra restaurant slot for Enterprise plan',
+        if (!plan || !plan.name.toLowerCase().includes("enterprise")) {
+          return res
+            .status(400)
+            .json({
+              error:
+                "Additional restaurants are only available for Enterprise plans",
+            });
+        }
+
+        // Get current restaurant count
+        const restaurants = await storage.getRestaurantsByTenantId(tenant.id);
+        const currentCount = restaurants.length;
+        const includedRestaurants = 3; // Enterprise includes 3 restaurants
+
+        if (currentCount < includedRestaurants) {
+          return res
+            .status(400)
+            .json({
+              error: "You have not reached the included restaurant limit yet",
+            });
+        }
+
+        // Create additional restaurant charge in Stripe
+        const additionalCost = 5000; // $50.00 in cents
+
+        if (tenant.stripeCustomerId && tenant.stripeSubscriptionId) {
+          // Add recurring charge for additional restaurant
+          const subscriptionItem = await stripe.subscriptionItems.create({
+            subscription: tenant.stripeSubscriptionId,
+            price_data: {
+              currency: "usd",
+              product_data: {
+                name: "Additional Restaurant",
+                description: "Extra restaurant slot for Enterprise plan",
+              },
+              unit_amount: additionalCost,
+              recurring: {
+                interval: "month",
+              },
             },
-            unit_amount: additionalCost,
-            recurring: {
-              interval: 'month',
-            },
-          },
-          quantity: 1,
-        });
+            quantity: 1,
+          });
 
-        // Update tenant record
-        await storage.updateTenant(tenant.id, {
-          additionalRestaurants: (tenant.additionalRestaurants || 0) + 1,
-          additionalRestaurantsCost: (tenant.additionalRestaurantsCost || 0) + additionalCost,
-        });
+          // Update tenant record
+          await storage.updateTenant(tenant.id, {
+            additionalRestaurants: (tenant.additionalRestaurants || 0) + 1,
+            additionalRestaurantsCost:
+              (tenant.additionalRestaurantsCost || 0) + additionalCost,
+          });
 
-        res.json({
-          success: true,
-          message: 'Additional restaurant slot purchased successfully',
-          additionalCost: additionalCost / 100,
-          subscriptionItem: subscriptionItem.id,
-        });
-      } else {
-        return res.status(400).json({ error: 'No Stripe customer or subscription found' });
+          res.json({
+            success: true,
+            message: "Additional restaurant slot purchased successfully",
+            additionalCost: additionalCost / 100,
+            subscriptionItem: subscriptionItem.id,
+          });
+        } else {
+          return res
+            .status(400)
+            .json({ error: "No Stripe customer or subscription found" });
+        }
+      } catch (error) {
+        console.error("Error purchasing additional restaurant:", error);
+        res
+          .status(500)
+          .json({ error: "Failed to purchase additional restaurant slot" });
       }
-    } catch (error) {
-      console.error('Error purchasing additional restaurant:', error);
-      res.status(500).json({ error: 'Failed to purchase additional restaurant slot' });
-    }
-  });
+    },
+  );
 
   // Billing Management Routes
 
@@ -14110,16 +14608,38 @@ NEXT STEPS:
         const restaurantId = parseInt(req.params.restaurantId);
         const tenantId = parseInt(req.params.tenantId);
 
-        console.log("Menu order request body:", JSON.stringify(req.body, null, 2));
+        console.log(
+          "Menu order request body:",
+          JSON.stringify(req.body, null, 2),
+        );
 
         // Validate required fields
-        const requiredFields = ['contactName', 'contactEmail', 'contactPhone', 'shippingAddress', 'city', 'state', 'zipCode', 'quantity', 'menuTheme', 'menuLayout', 'printingOption', 'shippingOption', 'subtotal', 'shippingCost', 'tax', 'total'];
-        const missingFields = requiredFields.filter(field => !req.body[field]);
-        
+        const requiredFields = [
+          "contactName",
+          "contactEmail",
+          "contactPhone",
+          "shippingAddress",
+          "city",
+          "state",
+          "zipCode",
+          "quantity",
+          "menuTheme",
+          "menuLayout",
+          "printingOption",
+          "shippingOption",
+          "subtotal",
+          "shippingCost",
+          "tax",
+          "total",
+        ];
+        const missingFields = requiredFields.filter(
+          (field) => !req.body[field],
+        );
+
         if (missingFields.length > 0) {
           return res.status(400).json({
             success: false,
-            message: `Missing required fields: ${missingFields.join(', ')}`
+            message: `Missing required fields: ${missingFields.join(", ")}`,
           });
         }
 
@@ -14148,7 +14668,7 @@ NEXT STEPS:
           tax: Math.round(parseFloat(req.body.tax) * 100),
           total: Math.round(parseFloat(req.body.total) * 100),
           specialInstructions: req.body.specialInstructions || null,
-          orderStatus: 'pending',
+          orderStatus: "pending",
         };
 
         const order = await storage.createMenuOrder(orderData);
@@ -14161,7 +14681,9 @@ NEXT STEPS:
             estimatedDelivery.setDate(estimatedDelivery.getDate() + 7); // Default 7 days
 
             await emailService.sendEmail({
-              to: [{ email: orderData.contactEmail, name: orderData.contactName }],
+              to: [
+                { email: orderData.contactEmail, name: orderData.contactName },
+              ],
               subject: `Menu Order Confirmation - ${orderNumber}`,
               htmlContent: `
                 <html>
@@ -14213,12 +14735,16 @@ NEXT STEPS:
                         <p><strong>Estimated Delivery:</strong> ${estimatedDelivery.toLocaleDateString()}</p>
                       </div>
 
-                      ${orderData.specialInstructions ? `
+                      ${
+                        orderData.specialInstructions
+                          ? `
                         <div style="background: #f0f0f0; padding: 15px; border-radius: 8px; margin: 20px 0;">
                           <h3 style="margin-top: 0;">Special Instructions</h3>
                           <p>${orderData.specialInstructions}</p>
                         </div>
-                      ` : ''}
+                      `
+                          : ""
+                      }
 
                       <div style="background: #d1ecf1; padding: 15px; border-radius: 8px; margin: 20px 0;">
                         <h3 style="margin-top: 0; color: #0c5460;">What Happens Next?</h3>
@@ -14241,7 +14767,10 @@ NEXT STEPS:
               `,
             });
           } catch (emailError) {
-            console.error("Failed to send order confirmation email:", emailError);
+            console.error(
+              "Failed to send order confirmation email:",
+              emailError,
+            );
           }
         }
 
@@ -14257,9 +14786,9 @@ NEXT STEPS:
         });
       } catch (error) {
         console.error("Error creating menu order:", error);
-        res.status(500).json({ 
+        res.status(500).json({
           success: false,
-          message: "Failed to place menu order" 
+          message: "Failed to place menu order",
         });
       }
     },
@@ -14274,10 +14803,13 @@ NEXT STEPS:
         const restaurantId = parseInt(req.params.restaurantId);
         const tenantId = parseInt(req.params.tenantId);
 
-        const orders = await storage.getMenuOrdersByRestaurant(restaurantId, tenantId);
-        
+        const orders = await storage.getMenuOrdersByRestaurant(
+          restaurantId,
+          tenantId,
+        );
+
         // Convert cents back to dollars for response
-        const formattedOrders = orders.map(order => ({
+        const formattedOrders = orders.map((order) => ({
           ...order,
           subtotal: order.subtotal / 100,
           shippingCost: order.shippingCost / 100,
@@ -14321,7 +14853,7 @@ NEXT STEPS:
   );
 
   // Kitchen Dashboard API Routes
-  
+
   // Get kitchen orders
   app.get(
     "/api/tenants/:tenantId/restaurants/:restaurantId/kitchen/orders",
@@ -14332,7 +14864,11 @@ NEXT STEPS:
         const tenantId = parseInt(req.params.tenantId);
         const { timeRange } = req.query;
 
-        const orders = await storage.getKitchenOrders(restaurantId, tenantId, timeRange as string);
+        const orders = await storage.getKitchenOrders(
+          restaurantId,
+          tenantId,
+          timeRange as string,
+        );
         res.json(orders);
       } catch (error) {
         console.error("Error fetching kitchen orders:", error);
@@ -14351,13 +14887,13 @@ NEXT STEPS:
         const { status, actualTime, timestamp } = req.body;
 
         const updates: any = { status };
-        
-        if (status === 'preparing' && !req.body.startedAt) {
+
+        if (status === "preparing" && !req.body.startedAt) {
           updates.startedAt = new Date();
-        } else if (status === 'ready' && actualTime) {
+        } else if (status === "ready" && actualTime) {
           updates.actualTime = actualTime;
           updates.readyAt = new Date();
-        } else if (status === 'served') {
+        } else if (status === "served") {
           updates.servedAt = new Date();
         }
 
@@ -14388,7 +14924,9 @@ NEXT STEPS:
         // Convert timestamp fields to Date objects if they exist and are valid
         if (orderData.startedAt) {
           const startedDate = new Date(orderData.startedAt);
-          orderData.startedAt = isNaN(startedDate.getTime()) ? null : startedDate;
+          orderData.startedAt = isNaN(startedDate.getTime())
+            ? null
+            : startedDate;
         }
         if (orderData.readyAt) {
           const readyDate = new Date(orderData.readyAt);
@@ -14417,7 +14955,10 @@ NEXT STEPS:
         const restaurantId = parseInt(req.params.restaurantId);
         const tenantId = parseInt(req.params.tenantId);
 
-        const stations = await storage.getKitchenStations(restaurantId, tenantId);
+        const stations = await storage.getKitchenStations(
+          restaurantId,
+          tenantId,
+        );
         res.json(stations);
       } catch (error) {
         console.error("Error fetching kitchen stations:", error);
@@ -14435,7 +14976,10 @@ NEXT STEPS:
         const stationId = parseInt(req.params.stationId);
         const updates = req.body;
 
-        const updatedStation = await storage.updateKitchenStation(stationId, updates);
+        const updatedStation = await storage.updateKitchenStation(
+          stationId,
+          updates,
+        );
         res.json(updatedStation);
       } catch (error) {
         console.error("Error updating kitchen station:", error);
@@ -14538,11 +15082,17 @@ NEXT STEPS:
         const tenantId = parseInt(req.params.tenantId);
         const { timeRange } = req.query;
 
-        const metrics = await storage.calculateKitchenMetrics(restaurantId, tenantId, timeRange as string);
+        const metrics = await storage.calculateKitchenMetrics(
+          restaurantId,
+          tenantId,
+          timeRange as string,
+        );
         res.json(metrics);
       } catch (error) {
         console.error("Error calculating kitchen metrics:", error);
-        res.status(500).json({ message: "Failed to calculate kitchen metrics" });
+        res
+          .status(500)
+          .json({ message: "Failed to calculate kitchen metrics" });
       }
     },
   );
@@ -14555,19 +15105,25 @@ NEXT STEPS:
       try {
         const restaurantId = parseInt(req.params.restaurantId);
         const tenantId = parseInt(req.params.tenantId);
-        const timeRange = req.query.timeRange as string || '4h';
+        const timeRange = (req.query.timeRange as string) || "4h";
 
-        const sparklineData = await storage.getKitchenPerformanceSparkline(restaurantId, tenantId, timeRange);
+        const sparklineData = await storage.getKitchenPerformanceSparkline(
+          restaurantId,
+          tenantId,
+          timeRange,
+        );
         res.json(sparklineData);
       } catch (error) {
         console.error("Error fetching kitchen performance sparkline:", error);
-        res.status(500).json({ message: "Failed to fetch performance sparkline data" });
+        res
+          .status(500)
+          .json({ message: "Failed to fetch performance sparkline data" });
       }
     },
   );
 
   // Print Orders API Routes
-  
+
   // Create print order and payment intent
   app.post(
     "/api/tenants/:tenantId/restaurants/:restaurantId/print-orders",
@@ -14595,7 +15151,7 @@ NEXT STEPS:
           rushOrder,
           deliveryMethod,
           deliveryAddress,
-          useSavedPaymentMethod
+          useSavedPaymentMethod,
         } = req.body;
 
         // Calculate pricing based on print specifications
@@ -14604,22 +15160,30 @@ NEXT STEPS:
           flyer: { A4: 300, A3: 500, A2: 800, A1: 1200, custom: 600 },
           poster: { A4: 800, A3: 1200, A2: 1800, A1: 2500, custom: 1500 },
           banner: { A4: 1200, A3: 1800, A2: 2500, A1: 3500, custom: 2000 },
-          business_card: { A4: 200, A3: 300, A2: 400, A1: 500, custom: 250 }
+          business_card: { A4: 200, A3: 300, A2: 400, A1: 500, custom: 250 },
         };
 
         const qualityMultipliers = {
           draft: 0.8,
           standard: 1.0,
           high: 1.3,
-          premium: 1.6
+          premium: 1.6,
         };
 
         const basePrice = basePrices[printType]?.[printSize] || 1000;
         const qualityMultiplier = qualityMultipliers[printQuality] || 1.0;
         const rushMultiplier = rushOrder ? 1.5 : 1.0;
-        const deliveryFee = deliveryMethod === 'delivery' ? 500 : deliveryMethod === 'mail' ? 300 : 0;
+        const deliveryFee =
+          deliveryMethod === "delivery"
+            ? 500
+            : deliveryMethod === "mail"
+              ? 300
+              : 0;
 
-        const totalAmount = Math.round(basePrice * qualityMultiplier * rushMultiplier * quantity + deliveryFee);
+        const totalAmount = Math.round(
+          basePrice * qualityMultiplier * rushMultiplier * quantity +
+            deliveryFee,
+        );
 
         // Generate unique order number
         const orderNumber = `PO-${Date.now()}-${Math.random().toString(36).substr(2, 9).toUpperCase()}`;
@@ -14628,13 +15192,13 @@ NEXT STEPS:
         const tenant = await storage.getTenantById(tenantId);
         let paymentIntentOptions = {
           amount: totalAmount,
-          currency: 'usd',
+          currency: "usd",
           metadata: {
             orderNumber,
             restaurantId: restaurantId.toString(),
             tenantId: tenantId.toString(),
             printType,
-            quantity: quantity.toString()
+            quantity: quantity.toString(),
           },
           description: `Print Order ${orderNumber} - ${printType} (${quantity}x ${printSize})`,
           automatic_payment_methods: {
@@ -14648,21 +15212,22 @@ NEXT STEPS:
             // Get customer's payment methods
             const paymentMethods = await stripe.paymentMethods.list({
               customer: tenant.stripeCustomerId,
-              type: 'card',
+              type: "card",
             });
 
             if (paymentMethods.data.length > 0) {
               paymentIntentOptions.customer = tenant.stripeCustomerId;
-              paymentIntentOptions.setup_future_usage = 'off_session';
+              paymentIntentOptions.setup_future_usage = "off_session";
             }
           } catch (error) {
-            console.error('Error fetching payment methods:', error);
+            console.error("Error fetching payment methods:", error);
             // Continue with regular payment flow if error
           }
         }
 
         // Create Stripe payment intent
-        const paymentIntent = await stripe.paymentIntents.create(paymentIntentOptions);
+        const paymentIntent =
+          await stripe.paymentIntents.create(paymentIntentOptions);
 
         // Create print order in database
         const printOrder = await storage.createPrintOrder({
@@ -14683,7 +15248,9 @@ NEXT STEPS:
           paymentIntentId: paymentIntent.id,
           deliveryMethod,
           deliveryAddress,
-          estimatedCompletion: new Date(Date.now() + (rushOrder ? 24 : 72) * 60 * 60 * 1000) // 1-3 days
+          estimatedCompletion: new Date(
+            Date.now() + (rushOrder ? 24 : 72) * 60 * 60 * 1000,
+          ), // 1-3 days
         });
 
         // Return saved payment methods if available
@@ -14692,9 +15259,9 @@ NEXT STEPS:
           try {
             const paymentMethods = await stripe.paymentMethods.list({
               customer: tenant.stripeCustomerId,
-              type: 'card',
+              type: "card",
             });
-            savedPaymentMethods = paymentMethods.data.map(pm => ({
+            savedPaymentMethods = paymentMethods.data.map((pm) => ({
               id: pm.id,
               brand: pm.card?.brand,
               last4: pm.card?.last4,
@@ -14702,7 +15269,10 @@ NEXT STEPS:
               exp_year: pm.card?.exp_year,
             }));
           } catch (error) {
-            console.error('Error fetching payment methods for response:', error);
+            console.error(
+              "Error fetching payment methods for response:",
+              error,
+            );
           }
         }
 
@@ -14710,14 +15280,13 @@ NEXT STEPS:
           printOrder,
           clientSecret: paymentIntent.client_secret,
           totalAmount,
-          savedPaymentMethods
+          savedPaymentMethods,
         });
-
       } catch (error) {
         console.error("Error creating print order:", error);
         res.status(500).json({ message: "Failed to create print order" });
       }
-    }
+    },
   );
 
   // Get saved payment methods for tenant
@@ -14735,10 +15304,10 @@ NEXT STEPS:
 
         const paymentMethods = await stripe.paymentMethods.list({
           customer: tenant.stripeCustomerId,
-          type: 'card',
+          type: "card",
         });
 
-        const formattedMethods = paymentMethods.data.map(pm => ({
+        const formattedMethods = paymentMethods.data.map((pm) => ({
           id: pm.id,
           brand: pm.card?.brand,
           last4: pm.card?.last4,
@@ -14751,7 +15320,7 @@ NEXT STEPS:
         console.error("Error fetching payment methods:", error);
         res.status(500).json({ message: "Failed to fetch payment methods" });
       }
-    }
+    },
   );
 
   // Get print orders for restaurant
@@ -14768,14 +15337,16 @@ NEXT STEPS:
           return res.status(404).json({ message: "Restaurant not found" });
         }
 
-        const printOrders = await storage.getPrintOrdersByRestaurant(restaurantId, tenantId);
+        const printOrders = await storage.getPrintOrdersByRestaurant(
+          restaurantId,
+          tenantId,
+        );
         res.json(printOrders);
-
       } catch (error) {
         console.error("Error fetching print orders:", error);
         res.status(500).json({ message: "Failed to fetch print orders" });
       }
-    }
+    },
   );
 
   // Create payment intent for existing print order
@@ -14800,24 +15371,24 @@ NEXT STEPS:
         }
 
         // Check if order is already paid
-        if (printOrder.paymentStatus === 'paid') {
+        if (printOrder.paymentStatus === "paid") {
           return res.status(400).json({ message: "Order is already paid" });
         }
 
         // Get tenant for payment methods
         const tenant = await storage.getTenantById(tenantId);
-        
+
         // Create payment intent options
         let paymentIntentOptions = {
           amount: printOrder.totalAmount,
-          currency: 'usd',
+          currency: "usd",
           metadata: {
             orderNumber: printOrder.orderNumber,
             restaurantId: restaurantId.toString(),
             tenantId: tenantId.toString(),
             printType: printOrder.printType,
             quantity: printOrder.quantity.toString(),
-            existingOrderId: orderId.toString()
+            existingOrderId: orderId.toString(),
           },
           description: `Print Order ${printOrder.orderNumber} - ${printOrder.printType} (${printOrder.quantity}x ${printOrder.printSize})`,
           automatic_payment_methods: {
@@ -14831,11 +15402,12 @@ NEXT STEPS:
         }
 
         // Create new payment intent
-        const paymentIntent = await stripe.paymentIntents.create(paymentIntentOptions);
+        const paymentIntent =
+          await stripe.paymentIntents.create(paymentIntentOptions);
 
         // Update the print order with new payment intent ID
         await storage.updatePrintOrder(orderId, {
-          paymentIntentId: paymentIntent.id
+          paymentIntentId: paymentIntent.id,
         });
 
         // Get saved payment methods if available
@@ -14844,9 +15416,9 @@ NEXT STEPS:
           try {
             const paymentMethods = await stripe.paymentMethods.list({
               customer: tenant.stripeCustomerId,
-              type: 'card',
+              type: "card",
             });
-            savedPaymentMethods = paymentMethods.data.map(pm => ({
+            savedPaymentMethods = paymentMethods.data.map((pm) => ({
               id: pm.id,
               brand: pm.card?.brand,
               last4: pm.card?.last4,
@@ -14854,20 +15426,22 @@ NEXT STEPS:
               exp_year: pm.card?.exp_year,
             }));
           } catch (error) {
-            console.error('Error fetching payment methods:', error);
+            console.error("Error fetching payment methods:", error);
           }
         }
 
         res.json({
           clientSecret: paymentIntent.client_secret,
-          savedPaymentMethods
+          savedPaymentMethods,
         });
-
       } catch (error) {
-        console.error("Error creating payment intent for existing order:", error);
+        console.error(
+          "Error creating payment intent for existing order:",
+          error,
+        );
         res.status(500).json({ message: "Failed to create payment intent" });
       }
-    }
+    },
   );
 
   // Update print order status
@@ -14893,70 +15467,74 @@ NEXT STEPS:
         }
 
         res.json(updatedOrder);
-
       } catch (error) {
         console.error("Error updating print order:", error);
         res.status(500).json({ message: "Failed to update print order" });
       }
-    }
+    },
   );
 
   // Confirm payment and update order status
-  app.post(
-    "/api/print-orders/confirm-payment",
-    async (req, res) => {
-      try {
-        const { paymentIntentId } = req.body;
+  app.post("/api/print-orders/confirm-payment", async (req, res) => {
+    try {
+      const { paymentIntentId } = req.body;
 
-        if (!paymentIntentId) {
-          return res.status(400).json({ message: "Payment intent ID is required" });
-        }
-
-        // Retrieve payment intent from Stripe
-        const paymentIntent = await stripe.paymentIntents.retrieve(paymentIntentId);
-
-        if (paymentIntent.status === 'succeeded') {
-          // Update print order status
-          const updatedOrder = await storage.updatePrintOrderByPaymentIntent(paymentIntentId, {
-            paymentStatus: 'paid',
-            orderStatus: 'processing',
-            stripePaymentId: paymentIntent.id
-          });
-
-          if (updatedOrder) {
-            // Send confirmation email if email service is available
-            if (emailService) {
-              try {
-                await emailService.sendPrintOrderConfirmation(
-                  updatedOrder.customerEmail,
-                  updatedOrder
-                );
-              } catch (emailError) {
-                console.error("Failed to send print order confirmation email:", emailError);
-              }
-            }
-
-            res.json({
-              success: true,
-              message: "Payment confirmed successfully",
-              order: updatedOrder
-            });
-          } else {
-            res.status(404).json({ message: "Print order not found" });
-          }
-        } else {
-          res.status(400).json({ 
-            message: "Payment not successful",
-            status: paymentIntent.status 
-          });
-        }
-
-      } catch (error) {
-        console.error("Error confirming payment:", error);
-        res.status(500).json({ message: "Failed to confirm payment" });
+      if (!paymentIntentId) {
+        return res
+          .status(400)
+          .json({ message: "Payment intent ID is required" });
       }
+
+      // Retrieve payment intent from Stripe
+      const paymentIntent =
+        await stripe.paymentIntents.retrieve(paymentIntentId);
+
+      if (paymentIntent.status === "succeeded") {
+        // Update print order status
+        const updatedOrder = await storage.updatePrintOrderByPaymentIntent(
+          paymentIntentId,
+          {
+            paymentStatus: "paid",
+            orderStatus: "processing",
+            stripePaymentId: paymentIntent.id,
+          },
+        );
+
+        if (updatedOrder) {
+          // Send confirmation email if email service is available
+          if (emailService) {
+            try {
+              await emailService.sendPrintOrderConfirmation(
+                updatedOrder.customerEmail,
+                updatedOrder,
+              );
+            } catch (emailError) {
+              console.error(
+                "Failed to send print order confirmation email:",
+                emailError,
+              );
+            }
+          }
+
+          res.json({
+            success: true,
+            message: "Payment confirmed successfully",
+            order: updatedOrder,
+          });
+        } else {
+          res.status(404).json({ message: "Print order not found" });
+        }
+      } else {
+        res.status(400).json({
+          message: "Payment not successful",
+          status: paymentIntent.status,
+        });
+      }
+    } catch (error) {
+      console.error("Error confirming payment:", error);
+      res.status(500).json({ message: "Failed to confirm payment" });
     }
-  );
+  });
 
   // Delete print order
   app.delete(
@@ -14981,147 +15559,174 @@ NEXT STEPS:
 
         // Delete the print order
         await storage.deletePrintOrder(orderId);
-        
-        res.json({ message: "Print order deleted successfully" });
 
+        res.json({ message: "Print order deleted successfully" });
       } catch (error) {
         console.error("Error deleting print order:", error);
         res.status(500).json({ message: "Failed to delete print order" });
       }
-    }
+    },
   );
 
   // Public endpoint to create print order (for external customers)
-  app.post("/api/restaurants/:restaurantId/print-orders/public", async (req, res) => {
-    try {
-      const restaurantId = parseInt(req.params.restaurantId);
+  app.post(
+    "/api/restaurants/:restaurantId/print-orders/public",
+    async (req, res) => {
+      try {
+        const restaurantId = parseInt(req.params.restaurantId);
 
-      if (isNaN(restaurantId)) {
-        return res.status(400).json({ message: "Invalid restaurant ID" });
-      }
+        if (isNaN(restaurantId)) {
+          return res.status(400).json({ message: "Invalid restaurant ID" });
+        }
 
-      const restaurant = await storage.getRestaurantById(restaurantId);
-      if (!restaurant) {
-        return res.status(404).json({ message: "Restaurant not found" });
-      }
+        const restaurant = await storage.getRestaurantById(restaurantId);
+        if (!restaurant) {
+          return res.status(404).json({ message: "Restaurant not found" });
+        }
 
-      const {
-        customerName,
-        customerEmail,
-        customerPhone,
-        printType,
-        printSize,
-        printQuality,
-        quantity,
-        design,
-        specialInstructions,
-        rushOrder,
-        deliveryMethod,
-        deliveryAddress
-      } = req.body;
-
-      // Calculate pricing (same logic as authenticated endpoint)
-      const basePrices = {
-        menu: { A4: 500, A3: 800, A2: 1200, A1: 1800, custom: 1000 },
-        flyer: { A4: 300, A3: 500, A2: 800, A1: 1200, custom: 600 },
-        poster: { A4: 800, A3: 1200, A2: 1800, A1: 2500, custom: 1500 },
-        banner: { A4: 1200, A3: 1800, A2: 2500, A1: 3500, custom: 2000 },
-        business_card: { A4: 200, A3: 300, A2: 400, A1: 500, custom: 250 }
-      };
-
-      const qualityMultipliers = {
-        draft: 0.8,
-        standard: 1.0,
-        high: 1.3,
-        premium: 1.6
-      };
-
-      const basePrice = basePrices[printType]?.[printSize] || 1000;
-      const qualityMultiplier = qualityMultipliers[printQuality] || 1.0;
-      const rushMultiplier = rushOrder ? 1.5 : 1.0;
-      const deliveryFee = deliveryMethod === 'delivery' ? 500 : deliveryMethod === 'mail' ? 300 : 0;
-
-      const totalAmount = Math.round(basePrice * qualityMultiplier * rushMultiplier * quantity + deliveryFee);
-
-      // Generate unique order number
-      const orderNumber = `PO-${Date.now()}-${Math.random().toString(36).substr(2, 9).toUpperCase()}`;
-
-      // Create Stripe payment intent
-      const paymentIntent = await stripe.paymentIntents.create({
-        amount: totalAmount,
-        currency: 'usd',
-        metadata: {
-          orderNumber,
-          restaurantId: restaurantId.toString(),
-          tenantId: restaurant.tenantId.toString(),
+        const {
+          customerName,
+          customerEmail,
+          customerPhone,
           printType,
-          quantity: quantity.toString()
-        },
-        description: `Print Order ${orderNumber} - ${printType} (${quantity}x ${printSize})`
-      });
+          printSize,
+          printQuality,
+          quantity,
+          design,
+          specialInstructions,
+          rushOrder,
+          deliveryMethod,
+          deliveryAddress,
+        } = req.body;
 
-      // Create print order in database
-      const printOrder = await storage.createPrintOrder({
-        restaurantId,
-        tenantId: restaurant.tenantId,
-        orderNumber,
-        customerName,
-        customerEmail,
-        customerPhone,
-        printType,
-        printSize,
-        printQuality,
-        quantity,
-        design,
-        specialInstructions,
-        rushOrder,
-        totalAmount,
-        paymentIntentId: paymentIntent.id,
-        deliveryMethod,
-        deliveryAddress,
-        estimatedCompletion: new Date(Date.now() + (rushOrder ? 24 : 72) * 60 * 60 * 1000)
-      });
+        // Calculate pricing (same logic as authenticated endpoint)
+        const basePrices = {
+          menu: { A4: 500, A3: 800, A2: 1200, A1: 1800, custom: 1000 },
+          flyer: { A4: 300, A3: 500, A2: 800, A1: 1200, custom: 600 },
+          poster: { A4: 800, A3: 1200, A2: 1800, A1: 2500, custom: 1500 },
+          banner: { A4: 1200, A3: 1800, A2: 2500, A1: 3500, custom: 2000 },
+          business_card: { A4: 200, A3: 300, A2: 400, A1: 500, custom: 250 },
+        };
 
-      res.json({
-        printOrder,
-        clientSecret: paymentIntent.client_secret,
-        totalAmount
-      });
+        const qualityMultipliers = {
+          draft: 0.8,
+          standard: 1.0,
+          high: 1.3,
+          premium: 1.6,
+        };
 
-    } catch (error) {
-      console.error("Error creating public print order:", error);
-      res.status(500).json({ message: "Failed to create print order" });
-    }
-  });
+        const basePrice = basePrices[printType]?.[printSize] || 1000;
+        const qualityMultiplier = qualityMultipliers[printQuality] || 1.0;
+        const rushMultiplier = rushOrder ? 1.5 : 1.0;
+        const deliveryFee =
+          deliveryMethod === "delivery"
+            ? 500
+            : deliveryMethod === "mail"
+              ? 300
+              : 0;
+
+        const totalAmount = Math.round(
+          basePrice * qualityMultiplier * rushMultiplier * quantity +
+            deliveryFee,
+        );
+
+        // Generate unique order number
+        const orderNumber = `PO-${Date.now()}-${Math.random().toString(36).substr(2, 9).toUpperCase()}`;
+
+        // Create Stripe payment intent
+        const paymentIntent = await stripe.paymentIntents.create({
+          amount: totalAmount,
+          currency: "usd",
+          metadata: {
+            orderNumber,
+            restaurantId: restaurantId.toString(),
+            tenantId: restaurant.tenantId.toString(),
+            printType,
+            quantity: quantity.toString(),
+          },
+          description: `Print Order ${orderNumber} - ${printType} (${quantity}x ${printSize})`,
+        });
+
+        // Create print order in database
+        const printOrder = await storage.createPrintOrder({
+          restaurantId,
+          tenantId: restaurant.tenantId,
+          orderNumber,
+          customerName,
+          customerEmail,
+          customerPhone,
+          printType,
+          printSize,
+          printQuality,
+          quantity,
+          design,
+          specialInstructions,
+          rushOrder,
+          totalAmount,
+          paymentIntentId: paymentIntent.id,
+          deliveryMethod,
+          deliveryAddress,
+          estimatedCompletion: new Date(
+            Date.now() + (rushOrder ? 24 : 72) * 60 * 60 * 1000,
+          ),
+        });
+
+        res.json({
+          printOrder,
+          clientSecret: paymentIntent.client_secret,
+          totalAmount,
+        });
+      } catch (error) {
+        console.error("Error creating public print order:", error);
+        res.status(500).json({ message: "Failed to create print order" });
+      }
+    },
+  );
 
   // Initialize cancellation reminder service
   const cancellationReminderService = new CancellationReminderService();
   cancellationReminderService.start();
 
   // SMS Settings routes
-  app.get("/api/tenants/:tenantId/restaurants/:restaurantId/sms-settings", async (req, res) => {
-    try {
-      const { tenantId, restaurantId } = req.params;
-      const settings = await storage.getSmsSettings(parseInt(restaurantId), parseInt(tenantId));
-      res.json(settings);
-    } catch (error) {
-      console.error("Error fetching SMS settings:", error);
-      res.status(500).json({ message: "Internal server error" });
-    }
-  });
+  app.get(
+    "/api/tenants/:tenantId/restaurants/:restaurantId/sms-settings",
+    async (req, res) => {
+      try {
+        const { tenantId, restaurantId } = req.params;
+        const settings = await storage.getSmsSettings(
+          parseInt(restaurantId),
+          parseInt(tenantId),
+        );
+        res.json(settings);
+      } catch (error) {
+        console.error("Error fetching SMS settings:", error);
+        res.status(500).json({ message: "Internal server error" });
+      }
+    },
+  );
 
-  app.post("/api/tenants/:tenantId/restaurants/:restaurantId/sms-settings", async (req, res) => {
-    try {
-      const { tenantId, restaurantId } = req.params;
-      const settings = req.body;
-      
-      const savedSettings = await storage.saveSmsSettings(parseInt(restaurantId), parseInt(tenantId), settings);
-      res.json({ message: "SMS settings saved successfully", settings: savedSettings });
-    } catch (error) {
-      console.error("Error saving SMS settings:", error);
-      res.status(500).json({ message: "Internal server error" });
-    }
-  });
+  app.post(
+    "/api/tenants/:tenantId/restaurants/:restaurantId/sms-settings",
+    async (req, res) => {
+      try {
+        const { tenantId, restaurantId } = req.params;
+        const settings = req.body;
+
+        const savedSettings = await storage.saveSmsSettings(
+          parseInt(restaurantId),
+          parseInt(tenantId),
+          settings,
+        );
+        res.json({
+          message: "SMS settings saved successfully",
+          settings: savedSettings,
+        });
+      } catch (error) {
+        console.error("Error saving SMS settings:", error);
+        res.status(500).json({ message: "Internal server error" });
+      }
+    },
+  );
 
   // SMS Balance routes
   app.get("/api/tenants/:tenantId/sms-balance", async (req, res) => {
@@ -15139,13 +15744,19 @@ NEXT STEPS:
     try {
       const { tenantId } = req.params;
       const { amount } = req.body;
-      
+
       if (!amount || amount <= 0) {
         return res.status(400).json({ message: "Invalid amount" });
       }
-      
-      const updatedBalance = await storage.addSmsBalance(parseInt(tenantId), parseFloat(amount));
-      res.json({ message: "SMS balance added successfully", balance: updatedBalance });
+
+      const updatedBalance = await storage.addSmsBalance(
+        parseInt(tenantId),
+        parseFloat(amount),
+      );
+      res.json({
+        message: "SMS balance added successfully",
+        balance: updatedBalance,
+      });
     } catch (error) {
       console.error("Error adding SMS balance:", error);
       res.status(500).json({ message: "Internal server error" });
@@ -15153,93 +15764,131 @@ NEXT STEPS:
   });
 
   // SMS Test route for free testing
-  app.post("/api/tenants/:tenantId/restaurants/:restaurantId/sms-messages/test", async (req, res) => {
-    try {
-      const { tenantId, restaurantId } = req.params;
-      const { phoneNumber, message, type } = req.body;
-      
-      // For testing purposes, simulate sending SMS without actual delivery
-      const testMessage = await storage.createSmsMessage(parseInt(restaurantId), parseInt(tenantId), {
-        phoneNumber,
-        message: message || "Test SMS from ReadyTable: Your booking has been confirmed!",
-        type: type || "test",
-        cost: "0.00", // Free for testing
-      });
-      
-      // Simulate successful delivery
-      await storage.updateSmsMessageStatus(testMessage.id, "delivered");
-      
-      res.json({ 
-        message: "Test SMS sent successfully", 
-        smsMessage: testMessage,
-        note: "This is a test message - no actual SMS was sent to preserve your balance"
-      });
-    } catch (error) {
-      console.error("Error sending test SMS:", error);
-      res.status(500).json({ message: "Internal server error" });
-    }
-  });
+  app.post(
+    "/api/tenants/:tenantId/restaurants/:restaurantId/sms-messages/test",
+    async (req, res) => {
+      try {
+        const { tenantId, restaurantId } = req.params;
+        const { phoneNumber, message, type } = req.body;
+
+        // For testing purposes, simulate sending SMS without actual delivery
+        const testMessage = await storage.createSmsMessage(
+          parseInt(restaurantId),
+          parseInt(tenantId),
+          {
+            phoneNumber,
+            message:
+              message ||
+              "Test SMS from ReadyTable: Your booking has been confirmed!",
+            type: type || "test",
+            cost: "0.00", // Free for testing
+          },
+        );
+
+        // Simulate successful delivery
+        await storage.updateSmsMessageStatus(testMessage.id, "delivered");
+
+        res.json({
+          message: "Test SMS sent successfully",
+          smsMessage: testMessage,
+          note: "This is a test message - no actual SMS was sent to preserve your balance",
+        });
+      } catch (error) {
+        console.error("Error sending test SMS:", error);
+        res.status(500).json({ message: "Internal server error" });
+      }
+    },
+  );
 
   // Feedback Questions routes
-  app.get("/api/tenants/:tenantId/restaurants/:restaurantId/feedback-questions", async (req, res) => {
-    try {
-      const { tenantId, restaurantId } = req.params;
-      const questions = await storage.getFeedbackQuestions(parseInt(restaurantId), parseInt(tenantId));
-      res.json(questions);
-    } catch (error) {
-      console.error("Error fetching feedback questions:", error);
-      res.status(500).json({ message: "Internal server error" });
-    }
-  });
+  app.get(
+    "/api/tenants/:tenantId/restaurants/:restaurantId/feedback-questions",
+    async (req, res) => {
+      try {
+        const { tenantId, restaurantId } = req.params;
+        const questions = await storage.getFeedbackQuestions(
+          parseInt(restaurantId),
+          parseInt(tenantId),
+        );
+        res.json(questions);
+      } catch (error) {
+        console.error("Error fetching feedback questions:", error);
+        res.status(500).json({ message: "Internal server error" });
+      }
+    },
+  );
 
-  app.post("/api/tenants/:tenantId/restaurants/:restaurantId/feedback-questions", async (req, res) => {
-    try {
-      const { tenantId, restaurantId } = req.params;
-      const questionData = req.body;
-      
-      const question = await storage.createFeedbackQuestion(parseInt(restaurantId), parseInt(tenantId), questionData);
-      res.json(question);
-    } catch (error) {
-      console.error("Error creating feedback question:", error);
-      res.status(500).json({ message: "Internal server error" });
-    }
-  });
+  app.post(
+    "/api/tenants/:tenantId/restaurants/:restaurantId/feedback-questions",
+    async (req, res) => {
+      try {
+        const { tenantId, restaurantId } = req.params;
+        const questionData = req.body;
 
-  app.put("/api/tenants/:tenantId/restaurants/:restaurantId/feedback-questions/:id", async (req, res) => {
-    try {
-      const { id } = req.params;
-      const questionData = req.body;
-      
-      const question = await storage.updateFeedbackQuestion(parseInt(id), questionData);
-      res.json(question);
-    } catch (error) {
-      console.error("Error updating feedback question:", error);
-      res.status(500).json({ message: "Internal server error" });
-    }
-  });
+        const question = await storage.createFeedbackQuestion(
+          parseInt(restaurantId),
+          parseInt(tenantId),
+          questionData,
+        );
+        res.json(question);
+      } catch (error) {
+        console.error("Error creating feedback question:", error);
+        res.status(500).json({ message: "Internal server error" });
+      }
+    },
+  );
 
-  app.delete("/api/tenants/:tenantId/restaurants/:restaurantId/feedback-questions/:id", async (req, res) => {
-    try {
-      const { id } = req.params;
-      await storage.deleteFeedbackQuestion(parseInt(id));
-      res.json({ message: "Feedback question deleted successfully" });
-    } catch (error) {
-      console.error("Error deleting feedback question:", error);
-      res.status(500).json({ message: "Internal server error" });
-    }
-  });
+  app.put(
+    "/api/tenants/:tenantId/restaurants/:restaurantId/feedback-questions/:id",
+    async (req, res) => {
+      try {
+        const { id } = req.params;
+        const questionData = req.body;
+
+        const question = await storage.updateFeedbackQuestion(
+          parseInt(id),
+          questionData,
+        );
+        res.json(question);
+      } catch (error) {
+        console.error("Error updating feedback question:", error);
+        res.status(500).json({ message: "Internal server error" });
+      }
+    },
+  );
+
+  app.delete(
+    "/api/tenants/:tenantId/restaurants/:restaurantId/feedback-questions/:id",
+    async (req, res) => {
+      try {
+        const { id } = req.params;
+        await storage.deleteFeedbackQuestion(parseInt(id));
+        res.json({ message: "Feedback question deleted successfully" });
+      } catch (error) {
+        console.error("Error deleting feedback question:", error);
+        res.status(500).json({ message: "Internal server error" });
+      }
+    },
+  );
 
   // Feedback responses route (authenticated)
-  app.get("/api/tenants/:tenantId/restaurants/:restaurantId/feedback", validateTenant, async (req, res) => {
-    try {
-      const { tenantId, restaurantId } = req.params;
-      const feedbackData = await storage.getFeedbackResponses(parseInt(restaurantId), parseInt(tenantId));
-      res.json(feedbackData);
-    } catch (error) {
-      console.error("Error fetching feedback responses:", error);
-      res.status(500).json({ message: "Internal server error" });
-    }
-  });
+  app.get(
+    "/api/tenants/:tenantId/restaurants/:restaurantId/feedback",
+    validateTenant,
+    async (req, res) => {
+      try {
+        const { tenantId, restaurantId } = req.params;
+        const feedbackData = await storage.getFeedbackResponses(
+          parseInt(restaurantId),
+          parseInt(tenantId),
+        );
+        res.json(feedbackData);
+      } catch (error) {
+        console.error("Error fetching feedback responses:", error);
+        res.status(500).json({ message: "Internal server error" });
+      }
+    },
+  );
 
   // Public API endpoints for guest feedback access (no authentication required)
   app.get(
@@ -15247,8 +15896,10 @@ NEXT STEPS:
     async (req: Request, res: Response) => {
       try {
         const { tenantId, restaurantId } = req.params;
-        const restaurant = await storage.getRestaurantById(parseInt(restaurantId));
-        
+        const restaurant = await storage.getRestaurantById(
+          parseInt(restaurantId),
+        );
+
         if (!restaurant || restaurant.tenantId !== parseInt(tenantId)) {
           return res.status(404).json({ message: "Restaurant not found" });
         }
@@ -15260,13 +15911,15 @@ NEXT STEPS:
           description: restaurant.description,
           address: restaurant.address,
           phone: restaurant.phone,
-          email: restaurant.email
+          email: restaurant.email,
         });
       } catch (error) {
         console.error("Error fetching public restaurant info:", error);
-        res.status(500).json({ error: "Failed to fetch restaurant information" });
+        res
+          .status(500)
+          .json({ error: "Failed to fetch restaurant information" });
       }
-    }
+    },
   );
 
   app.get(
@@ -15274,21 +15927,26 @@ NEXT STEPS:
     async (req: Request, res: Response) => {
       try {
         const { tenantId, restaurantId } = req.params;
-        const restaurant = await storage.getRestaurantById(parseInt(restaurantId));
-        
+        const restaurant = await storage.getRestaurantById(
+          parseInt(restaurantId),
+        );
+
         if (!restaurant || restaurant.tenantId !== parseInt(tenantId)) {
           return res.status(404).json({ message: "Restaurant not found" });
         }
 
-        const questions = await storage.getFeedbackQuestions(parseInt(restaurantId), parseInt(tenantId));
+        const questions = await storage.getFeedbackQuestions(
+          parseInt(restaurantId),
+          parseInt(tenantId),
+        );
         // Only return active questions for guest access
-        const activeQuestions = questions.filter(q => q.isActive);
+        const activeQuestions = questions.filter((q) => q.isActive);
         res.json(activeQuestions);
       } catch (error) {
         console.error("Error fetching public feedback questions:", error);
         res.status(500).json({ error: "Failed to fetch feedback questions" });
       }
-    }
+    },
   );
 
   app.post(
@@ -15297,16 +15955,25 @@ NEXT STEPS:
       try {
         const tenantId = parseInt(req.params.tenantId);
         const restaurantId = parseInt(req.params.restaurantId);
-        
+
         const restaurant = await storage.getRestaurantById(restaurantId);
         if (!restaurant || restaurant.tenantId !== tenantId) {
           return res.status(404).json({ message: "Restaurant not found" });
         }
 
-        const { customerName, customerEmail, customerPhone, tableNumber, overallRating, questionResponses } = req.body;
+        const {
+          customerName,
+          customerEmail,
+          customerPhone,
+          tableNumber,
+          overallRating,
+          questionResponses,
+        } = req.body;
 
         // Create main feedback entry with validated rating
-        const validatedOverallRating = overallRating ? Math.min(Math.max(overallRating, 1), 5) : null;
+        const validatedOverallRating = overallRating
+          ? Math.min(Math.max(overallRating, 1), 5)
+          : null;
         const feedbackData = {
           customerName,
           customerEmail,
@@ -15331,24 +15998,26 @@ NEXT STEPS:
           source: "qr_code_guest_form",
           guestEmail: feedbackData.customerEmail,
           ipAddress: req.ip,
-          userAgent: req.get('User-Agent'),
+          userAgent: req.get("User-Agent"),
           details: {
             feedbackId: feedback.id,
             customerName: feedbackData.customerName,
             customerEmail: feedbackData.customerEmail,
             tableNumber: feedbackData.tableNumber,
             overallRating: validatedOverallRating,
-            hasQuestionResponses: !!(questionResponses && questionResponses.length > 0),
+            hasQuestionResponses: !!(
+              questionResponses && questionResponses.length > 0
+            ),
             responseCount: questionResponses ? questionResponses.length : 0,
-            accessMethod: "qr_code"
-          }
+            accessMethod: "qr_code",
+          },
         });
 
         // Store individual question responses and aggregate data
         let aggregatedRating = null;
         let aggregatedNps = null;
-        let aggregatedComments = '';
-        
+        let aggregatedComments = "";
+
         if (questionResponses && Array.isArray(questionResponses)) {
           // First, store all individual responses
           for (const response of questionResponses) {
@@ -15370,7 +16039,7 @@ NEXT STEPS:
               aggregatedNps = response.npsScore;
             }
             if (response.textResponse && response.textResponse.trim()) {
-              aggregatedComments = aggregatedComments 
+              aggregatedComments = aggregatedComments
                 ? `${aggregatedComments}; ${response.textResponse}`
                 : response.textResponse;
             }
@@ -15378,13 +16047,16 @@ NEXT STEPS:
 
           // Update the main feedback entry with aggregated data
           // Always prioritize the 5-star overall rating over individual question ratings
-          const finalRating = validatedOverallRating !== null ? validatedOverallRating : aggregatedRating;
+          const finalRating =
+            validatedOverallRating !== null
+              ? validatedOverallRating
+              : aggregatedRating;
           const updatedFeedback = await storage.updateFeedback(feedback.id, {
             rating: finalRating,
             nps: aggregatedNps,
             comments: aggregatedComments || null,
           });
-          
+
           res.json(updatedFeedback);
         } else {
           res.json(feedback);
@@ -15393,7 +16065,7 @@ NEXT STEPS:
         console.error("Error submitting public feedback:", error);
         res.status(500).json({ error: "Failed to submit feedback" });
       }
-    }
+    },
   );
 
   // Public opening hours endpoint
@@ -15402,19 +16074,23 @@ NEXT STEPS:
     async (req: Request, res: Response) => {
       try {
         const { tenantId, restaurantId } = req.params;
-        const restaurant = await storage.getRestaurantById(parseInt(restaurantId));
-        
+        const restaurant = await storage.getRestaurantById(
+          parseInt(restaurantId),
+        );
+
         if (!restaurant || restaurant.tenantId !== parseInt(tenantId)) {
           return res.status(404).json({ message: "Restaurant not found" });
         }
 
-        const openingHours = await storage.getOpeningHoursByRestaurant(parseInt(restaurantId));
+        const openingHours = await storage.getOpeningHoursByRestaurant(
+          parseInt(restaurantId),
+        );
         res.json(openingHours);
       } catch (error) {
         console.error("Error fetching public opening hours:", error);
         res.status(500).json({ error: "Failed to fetch opening hours" });
       }
-    }
+    },
   );
 
   // Public seasonal themes endpoint
@@ -15423,19 +16099,24 @@ NEXT STEPS:
     async (req: Request, res: Response) => {
       try {
         const { tenantId, restaurantId } = req.params;
-        const restaurant = await storage.getRestaurantById(parseInt(restaurantId));
-        
+        const restaurant = await storage.getRestaurantById(
+          parseInt(restaurantId),
+        );
+
         if (!restaurant || restaurant.tenantId !== parseInt(tenantId)) {
           return res.status(404).json({ message: "Restaurant not found" });
         }
 
-        const themes = await storage.getSeasonalMenuThemes(parseInt(restaurantId), parseInt(tenantId));
+        const themes = await storage.getSeasonalMenuThemes(
+          parseInt(restaurantId),
+          parseInt(tenantId),
+        );
         res.json(themes);
       } catch (error) {
         console.error("Error fetching public seasonal themes:", error);
         res.status(500).json({ error: "Failed to fetch seasonal themes" });
       }
-    }
+    },
   );
 
   // Feedback reminder endpoints
@@ -15443,11 +16124,11 @@ NEXT STEPS:
     try {
       // Manual trigger for testing feedback reminders
       console.log("Manual feedback reminder check triggered");
-      
+
       // This will be handled by the feedback reminder service
-      res.json({ 
+      res.json({
         message: "Feedback reminder check triggered successfully",
-        note: "The service will process completed bookings and send emails automatically"
+        note: "The service will process completed bookings and send emails automatically",
       });
     } catch (error) {
       console.error("Error triggering feedback reminders:", error);
@@ -15456,356 +16137,476 @@ NEXT STEPS:
   });
 
   // Send immediate feedback email for testing
-  app.post("/api/admin/tenants/:tenantId/restaurants/:restaurantId/send-feedback-email/:bookingId", async (req, res) => {
-    try {
-      const bookingId = parseInt(req.params.bookingId);
-      const restaurantId = parseInt(req.params.restaurantId);
-      const tenantId = parseInt(req.params.tenantId);
+  app.post(
+    "/api/admin/tenants/:tenantId/restaurants/:restaurantId/send-feedback-email/:bookingId",
+    async (req, res) => {
+      try {
+        const bookingId = parseInt(req.params.bookingId);
+        const restaurantId = parseInt(req.params.restaurantId);
+        const tenantId = parseInt(req.params.tenantId);
 
-      const booking = await storage.getBookingById(bookingId);
-      const restaurant = await storage.getRestaurantById(restaurantId);
+        const booking = await storage.getBookingById(bookingId);
+        const restaurant = await storage.getRestaurantById(restaurantId);
 
-      if (!booking || !restaurant || booking.restaurantId !== restaurantId || restaurant.tenantId !== tenantId) {
-        return res.status(404).json({ message: "Booking or restaurant not found" });
-      }
-
-      if (!booking.customerEmail) {
-        return res.status(400).json({ message: "No customer email available for this booking" });
-      }
-
-      // Send feedback request immediately using the existing service
-      await feedbackReminderService.sendFeedbackRequest(booking, restaurant, tenantId);
-
-      res.json({ 
-        message: "Feedback email sent successfully",
-        booking: {
-          id: booking.id,
-          customerName: booking.customerName,
-          customerEmail: booking.customerEmail,
-          bookingDate: booking.bookingDate
+        if (
+          !booking ||
+          !restaurant ||
+          booking.restaurantId !== restaurantId ||
+          restaurant.tenantId !== tenantId
+        ) {
+          return res
+            .status(404)
+            .json({ message: "Booking or restaurant not found" });
         }
-      });
-    } catch (error) {
-      console.error("Error sending feedback email:", error);
-      res.status(500).json({ message: "Failed to send feedback email" });
-    }
-  });
+
+        if (!booking.customerEmail) {
+          return res
+            .status(400)
+            .json({ message: "No customer email available for this booking" });
+        }
+
+        // Send feedback request immediately using the existing service
+        await feedbackReminderService.sendFeedbackRequest(
+          booking,
+          restaurant,
+          tenantId,
+        );
+
+        res.json({
+          message: "Feedback email sent successfully",
+          booking: {
+            id: booking.id,
+            customerName: booking.customerName,
+            customerEmail: booking.customerEmail,
+            bookingDate: booking.bookingDate,
+          },
+        });
+      } catch (error) {
+        console.error("Error sending feedback email:", error);
+        res.status(500).json({ message: "Failed to send feedback email" });
+      }
+    },
+  );
 
   // Multi-restaurant enterprise management routes
-  app.get("/api/tenants/:tenantId/restaurant-management", validateTenant, async (req, res) => {
-    try {
-      const tenantId = parseInt(req.params.tenantId);
-      
-      const tenant = await storage.getTenantById(tenantId);
-      if (!tenant) {
-        return res.status(404).json({ message: "Tenant not found" });
-      }
+  app.get(
+    "/api/tenants/:tenantId/restaurant-management",
+    validateTenant,
+    async (req, res) => {
+      try {
+        const tenantId = parseInt(req.params.tenantId);
 
-      const subscriptionPlan = await storage.getSubscriptionPlanById(tenant.subscriptionPlanId);
-      if (!subscriptionPlan) {
-        return res.status(404).json({ message: "Subscription plan not found" });
-      }
-
-      // Get all restaurants for this tenant
-      const allRestaurants = await storage.db?.select().from(restaurants).where(eq(restaurants.tenantId, tenantId)) || [];
-      const currentCount = allRestaurants.length;
-      const baseLimit = subscriptionPlan.maxRestaurants || 1;
-      const additionalCount = tenant.additionalRestaurants || 0;
-      const totalAllowed = baseLimit + additionalCount;
-
-      const managementInfo = {
-        limits: {
-          baseLimit,
-          currentCount,
-          additionalCount,
-          canCreateMore: currentCount < totalAllowed,
-          costPerAdditional: 5000,
-          totalAllowed
-        },
-        tenant: {
-          id: tenant.id,
-          name: tenant.name,
-          subscriptionPlan: subscriptionPlan.name,
-          isEnterprise: subscriptionPlan.name.toLowerCase() === "enterprise"
-        },
-        restaurants: allRestaurants.map(r => ({
-          id: r.id,
-          name: r.name,
-          createdAt: r.createdAt,
-          isActive: r.isActive ?? true
-        })),
-        pricing: {
-          additionalRestaurantCost: 50,
-          currency: "USD",
-          billingInterval: "monthly"
+        const tenant = await storage.getTenantById(tenantId);
+        if (!tenant) {
+          return res.status(404).json({ message: "Tenant not found" });
         }
-      };
 
-      res.json(managementInfo);
-    } catch (error) {
-      console.error("Error fetching restaurant management info:", error);
-      res.status(500).json({ message: "Failed to fetch restaurant management info" });
-    }
-  });
-
-  app.post("/api/tenants/:tenantId/purchase-additional-restaurant", validateTenant, async (req, res) => {
-    const tenantId = parseInt(req.params.tenantId);
-
-    if (isNaN(tenantId) || !tenantId) {
-      return res.status(400).json({ message: "Tenant ID is required and must be a valid number." });
-    }
-
-    try {
-      const tenant = await storage.getTenantById(tenantId);
-      if (!tenant) {
-        return res.status(404).json({ message: "Tenant not found" });
-      }
-
-      const subscriptionPlan = await storage.getSubscriptionPlanById(tenant.subscriptionPlanId);
-      if (!subscriptionPlan || subscriptionPlan.name.toLowerCase() !== "enterprise") {
-        return res.status(400).json({ message: "Additional restaurants are only available with Enterprise plans" });
-      }
-
-      if (!tenant.stripeCustomerId) {
-        return res.status(400).json({ message: "No payment method on file. Please add a payment method first." });
-      }
-
-      // Create additional restaurant payment logic here
-      const paymentIntent = await stripe.paymentIntents.create({
-        amount: 5000,
-        currency: "usd",
-        customer: tenant.stripeCustomerId,
-        description: `Additional restaurant for ${tenant.name}`,
-        metadata: {
-          tenantId: tenantId.toString(),
-          type: "additional_restaurant"
-        },
-        automatic_payment_methods: {
-          enabled: true
+        const subscriptionPlan = await storage.getSubscriptionPlanById(
+          tenant.subscriptionPlanId,
+        );
+        if (!subscriptionPlan) {
+          return res
+            .status(404)
+            .json({ message: "Subscription plan not found" });
         }
-      });
 
-      res.json({
-        success: true,
-        message: "Payment initiated for additional restaurant",
-        paymentIntentId: paymentIntent.id
-      });
-    } catch (error) {
-      console.error("Error processing additional restaurant purchase:", error);
-      res.status(500).json({ success: false, message: "Failed to process purchase." });
-    }
-  });
+        // Get all restaurants for this tenant
+        const allRestaurants =
+          (await storage.db
+            ?.select()
+            .from(restaurants)
+            .where(eq(restaurants.tenantId, tenantId))) || [];
+        const currentCount = allRestaurants.length;
+        const baseLimit = subscriptionPlan.maxRestaurants || 1;
+        const additionalCount = tenant.additionalRestaurants || 0;
+        const totalAllowed = baseLimit + additionalCount;
 
-  app.post("/api/tenants/:tenantId/confirm-additional-restaurant", validateTenant, async (req, res) => {
-    try {
+        const managementInfo = {
+          limits: {
+            baseLimit,
+            currentCount,
+            additionalCount,
+            canCreateMore: currentCount < totalAllowed,
+            costPerAdditional: 5000,
+            totalAllowed,
+          },
+          tenant: {
+            id: tenant.id,
+            name: tenant.name,
+            subscriptionPlan: subscriptionPlan.name,
+            isEnterprise: subscriptionPlan.name.toLowerCase() === "enterprise",
+          },
+          restaurants: allRestaurants.map((r) => ({
+            id: r.id,
+            name: r.name,
+            createdAt: r.createdAt,
+            isActive: r.isActive ?? true,
+          })),
+          pricing: {
+            additionalRestaurantCost: 50,
+            currency: "USD",
+            billingInterval: "monthly",
+          },
+        };
+
+        res.json(managementInfo);
+      } catch (error) {
+        console.error("Error fetching restaurant management info:", error);
+        res
+          .status(500)
+          .json({ message: "Failed to fetch restaurant management info" });
+      }
+    },
+  );
+
+  app.post(
+    "/api/tenants/:tenantId/purchase-additional-restaurant",
+    validateTenant,
+    async (req, res) => {
       const tenantId = parseInt(req.params.tenantId);
-      const { paymentIntentId } = req.body;
 
-      if (!paymentIntentId) {
-        return res.status(400).json({ message: "Payment intent ID is required" });
+      if (isNaN(tenantId) || !tenantId) {
+        return res
+          .status(400)
+          .json({
+            message: "Tenant ID is required and must be a valid number.",
+          });
       }
 
-      const paymentIntent = await stripe.paymentIntents.retrieve(paymentIntentId);
-      
-      if (paymentIntent.status !== "succeeded") {
-        return res.status(400).json({ 
-          message: "Payment not completed successfully" 
+      try {
+        const tenant = await storage.getTenantById(tenantId);
+        if (!tenant) {
+          return res.status(404).json({ message: "Tenant not found" });
+        }
+
+        const subscriptionPlan = await storage.getSubscriptionPlanById(
+          tenant.subscriptionPlanId,
+        );
+        if (
+          !subscriptionPlan ||
+          subscriptionPlan.name.toLowerCase() !== "enterprise"
+        ) {
+          return res
+            .status(400)
+            .json({
+              message:
+                "Additional restaurants are only available with Enterprise plans",
+            });
+        }
+
+        if (!tenant.stripeCustomerId) {
+          return res
+            .status(400)
+            .json({
+              message:
+                "No payment method on file. Please add a payment method first.",
+            });
+        }
+
+        // Create additional restaurant payment logic here
+        const paymentIntent = await stripe.paymentIntents.create({
+          amount: 5000,
+          currency: "usd",
+          customer: tenant.stripeCustomerId,
+          description: `Additional restaurant for ${tenant.name}`,
+          metadata: {
+            tenantId: tenantId.toString(),
+            type: "additional_restaurant",
+          },
+          automatic_payment_methods: {
+            enabled: true,
+          },
         });
-      }
 
-      const tenant = await storage.getTenantById(tenantId);
-      const newAdditionalCount = (tenant.additionalRestaurants || 0) + 1;
-      const newAdditionalCost = (tenant.additionalRestaurantsCost || 0) + 5000;
-
-      await storage.updateTenant(tenantId, {
-        additionalRestaurants: newAdditionalCount,
-        additionalRestaurantsCost: newAdditionalCost
-      });
-
-      res.json({
-        success: true,
-        message: "Additional restaurant purchased successfully"
-      });
-    } catch (error) {
-      console.error("Error confirming additional restaurant purchase:", error);
-      res.status(500).json({ 
-        success: false,
-        message: "Failed to confirm additional restaurant purchase" 
-      });
-    }
-  });
-
-  app.get("/api/tenants/:tenantId/can-create-restaurant", validateTenant, async (req, res) => {
-    try {
-      const tenantId = parseInt(req.params.tenantId);
-      
-      const tenant = await storage.getTenantById(tenantId);
-      if (!tenant) {
-        return res.status(404).json({ message: "Tenant not found" });
-      }
-
-      const subscriptionPlan = await storage.getSubscriptionPlanById(tenant.subscriptionPlanId);
-      if (!subscriptionPlan) {
-        return res.status(404).json({ message: "Subscription plan not found" });
-      }
-
-      console.log("CAN-CREATE DEBUG: tenant =", JSON.stringify(tenant));
-      console.log("CAN-CREATE DEBUG: subscriptionPlan =", JSON.stringify(subscriptionPlan));
-
-      const allRestaurants = await storage.db?.select().from(restaurants).where(eq(restaurants.tenantId, tenantId)) || [];
-      const currentCount = allRestaurants.length;
-      const baseLimit = subscriptionPlan.maxRestaurants || 1;
-      const additionalCount = tenant.additionalRestaurants || 0;
-      const totalAllowed = baseLimit + additionalCount;
-      
-      console.log(`CAN-CREATE DEBUG: current=${currentCount}, baseLimit=${baseLimit}, additional=${additionalCount}, totalAllowed=${totalAllowed}`);
-
-      if (currentCount < totalAllowed) {
-        res.json({ canCreate: true });
-      } else if (subscriptionPlan.name.toLowerCase() === 'enterprise') {
-        res.json({ 
-          canCreate: false, 
-          reason: 'Restaurant limit reached. You can purchase additional restaurants for $50/month each.',
-          canPurchaseMore: true
+        res.json({
+          success: true,
+          message: "Payment initiated for additional restaurant",
+          paymentIntentId: paymentIntent.id,
         });
-      } else {
-        res.json({ 
-          canCreate: false, 
-          reason: 'Additional restaurants are only available with Enterprise plans',
-          canPurchaseMore: false
-        });
+      } catch (error) {
+        console.error(
+          "Error processing additional restaurant purchase:",
+          error,
+        );
+        res
+          .status(500)
+          .json({ success: false, message: "Failed to process purchase." });
       }
-    } catch (error) {
-      console.error("Error checking restaurant creation limits:", error);
-      res.status(500).json({ message: "Failed to check restaurant limits" });
-    }
-  });
+    },
+  );
 
-  // Create restaurant endpoint
-  app.post("/api/tenants/:tenantId/restaurants", validateTenant, async (req, res) => {
-    console.log("=== RESTAURANT CREATION START ===");
-    console.log("Request body:", JSON.stringify(req.body, null, 2));
-    console.log("Tenant ID:", req.params.tenantId);
-    
-    try {
-      const tenantId = parseInt(req.params.tenantId);
-      const { name, description, address, phone, email, cuisine, userId } = req.body;
+  app.post(
+    "/api/tenants/:tenantId/confirm-additional-restaurant",
+    validateTenant,
+    async (req, res) => {
+      try {
+        const tenantId = parseInt(req.params.tenantId);
+        const { paymentIntentId } = req.body;
 
-      console.log("Parsed tenant ID:", tenantId);
-      console.log("Restaurant name:", name);
-      console.log("User ID:", userId);
+        if (!paymentIntentId) {
+          return res
+            .status(400)
+            .json({ message: "Payment intent ID is required" });
+        }
 
-      if (!name || !userId) {
-        console.log("Missing required fields - name or userId");
-        return res.status(400).json({ message: "Restaurant name and user ID are required" });
-      }
+        const paymentIntent =
+          await stripe.paymentIntents.retrieve(paymentIntentId);
 
-      // Verify tenant exists and user has permission
-      const tenant = await storage.getTenantById(tenantId);
-      if (!tenant) {
-        return res.status(404).json({ message: "Tenant not found" });
-      }
+        if (paymentIntent.status !== "succeeded") {
+          return res.status(400).json({
+            message: "Payment not completed successfully",
+          });
+        }
 
-      // Validate tenant restaurant limit using system settings
-      const restaurantLimitValidation = await SystemSettingsValidator.validateTenantRestaurantLimit(tenantId);
-      if (!restaurantLimitValidation.valid) {
-        return res.status(400).json({ message: restaurantLimitValidation.message });
-      }
-
-      const subscriptionPlan = await storage.getSubscriptionPlanById(tenant.subscriptionPlanId);
-      if (!subscriptionPlan) {
-        return res.status(404).json({ message: "Subscription plan not found" });
-      }
-
-      console.log(`DEBUG: tenant=${JSON.stringify(tenant)}`);
-      console.log(`DEBUG: subscriptionPlan=${JSON.stringify(subscriptionPlan)}`);
-
-      // Check restaurant creation limits
-      const allRestaurants = await storage.db?.select().from(restaurants).where(eq(restaurants.tenantId, tenantId)) || [];
-      const currentCount = allRestaurants.length;
-      const baseLimit = subscriptionPlan.maxRestaurants || 1;
-      const additionalCount = tenant.additionalRestaurants || 0;
-      const totalAllowed = baseLimit + additionalCount;
-      
-      console.log(`Restaurant creation check: current=${currentCount}, baseLimit=${baseLimit}, additional=${additionalCount}, totalAllowed=${totalAllowed}, planName=${subscriptionPlan.name}`);
-
-      // Check if this creation would exceed the current limit
-      const willExceedLimit = currentCount >= totalAllowed;
-      const isEnterprise = subscriptionPlan.name.toLowerCase() === 'enterprise';
-      
-      if (willExceedLimit && !isEnterprise) {
-        return res.status(400).json({ 
-          message: `Restaurant limit reached. Upgrade to Enterprise to add more restaurants.` 
-        });
-      }
-      
-      // For Enterprise customers, allow creation beyond limit with automatic billing
-      let willBeBilled = false;
-      if (willExceedLimit && isEnterprise) {
-        willBeBilled = true;
-        console.log(`Enterprise customer creating restaurant beyond limit - will be billed $50/month`);
-      }
-
-      // Create the restaurant
-      const restaurant = await storage.createRestaurant({
-        name,
-        userId,
-        tenantId,
-        email: email || null,
-        address: address || null,
-        phone: phone || null,
-        description: description || null,
-        emailSettings: JSON.stringify({})
-      });
-
-      // If this exceeds the base limit, increment additional restaurants count
-      if (willBeBilled) {
+        const tenant = await storage.getTenantById(tenantId);
         const newAdditionalCount = (tenant.additionalRestaurants || 0) + 1;
-        const newAdditionalCost = (tenant.additionalRestaurantsCost || 0) + 5000; // $50 in cents
-        
+        const newAdditionalCost =
+          (tenant.additionalRestaurantsCost || 0) + 5000;
+
         await storage.updateTenant(tenantId, {
           additionalRestaurants: newAdditionalCount,
-          additionalRestaurantsCost: newAdditionalCost
+          additionalRestaurantsCost: newAdditionalCost,
         });
-        
-        console.log(`Updated tenant ${tenantId}: additional restaurants now ${newAdditionalCount}, cost $${newAdditionalCost/100}`);
+
+        res.json({
+          success: true,
+          message: "Additional restaurant purchased successfully",
+        });
+      } catch (error) {
+        console.error(
+          "Error confirming additional restaurant purchase:",
+          error,
+        );
+        res.status(500).json({
+          success: false,
+          message: "Failed to confirm additional restaurant purchase",
+        });
       }
+    },
+  );
 
-      // Log restaurant creation
-      await logActivity({
-        restaurantId: restaurant.id,
-        tenantId: tenantId,
-        eventType: "restaurant_creation",
-        description: `New restaurant "${name}" created`,
-        source: "manual",
-        userEmail: req.user?.email,
-        userLogin: req.user?.email,
-        ipAddress: req.ip,
-        userAgent: req.get('User-Agent'),
-        details: {
-          restaurantName: name,
-          address,
-          phone,
-          email
+  app.get(
+    "/api/tenants/:tenantId/can-create-restaurant",
+    validateTenant,
+    async (req, res) => {
+      try {
+        const tenantId = parseInt(req.params.tenantId);
+
+        const tenant = await storage.getTenantById(tenantId);
+        if (!tenant) {
+          return res.status(404).json({ message: "Tenant not found" });
         }
-      });
 
-      // Return success response with billing information if applicable
-      const response = {
-        ...restaurant,
-        billing: willBeBilled ? {
-          message: "This restaurant will be billed automatically at $50/month with your subscription.",
-          additionalCost: 5000, // $50 in cents
-          totalAdditionalRestaurants: (tenant.additionalRestaurants || 0) + (willBeBilled ? 1 : 0)
-        } : null
-      };
+        const subscriptionPlan = await storage.getSubscriptionPlanById(
+          tenant.subscriptionPlanId,
+        );
+        if (!subscriptionPlan) {
+          return res
+            .status(404)
+            .json({ message: "Subscription plan not found" });
+        }
 
-      res.status(201).json(response);
-    } catch (error) {
-      console.error("Error creating restaurant:", error);
-      res.status(500).json({ message: "Internal server error" });
-    }
-  });
+        console.log("CAN-CREATE DEBUG: tenant =", JSON.stringify(tenant));
+        console.log(
+          "CAN-CREATE DEBUG: subscriptionPlan =",
+          JSON.stringify(subscriptionPlan),
+        );
+
+        const allRestaurants =
+          (await storage.db
+            ?.select()
+            .from(restaurants)
+            .where(eq(restaurants.tenantId, tenantId))) || [];
+        const currentCount = allRestaurants.length;
+        const baseLimit = subscriptionPlan.maxRestaurants || 1;
+        const additionalCount = tenant.additionalRestaurants || 0;
+        const totalAllowed = baseLimit + additionalCount;
+
+        console.log(
+          `CAN-CREATE DEBUG: current=${currentCount}, baseLimit=${baseLimit}, additional=${additionalCount}, totalAllowed=${totalAllowed}`,
+        );
+
+        if (currentCount < totalAllowed) {
+          res.json({ canCreate: true });
+        } else if (subscriptionPlan.name.toLowerCase() === "enterprise") {
+          res.json({
+            canCreate: false,
+            reason:
+              "Restaurant limit reached. You can purchase additional restaurants for $50/month each.",
+            canPurchaseMore: true,
+          });
+        } else {
+          res.json({
+            canCreate: false,
+            reason:
+              "Additional restaurants are only available with Enterprise plans",
+            canPurchaseMore: false,
+          });
+        }
+      } catch (error) {
+        console.error("Error checking restaurant creation limits:", error);
+        res.status(500).json({ message: "Failed to check restaurant limits" });
+      }
+    },
+  );
+
+  // Create restaurant endpoint
+  app.post(
+    "/api/tenants/:tenantId/restaurants",
+    validateTenant,
+    async (req, res) => {
+      console.log("=== RESTAURANT CREATION START ===");
+      console.log("Request body:", JSON.stringify(req.body, null, 2));
+      console.log("Tenant ID:", req.params.tenantId);
+
+      try {
+        const tenantId = parseInt(req.params.tenantId);
+        const { name, description, address, phone, email, cuisine, userId } =
+          req.body;
+
+        console.log("Parsed tenant ID:", tenantId);
+        console.log("Restaurant name:", name);
+        console.log("User ID:", userId);
+
+        if (!name || !userId) {
+          console.log("Missing required fields - name or userId");
+          return res
+            .status(400)
+            .json({ message: "Restaurant name and user ID are required" });
+        }
+
+        // Verify tenant exists and user has permission
+        const tenant = await storage.getTenantById(tenantId);
+        if (!tenant) {
+          return res.status(404).json({ message: "Tenant not found" });
+        }
+
+        // Validate tenant restaurant limit using system settings
+        const restaurantLimitValidation =
+          await SystemSettingsValidator.validateTenantRestaurantLimit(tenantId);
+        if (!restaurantLimitValidation.valid) {
+          return res
+            .status(400)
+            .json({ message: restaurantLimitValidation.message });
+        }
+
+        const subscriptionPlan = await storage.getSubscriptionPlanById(
+          tenant.subscriptionPlanId,
+        );
+        if (!subscriptionPlan) {
+          return res
+            .status(404)
+            .json({ message: "Subscription plan not found" });
+        }
+
+        console.log(`DEBUG: tenant=${JSON.stringify(tenant)}`);
+        console.log(
+          `DEBUG: subscriptionPlan=${JSON.stringify(subscriptionPlan)}`,
+        );
+
+        // Check restaurant creation limits
+        const allRestaurants =
+          (await storage.db
+            ?.select()
+            .from(restaurants)
+            .where(eq(restaurants.tenantId, tenantId))) || [];
+        const currentCount = allRestaurants.length;
+        const baseLimit = subscriptionPlan.maxRestaurants || 1;
+        const additionalCount = tenant.additionalRestaurants || 0;
+        const totalAllowed = baseLimit + additionalCount;
+
+        console.log(
+          `Restaurant creation check: current=${currentCount}, baseLimit=${baseLimit}, additional=${additionalCount}, totalAllowed=${totalAllowed}, planName=${subscriptionPlan.name}`,
+        );
+
+        // Check if this creation would exceed the current limit
+        const willExceedLimit = currentCount >= totalAllowed;
+        const isEnterprise =
+          subscriptionPlan.name.toLowerCase() === "enterprise";
+
+        if (willExceedLimit && !isEnterprise) {
+          return res.status(400).json({
+            message: `Restaurant limit reached. Upgrade to Enterprise to add more restaurants.`,
+          });
+        }
+
+        // For Enterprise customers, allow creation beyond limit with automatic billing
+        let willBeBilled = false;
+        if (willExceedLimit && isEnterprise) {
+          willBeBilled = true;
+          console.log(
+            `Enterprise customer creating restaurant beyond limit - will be billed $50/month`,
+          );
+        }
+
+        // Create the restaurant
+        const restaurant = await storage.createRestaurant({
+          name,
+          userId,
+          tenantId,
+          email: email || null,
+          address: address || null,
+          phone: phone || null,
+          description: description || null,
+          emailSettings: JSON.stringify({}),
+        });
+
+        // If this exceeds the base limit, increment additional restaurants count
+        if (willBeBilled) {
+          const newAdditionalCount = (tenant.additionalRestaurants || 0) + 1;
+          const newAdditionalCost =
+            (tenant.additionalRestaurantsCost || 0) + 5000; // $50 in cents
+
+          await storage.updateTenant(tenantId, {
+            additionalRestaurants: newAdditionalCount,
+            additionalRestaurantsCost: newAdditionalCost,
+          });
+
+          console.log(
+            `Updated tenant ${tenantId}: additional restaurants now ${newAdditionalCount}, cost $${newAdditionalCost / 100}`,
+          );
+        }
+
+        // Log restaurant creation
+        await logActivity({
+          restaurantId: restaurant.id,
+          tenantId: tenantId,
+          eventType: "restaurant_creation",
+          description: `New restaurant "${name}" created`,
+          source: "manual",
+          userEmail: req.user?.email,
+          userLogin: req.user?.email,
+          ipAddress: req.ip,
+          userAgent: req.get("User-Agent"),
+          details: {
+            restaurantName: name,
+            address,
+            phone,
+            email,
+          },
+        });
+
+        // Return success response with billing information if applicable
+        const response = {
+          ...restaurant,
+          billing: willBeBilled
+            ? {
+                message:
+                  "This restaurant will be billed automatically at $50/month with your subscription.",
+                additionalCost: 5000, // $50 in cents
+                totalAdditionalRestaurants:
+                  (tenant.additionalRestaurants || 0) + (willBeBilled ? 1 : 0),
+              }
+            : null,
+        };
+
+        res.status(201).json(response);
+      } catch (error) {
+        console.error("Error creating restaurant:", error);
+        res.status(500).json({ message: "Internal server error" });
+      }
+    },
+  );
 
   // Stripe invoice endpoint for print orders
   app.get("/api/stripe/invoice/:paymentId", async (req, res) => {
@@ -15816,16 +16617,18 @@ NEXT STEPS:
       const paymentIntent = await stripe.paymentIntents.retrieve(paymentId);
 
       if (!paymentIntent) {
-        return res.status(404).json({ 
+        return res.status(404).json({
           error: "Payment not found",
-          message: "Payment intent not found in Stripe"
+          message: "Payment intent not found in Stripe",
         });
       }
 
       // Get the invoice if it exists
       let invoiceUrl = null;
       if (paymentIntent.invoice) {
-        const invoice = await stripe.invoices.retrieve(paymentIntent.invoice as string);
+        const invoice = await stripe.invoices.retrieve(
+          paymentIntent.invoice as string,
+        );
         invoiceUrl = invoice.hosted_invoice_url;
       }
 
@@ -15839,14 +16642,13 @@ NEXT STEPS:
         invoiceUrl: invoiceUrl,
         receiptUrl: paymentIntent.charges?.data?.[0]?.receipt_url || null,
         description: paymentIntent.description,
-        metadata: paymentIntent.metadata
+        metadata: paymentIntent.metadata,
       });
-
     } catch (error: any) {
       console.error("Error retrieving Stripe invoice:", error);
-      res.status(500).json({ 
+      res.status(500).json({
         error: "Failed to retrieve invoice",
-        message: error.message 
+        message: error.message,
       });
     }
   });
@@ -15859,7 +16661,7 @@ NEXT STEPS:
   app.get("/api/system-settings", async (req, res) => {
     try {
       const settings = await systemSettings.getSettings();
-      
+
       // Only expose safe settings to frontend (not admin-only settings)
       const publicSettings = {
         system_name: settings.system_name,
@@ -15867,7 +16669,8 @@ NEXT STEPS:
         require_phone_for_bookings: settings.require_phone_for_bookings,
         max_advance_booking_days: settings.max_advance_booking_days,
         min_advance_booking_hours: settings.min_advance_booking_hours,
-        default_booking_duration_minutes: settings.default_booking_duration_minutes,
+        default_booking_duration_minutes:
+          settings.default_booking_duration_minutes,
         enable_calendar_integration: settings.enable_calendar_integration,
         enable_widgets: settings.enable_widgets,
         enable_kitchen_management: settings.enable_kitchen_management,
@@ -15876,7 +16679,7 @@ NEXT STEPS:
         maintenance_mode: settings.maintenance_mode,
         maintenance_message: settings.maintenance_message,
       };
-      
+
       res.json(publicSettings);
     } catch (error) {
       console.error("Error fetching system settings:", error);
@@ -15888,16 +16691,56 @@ NEXT STEPS:
   registerAdminRoutes(app);
 
   // Tenant user management routes - restricted to managers and owners only
-  app.get("/api/tenants/:tenantId/users", validateTenant, requirePermission(PERMISSIONS.VIEW_USERS), tenantRoutes.getTenantUsers);
-  app.post("/api/tenants/:tenantId/users/invite", validateTenant, requirePermission(PERMISSIONS.MANAGE_USERS), tenantRoutes.inviteTenantUser);
-  app.put("/api/tenants/:tenantId/users/:userId", validateTenant, requirePermission(PERMISSIONS.MANAGE_USERS), tenantRoutes.updateTenantUser);
-  app.delete("/api/tenants/:tenantId/users/:userId", validateTenant, requirePermission(PERMISSIONS.MANAGE_USERS), tenantRoutes.removeTenantUser);
-  app.get("/api/tenants/:tenantId/roles", validateTenant, requirePermission(PERMISSIONS.VIEW_USERS), tenantRoutes.getTenantRoles);
-  app.post("/api/tenants/:tenantId/roles", validateTenant, requirePermission(PERMISSIONS.MANAGE_USERS), tenantRoutes.createTenantRole);
-  
+  app.get(
+    "/api/tenants/:tenantId/users",
+    validateTenant,
+    requirePermission(PERMISSIONS.VIEW_USERS),
+    tenantRoutes.getTenantUsers,
+  );
+  app.post(
+    "/api/tenants/:tenantId/users/invite",
+    validateTenant,
+    requirePermission(PERMISSIONS.MANAGE_USERS),
+    tenantRoutes.inviteTenantUser,
+  );
+  app.put(
+    "/api/tenants/:tenantId/users/:userId",
+    validateTenant,
+    requirePermission(PERMISSIONS.MANAGE_USERS),
+    tenantRoutes.updateTenantUser,
+  );
+  app.delete(
+    "/api/tenants/:tenantId/users/:userId",
+    validateTenant,
+    requirePermission(PERMISSIONS.MANAGE_USERS),
+    tenantRoutes.removeTenantUser,
+  );
+  app.get(
+    "/api/tenants/:tenantId/roles",
+    validateTenant,
+    requirePermission(PERMISSIONS.VIEW_USERS),
+    tenantRoutes.getTenantRoles,
+  );
+  app.post(
+    "/api/tenants/:tenantId/roles",
+    validateTenant,
+    requirePermission(PERMISSIONS.MANAGE_USERS),
+    tenantRoutes.createTenantRole,
+  );
+
   // Role permissions management routes
-  app.get("/api/tenants/:tenantId/role-permissions", validateTenant, requirePermission(PERMISSIONS.ACCESS_USERS), tenantRoutes.getRolePermissions);
-  app.put("/api/tenants/:tenantId/role-permissions", validateTenant, requirePermission(PERMISSIONS.ACCESS_USERS), tenantRoutes.updateRolePermissionsEndpoint);
+  app.get(
+    "/api/tenants/:tenantId/role-permissions",
+    validateTenant,
+    requirePermission(PERMISSIONS.ACCESS_USERS),
+    tenantRoutes.getRolePermissions,
+  );
+  app.put(
+    "/api/tenants/:tenantId/role-permissions",
+    validateTenant,
+    requirePermission(PERMISSIONS.ACCESS_USERS),
+    tenantRoutes.updateRolePermissionsEndpoint,
+  );
 
   // User permissions endpoint for client-side permission checks
   app.get("/api/user/permissions", async (req, res) => {
@@ -15920,7 +16763,7 @@ NEXT STEPS:
       res.json({
         permissions,
         role: userRole,
-        redirect
+        redirect,
       });
     } catch (error) {
       console.error("Error getting user permissions:", error);
@@ -15929,7 +16772,10 @@ NEXT STEPS:
   });
 
   // Invitation management routes (public - no auth required)
-  app.get("/api/invitations/validate/:token", tenantRoutes.validateInvitationToken);
+  app.get(
+    "/api/invitations/validate/:token",
+    tenantRoutes.validateInvitationToken,
+  );
   app.post("/api/invitations/accept", tenantRoutes.acceptInvitation);
 
   // Register restaurant management routes (new role-based permission system)

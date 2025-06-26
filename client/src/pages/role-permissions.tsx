@@ -191,7 +191,9 @@ export default function RolePermissions() {
     isLoading,
     error: error?.message,
     enabled: !!tenantId,
-    queryKey: [`/api/tenants/${tenantId}/role-permissions`]
+    queryKey: [`/api/tenants/${tenantId}/role-permissions`],
+    rolesFromAPI: permissionsData?.roles,
+    rolesCount: permissionsData?.roles?.length
   });
 
   useEffect(() => {
@@ -376,15 +378,23 @@ export default function RolePermissions() {
     );
   }
 
-  const availableRoles = permissionsData.roles.filter(r => r.role !== 'owner');
+  const availableRoles = permissionsData.roles ? permissionsData.roles.filter(r => r.role !== 'owner') : [];
   
   // Debug roles
   console.log("🔍 ROLES DEBUG:", {
     allRoles: permissionsData.roles,
     availableRoles,
     filteredCount: availableRoles.length,
-    selectedRole
+    selectedRole,
+    permissionsDataExists: !!permissionsData,
+    rolesArray: permissionsData?.roles
   });
+
+  // Ensure we have a valid selected role
+  if (availableRoles.length > 0 && !availableRoles.find(r => r.role === selectedRole)) {
+    console.log("🔄 Setting default selected role to:", availableRoles[0].role);
+    setSelectedRole(availableRoles[0].role);
+  }
   const currentRolePermissions = rolePermissions[selectedRole] || [];
   const currentRoleRedirect = roleRedirects[selectedRole] || "dashboard";
 
@@ -428,32 +438,42 @@ export default function RolePermissions() {
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-2">
+            <div className="text-xs text-muted-foreground mb-2">
+              Found {availableRoles.length} roles
+            </div>
+            {console.log("🔍 RENDERING SIDEBAR - Available roles:", availableRoles)}
             {availableRoles.length === 0 ? (
               <div className="text-center py-4 text-muted-foreground">
-                No roles available
+                <p>No roles available</p>
+                <p className="text-xs mt-1">Total roles in data: {permissionsData?.roles?.length || 0}</p>
               </div>
             ) : (
-              availableRoles.map((role) => {
-                console.log("🔍 RENDERING ROLE:", role.role, "permissions:", rolePermissions[role.role]?.length || 0);
-                return (
-                  <Button
-                    key={role.role}
-                    variant={selectedRole === role.role ? "default" : "ghost"}
-                    className="w-full justify-start"
-                    onClick={() => {
-                      console.log("🔍 SELECTED ROLE:", role.role);
-                      setSelectedRole(role.role);
-                    }}
-                  >
-                    <div className="flex items-center justify-between w-full">
-                      <span className="capitalize">{role.role.replace('_', ' ')}</span>
-                      <Badge variant="secondary" className="ml-2">
-                        {(rolePermissions[role.role] || []).filter(p => p.startsWith('access_')).length}
-                      </Badge>
-                    </div>
-                  </Button>
-                );
-              })
+              <div className="space-y-2">
+                {availableRoles.map((role) => {
+                  console.log("🔍 RENDERING ROLE BUTTON:", role.role);
+                  const permissionCount = (rolePermissions[role.role] || []).filter(p => p.startsWith('access_')).length;
+                  return (
+                    <Button
+                      key={role.role}
+                      variant={selectedRole === role.role ? "default" : "ghost"}
+                      className="w-full justify-start text-left"
+                      onClick={() => {
+                        console.log("🔍 ROLE CLICKED:", role.role);
+                        setSelectedRole(role.role);
+                      }}
+                    >
+                      <div className="flex items-center justify-between w-full">
+                        <span className="capitalize font-medium">
+                          {role.role.replace('_', ' ')}
+                        </span>
+                        <Badge variant="secondary" className="ml-2 text-xs">
+                          {permissionCount}
+                        </Badge>
+                      </div>
+                    </Button>
+                  );
+                })}
+              </div>
             )}
           </CardContent>
         </Card>
