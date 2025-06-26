@@ -198,7 +198,7 @@ export default function RolePermissions() {
 
   useEffect(() => {
     console.log("🔍 USE_EFFECT PERMISSIONS DATA:", permissionsData);
-    if (permissionsData) {
+    if (permissionsData && permissionsData.roles && permissionsData.roles.length > 0) {
       const permissions: { [key: string]: string[] } = {};
       const redirects: { [key: string]: string } = {};
       
@@ -210,8 +210,16 @@ export default function RolePermissions() {
       console.log("🔍 SETTING ROLE PERMISSIONS:", permissions);
       console.log("🔍 SETTING ROLE REDIRECTS:", redirects);
       
-      setRolePermissions(permissions);
-      setRoleRedirects(redirects);
+      // Only update if the data has actually changed to prevent infinite loops
+      setRolePermissions(prev => {
+        const hasChanged = JSON.stringify(prev) !== JSON.stringify(permissions);
+        return hasChanged ? permissions : prev;
+      });
+      
+      setRoleRedirects(prev => {
+        const hasChanged = JSON.stringify(prev) !== JSON.stringify(redirects);
+        return hasChanged ? redirects : prev;
+      });
     }
   }, [permissionsData]);
 
@@ -293,7 +301,7 @@ export default function RolePermissions() {
     const { active, over } = event;
     setActiveId(null);
 
-    if (!over || !permissionsData) return;
+    if (!over || !permissionsData || !selectedRole) return;
 
     const activePermission = active.data.current?.permission as Permission;
     const overId = over.id as string;
@@ -303,26 +311,29 @@ export default function RolePermissions() {
     const currentRolePermissions = rolePermissions[selectedRole] || [];
     const isCurrentlyAssigned = currentRolePermissions.includes(activePermission.key);
 
-    // Handle dropping on assigned permissions zones (both pages and features)
-    if (overId === `assigned-${selectedRole}` || overId === `assigned-features-${selectedRole}`) {
-      if (!isCurrentlyAssigned) {
-        setRolePermissions(prev => ({
-          ...prev,
-          [selectedRole]: [...currentRolePermissions, activePermission.key]
-        }));
-        setHasChanges(true);
+    // Batch state updates to prevent rapid consecutive updates
+    setTimeout(() => {
+      // Handle dropping on assigned permissions zones (both pages and features)
+      if (overId === `assigned-${selectedRole}` || overId === `assigned-features-${selectedRole}`) {
+        if (!isCurrentlyAssigned) {
+          setRolePermissions(prev => ({
+            ...prev,
+            [selectedRole]: [...(prev[selectedRole] || []), activePermission.key]
+          }));
+          setHasChanges(true);
+        }
       }
-    }
-    // Handle dropping on available permissions zones (both pages and features)
-    else if (overId === `available-${selectedRole}` || overId === `available-features-${selectedRole}`) {
-      if (isCurrentlyAssigned) {
-        setRolePermissions(prev => ({
-          ...prev,
-          [selectedRole]: currentRolePermissions.filter(p => p !== activePermission.key)
-        }));
-        setHasChanges(true);
+      // Handle dropping on available permissions zones (both pages and features)
+      else if (overId === `available-${selectedRole}` || overId === `available-features-${selectedRole}`) {
+        if (isCurrentlyAssigned) {
+          setRolePermissions(prev => ({
+            ...prev,
+            [selectedRole]: (prev[selectedRole] || []).filter(p => p !== activePermission.key)
+          }));
+          setHasChanges(true);
+        }
       }
-    }
+    }, 0);
   };
 
   if (!tenantId) {
