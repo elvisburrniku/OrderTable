@@ -438,43 +438,54 @@ export default function RolePermissions() {
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-2">
-            <div className="text-xs text-muted-foreground mb-2">
-              Found {availableRoles.length} roles
+            <div className="text-xs text-muted-foreground mb-2 bg-yellow-100 p-2 rounded">
+              DEBUG: Found {availableRoles.length} roles | Total API: {permissionsData?.roles?.length || 0}
             </div>
             {console.log("🔍 RENDERING SIDEBAR - Available roles:", availableRoles)}
-            {availableRoles.length === 0 ? (
-              <div className="text-center py-4 text-muted-foreground">
-                <p>No roles available</p>
-                <p className="text-xs mt-1">Total roles in data: {permissionsData?.roles?.length || 0}</p>
-              </div>
-            ) : (
-              <div className="space-y-2">
-                {availableRoles.map((role) => {
+            
+            {/* Force visible test buttons */}
+            <div className="space-y-1 mb-4">
+              <div className="text-xs font-bold text-red-600">TEST BUTTONS (should always show):</div>
+              <Button className="w-full bg-red-500 text-white">Manager (Test)</Button>
+              <Button className="w-full bg-blue-500 text-white">Agent (Test)</Button>
+              <Button className="w-full bg-green-500 text-white">Kitchen Staff (Test)</Button>
+            </div>
+            
+            <div className="space-y-2 border-2 border-purple-500 p-2 rounded">
+              <div className="text-xs font-bold text-purple-600">ACTUAL ROLE BUTTONS:</div>
+              {availableRoles.length === 0 ? (
+                <div className="text-center py-4 text-muted-foreground border border-dashed rounded-lg">
+                  <p>No roles available</p>
+                  <p className="text-xs mt-1">Total roles in data: {permissionsData?.roles?.length || 0}</p>
+                </div>
+              ) : (
+                availableRoles.map((role) => {
                   console.log("🔍 RENDERING ROLE BUTTON:", role.role);
                   const permissionCount = (rolePermissions[role.role] || []).filter(p => p.startsWith('access_')).length;
                   return (
                     <Button
                       key={role.role}
-                      variant={selectedRole === role.role ? "default" : "ghost"}
-                      className="w-full justify-start text-left"
+                      variant={selectedRole === role.role ? "default" : "outline"}
+                      className="w-full justify-between bg-card text-card-foreground border hover:bg-accent hover:text-accent-foreground transition-colors"
                       onClick={() => {
                         console.log("🔍 ROLE CLICKED:", role.role);
                         setSelectedRole(role.role);
                       }}
                     >
-                      <div className="flex items-center justify-between w-full">
-                        <span className="capitalize font-medium">
-                          {role.role.replace('_', ' ')}
-                        </span>
-                        <Badge variant="secondary" className="ml-2 text-xs">
-                          {permissionCount}
-                        </Badge>
-                      </div>
+                      <span className="capitalize font-medium text-left">
+                        {role.role.replace('_', ' ')}
+                      </span>
+                      <Badge 
+                        variant={selectedRole === role.role ? "secondary" : "default"} 
+                        className="ml-2 text-xs bg-background text-foreground"
+                      >
+                        {permissionCount}
+                      </Badge>
                     </Button>
                   );
-                })}
-              </div>
-            )}
+                })
+              )}
+            </div>
           </CardContent>
         </Card>
 
