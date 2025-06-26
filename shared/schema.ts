@@ -762,8 +762,7 @@ export const menuPrintOrders = pgTable("menu_print_orders", {
   restaurantId: integer("restaurant_id").notNull().references(() => restaurants.id, { onDelete: "cascade" }),
   tenantId: integer("tenant_id").notNull().references(() => tenants.id, { onDelete: "cascade" }),
   orderNumber: text("order_number").notNull().unique(),
-  printingOption: text("printing_option").notNull(), // standard,```text
-premium, deluxe, luxury
+  printingOption: text("printing_option").notNull(), // standard, premium, deluxe, luxury
   shippingOption: text("shipping_option").notNull(), // standard, expedited, overnight
   quantity: integer("quantity").notNull(),
   menuTheme: text("menu_theme").notNull(),
