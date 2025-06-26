@@ -1189,45 +1189,199 @@ export default function BillingPage() {
                 </Collapsible>
               </motion.div>
 
-              {/* Invoice List */}
+              {/* Enhanced Invoice Table */}
               <motion.div 
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.5, delay: 0.7 }}
-                className="space-y-4"
+                className="bg-white rounded-xl border-2 border-gray-100 overflow-hidden shadow-sm"
               >
-                {invoicesLoading ? (
-                  <div className="flex items-center justify-center py-12">
-                    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900"></div>
-                    <span className="ml-2 text-gray-600">Loading invoices...</span>
-                  </div>
-                ) : paginatedInvoices.length === 0 ? (
-                  <div className="text-center py-12">
-                    <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                      <FileText className="w-8 h-8 text-gray-400" />
-                    </div>
-                    <h3 className="text-lg font-semibold text-gray-900 mb-2">No invoices found</h3>
-                    <p className="text-gray-500">
-                      {searchTerm || statusFilter !== 'all' || dateFilter !== 'all' 
-                        ? "Try adjusting your filters" 
-                        : "Your invoices will appear here"}
-                    </p>
-                  </div>
-                ) : (
-                  <AnimatePresence>
-                    {paginatedInvoices.map((invoice: Invoice, index: number) => (
-                      <motion.div 
-                        key={invoice.id}
-                        initial={{ opacity: 0, y: 10 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        exit={{ opacity: 0, y: -10 }}
-                        transition={{ duration: 0.3, delay: index * 0.05 }}
-                      >
-                        <InvoiceRow invoice={invoice} />
-                      </motion.div>
-                    ))}
-                  </AnimatePresence>
-                )}
+                <div className="overflow-x-auto">
+                  <table className="w-full">
+                    <thead>
+                      <tr className="bg-gray-50 border-b border-gray-200">
+                        <th className="text-left py-3 px-4 text-xs font-medium text-gray-500 uppercase tracking-wider">
+                          Invoice ID
+                        </th>
+                        <th className="text-left py-3 px-4 text-xs font-medium text-gray-500 uppercase tracking-wider">
+                          Amount
+                        </th>
+                        <th className="text-left py-3 px-4 text-xs font-medium text-gray-500 uppercase tracking-wider">
+                          Status
+                        </th>
+                        <th className="text-left py-3 px-4 text-xs font-medium text-gray-500 uppercase tracking-wider">
+                          Date Created
+                        </th>
+                        <th className="text-left py-3 px-4 text-xs font-medium text-gray-500 uppercase tracking-wider">
+                          Service Period
+                        </th>
+                        <th className="text-left py-3 px-4 text-xs font-medium text-gray-500 uppercase tracking-wider">
+                          Actions
+                        </th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-gray-100">
+                      {invoicesLoading ? (
+                        <tr>
+                          <td colSpan={6} className="py-12 text-center">
+                            <div className="flex flex-col items-center space-y-4">
+                              <div className="animate-spin rounded-full h-8 w-8 border-2 border-gray-900 border-t-transparent"></div>
+                              <span className="text-gray-500 font-medium">Loading invoices...</span>
+                            </div>
+                          </td>
+                        </tr>
+                      ) : paginatedInvoices.length === 0 ? (
+                        <tr>
+                          <td colSpan={6} className="py-12 text-center">
+                            <div className="flex flex-col items-center space-y-4">
+                              <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center">
+                                <FileText className="w-8 h-8 text-gray-400" />
+                              </div>
+                              <div>
+                                <h3 className="text-gray-900 font-medium">No invoices found</h3>
+                                <p className="text-gray-500 text-sm mt-1">
+                                  {searchTerm || statusFilter !== 'all' || dateFilter !== 'all' 
+                                    ? "Try adjusting your filters" 
+                                    : "Your invoices will appear here"}
+                                </p>
+                              </div>
+                            </div>
+                          </td>
+                        </tr>
+                      ) : (
+                        paginatedInvoices.map((invoice: Invoice, index: number) => (
+                          <motion.tr 
+                            key={invoice.id}
+                            initial={{ opacity: 0, y: 10 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            transition={{ duration: 0.3, delay: index * 0.05 }}
+                            className={`group hover:bg-blue-50 transition-all duration-200 cursor-pointer ${
+                              index % 2 === 0 ? 'bg-white' : 'bg-gray-50/50'
+                            }`}
+                            onClick={() => handleViewInvoiceDetails(invoice)}
+                          >
+                            <td className="py-3 px-4">
+                              <div className="flex items-center">
+                                <span className="text-blue-600 font-semibold text-sm bg-blue-50 px-2 py-1 rounded-md">
+                                  #{invoice.number}
+                                </span>
+                              </div>
+                            </td>
+                            <td className="py-3 px-4">
+                              <div className="space-y-1">
+                                <div className="font-semibold text-lg text-gray-900">
+                                  ${(invoice.amount_paid / 100).toFixed(2)}
+                                </div>
+                                <div className="text-xs text-gray-500 uppercase tracking-wide">
+                                  {invoice.currency}
+                                </div>
+                              </div>
+                            </td>
+                            <td className="py-3 px-4">
+                              {(() => {
+                                const getStatusBadge = (status: string) => {
+                                  switch (status) {
+                                    case "paid":
+                                      return (
+                                        <span className="bg-green-500 text-white px-2 py-1 rounded-full text-xs font-medium flex items-center space-x-1">
+                                          <CheckCircle className="h-3 w-3" />
+                                          <span>Paid</span>
+                                        </span>
+                                      );
+                                    case "open":
+                                      return (
+                                        <span className="bg-yellow-500 text-white px-2 py-1 rounded-full text-xs font-medium flex items-center space-x-1">
+                                          <Clock className="h-3 w-3" />
+                                          <span>Open</span>
+                                        </span>
+                                      );
+                                    case "void":
+                                      return <span className="bg-gray-500 text-white px-2 py-1 rounded-full text-xs font-medium">Void</span>;
+                                    default:
+                                      return <span className="bg-gray-500 text-white px-2 py-1 rounded-full text-xs font-medium">{status}</span>;
+                                  }
+                                };
+                                return getStatusBadge(invoice.status);
+                              })()}
+                            </td>
+                            <td className="py-3 px-4">
+                              <div className="space-y-1">
+                                <div className="font-medium text-gray-900">
+                                  {format(new Date(invoice.created * 1000), "MMM dd, yyyy")}
+                                </div>
+                                <div className="text-sm text-gray-500 flex items-center">
+                                  <Clock className="w-3 h-3 mr-1" />
+                                  {format(new Date(invoice.created * 1000), "HH:mm")}
+                                </div>
+                              </div>
+                            </td>
+                            <td className="py-3 px-4">
+                              {invoice.period_start && invoice.period_end ? (
+                                <div className="text-sm text-gray-600 flex items-center">
+                                  <CalendarIcon className="w-3 h-3 mr-1" />
+                                  <span>
+                                    {format(new Date(invoice.period_start * 1000), "MMM dd")} - {format(new Date(invoice.period_end * 1000), "MMM dd, yyyy")}
+                                  </span>
+                                </div>
+                              ) : (
+                                <span className="text-sm text-gray-400">-</span>
+                              )}
+                            </td>
+                            <td className="py-3 px-4">
+                              <div className="flex items-center space-x-2 opacity-60 group-hover:opacity-100 transition-opacity">
+                                <Button
+                                  variant="outline"
+                                  size="sm"
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    handleViewInvoiceDetails(invoice);
+                                  }}
+                                  className="h-8 w-8 p-0"
+                                >
+                                  <Eye className="h-4 w-4" />
+                                </Button>
+                                {invoice.hosted_invoice_url && (
+                                  <Button 
+                                    variant="outline" 
+                                    size="sm" 
+                                    asChild 
+                                    className="h-8 w-8 p-0 hover:bg-gray-50"
+                                    onClick={(e) => e.stopPropagation()}
+                                  >
+                                    <a
+                                      href={invoice.hosted_invoice_url}
+                                      target="_blank"
+                                      rel="noopener noreferrer"
+                                    >
+                                      <Globe className="h-3 w-3" />
+                                    </a>
+                                  </Button>
+                                )}
+                                {invoice.invoice_pdf && (
+                                  <Button 
+                                    variant="outline" 
+                                    size="sm" 
+                                    asChild 
+                                    className="h-8 w-8 p-0 hover:bg-gray-50"
+                                    onClick={(e) => e.stopPropagation()}
+                                  >
+                                    <a
+                                      href={invoice.invoice_pdf}
+                                      target="_blank"
+                                      rel="noopener noreferrer"
+                                    >
+                                      <Download className="h-3 w-3" />
+                                    </a>
+                                  </Button>
+                                )}
+                              </div>
+                            </td>
+                          </motion.tr>
+                        ))
+                      )}
+                    </tbody>
+                  </table>
+                </div>
               </motion.div>
 
               {/* Pagination */}
