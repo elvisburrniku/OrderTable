@@ -428,21 +428,33 @@ export default function RolePermissions() {
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-2">
-            {availableRoles.map((role) => (
-              <Button
-                key={role.role}
-                variant={selectedRole === role.role ? "default" : "ghost"}
-                className="w-full justify-start"
-                onClick={() => setSelectedRole(role.role)}
-              >
-                <div className="flex items-center justify-between w-full">
-                  <span className="capitalize">{role.role.replace('_', ' ')}</span>
-                  <Badge variant="secondary" className="ml-2">
-                    {(rolePermissions[role.role] || []).filter(p => p.startsWith('access_')).length}
-                  </Badge>
-                </div>
-              </Button>
-            ))}
+            {availableRoles.length === 0 ? (
+              <div className="text-center py-4 text-muted-foreground">
+                No roles available
+              </div>
+            ) : (
+              availableRoles.map((role) => {
+                console.log("🔍 RENDERING ROLE:", role.role, "permissions:", rolePermissions[role.role]?.length || 0);
+                return (
+                  <Button
+                    key={role.role}
+                    variant={selectedRole === role.role ? "default" : "ghost"}
+                    className="w-full justify-start"
+                    onClick={() => {
+                      console.log("🔍 SELECTED ROLE:", role.role);
+                      setSelectedRole(role.role);
+                    }}
+                  >
+                    <div className="flex items-center justify-between w-full">
+                      <span className="capitalize">{role.role.replace('_', ' ')}</span>
+                      <Badge variant="secondary" className="ml-2">
+                        {(rolePermissions[role.role] || []).filter(p => p.startsWith('access_')).length}
+                      </Badge>
+                    </div>
+                  </Button>
+                );
+              })
+            )}
           </CardContent>
         </Card>
 
