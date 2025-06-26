@@ -699,6 +699,6 @@ export function setupTenantRoutes(app: any) {
   app.delete("/api/tenant/:tenantId/users/:userId", removeUserFromTenant);
   
   // Role permissions management (users with access_users permission)
-  app.get("/api/tenants/:tenantId/role-permissions", requirePermission(PERMISSIONS.ACCESS_USERS), getRolePermissions);
-  app.put("/api/tenants/:tenantId/role-permissions", requirePermission(PERMISSIONS.ACCESS_USERS), updateRolePermissionsEndpoint);
+  app.get("/api/tenants/:tenantId/role-permissions", validateTenant, requirePermission(PERMISSIONS.ACCESS_USERS), getRolePermissions);
+  app.put("/api/tenants/:tenantId/role-permissions", validateTenant, requirePermission(PERMISSIONS.ACCESS_USERS), updateRolePermissionsEndpoint);
 }

@@ -187,22 +187,31 @@ export function requirePermission(permission: string) {
       const sessionTenant = (req as any).session?.tenant;
 
       if (!sessionUser || !sessionTenant) {
-        return res.status(401).json({ error: "Authentication required" });
+        return res.status(401).json({ 
+          error: "Authentication required",
+          message: "Please log in to access this resource" 
+        });
       }
 
       const hasAccess = await hasPermission(sessionUser.id, sessionTenant.id, permission);
       
       if (!hasAccess) {
+        const userRole = await getUserRole(sessionUser.id, sessionTenant.id);
         return res.status(403).json({ 
           error: "Access denied", 
-          message: "You don't have permission to perform this action" 
+          message: `Your role (${userRole}) does not have permission to access this resource`,
+          requiredPermission: permission,
+          userRole: userRole
         });
       }
 
       next();
     } catch (error) {
       console.error("Permission check error:", error);
-      res.status(500).json({ error: "Internal server error" });
+      res.status(500).json({ 
+        error: "Internal server error",
+        message: "An error occurred while checking permissions" 
+      });
     }
   };
 }

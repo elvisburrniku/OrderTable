@@ -55,8 +55,9 @@ export default function RolePermissions() {
   const [roleRedirects, setRoleRedirects] = useState<{ [key: string]: string }>({});
   const [hasChanges, setHasChanges] = useState(false);
 
-  const { data: permissionsData, isLoading } = useQuery<RolePermissionsData>({
+  const { data: permissionsData, isLoading, error } = useQuery<RolePermissionsData>({
     queryKey: ["/api/tenants/3/role-permissions"],
+    retry: false,
   });
 
   useEffect(() => {
@@ -147,6 +148,31 @@ export default function RolePermissions() {
     return (
       <div className="flex items-center justify-center h-64">
         <div className="animate-spin w-8 h-8 border-4 border-primary border-t-transparent rounded-full" />
+      </div>
+    );
+  }
+
+  if (error) {
+    const errorData = error as any;
+    if (errorData?.status === 403) {
+      return (
+        <div className="text-center py-8">
+          <div className="max-w-md mx-auto">
+            <Shield className="h-16 w-16 mx-auto text-muted-foreground mb-4" />
+            <h2 className="text-xl font-semibold mb-2">Access Denied</h2>
+            <p className="text-muted-foreground mb-4">
+              You don't have permission to manage role permissions. Contact your administrator for access.
+            </p>
+            <p className="text-sm text-muted-foreground">
+              Required permission: User Management
+            </p>
+          </div>
+        </div>
+      );
+    }
+    return (
+      <div className="text-center py-8">
+        <p className="text-muted-foreground">Failed to load permissions data.</p>
       </div>
     );
   }
