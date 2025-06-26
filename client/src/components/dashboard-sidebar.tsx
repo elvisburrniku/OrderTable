@@ -159,6 +159,12 @@ export default function DashboardSidebar({
       color: "text-purple-600",
     },
     {
+      name: "Users",
+      icon: Users,
+      href: `/${tenantId}/users`,
+      color: "text-blue-600",
+    },
+    {
       name: "Menu Management",
       icon: ChefHat,
       href: `/${tenantId}/menu-management`,
