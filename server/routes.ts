@@ -687,6 +687,75 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Get role permissions for tenant management
+  app.get("/api/tenants/:tenantId/role-permissions", validateTenant, async (req, res) => {
+    try {
+      const tenantId = parseInt(req.params.tenantId);
+      const sessionUser = (req as any).session?.user;
+      const sessionTenant = (req as any).session?.tenant;
+
+      if (!sessionUser || !sessionTenant) {
+        return res.status(401).json({ error: "Authentication required" });
+      }
+
+      // Check if user has permission to manage users/roles
+      const userRole = await getUserRole(sessionUser.id, tenantId);
+      const permissions = await getUserPermissions(sessionUser.id, tenantId);
+      
+      if (!permissions.includes(PERMISSIONS.ACCESS_USERS)) {
+        return res.status(403).json({ 
+          error: "Access denied",
+          message: "You don't have permission to manage role permissions" 
+        });
+      }
+
+      // Get all role permissions data
+      const rolePermissionsData = await storage.getRolePermissionsData(tenantId);
+      
+      res.json(rolePermissionsData);
+    } catch (error) {
+      console.error("Error getting role permissions:", error);
+      res.status(500).json({ error: "Internal server error" });
+    }
+  });
+
+  // Update role permissions
+  app.put("/api/tenants/:tenantId/role-permissions", validateTenant, async (req, res) => {
+    try {
+      const tenantId = parseInt(req.params.tenantId);
+      const sessionUser = (req as any).session?.user;
+      const sessionTenant = (req as any).session?.tenant;
+      const { role, permissions, redirect } = req.body;
+
+      if (!sessionUser || !sessionTenant) {
+        return res.status(401).json({ error: "Authentication required" });
+      }
+
+      // Check if user has permission to manage users/roles
+      const userPermissions = await getUserPermissions(sessionUser.id, tenantId);
+      
+      if (!userPermissions.includes(PERMISSIONS.MANAGE_USERS)) {
+        return res.status(403).json({ 
+          error: "Access denied",
+          message: "You don't have permission to update role permissions" 
+        });
+      }
+
+      // Update role permissions
+      await storage.updateRolePermissions(tenantId, role, permissions, redirect);
+      
+      res.json({ 
+        message: "Role permissions updated successfully",
+        role,
+        permissions,
+        redirect
+      });
+    } catch (error) {
+      console.error("Error updating role permissions:", error);
+      res.status(500).json({ error: "Internal server error" });
+    }
+  });
+
   // User password change route
   app.put("/api/users/:userId/change-password", async (req, res) => {
     try {

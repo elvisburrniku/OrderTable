@@ -11,6 +11,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { useToast } from "@/hooks/use-toast";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { apiRequest } from "@/lib/queryClient";
+import { useTenant } from "@/lib/tenant";
 import { Settings, Users, Shield, ArrowRight, Save, RotateCcw } from "lucide-react";
 
 interface Permission {
@@ -50,13 +51,15 @@ const redirectOptions = [
 export default function RolePermissions() {
   const { toast } = useToast();
   const queryClient = useQueryClient();
+  const { tenantId } = useTenant();
   const [selectedRole, setSelectedRole] = useState<string>("manager");
   const [rolePermissions, setRolePermissions] = useState<{ [key: string]: string[] }>({});
   const [roleRedirects, setRoleRedirects] = useState<{ [key: string]: string }>({});
   const [hasChanges, setHasChanges] = useState(false);
 
   const { data: permissionsData, isLoading, error } = useQuery<RolePermissionsData>({
-    queryKey: ["/api/user/tenant/role-permissions"],
+    queryKey: [`/api/tenants/${tenantId}/role-permissions`],
+    enabled: !!tenantId,
     retry: false,
   });
 
@@ -77,7 +80,7 @@ export default function RolePermissions() {
 
   const updatePermissionsMutation = useMutation({
     mutationFn: async (data: { role: string; permissions: string[]; redirect: string }) => {
-      return apiRequest("PUT", "/api/user/tenant/role-permissions", data);
+      return apiRequest("PUT", `/api/tenants/${tenantId}/role-permissions`, data);
     },
     onSuccess: () => {
       toast({
@@ -85,7 +88,7 @@ export default function RolePermissions() {
         description: "Role permissions have been updated successfully.",
       });
       setHasChanges(false);
-      queryClient.invalidateQueries({ queryKey: ["/api/user/tenant/role-permissions"] });
+      queryClient.invalidateQueries({ queryKey: [`/api/tenants/${tenantId}/role-permissions`] });
     },
     onError: (error: any) => {
       toast({
@@ -143,6 +146,14 @@ export default function RolePermissions() {
       setHasChanges(false);
     }
   };
+
+  if (!tenantId) {
+    return (
+      <div className="text-center py-8">
+        <p className="text-muted-foreground">No tenant context available. Please refresh the page.</p>
+      </div>
+    );
+  }
 
   if (isLoading) {
     return (
