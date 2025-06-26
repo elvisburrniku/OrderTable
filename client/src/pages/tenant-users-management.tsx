@@ -68,14 +68,23 @@ export default function TenantUsersManagement({ tenantId }: TenantUsersManagemen
 
   // Fetch tenant users
   const { data: users, isLoading: usersLoading } = useQuery<TenantUser[]>({
-    queryKey: ["/api/tenants", tenantId, "users"],
+    queryKey: [`/api/tenants/${tenantId}/users`],
     enabled: !!tenantId,
   });
 
   // Fetch available roles
-  const { data: roles, isLoading: rolesLoading } = useQuery<Role[]>({
-    queryKey: ["/api/tenants", tenantId, "roles"],
+  const { data: roles, isLoading: rolesLoading, error: rolesError } = useQuery<Role[]>({
+    queryKey: [`/api/tenants/${tenantId}/roles`],
     enabled: !!tenantId,
+  });
+
+  // Debug logging
+  console.log("TenantUsersManagement Debug:", {
+    tenantId,
+    rolesLoading,
+    rolesError,
+    roles,
+    rolesLength: roles?.length
   });
 
   // Form setup
@@ -109,7 +118,7 @@ export default function TenantUsersManagement({ tenantId }: TenantUsersManagemen
       });
       inviteForm.reset();
       setInviteDialogOpen(false);
-      queryClient.invalidateQueries({ queryKey: ["/api/tenants", tenantId, "users"] });
+      queryClient.invalidateQueries({ queryKey: [`/api/tenants/${tenantId}/users`] });
     },
     onError: (error: Error) => {
       toast({
@@ -133,7 +142,7 @@ export default function TenantUsersManagement({ tenantId }: TenantUsersManagemen
       updateForm.reset();
       setEditDialogOpen(false);
       setEditingUser(null);
-      queryClient.invalidateQueries({ queryKey: ["/api/tenants", tenantId, "users"] });
+      queryClient.invalidateQueries({ queryKey: [`/api/tenants/${tenantId}/users`] });
     },
     onError: (error: Error) => {
       toast({
@@ -153,7 +162,7 @@ export default function TenantUsersManagement({ tenantId }: TenantUsersManagemen
         title: "User Removed",
         description: "User has been successfully removed from the team.",
       });
-      queryClient.invalidateQueries({ queryKey: ["/api/tenants", tenantId, "users"] });
+      queryClient.invalidateQueries({ queryKey: [`/api/tenants/${tenantId}/users`] });
     },
     onError: (error: Error) => {
       toast({
