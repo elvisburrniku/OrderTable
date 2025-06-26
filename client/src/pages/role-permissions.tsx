@@ -161,6 +161,15 @@ export default function RolePermissions() {
   const [hasChanges, setHasChanges] = useState(false);
   const [activeId, setActiveId] = useState<string | null>(null);
 
+  // Debug state
+  console.log("🔍 ROLE PERMISSIONS DEBUG:", {
+    tenantId,
+    selectedRole,
+    rolePermissions,
+    roleRedirects,
+    hasChanges
+  });
+
   // Drag and drop sensors
   const sensors = useSensors(
     useSensor(PointerSensor, {
@@ -176,7 +185,17 @@ export default function RolePermissions() {
     retry: false,
   });
 
+  // Debug API response
+  console.log("🔍 API RESPONSE DEBUG:", {
+    permissionsData,
+    isLoading,
+    error: error?.message,
+    enabled: !!tenantId,
+    queryKey: [`/api/tenants/${tenantId}/role-permissions`]
+  });
+
   useEffect(() => {
+    console.log("🔍 USE_EFFECT PERMISSIONS DATA:", permissionsData);
     if (permissionsData) {
       const permissions: { [key: string]: string[] } = {};
       const redirects: { [key: string]: string } = {};
@@ -185,6 +204,9 @@ export default function RolePermissions() {
         permissions[role.role] = role.permissions;
         redirects[role.role] = role.redirect;
       });
+      
+      console.log("🔍 SETTING ROLE PERMISSIONS:", permissions);
+      console.log("🔍 SETTING ROLE REDIRECTS:", redirects);
       
       setRolePermissions(permissions);
       setRoleRedirects(redirects);
@@ -343,6 +365,7 @@ export default function RolePermissions() {
   }
 
   if (!permissionsData) {
+    console.log("🚨 NO PERMISSIONS DATA - Component will show error");
     return (
       <div className="text-center py-8">
         <p className="text-muted-foreground">Failed to load permissions data.</p>
@@ -351,6 +374,14 @@ export default function RolePermissions() {
   }
 
   const availableRoles = permissionsData.roles.filter(r => r.role !== 'owner');
+  
+  // Debug roles
+  console.log("🔍 ROLES DEBUG:", {
+    allRoles: permissionsData.roles,
+    availableRoles,
+    filteredCount: availableRoles.length,
+    selectedRole
+  });
   const currentRolePermissions = rolePermissions[selectedRole] || [];
   const currentRoleRedirect = roleRedirects[selectedRole] || "dashboard";
 
