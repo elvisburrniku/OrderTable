@@ -930,6 +930,8 @@ export default function ConflictResolutionSystem({
         </TabsContent>
       </Tabs>
 
+      </Tabs>
+
       {/* Conflict Detail Dialog */}
       <Dialog open={!!selectedConflict} onOpenChange={() => setSelectedConflict(null)}>
         <DialogContent className="max-w-4xl max-h-[80vh] overflow-y-auto">
@@ -1059,7 +1061,6 @@ export default function ConflictResolutionSystem({
           )}
         </DialogContent>
       </Dialog>
-      </Tabs>
       </motion.div>
     </motion.div>
   );
