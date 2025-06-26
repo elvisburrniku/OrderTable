@@ -63,6 +63,7 @@ import {
   Users,
   Timer,
   Crown,
+  Settings,
 } from "lucide-react";
 import { format } from "date-fns";
 import { motion, AnimatePresence } from "framer-motion";
@@ -1094,295 +1095,313 @@ export default function BillingPage() {
               </CardDescription>
             </CardHeader>
             <CardContent>
-              {/* Filters */}
-              <motion.div 
-                initial={{ opacity: 0, y: 10 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.5, delay: 0.6 }}
-                className="space-y-4 mb-6"
-              >
-                <Collapsible open={showFilters} onOpenChange={setShowFilters}>
-                  <CollapsibleTrigger asChild>
-                    <Button 
-                      variant="outline" 
-                      className="flex items-center space-x-2"
-                    >
-                      <Filter className="w-4 h-4" />
-                      <span>Filters</span>
-                      <ChevronDown className={`w-4 h-4 transition-transform ${showFilters ? 'rotate-180' : ''}`} />
-                    </Button>
-                  </CollapsibleTrigger>
+              {/* Filter Controls Bar - Bookings Style */}
+              <div className="flex items-center justify-between">
+                <div className="flex items-center space-x-4">
+                  <Collapsible open={showFilters} onOpenChange={setShowFilters}>
+                    <CollapsibleTrigger asChild>
+                      <Button 
+                        variant="outline" 
+                        className="h-10 px-4 border-2 border-gray-200 hover:border-green-500 hover:bg-green-50 transition-all duration-200 flex items-center space-x-2 font-medium"
+                      >
+                        <Filter className="w-4 h-4" />
+                        <span>Filters</span>
+                        {(statusFilter !== 'all' || dateFilter !== 'all' || searchTerm) && (
+                          <span className="bg-green-500 text-white text-xs px-2 py-0.5 rounded-full ml-1">
+                            {[statusFilter !== 'all', dateFilter !== 'all', searchTerm].filter(Boolean).length}
+                          </span>
+                        )}
+                        <ChevronDown className={`w-4 h-4 transform transition-transform duration-200 ${showFilters ? 'rotate-180' : ''}`} />
+                      </Button>
+                    </CollapsibleTrigger>
 
-                  <CollapsibleContent className="mt-4">
-                    <motion.div
-                      initial={{ opacity: 0, scale: 0.95 }}
-                      animate={{ opacity: 1, scale: 1 }}
-                      transition={{ duration: 0.3 }}
-                      className="bg-gray-50 rounded-lg p-4"
-                    >
-                      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                        <div className="relative">
-                          <Search className="w-4 h-4 text-gray-400 absolute left-3 top-1/2 transform -translate-y-1/2" />
-                          <Input
-                            placeholder="Search invoices..."
-                            value={searchTerm}
-                            onChange={(e) => setSearchTerm(e.target.value)}
-                            className="pl-10"
-                          />
-                        </div>
-
-                        <Select value={statusFilter} onValueChange={setStatusFilter}>
-                          <SelectTrigger>
-                            <SelectValue placeholder="All Statuses" />
-                          </SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value="all">All Statuses</SelectItem>
-                            <SelectItem value="paid">Paid</SelectItem>
-                            <SelectItem value="open">Open</SelectItem>
-                            <SelectItem value="void">Void</SelectItem>
-                          </SelectContent>
-                        </Select>
-
-                        <Select value={dateFilter} onValueChange={setDateFilter}>
-                          <SelectTrigger>
-                            <SelectValue placeholder="All Time" />
-                          </SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value="all">All Time</SelectItem>
-                            <SelectItem value="last30">Last 30 Days</SelectItem>
-                            <SelectItem value="last90">Last 90 Days</SelectItem>
-                            <SelectItem value="thisYear">This Year</SelectItem>
-                          </SelectContent>
-                        </Select>
-                      </div>
-
-                      {(statusFilter !== 'all' || dateFilter !== 'all' || searchTerm) && (
-                        <div className="flex items-center justify-between mt-4 pt-4 border-t border-gray-200">
-                          <div className="flex items-center space-x-2 text-sm text-gray-600">
-                            <span>Active filters:</span>
-                            {searchTerm && (
-                              <Badge variant="secondary">Search: "{searchTerm}"</Badge>
-                            )}
-                            {statusFilter !== 'all' && (
-                              <Badge variant="secondary">Status: {statusFilter}</Badge>
-                            )}
-                            {dateFilter !== 'all' && (
-                              <Badge variant="secondary">Date: {dateFilter}</Badge>
-                            )}
+                    <CollapsibleContent className="mt-4">
+                      <div className="bg-gray-50 rounded-xl p-6 border-2 border-gray-100">
+                        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                          {/* Search Input */}
+                          <div className="relative">
+                            <label className="block text-sm font-medium text-gray-700 mb-2">Search</label>
+                            <div className="relative">
+                              <Search className="w-4 h-4 text-gray-400 absolute left-3 top-1/2 transform -translate-y-1/2" />
+                              <Input
+                                placeholder="Search by invoice number..."
+                                value={searchTerm}
+                                onChange={(e) => setSearchTerm(e.target.value)}
+                                className="pl-10 h-11 border-2 border-gray-200 focus:border-green-500 focus:ring-0 rounded-lg transition-all duration-200"
+                              />
+                            </div>
                           </div>
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={() => {
-                              setSearchTerm("");
-                              setStatusFilter("all");
-                              setDateFilter("all");
-                            }}
-                            className="text-gray-500 hover:text-gray-700"
-                          >
-                            Clear filters
-                          </Button>
-                        </div>
-                      )}
-                    </motion.div>
-                  </CollapsibleContent>
-                </Collapsible>
-              </motion.div>
 
-              {/* Enhanced Invoice Table */}
-              <motion.div 
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.5, delay: 0.7 }}
-                className="bg-white rounded-xl border-2 border-gray-100 overflow-hidden shadow-sm"
-              >
-                <div className="overflow-x-auto">
-                  <table className="w-full">
-                    <thead>
-                      <tr className="bg-gray-50 border-b border-gray-200">
-                        <th className="text-left py-3 px-4 text-xs font-medium text-gray-500 uppercase tracking-wider">
-                          Invoice ID
-                        </th>
-                        <th className="text-left py-3 px-4 text-xs font-medium text-gray-500 uppercase tracking-wider">
-                          Amount
-                        </th>
-                        <th className="text-left py-3 px-4 text-xs font-medium text-gray-500 uppercase tracking-wider">
-                          Status
-                        </th>
-                        <th className="text-left py-3 px-4 text-xs font-medium text-gray-500 uppercase tracking-wider">
-                          Date Created
-                        </th>
-                        <th className="text-left py-3 px-4 text-xs font-medium text-gray-500 uppercase tracking-wider">
-                          Service Period
-                        </th>
-                        <th className="text-left py-3 px-4 text-xs font-medium text-gray-500 uppercase tracking-wider">
-                          Actions
-                        </th>
-                      </tr>
-                    </thead>
-                    <tbody className="divide-y divide-gray-100">
-                      {invoicesLoading ? (
-                        <tr>
-                          <td colSpan={6} className="py-12 text-center">
-                            <div className="flex flex-col items-center space-y-4">
-                              <div className="animate-spin rounded-full h-8 w-8 border-2 border-green-500 border-t-transparent"></div>
-                              <span className="text-gray-500 font-medium">Loading invoices...</span>
-                            </div>
-                          </td>
-                        </tr>
-                      ) : paginatedInvoices.length === 0 ? (
-                        <tr>
-                          <td colSpan={6} className="py-12 text-center">
-                            <div className="flex flex-col items-center space-y-4">
-                              <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center">
-                                <FileText className="w-8 h-8 text-gray-400" />
-                              </div>
-                              <div>
-                                <h3 className="text-gray-900 font-medium">No invoices found</h3>
-                                <p className="text-gray-500 text-sm mt-1">
-                                  {searchTerm || statusFilter !== 'all' || dateFilter !== 'all' 
-                                    ? "Try adjusting your filters" 
-                                    : "Your invoices will appear here"}
-                                </p>
-                              </div>
-                            </div>
-                          </td>
-                        </tr>
-                      ) : (
-                        paginatedInvoices.map((invoice: Invoice, index: number) => (
-                          <motion.tr 
-                            key={invoice.id}
-                            initial={{ opacity: 0, y: 10 }}
-                            animate={{ opacity: 1, y: 0 }}
-                            transition={{ duration: 0.3, delay: index * 0.05 }}
-                            className={`group hover:bg-blue-50 transition-all duration-200 cursor-pointer ${
-                              index % 2 === 0 ? 'bg-white' : 'bg-gray-50/50'
-                            }`}
-                            onClick={() => handleViewInvoiceDetails(invoice)}
-                          >
-                            <td className="py-3 px-4">
-                              <div className="flex items-center">
-                                <span className="text-blue-600 font-semibold text-sm bg-blue-50 px-2 py-1 rounded-md">
-                                  #{invoice.number}
+                          {/* Status Filter */}
+                          <div>
+                            <label className="block text-sm font-medium text-gray-700 mb-2">Status</label>
+                            <Select value={statusFilter} onValueChange={setStatusFilter}>
+                              <SelectTrigger className="h-11 border-2 border-gray-200 focus:border-green-500 rounded-lg transition-all duration-200">
+                                <SelectValue placeholder="All Status" />
+                              </SelectTrigger>
+                              <SelectContent className="rounded-lg border-2 border-gray-200">
+                                <SelectItem value="all" className="rounded-md">All Status</SelectItem>
+                                <SelectItem value="paid" className="rounded-md">
+                                  <div className="flex items-center space-x-2">
+                                    <div className="w-2 h-2 bg-green-500 rounded-full"></div>
+                                    <span>Paid</span>
+                                  </div>
+                                </SelectItem>
+                                <SelectItem value="open" className="rounded-md">
+                                  <div className="flex items-center space-x-2">
+                                    <div className="w-2 h-2 bg-yellow-500 rounded-full"></div>
+                                    <span>Open</span>
+                                  </div>
+                                </SelectItem>
+                                <SelectItem value="void" className="rounded-md">
+                                  <div className="flex items-center space-x-2">
+                                    <div className="w-2 h-2 bg-gray-500 rounded-full"></div>
+                                    <span>Void</span>
+                                  </div>
+                                </SelectItem>
+                              </SelectContent>
+                            </Select>
+                          </div>
+
+                          {/* Date Filter */}
+                          <div>
+                            <label className="block text-sm font-medium text-gray-700 mb-2">Time Period</label>
+                            <Select value={dateFilter} onValueChange={setDateFilter}>
+                              <SelectTrigger className="h-11 border-2 border-gray-200 focus:border-green-500 rounded-lg transition-all duration-200">
+                                <SelectValue placeholder="All Time" />
+                              </SelectTrigger>
+                              <SelectContent className="rounded-lg border-2 border-gray-200">
+                                <SelectItem value="all" className="rounded-md">All Time</SelectItem>
+                                <SelectItem value="last30" className="rounded-md">
+                                  <div className="flex items-center space-x-2">
+                                    <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
+                                    <span>Last 30 Days</span>
+                                  </div>
+                                </SelectItem>
+                                <SelectItem value="last90" className="rounded-md">
+                                  <div className="flex items-center space-x-2">
+                                    <div className="w-2 h-2 bg-purple-500 rounded-full"></div>
+                                    <span>Last 90 Days</span>
+                                  </div>
+                                </SelectItem>
+                                <SelectItem value="thisYear" className="rounded-md">
+                                  <div className="flex items-center space-x-2">
+                                    <div className="w-2 h-2 bg-orange-500 rounded-full"></div>
+                                    <span>This Year</span>
+                                  </div>
+                                </SelectItem>
+                              </SelectContent>
+                            </Select>
+                          </div>
+                        </div>
+
+                        {/* Filter Actions */}
+                        {(statusFilter !== 'all' || dateFilter !== 'all' || searchTerm) && (
+                          <div className="flex items-center justify-between mt-4 pt-4 border-t border-gray-200">
+                            <div className="flex items-center space-x-2 text-sm text-gray-600">
+                              <span>Active filters:</span>
+                              {searchTerm && (
+                                <span className="bg-green-100 text-green-800 px-2 py-1 rounded-md text-xs font-medium">
+                                  Search: "{searchTerm}"
                                 </span>
-                              </div>
-                            </td>
-                            <td className="py-3 px-4">
-                              <div className="space-y-1">
-                                <div className="font-semibold text-lg text-gray-900">
-                                  ${(invoice.amount_paid / 100).toFixed(2)}
-                                </div>
-                                <div className="text-xs text-gray-500 uppercase tracking-wide">
-                                  {invoice.currency}
-                                </div>
-                              </div>
-                            </td>
-                            <td className="py-3 px-4">
-                              {(() => {
-                                const getStatusBadge = (status: string) => {
-                                  switch (status) {
-                                    case "paid":
-                                      return (
-                                        <span className="bg-green-500 text-white px-2 py-1 rounded-full text-xs font-medium flex items-center space-x-1">
-                                          <CheckCircle className="h-3 w-3" />
-                                          <span>Paid</span>
-                                        </span>
-                                      );
-                                    case "open":
-                                      return (
-                                        <span className="bg-yellow-500 text-white px-2 py-1 rounded-full text-xs font-medium flex items-center space-x-1">
-                                          <Clock className="h-3 w-3" />
-                                          <span>Open</span>
-                                        </span>
-                                      );
-                                    case "void":
-                                      return <span className="bg-gray-500 text-white px-2 py-1 rounded-full text-xs font-medium">Void</span>;
-                                    default:
-                                      return <span className="bg-gray-500 text-white px-2 py-1 rounded-full text-xs font-medium">{status}</span>;
-                                  }
-                                };
-                                return getStatusBadge(invoice.status);
-                              })()}
-                            </td>
-                            <td className="py-3 px-4">
-                              <div className="space-y-1">
-                                <div className="font-medium text-gray-900">
-                                  {format(new Date(invoice.created * 1000), "MMM dd, yyyy")}
-                                </div>
-                                <div className="text-sm text-gray-500 flex items-center">
-                                  <Clock className="w-3 h-3 mr-1" />
-                                  {format(new Date(invoice.created * 1000), "HH:mm")}
-                                </div>
-                              </div>
-                            </td>
-                            <td className="py-3 px-4">
-                              {invoice.period_start && invoice.period_end ? (
-                                <div className="text-sm text-gray-600 flex items-center">
-                                  <CalendarIcon className="w-3 h-3 mr-1" />
-                                  <span>
-                                    {format(new Date(invoice.period_start * 1000), "MMM dd")} - {format(new Date(invoice.period_end * 1000), "MMM dd, yyyy")}
-                                  </span>
-                                </div>
-                              ) : (
-                                <span className="text-sm text-gray-400">-</span>
                               )}
-                            </td>
-                            <td className="py-3 px-4">
-                              <div className="flex items-center space-x-2 opacity-60 group-hover:opacity-100 transition-opacity">
-                                <Button
-                                  variant="outline"
-                                  size="sm"
-                                  onClick={(e) => {
-                                    e.stopPropagation();
-                                    handleViewInvoiceDetails(invoice);
-                                  }}
-                                  className="h-8 w-8 p-0"
-                                >
-                                  <Eye className="h-4 w-4" />
-                                </Button>
-                                {invoice.hosted_invoice_url && (
-                                  <Button 
-                                    variant="outline" 
-                                    size="sm" 
-                                    asChild 
-                                    className="h-8 w-8 p-0 hover:bg-gray-50"
-                                    onClick={(e) => e.stopPropagation()}
-                                  >
-                                    <a
-                                      href={invoice.hosted_invoice_url}
-                                      target="_blank"
-                                      rel="noopener noreferrer"
-                                    >
-                                      <Globe className="h-3 w-3" />
-                                    </a>
-                                  </Button>
-                                )}
-                                {invoice.invoice_pdf && (
-                                  <Button 
-                                    variant="outline" 
-                                    size="sm" 
-                                    asChild 
-                                    className="h-8 w-8 p-0 hover:bg-gray-50"
-                                    onClick={(e) => e.stopPropagation()}
-                                  >
-                                    <a
-                                      href={invoice.invoice_pdf}
-                                      target="_blank"
-                                      rel="noopener noreferrer"
-                                    >
-                                      <Download className="h-3 w-3" />
-                                    </a>
-                                  </Button>
-                                )}
-                              </div>
-                            </td>
-                          </motion.tr>
-                        ))
-                      )}
-                    </tbody>
-                  </table>
+                              {statusFilter !== 'all' && (
+                                <span className="bg-blue-100 text-blue-800 px-2 py-1 rounded-md text-xs font-medium">
+                                  Status: {statusFilter}
+                                </span>
+                              )}
+                              {dateFilter !== 'all' && (
+                                <span className="bg-purple-100 text-purple-800 px-2 py-1 rounded-md text-xs font-medium">
+                                  Date: {dateFilter}
+                                </span>
+                              )}
+                            </div>
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => {
+                                setSearchTerm("");
+                                setStatusFilter("all");
+                                setDateFilter("all");
+                              }}
+                              className="text-gray-500 hover:text-gray-700 hover:bg-gray-100"
+                            >
+                              Clear all
+                            </Button>
+                          </div>
+                        )}
+                      </div>
+                    </CollapsibleContent>
+                  </Collapsible>
                 </div>
-              </motion.div>
+              </div>
+
+            {/* Invoice Table with Bookings-style Design */}
+            <motion.div 
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.5, delay: 0.7 }}
+              className="bg-white rounded-xl border-2 border-gray-100 overflow-hidden shadow-sm"
+            >
+              <div className="overflow-x-auto">
+                <table className="w-full">
+                  <thead>
+                    <tr className="bg-gray-50 border-b border-gray-200">
+                      <th className="text-left py-3 px-4 text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Invoice ID
+                      </th>
+                      <th className="text-left py-3 px-4 text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Amount
+                      </th>
+                      <th className="text-left py-3 px-4 text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Status
+                      </th>
+                      <th className="text-left py-3 px-4 text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Date Created
+                      </th>
+                      <th className="text-left py-3 px-4 text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Service Period
+                      </th>
+                      <th className="text-left py-3 px-4 text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Actions
+                      </th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-gray-100">
+                    {invoicesLoading ? (
+                      <tr>
+                        <td colSpan={6} className="py-12 text-center">
+                          <div className="flex flex-col items-center space-y-4">
+                            <div className="animate-spin rounded-full h-8 w-8 border-2 border-green-500 border-t-transparent"></div>
+                            <span className="text-gray-500 font-medium">Loading invoices...</span>
+                          </div>
+                        </td>
+                      </tr>
+                    ) : paginatedInvoices.length === 0 ? (
+                      <tr>
+                        <td colSpan={6} className="py-12 text-center">
+                          <div className="flex flex-col items-center space-y-4">
+                            <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center">
+                              <FileText className="w-8 h-8 text-gray-400" />
+                            </div>
+                            <div>
+                              <h3 className="text-gray-900 font-medium">No invoices found</h3>
+                              <p className="text-gray-500 text-sm mt-1">
+                                {searchTerm || statusFilter !== 'all' || dateFilter !== 'all' 
+                                  ? "Try adjusting your filters" 
+                                  : "Your invoices will appear here"}
+                              </p>
+                            </div>
+                          </div>
+                        </td>
+                      </tr>
+                    ) : (
+                      paginatedInvoices.map((invoice: Invoice, index: number) => (
+                        <motion.tr 
+                          key={invoice.id}
+                          initial={{ opacity: 0, y: 10 }}
+                          animate={{ opacity: 1, y: 0 }}
+                          transition={{ duration: 0.3, delay: index * 0.05 }}
+                          className={`group hover:bg-blue-50 transition-all duration-200 cursor-pointer ${
+                            index % 2 === 0 ? 'bg-white' : 'bg-gray-50/50'
+                          }`}
+                          onClick={() => handleViewInvoiceDetails(invoice)}
+                        >
+                          <td className="py-3 px-4">
+                            <div className="flex items-center">
+                              <span className="text-blue-600 font-semibold text-sm">
+                                #{invoice.number}
+                              </span>
+                            </div>
+                          </td>
+                          <td className="py-3 px-4">
+                            <div className="space-y-1">
+                              <div className="font-semibold text-gray-900">
+                                ${(invoice.amount_paid / 100).toFixed(2)}
+                              </div>
+                              <div className="text-xs text-gray-500 uppercase tracking-wide">
+                                {invoice.currency}
+                              </div>
+                            </div>
+                          </td>
+                          <td className="py-3 px-4">
+                            {(() => {
+                              const getStatusBadge = (status: string) => {
+                                switch (status) {
+                                  case "paid":
+                                    return (
+                                      <span className="bg-green-500 text-white px-2 py-1 rounded-full text-xs font-medium">
+                                        Paid
+                                      </span>
+                                    );
+                                  case "open":
+                                    return (
+                                      <span className="bg-yellow-500 text-white px-2 py-1 rounded-full text-xs font-medium">
+                                        Open
+                                      </span>
+                                    );
+                                  case "void":
+                                    return <span className="bg-gray-500 text-white px-2 py-1 rounded-full text-xs font-medium">Void</span>;
+                                  default:
+                                    return <span className="bg-gray-500 text-white px-2 py-1 rounded-full text-xs font-medium">{status}</span>;
+                                }
+                              };
+                              return getStatusBadge(invoice.status);
+                            })()}
+                          </td>
+                          <td className="py-3 px-4">
+                            <div className="text-gray-900">
+                              {format(new Date(invoice.created * 1000), "M/d/yyyy")}
+                            </div>
+                          </td>
+                          <td className="py-3 px-4">
+                            {invoice.period_start && invoice.period_end ? (
+                              <div className="text-sm text-gray-600">
+                                {format(new Date(invoice.period_start * 1000), "M/d/yyyy")} - {format(new Date(invoice.period_end * 1000), "M/d/yyyy")}
+                              </div>
+                            ) : (
+                              <span className="text-sm text-gray-400">-</span>
+                            )}
+                          </td>
+                          <td className="py-3 px-4">
+                            <div className="flex items-center space-x-2">
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  handleViewInvoiceDetails(invoice);
+                                }}
+                                className="h-8 w-8 p-0"
+                              >
+                                <Eye className="h-4 w-4" />
+                              </Button>
+                              {invoice.invoice_pdf && (
+                                <Button 
+                                  variant="outline" 
+                                  size="sm" 
+                                  asChild 
+                                  className="h-8 w-8 p-0"
+                                  onClick={(e) => e.stopPropagation()}
+                                >
+                                  <a
+                                    href={invoice.invoice_pdf}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                  >
+                                    <Download className="h-3 w-3" />
+                                  </a>
+                                </Button>
+                              )}
+                            </div>
+                          </td>
+                        </motion.tr>
+                      ))
+                    )}
+                  </tbody>
+                </table>
+              </div>
+            </motion.div>
 
               {/* Pagination */}
               {totalPages > 1 && (
