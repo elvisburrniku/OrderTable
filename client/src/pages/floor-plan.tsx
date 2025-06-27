@@ -1,23 +1,48 @@
-import { useState } from 'react';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { useAuth } from '@/lib/auth';
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { apiRequest } from '@/lib/queryClient';
-import { useToast } from '@/hooks/use-toast';
-import { 
-  Move, RotateCw, Save, Undo, Redo, Grid, Download, Upload,
-  Square, Circle, Home, DoorOpen, Eye, PlusCircle, Trash2
-} from 'lucide-react';
-import { Slider } from '@/components/ui/slider';
+import { useState } from "react";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { useAuth } from "@/lib/auth";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { apiRequest } from "@/lib/queryClient";
+import { useToast } from "@/hooks/use-toast";
+import {
+  Move,
+  RotateCw,
+  Save,
+  Undo,
+  Redo,
+  Grid,
+  Download,
+  Upload,
+  Square,
+  Circle,
+  Home,
+  DoorOpen,
+  Eye,
+  PlusCircle,
+  Trash2,
+} from "lucide-react";
+import { Slider } from "@/components/ui/slider";
 
 interface FloorPlanElement {
   id: string;
-  type: 'table' | 'chair' | 'wall' | 'door' | 'window' | 'decoration';
+  type: "table" | "chair" | "wall" | "door" | "window" | "decoration";
   x: number;
   y: number;
   width: number;
@@ -26,7 +51,7 @@ interface FloorPlanElement {
   properties: {
     tableNumber?: string;
     capacity?: number;
-    shape?: 'rectangle' | 'circle' | 'square';
+    shape?: "rectangle" | "circle" | "square";
     color?: string;
     label?: string;
   };
@@ -43,14 +68,18 @@ interface FloorPlan {
   gridSize: number;
   scale: number;
 }
-
 const ELEMENT_TYPES = [
-  { type: 'table', icon: Square, label: 'Table', color: '#8B4513' },
-  { type: 'chair', icon: Circle, label: 'Chair', color: '#654321' },
-  { type: 'wall', icon: Home, label: 'Wall', color: '#808080' },
-  { type: 'door', icon: DoorOpen, label: 'Door', color: '#8B4513' },
-  { type: 'window', icon: Eye, label: 'Window', color: '#87CEEB' },
-  { type: 'decoration', icon: PlusCircle, label: 'Decoration', color: '#90EE90' },
+  { type: "table", icon: Square, label: "Table", color: "#8B4513" },
+  { type: "chair", icon: Circle, label: "Chair", color: "#654321" },
+  { type: "wall", icon: Home, label: "Wall", color: "#808080" },
+  { type: "door", icon: DoorOpen, label: "Door", color: "#8B4513" },
+  { type: "window", icon: Eye, label: "Window", color: "#87CEEB" },
+  {
+    type: "decoration",
+    icon: PlusCircle,
+    label: "Decoration",
+    color: "#90EE90",
+  },
 ];
 
 export default function FloorPlanPage() {
@@ -61,7 +90,7 @@ export default function FloorPlanPage() {
   const queryClient = useQueryClient();
 
   const [currentPlan, setCurrentPlan] = useState<FloorPlan>({
-    name: 'New Floor Plan',
+    name: "New Floor Plan",
     elements: [],
     dimensions: { width: 800, height: 600 },
     gridSize: 20,
@@ -69,12 +98,14 @@ export default function FloorPlanPage() {
   });
 
   const [selectedElement, setSelectedElement] = useState<string | null>(null);
-  const [selectedTool, setSelectedTool] = useState<string>('select');
+  const [selectedTool, setSelectedTool] = useState<string>("select");
   const [showGrid, setShowGrid] = useState(true);
 
   // Load existing floor plans
   const { data: floorPlans, isLoading } = useQuery({
-    queryKey: [`/api/tenants/${restaurant?.tenantId}/restaurants/${restaurant?.id}/floor-plans`],
+    queryKey: [
+      `/api/tenants/${restaurant?.tenantId}/restaurants/${restaurant?.id}/floor-plans`,
+    ],
     enabled: !!restaurant?.id && !!restaurant?.tenantId,
   });
 
@@ -84,56 +115,58 @@ export default function FloorPlanPage() {
       const endpoint = plan.id
         ? `/api/tenants/${restaurant?.tenantId}/restaurants/${restaurant?.id}/floor-plans/${plan.id}`
         : `/api/tenants/${restaurant?.tenantId}/restaurants/${restaurant?.id}/floor-plans`;
-      
-      return apiRequest(endpoint, plan.id ? 'PUT' : 'POST', plan);
+
+      return apiRequest(endpoint, plan.id ? "PUT" : "POST", plan);
     },
     onSuccess: () => {
-      toast({ title: 'Floor plan saved successfully' });
+      toast({ title: "Floor plan saved successfully" });
       queryClient.invalidateQueries({
-        queryKey: [`/api/tenants/${restaurant?.tenantId}/restaurants/${restaurant?.id}/floor-plans`],
+        queryKey: [
+          `/api/tenants/${restaurant?.tenantId}/restaurants/${restaurant?.id}/floor-plans`,
+        ],
       });
     },
     onError: () => {
-      toast({ title: 'Failed to save floor plan', variant: 'destructive' });
+      toast({ title: "Failed to save floor plan", variant: "destructive" });
     },
   });
 
   const addElement = (type: string) => {
     const newElement: FloorPlanElement = {
       id: `${type}-${Date.now()}`,
-      type: type as FloorPlanElement['type'],
+      type: type as FloorPlanElement["type"],
       x: 100,
       y: 100,
-      width: type === 'table' ? 80 : type === 'chair' ? 40 : 60,
-      height: type === 'table' ? 80 : type === 'chair' ? 40 : 60,
+      width: type === "table" ? 80 : type === "chair" ? 40 : 60,
+      height: type === "table" ? 80 : type === "chair" ? 40 : 60,
       rotation: 0,
       properties: {
-        color: ELEMENT_TYPES.find(t => t.type === type)?.color || '#000000',
-        label: type === 'table' ? 'T1' : '',
-        capacity: type === 'table' ? 4 : undefined,
-        shape: type === 'table' ? 'rectangle' : undefined,
+        color: ELEMENT_TYPES.find((t) => t.type === type)?.color || "#000000",
+        label: type === "table" ? "T1" : "",
+        capacity: type === "table" ? 4 : undefined,
+        shape: type === "table" ? "rectangle" : undefined,
       },
     };
 
-    setCurrentPlan(prev => ({
+    setCurrentPlan((prev) => ({
       ...prev,
       elements: [...prev.elements, newElement],
     }));
   };
 
   const updateElement = (id: string, updates: Partial<FloorPlanElement>) => {
-    setCurrentPlan(prev => ({
+    setCurrentPlan((prev) => ({
       ...prev,
-      elements: prev.elements.map(el => 
-        el.id === id ? { ...el, ...updates } : el
+      elements: prev.elements.map((el) =>
+        el.id === id ? { ...el, ...updates } : el,
       ),
     }));
   };
 
   const deleteElement = (id: string) => {
-    setCurrentPlan(prev => ({
+    setCurrentPlan((prev) => ({
       ...prev,
-      elements: prev.elements.filter(el => el.id !== id),
+      elements: prev.elements.filter((el) => el.id !== id),
     }));
     setSelectedElement(null);
   };
@@ -154,7 +187,8 @@ export default function FloorPlanPage() {
           <CardHeader>
             <CardTitle>Access Denied</CardTitle>
             <CardDescription>
-              You need to be associated with a restaurant to access floor plan designer.
+              You need to be associated with a restaurant to access floor plan
+              designer.
             </CardDescription>
           </CardHeader>
         </Card>
@@ -210,8 +244,8 @@ export default function FloorPlanPage() {
               <Label className="text-sm font-medium">Grid Size</Label>
               <Slider
                 value={[currentPlan.gridSize]}
-                onValueChange={([value]) => 
-                  setCurrentPlan(prev => ({ ...prev, gridSize: value }))
+                onValueChange={([value]) =>
+                  setCurrentPlan((prev) => ({ ...prev, gridSize: value }))
                 }
                 min={10}
                 max={50}
@@ -226,29 +260,40 @@ export default function FloorPlanPage() {
                   onChange={(e) => setShowGrid(e.target.checked)}
                   className="rounded"
                 />
-                <Label htmlFor="showGrid" className="text-sm">Show Grid</Label>
+                <Label htmlFor="showGrid" className="text-sm">
+                  Show Grid
+                </Label>
               </div>
             </div>
 
             {/* Element Properties */}
             {selectedElement && (
               <div className="space-y-2">
-                <Label className="text-sm font-medium">Element Properties</Label>
+                <Label className="text-sm font-medium">
+                  Element Properties
+                </Label>
                 {(() => {
-                  const element = currentPlan.elements.find(el => el.id === selectedElement);
+                  const element = currentPlan.elements.find(
+                    (el) => el.id === selectedElement,
+                  );
                   if (!element) return null;
 
                   return (
                     <div className="space-y-2">
-                      {element.type === 'table' && (
+                      {element.type === "table" && (
                         <>
                           <div>
                             <Label className="text-xs">Table Number</Label>
                             <Input
-                              value={element.properties.tableNumber || ''}
-                              onChange={(e) => updateElement(element.id, {
-                                properties: { ...element.properties, tableNumber: e.target.value }
-                              })}
+                              value={element.properties.tableNumber || ""}
+                              onChange={(e) =>
+                                updateElement(element.id, {
+                                  properties: {
+                                    ...element.properties,
+                                    tableNumber: e.target.value,
+                                  },
+                                })
+                              }
                               className="h-8"
                             />
                           </div>
@@ -257,9 +302,14 @@ export default function FloorPlanPage() {
                             <Input
                               type="number"
                               value={element.properties.capacity || 4}
-                              onChange={(e) => updateElement(element.id, {
-                                properties: { ...element.properties, capacity: parseInt(e.target.value) }
-                              })}
+                              onChange={(e) =>
+                                updateElement(element.id, {
+                                  properties: {
+                                    ...element.properties,
+                                    capacity: parseInt(e.target.value),
+                                  },
+                                })
+                              }
                               className="h-8"
                             />
                           </div>
@@ -289,13 +339,20 @@ export default function FloorPlanPage() {
               <div>
                 <CardTitle>{currentPlan.name}</CardTitle>
                 <CardDescription>
-                  {currentPlan.elements.length} elements • {currentPlan.dimensions.width}×{currentPlan.dimensions.height}px
+                  {currentPlan.elements.length} elements •{" "}
+                  {currentPlan.dimensions.width}×{currentPlan.dimensions.height}
+                  px
                 </CardDescription>
               </div>
               <div className="flex gap-2">
                 <Input
                   value={currentPlan.name}
-                  onChange={(e) => setCurrentPlan(prev => ({ ...prev, name: e.target.value }))}
+                  onChange={(e) =>
+                    setCurrentPlan((prev) => ({
+                      ...prev,
+                      name: e.target.value,
+                    }))
+                  }
                   className="w-48"
                   placeholder="Floor plan name"
                 />
@@ -303,39 +360,50 @@ export default function FloorPlanPage() {
             </div>
           </CardHeader>
           <CardContent>
-            <div 
+            <div
               className="relative bg-white border border-gray-200 overflow-hidden"
-              style={{ 
-                width: currentPlan.dimensions.width, 
+              style={{
+                width: currentPlan.dimensions.width,
                 height: currentPlan.dimensions.height,
-                backgroundImage: showGrid ? `
+                backgroundImage: showGrid
+                  ? `
                   linear-gradient(to right, #f0f0f0 1px, transparent 1px),
                   linear-gradient(to bottom, #f0f0f0 1px, transparent 1px)
-                ` : 'none',
-                backgroundSize: showGrid ? `${currentPlan.gridSize}px ${currentPlan.gridSize}px` : 'auto',
+                `
+                  : "none",
+                backgroundSize: showGrid
+                  ? `${currentPlan.gridSize}px ${currentPlan.gridSize}px`
+                  : "auto",
               }}
             >
               {currentPlan.elements.map((element) => {
-                const elementType = ELEMENT_TYPES.find(t => t.type === element.type);
+                const elementType = ELEMENT_TYPES.find(
+                  (t) => t.type === element.type,
+                );
                 const isSelected = selectedElement === element.id;
-                
+
                 return (
                   <div
                     key={element.id}
                     className={`absolute cursor-pointer border-2 flex items-center justify-center text-xs font-medium ${
-                      isSelected ? 'border-blue-500 bg-blue-50' : 'border-gray-300 hover:border-gray-400'
+                      isSelected
+                        ? "border-blue-500 bg-blue-50"
+                        : "border-gray-300 hover:border-gray-400"
                     }`}
                     style={{
                       left: element.x,
                       top: element.y,
                       width: element.width,
                       height: element.height,
-                      backgroundColor: element.properties.color || elementType?.color,
+                      backgroundColor:
+                        element.properties.color || elementType?.color,
                       transform: `rotate(${element.rotation}deg)`,
                     }}
                     onClick={() => setSelectedElement(element.id)}
                   >
-                    {element.properties.tableNumber || element.properties.label || element.type}
+                    {element.properties.tableNumber ||
+                      element.properties.label ||
+                      element.type}
                   </div>
                 );
               })}
@@ -349,12 +417,17 @@ export default function FloorPlanPage() {
         <Card>
           <CardHeader>
             <CardTitle>Existing Floor Plans</CardTitle>
-            <CardDescription>Load and manage your saved floor plans</CardDescription>
+            <CardDescription>
+              Load and manage your saved floor plans
+            </CardDescription>
           </CardHeader>
           <CardContent>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
               {floorPlans.map((plan: FloorPlan) => (
-                <Card key={plan.id} className="cursor-pointer hover:shadow-md transition-shadow">
+                <Card
+                  key={plan.id}
+                  className="cursor-pointer hover:shadow-md transition-shadow"
+                >
                   <CardHeader className="pb-2">
                     <CardTitle className="text-sm">{plan.name}</CardTitle>
                     <CardDescription className="text-xs">

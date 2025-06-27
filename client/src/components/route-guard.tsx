@@ -16,7 +16,7 @@ export function RouteGuard({ children }: RouteGuardProps) {
     if (!isLoading) {
       // Skip authentication checks for public routes like guest booking
       const publicRoutes = [
-        /^\/$/,  // Home page should be public
+        /^\/$/, // Home page should be public
         /^\/login$/,
         /^\/register$/,
         /^\/guest-booking\/\d+\/\d+$/,
@@ -24,10 +24,12 @@ export function RouteGuard({ children }: RouteGuardProps) {
         /^\/contact$/,
         /^\/feedback-responses$/,
         /^\/feedback-responses-popup$/,
-        /^\/booking-manage$/
+        /^\/booking-manage$/,
       ];
-      
-      const isPublicRoute = publicRoutes.some(pattern => pattern.test(location));
+
+      const isPublicRoute = publicRoutes.some((pattern) =>
+        pattern.test(location),
+      );
       if (isPublicRoute) {
         return; // Skip authentication for public routes
       }
@@ -43,13 +45,13 @@ export function RouteGuard({ children }: RouteGuardProps) {
       const tenantRouteMatch = location.match(/^\/(\d+)\//);
       if (tenantRouteMatch) {
         const routeTenantId = parseInt(tenantRouteMatch[1]);
-        
+
         // If user has a restaurant but wrong tenant ID, redirect to correct dashboard
         if (restaurant && restaurant.tenantId !== routeTenantId) {
           setLocation(`/${restaurant.tenantId}/dashboard`);
           return;
         }
-        
+
         // If user doesn't have a restaurant, redirect to login
         if (!restaurant) {
           setLocation("/login");
@@ -77,6 +79,7 @@ export function RouteGuard({ children }: RouteGuardProps) {
         /^\/\d+\/print-orders$/,
         /^\/\d+\/statistics$/,
         /^\/\d+\/activity-log$/,
+        /^\/\d+\/floor-plan$/,
         /^\/\d+\/waiting-list$/,
         /^\/\d+\/subscription$/,
         /^\/\d+\/sms-messages$/,
@@ -116,11 +119,13 @@ export function RouteGuard({ children }: RouteGuardProps) {
         /^\/contact$/,
         /^\/guest-booking\/\d+\/\d+$/,
         /^\/feedback\/\d+\/\d+$/,
-        /^\/booking-manage$/
+        /^\/booking-manage$/,
       ];
 
-      const isKnownRoute = knownRoutes.some(pattern => pattern.test(location));
-      
+      const isKnownRoute = knownRoutes.some((pattern) =>
+        pattern.test(location),
+      );
+
       if (!isKnownRoute) {
         // Unknown route - redirect to dashboard if authenticated, login if not
         if (user && restaurant) {
