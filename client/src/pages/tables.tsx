@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { useAuthGuard } from "@/lib/auth.tsx";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { useToast } from "@/hooks/use-toast";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -56,6 +57,7 @@ export default function Tables() {
   } = useAuthGuard();
   const { canCreateTable } = useSubscription();
   const queryClient = useQueryClient();
+  const { toast } = useToast();
   
   // Auto scroll to top when page loads
   useScrollToTop();
@@ -63,6 +65,8 @@ export default function Tables() {
   // State management
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [editingTable, setEditingTable] = useState<any>(null);
+  const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
+  const [tableToDelete, setTableToDelete] = useState<any>(null);
   const [newTable, setNewTable] = useState({
     tableNumber: "",
     capacity: 4,
@@ -336,6 +340,17 @@ export default function Tables() {
           "tables",
         ],
       });
+      toast({
+        title: "Success",
+        description: "Table deleted successfully!",
+      });
+    },
+    onError: (error) => {
+      toast({
+        title: "Error",
+        description: "Failed to delete table. Please try again.",
+        variant: "destructive",
+      });
     },
   });
 
@@ -373,6 +388,19 @@ export default function Tables() {
       `Handler called for table ID: ${tableId}, setting to: ${isActive}`,
     );
     updateTableMutation.mutate({ id: tableId, isActive });
+  };
+
+  const handleDeleteTable = (table: any) => {
+    setTableToDelete(table);
+    setIsDeleteDialogOpen(true);
+  };
+
+  const confirmDeleteTable = () => {
+    if (tableToDelete && tableToDelete.id) {
+      deleteTableMutation.mutate(tableToDelete.id);
+      setIsDeleteDialogOpen(false);
+      setTableToDelete(null);
+    }
   };
 
   const getStatusBadge = (isActive: boolean) => {
@@ -808,7 +836,8 @@ export default function Tables() {
                               <Button
                                 variant="outline"
                                 size="sm"
-                                onClick={() => {
+                                onClick={(e) => {
+                                  e.stopPropagation();
                                   setEditingTable(table);
                                   setNewTable({
                                     tableNumber: table.tableNumber,
@@ -817,19 +846,18 @@ export default function Tables() {
                                   });
                                   setIsDialogOpen(true);
                                 }}
-                                className="text-blue-600 border-blue-600 hover:bg-blue-50 h-8 w-8 p-0"
+                                className="h-8 w-8 p-0"
                               >
                                 <Edit className="h-4 w-4" />
                               </Button>
                               <Button
                                 variant="outline"
                                 size="sm"
-                                onClick={() => {
-                                  if (confirm(`Are you sure you want to delete Table ${table.tableNumber}?`)) {
-                                    deleteTableMutation.mutate(table.id);
-                                  }
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  handleDeleteTable(table);
                                 }}
-                                className="text-red-600 border-red-600 hover:bg-red-50 h-8 w-8 p-0"
+                                className="h-8 w-8 p-0 text-red-600 hover:text-red-700 hover:bg-red-50"
                               >
                                 <Trash2 className="h-4 w-4" />
                               </Button>
@@ -941,6 +969,34 @@ export default function Tables() {
               <p>Capacity: {selectedTableQR?.capacity} people</p>
               <p>Status: {selectedTableQR?.isActive ? "Active" : "Inactive"}</p>
             </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Delete Confirmation Dialog */}
+      <Dialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>Delete Table</DialogTitle>
+          </DialogHeader>
+          <div className="py-4">
+            <p className="text-gray-600">
+              Are you sure you want to delete <strong>Table {tableToDelete?.tableNumber}</strong>?
+            </p>
+            <p className="text-red-600 text-sm mt-2">This action cannot be undone and will also delete all associated bookings.</p>
+          </div>
+          <div className="flex justify-end space-x-2">
+            <Button type="button" variant="outline" onClick={() => setIsDeleteDialogOpen(false)}>
+              Cancel
+            </Button>
+            <Button 
+              type="button" 
+              variant="destructive" 
+              onClick={confirmDeleteTable}
+              disabled={deleteTableMutation.isPending}
+            >
+              {deleteTableMutation.isPending ? "Deleting..." : "Delete Table"}
+            </Button>
           </div>
         </DialogContent>
       </Dialog>
