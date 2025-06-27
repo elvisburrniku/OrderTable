@@ -282,7 +282,7 @@ export default function GuestBookingResponsive(props: any) {
 
   // Check if a time slot is valid based on opening hours and cut-off times
   const isTimeSlotValid = (timeSlot: string, date: Date) => {
-    if (!date) return false;
+    if (!date || !timeSlot) return false;
     
     const dayOfWeek = date.getDay();
     
@@ -291,11 +291,31 @@ export default function GuestBookingResponsive(props: any) {
       const dayHours = openingHours.find((h: any) => h.dayOfWeek === dayOfWeek);
       if (!dayHours || !dayHours.isOpen) return false;
       
-      const [hours, minutes] = timeSlot.split(':').map(Number);
+      // Validate timeSlot format
+      if (!timeSlot.includes(':')) return false;
+      
+      const timeSlotParts = timeSlot.split(':');
+      if (timeSlotParts.length !== 2) return false;
+      
+      const [hours, minutes] = timeSlotParts.map(Number);
+      if (isNaN(hours) || isNaN(minutes)) return false;
+      
       const slotTime = hours * 60 + minutes; // Convert to minutes
       
-      const [openHour, openMin] = dayHours.openTime.split(':').map(Number);
-      const [closeHour, closeMin] = dayHours.closeTime.split(':').map(Number);
+      // Validate opening hours format
+      if (!dayHours.openTime || !dayHours.closeTime || 
+          !dayHours.openTime.includes(':') || !dayHours.closeTime.includes(':')) return false;
+      
+      const openTimeParts = dayHours.openTime.split(':');
+      const closeTimeParts = dayHours.closeTime.split(':');
+      
+      if (openTimeParts.length !== 2 || closeTimeParts.length !== 2) return false;
+      
+      const [openHour, openMin] = openTimeParts.map(Number);
+      const [closeHour, closeMin] = closeTimeParts.map(Number);
+      
+      if (isNaN(openHour) || isNaN(openMin) || isNaN(closeHour) || isNaN(closeMin)) return false;
+      
       const openTime = openHour * 60 + openMin;
       const closeTime = closeHour * 60 + closeMin;
       
@@ -309,16 +329,29 @@ export default function GuestBookingResponsive(props: any) {
       
       if (isToday) {
         const cutOff = cutOffTimes.find((c: any) => c.dayOfWeek === dayOfWeek);
-        if (cutOff) {
-          const [cutHour, cutMin] = cutOff.cutOffTime.split(':').map(Number);
-          const cutOffMinutes = cutHour * 60 + cutMin;
-          const currentMinutes = now.getHours() * 60 + now.getMinutes();
-          
-          const [slotHour, slotMin] = timeSlot.split(':').map(Number);
-          const slotMinutes = slotHour * 60 + slotMin;
-          
-          // If current time + cut-off buffer > slot time, slot is not available
-          if (currentMinutes + cutOffMinutes > slotMinutes) return false;
+        if (cutOff && cutOff.cutOffTime && cutOff.cutOffTime.includes(':')) {
+          const cutOffTimeParts = cutOff.cutOffTime.split(':');
+          if (cutOffTimeParts.length === 2) {
+            const [cutHour, cutMin] = cutOffTimeParts.map(Number);
+            if (!isNaN(cutHour) && !isNaN(cutMin)) {
+              const cutOffMinutes = cutHour * 60 + cutMin;
+              const currentMinutes = now.getHours() * 60 + now.getMinutes();
+              
+              // Validate timeSlot again for cut-off check
+              if (timeSlot.includes(':')) {
+                const timeSlotParts = timeSlot.split(':');
+                if (timeSlotParts.length === 2) {
+                  const [slotHour, slotMin] = timeSlotParts.map(Number);
+                  if (!isNaN(slotHour) && !isNaN(slotMin)) {
+                    const slotMinutes = slotHour * 60 + slotMin;
+                    
+                    // If current time + cut-off buffer > slot time, slot is not available
+                    if (currentMinutes + cutOffMinutes > slotMinutes) return false;
+                  }
+                }
+              }
+            }
+          }
         }
       }
     }

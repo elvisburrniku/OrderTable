@@ -22,6 +22,11 @@ A comprehensive restaurant booking management system with React frontend and Exp
 - Kitchen order management
 
 ## Recent Changes
+- **2025-06-27**: Successfully integrated heat-map with table-plan positioning system and fixed guest booking validation error
+- **Heat-Map Integration**: Heat-map now uses actual table positions, shapes, and rotations from table-plan page instead of hardcoded positions
+- **Enhanced Visualization**: Added animated heat rings for high-performance tables, improved tooltips with detailed metrics, and room backgrounds
+- **Bug Fix**: Fixed guest booking error by adding comprehensive null checks to isTimeSlotValid function preventing undefined property access
+- **User Experience**: Tables now display exactly where positioned in table-plan with correct visual representation and interactive effects
 - **2025-06-26**: Completed comprehensive role-based access control system with page-level permissions and role-based redirects
 - **Permission System**: Implemented AutoPermissionGuard wrapping all authenticated routes for automatic access control
 - **Role Permissions Interface**: Created dedicated role permissions management page accessible via Users → Role Permissions button
