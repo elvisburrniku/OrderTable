@@ -77,7 +77,7 @@ import { useSettings } from "@/hooks/use-settings";
 import { useDate } from "@/contexts/date-context";
 
 export default function Dashboard() {
-  const { user, restaurant, isLoading } = useAuth();
+  const { user, restaurant, isLoading, logout } = useAuth();
   const { generalSettings } = useSettings();
   const { formatDate, formatTime, formatDateTime } = useDate();
   const [selectedDate, setSelectedDate] = useState(new Date());
