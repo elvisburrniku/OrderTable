@@ -31,8 +31,12 @@ A comprehensive restaurant booking management system with React frontend and Exp
 - **Calendar Integration**: Calendar view visually disables dates blocked by configuration restrictions while allowing dates with modified hours
 - **Enhanced Validation**: Updated time slot validation and generation to prioritize special period hours over regular opening hours
 - **System Stability**: Guest booking system now loads without errors and properly handles all configuration scenarios
+- **Priority System Implementation**: Established clear booking restriction hierarchy - Special periods override opening hours, cut-off times enforce time buffers
+- **Cut-off Time Logic**: Enhanced cut-off validation to handle both hourly (1:00 = 1 hour before) and daily (24:00 = 1 day before) restrictions
 - **Heat-Map Integration**: Heat-map now uses actual table positions, shapes, and rotations from table-plan page instead of hardcoded positions
 - **Enhanced Visualization**: Added animated heat rings for high-performance tables, improved tooltips with detailed metrics, and room backgrounds
+- **Bug Fix**: Fixed guest booking error by adding comprehensive null checks to isTimeSlotValid function preventing undefined property access
+- **User Experience**: Tables now display exactly where positioned in table-plan with correct visual representation and interactive effects
 - **Bug Fix**: Fixed guest booking error by adding comprehensive null checks to isTimeSlotValid function preventing undefined property access
 - **User Experience**: Tables now display exactly where positioned in table-plan with correct visual representation and interactive effects
 - **2025-06-26**: Completed comprehensive role-based access control system with page-level permissions and role-based redirects
