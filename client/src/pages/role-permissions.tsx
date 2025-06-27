@@ -38,7 +38,6 @@ import {
 import {
   DndContext,
   DragEndEvent,
-  DragStartEvent,
   DragOverlay,
   DragStartEvent,
   PointerSensor,
@@ -739,14 +738,14 @@ export default function RolePermissions() {
                           );
                         setRolePermissions((prev) => {
                           const uniquePermissions = [...currentRolePermissions];
-                          allPagePermissions.forEach(p => {
+                          allPagePermissions.forEach((p) => {
                             if (!uniquePermissions.includes(p)) {
                               uniquePermissions.push(p);
                             }
                           });
                           return {
                             ...prev,
-                            [selectedRole]: uniquePermissions
+                            [selectedRole]: uniquePermissions,
                           };
                         });
                         setHasChanges(true);
@@ -898,14 +897,14 @@ export default function RolePermissions() {
                           );
                         setRolePermissions((prev) => {
                           const uniquePermissions = [...currentRolePermissions];
-                          allFeaturePermissions.forEach(p => {
+                          allFeaturePermissions.forEach((p) => {
                             if (!uniquePermissions.includes(p)) {
                               uniquePermissions.push(p);
                             }
                           });
                           return {
                             ...prev,
-                            [selectedRole]: uniquePermissions
+                            [selectedRole]: uniquePermissions,
                           };
                         });
                         setHasChanges(true);
