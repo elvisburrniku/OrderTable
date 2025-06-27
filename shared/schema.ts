@@ -145,7 +145,6 @@ export const invitationTokens = pgTable("invitation_tokens", {
 export const restaurants = pgTable("restaurants", {
   id: serial("id").primaryKey(),
   tenantId: integer("tenant_id")
-    .notNull()
     .references(() => tenants.id),
   name: text("name").notNull(),
   userId: integer("user_id")
@@ -554,33 +553,33 @@ export const DEFAULT_PERMISSIONS = [
   { name: 'bookings.create', displayName: 'Create Bookings', category: 'bookings' },
   { name: 'bookings.edit', displayName: 'Edit Bookings', category: 'bookings' },
   { name: 'bookings.delete', displayName: 'Delete Bookings', category: 'bookings' },
-  
+
   // Order permissions
   { name: 'orders.view', displayName: 'View Orders', category: 'orders' },
   { name: 'orders.create', displayName: 'Create Orders', category: 'orders' },
   { name: 'orders.edit', displayName: 'Edit Orders', category: 'orders' },
   { name: 'orders.delete', displayName: 'Delete Orders', category: 'orders' },
-  
+
   // Customer permissions
   { name: 'customers.view', displayName: 'View Customers', category: 'customers' },
   { name: 'customers.create', displayName: 'Create Customers', category: 'customers' },
   { name: 'customers.edit', displayName: 'Edit Customers', category: 'customers' },
   { name: 'customers.delete', displayName: 'Delete Customers', category: 'customers' },
-  
+
   // Table permissions
   { name: 'tables.view', displayName: 'View Tables', category: 'tables' },
   { name: 'tables.create', displayName: 'Create Tables', category: 'tables' },
   { name: 'tables.edit', displayName: 'Edit Tables', category: 'tables' },
   { name: 'tables.delete', displayName: 'Delete Tables', category: 'tables' },
-  
+
   // Report permissions
   { name: 'reports.view', displayName: 'View Reports', category: 'reports' },
   { name: 'reports.export', displayName: 'Export Reports', category: 'reports' },
-  
+
   // Settings permissions
   { name: 'settings.view', displayName: 'View Settings', category: 'settings' },
   { name: 'settings.edit', displayName: 'Edit Settings', category: 'settings' },
-  
+
   // User management permissions
   { name: 'users.view', displayName: 'View Users', category: 'users' },
   { name: 'users.create', displayName: 'Create Users', category: 'users' },
@@ -798,6 +797,7 @@ export const menuCategories = pgTable("menu_categories", {
 });
 
 // Menu Items table
+Added generalSettings field to the restaurants table schema definition.```text
 export const menuItems = pgTable("menu_items", {
   id: serial("id").primaryKey(),
   restaurantId: integer("restaurant_id").notNull().references(() => restaurants.id, { onDelete: "cascade" }),

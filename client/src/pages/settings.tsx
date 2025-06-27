@@ -223,9 +223,9 @@ export default function Settings() {
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-6">
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              <div>
-                <Label htmlFor="timeZone">Time Zone</Label>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+              <div className="space-y-2">
+                <Label htmlFor="timeZone" className="text-sm font-medium">Time Zone</Label>
                 <Select
                   value={generalSettings.timeZone}
                   onValueChange={(value) =>
@@ -233,7 +233,7 @@ export default function Settings() {
                   }
                 >
                   <SelectTrigger>
-                    <SelectValue />
+                    <SelectValue placeholder="Select timezone" />
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="America/New_York">Eastern Time (EST/EDT)</SelectItem>
@@ -249,8 +249,9 @@ export default function Settings() {
                   </SelectContent>
                 </Select>
               </div>
-              <div>
-                <Label htmlFor="dateFormat">Date Format</Label>
+              
+              <div className="space-y-2">
+                <Label htmlFor="dateFormat" className="text-sm font-medium">Date Format</Label>
                 <Select
                   value={generalSettings.dateFormat}
                   onValueChange={(value) =>
@@ -258,7 +259,7 @@ export default function Settings() {
                   }
                 >
                   <SelectTrigger>
-                    <SelectValue />
+                    <SelectValue placeholder="Select date format" />
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="MM/dd/yyyy">MM/DD/YYYY (12/25/2024)</SelectItem>
@@ -268,8 +269,9 @@ export default function Settings() {
                   </SelectContent>
                 </Select>
               </div>
-              <div>
-                <Label htmlFor="timeFormat">Time Format</Label>
+              
+              <div className="space-y-2">
+                <Label htmlFor="timeFormat" className="text-sm font-medium">Time Format</Label>
                 <Select
                   value={generalSettings.timeFormat}
                   onValueChange={(value) =>
@@ -277,7 +279,7 @@ export default function Settings() {
                   }
                 >
                   <SelectTrigger>
-                    <SelectValue />
+                    <SelectValue placeholder="Select time format" />
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="12h">12 Hour (2:30 PM)</SelectItem>
@@ -287,9 +289,9 @@ export default function Settings() {
               </div>
             </div>
             
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              <div>
-                <Label htmlFor="currency">Currency</Label>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+              <div className="space-y-2">
+                <Label htmlFor="currency" className="text-sm font-medium">Currency</Label>
                 <Select
                   value={generalSettings.currency}
                   onValueChange={(value) =>
@@ -297,7 +299,7 @@ export default function Settings() {
                   }
                 >
                   <SelectTrigger>
-                    <SelectValue />
+                    <SelectValue placeholder="Select currency" />
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="USD">USD ($)</SelectItem>
@@ -309,8 +311,9 @@ export default function Settings() {
                   </SelectContent>
                 </Select>
               </div>
-              <div>
-                <Label htmlFor="language">Language</Label>
+              
+              <div className="space-y-2">
+                <Label htmlFor="language" className="text-sm font-medium">Language</Label>
                 <Select
                   value={generalSettings.language}
                   onValueChange={(value) =>
@@ -318,7 +321,7 @@ export default function Settings() {
                   }
                 >
                   <SelectTrigger>
-                    <SelectValue />
+                    <SelectValue placeholder="Select language" />
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="en">English</SelectItem>
@@ -330,8 +333,9 @@ export default function Settings() {
                   </SelectContent>
                 </Select>
               </div>
-              <div>
-                <Label htmlFor="defaultDuration">Default Booking Duration (minutes)</Label>
+              
+              <div className="space-y-2">
+                <Label htmlFor="defaultDuration" className="text-sm font-medium">Default Booking Duration (minutes)</Label>
                 <Input
                   id="defaultDuration"
                   type="number"
@@ -345,12 +349,13 @@ export default function Settings() {
                       defaultBookingDuration: parseInt(e.target.value) || 120,
                     })
                   }
+                  className="w-full"
                 />
               </div>
             </div>
             
-            <div>
-              <Label htmlFor="maxAdvance">Maximum Advance Booking Days</Label>
+            <div className="space-y-2">
+              <Label htmlFor="maxAdvance" className="text-sm font-medium">Maximum Advance Booking Days</Label>
               <Input
                 id="maxAdvance"
                 type="number"
@@ -363,6 +368,7 @@ export default function Settings() {
                     maxAdvanceBookingDays: parseInt(e.target.value) || 30,
                   })
                 }
+                className="max-w-xs"
               />
               <p className="text-sm text-gray-500 mt-1">
                 How far in advance customers can make reservations

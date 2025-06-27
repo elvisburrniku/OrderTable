@@ -4500,6 +4500,20 @@ export async function registerRoutes(app: Express): Promise<Server> {
           restaurantId,
           tenantId,
         );
+        
+        // Ensure general settings have default values if not set
+        if (!settings.generalSettings) {
+          settings.generalSettings = {
+            timeZone: "America/New_York",
+            dateFormat: "MM/dd/yyyy",
+            timeFormat: "12h",
+            defaultBookingDuration: 120,
+            maxAdvanceBookingDays: 30,
+            currency: "USD",
+            language: "en",
+          };
+        }
+        
         res.json(settings);
       } catch (error) {
         console.error("Error fetching settings:", error);
@@ -4527,6 +4541,24 @@ export async function registerRoutes(app: Express): Promise<Server> {
           tenantId,
           req.body,
         );
+
+        // Log settings update activity
+        const sessionUser = (req as any).session?.user;
+        await logActivity({
+          restaurantId,
+          tenantId,
+          eventType: "settings_update",
+          description: "Restaurant settings updated",
+          source: "manual",
+          userEmail: sessionUser?.email,
+          userLogin: sessionUser?.email,
+          ipAddress: req.ip,
+          userAgent: req.get("User-Agent"),
+          details: {
+            updatedSections: Object.keys(req.body),
+            generalSettings: req.body.generalSettings ? "updated" : "unchanged",
+          },
+        });
 
         res.json({
           message: "Settings updated successfully",

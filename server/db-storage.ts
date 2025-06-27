@@ -895,7 +895,8 @@ export class DatabaseStorage implements IStorage {
   }
   async getCombinedTableById(id: number): Promise<any> {
     try {
-      const result = await this.db
+      const result =```text
+await this.db
         .select()
         .from(combinedTables)
         .where(eq(combinedTables.id, id));
@@ -1163,186 +1164,100 @@ export class DatabaseStorage implements IStorage {
     return false;
   }
   // Restaurant Settings methods
-  async getRestaurantSettings(
-    restaurantId: number,
-    tenantId: number,
-  ): Promise<any> {
-    if (!this.db) throw new Error("Database connection not available");
-    const [restaurant] = await this.db
-      .select({
-        emailSettings: restaurants.emailSettings,
-        generalSettings: restaurants.generalSettings,
-        bookingSettings: restaurants.bookingSettings,
-        notificationSettings: restaurants.notificationSettings,
-      })
-      .from(restaurants)
-      .where(
-        and(
-          eq(restaurants.id, restaurantId),
-          eq(restaurants.tenantId, tenantId),
-        ),
-      )
-      .limit(1);
-    if (!restaurant) {
-      throw new Error("Restaurant not found");
+  async getRestaurantSettings(restaurantId: number, tenantId: number): Promise<any> {
+    try {
+      const restaurant = await this.getRestaurantById(restaurantId);
+      if (!restaurant || restaurant.tenantId !== tenantId) {
+        throw new Error("Restaurant not found or access denied");
+      }
+
+      // Get settings from various sources
+      const emailSettings = restaurant.emailSettings ? JSON.parse(restaurant.emailSettings) : {};
+      const openingHours = await this.getOpeningHoursByRestaurant(restaurantId);
+      const cutOffTimes = await this.getCutOffTimesByRestaurant(restaurantId);
+      const specialPeriods = await this.getSpecialPeriodsByRestaurant(restaurantId);
+
+      // Get stored general settings or use defaults
+      let generalSettings = {
+        timeZone: "America/New_York",
+        dateFormat: "MM/dd/yyyy", 
+        timeFormat: "12h",
+        defaultBookingDuration: 120,
+        maxAdvanceBookingDays: 30,
+        currency: "USD",
+        language: "en",
+      };
+
+      // Check if restaurant has stored general settings
+      if (restaurant.generalSettings) {
+        try {
+          const storedSettings = JSON.parse(restaurant.generalSettings);
+          generalSettings = { ...generalSettings, ...storedSettings };
+        } catch (e) {
+          console.warn("Failed to parse stored general settings, using defaults");
+        }
+      }
+
+      return {
+        emailSettings,
+        generalSettings,
+        bookingSettings: {},
+        notificationSettings: {
+          emailNotifications: true,
+          smsNotifications: false,
+          pushNotifications: true,
+          bookingReminders: true,
+          cancelationAlerts: true,
+          noShowAlerts: true,
+        },
+        openingHours,
+        cutOffTimes,
+        specialPeriods,
+      };
+    } catch (error) {
+      console.error("Error fetching restaurant settings:", error);
+      throw error;
     }
-    // Return parsed settings with defaults
-    return {
-      emailSettings: restaurant.emailSettings
-        ? JSON.parse(restaurant.emailSettings)
-        : {
-            enableBookingConfirmation: true,
-            enableBookingReminders: true,
-            enableCancellationNotice: true,
-            reminderHoursBefore: 24,
-            fromEmail: "",
-            fromName: "",
-          },
-      generalSettings: restaurant.generalSettings
-        ? JSON.parse(restaurant.generalSettings)
-        : {
-            timeZone: "America/New_York",
-            dateFormat: "MM/dd/yyyy",
-            timeFormat: "12h",
-            defaultBookingDuration: 120,
-            maxAdvanceBookingDays: 30,
-            currency: "USD",
-            language: "en",
-            // Restaurant operations
-            operationalSettings: {
-              autoAcceptReservations: false,
-              requireConfirmation: true,
-              allowModifications: true,
-              enableNoShowTracking: true,
-              noShowGracePeriod: 15, // minutes
-              automaticTableRelease: 30, // minutes after no-show
-            },
-            // Payment and pricing
-            paymentSettings: {
-              acceptCreditCards: true,
-              acceptCash: true,
-              acceptDigitalPayments: true,
-              requireDepositForLargeGroups: true,
-              largeGroupThreshold: 8,
-              cancellationPolicy: "24h", // 24h, 48h, 72h, 1week
-              refundPolicy: "full", // full, partial, none
-            },
-            // Staff and service
-            serviceSettings: {
-              enableTableService: true,
-              enableTakeout: true,
-              enableDelivery: false,
-              deliveryRadius: 5, // miles/km
-              averageServiceTime: 90, // minutes
-              enableSpecialRequests: true,
-              maxSpecialRequestLength: 500,
-            },
-          },
-      bookingSettings: restaurant.bookingSettings
-        ? JSON.parse(restaurant.bookingSettings)
-        : {
-            // Basic booking settings
-            enableWalkIns: true,
-            enableWaitingList: true,
-            autoConfirmBookings: false,
-            requireDeposit: false,
-            depositAmount: 0,
-            allowSameDayBookings: true,
-            minBookingNotice: 0,
-            // Duration and timing settings
-            defaultDuration: 120, // minutes
-            emptySeats: 2,
-            turnaroundTime: 0, // minutes
-            useEndingTime: false,
-            // Contact and cancellation
-            contactMethod: "phone", // phone, email, both
-            allowCancellationAndChanges: true,
-            cancellationNotice: "none", // none, 24h, 48h, 1week
-            groupRequest: false,
-            // Table booking preferences
-            tableBooking: "recommended", // recommended, required, disabled
-            // Data storage
-            personalDataStorage: "1year", // 6months, 1year, 2years, 5years
-            // Field visibility
-            showCompanyNameField: { manual: false, online: false },
-            showRoomNumberField: { manual: false, online: false },
-            showAgreedPriceField: false,
-            showPromoCodeField: { manual: false, online: false },
-            // Online booking settings
-            onlineBooking: {
-              enabled: true,
-              bookingFlow: "guest_first", // guest_first, date_first
-              minGuests: 1,
-              maxGuests: 10,
-              minNotice: 1.5, // hours
-              maxNotice: 45, // days
-              interval: 15, // minutes
-              maxBookingsPerTime: "unlimited",
-              maxGuestsPerTime: "unlimited",
-              maxCapacity: "unlimited",
-              collectEmail: true,
-              emailRequired: false,
-              collectAddress: "zipcode", // none, zipcode, full
-              confirmNewsletter: true,
-              confirmDuration: false,
-              confirmUrl: "",
-              privacyPolicyUrl: "",
-            },
-            // Manual booking (administration)
-            manualBooking: {
-              tableSuggestions: true,
-              interval: 15, // minutes
-              initialsRequired: false,
-            },
-            // Administration
-            administration: {
-              newBookingNotification: true,
-            },
-          },
-      notificationSettings: restaurant.notificationSettings
-        ? JSON.parse(restaurant.notificationSettings)
-        : {
-            emailNotifications: true,
-            smsNotifications: false,
-            pushNotifications: true,
-            bookingReminders: true,
-            cancelationAlerts: true,
-            noShowAlerts: true,
-          },
-    };
   }
-  async updateRestaurantSettings(
-    restaurantId: number,
-    tenantId: number,
-    settings: any,
-  ): Promise<any> {
-    if (!this.db) throw new Error("Database connection not available");
-    const updateData: any = {};
-    if (settings.emailSettings) {
-      updateData.emailSettings = JSON.stringify(settings.emailSettings);
+  async updateRestaurantSettings(restaurantId: number, tenantId: number, settings: any): Promise<any> {
+    try {
+      const restaurant = await this.getRestaurantById(restaurantId);
+      if (!restaurant || restaurant.tenantId !== tenantId) {
+        throw new Error("Restaurant not found or access denied");
+      }
+
+      const updates: any = {};
+
+      // Handle email settings
+      if (settings.emailSettings) {
+        updates.emailSettings = JSON.stringify(settings.emailSettings);
+      }
+
+      // Handle general settings
+      if (settings.generalSettings) {
+        updates.generalSettings = JSON.stringify(settings.generalSettings);
+      }
+
+      // Update restaurant record if there are changes
+      if (Object.keys(updates).length > 0) {
+        await this.updateRestaurant(restaurantId, updates);
+      }
+
+      // Handle other settings that have their own tables
+      if (settings.openingHours) {
+        await this.createOrUpdateOpeningHours(restaurantId, tenantId, settings.openingHours);
+      }
+
+      if (settings.cutOffTimes) {
+        await this.createOrUpdateCutOffTimes(restaurantId, tenantId, settings.cutOffTimes);
+      }
+
+      // Return updated settings
+      return await this.getRestaurantSettings(restaurantId, tenantId);
+    } catch (error) {
+      console.error("Error updating restaurant settings:", error);
+      throw error;
     }
-    if (settings.generalSettings) {
-      updateData.generalSettings = JSON.stringify(settings.generalSettings);
-    }
-    if (settings.bookingSettings) {
-      updateData.bookingSettings = JSON.stringify(settings.bookingSettings);
-    }
-    if (settings.notificationSettings) {
-      updateData.notificationSettings = JSON.stringify(
-        settings.notificationSettings,
-      );
-    }
-    const [updatedRestaurant] = await this.db
-      .update(restaurants)
-      .set(updateData)
-      .where(
-        and(
-          eq(restaurants.id, restaurantId),
-          eq(restaurants.tenantId, tenantId),
-        ),
-      )
-      .returning();
-    return updatedRestaurant;
   }
   // SMS Settings methods
   async getSmsSettings(restaurantId: number, tenantId: number): Promise<any> {
@@ -1957,7 +1872,7 @@ export class DatabaseStorage implements IStorage {
       .returning();
     return result[0];
   }
-  async deleteProductGroup(id: number): Promise<void> {
+  async deleteProductGroup(id: number): Promise<boolean> {
     if (!this.db) throw new Error("Database connection not available");
     await this.db.delete(productGroups).where(eq(productGroups.id, id));
   }
@@ -2884,8 +2799,7 @@ export class DatabaseStorage implements IStorage {
   async deleteKitchenStaff(id: number): Promise<boolean> {
     if (!this.db) return false;
     await this.db.delete(kitchenStaff).where(eq(kitchenStaff.id, id));
-    return true;
-  }
+    return true;  }
   // Kitchen Performance Sparkline Data
   async getKitchenPerformanceSparkline(
     restaurantId: number,
