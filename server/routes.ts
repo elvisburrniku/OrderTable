@@ -4537,6 +4537,49 @@ export async function registerRoutes(app: Express): Promise<Server> {
     },
   );
 
+  // Lightweight booking configuration endpoint (no subscription validation)
+  app.get(
+    "/api/tenants/:tenantId/restaurants/:restaurantId/booking-config",
+    async (req, res) => {
+      console.log("Booking config endpoint hit with params:", req.params);
+      try {
+        const restaurantId = parseInt(req.params.restaurantId);
+        const tenantId = parseInt(req.params.tenantId);
+
+        console.log("Parsed IDs - tenantId:", tenantId, "restaurantId:", restaurantId);
+
+        const restaurant = await storage.getRestaurantById(restaurantId);
+        console.log("Found restaurant:", restaurant?.name || "not found");
+        
+        if (!restaurant || restaurant.tenantId !== tenantId) {
+          console.log("Restaurant validation failed");
+          return res.status(404).json({ message: "Restaurant not found" });
+        }
+
+        const settings = await storage.getRestaurantSettings(
+          restaurantId,
+          tenantId,
+        );
+        
+        console.log("Retrieved settings:", settings?.generalSettings);
+        
+        // Return only essential booking configuration
+        const bookingConfig = {
+          defaultBookingDuration: settings.generalSettings?.defaultBookingDuration || 120,
+          maxAdvanceBookingDays: settings.generalSettings?.maxAdvanceBookingDays || 30,
+          timeZone: settings.generalSettings?.timeZone || "America/New_York",
+          currency: settings.generalSettings?.currency || "USD",
+        };
+        
+        console.log("Returning booking config:", bookingConfig);
+        res.json(bookingConfig);
+      } catch (error) {
+        console.error("Error fetching booking config:", error);
+        res.status(500).json({ message: "Internal server error" });
+      }
+    },
+  );
+
   // Settings routes - only managers and owners can view settings
   app.get(
     "/api/tenants/:tenantId/restaurants/:restaurantId/settings",
