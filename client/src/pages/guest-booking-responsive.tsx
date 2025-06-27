@@ -198,6 +198,107 @@ export default function GuestBookingResponsive(props: any) {
   // Get day names for header
   const dayNames = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
 
+  // Utility functions for booking validation and time slot generation
+
+  // Get special period opening hours for a specific date (if restaurant is open during special period)
+  const getSpecialPeriodHours = (date: Date) => {
+    if (!specialPeriods || !Array.isArray(specialPeriods)) return null;
+    
+    const dateStr = format(date, 'yyyy-MM-dd');
+    
+    const activePeriod = specialPeriods.find((period: any) => {
+      if (!period.startDate || !period.endDate || !period.isOpen) return false;
+      
+      const startDate = format(new Date(period.startDate), 'yyyy-MM-dd');
+      const endDate = format(new Date(period.endDate), 'yyyy-MM-dd');
+      
+      return dateStr >= startDate && dateStr <= endDate;
+    });
+    
+    if (activePeriod && activePeriod.openingTime && activePeriod.closingTime) {
+      return {
+        openTime: activePeriod.openingTime,
+        closeTime: activePeriod.closingTime,
+        isOpen: true
+      };
+    }
+    
+    return null;
+  };
+
+  // Check if a date is blocked by special periods (only when restaurant is closed)
+  const isDateBlockedBySpecialPeriods = (date: Date) => {
+    if (!specialPeriods || !Array.isArray(specialPeriods)) return false;
+    
+    const dateStr = format(date, 'yyyy-MM-dd');
+    
+    return specialPeriods.some((period: any) => {
+      if (!period.startDate || !period.endDate) return false;
+      
+      const startDate = format(new Date(period.startDate), 'yyyy-MM-dd');
+      const endDate = format(new Date(period.endDate), 'yyyy-MM-dd');
+      
+      // Only block if date is in period AND restaurant is closed during this period
+      const isInPeriod = dateStr >= startDate && dateStr <= endDate;
+      const isRestaurantClosed = !period.isOpen;
+      
+      return isInPeriod && isRestaurantClosed;
+    });
+  };
+
+  // Check if a specific date is disabled in opening hours configuration
+  const isDateDisabledInOpeningHours = (date: Date) => {
+    if (!openingHours || !Array.isArray(openingHours)) return false;
+    
+    const dayOfWeek = date.getDay();
+    const dayHours = openingHours.find((h: any) => h.dayOfWeek === dayOfWeek);
+    
+    // If no configuration found for this day or explicitly marked as closed
+    return !dayHours || !dayHours.isOpen;
+  };
+
+  // Check if booking is within cut-off time restrictions
+  const isWithinCutOffTime = (timeSlot: string, date: Date) => {
+    if (!cutOffTimes || !Array.isArray(cutOffTimes) || !timeSlot || !date) return false;
+    
+    const now = new Date();
+    const bookingDateTime = new Date(date);
+    
+    // Parse time slot
+    if (!timeSlot.includes(':')) return false;
+    const timeSlotParts = timeSlot.split(':');
+    if (timeSlotParts.length !== 2) return false;
+    
+    const [slotHour, slotMin] = timeSlotParts.map(Number);
+    if (isNaN(slotHour) || isNaN(slotMin)) return false;
+    
+    // Set the booking time
+    bookingDateTime.setHours(slotHour, slotMin, 0, 0);
+    
+    const dayOfWeek = date.getDay();
+    const cutOff = cutOffTimes.find((c: any) => c.dayOfWeek === dayOfWeek);
+    
+    if (cutOff && cutOff.cutOffTime && cutOff.cutOffTime.includes(':')) {
+      const cutOffTimeParts = cutOff.cutOffTime.split(':');
+      if (cutOffTimeParts.length === 2) {
+        const [cutHour, cutMin] = cutOffTimeParts.map(Number);
+        if (!isNaN(cutHour) && !isNaN(cutMin)) {
+          // Calculate cut-off time in minutes
+          const cutOffMinutes = cutHour * 60 + cutMin;
+          
+          // Calculate time difference between now and booking time
+          const timeDifferenceMs = bookingDateTime.getTime() - now.getTime();
+          const timeDifferenceMinutes = Math.floor(timeDifferenceMs / (1000 * 60));
+          
+          // If booking is within cut-off period, it's not allowed
+          return timeDifferenceMinutes < cutOffMinutes;
+        }
+      }
+    }
+    
+    return false;
+  };
+
   // Generate time slots based on opening hours or special period hours
   const generateTimeSlotsForDate = (date: Date) => {
     if (!date) return [];
@@ -262,9 +363,6 @@ export default function GuestBookingResponsive(props: any) {
     return slots;
   };
 
-  // Get time slots for the selected date
-  const timeSlots = selectedDate ? generateTimeSlotsForDate(selectedDate) : [];
-
   // Check if a date is available based on all configuration restrictions
   const isDateAvailable = (date: Date) => {
     // Check if date is in the past
@@ -301,104 +399,8 @@ export default function GuestBookingResponsive(props: any) {
     return true;
   };
 
-  // Check if a date is blocked by special periods (only when restaurant is closed)
-  const isDateBlockedBySpecialPeriods = (date: Date) => {
-    if (!specialPeriods || !Array.isArray(specialPeriods)) return false;
-    
-    const dateStr = format(date, 'yyyy-MM-dd');
-    
-    return specialPeriods.some((period: any) => {
-      if (!period.startDate || !period.endDate) return false;
-      
-      const startDate = format(new Date(period.startDate), 'yyyy-MM-dd');
-      const endDate = format(new Date(period.endDate), 'yyyy-MM-dd');
-      
-      // Only block if date is in period AND restaurant is closed during this period
-      const isInPeriod = dateStr >= startDate && dateStr <= endDate;
-      const isRestaurantClosed = !period.isOpen;
-      
-      return isInPeriod && isRestaurantClosed;
-    });
-  };
-
-  // Get special period opening hours for a specific date (if restaurant is open during special period)
-  const getSpecialPeriodHours = (date: Date) => {
-    if (!specialPeriods || !Array.isArray(specialPeriods)) return null;
-    
-    const dateStr = format(date, 'yyyy-MM-dd');
-    
-    const activePeriod = specialPeriods.find((period: any) => {
-      if (!period.startDate || !period.endDate || !period.isOpen) return false;
-      
-      const startDate = format(new Date(period.startDate), 'yyyy-MM-dd');
-      const endDate = format(new Date(period.endDate), 'yyyy-MM-dd');
-      
-      return dateStr >= startDate && dateStr <= endDate;
-    });
-    
-    if (activePeriod && activePeriod.openingTime && activePeriod.closingTime) {
-      return {
-        openTime: activePeriod.openingTime,
-        closeTime: activePeriod.closingTime,
-        isOpen: true
-      };
-    }
-    
-    return null;
-  };
-
-  // Check if a specific date is disabled in opening hours configuration
-  const isDateDisabledInOpeningHours = (date: Date) => {
-    if (!openingHours || !Array.isArray(openingHours)) return false;
-    
-    const dayOfWeek = date.getDay();
-    const dayHours = openingHours.find((h: any) => h.dayOfWeek === dayOfWeek);
-    
-    // If no configuration found for this day or explicitly marked as closed
-    return !dayHours || !dayHours.isOpen;
-  };
-
-  // Check if booking is within cut-off time restrictions
-  const isWithinCutOffTime = (timeSlot: string, date: Date) => {
-    if (!cutOffTimes || !Array.isArray(cutOffTimes) || !timeSlot || !date) return false;
-    
-    const now = new Date();
-    const bookingDateTime = new Date(date);
-    
-    // Parse time slot
-    if (!timeSlot.includes(':')) return false;
-    const timeSlotParts = timeSlot.split(':');
-    if (timeSlotParts.length !== 2) return false;
-    
-    const [slotHour, slotMin] = timeSlotParts.map(Number);
-    if (isNaN(slotHour) || isNaN(slotMin)) return false;
-    
-    // Set the booking time
-    bookingDateTime.setHours(slotHour, slotMin, 0, 0);
-    
-    const dayOfWeek = date.getDay();
-    const cutOff = cutOffTimes.find((c: any) => c.dayOfWeek === dayOfWeek);
-    
-    if (cutOff && cutOff.cutOffTime && cutOff.cutOffTime.includes(':')) {
-      const cutOffTimeParts = cutOff.cutOffTime.split(':');
-      if (cutOffTimeParts.length === 2) {
-        const [cutHour, cutMin] = cutOffTimeParts.map(Number);
-        if (!isNaN(cutHour) && !isNaN(cutMin)) {
-          // Calculate cut-off time in minutes
-          const cutOffMinutes = cutHour * 60 + cutMin;
-          
-          // Calculate time difference between now and booking time
-          const timeDifferenceMs = bookingDateTime.getTime() - now.getTime();
-          const timeDifferenceMinutes = Math.floor(timeDifferenceMs / (1000 * 60));
-          
-          // If booking is within cut-off period, it's not allowed
-          return timeDifferenceMinutes < cutOffMinutes;
-        }
-      }
-    }
-    
-    return false;
-  };
+  // Get time slots for the selected date
+  const timeSlots = selectedDate ? generateTimeSlotsForDate(selectedDate) : [];
 
   // Check if a time slot is valid based on all configuration restrictions
   const isTimeSlotValid = (timeSlot: string, date: Date) => {
