@@ -80,6 +80,7 @@ export default function Dashboard() {
   const { user, restaurant, isLoading, logout } = useAuth();
   const { generalSettings } = useSettings();
   const { formatDate, formatTime, formatDateTime } = useDate();
+  const [, setLocation] = useLocation();
   const [selectedDate, setSelectedDate] = useState(new Date());
   const [viewMode, setViewMode] = useState<"calendar" | "layout" | "status" | "menu">(
     "calendar",

@@ -17,7 +17,19 @@ interface DateProviderProps {
 }
 
 export function DateProvider({ children }: DateProviderProps) {
-  const { generalSettings } = useSettingsContext();
+  // Try to use settings context, but provide fallback if not available
+  let generalSettings;
+  try {
+    const settingsContext = useSettingsContext();
+    generalSettings = settingsContext.generalSettings;
+  } catch (error) {
+    // Fallback to default settings if SettingsProvider is not available
+    generalSettings = {
+      timeFormat: "24h" as const,
+      dateFormat: "DD/MM/YYYY",
+      timeZone: "UTC",
+    };
+  }
 
   const getDateFormatOptions = (): TimeFormatOptions => ({
     timeFormat: generalSettings.timeFormat as "12h" | "24h",
