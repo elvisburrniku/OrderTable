@@ -22,6 +22,7 @@ const PAGE_PERMISSION_MAP: { [key: string]: string } = {
   "customers": "access_customers",
   "menu-management": "access_menu",
   "tables": "access_tables",
+  "floor-plan": "access_floor_plan",
   "kitchen-dashboard": "access_kitchen",
   "users": "access_users",
   "guard-management": "access_users",
