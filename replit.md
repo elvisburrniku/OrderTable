@@ -22,7 +22,12 @@ A comprehensive restaurant booking management system with React frontend and Exp
 - Kitchen order management
 
 ## Recent Changes
-- **2025-06-27**: Successfully integrated heat-map with table-plan positioning system and fixed guest booking validation error
+- **2025-06-27**: Implemented comprehensive configuration-based booking restrictions for guest booking system
+- **Opening Hours Restrictions**: Guest booking system now prevents bookings on days disabled in opening hours configuration
+- **Special Periods Blocking**: Bookings are blocked during configured special periods (holidays, closures, events)
+- **Cut-off Time Enforcement**: System checks cut-off time configuration and prevents bookings within specified time buffer
+- **Calendar Integration**: Calendar view visually disables dates blocked by any of the three configuration restrictions
+- **Validation System**: Enhanced isTimeSlotValid function with comprehensive checks for all booking restrictions
 - **Heat-Map Integration**: Heat-map now uses actual table positions, shapes, and rotations from table-plan page instead of hardcoded positions
 - **Enhanced Visualization**: Added animated heat rings for high-performance tables, improved tooltips with detailed metrics, and room backgrounds
 - **Bug Fix**: Fixed guest booking error by adding comprehensive null checks to isTimeSlotValid function preventing undefined property access

@@ -240,53 +240,133 @@ export default function GuestBookingResponsive(props: any) {
   // Get time slots for the selected date
   const timeSlots = selectedDate ? generateTimeSlotsForDate(selectedDate) : [];
 
-  // Check if a date is available based on opening hours and special periods
+  // Check if a date is available based on all configuration restrictions
   const isDateAvailable = (date: Date) => {
-    const dayOfWeek = date.getDay(); // 0 = Sunday, 1 = Monday, etc.
-    
     // Check if date is in the past
     const today = startOfDay(new Date());
     if (date < today) return false;
     
-    // Check special periods first (restaurant-specific closures)
-    if (specialPeriods && Array.isArray(specialPeriods)) {
-      const dateStr = format(date, 'yyyy-MM-dd');
-      const hasSpecialPeriod = specialPeriods.some((period: any) => {
-        const start = new Date(period.startDate);
-        const end = new Date(period.endDate);
-        const checkDate = new Date(dateStr);
-        return checkDate >= start && checkDate <= end && !period.isOpen;
-      });
-      if (hasSpecialPeriod) return false;
+    // 1. Check if date is disabled in opening hours configuration
+    if (isDateDisabledInOpeningHours(date)) {
+      return false;
     }
-
-    // Check regular opening hours
-    if (openingHours && Array.isArray(openingHours)) {
-      const dayHours = openingHours.find((h: any) => h.dayOfWeek === dayOfWeek);
-      if (!dayHours || !dayHours.isOpen) return false;
+    
+    // 2. Check if date is blocked by special periods
+    if (isDateBlockedBySpecialPeriods(date)) {
+      return false;
     }
-
-    // Check cut-off times (advance booking requirements)
-    if (cutOffTimes && Array.isArray(cutOffTimes)) {
-      const now = new Date();
+    
+    // 3. For today, check if any time slots would be available considering cut-off times
+    const isToday = format(date, 'yyyy-MM-dd') === format(new Date(), 'yyyy-MM-dd');
+    if (isToday && cutOffTimes && Array.isArray(cutOffTimes)) {
+      const dayOfWeek = date.getDay();
       const cutOff = cutOffTimes.find((c: any) => c.dayOfWeek === dayOfWeek);
-      if (cutOff && cutOff.hoursInAdvance > 0) {
-        const requiredTime = new Date(date);
-        requiredTime.setHours(requiredTime.getHours() - cutOff.hoursInAdvance);
-        if (now > requiredTime) return false;
+      
+      if (cutOff && cutOff.cutOffTime) {
+        // Check if there would be any available slots today
+        // Sample with evening slot to see if day is completely blocked
+        const sampleSlot = "20:00";
+        if (isWithinCutOffTime(sampleSlot, date)) {
+          // If even evening slots are blocked, the whole day is likely blocked
+          return false;
+        }
       }
     }
 
     return true;
   };
 
-  // Check if a time slot is valid based on opening hours and cut-off times
+  // Check if a date is blocked by special periods
+  const isDateBlockedBySpecialPeriods = (date: Date) => {
+    if (!specialPeriods || !Array.isArray(specialPeriods)) return false;
+    
+    const dateStr = format(date, 'yyyy-MM-dd');
+    
+    return specialPeriods.some((period: any) => {
+      if (!period.startDate || !period.endDate) return false;
+      
+      const startDate = format(new Date(period.startDate), 'yyyy-MM-dd');
+      const endDate = format(new Date(period.endDate), 'yyyy-MM-dd');
+      
+      return dateStr >= startDate && dateStr <= endDate;
+    });
+  };
+
+  // Check if a specific date is disabled in opening hours configuration
+  const isDateDisabledInOpeningHours = (date: Date) => {
+    if (!openingHours || !Array.isArray(openingHours)) return false;
+    
+    const dayOfWeek = date.getDay();
+    const dayHours = openingHours.find((h: any) => h.dayOfWeek === dayOfWeek);
+    
+    // If no configuration found for this day or explicitly marked as closed
+    return !dayHours || !dayHours.isOpen;
+  };
+
+  // Check if booking is within cut-off time restrictions
+  const isWithinCutOffTime = (timeSlot: string, date: Date) => {
+    if (!cutOffTimes || !Array.isArray(cutOffTimes) || !timeSlot || !date) return false;
+    
+    const now = new Date();
+    const bookingDateTime = new Date(date);
+    
+    // Parse time slot
+    if (!timeSlot.includes(':')) return false;
+    const timeSlotParts = timeSlot.split(':');
+    if (timeSlotParts.length !== 2) return false;
+    
+    const [slotHour, slotMin] = timeSlotParts.map(Number);
+    if (isNaN(slotHour) || isNaN(slotMin)) return false;
+    
+    // Set the booking time
+    bookingDateTime.setHours(slotHour, slotMin, 0, 0);
+    
+    const dayOfWeek = date.getDay();
+    const cutOff = cutOffTimes.find((c: any) => c.dayOfWeek === dayOfWeek);
+    
+    if (cutOff && cutOff.cutOffTime && cutOff.cutOffTime.includes(':')) {
+      const cutOffTimeParts = cutOff.cutOffTime.split(':');
+      if (cutOffTimeParts.length === 2) {
+        const [cutHour, cutMin] = cutOffTimeParts.map(Number);
+        if (!isNaN(cutHour) && !isNaN(cutMin)) {
+          // Calculate cut-off time in minutes
+          const cutOffMinutes = cutHour * 60 + cutMin;
+          
+          // Calculate time difference between now and booking time
+          const timeDifferenceMs = bookingDateTime.getTime() - now.getTime();
+          const timeDifferenceMinutes = Math.floor(timeDifferenceMs / (1000 * 60));
+          
+          // If booking is within cut-off period, it's not allowed
+          return timeDifferenceMinutes < cutOffMinutes;
+        }
+      }
+    }
+    
+    return false;
+  };
+
+  // Check if a time slot is valid based on all configuration restrictions
   const isTimeSlotValid = (timeSlot: string, date: Date) => {
     if (!date || !timeSlot) return false;
     
+    // 1. Check if date is disabled in opening hours configuration
+    if (isDateDisabledInOpeningHours(date)) {
+      return false;
+    }
+    
+    // 2. Check if date is blocked by special periods
+    if (isDateBlockedBySpecialPeriods(date)) {
+      return false;
+    }
+    
+    // 3. Check if booking is within cut-off time restrictions
+    if (isWithinCutOffTime(timeSlot, date)) {
+      return false;
+    }
+    
     const dayOfWeek = date.getDay();
     
-    // Check opening hours for the day
+    // 4. Check opening hours for the specific time slot
     if (openingHours && Array.isArray(openingHours)) {
       const dayHours = openingHours.find((h: any) => h.dayOfWeek === dayOfWeek);
       if (!dayHours || !dayHours.isOpen) return false;
@@ -320,40 +400,6 @@ export default function GuestBookingResponsive(props: any) {
       const closeTime = closeHour * 60 + closeMin;
       
       if (slotTime < openTime || slotTime > closeTime) return false;
-    }
-
-    // Check cut-off times
-    if (cutOffTimes && Array.isArray(cutOffTimes)) {
-      const now = new Date();
-      const isToday = format(date, 'yyyy-MM-dd') === format(now, 'yyyy-MM-dd');
-      
-      if (isToday) {
-        const cutOff = cutOffTimes.find((c: any) => c.dayOfWeek === dayOfWeek);
-        if (cutOff && cutOff.cutOffTime && cutOff.cutOffTime.includes(':')) {
-          const cutOffTimeParts = cutOff.cutOffTime.split(':');
-          if (cutOffTimeParts.length === 2) {
-            const [cutHour, cutMin] = cutOffTimeParts.map(Number);
-            if (!isNaN(cutHour) && !isNaN(cutMin)) {
-              const cutOffMinutes = cutHour * 60 + cutMin;
-              const currentMinutes = now.getHours() * 60 + now.getMinutes();
-              
-              // Validate timeSlot again for cut-off check
-              if (timeSlot.includes(':')) {
-                const timeSlotParts = timeSlot.split(':');
-                if (timeSlotParts.length === 2) {
-                  const [slotHour, slotMin] = timeSlotParts.map(Number);
-                  if (!isNaN(slotHour) && !isNaN(slotMin)) {
-                    const slotMinutes = slotHour * 60 + slotMin;
-                    
-                    // If current time + cut-off buffer > slot time, slot is not available
-                    if (currentMinutes + cutOffMinutes > slotMinutes) return false;
-                  }
-                }
-              }
-            }
-          }
-        }
-      }
     }
 
     return true;
