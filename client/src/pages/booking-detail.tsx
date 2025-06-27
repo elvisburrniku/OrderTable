@@ -145,7 +145,7 @@ export default function BookingDetail() {
   const deleteMutation = useMutation({
     mutationFn: async () => {
       const response = await fetch(
-        `/api/tenants/${restaurant?.tenantId}/bookings/${id}`,
+        `/api/tenants/${restaurant?.tenantId}/restaurants/${restaurant?.id}/bookings/${id}`,
         {
           method: "DELETE",
         },
