@@ -16925,6 +16925,7 @@ NEXT STEPS:
   app.get(
     "/api/tenants/:tenantId/restaurants/:restaurantId/floor-plans",
     validateTenant,
+    requirePermission(PERMISSIONS.ACCESS_FLOOR_PLAN),
     async (req, res) => {
       try {
         const restaurantId = parseInt(req.params.restaurantId);
@@ -16947,6 +16948,7 @@ NEXT STEPS:
   app.post(
     "/api/tenants/:tenantId/restaurants/:restaurantId/floor-plans",
     validateTenant,
+    requirePermission(PERMISSIONS.ACCESS_FLOOR_PLAN),
     async (req, res) => {
       try {
         const restaurantId = parseInt(req.params.restaurantId);
@@ -16975,6 +16977,7 @@ NEXT STEPS:
   app.put(
     "/api/tenants/:tenantId/restaurants/:restaurantId/floor-plans/:id",
     validateTenant,
+    requirePermission(PERMISSIONS.ACCESS_FLOOR_PLAN),
     async (req, res) => {
       try {
         const id = parseInt(req.params.id);
@@ -17003,6 +17006,7 @@ NEXT STEPS:
   app.delete(
     "/api/tenants/:tenantId/restaurants/:restaurantId/floor-plans/:id",
     validateTenant,
+    requirePermission(PERMISSIONS.ACCESS_FLOOR_PLAN),
     async (req, res) => {
       try {
         const id = parseInt(req.params.id);
@@ -17028,7 +17032,7 @@ NEXT STEPS:
     },
   );
 
-  app.get("/api/floor-plan-templates", async (req, res) => {
+  app.get("/api/floor-plan-templates", requirePermission(PERMISSIONS.ACCESS_FLOOR_PLAN), async (req, res) => {
     try {
       const templates = await storage.getFloorPlanTemplates();
       res.json(templates);

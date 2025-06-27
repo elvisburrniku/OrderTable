@@ -165,6 +165,12 @@ export default function DashboardSidebar({
       color: "text-blue-600",
     },
     {
+      name: "Floor Plan",
+      icon: Layout,
+      href: `/${tenantId}/floor-plan`,
+      color: "text-violet-600",
+    },
+    {
       name: "Menu Management",
       icon: ChefHat,
       href: `/${tenantId}/menu-management`,
