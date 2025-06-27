@@ -654,7 +654,6 @@ export default function SeatingHeatMap({ restaurantId, tenantId }: SeatingHeatMa
                             fill={colorData.fill}
                             stroke={isHovered ? "#3b82f6" : colorData.stroke}
                             strokeWidth={isHovered ? "3" : "2"}
-```text
                             filter={isHovered ? "url(#glow)" : "url(#shadow)"}
                             className="cursor-pointer"
                             onClick={() => setSelectedTable(table)}
