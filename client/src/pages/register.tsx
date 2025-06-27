@@ -11,6 +11,8 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useToast } from "@/hooks/use-toast";
 import { Link, useLocation } from "wouter";
 import { apiRequest } from "@/lib/queryClient";
+import { Loader2 } from "lucide-react";
+import { StandardLoading } from "@/components/standard-loading";
 
 const registrationSchema = z.object({
   companyName: z.string().min(1, "Company name is required"),
@@ -56,7 +58,7 @@ export default function Register() {
   useEffect(() => {
     if (!sessionLoading && session) {
       const restaurant = (session as any)?.restaurant;
-      
+
       if (restaurant) {
         if (restaurant.setupCompleted) {
           // Redirect to dashboard if setup is complete
@@ -88,12 +90,12 @@ export default function Register() {
         },
         body: JSON.stringify(data),
       });
-      
+
       if (!response.ok) {
         const error = await response.json();
         throw new Error(error.message || 'Registration failed');
       }
-      
+
       return response.json();
     },
     onSuccess: (data) => {

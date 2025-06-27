@@ -34,6 +34,7 @@ import {
   User,
   Hash,
 } from "lucide-react";
+import { StandardLoading } from "@/components/standard-loading";
 import { useToast } from "@/hooks/use-toast";
 import {
   AlertDialog,
@@ -207,24 +208,11 @@ export default function BookingDetail() {
   });
 
   if (!user || !restaurant) {
-    return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <div className="text-center">
-          <p className="text-gray-600">Please log in to view booking details</p>
-        </div>
-      </div>
-    );
+    return <StandardLoading message="Please log in to view booking details" />;
   }
 
   if (isLoading) {
-    return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
-          <p className="text-gray-600 text-lg">Loading booking details...</p>
-        </div>
-      </div>
-    );
+    return <StandardLoading message="Loading booking details..." />;
   }
 
   if (error || !booking) {

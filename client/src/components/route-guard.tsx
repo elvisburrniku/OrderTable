@@ -1,6 +1,9 @@
-import { useEffect } from "react";
+`
+```typescript
+import { useAuth } from "@/lib/auth.tsx";
 import { useLocation } from "wouter";
-import { useAuth } from "@/lib/auth";
+import { useEffect } from "react";
+import { StandardLoading } from "./standard-loading";
 
 interface RouteGuardProps {
   children: React.ReactNode;
@@ -24,7 +27,7 @@ export function RouteGuard({ children }: RouteGuardProps) {
         /^\/feedback-responses-popup$/,
         /^\/booking-manage$/
       ];
-      
+
       const isPublicRoute = publicRoutes.some(pattern => pattern.test(location));
       if (isPublicRoute) {
         return; // Skip authentication for public routes
@@ -41,13 +44,13 @@ export function RouteGuard({ children }: RouteGuardProps) {
       const tenantRouteMatch = location.match(/^\/(\d+)\//);
       if (tenantRouteMatch) {
         const routeTenantId = parseInt(tenantRouteMatch[1]);
-        
+
         // If user has a restaurant but wrong tenant ID, redirect to correct dashboard
         if (restaurant && restaurant.tenantId !== routeTenantId) {
           setLocation(`/${restaurant.tenantId}/dashboard`);
           return;
         }
-        
+
         // If user doesn't have a restaurant, redirect to login
         if (!restaurant) {
           setLocation("/login");
@@ -118,7 +121,7 @@ export function RouteGuard({ children }: RouteGuardProps) {
       ];
 
       const isKnownRoute = knownRoutes.some(pattern => pattern.test(location));
-      
+
       if (!isKnownRoute) {
         // Unknown route - redirect to dashboard if authenticated, login if not
         if (user && restaurant) {
@@ -129,6 +132,13 @@ export function RouteGuard({ children }: RouteGuardProps) {
       }
     }
   }, [location, user, restaurant, isLoading, setLocation]);
+
+  if (isLoading) {
+    if (location === "/login") {
+      return <>{children}</>;
+    }
+    return <StandardLoading />;
+  }
 
   return <>{children}</>;
 }

@@ -3,6 +3,7 @@ import { useLocation } from "wouter";
 import { useQuery } from "@tanstack/react-query";
 import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
+import { StandardLoading } from "./standard-loading";
 
 interface PermissionGuardProps {
   children: React.ReactNode;
@@ -49,12 +50,12 @@ export function PermissionGuard({ children, requiredPermission, fallbackPath }: 
 
   useEffect(() => {
     console.log("PermissionGuard check:", { requiredPermission, userPermissions, isLoading });
-    
+
     if (isLoading || !userPermissions) return;
 
     const hasPermission = userPermissions.permissions.includes(requiredPermission);
     console.log("PermissionGuard result:", { hasPermission, userRole: userPermissions.role });
-    
+
     setHasAccess(hasPermission);
 
     if (!hasPermission) {
@@ -76,9 +77,7 @@ export function PermissionGuard({ children, requiredPermission, fallbackPath }: 
 
   if (isLoading) {
     return (
-      <div className="flex items-center justify-center h-64">
-        <div className="animate-spin w-8 h-8 border-4 border-primary border-t-transparent rounded-full" />
-      </div>
+      <StandardLoading />
     );
   }
 
@@ -138,7 +137,7 @@ export function usePermissions() {
 export function AutoPermissionGuard({ children }: { children: React.ReactNode }) {
   const [location] = useLocation();
   const { getUserRole, hasPermission, isLoading, permissions } = usePermissions();
-  
+
   // Extract the page name from the current route
   const getPageFromRoute = (path: string): string => {
     const segments = path.split('/').filter(Boolean);
@@ -166,9 +165,7 @@ export function AutoPermissionGuard({ children }: { children: React.ReactNode })
   if (isLoading || !userRole) {
     console.log("🔄 AutoPermissionGuard: Still loading permissions, showing loading state");
     return (
-      <div className="flex items-center justify-center h-64">
-        <div className="animate-spin w-8 h-8 border-4 border-primary border-t-transparent rounded-full" />
-      </div>
+      <StandardLoading />
     );
   }
 
