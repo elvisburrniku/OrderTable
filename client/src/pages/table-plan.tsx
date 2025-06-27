@@ -484,38 +484,60 @@ export default function TablePlan() {
     return baseStyle;
   };
 
-  const renderChairsAroundTable = (position, tableId) => {
+  const styles = {
+    table: {
+      width: '70px',
+      height: '70px',
+      lineHeight: '70px',
+      textAlign: 'center',
+      borderRadius: '12px',
+      backgroundColor: '#555',
+      boxShadow: '0 4px 8px rgba(0, 0, 0, 0.1)',
+      cursor: 'pointer',
+      color: '#fff',
+      transition: 'transform 0.2s, box-shadow 0.2s',
+    },
+    chair: {
+      width: '14px',
+      height: '14px',
+      borderRadius: '50%',
+      backgroundColor: '#8B4513',
+      boxShadow: '0 2px 4px rgba(0, 0, 0, 0.1)',
+    },
+  };
+
+  function renderTable(position, tableId) {
+    return (
+      <div
+        key={`table-${tableId}`}
+        style={{ ...styles.table, left: `${position.x}px`, top: `${position.y}px` }}
+        draggable
+        onDragStart={(e) => handleDragStart(tableId, e)}
+      >
+        {tableId}
+      </div>
+    );
+  }
+
+  function renderChairsAroundTable(position, tableId) {
     const chairs = [];
     const capacity = position.capacity || 4;
-    const chairSize = 12;
-    const tableWidth = 70;
 
     for (let i = 0; i < capacity; i++) {
       const angle = (i * 2 * Math.PI) / capacity;
       const radius = 45;
-
-      const chairX = position.x + tableWidth / 2 + Math.cos(angle) * radius - chairSize / 2;
-      const chairY = position.y + tableWidth / 2 + Math.sin(angle) * radius - chairSize / 2;
+      const chairX = position.x + radius * Math.cos(angle);
+      const chairY = position.y + radius * Math.sin(angle);
 
       chairs.push(
         <div
           key={`chair-${tableId}-${i}`}
-          style={{
-            position: "absolute",
-            left: `${chairX}px`,
-            top: `${chairY}px`,
-            width: `${chairSize}px`,
-            height: `${chairSize}px`,
-            backgroundColor: "#A0AEC0",
-            borderRadius: "50%",
-            boxShadow: "0 2px 4px rgba(0, 0, 0, 0.1)"
-          }}
+          style={{ ...styles.chair, left: `${chairX}px`, top: `${chairY}px`, position: 'absolute' }}
         />
       );
     }
-
     return chairs;
-  };
+  }
 
   const getStructureStyle = (structure: TableStructure) => ({
     width: structure.shape === "rectangle" ? "60px" : "50px",
@@ -704,7 +726,7 @@ export default function TablePlan() {
                   }, e)}
                   title="Large Round Table"
                 />
-                
+
                 {/* Row 2 */}
                 <div
                   className="w-10 h-6 bg-gray-600 cursor-grab hover:bg-gray-700 transition-colors"
@@ -745,7 +767,7 @@ export default function TablePlan() {
                   }, e)}
                   title="Extra Large Round Table"
                 />
-                
+
                 {/* Row 3 */}
                 <div
                   className="w-8 h-8 bg-gray-600 rounded-full cursor-grab hover:bg-gray-700 transition-colors"
@@ -786,7 +808,7 @@ export default function TablePlan() {
                   }, e)}
                   title="Massive Round Table"
                 />
-                
+
                 {/* Row 4 - Long rectangles */}
                 <div
                   className="w-12 h-4 bg-gray-600 cursor-grab hover:bg-gray-700 transition-colors col-span-2"
@@ -815,7 +837,7 @@ export default function TablePlan() {
                   title="Extra Long Rectangular Table"
                 />
               </div>
-              
+
               <div className="mb-4">
                 <Button
                   className="w-full bg-green-600 hover:bg-green-700 text-white"
@@ -824,7 +846,7 @@ export default function TablePlan() {
                   Done
                 </Button>
               </div>
-              
+
               <div className="mb-4">
                 <Button
                   variant="outline"
@@ -835,7 +857,7 @@ export default function TablePlan() {
                 </Button>
               </div>
             </div>
-            
+
             {/* Unallocated Tables */}
             <div className="mb-6">
               <h3 className="text-sm font-medium text-gray-700 mb-3">
@@ -848,7 +870,7 @@ export default function TablePlan() {
                     'bg-gray-800', 'bg-slate-600', 'bg-slate-700'
                   ];
                   const colorClass = priorityColors[index % priorityColors.length];
-                  
+
                   return (
                     <div
                       key={`unallocated-${table.id}`}
@@ -865,7 +887,7 @@ export default function TablePlan() {
                   );
                 })}
               </div>
-              
+
               {/* Priority Legend */}
               <div className="mb-4">
                 <h4 className="text-xs font-medium text-gray-700 mb-2">Priority:</h4>
@@ -947,6 +969,7 @@ export default function TablePlan() {
                 onDrop={handleDrop}
               >
                 {/* Grid pattern */}
+                <```text
                 <div
                   className="absolute inset-0 opacity-20"
                   style={{
@@ -998,7 +1021,7 @@ export default function TablePlan() {
                     <React.Fragment key={`table-group-${tableId}`}>
                       {/* Render chairs around the table */}
                       {renderChairsAroundTable(position, numericTableId)}
-                      
+
                       {/* Render the table */}
                       <div
                         key={`positioned-table-${tableId}`}
