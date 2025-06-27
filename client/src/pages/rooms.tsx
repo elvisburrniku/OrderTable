@@ -63,6 +63,8 @@ export default function Rooms() {
   const [itemsPerPage, setItemsPerPage] = useState(6);
   const [isNewRoomOpen, setIsNewRoomOpen] = useState(false);
   const [editingRoom, setEditingRoom] = useState<Room | null>(null);
+  const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
+  const [roomToDelete, setRoomToDelete] = useState<Room | null>(null);
   const [newRoom, setNewRoom] = useState({
     name: "",
     priority: "Medium"
@@ -101,6 +103,17 @@ export default function Rooms() {
     onSuccess: () => {
       queryClient.invalidateQueries({ 
         queryKey: ["/api/tenants", restaurant?.tenantId, "restaurants", restaurant?.id, "rooms"] 
+      });
+      toast({
+        title: "Success",
+        description: "Room deleted successfully!",
+      });
+    },
+    onError: (error) => {
+      toast({
+        title: "Error", 
+        description: "Failed to delete room. Please try again.",
+        variant: "destructive",
       });
     },
   });
@@ -411,6 +424,19 @@ export default function Rooms() {
     }
   };
 
+  const handleDeleteRoom = (room: Room) => {
+    setRoomToDelete(room);
+    setIsDeleteDialogOpen(true);
+  };
+
+  const confirmDeleteRoom = () => {
+    if (roomToDelete && roomToDelete.id) {
+      deleteRoomMutation.mutate(roomToDelete.id);
+      setIsDeleteDialogOpen(false);
+      setRoomToDelete(null);
+    }
+  };
+
   return (
     <TooltipProvider>
       <div className="min-h-screen bg-gray-50">
@@ -652,23 +678,30 @@ export default function Rooms() {
                             </Badge>
                           </td>
                            <td className="py-4 px-4">
-                            <DropdownMenu>
-                              <DropdownMenuTrigger asChild>
-                                <Button variant="ghost" className="h-8 w-8 p-0">
-                                  <span className="sr-only">Open menu</span>
-                                  <MoreHorizontal className="h-4 w-4" />
-                                </Button>
-                              </DropdownMenuTrigger>
-                              <DropdownMenuContent align="end">
-                                <DropdownMenuLabel>Actions</DropdownMenuLabel>
-                                <DropdownMenuItem onClick={() => handleEditRoom(room)}>
-                                  <Edit className="mr-2 h-4 w-4" /> Edit
-                                </DropdownMenuItem>
-                                <DropdownMenuItem onClick={() => removeRoom(index)}>
-                                  <Trash2 className="mr-2 h-4 w-4" /> Delete
-                                </DropdownMenuItem>
-                              </DropdownMenuContent>
-                            </DropdownMenu>
+                            <div className="flex items-center space-x-2">
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  handleEditRoom(room);
+                                }}
+                                className="h-8 w-8 p-0"
+                              >
+                                <Edit className="h-4 w-4" />
+                              </Button>
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  handleDeleteRoom(room);
+                                }}
+                                className="h-8 w-8 p-0 text-red-600 hover:text-red-700 hover:bg-red-50"
+                              >
+                                <Trash2 className="h-4 w-4" />
+                              </Button>
+                            </div>
                           </td>
                         </motion.tr>
                       ))
@@ -785,6 +818,34 @@ export default function Rooms() {
                 </div>
               </div>
             )}
+          </DialogContent>
+        </Dialog>
+
+        {/* Delete Confirmation Dialog */}
+        <Dialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
+          <DialogContent className="max-w-md">
+            <DialogHeader>
+              <DialogTitle>Delete Room</DialogTitle>
+            </DialogHeader>
+            <div className="py-4">
+              <p className="text-gray-600">
+                Are you sure you want to delete the room <strong>{roomToDelete?.name}</strong>?
+              </p>
+              <p className="text-red-600 text-sm mt-2">This action cannot be undone and will also delete all associated tables.</p>
+            </div>
+            <div className="flex justify-end space-x-2">
+              <Button type="button" variant="outline" onClick={() => setIsDeleteDialogOpen(false)}>
+                Cancel
+              </Button>
+              <Button 
+                type="button" 
+                variant="destructive" 
+                onClick={confirmDeleteRoom}
+                disabled={deleteRoomMutation.isPending}
+              >
+                {deleteRoomMutation.isPending ? "Deleting..." : "Delete Room"}
+              </Button>
+            </div>
           </DialogContent>
         </Dialog>
       </div>
