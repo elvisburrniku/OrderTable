@@ -1,0 +1,175 @@
+Error processing bookings for restaurant 1: NeonDbError: column "event_type" does not exist
+    at execute (file:///home/runner/workspace/node_modules/@neondatabase/serverless/index.mjs:1556:55)
+    at process.processTicksAndRejections (node:internal/process/task_queues:95:5)
+    at async NeonHttpPreparedQuery.execute (/home/runner/workspace/node_modules/src/neon-http/session.ts:68:18)
+    at async DatabaseStorage.getBookingsByRestaurant (/home/runner/workspace/server/db-storage.ts:468:20)
+    at async FeedbackReminderService.processRestaurantBookings (/home/runner/workspace/server/feedback-reminder-service.ts:65:24)
+    at async FeedbackReminderService.checkCompletedBookings (/home/runner/workspace/server/feedback-reminder-service.ts:55:11) {
+  severity: 'ERROR',
+  code: '42703',
+  detail: undefined,
+  hint: undefined,
+  position: '229',
+  internalPosition: undefined,
+  internalQuery: undefined,
+  where: undefined,
+  schema: undefined,
+  table: undefined,
+  column: undefined,
+  dataType: undefined,
+  constraint: undefined,
+  file: 'parse_relation.c',
+  line: '3716',
+  routine: 'errorMissingColumn',
+  sourceError: undefined
+}
+Error processing bookings for restaurant 2: NeonDbError: column "event_type" does not exist
+    at execute (file:///home/runner/workspace/node_modules/@neondatabase/serverless/index.mjs:1556:55)
+    at process.processTicksAndRejections (node:internal/process/task_queues:95:5)
+    at async NeonHttpPreparedQuery.execute (/home/runner/workspace/node_modules/src/neon-http/session.ts:68:18)
+    at async DatabaseStorage.getBookingsByRestaurant (/home/runner/workspace/server/db-storage.ts:468:20)
+    at async FeedbackReminderService.processRestaurantBookings (/home/runner/workspace/server/feedback-reminder-service.ts:65:24)
+    at async FeedbackReminderService.checkCompletedBookings (/home/runner/workspace/server/feedback-reminder-service.ts:55:11) {
+  severity: 'ERROR',
+  code: '42703',
+  detail: undefined,
+  hint: undefined,
+  position: '229',
+  internalPosition: undefined,
+  internalQuery: undefined,
+  where: undefined,
+  schema: undefined,
+  table: undefined,
+  column: undefined,
+  dataType: undefined,
+  constraint: undefined,
+  file: 'parse_relation.c',
+  line: '3716',
+  routine: 'errorMissingColumn',
+  sourceError: undefined
+}
+Error processing bookings for restaurant 3: NeonDbError: column "event_type" does not exist
+    at execute (file:///home/runner/workspace/node_modules/@neondatabase/serverless/index.mjs:1556:55)
+    at process.processTicksAndRejections (node:internal/process/task_queues:95:5)
+    at async NeonHttpPreparedQuery.execute (/home/runner/workspace/node_modules/src/neon-http/session.ts:68:18)
+    at async DatabaseStorage.getBookingsByRestaurant (/home/runner/workspace/server/db-storage.ts:468:20)
+    at async FeedbackReminderService.processRestaurantBookings (/home/runner/workspace/server/feedback-reminder-service.ts:65:24)
+    at async FeedbackReminderService.checkCompletedBookings (/home/runner/workspace/server/feedback-reminder-service.ts:55:11) {
+  severity: 'ERROR',
+  code: '42703',
+  detail: undefined,
+  hint: undefined,
+  position: '229',
+  internalPosition: undefined,
+  internalQuery: undefined,
+  where: undefined,
+  schema: undefined,
+  table: undefined,
+  column: undefined,
+  dataType: undefined,
+  constraint: undefined,
+  file: 'parse_relation.c',
+  line: '3716',
+  routine: 'errorMissingColumn',
+  sourceError: undefined
+}
+Error processing bookings for restaurant 4: NeonDbError: column "event_type" does not exist
+    at execute (file:///home/runner/workspace/node_modules/@neondatabase/serverless/index.mjs:1556:55)
+    at process.processTicksAndRejections (node:internal/process/task_queues:95:5)
+    at async NeonHttpPreparedQuery.execute (/home/runner/workspace/node_modules/src/neon-http/session.ts:68:18)
+    at async DatabaseStorage.getBookingsByRestaurant (/home/runner/workspace/server/db-storage.ts:468:20)
+    at async FeedbackReminderService.processRestaurantBookings (/home/runner/workspace/server/feedback-reminder-service.ts:65:24)
+    at async FeedbackReminderService.checkCompletedBookings (/home/runner/workspace/server/feedback-reminder-service.ts:55:11) {
+  severity: 'ERROR',
+  code: '42703',
+  detail: undefined,
+  hint: undefined,
+  position: '229',
+  internalPosition: undefined,
+  internalQuery: undefined,
+  where: undefined,
+  schema: undefined,
+  table: undefined,
+  column: undefined,
+  dataType: undefined,
+  constraint: undefined,
+  file: 'parse_relation.c',
+  line: '3716',
+  routine: 'errorMissingColumn',
+  sourceError: undefined
+}
+Error processing bookings for restaurant 5: NeonDbError: column "event_type" does not exist
+    at execute (file:///home/runner/workspace/node_modules/@neondatabase/serverless/index.mjs:1556:55)
+    at process.processTicksAndRejections (node:internal/process/task_queues:95:5)
+    at async NeonHttpPreparedQuery.execute (/home/runner/workspace/node_modules/src/neon-http/session.ts:68:18)
+    at async DatabaseStorage.getBookingsByRestaurant (/home/runner/workspace/server/db-storage.ts:468:20)
+    at async FeedbackReminderService.processRestaurantBookings (/home/runner/workspace/server/feedback-reminder-service.ts:65:24)
+    at async FeedbackReminderService.checkCompletedBookings (/home/runner/workspace/server/feedback-reminder-service.ts:55:11) {
+  severity: 'ERROR',
+  code: '42703',
+  detail: undefined,
+  hint: undefined,
+  position: '229',
+  internalPosition: undefined,
+  internalQuery: undefined,
+  where: undefined,
+  schema: undefined,
+  table: undefined,
+  column: undefined,
+  dataType: undefined,
+  constraint: undefined,
+  file: 'parse_relation.c',
+  line: '3716',
+  routine: 'errorMissingColumn',
+  sourceError: undefined
+}
+Error processing bookings for restaurant 7: NeonDbError: column "event_type" does not exist
+    at execute (file:///home/runner/workspace/node_modules/@neondatabase/serverless/index.mjs:1556:55)
+    at process.processTicksAndRejections (node:internal/process/task_queues:95:5)
+    at async NeonHttpPreparedQuery.execute (/home/runner/workspace/node_modules/src/neon-http/session.ts:68:18)
+    at async DatabaseStorage.getBookingsByRestaurant (/home/runner/workspace/server/db-storage.ts:468:20)
+    at async FeedbackReminderService.processRestaurantBookings (/home/runner/workspace/server/feedback-reminder-service.ts:65:24)
+    at async FeedbackReminderService.checkCompletedBookings (/home/runner/workspace/server/feedback-reminder-service.ts:55:11) {
+  severity: 'ERROR',
+  code: '42703',
+  detail: undefined,
+  hint: undefined,
+  position: '229',
+  internalPosition: undefined,
+  internalQuery: undefined,
+  where: undefined,
+  schema: undefined,
+  table: undefined,
+  column: undefined,
+  dataType: undefined,
+  constraint: undefined,
+  file: 'parse_relation.c',
+  line: '3716',
+  routine: 'errorMissingColumn',
+  sourceError: undefined
+}
+Error processing bookings for restaurant 6: NeonDbError: column "event_type" does not exist
+    at execute (file:///home/runner/workspace/node_modules/@neondatabase/serverless/index.mjs:1556:55)
+    at process.processTicksAndRejections (node:internal/process/task_queues:95:5)
+    at async NeonHttpPreparedQuery.execute (/home/runner/workspace/node_modules/src/neon-http/session.ts:68:18)
+    at async DatabaseStorage.getBookingsByRestaurant (/home/runner/workspace/server/db-storage.ts:468:20)
+    at async FeedbackReminderService.processRestaurantBookings (/home/runner/workspace/server/feedback-reminder-service.ts:65:24)
+    at async FeedbackReminderService.checkCompletedBookings (/home/runner/workspace/server/feedback-reminder-service.ts:55:11) {
+  severity: 'ERROR',
+  code: '42703',
+  detail: undefined,
+  hint: undefined,
+  position: '229',
+  internalPosition: undefined,
+  internalQuery: undefined,
+  where: undefined,
+  schema: undefined,
+  table: undefined,
+  column: undefined,
+  dataType: undefined,
+  constraint: undefined,
+  file: 'parse_relation.c',
+  line: '3716',
+  routine: 'errorMissingColumn',
+  sourceError: undefined
+}
