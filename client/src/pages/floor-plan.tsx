@@ -55,8 +55,8 @@ const ELEMENT_TYPES = [
 
 export default function FloorPlanPage() {
   const { user } = useAuth();
-  // Get restaurant from user context or default for testing
-  const restaurant = { id: 7, tenantId: 3 };
+  // Get restaurant from user context
+  const restaurant = user?.restaurants?.[0];
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
