@@ -65,6 +65,7 @@ export default function BookingDetail() {
     status: "",
     notes: "",
     bookingDate: "",
+    tableId: null as number | null,
   });
 
   const {
@@ -97,6 +98,18 @@ export default function BookingDetail() {
       return allRequests.filter((req: any) => req.bookingId === parseInt(id));
     },
     enabled: !!restaurant && !!restaurant.tenantId && !!restaurant.id && !!id,
+  });
+
+  const { data: tables } = useQuery({
+    queryKey: [`/api/tenants/${restaurant?.tenantId}/restaurants/${restaurant?.id}/tables`],
+    queryFn: async () => {
+      const response = await fetch(
+        `/api/tenants/${restaurant?.tenantId}/restaurants/${restaurant?.id}/tables`,
+      );
+      if (!response.ok) throw new Error("Failed to fetch tables");
+      return response.json();
+    },
+    enabled: !!restaurant && !!restaurant.tenantId && !!restaurant.id,
   });
 
   const updateMutation = useMutation({
@@ -248,6 +261,7 @@ export default function BookingDetail() {
       status: booking.status || "",
       notes: booking.notes || "",
       bookingDate: new Date(booking.bookingDate).toISOString().split('T')[0] || "",
+      tableId: booking.tableId || null,
     });
     setIsEditing(true);
   };
@@ -256,6 +270,7 @@ export default function BookingDetail() {
     updateMutation.mutate({
       ...editData,
       bookingDate: editData.bookingDate ? new Date(editData.bookingDate) : new Date(booking.bookingDate),
+      tableId: editData.tableId,
     });
   };
 
@@ -674,6 +689,28 @@ export default function BookingDetail() {
                           className="mt-1"
                           required
                         />
+                      </div>
+
+                      <div>
+                        <Label htmlFor="edit-tableId" className="text-sm font-medium text-gray-700">Available Tables</Label>
+                        <Select
+                          value={editData.tableId?.toString() || "none"}
+                          onValueChange={(value) =>
+                            setEditData({ ...editData, tableId: value === "none" ? null : parseInt(value) })
+                          }
+                        >
+                          <SelectTrigger className="mt-1">
+                            <SelectValue placeholder="Select a table" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="none">No table assigned</SelectItem>
+                            {Array.isArray(tables) && tables.map((table: any) => (
+                              <SelectItem key={table.id} value={table.id.toString()}>
+                                Table {table.tableNumber || table.id} (Capacity: {table.capacity})
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
                       </div>
 
                       <div>
