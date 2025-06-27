@@ -22,6 +22,12 @@ A comprehensive restaurant booking management system with React frontend and Exp
 - Kitchen order management
 
 ## Recent Changes
+- **2025-06-27**: Fixed subscription access restrictions for cancelled subscriptions - users can now access all essential features
+- **Subscription System**: Modified permission middleware to allow core restaurant management functionality even with cancelled subscriptions
+- **Access Control**: Users with cancelled subscriptions can access dashboard, bookings, customers, menu, tables, kitchen, settings, floor plan, user management, and billing features
+- **Permission Fix**: Added comprehensive permission list for cancelled subscriptions including MANAGE_BILLING, ACCESS_USERS, VIEW_USERS, MANAGE_USERS
+- **Calendar Component**: Fixed JavaScript errors with safety checks for undefined properties in enhanced-google-calendar component
+- **Database Schema**: Resolved missing column issues by adding event_type, payment fields, and other required booking columns
 - **2025-06-27**: Completed Interactive Restaurant Floor Plan Designer with drag-and-drop functionality
 - **Floor Plan Designer**: Implemented comprehensive floor plan system with visual drag-and-drop interface for tables, chairs, walls, doors, windows, and decorations
 - **Database Schema**: Added floor_plans and floor_plan_templates tables with complete element positioning and styling support
