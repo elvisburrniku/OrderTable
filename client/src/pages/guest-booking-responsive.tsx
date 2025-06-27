@@ -646,11 +646,10 @@ export default function GuestBookingResponsive(props: any) {
 
               return (
                 <div key={index} className="flex flex-col items-center flex-1">
-                  <div className={`
-                    w-10 h-10 md:w-12 md:h-12 rounded-full flex items-center justify-center mb-2
-                    ${isActive ? 'bg-blue-500 text-white' : 
-                      isCompleted ? 'bg-green-500 text-white' : 'bg-white/20 text-white/60'}
-                  `}>
+                  <div className={
+                    isActive ? 'w-10 h-10 md:w-12 md:h-12 rounded-full flex items-center justify-center mb-2 bg-blue-500 text-white' : 
+                      isCompleted ? 'w-10 h-10 md:w-12 md:h-12 rounded-full flex items-center justify-center mb-2 bg-green-500 text-white' : 'w-10 h-10 md:w-12 md:h-12 rounded-full flex items-center justify-center mb-2 bg-white/20 text-white/60'
+                  }>
                     {isCompleted ? <Check className="w-5 h-5 md:w-6 md:h-6" /> : <Icon className="w-5 h-5 md:w-6 md:h-6" />}
                   </div>
                   <span className={`text-xs md:text-sm font-medium ${isActive || isCompleted ? 'text-white' : 'text-white/60'}`}>
@@ -752,18 +751,17 @@ export default function GuestBookingResponsive(props: any) {
                         key={index}
                         onClick={() => isAvailable && setSelectedDate(date)}
                         disabled={!isAvailable}
-                        className={`
-                          h-12 w-full rounded-lg border-2 transition-all duration-200 text-center flex flex-col items-center justify-center
-                          ${isPastDate
-                            ? 'border-gray-200 bg-gray-100 text-gray-400 cursor-not-allowed'
+                        className={
+                          isPastDate
+                            ? 'h-12 w-full rounded-lg border-2 transition-all duration-200 text-center flex flex-col items-center justify-center border-gray-200 bg-gray-100 text-gray-400 cursor-not-allowed'
                             : !isAvailable
-                            ? 'border-red-300 bg-red-100 text-red-600 cursor-not-allowed'
-                            :`isSelected
-                            ? 'border-blue-500 bg-blue-500 text-white shadow-lg'
+                            ? 'h-12 w-full rounded-lg border-2 transition-all duration-200 text-center flex flex-col items-center justify-center border-red-300 bg-red-100 text-red-600 cursor-not-allowed'
+                            : isSelected
+                            ? 'h-12 w-full rounded-lg border-2 transition-all duration-200 text-center flex flex-col items-center justify-center border-blue-500 bg-blue-500 text-white shadow-lg'
                             : isToday
-                            ? 'border-green-400 bg-green-100 text-green-700 font-semibold'
-                            : 'border-green-300 bg-green-50 text-green-700 hover:border-green-400 hover:bg-green-100'}
-                        `}
+                            ? 'h-12 w-full rounded-lg border-2 transition-all duration-200 text-center flex flex-col items-center justify-center border-green-400 bg-green-100 text-green-700 font-semibold'
+                            : 'h-12 w-full rounded-lg border-2 transition-all duration-200 text-center flex flex-col items-center justify-center border-green-300 bg-green-50 text-green-700 hover:border-green-400 hover:bg-green-100'
+                        }
                       >
                         <span className="text-sm font-medium">{format(date, 'd')}</span>
                         {isToday && isAvailable && <span className="text-xs">Today</span>}
@@ -830,16 +828,15 @@ export default function GuestBookingResponsive(props: any) {
                             key={time}
                             onClick={() => isAvailable && setSelectedTime(time)}
                             disabled={!isAvailable}
-                            className={`
-                              relative p-3 rounded-lg border-2 transition-all duration-200
-                              ${!isAvailable
-                                ? 'border-red-300 bg-red-100 text-red-600 cursor-not-allowed'
+                            className={
+                              !isAvailable
+                                ? 'relative p-3 rounded-lg border-2 transition-all duration-200 border-red-300 bg-red-100 text-red-600 cursor-not-allowed'
                                 : isSelected
-                                ? 'border-blue-500 bg-blue-50 text-blue-700 shadow-lg'
+                                ? 'relative p-3 rounded-lg border-2 transition-all duration-200 border-blue-500 bg-blue-50 text-blue-700 shadow-lg'
                                 : isRecommended
-                                ? 'border-amber-300 bg-amber-50 text-amber-700 hover:border-amber-400 hover:bg-amber-100'
-                                : 'border-green-300 bg-green-50 text-green-700 hover:border-green-400 hover:bg-green-100'}
-                            `}
+                                ? 'relative p-3 rounded-lg border-2 transition-all duration-200 border-amber-300 bg-amber-50 text-amber-700 hover:border-amber-400 hover:bg-amber-100'
+                                : 'relative p-3 rounded-lg border-2 transition-all duration-200 border-green-300 bg-green-50 text-green-700 hover:border-green-400 hover:bg-green-100'
+                            }
                           >
                             {isRecommended && isAvailable && !isSelected && (
                               <span className="absolute -top-1 -right-1 w-3 h-3 bg-amber-400 rounded-full"></span>
@@ -933,14 +930,13 @@ export default function GuestBookingResponsive(props: any) {
                     <button
                       key={count}
                       onClick={() => setGuestCount(count)}
-                      className={`
-                        px-3 py-1 rounded-full text-sm transition-all duration-200
-                        ${guestCount === count 
-                          ? 'bg-blue-500 text-white' 
+                      className={
+                        guestCount === count 
+                          ? 'px-3 py-1 rounded-full text-sm transition-all duration-200 bg-blue-500 text-white' 
                           : count === getDefaultGuestCount()
-                          ? 'bg-amber-100 text-amber-700 border border-amber-300'
-                          : 'bg-gray-100 text-gray-600 hover:bg-gray-200'}
-                      `}
+                          ? 'px-3 py-1 rounded-full text-sm transition-all duration-200 bg-amber-100 text-amber-700 border border-amber-300'
+                          : 'px-3 py-1 rounded-full text-sm transition-all duration-200 bg-gray-100 text-gray-600 hover:bg-gray-200'
+                      }
                     >
                       {count}
                     </button>
@@ -1077,4 +1073,5 @@ export default function GuestBookingResponsive(props: any) {
       </div>
     </div>
   );
+}
 }
