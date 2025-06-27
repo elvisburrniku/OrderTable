@@ -23,12 +23,12 @@ import {
 
 export default function GuestBookingResponsive(props: any) {
   const [match, params] = useRoute('/guest-booking/:tenantId/:restaurantId');
-  
+
   // Extract parameters from URL path manually if useRoute doesn't work
   const pathParts = window.location.pathname.split('/');
   const pathTenantId = pathParts[2];
   const pathRestaurantId = pathParts[3];
-  
+
   const tenantId = params?.tenantId || pathTenantId || props.params?.tenantId || props.tenantId;
   const restaurantId = params?.restaurantId || pathRestaurantId || props.params?.restaurantId || props.restaurantId;
   const { toast } = useToast();
@@ -40,7 +40,7 @@ export default function GuestBookingResponsive(props: any) {
 
 
   const [currentStep, setCurrentStep] = useState(0);
-  
+
   // Set default guest count based on time of day
   const getDefaultGuestCount = () => {
     const currentHour = new Date().getHours();
@@ -49,7 +49,7 @@ export default function GuestBookingResponsive(props: any) {
     if (currentHour >= 17 && currentHour < 21) return 4; // Dinner - larger groups
     return 2; // Late night - smaller groups
   };
-  
+
   const [guestCount, setGuestCount] = useState(getDefaultGuestCount());
   const [selectedDate, setSelectedDate] = useState<Date | null>(null);
   const [selectedTime, setSelectedTime] = useState('');
@@ -164,7 +164,7 @@ export default function GuestBookingResponsive(props: any) {
 
   const isStepValid = () => {
     const hasThemes = seasonalThemes.length > 0;
-    
+
     switch (currentStep) {
       case 0: return selectedDate !== null;
       case 1: return selectedTime !== '';
@@ -211,51 +211,51 @@ export default function GuestBookingResponsive(props: any) {
   // Get special period opening hours for a specific date (if restaurant is open during special period)
   const getSpecialPeriodHours = (date: Date) => {
     if (!specialPeriods || !Array.isArray(specialPeriods)) return null;
-    
+
     const dateStr = format(date, 'yyyy-MM-dd');
-    
+
     const activePeriod = specialPeriods.find((period: any) => {
       if (!period.startDate || !period.endDate || !period.isOpen) return false;
-      
+
       const startDate = format(new Date(period.startDate), 'yyyy-MM-dd');
       const endDate = format(new Date(period.endDate), 'yyyy-MM-dd');
-      
+
       return dateStr >= startDate && dateStr <= endDate;
     });
-    
+
     if (activePeriod && activePeriod.openTime && activePeriod.closeTime) {
       // Handle midnight close time (00:00) as end of day (23:59)
       let closeTime = activePeriod.closeTime;
       if (closeTime === "00:00") {
         closeTime = "23:59";
       }
-      
+
       return {
         openTime: activePeriod.openTime,
         closeTime: closeTime,
         isOpen: true
       };
     }
-    
+
     return null;
   };
 
   // Check if a date is blocked by special periods (only when restaurant is closed)
   const isDateBlockedBySpecialPeriods = (date: Date) => {
     if (!specialPeriods || !Array.isArray(specialPeriods)) return false;
-    
+
     const dateStr = format(date, 'yyyy-MM-dd');
-    
+
     return specialPeriods.some((period: any) => {
       if (!period.startDate || !period.endDate) return false;
-      
+
       const startDate = format(new Date(period.startDate), 'yyyy-MM-dd');
       const endDate = format(new Date(period.endDate), 'yyyy-MM-dd');
-      
+
       // Only block if date is in period AND restaurant is closed during this period
       const isInPeriod = dateStr >= startDate && dateStr <= endDate;
       const isRestaurantClosed = !period.isOpen;
-      
+
       return isInPeriod && isRestaurantClosed;
     });
   };
@@ -263,47 +263,66 @@ export default function GuestBookingResponsive(props: any) {
   // Check if a specific date is disabled in opening hours configuration
   const isDateDisabledInOpeningHours = (date: Date) => {
     if (!openingHours || !Array.isArray(openingHours)) return false;
-    
+
     const dayOfWeek = date.getDay();
     const dayHours = openingHours.find((h: any) => h.dayOfWeek === dayOfWeek);
-    
+
     // If no configuration found for this day or explicitly marked as closed
     return !dayHours || !dayHours.isOpen;
   };
 
+// Helper function to check if date is disabled in opening hours
+  const isDateDisabledInOpeningHours = (date: Date, openingHours: any[]) => {
+    if (!openingHours || openingHours.length === 0) return false;
+
+    const dayOfWeek = date.getDay();
+    const dayHours = openingHours.find(h => h.dayOfWeek === dayOfWeek);
+
+    return dayHours ? !dayHours.isOpen : true;
+  };
+
+  // Check if date is available based on opening hours and special periods
+  const isDateAvailable = (date: Date) => {
+    const dateStr = format(date, 'yyyy-MM-dd');
+
+    // Check if date is disabled in opening hours
+    if (isDateDisabledInOpeningHours(date, openingHours)) {
+      return false;
+    }
+
   // Check if booking is within cut-off time restrictions
   const isWithinCutOffTime = (timeSlot: string, date: Date) => {
     if (!cutOffTimes || !Array.isArray(cutOffTimes) || !timeSlot || !date) return false;
-    
+
     const now = new Date();
     const bookingDateTime = new Date(date);
-    
+
     // Parse time slot (handle both HH:MM and H:MM formats)
     if (!timeSlot.includes(':')) return false;
     const timeSlotParts = timeSlot.split(':');
     if (timeSlotParts.length !== 2) return false;
-    
+
     const [slotHour, slotMin] = timeSlotParts.map(Number);
     if (isNaN(slotHour) || isNaN(slotMin)) return false;
-    
+
     // Set the booking time
     bookingDateTime.setHours(slotHour, slotMin, 0, 0);
-    
+
     const dayOfWeek = date.getDay();
     const cutOff = cutOffTimes.find((c: any) => c.dayOfWeek === dayOfWeek);
-    
+
     if (cutOff && typeof cutOff.cutOffHours === 'number' && cutOff.cutOffHours > 0) {
       // Cut-off time in hours (e.g., 1 = 1 hour before, 2 = 2 hours before)
       const cutOffMinutes = cutOff.cutOffHours * 60;
-      
+
       // Calculate the minimum allowed booking time from now
       const minAllowedBookingTime = new Date(now.getTime() + cutOffMinutes * 60 * 1000);
-      
+
       // If the requested booking time is before the minimum allowed time, it's not allowed
       // Example: If it's 11:00 AM and cut-off is 1 hour, can't book before 12:00 PM
       return bookingDateTime < minAllowedBookingTime;
     }
-    
+
     // Legacy support for cutOffTime format (if still used)
     if (cutOff && cutOff.cutOffTime && cutOff.cutOffTime.includes(':')) {
       const cutOffTimeParts = cutOff.cutOffTime.split(':');
@@ -316,18 +335,18 @@ export default function GuestBookingResponsive(props: any) {
         }
       }
     }
-    
+
     return false;
   };
 
   // Generate time slots based on opening hours or special period hours
   const generateTimeSlotsForDate = (date: Date) => {
     if (!date) return [];
-    
+
     // Check for special period hours first
     const specialHours = getSpecialPeriodHours(date);
     let effectiveHours = null;
-    
+
     if (specialHours) {
       // Use special period hours if restaurant is open during special period
       effectiveHours = specialHours;
@@ -339,40 +358,40 @@ export default function GuestBookingResponsive(props: any) {
         effectiveHours = dayHours;
       }
     }
-    
+
     if (!effectiveHours || !effectiveHours.isOpen) return [];
-    
+
     // Validate hours format
     if (!effectiveHours.openTime || !effectiveHours.closeTime || 
         !effectiveHours.openTime.includes(':') || !effectiveHours.closeTime.includes(':')) return [];
-    
+
     const openTimeParts = effectiveHours.openTime.split(':');
     const closeTimeParts = effectiveHours.closeTime.split(':');
-    
+
     if (openTimeParts.length !== 2 || closeTimeParts.length !== 2) return [];
-    
+
     const [openHour, openMin] = openTimeParts.map(Number);
     const [closeHour, closeMin] = closeTimeParts.map(Number);
-    
+
     if (isNaN(openHour) || isNaN(openMin) || isNaN(closeHour) || isNaN(closeMin)) return [];
-    
+
     const slots = [];
-    
+
     // Start from opening time
     let currentHour = openHour;
     let currentMin = openMin;
-    
+
     // Generate 15-minute intervals until closing time
     while (true) {
       const slotTime = currentHour * 60 + currentMin;
       const closeTime = closeHour * 60 + closeMin;
-      
+
       // Stop if we've reached or passed closing time
       if (slotTime >= closeTime) break;
-      
+
       const timeString = `${currentHour.toString().padStart(2, '0')}:${currentMin.toString().padStart(2, '0')}`;
       slots.push(timeString);
-      
+
       // Add 15 minutes
       currentMin += 15;
       if (currentMin >= 60) {
@@ -380,7 +399,7 @@ export default function GuestBookingResponsive(props: any) {
         currentHour++;
       }
     }
-    
+
     return slots;
   };
 
@@ -389,7 +408,7 @@ export default function GuestBookingResponsive(props: any) {
     // Check if date is in the past
     const today = startOfDay(new Date());
     if (date < today) return false;
-    
+
     // Priority 1: Check for special periods first (highest priority)
     const specialHours = getSpecialPeriodHours(date);
     if (specialHours) {
@@ -401,23 +420,23 @@ export default function GuestBookingResponsive(props: any) {
       // Restaurant is open with custom hours during special period - date is available
       return true;
     }
-    
+
     // Priority 2: Check if date is blocked by special periods (closed periods)
     if (isDateBlockedBySpecialPeriods(date)) {
       return false;
     }
-    
+
     // Priority 3: Check opening hours configuration (base rule)
     if (isDateDisabledInOpeningHours(date)) {
       return false;
     }
-    
+
     // Priority 4: Check cut-off times for today only
     const isToday = format(date, 'yyyy-MM-dd') === format(new Date(), 'yyyy-MM-dd');
     if (isToday && cutOffTimes && Array.isArray(cutOffTimes)) {
       const dayOfWeek = date.getDay();
       const cutOff = cutOffTimes.find((c: any) => c.dayOfWeek === dayOfWeek);
-      
+
       if (cutOff && cutOff.cutOffTime) {
         // Check if there would be any available slots today considering cut-off
         const sampleSlot = "20:00";
@@ -437,13 +456,13 @@ export default function GuestBookingResponsive(props: any) {
   // Check if a time slot is valid based on priority hierarchy
   const isTimeSlotValid = (timeSlot: string, date: Date) => {
     if (!date || !timeSlot) return false;
-    
+
     const dayOfWeek = date.getDay();
-    
+
     // Priority 1: Check for special periods first (highest priority)
     const specialHours = getSpecialPeriodHours(date);
     let effectiveHours = null;
-    
+
     if (specialHours) {
       // Special period found - use its configuration
       if (!specialHours.isOpen) {
@@ -456,7 +475,7 @@ export default function GuestBookingResponsive(props: any) {
       if (isDateBlockedBySpecialPeriods(date)) {
         return false;
       }
-      
+
       // Priority 3: Use regular opening hours (base rule)
       if (openingHours && Array.isArray(openingHours)) {
         const dayHours = openingHours.find((h: any) => h.dayOfWeek === dayOfWeek);
@@ -464,46 +483,46 @@ export default function GuestBookingResponsive(props: any) {
           effectiveHours = dayHours;
         }
       }
-      
+
       // If no opening hours found or day is closed
       if (!effectiveHours || !effectiveHours.isOpen) {
         return false;
       }
     }
-    
+
     // Priority 4: Check cut-off time restrictions (lowest priority)
     if (isWithinCutOffTime(timeSlot, date)) {
       return false;
     }
-    
+
     // Validate timeSlot format
     if (!timeSlot.includes(':')) return false;
-    
+
     const timeSlotParts = timeSlot.split(':');
     if (timeSlotParts.length !== 2) return false;
-    
+
     const [hours, minutes] = timeSlotParts.map(Number);
     if (isNaN(hours) || isNaN(minutes)) return false;
-    
+
     const slotTime = hours * 60 + minutes; // Convert to minutes
-    
+
     // Validate effective hours format
     if (!effectiveHours.openTime || !effectiveHours.closeTime || 
         !effectiveHours.openTime.includes(':') || !effectiveHours.closeTime.includes(':')) return false;
-    
+
     const openTimeParts = effectiveHours.openTime.split(':');
     const closeTimeParts = effectiveHours.closeTime.split(':');
-    
+
     if (openTimeParts.length !== 2 || closeTimeParts.length !== 2) return false;
-    
+
     const [openHour, openMin] = openTimeParts.map(Number);
     const [closeHour, closeMin] = closeTimeParts.map(Number);
-    
+
     if (isNaN(openHour) || isNaN(openMin) || isNaN(closeHour) || isNaN(closeMin)) return false;
-    
+
     const openTime = openHour * 60 + openMin;
     const closeTime = closeHour * 60 + closeMin;
-    
+
     if (slotTime < openTime || slotTime > closeTime) return false;
 
     return true;
@@ -513,7 +532,7 @@ export default function GuestBookingResponsive(props: any) {
   const getWelcomeMessage = () => {
     const currentHour = new Date().getHours();
     const restaurantName = (restaurant as any)?.name || "Our Restaurant";
-    
+
     if (currentHour >= 5 && currentHour < 12) {
       return {
         greeting: "Good Morning!",
@@ -554,10 +573,10 @@ export default function GuestBookingResponsive(props: any) {
   // Get recommended time slots based on current time and available slots
   const getRecommendedTimeSlots = (availableSlots: string[]) => {
     if (!availableSlots.length) return [];
-    
+
     const currentHour = new Date().getHours();
     let preferredTimes: string[] = [];
-    
+
     if (currentHour >= 5 && currentHour < 12) {
       // Morning - recommend breakfast times
       preferredTimes = ['08:00', '09:00', '10:00', '11:00'];
@@ -571,7 +590,7 @@ export default function GuestBookingResponsive(props: any) {
       // Late night - recommend available evening slots
       preferredTimes = ['21:00', '21:30', '22:00'];
     }
-    
+
     // Return only preferred times that are actually available
     return preferredTimes.filter(time => availableSlots.includes(time));
   };
@@ -634,7 +653,7 @@ export default function GuestBookingResponsive(props: any) {
               const Icon = step.icon;
               const isActive = index === currentStep;
               const isCompleted = index < currentStep;
-              
+
               return (
                 <div key={index} className="flex flex-col items-center flex-1">
                   <div className={`
@@ -668,14 +687,14 @@ export default function GuestBookingResponsive(props: any) {
             />
           </div>
         )}
-        
+
         <Card className="max-w-2xl mx-auto bg-white/95 backdrop-blur-sm shadow-2xl">
           <CardContent className="p-6 md:p-8">
             {/* Step 0: Date Selection */}
             {currentStep === 0 && (
               <div className="space-y-6">
                 <h2 className="text-xl md:text-2xl font-bold text-gray-900 text-center">Select Date</h2>
-                
+
                 {/* Show loading skeleton while data is loading */}
                 {(restaurantLoading || openingHoursLoading || specialPeriodsLoading) ? (
                   <CalendarSkeleton />
@@ -692,11 +711,11 @@ export default function GuestBookingResponsive(props: any) {
                       >
                         <ChevronLeft className="w-4 h-4" />
                       </Button>
-                      
+
                       <h3 className="text-lg font-semibold text-gray-800">
                         {format(currentMonth, 'MMMM yyyy')}
                       </h3>
-                      
+
                       <Button
                         variant="outline"
                         size="sm"
@@ -723,21 +742,21 @@ export default function GuestBookingResponsive(props: any) {
                     const firstDayOfMonth = getDay(startOfMonth(currentMonth));
                     // Convert to Monday-first: Sunday=0 -> 6, Monday=1 -> 0, Tuesday=2 -> 1, etc.
                     const mondayFirstOffset = firstDayOfMonth === 0 ? 6 : firstDayOfMonth - 1;
-                    
+
                     return Array.from({ length: mondayFirstOffset }).map((_, index) => (
                       <div key={`empty-${index}`} className="h-12"></div>
                     ));
                   })()}
-                  
+
                   {/* Date buttons */}
                   {calendarDates.map((date, index) => {
                     const isSelected = selectedDate && format(selectedDate, 'yyyy-MM-dd') === format(date, 'yyyy-MM-dd');
                     const isToday = format(date, 'yyyy-MM-dd') === format(new Date(), 'yyyy-MM-dd');
                     const isPastDate = date < startOfDay(new Date());
                     const isAvailable = !isPastDate && isDateAvailable(date);
-                    
 
-                    
+
+
                     return (
                       <button
                         key={index}
@@ -749,7 +768,7 @@ export default function GuestBookingResponsive(props: any) {
                             ? 'border-gray-200 bg-gray-100 text-gray-400 cursor-not-allowed'
                             : !isAvailable
                             ? 'border-red-300 bg-red-100 text-red-600 cursor-not-allowed'
-                            : isSelected
+                            :`isSelected
                             ? 'border-blue-500 bg-blue-500 text-white shadow-lg'
                             : isToday
                             ? 'border-green-400 bg-green-100 text-green-700 font-semibold'
@@ -764,7 +783,7 @@ export default function GuestBookingResponsive(props: any) {
                     );
                   })}
                 </div>
-                
+
                 <div className="text-center text-sm text-gray-600 space-y-1">
                   <p>Select your preferred date • Today is highlighted</p>
                   <div className="text-xs flex justify-center items-center space-x-4">
@@ -788,7 +807,7 @@ export default function GuestBookingResponsive(props: any) {
               <div className="space-y-6">
                 <div className="text-center">
                   <h2 className="text-xl md:text-2xl font-bold text-gray-900 mb-2">Select Time</h2>
-                  
+
                   {/* Show loading skeleton while data is loading */}
                   {(restaurantLoading || openingHoursLoading || specialPeriodsLoading) ? (
                     <TimeSlotsSkeletonGrid />
@@ -799,7 +818,7 @@ export default function GuestBookingResponsive(props: any) {
                           ⭐ Recommended for {welcomeMessage.mealType}
                         </p>
                       )}
-                
+
                       {timeSlots.length === 0 ? (
                   <div className="text-center py-8">
                     <Clock className="w-12 h-12 text-gray-400 mx-auto mb-4" />
@@ -815,7 +834,7 @@ export default function GuestBookingResponsive(props: any) {
                         const isAvailableBySystem = !(availableSlots as any) || (availableSlots as any).slots?.includes(time);
                         const isAvailable = isValidByRules && isAvailableBySystem;
                         const isSelected = selectedTime === time;
-                        
+
                         return (
                           <button
                             key={time}
@@ -874,7 +893,7 @@ export default function GuestBookingResponsive(props: any) {
                     Suggested for {welcomeMessage.mealType}: {getDefaultGuestCount()} guests
                   </p>
                 </div>
-                
+
                 {/* Direct Input Option */}
                 <div className="flex items-center justify-center space-x-4 mb-6">
                   <Label htmlFor="guestInput" className="text-sm font-medium text-gray-700">
@@ -917,7 +936,7 @@ export default function GuestBookingResponsive(props: any) {
                     +
                   </Button>
                 </div>
-                
+
                 {/* Quick Select Buttons */}
                 <div className="flex justify-center space-x-2 flex-wrap">
                   {[1, 2, 3, 4, 5, 6].map((count) => (
@@ -950,7 +969,7 @@ export default function GuestBookingResponsive(props: any) {
                     Enhance your visit with a seasonal theme that matches your mood (optional)
                   </p>
                 </div>
-                
+
                 <SeasonalThemeSelector
                   restaurantId={parseInt(restaurantId)}
                   tenantId={parseInt(tenantId)}
@@ -965,7 +984,7 @@ export default function GuestBookingResponsive(props: any) {
             {((currentStep === 3 && seasonalThemes.length === 0) || (currentStep === 4 && seasonalThemes.length > 0)) && (
               <div className="space-y-6">
                 <h2 className="text-xl md:text-2xl font-bold text-gray-900 text-center">Your Details</h2>
-                
+
                 {/* Show loading skeleton while restaurant data loads */}
                 {restaurantLoading ? (
                   <BookingFormSkeleton />
@@ -1028,7 +1047,7 @@ export default function GuestBookingResponsive(props: any) {
                 <ChevronLeft className="w-4 h-4" />
                 <span>Previous</span>
               </Button>
-              
+
               <Button
                 onClick={handleNext}
                 disabled={!isStepValid() || createBookingMutation.isPending}
