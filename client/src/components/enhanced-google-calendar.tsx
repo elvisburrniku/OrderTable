@@ -154,11 +154,14 @@ export default function EnhancedGoogleCalendar({
   });
 
   // Helper function to get opening hours for a specific date
-  const getOpeningHoursForDate = useCallback((date: Date) => {
-    if (!openingHours || !Array.isArray(openingHours)) return null;
-    const dayOfWeek = date.getDay(); // 0 = Sunday, 1 = Monday, etc.
-    return openingHours.find(h => h.dayOfWeek === dayOfWeek);
-  }, [openingHours]);
+  const getOpeningHoursForDate = useCallback(
+    (date: Date) => {
+      if (!openingHours || !Array.isArray(openingHours)) return null;
+      const dayOfWeek = date.getDay(); // 0 = Sunday, 1 = Monday, etc.
+      return openingHours.find((h) => h.dayOfWeek === dayOfWeek);
+    },
+    [openingHours],
+  );
 
   // Time slots for the calendar based on opening hours
   const timeSlots = useMemo(() => {
@@ -169,10 +172,10 @@ export default function EnhancedGoogleCalendar({
     let latestClose = 0;
 
     if (openingHours && Array.isArray(openingHours)) {
-      openingHours.forEach(hours => {
+      openingHours.forEach((hours) => {
         if (hours.isOpen && hours.openTime && hours.closeTime) {
-          const openHour = parseInt(hours.openTime.split(':')[0]);
-          const closeHour = parseInt(hours.closeTime.split(':')[0]);
+          const openHour = parseInt(hours.openTime.split(":")[0]);
+          const closeHour = parseInt(hours.closeTime.split(":")[0]);
 
           earliestOpen = Math.min(earliestOpen, openHour);
           latestClose = Math.max(latestClose, closeHour);
@@ -201,27 +204,37 @@ export default function EnhancedGoogleCalendar({
   }, [openingHours]);
 
   // Check if a time slot contains the current time
-  const isCurrentTimeSlot = useCallback((timeSlot: string) => {
-    const now = currentTime;
-    const currentHour = now.getHours();
-    const currentMinute = now.getMinutes();
+  const isCurrentTimeSlot = useCallback(
+    (timeSlot: string) => {
+      const now = currentTime;
+      const currentHour = now.getHours();
+      const currentMinute = now.getMinutes();
 
-    const [slotHour, slotMinute] = timeSlot.split(':').map(Number);
+      const [slotHour, slotMinute] = timeSlot.split(":").map(Number);
 
-    // Check if current time falls within this 15-minute slot
-    return currentHour === slotHour && currentMinute >= slotMinute && currentMinute < slotMinute + 15;
-  }, [currentTime]);
+      // Check if current time falls within this 15-minute slot
+      return (
+        currentHour === slotHour &&
+        currentMinute >= slotMinute &&
+        currentMinute < slotMinute + 15
+      );
+    },
+    [currentTime],
+  );
 
   // Check if a time slot is within opening hours for a specific date
-  const isTimeSlotOpen = useCallback((date: Date, timeSlot: string) => {
-    const dayHours = getOpeningHoursForDate(date);
-    if (!dayHours || !dayHours.isOpen) return false;
+  const isTimeSlotOpen = useCallback(
+    (date: Date, timeSlot: string) => {
+      const dayHours = getOpeningHoursForDate(date);
+      if (!dayHours || !dayHours.isOpen) return false;
 
-    const openTime = dayHours.openTime || "09:00";
-    const closeTime = dayHours.closeTime || "22:00";
+      const openTime = dayHours.openTime || "09:00";
+      const closeTime = dayHours.closeTime || "22:00";
 
-    return timeSlot >= openTime && timeSlot <= closeTime;
-  }, [getOpeningHoursForDate]);
+      return timeSlot >= openTime && timeSlot <= closeTime;
+    },
+    [getOpeningHoursForDate],
+  );
 
   // Get visible dates based on view
   const visibleDates = useMemo(() => {
@@ -299,13 +312,13 @@ export default function EnhancedGoogleCalendar({
       const dateKey = format(new Date(booking.bookingDate), "yyyy-MM-dd");
 
       // Convert booking time to minutes to find the correct slot
-      const [hours, minutes] = booking.startTime.split(':').map(Number);
+      const [hours, minutes] = booking.startTime.split(":").map(Number);
       const bookingMinutes = hours * 60 + minutes;
 
       // Find the appropriate time slot (round down to nearest 30-minute interval)
       const slotHour = Math.floor(bookingMinutes / 60);
       const slotMinute = Math.floor((bookingMinutes % 60) / 30) * 30;
-      const assignedSlot = `${slotHour.toString().padStart(2, '0')}:${slotMinute.toString().padStart(2, '0')}`;
+      const assignedSlot = `${slotHour.toString().padStart(2, "0")}:${slotMinute.toString().padStart(2, "0")}`;
 
       // Only assign to slots that exist in timeSlots array
       if (timeSlots.includes(assignedSlot)) {
@@ -400,12 +413,12 @@ export default function EnhancedGoogleCalendar({
   const getBookingCardStyle = useCallback(
     (booking: Booking, date: Date, timeSlot: string) => {
       // Check if booking is cancelled
-      if (booking.status === 'cancelled') {
+      if (booking.status === "cancelled") {
         return "bg-gray-200 text-gray-500 border-l-4 border-gray-400 opacity-60 cursor-default";
       }
 
       // Check if booking is no-show
-      if (booking.status === 'no-show') {
+      if (booking.status === "no-show") {
         return "bg-red-100 text-red-700 border-l-4 border-red-300 opacity-70 cursor-default";
       }
 
@@ -836,23 +849,22 @@ export default function EnhancedGoogleCalendar({
     },
   });
 
-    const handleDurationChange = (duration: number) => {
-        setNewBooking((prev) => {
-            const [hours, minutes] = prev.startTime.split(":").map(Number);
-            const startMinutes = hours * 60 + minutes;
-            const endMinutes = startMinutes + duration;
-            const endHour = Math.floor(endMinutes / 60);
-            const endMin = endMinutes % 60;
-            const endTime = `${endHour.toString().padStart(2, "0")}:${endMin.toString().padStart(2, "0")}`;
+  const handleDurationChange = (duration: number) => {
+    setNewBooking((prev) => {
+      const [hours, minutes] = prev.startTime.split(":").map(Number);
+      const startMinutes = hours * 60 + minutes;
+      const endMinutes = startMinutes + duration;
+      const endHour = Math.floor(endMinutes / 60);
+      const endMin = endMinutes % 60;
+      const endTime = `${endHour.toString().padStart(2, "0")}:${endMin.toString().padStart(2, "0")}`;
 
-            return {
-                ...prev,
-                duration: duration,
-                endTime: endTime,
-            };
-        });
-    };
-
+      return {
+        ...prev,
+        duration: duration,
+        endTime: endTime,
+      };
+    });
+  };
 
   const handleCreateBooking = () => {
     if (!selectedTimeSlot) return;
@@ -872,7 +884,8 @@ export default function EnhancedGoogleCalendar({
     if (!isTimeSlotOpen(date, time)) {
       toast({
         title: "Restaurant Closed",
-        description: "The restaurant is closed at this time. Please select a time during operating hours.",
+        description:
+          "The restaurant is closed at this time. Please select a time during operating hours.",
         variant: "destructive",
       });
       return;
@@ -900,7 +913,7 @@ export default function EnhancedGoogleCalendar({
     if (!endTime) return 60; // Default 1 hour if no end time
 
     const toMinutes = (timeStr: string) => {
-      const [hours, minutes] = timeStr.split(':').map(Number);
+      const [hours, minutes] = timeStr.split(":").map(Number);
       return hours * 60 + minutes;
     };
 
@@ -922,13 +935,18 @@ export default function EnhancedGoogleCalendar({
   const getTimelineBarColor = (startTime: string, endTime?: string) => {
     const duration = getBookingDurationMinutes(startTime, endTime);
 
-    if (duration <= 60) return 'bg-green-400'; // Short booking (≤1h)
-    if (duration <= 120) return 'bg-yellow-400'; // Medium booking (≤2h)
-    return 'bg-red-400'; // Long booking (>2h)
+    if (duration <= 60) return "bg-green-400"; // Short booking (≤1h)
+    if (duration <= 120) return "bg-yellow-400"; // Medium booking (≤2h)
+    return "bg-red-400"; // Long booking (>2h)
   };
 
   // Function to get available tables for a specific time slot
-  const getAvailableTablesForTimeSlot = (date: Date, startTime: string, endTime: string = startTime, excludeBookingId?: number) => {
+  const getAvailableTablesForTimeSlot = (
+    date: Date,
+    startTime: string,
+    endTime: string = startTime,
+    excludeBookingId?: number,
+  ) => {
     // Validate inputs to prevent RangeError
     if (!date || !startTime) {
       return tables;
@@ -936,31 +954,36 @@ export default function EnhancedGoogleCalendar({
 
     let dateStr: string;
     try {
-      dateStr = format(date, 'yyyy-MM-dd');
+      dateStr = format(date, "yyyy-MM-dd");
     } catch (error) {
       return tables;
     }
 
-    return tables.filter(table => {
+    return tables.filter((table) => {
       // Check if this table has any bookings that overlap with the selected time
-      const conflictingBookings = allBookings.filter(booking => {
+      const conflictingBookings = allBookings.filter((booking) => {
         // Skip the booking we're editing
-        ```text
-if (excludeBookingId && booking.id === excludeBookingId) return false;
+        if (excludeBookingId && booking.id === excludeBookingId) return false;
 
         if (booking.tableId !== table.id) return false;
 
         // Convert booking date to string for comparison
         let bookingDateStr: string;
         try {
-          if (typeof booking.bookingDate === 'string') {
+          if (typeof booking.bookingDate === "string") {
             // If it's already a string, parse it and format it
-            bookingDateStr = format(new Date(booking.bookingDate), 'yyyy-MM-dd');
+            bookingDateStr = format(
+              new Date(booking.bookingDate),
+              "yyyy-MM-dd",
+            );
           } else if (booking.bookingDate instanceof Date) {
-            return format(booking.bookingDate, 'yyyy-MM-dd');
+            return format(booking.bookingDate, "yyyy-MM-dd");
           } else {
             // Fallback - convert to string and parse
-            bookingDateStr = format(new Date(booking.bookingDate), 'yyyy-MM-dd');
+            bookingDateStr = format(
+              new Date(booking.bookingDate),
+              "yyyy-MM-dd",
+            );
           }
         } catch (error) {
           return false; // Skip this booking if date is invalid
@@ -974,8 +997,8 @@ if (excludeBookingId && booking.id === excludeBookingId) return false;
 
         // Convert times to minutes for easier comparison
         const toMinutes = (timeStr: string) => {
-          if (!timeStr || typeof timeStr !== 'string') return 0;
-          const parts = timeStr.split(':');
+          if (!timeStr || typeof timeStr !== "string") return 0;
+          const parts = timeStr.split(":");
           if (parts.length !== 2) return 0;
           const [hours, minutes] = parts.map(Number);
           if (isNaN(hours) || isNaN(minutes)) return 0;
@@ -988,7 +1011,9 @@ if (excludeBookingId && booking.id === excludeBookingId) return false;
         const existingEnd = toMinutes(bookingEnd);
 
         // Check if times overlap (any overlap means conflict)
-        const hasOverlap = !(selectedEnd <= existingStart || selectedStart >= existingEnd);
+        const hasOverlap = !(
+          selectedEnd <= existingStart || selectedStart >= existingEnd
+        );
 
         return hasOverlap;
       });
@@ -1021,9 +1046,13 @@ if (excludeBookingId && booking.id === excludeBookingId) return false;
                 <div
                   key={timeSlot}
                   className={`flex items-center space-x-4 p-2 border rounded transition-all duration-200 ${availabilityColor} ${
-                    availabilityLevel === "closed" ? "cursor-not-allowed" : "cursor-pointer"
+                    availabilityLevel === "closed"
+                      ? "cursor-not-allowed"
+                      : "cursor-pointer"
                   } ${isDragging ? "hover:border-blue-300" : ""} ${
-                    isCurrentTimeSlot(timeSlot) ? "ring-2 ring-blue-400 bg-blue-50" : ""
+                    isCurrentTimeSlot(timeSlot)
+                      ? "ring-2 ring-blue-400 bg-blue-50"
+                      : ""
                   }`}
                   onClick={(e) => {
                     // Only open dialog if clicking directly on the container, not on bookings
@@ -1051,9 +1080,10 @@ if (excludeBookingId && booking.id === excludeBookingId) return false;
                         key={booking.id}
                         data-booking-id={booking.id}
                         className={`booking-card flex items-center space-x-2 p-2 rounded text-sm transition-all duration-300 ease-out ${
-                          booking.status === 'cancelled' || booking.status === 'no-show'
-                            ? 'cursor-default' 
-                            : 'cursor-pointer hover:shadow-lg hover:scale-105 hover:-translate-y-1 hover:rotate-1 active:scale-95 active:rotate-0'
+                          booking.status === "cancelled" ||
+                          booking.status === "no-show"
+                            ? "cursor-default"
+                            : "cursor-pointer hover:shadow-lg hover:scale-105 hover:-translate-y-1 hover:rotate-1 active:scale-95 active:rotate-0"
                         } ${getBookingCardStyle(booking, currentDate, timeSlot)}`}
                         onClick={(e) => {
                           e.stopPropagation();
@@ -1063,17 +1093,21 @@ if (excludeBookingId && booking.id === excludeBookingId) return false;
                           setIsEditBookingOpen(true);
                           console.log("Day view edit dialog should open");
                         }}
-                        onMouseDown={(e) => (booking.status !== 'cancelled' && booking.status !== 'no-show') && handleMouseDown(e, booking)}
+                        onMouseDown={(e) =>
+                          booking.status !== "cancelled" &&
+                          booking.status !== "no-show" &&
+                          handleMouseDown(e, booking)
+                        }
                         title={
-                          booking.status === 'cancelled'
+                          booking.status === "cancelled"
                             ? "Cancelled booking - Click to edit only"
-                            : booking.status === 'no-show'
+                            : booking.status === "no-show"
                               ? "No-show booking - Click to edit only"
                               : getTableConflictStatus(
-                                  booking.tableId || 0,
-                                  currentDate,
-                                  timeSlot,
-                                )
+                                    booking.tableId || 0,
+                                    currentDate,
+                                    timeSlot,
+                                  )
                                 ? "TABLE CONFLICT - Multiple bookings on same table!"
                                 : "Click to edit booking"
                         }
@@ -1082,7 +1116,11 @@ if (excludeBookingId && booking.id === excludeBookingId) return false;
                           <div className="flex items-center space-x-2">
                             <Users className="w-4 h-4" />
                             <span className="flex-1">
-                              {booking.customerName} {booking.status === 'cancelled' && '(Cancelled)'} {booking.status === 'no-show' && '(No Show)'} ({booking.guestCount} guests) - {booking.startTime}{booking.endTime ? `-${booking.endTime}` : ''}
+                              {booking.customerName}{" "}
+                              {booking.status === "cancelled" && "(Cancelled)"}{" "}
+                              {booking.status === "no-show" && "(No Show)"} (
+                              {booking.guestCount} guests) - {booking.startTime}
+                              {booking.endTime ? `-${booking.endTime}` : ""}
                             </span>
                             {booking.tableId && (
                               <Badge variant="outline">
@@ -1096,14 +1134,23 @@ if (excludeBookingId && booking.id === excludeBookingId) return false;
                           </div>
                           {/* Timeline Preview */}
                           <div className="mt-1 w-full bg-gray-200 rounded-full h-2">
-                            <div 
+                            <div
                               className={`h-2 rounded-full transition-all duration-300 ${getTimelineBarColor(booking.startTime, booking.endTime)}`}
-                              style={{ width: getTimelineBarWidth(booking.startTime, booking.endTime) }}
+                              style={{
+                                width: getTimelineBarWidth(
+                                  booking.startTime,
+                                  booking.endTime,
+                                ),
+                              }}
                               title={`Duration: ${getBookingDurationMinutes(booking.startTime, booking.endTime)} minutes`}
                             />
                           </div>
                           <div className="text-xs text-gray-500 mt-1">
-                            {getBookingDurationMinutes(booking.startTime, booking.endTime)} min duration
+                            {getBookingDurationMinutes(
+                              booking.startTime,
+                              booking.endTime,
+                            )}{" "}
+                            min duration
                           </div>
                         </div>
                       </div>
@@ -1149,11 +1196,13 @@ if (excludeBookingId && booking.id === excludeBookingId) return false;
           <div className="flex-1 overflow-y-auto">
             {timeSlots.map((timeSlot) => (
               <div key={timeSlot} className="grid grid-cols-8 border-b">
-                <div className={`p-2 text-xs border-r ${
-                  isCurrentTimeSlot(timeSlot) 
-                    ? 'bg-blue-100 text-blue-800 font-semibold' 
-                    : 'text-gray-600'
-                }`}>
+                <div
+                  className={`p-2 text-xs border-r ${
+                    isCurrentTimeSlot(timeSlot)
+                      ? "bg-blue-100 text-blue-800 font-semibold"
+                      : "text-gray-600"
+                  }`}
+                >
                   {timeSlot}
                 </div>
                 {visibleDates.map((date) => {
@@ -1168,7 +1217,9 @@ if (excludeBookingId && booking.id === excludeBookingId) return false;
                     <div
                       key={`${date.toISOString()}-${timeSlot}`}
                       className={`p-1 border-l min-h-[60px] relative ${availabilityColor} ${
-                        availabilityLevel === "closed" ? "cursor-not-allowed" : "cursor-pointer"
+                        availabilityLevel === "closed"
+                          ? "cursor-not-allowed"
+                          : "cursor-pointer"
                       }`}
                       onClick={(e) => {
                         // Only open dialog if clicking directly on the container, not on bookings
@@ -1189,39 +1240,52 @@ if (excludeBookingId && booking.id === excludeBookingId) return false;
                           key={booking.id}
                           data-booking-id={booking.id}
                           className={`booking-card p-1 mb-1 rounded text-xs transition-all duration-300 ease-out ${
-                            booking.status === 'cancelled' || booking.status === 'no-show'
-                              ? 'cursor-default' 
-                              : 'cursor-pointer hover:shadow-lg hover:scale-110 hover:-translate-y-1 hover:rotate-2 active:scale-95 active:rotate-0'
+                            booking.status === "cancelled" ||
+                            booking.status === "no-show"
+                              ? "cursor-default"
+                              : "cursor-pointer hover:shadow-lg hover:scale-110 hover:-translate-y-1 hover:rotate-2 active:scale-95 active:rotate-0"
                           } ${getBookingCardStyle(booking, date, timeSlot)}`}
-                          onMouseDown={(e) => (booking.status !== 'cancelled' && booking.status !== 'no-show') && handleMouseDown(e, booking)}
+                          onMouseDown={(e) =>
+                            booking.status !== "cancelled" &&
+                            booking.status !== "no-show" &&
+                            handleMouseDown(e, booking)
+                          }
                           title={
-                            booking.status === 'cancelled'
+                            booking.status === "cancelled"
                               ? "Cancelled booking - Click to edit only"
-                              : booking.status === 'no-show'
+                              : booking.status === "no-show"
                                 ? "No-show booking - Click to edit only"
                                 : getTableConflictStatus(
-                                    booking.tableId || 0,
-                                    date,
-                                    timeSlot,
-                                  )
+                                      booking.tableId || 0,
+                                      date,
+                                      timeSlot,
+                                    )
                                   ? "TABLE CONFLICT - Multiple bookings on same table!"
                                   : "Click to edit booking"
                           }
                         >
                           <div className="truncate font-medium">
-                            {booking.customerName} {booking.status === 'cancelled' && '(Cancelled)'} {booking.status === 'no-show' && '(No Show)'}
+                            {booking.customerName}{" "}
+                            {booking.status === "cancelled" && "(Cancelled)"}{" "}
+                            {booking.status === "no-show" && "(No Show)"}
                           </div>
                           <div className="text-xs opacity-75">
                             {booking.guestCount} guests
                           </div>
                           <div className="text-xs opacity-75">
-                            {booking.startTime}{booking.endTime ? `-${booking.endTime}` : ''}
+                            {booking.startTime}
+                            {booking.endTime ? `-${booking.endTime}` : ""}
                           </div>
                           {/* Timeline Preview for Week View */}
                           <div className="mt-1 w-full bg-gray-200 rounded-full h-1.5">
-                            <div 
+                            <div
                               className={`h-1.5 rounded-full transition-all duration-300 ${getTimelineBarColor(booking.startTime, booking.endTime)}`}
-                              style={{ width: getTimelineBarWidth(booking.startTime, booking.endTime) }}
+                              style={{
+                                width: getTimelineBarWidth(
+                                  booking.startTime,
+                                  booking.endTime,
+                                ),
+                              }}
                               title={`Duration: ${getBookingDurationMinutes(booking.startTime, booking.endTime)} min`}
                             />
                           </div>
@@ -1324,15 +1388,23 @@ if (excludeBookingId && booking.id === excludeBookingId) return false;
                           title="Click to edit booking"
                         >
                           <div className="truncate">
-                            <div className="font-medium">{booking.customerName}</div>
+                            <div className="font-medium">
+                              {booking.customerName}
+                            </div>
                             <div className="text-xs opacity-75">
-                              {booking.startTime}{booking.endTime ? `-${booking.endTime}` : ''}
+                              {booking.startTime}
+                              {booking.endTime ? `-${booking.endTime}` : ""}
                             </div>
                             {/* Timeline Preview for Month View */}
                             <div className="mt-1 w-full bg-blue-200 rounded-full h-1">
-                              <div 
+                              <div
                                 className={`h-1 rounded-full transition-all duration-300 ${getTimelineBarColor(booking.startTime, booking.endTime)} opacity-80`}
-                                style={{ width: getTimelineBarWidth(booking.startTime, booking.endTime) }}
+                                style={{
+                                  width: getTimelineBarWidth(
+                                    booking.startTime,
+                                    booking.endTime,
+                                  ),
+                                }}
                                 title={`${getBookingDurationMinutes(booking.startTime, booking.endTime)} min`}
                               />
                             </div>
@@ -1540,71 +1612,82 @@ if (excludeBookingId && booking.id === excludeBookingId) return false;
             </div>
 
             <div className="grid grid-cols-3 gap-4">
-                    <div>
-                      <Label htmlFor="startTime">Start Time</Label>
-                      <Input
-                        id="startTime"
-                        type="time"
-                        value={newBooking.startTime}
-                        onChange={(e) => {
-                          const newStartTime = e.target.value;
-                          const currentDuration = newBooking.duration || generalSettings?.defaultBookingDuration || 60;
+              <div>
+                <Label htmlFor="startTime">Start Time</Label>
+                <Input
+                  id="startTime"
+                  type="time"
+                  value={newBooking.startTime}
+                  onChange={(e) => {
+                    const newStartTime = e.target.value;
+                    const currentDuration =
+                      newBooking.duration ||
+                      generalSettings?.defaultBookingDuration ||
+                      60;
 
-                          // Recalculate end time when start time changes
-                          const [hours, minutes] = newStartTime.split(":").map(Number);
-                          const startMinutes = hours * 60 + minutes;
-                          const endMinutes = startMinutes + currentDuration;
-                          const endHour = Math.floor(endMinutes / 60);
-                          const endMin = endMinutes % 60;
-                          const endTime = `${endHour.toString().padStart(2, "0")}:${endMin.toString().padStart(2, "0")}`;
+                    // Recalculate end time when start time changes
+                    const [hours, minutes] = newStartTime
+                      .split(":")
+                      .map(Number);
+                    const startMinutes = hours * 60 + minutes;
+                    const endMinutes = startMinutes + currentDuration;
+                    const endHour = Math.floor(endMinutes / 60);
+                    const endMin = endMinutes % 60;
+                    const endTime = `${endHour.toString().padStart(2, "0")}:${endMin.toString().padStart(2, "0")}`;
 
-                          setNewBooking((prev) => ({
-                            ...prev,
-                            startTime: newStartTime,
-                            endTime: endTime,
-                          }));
-                        }}
-                        required
-                      />
-                    </div>
-                    <div>
-                      <Label htmlFor="duration">Duration</Label>
-                      <Select
-                        value={(newBooking.duration || generalSettings?.defaultBookingDuration || 60).toString()}
-                        onValueChange={(value) => handleDurationChange(parseInt(value))}
-                      >
-                        <SelectTrigger>
-                          <SelectValue placeholder="Select duration" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="15">15 min</SelectItem>
-                          <SelectItem value="30">30 min</SelectItem>
-                          <SelectItem value="45">45 min</SelectItem>
-                          <SelectItem value="60">1 hour</SelectItem>
-                          <SelectItem value="90">1.5 hours</SelectItem>
-                          <SelectItem value="120">2 hours</SelectItem>
-                          <SelectItem value="150">2.5 hours</SelectItem>
-                          <SelectItem value="180">3 hours</SelectItem>
-                          <SelectItem value="240">4 hours</SelectItem>
-                        </SelectContent>
-                      </Select>
-                    </div>
-                    <div>
-                      <Label htmlFor="endTime">End Time</Label>
-                      <Input
-                        id="endTime"
-                        type="time"
-                        value={newBooking.endTime}
-                        onChange={(e) =>
-                          setNewBooking((prev) => ({
-                            ...prev,
-                            endTime: e.target.value,
-                          }))
-                        }
-                        required
-                      />
-                    </div>
-                  </div>
+                    setNewBooking((prev) => ({
+                      ...prev,
+                      startTime: newStartTime,
+                      endTime: endTime,
+                    }));
+                  }}
+                  required
+                />
+              </div>
+              <div>
+                <Label htmlFor="duration">Duration</Label>
+                <Select
+                  value={(
+                    newBooking.duration ||
+                    generalSettings?.defaultBookingDuration ||
+                    60
+                  ).toString()}
+                  onValueChange={(value) =>
+                    handleDurationChange(parseInt(value))
+                  }
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select duration" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="15">15 min</SelectItem>
+                    <SelectItem value="30">30 min</SelectItem>
+                    <SelectItem value="45">45 min</SelectItem>
+                    <SelectItem value="60">1 hour</SelectItem>
+                    <SelectItem value="90">1.5 hours</SelectItem>
+                    <SelectItem value="120">2 hours</SelectItem>
+                    <SelectItem value="150">2.5 hours</SelectItem>
+                    <SelectItem value="180">3 hours</SelectItem>
+                    <SelectItem value="240">4 hours</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div>
+                <Label htmlFor="endTime">End Time</Label>
+                <Input
+                  id="endTime"
+                  type="time"
+                  value={newBooking.endTime}
+                  onChange={(e) =>
+                    setNewBooking((prev) => ({
+                      ...prev,
+                      endTime: e.target.value,
+                    }))
+                  }
+                  required
+                />
+              </div>
+            </div>
 
             <div>
               <Label htmlFor="tableId">Available Tables</Label>
@@ -1625,15 +1708,19 @@ if (excludeBookingId && booking.id === excludeBookingId) return false;
                     // Get available tables for the selected time slot
                     let bookingDate: Date;
                     try {
-                      bookingDate = selectedTimeSlot?.date || (newBooking.bookingDate ? new Date(newBooking.bookingDate) : new Date());
+                      bookingDate =
+                        selectedTimeSlot?.date ||
+                        (newBooking.bookingDate
+                          ? new Date(newBooking.bookingDate)
+                          : new Date());
                     } catch (error) {
                       bookingDate = new Date();
                     }
 
                     const availableTables = getAvailableTablesForTimeSlot(
-                      bookingDate, 
-                      newBooking.startTime, 
-                      newBooking.endTime
+                      bookingDate,
+                      newBooking.startTime,
+                      newBooking.endTime,
                     );
 
                     if (availableTables.length === 0) {
@@ -1655,15 +1742,19 @@ if (excludeBookingId && booking.id === excludeBookingId) return false;
               {(() => {
                 let bookingDate: Date;
                 try {
-                  bookingDate = selectedTimeSlot?.date || (newBooking.bookingDate ? new Date(newBooking.bookingDate) : new Date());
+                  bookingDate =
+                    selectedTimeSlot?.date ||
+                    (newBooking.bookingDate
+                      ? new Date(newBooking.bookingDate)
+                      : new Date());
                 } catch (error) {
                   bookingDate = new Date();
                 }
 
                 const availableTables = getAvailableTablesForTimeSlot(
-                  bookingDate, 
-                  newBooking.startTime, 
-                  newBooking.endTime
+                  bookingDate,
+                  newBooking.startTime,
+                  newBooking.endTime,
                 );
                 const totalTables = tables.length;
                 const unavailableCount = totalTables - availableTables.length;
@@ -1671,7 +1762,7 @@ if (excludeBookingId && booking.id === excludeBookingId) return false;
                 if (unavailableCount > 0) {
                   return (
                     <p className="text-sm text-orange-600 mt-1">
-                      {availableTables.length} of {totalTables} tables available 
+                      {availableTables.length} of {totalTables} tables available
                       ({unavailableCount} already booked)
                     </p>
                   );
@@ -1756,7 +1847,12 @@ interface EditBookingFormProps {
   onCancel: () => void;
   isLoading: boolean;
   allBookings: Booking[];
-  getAvailableTablesForTimeSlot: (date: Date, startTime: string, endTime?: string, excludeBookingId?: number) => TableType[];
+  getAvailableTablesForTimeSlot: (
+    date: Date,
+    startTime: string,
+    endTime?: string,
+    excludeBookingId?: number,
+  ) => TableType[];
 }
 
 function EditBookingForm({
@@ -1778,14 +1874,14 @@ function EditBookingForm({
         if (typeof booking.bookingDate === "string") {
           // Parse the date string and format as YYYY-MM-DD
           const date = new Date(booking.bookingDate);
-          return format(date, 'yyyy-MM-dd');
+          return format(date, "yyyy-MM-dd");
         } else if (booking.bookingDate instanceof Date) {
-          return format(booking.bookingDate, 'yyyy-MM-dd');
+          return format(booking.bookingDate, "yyyy-MM-dd");
         } else {
-          return format(new Date(), 'yyyy-MM-dd');
+          return format(new Date(), "yyyy-MM-dd");
         }
       } catch (error) {
-        return format(new Date(), 'yyyy-MM-dd');
+        return format(new Date(), "yyyy-MM-dd");
       }
     })(),
     startTime: booking.startTime,
@@ -1839,8 +1935,6 @@ function EditBookingForm({
             setFormData((prev) => ({ ...prev, customerPhone: e.target.value }))
           }
           placeholder="Phone number"
-        ```text
-
         />
       </div>
 
@@ -1888,10 +1982,10 @@ function EditBookingForm({
                 }
 
                 const availableTables = getAvailableTablesForTimeSlot(
-                  bookingDate, 
-                  formData.startTime, 
+                  bookingDate,
+                  formData.startTime,
                   formData.startTime, // Using same time for start and end
-                  booking.id // Exclude current booking from conflict check
+                  booking.id, // Exclude current booking from conflict check
                 );
 
                 const unavailableCount = tables.length - availableTables.length;
@@ -1905,7 +1999,9 @@ function EditBookingForm({
                     ))}
                     {unavailableCount > 0 && (
                       <div className="px-2 py-1 text-xs text-red-600 opacity-60">
-                        {unavailableCount} table{unavailableCount !== 1 ? 's' : ''} unavailable at this time
+                        {unavailableCount} table
+                        {unavailableCount !== 1 ? "s" : ""} unavailable at this
+                        time
                       </div>
                     )}
                   </>
