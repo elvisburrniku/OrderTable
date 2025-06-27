@@ -1,4 +1,6 @@
 import { useEffect } from "react";
+
+// Added for debugging
 import { useLocation } from "wouter";
 import { useAuth } from "@/lib/auth";
 

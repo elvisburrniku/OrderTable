@@ -49,7 +49,7 @@ export function PermissionGuard({ children, requiredPermission, fallbackPath }: 
   });
 
   useEffect(() => {
-    console.log("PermissionGuard check:", { requiredPermission, userPermissions, isLoading });
+    console.log("PermissionGuard: Initial Check", { requiredPermission, userPermissions, isLoading });
     
     if (isLoading || !userPermissions) return;
 
