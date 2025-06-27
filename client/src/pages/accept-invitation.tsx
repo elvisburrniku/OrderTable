@@ -88,8 +88,7 @@ export default function AcceptInvitation() {
 
   const acceptInvitationMutation = useMutation({
     mutationFn: async (data: PasswordForm) => {
-      return await apiRequest("POST", "/api/invitations/accept", {
-        token,
+      return await apiRequest("POST", `/api/invitations/accept/${token}`, {
         password: data.password,
       });
     },
