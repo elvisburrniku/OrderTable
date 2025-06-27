@@ -455,21 +455,22 @@ export default function TablePlan() {
     return null;
   }
 
-  const getTableStyle = (table: any, position?: TablePosition) => {
+  const getTableStyle = (table, position) => {
     const baseStyle = {
-      width: "60px",
-      height: "60px",
-      position: "absolute" as const,
-      cursor: "move",
+      width: "70px",
+      height: "70px",
+      position: "absolute",
+      cursor: "pointer",
       display: "flex",
       alignItems: "center",
       justifyContent: "center",
       fontSize: "12px",
-      fontWeight: "bold",
-      color: "white",
-      userSelect: "none" as const,
-      zIndex:
-        isDragging && draggedTable === (table?.id || position?.id) ? 1000 : 1,
+      color: "#fff",
+      userSelect: "none",
+      zIndex: 1,
+      backgroundColor: "#555",
+      borderRadius: "12px",
+      boxShadow: "0 4px 8px rgba(0, 0, 0, 0.1)"
     };
 
     if (position) {
@@ -477,100 +478,25 @@ export default function TablePlan() {
         ...baseStyle,
         left: `${position.x}px`,
         top: `${position.y}px`,
-        transform: `rotate(${position.rotation}deg)`,
-        backgroundColor: position.isConfigured
-          ? "#16a34a"
-          : table?.isActive
-            ? "#16a34a"
-            : "#6b7280",
-        borderRadius:
-          position.shape === "circle"
-            ? "50%"
-            : position.shape === "rectangle"
-              ? "8px"
-              : "4px",
-        width: position.shape === "rectangle" ? "80px" : "60px",
       };
     }
 
-    return {
-      ...baseStyle,
-      backgroundColor: table?.isActive ? "#16a34a" : "#6b7280",
-      borderRadius: "50%",
-      position: "relative" as const,
-      margin: "5px",
-    };
+    return baseStyle;
   };
 
-  const renderChairsAroundTable = (position: TablePosition, tableId: number) => {
+  const renderChairsAroundTable = (position, tableId) => {
     const chairs = [];
     const capacity = position.capacity || 4;
     const chairSize = 12;
-    const tableWidth = position.shape === "rectangle" ? 80 : 60;
-    const tableHeight = 60;
-    
-    // Calculate chair positions based on table shape and capacity
+    const tableWidth = 70;
+
     for (let i = 0; i < capacity; i++) {
-      let chairX, chairY;
-      
-      if (position.shape === "circle") {
-        // Circular arrangement for round tables
-        const angle = (i * 2 * Math.PI) / capacity;
-        const radius = 40;
-        chairX = position.x + 30 + Math.cos(angle) * radius - chairSize / 2;
-        chairY = position.y + 30 + Math.sin(angle) * radius - chairSize / 2;
-      } else if (position.shape === "rectangle") {
-        // Rectangular arrangement for rectangular tables
-        const perimeter = 2 * (tableWidth + tableHeight);
-        const chairSpacing = perimeter / capacity;
-        const currentPos = i * chairSpacing;
-        
-        if (currentPos < tableWidth) {
-          // Top side
-          chairX = position.x + currentPos - chairSize / 2;
-          chairY = position.y - 20;
-        } else if (currentPos < tableWidth + tableHeight) {
-          // Right side
-          chairX = position.x + tableWidth + 8;
-          chairY = position.y + (currentPos - tableWidth) - chairSize / 2;
-        } else if (currentPos < 2 * tableWidth + tableHeight) {
-          // Bottom side
-          chairX = position.x + tableWidth - (currentPos - tableWidth - tableHeight) - chairSize / 2;
-          chairY = position.y + tableHeight + 8;
-        } else {
-          // Left side
-          chairX = position.x - 20;
-          chairY = position.y + tableHeight - (currentPos - 2 * tableWidth - tableHeight) - chairSize / 2;
-        }
-      } else {
-        // Square arrangement for square tables
-        const sideChairs = Math.ceil(capacity / 4);
-        const side = Math.floor(i / sideChairs);
-        const positionOnSide = i % sideChairs;
-        
-        switch (side) {
-          case 0: // Top
-            chairX = position.x + 10 + (positionOnSide * 20) - chairSize / 2;
-            chairY = position.y - 20;
-            break;
-          case 1: // Right
-            chairX = position.x + tableWidth + 8;
-            chairY = position.y + 10 + (positionOnSide * 20) - chairSize / 2;
-            break;
-          case 2: // Bottom
-            chairX = position.x + 10 + (positionOnSide * 20) - chairSize / 2;
-            chairY = position.y + tableHeight + 8;
-            break;
-          case 3: // Left
-            chairX = position.x - 20;
-            chairY = position.y + 10 + (positionOnSide * 20) - chairSize / 2;
-            break;
-          default:
-            chairX = position.x;
-            chairY = position.y;
-        }
-      }
-      
+      const angle = (i * 2 * Math.PI) / capacity;
+      const radius = 45;
+
+      const chairX = position.x + tableWidth / 2 + Math.cos(angle) * radius - chairSize / 2;
+      const chairY = position.y + tableWidth / 2 + Math.sin(angle) * radius - chairSize / 2;
+
       chairs.push(
         <div
           key={`chair-${tableId}-${i}`}
@@ -580,17 +506,14 @@ export default function TablePlan() {
             top: `${chairY}px`,
             width: `${chairSize}px`,
             height: `${chairSize}px`,
-            backgroundColor: "#8B4513",
-            borderRadius: "2px",
-            border: "1px solid #654321",
-            transform: `rotate(${position.rotation}deg)`,
-            zIndex: isDragging && draggedTable === tableId ? 999 : 0,
+            backgroundColor: "#A0AEC0",
+            borderRadius: "50%",
+            boxShadow: "0 2px 4px rgba(0, 0, 0, 0.1)"
           }}
-          className="chair"
         />
       );
     }
-    
+
     return chairs;
   };
 
