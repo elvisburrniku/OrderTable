@@ -151,8 +151,9 @@ function App() {
             <Route>
               <AuthProvider>
                 <TenantProvider>
-                  <DateProvider>
-                    <RouteGuard>
+                  <SettingsProvider>
+                    <DateProvider>
+                      <RouteGuard>
                       <LayoutWrapper>
                         <SessionTimeoutHandler />
                         <Switch>
@@ -444,6 +445,7 @@ function App() {
                       </LayoutWrapper>
                     </RouteGuard>
                   </DateProvider>
+                </SettingsProvider>
                 </TenantProvider>
               </AuthProvider>
             </Route>
