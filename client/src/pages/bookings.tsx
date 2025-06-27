@@ -41,9 +41,13 @@ import {
 // import { InternationalPhoneInput } from "@/components/international-phone-input";
 import { motion } from "framer-motion";
 import { useScrollToTop } from "@/hooks/use-scroll-to-top";
+import { format } from "date-fns";
+import { useSettings } from "@/hooks/use-settings";
+import { formatTime, formatDateTime, formatDate } from "@/lib/time-formatter";
 
 export default function Bookings() {
   const { user, restaurant } = useAuth();
+  const { generalSettings } = useSettings();
   const queryClient = useQueryClient();
 
   // Auto scroll to top when page loads
@@ -115,17 +119,17 @@ export default function Bookings() {
   const paginatedBookings = filteredBookings.slice(startIndex, endIndex);
 
   // Format date helper
-  const formatDate = (dateString: string) => {
-    const date = new Date(dateString);
-    return date.toLocaleDateString('en-US', { 
-      month: 'numeric', 
-      day: 'numeric', 
-      year: 'numeric' 
-    });
-  };
+  // const formatDate = (dateString: string) => {
+  //   const date = new Date(dateString);
+  //   return date.toLocaleDateString('en-US', { 
+  //     month: 'numeric', 
+  //     day: 'numeric', 
+  //     year: 'numeric' 
+  //   });
+  // };
 
   // Format time helper
-  const formatTime = (timeString: string | null | undefined) => {
+  const formatTimeHelper = (timeString: string | null | undefined) => {
     if (!timeString) return '-';
     return timeString.substring(0, 5); // Extract HH:MM from HH:MM:SS
   };
@@ -603,7 +607,7 @@ export default function Bookings() {
                               </div>
                               <div className="text-sm text-gray-500 flex items-center">
                                 <Clock className="w-3 h-3 mr-1" />
-                                {formatTime(booking.startTime)}
+                                {formatTimeHelper(booking.startTime)}
                               </div>
                             </div>
                           </td>
@@ -767,8 +771,7 @@ export default function Bookings() {
                       className="w-8 h-8 p-0"
                     >
                       <ChevronRight className="w-4 h-4" />
-                    </Button>
-                    <Button
+                    </Button><Button
                       variant="outline"
                       size="sm"
                       onClick={() => setCurrentPage(totalPages)}
@@ -916,7 +919,7 @@ export default function Bookings() {
             <p className="text-gray-600">
               Are you sure you want to delete the booking for <strong>{bookingToDelete?.customerName}</strong> on{" "}
               <strong>{bookingToDelete ? formatDate(bookingToDelete.bookingDate) : ""}</strong> at{" "}
-              <strong>{bookingToDelete ? formatTime(bookingToDelete.startTime) : ""}</strong>?
+              <strong>{bookingToDelete ? formatTimeHelper(bookingToDelete.startTime) : ""}</strong>?
             </p>
             <p className="text-red-600 text-sm mt-2">This action cannot be undone.</p>
           </div>

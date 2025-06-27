@@ -73,10 +73,11 @@ import { useToast } from "@/hooks/use-toast";
 import { RealTimeNotifications } from "@/components/real-time-notifications";
 import { safeArray, safeObject } from "@/hooks/use-mobile-safe";
 import { MenuManagement } from "@/components/menu-management";
+import { useSettings } from "@/lib/settings";
 
 export default function Dashboard() {
-  const [, setLocation] = useLocation();
-  const { user, restaurant, logout, isLoading } = useAuth();
+  const { user, restaurant } = useAuth();
+  const { generalSettings } = useSettings();
   const [selectedDate, setSelectedDate] = useState(new Date());
   const [viewMode, setViewMode] = useState<"calendar" | "layout" | "status" | "menu">(
     "calendar",
@@ -284,11 +285,11 @@ export default function Dashboard() {
     const target = new Date();
     const [hours, minutes] = targetTime.split(':');
     target.setHours(parseInt(hours), parseInt(minutes), 0, 0);
-    
+
     if (target < now) {
       target.setDate(target.getDate() + 1);
     }
-    
+
     const diff = target.getTime() - now.getTime();
     return Math.max(0, Math.floor(diff / (1000 * 60)));
   };
@@ -684,9 +685,9 @@ export default function Dashboard() {
   const getAvailableTablesCount = () => {
     const safeTables = safeArray(tables as any[]);
     const safeBookings = safeArray(todayBookings as any[]);
-    
+
     if (safeTables.length === 0) return 0;
-    
+
     const currentHour = new Date().getHours();
     const bookedTableIds = safeBookings
       .filter((booking: any) => {
@@ -959,7 +960,7 @@ export default function Dashboard() {
           onAnimationComplete={handleWelcomeComplete}
         />
       )}
-      
+
       {/* Main Content */}
       <div className="flex-1 flex flex-col">
         {/* Header */}
@@ -974,7 +975,7 @@ export default function Dashboard() {
                   <div className="flex items-center bg-blue-50 border border-blue-200 rounded-lg px-3 py-2">
                     <Clock className="h-4 w-4 mr-2 text-blue-600" />
                     <span className="text-sm font-medium text-blue-800">
-                      {format(currentTime, "HH:mm:ss")}
+                      {format(currentTime, generalSettings?.timeFormat === '12' ? "hh:mm:ss a" : "HH:mm:ss")}
                     </span>
                   </div>
                   <AnimatedNotificationBadge 
@@ -1148,7 +1149,7 @@ export default function Dashboard() {
             currentPlan="basic" 
             className="mb-6" 
           />
-          
+
           {/* Active Seasonal Theme Banner */}
           <ActiveSeasonalThemeDisplay
             restaurantId={restaurant?.id || 0}

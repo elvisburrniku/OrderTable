@@ -166,8 +166,12 @@ export default function Settings() {
       return response.json();
     },
     onSuccess: () => {
+      // Invalidate all queries to ensure immediate updates across the app
       queryClient.invalidateQueries({ 
         queryKey: [`/api/tenants/${restaurant?.tenantId}/restaurants/${restaurant?.id}/settings`] 
+      });
+      queryClient.invalidateQueries({ 
+        queryKey: [`/api/tenants/${restaurant?.tenantId}/restaurants/${restaurant?.id}/bookings`] 
       });
       toast({ title: "Settings updated successfully" });
     },

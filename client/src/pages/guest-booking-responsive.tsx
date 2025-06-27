@@ -10,17 +10,20 @@ import { Calendar, Clock, Users, Phone, Mail, User, Check, ChevronLeft, ChevronR
 import { format, addDays, startOfDay, startOfMonth, endOfMonth, addMonths, subMonths, getDay, eachDayOfInterval } from 'date-fns';
 import ActiveSeasonalThemeDisplay from '@/components/active-seasonal-theme-display';
 import SeasonalThemeSelector from '@/components/seasonal-theme-selector';
+import { useSettings } from "@/hooks/use-settings";
+import { formatTime } from "@/lib/time-formatter";
 
 // Dynamic time slot generation will be done based on opening hours
 
 export default function GuestBookingResponsive(props: any) {
   const [match, params] = useRoute('/guest-booking/:tenantId/:restaurantId');
-  
+  const { generalSettings } = useSettings();
+
   // Extract parameters from URL path manually if useRoute doesn't work
   const pathParts = window.location.pathname.split('/');
   const pathTenantId = pathParts[2];
   const pathRestaurantId = pathParts[3];
-  
+
   const tenantId = params?.tenantId || pathTenantId || props.params?.tenantId || props.tenantId;
   const restaurantId = params?.restaurantId || pathRestaurantId || props.params?.restaurantId || props.restaurantId;
   const { toast } = useToast();
@@ -32,7 +35,7 @@ export default function GuestBookingResponsive(props: any) {
 
 
   const [currentStep, setCurrentStep] = useState(0);
-  
+
   // Set default guest count based on time of day
   const getDefaultGuestCount = () => {
     const currentHour = new Date().getHours();
@@ -41,7 +44,7 @@ export default function GuestBookingResponsive(props: any) {
     if (currentHour >= 17 && currentHour < 21) return 4; // Dinner - larger groups
     return 2; // Late night - smaller groups
   };
-  
+
   const [guestCount, setGuestCount] = useState(getDefaultGuestCount());
   const [selectedDate, setSelectedDate] = useState<Date | null>(null);
   const [selectedTime, setSelectedTime] = useState('');
@@ -156,7 +159,7 @@ export default function GuestBookingResponsive(props: any) {
 
   const isStepValid = () => {
     const hasThemes = seasonalThemes.length > 0;
-    
+
     switch (currentStep) {
       case 0: return selectedDate !== null;
       case 1: return selectedTime !== '';
@@ -201,31 +204,31 @@ export default function GuestBookingResponsive(props: any) {
   // Generate time slots based on restaurant opening hours for selected date
   const generateTimeSlotsForDate = (date: Date) => {
     if (!date || !openingHours || !Array.isArray(openingHours)) return [];
-    
+
     const dayOfWeek = date.getDay();
     const dayHours = openingHours.find((h: any) => h.dayOfWeek === dayOfWeek);
-    
+
     if (!dayHours || !dayHours.isOpen) return [];
-    
+
     const slots = [];
     const [openHour, openMin] = dayHours.openTime.split(':').map(Number);
     const [closeHour, closeMin] = dayHours.closeTime.split(':').map(Number);
-    
+
     // Start from opening time
     let currentHour = openHour;
     let currentMin = openMin;
-    
+
     // Generate 15-minute intervals until closing time
     while (true) {
       const slotTime = currentHour * 60 + currentMin;
       const closeTime = closeHour * 60 + closeMin;
-      
+
       // Stop if we've reached or passed closing time
       if (slotTime >= closeTime) break;
-      
+
       const timeString = `${currentHour.toString().padStart(2, '0')}:${currentMin.toString().padStart(2, '0')}`;
       slots.push(timeString);
-      
+
       // Add 15 minutes
       currentMin += 15;
       if (currentMin >= 60) {
@@ -233,7 +236,7 @@ export default function GuestBookingResponsive(props: any) {
         currentHour++;
       }
     }
-    
+
     return slots;
   };
 
@@ -243,11 +246,11 @@ export default function GuestBookingResponsive(props: any) {
   // Check if a date is available based on opening hours and special periods
   const isDateAvailable = (date: Date) => {
     const dayOfWeek = date.getDay(); // 0 = Sunday, 1 = Monday, etc.
-    
+
     // Check if date is in the past
     const today = startOfDay(new Date());
     if (date < today) return false;
-    
+
     // Check special periods first (restaurant-specific closures)
     if (specialPeriods && Array.isArray(specialPeriods)) {
       const dateStr = format(date, 'yyyy-MM-dd');
@@ -283,22 +286,22 @@ export default function GuestBookingResponsive(props: any) {
   // Check if a time slot is valid based on opening hours and cut-off times
   const isTimeSlotValid = (timeSlot: string, date: Date) => {
     if (!date) return false;
-    
+
     const dayOfWeek = date.getDay();
-    
+
     // Check opening hours for the day
     if (openingHours && Array.isArray(openingHours)) {
       const dayHours = openingHours.find((h: any) => h.dayOfWeek === dayOfWeek);
       if (!dayHours || !dayHours.isOpen) return false;
-      
+
       const [hours, minutes] = timeSlot.split(':').map(Number);
       const slotTime = hours * 60 + minutes; // Convert to minutes
-      
+
       const [openHour, openMin] = dayHours.openTime.split(':').map(Number);
       const [closeHour, closeMin] = dayHours.closeTime.split(':').map(Number);
       const openTime = openHour * 60 + openMin;
       const closeTime = closeHour * 60 + closeMin;
-      
+
       if (slotTime < openTime || slotTime > closeTime) return false;
     }
 
@@ -306,17 +309,17 @@ export default function GuestBookingResponsive(props: any) {
     if (cutOffTimes && Array.isArray(cutOffTimes)) {
       const now = new Date();
       const isToday = format(date, 'yyyy-MM-dd') === format(now, 'yyyy-MM-dd');
-      
+
       if (isToday) {
         const cutOff = cutOffTimes.find((c: any) => c.dayOfWeek === dayOfWeek);
         if (cutOff) {
           const [cutHour, cutMin] = cutOff.cutOffTime.split(':').map(Number);
           const cutOffMinutes = cutHour * 60 + cutMin;
           const currentMinutes = now.getHours() * 60 + now.getMinutes();
-          
+
           const [slotHour, slotMin] = timeSlot.split(':').map(Number);
           const slotMinutes = slotHour * 60 + slotMin;
-          
+
           // If current time + cut-off buffer > slot time, slot is not available
           if (currentMinutes + cutOffMinutes > slotMinutes) return false;
         }
@@ -330,7 +333,7 @@ export default function GuestBookingResponsive(props: any) {
   const getWelcomeMessage = () => {
     const currentHour = new Date().getHours();
     const restaurantName = (restaurant as any)?.name || "Our Restaurant";
-    
+
     if (currentHour >= 5 && currentHour < 12) {
       return {
         greeting: "Good Morning!",
@@ -371,10 +374,10 @@ export default function GuestBookingResponsive(props: any) {
   // Get recommended time slots based on current time and available slots
   const getRecommendedTimeSlots = (availableSlots: string[]) => {
     if (!availableSlots.length) return [];
-    
+
     const currentHour = new Date().getHours();
     let preferredTimes: string[] = [];
-    
+
     if (currentHour >= 5 && currentHour < 12) {
       // Morning - recommend breakfast times
       preferredTimes = ['08:00', '09:00', '10:00', '11:00'];
@@ -388,7 +391,7 @@ export default function GuestBookingResponsive(props: any) {
       // Late night - recommend available evening slots
       preferredTimes = ['21:00', '21:30', '22:00'];
     }
-    
+
     // Return only preferred times that are actually available
     return preferredTimes.filter(time => availableSlots.includes(time));
   };
@@ -451,7 +454,7 @@ export default function GuestBookingResponsive(props: any) {
               const Icon = step.icon;
               const isActive = index === currentStep;
               const isCompleted = index < currentStep;
-              
+
               return (
                 <div key={index} className="flex flex-col items-center flex-1">
                   <div className={`
@@ -485,14 +488,14 @@ export default function GuestBookingResponsive(props: any) {
             />
           </div>
         )}
-        
+
         <Card className="max-w-2xl mx-auto bg-white/95 backdrop-blur-sm shadow-2xl">
           <CardContent className="p-6 md:p-8">
             {/* Step 0: Date Selection */}
             {currentStep === 0 && (
               <div className="space-y-6">
                 <h2 className="text-xl md:text-2xl font-bold text-gray-900 text-center">Select Date</h2>
-                
+
                 {/* Month Navigation Header */}
                 <div className="flex items-center justify-between mb-4">
                   <Button
@@ -504,11 +507,11 @@ export default function GuestBookingResponsive(props: any) {
                   >
                     <ChevronLeft className="w-4 h-4" />
                   </Button>
-                  
+
                   <h3 className="text-lg font-semibold text-gray-800">
                     {format(currentMonth, 'MMMM yyyy')}
                   </h3>
-                  
+
                   <Button
                     variant="outline"
                     size="sm"
@@ -535,21 +538,21 @@ export default function GuestBookingResponsive(props: any) {
                     const firstDayOfMonth = getDay(startOfMonth(currentMonth));
                     // Convert to Monday-first: Sunday=0 -> 6, Monday=1 -> 0, Tuesday=2 -> 1, etc.
                     const mondayFirstOffset = firstDayOfMonth === 0 ? 6 : firstDayOfMonth - 1;
-                    
+
                     return Array.from({ length: mondayFirstOffset }).map((_, index) => (
                       <div key={`empty-${index}`} className="h-12"></div>
                     ));
                   })()}
-                  
+
                   {/* Date buttons */}
                   {calendarDates.map((date, index) => {
                     const isSelected = selectedDate && format(selectedDate, 'yyyy-MM-dd') === format(date, 'yyyy-MM-dd');
                     const isToday = format(date, 'yyyy-MM-dd') === format(new Date(), 'yyyy-MM-dd');
                     const isPastDate = date < startOfDay(new Date());
                     const isAvailable = !isPastDate && isDateAvailable(date);
-                    
 
-                    
+
+
                     return (
                       <button
                         key={index}
@@ -576,7 +579,7 @@ export default function GuestBookingResponsive(props: any) {
                     );
                   })}
                 </div>
-                
+
                 <div className="text-center text-sm text-gray-600 space-y-1">
                   <p>Select your preferred date • Today is highlighted</p>
                   <div className="text-xs flex justify-center items-center space-x-4">
@@ -604,7 +607,7 @@ export default function GuestBookingResponsive(props: any) {
                     </p>
                   )}
                 </div>
-                
+
                 {timeSlots.length === 0 ? (
                   <div className="text-center py-8">
                     <Clock className="w-12 h-12 text-gray-400 mx-auto mb-4" />
@@ -620,7 +623,12 @@ export default function GuestBookingResponsive(props: any) {
                         const isAvailableBySystem = !(availableSlots as any) || (availableSlots as any).slots?.includes(time);
                         const isAvailable = isValidByRules && isAvailableBySystem;
                         const isSelected = selectedTime === time;
-                        
+
+                        const [hour, minute] = time.split(':').map(Number);
+
+                        const time24 = `${hour.toString().padStart(2, '0')}:${minute.toString().padStart(2, '0')}`;
+                        const displayTime = formatTime(time24, { timeFormat: generalSettings?.timeFormat || '12h' });
+
                         return (
                           <button
                             key={time}
@@ -640,7 +648,7 @@ export default function GuestBookingResponsive(props: any) {
                             {isRecommended && isAvailable && !isSelected && (
                               <span className="absolute -top-1 -right-1 w-3 h-3 bg-amber-400 rounded-full"></span>
                             )}
-                            {time}
+                            {displayTime}
                           </button>
                         );
                       })}
@@ -676,7 +684,7 @@ export default function GuestBookingResponsive(props: any) {
                     Suggested for {welcomeMessage.mealType}: {getDefaultGuestCount()} guests
                   </p>
                 </div>
-                
+
                 {/* Direct Input Option */}
                 <div className="flex items-center justify-center space-x-4 mb-6">
                   <Label htmlFor="guestInput" className="text-sm font-medium text-gray-700">
@@ -719,7 +727,7 @@ export default function GuestBookingResponsive(props: any) {
                     +
                   </Button>
                 </div>
-                
+
                 {/* Quick Select Buttons */}
                 <div className="flex justify-center space-x-2 flex-wrap">
                   {[1, 2, 3, 4, 5, 6].map((count) => (
@@ -752,7 +760,7 @@ export default function GuestBookingResponsive(props: any) {
                     Enhance your visit with a seasonal theme that matches your mood (optional)
                   </p>
                 </div>
-                
+
                 <SeasonalThemeSelector
                   restaurantId={parseInt(restaurantId)}
                   tenantId={parseInt(tenantId)}
@@ -824,7 +832,7 @@ export default function GuestBookingResponsive(props: any) {
                 <ChevronLeft className="w-4 h-4" />
                 <span>Previous</span>
               </Button>
-              
+
               <Button
                 onClick={handleNext}
                 disabled={!isStepValid() || createBookingMutation.isPending}

@@ -62,6 +62,8 @@ import {
 } from "lucide-react";
 import { Booking, Table as TableType } from "@shared/schema";
 import DynamicBookingForm from "@/components/dynamic-booking-form";
+import { useSettings } from "@/hooks/use-settings";
+import { formatTime, formatDateTime } from "@/lib/time-formatter";
 
 interface EnhancedGoogleCalendarProps {
   selectedDate: Date;
@@ -92,6 +94,7 @@ export default function EnhancedGoogleCalendar({
   const { restaurant } = useAuth();
   const { toast } = useToast();
   const queryClient = useQueryClient();
+  const { generalSettings } = useSettings();
 
   const [view, setView] = useState<ViewType>("week");
   const [currentDate, setCurrentDate] = useState(selectedDate);
@@ -112,7 +115,7 @@ export default function EnhancedGoogleCalendar({
   const dragStartTime = useRef<number>(0);
   const dragStartPos = useRef<{ x: number; y: number }>({ x: 0, y: 0 });
   const clickTimeout = useRef<NodeJS.Timeout | null>(null);
-  
+
   // Current time indicator state
   const [currentTime, setCurrentTime] = useState(new Date());
 
@@ -160,33 +163,33 @@ export default function EnhancedGoogleCalendar({
   // Time slots for the calendar based on opening hours
   const timeSlots = useMemo(() => {
     const slots = [];
-    
+
     // Find the earliest opening time and latest closing time across all days
     let earliestOpen = 24;
     let latestClose = 0;
-    
+
     if (openingHours && Array.isArray(openingHours)) {
       openingHours.forEach(hours => {
         if (hours.isOpen && hours.openTime && hours.closeTime) {
           const openHour = parseInt(hours.openTime.split(':')[0]);
           const closeHour = parseInt(hours.closeTime.split(':')[0]);
-          
+
           earliestOpen = Math.min(earliestOpen, openHour);
           latestClose = Math.max(latestClose, closeHour);
         }
       });
     }
-    
+
     // Fallback to default hours if no opening hours are set
     if (earliestOpen === 24 || latestClose === 0) {
       earliestOpen = 9;
       latestClose = 22;
     }
-    
+
     // Add 1 hour buffer before and after for flexibility
     const startHour = Math.max(6, earliestOpen - 1);
     const endHour = Math.min(23, latestClose + 1);
-    
+
     // Generate 15-minute intervals within the working hours range
     for (let hour = startHour; hour <= endHour; hour++) {
       for (let minute = 0; minute < 60; minute += 15) {
@@ -202,9 +205,9 @@ export default function EnhancedGoogleCalendar({
     const now = currentTime;
     const currentHour = now.getHours();
     const currentMinute = now.getMinutes();
-    
+
     const [slotHour, slotMinute] = timeSlot.split(':').map(Number);
-    
+
     // Check if current time falls within this 15-minute slot
     return currentHour === slotHour && currentMinute >= slotMinute && currentMinute < slotMinute + 15;
   }, [currentTime]);
@@ -289,21 +292,21 @@ export default function EnhancedGoogleCalendar({
 
   const bookingsByTimeSlot = useMemo(() => {
     const grouped = new Map<string, Booking[]>();
-    
+
     allBookings.forEach((booking) => {
       if (!booking.startTime) return;
-      
+
       const dateKey = format(new Date(booking.bookingDate), "yyyy-MM-dd");
-      
+
       // Convert booking time to minutes to find the correct slot
       const [hours, minutes] = booking.startTime.split(':').map(Number);
       const bookingMinutes = hours * 60 + minutes;
-      
+
       // Find the appropriate time slot (round down to nearest 30-minute interval)
       const slotHour = Math.floor(bookingMinutes / 60);
       const slotMinute = Math.floor((bookingMinutes % 60) / 30) * 30;
       const assignedSlot = `${slotHour.toString().padStart(2, '0')}:${slotMinute.toString().padStart(2, '0')}`;
-      
+
       // Only assign to slots that exist in timeSlots array
       if (timeSlots.includes(assignedSlot)) {
         const timeKey = `${dateKey}-${assignedSlot}`;
@@ -313,7 +316,7 @@ export default function EnhancedGoogleCalendar({
         grouped.get(timeKey)!.push(booking);
       }
     });
-    
+
     return grouped;
   }, [allBookings, timeSlots]);
 
@@ -533,7 +536,7 @@ export default function EnhancedGoogleCalendar({
 
       if (error.message) {
         try {
-          // Check if the error message contains JSON (like "400: {"message":"...}")
+          // Check if the error message contains JSON (like "400: {"message":"..."}")
           const match = error.message.match(/400:\s*({.*})/);
           if (match) {
             const jsonError = JSON.parse(match[1]);
@@ -595,7 +598,7 @@ export default function EnhancedGoogleCalendar({
 
       if (error.message) {
         try {
-          // Check if the error message contains JSON (like "400: {"message":"...}")
+          // Check if the error message contains JSON (like "400: {"message":"..."}")
           const match = error.message.match(/400:\s*({.*})/);
           if (match) {
             const jsonError = JSON.parse(match[1]);
@@ -877,15 +880,15 @@ export default function EnhancedGoogleCalendar({
   // Function to calculate booking duration in minutes
   const getBookingDurationMinutes = (startTime: string, endTime?: string) => {
     if (!endTime) return 60; // Default 1 hour if no end time
-    
+
     const toMinutes = (timeStr: string) => {
       const [hours, minutes] = timeStr.split(':').map(Number);
       return hours * 60 + minutes;
     };
-    
+
     const startMinutes = toMinutes(startTime);
     const endMinutes = toMinutes(endTime);
-    
+
     return endMinutes - startMinutes;
   };
 
@@ -900,7 +903,7 @@ export default function EnhancedGoogleCalendar({
   // Function to get timeline bar color based on duration
   const getTimelineBarColor = (startTime: string, endTime?: string) => {
     const duration = getBookingDurationMinutes(startTime, endTime);
-    
+
     if (duration <= 60) return 'bg-green-400'; // Short booking (≤1h)
     if (duration <= 120) return 'bg-yellow-400'; // Medium booking (≤2h)
     return 'bg-red-400'; // Long booking (>2h)
@@ -912,22 +915,22 @@ export default function EnhancedGoogleCalendar({
     if (!date || !startTime) {
       return tables;
     }
-    
+
     let dateStr: string;
     try {
       dateStr = format(date, 'yyyy-MM-dd');
     } catch (error) {
       return tables;
     }
-    
+
     return tables.filter(table => {
       // Check if this table has any bookings that overlap with the selected time
       const conflictingBookings = allBookings.filter(booking => {
         // Skip the booking we're editing
         if (excludeBookingId && booking.id === excludeBookingId) return false;
-        
+
         if (booking.tableId !== table.id) return false;
-        
+
         // Convert booking date to string for comparison
         let bookingDateStr: string;
         try {
@@ -937,19 +940,20 @@ export default function EnhancedGoogleCalendar({
           } else if (booking.bookingDate instanceof Date) {
             bookingDateStr = format(booking.bookingDate, 'yyyy-MM-dd');
           } else {
-            // Fallback - convert to string and parse
+            // Fallback - convert to string```text
+and parse
             bookingDateStr = format(new Date(booking.bookingDate), 'yyyy-MM-dd');
           }
         } catch (error) {
           return false; // Skip this booking if date is invalid
         }
-        
+
         if (bookingDateStr !== dateStr) return false;
-        
+
         // Check for time overlap
         const bookingStart = booking.startTime;
         const bookingEnd = booking.endTime || booking.startTime;
-        
+
         // Convert times to minutes for easier comparison
         const toMinutes = (timeStr: string) => {
           if (!timeStr || typeof timeStr !== 'string') return 0;
@@ -959,18 +963,18 @@ export default function EnhancedGoogleCalendar({
           if (isNaN(hours) || isNaN(minutes)) return 0;
           return hours * 60 + minutes;
         };
-        
+
         const selectedStart = toMinutes(startTime);
         const selectedEnd = toMinutes(endTime);
         const existingStart = toMinutes(bookingStart);
         const existingEnd = toMinutes(bookingEnd);
-        
+
         // Check if times overlap (any overlap means conflict)
         const hasOverlap = !(selectedEnd <= existingStart || selectedStart >= existingEnd);
-        
+
         return hasOverlap;
       });
-      
+
       return conflictingBookings.length === 0;
     });
   };
@@ -1571,13 +1575,13 @@ export default function EnhancedGoogleCalendar({
                     } catch (error) {
                       bookingDate = new Date();
                     }
-                    
+
                     const availableTables = getAvailableTablesForTimeSlot(
                       bookingDate, 
                       newBooking.startTime, 
                       newBooking.endTime
                     );
-                    
+
                     if (availableTables.length === 0) {
                       return (
                         <SelectItem value="no-tables-available" disabled>
@@ -1585,7 +1589,7 @@ export default function EnhancedGoogleCalendar({
                         </SelectItem>
                       );
                     }
-                    
+
                     return availableTables.map((table) => (
                       <SelectItem key={table.id} value={table.id.toString()}>
                         Table {table.tableNumber} (Capacity: {table.capacity})
@@ -1601,7 +1605,7 @@ export default function EnhancedGoogleCalendar({
                 } catch (error) {
                   bookingDate = new Date();
                 }
-                
+
                 const availableTables = getAvailableTablesForTimeSlot(
                   bookingDate, 
                   newBooking.startTime, 
@@ -1609,7 +1613,7 @@ export default function EnhancedGoogleCalendar({
                 );
                 const totalTables = tables.length;
                 const unavailableCount = totalTables - availableTables.length;
-                
+
                 if (unavailableCount > 0) {
                   return (
                     <p className="text-sm text-orange-600 mt-1">
@@ -1618,7 +1622,7 @@ export default function EnhancedGoogleCalendar({
                     </p>
                   );
                 }
-                
+
                 return (
                   <p className="text-sm text-green-600 mt-1">
                     All {totalTables} tables available
@@ -1826,16 +1830,16 @@ function EditBookingForm({
                 } catch (error) {
                   bookingDate = new Date();
                 }
-                
+
                 const availableTables = getAvailableTablesForTimeSlot(
                   bookingDate, 
                   formData.startTime, 
                   formData.startTime, // Using same time for start and end
                   booking.id // Exclude current booking from conflict check
                 );
-                
+
                 const unavailableCount = tables.length - availableTables.length;
-                
+
                 return (
                   <>
                     {availableTables.map((table) => (

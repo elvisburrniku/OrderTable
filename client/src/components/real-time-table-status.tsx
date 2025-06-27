@@ -17,7 +17,9 @@ import {
   Utensils,
   RefreshCw
 } from 'lucide-react';
-import { format, parseISO, isAfter, isBefore, addMinutes, subMinutes } from 'date-fns';
+import { format, addMinutes } from "date-fns";
+import { useSettings } from "@/hooks/use-settings";
+import { formatTime } from "@/lib/time-formatter";
 
 interface TableStatus {
   id: number;
@@ -193,6 +195,7 @@ export default function RealTimeTableStatus({
       </Card>
     );
   }
+  const { generalSettings } = useSettings();
 
   return (
     <div className="space-y-6">

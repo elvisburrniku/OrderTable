@@ -15,6 +15,8 @@ import { List, Table, Calendar, Users, Plus, ChevronLeft, ChevronRight, Clock } 
 import { Booking, Table as TableType } from "@shared/schema";
 import WalkInBookingButton from "@/components/walk-in-booking";
 import DynamicBookingForm from "@/components/dynamic-booking-form";
+import { useSettings } from "@/hooks/use-settings";
+import { formatTime, formatDateTime } from "@/lib/time-formatter";
 
 interface BookingCalendarProps {
   selectedDate: Date;
@@ -26,7 +28,8 @@ interface BookingCalendarProps {
 }
 
 export default function BookingCalendar({ selectedDate, bookings, allBookings = [], tables, isLoading, onDateSelect }: BookingCalendarProps) {
-  const { restaurant } = useAuth();
+  const { user, restaurant } = useAuth();
+  const { generalSettings } = useSettings();
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const [activeView, setActiveView] = useState("calendar");
@@ -119,7 +122,7 @@ export default function BookingCalendar({ selectedDate, bookings, allBookings = 
 
     const dayOfWeek = date.getDay();
     const cutOffTime = cutOffTimes.find((ct: any) => ct.dayOfWeek === dayOfWeek && ct.isEnabled);
-    
+
     if (!cutOffTime || cutOffTime.cutOffHours === 0) {
       return false;
     }
@@ -128,11 +131,11 @@ export default function BookingCalendar({ selectedDate, bookings, allBookings = 
     const [hours, minutes] = timeSlot.split(':').map(Number);
     const bookingDateTime = new Date(date);
     bookingDateTime.setHours(hours, minutes, 0, 0);
-    
+
     // Calculate cut-off datetime (current time + cut-off hours)
     const now = new Date();
     const cutOffDateTime = new Date(now.getTime() + (cutOffTime.cutOffHours * 60 * 60 * 1000));
-    
+
     // Check if booking time is before the cut-off time (should be blocked)
     return bookingDateTime <= cutOffDateTime;
   };
@@ -264,15 +267,15 @@ export default function BookingCalendar({ selectedDate, bookings, allBookings = 
   const generateTimeSlots = (date?: Date) => {
     const targetDate = date || selectedDate;
     const dayHours = getOpeningHoursForDay(targetDate);
-    
+
     if (!dayHours || !dayHours.isOpen) {
       return [];
     }
-    
+
     const slots = [];
     const openHour = parseInt(dayHours.openTime.split(':')[0]);
     const closeHour = parseInt(dayHours.closeTime.split(':')[0]);
-    
+
     for (let hour = openHour; hour < closeHour; hour++) {
       slots.push(`${hour.toString().padStart(2, '0')}:00`);
     }
@@ -284,11 +287,11 @@ export default function BookingCalendar({ selectedDate, bookings, allBookings = 
   const getBookingForTableAndTime = (tableId: number, time: string) => {
     return bookings.find(booking => {
       if (booking.tableId !== tableId || !booking.startTime) return false;
-      
+
       // Extract hour from both booking time and slot time
       const bookingHour = parseInt(booking.startTime.split(':')[0]);
       const slotHour = parseInt(time.split(':')[0]);
-      
+
       // Match bookings that fall within the same hour slot
       return bookingHour === slotHour;
     });
@@ -375,11 +378,11 @@ export default function BookingCalendar({ selectedDate, bookings, allBookings = 
             // Generate hourly time slots for this day
             const generateTimeSlots = () => {
               if (isClosed) return [];
-              
+
               const slots = [];
               const openHour = parseInt(dayHours.openTime.split(':')[0]);
               const closeHour = parseInt(dayHours.closeTime.split(':')[0]);
-              
+
               for (let hour = openHour; hour < closeHour; hour++) {
                 const timeStr = `${hour.toString().padStart(2, '0')}:00`;
                 // Find any booking that starts within this hour slot
@@ -439,7 +442,7 @@ export default function BookingCalendar({ selectedDate, bookings, allBookings = 
                       </div>
                     )}
                   </div>
-                  
+
                   {/* Opening Hours */}
                   <div className="mt-1">
                     {isClosed ? (
@@ -566,7 +569,7 @@ export default function BookingCalendar({ selectedDate, bookings, allBookings = 
                         )}
                       </div>
                       <div className="mt-1 flex items-center space-x-4 text-sm text-gray-600">
-                        <span>{booking.startTime} - {booking.endTime}</span>
+                         <span>{formatTime(booking.startTime, generalSettings?.timeFormat)} - {formatTime(booking.endTime, generalSettings?.timeFormat)}</span>
                         <span>{booking.guestCount} guests</span>
                         <span>{getTableDisplayName(booking)}</span>
                       </div>
@@ -689,7 +692,7 @@ export default function BookingCalendar({ selectedDate, bookings, allBookings = 
         {/* Booking Action Buttons */}
         <div className="flex items-center space-x-2">
           <WalkInBookingButton />
-          
+
           {/* New Booking Dialog */}
           <Dialog open={isNewBookingOpen} onOpenChange={setIsNewBookingOpen}>
             <DialogTrigger asChild>
