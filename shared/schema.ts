@@ -851,8 +851,7 @@ export const resolvedConflicts = pgTable("resolved_conflicts", {
   id: serial("id").primaryKey(),
   restaurantId: integer("restaurant_id")
     .notNull()
-    .references(() =>```python
-restaurants.id, { onDelete: "cascade" }),
+    .references(() => restaurants.id, { onDelete: "cascade" }),
   tenantId: integer("tenant_id")
     .notNull()
     .references(() => tenants.id, { onDelete: "cascade" }),
