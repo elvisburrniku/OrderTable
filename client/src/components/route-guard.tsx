@@ -1,5 +1,3 @@
-`
-```typescript
 import { useAuth } from "@/lib/auth.tsx";
 import { useLocation } from "wouter";
 import { useEffect } from "react";
