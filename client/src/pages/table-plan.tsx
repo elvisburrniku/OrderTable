@@ -509,22 +509,22 @@ export default function TablePlan() {
     const capacity = position.capacity || table?.capacity || 4;
     const tableNumber = position.tableNumber || table?.tableNumber || tableId;
 
-    // Table dimensions based on shape and capacity
+    // Table dimensions based on shape and capacity (made smaller)
     const getTableDimensions = () => {
       switch (shape) {
         case 'square':
-          return { width: capacity <= 2 ? 60 : capacity <= 4 ? 80 : 100, height: capacity <= 2 ? 60 : capacity <= 4 ? 80 : 100 };
+          return { width: capacity <= 2 ? 40 : capacity <= 4 ? 50 : 60, height: capacity <= 2 ? 40 : capacity <= 4 ? 50 : 60 };
         case 'circle':
         case 'round':
-          return { width: capacity <= 2 ? 60 : capacity <= 4 ? 80 : capacity <= 8 ? 120 : capacity <= 12 ? 140 : 160, height: capacity <= 2 ? 60 : capacity <= 4 ? 80 : capacity <= 8 ? 120 : capacity <= 12 ? 140 : 160 };
+          return { width: capacity <= 2 ? 40 : capacity <= 4 ? 50 : capacity <= 8 ? 70 : capacity <= 12 ? 80 : 90, height: capacity <= 2 ? 40 : capacity <= 4 ? 50 : capacity <= 8 ? 70 : capacity <= 12 ? 80 : 90 };
         case 'octagon':
-          return { width: 120, height: 120 };
+          return { width: 70, height: 70 };
         case 'curved':
-          return { width: capacity <= 6 ? 100 : 140, height: capacity <= 6 ? 80 : 100 };
+          return { width: capacity <= 6 ? 60 : 80, height: capacity <= 6 ? 50 : 60 };
         case 'long-rectangle':
-          return { width: capacity <= 8 ? 140 : 180, height: 80 };
+          return { width: capacity <= 8 ? 80 : 100, height: 50 };
         default:
-          return { width: 80, height: 80 };
+          return { width: 50, height: 50 };
       }
     };
 
@@ -584,7 +584,7 @@ export default function TablePlan() {
         for (let i = 0; i < Math.min(chairsPerSide, capacity); i++) {
           chairs.push({
             x: position.x + chairSpacing * (i + 1) - 8,
-            y: position.y - 25,
+            y: position.y - 18,
             rotation: 0
           });
         }
@@ -593,7 +593,7 @@ export default function TablePlan() {
         if (capacity > chairsPerSide) {
           for (let i = 0; i < Math.min(chairsPerSide, capacity - chairsPerSide); i++) {
             chairs.push({
-              x: position.x + tableWidth + 15,
+              x: position.x + tableWidth + 8,
               y: position.y + chairSpacing * (i + 1) - 8,
               rotation: 90
             });
@@ -605,7 +605,7 @@ export default function TablePlan() {
           for (let i = 0; i < Math.min(chairsPerSide, capacity - chairsPerSide * 2); i++) {
             chairs.push({
               x: position.x + tableWidth - chairSpacing * (i + 1) - 8,
-              y: position.y + tableHeight + 15,
+              y: position.y + tableHeight + 8,
               rotation: 180
             });
           }
@@ -615,7 +615,7 @@ export default function TablePlan() {
         if (capacity > chairsPerSide * 3) {
           for (let i = 0; i < Math.min(chairsPerSide, capacity - chairsPerSide * 3); i++) {
             chairs.push({
-              x: position.x - 25,
+              x: position.x - 18,
               y: position.y + tableHeight - chairSpacing * (i + 1) - 8,
               rotation: 270
             });
@@ -645,7 +645,7 @@ export default function TablePlan() {
         // Short sides
         for (let i = 0; i < shortSideChairs; i++) {
           chairs.push({
-            x: position.x - 25,
+            x: position.x - 18,
             y: position.y + (tableHeight / (shortSideChairs + 1)) * (i + 1) - 8,
             rotation: 270
           });
@@ -653,14 +653,14 @@ export default function TablePlan() {
 
         for (let i = 0; i < shortSideChairs; i++) {
           chairs.push({
-            x: position.x + tableWidth + 15,
+            x: position.x + tableWidth + 8,
             y: position.y + (tableHeight / (shortSideChairs + 1)) * (i + 1) - 8,
             rotation: 90
           });
         }
       } else {
         // Circular arrangement for round, oval, octagon tables
-        const radius = Math.max(tableWidth, tableHeight) / 2 + 30;
+        const radius = Math.max(tableWidth, tableHeight) / 2 + 20;
         for (let i = 0; i < capacity; i++) {
           const angle = (i * 2 * Math.PI) / capacity - Math.PI / 2; // Start from top
           chairs.push({
@@ -686,13 +686,13 @@ export default function TablePlan() {
               position: 'absolute',
               left: `${chair.x}px`,
               top: `${chair.y}px`,
-              width: '16px',
-              height: '24px',
+              width: '12px',
+              height: '18px',
               backgroundColor: '#8b4513',
               border: '1px solid #654321',
-              borderRadius: '4px 4px 8px 8px',
+              borderRadius: '3px 3px 6px 6px',
               transform: `rotate(${chair.rotation}deg)`,
-              boxShadow: '0 2px 4px rgba(0, 0, 0, 0.3)',
+              boxShadow: '0 1px 2px rgba(0, 0, 0, 0.3)',
               zIndex: 5,
             }}
           >
@@ -700,12 +700,12 @@ export default function TablePlan() {
             <div
               style={{
                 position: 'absolute',
-                top: '-2px',
-                left: '2px',
-                width: '12px',
-                height: '6px',
+                top: '-1px',
+                left: '1px',
+                width: '10px',
+                height: '4px',
                 backgroundColor: '#654321',
-                borderRadius: '2px 2px 0 0',
+                borderRadius: '1px 1px 0 0',
               }}
             />
           </div>
@@ -725,10 +725,55 @@ export default function TablePlan() {
             e.currentTarget.style.boxShadow = '0 8px 16px rgba(0, 0, 0, 0.2), inset 0 1px 0 rgba(255, 255, 255, 0.1)';
           }}
         >
+          {/* Remove button (X) */}
+          <button
+            style={{
+              position: 'absolute',
+              top: '-8px',
+              right: '-8px',
+              width: '20px',
+              height: '20px',
+              backgroundColor: '#ef4444',
+              color: 'white',
+              border: 'none',
+              borderRadius: '50%',
+              fontSize: '12px',
+              fontWeight: 'bold',
+              cursor: 'pointer',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              zIndex: 20,
+              boxShadow: '0 2px 4px rgba(0, 0, 0, 0.2)',
+            }}
+            onClick={(e) => {
+              e.preventDefault();
+              e.stopPropagation();
+              if (window.confirm(`Remove Table ${tableNumber} from the floor plan?`)) {
+                setTablePositions((prev) => {
+                  const newPositions = { ...prev };
+                  delete newPositions[tableId];
+                  return newPositions;
+                });
+              }
+            }}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.backgroundColor = '#dc2626';
+              e.currentTarget.style.transform = 'scale(1.1)';
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.backgroundColor = '#ef4444';
+              e.currentTarget.style.transform = 'scale(1)';
+            }}
+            title="Remove table from plan"
+          >
+            ×
+          </button>
+
           <div style={{ textAlign: 'center' }}>
-            <div style={{ fontSize: '12px', opacity: 0.8 }}>T</div>
-            <div style={{ fontSize: '16px', fontWeight: 'bold' }}>{tableNumber}</div>
-            <div style={{ fontSize: '10px', opacity: 0.7 }}>{capacity}p</div>
+            <div style={{ fontSize: '10px', opacity: 0.8 }}>T</div>
+            <div style={{ fontSize: '12px', fontWeight: 'bold' }}>{tableNumber}</div>
+            <div style={{ fontSize: '8px', opacity: 0.7 }}>{capacity}p</div>
           </div>
         </div>
       </div>
