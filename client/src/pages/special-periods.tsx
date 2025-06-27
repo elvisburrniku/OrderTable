@@ -771,25 +771,55 @@ export default function SpecialPeriods() {
                                 <Button
                                   variant="outline"
                                   size="sm"
-                                  className="h-8 w-8 p-0 text-red-600 hover:text-red-700"
+                                  className="h-8 w-8 p-0 text-red-600 hover:text-red-700 hover:bg-red-50"
                                 >
                                   <Trash2 className="w-4 h-4" />
                                 </Button>
                               </AlertDialogTrigger>
-                              <AlertDialogContent>
+                              <AlertDialogContent className="max-w-lg">
                                 <AlertDialogHeader>
-                                  <AlertDialogTitle>Delete Special Period</AlertDialogTitle>
-                                  <AlertDialogDescription>
-                                    Are you sure you want to delete "{period.name}"? This action cannot be undone.
+                                  <AlertDialogTitle className="flex items-center text-xl">
+                                    <CalendarIcon className="w-6 h-6 mr-2 text-red-600" />
+                                    Delete Special Period Confirmation
+                                  </AlertDialogTitle>
+                                  <AlertDialogDescription className="space-y-3 text-base">
+                                    <p>
+                                      Are you sure you want to delete the special period{" "}
+                                      <span className="font-semibold text-gray-900">"{period.name}"</span> scheduled from{" "}
+                                      <span className="font-semibold text-gray-900">
+                                        {format(new Date(period.startDate), "MMMM dd, yyyy")}
+                                      </span>{" "}
+                                      to{" "}
+                                      <span className="font-semibold text-gray-900">
+                                        {format(new Date(period.endDate), "MMMM dd, yyyy")}
+                                      </span>?
+                                    </p>
+                                    <div className="bg-red-50 border border-red-200 rounded-lg p-4">
+                                      <p className="text-red-800 text-sm font-medium flex items-center">
+                                        <Trash2 className="w-4 h-4 mr-2" />
+                                        This action cannot be undone and will permanently remove this special period configuration.
+                                      </p>
+                                    </div>
                                   </AlertDialogDescription>
                                 </AlertDialogHeader>
-                                <AlertDialogFooter>
-                                  <AlertDialogCancel>Cancel</AlertDialogCancel>
+                                <AlertDialogFooter className="gap-3">
+                                  <AlertDialogCancel className="px-6 py-2.5">Cancel</AlertDialogCancel>
                                   <AlertDialogAction
                                     onClick={() => deletePeriod(-1, period.id)}
-                                    className="bg-red-600 hover:bg-red-700"
+                                    disabled={deletePeriodMutation.isPending}
+                                    className="bg-red-600 hover:bg-red-700 text-white px-6 py-2.5"
                                   >
-                                    Delete
+                                    {deletePeriodMutation.isPending ? (
+                                      <>
+                                        <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                                        Deleting...
+                                      </>
+                                    ) : (
+                                      <>
+                                        <Trash2 className="w-4 h-4 mr-2" />
+                                        Delete Period
+                                      </>
+                                    )}
                                   </AlertDialogAction>
                                 </AlertDialogFooter>
                               </AlertDialogContent>
