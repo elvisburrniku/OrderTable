@@ -34,6 +34,8 @@ import {
 } from "lucide-react";
 import { motion } from "framer-motion";
 import { format } from "date-fns";
+import { useSettings } from "@/hooks/use-settings";
+import { formatDate, formatDateTime } from "@/lib/time-formatter";
 
 interface SmsMessage {
   id: number;

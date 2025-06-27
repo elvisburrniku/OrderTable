@@ -16,7 +16,7 @@ import { Booking, Table as TableType } from "@shared/schema";
 import WalkInBookingButton from "@/components/walk-in-booking";
 import DynamicBookingForm from "@/components/dynamic-booking-form";
 import { useSettings } from "@/hooks/use-settings";
-import { formatTime, formatDateTime } from "@/lib/time-formatter";
+import { useDate } from "@/contexts/date-context";
 
 interface BookingCalendarProps {
   selectedDate: Date;
@@ -30,6 +30,7 @@ interface BookingCalendarProps {
 export default function BookingCalendar({ selectedDate, bookings, allBookings = [], tables, isLoading, onDateSelect }: BookingCalendarProps) {
   const { user, restaurant } = useAuth();
   const { generalSettings } = useSettings();
+  const { formatDate, formatTime, formatDateTime } = useDate();
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const [activeView, setActiveView] = useState("calendar");

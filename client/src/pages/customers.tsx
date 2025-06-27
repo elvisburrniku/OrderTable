@@ -35,6 +35,8 @@ import {
 } from "@/components/ui/collapsible";
 import { Search, Plus, Mail, Phone, Calendar, Star, Filter, ChevronDown, ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight, User, Users, Edit, Trash2 } from "lucide-react";
 import { format } from "date-fns";
+import { useSettings } from "@/hooks/use-settings";
+import { formatDate } from "@/lib/time-formatter";
 import { motion } from "framer-motion";
 
 export default function Customers() {

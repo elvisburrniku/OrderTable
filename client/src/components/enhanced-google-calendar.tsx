@@ -63,7 +63,7 @@ import {
 import { Booking, Table as TableType } from "@shared/schema";
 import DynamicBookingForm from "@/components/dynamic-booking-form";
 import { useSettings } from "@/hooks/use-settings";
-import { formatTime, formatDateTime } from "@/lib/time-formatter";
+import { useDate } from "@/contexts/date-context";
 
 interface EnhancedGoogleCalendarProps {
   selectedDate: Date;

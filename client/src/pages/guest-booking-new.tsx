@@ -9,6 +9,8 @@ import { useToast } from "@/hooks/use-toast";
 import { ChevronLeft, ChevronRight, Info, Users, Calendar, Clock, CheckCircle } from "lucide-react";
 import { Calendar as CalendarComponent } from "@/components/ui/calendar";
 import { format, addDays, isSameDay } from "date-fns";
+import { useSettings } from "@/hooks/use-settings";
+import { formatDate, formatTime } from "@/lib/time-formatter";
 
 interface BookingStep {
   id: string;

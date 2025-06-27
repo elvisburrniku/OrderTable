@@ -8,6 +8,8 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { format, startOfMonth, endOfMonth, eachDayOfInterval, isSameDay, isToday, addMonths, subMonths, startOfWeek, endOfWeek, addDays } from "date-fns";
+import { useSettings } from "@/hooks/use-settings";
+import { formatDate, formatTime } from "@/lib/time-formatter";
 import { ChevronLeft, ChevronRight, Clock, Users, Calendar, CheckCircle, XCircle, AlertCircle } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
 

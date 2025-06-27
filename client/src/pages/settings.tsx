@@ -68,31 +68,31 @@ export default function Settings() {
     depositAmount: 0,
     allowSameDayBookings: true,
     minBookingNotice: 0,
-    
+
     // Duration and timing settings
     defaultDuration: 120,
     emptySeats: 2,
     turnaroundTime: 0,
     useEndingTime: false,
-    
+
     // Contact and cancellation
     contactMethod: "phone",
     allowCancellationAndChanges: true,
     cancellationNotice: "none",
     groupRequest: false,
-    
+
     // Table booking preferences
     tableBooking: "recommended",
-    
+
     // Data storage
     personalDataStorage: "1year",
-    
+
     // Field visibility
     showCompanyNameField: { manual: false, online: false },
     showRoomNumberField: { manual: false, online: false },
     showAgreedPriceField: false,
     showPromoCodeField: { manual: false, online: false },
-    
+
     // Online booking settings
     onlineBooking: {
       enabled: true,
@@ -113,14 +113,14 @@ export default function Settings() {
       confirmUrl: "",
       privacyPolicyUrl: "",
     },
-    
+
     // Manual booking (administration)
     manualBooking: {
       tableSuggestions: true,
       interval: 15,
       initialsRequired: false,
     },
-    
+
     // Administration
     administration: {
       newBookingNotification: true,
@@ -253,7 +253,7 @@ export default function Settings() {
                   </SelectContent>
                 </Select>
               </div>
-              
+
               <div className="space-y-2">
                 <Label htmlFor="dateFormat" className="text-sm font-medium">Date Format</Label>
                 <Select
@@ -273,7 +273,7 @@ export default function Settings() {
                   </SelectContent>
                 </Select>
               </div>
-              
+
               <div className="space-y-2">
                 <Label htmlFor="timeFormat" className="text-sm font-medium">Time Format</Label>
                 <Select
@@ -292,7 +292,7 @@ export default function Settings() {
                 </Select>
               </div>
             </div>
-            
+
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
               <div className="space-y-2">
                 <Label htmlFor="currency" className="text-sm font-medium">Currency</Label>
@@ -315,7 +315,7 @@ export default function Settings() {
                   </SelectContent>
                 </Select>
               </div>
-              
+
               <div className="space-y-2">
                 <Label htmlFor="language" className="text-sm font-medium">Language</Label>
                 <Select
@@ -337,7 +337,7 @@ export default function Settings() {
                   </SelectContent>
                 </Select>
               </div>
-              
+
               <div className="space-y-2">
                 <Label htmlFor="defaultDuration" className="text-sm font-medium">Default Booking Duration (minutes)</Label>
                 <Input
@@ -357,7 +357,7 @@ export default function Settings() {
                 />
               </div>
             </div>
-            
+
             <div className="space-y-2">
               <Label htmlFor="maxAdvance" className="text-sm font-medium">Maximum Advance Booking Days</Label>
               <Input
@@ -622,7 +622,7 @@ export default function Settings() {
                 {/* Field Visibility Settings */}
                 <div className="space-y-4">
                   <h5 className="font-medium">Show fields:</h5>
-                  
+
                   <div className="space-y-3">
                     <div>
                       <Label>Show "Company name" field:</Label>
@@ -1282,7 +1282,7 @@ export default function Settings() {
 
             <div className="space-y-4">
               <h4 className="text-lg font-medium">Automated Email Types</h4>
-              
+
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div className="space-y-4">
                   <div className="flex items-center justify-between">
@@ -1302,7 +1302,7 @@ export default function Settings() {
                       }
                     />
                   </div>
-                  
+
                   <div className="flex items-center justify-between">
                     <div>
                       <Label>Booking Reminder Emails</Label>
@@ -1320,7 +1320,7 @@ export default function Settings() {
                       }
                     />
                   </div>
-                  
+
                   <div className="flex items-center justify-between">
                     <div>
                       <Label>Cancellation Notice Emails</Label>
@@ -1339,7 +1339,7 @@ export default function Settings() {
                     />
                   </div>
                 </div>
-                
+
                 <div className="space-y-4">
                   {emailSettings.enableBookingReminders && (
                     <div>
@@ -1389,7 +1389,7 @@ export default function Settings() {
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div className="space-y-4">
                 <h4 className="font-medium text-gray-900 dark:text-white">Notification Channels</h4>
-                
+
                 <div className="flex items-center justify-between">
                   <div>
                     <Label>Email Notifications</Label>
@@ -1404,7 +1404,7 @@ export default function Settings() {
                     }
                   />
                 </div>
-                
+
                 <div className="flex items-center justify-between">
                   <div>
                     <Label>SMS Notifications</Label>
@@ -1419,7 +1419,7 @@ export default function Settings() {
                     }
                   />
                 </div>
-                
+
                 <div className="flex items-center justify-between">
                   <div>
                     <Label>Push Notifications</Label>
@@ -1435,10 +1435,10 @@ export default function Settings() {
                   />
                 </div>
               </div>
-              
+
               <div className="space-y-4">
                 <h4 className="font-medium text-gray-900 dark:text-white">Alert Types</h4>
-                
+
                 <div className="flex items-center justify-between">
                   <div>
                     <Label>Booking Reminders</Label>
@@ -1453,7 +1453,7 @@ export default function Settings() {
                     }
                   />
                 </div>
-                
+
                 <div className="flex items-center justify-between">
                   <div>
                     <Label>Cancellation Alerts</Label>
@@ -1468,7 +1468,7 @@ export default function Settings() {
                     }
                   />
                 </div>
-                
+
                 <div className="flex items-center justify-between">
                   <div>
                     <Label>No-Show Alerts</Label>
@@ -1503,7 +1503,7 @@ export default function Settings() {
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div className="space-y-4">
                 <h4 className="font-medium text-gray-900 dark:text-white">Service Options</h4>
-                
+
                 <div className="flex items-center justify-between">
                   <div>
                     <Label>Table Service</Label>
@@ -1511,7 +1511,7 @@ export default function Settings() {
                   </div>
                   <Switch defaultChecked />
                 </div>
-                
+
                 <div className="flex items-center justify-between">
                   <div>
                     <Label>Takeout Orders</Label>
@@ -1519,7 +1519,7 @@ export default function Settings() {
                   </div>
                   <Switch defaultChecked />
                 </div>
-                
+
                 <div className="flex items-center justify-between">
                   <div>
                     <Label>Delivery Service</Label>
@@ -1527,7 +1527,7 @@ export default function Settings() {
                   </div>
                   <Switch />
                 </div>
-                
+
                 <div>
                   <Label htmlFor="deliveryRadius">Delivery Radius (miles)</Label>
                   <Input
@@ -1539,10 +1539,10 @@ export default function Settings() {
                   />
                 </div>
               </div>
-              
+
               <div className="space-y-4">
                 <h4 className="font-medium text-gray-900 dark:text-white">Kitchen Operations</h4>
-                
+
                 <div>
                   <Label htmlFor="avgServiceTime">Average Service Time (minutes)</Label>
                   <Select defaultValue="90">
@@ -1558,7 +1558,7 @@ export default function Settings() {
                     </SelectContent>
                   </Select>
                 </div>
-                
+
                 <div className="flex items-center justify-between">
                   <div>
                     <Label>Special Requests</Label>
@@ -1566,7 +1566,7 @@ export default function Settings() {
                   </div>
                   <Switch defaultChecked />
                 </div>
-                
+
                 <div>
                   <Label htmlFor="noShowGrace">No-Show Grace Period (minutes)</Label>
                   <Select defaultValue="15">
@@ -1581,7 +1581,7 @@ export default function Settings() {
                     </SelectContent>
                   </Select>
                 </div>
-                
+
                 <div>
                   <Label htmlFor="tableRelease">Auto Table Release (minutes)</Label>
                   <Select defaultValue="30">
@@ -1616,7 +1616,7 @@ export default function Settings() {
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div className="space-y-4">
                 <h4 className="font-medium text-gray-900 dark:text-white">Accepted Payment Methods</h4>
-                
+
                 <div className="flex items-center justify-between">
                   <div>
                     <Label>Credit/Debit Cards</Label>
@@ -1624,7 +1624,7 @@ export default function Settings() {
                   </div>
                   <Switch defaultChecked />
                 </div>
-                
+
                 <div className="flex items-center justify-between">
                   <div>
                     <Label>Cash Payments</Label>
@@ -1632,7 +1632,7 @@ export default function Settings() {
                   </div>
                   <Switch defaultChecked />
                 </div>
-                
+
                 <div className="flex items-center justify-between">
                   <div>
                     <Label>Digital Payments</Label>
@@ -1640,7 +1640,7 @@ export default function Settings() {
                   </div>
                   <Switch defaultChecked />
                 </div>
-                
+
                 <div className="flex items-center justify-between">
                   <div>
                     <Label>Require Deposit for Large Groups</Label>
@@ -1648,7 +1648,7 @@ export default function Settings() {
                   </div>
                   <Switch defaultChecked />
                 </div>
-                
+
                 <div>
                   <Label htmlFor="groupThreshold">Large Group Threshold</Label>
                   <Select defaultValue="8">
@@ -1664,10 +1664,10 @@ export default function Settings() {
                   </Select>
                 </div>
               </div>
-              
+
               <div className="space-y-4">
                 <h4 className="font-medium text-gray-900 dark:text-white">Policies</h4>
-                
+
                 <div>
                   <Label>Cancellation Policy</Label>
                   <Select defaultValue="24h">
@@ -1682,7 +1682,7 @@ export default function Settings() {
                     </SelectContent>
                   </Select>
                 </div>
-                
+
                 <div>
                   <Label>Refund Policy</Label>
                   <Select defaultValue="full">
@@ -1697,7 +1697,7 @@ export default function Settings() {
                     </SelectContent>
                   </Select>
                 </div>
-                
+
                 <div>
                   <Label htmlFor="serviceFee">Service Fee (%)</Label>
                   <Input
@@ -1712,7 +1712,7 @@ export default function Settings() {
                     Optional service charge percentage
                   </p>
                 </div>
-                
+
                 <div>
                   <Label htmlFor="taxRate">Tax Rate (%)</Label>
                   <Input
@@ -1744,7 +1744,7 @@ export default function Settings() {
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div className="space-y-4">
                 <h4 className="font-medium text-gray-900 dark:text-white">Loyalty & Rewards</h4>
-                
+
                 <div className="flex items-center justify-between">
                   <div>
                     <Label>Enable Loyalty Program</Label>
@@ -1752,7 +1752,7 @@ export default function Settings() {
                   </div>
                   <Switch />
                 </div>
-                
+
                 <div className="flex items-center justify-between">
                   <div>
                     <Label>Birthday Rewards</Label>
@@ -1760,7 +1760,7 @@ export default function Settings() {
                   </div>
                   <Switch />
                 </div>
-                
+
                 <div className="flex items-center justify-between">
                   <div>
                     <Label>Feedback Collection</Label>
@@ -1768,7 +1768,7 @@ export default function Settings() {
                   </div>
                   <Switch defaultChecked />
                 </div>
-                
+
                 <div>
                   <Label>Review Platform Integration</Label>
                   <div className="space-y-2 mt-2">
@@ -1787,10 +1787,10 @@ export default function Settings() {
                   </div>
                 </div>
               </div>
-              
+
               <div className="space-y-4">
                 <h4 className="font-medium text-gray-900 dark:text-white">Communication Preferences</h4>
-                
+
                 <div className="flex items-center justify-between">
                   <div>
                     <Label>Automated Thank You Messages</Label>
@@ -1798,7 +1798,7 @@ export default function Settings() {
                   </div>
                   <Switch defaultChecked />
                 </div>
-                
+
                 <div className="flex items-center justify-between">
                   <div>
                     <Label>Special Event Invitations</Label>
@@ -1806,7 +1806,7 @@ export default function Settings() {
                   </div>
                   <Switch />
                 </div>
-                
+
                 <div className="flex items-center justify-between">
                   <div>
                     <Label>Newsletter Subscriptions</Label>
@@ -1814,7 +1814,7 @@ export default function Settings() {
                   </div>
                   <Switch />
                 </div>
-                
+
                 <div>
                   <Label htmlFor="avgResponseTime">Average Response Time</Label>
                   <Select defaultValue="2h">
@@ -1850,7 +1850,7 @@ export default function Settings() {
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div className="space-y-4">
                 <h4 className="font-medium text-gray-900 dark:text-white">Promotional Features</h4>
-                
+
                 <div className="flex items-center justify-between">
                   <div>
                     <Label>Happy Hour Specials</Label>
@@ -1858,7 +1858,7 @@ export default function Settings() {
                   </div>
                   <Switch />
                 </div>
-                
+
                 <div className="flex items-center justify-between">
                   <div>
                     <Label>Early Bird Discounts</Label>
@@ -1866,7 +1866,7 @@ export default function Settings() {
                   </div>
                   <Switch />
                 </div>
-                
+
                 <div className="flex items-center justify-between">
                   <div>
                     <Label>Group Discounts</Label>
@@ -1874,7 +1874,7 @@ export default function Settings() {
                   </div>
                   <Switch />
                 </div>
-                
+
                 <div className="flex items-center justify-between">
                   <div>
                     <Label>Seasonal Promotions</Label>
@@ -1882,7 +1882,7 @@ export default function Settings() {
                   </div>
                   <Switch defaultChecked />
                 </div>
-                
+
                 <div>
                   <Label htmlFor="promoCode">Default Promo Code</Label>
                   <Input
@@ -1891,10 +1891,10 @@ export default function Settings() {
                   />
                 </div>
               </div>
-              
+
               <div className="space-y-4">
                 <h4 className="font-medium text-gray-900 dark:text-white">Social Media Integration</h4>
-                
+
                 <div className="flex items-center justify-between">
                   <div>
                     <Label>Instagram Integration</Label>
@@ -1902,7 +1902,7 @@ export default function Settings() {
                   </div>
                   <Switch />
                 </div>
-                
+
                 <div className="flex items-center justify-between">
                   <div>
                     <Label>Facebook Check-ins</Label>
@@ -1910,7 +1910,7 @@ export default function Settings() {
                   </div>
                   <Switch />
                 </div>
-                
+
                 <div className="flex items-center justify-between">
                   <div>
                     <Label>Twitter Updates</Label>
@@ -1918,7 +1918,7 @@ export default function Settings() {
                   </div>
                   <Switch />
                 </div>
-                
+
                 <div>
                   <Label htmlFor="hashtag">Restaurant Hashtag</Label>
                   <Input
@@ -1926,7 +1926,7 @@ export default function Settings() {
                     placeholder="#YourRestaurant"
                   />
                 </div>
-                
+
                 <div>
                   <Label htmlFor="socialHandle">Social Media Handle</Label>
                   <Input
@@ -1954,7 +1954,7 @@ export default function Settings() {
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div className="space-y-4">
                 <h4 className="font-medium text-gray-900 dark:text-white">Data & Privacy</h4>
-                
+
                 <div className="p-4 border rounded-lg bg-yellow-50 dark:bg-yellow-900/20 border-yellow-200 dark:border-yellow-800">
                   <div className="flex items-start space-x-3">
                     <AlertCircle className="h-5 w-5 text-yellow-600 dark:text-yellow-400 mt-0.5" />
@@ -1966,7 +1966,7 @@ export default function Settings() {
                     </div>
                   </div>
                 </div>
-                
+
                 <div>
                   <Label>System Timezone Display</Label>
                   <p className="text-sm text-gray-500 mt-1">
@@ -1974,10 +1974,10 @@ export default function Settings() {
                   </p>
                 </div>
               </div>
-              
+
               <div className="space-y-4">
                 <h4 className="font-medium text-gray-900 dark:text-white">Integration Status</h4>
-                
+
                 <div className="space-y-3">
                   <div className="flex items-center justify-between p-3 border rounded-lg">
                     <div className="flex items-center space-x-2">
@@ -1986,7 +1986,7 @@ export default function Settings() {
                     </div>
                     <span className="text-xs text-green-600 bg-green-100 px-2 py-1 rounded">Connected</span>
                   </div>
-                  
+
                   <div className="flex items-center justify-between p-3 border rounded-lg">
                     <div className="flex items-center space-x-2">
                       <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
@@ -1994,7 +1994,7 @@ export default function Settings() {
                     </div>
                     <span className="text-xs text-blue-600 bg-blue-100 px-2 py-1 rounded">Active</span>
                   </div>
-                  
+
                   <div className="flex items-center justify-between p-3 border rounded-lg">
                     <div className="flex items-center space-x-2">
                       <div className="w-2 h-2 bg-gray-400 rounded-full"></div>

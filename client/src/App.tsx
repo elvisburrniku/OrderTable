@@ -96,6 +96,8 @@ import { AdminPanel } from "./pages/admin/admin-panel";
 import TenantUsersManagement from "./pages/tenant-users-management";
 import AcceptInvitation from "./pages/accept-invitation";
 import RolePermissions from "./pages/role-permissions";
+import { SettingsProvider } from '@/contexts/settings-context';
+import { DateProvider } from '@/contexts/date-context';
 
 function App() {
   return (

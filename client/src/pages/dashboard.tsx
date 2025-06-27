@@ -73,11 +73,13 @@ import { useToast } from "@/hooks/use-toast";
 import { RealTimeNotifications } from "@/components/real-time-notifications";
 import { safeArray, safeObject } from "@/hooks/use-mobile-safe";
 import { MenuManagement } from "@/components/menu-management";
-import { useSettings } from "@/lib/settings";
+import { useSettings } from "@/hooks/use-settings";
+import { useDate } from "@/contexts/date-context";
 
 export default function Dashboard() {
   const { user, restaurant } = useAuth();
   const { generalSettings } = useSettings();
+  const { formatDate, formatTime, formatDateTime } = useDate();
   const [selectedDate, setSelectedDate] = useState(new Date());
   const [viewMode, setViewMode] = useState<"calendar" | "layout" | "status" | "menu">(
     "calendar",
@@ -716,9 +718,7 @@ export default function Dashboard() {
     if (specialPeriod) {
       return {
         isOpen: specialPeriod.isOpen,
-        openTime: specialPeriod.isOpen
-          ? specialPeriod.openTime || "09:00"
-          : "00:00",
+        openTime: specialPeriod.openTime || "09:00",
         closeTime: specialPeriod.isOpen
           ? specialPeriod.closeTime || "22:00"
           : "00:00",
@@ -848,7 +848,7 @@ export default function Dashboard() {
             </div>
           </div>
           <p className="text-sm text-gray-600">
-            {format(selectedDate, "EEEE, MMMM d, yyyy")} - Red tables are
+            {formatDate(selectedDate, "EEEE, MMMM d, yyyy")} - Red tables are
             booked, green tables are available
           </p>
         </CardHeader>
@@ -969,13 +969,13 @@ export default function Dashboard() {
             <div>
               <div className="flex items-center space-x-4">
                 <h1 className="text-2xl font-bold text-gray-900">
-                  {format(selectedDate, "EEEE dd MMMM yyyy")}
+                  {formatDate(selectedDate, "EEEE dd MMMM yyyy")}
                 </h1>
                 <div className="flex items-center gap-3">
                   <div className="flex items-center bg-blue-50 border border-blue-200 rounded-lg px-3 py-2">
                     <Clock className="h-4 w-4 mr-2 text-blue-600" />
                     <span className="text-sm font-medium text-blue-800">
-                      {format(currentTime, generalSettings?.timeFormat === '12' ? "hh:mm:ss a" : "HH:mm:ss")}
+                      {formatTime(currentTime, generalSettings?.timeFormat === '12' ? "hh:mm:ss a" : "HH:mm:ss")}
                     </span>
                   </div>
                   <AnimatedNotificationBadge 
