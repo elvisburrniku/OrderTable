@@ -22,6 +22,14 @@ A comprehensive restaurant booking management system with React frontend and Exp
 - Kitchen order management
 
 ## Recent Changes
+- **2025-06-27**: Completed Interactive Restaurant Floor Plan Designer with drag-and-drop functionality
+- **Floor Plan Designer**: Implemented comprehensive floor plan system with visual drag-and-drop interface for tables, chairs, walls, doors, windows, and decorations
+- **Database Schema**: Added floor_plans and floor_plan_templates tables with complete element positioning and styling support
+- **Backend Infrastructure**: Created full API endpoints in server/routes.ts and storage methods in db-storage.ts for floor plan CRUD operations
+- **Frontend Implementation**: Built dedicated floor plan page at /floor-plan with SVG-based rendering, element selection, property editing, and grid snapping
+- **Element Management**: Support for multiple element types with customizable properties including table numbers, capacity, colors, and positioning
+- **Save/Load System**: Floor plans can be saved to database and loaded for editing with proper validation and error handling
+- **Visual Interface**: Modern UI with toolbar for element selection, property panels, grid controls, and real-time visual feedback
 - **2025-06-27**: Completed comprehensive booking settings implementation with all 7 requested features fully integrated application-wide
 - **Booking Feature Implementation**: Successfully implemented duration control (start/end time), empty seats functionality, turnaround time, contact method options, cancellation controls, cancellation notice periods, and group request functionality
 - **Application-wide Integration**: All booking features work consistently across dynamic booking form, booking calendar, booking cancellation component, and API endpoints

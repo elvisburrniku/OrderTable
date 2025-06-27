@@ -5,7 +5,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { useAuth } from '@/contexts/auth';
+import { useUser } from '@/contexts/user-context';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { apiRequest } from '@/lib/queryClient';
 import { useToast } from '@/hooks/use-toast';
@@ -106,10 +106,7 @@ export function FloorPlanDesigner() {
         ? `/api/tenants/${restaurant?.tenantId}/restaurants/${restaurant?.id}/floor-plans/${plan.id}`
         : `/api/tenants/${restaurant?.tenantId}/restaurants/${restaurant?.id}/floor-plans`;
       
-      return apiRequest(endpoint, {
-        method: plan.id ? 'PUT' : 'POST',
-        body: JSON.stringify(plan),
-      });
+      return apiRequest(endpoint, plan.id ? 'PUT' : 'POST', plan);
     },
     onSuccess: () => {
       toast({ title: 'Floor plan saved successfully' });

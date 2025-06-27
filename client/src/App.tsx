@@ -88,6 +88,7 @@ import MenuManagementPage from "./pages/menu-management";
 import KitchenDashboardPage from "./pages/kitchen-dashboard";
 import PrintOrders from "./pages/print-orders";
 import CountdownDemoPage from "./pages/countdown-demo";
+import FloorPlan from "./pages/floor-plan";
 import { SetupGuard } from "./components/setup-guard";
 import { OverduePaymentGuard } from "./components/overdue-payment-guard";
 import ErrorBoundary from "./components/error-boundary";
@@ -195,6 +196,10 @@ function App() {
                                 <Route
                                   path="/:tenantId/tables"
                                   component={Tables}
+                                />
+                                <Route
+                                  path="/:tenantId/floor-plan"
+                                  component={FloorPlan}
                                 />
                                 <Route
                                   path="/:tenantId/customers"
