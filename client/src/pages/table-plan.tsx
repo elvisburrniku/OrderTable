@@ -49,6 +49,12 @@ interface TableStructure {
   description: string;
 }
 
+const TABLE_SHAPES = [
+  { value: "square", label: "Square" },
+  { value: "circle", label: "Circle" },
+  { value: "rectangle", label: "Rectangle" },
+];
+
 const TABLE_STRUCTURES: TableStructure[] = [
   {
     id: "square-2",
@@ -100,7 +106,7 @@ const TABLE_STRUCTURES: TableStructure[] = [
   },
   {
     id: "curved-8",
-    name: "Curved 8", 
+    name: "Curved 8",
     shape: "curved",
     icon: Circle,
     defaultCapacity: 8,
@@ -502,7 +508,7 @@ export default function TablePlan() {
     const shape = position.shape || 'square';
     const capacity = position.capacity || table?.capacity || 4;
     const tableNumber = position.tableNumber || table?.tableNumber || tableId;
-    
+
     // Table dimensions based on shape and capacity
     const getTableDimensions = () => {
       switch (shape) {
@@ -582,7 +588,7 @@ export default function TablePlan() {
             rotation: 0
           });
         }
-        
+
         // Right side
         if (capacity > chairsPerSide) {
           for (let i = 0; i < Math.min(chairsPerSide, capacity - chairsPerSide); i++) {
@@ -618,7 +624,7 @@ export default function TablePlan() {
       } else if (shape === 'long-rectangle') {
         const longSideChairs = Math.ceil(capacity * 0.6);
         const shortSideChairs = Math.floor((capacity - longSideChairs) / 2);
-        
+
         // Long sides
         for (let i = 0; i < Math.ceil(longSideChairs / 2); i++) {
           chairs.push({
@@ -627,7 +633,7 @@ export default function TablePlan() {
             rotation: 0
           });
         }
-        
+
         for (let i = 0; i < Math.floor(longSideChairs / 2); i++) {
           chairs.push({
             x: position.x + (tableWidth / (Math.floor(longSideChairs / 2) + 1)) * (i + 1) - 8,
@@ -644,7 +650,7 @@ export default function TablePlan() {
             rotation: 270
           });
         }
-        
+
         for (let i = 0; i < shortSideChairs; i++) {
           chairs.push({
             x: position.x + tableWidth + 15,
@@ -704,7 +710,7 @@ export default function TablePlan() {
             />
           </div>
         ))}
-        
+
         {/* Table */}
         <div
           style={getTableStyle()}
@@ -843,6 +849,14 @@ export default function TablePlan() {
     );
   };
 
+  // Table styling based on shape
+  const getTableStyle = (table: any) => {
+    const baseStyle = {
+      cursor: "grab",
+    };
+    return baseStyle;
+  };
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 via-gray-50 to-blue-50">
       {/* Professional Header */}
@@ -923,7 +937,7 @@ export default function TablePlan() {
                       <div
                         draggable
                         onDragStart={(e) => handleDragStart(table.id, e)}
-                        style={getTableStyle(table)}
+                        style={{cursor: "grab"}}
                         title={`Drag to place Table ${table.tableNumber}`}
                       >
                         {table.tableNumber}
@@ -1241,7 +1255,7 @@ export default function TablePlan() {
                 onDrop={handleDrop}
               >
                 {/* Grid pattern */}
-                
+
                 <div
                   className="absolute inset-0 opacity-20"
                   style={{
