@@ -780,7 +780,6 @@ export default function Bookings() {
                           >
                             {pageNum}
                           </Button>
-                        ```python
                         );
                       })}
                     </div>
