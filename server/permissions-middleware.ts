@@ -349,9 +349,23 @@ async function checkSubscriptionAccess(tenantId: number, permission: string): Pr
       }
     }
 
+    // Check if subscription is cancelled - completely block access to billing
+    if (tenant.subscriptionStatus === 'cancelled' || tenant.subscriptionStatus === 'canceled') {
+      return { allowed: false, status: tenant.subscriptionStatus, message: "Your subscription has been cancelled. Contact support for reactivation." };
+    }
+
     // Check if subscription is active
     if (tenant.subscriptionStatus !== 'active') {
-      return { allowed: false, status: tenant.subscriptionStatus, message: "Your subscription is not active. Please update your billing information." };
+      // Allow billing access for past_due, trialing, or ended subscriptions to enable reactivation
+      const allowedForInactive = [
+        PERMISSIONS.ACCESS_BILLING,
+        PERMISSIONS.VIEW_BILLING,
+        PERMISSIONS.MANAGE_BILLING
+      ];
+      
+      if (!allowedForInactive.includes(permission)) {
+        return { allowed: false, status: tenant.subscriptionStatus, message: "Your subscription is not active. Please update your billing information." };
+      }
     }
 
     return { allowed: true };
