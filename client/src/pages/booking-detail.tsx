@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { useParams } from "wouter";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
@@ -27,6 +28,7 @@ import {
   CheckCircle,
   XCircle,
   AlertCircle,
+  MapPin,
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 
@@ -254,7 +256,7 @@ export default function BookingDetail() {
   const getStatusBadge = (status: string) => {
     switch (status) {
       case "confirmed":
-        return <Badge className="bg-green-100 text-green-800">Active</Badge>;
+        return <Badge className="bg-green-100 text-green-800">Confirmed</Badge>;
       case "completed":
         return <Badge className="bg-blue-100 text-blue-800">Completed</Badge>;
       case "cancelled":
@@ -314,21 +316,14 @@ export default function BookingDetail() {
       {/* Header Section */}
       <div className="bg-white shadow-sm border-b">
         <div className="max-w-4xl mx-auto p-6">
-          <div className="flex items-center justify-between">
-            <Button
-              variant="ghost"
-              onClick={() => (window.location.href = `/${restaurant.tenantId}/bookings`)}
-              className="flex items-center text-gray-600 hover:text-gray-900"
-            >
-              <ArrowLeft className="w-4 h-4 mr-2" />
-              Back to Bookings
-            </Button>
-            <div className="text-center">
-              <h1 className="text-2xl font-bold text-gray-900">Booking Confirmation</h1>
-              <p className="text-gray-600">Reservation #{booking.id}</p>
-            </div>
-            <div className="w-20"></div> {/* Spacer for centering */}
-          </div>
+          <Button
+            variant="ghost"
+            onClick={() => (window.location.href = `/${restaurant.tenantId}/bookings`)}
+            className="flex items-center text-gray-600 hover:text-gray-900 mb-4"
+          >
+            <ArrowLeft className="w-4 h-4 mr-2" />
+            Back to Bookings
+          </Button>
         </div>
       </div>
 
@@ -360,7 +355,10 @@ export default function BookingDetail() {
             {/* Restaurant Info */}
             <div className="text-center mb-8">
               <h2 className="text-3xl font-bold text-gray-900 mb-2">{restaurant.name}</h2>
-              <p className="text-gray-600">{restaurant.address}</p>
+              <p className="text-gray-600 flex items-center justify-center">
+                <MapPin className="w-4 h-4 mr-1" />
+                {restaurant.address}
+              </p>
             </div>
 
             {/* Booking Details Grid */}
@@ -446,6 +444,22 @@ export default function BookingDetail() {
               </div>
             </div>
 
+            {/* Booking ID */}
+            <div className="text-center mb-6 p-4 bg-gray-50 rounded-lg">
+              <p className="text-sm text-gray-600">
+                <strong>Booking ID:</strong> #{booking.id}
+              </p>
+              <p className="text-sm text-gray-500">
+                Created: {new Date(booking.createdAt).toLocaleDateString('en-US', {
+                  year: 'numeric',
+                  month: 'long',
+                  day: 'numeric',
+                  hour: '2-digit',
+                  minute: '2-digit'
+                })}
+              </p>
+            </div>
+
             {/* Action Buttons */}
             <div className="flex justify-center space-x-4 pt-6 border-t border-gray-200">
               {!isEditing ? (
@@ -463,7 +477,7 @@ export default function BookingDetail() {
                     className="text-red-600 border-red-300 hover:bg-red-50 px-6 py-2"
                   >
                     <Trash2 className="w-4 h-4 mr-2" />
-                    Cancel Booking
+                    Delete Booking
                   </Button>
                 </>
               ) : (
