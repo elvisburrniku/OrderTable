@@ -1819,14 +1819,14 @@ export default function EnhancedGoogleCalendar({
                   <Button
                     key={tag}
                     type="button"
-                    variant={newBooking.tags.includes(tag) ? "default" : "outline"}
+                    variant={newBooking.tags?.includes(tag) ? "default" : "outline"}
                     size="sm"
                     onClick={() => {
                       setNewBooking((prev) => ({
                         ...prev,
-                        tags: prev.tags.includes(tag)
+                        tags: prev.tags?.includes(tag)
                           ? prev.tags.filter((t) => t !== tag)
-                          : [...prev.tags, tag],
+                          : [...(prev.tags || []), tag],
                       }));
                     }}
                   >
