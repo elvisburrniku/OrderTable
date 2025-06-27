@@ -31,6 +31,17 @@ import {
   MapPin,
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
 
 export default function BookingDetail() {
   const { id } = useParams();
@@ -38,6 +49,7 @@ export default function BookingDetail() {
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const [isEditing, setIsEditing] = useState(false);
+  const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [editData, setEditData] = useState({
     customerName: "",
     customerEmail: "",
@@ -248,9 +260,8 @@ export default function BookingDetail() {
   };
 
   const handleDelete = () => {
-    if (confirm("Are you sure you want to delete this booking?")) {
-      deleteMutation.mutate();
-    }
+    setIsDeleteDialogOpen(false);
+    deleteMutation.mutate();
   };
 
   const getStatusBadge = (status: string) => {
@@ -471,14 +482,50 @@ export default function BookingDetail() {
                     <Edit className="w-4 h-4 mr-2" />
                     Edit Booking
                   </Button>
-                  <Button
-                    variant="outline"
-                    onClick={handleDelete}
-                    className="text-red-600 border-red-300 hover:bg-red-50 px-6 py-2"
-                  >
-                    <Trash2 className="w-4 h-4 mr-2" />
-                    Delete Booking
-                  </Button>
+                  <AlertDialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
+                    <AlertDialogTrigger asChild>
+                      <Button
+                        variant="outline"
+                        className="text-red-600 border-red-300 hover:bg-red-50 px-6 py-2"
+                      >
+                        <Trash2 className="w-4 h-4 mr-2" />
+                        Delete Booking
+                      </Button>
+                    </AlertDialogTrigger>
+                    <AlertDialogContent className="max-w-md">
+                      <AlertDialogHeader>
+                        <AlertDialogTitle className="flex items-center">
+                          <AlertCircle className="w-5 h-5 mr-2 text-red-600" />
+                          Delete Booking
+                        </AlertDialogTitle>
+                        <AlertDialogDescription className="space-y-2">
+                          <p>
+                            Are you sure you want to delete the booking for <strong>{booking.customerName}</strong> on{" "}
+                            <strong>{new Date(booking.bookingDate).toLocaleDateString('en-US', {
+                              weekday: 'long',
+                              year: 'numeric',
+                              month: 'long',
+                              day: 'numeric'
+                            })}</strong> at{" "}
+                            <strong>{booking.startTime}</strong>?
+                          </p>
+                          <p className="text-red-600 text-sm font-medium">
+                            This action cannot be undone.
+                          </p>
+                        </AlertDialogDescription>
+                      </AlertDialogHeader>
+                      <AlertDialogFooter>
+                        <AlertDialogCancel>Cancel</AlertDialogCancel>
+                        <AlertDialogAction
+                          onClick={handleDelete}
+                          disabled={deleteMutation.isPending}
+                          className="bg-red-600 hover:bg-red-700 text-white"
+                        >
+                          {deleteMutation.isPending ? "Deleting..." : "Delete Booking"}
+                        </AlertDialogAction>
+                      </AlertDialogFooter>
+                    </AlertDialogContent>
+                  </AlertDialog>
                 </>
               ) : (
                 <>
