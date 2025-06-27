@@ -86,9 +86,14 @@ export default function FloorPlanPage() {
   const { user } = useAuth();
   const { toast } = useToast();
   const queryClient = useQueryClient();
-  
+
+  console.log("User context:", user);
+
   // Get restaurant from user context - check multiple possible structures
-  const restaurant = user?.restaurant || user?.restaurants?.[0] || (user?.restaurantId ? user : null);
+  const restaurant =
+    user?.restaurant ||
+    user?.restaurants?.[0] ||
+    (user?.restaurantId ? user : null);
 
   const [currentPlan, setCurrentPlan] = useState<FloorPlan>({
     name: "New Floor Plan",
@@ -103,7 +108,8 @@ export default function FloorPlanPage() {
   const [showGrid, setShowGrid] = useState(true);
 
   // Extract restaurant and tenant IDs from different possible structures
-  const restaurantId = restaurant?.id || restaurant?.restaurantId || user?.restaurantId;
+  const restaurantId =
+    restaurant?.id || restaurant?.restaurantId || user?.restaurantId;
   const tenantId = restaurant?.tenantId || user?.tenantId;
 
   // Load existing floor plans
