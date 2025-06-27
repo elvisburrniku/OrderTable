@@ -64,6 +64,7 @@ export default function BookingDetail() {
     endTime: "",
     status: "",
     notes: "",
+    bookingDate: "",
   });
 
   const {
@@ -246,12 +247,16 @@ export default function BookingDetail() {
       endTime: booking.endTime || "",
       status: booking.status || "",
       notes: booking.notes || "",
+      bookingDate: new Date(booking.bookingDate).toISOString().split('T')[0] || "",
     });
     setIsEditing(true);
   };
 
   const handleSave = () => {
-    updateMutation.mutate(editData);
+    updateMutation.mutate({
+      ...editData,
+      bookingDate: editData.bookingDate ? new Date(editData.bookingDate) : new Date(booking.bookingDate),
+    });
   };
 
   const handleDelete = () => {
@@ -655,6 +660,20 @@ export default function BookingDetail() {
                             <SelectItem value="no-show">No Show</SelectItem>
                           </SelectContent>
                         </Select>
+                      </div>
+
+                      <div>
+                        <Label htmlFor="edit-bookingDate" className="text-sm font-medium text-gray-700">Booking Date</Label>
+                        <Input
+                          id="edit-bookingDate"
+                          type="date"
+                          value={editData.bookingDate || new Date(booking.bookingDate).toISOString().split('T')[0]}
+                          onChange={(e) =>
+                            setEditData({ ...editData, bookingDate: e.target.value })
+                          }
+                          className="mt-1"
+                          required
+                        />
                       </div>
 
                       <div>
