@@ -758,7 +758,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         console.log("🔍 ROLE PERMISSIONS API ACCESS CHECK:", {
           userRole,
           hasAccessUsers: userPermissions.includes(PERMISSIONS.ACCESS_USERS),
-          allPermissions: userPermissions
+          allPermissions: userPermissions,
         });
 
         // TEMPORARY: Remove permission check to test role-permissions page
@@ -771,7 +771,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
         //   });
         // }
 
-        console.log("✅ ROLE PERMISSIONS ACCESS GRANTED for user role:", userRole, "(permission check temporarily disabled)");
+        console.log(
+          "✅ ROLE PERMISSIONS ACCESS GRANTED for user role:",
+          userRole,
+          "(permission check temporarily disabled)",
+        );
 
         // Get role permissions data
         const rolePermissions = Object.entries(ROLE_PERMISSIONS).map(
@@ -1145,11 +1149,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Stripe webhook endpoint
   app.post("/api/webhooks/stripe", async (req, res) => {
     try {
-      const sig = req.headers['stripe-signature'];
+      const sig = req.headers["stripe-signature"];
       let event;
 
       try {
-        event = stripe.webhooks.constructEvent(req.body, sig, process.env.STRIPE_WEBHOOK_SECRET);
+        event = stripe.webhooks.constructEvent(
+          req.body,
+          sig,
+          process.env.STRIPE_WEBHOOK_SECRET,
+        );
       } catch (err) {
         console.log(`Webhook signature verification failed.`, err.message);
         return res.status(400).send(`Webhook Error: ${err.message}`);
@@ -1157,24 +1165,24 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       // Handle the event
       switch (event.type) {
-        case 'checkout.session.completed':
+        case "checkout.session.completed":
           const session = event.data.object;
           // Handle successful payment
-          console.log('Payment successful:', session.id);
+          console.log("Payment successful:", session.id);
           break;
-        case 'invoice.payment_succeeded':
+        case "invoice.payment_succeeded":
           const invoice = event.data.object;
           // Handle subscription renewal
-          console.log('Subscription renewed:', invoice.subscription);
+          console.log("Subscription renewed:", invoice.subscription);
           break;
         default:
           console.log(`Unhandled event type ${event.type}`);
       }
 
-      res.json({received: true});
+      res.json({ received: true });
     } catch (error) {
-      console.error('Stripe webhook error:', error);
-      res.status(500).json({ error: 'Webhook processing failed' });
+      console.error("Stripe webhook error:", error);
+      res.status(500).json({ error: "Webhook processing failed" });
     }
   });
 
@@ -1531,7 +1539,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
         // Handle Stripe payment processing if required
         let paymentIntent = null;
-        if (bookingData.requiresPayment && bookingData.paymentAmount && bookingData.paymentAmount > 0) {
+        if (
+          bookingData.requiresPayment &&
+          bookingData.paymentAmount &&
+          bookingData.paymentAmount > 0
+        ) {
           try {
             // Check if restaurant has Stripe configured
             const tenant = await storage.getTenantById(tenantId);
@@ -1539,7 +1551,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
               // Create payment intent
               paymentIntent = await stripe.paymentIntents.create({
                 amount: Math.round(bookingData.paymentAmount * 100), // Convert to cents
-                currency: 'usd',
+                currency: "usd",
                 customer: tenant.stripeCustomerId,
                 description: `Prepayment for booking #${booking.id} - ${bookingData.customerName}`,
                 metadata: {
@@ -1547,26 +1559,33 @@ export async function registerRoutes(app: Express): Promise<Server> {
                   tenantId: tenantId.toString(),
                   restaurantId: restaurantId.toString(),
                   customerEmail: bookingData.customerEmail,
-                  type: 'booking_prepayment'
+                  type: "booking_prepayment",
                 },
                 automatic_payment_methods: {
-                  enabled: true
+                  enabled: true,
                 },
                 receipt_email: bookingData.customerEmail,
               });
 
               // Update booking with payment intent ID
-              await storage.updateBooking(booking.id, { 
+              await storage.updateBooking(booking.id, {
                 paymentIntentId: paymentIntent.id,
-                paymentStatus: 'pending'
+                paymentStatus: "pending",
               });
 
-              console.log(`Created payment intent ${paymentIntent.id} for booking ${booking.id}`);
+              console.log(
+                `Created payment intent ${paymentIntent.id} for booking ${booking.id}`,
+              );
             } else {
-              console.log(`Tenant ${tenantId} does not have Stripe configured for payments`);
+              console.log(
+                `Tenant ${tenantId} does not have Stripe configured for payments`,
+              );
             }
           } catch (stripeError) {
-            console.error('Stripe payment intent creation failed:', stripeError);
+            console.error(
+              "Stripe payment intent creation failed:",
+              stripeError,
+            );
             // Don't fail the booking if payment setup fails
           }
         }
@@ -1641,7 +1660,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
                 paymentRequired: bookingData.requiresPayment,
                 paymentAmount: bookingData.paymentAmount,
                 paymentDeadline: bookingData.paymentDeadlineHours,
-                paymentLink: paymentIntent ? `${req.protocol}://${req.get("host")}/payment/${paymentIntent.id}` : null,
+                paymentLink: paymentIntent
+                  ? `${req.protocol}://${req.get("host")}/payment/${paymentIntent.id}`
+                  : null,
               };
 
               await emailService.sendBookingConfirmation(
@@ -2993,7 +3014,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
         }
 
         if (booking.status === "cancelled") {
-          return res.status(400).json({ message: "Booking is already cancelled" });
+          return res
+            .status(400)
+            .json({ message: "Booking is already cancelled" });
         }
 
         // Update booking status to cancelled
@@ -3015,10 +3038,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
           },
         });
 
-        res.json({ 
-          success: true, 
+        res.json({
+          success: true,
           message: "Booking cancelled successfully",
-          booking: updatedBooking 
+          booking: updatedBooking,
         });
       } catch (error) {
         console.error("Error cancelling booking:", error);
@@ -4640,11 +4663,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
         const restaurantId = parseInt(req.params.restaurantId);
         const tenantId = parseInt(req.params.tenantId);
 
-        console.log("Parsed IDs - tenantId:", tenantId, "restaurantId:", restaurantId);
+        console.log(
+          "Parsed IDs - tenantId:",
+          tenantId,
+          "restaurantId:",
+          restaurantId,
+        );
 
         const restaurant = await storage.getRestaurantById(restaurantId);
         console.log("Found restaurant:", restaurant?.name || "not found");
-        
+
         if (!restaurant || restaurant.tenantId !== tenantId) {
           console.log("Restaurant validation failed");
           return res.status(404).json({ message: "Restaurant not found" });
@@ -4654,17 +4682,19 @@ export async function registerRoutes(app: Express): Promise<Server> {
           restaurantId,
           tenantId,
         );
-        
+
         console.log("Retrieved settings:", settings?.generalSettings);
-        
+
         // Return only essential booking configuration
         const bookingConfig = {
-          defaultBookingDuration: settings.generalSettings?.defaultBookingDuration || 120,
-          maxAdvanceBookingDays: settings.generalSettings?.maxAdvanceBookingDays || 30,
+          defaultBookingDuration:
+            settings.generalSettings?.defaultBookingDuration || 120,
+          maxAdvanceBookingDays:
+            settings.generalSettings?.maxAdvanceBookingDays || 30,
           timeZone: settings.generalSettings?.timeZone || "America/New_York",
           currency: settings.generalSettings?.currency || "USD",
         };
-        
+
         console.log("Returning booking config:", bookingConfig);
         res.json(bookingConfig);
       } catch (error) {
@@ -4693,7 +4723,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           restaurantId,
           tenantId,
         );
-        
+
         // Ensure general settings have default values if not set
         if (!settings.generalSettings) {
           settings.generalSettings = {
@@ -4706,7 +4736,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
             language: "en",
           };
         }
-        
+
         res.json(settings);
       } catch (error) {
         console.error("Error fetching settings:", error);
@@ -7697,13 +7727,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
           return res.status(404).json({ message: "Restaurant not found" });
         }
 
-        const savedConfig = await storage.createOrUpdateIntegrationConfiguration(
-          restaurantId,
-          tenantId,
-          integrationId,
-          isEnabled,
-          configuration || {}
-        );
+        const savedConfig =
+          await storage.createOrUpdateIntegrationConfiguration(
+            restaurantId,
+            tenantId,
+            integrationId,
+            isEnabled,
+            configuration || {},
+          );
 
         res.json(savedConfig);
       } catch (error) {
@@ -11315,11 +11346,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
               console.log(
                 `CONFLICTS RESOLVE: Invalid portionGuests: ${portionGuests} for booking ${i + 1}`,
               );
-              return res
-                .status(400)
-                .json({
-                  message: "Invalid guest count calculation for split booking",
-                });
+              return res.status(400).json({
+                message: "Invalid guest count calculation for split booking",
+              });
             }
 
             await storage.createBooking({
@@ -12785,11 +12814,9 @@ NEXT STEPS:
         const { productName, categoryId, price, status } = req.body;
 
         if (!productName || !categoryId || !price) {
-          return res
-            .status(400)
-            .json({
-              message: "Product name, category, and price are required",
-            });
+          return res.status(400).json({
+            message: "Product name, category, and price are required",
+          });
         }
 
         // Verify restaurant belongs to tenant
@@ -13950,12 +13977,10 @@ NEXT STEPS:
           : null;
 
         if (!plan || !plan.name.toLowerCase().includes("enterprise")) {
-          return res
-            .status(400)
-            .json({
-              error:
-                "Additional restaurants are only available for Enterprise plans",
-            });
+          return res.status(400).json({
+            error:
+              "Additional restaurants are only available for Enterprise plans",
+          });
         }
 
         // Get current restaurant count
@@ -13964,11 +13989,9 @@ NEXT STEPS:
         const includedRestaurants = 3; // Enterprise includes 3 restaurants
 
         if (currentCount < includedRestaurants) {
-          return res
-            .status(400)
-            .json({
-              error: "You have not reached the included restaurant limit yet",
-            });
+          return res.status(400).json({
+            error: "You have not reached the included restaurant limit yet",
+          });
         }
 
         // Create additional restaurant charge in Stripe
@@ -16498,11 +16521,9 @@ NEXT STEPS:
       const tenantId = parseInt(req.params.tenantId);
 
       if (isNaN(tenantId) || !tenantId) {
-        return res
-          .status(400)
-          .json({
-            message: "Tenant ID is required and must be a valid number.",
-          });
+        return res.status(400).json({
+          message: "Tenant ID is required and must be a valid number.",
+        });
       }
 
       try {
@@ -16518,21 +16539,17 @@ NEXT STEPS:
           !subscriptionPlan ||
           subscriptionPlan.name.toLowerCase() !== "enterprise"
         ) {
-          return res
-            .status(400)
-            .json({
-              message:
-                "Additional restaurants are only available with Enterprise plans",
-            });
+          return res.status(400).json({
+            message:
+              "Additional restaurants are only available with Enterprise plans",
+          });
         }
 
         if (!tenant.stripeCustomerId) {
-          return res
-            .status(400)
-            .json({
-              message:
-                "No payment method on file. Please add a payment method first.",
-            });
+          return res.status(400).json({
+            message:
+              "No payment method on file. Please add a payment method first.",
+          });
         }
 
         // Create additional restaurant payment logic here
@@ -17029,7 +17046,8 @@ NEXT STEPS:
           return res.status(404).json({ message: "Restaurant not found" });
         }
 
-        const floorPlans = await storage.getFloorPlansByRestaurant(restaurantId);
+        const floorPlans =
+          await storage.getFloorPlansByRestaurant(restaurantId);
         res.json(floorPlans);
       } catch (error) {
         console.error("Error fetching floor plans:", error);
@@ -17132,32 +17150,26 @@ NEXT STEPS:
     }
   });
 
-  try {
-    const { restaurantStorage } = await import("./restaurant-storage");
-    await restaurantStorage.initializeSystem();
-    console.log("Restaurant management system initialized successfully");
-  } catch (error) {
-    console.error("Failed to initialize restaurant management system:", error);
-  }
-
-  return httpServer;
-}
-// Stripe webhook handler for payment confirmations
+  // Stripe webhook handler for payment confirmations
   app.post("/api/webhooks/stripe", async (req, res) => {
-    const sig = req.headers['stripe-signature'];
+    const sig = req.headers["stripe-signature"];
     let event;
 
     try {
-      event = stripe.webhooks.constructEvent(req.body, sig, process.env.STRIPE_WEBHOOK_SECRET);
+      event = stripe.webhooks.constructEvent(
+        req.body,
+        sig,
+        process.env.STRIPE_WEBHOOK_SECRET,
+      );
     } catch (err) {
       console.log(`Webhook signature verification failed.`, err.message);
       return res.status(400).send(`Webhook Error: ${err.message}`);
     }
 
     // Handle payment intent succeeded
-    if (event.type === 'payment_intent.succeeded') {
+    if (event.type === "payment_intent.succeeded") {
       const paymentIntent = event.data.object;
-      
+
       try {
         // Find booking by payment intent ID
         const bookings = await storage.db
@@ -17167,10 +17179,10 @@ NEXT STEPS:
 
         if (bookings.length > 0) {
           const booking = bookings[0];
-          
+
           // Update booking payment status
           await storage.updateBooking(booking.id, {
-            paymentStatus: 'paid',
+            paymentStatus: "paid",
             paymentPaidAt: new Date(),
           });
 
@@ -17186,17 +17198,31 @@ NEXT STEPS:
                   bookingId: booking.id,
                   amount: paymentIntent.amount / 100, // Convert from cents
                   currency: paymentIntent.currency.toUpperCase(),
-                }
+                },
               );
             } catch (emailError) {
-              console.error('Failed to send payment confirmation email:', emailError);
+              console.error(
+                "Failed to send payment confirmation email:",
+                emailError,
+              );
             }
           }
         }
       } catch (error) {
-        console.error('Error processing payment webhook:', error);
+        console.error("Error processing payment webhook:", error);
       }
     }
 
     res.json({ received: true });
   });
+
+  try {
+    const { restaurantStorage } = await import("./restaurant-storage");
+    await restaurantStorage.initializeSystem();
+    console.log("Restaurant management system initialized successfully");
+  } catch (error) {
+    console.error("Failed to initialize restaurant management system:", error);
+  }
+
+  return httpServer;
+}
