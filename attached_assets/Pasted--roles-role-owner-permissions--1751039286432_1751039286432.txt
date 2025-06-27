@@ -1,0 +1,257 @@
+{
+    "roles": [
+        {
+            "role": "owner",
+            "permissions": [
+                "access_dashboard",
+                "access_bookings",
+                "access_customers",
+                "access_menu",
+                "access_tables",
+                "access_kitchen",
+                "access_users",
+                "access_billing",
+                "access_reports",
+                "access_notifications",
+                "access_integrations",
+                "access_settings",
+                "access_floor_plan",
+                "view_bookings",
+                "create_bookings",
+                "edit_bookings",
+                "delete_bookings",
+                "view_customers",
+                "edit_customers",
+                "view_settings",
+                "edit_settings",
+                "view_menu",
+                "edit_menu",
+                "view_tables",
+                "edit_tables",
+                "view_kitchen",
+                "manage_kitchen",
+                "view_users",
+                "manage_users",
+                "view_billing",
+                "manage_billing",
+                "view_reports",
+                "view_notifications",
+                "manage_notifications",
+                "view_integrations",
+                "manage_integrations"
+            ],
+            "redirect": "dashboard"
+        },
+        {
+            "role": "manager",
+            "permissions": [
+                "access_dashboard",
+                "access_bookings",
+                "access_customers",
+                "access_menu",
+                "access_tables",
+                "access_kitchen",
+                "access_users",
+                "access_reports",
+                "access_notifications",
+                "access_integrations",
+                "access_settings",
+                "access_floor_plan",
+                "view_bookings",
+                "create_bookings",
+                "edit_bookings",
+                "delete_bookings",
+                "view_customers",
+                "edit_customers",
+                "view_settings",
+                "edit_settings",
+                "view_menu",
+                "edit_menu",
+                "view_tables",
+                "edit_tables",
+                "view_kitchen",
+                "manage_kitchen",
+                "access_users",
+                "view_users",
+                "manage_users",
+                "view_reports",
+                "view_notifications",
+                "view_integrations"
+            ],
+            "redirect": "dashboard"
+        },
+        {
+            "role": "agent",
+            "permissions": [
+                "access_dashboard",
+                "access_bookings",
+                "access_customers",
+                "access_menu",
+                "access_tables",
+                "access_reports",
+                "access_users",
+                "access_floor_plan",
+                "view_bookings",
+                "create_bookings",
+                "edit_bookings",
+                "view_customers",
+                "edit_customers",
+                "view_menu",
+                "view_tables",
+                "view_reports",
+                "view_users"
+            ],
+            "redirect": "bookings"
+        },
+        {
+            "role": "kitchen_staff",
+            "permissions": [
+                "access_kitchen",
+                "access_menu",
+                "view_kitchen",
+                "manage_kitchen",
+                "view_bookings",
+                "view_menu"
+            ],
+            "redirect": "kitchen-management"
+        }
+    ],
+    "availablePermissions": {
+        "pageAccess": [
+            {
+                "key": "access_dashboard",
+                "label": "Dashboard Access"
+            },
+            {
+                "key": "access_bookings",
+                "label": "Bookings Access"
+            },
+            {
+                "key": "access_customers",
+                "label": "Customers Access"
+            },
+            {
+                "key": "access_menu",
+                "label": "Menu Management Access"
+            },
+            {
+                "key": "access_tables",
+                "label": "Table Management Access"
+            },
+            {
+                "key": "access_kitchen",
+                "label": "Kitchen Access"
+            },
+            {
+                "key": "access_users",
+                "label": "User Management Access"
+            },
+            {
+                "key": "access_billing",
+                "label": "Billing Access"
+            },
+            {
+                "key": "access_reports",
+                "label": "Reports Access"
+            },
+            {
+                "key": "access_notifications",
+                "label": "Notifications Access"
+            },
+            {
+                "key": "access_integrations",
+                "label": "Integrations Access"
+            },
+            {
+                "key": "access_settings",
+                "label": "Settings Access"
+            }
+        ],
+        "features": [
+            {
+                "key": "view_bookings",
+                "label": "View Bookings"
+            },
+            {
+                "key": "create_bookings",
+                "label": "Create Bookings"
+            },
+            {
+                "key": "edit_bookings",
+                "label": "Edit Bookings"
+            },
+            {
+                "key": "delete_bookings",
+                "label": "Delete Bookings"
+            },
+            {
+                "key": "view_customers",
+                "label": "View Customers"
+            },
+            {
+                "key": "edit_customers",
+                "label": "Edit Customers"
+            },
+            {
+                "key": "view_menu",
+                "label": "View Menu"
+            },
+            {
+                "key": "edit_menu",
+                "label": "Edit Menu"
+            },
+            {
+                "key": "view_tables",
+                "label": "View Tables"
+            },
+            {
+                "key": "edit_tables",
+                "label": "Edit Tables"
+            },
+            {
+                "key": "view_kitchen",
+                "label": "View Kitchen"
+            },
+            {
+                "key": "manage_kitchen",
+                "label": "Manage Kitchen"
+            },
+            {
+                "key": "view_users",
+                "label": "View Users"
+            },
+            {
+                "key": "manage_users",
+                "label": "Manage Users"
+            },
+            {
+                "key": "view_settings",
+                "label": "View Settings"
+            },
+            {
+                "key": "edit_settings",
+                "label": "Edit Settings"
+            },
+            {
+                "key": "view_reports",
+                "label": "View Reports"
+            },
+            {
+                "key": "view_notifications",
+                "label": "View Notifications"
+            },
+            {
+                "key": "manage_notifications",
+                "label": "Manage Notifications"
+            },
+            {
+                "key": "view_integrations",
+                "label": "View Integrations"
+            },
+            {
+                "key": "manage_integrations",
+                "label": "Manage Integrations"
+            }
+        ]
+    }
+}
