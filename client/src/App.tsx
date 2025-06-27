@@ -154,9 +154,9 @@ function App() {
                   <SettingsProvider>
                     <DateProvider>
                       <RouteGuard>
-                      <LayoutWrapper>
-                        <SessionTimeoutHandler />
-                        <Switch>
+                        <LayoutWrapper>
+                          <SessionTimeoutHandler />
+                          <Switch>
                           <Route path="/" component={Home} />
                           <Route path="/login" component={Login} />
                           <Route path="/register" component={Register} />
@@ -443,9 +443,9 @@ function App() {
                           <Route component={NotFound} />
                         </Switch>
                       </LayoutWrapper>
-                    </RouteGuard>
-                  </DateProvider>
-                </SettingsProvider>
+                      </RouteGuard>
+                    </DateProvider>
+                  </SettingsProvider>
                 </TenantProvider>
               </AuthProvider>
             </Route>
