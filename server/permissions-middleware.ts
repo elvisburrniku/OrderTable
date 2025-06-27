@@ -379,7 +379,11 @@ async function checkSubscriptionAccess(tenantId: number, permission: string): Pr
         PERMISSIONS.VIEW_KITCHEN,
         PERMISSIONS.MANAGE_KITCHEN,
         PERMISSIONS.ACCESS_BILLING,
-        PERMISSIONS.VIEW_BILLING
+        PERMISSIONS.VIEW_BILLING,
+        PERMISSIONS.MANAGE_BILLING,
+        PERMISSIONS.ACCESS_USERS,
+        PERMISSIONS.VIEW_USERS,
+        PERMISSIONS.MANAGE_USERS
       ];
       
       if (!allowedWithCancelledSubscription.includes(permission)) {
