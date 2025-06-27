@@ -1838,6 +1838,84 @@ export async function registerRoutes(app: Express): Promise<Server> {
     },
   );
 
+  // Delete booking route with tenant and restaurant validation
+  app.delete(
+    "/api/tenants/:tenantId/restaurants/:restaurantId/bookings/:id",
+    validateTenant,
+    async (req, res) => {
+      try {
+        const id = parseInt(req.params.id);
+        const restaurantId = parseInt(req.params.restaurantId);
+        const tenantId = parseInt(req.params.tenantId);
+
+        if (isNaN(id) || isNaN(restaurantId) || isNaN(tenantId)) {
+          return res.status(400).json({ message: "Invalid booking, restaurant, or tenant ID" });
+        }
+
+        // Verify restaurant belongs to tenant
+        const restaurant = await storage.getRestaurantById(restaurantId);
+        if (!restaurant || restaurant.tenantId !== tenantId) {
+          return res.status(404).json({ message: "Restaurant not found" });
+        }
+
+        // Verify booking exists and belongs to this restaurant and tenant
+        const existingBooking = await storage.getBookingById(id);
+        if (
+          !existingBooking ||
+          existingBooking.tenantId !== tenantId ||
+          existingBooking.restaurantId !== restaurantId
+        ) {
+          return res.status(404).json({ message: "Booking not found" });
+        }
+
+        // Delete the booking
+        const success = await storage.deleteBooking(id);
+        if (!success) {
+          return res.status(500).json({ message: "Failed to delete booking" });
+        }
+
+        // Log booking deletion
+        const sessionUser = (req as any).session?.user;
+        await logActivity({
+          restaurantId: restaurantId,
+          tenantId: tenantId,
+          eventType: "booking_delete",
+          description: `Booking deleted for ${existingBooking.customerName}`,
+          source: "manual",
+          userEmail: sessionUser?.email,
+          userLogin: sessionUser?.email,
+          guestEmail: existingBooking.customerEmail,
+          ipAddress: req.ip,
+          userAgent: req.get("User-Agent"),
+          bookingId: existingBooking.id,
+          customerId: existingBooking.customerId,
+          details: {
+            deletedBooking: {
+              id: existingBooking.id,
+              customerName: existingBooking.customerName,
+              bookingDate: existingBooking.bookingDate,
+              startTime: existingBooking.startTime,
+              status: existingBooking.status,
+            },
+          },
+        });
+
+        // Send webhook notifications for booking deletion
+        try {
+          const webhookService = new WebhookService(storage);
+          await webhookService.notifyBookingDeleted(restaurantId, existingBooking);
+        } catch (webhookError) {
+          console.error("Error sending booking deletion webhook:", webhookError);
+        }
+
+        res.json({ message: "Booking deleted successfully" });
+      } catch (error) {
+        console.error("Booking deletion error:", error);
+        res.status(500).json({ message: "Failed to delete booking" });
+      }
+    },
+  );
+
   // Complete tenant-restaurant routes implementation
   app.get(
     "/api/tenants/:tenantId/restaurants/:restaurantId/tables",
