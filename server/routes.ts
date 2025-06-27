@@ -609,8 +609,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
           const tenantUserRelations = await storage.db
             .select()
             .from(storage.db.schema.tenantUsers)
-            .where(storage.db.eq(storage.db.schema.tenantUsers.tenantId, tenantUser.id));
-          
+            .where(
+              storage.db.eq(
+                storage.db.schema.tenantUsers.tenantId,
+                tenantUser.id,
+              ),
+            );
+
           const userInTenant = tenantUserRelations?.find(
             (tu) => tu.userId === user.id,
           );
@@ -765,20 +770,20 @@ export async function registerRoutes(app: Express): Promise<Server> {
         });
 
         // TEMPORARY: Remove permission check to test role-permissions page
-        Allow owners (who have all permissions) and users with ACCESS_USERS permission
-        if (userRole !== "owner" && !userPermissions.includes(PERMISSIONS.ACCESS_USERS)) {
-          console.log("🚨 ACCESS DENIED for role permissions:", { userRole, permissions: userPermissions });
+        // Allow owners (who have all permissions) and users with ACCESS_USERS permission
+        if (
+          userRole !== "owner" &&
+          !userPermissions.includes(PERMISSIONS.ACCESS_USERS)
+        ) {
+          console.log("🚨 ACCESS DENIED for role permissions:", {
+            userRole,
+            permissions: userPermissions,
+          });
           return res.status(403).json({
             error: "Access denied",
             message: "You don't have permission to view role permissions",
           });
         }
-
-        console.log(
-          "✅ ROLE PERMISSIONS ACCESS GRANTED for user role:",
-          userRole,
-          "(permission check temporarily disabled)",
-        );
 
         // Get role permissions data
         const rolePermissions = Object.entries(ROLE_PERMISSIONS).map(
@@ -871,7 +876,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
         }
 
         // Import the permission update functions
-        const { updateRolePermissions, updateRoleRedirect } = await import("./permissions-middleware");
+        const { updateRolePermissions, updateRoleRedirect } = await import(
+          "./permissions-middleware"
+        );
 
         // Update role permissions
         const permissionsUpdated = updateRolePermissions(role, permissions);
