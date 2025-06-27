@@ -89,7 +89,21 @@ export default function FloorPlanPage() {
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
-  const [currentPlan, setCurrentPlan] = useState<FloorPlan>({
+  if (!restaurant) {
+    return (
+      <div className="p-6">
+        <Card>
+          <CardHeader>
+            <CardTitle>Access Denied</CardTitle>
+            <CardDescription>
+              You need to be associated with a restaurant to access the floor plan designer. 
+              Please contact support or your administrator to gain access.
+            </CardDescription>
+          </CardHeader>
+        </Card>
+      </div>
+    );
+  }
     name: "New Floor Plan",
     elements: [],
     dimensions: { width: 800, height: 600 },
