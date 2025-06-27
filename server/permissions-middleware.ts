@@ -352,9 +352,39 @@ async function checkSubscriptionAccess(tenantId: number, permission: string): Pr
       }
     }
 
-    // Check if subscription is active
+    // Check if subscription is active - allow core functionality even for cancelled subscriptions
     if (tenant.subscriptionStatus !== 'active') {
-      return { allowed: false, status: tenant.subscriptionStatus, message: "Your subscription is not active. Please update your billing information." };
+      // Allow essential restaurant management features even with cancelled subscription
+      const allowedWithCancelledSubscription = [
+        PERMISSIONS.ACCESS_DASHBOARD,
+        PERMISSIONS.ACCESS_BOOKINGS,
+        PERMISSIONS.ACCESS_CUSTOMERS,
+        PERMISSIONS.ACCESS_MENU,
+        PERMISSIONS.ACCESS_TABLES,
+        PERMISSIONS.ACCESS_KITCHEN,
+        PERMISSIONS.ACCESS_SETTINGS,
+        PERMISSIONS.ACCESS_FLOOR_PLAN,
+        PERMISSIONS.VIEW_BOOKINGS,
+        PERMISSIONS.CREATE_BOOKINGS,
+        PERMISSIONS.EDIT_BOOKINGS,
+        PERMISSIONS.DELETE_BOOKINGS,
+        PERMISSIONS.VIEW_CUSTOMERS,
+        PERMISSIONS.EDIT_CUSTOMERS,
+        PERMISSIONS.VIEW_SETTINGS,
+        PERMISSIONS.EDIT_SETTINGS,
+        PERMISSIONS.VIEW_MENU,
+        PERMISSIONS.EDIT_MENU,
+        PERMISSIONS.VIEW_TABLES,
+        PERMISSIONS.EDIT_TABLES,
+        PERMISSIONS.VIEW_KITCHEN,
+        PERMISSIONS.MANAGE_KITCHEN,
+        PERMISSIONS.ACCESS_BILLING,
+        PERMISSIONS.VIEW_BILLING
+      ];
+      
+      if (!allowedWithCancelledSubscription.includes(permission)) {
+        return { allowed: false, status: tenant.subscriptionStatus, message: "Your subscription is not active. Please update your billing information." };
+      }
     }
 
     return { allowed: true };
