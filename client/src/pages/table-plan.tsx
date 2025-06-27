@@ -619,42 +619,263 @@ export default function TablePlan() {
               </div>
             </div>
 
-            {/* Table Structures */}
+            {/* Shape Selector */}
+            <div className="mb-6">
+              <h3 className="text-sm font-medium text-gray-700 mb-3">Shapes:</h3>
+              <div className="grid grid-cols-5 gap-2 mb-4">
+                {/* Row 1 */}
+                <div
+                  className="w-8 h-8 bg-gray-600 cursor-grab hover:bg-gray-700 transition-colors"
+                  draggable
+                  onDragStart={(e) => handleStructureDragStart({
+                    id: "small-square",
+                    name: "Small Square",
+                    shape: "square",
+                    icon: Square,
+                    defaultCapacity: 2,
+                    description: "2-person square table",
+                  }, e)}
+                  title="Small Square Table"
+                />
+                <div
+                  className="w-8 h-8 bg-gray-600 rounded-full cursor-grab hover:bg-gray-700 transition-colors"
+                  draggable
+                  onDragStart={(e) => handleStructureDragStart({
+                    id: "small-round",
+                    name: "Small Round",
+                    shape: "circle",
+                    icon: Circle,
+                    defaultCapacity: 2,
+                    description: "2-person round table",
+                  }, e)}
+                  title="Small Round Table"
+                />
+                <div
+                  className="w-8 h-8 bg-gray-600 cursor-grab hover:bg-gray-700 transition-colors"
+                  draggable
+                  onDragStart={(e) => handleStructureDragStart({
+                    id: "medium-square",
+                    name: "Medium Square",
+                    shape: "square",
+                    icon: Square,
+                    defaultCapacity: 4,
+                    description: "4-person square table",
+                  }, e)}
+                  title="Medium Square Table"
+                />
+                <div
+                  className="w-8 h-8 bg-gray-600 rounded-full cursor-grab hover:bg-gray-700 transition-colors"
+                  draggable
+                  onDragStart={(e) => handleStructureDragStart({
+                    id: "medium-round",
+                    name: "Medium Round",
+                    shape: "circle",
+                    icon: Circle,
+                    defaultCapacity: 4,
+                    description: "4-person round table",
+                  }, e)}
+                  title="Medium Round Table"
+                />
+                <div
+                  className="w-8 h-8 bg-gray-600 rounded-full cursor-grab hover:bg-gray-700 transition-colors"
+                  draggable
+                  onDragStart={(e) => handleStructureDragStart({
+                    id: "large-round",
+                    name: "Large Round",
+                    shape: "circle",
+                    icon: Circle,
+                    defaultCapacity: 6,
+                    description: "6-person round table",
+                  }, e)}
+                  title="Large Round Table"
+                />
+                
+                {/* Row 2 */}
+                <div
+                  className="w-10 h-6 bg-gray-600 cursor-grab hover:bg-gray-700 transition-colors"
+                  draggable
+                  onDragStart={(e) => handleStructureDragStart({
+                    id: "rectangular",
+                    name: "Rectangular",
+                    shape: "rectangle",
+                    icon: Square,
+                    defaultCapacity: 6,
+                    description: "6-person rectangular table",
+                  }, e)}
+                  title="Rectangular Table"
+                />
+                <div
+                  className="w-8 h-8 bg-gray-600 cursor-grab hover:bg-gray-700 transition-colors"
+                  draggable
+                  onDragStart={(e) => handleStructureDragStart({
+                    id: "large-square",
+                    name: "Large Square",
+                    shape: "square",
+                    icon: Square,
+                    defaultCapacity: 6,
+                    description: "6-person square table",
+                  }, e)}
+                  title="Large Square Table"
+                />
+                <div
+                  className="w-8 h-8 bg-gray-600 rounded-full cursor-grab hover:bg-gray-700 transition-colors"
+                  draggable
+                  onDragStart={(e) => handleStructureDragStart({
+                    id: "extra-large-round",
+                    name: "Extra Large Round",
+                    shape: "circle",
+                    icon: Circle,
+                    defaultCapacity: 8,
+                    description: "8-person round table",
+                  }, e)}
+                  title="Extra Large Round Table"
+                />
+                
+                {/* Row 3 */}
+                <div
+                  className="w-8 h-8 bg-gray-600 rounded-full cursor-grab hover:bg-gray-700 transition-colors"
+                  draggable
+                  onDragStart={(e) => handleStructureDragStart({
+                    id: "huge-round-1",
+                    name: "Huge Round",
+                    shape: "circle",
+                    icon: Circle,
+                    defaultCapacity: 10,
+                    description: "10-person round table",
+                  }, e)}
+                  title="Huge Round Table"
+                />
+                <div
+                  className="w-10 h-8 bg-gray-600 rounded-full cursor-grab hover:bg-gray-700 transition-colors"
+                  draggable
+                  onDragStart={(e) => handleStructureDragStart({
+                    id: "huge-round-2",
+                    name: "Extra Huge Round",
+                    shape: "circle",
+                    icon: Circle,
+                    defaultCapacity: 12,
+                    description: "12-person round table",
+                  }, e)}
+                  title="Extra Huge Round Table"
+                />
+                <div
+                  className="w-12 h-10 bg-gray-600 rounded-full cursor-grab hover:bg-gray-700 transition-colors"
+                  draggable
+                  onDragStart={(e) => handleStructureDragStart({
+                    id: "massive-round",
+                    name: "Massive Round",
+                    shape: "circle",
+                    icon: Circle,
+                    defaultCapacity: 16,
+                    description: "16-person round table",
+                  }, e)}
+                  title="Massive Round Table"
+                />
+                
+                {/* Row 4 - Long rectangles */}
+                <div
+                  className="w-12 h-4 bg-gray-600 cursor-grab hover:bg-gray-700 transition-colors col-span-2"
+                  draggable
+                  onDragStart={(e) => handleStructureDragStart({
+                    id: "long-rectangular-1",
+                    name: "Long Rectangular",
+                    shape: "rectangle",
+                    icon: Square,
+                    defaultCapacity: 8,
+                    description: "8-person long table",
+                  }, e)}
+                  title="Long Rectangular Table"
+                />
+                <div
+                  className="w-12 h-4 bg-gray-600 cursor-grab hover:bg-gray-700 transition-colors col-span-2"
+                  draggable
+                  onDragStart={(e) => handleStructureDragStart({
+                    id: "long-rectangular-2",
+                    name: "Extra Long Rectangular",
+                    shape: "rectangle",
+                    icon: Square,
+                    defaultCapacity: 12,
+                    description: "12-person extra long table",
+                  }, e)}
+                  title="Extra Long Rectangular Table"
+                />
+              </div>
+              
+              <div className="mb-4">
+                <Button
+                  className="w-full bg-green-600 hover:bg-green-700 text-white"
+                  onClick={() => {/* Handle done */}}
+                >
+                  Done
+                </Button>
+              </div>
+              
+              <div className="mb-4">
+                <Button
+                  variant="outline"
+                  className="w-full text-red-600 border-red-600 hover:bg-red-50"
+                  onClick={() => {/* Handle delete table */}}
+                >
+                  Delete table
+                </Button>
+              </div>
+            </div>
+            
+            {/* Unallocated Tables */}
             <div className="mb-6">
               <h3 className="text-sm font-medium text-gray-700 mb-3">
-                Table Structures
+                Unallocated tables (drag to the white box)
               </h3>
-              <div className="grid grid-cols-2 gap-2 mb-4">
-                {TABLE_STRUCTURES.map((structure) => (
-                  <div
-                    key={`structure-${structure.id}`}
-                    className="p-3 border border-gray-200 rounded-lg hover:bg-gray-50 hover:border-gray-300 cursor-grab transition-all duration-200 hover:shadow-sm"
-                    draggable
-                    onDragStart={(e) => handleStructureDragStart(structure, e)}
-                  >
-                    <div className="flex flex-col items-center">
-                      <div
-                        style={getStructureStyle(structure)}
-                        className="mb-2 hover:scale-105 transition-transform hover:shadow-md"
-                      >
-                        {structure.defaultCapacity}
-                      </div>
-                      <div className="text-xs text-center">
-                        <div className="font-medium text-gray-900">{structure.name}</div>
-                        <div className="text-gray-600 text-[10px] leading-tight">
-                          {structure.description}
-                        </div>
+              <div className="flex flex-wrap gap-2 mb-4">
+                {tables.filter((table: any) => !tablePositions[table.id]).map((table: any, index: number) => {
+                  const priorityColors = [
+                    'bg-blue-600', 'bg-blue-500', 'bg-gray-600', 'bg-gray-700', 
+                    'bg-gray-800', 'bg-slate-600', 'bg-slate-700'
+                  ];
+                  const colorClass = priorityColors[index % priorityColors.length];
+                  
+                  return (
+                    <div
+                      key={`unallocated-${table.id}`}
+                      className={`${colorClass} text-white px-3 py-2 rounded cursor-grab hover:opacity-90 transition-opacity text-xs font-medium`}
+                      draggable
+                      onDragStart={(e) => handleDragStart(table.id, e)}
+                      title={`Table ${table.tableNumber} - ${table.capacity} persons`}
+                    >
+                      <div className="text-center">
+                        <div className="font-bold">{table.tableNumber}</div>
+                        <div className="text-[10px] opacity-90">{table.capacity} pers.</div>
                       </div>
                     </div>
-                  </div>
-                ))}
+                  );
+                })}
               </div>
-              <div className="text-xs text-gray-500 p-2 bg-blue-50 rounded">
-                <strong>Tips:</strong>
-                <br />• Drag table structures onto the floor plan to add new
-                tables
-                <br />• Hover over placed tables to see the remove button (×)
-                <br />• Right-click on tables for quick removal
+              
+              {/* Priority Legend */}
+              <div className="mb-4">
+                <h4 className="text-xs font-medium text-gray-700 mb-2">Priority:</h4>
+                <div className="flex flex-wrap gap-2 text-xs">
+                  <div className="flex items-center gap-1">
+                    <div className="w-3 h-3 bg-green-600 rounded-full"></div>
+                    <span>Highest</span>
+                  </div>
+                  <div className="flex items-center gap-1">
+                    <div className="w-3 h-3 bg-blue-600 rounded-full"></div>
+                    <span>High</span>
+                  </div>
+                  <div className="flex items-center gap-1">
+                    <div className="w-3 h-3 bg-gray-600 rounded-full"></div>
+                    <span>Medium</span>
+                  </div>
+                  <div className="flex items-center gap-1">
+                    <div className="w-3 h-3 bg-yellow-500 rounded-full"></div>
+                    <span>Low</span>
+                  </div>
+                  <div className="flex items-center gap-1">
+                    <div className="w-3 h-3 bg-red-500 rounded-full"></div>
+                    <span>Lowest</span>
+                  </div>
+                </div>
               </div>
             </div>
 
