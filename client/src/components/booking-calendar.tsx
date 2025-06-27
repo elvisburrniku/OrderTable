@@ -15,8 +15,10 @@ import { List, Table, Calendar, Users, Plus, ChevronLeft, ChevronRight, Clock } 
 import { Booking, Table as TableType } from "@shared/schema";
 import WalkInBookingButton from "@/components/walk-in-booking";
 import DynamicBookingForm from "@/components/dynamic-booking-form";
+import { BookingCancellation } from "@/components/booking-cancellation";
 import { useSettings } from "@/hooks/use-settings";
 import { useDate } from "@/contexts/date-context";
+import { useBooking } from "@/contexts/booking-context";
 
 interface BookingCalendarProps {
   selectedDate: Date;
@@ -31,6 +33,15 @@ export default function BookingCalendar({ selectedDate, bookings, allBookings = 
   const { user, restaurant } = useAuth();
   const { generalSettings } = useSettings();
   const { formatDate, formatTime, formatDateTime } = useDate();
+  const { 
+    getMaxBookingDate, 
+    isDateBookable, 
+    allowCancellationAndChanges,
+    turnaroundTime,
+    emptySeats,
+    contactMethod,
+    groupRequest
+  } = useBooking();
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const [activeView, setActiveView] = useState("calendar");
@@ -238,17 +249,42 @@ export default function BookingCalendar({ selectedDate, bookings, allBookings = 
       } else {
         tableId = parseInt(newBooking.tableId);
 
-        // Validate guest count against selected table capacity
+        // Validate guest count against selected table capacity with empty seats setting
         const selectedTable = tables.find(t => t.id === tableId);
-        if (selectedTable && newBooking.guestCount > selectedTable.capacity) {
-          toast({
-            title: "Error",
-            description: `Selected table can only accommodate ${selectedTable.capacity} guests. You have ${newBooking.guestCount} guests.`,
-            variant: "destructive"
-          });
-          return;
+        if (selectedTable) {
+          const requiredCapacity = newBooking.guestCount + emptySeats;
+          if (requiredCapacity > selectedTable.capacity) {
+            toast({
+              title: "Error",
+              description: `Selected table cannot accommodate ${newBooking.guestCount} guests with ${emptySeats} empty seats required. Table capacity: ${selectedTable.capacity}`,
+              variant: "destructive"
+            });
+            return;
+          }
         }
       }
+    }
+
+    // Validate booking date using booking context settings
+    const dateValidation = isDateBookable(selectedDate);
+    if (!dateValidation) {
+      toast({
+        title: "Invalid Date",
+        description: "This date is not available for booking",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    // Check if date is within maximum advance booking days
+    const maxDate = getMaxBookingDate();
+    if (selectedDate > maxDate) {
+      toast({
+        title: "Date Too Far",
+        description: `Bookings can only be made up to ${Math.floor((maxDate.getTime() - new Date().getTime()) / (1000 * 60 * 60 * 24))} days in advance`,
+        variant: "destructive"
+      });
+      return;
     }
 
     // Format date as YYYY-MM-DD without timezone conversion
@@ -584,6 +620,13 @@ export default function BookingCalendar({ selectedDate, bookings, allBookings = 
                       <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
                         {booking.status || 'Confirmed'}
                       </span>
+                      {allowCancellationAndChanges && booking.status !== 'cancelled' && (
+                        <BookingCancellation booking={booking}>
+                          <Button variant="outline" size="sm" className="text-red-600 hover:text-red-700">
+                            Cancel
+                          </Button>
+                        </BookingCancellation>
+                      )}
                     </div>
                   </div>
                 </div>

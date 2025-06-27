@@ -150,7 +150,19 @@ export default function DynamicBookingForm({
   onCancel
 }: DynamicBookingFormProps) {
   const { restaurant } = useAuth();
-  const { defaultBookingDuration, getDefaultEndTime, validateBookingDate, getMaxBookingDate } = useBooking();
+  const { 
+    defaultBookingDuration, 
+    getDefaultEndTime, 
+    getEffectiveEndTime,
+    validateBookingDate, 
+    getMaxBookingDate,
+    turnaroundTime,
+    useEndingTime,
+    emptySeats,
+    contactMethod,
+    allowCancellationAndChanges,
+    groupRequest
+  } = useBooking();
   const { formatTime } = useDate();
   const [fields, setFields] = useState<FormField[]>(defaultFields);
 
@@ -182,7 +194,21 @@ export default function DynamicBookingForm({
     if (fieldId === "startTime" && value) {
       const bookingDate = formData.bookingDate || new Date().toISOString().split('T')[0];
       const startDateTime = new Date(`${bookingDate}T${value}`);
-      const endDateTime = getDefaultEndTime(startDateTime);
+      
+      // Use effective end time that includes turnaround time if configured
+      const endDateTime = useEndingTime 
+        ? getEffectiveEndTime(startDateTime, false, defaultBookingDuration)
+        : getDefaultEndTime(startDateTime);
+        
+      const endTimeString = endDateTime.toTimeString().slice(0, 5);
+      updatedData.endTime = endTimeString;
+    }
+
+    // Handle custom duration changes
+    if (fieldId === "customDuration" && value && formData.startTime) {
+      const bookingDate = formData.bookingDate || new Date().toISOString().split('T')[0];
+      const startDateTime = new Date(`${bookingDate}T${formData.startTime}`);
+      const endDateTime = getEffectiveEndTime(startDateTime, true, parseInt(value));
       const endTimeString = endDateTime.toTimeString().slice(0, 5);
       updatedData.endTime = endTimeString;
     }
@@ -245,11 +271,19 @@ export default function DynamicBookingForm({
                 </SelectTrigger>
                 <SelectContent>
                   {tables && tables.length > 0 ? (
-                    tables.map((table) => (
-                      <SelectItem key={`table-${table.id}`} value={table.id.toString()}>
-                        Table {table.tableNumber} ({table.capacity} seats)
-                      </SelectItem>
-                    ))
+                    tables
+                      .filter((table) => {
+                        // Filter tables based on guest count and empty seats setting
+                        const guestCount = parseInt(formData.guestCount) || 1;
+                        const requiredCapacity = guestCount + emptySeats;
+                        return table.capacity >= requiredCapacity;
+                      })
+                      .map((table) => (
+                        <SelectItem key={`table-${table.id}`} value={table.id.toString()}>
+                          Table {table.tableNumber} ({table.capacity} seats)
+                          {emptySeats > 0 && ` - ${table.capacity - (parseInt(formData.guestCount) || 1)} empty`}
+                        </SelectItem>
+                      ))
                   ) : null}
                   {combinedTables && combinedTables.length > 0 ? (
                     combinedTables.map((combinedTable) => (
@@ -366,10 +400,57 @@ export default function DynamicBookingForm({
     .filter(field => field.isActive)
     .sort((a, b) => a.sortOrder - b.sortOrder);
 
+  // Contact method validation
+  const validateContactInfo = () => {
+    const phone = formData.phoneNumber;
+    const email = formData.email;
+    
+    if (contactMethod === 'phone' && !phone) {
+      return { valid: false, message: "Phone number is required" };
+    }
+    if (contactMethod === 'email' && !email) {
+      return { valid: false, message: "Email address is required" };
+    }
+    if (contactMethod === 'both' && (!phone || !email)) {
+      return { valid: false, message: "Both phone number and email are required" };
+    }
+    return { valid: true };
+  };
+
+  const handleFormSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    // Validate contact information based on settings
+    const contactValidation = validateContactInfo();
+    if (!contactValidation.valid) {
+      console.warn("Contact validation failed:", contactValidation.message);
+      return;
+    }
+    
+    onSubmit(e);
+  };
+
   return (
-    <form onSubmit={onSubmit} className="space-y-4">
+    <form onSubmit={handleFormSubmit} className="space-y-4">
       <div className="grid grid-cols-2 gap-4">
         {activeFields.map(renderField)}
+      </div>
+
+      {/* Group Request Notice */}
+      {groupRequest && (
+        <div className="mt-4 p-3 bg-blue-50 border border-blue-200 rounded-lg">
+          <p className="text-sm text-blue-800">
+            <strong>Group Bookings Available:</strong> For large parties or special events, 
+            please contact us directly for customized arrangements.
+          </p>
+        </div>
+      )}
+
+      {/* Contact Method Requirements */}
+      <div className="mt-4 text-xs text-gray-600">
+        {contactMethod === 'phone' && "Phone number required for booking confirmation"}
+        {contactMethod === 'email' && "Email address required for booking confirmation"}
+        {contactMethod === 'both' && "Phone number and email required for booking confirmation"}
       </div>
       
       <div className="flex justify-end space-x-2 pt-4">

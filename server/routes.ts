@@ -2877,6 +2877,62 @@ export async function registerRoutes(app: Express): Promise<Server> {
     },
   );
 
+  // Cancel booking (authenticated route for dashboard)
+  app.post(
+    "/api/tenants/:tenantId/restaurants/:restaurantId/bookings/:bookingId/cancel",
+    validateTenant,
+    async (req, res) => {
+      try {
+        const restaurantId = parseInt(req.params.restaurantId);
+        const tenantId = parseInt(req.params.tenantId);
+        const bookingId = parseInt(req.params.bookingId);
+        const { reason } = req.body;
+
+        const restaurant = await storage.getRestaurantById(restaurantId);
+        if (!restaurant || restaurant.tenantId !== tenantId) {
+          return res.status(404).json({ message: "Restaurant not found" });
+        }
+
+        const booking = await storage.getBookingById(bookingId);
+        if (!booking || booking.restaurantId !== restaurantId) {
+          return res.status(404).json({ message: "Booking not found" });
+        }
+
+        if (booking.status === "cancelled") {
+          return res.status(400).json({ message: "Booking is already cancelled" });
+        }
+
+        // Update booking status to cancelled
+        const updatedBooking = await storage.updateBooking(bookingId, {
+          status: "cancelled",
+          notes: reason ? `Cancelled: ${reason}` : "Cancelled",
+        });
+
+        // Log the cancellation activity
+        await storage.createSystemLog({
+          tenantId,
+          category: "booking",
+          action: "cancel",
+          details: `Booking #${bookingId} cancelled${reason ? ` - Reason: ${reason}` : ""}`,
+          metadata: {
+            bookingId,
+            restaurantId,
+            reason,
+          },
+        });
+
+        res.json({ 
+          success: true, 
+          message: "Booking cancelled successfully",
+          booking: updatedBooking 
+        });
+      } catch (error) {
+        console.error("Error cancelling booking:", error);
+        res.status(500).json({ message: "Failed to cancel booking" });
+      }
+    },
+  );
+
   // Public feedback submission (for customers via QR code)
   app.post(
     "/api/tenants/:tenantId/restaurants/:restaurantId/feedback",

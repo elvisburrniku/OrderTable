@@ -529,9 +529,10 @@ export default function Settings() {
                       </SelectTrigger>
                       <SelectContent>
                         <SelectItem value="none">None</SelectItem>
+                        <SelectItem value="2h">2 hours</SelectItem>
+                        <SelectItem value="4h">4 hours</SelectItem>
                         <SelectItem value="24h">24 hours</SelectItem>
                         <SelectItem value="48h">48 hours</SelectItem>
-                        <SelectItem value="1week">1 week</SelectItem>
                       </SelectContent>
                     </Select>
                   </div>
