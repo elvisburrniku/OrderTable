@@ -659,86 +659,15 @@ export default function TablePlan() {
             Save table plan
           </Button>
 
-          {/* Unallocated Tables */}
-          <div className="mb-4">
-            <div className="bg-gray-200 p-3 rounded">
-              <h3 className="text-sm font-medium text-gray-700 mb-2">
-                Unallocated tables <span className="text-gray-500">(drag to the white box)</span>
-              </h3>
-              <div className="flex flex-wrap gap-2">
-                {tables.filter((table: any) => !tablePositions[table.id]).map((table: any, index: number) => {
-                  const priorityColors = [
-                    '#16a34a', // Highest - Green
-                    '#2563eb', // High - Blue  
-                    '#64748b', // Medium - Gray
-                    '#eab308', // Low - Yellow
-                    '#dc2626', // Lowest - Red
-                  ];
-                  const colorClass = priorityColors[index % priorityColors.length];
-
-                  return (
-                    <div
-                      key={`unallocated-${table.id}`}
-                      style={{
-                        backgroundColor: colorClass,
-                        color: 'white',
-                        padding: '8px 12px',
-                        borderRadius: '4px',
-                        cursor: 'grab',
-                        fontSize: '12px',
-                        fontWeight: 'bold',
-                        display: 'flex',
-                        flexDirection: 'column',
-                        alignItems: 'center',
-                        minWidth: '50px'
-                      }}
-                      draggable
-                      onDragStart={(e) => handleDragStart(table.id, e)}
-                      title={`Table ${table.tableNumber} - ${table.capacity} persons`}
-                    >
-                      <div>{table.tableNumber}</div>
-                      <div style={{ fontSize: '10px' }}>{table.capacity} pers.</div>
-                    </div>
-                  );
-                })}
-              </div>
-
-              {/* Priority Legend */}
-              <div className="mt-3">
-                <div className="text-xs text-gray-700 mb-1">Priority:</div>
-                <div className="flex items-center gap-3 text-xs">
-                  <div className="flex items-center gap-1">
-                    <div className="w-3 h-3 bg-green-600 rounded-full"></div>
-                    <span>Highest</span>
-                  </div>
-                  <div className="flex items-center gap-1">
-                    <div className="w-3 h-3 bg-blue-600 rounded-full"></div>
-                    <span>High</span>
-                  </div>
-                  <div className="flex items-center gap-1">
-                    <div className="w-3 h-3 bg-gray-500 rounded-full"></div>
-                    <span>Medium</span>
-                  </div>
-                  <div className="flex items-center gap-1">
-                    <div className="w-3 h-3 bg-yellow-500 rounded-full"></div>
-                    <span>Low</span>
-                  </div>
-                  <div className="flex items-center gap-1">
-                    <div className="w-3 h-3 bg-red-500 rounded-full"></div>
-                    <span>Lowest</span>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
+          
         </div>
 
         {/* Main Content Area */}
         <div className="flex-1 p-6">
           <div
             ref={planRef}
-            className="bg-gray-200 border-2 border-gray-300 rounded"
-            style={{ height: "600px", minHeight: "400px", position: "relative" }}
+            className="bg-gray-200 border-2 border-gray-300 rounded mb-6"
+            style={{ height: "400px", minHeight: "400px", position: "relative" }}
             onDragOver={handleDragOver}
             onDrop={handleDrop}
           >
@@ -773,6 +702,79 @@ export default function TablePlan() {
 
               return renderTable(position, numericTableId, dbTable);
             })}
+          </div>
+
+          {/* Unallocated Tables - Moved below the planning area */}
+          <div className="bg-gray-200 p-4 rounded">
+            <h3 className="text-sm font-medium text-gray-700 mb-3">
+              Unallocated tables <span className="text-gray-500">(drag to the white box)</span>
+            </h3>
+            <div className="flex flex-wrap gap-3 mb-4">
+              {tables.filter((table: any) => !tablePositions[table.id]).map((table: any, index: number) => {
+                const priorityColors = [
+                  '#16a34a', // Highest - Green
+                  '#2563eb', // High - Blue  
+                  '#64748b', // Medium - Gray
+                  '#eab308', // Low - Yellow
+                  '#dc2626', // Lowest - Red
+                ];
+                const colorClass = priorityColors[index % priorityColors.length];
+
+                return (
+                  <div
+                    key={`unallocated-${table.id}`}
+                    style={{
+                      backgroundColor: colorClass,
+                      color: 'white',
+                      padding: '12px 16px',
+                      borderRadius: '4px',
+                      cursor: 'grab',
+                      fontSize: '12px',
+                      fontWeight: 'bold',
+                      display: 'flex',
+                      flexDirection: 'column',
+                      alignItems: 'center',
+                      minWidth: '60px',
+                      minHeight: '50px',
+                      justifyContent: 'center'
+                    }}
+                    draggable
+                    onDragStart={(e) => handleDragStart(table.id, e)}
+                    title={`Table ${table.tableNumber} - ${table.capacity} persons`}
+                  >
+                    <div>{table.tableNumber}</div>
+                    <div style={{ fontSize: '10px' }}>{table.capacity} pers.</div>
+                  </div>
+                );
+              })}
+            </div>
+
+            {/* Priority Legend */}
+            <div>
+              <div className="text-xs text-gray-700 mb-2">Priority:</div>
+              <div className="flex items-center gap-4 text-xs">
+                <div className="flex items-center gap-1">
+                  <div className="w-3 h-3 bg-green-600 rounded-full"></div>
+                  <span>Highest</span>
+                </div>
+                <div className="flex items-center gap-1">
+                  <div className="w-3 h-3 bg-blue-600 rounded-full"></div>
+                  <span>High</span>
+                </div>
+                <div className="flex items-center gap-1">
+                  <div className="w-3 h-3 bg-gray-500 rounded-full"></div>
+                  <span>Medium</span>
+                </div>
+                <div className="flex items-center gap-1">
+                  <div className="w-3 h-3 bg-yellow-500 rounded-full"></div>
+                  <span>Low</span>
+                </div>
+                <div className="flex items-center gap-1">
+                  <div className="w-3 h-3 bg-red-500 rounded-full"></div>
+                  <span>Lowest</span>
+                </div>
+              </div>
+            </div>
           </div>
         </div>
       </div>
