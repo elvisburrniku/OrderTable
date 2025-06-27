@@ -222,6 +222,50 @@ export default function Rooms() {
     },
   });
 
+  // Create new room mutation
+  const createRoomMutation = useMutation({
+    mutationFn: async (roomData: { name: string; priority: string }) => {
+      const currentTenantId = restaurant?.tenantId;
+      if (!currentTenantId || !restaurant?.id) {
+        throw new Error("Missing tenant or restaurant information");
+      }
+
+      const response = await fetch(
+        `/api/tenants/${currentTenantId}/restaurants/${restaurant.id}/rooms`,
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            name: roomData.name,
+            priority: roomData.priority,
+            restaurantId: restaurant.id,
+            tenantId: currentTenantId,
+          }),
+        },
+      );
+      if (!response.ok) throw new Error("Failed to create room");
+      return response.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ 
+        queryKey: ["/api/tenants", restaurant?.tenantId, "restaurants", restaurant?.id, "rooms"] 
+      });
+      setIsNewRoomOpen(false);
+      setNewRoom({ name: "", priority: "Medium" });
+      toast({
+        title: "Success",
+        description: "Room created successfully!",
+      });
+    },
+    onError: (error) => {
+      toast({
+        title: "Error", 
+        description: "Failed to create room. Please try again.",
+        variant: "destructive",
+      });
+    },
+  });
+
   // Update local state when rooms are fetched
   useEffect(() => {
     if (fetchedRooms.length > 0) {
@@ -233,6 +277,11 @@ export default function Rooms() {
       setOriginalRooms([]);
     }
   }, [fetchedRooms, isLoading]);
+
+  // Reset pagination when filters change
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [searchTerm, priorityFilter]);
 
   // Filter rooms
   const filteredRooms = (rooms || []).filter((room: Room) => {
@@ -248,11 +297,6 @@ export default function Rooms() {
   const startIndex = (currentPage - 1) * itemsPerPage;
   const endIndex = startIndex + itemsPerPage;
   const paginatedRooms = filteredRooms.slice(startIndex, endIndex);
-
-  // Reset pagination when filters change
-  useEffect(() => {
-    setCurrentPage(1);
-  }, [searchTerm, priorityFilter]);
 
   // Priority badge style
   const getPriorityBadge = (priority: string) => {
@@ -349,50 +393,6 @@ export default function Rooms() {
     const validRooms = rooms.filter(room => room.name.trim() !== "");
     saveRoomsMutation.mutate(validRooms);
   };
-
-  // Create new room mutation
-  const createRoomMutation = useMutation({
-    mutationFn: async (roomData: { name: string; priority: string }) => {
-      const currentTenantId = restaurant?.tenantId;
-      if (!currentTenantId || !restaurant?.id) {
-        throw new Error("Missing tenant or restaurant information");
-      }
-
-      const response = await fetch(
-        `/api/tenants/${currentTenantId}/restaurants/${restaurant.id}/rooms`,
-        {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            name: roomData.name,
-            priority: roomData.priority,
-            restaurantId: restaurant.id,
-            tenantId: currentTenantId,
-          }),
-        },
-      );
-      if (!response.ok) throw new Error("Failed to create room");
-      return response.json();
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ 
-        queryKey: ["/api/tenants", restaurant?.tenantId, "restaurants", restaurant?.id, "rooms"] 
-      });
-      setIsNewRoomOpen(false);
-      setNewRoom({ name: "", priority: "Medium" });
-      toast({
-        title: "Success",
-        description: "Room created successfully!",
-      });
-    },
-    onError: (error) => {
-      toast({
-        title: "Error", 
-        description: "Failed to create room. Please try again.",
-        variant: "destructive",
-      });
-    },
-  });
 
   const handleCreateRoom = () => {
     if (newRoom.name.trim()) {
