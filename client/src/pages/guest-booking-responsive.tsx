@@ -260,7 +260,7 @@ export default function GuestBookingResponsive(props: any) {
     });
   };
 
-  // Check if a specific date is disabled in opening hours configuration
+  // Helper function to check if date is disabled in opening hours
   const isDateDisabledInOpeningHours = (date: Date) => {
     if (!openingHours || !Array.isArray(openingHours)) return false;
 
@@ -269,16 +269,6 @@ export default function GuestBookingResponsive(props: any) {
 
     // If no configuration found for this day or explicitly marked as closed
     return !dayHours || !dayHours.isOpen;
-  };
-
-// Helper function to check if date is disabled in opening hours
-  const isDateDisabledInOpeningHours = (date: Date, openingHours: any[]) => {
-    if (!openingHours || openingHours.length === 0) return false;
-
-    const dayOfWeek = date.getDay();
-    const dayHours = openingHours.find(h => h.dayOfWeek === dayOfWeek);
-
-    return dayHours ? !dayHours.isOpen : true;
   };
 
   // Check if date is available based on opening hours and special periods
