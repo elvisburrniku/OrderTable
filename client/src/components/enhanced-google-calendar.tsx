@@ -151,6 +151,15 @@ export default function EnhancedGoogleCalendar({
     startTime: "",
     endTime: "",
     duration: generalSettings?.defaultBookingDuration || 60,
+    eventType: "general", // general, birthday, anniversary, business, etc.
+    internalNotes: "",
+    extraDescription: "",
+    tags: [] as string[],
+    requiresPayment: false,
+    paymentAmount: 0,
+    paymentDeadlineHours: 24,
+    language: "en",
+    attachments: [] as File[],
   });
 
   // Helper function to get opening hours for a specific date
@@ -1544,24 +1553,65 @@ export default function EnhancedGoogleCalendar({
 
       {/* New Booking Dialog */}
       <Dialog open={isNewBookingOpen} onOpenChange={setIsNewBookingOpen}>
-        <DialogContent className="max-w-md">
+        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>Create New Booking</DialogTitle>
           </DialogHeader>
           <div className="space-y-4">
+            {/* Event Type */}
             <div>
-              <Label htmlFor="customerName">Customer Name</Label>
-              <Input
-                id="customerName"
-                value={newBooking.customerName}
-                onChange={(e) =>
-                  setNewBooking((prev) => ({
-                    ...prev,
-                    customerName: e.target.value,
-                  }))
+              <Label htmlFor="eventType">Event Type</Label>
+              <Select
+                value={newBooking.eventType}
+                onValueChange={(value) =>
+                  setNewBooking((prev) => ({ ...prev, eventType: value }))
                 }
-                placeholder="Enter customer name"
-              />
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Select event type" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="general">General Dining</SelectItem>
+                  <SelectItem value="birthday">Birthday</SelectItem>
+                  <SelectItem value="anniversary">Anniversary</SelectItem>
+                  <SelectItem value="business">Business Meeting</SelectItem>
+                  <SelectItem value="date">Date Night</SelectItem>
+                  <SelectItem value="celebration">Celebration</SelectItem>
+                  <SelectItem value="family">Family Gathering</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+
+            {/* Customer Details */}
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <Label htmlFor="customerName">Customer Name</Label>
+                <Input
+                  id="customerName"
+                  value={newBooking.customerName}
+                  onChange={(e) =>
+                    setNewBooking((prev) => ({
+                      ...prev,
+                      customerName: e.target.value,
+                    }))
+                  }
+                  placeholder="Enter customer name"
+                />
+              </div>
+              <div>
+                <Label htmlFor="customerPhone">Phone</Label>
+                <Input
+                  id="customerPhone"
+                  value={newBooking.customerPhone}
+                  onChange={(e) =>
+                    setNewBooking((prev) => ({
+                      ...prev,
+                      customerPhone: e.target.value,
+                    }))
+                  }
+                  placeholder="+1 (555) 123-4567"
+                />
+              </div>
             </div>
 
             <div>
@@ -1580,37 +1630,7 @@ export default function EnhancedGoogleCalendar({
               />
             </div>
 
-            <div>
-              <Label htmlFor="customerPhone">Phone</Label>
-              <Input
-                id="customerPhone"
-                value={newBooking.customerPhone}
-                onChange={(e) =>
-                  setNewBooking((prev) => ({
-                    ...prev,
-                    customerPhone: e.target.value,
-                  }))
-                }
-                placeholder="+1 (555) 123-4567"
-              />
-            </div>
-
-            <div>
-              <Label htmlFor="guestCount">Guest Count</Label>
-              <Input
-                id="guestCount"
-                type="number"
-                min="1"
-                value={newBooking.guestCount}
-                onChange={(e) =>
-                  setNewBooking((prev) => ({
-                    ...prev,
-                    guestCount: parseInt(e.target.value) || 1,
-                  }))
-                }
-              />
-            </div>
-
+            {/* Date, Time, Duration */}
             <div className="grid grid-cols-3 gap-4">
               <div>
                 <Label htmlFor="startTime">Start Time</Label>
@@ -1673,28 +1693,36 @@ export default function EnhancedGoogleCalendar({
                 </Select>
               </div>
               <div>
-                <Label htmlFor="endTime">End Time</Label>
-                <Input
-                  id="endTime"
-                  type="time"
-                  value={newBooking.endTime}
-                  onChange={(e) =>
+                <Label htmlFor="guestCount">Guests</Label>
+                <Select
+                  value={newBooking.guestCount.toString()}
+                  onValueChange={(value) =>
                     setNewBooking((prev) => ({
                       ...prev,
-                      endTime: e.target.value,
+                      guestCount: parseInt(value),
                     }))
                   }
-                  required
-                />
+                >
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {Array.from({ length: 20 }, (_, i) => i + 1).map((num) => (
+                      <SelectItem key={num} value={num.toString()}>
+                        {num} {num === 1 ? "person" : "persons"}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
               </div>
             </div>
 
+            {/* Table Selection */}
             <div>
               <Label htmlFor="tableId">Available Tables</Label>
               <Select
                 value={newBooking.tableId}
                 onValueChange={(value) => {
-                  // Prevent selecting the disabled "no tables available" option
                   if (value !== "no-tables-available") {
                     setNewBooking((prev) => ({ ...prev, tableId: value }));
                   }
@@ -1705,7 +1733,6 @@ export default function EnhancedGoogleCalendar({
                 </SelectTrigger>
                 <SelectContent>
                   {(() => {
-                    // Get available tables for the selected time slot
                     let bookingDate: Date;
                     try {
                       bookingDate =
@@ -1739,57 +1766,168 @@ export default function EnhancedGoogleCalendar({
                   })()}
                 </SelectContent>
               </Select>
-              {(() => {
-                let bookingDate: Date;
-                try {
-                  bookingDate =
-                    selectedTimeSlot?.date ||
-                    (newBooking.bookingDate
-                      ? new Date(newBooking.bookingDate)
-                      : new Date());
-                } catch (error) {
-                  bookingDate = new Date();
-                }
-
-                const availableTables = getAvailableTablesForTimeSlot(
-                  bookingDate,
-                  newBooking.startTime,
-                  newBooking.endTime,
-                );
-                const totalTables = tables.length;
-                const unavailableCount = totalTables - availableTables.length;
-
-                if (unavailableCount > 0) {
-                  return (
-                    <p className="text-sm text-orange-600 mt-1">
-                      {availableTables.length} of {totalTables} tables available
-                      ({unavailableCount} already booked)
-                    </p>
-                  );
-                }
-
-                return (
-                  <p className="text-sm text-green-600 mt-1">
-                    All {totalTables} tables available
-                  </p>
-                );
-              })()}
             </div>
 
+            {/* Special Requests */}
             <div>
-              <Label htmlFor="notes">Notes</Label>
+              <Label htmlFor="specialRequests">Special Requests</Label>
               <Textarea
-                id="notes"
-                value={newBooking.notes}
+                id="specialRequests"
+                value={newBooking.specialRequests}
                 onChange={(e) =>
-                  setNewBooking((prev) => ({ ...prev, notes: e.target.value }))
+                  setNewBooking((prev) => ({ ...prev, specialRequests: e.target.value }))
                 }
-                placeholder="Special requests or notes..."
-                className="min-h-[80px]"
+                placeholder="Dietary requirements, seating preferences, allergies..."
+                className="min-h-[60px]"
               />
             </div>
 
-            <div className="flex justify-end space-x-2">
+            {/* Internal Notes */}
+            <div>
+              <Label htmlFor="internalNotes">Internal Notes</Label>
+              <Textarea
+                id="internalNotes"
+                value={newBooking.internalNotes}
+                onChange={(e) =>
+                  setNewBooking((prev) => ({ ...prev, internalNotes: e.target.value }))
+                }
+                placeholder="Staff notes (not visible to customer)..."
+                className="min-h-[60px]"
+              />
+            </div>
+
+            {/* Extra Description */}
+            <div>
+              <Label htmlFor="extraDescription">Extra Description</Label>
+              <Textarea
+                id="extraDescription"
+                value={newBooking.extraDescription}
+                onChange={(e) =>
+                  setNewBooking((prev) => ({ ...prev, extraDescription: e.target.value }))
+                }
+                placeholder="Additional booking details..."
+                className="min-h-[60px]"
+              />
+            </div>
+
+            {/* Tags */}
+            <div>
+              <Label>Tags</Label>
+              <div className="flex flex-wrap gap-2 mt-2">
+                {["Birthday", "Anniversary", "VIP", "First Time", "Regular", "Special Diet", "Large Party"].map((tag) => (
+                  <Button
+                    key={tag}
+                    type="button"
+                    variant={newBooking.tags.includes(tag) ? "default" : "outline"}
+                    size="sm"
+                    onClick={() => {
+                      setNewBooking((prev) => ({
+                        ...prev,
+                        tags: prev.tags.includes(tag)
+                          ? prev.tags.filter((t) => t !== tag)
+                          : [...prev.tags, tag],
+                      }));
+                    }}
+                  >
+                    {tag}
+                  </Button>
+                ))}
+              </div>
+            </div>
+
+            {/* Payment Setup */}
+            <div className="border rounded-lg p-4 space-y-4">
+              <div className="flex items-center space-x-2">
+                <Switch
+                  checked={newBooking.requiresPayment}
+                  onCheckedChange={(checked) =>
+                    setNewBooking((prev) => ({ ...prev, requiresPayment: checked }))
+                  }
+                />
+                <Label>Require prepayment</Label>
+              </div>
+
+              {newBooking.requiresPayment && (
+                <div className="space-y-3 pl-6">
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <Label htmlFor="paymentAmount">Amount</Label>
+                      <Input
+                        id="paymentAmount"
+                        type="number"
+                        min="0"
+                        step="0.01"
+                        value={newBooking.paymentAmount}
+                        onChange={(e) =>
+                          setNewBooking((prev) => ({
+                            ...prev,
+                            paymentAmount: parseFloat(e.target.value) || 0,
+                          }))
+                        }
+                        placeholder="0.00"
+                      />
+                    </div>
+                    <div>
+                      <Label htmlFor="paymentDeadline">Payment Deadline</Label>
+                      <Select
+                        value={newBooking.paymentDeadlineHours.toString()}
+                        onValueChange={(value) =>
+                          setNewBooking((prev) => ({
+                            ...prev,
+                            paymentDeadlineHours: parseInt(value),
+                          }))
+                        }
+                      >
+                        <SelectTrigger>
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="1">1 hour</SelectItem>
+                          <SelectItem value="2">2 hours</SelectItem>
+                          <SelectItem value="6">6 hours</SelectItem>
+                          <SelectItem value="24">24 hours</SelectItem>
+                          <SelectItem value="48">48 hours</SelectItem>
+                          <SelectItem value="72">72 hours</SelectItem>
+                          <SelectItem value="168">1 week</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  </div>
+                  <div className="flex items-center space-x-2 text-sm text-gray-600">
+                    <Switch
+                      checked={true}
+                      disabled
+                    />
+                    <span>Send email with payment link</span>
+                  </div>
+                </div>
+              )}
+            </div>
+
+            {/* Language */}
+            <div>
+              <Label htmlFor="language">Language</Label>
+              <Select
+                value={newBooking.language}
+                onValueChange={(value) =>
+                  setNewBooking((prev) => ({ ...prev, language: value }))
+                }
+              >
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="en">English (GB)</SelectItem>
+                  <SelectItem value="es">Spanish</SelectItem>
+                  <SelectItem value="fr">French</SelectItem>
+                  <SelectItem value="de">German</SelectItem>
+                  <SelectItem value="it">Italian</SelectItem>
+                  <SelectItem value="pt">Portuguese</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div className="flex justify-end space-x-2 pt-4">
               <Button
                 variant="outline"
                 onClick={() => setIsNewBookingOpen(false)}

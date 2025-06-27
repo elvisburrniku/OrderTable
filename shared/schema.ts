@@ -214,6 +214,19 @@ export const bookings = pgTable("bookings", {
   source: varchar("source", { length: 20 }).default("manual"), // manual, online, google
   notes: text("notes"),
   managementHash: text("management_hash"), // Hash for booking management links
+  // New comprehensive fields
+  eventType: varchar("event_type", { length: 50 }).default("general"),
+  internalNotes: text("internal_notes"),
+  extraDescription: text("extra_description"),
+  tags: text("tags").array(),
+  language: varchar("language", { length: 10 }).default("en"),
+  // Payment fields
+  requiresPayment: boolean("requires_payment").default(false),
+  paymentAmount: decimal("payment_amount", { precision: 10, scale: 2 }),
+  paymentDeadlineHours: integer("payment_deadline_hours").default(24),
+  paymentStatus: varchar("payment_status", { length: 20 }).default("pending"), // pending, paid, failed, refunded
+  paymentIntentId: text("payment_intent_id"),
+  paymentPaidAt: timestamp("payment_paid_at"),
   createdAt: timestamp("created_at").defaultNow(),
 });
 
