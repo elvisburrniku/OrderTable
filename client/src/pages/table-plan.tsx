@@ -502,6 +502,98 @@ export default function TablePlan() {
     };
   };
 
+  const renderChairsAroundTable = (position: TablePosition, tableId: number) => {
+    const chairs = [];
+    const capacity = position.capacity || 4;
+    const chairSize = 12;
+    const tableWidth = position.shape === "rectangle" ? 80 : 60;
+    const tableHeight = 60;
+    
+    // Calculate chair positions based on table shape and capacity
+    for (let i = 0; i < capacity; i++) {
+      let chairX, chairY;
+      
+      if (position.shape === "circle") {
+        // Circular arrangement for round tables
+        const angle = (i * 2 * Math.PI) / capacity;
+        const radius = 40;
+        chairX = position.x + 30 + Math.cos(angle) * radius - chairSize / 2;
+        chairY = position.y + 30 + Math.sin(angle) * radius - chairSize / 2;
+      } else if (position.shape === "rectangle") {
+        // Rectangular arrangement for rectangular tables
+        const perimeter = 2 * (tableWidth + tableHeight);
+        const chairSpacing = perimeter / capacity;
+        const currentPos = i * chairSpacing;
+        
+        if (currentPos < tableWidth) {
+          // Top side
+          chairX = position.x + currentPos - chairSize / 2;
+          chairY = position.y - 20;
+        } else if (currentPos < tableWidth + tableHeight) {
+          // Right side
+          chairX = position.x + tableWidth + 8;
+          chairY = position.y + (currentPos - tableWidth) - chairSize / 2;
+        } else if (currentPos < 2 * tableWidth + tableHeight) {
+          // Bottom side
+          chairX = position.x + tableWidth - (currentPos - tableWidth - tableHeight) - chairSize / 2;
+          chairY = position.y + tableHeight + 8;
+        } else {
+          // Left side
+          chairX = position.x - 20;
+          chairY = position.y + tableHeight - (currentPos - 2 * tableWidth - tableHeight) - chairSize / 2;
+        }
+      } else {
+        // Square arrangement for square tables
+        const sideChairs = Math.ceil(capacity / 4);
+        const side = Math.floor(i / sideChairs);
+        const positionOnSide = i % sideChairs;
+        
+        switch (side) {
+          case 0: // Top
+            chairX = position.x + 10 + (positionOnSide * 20) - chairSize / 2;
+            chairY = position.y - 20;
+            break;
+          case 1: // Right
+            chairX = position.x + tableWidth + 8;
+            chairY = position.y + 10 + (positionOnSide * 20) - chairSize / 2;
+            break;
+          case 2: // Bottom
+            chairX = position.x + 10 + (positionOnSide * 20) - chairSize / 2;
+            chairY = position.y + tableHeight + 8;
+            break;
+          case 3: // Left
+            chairX = position.x - 20;
+            chairY = position.y + 10 + (positionOnSide * 20) - chairSize / 2;
+            break;
+          default:
+            chairX = position.x;
+            chairY = position.y;
+        }
+      }
+      
+      chairs.push(
+        <div
+          key={`chair-${tableId}-${i}`}
+          style={{
+            position: "absolute",
+            left: `${chairX}px`,
+            top: `${chairY}px`,
+            width: `${chairSize}px`,
+            height: `${chairSize}px`,
+            backgroundColor: "#8B4513",
+            borderRadius: "2px",
+            border: "1px solid #654321",
+            transform: `rotate(${position.rotation}deg)`,
+            zIndex: isDragging && draggedTable === tableId ? 999 : 0,
+          }}
+          className="chair"
+        />
+      );
+    }
+    
+    return chairs;
+  };
+
   const getStructureStyle = (structure: TableStructure) => ({
     width: structure.shape === "rectangle" ? "60px" : "50px",
     height: "50px",
@@ -971,7 +1063,7 @@ export default function TablePlan() {
                   </div>
                 )}
 
-                {/* Placed Tables */}
+                {/* Placed Tables with Chairs */}
                 {Object.entries(tablePositions).map(([tableId, position]) => {
                   // Find corresponding table from database if it exists
                   const dbTable = tables.find(
@@ -980,73 +1072,79 @@ export default function TablePlan() {
                   const numericTableId = parseInt(tableId);
 
                   return (
-                    <div
-                      key={`positioned-table-${tableId}`}
-                      draggable
-                      onDragStart={(e) => handleDragStart(numericTableId, e)}
-                      style={getTableStyle(dbTable, position)}
-                      className="shadow-lg border-2 border-white hover:shadow-xl transition-shadow"
-                      title={
-                        dbTable
-                          ? `Table ${dbTable.tableNumber} (${dbTable.capacity} seats) - Right click to remove`
-                          : position.isConfigured
-                            ? `Table ${position.tableNumber} (${position.capacity} seats) - Right click to remove`
-                            : "Unconfigured table - Right click to remove"
-                      }
-                      onContextMenu={(e) => {
-                        e.preventDefault();
-                        if (
-                          window.confirm(
-                            `Are you sure you want to remove this table from the floor plan?`,
-                          )
-                        ) {
-                          setTablePositions((prev) => {
-                            const newPositions = { ...prev };
-                            delete newPositions[numericTableId];
-                            return newPositions;
-                          });
+                    <React.Fragment key={`table-group-${tableId}`}>
+                      {/* Render chairs around the table */}
+                      {renderChairsAroundTable(position, numericTableId)}
+                      
+                      {/* Render the table */}
+                      <div
+                        key={`positioned-table-${tableId}`}
+                        draggable
+                        onDragStart={(e) => handleDragStart(numericTableId, e)}
+                        style={getTableStyle(dbTable, position)}
+                        className="shadow-lg border-2 border-white hover:shadow-xl transition-shadow"
+                        title={
+                          dbTable
+                            ? `Table ${dbTable.tableNumber} (${dbTable.capacity} seats) - Right click to remove`
+                            : position.isConfigured
+                              ? `Table ${position.tableNumber} (${position.capacity} seats) - Right click to remove`
+                              : "Unconfigured table - Right click to remove"
                         }
-                      }}
-                    >
-                      <div className="text-center relative group">
-                        <div className="font-bold">
-                          {dbTable
-                            ? dbTable.tableNumber
-                            : position.isConfigured
-                              ? position.tableNumber
-                              : "?"}
+                        onContextMenu={(e) => {
+                          e.preventDefault();
+                          if (
+                            window.confirm(
+                              `Are you sure you want to remove this table from the floor plan?`,
+                            )
+                          ) {
+                            setTablePositions((prev) => {
+                              const newPositions = { ...prev };
+                              delete newPositions[numericTableId];
+                              return newPositions;
+                            });
+                          }
+                        }}
+                      >
+                        <div className="text-center relative group">
+                          <div className="font-bold">
+                            {dbTable
+                              ? dbTable.tableNumber
+                              : position.isConfigured
+                                ? position.tableNumber
+                                : "?"}
+                          </div>
+                          <div className="text-xs opacity-80">
+                            {dbTable
+                              ? `${dbTable.capacity} seats`
+                              : position.isConfigured
+                                ? `${position.capacity} seats`
+                                : ""}
+                          </div>
+                          {/* Remove button - shown on hover */}
+                          <button
+                            className="absolute -top-2 -right-2 w-5 h-5 bg-red-600 text-white rounded-full text-xs opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center hover:bg-red-700"
+                            onClick={(e) => {
+                              e.preventDefault();
+                              e.stopPropagation();
+                              if (
+                                window.confirm(
+                                  `Are you sure you want to remove this table from the floor plan?`,
+                                )
+                              ) {
+                                setTablePositions((prev) => {
+                                  const newPositions = { ...prev };
+                                  delete newPositions[numericTableId];
+                                  return newPositions;
+                                });
+                              }
+                            }}
+                            title="Remove table from floor plan"
+                          >
+                            ×
+                          </button>
                         </div>
-                        <div className="text-xs opacity-80">
-                          {dbTable
-                            ? `${dbTable.capacity} seats`
-                            : position.isConfigured
-                              ? `${position.capacity} seats`
-                              : ""}
-                        </div>
-                        {/* Remove button - shown on hover */}
-                        <button
-                          className="absolute -top-2 -right-2 w-5 h-5 bg-red-600 text-white rounded-full text-xs opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center hover:bg-red-700"
-                          onClick={(e) => {
-                            e.preventDefault();
-                            e.stopPropagation();
-                            if (
-                              window.confirm(
-                                `Are you sure you want to remove this table from the floor plan?`,
-                              )
-                            ) {
-                              setTablePositions((prev) => {
-                                const newPositions = { ...prev };
-                                delete newPositions[numericTableId];
-                                return newPositions;
-                              });
-                            }
-                          }}
-                          title="Remove table from floor plan"
-                        >
-                          ×
-                        </button>
                       </div>
-                    </div>
+                    </React.Fragment>
                   );
                 })}
               </div>
@@ -1075,6 +1173,15 @@ export default function TablePlan() {
       </div>
 
       {/* Table Configuration Dialog */}
+      {/* CSS for chair styling */}
+      <style jsx>{`
+        .chair:hover {
+          background-color: #A0522D !important;
+          transform: scale(1.1) rotate(${isDragging ? '0deg' : '0deg'});
+          transition: all 0.2s ease;
+        }
+      `}</style>
+
       <Dialog open={showConfigDialog} onOpenChange={setShowConfigDialog}>
         <DialogContent>
           <DialogHeader>
