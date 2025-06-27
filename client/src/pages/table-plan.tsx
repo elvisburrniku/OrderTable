@@ -228,16 +228,6 @@ export default function TablePlan() {
     enabled: !!restaurant && !!restaurant.tenantId,
   });
 
-  // Fetch subscription details for table limits
-  const { data: subscription } = useQuery({
-    queryKey: ["/api/subscription/details"],
-    queryFn: async () => {
-      const response = await fetch("/api/subscription/details");
-      if (!response.ok) throw new Error("Failed to fetch subscription");
-      return response.json();
-    },
-  });
-
   // Load saved table layout
   const { data: savedLayout } = useQuery({
     queryKey: [
@@ -301,13 +291,6 @@ export default function TablePlan() {
 
   const handleStructureDragStart = useCallback(
     (structure: TableStructure, e: React.DragEvent) => {
-      // Check if table limit is reached
-      const isLimitReached = subscription && (tables?.length || 0) >= (subscription.subscriptionPlan?.maxTables || 0);
-      if (isLimitReached) {
-        e.preventDefault();
-        return false;
-      }
-      
       console.log("Starting drag for structure:", structure);
       setDraggedStructure(structure);
       setDraggedTable(null);
@@ -495,15 +478,6 @@ export default function TablePlan() {
       alert(
         "A table with this number already exists. Please choose a different number.",
       );
-      return;
-    }
-
-    // Check subscription table limits
-    const currentTableCount = tables?.length || 0;
-    const maxTables = subscription?.subscriptionPlan?.maxTables || 0;
-    
-    if (currentTableCount >= maxTables) {
-      alert(`Table limit reached! Your ${subscription?.subscriptionPlan?.name || 'current'} plan allows ${maxTables} tables. Please upgrade your subscription to add more tables.`);
       return;
     }
 
@@ -941,33 +915,13 @@ export default function TablePlan() {
               </div>
             </div>
             <div className="flex items-center space-x-4">
-              {subscription && (
-                <div className="flex items-center gap-3">
-                  <Badge 
-                    variant={
-                      (tables?.length || 0) >= (subscription.subscriptionPlan?.maxTables || 0) 
-                        ? "destructive" 
-                        : (tables?.length || 0) >= (subscription.subscriptionPlan?.maxTables || 0) * 0.8 
-                          ? "secondary" 
-                          : "outline"
-                    }
-                    className="text-sm px-3 py-1"
-                  >
-                    {tables?.length || 0}/{subscription.subscriptionPlan?.maxTables || 0} tables
-                  </Badge>
-                  <span className="text-sm text-gray-500">
-                    {subscription.subscriptionPlan?.name} Plan
-                  </span>
-                </div>
-              )}
               <Button
                 variant="outline"
-                onClick={saveLayout}
-                disabled={saveLayoutMutation.isPending}
+                onClick={() => {/* Save layout */}}
                 className="bg-white hover:bg-gray-50"
               >
                 <Save className="h-4 w-4 mr-2" />
-                {saveLayoutMutation.isPending ? "Saving..." : "Save Layout"}
+                Save Layout
               </Button>
             </div>
           </div>
@@ -1076,53 +1030,20 @@ export default function TablePlan() {
             {/* Professional Table Structures */}
             <div className="mb-6">
               <h3 className="text-sm font-medium text-gray-700 mb-3">Table Shapes</h3>
-              
-              {/* Table Limit Warning */}
-              {subscription && (tables?.length || 0) >= (subscription.subscriptionPlan?.maxTables || 0) && (
-                <div className="bg-red-50 border border-red-200 rounded-lg p-3 mb-4">
-                  <div className="text-center">
-                    <div className="text-sm font-medium text-red-800 mb-1">
-                      Table Limit Reached
-                    </div>
-                    <div className="text-xs text-red-600">
-                      Your {subscription.subscriptionPlan?.name} plan allows {subscription.subscriptionPlan?.maxTables} tables. 
-                      Upgrade your subscription to add more tables.
+              <div className="grid grid-cols-2 gap-3 max-h-96 overflow-y-auto">
+                {TABLE_STRUCTURES.map((structure) => (
+                  <div
+                    key={structure.id}
+                    className="border rounded-lg p-2 hover:bg-gray-50 transition-colors cursor-grab"
+                    title={structure.description}
+                  >
+                    <TableStructurePreview structure={structure} />
+                    <div className="text-center mt-1">
+                      <div className="text-xs font-medium text-gray-700">{structure.name}</div>
+                      <div className="text-xs text-gray-500">{structure.description}</div>
                     </div>
                   </div>
-                </div>
-              )}
-              
-              <div className="grid grid-cols-2 gap-3 max-h-96 overflow-y-auto">
-                {TABLE_STRUCTURES.map((structure) => {
-                  const isLimitReached = subscription && (tables?.length || 0) >= (subscription.subscriptionPlan?.maxTables || 0);
-                  return (
-                    <div
-                      key={structure.id}
-                      className={`border rounded-lg p-2 transition-colors ${
-                        isLimitReached 
-                          ? 'bg-gray-100 border-gray-300 cursor-not-allowed opacity-50' 
-                          : 'hover:bg-gray-50 cursor-grab'
-                      }`}
-                      draggable={!isLimitReached}
-                      onDragStart={!isLimitReached ? (e) => handleStructureDragStart(structure, e) : undefined}
-                      title={
-                        isLimitReached 
-                          ? 'Table limit reached - upgrade subscription to add more tables'
-                          : structure.description
-                      }
-                    >
-                      <TableStructurePreview structure={structure} />
-                      <div className="text-center mt-1">
-                        <div className={`text-xs font-medium ${isLimitReached ? 'text-gray-500' : 'text-gray-700'}`}>
-                          {structure.name}
-                        </div>
-                        <div className={`text-xs ${isLimitReached ? 'text-gray-400' : 'text-gray-500'}`}>
-                          {structure.description}
-                        </div>
-                      </div>
-                    </div>
-                  );
-                })}
+                ))}
                 <div
                   className="w-8 h-8 bg-gray-600 rounded-full cursor-grab hover:bg-gray-700 transition-colors"
                   draggable
