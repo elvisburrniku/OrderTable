@@ -11,6 +11,7 @@ import { Badge } from "@/components/ui/badge";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import { 
   DropdownMenu,
   DropdownMenuContent,
@@ -76,6 +77,7 @@ export default function SpecialPeriods() {
   const [showPeriodModal, setShowPeriodModal] = useState(false);
   const [selectedPeriod, setSelectedPeriod] = useState<SpecialPeriod | null>(null);
   const [isEditing, setIsEditing] = useState(false);
+  const [periodToDelete, setPeriodToDelete] = useState<{period: any, index: number} | null>(null);
 
   // Fetch existing special periods
   const { data: existingPeriods, isLoading } = useQuery({
@@ -353,6 +355,13 @@ export default function SpecialPeriods() {
       // Remove from local state if not saved yet
       const newPeriods = periods.filter((_, i) => i !== index);
       setPeriods(newPeriods);
+    }
+  };
+
+  const handleDeleteConfirm = () => {
+    if (periodToDelete) {
+      deletePeriod(periodToDelete.index, periodToDelete.period.id);
+      setPeriodToDelete(null);
     }
   };
 
@@ -757,14 +766,34 @@ export default function SpecialPeriods() {
                             >
                               <Edit className="w-4 h-4" />
                             </Button>
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              onClick={() => deletePeriod(-1, period.id)}
-                              className="h-8 w-8 p-0 text-red-600 hover:text-red-700"
-                            >
-                              <Trash2 className="w-4 h-4" />
-                            </Button>
+                            <AlertDialog>
+                              <AlertDialogTrigger asChild>
+                                <Button
+                                  variant="outline"
+                                  size="sm"
+                                  className="h-8 w-8 p-0 text-red-600 hover:text-red-700"
+                                >
+                                  <Trash2 className="w-4 h-4" />
+                                </Button>
+                              </AlertDialogTrigger>
+                              <AlertDialogContent>
+                                <AlertDialogHeader>
+                                  <AlertDialogTitle>Delete Special Period</AlertDialogTitle>
+                                  <AlertDialogDescription>
+                                    Are you sure you want to delete "{period.name}"? This action cannot be undone.
+                                  </AlertDialogDescription>
+                                </AlertDialogHeader>
+                                <AlertDialogFooter>
+                                  <AlertDialogCancel>Cancel</AlertDialogCancel>
+                                  <AlertDialogAction
+                                    onClick={() => deletePeriod(-1, period.id)}
+                                    className="bg-red-600 hover:bg-red-700"
+                                  >
+                                    Delete
+                                  </AlertDialogAction>
+                                </AlertDialogFooter>
+                              </AlertDialogContent>
+                            </AlertDialog>
                           </div>
                         </td>
                       </motion.tr>
