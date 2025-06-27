@@ -31,7 +31,7 @@ export function useSettings() {
     timeZone: "America/New_York",
     dateFormat: "MM/dd/yyyy",
     timeFormat: "12h",
-    defaultBookingDuration: 120,
+    defaultBookingDuration: 60,
     maxAdvanceBookingDays: 30,
     currency: "USD",
     language: "en",

@@ -39,29 +39,19 @@ interface BookingProviderProps {
 
 export function BookingProvider({ children }: BookingProviderProps) {
   // Try to use settings context, but provide fallback if not available
-  let generalSettings, bookingSettings;
+  let generalSettings;
   try {
     const settingsContext = useSettingsContext();
     generalSettings = settingsContext.generalSettings;
-    bookingSettings = settingsContext.bookingSettings;
   } catch (error) {
     // Fallback to default settings if SettingsProvider is not available
     generalSettings = {
-      defaultBookingDuration: 120,
+      defaultBookingDuration: 60,
       maxAdvanceBookingDays: 30,
-    };
-    bookingSettings = {
-      turnaroundTime: 0,
-      useEndingTime: false,
-      emptySeats: 2,
-      contactMethod: 'phone',
-      allowCancellationAndChanges: true,
-      cancellationNotice: 'none',
-      groupRequest: false,
     };
   }
 
-  // Merge settings with defaults
+  // Default booking settings
   const effectiveBookingSettings = {
     turnaroundTime: 0,
     useEndingTime: false,
@@ -70,7 +60,6 @@ export function BookingProvider({ children }: BookingProviderProps) {
     allowCancellationAndChanges: true,
     cancellationNotice: 'none' as const,
     groupRequest: false,
-    ...bookingSettings,
   };
 
   const getMaxBookingDate = (): Date => {
@@ -91,7 +80,8 @@ export function BookingProvider({ children }: BookingProviderProps) {
 
   const getDefaultEndTime = (startTime: Date): Date => {
     const endTime = new Date(startTime);
-    endTime.setMinutes(endTime.getMinutes() + generalSettings.defaultBookingDuration);
+    const duration = generalSettings?.defaultBookingDuration || 60;
+    endTime.setMinutes(endTime.getMinutes() + duration);
     return endTime;
   };
 
@@ -99,7 +89,7 @@ export function BookingProvider({ children }: BookingProviderProps) {
     const endTime = new Date(startTime);
     const duration = useCustomDuration && customDuration 
       ? customDuration 
-      : generalSettings.defaultBookingDuration;
+      : (generalSettings?.defaultBookingDuration || 60);
     
     endTime.setMinutes(endTime.getMinutes() + duration);
     
@@ -145,12 +135,16 @@ export function BookingProvider({ children }: BookingProviderProps) {
     }
 
     const now = new Date();
-    const noticeHours = {
+    const noticeMap = {
       '2h': 2,
       '4h': 4,
       '24h': 24,
       '48h': 48,
-    }[effectiveBookingSettings.cancellationNotice] || 0;
+    } as const;
+    
+    type NoticeKey = keyof typeof noticeMap;
+    const noticeKey = effectiveBookingSettings.cancellationNotice as NoticeKey;
+    const noticeHours: number = noticeMap[noticeKey] || 0;
 
     const requiredNoticeTime = new Date(bookingDate);
     requiredNoticeTime.setHours(requiredNoticeTime.getHours() - noticeHours);
@@ -169,8 +163,8 @@ export function BookingProvider({ children }: BookingProviderProps) {
     <BookingContext.Provider 
       value={{
         // Duration and timing
-        defaultBookingDuration: generalSettings.defaultBookingDuration,
-        maxAdvanceBookingDays: generalSettings.maxAdvanceBookingDays,
+        defaultBookingDuration: generalSettings?.defaultBookingDuration || 60,
+        maxAdvanceBookingDays: generalSettings?.maxAdvanceBookingDays || 30,
         turnaroundTime: effectiveBookingSettings.turnaroundTime,
         useEndingTime: effectiveBookingSettings.useEndingTime,
         
