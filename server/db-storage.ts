@@ -895,8 +895,7 @@ export class DatabaseStorage implements IStorage {
   }
   async getCombinedTableById(id: number): Promise<any> {
     try {
-      const result =```text
-await this.db
+      const result = await this.db
         .select()
         .from(combinedTables)
         .where(eq(combinedTables.id, id));
@@ -1164,7 +1163,10 @@ await this.db
     return false;
   }
   // Restaurant Settings methods
-  async getRestaurantSettings(restaurantId: number, tenantId: number): Promise<any> {
+  async getRestaurantSettings(
+    restaurantId: number,
+    tenantId: number,
+  ): Promise<any> {
     try {
       const restaurant = await this.getRestaurantById(restaurantId);
       if (!restaurant || restaurant.tenantId !== tenantId) {
@@ -1172,15 +1174,18 @@ await this.db
       }
 
       // Get settings from various sources
-      const emailSettings = restaurant.emailSettings ? JSON.parse(restaurant.emailSettings) : {};
+      const emailSettings = restaurant.emailSettings
+        ? JSON.parse(restaurant.emailSettings)
+        : {};
       const openingHours = await this.getOpeningHoursByRestaurant(restaurantId);
       const cutOffTimes = await this.getCutOffTimesByRestaurant(restaurantId);
-      const specialPeriods = await this.getSpecialPeriodsByRestaurant(restaurantId);
+      const specialPeriods =
+        await this.getSpecialPeriodsByRestaurant(restaurantId);
 
       // Get stored general settings or use defaults
       let generalSettings = {
         timeZone: "America/New_York",
-        dateFormat: "MM/dd/yyyy", 
+        dateFormat: "MM/dd/yyyy",
         timeFormat: "12h",
         defaultBookingDuration: 120,
         maxAdvanceBookingDays: 30,
@@ -1194,7 +1199,9 @@ await this.db
           const storedSettings = JSON.parse(restaurant.generalSettings);
           generalSettings = { ...generalSettings, ...storedSettings };
         } catch (e) {
-          console.warn("Failed to parse stored general settings, using defaults");
+          console.warn(
+            "Failed to parse stored general settings, using defaults",
+          );
         }
       }
 
@@ -1219,7 +1226,11 @@ await this.db
       throw error;
     }
   }
-  async updateRestaurantSettings(restaurantId: number, tenantId: number, settings: any): Promise<any> {
+  async updateRestaurantSettings(
+    restaurantId: number,
+    tenantId: number,
+    settings: any,
+  ): Promise<any> {
     try {
       const restaurant = await this.getRestaurantById(restaurantId);
       if (!restaurant || restaurant.tenantId !== tenantId) {
@@ -1245,11 +1256,19 @@ await this.db
 
       // Handle other settings that have their own tables
       if (settings.openingHours) {
-        await this.createOrUpdateOpeningHours(restaurantId, tenantId, settings.openingHours);
+        await this.createOrUpdateOpeningHours(
+          restaurantId,
+          tenantId,
+          settings.openingHours,
+        );
       }
 
       if (settings.cutOffTimes) {
-        await this.createOrUpdateCutOffTimes(restaurantId, tenantId, settings.cutOffTimes);
+        await this.createOrUpdateCutOffTimes(
+          restaurantId,
+          tenantId,
+          settings.cutOffTimes,
+        );
       }
 
       // Return updated settings
@@ -1800,7 +1819,8 @@ await this.db
       ...feedbackData,
       createdAt: new Date(),
       visited: false,
-      bookingDate: feedbackData.visitDate || new Date().toISOString().split("T")[0],
+      bookingDate:
+        feedbackData.visitDate || new Date().toISOString().split("T")[0],
       questionName: "Guest Feedback",
     };
     const [newFeedback] = await this.db
@@ -2719,7 +2739,8 @@ await this.db
   }
   async deleteKitchenOrder(id: number): Promise<boolean> {
     if (!this.db) return false;
-    await this.db.delete(kitchenOrders).where(eq(kitchenOrders.id, id));    return true;
+    await this.db.delete(kitchenOrders).where(eq(kitchenOrders.id, id));
+    return true;
   }
   // Kitchen Stations
   async createKitchenStation(stationData: any): Promise<any> {
@@ -2799,7 +2820,8 @@ await this.db
   async deleteKitchenStaff(id: number): Promise<boolean> {
     if (!this.db) return false;
     await this.db.delete(kitchenStaff).where(eq(kitchenStaff.id, id));
-    return true;  }
+    return true;
+  }
   // Kitchen Performance Sparkline Data
   async getKitchenPerformanceSparkline(
     restaurantId: number,
@@ -3124,7 +3146,9 @@ await this.db
   }
   async deletePrintOrder(orderId: number): Promise<void> {
     try {
-      const result = await this.db.delete(printOrders).where(eq(printOrders.id, orderId));
+      const result = await this.db
+        .delete(printOrders)
+        .where(eq(printOrders.id, orderId));
       console.log(`Deleted print order ${orderId}`);
     } catch (error) {
       console.error(`Error deleting print order ${orderId}:`, error);
@@ -3140,13 +3164,13 @@ await this.db
         .where(
           and(
             eq(integrationConfigurations.tenantId, tenantId),
-            eq(integrationConfigurations.restaurantId, restaurantId)
-          )
+            eq(integrationConfigurations.restaurantId, restaurantId),
+          ),
         );
 
       return configs;
     } catch (error) {
-      console.error('Error fetching integration configurations:', error);
+      console.error("Error fetching integration configurations:", error);
       return [];
     }
   }
@@ -3156,7 +3180,7 @@ await this.db
     restaurantId: number,
     integrationId: string,
     isEnabled: boolean,
-    configuration: any
+    configuration: any,
   ) {
     const [result] = await this.db
       .insert(integrationConfigurations)
@@ -3167,15 +3191,19 @@ await this.db
         isEnabled,
         configuration,
         createdAt: new Date(),
-        updatedAt: new Date()
+        updatedAt: new Date(),
       })
       .onConflictDoUpdate({
-        target: [integrationConfigurations.tenantId, integrationConfigurations.restaurantId, integrationConfigurations.integrationId],
+        target: [
+          integrationConfigurations.tenantId,
+          integrationConfigurations.restaurantId,
+          integrationConfigurations.integrationId,
+        ],
         set: {
           isEnabled,
           configuration,
-          updatedAt: new Date()
-        }
+          updatedAt: new Date(),
+        },
       })
       .returning();
 

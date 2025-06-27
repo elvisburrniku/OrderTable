@@ -38,8 +38,12 @@ export const tenants = pgTable("tenants", {
   id: serial("id").primaryKey(),
   name: text("name").notNull(),
   slug: text("slug").notNull().unique(),
-  subscriptionPlanId: integer("subscription_plan_id").references(() => subscriptionPlans.id),
-  subscriptionStatus: varchar("subscription_status", { length: 20 }).default("trial"), // trial, active, expired, cancelled, suspended, paused
+  subscriptionPlanId: integer("subscription_plan_id").references(
+    () => subscriptionPlans.id,
+  ),
+  subscriptionStatus: varchar("subscription_status", { length: 20 }).default(
+    "trial",
+  ), // trial, active, expired, cancelled, suspended, paused
   trialStartDate: timestamp("trial_start_date").defaultNow(),
   trialEndDate: timestamp("trial_end_date"),
   subscriptionStartDate: timestamp("subscription_start_date"),
@@ -116,8 +120,7 @@ export const restaurantUsers = pgTable(
     userId: integer("user_id")
       .notNull()
       .references(() => users.id),
-    roleId: integer("role_id")
-      .references(() => roles.id),
+    roleId: integer("role_id").references(() => roles.id),
     createdAt: timestamp("created_at").defaultNow(),
   },
   (table) => {
@@ -133,7 +136,9 @@ export const invitationTokens = pgTable("invitation_tokens", {
   token: text("token").notNull().unique(),
   email: text("email").notNull(),
   name: text("name").notNull(),
-  tenantId: integer("tenant_id").notNull().references(() => tenants.id),
+  tenantId: integer("tenant_id")
+    .notNull()
+    .references(() => tenants.id),
   role: text("role").notNull(),
   invitedByUserId: integer("invited_by_user_id").references(() => users.id),
   expiresAt: timestamp("expires_at").notNull(),
@@ -144,8 +149,7 @@ export const invitationTokens = pgTable("invitation_tokens", {
 
 export const restaurants = pgTable("restaurants", {
   id: serial("id").primaryKey(),
-  tenantId: integer("tenant_id")
-    .references(() => tenants.id),
+  tenantId: integer("tenant_id").references(() => tenants.id),
   name: text("name").notNull(),
   userId: integer("user_id")
     .references(() => users.id)
@@ -230,8 +234,6 @@ export const customers = pgTable("customers", {
   lastVisit: timestamp("last_visit"),
   createdAt: timestamp("created_at").defaultNow(),
 });
-
-
 
 export const waitingList = pgTable("waiting_list", {
   id: serial("id").primaryKey(),
@@ -382,7 +384,9 @@ export const notifications = pgTable("notifications", {
   title: text("title").notNull(),
   message: text("message").notNull(),
   bookingId: integer("booking_id").references(() => bookings.id),
-  changeRequestId: integer("change_request_id").references(() => bookingChangeRequests.id),
+  changeRequestId: integer("change_request_id").references(
+    () => bookingChangeRequests.id,
+  ),
   data: json("data"), // Additional notification data
   originalData: json("original_data"), // For revert functionality
   isRead: boolean("is_read").default(false),
@@ -393,7 +397,9 @@ export const notifications = pgTable("notifications", {
   createdAt: timestamp("created_at").defaultNow(),
 });
 
-export const insertBookingChangeRequestSchema = createInsertSchema(bookingChangeRequests).omit({
+export const insertBookingChangeRequestSchema = createInsertSchema(
+  bookingChangeRequests,
+).omit({
   id: true,
   createdAt: true,
   respondedAt: true,
@@ -434,8 +440,6 @@ export const insertUserSchema = createInsertSchema(users).pick({
   restaurantName: true,
 });
 
-
-
 export const insertRestaurantSchema = createInsertSchema(restaurants).omit({
   id: true,
   createdAt: true,
@@ -457,17 +461,19 @@ export const insertCustomerSchema = createInsertSchema(customers).omit({
   lastVisit: true,
 });
 
-export const insertWalkInCustomerSchema = createInsertSchema(customers).omit({
-  id: true,
-  createdAt: true,
-  totalBookings: true,
-  lastVisit: true,
-}).extend({
-  name: z.string().optional().default("Walk-in Customer"),
-  email: z.string().optional(),
-  phone: z.string().optional(),
-  isWalkIn: z.boolean().default(true),
-});
+export const insertWalkInCustomerSchema = createInsertSchema(customers)
+  .omit({
+    id: true,
+    createdAt: true,
+    totalBookings: true,
+    lastVisit: true,
+  })
+  .extend({
+    name: z.string().optional().default("Walk-in Customer"),
+    email: z.string().optional(),
+    phone: z.string().optional(),
+    isWalkIn: z.boolean().default(true),
+  });
 
 export const insertWaitingListSchema = createInsertSchema(waitingList).omit({
   id: true,
@@ -523,7 +529,9 @@ export const insertTenantUserSchema = createInsertSchema(tenantUsers).omit({
   createdAt: true,
 });
 
-export const insertRestaurantUserSchema = createInsertSchema(restaurantUsers).omit({
+export const insertRestaurantUserSchema = createInsertSchema(
+  restaurantUsers,
+).omit({
   createdAt: true,
 });
 
@@ -537,93 +545,134 @@ export const inviteUserSchema = z.object({
 
 // Permission categories
 export const PERMISSION_CATEGORIES = {
-  BOOKINGS: 'bookings',
-  ORDERS: 'orders',
-  CUSTOMERS: 'customers',
-  TABLES: 'tables',
-  REPORTS: 'reports',
-  SETTINGS: 'settings',
-  USERS: 'users',
+  BOOKINGS: "bookings",
+  ORDERS: "orders",
+  CUSTOMERS: "customers",
+  TABLES: "tables",
+  REPORTS: "reports",
+  SETTINGS: "settings",
+  USERS: "users",
 } as const;
 
 // Default permissions
 export const DEFAULT_PERMISSIONS = [
   // Booking permissions
-  { name: 'bookings.view', displayName: 'View Bookings', category: 'bookings' },
-  { name: 'bookings.create', displayName: 'Create Bookings', category: 'bookings' },
-  { name: 'bookings.edit', displayName: 'Edit Bookings', category: 'bookings' },
-  { name: 'bookings.delete', displayName: 'Delete Bookings', category: 'bookings' },
+  { name: "bookings.view", displayName: "View Bookings", category: "bookings" },
+  {
+    name: "bookings.create",
+    displayName: "Create Bookings",
+    category: "bookings",
+  },
+  { name: "bookings.edit", displayName: "Edit Bookings", category: "bookings" },
+  {
+    name: "bookings.delete",
+    displayName: "Delete Bookings",
+    category: "bookings",
+  },
 
   // Order permissions
-  { name: 'orders.view', displayName: 'View Orders', category: 'orders' },
-  { name: 'orders.create', displayName: 'Create Orders', category: 'orders' },
-  { name: 'orders.edit', displayName: 'Edit Orders', category: 'orders' },
-  { name: 'orders.delete', displayName: 'Delete Orders', category: 'orders' },
+  { name: "orders.view", displayName: "View Orders", category: "orders" },
+  { name: "orders.create", displayName: "Create Orders", category: "orders" },
+  { name: "orders.edit", displayName: "Edit Orders", category: "orders" },
+  { name: "orders.delete", displayName: "Delete Orders", category: "orders" },
 
   // Customer permissions
-  { name: 'customers.view', displayName: 'View Customers', category: 'customers' },
-  { name: 'customers.create', displayName: 'Create Customers', category: 'customers' },
-  { name: 'customers.edit', displayName: 'Edit Customers', category: 'customers' },
-  { name: 'customers.delete', displayName: 'Delete Customers', category: 'customers' },
+  {
+    name: "customers.view",
+    displayName: "View Customers",
+    category: "customers",
+  },
+  {
+    name: "customers.create",
+    displayName: "Create Customers",
+    category: "customers",
+  },
+  {
+    name: "customers.edit",
+    displayName: "Edit Customers",
+    category: "customers",
+  },
+  {
+    name: "customers.delete",
+    displayName: "Delete Customers",
+    category: "customers",
+  },
 
   // Table permissions
-  { name: 'tables.view', displayName: 'View Tables', category: 'tables' },
-  { name: 'tables.create', displayName: 'Create Tables', category: 'tables' },
-  { name: 'tables.edit', displayName: 'Edit Tables', category: 'tables' },
-  { name: 'tables.delete', displayName: 'Delete Tables', category: 'tables' },
+  { name: "tables.view", displayName: "View Tables", category: "tables" },
+  { name: "tables.create", displayName: "Create Tables", category: "tables" },
+  { name: "tables.edit", displayName: "Edit Tables", category: "tables" },
+  { name: "tables.delete", displayName: "Delete Tables", category: "tables" },
 
   // Report permissions
-  { name: 'reports.view', displayName: 'View Reports', category: 'reports' },
-  { name: 'reports.export', displayName: 'Export Reports', category: 'reports' },
+  { name: "reports.view", displayName: "View Reports", category: "reports" },
+  {
+    name: "reports.export",
+    displayName: "Export Reports",
+    category: "reports",
+  },
 
   // Settings permissions
-  { name: 'settings.view', displayName: 'View Settings', category: 'settings' },
-  { name: 'settings.edit', displayName: 'Edit Settings', category: 'settings' },
+  { name: "settings.view", displayName: "View Settings", category: "settings" },
+  { name: "settings.edit", displayName: "Edit Settings", category: "settings" },
 
   // User management permissions
-  { name: 'users.view', displayName: 'View Users', category: 'users' },
-  { name: 'users.create', displayName: 'Create Users', category: 'users' },
-  { name: 'users.edit', displayName: 'Edit Users', category: 'users' },
-  { name: 'users.delete', displayName: 'Delete Users', category: 'users' },
+  { name: "users.view", displayName: "View Users", category: "users" },
+  { name: "users.create", displayName: "Create Users", category: "users" },
+  { name: "users.edit", displayName: "Edit Users", category: "users" },
+  { name: "users.delete", displayName: "Delete Users", category: "users" },
 ] as const;
 
 // Default roles with permissions
 export const DEFAULT_ROLES = [
   {
-    name: 'owner',
-    displayName: 'Owner',
-    permissions: DEFAULT_PERMISSIONS.map(p => p.name),
+    name: "owner",
+    displayName: "Owner",
+    permissions: DEFAULT_PERMISSIONS.map((p) => p.name),
     isSystem: true,
   },
   {
-    name: 'manager',
-    displayName: 'Manager',
+    name: "manager",
+    displayName: "Manager",
     permissions: [
-      'bookings.view', 'bookings.create', 'bookings.edit', 'bookings.delete',
-      'orders.view', 'orders.create', 'orders.edit', 'orders.delete',
-      'customers.view', 'customers.create', 'customers.edit',
-      'tables.view', 'tables.create', 'tables.edit',
-      'reports.view', 'reports.export',
-      'settings.view',
+      "bookings.view",
+      "bookings.create",
+      "bookings.edit",
+      "bookings.delete",
+      "orders.view",
+      "orders.create",
+      "orders.edit",
+      "orders.delete",
+      "customers.view",
+      "customers.create",
+      "customers.edit",
+      "tables.view",
+      "tables.create",
+      "tables.edit",
+      "reports.view",
+      "reports.export",
+      "settings.view",
     ],
     isSystem: true,
   },
   {
-    name: 'agent',
-    displayName: 'Agent',
+    name: "agent",
+    displayName: "Agent",
     permissions: [
-      'bookings.view', 'bookings.create', 'bookings.edit',
-      'customers.view', 'customers.create', 'customers.edit',
-      'tables.view',
+      "bookings.view",
+      "bookings.create",
+      "bookings.edit",
+      "customers.view",
+      "customers.create",
+      "customers.edit",
+      "tables.view",
     ],
     isSystem: true,
   },
   {
-    name: 'kitchen_staff',
-    displayName: 'Kitchen Staff',
-    permissions: [
-      'orders.view', 'orders.edit',
-    ],
+    name: "kitchen_staff",
+    displayName: "Kitchen Staff",
+    permissions: ["orders.view", "orders.edit"],
     isSystem: true,
   },
 ] as const;
@@ -708,8 +757,6 @@ export const selectSpecialPeriodSchema = createSelectSchema(specialPeriods);
 export const insertCutOffTimeSchema = createInsertSchema(cutOffTimes);
 export const selectCutOffTimeSchema = createSelectSchema(cutOffTimes);
 
-
-
 export const tableLayouts = pgTable("table_layouts", {
   id: serial("id").primaryKey(),
   restaurantId: integer("restaurant_id")
@@ -726,23 +773,31 @@ export const tableLayouts = pgTable("table_layouts", {
     .$onUpdate(() => new Date()),
 });
 
-export const webhooks = pgTable('webhooks', {
-  id: serial('id').primaryKey(),
-  tenantId: integer('tenant_id').notNull().references(() => tenants.id, { onDelete: 'cascade' }),
-  restaurantId: integer('restaurant_id').notNull().references(() => restaurants.id, { onDelete: 'cascade' }),
-  name: varchar('name', { length: 255 }).notNull(),
-  url: text('url').notNull(),
-  events: text('events').array().notNull(),
-  isActive: boolean('is_active').default(true),
-  secret: varchar('secret', { length: 255 }),
-  createdAt: timestamp('created_at').default(sql`now()`),
-  updatedAt: timestamp('updated_at').default(sql`now()`),
+export const webhooks = pgTable("webhooks", {
+  id: serial("id").primaryKey(),
+  tenantId: integer("tenant_id")
+    .notNull()
+    .references(() => tenants.id, { onDelete: "cascade" }),
+  restaurantId: integer("restaurant_id")
+    .notNull()
+    .references(() => restaurants.id, { onDelete: "cascade" }),
+  name: varchar("name", { length: 255 }).notNull(),
+  url: text("url").notNull(),
+  events: text("events").array().notNull(),
+  isActive: boolean("is_active").default(true),
+  secret: varchar("secret", { length: 255 }),
+  createdAt: timestamp("created_at").default(sql`now()`),
+  updatedAt: timestamp("updated_at").default(sql`now()`),
 });
 
 export const customFields = pgTable("custom_fields", {
   id: serial("id").primaryKey(),
-  tenantId: integer("tenant_id").references(() => tenants.id, { onDelete: "cascade" }),
-  restaurantId: integer("restaurant_id").references(() => restaurants.id, { onDelete: "cascade" }),
+  tenantId: integer("tenant_id").references(() => tenants.id, {
+    onDelete: "cascade",
+  }),
+  restaurantId: integer("restaurant_id").references(() => restaurants.id, {
+    onDelete: "cascade",
+  }),
   fieldName: varchar("field_name", { length: 100 }).notNull(),
   fieldType: varchar("field_type", { length: 50 }).notNull(), // text, number, select, checkbox
   isRequired: boolean("is_required").default(false),
@@ -751,26 +806,42 @@ export const customFields = pgTable("custom_fields", {
   updatedAt: timestamp("updated_at").defaultNow(),
 });
 
-export const integrationConfigurations = pgTable("integration_configurations", {
-  id: serial("id").primaryKey(),
-  tenantId: integer("tenant_id").references(() => tenants.id, { onDelete: "cascade" }),
-  restaurantId: integer("restaurant_id").references(() => restaurants.id, { onDelete: "cascade" }),
-  integrationId: varchar("integration_id", { length: 50 }).notNull(),
-  isEnabled: boolean("is_enabled").default(false),
-  configuration: jsonb("configuration"),
-  createdAt: timestamp("created_at").defaultNow(),
-  updatedAt: timestamp("updated_at").defaultNow(),
-}, (table) => {
-  return {
-    uniqueIntegration: unique().on(table.tenantId, table.restaurantId, table.integrationId),
-  };
-});
+export const integrationConfigurations = pgTable(
+  "integration_configurations",
+  {
+    id: serial("id").primaryKey(),
+    tenantId: integer("tenant_id").references(() => tenants.id, {
+      onDelete: "cascade",
+    }),
+    restaurantId: integer("restaurant_id").references(() => restaurants.id, {
+      onDelete: "cascade",
+    }),
+    integrationId: varchar("integration_id", { length: 50 }).notNull(),
+    isEnabled: boolean("is_enabled").default(false),
+    configuration: jsonb("configuration"),
+    createdAt: timestamp("created_at").defaultNow(),
+    updatedAt: timestamp("updated_at").defaultNow(),
+  },
+  (table) => {
+    return {
+      uniqueIntegration: unique().on(
+        table.tenantId,
+        table.restaurantId,
+        table.integrationId,
+      ),
+    };
+  },
+);
 
 // Resolved Conflicts table
 export const resolvedConflicts = pgTable("resolved_conflicts", {
   id: serial("id").primaryKey(),
-  restaurantId: integer("restaurant_id").notNull().references(() => restaurants.id, { onDelete: "cascade" }),
-  tenantId: integer("tenant_id").notNull().references(() => tenants.id, { onDelete: "cascade" }),
+  restaurantId: integer("restaurant_id")
+    .notNull()
+    .references(() => restaurants.id, { onDelete: "cascade" }),
+  tenantId: integer("tenant_id")
+    .notNull()
+    .references(() => tenants.id, { onDelete: "cascade" }),
   conflictId: text("conflict_id").notNull(),
   conflictType: text("conflict_type").notNull(),
   severity: text("severity").notNull(),
@@ -786,8 +857,12 @@ export const resolvedConflicts = pgTable("resolved_conflicts", {
 // Menu Categories table
 export const menuCategories = pgTable("menu_categories", {
   id: serial("id").primaryKey(),
-  restaurantId: integer("restaurant_id").notNull().references(() => restaurants.id, { onDelete: "cascade" }),
-  tenantId: integer("tenant_id").notNull().references(() => tenants.id, { onDelete: "cascade" }),
+  restaurantId: integer("restaurant_id")
+    .notNull()
+    .references(() => restaurants.id, { onDelete: "cascade" }),
+  tenantId: integer("tenant_id")
+    .notNull()
+    .references(() => tenants.id, { onDelete: "cascade" }),
   name: text("name").notNull(),
   description: text("description"),
   displayOrder: integer("display_order").default(0),
@@ -797,12 +872,17 @@ export const menuCategories = pgTable("menu_categories", {
 });
 
 // Menu Items table
-Added generalSettings field to the restaurants table schema definition.```text
 export const menuItems = pgTable("menu_items", {
   id: serial("id").primaryKey(),
-  restaurantId: integer("restaurant_id").notNull().references(() => restaurants.id, { onDelete: "cascade" }),
-  tenantId: integer("tenant_id").notNull().references(() => tenants.id, { onDelete: "cascade" }),
-  categoryId: integer("category_id").notNull().references(() => menuCategories.id, { onDelete: "cascade" }),
+  restaurantId: integer("restaurant_id")
+    .notNull()
+    .references(() => restaurants.id, { onDelete: "cascade" }),
+  tenantId: integer("tenant_id")
+    .notNull()
+    .references(() => tenants.id, { onDelete: "cascade" }),
+  categoryId: integer("category_id")
+    .notNull()
+    .references(() => menuCategories.id, { onDelete: "cascade" }),
   name: text("name").notNull(),
   description: text("description"),
   price: integer("price"), // price in cents
@@ -823,8 +903,12 @@ export const menuItems = pgTable("menu_items", {
 // Seasonal Menu Themes table
 export const seasonalMenuThemes = pgTable("seasonal_menu_themes", {
   id: serial("id").primaryKey(),
-  restaurantId: integer("restaurant_id").notNull().references(() => restaurants.id, { onDelete: "cascade" }),
-  tenantId: integer("tenant_id").notNull().references(() => tenants.id, { onDelete: "cascade" }),
+  restaurantId: integer("restaurant_id")
+    .notNull()
+    .references(() => restaurants.id, { onDelete: "cascade" }),
+  tenantId: integer("tenant_id")
+    .notNull()
+    .references(() => tenants.id, { onDelete: "cascade" }),
   name: text("name").notNull(),
   description: text("description").notNull(),
   season: varchar("season", { length: 20 }).notNull(), // spring, summer, autumn, winter
@@ -844,9 +928,16 @@ export const seasonalMenuThemes = pgTable("seasonal_menu_themes", {
 // Rescheduling Suggestions table
 export const reschedulingSuggestions = pgTable("rescheduling_suggestions", {
   id: serial("id").primaryKey(),
-  restaurantId: integer("restaurant_id").notNull().references(() => restaurants.id, { onDelete: "cascade" }),
-  tenantId: integer("tenant_id").notNull().references(() => tenants.id, { onDelete: "cascade" }),
-  originalBookingId: integer("original_booking_id").references(() => bookings.id, { onDelete: "cascade" }),
+  restaurantId: integer("restaurant_id")
+    .notNull()
+    .references(() => restaurants.id, { onDelete: "cascade" }),
+  tenantId: integer("tenant_id")
+    .notNull()
+    .references(() => tenants.id, { onDelete: "cascade" }),
+  originalBookingId: integer("original_booking_id").references(
+    () => bookings.id,
+    { onDelete: "cascade" },
+  ),
   originalDate: text("original_date").notNull(),
   originalTime: text("original_time").notNull(),
   suggestedDate: text("suggested_date").notNull(),
@@ -861,7 +952,7 @@ export const reschedulingSuggestions = pgTable("rescheduling_suggestions", {
   status: varchar("status", { length: 20 }).default("pending"), // pending, accepted, rejected, expired
   expiresAt: timestamp("expires_at"),
   createdAt: timestamp("created_at").defaultNow(),
-  updatedAt: timestamp("updated_at").defaultNow()
+  updatedAt: timestamp("updated_at").defaultNow(),
 });
 
 // Type exports for all tables
@@ -907,39 +998,64 @@ export type InsertCombinedTable = InferInsertModel<typeof combinedTables>;
 export type TableLayout = InferSelectModel<typeof tableLayouts>;
 export type InsertTableLayout = InferInsertModel<typeof tableLayouts>;
 
-export type BookingChangeRequest = InferSelectModel<typeof bookingChangeRequests>;
-export type InsertBookingChangeRequest = InferInsertModel<typeof bookingChangeRequests>;
+export type BookingChangeRequest = InferSelectModel<
+  typeof bookingChangeRequests
+>;
+export type InsertBookingChangeRequest = InferInsertModel<
+  typeof bookingChangeRequests
+>;
 
-export type IntegrationConfiguration = InferSelectModel<typeof integrationConfigurations>;
-export type InsertIntegrationConfiguration = InferInsertModel<typeof integrationConfigurations>;
+export type IntegrationConfiguration = InferSelectModel<
+  typeof integrationConfigurations
+>;
+export type InsertIntegrationConfiguration = InferInsertModel<
+  typeof integrationConfigurations
+>;
 
-export type ReschedulingSuggestion = InferSelectModel<typeof reschedulingSuggestions>;
-export type InsertReschedulingSuggestion = InferInsertModel<typeof reschedulingSuggestions>;
+export type ReschedulingSuggestion = InferSelectModel<
+  typeof reschedulingSuggestions
+>;
+export type InsertReschedulingSuggestion = InferInsertModel<
+  typeof reschedulingSuggestions
+>;
 
 export type InvitationToken = InferSelectModel<typeof invitationTokens>;
 export type InsertInvitationToken = InferInsertModel<typeof invitationTokens>;
 
-export const insertInvitationTokenSchema = createInsertSchema(invitationTokens).omit({
+export const insertInvitationTokenSchema = createInsertSchema(
+  invitationTokens,
+).omit({
   id: true,
   createdAt: true,
 });
 
-export const insertIntegrationConfigurationSchema = createInsertSchema(integrationConfigurations);
-export const selectIntegrationConfigurationSchema = createSelectSchema(integrationConfigurations);
+export const insertIntegrationConfigurationSchema = createInsertSchema(
+  integrationConfigurations,
+);
+export const selectIntegrationConfigurationSchema = createSelectSchema(
+  integrationConfigurations,
+);
 
-export const insertReschedulingSuggestionSchema = createInsertSchema(reschedulingSuggestions).omit({
+export const insertReschedulingSuggestionSchema = createInsertSchema(
+  reschedulingSuggestions,
+).omit({
   id: true,
   createdAt: true,
   updatedAt: true,
 });
-export const selectReschedulingSuggestionSchema = createSelectSchema(reschedulingSuggestions);
+export const selectReschedulingSuggestionSchema = createSelectSchema(
+  reschedulingSuggestions,
+);
 
-export const insertResolvedConflictSchema = createInsertSchema(resolvedConflicts).omit({
+export const insertResolvedConflictSchema = createInsertSchema(
+  resolvedConflicts,
+).omit({
   id: true,
   createdAt: true,
   resolvedAt: true,
 });
-export const selectResolvedConflictSchema = createSelectSchema(resolvedConflicts);
+export const selectResolvedConflictSchema =
+  createSelectSchema(resolvedConflicts);
 
 export type ResolvedConflict = InferSelectModel<typeof resolvedConflicts>;
 export type InsertResolvedConflict = InferInsertModel<typeof resolvedConflicts>;
@@ -953,8 +1069,12 @@ export type InsertMenuItem = InferInsertModel<typeof menuItems>;
 // Menu Print Orders table for professional printing service
 export const menuPrintOrders = pgTable("menu_print_orders", {
   id: serial("id").primaryKey(),
-  restaurantId: integer("restaurant_id").notNull().references(() => restaurants.id, { onDelete: "cascade" }),
-  tenantId: integer("tenant_id").notNull().references(() => tenants.id, { onDelete: "cascade" }),
+  restaurantId: integer("restaurant_id")
+    .notNull()
+    .references(() => restaurants.id, { onDelete: "cascade" }),
+  tenantId: integer("tenant_id")
+    .notNull()
+    .references(() => tenants.id, { onDelete: "cascade" }),
   orderNumber: text("order_number").notNull().unique(),
   printingOption: text("printing_option").notNull(), // standard, premium, deluxe, luxury
   shippingOption: text("shipping_option").notNull(), // standard, expedited, overnight
@@ -982,8 +1102,12 @@ export const menuPrintOrders = pgTable("menu_print_orders", {
 
 export const seatingConfigurations = pgTable("seating_configurations", {
   id: serial("id").primaryKey(),
-  restaurantId: integer("restaurant_id").notNull().references(() => restaurants.id, { onDelete: "cascade" }),
-  tenantId: integer("tenant_id").notNull().references(() => tenants.id, { onDelete: "cascade" }),
+  restaurantId: integer("restaurant_id")
+    .notNull()
+    .references(() => restaurants.id, { onDelete: "cascade" }),
+  tenantId: integer("tenant_id")
+    .notNull()
+    .references(() => tenants.id, { onDelete: "cascade" }),
   name: text("name").notNull(),
   criteria: text("criteria").default("Unlimited"),
   validOnline: text("valid_online").default("Unlimited"),
@@ -994,8 +1118,12 @@ export const seatingConfigurations = pgTable("seating_configurations", {
 
 export const periodicCriteria = pgTable("periodic_criteria", {
   id: serial("id").primaryKey(),
-  restaurantId: integer("restaurant_id").notNull().references(() => restaurants.id, { onDelete: "cascade" }),
-  tenantId: integer("tenant_id").notNull().references(() => tenants.id, { onDelete: "cascade" }),
+  restaurantId: integer("restaurant_id")
+    .notNull()
+    .references(() => restaurants.id, { onDelete: "cascade" }),
+  tenantId: integer("tenant_id")
+    .notNull()
+    .references(() => tenants.id, { onDelete: "cascade" }),
   name: text("name").notNull(),
   period: text("period").notNull(), // Time period like "4" hours
   guests: integer("guests").notNull(), // Guest count
@@ -1007,11 +1135,17 @@ export const periodicCriteria = pgTable("periodic_criteria", {
 
 export const bookingFormFields = pgTable("booking_form_fields", {
   id: serial("id").primaryKey(),
-  restaurantId: integer("restaurant_id").notNull().references(() => restaurants.id, { onDelete: "cascade" }),
-  tenantId: integer("tenant_id").notNull().references(() => tenants.id, { onDelete: "cascade" }),
+  restaurantId: integer("restaurant_id")
+    .notNull()
+    .references(() => restaurants.id, { onDelete: "cascade" }),
+  tenantId: integer("tenant_id")
+    .notNull()
+    .references(() => tenants.id, { onDelete: "cascade" }),
   fieldType: text("field_type").notNull(), // "default" or "custom"
   fieldId: text("field_id").notNull(), // field identifier (customerName, email, phone, etc. or custom field id)
-  customFieldId: integer("custom_field_id").references(() => customFields.id, { onDelete: "cascade" }),
+  customFieldId: integer("custom_field_id").references(() => customFields.id, {
+    onDelete: "cascade",
+  }),
   label: text("label").notNull(),
   inputType: text("input_type").notNull(), // text, email, tel, number, select, checkbox, switch, textarea
   isRequired: boolean("is_required").default(false),
@@ -1027,8 +1161,12 @@ export const bookingFormFields = pgTable("booking_form_fields", {
 
 export const bookingAgents = pgTable("booking_agents", {
   id: serial("id").primaryKey(),
-  restaurantId: integer("restaurant_id").notNull().references(() => restaurants.id, { onDelete: "cascade" }),
-  tenantId: integer("tenant_id").notNull().references(() => tenants.id, { onDelete: "cascade" }),
+  restaurantId: integer("restaurant_id")
+    .notNull()
+    .references(() => restaurants.id, { onDelete: "cascade" }),
+  tenantId: integer("tenant_id")
+    .notNull()
+    .references(() => tenants.id, { onDelete: "cascade" }),
   name: text("name").notNull(),
   email: text("email").notNull(),
   phone: text("phone").notNull(),
@@ -1041,21 +1179,29 @@ export const bookingAgents = pgTable("booking_agents", {
 
 export const smsSettings = pgTable("sms_settings", {
   id: serial("id").primaryKey(),
-  restaurantId: integer("restaurant_id").notNull().references(() => restaurants.id, { onDelete: "cascade" }),
-  tenantId: integer("tenant_id").notNull().references(() => tenants.id, { onDelete: "cascade" }),
+  restaurantId: integer("restaurant_id")
+    .notNull()
+    .references(() => restaurants.id, { onDelete: "cascade" }),
+  tenantId: integer("tenant_id")
+    .notNull()
+    .references(() => tenants.id, { onDelete: "cascade" }),
   confirmationEnabled: boolean("confirmation_enabled").default(false),
   reminderEnabled: boolean("reminder_enabled").default(false),
   reminderHours: integer("reminder_hours").default(2),
   countryCode: text("country_code").default("+1"),
   phoneNumber: text("phone_number"),
-  satisfactionSurveyEnabled: boolean("satisfaction_survey_enabled").default(false),
+  satisfactionSurveyEnabled: boolean("satisfaction_survey_enabled").default(
+    false,
+  ),
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
 });
 
 export const smsBalance = pgTable("sms_balance", {
   id: serial("id").primaryKey(),
-  tenantId: integer("tenant_id").notNull().references(() => tenants.id, { onDelete: "cascade" }),
+  tenantId: integer("tenant_id")
+    .notNull()
+    .references(() => tenants.id, { onDelete: "cascade" }),
   balance: decimal("balance", { precision: 10, scale: 2 }).default("0.00"),
   currency: text("currency").default("EUR"),
   createdAt: timestamp("created_at").defaultNow().notNull(),
@@ -1064,9 +1210,15 @@ export const smsBalance = pgTable("sms_balance", {
 
 export const smsMessages = pgTable("sms_messages", {
   id: serial("id").primaryKey(),
-  restaurantId: integer("restaurant_id").notNull().references(() => restaurants.id, { onDelete: "cascade" }),
-  tenantId: integer("tenant_id").notNull().references(() => tenants.id, { onDelete: "cascade" }),
-  bookingId: integer("booking_id").references(() => bookings.id, { onDelete: "cascade" }),
+  restaurantId: integer("restaurant_id")
+    .notNull()
+    .references(() => restaurants.id, { onDelete: "cascade" }),
+  tenantId: integer("tenant_id")
+    .notNull()
+    .references(() => tenants.id, { onDelete: "cascade" }),
+  bookingId: integer("booking_id").references(() => bookings.id, {
+    onDelete: "cascade",
+  }),
   phoneNumber: text("phone_number").notNull(),
   message: text("message").notNull(),
   type: text("type").notNull(), // 'confirmation', 'reminder', 'survey'
@@ -1095,7 +1247,9 @@ export const adminUsers = pgTable("admin_users", {
 
 export const adminSessions = pgTable("admin_sessions", {
   id: text("id").primaryKey(),
-  adminUserId: integer("admin_user_id").notNull().references(() => adminUsers.id, { onDelete: "cascade" }),
+  adminUserId: integer("admin_user_id")
+    .notNull()
+    .references(() => adminUsers.id, { onDelete: "cascade" }),
   expiresAt: timestamp("expires_at").notNull(),
   createdAt: timestamp("created_at").defaultNow(),
 });
@@ -1123,8 +1277,12 @@ export const systemLogs = pgTable("system_logs", {
 
 export const feedbackQuestions = pgTable("feedback_questions", {
   id: serial("id").primaryKey(),
-  restaurantId: integer("restaurant_id").notNull().references(() => restaurants.id, { onDelete: "cascade" }),
-  tenantId: integer("tenant_id").notNull().references(() => tenants.id, { onDelete: "cascade" }),
+  restaurantId: integer("restaurant_id")
+    .notNull()
+    .references(() => restaurants.id, { onDelete: "cascade" }),
+  tenantId: integer("tenant_id")
+    .notNull()
+    .references(() => tenants.id, { onDelete: "cascade" }),
   name: text("name").notNull(),
   questionType: text("question_type").default("nps"), // 'nps', 'rating', 'text'
   hasNps: boolean("has_nps").default(true),
@@ -1137,10 +1295,18 @@ export const feedbackQuestions = pgTable("feedback_questions", {
 
 export const feedbackResponses = pgTable("feedback_responses", {
   id: serial("id").primaryKey(),
-  feedbackId: integer("feedback_id").notNull().references(() => feedback.id, { onDelete: "cascade" }),
-  questionId: integer("question_id").notNull().references(() => feedbackQuestions.id, { onDelete: "cascade" }),
-  restaurantId: integer("restaurant_id").notNull().references(() => restaurants.id, { onDelete: "cascade" }),
-  tenantId: integer("tenant_id").notNull().references(() => tenants.id, { onDelete: "cascade" }),
+  feedbackId: integer("feedback_id")
+    .notNull()
+    .references(() => feedback.id, { onDelete: "cascade" }),
+  questionId: integer("question_id")
+    .notNull()
+    .references(() => feedbackQuestions.id, { onDelete: "cascade" }),
+  restaurantId: integer("restaurant_id")
+    .notNull()
+    .references(() => restaurants.id, { onDelete: "cascade" }),
+  tenantId: integer("tenant_id")
+    .notNull()
+    .references(() => tenants.id, { onDelete: "cascade" }),
   rating: integer("rating"), // Star rating (1-5)
   npsScore: integer("nps_score"), // NPS score (0-10)
   textResponse: text("text_response"), // Text answer
@@ -1150,7 +1316,9 @@ export const feedbackResponses = pgTable("feedback_responses", {
 export type MenuPrintOrder = InferSelectModel<typeof menuPrintOrders>;
 export type InsertMenuPrintOrder = InferInsertModel<typeof menuPrintOrders>;
 
-export const insertMenuPrintOrderSchema = createInsertSchema(menuPrintOrders).omit({
+export const insertMenuPrintOrderSchema = createInsertSchema(
+  menuPrintOrders,
+).omit({
   id: true,
   orderNumber: true,
   createdAt: true,
@@ -1158,16 +1326,24 @@ export const insertMenuPrintOrderSchema = createInsertSchema(menuPrintOrders).om
 });
 export const selectMenuPrintOrderSchema = createSelectSchema(menuPrintOrders);
 
-export type SeatingConfiguration = InferSelectModel<typeof seatingConfigurations>;
-export type InsertSeatingConfiguration = InferInsertModel<typeof seatingConfigurations>;
+export type SeatingConfiguration = InferSelectModel<
+  typeof seatingConfigurations
+>;
+export type InsertSeatingConfiguration = InferInsertModel<
+  typeof seatingConfigurations
+>;
 
-export const insertSeatingConfigurationSchema = createInsertSchema(seatingConfigurations).omit({
+export const insertSeatingConfigurationSchema = createInsertSchema(
+  seatingConfigurations,
+).omit({
   id: true,
   createdAt: true,
-  updatedAt: true
+  updatedAt: true,
 });
 
-export const insertFeedbackResponseSchema = createInsertSchema(feedbackResponses).omit({
+export const insertFeedbackResponseSchema = createInsertSchema(
+  feedbackResponses,
+).omit({
   id: true,
   createdAt: true,
 });
@@ -1178,8 +1354,12 @@ export type InsertFeedbackResponse = typeof feedbackResponses.$inferInsert;
 // Kitchen Dashboard Tables
 export const kitchenOrders = pgTable("kitchen_orders", {
   id: serial("id").primaryKey(),
-  restaurantId: integer("restaurant_id").notNull().references(() => restaurants.id, { onDelete: "cascade" }),
-  tenantId: integer("tenant_id").notNull().references(() => tenants.id, { onDelete: "cascade" }),
+  restaurantId: integer("restaurant_id")
+    .notNull()
+    .references(() => restaurants.id, { onDelete: "cascade" }),
+  tenantId: integer("tenant_id")
+    .notNull()
+    .references(() => tenants.id, { onDelete: "cascade" }),
   orderNumber: text("order_number").notNull(),
   tableNumber: text("table_number").notNull(),
   customerName: text("customer_name").notNull(),
@@ -1199,8 +1379,12 @@ export const kitchenOrders = pgTable("kitchen_orders", {
 
 export const kitchenStations = pgTable("kitchen_stations", {
   id: serial("id").primaryKey(),
-  restaurantId: integer("restaurant_id").notNull().references(() => restaurants.id, { onDelete: "cascade" }),
-  tenantId: integer("tenant_id").notNull().references(() => tenants.id, { onDelete: "cascade" }),
+  restaurantId: integer("restaurant_id")
+    .notNull()
+    .references(() => restaurants.id, { onDelete: "cascade" }),
+  tenantId: integer("tenant_id")
+    .notNull()
+    .references(() => tenants.id, { onDelete: "cascade" }),
   name: text("name").notNull(),
   type: text("type").notNull(), // grill, fryer, salad, dessert, beverage, prep
   capacity: integer("capacity").default(5).notNull(),
@@ -1216,9 +1400,15 @@ export const kitchenStations = pgTable("kitchen_stations", {
 
 export const kitchenStaff = pgTable("kitchen_staff", {
   id: serial("id").primaryKey(),
-  restaurantId: integer("restaurant_id").notNull().references(() => restaurants.id, { onDelete: "cascade" }),
-  tenantId: integer("tenant_id").notNull().references(() => tenants.id, { onDelete: "cascade" }),
-  userId: integer("user_id").references(() => users.id, { onDelete: "set null" }),
+  restaurantId: integer("restaurant_id")
+    .notNull()
+    .references(() => restaurants.id, { onDelete: "cascade" }),
+  tenantId: integer("tenant_id")
+    .notNull()
+    .references(() => tenants.id, { onDelete: "cascade" }),
+  userId: integer("user_id").references(() => users.id, {
+    onDelete: "set null",
+  }),
   name: text("name").notNull(),
   role: text("role").notNull(), // head_chef, sous_chef, line_cook, prep_cook, dishwasher
   shift: text("shift").notNull(), // morning, afternoon, evening, night
@@ -1235,8 +1425,12 @@ export const kitchenStaff = pgTable("kitchen_staff", {
 
 export const kitchenMetrics = pgTable("kitchen_metrics", {
   id: serial("id").primaryKey(),
-  restaurantId: integer("restaurant_id").notNull().references(() => restaurants.id, { onDelete: "cascade" }),
-  tenantId: integer("tenant_id").notNull().references(() => tenants.id, { onDelete: "cascade" }),
+  restaurantId: integer("restaurant_id")
+    .notNull()
+    .references(() => restaurants.id, { onDelete: "cascade" }),
+  tenantId: integer("tenant_id")
+    .notNull()
+    .references(() => tenants.id, { onDelete: "cascade" }),
   date: date("date").notNull(),
   ordersCompleted: integer("orders_completed").default(0).notNull(),
   averageTime: integer("average_time").default(0).notNull(), // in minutes
@@ -1267,23 +1461,30 @@ export const insertKitchenOrderSchema = createInsertSchema(kitchenOrders).omit({
   createdAt: true,
   updatedAt: true,
 });
-export const selectSeatingConfigurationSchema = createSelectSchema(seatingConfigurations);
+export const selectSeatingConfigurationSchema = createSelectSchema(
+  seatingConfigurations,
+);
 
 export type PeriodicCriteria = InferSelectModel<typeof periodicCriteria>;
 export type InsertPeriodicCriteria = InferInsertModel<typeof periodicCriteria>;
 
-export const insertPeriodicCriteriaSchema = createInsertSchema(periodicCriteria).omit({
+export const insertPeriodicCriteriaSchema = createInsertSchema(
+  periodicCriteria,
+).omit({
   id: true,
   createdAt: true,
   updatedAt: true,
 });
 
-export const insertKitchenStationSchema = createInsertSchema(kitchenStations).omit({
+export const insertKitchenStationSchema = createInsertSchema(
+  kitchenStations,
+).omit({
   id: true,
   createdAt: true,
   updatedAt: true,
 });
-export const selectPeriodicCriteriaSchema = createSelectSchema(periodicCriteria);
+export const selectPeriodicCriteriaSchema =
+  createSelectSchema(periodicCriteria);
 
 export type CustomField = InferSelectModel<typeof customFields>;
 export type InsertCustomField = InferInsertModel<typeof customFields>;
@@ -1310,7 +1511,9 @@ export const insertBookingAgentSchema = createInsertSchema(bookingAgents).omit({
   updatedAt: true,
 });
 
-export const insertKitchenMetricsSchema = createInsertSchema(kitchenMetrics).omit({
+export const insertKitchenMetricsSchema = createInsertSchema(
+  kitchenMetrics,
+).omit({
   id: true,
   createdAt: true,
   updatedAt: true,
@@ -1329,8 +1532,12 @@ export const insertSmsSettingsSchema = createInsertSchema(smsSettings).omit({
 // Print Orders Schema
 export const printOrders = pgTable("print_orders", {
   id: serial("id").primaryKey(),
-  restaurantId: integer("restaurant_id").notNull().references(() => restaurants.id, { onDelete: "cascade" }),
-  tenantId: integer("tenant_id").notNull().references(() => tenants.id, { onDelete: "cascade" }),
+  restaurantId: integer("restaurant_id")
+    .notNull()
+    .references(() => restaurants.id, { onDelete: "cascade" }),
+  tenantId: integer("tenant_id")
+    .notNull()
+    .references(() => tenants.id, { onDelete: "cascade" }),
   orderNumber: text("order_number").notNull().unique(),
   customerName: text("customer_name").notNull(),
   customerEmail: text("customer_email").notNull(),
@@ -1385,21 +1592,28 @@ export const selectSmsBalanceSchema = createSelectSchema(smsBalance);
 export type FeedbackQuestion = InferSelectModel<typeof feedbackQuestions>;
 export type InsertFeedbackQuestion = InferInsertModel<typeof feedbackQuestions>;
 
-export const insertFeedbackQuestionSchema = createInsertSchema(feedbackQuestions).omit({
+export const insertFeedbackQuestionSchema = createInsertSchema(
+  feedbackQuestions,
+).omit({
   id: true,
   createdAt: true,
   updatedAt: true,
 });
-export const selectFeedbackQuestionSchema = createSelectSchema(feedbackQuestions);
+export const selectFeedbackQuestionSchema =
+  createSelectSchema(feedbackQuestions);
 
 export type SeasonalMenuTheme = InferSelectModel<typeof seasonalMenuThemes>;
-export type InsertSeasonalMenuTheme = InferInsertModel<typeof seasonalMenuThemes>;
+export type InsertSeasonalMenuTheme = InferInsertModel<
+  typeof seasonalMenuThemes
+>;
 
-export const insertMenuCategorySchema = createInsertSchema(menuCategories).omit({
-  id: true,
-  createdAt: true,
-  updatedAt: true,
-});
+export const insertMenuCategorySchema = createInsertSchema(menuCategories).omit(
+  {
+    id: true,
+    createdAt: true,
+    updatedAt: true,
+  },
+);
 export const selectMenuCategorySchema = createSelectSchema(menuCategories);
 
 export const insertMenuItemSchema = createInsertSchema(menuItems).omit({
@@ -1408,7 +1622,9 @@ export const insertMenuItemSchema = createInsertSchema(menuItems).omit({
   updatedAt: true,
 });
 
-export const insertSeasonalMenuThemeSchema = createInsertSchema(seasonalMenuThemes).omit({
+export const insertSeasonalMenuThemeSchema = createInsertSchema(
+  seasonalMenuThemes,
+).omit({
   id: true,
   createdAt: true,
   updatedAt: true,
@@ -1420,8 +1636,12 @@ export type LoginData = z.infer<typeof loginSchema>;
 // Product Groups table
 export const productGroups = pgTable("product_groups", {
   id: serial("id").primaryKey(),
-  restaurantId: integer("restaurant_id").notNull().references(() => restaurants.id, { onDelete: "cascade" }),
-  tenantId: integer("tenant_id").notNull().references(() => tenants.id, { onDelete: "cascade" }),
+  restaurantId: integer("restaurant_id")
+    .notNull()
+    .references(() => restaurants.id, { onDelete: "cascade" }),
+  tenantId: integer("tenant_id")
+    .notNull()
+    .references(() => tenants.id, { onDelete: "cascade" }),
   groupName: text("group_name").notNull(),
   quantity: integer("quantity").notNull().default(0),
   status: varchar("status", { length: 20 }).notNull().default("active"), // active, inactive
@@ -1438,10 +1658,16 @@ export const selectProductGroupSchema = createSelectSchema(productGroups);
 // Products table
 export const products = pgTable("products", {
   id: serial("id").primaryKey(),
-  restaurantId: integer("restaurant_id").notNull().references(() => restaurants.id, { onDelete: "cascade" }),
-  tenantId: integer("tenant_id").notNull().references(() => tenants.id, { onDelete: "cascade" }),
+  restaurantId: integer("restaurant_id")
+    .notNull()
+    .references(() => restaurants.id, { onDelete: "cascade" }),
+  tenantId: integer("tenant_id")
+    .notNull()
+    .references(() => tenants.id, { onDelete: "cascade" }),
   productName: text("product_name").notNull(),
-  categoryId: integer("category_id").notNull().references(() => productGroups.id, { onDelete: "cascade" }), // Reference to product groups
+  categoryId: integer("category_id")
+    .notNull()
+    .references(() => productGroups.id, { onDelete: "cascade" }), // Reference to product groups
   price: decimal("price", { precision: 10, scale: 2 }).notNull(),
   status: varchar("status", { length: 20 }).notNull().default("active"), // active, inactive
   createdAt: timestamp("created_at").defaultNow().notNull(),
@@ -1473,7 +1699,9 @@ export const insertAdminUserSchema = createInsertSchema(adminUsers).omit({
   updatedAt: true,
 });
 
-export const insertSystemSettingSchema = createInsertSchema(systemSettings).omit({
+export const insertSystemSettingSchema = createInsertSchema(
+  systemSettings,
+).omit({
   id: true,
   updatedAt: true,
 });
@@ -1486,18 +1714,28 @@ export const insertSystemLogSchema = createInsertSchema(systemLogs).omit({
 // Payment Setups table
 export const paymentSetups = pgTable("payment_setups", {
   id: serial("id").primaryKey(),
-  restaurantId: integer("restaurant_id").notNull().references(() => restaurants.id, { onDelete: "cascade" }),
-  tenantId: integer("tenant_id").notNull().references(() => tenants.id, { onDelete: "cascade" }),
+  restaurantId: integer("restaurant_id")
+    .notNull()
+    .references(() => restaurants.id, { onDelete: "cascade" }),
+  tenantId: integer("tenant_id")
+    .notNull()
+    .references(() => tenants.id, { onDelete: "cascade" }),
   name: text("name").notNull(),
   method: varchar("method", { length: 50 }).notNull(), // capture_amount, reserve_amount, membership_fee
   type: varchar("type", { length: 50 }).notNull(), // deposit, prepayment, membership
-  priceType: varchar("price_type", { length: 50 }).default("one_price").notNull(), // one_price, multiple_prices
+  priceType: varchar("price_type", { length: 50 })
+    .default("one_price")
+    .notNull(), // one_price, multiple_prices
   amount: decimal("amount", { precision: 10, scale: 2 }).notNull(),
   currency: varchar("currency", { length: 10 }).default("EUR").notNull(),
-  priceUnit: varchar("price_unit", { length: 50 }).default("per_guest").notNull(), // per_guest, per_booking, per_table
+  priceUnit: varchar("price_unit", { length: 50 })
+    .default("per_guest")
+    .notNull(), // per_guest, per_booking, per_table
   allowResidual: boolean("allow_residual").default(false).notNull(),
   residualAmount: decimal("residual_amount", { precision: 10, scale: 2 }),
-  cancellationNotice: varchar("cancellation_notice", { length: 50 }).default("24_hours").notNull(), // 24_hours, 48_hours, 72_hours, 1_week
+  cancellationNotice: varchar("cancellation_notice", { length: 50 })
+    .default("24_hours")
+    .notNull(), // 24_hours, 48_hours, 72_hours, 1_week
   description: text("description"),
   language: varchar("language", { length: 10 }).default("en").notNull(),
   createdAt: timestamp("created_at").defaultNow().notNull(),
