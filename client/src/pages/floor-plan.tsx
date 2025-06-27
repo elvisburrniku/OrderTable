@@ -84,10 +84,11 @@ const ELEMENT_TYPES = [
 
 export default function FloorPlanPage() {
   const { user } = useAuth();
-  // Get restaurant from user context
-  const restaurant = user?.restaurants?.[0];
   const { toast } = useToast();
   const queryClient = useQueryClient();
+  
+  // Get restaurant from user context - check multiple possible structures
+  const restaurant = user?.restaurant || user?.restaurants?.[0] || (user?.restaurantId ? user : null);
 
   const [currentPlan, setCurrentPlan] = useState<FloorPlan>({
     name: "New Floor Plan",
@@ -101,20 +102,24 @@ export default function FloorPlanPage() {
   const [selectedTool, setSelectedTool] = useState<string>("select");
   const [showGrid, setShowGrid] = useState(true);
 
+  // Extract restaurant and tenant IDs from different possible structures
+  const restaurantId = restaurant?.id || restaurant?.restaurantId || user?.restaurantId;
+  const tenantId = restaurant?.tenantId || user?.tenantId;
+
   // Load existing floor plans
   const { data: floorPlans, isLoading } = useQuery({
     queryKey: [
-      `/api/tenants/${restaurant?.tenantId}/restaurants/${restaurant?.id}/floor-plans`,
+      `/api/tenants/${tenantId}/restaurants/${restaurantId}/floor-plans`,
     ],
-    enabled: !!restaurant?.id && !!restaurant?.tenantId,
+    enabled: !!restaurantId && !!tenantId,
   });
 
   // Save floor plan mutation
   const saveFloorPlan = useMutation({
     mutationFn: async (plan: FloorPlan) => {
       const endpoint = plan.id
-        ? `/api/tenants/${restaurant?.tenantId}/restaurants/${restaurant?.id}/floor-plans/${plan.id}`
-        : `/api/tenants/${restaurant?.tenantId}/restaurants/${restaurant?.id}/floor-plans`;
+        ? `/api/tenants/${tenantId}/restaurants/${restaurantId}/floor-plans/${plan.id}`
+        : `/api/tenants/${tenantId}/restaurants/${restaurantId}/floor-plans`;
 
       return apiRequest(endpoint, plan.id ? "PUT" : "POST", plan);
     },
@@ -122,7 +127,7 @@ export default function FloorPlanPage() {
       toast({ title: "Floor plan saved successfully" });
       queryClient.invalidateQueries({
         queryKey: [
-          `/api/tenants/${restaurant?.tenantId}/restaurants/${restaurant?.id}/floor-plans`,
+          `/api/tenants/${tenantId}/restaurants/${restaurantId}/floor-plans`,
         ],
       });
     },
@@ -180,7 +185,7 @@ export default function FloorPlanPage() {
     setSelectedElement(null);
   };
 
-  if (!restaurant) {
+  if (!restaurantId || !tenantId) {
     return (
       <div className="p-6">
         <Card>
