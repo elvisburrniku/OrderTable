@@ -628,20 +628,20 @@ export default function TablePlan() {
                 {TABLE_STRUCTURES.map((structure) => (
                   <div
                     key={`structure-${structure.id}`}
-                    className="p-2 border rounded-lg hover:bg-gray-50 cursor-grab"
+                    className="p-3 border border-gray-200 rounded-lg hover:bg-gray-50 hover:border-gray-300 cursor-grab transition-all duration-200 hover:shadow-sm"
                     draggable
                     onDragStart={(e) => handleStructureDragStart(structure, e)}
                   >
                     <div className="flex flex-col items-center">
                       <div
                         style={getStructureStyle(structure)}
-                        className="mb-1"
+                        className="mb-2 hover:scale-105 transition-transform hover:shadow-md"
                       >
                         {structure.defaultCapacity}
                       </div>
                       <div className="text-xs text-center">
-                        <div className="font-medium">{structure.name}</div>
-                        <div className="text-gray-500">
+                        <div className="font-medium text-gray-900">{structure.name}</div>
+                        <div className="text-gray-600 text-[10px] leading-tight">
                           {structure.description}
                         </div>
                       </div>
