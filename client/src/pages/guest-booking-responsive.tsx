@@ -292,35 +292,27 @@ export default function GuestBookingResponsive(props: any) {
     const dayOfWeek = date.getDay();
     const cutOff = cutOffTimes.find((c: any) => c.dayOfWeek === dayOfWeek);
     
+    if (cutOff && typeof cutOff.cutOffHours === 'number' && cutOff.cutOffHours > 0) {
+      // Cut-off time in hours (e.g., 1 = 1 hour before, 2 = 2 hours before)
+      const cutOffMinutes = cutOff.cutOffHours * 60;
+      
+      // Calculate the minimum allowed booking time from now
+      const minAllowedBookingTime = new Date(now.getTime() + cutOffMinutes * 60 * 1000);
+      
+      // If the requested booking time is before the minimum allowed time, it's not allowed
+      // Example: If it's 11:00 AM and cut-off is 1 hour, can't book before 12:00 PM
+      return bookingDateTime < minAllowedBookingTime;
+    }
+    
+    // Legacy support for cutOffTime format (if still used)
     if (cutOff && cutOff.cutOffTime && cutOff.cutOffTime.includes(':')) {
       const cutOffTimeParts = cutOff.cutOffTime.split(':');
       if (cutOffTimeParts.length === 2) {
         const [cutHour, cutMin] = cutOffTimeParts.map(Number);
         if (!isNaN(cutHour) && !isNaN(cutMin)) {
-          // Handle different cut-off time formats
-          if (cutHour >= 24) {
-            // Cut-off time in days (e.g., 24:00 = 1 day, 48:00 = 2 days)
-            const cutOffDays = Math.floor(cutHour / 24);
-            const cutOffRemainingHours = cutHour % 24;
-            
-            // Calculate cut-off deadline (when booking should stop being allowed)
-            const cutOffDeadline = new Date(bookingDateTime);
-            cutOffDeadline.setDate(cutOffDeadline.getDate() - cutOffDays);
-            cutOffDeadline.setHours(cutOffRemainingHours, cutMin, 0, 0);
-            
-            // If current time is past the cut-off deadline, booking is not allowed
-            return now >= cutOffDeadline;
-          } else {
-            // Cut-off time in hours/minutes (e.g., 1:00 = 1 hour before)
-            const cutOffMinutes = cutHour * 60 + cutMin;
-            
-            // Calculate the minimum allowed booking time from now
-            const minAllowedBookingTime = new Date(now.getTime() + cutOffMinutes * 60 * 1000);
-            
-            // If the requested booking time is before the minimum allowed time, it's not allowed
-            // Example: If it's 11:00 AM and cut-off is 1 hour, can't book before 12:00 PM
-            return bookingDateTime < minAllowedBookingTime;
-          }
+          const cutOffMinutes = cutHour * 60 + cutMin;
+          const minAllowedBookingTime = new Date(now.getTime() + cutOffMinutes * 60 * 1000);
+          return bookingDateTime < minAllowedBookingTime;
         }
       }
     }
