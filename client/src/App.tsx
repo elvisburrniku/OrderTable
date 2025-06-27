@@ -96,9 +96,8 @@ import { AdminPanel } from "./pages/admin/admin-panel";
 import TenantUsersManagement from "./pages/tenant-users-management";
 import AcceptInvitation from "./pages/accept-invitation";
 import RolePermissions from "./pages/role-permissions";
-import { SettingsProvider } from '@/contexts/settings-context';
-import { DateProvider } from '@/contexts/date-context';
-import { LanguageProvider } from "./contexts/language-context";
+import { SettingsProvider } from "@/contexts/settings-context";
+import { DateProvider } from "@/contexts/date-context";
 
 function App() {
   return (
@@ -275,7 +274,9 @@ function App() {
                                 <Route path="/:tenantId/users">
                                   {(params) => (
                                     <TenantUsersManagement
-                                      tenantId={parseInt(params.tenantId || "1")}
+                                      tenantId={parseInt(
+                                        params.tenantId || "1",
+                                      )}
                                     />
                                   )}
                                 </Route>
@@ -388,7 +389,10 @@ function App() {
                                   path="/:tenantId/settings"
                                   component={Settings}
                                 />
-                                <Route path="/:tenantId/help" component={Help} />
+                                <Route
+                                  path="/:tenantId/help"
+                                  component={Help}
+                                />
                                 <Route
                                   path="/:tenantId/restaurant-management"
                                   component={RestaurantManagement}
