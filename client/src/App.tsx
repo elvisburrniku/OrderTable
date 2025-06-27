@@ -98,6 +98,8 @@ import AcceptInvitation from "./pages/accept-invitation";
 import RolePermissions from "./pages/role-permissions";
 import { SettingsProvider } from "@/contexts/settings-context";
 import { DateProvider } from "@/contexts/date-context";
+import { CurrencyProvider } from "@/contexts/currency-context";
+import { BookingProvider } from "@/contexts/booking-context";
 
 function App() {
   return (
@@ -153,7 +155,9 @@ function App() {
                 <TenantProvider>
                   <SettingsProvider>
                     <DateProvider>
-                      <RouteGuard>
+                      <CurrencyProvider>
+                        <BookingProvider>
+                          <RouteGuard>
                         <LayoutWrapper>
                           <SessionTimeoutHandler />
                           <Switch>
@@ -443,7 +447,9 @@ function App() {
                           <Route component={NotFound} />
                         </Switch>
                       </LayoutWrapper>
-                      </RouteGuard>
+                          </RouteGuard>
+                        </BookingProvider>
+                      </CurrencyProvider>
                     </DateProvider>
                   </SettingsProvider>
                 </TenantProvider>

@@ -15,6 +15,8 @@ import {
 } from "lucide-react";
 import { format } from "date-fns";
 import { loadStripe } from "@stripe/stripe-js";
+import { useCurrency } from "@/contexts/currency-context";
+import { useDate } from "@/contexts/date-context";
 
 interface SubscriptionPlan {
   id: number;
@@ -35,6 +37,8 @@ interface UserSubscription {
 
 export default function Subscription() {
   const { user, restaurant, isLoading } = useAuth();
+  const { formatCurrency } = useCurrency();
+  const { formatDate } = useDate();
   const queryClient = useQueryClient();
   const [showSuccessMessage, setShowSuccessMessage] = useState(false);
   const [showCancelMessage, setShowCancelMessage] = useState(false);
@@ -292,7 +296,7 @@ export default function Subscription() {
                   <CardTitle className="text-center">{plan.name}</CardTitle>
                   <div className="text-center">
                     <span className="text-3xl font-bold">
-                      ${(plan.price / 100).toFixed(2)}
+                      {formatCurrency(plan.price)}
                     </span>
                     <span className="text-gray-600">/{plan.interval}</span>
                   </div>

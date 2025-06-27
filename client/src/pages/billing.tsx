@@ -10,6 +10,8 @@ import {
 import { PaymentMethodGuard } from "@/components/payment-method-guard";
 import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
+import { useCurrency } from "@/contexts/currency-context";
+import { useDate } from "@/contexts/date-context";
 import {
   Card,
   CardContent,
@@ -291,6 +293,8 @@ const PaymentMethodCard = ({
 };
 
 const InvoiceRow = ({ invoice }: { invoice: Invoice }) => {
+  const { formatCurrency } = useCurrency();
+  const { formatDate } = useDate();
   const getStatusBadge = (status: string) => {
     switch (status) {
       case "paid":
@@ -325,21 +329,18 @@ const InvoiceRow = ({ invoice }: { invoice: Invoice }) => {
       <div className="flex-1">
         <div className="font-semibold text-gray-900 mb-1">#{invoice.number}</div>
         <div className="text-sm text-gray-500 mb-1">
-          {format(new Date(invoice.created * 1000), "MMM dd, yyyy")}
+          {formatDate(new Date(invoice.created * 1000))}
         </div>
         {invoice.period_start && invoice.period_end && (
           <div className="text-xs text-gray-400 flex items-center">
             <CalendarIcon className="w-3 h-3 mr-1" />
-            {format(new Date(invoice.period_start * 1000), "MMM dd")} - {format(new Date(invoice.period_end * 1000), "MMM dd, yyyy")}
+            {formatDate(new Date(invoice.period_start * 1000))} - {formatDate(new Date(invoice.period_end * 1000))}
           </div>
         )}
       </div>
       <div className="text-right space-y-2 mr-6">
         <div className="font-semibold text-lg text-gray-900">
-          ${(invoice.amount_paid / 100).toFixed(2)}
-        </div>
-        <div className="text-xs text-gray-500 uppercase tracking-wide">
-          {invoice.currency}
+          {formatCurrency(invoice.amount_paid)}
         </div>
         {getStatusBadge(invoice.status)}
       </div>
@@ -372,6 +373,8 @@ const InvoiceRow = ({ invoice }: { invoice: Invoice }) => {
 };
 
 export default function BillingPage() {
+  const { formatCurrency } = useCurrency();
+  const { formatDate } = useDate();
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const [addPaymentDialogOpen, setAddPaymentDialogOpen] = useState(false);
@@ -1059,15 +1062,12 @@ export default function BillingPage() {
                 <div className="flex items-center justify-between p-4 bg-white rounded-lg">
                   <div>
                     <div className="font-semibold text-xl text-gray-900">
-                      ${(billingInfo.upcomingInvoice.amount_due / 100).toFixed(2)}{" "}
-                      <span className="text-sm font-normal text-gray-500">
-                        {billingInfo.upcomingInvoice.currency.toUpperCase()}
-                      </span>
+                      {formatCurrency(billingInfo.upcomingInvoice.amount_due)}
                     </div>
                     <div className="flex items-center text-gray-600 mt-1">
                       <CalendarIcon className="w-4 h-4 mr-1" />
                       <span className="text-sm">
-                        Due: {format(new Date(billingInfo.upcomingInvoice.period_end * 1000), "MMM dd, yyyy")}
+                        Due: {formatDate(new Date(billingInfo.upcomingInvoice.period_end * 1000))}
                       </span>
                     </div>
                   </div>
@@ -1317,10 +1317,7 @@ export default function BillingPage() {
                           <td className="py-3 px-4">
                             <div className="space-y-1">
                               <div className="font-semibold text-gray-900">
-                                ${(invoice.amount_paid / 100).toFixed(2)}
-                              </div>
-                              <div className="text-xs text-gray-500 uppercase tracking-wide">
-                                {invoice.currency}
+                                {formatCurrency(invoice.amount_paid)}
                               </div>
                             </div>
                           </td>
@@ -1545,7 +1542,7 @@ export default function BillingPage() {
                       <div className="space-y-3">
                         <label className="text-sm font-bold text-gray-600 uppercase tracking-wider">Amount</label>
                         <p className="text-2xl font-bold text-gray-900">
-                          ${(selectedInvoice.amount_paid / 100).toFixed(2)} {selectedInvoice.currency.toUpperCase()}
+                          {formatCurrency(selectedInvoice.amount_paid)}
                         </p>
                       </div>
                       <div className="space-y-3">
@@ -1555,14 +1552,14 @@ export default function BillingPage() {
                       <div className="space-y-3">
                         <label className="text-sm font-bold text-gray-600 uppercase tracking-wider">Created</label>
                         <p className="text-2xl font-bold text-gray-900">
-                          {format(new Date(selectedInvoice.created * 1000), "MMM dd, yyyy")}
+                          {formatDate(new Date(selectedInvoice.created * 1000))}
                         </p>
                       </div>
                       {selectedInvoice.period_start && selectedInvoice.period_end && (
                         <div className="space-y-3 md:col-span-2">
                           <label className="text-sm font-bold text-gray-600 uppercase tracking-wider">Service Period</label>
                           <p className="text-lg text-gray-900 font-semibold">
-                            {format(new Date(selectedInvoice.period_start * 1000), "MMM dd")} - {format(new Date(selectedInvoice.period_end * 1000), "MMM dd, yyyy")}
+                            {formatDate(new Date(selectedInvoice.period_start * 1000))} - {formatDate(new Date(selectedInvoice.period_end * 1000))}
                           </p>
                         </div>
                       )}
@@ -1570,7 +1567,7 @@ export default function BillingPage() {
                         <div className="space-y-3">
                           <label className="text-sm font-bold text-gray-600 uppercase tracking-wider">Amount Due</label>
                           <p className="text-2xl font-bold text-red-600">
-                            ${(selectedInvoice.amount_due / 100).toFixed(2)} {selectedInvoice.currency.toUpperCase()}
+                            {formatCurrency(selectedInvoice.amount_due)}
                           </p>
                         </div>
                       )}

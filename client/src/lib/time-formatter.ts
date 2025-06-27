@@ -1,5 +1,6 @@
 
-import { format, parse } from "date-fns";
+import { format, toZonedTime, fromZonedTime } from "date-fns-tz";
+import { format as formatDate, parse } from "date-fns";
 
 export interface TimeFormatOptions {
   timeFormat?: "12h" | "24h";
@@ -8,7 +9,7 @@ export interface TimeFormatOptions {
 }
 
 export function formatTime(time: string | Date, options: TimeFormatOptions = {}): string {
-  const { timeFormat = "12h" } = options;
+  const { timeFormat = "12h", timeZone = "UTC" } = options;
   
   let dateObj: Date;
   
@@ -35,15 +36,18 @@ export function formatTime(time: string | Date, options: TimeFormatOptions = {})
     return time.toString(); // Return original if parsing fails
   }
 
+  // Convert to specified timezone
+  const zonedDate = toZonedTime(dateObj, timeZone);
+
   if (timeFormat === "24h") {
-    return format(dateObj, "HH:mm");
+    return format(zonedDate, "HH:mm", { timeZone });
   } else {
-    return format(dateObj, "h:mm a");
+    return format(zonedDate, "h:mm a", { timeZone });
   }
 }
 
 export function formatDateTime(datetime: string | Date, options: TimeFormatOptions = {}): string {
-  const { timeFormat = "12h", dateFormat = "MM/dd/yyyy" } = options;
+  const { timeFormat = "12h", dateFormat = "MM/dd/yyyy", timeZone = "UTC" } = options;
   
   const dateObj = typeof datetime === "string" ? new Date(datetime) : datetime;
   
@@ -51,14 +55,17 @@ export function formatDateTime(datetime: string | Date, options: TimeFormatOptio
     return datetime.toString();
   }
 
-  const formattedDate = format(dateObj, dateFormat);
-  const formattedTime = formatTime(dateObj, { timeFormat });
+  // Convert to specified timezone
+  const zonedDate = toZonedTime(dateObj, timeZone);
+  
+  const formattedDate = format(zonedDate, dateFormat, { timeZone });
+  const formattedTime = formatTime(dateObj, { timeFormat, timeZone });
   
   return `${formattedDate} ${formattedTime}`;
 }
 
 export function formatDate(date: string | Date, options: TimeFormatOptions = {}): string {
-  const { dateFormat = "MM/dd/yyyy" } = options;
+  const { dateFormat = "MM/dd/yyyy", timeZone = "UTC" } = options;
   
   const dateObj = typeof date === "string" ? new Date(date) : date;
   
@@ -66,5 +73,33 @@ export function formatDate(date: string | Date, options: TimeFormatOptions = {})
     return date.toString();
   }
 
-  return format(dateObj, dateFormat);
+  // Convert to specified timezone for date formatting
+  const zonedDate = toZonedTime(dateObj, timeZone);
+  return format(zonedDate, dateFormat, { timeZone });
+}
+
+export function convertToTimezone(date: Date, timeZone: string): Date {
+  return toZonedTime(date, timeZone);
+}
+
+export function convertFromTimezone(date: Date, timeZone: string): Date {
+  return fromZonedTime(date, timeZone);
+}
+
+export function getSupportedTimezones() {
+  return [
+    { value: "America/New_York", label: "Eastern Time (EST/EDT)" },
+    { value: "America/Chicago", label: "Central Time (CST/CDT)" },
+    { value: "America/Denver", label: "Mountain Time (MST/MDT)" },
+    { value: "America/Los_Angeles", label: "Pacific Time (PST/PDT)" },
+    { value: "America/Anchorage", label: "Alaska Time (AKST/AKDT)" },
+    { value: "Pacific/Honolulu", label: "Hawaii Time (HST)" },
+    { value: "UTC", label: "UTC" },
+    { value: "Europe/London", label: "GMT/BST" },
+    { value: "Europe/Paris", label: "CET/CEST" },
+    { value: "Europe/Berlin", label: "CET/CEST" },
+    { value: "Asia/Tokyo", label: "JST" },
+    { value: "Asia/Shanghai", label: "CST" },
+    { value: "Australia/Sydney", label: "AEST/AEDT" },
+  ];
 }

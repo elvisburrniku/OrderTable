@@ -8,6 +8,8 @@ import { Textarea } from "@/components/ui/textarea";
 import { Checkbox } from "@/components/ui/checkbox";
 import { useQuery } from "@tanstack/react-query";
 import { useAuth } from "@/lib/auth.tsx";
+import { useBooking } from "@/contexts/booking-context";
+import { useDate } from "@/contexts/date-context";
 
 interface FormField {
   id: string;
@@ -148,6 +150,8 @@ export default function DynamicBookingForm({
   onCancel
 }: DynamicBookingFormProps) {
   const { restaurant } = useAuth();
+  const { defaultBookingDuration, getDefaultEndTime, validateBookingDate, getMaxBookingDate } = useBooking();
+  const { formatTime } = useDate();
   const [fields, setFields] = useState<FormField[]>(defaultFields);
 
   // Fetch form configuration
@@ -169,10 +173,31 @@ export default function DynamicBookingForm({
   }, [formConfig]);
 
   const handleInputChange = (fieldId: string, value: any) => {
-    onFormDataChange({
+    let updatedData = {
       ...formData,
       [fieldId]: value
-    });
+    };
+
+    // Auto-calculate end time when start time changes
+    if (fieldId === "startTime" && value) {
+      const bookingDate = formData.bookingDate || new Date().toISOString().split('T')[0];
+      const startDateTime = new Date(`${bookingDate}T${value}`);
+      const endDateTime = getDefaultEndTime(startDateTime);
+      const endTimeString = endDateTime.toTimeString().slice(0, 5);
+      updatedData.endTime = endTimeString;
+    }
+
+    // Validate booking date
+    if (fieldId === "bookingDate" && value) {
+      const selectedDate = new Date(value);
+      const validation = validateBookingDate(selectedDate);
+      if (!validation.valid) {
+        // You could add error handling here
+        console.warn("Invalid booking date:", validation.message);
+      }
+    }
+
+    onFormDataChange(updatedData);
   };
 
   const renderField = (field: FormField) => {
