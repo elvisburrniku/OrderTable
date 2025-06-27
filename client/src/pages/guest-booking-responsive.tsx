@@ -10,6 +10,14 @@ import { Calendar, Clock, Users, Phone, Mail, User, Check, ChevronLeft, ChevronR
 import { format, addDays, startOfDay, startOfMonth, endOfMonth, addMonths, subMonths, getDay, eachDayOfInterval } from 'date-fns';
 import ActiveSeasonalThemeDisplay from '@/components/active-seasonal-theme-display';
 import SeasonalThemeSelector from '@/components/seasonal-theme-selector';
+import { 
+  RestaurantInfoSkeleton, 
+  CalendarSkeleton, 
+  TimeSlotsSkeletonGrid, 
+  BookingFormSkeleton, 
+  TableSelectionSkeleton,
+  ShimmerSkeleton 
+} from '@/components/skeletons/booking-skeleton';
 
 // Dynamic time slot generation will be done based on opening hours
 
@@ -56,13 +64,13 @@ export default function GuestBookingResponsive(props: any) {
   const [bookingId, setBookingId] = useState<number | null>(null);
 
   // Fetch restaurant data
-  const { data: restaurant } = useQuery({
+  const { data: restaurant, isLoading: restaurantLoading } = useQuery({
     queryKey: [`/api/public/tenants/${finalTenantId}/restaurants/${finalRestaurantId}`],
     enabled: !!(finalTenantId && finalRestaurantId),
   });
 
   // Fetch opening hours
-  const { data: openingHours } = useQuery({
+  const { data: openingHours, isLoading: openingHoursLoading } = useQuery({
     queryKey: [`/api/public/tenants/${finalTenantId}/restaurants/${finalRestaurantId}/opening-hours`],
     enabled: !!(finalTenantId && finalRestaurantId),
   });
@@ -80,7 +88,7 @@ export default function GuestBookingResponsive(props: any) {
   });
 
   // Fetch special periods
-  const { data: specialPeriods } = useQuery({
+  const { data: specialPeriods, isLoading: specialPeriodsLoading } = useQuery({
     queryKey: [`/api/tenants/${finalTenantId}/restaurants/${finalRestaurantId}/special-periods`],
     enabled: !!(finalTenantId && finalRestaurantId),
   });
@@ -678,31 +686,36 @@ export default function GuestBookingResponsive(props: any) {
               <div className="space-y-6">
                 <h2 className="text-xl md:text-2xl font-bold text-gray-900 text-center">Select Date</h2>
                 
-                {/* Month Navigation Header */}
-                <div className="flex items-center justify-between mb-4">
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={goToPreviousMonth}
-                    disabled={startOfMonth(currentMonth) <= startOfMonth(new Date())}
-                    className="flex items-center space-x-1"
-                  >
-                    <ChevronLeft className="w-4 h-4" />
-                  </Button>
-                  
-                  <h3 className="text-lg font-semibold text-gray-800">
-                    {format(currentMonth, 'MMMM yyyy')}
-                  </h3>
-                  
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={goToNextMonth}
-                    className="flex items-center space-x-1"
-                  >
-                    <ChevronRight className="w-4 h-4" />
-                  </Button>
-                </div>
+                {/* Show loading skeleton while data is loading */}
+                {(restaurantLoading || openingHoursLoading || specialPeriodsLoading) ? (
+                  <CalendarSkeleton />
+                ) : (
+                  <>
+                    {/* Month Navigation Header */}
+                    <div className="flex items-center justify-between mb-4">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={goToPreviousMonth}
+                        disabled={startOfMonth(currentMonth) <= startOfMonth(new Date())}
+                        className="flex items-center space-x-1"
+                      >
+                        <ChevronLeft className="w-4 h-4" />
+                      </Button>
+                      
+                      <h3 className="text-lg font-semibold text-gray-800">
+                        {format(currentMonth, 'MMMM yyyy')}
+                      </h3>
+                      
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={goToNextMonth}
+                        className="flex items-center space-x-1"
+                      >
+                        <ChevronRight className="w-4 h-4" />
+                      </Button>
+                    </div>
 
                 {/* Day Headers */}
                 <div className="grid grid-cols-7 gap-1 mb-2">
@@ -775,6 +788,8 @@ export default function GuestBookingResponsive(props: any) {
                     </span>
                   </div>
                 </div>
+                  </>
+                )}
               </div>
             )}
 
@@ -783,14 +798,19 @@ export default function GuestBookingResponsive(props: any) {
               <div className="space-y-6">
                 <div className="text-center">
                   <h2 className="text-xl md:text-2xl font-bold text-gray-900 mb-2">Select Time</h2>
-                  {timeSlots.length > 0 && (
-                    <p className="text-sm text-blue-600 font-medium">
-                      ⭐ Recommended for {welcomeMessage.mealType}
-                    </p>
-                  )}
-                </div>
+                  
+                  {/* Show loading skeleton while data is loading */}
+                  {(restaurantLoading || openingHoursLoading || specialPeriodsLoading) ? (
+                    <TimeSlotsSkeletonGrid />
+                  ) : (
+                    <>
+                      {timeSlots.length > 0 && (
+                        <p className="text-sm text-blue-600 font-medium">
+                          ⭐ Recommended for {welcomeMessage.mealType}
+                        </p>
+                      )}
                 
-                {timeSlots.length === 0 ? (
+                      {timeSlots.length === 0 ? (
                   <div className="text-center py-8">
                     <Clock className="w-12 h-12 text-gray-400 mx-auto mb-4" />
                     <p className="text-gray-600 mb-2">No time slots available for this date</p>
@@ -849,6 +869,9 @@ export default function GuestBookingResponsive(props: any) {
                     </div>
                   </div>
                 )}
+                    </>
+                  )}
+                </div>
               </div>
             )}
 
@@ -952,7 +975,12 @@ export default function GuestBookingResponsive(props: any) {
             {((currentStep === 3 && seasonalThemes.length === 0) || (currentStep === 4 && seasonalThemes.length > 0)) && (
               <div className="space-y-6">
                 <h2 className="text-xl md:text-2xl font-bold text-gray-900 text-center">Your Details</h2>
-                <div className="space-y-4">
+                
+                {/* Show loading skeleton while restaurant data loads */}
+                {restaurantLoading ? (
+                  <BookingFormSkeleton />
+                ) : (
+                  <div className="space-y-4">
                   <div>
                     <Label htmlFor="name" className="flex items-center mb-2">
                       <User className="w-4 h-4 mr-2" />
@@ -995,6 +1023,7 @@ export default function GuestBookingResponsive(props: any) {
                     />
                   </div>
                 </div>
+                )}
               </div>
             )}
 
