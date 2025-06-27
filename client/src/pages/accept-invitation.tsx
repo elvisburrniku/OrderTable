@@ -51,7 +51,7 @@ export default function AcceptInvitation() {
   useEffect(() => {
     const urlParams = new URLSearchParams(window.location.search);
     const tokenParam = urlParams.get('token');
-    
+
     if (!tokenParam) {
       toast({
         title: "Invalid Invitation",
@@ -66,18 +66,35 @@ export default function AcceptInvitation() {
     validateInvitation(tokenParam);
   }, []);
 
-  const validateInvitation = async (invitationToken: string) => {
+  const validateInvitation = async (tokenParam: string) => {
     try {
-      const response = await apiRequest("GET", `/api/invitations/validate/${invitationToken}`);
-      if (!response.ok) {
-        throw new Error("Invalid or expired invitation");
-      }
+      const response = await fetch(`/api/invitations/validate/${tokenParam}`);
       const data = await response.json();
+
+      if (!response.ok) {
+        if (data.expired) {
+          toast({
+            title: "Invitation Expired",
+            description: "This invitation has expired. Please request a new invitation.",
+            variant: "destructive",
+          });
+        } else {
+          toast({
+            title: "Invalid Invitation",
+            description: data.message || "This invitation is not valid.",
+            variant: "destructive",
+          });
+        }
+        setLocation("/login");
+        return;
+      }
+
       setInvitationData(data);
     } catch (error) {
+      console.error("Error validating invitation:", error);
       toast({
-        title: "Invalid Invitation",
-        description: "This invitation link is invalid or has expired.",
+        title: "Error",
+        description: "Failed to validate invitation. Please try again.",
         variant: "destructive",
       });
       setLocation("/login");
@@ -88,8 +105,7 @@ export default function AcceptInvitation() {
 
   const acceptInvitationMutation = useMutation({
     mutationFn: async (data: PasswordForm) => {
-      return await apiRequest("POST", "/api/invitations/accept", {
-        token,
+      return await apiRequest("POST", `/api/invitations/accept/${token}`, {
         password: data.password,
       });
     },
@@ -255,4 +271,3 @@ export default function AcceptInvitation() {
     </div>
   );
 }
-
