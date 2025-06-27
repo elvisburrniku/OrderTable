@@ -969,7 +969,7 @@ export default function TablePlan() {
                 onDrop={handleDrop}
               >
                 {/* Grid pattern */}
-                <```text
+                
                 <div
                   className="absolute inset-0 opacity-20"
                   style={{
