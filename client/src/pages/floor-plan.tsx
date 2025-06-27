@@ -89,11 +89,8 @@ export default function FloorPlanPage() {
 
   console.log("User context:", user);
 
-  // Get restaurant from user context - check multiple possible structures
-  const restaurant =
-    user?.restaurant ||
-    user?.restaurants?.[0] ||
-    (user?.restaurantId ? user : null);
+  // Get restaurant from auth context
+  const { restaurant } = useAuth();
 
   const [currentPlan, setCurrentPlan] = useState<FloorPlan>({
     name: "New Floor Plan",
@@ -107,10 +104,9 @@ export default function FloorPlanPage() {
   const [selectedTool, setSelectedTool] = useState<string>("select");
   const [showGrid, setShowGrid] = useState(true);
 
-  // Extract restaurant and tenant IDs from different possible structures
-  const restaurantId =
-    restaurant?.id || restaurant?.restaurantId || user?.restaurantId;
-  const tenantId = restaurant?.tenantId || user?.tenantId;
+  // Extract restaurant and tenant IDs
+  const restaurantId = restaurant?.id;
+  const tenantId = restaurant?.tenantId;
 
   // Load existing floor plans
   const { data: floorPlans, isLoading } = useQuery({
@@ -191,7 +187,7 @@ export default function FloorPlanPage() {
     setSelectedElement(null);
   };
 
-  if (!restaurantId || !tenantId) {
+  if (!restaurant) {
     return (
       <div className="p-6">
         <Card>
@@ -199,7 +195,7 @@ export default function FloorPlanPage() {
             <CardTitle>Access Denied</CardTitle>
             <CardDescription>
               You need to be associated with a restaurant to access floor plan
-              designer.
+              designer. Please ensure your restaurant is properly set up.
             </CardDescription>
           </CardHeader>
         </Card>
