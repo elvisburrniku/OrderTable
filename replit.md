@@ -22,6 +22,13 @@ A comprehensive restaurant booking management system with React frontend and Exp
 - Kitchen order management
 
 ## Recent Changes
+- **2025-06-27**: Implemented subscription-based table creation limits with comprehensive validation
+- **Table Limit Enforcement**: Users can now only create tables up to their subscription plan's allowance
+- **Visual Feedback System**: Added real-time table usage indicators (e.g., "3/10 tables") with color-coded badges in header
+- **Smart UI Behavior**: Table shapes become disabled and grayed out when limits are reached, preventing drag-and-drop
+- **Server-Side Protection**: Backend validates table limits before creation and returns clear error messages
+- **User Experience Enhancement**: Clear warnings displayed when table limits are reached with upgrade prompts
+- **Professional Design**: Integrated table limit indicators seamlessly into the sophisticated table-plan interface
 - **2025-06-27**: Fixed guest booking system initialization errors and completed special periods functionality
 - **Bug Fix Resolution**: Resolved function redeclaration errors that were preventing guest booking system from loading properly
 - **Special Periods Smart Logic**: When "Restaurant is open during this period" is enabled, system uses custom opening/closing times from special period configuration instead of blocking dates
