@@ -322,29 +322,47 @@ export async function acceptInvitation(req: Request, res: Response) {
       .from(users)
       .where(eq(users.email, invitation.email));
 
+    let userId;
+    
     if (existingUser.length > 0) {
-      return res.status(400).json({ message: "User with this email already exists" });
+      // User exists, just add them to the tenant
+      userId = existingUser[0].id;
+      
+      // Check if user is already in this tenant
+      const existingTenantUser = await db
+        .select()
+        .from(tenantUsers)
+        .where(and(
+          eq(tenantUsers.tenantId, invitation.tenantId),
+          eq(tenantUsers.userId, userId)
+        ));
+
+      if (existingTenantUser.length > 0) {
+        return res.status(400).json({ message: "User is already a member of this tenant" });
+      }
+    } else {
+      // Hash password
+      const bcrypt = require('bcrypt');
+      const hashedPassword = await bcrypt.hash(password, 10);
+
+      // Create new user
+      const [newUser] = await db.insert(users).values({
+        email: invitation.email,
+        name: invitation.name,
+        password: hashedPassword,
+        restaurantName: null, // This will be null for team members
+        ssoProvider: null,
+        ssoId: null,
+        createdAt: new Date(),
+      }).returning();
+
+      userId = newUser.id;
     }
-
-    // Hash password
-    const bcrypt = require('bcrypt');
-    const hashedPassword = await bcrypt.hash(password, 10);
-
-    // Create user
-    const [newUser] = await db.insert(users).values({
-      email: invitation.email,
-      name: invitation.name,
-      password: hashedPassword,
-      restaurantName: null, // This will be null for team members
-      ssoProvider: null,
-      ssoId: null,
-      createdAt: new Date(),
-    }).returning();
 
     // Add user to tenant
     await db.insert(tenantUsers).values({
       tenantId: invitation.tenantId,
-      userId: newUser.id,
+      userId: userId,
       role: invitation.role,
     });
 
@@ -357,9 +375,9 @@ export async function acceptInvitation(req: Request, res: Response) {
     res.json({
       message: "Account created successfully",
       user: {
-        id: newUser.id,
-        email: newUser.email,
-        name: newUser.name,
+        id: userId,
+        email: invitation.email,
+        name: invitation.name,
         role: invitation.role
       }
     });

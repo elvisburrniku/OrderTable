@@ -1190,12 +1190,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Invitation routes (public - no authentication required)
-  app.get("/api/tenants/invitation/validate/:token", async (req, res) => {
+  app.get("/api/invitations/validate/:token", async (req, res) => {
     const { validateInvitationToken } = await import("./tenant-routes");
     await validateInvitationToken(req, res);
   });
 
-  app.post("/api/tenants/invitation/accept/:token", async (req, res) => {
+  app.post("/api/invitations/accept/:token", async (req, res) => {
     const { acceptInvitation } = await import("./tenant-routes");
     await acceptInvitation(req, res);
   });
