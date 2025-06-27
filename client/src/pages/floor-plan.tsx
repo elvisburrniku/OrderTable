@@ -105,7 +105,7 @@ export default function FloorPlanPage() {
     );
   }
     name: "New Floor Plan",
-    elements: [],
+    elements: []; // Added missing semicolon
     dimensions: { width: 800, height: 600 },
     gridSize: 20,
     scale: 1,
