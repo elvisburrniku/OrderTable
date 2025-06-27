@@ -34,7 +34,6 @@ A comprehensive restaurant booking management system with React frontend and Exp
 - **Priority System Implementation**: Established clear booking restriction hierarchy - Special periods override opening hours, cut-off times enforce time buffers
 - **Cut-off Time Logic**: Enhanced cut-off validation to handle both hourly (1:00 = 1 hour before) and daily (24:00 = 1 day before) restrictions
 - **Cut-off Time Fix**: Fixed hourly cut-off logic - if current time is 11:00 AM and cut-off is 1 hour, blocks bookings until after 12:00 PM
-- **Cancelled Subscription Security**: Fixed security vulnerability where cancelled subscription users could still access billing information and invoices
 - **Elegant Loading Skeletons**: Implemented comprehensive loading skeletons for async content with shimmer animations and glassmorphism design
 - **Skeleton Components**: Added RestaurantInfoSkeleton, CalendarSkeleton, TimeSlotsSkeletonGrid, BookingFormSkeleton, and TableSelectionSkeleton
 - **Enhanced UX**: Loading states now show elegant animated placeholders while data loads instead of blank or loading spinners

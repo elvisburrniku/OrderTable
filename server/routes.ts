@@ -440,21 +440,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const sessionTenant = (req as any).session?.tenant;
 
       if (sessionUser && sessionTenant) {
-        // Check if subscription is cancelled - completely block access
-        if (sessionTenant.subscriptionStatus === "cancelled" || sessionTenant.subscriptionStatus === "canceled") {
-          // Clear session for cancelled subscription
-          (req as any).session.destroy((err: any) => {
-            if (err) console.error("Error destroying session:", err);
-          });
-          return res.status(403).json({
-            valid: false,
-            message: "Subscription cancelled",
-            details: "Your subscription has been cancelled. Contact support for reactivation.",
-            supportEmail: "support@replit.com",
-            status: "cancelled",
-          });
-        }
-
         // Check if tenant is suspended or paused
         if (sessionTenant.subscriptionStatus === "suspended") {
           // Clear session for suspended tenant
