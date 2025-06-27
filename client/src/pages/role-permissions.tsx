@@ -38,6 +38,7 @@ import {
 import {
   DndContext,
   DragEndEvent,
+  DragStartEvent,
   DragOverlay,
   DragStartEvent,
   PointerSensor,
@@ -569,6 +570,7 @@ export default function RolePermissions() {
                   const permissionCount = (
                     rolePermissions[role.role] || []
                   ).filter((p) => p.startsWith("access_")).length;
+                  const isOwnerRole = role.role === "owner";
                   return (
                     <Button
                       key={role.role}
@@ -580,6 +582,7 @@ export default function RolePermissions() {
                         console.log("🔍 ROLE CLICKED:", role.role);
                         setSelectedRole(role.role);
                       }}
+                      disabled={isOwnerRole}
                     >
                       <span className="capitalize font-medium text-left">
                         {role.role.replace("_", " ")}
