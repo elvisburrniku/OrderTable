@@ -16921,6 +16921,123 @@ NEXT STEPS:
   registerRestaurantRoutes(app);
 
   // Initialize restaurant management system
+  // Floor Plan routes
+  app.get(
+    "/api/tenants/:tenantId/restaurants/:restaurantId/floor-plans",
+    validateTenant,
+    async (req, res) => {
+      try {
+        const restaurantId = parseInt(req.params.restaurantId);
+        const tenantId = parseInt(req.params.tenantId);
+
+        const restaurant = await storage.getRestaurantById(restaurantId);
+        if (!restaurant || restaurant.tenantId !== tenantId) {
+          return res.status(404).json({ message: "Restaurant not found" });
+        }
+
+        const floorPlans = await storage.getFloorPlansByRestaurant(restaurantId);
+        res.json(floorPlans);
+      } catch (error) {
+        console.error("Error fetching floor plans:", error);
+        res.status(500).json({ message: "Internal server error" });
+      }
+    },
+  );
+
+  app.post(
+    "/api/tenants/:tenantId/restaurants/:restaurantId/floor-plans",
+    validateTenant,
+    async (req, res) => {
+      try {
+        const restaurantId = parseInt(req.params.restaurantId);
+        const tenantId = parseInt(req.params.tenantId);
+
+        const restaurant = await storage.getRestaurantById(restaurantId);
+        if (!restaurant || restaurant.tenantId !== tenantId) {
+          return res.status(404).json({ message: "Restaurant not found" });
+        }
+
+        const floorPlanData = {
+          ...req.body,
+          restaurantId,
+          tenantId,
+        };
+
+        const floorPlan = await storage.createFloorPlan(floorPlanData);
+        res.status(201).json(floorPlan);
+      } catch (error) {
+        console.error("Error creating floor plan:", error);
+        res.status(500).json({ message: "Internal server error" });
+      }
+    },
+  );
+
+  app.put(
+    "/api/tenants/:tenantId/restaurants/:restaurantId/floor-plans/:id",
+    validateTenant,
+    async (req, res) => {
+      try {
+        const id = parseInt(req.params.id);
+        const restaurantId = parseInt(req.params.restaurantId);
+        const tenantId = parseInt(req.params.tenantId);
+
+        const restaurant = await storage.getRestaurantById(restaurantId);
+        if (!restaurant || restaurant.tenantId !== tenantId) {
+          return res.status(404).json({ message: "Restaurant not found" });
+        }
+
+        const existingPlan = await storage.getFloorPlanById(id);
+        if (!existingPlan || existingPlan.restaurantId !== restaurantId) {
+          return res.status(404).json({ message: "Floor plan not found" });
+        }
+
+        const updatedPlan = await storage.updateFloorPlan(id, req.body);
+        res.json(updatedPlan);
+      } catch (error) {
+        console.error("Error updating floor plan:", error);
+        res.status(500).json({ message: "Internal server error" });
+      }
+    },
+  );
+
+  app.delete(
+    "/api/tenants/:tenantId/restaurants/:restaurantId/floor-plans/:id",
+    validateTenant,
+    async (req, res) => {
+      try {
+        const id = parseInt(req.params.id);
+        const restaurantId = parseInt(req.params.restaurantId);
+        const tenantId = parseInt(req.params.tenantId);
+
+        const restaurant = await storage.getRestaurantById(restaurantId);
+        if (!restaurant || restaurant.tenantId !== tenantId) {
+          return res.status(404).json({ message: "Restaurant not found" });
+        }
+
+        const existingPlan = await storage.getFloorPlanById(id);
+        if (!existingPlan || existingPlan.restaurantId !== restaurantId) {
+          return res.status(404).json({ message: "Floor plan not found" });
+        }
+
+        await storage.deleteFloorPlan(id);
+        res.json({ message: "Floor plan deleted successfully" });
+      } catch (error) {
+        console.error("Error deleting floor plan:", error);
+        res.status(500).json({ message: "Internal server error" });
+      }
+    },
+  );
+
+  app.get("/api/floor-plan-templates", async (req, res) => {
+    try {
+      const templates = await storage.getFloorPlanTemplates();
+      res.json(templates);
+    } catch (error) {
+      console.error("Error fetching floor plan templates:", error);
+      res.status(500).json({ message: "Internal server error" });
+    }
+  });
+
   try {
     const { restaurantStorage } = await import("./restaurant-storage");
     await restaurantStorage.initializeSystem();

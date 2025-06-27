@@ -48,6 +48,8 @@ const {
   productGroups,
   products,
   paymentSetups,
+  floorPlans,
+  floorPlanTemplates,
 } = schema;
 export class DatabaseStorage implements IStorage {
   db: any;
@@ -3207,6 +3209,88 @@ export class DatabaseStorage implements IStorage {
       })
       .returning();
 
+    return result;
+  }
+
+  // Floor Plans
+  async getFloorPlansByRestaurant(restaurantId: number): Promise<any[]> {
+    if (!this.db) return [];
+    const result = await this.db
+      .select()
+      .from(floorPlans)
+      .where(eq(floorPlans.restaurantId, restaurantId))
+      .orderBy(desc(floorPlans.createdAt));
+    return result;
+  }
+
+  async getFloorPlanById(id: number): Promise<any | undefined> {
+    if (!this.db) return undefined;
+    const [result] = await this.db
+      .select()
+      .from(floorPlans)
+      .where(eq(floorPlans.id, id));
+    return result;
+  }
+
+  async createFloorPlan(floorPlan: any): Promise<any> {
+    if (!this.db) throw new Error("Database connection not available");
+    const [result] = await this.db
+      .insert(floorPlans)
+      .values({
+        ...floorPlan,
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      })
+      .returning();
+    return result;
+  }
+
+  async updateFloorPlan(id: number, updates: any): Promise<any | undefined> {
+    if (!this.db) return undefined;
+    const [result] = await this.db
+      .update(floorPlans)
+      .set({ ...updates, updatedAt: new Date() })
+      .where(eq(floorPlans.id, id))
+      .returning();
+    return result;
+  }
+
+  async deleteFloorPlan(id: number): Promise<boolean> {
+    if (!this.db) return false;
+    await this.db.delete(floorPlans).where(eq(floorPlans.id, id));
+    return true;
+  }
+
+  // Floor Plan Templates
+  async getFloorPlanTemplates(): Promise<any[]> {
+    if (!this.db) return [];
+    const result = await this.db
+      .select()
+      .from(floorPlanTemplates)
+      .where(eq(floorPlanTemplates.isPublic, true))
+      .orderBy(desc(floorPlanTemplates.popularity));
+    return result;
+  }
+
+  async getFloorPlanTemplateById(id: number): Promise<any | undefined> {
+    if (!this.db) return undefined;
+    const [result] = await this.db
+      .select()
+      .from(floorPlanTemplates)
+      .where(eq(floorPlanTemplates.id, id));
+    return result;
+  }
+
+  async createFloorPlanTemplate(template: any): Promise<any> {
+    if (!this.db) throw new Error("Database connection not available");
+    const [result] = await this.db
+      .insert(floorPlanTemplates)
+      .values({
+        ...template,
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      })
+      .returning();
     return result;
   }
 }

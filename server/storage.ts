@@ -61,6 +61,10 @@ import type {
   InsertProductGroup,
   Product,
   InsertProduct,
+  FloorPlan,
+  InsertFloorPlan,
+  FloorPlanTemplate,
+  InsertFloorPlanTemplate,
 } from "../shared/schema";
 import { neon } from "@neondatabase/serverless";
 import { drizzle } from "drizzle-orm/neon-http";
@@ -468,6 +472,18 @@ export interface IStorage {
   ): Promise<any>;
   getPrintOrderByOrderNumber(orderNumber: string): Promise<any>;
   deletePrintOrder(orderId: number): Promise<any>;
+
+  // Floor Plans
+  getFloorPlansByRestaurant(restaurantId: number): Promise<FloorPlan[]>;
+  getFloorPlanById(id: number): Promise<FloorPlan | undefined>;
+  createFloorPlan(floorPlan: InsertFloorPlan): Promise<FloorPlan>;
+  updateFloorPlan(id: number, updates: Partial<FloorPlan>): Promise<FloorPlan | undefined>;
+  deleteFloorPlan(id: number): Promise<boolean>;
+
+  // Floor Plan Templates
+  getFloorPlanTemplates(): Promise<FloorPlanTemplate[]>;
+  getFloorPlanTemplateById(id: number): Promise<FloorPlanTemplate | undefined>;
+  createFloorPlanTemplate(template: InsertFloorPlanTemplate): Promise<FloorPlanTemplate>;
 }
 
 import { DatabaseStorage } from "./db-storage";

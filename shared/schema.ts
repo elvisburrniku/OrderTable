@@ -955,6 +955,44 @@ export const reschedulingSuggestions = pgTable("rescheduling_suggestions", {
   updatedAt: timestamp("updated_at").defaultNow(),
 });
 
+// Floor Plans table
+export const floorPlans = pgTable("floor_plans", {
+  id: serial("id").primaryKey(),
+  restaurantId: integer("restaurant_id")
+    .notNull()
+    .references(() => restaurants.id, { onDelete: "cascade" }),
+  tenantId: integer("tenant_id")
+    .notNull()
+    .references(() => tenants.id, { onDelete: "cascade" }),
+  name: text("name").notNull(),
+  description: text("description"),
+  elements: jsonb("elements").notNull().default('[]'), // FloorPlanElement[]
+  dimensions: jsonb("dimensions").notNull().default('{"width": 800, "height": 600}'), // {width, height}
+  gridSize: integer("grid_size").default(20),
+  scale: decimal("scale", { precision: 3, scale: 2 }).default("1.00"),
+  isActive: boolean("is_active").default(false),
+  isDefault: boolean("is_default").default(false),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+});
+
+// Floor Plan Templates table (for pre-made layouts)
+export const floorPlanTemplates = pgTable("floor_plan_templates", {
+  id: serial("id").primaryKey(),
+  name: text("name").notNull(),
+  description: text("description"),
+  category: varchar("category", { length: 50 }).notNull(), // "restaurant", "cafe", "bar", "fine_dining"
+  elements: jsonb("elements").notNull().default('[]'),
+  dimensions: jsonb("dimensions").notNull().default('{"width": 800, "height": 600}'),
+  gridSize: integer("grid_size").default(20),
+  previewImage: text("preview_image"), // URL or base64
+  tags: text("tags").array(), // searchable tags
+  popularity: integer("popularity").default(0),
+  isPublic: boolean("is_public").default(true),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+});
+
 // Type exports for all tables
 export type User = InferSelectModel<typeof users>;
 export type InsertUser = InferInsertModel<typeof users>;
@@ -1018,6 +1056,12 @@ export type ReschedulingSuggestion = InferSelectModel<
 export type InsertReschedulingSuggestion = InferInsertModel<
   typeof reschedulingSuggestions
 >;
+
+export type FloorPlan = InferSelectModel<typeof floorPlans>;
+export type InsertFloorPlan = InferInsertModel<typeof floorPlans>;
+
+export type FloorPlanTemplate = InferSelectModel<typeof floorPlanTemplates>;
+export type InsertFloorPlanTemplate = InferInsertModel<typeof floorPlanTemplates>;
 
 export type InvitationToken = InferSelectModel<typeof invitationTokens>;
 export type InsertInvitationToken = InferInsertModel<typeof invitationTokens>;
