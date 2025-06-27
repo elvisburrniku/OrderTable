@@ -144,13 +144,13 @@ export default function EnhancedGoogleCalendar({
 
   const [newBooking, setNewBooking] = useState({
     customerName: "",
-    customerEmail: "",
     customerPhone: "",
+    customerEmail: "",
     guestCount: 2,
-    startTime: "19:00",
-    endTime: "20:00",
-    tableId: "",
-    notes: "",
+    specialRequests: "",
+    startTime: "",
+    endTime: "",
+    duration: generalSettings?.defaultBookingDuration || 60,
   });
 
   // Helper function to get opening hours for a specific date
@@ -814,13 +814,13 @@ export default function EnhancedGoogleCalendar({
       setIsNewBookingOpen(false);
       setNewBooking({
         customerName: "",
-        customerEmail: "",
         customerPhone: "",
+        customerEmail: "",
         guestCount: 2,
-        startTime: "19:00",
-        endTime: "20:00",
-        tableId: "",
-        notes: "",
+        specialRequests: "",
+        startTime: "",
+        endTime: "",
+        duration: generalSettings?.defaultBookingDuration || 60,
       });
       toast({
         title: "Booking Created",
@@ -835,6 +835,24 @@ export default function EnhancedGoogleCalendar({
       });
     },
   });
+
+    const handleDurationChange = (duration: number) => {
+        setNewBooking((prev) => {
+            const [hours, minutes] = prev.startTime.split(":").map(Number);
+            const startMinutes = hours * 60 + minutes;
+            const endMinutes = startMinutes + duration;
+            const endHour = Math.floor(endMinutes / 60);
+            const endMin = endMinutes % 60;
+            const endTime = `${endHour.toString().padStart(2, "0")}:${endMin.toString().padStart(2, "0")}`;
+
+            return {
+                ...prev,
+                duration: duration,
+                endTime: endTime,
+            };
+        });
+    };
+
 
   const handleCreateBooking = () => {
     if (!selectedTimeSlot) return;
@@ -927,7 +945,8 @@ export default function EnhancedGoogleCalendar({
       // Check if this table has any bookings that overlap with the selected time
       const conflictingBookings = allBookings.filter(booking => {
         // Skip the booking we're editing
-        if (excludeBookingId && booking.id === excludeBookingId) return false;
+        ```text
+if (excludeBookingId && booking.id === excludeBookingId) return false;
 
         if (booking.tableId !== table.id) return false;
 
@@ -938,7 +957,7 @@ export default function EnhancedGoogleCalendar({
             // If it's already a string, parse it and format it
             bookingDateStr = format(new Date(booking.bookingDate), 'yyyy-MM-dd');
           } else if (booking.bookingDate instanceof Date) {
-            bookingDateStr = format(booking.bookingDate, 'yyyy-MM-dd');
+            return format(booking.bookingDate, 'yyyy-MM-dd');
           } else {
             // Fallback - convert to string and parse
             bookingDateStr = format(new Date(booking.bookingDate), 'yyyy-MM-dd');
@@ -1520,36 +1539,72 @@ export default function EnhancedGoogleCalendar({
               />
             </div>
 
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <Label htmlFor="startTime">Start Time</Label>
-                <Input
-                  id="startTime"
-                  type="time"
-                  value={newBooking.startTime}
-                  onChange={(e) =>
-                    setNewBooking((prev) => ({
-                      ...prev,
-                      startTime: e.target.value,
-                    }))
-                  }
-                />
-              </div>
-              <div>
-                <Label htmlFor="endTime">End Time</Label>
-                <Input
-                  id="endTime"
-                  type="time"
-                  value={newBooking.endTime}
-                  onChange={(e) =>
-                    setNewBooking((prev) => ({
-                      ...prev,
-                      endTime: e.target.value,
-                    }))
-                  }
-                />
-              </div>
-            </div>
+            <div className="grid grid-cols-3 gap-4">
+                    <div>
+                      <Label htmlFor="startTime">Start Time</Label>
+                      <Input
+                        id="startTime"
+                        type="time"
+                        value={newBooking.startTime}
+                        onChange={(e) => {
+                          const newStartTime = e.target.value;
+                          const currentDuration = newBooking.duration || generalSettings?.defaultBookingDuration || 60;
+
+                          // Recalculate end time when start time changes
+                          const [hours, minutes] = newStartTime.split(":").map(Number);
+                          const startMinutes = hours * 60 + minutes;
+                          const endMinutes = startMinutes + currentDuration;
+                          const endHour = Math.floor(endMinutes / 60);
+                          const endMin = endMinutes % 60;
+                          const endTime = `${endHour.toString().padStart(2, "0")}:${endMin.toString().padStart(2, "0")}`;
+
+                          setNewBooking((prev) => ({
+                            ...prev,
+                            startTime: newStartTime,
+                            endTime: endTime,
+                          }));
+                        }}
+                        required
+                      />
+                    </div>
+                    <div>
+                      <Label htmlFor="duration">Duration</Label>
+                      <Select
+                        value={(newBooking.duration || generalSettings?.defaultBookingDuration || 60).toString()}
+                        onValueChange={(value) => handleDurationChange(parseInt(value))}
+                      >
+                        <SelectTrigger>
+                          <SelectValue placeholder="Select duration" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="15">15 min</SelectItem>
+                          <SelectItem value="30">30 min</SelectItem>
+                          <SelectItem value="45">45 min</SelectItem>
+                          <SelectItem value="60">1 hour</SelectItem>
+                          <SelectItem value="90">1.5 hours</SelectItem>
+                          <SelectItem value="120">2 hours</SelectItem>
+                          <SelectItem value="150">2.5 hours</SelectItem>
+                          <SelectItem value="180">3 hours</SelectItem>
+                          <SelectItem value="240">4 hours</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    <div>
+                      <Label htmlFor="endTime">End Time</Label>
+                      <Input
+                        id="endTime"
+                        type="time"
+                        value={newBooking.endTime}
+                        onChange={(e) =>
+                          setNewBooking((prev) => ({
+                            ...prev,
+                            endTime: e.target.value,
+                          }))
+                        }
+                        required
+                      />
+                    </div>
+                  </div>
 
             <div>
               <Label htmlFor="tableId">Available Tables</Label>
@@ -1784,6 +1839,8 @@ function EditBookingForm({
             setFormData((prev) => ({ ...prev, customerPhone: e.target.value }))
           }
           placeholder="Phone number"
+        ```text
+
         />
       </div>
 
