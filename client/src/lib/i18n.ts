@@ -10,7 +10,7 @@ export interface Translations {
     login: string;
     register: string;
   };
-  
+
   // Hero Section
   hero: {
     badge: string;
@@ -23,7 +23,7 @@ export interface Translations {
     uptime: string;
     globalSupport: string;
   };
-  
+
   // Device Showcase
   devices: {
     title: string;
@@ -35,7 +35,7 @@ export interface Translations {
     tabletDesc: string;
     mobileDesc: string;
   };
-  
+
   // Pricing
   pricing: {
     badge: string;
@@ -78,7 +78,7 @@ export interface Translations {
       slaGuarantee: string;
     };
   };
-  
+
   // Features
   features: {
     badge: string;
@@ -97,7 +97,7 @@ export interface Translations {
     kitchenFeatures: string[];
     integrationFeatures: string[];
   };
-  
+
   // Why Choose
   whyChoose: {
     title: string;
@@ -111,7 +111,7 @@ export interface Translations {
     customerCentric: string;
     customerCentricDesc: string;
   };
-  
+
   // CTA
   cta: {
     badge: string;
@@ -126,7 +126,7 @@ export interface Translations {
     noSetupDesc: string;
     cancelDesc: string;
   };
-  
+
   // Footer
   footer: {
     company: string;
@@ -156,7 +156,7 @@ export interface Translations {
     cookies: string;
     gdpr: string;
   };
-  
+
   // Stats
   stats: {
     features: string;
@@ -854,7 +854,7 @@ export const translations: Record<Language, Translations> = {
         whiteLabel: "Solution en marque blanche",
         advancedApi: "Accès API avancé",
         accountManager: "Gestionnaire de compte dédié",
-        phoneSupport: "Support téléphonique 24/7",
+        phoneSupport: "24/7 Support téléphonique",
         customTraining: "Sessions de formation personnalisées",
         slaGuarantee: "Garantie SLA"
       }
@@ -2215,7 +2215,7 @@ const countryLanguageMap: Record<string, CountryLanguageMapping> = {
   }, // Switzerland
   'LI': { primary: 'de' }, // Liechtenstein
   'LU': { primary: 'de', alternatives: ['fr'] }, // Luxembourg
-  
+
   // English-speaking countries
   'US': { primary: 'en' }, // United States
   'GB': { primary: 'en' }, // United Kingdom
@@ -2228,7 +2228,7 @@ const countryLanguageMap: Record<string, CountryLanguageMapping> = {
   'SG': { primary: 'en' }, // Singapore
   'MT': { primary: 'en' }, // Malta
   'CY': { primary: 'en' }, // Cyprus
-  
+
   // Spanish-speaking countries
   'ES': { primary: 'es' }, // Spain
   'MX': { primary: 'es' }, // Mexico
@@ -2250,7 +2250,7 @@ const countryLanguageMap: Record<string, CountryLanguageMapping> = {
   'DO': { primary: 'es' }, // Dominican Republic
   'CU': { primary: 'es' }, // Cuba
   'PR': { primary: 'es' }, // Puerto Rico
-  
+
   // French-speaking countries
   'FR': { primary: 'fr' }, // France
   'BE': { 
@@ -2289,29 +2289,29 @@ const countryLanguageMap: Record<string, CountryLanguageMapping> = {
   'GF': { primary: 'fr' }, // French Guiana
   'RE': { primary: 'fr' }, // Réunion
   'YT': { primary: 'fr' }, // Mayotte
-  
+
   // Italian-speaking countries
   'IT': { primary: 'it' }, // Italy
   'SM': { primary: 'it' }, // San Marino
   'VA': { primary: 'it' }, // Vatican City
-  
+
   // Norwegian-speaking countries
   'NO': { primary: 'no' }, // Norway
   'SJ': { primary: 'no' }, // Svalbard and Jan Mayen
-  
+
   // Danish-speaking countries
   'DK': { primary: 'da' }, // Denmark
   'GL': { primary: 'da' }, // Greenland
   'FO': { primary: 'da' }, // Faroe Islands
-  
+
   // Swedish-speaking countries
   'SE': { primary: 'sv' }, // Sweden
   'FI': { primary: 'sv', alternatives: ['en'] }, // Finland (Swedish is official but less common)
   'AX': { primary: 'sv' }, // Åland Islands
-  
+
   // Czech-speaking countries
   'CZ': { primary: 'cs' }, // Czech Republic
-  
+
   // Dutch-speaking countries
   'NL': { primary: 'nl' }, // Netherlands
   'SR': { primary: 'nl' }, // Suriname
@@ -2327,18 +2327,18 @@ function getLanguageFromCountry(countryCode: string): Language {
   if (!mapping) {
     return 'en'; // Default to English for unknown countries
   }
-  
+
   // Try to detect browser language preference for multilingual countries
   if (mapping.alternatives && mapping.alternatives.length > 0) {
     const browserLang = navigator.language.toLowerCase();
     const langPrefix = browserLang.split('-')[0];
-    
+
     // Check if browser language matches any of the alternatives
     if (mapping.alternatives.includes(langPrefix as Language)) {
       return langPrefix as Language;
     }
   }
-  
+
   return mapping.primary;
 }
 
@@ -2366,12 +2366,12 @@ export async function detectLanguage(): Promise<Language> {
 
   // Fallback to browser language detection
   const browserLang = detectLanguageFromBrowser();
-  
+
   // Store detection info
   localStorage.setItem('readytable-language-detection', JSON.stringify({
     detectionMethod: 'browser'
   }));
-  
+
   return browserLang;
 }
 
@@ -2409,7 +2409,7 @@ async function detectLanguageByLocation(): Promise<Language | null> {
     for (const service of services) {
       try {
         const response = await fetch(service.url);
-        
+
         if (!response.ok) {
           console.log(`Service ${service.url} returned ${response.status}`);
           continue;
@@ -2427,12 +2427,12 @@ async function detectLanguageByLocation(): Promise<Language | null> {
         }
 
         const countryCode = locationData.country?.trim().toUpperCase();
-        
+
         if (countryCode && countryLanguageMap[countryCode]) {
           const detectedLanguage = getLanguageFromCountry(countryCode);
           console.log(`Detected location: ${countryCode} (${locationData.city || 'Unknown city'}, ${locationData.region || 'Unknown region'})`);
           console.log(`Setting language to: ${detectedLanguage}`);
-          
+
           // Store detection info
           localStorage.setItem('readytable-language-detection', JSON.stringify({
             detectionMethod: 'location',
@@ -2440,22 +2440,23 @@ async function detectLanguageByLocation(): Promise<Language | null> {
             region: locationData.region,
             city: locationData.city
           }));
-          
+
           return detectedLanguage;
         } else {
-          console.log(`Unknown country code: ${countryCode}`);
+          console.log(`Unknown country code: ${countryCode}, using default`);
+          return 'en'
         }
       } catch (serviceError) {
         console.log(`Service ${service.url} failed:`, serviceError);
         continue;
       }
     }
-    
+
     console.log('All location services failed or returned unknown countries');
   } catch (error) {
     console.log('Location detection error:', error);
   }
-  
+
   return null;
 }
 
@@ -2463,7 +2464,7 @@ async function detectLanguageByLocation(): Promise<Language | null> {
 function detectLanguageFromBrowser(): Language {
   // Get all browser languages in order of preference
   const browserLanguages = navigator.languages || [navigator.language];
-  
+
   // Map browser languages to our supported languages
   const languageMap: Record<string, Language> = {
     // English variants
@@ -2489,17 +2490,17 @@ function detectLanguageFromBrowser(): Language {
     // Dutch variants
     'nl': 'nl', 'nl-nl': 'nl', 'nl-be': 'nl', 'nl-sr': 'nl', 'nl-aw': 'nl', 'nl-cw': 'nl', 'nl-sx': 'nl', 'nl-bq': 'nl'
   };
-  
+
   // Try each browser language in order of preference
   for (const browserLang of browserLanguages) {
     const lang = browserLang.toLowerCase();
-    
+
     // Check exact match first
     if (languageMap[lang]) {
       console.log(`Browser language detected: ${lang} -> ${languageMap[lang]}`);
       return languageMap[lang];
     }
-    
+
     // Check language prefix (e.g., 'de' from 'de-at')
     const langPrefix = lang.split('-')[0];
     if (languageMap[langPrefix]) {
@@ -2507,7 +2508,7 @@ function detectLanguageFromBrowser(): Language {
       return languageMap[langPrefix];
     }
   }
-  
+
   console.log('No supported browser language found, defaulting to English');
   return 'en';
 }
@@ -2520,14 +2521,14 @@ export function useTranslations(): Translations {
 // Get specific translation (synchronous version for utility usage)
 export function getTranslation(key: string, language: Language = 'en'): string {
   const t = translations[language];
-  
+
   // Simple key path resolution (e.g., 'nav.features')
   const keys = key.split('.');
   let value: any = t;
-  
+
   for (const k of keys) {
     value = value?.[k];
   }
-  
+
   return typeof value === 'string' ? value : key;
 }

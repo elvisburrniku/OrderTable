@@ -52,6 +52,15 @@ configureSessionMiddleware().then(sessionMiddleware => {
   }));
 });
 
+// Add global error handler for unhandled promise rejections
+process.on('unhandledRejection', (reason, promise) => {
+  console.error('Unhandled Rejection at:', promise, 'reason:', reason);
+});
+
+process.on('uncaughtException', (error) => {
+  console.error('Uncaught Exception:', error);
+});
+
 // Maintenance mode middleware
 app.use(async (req, res, next) => {
   try {
