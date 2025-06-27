@@ -215,10 +215,16 @@ export default function GuestBookingResponsive(props: any) {
       return dateStr >= startDate && dateStr <= endDate;
     });
     
-    if (activePeriod && activePeriod.openingTime && activePeriod.closingTime) {
+    if (activePeriod && activePeriod.openTime && activePeriod.closeTime) {
+      // Handle midnight close time (00:00) as end of day (23:59)
+      let closeTime = activePeriod.closeTime;
+      if (closeTime === "00:00") {
+        closeTime = "23:59";
+      }
+      
       return {
-        openTime: activePeriod.openingTime,
-        closeTime: activePeriod.closingTime,
+        openTime: activePeriod.openTime,
+        closeTime: closeTime,
         isOpen: true
       };
     }
