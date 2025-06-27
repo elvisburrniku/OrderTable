@@ -40,20 +40,20 @@ import { useToast } from "@/hooks/use-toast";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
-import { 
-  Users, 
-  UserPlus, 
-  Edit, 
-  Trash2, 
-  Shield, 
-  Settings, 
-  ChevronDown, 
+import {
+  Users,
+  UserPlus,
+  Edit,
+  Trash2,
+  Shield,
+  Settings,
+  ChevronDown,
   ChevronUp,
   Save,
   RotateCcw,
   Grip,
   ArrowRight,
-  X
+  X,
 } from "lucide-react";
 import {
   Collapsible,
@@ -143,9 +143,9 @@ const redirectOptions = [
   { value: "dashboard", label: "Dashboard" },
   { value: "bookings", label: "Bookings" },
   { value: "customers", label: "Customers" },
-  { value: "menu", label: "Menu Management" },
+  { value: "menu-management", label: "Menu Management" },
   { value: "tables", label: "Table Management" },
-  { value: "kitchen", label: "Kitchen Management" },
+  { value: "kitchen-management", label: "Kitchen Management" },
   { value: "users", label: "User Management" },
   { value: "billing", label: "Billing" },
   { value: "reports", label: "Reports" },
@@ -160,7 +160,10 @@ interface DraggablePermissionProps {
   isActive?: boolean;
 }
 
-function DraggablePermission({ permission, isActive }: DraggablePermissionProps) {
+function DraggablePermission({
+  permission,
+  isActive,
+}: DraggablePermissionProps) {
   const {
     attributes,
     listeners,
@@ -219,7 +222,7 @@ function DroppableRoleZone({
   });
 
   const rolePermissions = permissions.filter((p) =>
-    role.permissions.includes(p.key)
+    role.permissions.includes(p.key),
   );
 
   return (
@@ -277,7 +280,9 @@ function DroppableRoleZone({
         ) : (
           <div className="text-center py-8 text-gray-500">
             <Shield className="h-8 w-8 mx-auto mb-2 opacity-50" />
-            <p className="text-sm">Drag permissions here to assign to this role</p>
+            <p className="text-sm">
+              Drag permissions here to assign to this role
+            </p>
           </div>
         )}
       </div>
@@ -296,20 +301,21 @@ export default function TenantUsersManagement({
   const [editingUser, setEditingUser] = useState<TenantUser | null>(null);
   const [inviteDialogOpen, setInviteDialogOpen] = useState(false);
   const [editDialogOpen, setEditDialogOpen] = useState(false);
-  
+
   // Guard Management state
   const [guardManagementOpen, setGuardManagementOpen] = useState(false);
   const [activePermission, setActivePermission] = useState<string | null>(null);
-  const [localRolePermissions, setLocalRolePermissions] = useState<RolePermissionsData | null>(null);
+  const [localRolePermissions, setLocalRolePermissions] =
+    useState<RolePermissionsData | null>(null);
   const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
-  
+
   // Drag and Drop sensors
   const sensors = useSensors(
     useSensor(PointerSensor, {
       activationConstraint: {
         distance: 8,
       },
-    })
+    }),
   );
 
   // Fetch tenant users
@@ -329,10 +335,11 @@ export default function TenantUsersManagement({
   });
 
   // Fetch role permissions for guard management
-  const { data: rolePermissionsData, isLoading: rolePermissionsLoading } = useQuery<RolePermissionsData>({
-    queryKey: [`/api/tenants/${tenantId}/role-permissions`],
-    enabled: !!tenantId && guardManagementOpen,
-  });
+  const { data: rolePermissionsData, isLoading: rolePermissionsLoading } =
+    useQuery<RolePermissionsData>({
+      queryKey: [`/api/tenants/${tenantId}/role-permissions`],
+      enabled: !!tenantId && guardManagementOpen,
+    });
 
   // Debug logging
   console.log("TenantUsersManagement Debug:", {
@@ -544,8 +551,9 @@ export default function TenantUsersManagement({
     // Handle dropping on role zones
     if (overId.startsWith("role-")) {
       const targetRole = overId.replace("role-", "");
-      
-      if (!localRolePermissions.roles.find(r => r.role === targetRole)) return;
+
+      if (!localRolePermissions.roles.find((r) => r.role === targetRole))
+        return;
 
       const updatedRoles = localRolePermissions.roles.map((role) => {
         if (role.role === targetRole) {
@@ -620,7 +628,7 @@ export default function TenantUsersManagement({
 
   const getAllPermissions = () => {
     if (!localRolePermissions) return [];
-    
+
     return [
       ...localRolePermissions.availablePermissions.pageAccess,
       ...localRolePermissions.availablePermissions.features,
@@ -632,7 +640,7 @@ export default function TenantUsersManagement({
 
     const allPermissions = getAllPermissions();
     const assignedPermissions = new Set();
-    
+
     localRolePermissions.roles.forEach((role) => {
       role.permissions.forEach((permission) => {
         assignedPermissions.add(permission);
@@ -659,8 +667,8 @@ export default function TenantUsersManagement({
             <CardTitle>Team Members</CardTitle>
           </div>
           <div className="flex items-center space-x-2">
-            <Button 
-              variant="outline" 
+            <Button
+              variant="outline"
               size="sm"
               onClick={() => setGuardManagementOpen(!guardManagementOpen)}
             >
@@ -841,7 +849,10 @@ export default function TenantUsersManagement({
       </Card>
 
       {/* Guard Management Collapsible Section */}
-      <Collapsible open={guardManagementOpen} onOpenChange={setGuardManagementOpen}>
+      <Collapsible
+        open={guardManagementOpen}
+        onOpenChange={setGuardManagementOpen}
+      >
         <CollapsibleContent>
           <Card>
             <CardHeader>
@@ -860,18 +871,26 @@ export default function TenantUsersManagement({
                     onClick={handleResetPermissions}
                     variant="outline"
                     size="sm"
-                    disabled={!hasUnsavedChanges || saveRolePermissionsMutation.isPending}
+                    disabled={
+                      !hasUnsavedChanges ||
+                      saveRolePermissionsMutation.isPending
+                    }
                   >
                     <RotateCcw className="h-4 w-4 mr-2" />
                     Reset
                   </Button>
                   <Button
                     onClick={handleSavePermissions}
-                    disabled={!hasUnsavedChanges || saveRolePermissionsMutation.isPending}
+                    disabled={
+                      !hasUnsavedChanges ||
+                      saveRolePermissionsMutation.isPending
+                    }
                     size="sm"
                   >
                     <Save className="h-4 w-4 mr-2" />
-                    {saveRolePermissionsMutation.isPending ? "Saving..." : "Save Changes"}
+                    {saveRolePermissionsMutation.isPending
+                      ? "Saving..."
+                      : "Save Changes"}
                   </Button>
                 </div>
               </div>
@@ -890,10 +909,14 @@ export default function TenantUsersManagement({
                 >
                   <Tabs defaultValue="drag-drop" className="w-full">
                     <TabsList className="grid w-full grid-cols-2">
-                      <TabsTrigger value="drag-drop">Drag & Drop Interface</TabsTrigger>
-                      <TabsTrigger value="overview">Permissions Overview</TabsTrigger>
+                      <TabsTrigger value="drag-drop">
+                        Drag & Drop Interface
+                      </TabsTrigger>
+                      <TabsTrigger value="overview">
+                        Permissions Overview
+                      </TabsTrigger>
                     </TabsList>
-                    
+
                     <TabsContent value="drag-drop" className="space-y-6">
                       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
                         {/* Available Permissions */}
@@ -904,37 +927,53 @@ export default function TenantUsersManagement({
                           </h3>
                           <div className="space-y-4">
                             <div>
-                              <h4 className="font-medium text-sm text-gray-600 mb-2">Page Access</h4>
+                              <h4 className="font-medium text-sm text-gray-600 mb-2">
+                                Page Access
+                              </h4>
                               <SortableContext
-                                items={localRolePermissions.availablePermissions.pageAccess.map((p) => p.key)}
+                                items={localRolePermissions.availablePermissions.pageAccess.map(
+                                  (p) => p.key,
+                                )}
                                 strategy={verticalListSortingStrategy}
                               >
                                 <div className="space-y-2">
-                                  {localRolePermissions.availablePermissions.pageAccess.map((permission) => (
-                                    <DraggablePermission
-                                      key={permission.key}
-                                      permission={permission}
-                                      isActive={activePermission === permission.key}
-                                    />
-                                  ))}
+                                  {localRolePermissions.availablePermissions.pageAccess.map(
+                                    (permission) => (
+                                      <DraggablePermission
+                                        key={permission.key}
+                                        permission={permission}
+                                        isActive={
+                                          activePermission === permission.key
+                                        }
+                                      />
+                                    ),
+                                  )}
                                 </div>
                               </SortableContext>
                             </div>
-                            
+
                             <div>
-                              <h4 className="font-medium text-sm text-gray-600 mb-2">Feature Access</h4>
+                              <h4 className="font-medium text-sm text-gray-600 mb-2">
+                                Feature Access
+                              </h4>
                               <SortableContext
-                                items={localRolePermissions.availablePermissions.features.map((p) => p.key)}
+                                items={localRolePermissions.availablePermissions.features.map(
+                                  (p) => p.key,
+                                )}
                                 strategy={verticalListSortingStrategy}
                               >
                                 <div className="space-y-2">
-                                  {localRolePermissions.availablePermissions.features.map((permission) => (
-                                    <DraggablePermission
-                                      key={permission.key}
-                                      permission={permission}
-                                      isActive={activePermission === permission.key}
-                                    />
-                                  ))}
+                                  {localRolePermissions.availablePermissions.features.map(
+                                    (permission) => (
+                                      <DraggablePermission
+                                        key={permission.key}
+                                        permission={permission}
+                                        isActive={
+                                          activePermission === permission.key
+                                        }
+                                      />
+                                    ),
+                                  )}
                                 </div>
                               </SortableContext>
                             </div>
@@ -961,34 +1000,55 @@ export default function TenantUsersManagement({
                         </div>
                       </div>
                     </TabsContent>
-                    
+
                     <TabsContent value="overview" className="space-y-4">
                       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                         {localRolePermissions.roles.map((role) => (
                           <Card key={role.role}>
                             <CardHeader className="pb-2">
-                              <CardTitle className="text-base capitalize">{role.role}</CardTitle>
+                              <CardTitle className="text-base capitalize">
+                                {role.role}
+                              </CardTitle>
                             </CardHeader>
                             <CardContent>
                               <div className="space-y-2">
                                 <div className="flex items-center justify-between">
-                                  <span className="text-sm font-medium">Permissions:</span>
-                                  <Badge variant="secondary">{role.permissions.length}</Badge>
+                                  <span className="text-sm font-medium">
+                                    Permissions:
+                                  </span>
+                                  <Badge variant="secondary">
+                                    {role.permissions.length}
+                                  </Badge>
                                 </div>
                                 <div className="flex items-center justify-between">
-                                  <span className="text-sm font-medium">Default Page:</span>
-                                  <Badge variant="outline">{role.redirect}</Badge>
+                                  <span className="text-sm font-medium">
+                                    Default Page:
+                                  </span>
+                                  <Badge variant="outline">
+                                    {role.redirect}
+                                  </Badge>
                                 </div>
                                 <div className="pt-2">
-                                  <span className="text-sm font-medium mb-1 block">Granted Access:</span>
+                                  <span className="text-sm font-medium mb-1 block">
+                                    Granted Access:
+                                  </span>
                                   <div className="flex flex-wrap gap-1">
-                                    {role.permissions.slice(0, 3).map((permission) => (
-                                      <Badge key={permission} variant="outline" className="text-xs">
-                                        {permission}
-                                      </Badge>
-                                    ))}
+                                    {role.permissions
+                                      .slice(0, 3)
+                                      .map((permission) => (
+                                        <Badge
+                                          key={permission}
+                                          variant="outline"
+                                          className="text-xs"
+                                        >
+                                          {permission}
+                                        </Badge>
+                                      ))}
                                     {role.permissions.length > 3 && (
-                                      <Badge variant="outline" className="text-xs">
+                                      <Badge
+                                        variant="outline"
+                                        className="text-xs"
+                                      >
                                         +{role.permissions.length - 3} more
                                       </Badge>
                                     )}
@@ -1001,13 +1061,17 @@ export default function TenantUsersManagement({
                       </div>
                     </TabsContent>
                   </Tabs>
-                  
+
                   <DragOverlay>
                     {activePermission ? (
                       <DraggablePermission
                         permission={
-                          getAllPermissions().find((p) => p.key === activePermission) || 
-                          { key: activePermission, label: activePermission }
+                          getAllPermissions().find(
+                            (p) => p.key === activePermission,
+                          ) || {
+                            key: activePermission,
+                            label: activePermission,
+                          }
                         }
                         isActive
                       />
