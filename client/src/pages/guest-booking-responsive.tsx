@@ -271,15 +271,7 @@ export default function GuestBookingResponsive(props: any) {
     return !dayHours || !dayHours.isOpen;
   };
 
-// Helper function to check if date is disabled in opening hours
-  const isDateDisabledInOpeningHours = (date: Date, openingHours: any[]) => {
-    if (!openingHours || openingHours.length === 0) return false;
 
-    const dayOfWeek = date.getDay();
-    const dayHours = openingHours.find(h => h.dayOfWeek === dayOfWeek);
-
-    return dayHours ? !dayHours.isOpen : true;
-  };
 
   // Check if date is available based on opening hours and special periods
   const isDateAvailable = (date: Date) => {
@@ -762,18 +754,18 @@ export default function GuestBookingResponsive(props: any) {
                         key={index}
                         onClick={() => isAvailable && setSelectedDate(date)}
                         disabled={!isAvailable}
-                        className={`
-                          h-12 w-full rounded-lg border-2 transition-all duration-200 text-center flex flex-col items-center justify-center
-                          ${isPastDate
-                            ? 'border-gray-200 bg-gray-100 text-gray-400 cursor-not-allowed'
+                        className={
+                          "h-12 w-full rounded-lg border-2 transition-all duration-200 text-center flex flex-col items-center justify-center " +
+                          (isPastDate
+                            ? "border-gray-200 bg-gray-100 text-gray-400 cursor-not-allowed"
                             : !isAvailable
-                            ? 'border-red-300 bg-red-100 text-red-600 cursor-not-allowed'
-                            :`isSelected
-                            ? 'border-blue-500 bg-blue-500 text-white shadow-lg'
+                            ? "border-red-300 bg-red-100 text-red-600 cursor-not-allowed"
+                            : isSelected
+                            ? "border-blue-500 bg-blue-500 text-white shadow-lg"
                             : isToday
-                            ? 'border-green-400 bg-green-100 text-green-700 font-semibold'
-                            : 'border-green-300 bg-green-50 text-green-700 hover:border-green-400 hover:bg-green-100'}
-                        `}
+                            ? "border-green-400 bg-green-100 text-green-700 font-semibold"
+                            : "border-green-300 bg-green-50 text-green-700 hover:border-green-400 hover:bg-green-100")
+                        }
                       >
                         <span className="text-sm font-medium">{format(date, 'd')}</span>
                         {isToday && isAvailable && <span className="text-xs">Today</span>}
@@ -840,16 +832,16 @@ export default function GuestBookingResponsive(props: any) {
                             key={time}
                             onClick={() => isAvailable && setSelectedTime(time)}
                             disabled={!isAvailable}
-                            className={`
-                              relative p-3 rounded-lg border-2 transition-all duration-200
-                              ${!isAvailable
-                                ? 'border-red-300 bg-red-100 text-red-600 cursor-not-allowed'
+                            className={
+                              "relative p-3 rounded-lg border-2 transition-all duration-200 " +
+                              (!isAvailable
+                                ? "border-red-300 bg-red-100 text-red-600 cursor-not-allowed"
                                 : isSelected
-                                ? 'border-blue-500 bg-blue-50 text-blue-700 shadow-lg'
+                                ? "border-blue-500 bg-blue-50 text-blue-700 shadow-lg"
                                 : isRecommended
-                                ? 'border-amber-300 bg-amber-50 text-amber-700 hover:border-amber-400 hover:bg-amber-100'
-                                : 'border-green-300 bg-green-50 text-green-700 hover:border-green-400 hover:bg-green-100'}
-                            `}
+                                ? "border-amber-300 bg-amber-50 text-amber-700 hover:border-amber-400 hover:bg-amber-100"
+                                : "border-green-300 bg-green-50 text-green-700 hover:border-green-400 hover:bg-green-100")
+                            }
                           >
                             {isRecommended && isAvailable && !isSelected && (
                               <span className="absolute -top-1 -right-1 w-3 h-3 bg-amber-400 rounded-full"></span>
@@ -943,14 +935,14 @@ export default function GuestBookingResponsive(props: any) {
                     <button
                       key={count}
                       onClick={() => setGuestCount(count)}
-                      className={`
-                        px-3 py-1 rounded-full text-sm transition-all duration-200
-                        ${guestCount === count 
-                          ? 'bg-blue-500 text-white' 
+                      className={
+                        "px-3 py-1 rounded-full text-sm transition-all duration-200 " +
+                        (guestCount === count 
+                          ? "bg-blue-500 text-white" 
                           : count === getDefaultGuestCount()
-                          ? 'bg-amber-100 text-amber-700 border border-amber-300'
-                          : 'bg-gray-100 text-gray-600 hover:bg-gray-200'}
-                      `}
+                          ? "bg-amber-100 text-amber-700 border border-amber-300"
+                          : "bg-gray-100 text-gray-600 hover:bg-gray-200")
+                      }
                     >
                       {count}
                     </button>
@@ -1087,4 +1079,5 @@ export default function GuestBookingResponsive(props: any) {
       </div>
     </div>
   );
+}
 }
