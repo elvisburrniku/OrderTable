@@ -63,6 +63,18 @@ export default function HeatMap() {
     refetchInterval: autoRefresh ? 30000 : false,
   });
 
+  // Fetch table layout data from table-plan
+  const { data: tableLayout } = useQuery({
+    queryKey: [`/api/tenants/${restaurant.tenantId}/restaurants/${restaurant.id}/table-layout`],
+    enabled: !!restaurant?.tenantId && !!restaurant?.id,
+  });
+
+  // Fetch rooms data
+  const { data: rooms = [] } = useQuery({
+    queryKey: [`/api/tenants/${restaurant.tenantId}/restaurants/${restaurant.id}/rooms`],
+    enabled: !!restaurant?.tenantId && !!restaurant?.id,
+  });
+
   // Auto-refresh every 30 seconds when enabled
   useEffect(() => {
     if (!autoRefresh) return;
@@ -73,6 +85,17 @@ export default function HeatMap() {
   }, [autoRefresh, refetch]);
 
   const heatData = heatMapData || [];
+
+  // Merge heat map data with table layout positions
+  const mergedTableData = heatData.map(table => {
+    const tablePosition = tableLayout?.positions?.[table.tableId];
+    return {
+      ...table,
+      position: tablePosition ? { x: tablePosition.x, y: tablePosition.y } : table.position,
+      shape: tablePosition?.shape || 'circle',
+      rotation: tablePosition?.rotation || 0
+    };
+  });
 
   const getStatusColor = (status: string) => {
     switch (status) {
@@ -302,25 +325,87 @@ export default function HeatMap() {
                               });
                             }}
                           >
-                            {heatData.map((table, index) => {
+                            {/* Room background */}
+                            {rooms.map((room) => (
+                              <rect
+                                key={room.id}
+                                x="50"
+                                y="50"
+                                width="700"
+                                height="300"
+                                fill="rgba(248, 250, 252, 0.8)"
+                                stroke="rgba(203, 213, 225, 0.6)"
+                                strokeWidth="2"
+                                strokeDasharray="5,5"
+                                rx="8"
+                              />
+                            ))}
+                            
+                            {/* Room label */}
+                            {rooms.map((room) => (
+                              <text
+                                key={`label-${room.id}`}
+                                x="60"
+                                y="75"
+                                className="text-sm font-medium fill-slate-600 pointer-events-none"
+                              >
+                                {room.name}
+                              </text>
+                            ))}
+                            {mergedTableData.map((table, index) => {
                               const intensity = getHeatIntensity(table, viewMode);
                               const statusColor = getStatusColor(table.status);
+                              const size = 20 + (intensity * 15);
                               
                               return (
-                                <g key={table.tableId}>
-                                  <circle
-                                    cx={table.position.x}
-                                    cy={table.position.y}
-                                    r={20 + (intensity * 15)}
-                                    fill={statusColor}
-                                    fillOpacity={0.1 + (intensity * 0.7)}
-                                    stroke={statusColor}
-                                    strokeWidth={2}
-                                    className="cursor-pointer transition-all duration-300 hover:stroke-width-3"
-                                    onMouseEnter={() => setHoveredTable(table)}
-                                    onMouseLeave={() => setHoveredTable(null)}
-                                    onClick={() => setSelectedTable(table)}
-                                  />
+                                <g key={table.tableId} transform={`rotate(${table.rotation} ${table.position.x} ${table.position.y})`}>
+                                  {table.shape === 'rectangle' ? (
+                                    <rect
+                                      x={table.position.x - size}
+                                      y={table.position.y - size/2}
+                                      width={size * 2}
+                                      height={size}
+                                      fill={statusColor}
+                                      fillOpacity={0.1 + (intensity * 0.7)}
+                                      stroke={statusColor}
+                                      strokeWidth={2}
+                                      rx={4}
+                                      className="cursor-pointer transition-all duration-300 hover:stroke-width-3"
+                                      onMouseEnter={() => setHoveredTable(table)}
+                                      onMouseLeave={() => setHoveredTable(null)}
+                                      onClick={() => setSelectedTable(table)}
+                                    />
+                                  ) : table.shape === 'square' ? (
+                                    <rect
+                                      x={table.position.x - size}
+                                      y={table.position.y - size}
+                                      width={size * 2}
+                                      height={size * 2}
+                                      fill={statusColor}
+                                      fillOpacity={0.1 + (intensity * 0.7)}
+                                      stroke={statusColor}
+                                      strokeWidth={2}
+                                      rx={4}
+                                      className="cursor-pointer transition-all duration-300 hover:stroke-width-3"
+                                      onMouseEnter={() => setHoveredTable(table)}
+                                      onMouseLeave={() => setHoveredTable(null)}
+                                      onClick={() => setSelectedTable(table)}
+                                    />
+                                  ) : (
+                                    <circle
+                                      cx={table.position.x}
+                                      cy={table.position.y}
+                                      r={size}
+                                      fill={statusColor}
+                                      fillOpacity={0.1 + (intensity * 0.7)}
+                                      stroke={statusColor}
+                                      strokeWidth={2}
+                                      className="cursor-pointer transition-all duration-300 hover:stroke-width-3"
+                                      onMouseEnter={() => setHoveredTable(table)}
+                                      onMouseLeave={() => setHoveredTable(null)}
+                                      onClick={() => setSelectedTable(table)}
+                                    />
+                                  )}
                                   <text
                                     x={table.position.x}
                                     y={table.position.y + 5}
@@ -332,7 +417,76 @@ export default function HeatMap() {
                                 </g>
                               );
                             })}
+
+                            {/* Animated heat rings for high-intensity tables */}
+                            {mergedTableData
+                              .filter(table => getHeatIntensity(table, viewMode) > 0.7)
+                              .map((table) => (
+                                <g key={`heat-ring-${table.tableId}`}>
+                                  <circle
+                                    cx={table.position.x}
+                                    cy={table.position.y}
+                                    r={40}
+                                    fill="none"
+                                    stroke={getStatusColor(table.status)}
+                                    strokeWidth="2"
+                                    strokeOpacity="0.3"
+                                    className="animate-ping"
+                                  />
+                                  <circle
+                                    cx={table.position.x}
+                                    cy={table.position.y}
+                                    r={50}
+                                    fill="none"
+                                    stroke={getStatusColor(table.status)}
+                                    strokeWidth="1"
+                                    strokeOpacity="0.2"
+                                    className="animate-pulse"
+                                  />
+                                </g>
+                              ))}
                           </svg>
+
+                          {/* Enhanced tooltip for hovered table */}
+                          {hoveredTable && (
+                            <div
+                              className="absolute bg-slate-900/95 backdrop-blur-sm text-white text-xs rounded-lg py-3 px-4 pointer-events-none z-10 shadow-xl border border-slate-700"
+                              style={{
+                                left: mousePosition.x + 15,
+                                top: mousePosition.y - 60,
+                              }}
+                            >
+                              <div className="font-semibold text-sm mb-1">{hoveredTable.tableName}</div>
+                              <div className="space-y-1">
+                                <div className="flex justify-between items-center">
+                                  <span className="text-slate-300">Status:</span>
+                                  <span className={`font-medium ${
+                                    hoveredTable.status === 'occupied' ? 'text-red-400' :
+                                    hoveredTable.status === 'reserved' ? 'text-amber-400' :
+                                    hoveredTable.status === 'maintenance' ? 'text-gray-400' :
+                                    'text-emerald-400'
+                                  }`}>
+                                    {hoveredTable.status === 'occupied' && 'Occupied'}
+                                    {hoveredTable.status === 'reserved' && 'Reserved'}
+                                    {hoveredTable.status === 'available' && 'Available'}
+                                    {hoveredTable.status === 'maintenance' && 'Maintenance'}
+                                  </span>
+                                </div>
+                                <div className="flex justify-between items-center">
+                                  <span className="text-slate-300">Performance:</span>
+                                  <span className="font-medium text-white">{hoveredTable.heatScore}/100</span>
+                                </div>
+                                <div className="flex justify-between items-center">
+                                  <span className="text-slate-300">Capacity:</span>
+                                  <span className="font-medium text-white">{hoveredTable.capacity} guests</span>
+                                </div>
+                                <div className="flex justify-between items-center">
+                                  <span className="text-slate-300">Revenue:</span>
+                                  <span className="font-medium text-emerald-400">${hoveredTable.revenueGenerated}</span>
+                                </div>
+                              </div>
+                            </div>
+                          )}
                           
                           {/* Legend */}
                           <div className="absolute bottom-4 left-4 bg-white rounded-lg border border-slate-200 p-4 shadow-sm">
@@ -423,9 +577,9 @@ export default function HeatMap() {
                     </CardHeader>
                     <CardContent className="space-y-4">
                       {[
-                        { label: 'High (80-100%)', count: heatData.filter(t => t.heatScore >= 80).length, color: 'bg-emerald-500' },
-                        { label: 'Medium (50-79%)', count: heatData.filter(t => t.heatScore >= 50 && t.heatScore < 80).length, color: 'bg-amber-500' },
-                        { label: 'Low (<50%)', count: heatData.filter(t => t.heatScore < 50).length, color: 'bg-red-500' }
+                        { label: 'High (80-100%)', count: mergedTableData.filter(t => t.heatScore >= 80).length, color: 'bg-emerald-500' },
+                        { label: 'Medium (50-79%)', count: mergedTableData.filter(t => t.heatScore >= 50 && t.heatScore < 80).length, color: 'bg-amber-500' },
+                        { label: 'Low (<50%)', count: mergedTableData.filter(t => t.heatScore < 50).length, color: 'bg-red-500' }
                       ].map((item) => (
                         <div key={item.label} className="flex items-center justify-between">
                           <div className="flex items-center space-x-3">
@@ -445,10 +599,10 @@ export default function HeatMap() {
                     </CardHeader>
                     <CardContent className="space-y-4">
                       {[
-                        { status: 'available', label: 'Available', count: heatData.filter(t => t.status === 'available').length },
-                        { status: 'occupied', label: 'Occupied', count: heatData.filter(t => t.status === 'occupied').length },
-                        { status: 'reserved', label: 'Reserved', count: heatData.filter(t => t.status === 'reserved').length },
-                        { status: 'maintenance', label: 'Maintenance', count: heatData.filter(t => t.status === 'maintenance').length }
+                        { status: 'available', label: 'Available', count: mergedTableData.filter(t => t.status === 'available').length },
+                        { status: 'occupied', label: 'Occupied', count: mergedTableData.filter(t => t.status === 'occupied').length },
+                        { status: 'reserved', label: 'Reserved', count: mergedTableData.filter(t => t.status === 'reserved').length },
+                        { status: 'maintenance', label: 'Maintenance', count: mergedTableData.filter(t => t.status === 'maintenance').length }
                       ].map((item) => (
                         <div key={item.status} className="flex items-center justify-between">
                           <div className="flex items-center space-x-3">
@@ -470,7 +624,7 @@ export default function HeatMap() {
                       <CardTitle className="text-lg font-medium text-slate-900">Top Performers</CardTitle>
                     </CardHeader>
                     <CardContent className="space-y-3">
-                      {heatData
+                      {mergedTableData
                         .sort((a, b) => b.heatScore - a.heatScore)
                         .slice(0, 5)
                         .map((table, index) => (
