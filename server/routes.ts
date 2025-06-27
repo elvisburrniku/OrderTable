@@ -1142,6 +1142,42 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Stripe webhook endpoint
+  app.post("/api/webhooks/stripe", async (req, res) => {
+    try {
+      const sig = req.headers['stripe-signature'];
+      let event;
+
+      try {
+        event = stripe.webhooks.constructEvent(req.body, sig, process.env.STRIPE_WEBHOOK_SECRET);
+      } catch (err) {
+        console.log(`Webhook signature verification failed.`, err.message);
+        return res.status(400).send(`Webhook Error: ${err.message}`);
+      }
+
+      // Handle the event
+      switch (event.type) {
+        case 'checkout.session.completed':
+          const session = event.data.object;
+          // Handle successful payment
+          console.log('Payment successful:', session.id);
+          break;
+        case 'invoice.payment_succeeded':
+          const invoice = event.data.object;
+          // Handle subscription renewal
+          console.log('Subscription renewed:', invoice.subscription);
+          break;
+        default:
+          console.log(`Unhandled event type ${event.type}`);
+      }
+
+      res.json({received: true});
+    } catch (error) {
+      console.error('Stripe webhook error:', error);
+      res.status(500).json({ error: 'Webhook processing failed' });
+    }
+  });
+
   // Multi-restaurant tenant routes
   app.get(
     "/api/tenants/:tenantId/restaurants",
