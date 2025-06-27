@@ -22,12 +22,13 @@ A comprehensive restaurant booking management system with React frontend and Exp
 - Kitchen order management
 
 ## Recent Changes
-- **2025-06-27**: Implemented comprehensive configuration-based booking restrictions for guest booking system
-- **Opening Hours Restrictions**: Guest booking system now prevents bookings on days disabled in opening hours configuration
-- **Special Periods Blocking**: Bookings are blocked during configured special periods (holidays, closures, events)
-- **Cut-off Time Enforcement**: System checks cut-off time configuration and prevents bookings within specified time buffer
-- **Calendar Integration**: Calendar view visually disables dates blocked by any of the three configuration restrictions
-- **Validation System**: Enhanced isTimeSlotValid function with comprehensive checks for all booking restrictions
+- **2025-06-27**: Enhanced special periods functionality to support custom opening hours for open periods
+- **Special Periods Smart Logic**: When "Restaurant is open during this period" is enabled, system uses custom opening/closing times from special period configuration instead of blocking dates
+- **Dynamic Time Slots**: Guest booking system generates time slots based on special period hours when restaurant is open during configured periods
+- **Flexible Configuration**: Special periods now support both closure periods (blocked dates) and modified hours periods (custom times)
+- **Comprehensive Booking Restrictions**: Guest booking system prevents bookings based on opening hours, special periods, and cut-off time configurations
+- **Calendar Integration**: Calendar view visually disables dates blocked by configuration restrictions while allowing dates with modified hours
+- **Enhanced Validation**: Updated time slot validation and generation to prioritize special period hours over regular opening hours
 - **Heat-Map Integration**: Heat-map now uses actual table positions, shapes, and rotations from table-plan page instead of hardcoded positions
 - **Enhanced Visualization**: Added animated heat rings for high-performance tables, improved tooltips with detailed metrics, and room backgrounds
 - **Bug Fix**: Fixed guest booking error by adding comprehensive null checks to isTimeSlotValid function preventing undefined property access

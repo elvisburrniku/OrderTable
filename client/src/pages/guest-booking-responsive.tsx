@@ -198,18 +198,43 @@ export default function GuestBookingResponsive(props: any) {
   // Get day names for header
   const dayNames = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
 
-  // Generate time slots based on restaurant opening hours for selected date
+  // Generate time slots based on opening hours or special period hours
   const generateTimeSlotsForDate = (date: Date) => {
-    if (!date || !openingHours || !Array.isArray(openingHours)) return [];
+    if (!date) return [];
     
-    const dayOfWeek = date.getDay();
-    const dayHours = openingHours.find((h: any) => h.dayOfWeek === dayOfWeek);
+    // Check for special period hours first
+    const specialHours = getSpecialPeriodHours(date);
+    let effectiveHours = null;
     
-    if (!dayHours || !dayHours.isOpen) return [];
+    if (specialHours) {
+      // Use special period hours if restaurant is open during special period
+      effectiveHours = specialHours;
+    } else if (openingHours && Array.isArray(openingHours)) {
+      // Use regular opening hours
+      const dayOfWeek = date.getDay();
+      const dayHours = openingHours.find((h: any) => h.dayOfWeek === dayOfWeek);
+      if (dayHours && dayHours.isOpen) {
+        effectiveHours = dayHours;
+      }
+    }
+    
+    if (!effectiveHours || !effectiveHours.isOpen) return [];
+    
+    // Validate hours format
+    if (!effectiveHours.openTime || !effectiveHours.closeTime || 
+        !effectiveHours.openTime.includes(':') || !effectiveHours.closeTime.includes(':')) return [];
+    
+    const openTimeParts = effectiveHours.openTime.split(':');
+    const closeTimeParts = effectiveHours.closeTime.split(':');
+    
+    if (openTimeParts.length !== 2 || closeTimeParts.length !== 2) return [];
+    
+    const [openHour, openMin] = openTimeParts.map(Number);
+    const [closeHour, closeMin] = closeTimeParts.map(Number);
+    
+    if (isNaN(openHour) || isNaN(openMin) || isNaN(closeHour) || isNaN(closeMin)) return [];
     
     const slots = [];
-    const [openHour, openMin] = dayHours.openTime.split(':').map(Number);
-    const [closeHour, closeMin] = dayHours.closeTime.split(':').map(Number);
     
     // Start from opening time
     let currentHour = openHour;
@@ -276,7 +301,7 @@ export default function GuestBookingResponsive(props: any) {
     return true;
   };
 
-  // Check if a date is blocked by special periods
+  // Check if a date is blocked by special periods (only when restaurant is closed)
   const isDateBlockedBySpecialPeriods = (date: Date) => {
     if (!specialPeriods || !Array.isArray(specialPeriods)) return false;
     
@@ -288,8 +313,38 @@ export default function GuestBookingResponsive(props: any) {
       const startDate = format(new Date(period.startDate), 'yyyy-MM-dd');
       const endDate = format(new Date(period.endDate), 'yyyy-MM-dd');
       
+      // Only block if date is in period AND restaurant is closed during this period
+      const isInPeriod = dateStr >= startDate && dateStr <= endDate;
+      const isRestaurantClosed = !period.isOpen;
+      
+      return isInPeriod && isRestaurantClosed;
+    });
+  };
+
+  // Get special period opening hours for a specific date (if restaurant is open during special period)
+  const getSpecialPeriodHours = (date: Date) => {
+    if (!specialPeriods || !Array.isArray(specialPeriods)) return null;
+    
+    const dateStr = format(date, 'yyyy-MM-dd');
+    
+    const activePeriod = specialPeriods.find((period: any) => {
+      if (!period.startDate || !period.endDate || !period.isOpen) return false;
+      
+      const startDate = format(new Date(period.startDate), 'yyyy-MM-dd');
+      const endDate = format(new Date(period.endDate), 'yyyy-MM-dd');
+      
       return dateStr >= startDate && dateStr <= endDate;
     });
+    
+    if (activePeriod && activePeriod.openingTime && activePeriod.closingTime) {
+      return {
+        openTime: activePeriod.openingTime,
+        closeTime: activePeriod.closingTime,
+        isOpen: true
+      };
+    }
+    
+    return null;
   };
 
   // Check if a specific date is disabled in opening hours configuration
@@ -366,41 +421,52 @@ export default function GuestBookingResponsive(props: any) {
     
     const dayOfWeek = date.getDay();
     
-    // 4. Check opening hours for the specific time slot
-    if (openingHours && Array.isArray(openingHours)) {
+    // 4. Check opening hours for the specific time slot (use special period hours if available)
+    const specialHours = getSpecialPeriodHours(date);
+    let effectiveHours = null;
+    
+    if (specialHours) {
+      // Use special period hours if restaurant is open during special period
+      effectiveHours = specialHours;
+    } else if (openingHours && Array.isArray(openingHours)) {
+      // Use regular opening hours
       const dayHours = openingHours.find((h: any) => h.dayOfWeek === dayOfWeek);
-      if (!dayHours || !dayHours.isOpen) return false;
-      
-      // Validate timeSlot format
-      if (!timeSlot.includes(':')) return false;
-      
-      const timeSlotParts = timeSlot.split(':');
-      if (timeSlotParts.length !== 2) return false;
-      
-      const [hours, minutes] = timeSlotParts.map(Number);
-      if (isNaN(hours) || isNaN(minutes)) return false;
-      
-      const slotTime = hours * 60 + minutes; // Convert to minutes
-      
-      // Validate opening hours format
-      if (!dayHours.openTime || !dayHours.closeTime || 
-          !dayHours.openTime.includes(':') || !dayHours.closeTime.includes(':')) return false;
-      
-      const openTimeParts = dayHours.openTime.split(':');
-      const closeTimeParts = dayHours.closeTime.split(':');
-      
-      if (openTimeParts.length !== 2 || closeTimeParts.length !== 2) return false;
-      
-      const [openHour, openMin] = openTimeParts.map(Number);
-      const [closeHour, closeMin] = closeTimeParts.map(Number);
-      
-      if (isNaN(openHour) || isNaN(openMin) || isNaN(closeHour) || isNaN(closeMin)) return false;
-      
-      const openTime = openHour * 60 + openMin;
-      const closeTime = closeHour * 60 + closeMin;
-      
-      if (slotTime < openTime || slotTime > closeTime) return false;
+      if (dayHours && dayHours.isOpen) {
+        effectiveHours = dayHours;
+      }
     }
+    
+    if (!effectiveHours || !effectiveHours.isOpen) return false;
+    
+    // Validate timeSlot format
+    if (!timeSlot.includes(':')) return false;
+    
+    const timeSlotParts = timeSlot.split(':');
+    if (timeSlotParts.length !== 2) return false;
+    
+    const [hours, minutes] = timeSlotParts.map(Number);
+    if (isNaN(hours) || isNaN(minutes)) return false;
+    
+    const slotTime = hours * 60 + minutes; // Convert to minutes
+    
+    // Validate effective hours format
+    if (!effectiveHours.openTime || !effectiveHours.closeTime || 
+        !effectiveHours.openTime.includes(':') || !effectiveHours.closeTime.includes(':')) return false;
+    
+    const openTimeParts = effectiveHours.openTime.split(':');
+    const closeTimeParts = effectiveHours.closeTime.split(':');
+    
+    if (openTimeParts.length !== 2 || closeTimeParts.length !== 2) return false;
+    
+    const [openHour, openMin] = openTimeParts.map(Number);
+    const [closeHour, closeMin] = closeTimeParts.map(Number);
+    
+    if (isNaN(openHour) || isNaN(openMin) || isNaN(closeHour) || isNaN(closeMin)) return false;
+    
+    const openTime = openHour * 60 + openMin;
+    const closeTime = closeHour * 60 + closeMin;
+    
+    if (slotTime < openTime || slotTime > closeTime) return false;
 
     return true;
   };
