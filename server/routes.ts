@@ -606,10 +606,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
       } else if (tenantUser.id) {
         // For team members, check if they have a role in the tenant
         try {
-          const tenantUserRelation = await storage.getTenantUsers(
-            tenantUser.id,
-          );
-          const userInTenant = tenantUserRelation?.find(
+          const tenantUserRelations = await storage.db
+            .select()
+            .from(storage.db.schema.tenantUsers)
+            .where(storage.db.eq(storage.db.schema.tenantUsers.tenantId, tenantUser.id));
+          
+          const userInTenant = tenantUserRelations?.find(
             (tu) => tu.userId === user.id,
           );
           if (userInTenant?.role) {
@@ -619,6 +621,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           console.log(
             "Could not fetch tenant user role, treating as basic team member",
           );
+          userRole = "agent"; // Default role for team members
         }
       }
 
@@ -1184,6 +1187,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
       console.error("Stripe webhook error:", error);
       res.status(500).json({ error: "Webhook processing failed" });
     }
+  });
+
+  // Invitation routes (public - no authentication required)
+  app.get("/api/tenants/invitation/validate/:token", async (req, res) => {
+    const { validateInvitationToken } = await import("./tenant-routes");
+    await validateInvitationToken(req, res);
+  });
+
+  app.post("/api/tenants/invitation/accept/:token", async (req, res) => {
+    const { acceptInvitation } = await import("./tenant-routes");
+    await acceptInvitation(req, res);
   });
 
   // Multi-restaurant tenant routes

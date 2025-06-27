@@ -1,4 +1,4 @@
-import { Request, Response } from "express";
+import { Request, Response, NextFunction } from "express";
 import { tenants, users, tenantUsers, restaurants, roles, invitationTokens } from "../shared/schema";
 import { eq, and } from "drizzle-orm";
 import { storage } from "./storage";
@@ -113,7 +113,7 @@ export async function inviteTenantUser(req: Request, res: Response) {
 
     // Check if user already exists
     const existingUser = await db.select().from(users).where(eq(users.email, inviteData.email));
-    
+
     if (existingUser.length > 0) {
       // Check if user is already in this tenant
       const existingTenantUser = await db
@@ -156,31 +156,69 @@ export async function inviteTenantUser(req: Request, res: Response) {
 
     // Get tenant information for email
     const [tenant] = await db.select().from(tenants).where(eq(tenants.id, tenantId));
-    
+
     // Send invitation email
     const emailService = new BrevoEmailService();
     const inviteUrl = `${req.protocol}://${req.get('host')}/accept-invitation?token=${token}`;
-    
+
     const emailSent = await emailService.sendEmail({
       to: [{ email: inviteData.email, name: inviteData.name }],
       subject: `You're invited to join ${tenant?.name || 'Restaurant Team'}`,
       htmlContent: `
-        <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
-          <h2 style="color: #333;">You're invited to join ${tenant?.name || 'Restaurant Team'}</h2>
-          <p>Hello ${inviteData.name},</p>
-          <p>You've been invited to join the team at ${tenant?.name || 'our restaurant'}. Click the link below to set up your account and choose your password.</p>
-          <div style="text-align: center; margin: 30px 0;">
-            <a href="${inviteUrl}" style="background-color: #3B82F6; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; display: inline-block; font-weight: bold;">Accept Invitation & Set Password</a>
-          </div>
-          <p>Your role will be: <strong>${inviteData.role}</strong></p>
-          <p style="color: #666;">This invitation will expire in 48 hours.</p>
-          <hr style="margin: 20px 0; border: none; border-top: 1px solid #eee;">
-          <p style="font-size: 12px; color: #999;">If the button doesn't work, copy and paste this link into your browser:<br>
-          <span style="word-break: break-all;">${inviteUrl}</span></p>
-        </div>
-      `,
-      textContent: `You're invited to join ${tenant?.name || 'Restaurant Team'}
+        <!DOCTYPE html>
+        <html>
+          <head>
+            <meta charset="utf-8">
+            <meta name="viewport" content="width=device-width, initial-scale=1.0">
+          </head>
+          <body style="margin: 0; padding: 20px; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Arial, sans-serif; background-color: #f5f5f5;">
+            <div style="max-width: 600px; margin: 0 auto; background-color: white; border-radius: 8px; overflow: hidden; box-shadow: 0 2px 10px rgba(0,0,0,0.1);">
 
+              <!-- Header -->
+              <div style="background-color: #3B82F6; padding: 30px 30px 20px; text-align: center;">
+                <h1 style="margin: 0; font-size: 28px; font-weight: 600; color: white; letter-spacing: -0.5px;">Team Invitation</h1>
+              </div>
+
+              <!-- Content -->
+              <div style="padding: 30px;">
+                <p style="margin: 0 0 20px; font-size: 16px; color: #333; line-height: 1.5;">Hello ${inviteData.name},</p>
+
+                <p style="margin: 0 0 30px; font-size: 16px; color: #666; line-height: 1.6;">
+                  You've been invited to join the team at <strong>${tenant?.name || 'our restaurant'}</strong>. Click the button below to set up your account and choose your password.
+                </p>
+
+                <!-- Role Badge -->
+                <div style="background-color: #f3f4f6; border-radius: 8px; padding: 20px; margin: 25px 0; text-align: center;">
+                  <p style="margin: 0; color: #666; font-size: 14px;">Your role will be:</p>
+                  <p style="margin: 5px 0 0; color: #333; font-size: 18px; font-weight: 600; text-transform: capitalize;">${inviteData.role}</p>
+                </div>
+
+                <!-- Action Button -->
+                <div style="text-align: center; margin: 30px 0;">
+                  <a href="${inviteUrl}" style="background-color: #3B82F6; color: white; padding: 12px 30px; text-decoration: none; border-radius: 6px; font-weight: 600; display: inline-block; font-size: 16px;">Accept Invitation & Set Password</a>
+                </div>
+
+                <div style="background-color: #fef3c7; border-radius: 8px; padding: 20px; margin: 25px 0; border-left: 4px solid #f59e0b;">
+                  <p style="margin: 0; color: #92400e; font-size: 14px;">
+                    ⏰ This invitation will expire in 48 hours. Please accept it soon to gain access to the system.
+                  </p>
+                </div>
+
+                <p style="margin: 30px 0 10px; font-size: 16px; color: #333;">Best regards,</p>
+                <p style="margin: 0; font-size: 16px; color: #333; font-weight: 600;">${tenant?.name || 'Restaurant Team'}</p>
+              </div>
+
+              <!-- Footer -->
+              <div style="background-color: #f8f9fa; padding: 20px 30px; border-top: 1px solid #e5e5e5;">
+                <p style="margin: 0; font-size: 12px; color: #666; line-height: 1.5; text-align: center;">
+                  If you have any questions about this invitation, please contact the restaurant team directly.
+                </p>
+              </div>
+            </div>
+          </body>
+        </html>
+      `,
+      textContent: `
 Hello ${inviteData.name},
 
 You've been invited to join the team at ${tenant?.name || 'our restaurant'}. Visit this link to set up your account and choose your password:
@@ -188,7 +226,10 @@ ${inviteUrl}
 
 Your role will be: ${inviteData.role}
 
-This invitation will expire in 48 hours.`,
+This invitation will expire in 48 hours.
+
+Best regards,
+${tenant?.name || 'Restaurant Team'}`,
     });
 
     if (!emailSent) {
@@ -232,10 +273,13 @@ export async function validateInvitationToken(req: Request, res: Response) {
     const [tenant] = await db.select().from(tenants).where(eq(tenants.id, invitation.tenantId));
 
     res.json({
+      token: invitation.token,
       email: invitation.email,
       name: invitation.name,
-      tenantName: tenant?.name || 'Restaurant Team',
+      tenantId: invitation.tenantId,
       role: invitation.role,
+      tenantName: tenant?.name || 'Restaurant Team',
+      used: invitation.used,
       expired: false
     });
   } catch (error) {
@@ -247,12 +291,14 @@ export async function validateInvitationToken(req: Request, res: Response) {
 // Accept invitation and create user account
 export async function acceptInvitation(req: Request, res: Response) {
   try {
-    const { token, password } = req.body;
+    const { token } = req.params;
+    const { password } = req.body;
 
-    if (!token || !password) {
-      return res.status(400).json({ message: "Token and password are required" });
+    if (!password || password.length < 6) {
+      return res.status(400).json({ message: "Password must be at least 6 characters long" });
     }
 
+    // Validate token again
     const [invitation] = await db
       .select()
       .from(invitationTokens)
@@ -271,21 +317,28 @@ export async function acceptInvitation(req: Request, res: Response) {
     }
 
     // Check if user already exists
-    const existingUser = await db.select().from(users).where(eq(users.email, invitation.email));
-    
+    const existingUser = await db
+      .select()
+      .from(users)
+      .where(eq(users.email, invitation.email));
+
     if (existingUser.length > 0) {
       return res.status(400).json({ message: "User with this email already exists" });
     }
 
     // Hash password
+    const bcrypt = require('bcrypt');
     const hashedPassword = await bcrypt.hash(password, 10);
 
-    // Create new user
+    // Create user
     const [newUser] = await db.insert(users).values({
       email: invitation.email,
       name: invitation.name,
       password: hashedPassword,
-      restaurantName: null,
+      restaurantName: null, // This will be null for team members
+      ssoProvider: null,
+      ssoId: null,
+      createdAt: new Date(),
     }).returning();
 
     // Add user to tenant
@@ -298,18 +351,16 @@ export async function acceptInvitation(req: Request, res: Response) {
     // Mark invitation as used
     await db
       .update(invitationTokens)
-      .set({ 
-        used: true, 
-        usedAt: new Date() 
-      })
+      .set({ used: true })
       .where(eq(invitationTokens.token, token));
 
-    res.json({ 
+    res.json({
       message: "Account created successfully",
-      user: { 
-        id: newUser.id, 
-        email: newUser.email, 
-        name: newUser.name 
+      user: {
+        id: newUser.id,
+        email: newUser.email,
+        name: newUser.name,
+        role: invitation.role
       }
     });
   } catch (error) {
@@ -637,10 +688,10 @@ export async function removeUserFromTenant(req: Request, res: Response) {
 export async function getRolePermissions(req: Request, res: Response) {
   try {
     console.log("Getting role permissions...");
-    
+
     // Set proper headers for JSON response
     res.setHeader('Content-Type', 'application/json');
-    
+
     const rolePermissions = Object.entries(ROLE_PERMISSIONS).map(([role, permissions]) => ({
       role,
       permissions: Array.isArray(permissions) ? permissions : [],
@@ -697,10 +748,14 @@ export function setupTenantRoutes(app: any) {
   app.put("/api/tenant/:tenantId", updateTenant);
   app.post("/api/tenant/:tenantId/invite", inviteUserToTenant);
   app.delete("/api/tenant/:tenantId/users/:userId", removeUserFromTenant);
-  
+
   // Role permissions management (users with access_users permission)
   app.get("/api/tenants/:tenantId/role-permissions", validateTenant, requirePermission(PERMISSIONS.ACCESS_USERS), getRolePermissions);
   app.put("/api/tenants/:tenantId/role-permissions", validateTenant, requirePermission(PERMISSIONS.ACCESS_USERS), updateRolePermissionsEndpoint);
+
+  // Invitation validation and acceptance
+  app.get("/api/invitation/:token", validateInvitationToken);
+  app.post("/api/invitation/:token/accept", acceptInvitation);
 }
 // Middleware to validate tenant access
 function validateTenant(req: Request, res: Response, next: NextFunction) {
@@ -728,4 +783,3 @@ function validateTenant(req: Request, res: Response, next: NextFunction) {
     res.status(500).json({ error: "Internal server error" });
   }
 }
-

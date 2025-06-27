@@ -851,7 +851,8 @@ export const resolvedConflicts = pgTable("resolved_conflicts", {
   id: serial("id").primaryKey(),
   restaurantId: integer("restaurant_id")
     .notNull()
-    .references(() => restaurants.id, { onDelete: "cascade" }),
+    .references(() =>```python
+restaurants.id, { onDelete: "cascade" }),
   tenantId: integer("tenant_id")
     .notNull()
     .references(() => tenants.id, { onDelete: "cascade" }),
@@ -977,7 +978,7 @@ export const floorPlans = pgTable("floor_plans", {
   tenantId: integer("tenant_id")
     .notNull()
     .references(() => tenants.id, { onDelete: "cascade" }),
-  name: text("name").notNull(),
+  name: varchar("name", { length: 255 }).notNull(),
   description: text("description"),
   elements: jsonb("elements").notNull().default('[]'), // FloorPlanElement[]
   dimensions: jsonb("dimensions").notNull().default('{"width": 800, "height": 600}'), // {width, height}
@@ -1602,8 +1603,7 @@ export const printOrders = pgTable("print_orders", {
   printType: text("print_type").notNull(), // menu, flyer, poster, banner, business_card
   printSize: text("print_size").notNull(), // A4, A3, A2, A1, custom
   printQuality: text("print_quality").default("standard").notNull(), // draft, standard, high, premium
-  quantity: integer("quantity").default(1).notNull(),
-  design: json("design").notNull(), // design configuration object
+  quantity: integer("quantity").default(1).notNull(),design: json("design").notNull(), // design configuration object
   specialInstructions: text("special_instructions"),
   rushOrder: boolean("rush_order").default(false).notNull(),
   totalAmount: integer("total_amount").notNull(), // in cents
