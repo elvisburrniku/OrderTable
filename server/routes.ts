@@ -783,7 +783,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
             error: "Access denied",
             message: "You don't have permission to view role permissions",
           });
-        }
+        };
 
         // Get role permissions data
         const rolePermissions = Object.entries(ROLE_PERMISSIONS).map(
