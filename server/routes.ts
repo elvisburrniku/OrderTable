@@ -1329,7 +1329,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
         res.json(bookings);
       } catch (error) {
-        res.status(400).json({ message: "Invalid request" });
+        console.error("Error fetching bookings:", error);
+        res.status(500).json({ message: "Internal server error" });
       }
     },
   );
