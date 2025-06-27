@@ -940,8 +940,7 @@ export default function EnhancedGoogleCalendar({
           } else if (booking.bookingDate instanceof Date) {
             bookingDateStr = format(booking.bookingDate, 'yyyy-MM-dd');
           } else {
-            // Fallback - convert to string```text
-and parse
+            // Fallback - convert to string and parse
             bookingDateStr = format(new Date(booking.bookingDate), 'yyyy-MM-dd');
           }
         } catch (error) {
