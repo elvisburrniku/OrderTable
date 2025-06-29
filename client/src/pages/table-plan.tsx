@@ -569,11 +569,22 @@ export default function TablePlan() {
       }
     };
 
-    // Chair positioning based on table shape and capacity
+    // Chair positioning based on table shape and capacity with rotation support
     const getChairPositions = () => {
       const chairs: Array<{ x: number, y: number, rotation: number }> = [];
       const centerX = position.x + tableWidth / 2;
       const centerY = position.y + tableHeight / 2;
+      const tableRotation = (position.rotation || 0) * Math.PI / 180; // Convert to radians
+
+      // Helper function to rotate a point around table center
+      const rotatePoint = (x: number, y: number) => {
+        const dx = x - centerX;
+        const dy = y - centerY;
+        return {
+          x: centerX + dx * Math.cos(tableRotation) - dy * Math.sin(tableRotation),
+          y: centerY + dx * Math.sin(tableRotation) + dy * Math.cos(tableRotation)
+        };
+      };
 
       if (shape === 'square' || shape === 'rectangle') {
         const chairsPerSide = Math.ceil(capacity / 4);
@@ -582,20 +593,26 @@ export default function TablePlan() {
 
         // Top side
         for (let i = 0; i < Math.min(chairsPerSide, capacity); i++) {
+          const chairX = position.x + chairSpacing * (i + 1) - 8;
+          const chairY = position.y - 18;
+          const rotatedPos = rotatePoint(chairX, chairY);
           chairs.push({
-            x: position.x + chairSpacing * (i + 1) - 8,
-            y: position.y - 18,
-            rotation: 0
+            x: rotatedPos.x,
+            y: rotatedPos.y,
+            rotation: (position.rotation || 0) + 0
           });
         }
 
         // Right side
         if (capacity > chairsPerSide) {
           for (let i = 0; i < Math.min(chairsPerSide, capacity - chairsPerSide); i++) {
+            const chairX = position.x + tableWidth + 8;
+            const chairY = position.y + chairSpacing * (i + 1) - 8;
+            const rotatedPos = rotatePoint(chairX, chairY);
             chairs.push({
-              x: position.x + tableWidth + 8,
-              y: position.y + chairSpacing * (i + 1) - 8,
-              rotation: 90
+              x: rotatedPos.x,
+              y: rotatedPos.y,
+              rotation: (position.rotation || 0) + 90
             });
           }
         }
@@ -603,10 +620,13 @@ export default function TablePlan() {
         // Bottom side
         if (capacity > chairsPerSide * 2) {
           for (let i = 0; i < Math.min(chairsPerSide, capacity - chairsPerSide * 2); i++) {
+            const chairX = position.x + tableWidth - chairSpacing * (i + 1) - 8;
+            const chairY = position.y + tableHeight + 8;
+            const rotatedPos = rotatePoint(chairX, chairY);
             chairs.push({
-              x: position.x + tableWidth - chairSpacing * (i + 1) - 8,
-              y: position.y + tableHeight + 8,
-              rotation: 180
+              x: rotatedPos.x,
+              y: rotatedPos.y,
+              rotation: (position.rotation || 0) + 180
             });
           }
         }
@@ -614,10 +634,13 @@ export default function TablePlan() {
         // Left side
         if (capacity > chairsPerSide * 3) {
           for (let i = 0; i < Math.min(chairsPerSide, capacity - chairsPerSide * 3); i++) {
+            const chairX = position.x - 18;
+            const chairY = position.y + tableHeight - chairSpacing * (i + 1) - 8;
+            const rotatedPos = rotatePoint(chairX, chairY);
             chairs.push({
-              x: position.x - 18,
-              y: position.y + tableHeight - chairSpacing * (i + 1) - 8,
-              rotation: 270
+              x: rotatedPos.x,
+              y: rotatedPos.y,
+              rotation: (position.rotation || 0) + 270
             });
           }
         }
@@ -625,37 +648,51 @@ export default function TablePlan() {
         const longSideChairs = Math.ceil(capacity * 0.6);
         const shortSideChairs = Math.floor((capacity - longSideChairs) / 2);
 
-        // Long sides
+        // Long sides - top
         for (let i = 0; i < Math.ceil(longSideChairs / 2); i++) {
+          const chairX = position.x + (tableWidth / (Math.ceil(longSideChairs / 2) + 1)) * (i + 1) - 8;
+          const chairY = position.y - 25;
+          const rotatedPos = rotatePoint(chairX, chairY);
           chairs.push({
-            x: position.x + (tableWidth / (Math.ceil(longSideChairs / 2) + 1)) * (i + 1) - 8,
-            y: position.y - 25,
-            rotation: 0
+            x: rotatedPos.x,
+            y: rotatedPos.y,
+            rotation: (position.rotation || 0) + 0
           });
         }
 
+        // Long sides - bottom
         for (let i = 0; i < Math.floor(longSideChairs / 2); i++) {
+          const chairX = position.x + (tableWidth / (Math.floor(longSideChairs / 2) + 1)) * (i + 1) - 8;
+          const chairY = position.y + tableHeight + 15;
+          const rotatedPos = rotatePoint(chairX, chairY);
           chairs.push({
-            x: position.x + (tableWidth / (Math.floor(longSideChairs / 2) + 1)) * (i + 1) - 8,
-            y: position.y + tableHeight + 15,
-            rotation: 180
+            x: rotatedPos.x,
+            y: rotatedPos.y,
+            rotation: (position.rotation || 0) + 180
           });
         }
 
-        // Short sides
+        // Short sides - left
         for (let i = 0; i < shortSideChairs; i++) {
+          const chairX = position.x - 18;
+          const chairY = position.y + (tableHeight / (shortSideChairs + 1)) * (i + 1) - 8;
+          const rotatedPos = rotatePoint(chairX, chairY);
           chairs.push({
-            x: position.x - 18,
-            y: position.y + (tableHeight / (shortSideChairs + 1)) * (i + 1) - 8,
-            rotation: 270
+            x: rotatedPos.x,
+            y: rotatedPos.y,
+            rotation: (position.rotation || 0) + 270
           });
         }
 
+        // Short sides - right
         for (let i = 0; i < shortSideChairs; i++) {
+          const chairX = position.x + tableWidth + 8;
+          const chairY = position.y + (tableHeight / (shortSideChairs + 1)) * (i + 1) - 8;
+          const rotatedPos = rotatePoint(chairX, chairY);
           chairs.push({
-            x: position.x + tableWidth + 8,
-            y: position.y + (tableHeight / (shortSideChairs + 1)) * (i + 1) - 8,
-            rotation: 90
+            x: rotatedPos.x,
+            y: rotatedPos.y,
+            rotation: (position.rotation || 0) + 90
           });
         }
       } else {
@@ -663,10 +700,11 @@ export default function TablePlan() {
         const radius = Math.max(tableWidth, tableHeight) / 2 + 20;
         for (let i = 0; i < capacity; i++) {
           const angle = (i * 2 * Math.PI) / capacity - Math.PI / 2; // Start from top
+          const adjustedAngle = angle + tableRotation; // Add table rotation
           chairs.push({
-            x: centerX + radius * Math.cos(angle) - 8,
-            y: centerY + radius * Math.sin(angle) - 8,
-            rotation: (angle * 180 / Math.PI) + 90
+            x: centerX + radius * Math.cos(adjustedAngle) - 8,
+            y: centerY + radius * Math.sin(adjustedAngle) - 8,
+            rotation: (adjustedAngle * 180 / Math.PI) + 90
           });
         }
       }
