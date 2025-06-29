@@ -38,15 +38,6 @@ interface TablePosition {
   tableNumber?: string;
   capacity?: number;
   isConfigured?: boolean;
-  chairs?: ChairPosition[];
-}
-
-interface ChairPosition {
-  id: string;
-  x: number;
-  y: number;
-  rotation: number;
-  isCustomPosition?: boolean;
 }
 
 interface TableStructure {
@@ -187,12 +178,6 @@ export default function TablePlan() {
   const [draggedStructure, setDraggedStructure] =
     useState<TableStructure | null>(null);
   const [isDragging, setIsDragging] = useState(false);
-  const [draggedChair, setDraggedChair] = useState<{
-    tableId: number;
-    chairId: string;
-  } | null>(null);
-  const [dragMode, setDragMode] = useState<'table' | 'chair'>('table');
-  const [dragOffset, setDragOffset] = useState({ x: 0, y: 0 });
   const [showConfigDialog, setShowConfigDialog] = useState(false);
   const [pendingTablePosition, setPendingTablePosition] = useState<{
     x: number;
@@ -300,34 +285,8 @@ export default function TablePlan() {
   const handleDragStart = useCallback((tableId: number, e: React.DragEvent) => {
     setDraggedTable(tableId);
     setDraggedStructure(null);
-    setDraggedChair(null);
-    setDragMode('table');
     setIsDragging(true);
     e.dataTransfer.effectAllowed = "move";
-    
-    // Calculate drag offset for smooth dragging
-    const rect = e.currentTarget.getBoundingClientRect();
-    setDragOffset({
-      x: e.clientX - rect.left,
-      y: e.clientY - rect.top
-    });
-  }, []);
-
-  const handleChairDragStart = useCallback((tableId: number, chairId: string, e: React.DragEvent) => {
-    e.stopPropagation(); // Prevent table drag
-    setDraggedChair({ tableId, chairId });
-    setDraggedTable(null);
-    setDraggedStructure(null);
-    setDragMode('chair');
-    setIsDragging(true);
-    e.dataTransfer.effectAllowed = "move";
-    
-    // Calculate drag offset for smooth dragging
-    const rect = e.currentTarget.getBoundingClientRect();
-    setDragOffset({
-      x: e.clientX - rect.left,
-      y: e.clientY - rect.top
-    });
   }, []);
 
   const handleStructureDragStart = useCallback(
@@ -360,27 +319,28 @@ export default function TablePlan() {
       e.preventDefault();
       e.stopPropagation();
 
+      console.log("Drop event fired", { draggedTable, draggedStructure });
+
       if (!planRef.current) {
+        console.log("No plan ref");
         return;
       }
 
       const rect = planRef.current.getBoundingClientRect();
-      // Snap to grid for precise positioning
-      const gridSize = 20;
-      const rawX = e.clientX - rect.left - dragOffset.x;
-      const rawY = e.clientY - rect.top - dragOffset.y;
-      
       const x = Math.max(
-        10,
-        Math.min(Math.round(rawX / gridSize) * gridSize, rect.width - 50),
+        40,
+        Math.min(e.clientX - rect.left - 40, rect.width - 80),
       );
       const y = Math.max(
-        10,
-        Math.min(Math.round(rawY / gridSize) * gridSize, rect.height - 50),
+        40,
+        Math.min(e.clientY - rect.top - 40, rect.height - 80),
       );
 
+      console.log("Drop position:", { x, y });
+
       if (draggedTable !== null) {
-        // Moving existing table
+        console.log("Moving existing table:", draggedTable);
+        // Moving existing table - use table ID directly as the key
         setTablePositions((prev) => ({
           ...prev,
           [draggedTable]: {
@@ -389,60 +349,40 @@ export default function TablePlan() {
             y,
           },
         }));
-      } else if (draggedChair) {
-        // Moving individual chair
-        setTablePositions((prev) => {
-          const table = prev[draggedChair.tableId];
-          if (!table) return prev;
-
-          const updatedChairs = table.chairs ? [...table.chairs] : [];
-          const chairIndex = updatedChairs.findIndex(c => c.id === draggedChair.chairId);
-          
-          if (chairIndex >= 0) {
-            updatedChairs[chairIndex] = {
-              ...updatedChairs[chairIndex],
-              x,
-              y,
-              isCustomPosition: true
-            };
-          } else {
-            // Create new custom chair position
-            updatedChairs.push({
-              id: draggedChair.chairId,
-              x,
-              y,
-              rotation: 0,
-              isCustomPosition: true
-            });
-          }
-
-          return {
-            ...prev,
-            [draggedChair.tableId]: {
-              ...table,
-              chairs: updatedChairs
-            }
-          };
-        });
+        setDraggedTable(null);
+        setDraggedStructure(null);
+        setIsDragging(false);
       } else if (draggedStructure) {
-        // Adding new table from structure
+        console.log("Adding new table from structure:", draggedStructure);
+        // Adding new table from structure - store position and structure info
         const currentStructure = draggedStructure;
+
+        // Reset drag states first
+        setDraggedTable(null);
+        setDraggedStructure(null);
+        setIsDragging(false);
+
+        // Then set up the dialog
+        console.log("Setting up dialog with structure:", currentStructure);
         setPendingTablePosition({ x, y, structure: currentStructure });
         setTableConfig({
           tableNumber: "",
           capacity: currentStructure.defaultCapacity,
         });
-        setTimeout(() => setShowConfigDialog(true), 100);
-      }
 
-      // Reset all drag states
-      setDraggedTable(null);
-      setDraggedStructure(null);
-      setDraggedChair(null);
-      setIsDragging(false);
-      setDragOffset({ x: 0, y: 0 });
+        // Force show dialog with a small delay to ensure state is updated
+        setTimeout(() => {
+          console.log("Showing config dialog");
+          setShowConfigDialog(true);
+        }, 100);
+      } else {
+        console.log("No dragged item found");
+        setDraggedTable(null);
+        setDraggedStructure(null);
+        setIsDragging(false);
+      }
     },
-    [draggedTable, draggedStructure, draggedChair, dragOffset],
+    [draggedTable, draggedStructure],
   );
 
   const rotateTable = (tableId: number) => {
@@ -464,16 +404,6 @@ export default function TablePlan() {
       [tableId]: {
         ...prev[tableId],
         shape,
-      },
-    }));
-  };
-
-  const resetChairsToDefault = (tableId: number) => {
-    setTablePositions((prev) => ({
-      ...prev,
-      [tableId]: {
-        ...prev[tableId],
-        chairs: undefined, // Remove custom chair positions
       },
     }));
   };
@@ -795,66 +725,26 @@ export default function TablePlan() {
       return chairs;
     };
 
-    // Get chair positions, merge with custom positions if available
-    const getEffectiveChairPositions = () => {
-      const defaultPositions = getChairPositions();
-      const customChairs = position.chairs || [];
-      
-      return defaultPositions.map((defaultChair, index) => {
-        const chairId = `${tableId}-chair-${index}`;
-        const customChair = customChairs.find(c => c.id === chairId);
-        
-        if (customChair && customChair.isCustomPosition) {
-          return {
-            ...defaultChair,
-            x: customChair.x,
-            y: customChair.y,
-            rotation: customChair.rotation,
-            id: chairId,
-            isCustom: true
-          };
-        }
-        
-        return {
-          ...defaultChair,
-          id: chairId,
-          isCustom: false
-        };
-      });
-    };
-
-    const effectiveChairPositions = getEffectiveChairPositions();
+    const chairPositions = getChairPositions();
 
     return (
       <div key={`table-group-${tableId}`}>
         {/* Chairs */}
-        {effectiveChairPositions.map((chair, index) => (
+        {chairPositions.map((chair, index) => (
           <div
-            key={chair.id}
-            draggable
-            onDragStart={(e) => handleChairDragStart(tableId, chair.id, e)}
+            key={`chair-${tableId}-${index}`}
             style={{
               position: 'absolute',
               left: `${chair.x}px`,
               top: `${chair.y}px`,
               width: '12px',
               height: '18px',
-              backgroundColor: chair.isCustom ? '#b45309' : '#8b4513',
-              border: `1px solid ${chair.isCustom ? '#92400e' : '#654321'}`,
+              backgroundColor: '#8b4513',
+              border: '1px solid #654321',
               borderRadius: '3px 3px 6px 6px',
               transform: `rotate(${chair.rotation}deg)`,
-              boxShadow: chair.isCustom ? '0 2px 4px rgba(180, 83, 9, 0.4)' : '0 1px 2px rgba(0, 0, 0, 0.3)',
-              zIndex: 15,
-              cursor: 'grab',
-              transition: 'all 0.2s ease',
-            }}
-            onMouseEnter={(e) => {
-              e.currentTarget.style.transform = `rotate(${chair.rotation}deg) scale(1.2)`;
-              e.currentTarget.style.boxShadow = '0 3px 6px rgba(0, 0, 0, 0.4)';
-            }}
-            onMouseLeave={(e) => {
-              e.currentTarget.style.transform = `rotate(${chair.rotation}deg) scale(1)`;
-              e.currentTarget.style.boxShadow = chair.isCustom ? '0 2px 4px rgba(180, 83, 9, 0.4)' : '0 1px 2px rgba(0, 0, 0, 0.3)';
+              boxShadow: '0 1px 2px rgba(0, 0, 0, 0.3)',
+              zIndex: 5,
             }}
           >
             {/* Chair back */}
@@ -865,25 +755,10 @@ export default function TablePlan() {
                 left: '1px',
                 width: '10px',
                 height: '4px',
-                backgroundColor: chair.isCustom ? '#92400e' : '#654321',
+                backgroundColor: '#654321',
                 borderRadius: '1px 1px 0 0',
               }}
             />
-            {/* Custom position indicator */}
-            {chair.isCustom && (
-              <div
-                style={{
-                  position: 'absolute',
-                  top: '-3px',
-                  right: '-3px',
-                  width: '4px',
-                  height: '4px',
-                  backgroundColor: '#ef4444',
-                  borderRadius: '50%',
-                  boxShadow: '0 1px 2px rgba(0, 0, 0, 0.3)',
-                }}
-              />
-            )}
           </div>
         ))}
 
@@ -1112,37 +987,6 @@ export default function TablePlan() {
             <p className="text-sm text-gray-500">Drag tables and shapes to create your layout</p>
           </div>
           <div className="p-6">
-            {/* Drag Mode Selector */}
-            <div className="mb-6 p-3 bg-blue-50 rounded-lg border border-blue-200">
-              <h3 className="text-sm font-medium text-gray-700 mb-2">Drag Mode</h3>
-              <div className="flex gap-2">
-                <Button
-                  size="sm"
-                  variant={dragMode === 'table' ? 'default' : 'outline'}
-                  onClick={() => setDragMode('table')}
-                  className="flex items-center gap-1"
-                >
-                  <Move className="h-3 w-3" />
-                  Tables
-                </Button>
-                <Button
-                  size="sm"
-                  variant={dragMode === 'chair' ? 'default' : 'outline'}
-                  onClick={() => setDragMode('chair')}
-                  className="flex items-center gap-1"
-                >
-                  <Users className="h-3 w-3" />
-                  Chairs
-                </Button>
-              </div>
-              <p className="text-xs text-gray-600 mt-2">
-                {dragMode === 'table' 
-                  ? 'Drag tables to move them. Chairs move automatically with tables.'
-                  : 'Drag individual chairs to custom positions. Orange chairs are custom positioned.'
-                }
-              </p>
-            </div>
-
             {/* Room Selection */}
             <div className="mb-6">
               <label className="block text-sm font-medium text-gray-700 mb-2">
@@ -1198,55 +1042,35 @@ export default function TablePlan() {
 
                     {/* Table controls if positioned */}
                     {tablePositions[table.id] && (
-                      <div className="mt-2 space-y-2">
-                        <div className="flex items-center gap-1">
-                          <Button
-                            size="sm"
-                            variant="outline"
-                            onClick={() => rotateTable(table.id)}
-                            className="h-6 w-6 p-0"
-                            title="Rotate table"
-                          >
-                            <RotateCw className="h-3 w-3" />
-                          </Button>
-                          <Select
-                            value={tablePositions[table.id]?.shape || "circle"}
-                            onValueChange={(
-                              shape: "square" | "circle" | "rectangle",
-                            ) => changeTableShape(table.id, shape)}
-                          >
-                            <SelectTrigger className="h-6 text-xs">
-                              <SelectValue />
-                            </SelectTrigger>
-                            <SelectContent>
-                              {TABLE_SHAPES.map((shape) => (
-                                <SelectItem
-                                  key={`shape-${shape.value}`}
-                                  value={shape.value}
-                                >
-                                  {shape.label}
-                                </SelectItem>
-                              ))}
-                            </SelectContent>
-                          </Select>
-                        </div>
-                        {/* Chair controls */}
-                        <div className="flex items-center gap-1">
-                          <Button
-                            size="sm"
-                            variant="outline"
-                            onClick={() => resetChairsToDefault(table.id)}
-                            className="h-6 text-xs px-2"
-                            title="Reset chairs to default positions"
-                          >
-                            Reset Chairs
-                          </Button>
-                          {tablePositions[table.id]?.chairs && (
-                            <Badge variant="secondary" className="text-xs">
-                              {tablePositions[table.id]?.chairs?.filter(c => c.isCustomPosition)?.length || 0} custom
-                            </Badge>
-                          )}
-                        </div>
+                      <div className="mt-2 flex items-center gap-1">
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={() => rotateTable(table.id)}
+                          className="h-6 w-6 p-0"
+                        >
+                          <RotateCw className="h-3 w-3" />
+                        </Button>
+                        <Select
+                          value={tablePositions[table.id]?.shape || "circle"}
+                          onValueChange={(
+                            shape: "square" | "circle" | "rectangle",
+                          ) => changeTableShape(table.id, shape)}
+                        >
+                          <SelectTrigger className="h-6 text-xs">
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {TABLE_SHAPES.map((shape) => (
+                              <SelectItem
+                                key={`shape-${shape.value}`}
+                                value={shape.value}
+                              >
+                                {shape.label}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
                       </div>
                     )}
                   </div>
@@ -1552,7 +1376,7 @@ export default function TablePlan() {
                   </div>
                 )}
 
-                {/* Active drop zone indicators */}
+                {/* Active drop zone indicator */}
                 {isDragging && draggedStructure && (
                   <div className="absolute inset-0 flex items-center justify-center bg-green-50 bg-opacity-50 border-2 border-dashed border-green-300 rounded-lg">
                     <div className="text-center text-green-600">
@@ -1562,34 +1386,6 @@ export default function TablePlan() {
                       </p>
                       <p className="text-sm">
                         Configuration dialog will appear after drop
-                      </p>
-                    </div>
-                  </div>
-                )}
-
-                {isDragging && draggedTable !== null && (
-                  <div className="absolute inset-0 flex items-center justify-center bg-blue-50 bg-opacity-50 border-2 border-dashed border-blue-300 rounded-lg">
-                    <div className="text-center text-blue-600">
-                      <Move className="h-16 w-16 mx-auto mb-2" />
-                      <p className="text-lg font-medium">
-                        Moving table...
-                      </p>
-                      <p className="text-sm">
-                        Drop to place table at new position
-                      </p>
-                    </div>
-                  </div>
-                )}
-
-                {isDragging && draggedChair && (
-                  <div className="absolute inset-0 flex items-center justify-center bg-orange-50 bg-opacity-50 border-2 border-dashed border-orange-300 rounded-lg">
-                    <div className="text-center text-orange-600">
-                      <Users className="h-16 w-16 mx-auto mb-2" />
-                      <p className="text-lg font-medium">
-                        Moving chair...
-                      </p>
-                      <p className="text-sm">
-                        Drop to place chair at custom position
                       </p>
                     </div>
                   </div>
