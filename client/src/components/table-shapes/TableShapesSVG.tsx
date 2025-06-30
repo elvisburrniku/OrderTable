@@ -6,10 +6,10 @@ interface TableSVGProps {
   className?: string;
 }
 
-export const SquareTable1Person: React.FC<TableSVGProps> = ({ width = 60, height = 60, className = "" }) => (
+export const SquareTable1Person: React.FC<TableSVGProps> = ({ width = 35, height = 45, className = "" }) => (
   <svg 
     preserveAspectRatio="xMidYMid" 
-    viewBox="0 0 100 100" 
+    viewBox="0 0 90 116" 
     style={{ width: `${width}px`, height: `${height}px` }}
     className={className}
   >
@@ -20,13 +20,13 @@ export const SquareTable1Person: React.FC<TableSVGProps> = ({ width = 60, height
       </style>
     </defs>
     <g>
-      <rect x="35" y="0" width="30" height="12" className="cls-2"></rect>
-      <rect x="0" y="10" width="100" height="80" className="cls-3"></rect>
+      <path d="M27.000,-0.000 L61.000,-0.000 C65.418,-0.000 69.000,3.582 69.000,8.000 C69.000,12.418 65.418,16.000 61.000,16.000 L27.000,16.000 C22.582,16.000 19.000,12.418 19.000,8.000 C19.000,3.582 22.582,-0.000 27.000,-0.000 Z" className="cls-2"></path>
+      <rect y="8" width="90" height="100" className="cls-3"></rect>
     </g>
   </svg>
 );
 
-export const CircleTable1Person: React.FC<TableSVGProps> = ({ width = 43.64, height = 43.64, className = "" }) => (
+export const CircleTable1Person: React.FC<TableSVGProps> = ({ width = 38, height = 38, className = "" }) => (
   <svg 
     preserveAspectRatio="xMidYMid" 
     viewBox="0 0 96 96" 
@@ -46,10 +46,10 @@ export const CircleTable1Person: React.FC<TableSVGProps> = ({ width = 43.64, hei
   </svg>
 );
 
-export const SquareTable2Person: React.FC<TableSVGProps> = ({ width = 60, height = 60, className = "" }) => (
+export const SquareTable2Person: React.FC<TableSVGProps> = ({ width = 35, height = 45, className = "" }) => (
   <svg 
     preserveAspectRatio="xMidYMid" 
-    viewBox="0 0 100 100" 
+    viewBox="0 0 90 116" 
     style={{ width: `${width}px`, height: `${height}px` }}
     className={className}
   >
@@ -60,14 +60,14 @@ export const SquareTable2Person: React.FC<TableSVGProps> = ({ width = 60, height
       </style>
     </defs>
     <g>
-      <rect x="35" y="88" width="30" height="12" className="cls-1"></rect>
-      <rect x="35" y="0" width="30" height="12" className="cls-1"></rect>
-      <rect x="0" y="10" width="100" height="80" className="cls-2"></rect>
+      <path d="M27.000,100.000 L61.000,100.000 C65.418,100.000 69.000,103.582 69.000,108.000 C69.000,112.418 65.418,116.000 61.000,116.000 L27.000,116.000 C22.582,116.000 19.000,112.418 19.000,108.000 C19.000,103.582 22.582,100.000 27.000,100.000 Z" className="cls-1"></path>
+      <path d="M27.000,-0.000 L61.000,-0.000 C65.418,-0.000 69.000,3.582 69.000,8.000 C69.000,12.418 65.418,16.000 61.000,16.000 L27.000,16.000 C22.582,16.000 19.000,12.418 19.000,8.000 C19.000,3.582 22.582,-0.000 27.000,-0.000 Z" className="cls-1"></path>
+      <rect y="8" width="90" height="100" className="cls-2"></rect>
     </g>
   </svg>
 );
 
-export const CircleTable2Person: React.FC<TableSVGProps> = ({ width = 43.64, height = 43.64, className = "" }) => (
+export const CircleTable2Person: React.FC<TableSVGProps> = ({ width = 38, height = 38, className = "" }) => (
   <svg 
     preserveAspectRatio="xMidYMid" 
     viewBox="0 0 96 96" 
@@ -133,10 +133,10 @@ export const SquareTable4Person: React.FC<TableSVGProps> = ({ width = 77.27, hei
   </svg>
 );
 
-export const SquareTable4PersonCompact: React.FC<TableSVGProps> = ({ width = 60, height = 60, className = "" }) => (
+export const SquareTable4PersonCompact: React.FC<TableSVGProps> = ({ width = 52, height = 52, className = "" }) => (
   <svg 
     preserveAspectRatio="xMidYMid" 
-    viewBox="0 0 100 100" 
+    viewBox="0 0 136 136" 
     style={{ width: `${width}px`, height: `${height}px` }}
     className={className}
   >
@@ -147,11 +147,11 @@ export const SquareTable4PersonCompact: React.FC<TableSVGProps> = ({ width = 60,
       </style>
     </defs>
     <g>
-      <rect x="35" y="88" width="30" height="12" className="cls-1"></rect>
-      <rect x="88" y="35" width="12" height="30" className="cls-1"></rect>
-      <rect x="0" y="35" width="12" height="30" className="cls-1"></rect>
-      <rect x="35" y="0" width="30" height="12" className="cls-1"></rect>
-      <rect x="10" y="10" width="80" height="80" className="cls-2"></rect>
+      <path d="M51.000,120.000 L85.000,120.000 C89.418,120.000 93.000,123.582 93.000,128.000 C93.000,132.418 89.418,136.000 85.000,136.000 L51.000,136.000 C46.582,136.000 43.000,132.418 43.000,128.000 C43.000,123.582 46.582,120.000 51.000,120.000 Z" className="cls-1"></path>
+      <path d="M128.000,43.000 C132.418,43.000 136.000,46.582 136.000,51.000 L136.000,85.000 C136.000,89.418 132.418,93.000 128.000,93.000 C123.582,93.000 120.000,89.418 120.000,85.000 L120.000,51.000 C120.000,46.582 123.582,43.000 128.000,43.000 Z" className="cls-1"></path>
+      <path d="M8.000,43.000 C12.418,43.000 16.000,46.582 16.000,51.000 L16.000,85.000 C16.000,89.418 12.418,93.000 8.000,93.000 C3.582,93.000 -0.000,89.418 -0.000,85.000 L-0.000,51.000 C-0.000,46.582 3.582,43.000 8.000,43.000 Z" className="cls-1"></path>
+      <path d="M51.000,-0.000 L85.000,-0.000 C89.418,-0.000 93.000,3.582 93.000,8.000 C93.000,12.418 89.418,16.000 85.000,16.000 L51.000,16.000 C46.582,16.000 43.000,12.418 43.000,8.000 C43.000,3.582 46.582,-0.000 51.000,-0.000 Z" className="cls-1"></path>
+      <rect x="8" y="8" width="120" height="120" className="cls-2"></rect>
     </g>
   </svg>
 );
@@ -255,10 +255,10 @@ export const CircleTable8Person: React.FC<TableSVGProps> = ({ width = 80.91, hei
   </svg>
 );
 
-export const SquareTable6Person: React.FC<TableSVGProps> = ({ width = 60, height = 60, className = "" }) => (
+export const SquareTable6Person: React.FC<TableSVGProps> = ({ width = 95, height = 45, className = "" }) => (
   <svg 
     preserveAspectRatio="xMidYMid" 
-    viewBox="0 0 100 100" 
+    viewBox="0 0 248 116" 
     style={{ width: `${width}px`, height: `${height}px` }}
     className={className}
   >
@@ -269,21 +269,21 @@ export const SquareTable6Person: React.FC<TableSVGProps> = ({ width = 60, height
       </style>
     </defs>
     <g>
-      <rect x="15" y="88" width="20" height="12" className="cls-1"></rect>
-      <rect x="15" y="0" width="20" height="12" className="cls-1"></rect>
-      <rect x="40" y="88" width="20" height="12" className="cls-1"></rect>
-      <rect x="40" y="0" width="20" height="12" className="cls-1"></rect>
-      <rect x="65" y="88" width="20" height="12" className="cls-1"></rect>
-      <rect x="65" y="0" width="20" height="12" className="cls-1"></rect>
-      <rect x="0" y="10" width="100" height="80" className="cls-2"></rect>
+      <path d="M29.000,100.000 L63.000,100.000 C67.418,100.000 71.000,103.582 71.000,108.000 C71.000,112.418 67.418,116.000 63.000,116.000 L29.000,116.000 C24.582,116.000 21.000,112.418 21.000,108.000 C21.000,103.582 24.582,100.000 29.000,100.000 Z" className="cls-1"></path>
+      <path d="M29.000,-0.000 L63.000,-0.000 C67.418,-0.000 71.000,3.582 71.000,8.000 C71.000,12.418 67.418,16.000 63.000,16.000 L29.000,16.000 C24.582,16.000 21.000,12.418 21.000,8.000 C21.000,3.582 24.582,-0.000 29.000,-0.000 Z" className="cls-1"></path>
+      <path d="M107.000,100.000 L141.000,100.000 C145.418,100.000 149.000,103.582 149.000,108.000 C149.000,112.418 145.418,116.000 141.000,116.000 L107.000,116.000 C102.582,116.000 99.000,112.418 99.000,108.000 C99.000,103.582 102.582,100.000 107.000,100.000 Z" className="cls-1"></path>
+      <path d="M107.000,-0.000 L141.000,-0.000 C145.418,-0.000 149.000,3.582 149.000,8.000 C149.000,12.418 145.418,16.000 141.000,16.000 L107.000,16.000 C102.582,16.000 99.000,12.418 99.000,8.000 C99.000,3.582 102.582,-0.000 107.000,-0.000 Z" className="cls-1"></path>
+      <path d="M185.000,100.000 L219.000,100.000 C223.418,100.000 227.000,103.582 227.000,108.000 C227.000,112.418 223.418,116.000 219.000,116.000 L185.000,116.000 C180.582,116.000 177.000,112.418 177.000,108.000 C177.000,103.582 180.582,100.000 185.000,100.000 Z" className="cls-1"></path>
+      <path d="M185.000,-0.000 L219.000,-0.000 C223.418,-0.000 227.000,3.582 227.000,8.000 C227.000,12.418 223.418,16.000 219.000,16.000 L185.000,16.000 C180.582,16.000 177.000,12.418 177.000,8.000 C177.000,3.582 180.582,-0.000 185.000,-0.000 Z" className="cls-1"></path>
+      <rect y="8" width="248" height="100" className="cls-2"></rect>
     </g>
   </svg>
 );
 
-export const SquareTable8Person: React.FC<TableSVGProps> = ({ width = 60, height = 60, className = "" }) => (
+export const SquareTable8Person: React.FC<TableSVGProps> = ({ width = 125, height = 45, className = "" }) => (
   <svg 
     preserveAspectRatio="xMidYMid" 
-    viewBox="0 0 100 100" 
+    viewBox="0 0 326 116" 
     style={{ width: `${width}px`, height: `${height}px` }}
     className={className}
   >
@@ -294,15 +294,15 @@ export const SquareTable8Person: React.FC<TableSVGProps> = ({ width = 60, height
       </style>
     </defs>
     <g>
-      <rect x="10" y="88" width="15" height="12" className="cls-1"></rect>
-      <rect x="10" y="0" width="15" height="12" className="cls-1"></rect>
-      <rect x="30" y="88" width="15" height="12" className="cls-1"></rect>
-      <rect x="30" y="0" width="15" height="12" className="cls-1"></rect>
-      <rect x="55" y="88" width="15" height="12" className="cls-1"></rect>
-      <rect x="55" y="0" width="15" height="12" className="cls-1"></rect>
-      <rect x="75" y="88" width="15" height="12" className="cls-1"></rect>
-      <rect x="75" y="0" width="15" height="12" className="cls-1"></rect>
-      <rect x="0" y="10" width="100" height="80" className="cls-2"></rect>
+      <path d="M29.000,100.000 L63.000,100.000 C67.418,100.000 71.000,103.582 71.000,108.000 C71.000,112.418 67.418,116.000 63.000,116.000 L29.000,116.000 C24.582,116.000 21.000,112.418 21.000,108.000 C21.000,103.582 24.582,100.000 29.000,100.000 Z" className="cls-1"></path>
+      <path d="M29.000,-0.000 L63.000,-0.000 C67.418,-0.000 71.000,3.582 71.000,8.000 C71.000,12.418 67.418,16.000 63.000,16.000 L29.000,16.000 C24.582,16.000 21.000,12.418 21.000,8.000 C21.000,3.582 24.582,-0.000 29.000,-0.000 Z" className="cls-1"></path>
+      <path d="M107.000,100.000 L141.000,100.000 C145.418,100.000 149.000,103.582 149.000,108.000 C149.000,112.418 145.418,116.000 141.000,116.000 L107.000,116.000 C102.582,116.000 99.000,112.418 99.000,108.000 C99.000,103.582 102.582,100.000 107.000,100.000 Z" className="cls-1"></path>
+      <path d="M107.000,-0.000 L141.000,-0.000 C145.418,-0.000 149.000,3.582 149.000,8.000 C149.000,12.418 145.418,16.000 141.000,16.000 L107.000,16.000 C102.582,16.000 99.000,12.418 99.000,8.000 C99.000,3.582 102.582,-0.000 107.000,-0.000 Z" className="cls-1"></path>
+      <path d="M185.000,100.000 L219.000,100.000 C223.418,100.000 227.000,103.582 227.000,108.000 C227.000,112.418 223.418,116.000 219.000,116.000 L185.000,116.000 C180.582,116.000 177.000,112.418 177.000,108.000 C177.000,103.582 180.582,100.000 185.000,100.000 Z" className="cls-1"></path>
+      <path d="M185.000,-0.000 L219.000,-0.000 C223.418,-0.000 227.000,3.582 227.000,8.000 C227.000,12.418 223.418,16.000 219.000,16.000 L185.000,16.000 C180.582,16.000 177.000,12.418 177.000,8.000 C177.000,3.582 180.582,-0.000 185.000,-0.000 Z" className="cls-1"></path>
+      <path d="M262.000,100.000 L296.000,100.000 C300.418,100.000 304.000,103.582 304.000,108.000 C304.000,112.418 300.418,116.000 296.000,116.000 L262.000,116.000 C257.582,116.000 254.000,112.418 254.000,108.000 C254.000,103.582 257.582,100.000 262.000,100.000 Z" className="cls-1"></path>
+      <path d="M263.000,-0.000 L297.000,-0.000 C301.418,-0.000 305.000,3.582 305.000,8.000 C305.000,12.418 301.418,16.000 297.000,16.000 L263.000,16.000 C258.582,16.000 255.000,12.418 255.000,8.000 C255.000,3.582 258.582,-0.000 263.000,-0.000 Z" className="cls-1"></path>
+      <rect y="8" width="326" height="100" className="cls-2"></rect>
     </g>
   </svg>
 );
