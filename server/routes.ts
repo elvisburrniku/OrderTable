@@ -877,9 +877,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
         }
 
         // Import the permission update functions
-        const { updateRolePermissions, updateRoleRedirect } = await import(
-          "./permissions-middleware"
-        );
+        const permissionsMiddleware = await import("./permissions-middleware");
+        const { updateRolePermissions, updateRoleRedirect } = permissionsMiddleware;
+
+        // Validate role and permissions
+        if (!role || !Array.isArray(permissions)) {
+          return res.status(400).json({
+            error: "Invalid request data",
+            message: "Role must be a string and permissions must be an array",
+          });
+        }
 
         // Update redirect if provided
         if (redirect) {
@@ -887,11 +894,19 @@ export async function registerRoutes(app: Express): Promise<Server> {
         }
 
         // Update role permissions
-        const permissionsUpdated = updateRolePermissions(role, permissions);
-        if (!permissionsUpdated) {
-          return res.status(400).json({
-            error: "Invalid role or cannot update owner permissions",
-            message: "The specified role cannot be updated or does not exist",
+        try {
+          const permissionsUpdated = updateRolePermissions(role, permissions);
+          if (!permissionsUpdated) {
+            return res.status(400).json({
+              error: "Invalid role or cannot update owner permissions",
+              message: "The specified role cannot be updated or does not exist",
+            });
+          }
+        } catch (updateError) {
+          console.error("Error updating role permissions:", updateError);
+          return res.status(500).json({
+            error: "Failed to update permissions",
+            message: "An error occurred while updating role permissions",
           });
         }
 

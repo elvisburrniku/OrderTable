@@ -310,7 +310,7 @@ export default function UsersManagement({ restaurantId }: { restaurantId: number
   // Update role permissions mutation
   const updateRolePermissionsMutation = useMutation({
     mutationFn: async (data: { role: string; permissions: string[]; redirect?: string }) => {
-      // Get the current tenant ID from session or props
+      // Get the current tenant ID from session or props  
       const tenantId = 1; // You may need to pass this as a prop or get from context
       
       const response = await apiRequest('PUT', `/api/tenants/${tenantId}/role-permissions`, {
@@ -326,6 +326,7 @@ export default function UsersManagement({ restaurantId }: { restaurantId: number
         description: "Role permissions updated successfully",
       });
       queryClient.invalidateQueries({ queryKey: ['/api/restaurant/roles'] });
+      queryClient.invalidateQueries({ queryKey: [`/api/tenants/1/role-permissions`] });
     },
     onError: (error: Error) => {
       toast({
@@ -353,7 +354,7 @@ export default function UsersManagement({ restaurantId }: { restaurantId: number
     updateRolePermissionsMutation.mutate({
       role,
       permissions,
-      redirect
+      redirect: redirect || 'dashboard'
     });
   };
 
