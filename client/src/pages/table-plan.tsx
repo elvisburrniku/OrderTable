@@ -600,10 +600,7 @@ export default function TablePlan() {
         </div>
       </div>
     );
-
-    
-
-
+  };
 
   // Table styling based on shape
   const getTableStyle = (table: any) => {
