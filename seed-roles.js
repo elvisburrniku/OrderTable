@@ -1,7 +1,7 @@
 
 import { drizzle } from "drizzle-orm/postgres-js";
 import postgres from "postgres";
-import { roles } from "./shared/schema.js";
+import { roles } from "./shared/schema.ts";
 
 const client = postgres(process.env.DATABASE_URL);
 const db = drizzle(client);
