@@ -595,14 +595,7 @@ export default function TablePlan() {
                       </div>
                     </div>
 
-                    {/* Show status if positioned */}
-                    {tablePositions[table.id] && (
-                      <div className="mt-2">
-                        <Badge variant="outline" className="text-xs">
-                          On Floor Plan
-                        </Badge>
-                      </div>
-                    )}
+
                   </div>
                 ))}
               </div>
