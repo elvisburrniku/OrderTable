@@ -22,6 +22,8 @@ A comprehensive restaurant booking management system with React frontend and Exp
 - Kitchen order management
 
 ## Recent Changes
+- **2025-06-30**: Successfully migrated project from Replit Agent to Replit environment and standardized table design
+- **Table Standardization**: All table shapes now uniform 60x60px with sharp rectangular edges for consistent layout design
 - **2025-06-29**: Successfully migrated project from Replit Agent to Replit environment
 - **Migration Completed**: Database connection established, server startup optimized, and authentication system working
 - **Table Chair Enhancement**: Fixed chair rotation to move with table rotation while maintaining even spacing around table perimeter
