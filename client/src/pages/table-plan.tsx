@@ -53,6 +53,8 @@ interface TablePosition {
   tableNumber?: string;
   capacity?: number;
   isConfigured?: boolean;
+  width?: number;
+  height?: number;
 }
 
 const TABLE_SHAPES = [
@@ -418,36 +420,42 @@ export default function TablePlan() {
     const tableNumber = position.tableNumber || table?.tableNumber || tableId;
     const shape = position.shape || "square";
 
-    // Dynamic table size based on capacity - bigger tables for more people
-    const baseSize = 70;
-    let tableWidth = baseSize;
-    let tableHeight = baseSize;
-    
-    // Scale tables based on capacity
-    if (capacity <= 2) {
-      tableWidth = baseSize * 0.8; // 56px
-      tableHeight = baseSize * 0.8; // 56px
-    } else if (capacity <= 4) {
-      tableWidth = baseSize; // 70px
-      tableHeight = baseSize; // 70px
-    } else if (capacity <= 6) {
-      tableWidth = baseSize * 1.3; // 91px
-      tableHeight = baseSize * 1.1; // 77px
-    } else if (capacity <= 8) {
-      tableWidth = baseSize * 1.6; // 112px
-      tableHeight = baseSize * 1.2; // 84px
-    } else if (capacity <= 12) {
-      tableWidth = baseSize * 2.0; // 140px
-      tableHeight = baseSize * 1.4; // 98px
-    } else {
-      // For very large capacities (12+)
-      tableWidth = baseSize * 2.4; // 168px
-      tableHeight = baseSize * 1.6; // 112px
-    }
+    // Use custom width/height if provided, otherwise calculate based on capacity
+    let tableWidth = position.width;
+    let tableHeight = position.height;
 
-    // For long tables, make them wider
-    if (shape === "long-rectangle" && capacity > 4) {
-      tableWidth = tableWidth * 1.5; // Make long tables significantly wider
+    if (!tableWidth || !tableHeight) {
+      // Dynamic table size based on capacity - bigger tables for more people
+      const baseSize = 70;
+      tableWidth = tableWidth || baseSize;
+      tableHeight = tableHeight || baseSize;
+      
+      // Scale tables based on capacity if no custom size is set
+      if (capacity <= 2) {
+        tableWidth = tableWidth || baseSize * 0.8; // 56px
+        tableHeight = tableHeight || baseSize * 0.8; // 56px
+      } else if (capacity <= 4) {
+        tableWidth = tableWidth || baseSize; // 70px
+        tableHeight = tableHeight || baseSize; // 70px
+      } else if (capacity <= 6) {
+        tableWidth = tableWidth || baseSize * 1.3; // 91px
+        tableHeight = tableHeight || baseSize * 1.1; // 77px
+      } else if (capacity <= 8) {
+        tableWidth = tableWidth || baseSize * 1.6; // 112px
+        tableHeight = tableHeight || baseSize * 1.2; // 84px
+      } else if (capacity <= 12) {
+        tableWidth = tableWidth || baseSize * 2.0; // 140px
+        tableHeight = tableHeight || baseSize * 1.4; // 98px
+      } else {
+        // For very large capacities (12+)
+        tableWidth = tableWidth || baseSize * 2.4; // 168px
+        tableHeight = tableHeight || baseSize * 1.6; // 112px
+      }
+
+      // For long tables, make them wider
+      if (shape === "long-rectangle" && capacity > 4) {
+        tableWidth = tableWidth * 1.5; // Make long tables significantly wider
+      }
     }
 
     return (
@@ -984,7 +992,7 @@ export default function TablePlan() {
 
       {/* Table Configuration Popup */}
       <Dialog open={showTableConfigPopup} onOpenChange={setShowTableConfigPopup}>
-        <DialogContent className="sm:max-w-md">
+        <DialogContent className="sm:max-w-lg">
           <DialogHeader>
             <DialogTitle>Configure Table</DialogTitle>
             {selectedTableForConfig && (
@@ -999,6 +1007,79 @@ export default function TablePlan() {
           <div className="space-y-4">
             {selectedTableForConfig && (
               <>
+                {/* Seating Capacity */}
+                <div>
+                  <Label htmlFor="seatingCapacity">Seating Capacity</Label>
+                  <Input
+                    id="seatingCapacity"
+                    type="number"
+                    min="1"
+                    max="20"
+                    value={tablePositions[selectedTableForConfig]?.capacity || 
+                           tables.find((t: any) => t.id === selectedTableForConfig)?.capacity || 4}
+                    onChange={(e) => {
+                      const capacity = parseInt(e.target.value) || 4;
+                      setTablePositions((prev) => ({
+                        ...prev,
+                        [selectedTableForConfig]: {
+                          ...prev[selectedTableForConfig],
+                          capacity: capacity,
+                        },
+                      }));
+                    }}
+                    className="mt-1"
+                  />
+                  <p className="text-xs text-gray-500 mt-1">
+                    Number of guests this table can accommodate
+                  </p>
+                </div>
+
+                {/* Table Size Controls */}
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <Label htmlFor="tableWidth">Table Width (px)</Label>
+                    <Input
+                      id="tableWidth"
+                      type="number"
+                      min="40"
+                      max="200"
+                      value={tablePositions[selectedTableForConfig]?.width || 70}
+                      onChange={(e) => {
+                        const width = parseInt(e.target.value) || 70;
+                        setTablePositions((prev) => ({
+                          ...prev,
+                          [selectedTableForConfig]: {
+                            ...prev[selectedTableForConfig],
+                            width: width,
+                          },
+                        }));
+                      }}
+                      className="mt-1"
+                    />
+                  </div>
+                  <div>
+                    <Label htmlFor="tableHeight">Table Height (px)</Label>
+                    <Input
+                      id="tableHeight"
+                      type="number"
+                      min="40"
+                      max="200"
+                      value={tablePositions[selectedTableForConfig]?.height || 70}
+                      onChange={(e) => {
+                        const height = parseInt(e.target.value) || 70;
+                        setTablePositions((prev) => ({
+                          ...prev,
+                          [selectedTableForConfig]: {
+                            ...prev[selectedTableForConfig],
+                            height: height,
+                          },
+                        }));
+                      }}
+                      className="mt-1"
+                    />
+                  </div>
+                </div>
+
                 {/* Shape Selection */}
                 <div>
                   <Label htmlFor="tableShape">Table Shape</Label>
@@ -1066,8 +1147,8 @@ export default function TablePlan() {
                       tablePositions[selectedTableForConfig]?.shape || "circle",
                       tablePositions[selectedTableForConfig]?.capacity || 
                       tables.find((t: any) => t.id === selectedTableForConfig)?.capacity || 4,
-                      80,
-                      80,
+                      tablePositions[selectedTableForConfig]?.width || 80,
+                      tablePositions[selectedTableForConfig]?.height || 80,
                       "drop-shadow-lg"
                     )}
                   </div>
