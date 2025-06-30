@@ -100,19 +100,20 @@ const TableSVGRenderer: React.FC<TableSVGRendererProps> = ({ position, table, on
 
   return (
     <div
-      style={{
-        position: 'absolute',
-        left: `${position.x}px`,
-        top: `${position.y}px`,
-        transform: `rotate(${position.rotation || 0}deg)`,
-        transformOrigin: 'center',
-        cursor: 'grab',
-        zIndex: 10,
-      }}
-      draggable
-      onDragStart={onDragStart}
-      className="group"
-    >
+        style={{
+          position: 'absolute',
+          left: `${position.x}px`,
+          top: `${position.y}px`,
+          transform: `rotate(${position.rotation || 0}deg)`,
+          transformOrigin: 'center',
+          cursor: isDragging ? 'grabbing' : 'grab',
+          zIndex: 10,
+        }}
+        draggable
+        onDragStart={onDragStart}
+        onDragEnd={() => setIsDragging(false)}
+        className="group"
+      >
       {/* Professional SVG Table Shape */}
       <div className="relative">
         <TableShapesSVG
