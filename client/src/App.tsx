@@ -101,6 +101,7 @@ import { SettingsProvider } from "@/contexts/settings-context";
 import { DateProvider } from "@/contexts/date-context";
 import { CurrencyProvider } from "@/contexts/currency-context";
 import { BookingProvider } from "@/contexts/booking-context";
+import { PWAInstallButton } from "@/components/pwa-install-button";
 
 function App() {
   return (
@@ -463,6 +464,7 @@ function App() {
             </Route>
           </Switch>
           <Toaster />
+          <PWAInstallButton />
         </QueryClientProvider>
       </LanguageProvider>
     </ErrorBoundary>

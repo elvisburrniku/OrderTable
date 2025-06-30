@@ -1,0 +1,10 @@
+<svg width="96" height="96" viewBox="0 0 96 96" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <rect width="96" height="96" rx="12" fill="#1f2937"/>
+  <g transform="translate(24, 24)">
+    <!-- Dashboard Grid -->
+    <rect x="0" y="0" width="20" height="20" fill="#10b981" rx="4"/>
+    <rect x="28" y="0" width="20" height="20" fill="#3b82f6" rx="4"/>
+    <rect x="0" y="28" width="20" height="20" fill="#f59e0b" rx="4"/>
+    <rect x="28" y="28" width="20" height="20" fill="#ef4444" rx="4"/>
+  </g>
+</svg>
