@@ -1,5 +1,12 @@
 import { Request, Response, NextFunction } from "express";
-import { tenants, users, tenantUsers, restaurants, roles, invitationTokens } from "../shared/schema";
+import {
+  tenants,
+  users,
+  tenantUsers,
+  restaurants,
+  roles,
+  invitationTokens,
+} from "../shared/schema";
 import { eq, and } from "drizzle-orm";
 import { storage } from "./storage";
 import { db } from "./db";
@@ -8,14 +15,14 @@ import bcrypt from "bcrypt";
 import { z } from "zod";
 import crypto from "crypto";
 import { BrevoEmailService } from "./brevo-service";
-import { 
-  requirePermission, 
-  PERMISSIONS, 
-  ROLE_PERMISSIONS, 
+import {
+  requirePermission,
+  PERMISSIONS,
+  ROLE_PERMISSIONS,
   ROLE_REDIRECTS,
   getAllPermissions,
   updateRolePermissions,
-  updateRoleRedirect 
+  updateRoleRedirect,
 } from "./permissions-middleware";
 
 // User invitation schema
@@ -42,7 +49,10 @@ export async function getTenant(req: Request, res: Response) {
   try {
     const tenantId = parseInt(req.params.tenantId);
 
-    const tenant = await db.select().from(tenants).where(eq(tenants.id, tenantId));
+    const tenant = await db
+      .select()
+      .from(tenants)
+      .where(eq(tenants.id, tenantId));
 
     if (!tenant.length) {
       return res.status(404).json({ message: "Tenant not found" });
@@ -59,7 +69,7 @@ export async function getTenant(req: Request, res: Response) {
           id: users.id,
           email: users.email,
           name: users.name,
-        }
+        },
       })
       .from(tenantUsers)
       .leftJoin(users, eq(tenantUsers.userId, users.id))
@@ -67,7 +77,7 @@ export async function getTenant(req: Request, res: Response) {
 
     res.json({
       tenant: tenant[0],
-      users: tenantUsersList
+      users: tenantUsersList,
     });
   } catch (error) {
     console.error("Error fetching tenant:", error);
@@ -92,7 +102,7 @@ export async function getTenantUsers(req: Request, res: Response) {
           name: users.name,
           restaurantName: users.restaurantName,
           ssoProvider: users.ssoProvider,
-        }
+        },
       })
       .from(tenantUsers)
       .leftJoin(users, eq(tenantUsers.userId, users.id))
@@ -112,20 +122,27 @@ export async function inviteTenantUser(req: Request, res: Response) {
     const inviteData = inviteUserSchema.parse(req.body);
 
     // Check if user already exists
-    const existingUser = await db.select().from(users).where(eq(users.email, inviteData.email));
+    const existingUser = await db
+      .select()
+      .from(users)
+      .where(eq(users.email, inviteData.email));
 
     if (existingUser.length > 0) {
       // Check if user is already in this tenant
       const existingTenantUser = await db
         .select()
         .from(tenantUsers)
-        .where(and(
-          eq(tenantUsers.tenantId, tenantId),
-          eq(tenantUsers.userId, existingUser[0].id)
-        ));
+        .where(
+          and(
+            eq(tenantUsers.tenantId, tenantId),
+            eq(tenantUsers.userId, existingUser[0].id),
+          ),
+        );
 
       if (existingTenantUser.length > 0) {
-        return res.status(400).json({ message: "User is already a member of this tenant" });
+        return res
+          .status(400)
+          .json({ message: "User is already a member of this tenant" });
       }
 
       // Add existing user to tenant
@@ -135,11 +152,13 @@ export async function inviteTenantUser(req: Request, res: Response) {
         role: inviteData.role,
       });
 
-      return res.json({ message: "Existing user added to tenant successfully" });
+      return res.json({
+        message: "Existing user added to tenant successfully",
+      });
     }
 
     // Generate invitation token for new user
-    const token = crypto.randomBytes(32).toString('hex');
+    const token = crypto.randomBytes(32).toString("hex");
     const expiresAt = new Date();
     expiresAt.setHours(expiresAt.getHours() + 48); // Token expires in 48 hours
 
@@ -155,15 +174,18 @@ export async function inviteTenantUser(req: Request, res: Response) {
     });
 
     // Get tenant information for email
-    const [tenant] = await db.select().from(tenants).where(eq(tenants.id, tenantId));
+    const [tenant] = await db
+      .select()
+      .from(tenants)
+      .where(eq(tenants.id, tenantId));
 
     // Send invitation email
     const emailService = new BrevoEmailService();
-    const inviteUrl = `${req.protocol}://${req.get('host')}/accept-invitation?token=${token}`;
+    const inviteUrl = `${req.protocol}://${req.get("host")}/accept-invitation?token=${token}`;
 
     const emailSent = await emailService.sendEmail({
       to: [{ email: inviteData.email, name: inviteData.name }],
-      subject: `You're invited to join ${tenant?.name || 'Restaurant Team'}`,
+      subject: `You're invited to join ${tenant?.name || "Restaurant Team"}`,
       htmlContent: `
         <!DOCTYPE html>
         <html>
@@ -184,7 +206,7 @@ export async function inviteTenantUser(req: Request, res: Response) {
                 <p style="margin: 0 0 20px; font-size: 16px; color: #333; line-height: 1.5;">Hello ${inviteData.name},</p>
 
                 <p style="margin: 0 0 30px; font-size: 16px; color: #666; line-height: 1.6;">
-                  You've been invited to join the team at <strong>${tenant?.name || 'our restaurant'}</strong>. Click the button below to set up your account and choose your password.
+                  You've been invited to join the team at <strong>${tenant?.name || "our restaurant"}</strong>. Click the button below to set up your account and choose your password.
                 </p>
 
                 <!-- Role Badge -->
@@ -205,7 +227,7 @@ export async function inviteTenantUser(req: Request, res: Response) {
                 </div>
 
                 <p style="margin: 30px 0 10px; font-size: 16px; color: #333;">Best regards,</p>
-                <p style="margin: 0; font-size: 16px; color: #333; font-weight: 600;">${tenant?.name || 'Restaurant Team'}</p>
+                <p style="margin: 0; font-size: 16px; color: #333; font-weight: 600;">${tenant?.name || "Restaurant Team"}</p>
               </div>
 
               <!-- Footer -->
@@ -221,7 +243,7 @@ export async function inviteTenantUser(req: Request, res: Response) {
       textContent: `
 Hello ${inviteData.name},
 
-You've been invited to join the team at ${tenant?.name || 'our restaurant'}. Visit this link to set up your account and choose your password:
+You've been invited to join the team at ${tenant?.name || "our restaurant"}. Visit this link to set up your account and choose your password:
 ${inviteUrl}
 
 Your role will be: ${inviteData.role}
@@ -229,17 +251,19 @@ Your role will be: ${inviteData.role}
 This invitation will expire in 48 hours.
 
 Best regards,
-${tenant?.name || 'Restaurant Team'}`,
+${tenant?.name || "Restaurant Team"}`,
     });
 
     if (!emailSent) {
-      return res.status(500).json({ message: "Failed to send invitation email" });
+      return res
+        .status(500)
+        .json({ message: "Failed to send invitation email" });
     }
 
-    res.json({ 
+    res.json({
       message: "Invitation sent successfully",
       email: inviteData.email,
-      expiresAt: expiresAt.toISOString()
+      expiresAt: expiresAt.toISOString(),
     });
   } catch (error) {
     console.error("Error inviting user:", error);
@@ -262,15 +286,22 @@ export async function validateInvitationToken(req: Request, res: Response) {
     }
 
     if (invitation.used) {
-      return res.status(400).json({ message: "Invitation has already been used" });
+      return res
+        .status(400)
+        .json({ message: "Invitation has already been used" });
     }
 
     if (new Date() > invitation.expiresAt) {
-      return res.status(400).json({ message: "Invitation has expired", expired: true });
+      return res
+        .status(400)
+        .json({ message: "Invitation has expired", expired: true });
     }
 
     // Get tenant information
-    const [tenant] = await db.select().from(tenants).where(eq(tenants.id, invitation.tenantId));
+    const [tenant] = await db
+      .select()
+      .from(tenants)
+      .where(eq(tenants.id, invitation.tenantId));
 
     res.json({
       token: invitation.token,
@@ -278,9 +309,9 @@ export async function validateInvitationToken(req: Request, res: Response) {
       name: invitation.name,
       tenantId: invitation.tenantId,
       role: invitation.role,
-      tenantName: tenant?.name || 'Restaurant Team',
+      tenantName: tenant?.name || "Restaurant Team",
       used: invitation.used,
-      expired: false
+      expired: false,
     });
   } catch (error) {
     console.error("Error validating invitation token:", error);
@@ -295,7 +326,9 @@ export async function acceptInvitation(req: Request, res: Response) {
     const { password } = req.body;
 
     if (!password || password.length < 6) {
-      return res.status(400).json({ message: "Password must be at least 6 characters long" });
+      return res
+        .status(400)
+        .json({ message: "Password must be at least 6 characters long" });
     }
 
     // Validate token again
@@ -309,7 +342,9 @@ export async function acceptInvitation(req: Request, res: Response) {
     }
 
     if (invitation.used) {
-      return res.status(400).json({ message: "Invitation has already been used" });
+      return res
+        .status(400)
+        .json({ message: "Invitation has already been used" });
     }
 
     if (new Date() > invitation.expiresAt) {
@@ -323,37 +358,44 @@ export async function acceptInvitation(req: Request, res: Response) {
       .where(eq(users.email, invitation.email));
 
     let userId;
-    
+
     if (existingUser.length > 0) {
       // User exists, just add them to the tenant
       userId = existingUser[0].id;
-      
+
       // Check if user is already in this tenant
       const existingTenantUser = await db
         .select()
         .from(tenantUsers)
-        .where(and(
-          eq(tenantUsers.tenantId, invitation.tenantId),
-          eq(tenantUsers.userId, userId)
-        ));
+        .where(
+          and(
+            eq(tenantUsers.tenantId, invitation.tenantId),
+            eq(tenantUsers.userId, userId),
+          ),
+        );
 
       if (existingTenantUser.length > 0) {
-        return res.status(400).json({ message: "User is already a member of this tenant" });
+        return res
+          .status(400)
+          .json({ message: "User is already a member of this tenant" });
       }
     } else {
       // Hash password
       const hashedPassword = await bcrypt.hash(password, 10);
 
       // Create new user
-      const [newUser] = await db.insert(users).values({
-        email: invitation.email,
-        name: invitation.name,
-        password: hashedPassword,
-        restaurantName: null, // This will be null for team members
-        ssoProvider: null,
-        ssoId: null,
-        createdAt: new Date(),
-      }).returning();
+      const [newUser] = await db
+        .insert(users)
+        .values({
+          email: invitation.email,
+          name: invitation.name,
+          password: hashedPassword,
+          restaurantName: null, // This will be null for team members
+          ssoProvider: null,
+          ssoId: null,
+          createdAt: new Date(),
+        })
+        .returning();
 
       userId = newUser.id;
     }
@@ -377,8 +419,8 @@ export async function acceptInvitation(req: Request, res: Response) {
         id: userId,
         email: invitation.email,
         name: invitation.name,
-        role: invitation.role
-      }
+        role: invitation.role,
+      },
     });
   } catch (error) {
     console.error("Error accepting invitation:", error);
@@ -406,10 +448,12 @@ export async function updateTenantUser(req: Request, res: Response) {
       await db
         .update(tenantUsers)
         .set({ role: updateData.role })
-        .where(and(
-          eq(tenantUsers.tenantId, tenantId),
-          eq(tenantUsers.userId, userId)
-        ));
+        .where(
+          and(
+            eq(tenantUsers.tenantId, tenantId),
+            eq(tenantUsers.userId, userId),
+          ),
+        );
     }
 
     res.json({ message: "User updated successfully" });
@@ -427,10 +471,9 @@ export async function removeTenantUser(req: Request, res: Response) {
 
     await db
       .delete(tenantUsers)
-      .where(and(
-        eq(tenantUsers.tenantId, tenantId),
-        eq(tenantUsers.userId, userId)
-      ));
+      .where(
+        and(eq(tenantUsers.tenantId, tenantId), eq(tenantUsers.userId, userId)),
+      );
 
     res.json({ message: "User removed from tenant successfully" });
   } catch (error) {
@@ -499,12 +542,15 @@ export async function createTenant(req: Request, res: Response) {
     }
 
     // Get default subscription plan from system settings
-    const defaultPlanName = await systemSettings.getSetting('default_subscription_plan');
-    const defaultPlan = await storage.getSubscriptionPlanByName(defaultPlanName);
+    const defaultPlanName = await systemSettings.getSetting(
+      "default_subscription_plan",
+    );
+    const defaultPlan =
+      await storage.getSubscriptionPlanByName(defaultPlanName);
     const subscriptionPlanId = defaultPlan?.id || 1; // Fallback to plan ID 1 if not found
 
     // Get trial days from system settings
-    const trialDays = await systemSettings.getSetting('max_trial_days');
+    const trialDays = await systemSettings.getSetting("max_trial_days");
     const trialEndDate = new Date();
     trialEndDate.setDate(trialEndDate.getDate() + trialDays);
 
@@ -516,7 +562,7 @@ export async function createTenant(req: Request, res: Response) {
         slug,
         subscriptionPlanId,
         trialEndDate,
-        status: 'trial',
+        status: "trial",
       })
       .returning();
 
@@ -550,13 +596,13 @@ export async function updateTenant(req: Request, res: Response) {
       .select()
       .from(tenantUsers)
       .where(
-        and(
-          eq(tenantUsers.tenantId, tenantId),
-          eq(tenantUsers.userId, userId)
-        )
+        and(eq(tenantUsers.tenantId, tenantId), eq(tenantUsers.userId, userId)),
       );
 
-    if (!tenantUser.length || !["owner", "admin"].includes(tenantUser[0].role || "")) {
+    if (
+      !tenantUser.length ||
+      !["owner", "admin"].includes(tenantUser[0].role || "")
+    ) {
       return res.status(403).json({ message: "Insufficient permissions" });
     }
 
@@ -594,21 +640,31 @@ export async function inviteUserToTenant(req: Request, res: Response) {
       .where(
         and(
           eq(tenantUsers.tenantId, tenantId),
-          eq(tenantUsers.userId, inviterId)
-        )
+          eq(tenantUsers.userId, inviterId),
+        ),
       );
 
-    if (!inviterTenantUser.length || !["owner", "admin"].includes(inviterTenantUser[0].role || "")) {
+    if (
+      !inviterTenantUser.length ||
+      !["owner", "admin"].includes(inviterTenantUser[0].role || "")
+    ) {
       return res.status(403).json({ message: "Insufficient permissions" });
     }
 
     // Find or create user
-    let [user] = await storage.db.select().from(users).where(eq(users.email, email));
+    let [user] = await storage.db
+      .select()
+      .from(users)
+      .where(eq(users.email, email));
 
     if (!user) {
       // For now, we'll just create a placeholder entry
       // In a real app, you'd send an invitation email
-      return res.status(400).json({ message: "User not found. Please ask them to register first." });
+      return res
+        .status(400)
+        .json({
+          message: "User not found. Please ask them to register first.",
+        });
     }
 
     // Check if user is already in tenant
@@ -618,8 +674,8 @@ export async function inviteUserToTenant(req: Request, res: Response) {
       .where(
         and(
           eq(tenantUsers.tenantId, tenantId),
-          eq(tenantUsers.userId, user.id)
-        )
+          eq(tenantUsers.userId, user.id),
+        ),
       );
 
     if (existingTenantUser.length) {
@@ -661,11 +717,14 @@ export async function removeUserFromTenant(req: Request, res: Response) {
       .where(
         and(
           eq(tenantUsers.tenantId, tenantId),
-          eq(tenantUsers.userId, removerId)
-        )
+          eq(tenantUsers.userId, removerId),
+        ),
       );
 
-    if (!removerTenantUser.length || !["owner", "admin"].includes(removerTenantUser[0].role || "")) {
+    if (
+      !removerTenantUser.length ||
+      !["owner", "admin"].includes(removerTenantUser[0].role || "")
+    ) {
       return res.status(403).json({ message: "Insufficient permissions" });
     }
 
@@ -676,8 +735,8 @@ export async function removeUserFromTenant(req: Request, res: Response) {
       .where(
         and(
           eq(tenantUsers.tenantId, tenantId),
-          eq(tenantUsers.userId, userIdToRemove)
-        )
+          eq(tenantUsers.userId, userIdToRemove),
+        ),
       );
 
     if (userToRemove.length && userToRemove[0].role === "owner") {
@@ -690,8 +749,8 @@ export async function removeUserFromTenant(req: Request, res: Response) {
       .where(
         and(
           eq(tenantUsers.tenantId, tenantId),
-          eq(tenantUsers.userId, userIdToRemove)
-        )
+          eq(tenantUsers.userId, userIdToRemove),
+        ),
       );
 
     res.json({ message: "User removed successfully" });
@@ -707,48 +766,62 @@ export async function getRolePermissions(req: Request, res: Response) {
     console.log("Getting role permissions...");
 
     // Set proper headers for JSON response
-    res.setHeader('Content-Type', 'application/json');
+    res.setHeader("Content-Type", "application/json");
 
-    const rolePermissions = Object.entries(ROLE_PERMISSIONS).map(([role, permissions]) => ({
-      role,
-      permissions: Array.isArray(permissions) ? permissions : [],
-      redirect: ROLE_REDIRECTS[role as keyof typeof ROLE_REDIRECTS] || "dashboard"
-    }));
+    const rolePermissions = Object.entries(ROLE_PERMISSIONS).map(
+      ([role, permissions]) => ({
+        role,
+        permissions: Array.isArray(permissions) ? permissions : [],
+        redirect:
+          ROLE_REDIRECTS[role as keyof typeof ROLE_REDIRECTS] || "dashboard",
+      }),
+    );
 
     const availablePermissions = getAllPermissions();
 
     const result = {
       roles: rolePermissions,
-      availablePermissions
+      availablePermissions,
     };
 
-    console.log("Sending role permissions result with", rolePermissions.length, "roles");
+    console.log(
+      "Sending role permissions result with",
+      rolePermissions.length,
+      "roles",
+    );
     return res.status(200).json(result);
   } catch (error) {
     console.error("Error getting role permissions:", error);
-    res.setHeader('Content-Type', 'application/json');
+    res.setHeader("Content-Type", "application/json");
     return res.status(500).json({ message: "Internal server error" });
   }
 }
 
 // Update role permissions
-export async function updateRolePermissionsEndpoint(req: Request, res: Response) {
+export async function updateRolePermissionsEndpoint(
+  req: Request,
+  res: Response,
+) {
   try {
     const { role, permissions, redirect } = req.body;
 
     if (!role || !permissions) {
-      return res.status(400).json({ message: "Role and permissions are required" });
-    }
-
-    // Update permissions
-    const permissionsUpdated = updateRolePermissions(role, permissions);
-    if (!permissionsUpdated) {
-      return res.status(400).json({ message: "Invalid role or cannot update owner permissions" });
+      return res
+        .status(400)
+        .json({ message: "Role and permissions are required" });
     }
 
     // Update redirect if provided
     if (redirect) {
       updateRoleRedirect(role, redirect);
+    }
+
+    // Update permissions
+    const permissionsUpdated = updateRolePermissions(role, permissions);
+    if (!permissionsUpdated) {
+      return res
+        .status(400)
+        .json({ message: "Invalid role or cannot update owner permissions" });
     }
 
     res.json({ message: "Role permissions updated successfully" });
@@ -767,8 +840,18 @@ export function setupTenantRoutes(app: any) {
   app.delete("/api/tenant/:tenantId/users/:userId", removeUserFromTenant);
 
   // Role permissions management (users with access_users permission)
-  app.get("/api/tenants/:tenantId/role-permissions", validateTenant, requirePermission(PERMISSIONS.ACCESS_USERS), getRolePermissions);
-  app.put("/api/tenants/:tenantId/role-permissions", validateTenant, requirePermission(PERMISSIONS.ACCESS_USERS), updateRolePermissionsEndpoint);
+  app.get(
+    "/api/tenants/:tenantId/role-permissions",
+    validateTenant,
+    requirePermission(PERMISSIONS.ACCESS_USERS),
+    getRolePermissions,
+  );
+  app.put(
+    "/api/tenants/:tenantId/role-permissions",
+    validateTenant,
+    requirePermission(PERMISSIONS.ACCESS_USERS),
+    updateRolePermissionsEndpoint,
+  );
 
   // Invitation validation and acceptance
   app.get("/api/invitation/:token", validateInvitationToken);
@@ -781,16 +864,16 @@ function validateTenant(req: Request, res: Response, next: NextFunction) {
     const sessionTenant = (req as any).session?.tenant;
 
     if (!sessionTenant) {
-      return res.status(401).json({ 
+      return res.status(401).json({
         error: "No tenant session",
-        message: "Please log in to access tenant resources" 
+        message: "Please log in to access tenant resources",
       });
     }
 
     if (sessionTenant.id !== tenantId) {
-      return res.status(403).json({ 
-        error: "Tenant access denied", 
-        message: "You don't have access to this tenant" 
+      return res.status(403).json({
+        error: "Tenant access denied",
+        message: "You don't have access to this tenant",
       });
     }
 

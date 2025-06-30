@@ -783,7 +783,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
             error: "Access denied",
             message: "You don't have permission to view role permissions",
           });
-        };
+        }
 
         // Get role permissions data
         const rolePermissions = Object.entries(ROLE_PERMISSIONS).map(
@@ -880,6 +880,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
           "./permissions-middleware"
         );
 
+        // Update redirect if provided
+        if (redirect) {
+          updateRoleRedirect(role, redirect);
+        }
+
         // Update role permissions
         const permissionsUpdated = updateRolePermissions(role, permissions);
         if (!permissionsUpdated) {
@@ -887,11 +892,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
             error: "Invalid role or cannot update owner permissions",
             message: "The specified role cannot be updated or does not exist",
           });
-        }
-
-        // Update redirect if provided
-        if (redirect) {
-          updateRoleRedirect(role, redirect);
         }
 
         res.json({
