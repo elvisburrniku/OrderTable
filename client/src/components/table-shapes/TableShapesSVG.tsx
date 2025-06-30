@@ -328,31 +328,41 @@ export const getTableSVG = (shape: string, capacity: number, width: number = 80,
     // The actual capacity number will still be stored and displayed correctly
     const effectiveCapacity = Math.min(safeCapacity, 12);
 
+    // Force all tables to render at exactly the same size with CSS override
+    const forceEqualSizeStyle = {
+      width: `${standardWidth}px !important`,
+      height: `${standardHeight}px !important`,
+      minWidth: `${standardWidth}px`,
+      minHeight: `${standardHeight}px`,
+      maxWidth: `${standardWidth}px`,
+      maxHeight: `${standardHeight}px`,
+    };
+
     switch (shape) {
       case "round":
       case "circle":
-        if (effectiveCapacity <= 2) return <CircleTable2Person width={standardWidth} height={standardHeight} className={className} />;
-        if (effectiveCapacity <= 4) return <CircleTable4Person width={standardWidth} height={standardHeight} className={className} />;
-        if (effectiveCapacity <= 6) return <CircleTable6Person width={standardWidth} height={standardHeight} className={className} />;
-        return <CircleTable8Person width={standardWidth} height={standardHeight} className={className} />;
+        if (effectiveCapacity <= 2) return <div style={forceEqualSizeStyle}><CircleTable2Person width={standardWidth} height={standardHeight} className={className} /></div>;
+        if (effectiveCapacity <= 4) return <div style={forceEqualSizeStyle}><CircleTable4Person width={standardWidth} height={standardHeight} className={className} /></div>;
+        if (effectiveCapacity <= 6) return <div style={forceEqualSizeStyle}><CircleTable6Person width={standardWidth} height={standardHeight} className={className} /></div>;
+        return <div style={forceEqualSizeStyle}><CircleTable8Person width={standardWidth} height={standardHeight} className={className} /></div>;
 
       case "square":
       case "rectangle":
-        if (effectiveCapacity <= 4) return <SquareTable4Person width={standardWidth} height={standardHeight} className={className} />;
-        if (effectiveCapacity <= 6) return <SquareTable6Person width={standardWidth} height={standardHeight} className={className} />;
-        return <SquareTable8Person width={standardWidth} height={standardHeight} className={className} />;
+        if (effectiveCapacity <= 4) return <div style={forceEqualSizeStyle}><SquareTable4Person width={standardWidth} height={standardHeight} className={className} /></div>;
+        if (effectiveCapacity <= 6) return <div style={forceEqualSizeStyle}><SquareTable6Person width={standardWidth} height={standardHeight} className={className} /></div>;
+        return <div style={forceEqualSizeStyle}><SquareTable8Person width={standardWidth} height={standardHeight} className={className} /></div>;
 
       case "long-rectangle":
-        if (effectiveCapacity <= 4) return <SquareTable4Person width={standardWidth} height={standardHeight} className={className} />;
-        if (effectiveCapacity <= 6) return <SquareTable6Person width={standardWidth} height={standardHeight} className={className} />;
-        return <SquareTable8Person width={standardWidth} height={standardHeight} className={className} />;
+        if (effectiveCapacity <= 4) return <div style={forceEqualSizeStyle}><SquareTable4Person width={standardWidth} height={standardHeight} className={className} /></div>;
+        if (effectiveCapacity <= 6) return <div style={forceEqualSizeStyle}><SquareTable6Person width={standardWidth} height={standardHeight} className={className} /></div>;
+        return <div style={forceEqualSizeStyle}><SquareTable8Person width={standardWidth} height={standardHeight} className={className} /></div>;
 
       default:
         // Default to round tables
-        if (effectiveCapacity <= 2) return <CircleTable2Person width={standardWidth} height={standardHeight} className={className} />;
-        if (effectiveCapacity <= 4) return <CircleTable4Person width={standardWidth} height={standardHeight} className={className} />;
-        if (effectiveCapacity <= 6) return <CircleTable6Person width={standardWidth} height={standardHeight} className={className} />;
-        return <CircleTable8Person width={standardWidth} height={standardHeight} className={className} />;
+        if (effectiveCapacity <= 2) return <div style={forceEqualSizeStyle}><CircleTable2Person width={standardWidth} height={standardHeight} className={className} /></div>;
+        if (effectiveCapacity <= 4) return <div style={forceEqualSizeStyle}><CircleTable4Person width={standardWidth} height={standardHeight} className={className} /></div>;
+        if (effectiveCapacity <= 6) return <div style={forceEqualSizeStyle}><CircleTable6Person width={standardWidth} height={standardHeight} className={className} /></div>;
+        return <div style={forceEqualSizeStyle}><CircleTable8Person width={standardWidth} height={standardHeight} className={className} /></div>;
     }
   };
 
