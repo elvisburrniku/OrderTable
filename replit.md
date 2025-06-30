@@ -22,6 +22,7 @@ A comprehensive restaurant booking management system with React frontend and Exp
 - Kitchen order management
 
 ## Recent Changes
+- **2025-06-30**: Fixed React hooks error and removed duplicate notification components from dashboard to eliminate double display
 - **2025-06-30**: Added authentication checks to notification indicator - only shows for authenticated users, preventing display on login/register pages
 - **2025-06-30**: Implemented functional notification dropdown with real-time notifications and user menu with Profile, Settings, Billing, Help, and Logout options
 - **2025-06-30**: Added notification indicator with bell icon and green dot to appear on every page across all layouts

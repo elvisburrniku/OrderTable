@@ -14,11 +14,6 @@ export function NotificationIndicator({ className = "" }: NotificationIndicatorP
   const { user, logout } = useAuth();
   const [, setLocation] = useLocation();
 
-  // Don't render if user is not authenticated
-  if (!user) {
-    return null;
-  }
-
   // Extract tenant ID from URL
   const location = window.location.pathname;
   const tenantMatch = location.match(/^\/(\d+)/);
@@ -29,6 +24,11 @@ export function NotificationIndicator({ className = "" }: NotificationIndicatorP
     queryKey: [`/api/tenants/${tenantId}/restaurants/1/notifications`],
     enabled: !!tenantId && !!user,
   });
+
+  // Don't render if user is not authenticated
+  if (!user) {
+    return null;
+  }
 
   const handleLogout = async () => {
     await logout();

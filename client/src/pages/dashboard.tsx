@@ -70,7 +70,7 @@ import { Label } from "@/components/ui/label";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
-import { RealTimeNotifications } from "@/components/real-time-notifications";
+
 import { safeArray, safeObject } from "@/hooks/use-mobile-safe";
 import { MenuManagement } from "@/components/menu-management";
 import { useSettings } from "@/hooks/use-settings";
@@ -1092,55 +1092,7 @@ export default function Dashboard() {
             </Button>
             <WalkInBookingButton />
           </div>
-          <div className="flex items-center space-x-4">
-            <RealTimeNotifications />
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button variant="ghost" className="h-8 w-8 p-0 rounded-full">
-                  <User className="h-5 w-5" />
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end">
-                <DropdownMenuLabel>{user?.name}</DropdownMenuLabel>
-                <DropdownMenuSeparator />
-                <DropdownMenuItem
-                  onClick={() =>
-                    setLocation(`/${restaurant?.tenantId}/profile`)
-                  }
-                >
-                  <User className="mr-2 h-4 w-4" />
-                  <span>Profile</span>
-                </DropdownMenuItem>
-                <DropdownMenuItem
-                  onClick={() =>
-                    setLocation(`/${restaurant?.tenantId}/settings`)
-                  }
-                >
-                  <Settings className="mr-2 h-4 w-4" />
-                  <span>Settings</span>
-                </DropdownMenuItem>
-                <DropdownMenuItem
-                  onClick={() =>
-                    setLocation(`/${restaurant?.tenantId}/billing`)
-                  }
-                >
-                  <CreditCard className="mr-2 h-4 w-4" />
-                  <span>Billing</span>
-                </DropdownMenuItem>
-                <DropdownMenuSeparator />
-                <DropdownMenuItem
-                  onClick={() => setLocation(`/${restaurant?.tenantId}/help`)}
-                >
-                  <HelpCircle className="mr-2 h-4 w-4" />
-                  <span>Help</span>
-                </DropdownMenuItem>
-                <DropdownMenuItem onClick={logout}>
-                  <LogOut className="mr-2 h-4 w-4" />
-                  <span>Log out</span>
-                </DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
-          </div>
+
         </div>
 
         {/* Main Interface */}
