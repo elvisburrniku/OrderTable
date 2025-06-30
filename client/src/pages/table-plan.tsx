@@ -499,38 +499,9 @@ export default function TablePlan() {
     const tableNumber = position.tableNumber || table?.tableNumber || tableId;
     const shape = position.shape || 'square';
 
-    // Find the matching table structure to get the SVG component
-    const getTableComponent = () => {
-      // Map current shape/capacity to our new table structures
-      if (shape === 'square' || shape === 'rectangle') {
-        if (capacity === 1) return TABLE_STRUCTURES.find(s => s.id === 'square-1');
-        if (capacity === 2) return TABLE_STRUCTURES.find(s => s.id === 'square-2');
-        if (capacity === 4) return TABLE_STRUCTURES.find(s => s.id === 'square-4');
-        if (capacity === 6) return TABLE_STRUCTURES.find(s => s.id === 'square-6');
-        if (capacity >= 8) return TABLE_STRUCTURES.find(s => s.id === 'square-8');
-      } else if (shape === 'circle' || shape === 'round') {
-        if (capacity === 1) return TABLE_STRUCTURES.find(s => s.id === 'circle-1');
-        if (capacity === 2) return TABLE_STRUCTURES.find(s => s.id === 'circle-2');
-        if (capacity === 3) return TABLE_STRUCTURES.find(s => s.id === 'circle-3');
-        if (capacity === 4) return TABLE_STRUCTURES.find(s => s.id === 'circle-4');
-        if (capacity === 5) return TABLE_STRUCTURES.find(s => s.id === 'circle-5');
-        if (capacity === 6) return TABLE_STRUCTURES.find(s => s.id === 'circle-6');
-        if (capacity >= 8) return TABLE_STRUCTURES.find(s => s.id === 'circle-8');
-      } else if (shape === 'long-rectangle') {
-        if (capacity <= 6) return TABLE_STRUCTURES.find(s => s.id === 'square-6');
-        return TABLE_STRUCTURES.find(s => s.id === 'square-8');
-      }
-
-      // Default fallback
-      return TABLE_STRUCTURES.find(s => s.id === 'square-4') || TABLE_STRUCTURES[0];
-    };
-
-    const tableStructure = getTableComponent();
-    if (!tableStructure) return null;
-
-    const TableSVGComponent = tableStructure.component;
-    const tableWidth = tableStructure.width;
-    const tableHeight = tableStructure.height;
+    // Use the existing getTableSVG function from TableShapesSVG
+    const tableWidth = 80;
+    const tableHeight = 80;
 
     return (
       <div
@@ -546,24 +517,20 @@ export default function TablePlan() {
         }}
         draggable
         onDragStart={(e) => {
+          console.log('Starting drag for table:', tableId);
           setDraggedTable(tableId);
           setIsDragging(true);
           e.dataTransfer.effectAllowed = "move";
         }}
-        onDrag={() => {}}
-        onDragEnd={() => {
+        onDragEnd={(e) => {
+          console.log('Drag ended for table:', tableId);
           setDraggedTable(null);
           setIsDragging(false);
         }}
-        onMouseDown={(e) => e.preventDefault()}
       >
         {/* SVG Table with professional design */}
         <div className="relative group">
-          <TableSVGComponent 
-            width={tableWidth} 
-            height={tableHeight}
-            className="drop-shadow-lg hover:drop-shadow-xl transition-all"
-          />
+          {getTableSVG(shape, capacity, tableWidth, tableHeight, "drop-shadow-lg hover:drop-shadow-xl transition-all")}
 
           {/* Table number overlay */}
           <div
@@ -586,12 +553,16 @@ export default function TablePlan() {
           {/* Remove button */}
           <button
             onClick={(e) => {
+              e.preventDefault();
               e.stopPropagation();
-              setTablePositions((prev) => {
-                const newPositions = { ...prev };
-                delete newPositions[tableId];
-                return newPositions;
-              });
+              console.log('Removing table:', tableId);
+              if (window.confirm(`Remove Table ${tableNumber} from the floor plan?`)) {
+                setTablePositions((prev) => {
+                  const newPositions = { ...prev };
+                  delete newPositions[tableId];
+                  return newPositions;
+                });
+              }
             }}
             style={{
               position: 'absolute',
@@ -630,267 +601,7 @@ export default function TablePlan() {
       </div>
     );
 
-    // Chair positioning with even spacing and rotation support
-    const getChairPositions = () => {
-      const chairs: Array<{ x: number, y: number, rotation: number }> = [];
-      const centerX = position.x + tableWidth / 2;
-      const centerY = position.y + tableHeight / 2;
-      const tableRotation = (position.rotation || 0) * Math.PI / 180; // Convert to radians
-
-      // Helper function to rotate a point around table center
-      const rotatePoint = (x: number, y: number) => {
-        const dx = x - centerX;
-        const dy = y - centerY;
-        return {
-          x: centerX + dx * Math.cos(tableRotation) - dy * Math.sin(tableRotation),
-          y: centerY + dx * Math.sin(tableRotation) + dy * Math.cos(tableRotation)
-        };
-      };
-
-      if (shape === 'square' || shape === 'rectangle') {
-        // Calculate chairs per side evenly
-        const perimeter = 2 * (tableWidth + tableHeight);
-        const chairDistance = 25; // Fixed distance between chairs
-        const maxChairsPerimeter = Math.floor(perimeter / chairDistance);
-        const actualCapacity = Math.min(capacity, maxChairsPerimeter);
-
-        // Distribute chairs evenly around perimeter
-        const topChairs = Math.ceil(actualCapacity * (tableWidth / perimeter));
-        const rightChairs = Math.ceil((actualCapacity - topChairs) * (tableHeight / (perimeter - tableWidth)));
-        const bottomChairs = Math.ceil((actualCapacity - topChairs - rightChairs) * (tableWidth / (perimeter - tableWidth - tableHeight)));
-        const leftChairs = actualCapacity - topChairs - rightChairs - bottomChairs;
-
-        // Top side - evenly spaced
-        for (let i = 0; i < topChairs; i++) {
-          const spacing = tableWidth / (topChairs + 1);
-          const chairX = position.x + spacing * (i + 1) - 8;
-          const chairY = position.y - 18;
-          const rotatedPos = rotatePoint(chairX, chairY);
-          chairs.push({
-            x: rotatedPos.x,
-            y: rotatedPos.y,
-            rotation: (position.rotation || 0) + 0
-          });
-        }
-
-        // Right side - evenly spaced
-        for (let i = 0; i < rightChairs; i++) {
-          const spacing = tableHeight / (rightChairs + 1);
-          const chairX = position.x + tableWidth + 8;
-          const chairY = position.y + spacing * (i + 1) - 8;
-          const rotatedPos = rotatePoint(chairX, chairY);
-          chairs.push({
-            x: rotatedPos.x,
-            y: rotatedPos.y,
-            rotation: (position.rotation || 0) + 90
-          });
-        }
-
-        // Bottom side - evenly spaced
-        for (let i = 0; i < bottomChairs; i++) {
-          const spacing = tableWidth / (bottomChairs + 1);
-          const chairX = position.x + tableWidth - spacing * (i + 1) - 8;
-          const chairY = position.y + tableHeight + 8;
-          const rotatedPos = rotatePoint(chairX, chairY);
-          chairs.push({
-            x: rotatedPos.x,
-            y: rotatedPos.y,
-            rotation: (position.rotation || 0) + 180
-          });
-        }
-
-        // Left side - evenly spaced
-        for (let i = 0; i < leftChairs; i++) {
-          const spacing = tableHeight / (leftChairs + 1);
-          const chairX = position.x - 18;
-          const chairY = position.y + tableHeight - spacing * (i + 1) - 8;
-          const rotatedPos = rotatePoint(chairX, chairY);
-          chairs.push({
-            x: rotatedPos.x,
-            y: rotatedPos.y,
-            rotation: (position.rotation || 0) + 270
-          });
-        }
-      } else if (shape === 'long-rectangle') {
-        // For long rectangles, prioritize long sides
-        const longSideChairs = Math.ceil(capacity * 0.6);
-        const shortSideChairs = Math.floor((capacity - longSideChairs) / 2);
-        const topChairs = Math.ceil(longSideChairs / 2);
-        const bottomChairs = Math.floor(longSideChairs / 2);
-
-        // Top long side
-        for (let i = 0; i < topChairs; i++) {
-          const spacing = tableWidth / (topChairs + 1);
-          const chairX = position.x + spacing * (i + 1) - 8;
-          const chairY = position.y - 25;
-          const rotatedPos = rotatePoint(chairX, chairY);
-          chairs.push({
-            x: rotatedPos.x,
-            y: rotatedPos.y,
-            rotation: (position.rotation || 0) + 0
-          });
-        }
-
-        // Bottom long side
-        for (let i = 0; i < bottomChairs; i++) {
-          const spacing = tableWidth / (bottomChairs + 1);
-          const chairX = position.x + spacing * (i + 1) - 8;
-          const chairY = position.y + tableHeight + 15;
-          const rotatedPos = rotatePoint(chairX, chairY);
-          chairs.push({
-            x: rotatedPos.x,
-            y: rotatedPos.y,
-            rotation: (position.rotation || 0) + 180
-          });
-        }
-
-        // Left short side
-        for (let i = 0; i < shortSideChairs; i++) {
-          const spacing = tableHeight / (shortSideChairs + 1);
-          const chairX = position.x - 18;
-          const chairY = position.y + spacing * (i + 1) - 8;
-          const rotatedPos = rotatePoint(chairX, chairY);
-          chairs.push({
-            x: rotatedPos.x,
-            y: rotatedPos.y,
-            rotation: (position.rotation || 0) + 270
-          });
-        }
-
-        // Right short side
-        for (let i = 0; i < shortSideChairs; i++) {
-          const spacing = tableHeight / (shortSideChairs + 1);
-          const chairX = position.x + tableWidth + 8;
-          const chairY = position.y + spacing * (i + 1) - 8;
-          const rotatedPos = rotatePoint(chairX, chairY);
-          chairs.push({
-            x: rotatedPos.x,
-            y: rotatedPos.y,
-            rotation: (position.rotation || 0) + 90
-          });
-        }
-      } else {
-        // Circular arrangement for round, oval, octagon tables
-        const radius = Math.max(tableWidth, tableHeight) / 2 + 20;
-        for (let i = 0; i < capacity; i++) {
-          const angle = (i * 2 * Math.PI) / capacity - Math.PI / 2; // Start from top
-          const adjustedAngle = angle + tableRotation; // Add table rotation
-          chairs.push({
-            x: centerX + radius * Math.cos(adjustedAngle) - 8,
-            y: centerY + radius * Math.sin(adjustedAngle) - 8,
-            rotation: (adjustedAngle * 180 / Math.PI) + 90
-          });
-        }
-      }
-
-      return chairs;
-    };
-
-    const chairPositions = getChairPositions();
-
-    return (
-      <div key={`table-group-${tableId}`}>
-        {/* Chairs */}
-        {chairPositions.map((chair, index) => (
-          <div
-            key={`chair-${tableId}-${index}`}
-            style={{
-              position: 'absolute',
-              left: `${chair.x}px`,
-              top: `${chair.y}px`,
-              width: '12px',
-              height: '18px',
-              backgroundColor: '#8b4513',
-              border: '1px solid #654321',
-              borderRadius: '3px 3px 6px 6px',
-              transform: `rotate(${chair.rotation}deg)`,
-              boxShadow: '0 1px 2px rgba(0, 0, 0, 0.3)',
-              zIndex: 5,
-            }}
-          >
-            {/* Chair back */}
-            <div
-              style={{
-                position: 'absolute',
-                top: '-1px',
-                left: '1px',
-                width: '10px',
-                height: '4px',
-                backgroundColor: '#654321',
-                borderRadius: '1px 1px 0 0',
-              }}
-            />
-          </div>
-        ))}
-
-        {/* Table */}
-        <div
-          style={getTableStyle()}
-          draggable
-          onDragStart={(e) => handleDragStart(tableId, e)}
-          onMouseEnter={(e) => {
-            e.currentTarget.style.transform = `rotate(${position.rotation || 0}deg) scale(1.05)`;
-            e.currentTarget.style.boxShadow = '0 12px 24px rgba(0, 0, 0, 0.3), inset 0 1px 0 rgba(255, 255, 255, 0.2)';
-          }}
-          onMouseLeave={(e) => {
-            e.currentTarget.style.transform = `rotate(${position.rotation || 0}deg) scale(1)`;
-            e.currentTarget.style.boxShadow = '0 8px 16px rgba(0, 0, 0, 0.2), inset 0 1px 0 rgba(255, 255, 255, 0.1)';
-          }}
-        >
-          {/* Remove button (X) */}
-          <button
-            style={{
-              position: 'absolute',
-              top: '-8px',
-              right: '-8px',
-              width: '20px',
-              height: '20px',
-              backgroundColor: '#ef4444',
-              color: 'white',
-              border: 'none',
-              borderRadius: '50%',
-              fontSize: '12px',
-              fontWeight: 'bold',
-              cursor: 'pointer',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              zIndex: 20,
-              boxShadow: '0 2px 4px rgba(0, 0, 0, 0.2)',
-            }}
-            onClick={(e) => {
-              e.preventDefault();
-              e.stopPropagation();
-              if (window.confirm(`Remove Table ${tableNumber} from the floor plan?`)) {
-                setTablePositions((prev) => {
-                  const newPositions = { ...prev };
-                  delete newPositions[tableId];
-                  return newPositions;
-                });
-              }
-            }}
-            onMouseEnter={(e) => {
-              e.currentTarget.style.backgroundColor = '#dc2626';
-              e.currentTarget.style.transform = 'scale(1.1)';
-            }}
-            onMouseLeave={(e) => {
-              e.currentTarget.style.backgroundColor = '#ef4444';
-              e.currentTarget.style.transform = 'scale(1)';
-            }}
-            title="Remove table from plan"
-          >
-            ×
-          </button>
-
-          <div style={{ textAlign: 'center' }}>
-            <div style={{ fontSize: '10px', opacity: 0.8 }}>T</div>
-            <div style={{ fontSize: '12px', fontWeight: 'bold' }}>{tableNumber}</div>
-            <div style={{ fontSize: '8px', opacity: 0.7 }}>{capacity}p</div>
-          </div>
-        </div>
-      </div>
-    );
-  };
+    
 
 
 
@@ -1220,40 +931,18 @@ export default function TablePlan() {
                   </div>
                 )}
 
-                {/* Professional Tables with Chairs */}
+                {/* Professional Tables */}
                 {Object.entries(tablePositions).map(([tableId, position]) => {
                   const dbTable = tables.find((t: any) => t.id === parseInt(tableId));
                   const numericTableId = parseInt(tableId);
 
                   return (
-                    <div
-                      key={`table-wrapper-${tableId}`}
-                      onContextMenu={(e) => {
-                        e.preventDefault();
-                        if (window.confirm(`Remove this table from the floor plan?`)) {
-                          setTablePositions((prev) => {
-                            const newPositions = { ...prev };
-                            delete newPositions[numericTableId];
-                            return newPositions;
-                          });
-                        }
-                      }}
-                    >
-                      <SVGTableRenderer
-                        position={position}
-                        table={dbTable}
-                        onDragStart={(e) => handleDragStart(numericTableId, e)}
-                        onRemove={() => {
-                          if (window.confirm(`Remove Table ${dbTable.tableNumber} from the floor plan?`)) {
-                            setTablePositions((prev) => {
-                              const newPositions = { ...prev };
-                              delete newPositions[numericTableId];
-                              return newPositions;
-                            });
-                          }
-                        }}
-                      />
-                    </div>
+                    <SVGTableRenderer
+                      key={`table-renderer-${tableId}`}
+                      position={position}
+                      tableId={numericTableId}
+                      table={dbTable}
+                    />
                   );
                 })}
               </div>
