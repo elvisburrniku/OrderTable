@@ -210,11 +210,13 @@ export default function TablePlan() {
       e.stopPropagation();
       if (draggedStructure) {
         e.dataTransfer.dropEffect = "copy";
-      } else {
+      } else if (draggedTable !== null) {
         e.dataTransfer.dropEffect = "move";
+      } else {
+        e.dataTransfer.dropEffect = "none";
       }
     },
-    [draggedStructure],
+    [draggedStructure, draggedTable],
   );
 
   const handleDrop = useCallback(
@@ -243,18 +245,23 @@ export default function TablePlan() {
       );
 
       console.log("Drop position:", { x, y });
+      console.log("Current table positions before drop:", tablePositions);
 
       if (draggedTable !== null) {
-        console.log("Moving existing table:", draggedTable);
+        console.log("Moving existing table:", draggedTable, "to position:", { x, y });
         // Moving existing table - use table ID directly as the key
-        setTablePositions((prev) => ({
-          ...prev,
-          [draggedTable]: {
-            ...prev[draggedTable],
-            x,
-            y,
-          },
-        }));
+        setTablePositions((prev) => {
+          const updated = {
+            ...prev,
+            [draggedTable]: {
+              ...prev[draggedTable],
+              x,
+              y,
+            },
+          };
+          console.log("Updated table positions:", updated);
+          return updated;
+        });
         setDraggedTable(null);
         setDraggedStructure(null);
         setIsDragging(false);
@@ -445,13 +452,21 @@ export default function TablePlan() {
         onDragStart={(e) => {
           console.log("Starting drag for table:", tableId);
           setDraggedTable(tableId);
+          setDraggedStructure(null);
           setIsDragging(true);
           e.dataTransfer.effectAllowed = "move";
+          e.dataTransfer.setData("text/plain", tableId.toString());
         }}
         onDragEnd={(e) => {
           console.log("Drag ended for table:", tableId);
-          setDraggedTable(null);
-          setIsDragging(false);
+          // Don't reset draggedTable immediately - let handleDrop process it first
+          // The handleDrop function will reset these states
+          setTimeout(() => {
+            if (draggedTable === tableId) {
+              setDraggedTable(null);
+              setIsDragging(false);
+            }
+          }, 50);
         }}
         onClick={(e) => {
           e.preventDefault();
