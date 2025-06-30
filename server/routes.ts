@@ -862,6 +862,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           return res.status(401).json({ error: "Authentication required" });
         }
 
+        
         // Check if user has permission to manage users/roles
         const userPermissions = await getUserPermissions(
           sessionUser.id,

@@ -660,11 +660,9 @@ export async function inviteUserToTenant(req: Request, res: Response) {
     if (!user) {
       // For now, we'll just create a placeholder entry
       // In a real app, you'd send an invitation email
-      return res
-        .status(400)
-        .json({
-          message: "User not found. Please ask them to register first.",
-        });
+      return res.status(400).json({
+        message: "User not found. Please ask them to register first.",
+      });
     }
 
     // Check if user is already in tenant
@@ -804,6 +802,9 @@ export async function updateRolePermissionsEndpoint(
 ) {
   try {
     const { role, permissions, redirect } = req.body;
+
+    console.log("Updating role permissions for role:", role);
+    console.log("New permissions:", permissions);
 
     if (!role || !permissions) {
       return res
