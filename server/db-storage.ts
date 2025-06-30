@@ -77,6 +77,7 @@ export class DatabaseStorage implements IStorage {
       return;
     }
     await this.initializeSubscriptionPlans();
+    await this.initializeSystemRoles();
   }
   private async initializeSubscriptionPlans() {
     try {
@@ -154,6 +155,82 @@ export class DatabaseStorage implements IStorage {
       }
     } catch (error) {
       console.error("Error initializing subscription plans:", error);
+    }
+  }
+
+  private async initializeSystemRoles() {
+    try {
+      const existingRoles = await this.db
+        .select()
+        .from(roles)
+        .where(eq(roles.isSystem, true))
+        .limit(1);
+
+      if (existingRoles.length === 0) {
+        console.log("Creating default system roles...");
+        
+        const defaultRoles = [
+          {
+            tenantId: null,
+            name: "owner",
+            displayName: "Owner",
+            permissions: JSON.stringify([
+              "access_dashboard", "access_bookings", "access_customers", "access_menu",
+              "access_tables", "access_kitchen", "access_users", "access_billing",
+              "access_reports", "access_notifications", "access_integrations", "access_settings",
+              "access_floor_plan", "view_bookings", "create_bookings", "edit_bookings",
+              "delete_bookings", "view_customers", "edit_customers", "view_settings",
+              "edit_settings", "view_menu", "edit_menu", "view_tables", "edit_tables",
+              "view_kitchen", "manage_kitchen", "view_users", "manage_users",
+              "view_billing", "manage_billing", "view_reports", "view_notifications",
+              "manage_notifications", "view_integrations", "manage_integrations"
+            ]),
+            isSystem: true,
+          },
+          {
+            tenantId: null,
+            name: "manager",
+            displayName: "Manager",
+            permissions: JSON.stringify([
+              "access_dashboard", "access_bookings", "access_customers", "access_menu",
+              "access_tables", "access_kitchen", "access_reports", "access_settings",
+              "view_bookings", "create_bookings", "edit_bookings", "delete_bookings",
+              "view_customers", "edit_customers", "view_settings", "edit_settings",
+              "view_menu", "edit_menu", "view_tables", "edit_tables",
+              "view_kitchen", "manage_kitchen", "view_reports"
+            ]),
+            isSystem: true,
+          },
+          {
+            tenantId: null,
+            name: "agent",
+            displayName: "Booking Agent",
+            permissions: JSON.stringify([
+              "access_dashboard", "access_bookings", "access_customers",
+              "view_bookings", "create_bookings", "edit_bookings",
+              "view_customers", "edit_customers"
+            ]),
+            isSystem: true,
+          },
+          {
+            tenantId: null,
+            name: "kitchen_staff",
+            displayName: "Kitchen Staff",
+            permissions: JSON.stringify([
+              "access_dashboard", "access_kitchen",
+              "view_kitchen", "manage_kitchen"
+            ]),
+            isSystem: true,
+          },
+        ];
+
+        await this.db.insert(roles).values(defaultRoles);
+        console.log("Default system roles created successfully");
+      } else {
+        console.log("System roles already exist");
+      }
+    } catch (error) {
+      console.error("Error initializing system roles:", error);
     }
   }
   // Stub methods for interface compliance
