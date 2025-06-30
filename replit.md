@@ -22,7 +22,6 @@ A comprehensive restaurant booking management system with React frontend and Exp
 - Kitchen order management
 
 ## Recent Changes
-<<<<<<< HEAD
 - **2025-06-30**: Implemented Dynamic Progressive Web App (PWA) system with route-specific installation capabilities
 - **Dynamic PWA Features**: Route-based PWA manifest generation, allowing different PWA configurations for specific screens (Dashboard, Bookings, Kitchen, Floor Plan, Menu)
 - **Smart Installation**: PWA install prompts appear only on designated routes with customized app names, icons, and functionality per screen
@@ -77,10 +76,6 @@ A comprehensive restaurant booking management system with React frontend and Exp
 - **Migration Completed**: Fixed React context provider ordering, resolved missing setLocation import, and established secure database connectivity
 - **Database Setup**: Created PostgreSQL database with complete schema migration (56 tables) and initialized admin system with default credentials
 - **Security Enhancements**: Implemented robust error handling in DateProvider context and maintained client/server separation patterns
-=======
-- **2025-06-30**: Successfully migrated project from Replit Agent to Replit environment and standardized table design
-- **Table Standardization**: All table shapes now uniform 60x60px with sharp rectangular edges for consistent layout design
->>>>>>> 2ede281 (Standardize table designs to use consistent size and rectangular shapes)
 - **2025-06-29**: Successfully migrated project from Replit Agent to Replit environment
 - **Migration Completed**: Database connection established, server startup optimized, and authentication system working
 - **Table Chair Enhancement**: Fixed chair rotation to move with table rotation while maintaining even spacing around table perimeter
