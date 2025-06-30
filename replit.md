@@ -22,6 +22,9 @@ A comprehensive restaurant booking management system with React frontend and Exp
 - Kitchen order management
 
 ## Recent Changes
+- **2025-06-30**: Fixed role permissions system with complete drag-and-drop functionality, remove buttons, and proper backend validation
+- **2025-06-30**: Enhanced role permissions backend with improved request validation and owner role protection
+- **2025-06-30**: Added remove functionality to assigned permissions with visual indicators and proper state management
 - **2025-06-30**: Fixed React hooks violation in real-time table status component causing "more hooks than during previous render" error
 - **2025-06-30**: Resolved database constraint issues by making restaurant_id nullable in activity_log table for proper activity logging
 - **2025-06-30**: Successfully migrated to fresh PostgreSQL database instance with all essential tables properly initialized

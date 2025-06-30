@@ -91,11 +91,15 @@ const redirectOptions = [
 interface DraggablePermissionProps {
   permission: Permission;
   isActive?: boolean;
+  isAssigned?: boolean;
+  onRemove?: () => void;
 }
 
 function DraggablePermission({
   permission,
   isActive,
+  isAssigned,
+  onRemove,
 }: DraggablePermissionProps) {
   const {
     attributes,
@@ -121,17 +125,30 @@ function DraggablePermission({
     <div
       ref={setNodeRef}
       style={style}
-      {...attributes}
-      {...listeners}
       className={`
         flex items-center gap-2 p-2 rounded-lg border cursor-grab
         ${isDragging ? "opacity-50" : ""}
         ${isActive ? "bg-primary text-primary-foreground border-primary" : "bg-background hover:bg-muted border-border"}
-        transition-colors duration-200
+        transition-colors duration-200 group
       `}
     >
-      <Grip className="h-4 w-4 text-muted-foreground" />
-      <span className="text-sm font-medium">{permission.label}</span>
+      <div {...attributes} {...listeners} className="flex items-center gap-2 flex-1">
+        <Grip className="h-4 w-4 text-muted-foreground" />
+        <span className="text-sm font-medium">{permission.label}</span>
+      </div>
+      {isAssigned && onRemove && (
+        <Button
+          variant="ghost"
+          size="sm"
+          onClick={(e) => {
+            e.stopPropagation();
+            onRemove();
+          }}
+          className="h-6 w-6 p-0 opacity-0 group-hover:opacity-100 transition-opacity"
+        >
+          <X className="h-3 w-3" />
+        </Button>
+      )}
     </div>
   );
 }
@@ -739,6 +756,8 @@ export default function RolePermissions() {
                                 key={permission.key}
                                 permission={permission}
                                 isActive={true}
+                                isAssigned={true}
+                                onRemove={() => handlePermissionToggle(selectedRole, permission.key)}
                               />
                             ))}
                         </SortableContext>
@@ -898,6 +917,8 @@ export default function RolePermissions() {
                                 key={permission.key}
                                 permission={permission}
                                 isActive={true}
+                                isAssigned={true}
+                                onRemove={() => handlePermissionToggle(selectedRole, permission.key)}
                               />
                             ))}
                         </SortableContext>

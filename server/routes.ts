@@ -858,11 +858,27 @@ export async function registerRoutes(app: Express): Promise<Server> {
         const sessionTenant = (req as any).session?.tenant;
         const { role, permissions, redirect } = req.body;
 
+        console.log("🔍 ROLE PERMISSIONS UPDATE REQUEST:", {
+          tenantId,
+          role,
+          permissions,
+          redirect,
+          requestBody: req.body,
+          sessionUser: sessionUser?.email,
+        });
+
         if (!sessionUser || !sessionTenant) {
           return res.status(401).json({ error: "Authentication required" });
         }
 
-        
+        // Validate request data
+        if (!role || !Array.isArray(permissions)) {
+          return res.status(400).json({
+            error: "Invalid request data",
+            message: "Role and permissions array are required",
+          });
+        }
+
         // Check if user has permission to manage users/roles
         const userPermissions = await getUserPermissions(
           sessionUser.id,
@@ -881,6 +897,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
           "./permissions-middleware"
         );
 
+        // Prevent updating owner role for security
+        if (role === 'owner') {
+          return res.status(400).json({
+            error: "Cannot update owner permissions",
+            message: "Owner permissions are fixed and cannot be modified",
+          });
+        }
+
         // Update redirect if provided
         if (redirect) {
           updateRoleRedirect(role, redirect);
@@ -890,10 +914,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
         const permissionsUpdated = updateRolePermissions(role, permissions);
         if (!permissionsUpdated) {
           return res.status(400).json({
-            error: "Invalid role or cannot update owner permissions",
+            error: "Invalid role or cannot update permissions",
             message: "The specified role cannot be updated or does not exist",
           });
         }
+
+        console.log("✅ ROLE PERMISSIONS UPDATED SUCCESSFULLY:", {
+          role,
+          permissions,
+          redirect,
+        });
 
         res.json({
           message: "Role permissions updated successfully",
