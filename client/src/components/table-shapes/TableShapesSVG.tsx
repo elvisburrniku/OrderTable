@@ -6,7 +6,7 @@ interface TableSVGProps {
   className?: string;
 }
 
-export const SquareTable1Person: React.FC<TableSVGProps> = ({ width = 35, height = 45, className = "" }) => (
+export const SquareTable1Person: React.FC<TableSVGProps> = ({ width = 50, height = 50, className = "" }) => (
   <svg 
     preserveAspectRatio="xMidYMid" 
     viewBox="0 0 90 116" 
@@ -26,7 +26,7 @@ export const SquareTable1Person: React.FC<TableSVGProps> = ({ width = 35, height
   </svg>
 );
 
-export const CircleTable1Person: React.FC<TableSVGProps> = ({ width = 38, height = 38, className = "" }) => (
+export const CircleTable1Person: React.FC<TableSVGProps> = ({ width = 50, height = 50, className = "" }) => (
   <svg 
     preserveAspectRatio="xMidYMid" 
     viewBox="0 0 96 96" 
@@ -46,7 +46,7 @@ export const CircleTable1Person: React.FC<TableSVGProps> = ({ width = 38, height
   </svg>
 );
 
-export const SquareTable2Person: React.FC<TableSVGProps> = ({ width = 35, height = 45, className = "" }) => (
+export const SquareTable2Person: React.FC<TableSVGProps> = ({ width = 50, height = 50, className = "" }) => (
   <svg 
     preserveAspectRatio="xMidYMid" 
     viewBox="0 0 90 116" 
@@ -67,7 +67,7 @@ export const SquareTable2Person: React.FC<TableSVGProps> = ({ width = 35, height
   </svg>
 );
 
-export const CircleTable2Person: React.FC<TableSVGProps> = ({ width = 38, height = 38, className = "" }) => (
+export const CircleTable2Person: React.FC<TableSVGProps> = ({ width = 50, height = 50, className = "" }) => (
   <svg 
     preserveAspectRatio="xMidYMid" 
     viewBox="0 0 96 96" 
@@ -133,7 +133,7 @@ export const SquareTable4Person: React.FC<TableSVGProps> = ({ width = 77.27, hei
   </svg>
 );
 
-export const SquareTable4PersonCompact: React.FC<TableSVGProps> = ({ width = 52, height = 52, className = "" }) => (
+export const SquareTable4PersonCompact: React.FC<TableSVGProps> = ({ width = 50, height = 50, className = "" }) => (
   <svg 
     preserveAspectRatio="xMidYMid" 
     viewBox="0 0 136 136" 
@@ -255,7 +255,7 @@ export const CircleTable8Person: React.FC<TableSVGProps> = ({ width = 80.91, hei
   </svg>
 );
 
-export const SquareTable6Person: React.FC<TableSVGProps> = ({ width = 95, height = 45, className = "" }) => (
+export const SquareTable6Person: React.FC<TableSVGProps> = ({ width = 50, height = 50, className = "" }) => (
   <svg 
     preserveAspectRatio="xMidYMid" 
     viewBox="0 0 248 116" 
@@ -280,7 +280,7 @@ export const SquareTable6Person: React.FC<TableSVGProps> = ({ width = 95, height
   </svg>
 );
 
-export const SquareTable8Person: React.FC<TableSVGProps> = ({ width = 125, height = 45, className = "" }) => (
+export const SquareTable8Person: React.FC<TableSVGProps> = ({ width = 50, height = 50, className = "" }) => (
   <svg 
     preserveAspectRatio="xMidYMid" 
     viewBox="0 0 326 116" 

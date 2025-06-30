@@ -694,7 +694,7 @@ export default function SeatingHeatMap({ restaurantId, tenantId }: SeatingHeatMa
                             animate={{ opacity: 1, y: table.position.y + 8 }}
                             transition={{ delay: 1.2 + index * 0.1, duration: 0.4 }}
                           >
-                            {table.capacity}p
+                            {table.capacity} pers.
                           </motion.text>
 
                           {/* Animated status indicator with pulse */}
