@@ -5,29 +5,9 @@
 /* Ensure all table SVGs are exactly the same size */
 .table-svg-container svg,
 [data-table-svg] svg,
-.table-shape svg,
-svg[viewBox] {
+.table-shape svg {
   width: 50px !important;
   height: 50px !important;
-  max-width: 50px !important;
-  max-height: 50px !important;
-  min-width: 50px !important;
-  min-height: 50px !important;
-}
-
-/* Force equal sizing for all table components */
-.table-svg-container,
-[data-table-svg],
-.table-shape {
-  width: 50px !important;
-  height: 50px !important;
-  max-width: 50px !important;
-  max-height: 50px !important;
-  min-width: 50px !important;
-  min-height: 50px !important;
-  display: block !important;
-  flex-shrink: 0 !important;
-  overflow: hidden !important;
 }
 
 :root {
