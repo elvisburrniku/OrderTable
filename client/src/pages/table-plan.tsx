@@ -29,7 +29,7 @@ import {
   Users,
 } from "lucide-react";
 import { TABLE_STRUCTURES, TableStructurePreview, getDraggableTableStructure } from "@/components/table-shapes/TableStructures";
-import { TableShapesSVG } from "@/components/table-shapes/TableShapesSVG";
+import { getTableSVG } from "@/components/table-shapes/TableShapesSVG";
 
 interface TablePosition {
   id: number;
@@ -60,7 +60,7 @@ const TableSVGRenderer: React.FC<TableSVGRendererProps> = ({ position, table, on
   // Map table shape to appropriate table structure
   const getTableStructure = () => {
     const baseCapacity = table.capacity || 4;
-    
+
     switch (position.shape) {
       case "circle":
       case "round":
@@ -69,35 +69,35 @@ const TableSVGRenderer: React.FC<TableSVGRendererProps> = ({ position, table, on
         if (baseCapacity <= 6) return TABLE_STRUCTURES[2]; // Round 2
         if (baseCapacity <= 8) return TABLE_STRUCTURES[3]; // Round 3
         return TABLE_STRUCTURES[3]; // Default to Round 3 for large capacity
-      
+
       case "square":
         if (baseCapacity <= 2) return TABLE_STRUCTURES[4]; // Square 1
         if (baseCapacity <= 4) return TABLE_STRUCTURES[5]; // Square 2
         return TABLE_STRUCTURES[6]; // Square 4
-      
+
       case "rectangle":
       case "long-rectangle":
         return TABLE_STRUCTURES[7]; // Rectangular
-        
+
       case "oval":
         return TABLE_STRUCTURES[8]; // Oval
-        
+
       case "octagon":
         return TABLE_STRUCTURES[9]; // Octagon
-        
+
       case "hexagon":
         return TABLE_STRUCTURES[10]; // Hexagon
-        
+
       case "curved":
         return TABLE_STRUCTURES[11]; // Curved
-        
+
       default:
         return TABLE_STRUCTURES[1]; // Default to Round 1
     }
   };
 
   const structure = getTableStructure();
-  
+
   return (
     <div
       style={{
@@ -122,7 +122,7 @@ const TableSVGRenderer: React.FC<TableSVGRendererProps> = ({ position, table, on
           height={80}
           className="hover:scale-105 transition-transform duration-200 drop-shadow-lg"
         />
-        
+
         {/* Table Info Overlay */}
         <div 
           className="absolute inset-0 flex items-center justify-center text-white font-bold text-sm pointer-events-none"
@@ -133,7 +133,7 @@ const TableSVGRenderer: React.FC<TableSVGRendererProps> = ({ position, table, on
             <div className="text-xs opacity-90">{table.capacity}p</div>
           </div>
         </div>
-        
+
         {/* Remove Button */}
         <button
           className="absolute -top-2 -right-2 w-6 h-6 bg-red-500 hover:bg-red-600 text-white rounded-full text-xs font-bold opacity-0 group-hover:opacity-100 transition-opacity duration-200 flex items-center justify-center z-20"
@@ -519,7 +519,7 @@ export default function TablePlan() {
         if (capacity <= 6) return TABLE_STRUCTURES.find(s => s.id === 'square-6');
         return TABLE_STRUCTURES.find(s => s.id === 'square-8');
       }
-      
+
       // Default fallback
       return TABLE_STRUCTURES.find(s => s.id === 'square-4') || TABLE_STRUCTURES[0];
     };
@@ -563,7 +563,7 @@ export default function TablePlan() {
             height={tableHeight}
             className="drop-shadow-lg hover:drop-shadow-xl transition-all"
           />
-          
+
           {/* Table number overlay */}
           <div
             style={{
@@ -652,7 +652,7 @@ export default function TablePlan() {
         const chairDistance = 25; // Fixed distance between chairs
         const maxChairsPerimeter = Math.floor(perimeter / chairDistance);
         const actualCapacity = Math.min(capacity, maxChairsPerimeter);
-        
+
         // Distribute chairs evenly around perimeter
         const topChairs = Math.ceil(actualCapacity * (tableWidth / perimeter));
         const rightChairs = Math.ceil((actualCapacity - topChairs) * (tableHeight / (perimeter - tableWidth)));
@@ -1238,7 +1238,7 @@ export default function TablePlan() {
                         }
                       }}
                     >
-                      <TableSVGRenderer
+                      <SVGTableRenderer
                         position={position}
                         table={dbTable}
                         onDragStart={(e) => handleDragStart(numericTableId, e)}

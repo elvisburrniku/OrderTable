@@ -316,45 +316,43 @@ interface TableShapesSVGProps {
   className?: string;
 }
 
-export const TableShapesSVG: React.FC<TableShapesSVGProps> = ({ 
-  shape, 
-  capacity, 
-  width = 80, 
-  height = 80, 
-  className = "" 
-}) => {
-  // Map shape and capacity to appropriate component
-  const getTableComponent = () => {
+export const getTableSVG = (shape: string, capacity: number, width: number = 60, height: number = 60, className: string = "") => {
+    // Safety check for capacity
+    const safeCapacity = capacity || 4;
+
     switch (shape) {
-      case "circle":
       case "round":
-        if (capacity <= 1) return <CircleTable1Person width={width} height={height} className={className} />;
-        if (capacity <= 2) return <CircleTable2Person width={width} height={height} className={className} />;
-        if (capacity <= 3) return <CircleTable3Person width={width} height={height} className={className} />;
-        if (capacity <= 4) return <CircleTable4Person width={width} height={height} className={className} />;
-        if (capacity <= 5) return <CircleTable5Person width={width} height={height} className={className} />;
+      case "circle":
+        if (safeCapacity <= 2) return <CircleTable2Person width={width} height={height} className={className} />;
+        if (safeCapacity <= 4) return <CircleTable4Person width={width} height={height} className={className} />;
         return <CircleTable6Person width={width} height={height} className={className} />;
-      
+
       case "square":
-        if (capacity <= 1) return <SquareTable1Person width={width} height={height} className={className} />;
-        if (capacity <= 2) return <SquareTable2Person width={width} height={height} className={className} />;
-        if (capacity <= 4) return <SquareTable4Person width={width} height={height} className={className} />;
-        if (capacity <= 6) return <SquareTable6Person width={width} height={height} className={className} />;
-        return <SquareTable8Person width={width} height={height} className={className} />;
-      
       case "rectangle":
-      case "long-rectangle":
-        if (capacity <= 4) return <SquareTable4Person width={width} height={height} className={className} />;
-        if (capacity <= 6) return <SquareTable6Person width={width} height={height} className={className} />;
+        if (safeCapacity <= 4) return <SquareTable4Person width={width} height={height} className={className} />;
+        if (safeCapacity <= 6) return <SquareTable6Person width={width} height={height} className={className} />;
         return <SquareTable8Person width={width} height={height} className={className} />;
-        
+
+      case "long-rectangle":
+        if (safeCapacity <= 4) return <SquareTable4Person width={width} height={height} className={className} />;
+        if (safeCapacity <= 6) return <SquareTable6Person width={width} height={height} className={className} />;
+        return <SquareTable8Person width={width} height={height} className={className} />;
+
       default:
         // Default to round tables
-        if (capacity <= 2) return <CircleTable2Person width={width} height={height} className={className} />;
-        if (capacity <= 4) return <CircleTable4Person width={width} height={height} className={className} />;
+        if (safeCapacity <= 2) return <CircleTable2Person width={width} height={height} className={className} />;
+        if (safeCapacity <= 4) return <CircleTable4Person width={width} height={height} className={className} />;
         return <CircleTable6Person width={width} height={height} className={className} />;
     }
   };
 
-  return getTableComponent();
+// Legacy export for backward compatibility
+export const TableShapesSVG = ({ shape, capacity, width = 60, height = 60, className = "" }: {
+  shape: string;
+  capacity: number;
+  width?: number;
+  height?: number;
+  className?: string;
+}) => {
+  return getTableSVG(shape, capacity, width, height, className);
 };
