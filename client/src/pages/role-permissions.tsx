@@ -367,11 +367,15 @@ export default function RolePermissions() {
       return;
     }
 
-    updatePermissionsMutation.mutate({
+    const updateData = {
       role: selectedRole,
       permissions: rolePermissions[selectedRole] || [],
       redirect: roleRedirects[selectedRole] || "dashboard",
-    });
+    };
+
+    console.log("🔍 FRONTEND SENDING UPDATE DATA:", updateData);
+
+    updatePermissionsMutation.mutate(updateData);
   };
 
   const handleResetRole = () => {
