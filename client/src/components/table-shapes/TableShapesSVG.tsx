@@ -322,29 +322,35 @@ export const getTableSVG = (shape: string, capacity: number, width: number = 80,
     const standardWidth = 80;
     const standardHeight = 80;
 
+    // For very high capacities (12+), use the largest available table
+    // This handles cases where someone enters 15 persons - they get a 12-person table
+    const effectiveCapacity = Math.min(safeCapacity, 12);
+
     switch (shape) {
       case "round":
       case "circle":
-        if (safeCapacity <= 2) return <CircleTable2Person width={standardWidth} height={standardHeight} className={className} />;
-        if (safeCapacity <= 4) return <CircleTable4Person width={standardWidth} height={standardHeight} className={className} />;
-        return <CircleTable6Person width={standardWidth} height={standardHeight} className={className} />;
+        if (effectiveCapacity <= 2) return <CircleTable2Person width={standardWidth} height={standardHeight} className={className} />;
+        if (effectiveCapacity <= 4) return <CircleTable4Person width={standardWidth} height={standardHeight} className={className} />;
+        if (effectiveCapacity <= 6) return <CircleTable6Person width={standardWidth} height={standardHeight} className={className} />;
+        return <CircleTable8Person width={standardWidth} height={standardHeight} className={className} />;
 
       case "square":
       case "rectangle":
-        if (safeCapacity <= 4) return <SquareTable4Person width={standardWidth} height={standardHeight} className={className} />;
-        if (safeCapacity <= 6) return <SquareTable6Person width={standardWidth} height={standardHeight} className={className} />;
+        if (effectiveCapacity <= 4) return <SquareTable4Person width={standardWidth} height={standardHeight} className={className} />;
+        if (effectiveCapacity <= 6) return <SquareTable6Person width={standardWidth} height={standardHeight} className={className} />;
         return <SquareTable8Person width={standardWidth} height={standardHeight} className={className} />;
 
       case "long-rectangle":
-        if (safeCapacity <= 4) return <SquareTable4Person width={standardWidth} height={standardHeight} className={className} />;
-        if (safeCapacity <= 6) return <SquareTable6Person width={standardWidth} height={standardHeight} className={className} />;
+        if (effectiveCapacity <= 4) return <SquareTable4Person width={standardWidth} height={standardHeight} className={className} />;
+        if (effectiveCapacity <= 6) return <SquareTable6Person width={standardWidth} height={standardHeight} className={className} />;
         return <SquareTable8Person width={standardWidth} height={standardHeight} className={className} />;
 
       default:
         // Default to round tables
-        if (safeCapacity <= 2) return <CircleTable2Person width={standardWidth} height={standardHeight} className={className} />;
-        if (safeCapacity <= 4) return <CircleTable4Person width={standardWidth} height={standardHeight} className={className} />;
-        return <CircleTable6Person width={standardWidth} height={standardHeight} className={className} />;
+        if (effectiveCapacity <= 2) return <CircleTable2Person width={standardWidth} height={standardHeight} className={className} />;
+        if (effectiveCapacity <= 4) return <CircleTable4Person width={standardWidth} height={standardHeight} className={className} />;
+        if (effectiveCapacity <= 6) return <CircleTable6Person width={standardWidth} height={standardHeight} className={className} />;
+        return <CircleTable8Person width={standardWidth} height={standardHeight} className={className} />;
     }
   };
 

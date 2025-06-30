@@ -881,15 +881,22 @@ export default function TablePlan() {
                 min="1"
                 max="20"
                 value={tableConfig.capacity}
-                onChange={(e) =>
+                onChange={(e) => {
+                  const inputCapacity = parseInt(e.target.value) || 1;
+                  // If user enters more than 12, suggest they might need multiple tables
                   setTableConfig((prev) => ({
                     ...prev,
-                    capacity: parseInt(e.target.value) || 1,
-                  }))
-                }
+                    capacity: inputCapacity,
+                  }));
+                }}
               />
               <p className="text-xs text-gray-500 mt-1">
                 Maximum number of guests this table can accommodate
+                {tableConfig.capacity > 12 && (
+                  <span className="text-orange-600 font-medium block">
+                    ⚠️ For {tableConfig.capacity} guests, consider using multiple tables for better service
+                  </span>
+                )}
               </p>
             </div>
             <div className="flex justify-end gap-2 pt-4">

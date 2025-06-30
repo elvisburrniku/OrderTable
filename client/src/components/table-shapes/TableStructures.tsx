@@ -157,6 +157,26 @@ export const TABLE_STRUCTURES: TableStructure[] = [
     width: 148.18,
     height: 52.73,
   },
+  {
+    id: "circle-12",
+    name: "Round 12",
+    shape: "round",
+    component: CircleTable8Person,
+    defaultCapacity: 12,
+    description: "12-person round table",
+    width: 80.91,
+    height: 80.45,
+  },
+  {
+    id: "square-12",
+    name: "Long 12",
+    shape: "long-rectangle",
+    component: SquareTable8Person,
+    defaultCapacity: 12,
+    description: "12-person long table",
+    width: 148.18,
+    height: 52.73,
+  },
 ];
 
 export const TableStructurePreview: React.FC<{ structure: TableStructure }> = ({ structure }) => {
