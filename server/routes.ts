@@ -597,30 +597,21 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       // Determine user role and ownership
       let userRole = null;
+      let role = null;
       let isOwner = false;
 
       // Check if user is the restaurant owner
       if (restaurant && restaurant.userId === user.id) {
         isOwner = true;
+        
         userRole = "owner";
       } else if (tenantUser.id) {
         // For team members, check if they have a role in the tenant
         try {
-          const tenantUserRelations = await storage.db
-            .select()
-            .from(storage.db.schema.tenantUsers)
-            .where(
-              storage.db.eq(
-                storage.db.schema.tenantUsers.tenantId,
-                tenantUser.id,
-              ),
-            );
-
-          const userInTenant = tenantUserRelations?.find(
-            (tu) => tu.userId === user.id,
-          );
-          if (userInTenant?.role) {
-            userRole = userInTenant.role;
+          // Use the getUserRole function from permissions middleware for consistent role determination
+          userRole = await getUserRole(user.id, tenantUser.id);
+          if (!userRole) {
+            userRole = "agent"; // Default role for team members
           }
         } catch (error) {
           console.log(

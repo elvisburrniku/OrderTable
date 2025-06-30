@@ -1,0 +1,77 @@
+     // Determine user role and ownership
+      let userRole = null;
+      let role = null;
+      let isOwner = false;
+
+      // Check if user is the restaurant owner
+      if (restaurant && restaurant.userId === user.id) {
+        isOwner = true;
+        
+        userRole = "owner";
+      } else if (tenantUser.id) {
+        // For team members, check if they have a role in the tenant
+        try {
+          const tenantUserRelations = await storage.db
+            .select()
+            .from(storage.db.schema.tenantUsers)
+            .where(
+              storage.db.eq(
+                storage.db.schema.tenantUsers.tenantId,
+                tenantUser.id,
+              ),
+            );
+
+          const userInTenant = tenantUserRelations?.find(
+            (tu) => tu.userId === user.id,
+          );
+          if (userInTenant?.role) {
+            userRole = userInTenant.role;
+          }
+        } catch (error) {
+          console.log(
+            "Could not fetch tenant user role, treating as basic team member",
+          );
+          userRole = "agent"; // Default role for team members
+        }
+      }
+
+      // Handle "Remember me" functionality
+      if (rememberMe) {
+        // Extend session to 30 days for remembered users
+        (req as any).session.cookie.maxAge = 30 * 24 * 60 * 60 * 1000; // 30 days
+      } else {
+        // Standard session duration (24 hours)
+        (req as any).session.cookie.maxAge = 24 * 60 * 60 * 1000; // 24 hours
+      }
+
+      // Store user in session for persistent authentication
+      (req as any).session.user = { ...user, password: undefined };
+      (req as any).session.tenant = tenantUser;
+      (req as any).session.restaurant = restaurant;
+      (req as any).session.rememberMe = rememberMe;
+
+      // Log successful login
+      await logActivity({
+        restaurantId: restaurant?.id,
+        tenantId: tenantUser.id,
+        eventType: "login",
+        description: `User logged in successfully`,
+        source: "manual",
+        userEmail: user.email,
+        userLogin: user.email,
+        ipAddress: req.ip,
+        userAgent: req.get("User-Agent"),
+        details: {
+          rememberMe,
+          sessionDuration: rememberMe ? "30 days" : "24 hours",
+          role: userRole,
+        },
+      });
+
+      res.json({
+        user: { ...user, password: undefined, role: userRole, isOwner },
+        tenant: tenantUser,
+        restaurant: restaurant
+          ? { ...restaurant, tenantId: restaurant.tenantId || tenantUser.id }
+          : null,
+      });

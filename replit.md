@@ -22,6 +22,7 @@ A comprehensive restaurant booking management system with React frontend and Exp
 - Kitchen order management
 
 ## Recent Changes
+- **2025-06-30**: Fixed role determination logic in authentication system to properly query tenant_users table with both tenantId and userId filters
 - **2025-06-30**: Implemented unified booking modal component ensuring consistent booking interface across dashboard and bookings pages
 - **2025-06-30**: Fixed database syntax error in custom fields query to resolve SQL errors during booking form loading
 - **2025-06-30**: Fixed React hooks error and removed duplicate notification components from dashboard to eliminate double display
