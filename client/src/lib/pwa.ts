@@ -18,7 +18,7 @@ export class PWAManager {
   }
 
   private async init() {
-    // Register service worker
+    // Register service worker first
     await this.registerServiceWorker();
     
     // Setup install prompt listeners
@@ -29,6 +29,37 @@ export class PWAManager {
     
     // Setup app update listener
     this.setupUpdateListener();
+    
+    // Track user engagement for PWA installability
+    this.trackUserEngagement();
+  }
+
+  private trackUserEngagement() {
+    // Track page interactions to meet PWA engagement requirements
+    let interactionCount = 0;
+    const requiredInteractions = 3;
+    
+    const trackInteraction = () => {
+      interactionCount++;
+      if (interactionCount >= requiredInteractions && !this.isInstalled) {
+        // User has engaged enough - trigger installability check
+        setTimeout(() => {
+          this.checkManualInstallability();
+        }, 1000);
+      }
+    };
+    
+    // Track various user interactions
+    document.addEventListener('click', trackInteraction);
+    document.addEventListener('scroll', trackInteraction);
+    document.addEventListener('keydown', trackInteraction);
+    
+    // Track time on site
+    setTimeout(() => {
+      if (!this.isInstalled) {
+        this.checkManualInstallability();
+      }
+    }, 5000); // Check after 5 seconds
   }
 
   private async registerServiceWorker() {

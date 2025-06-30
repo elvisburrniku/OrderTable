@@ -1,21 +1,38 @@
-const CACHE_NAME = 'readytable-v3';
+const CACHE_NAME = 'readytable-v5';
+const OFFLINE_URL = '/offline.html';
 
-// Essential files for PWA installability
+// Essential files for PWA installability and offline functionality
 const urlsToCache = [
   '/',
-  '/manifest.json'
+  '/manifest.json',
+  '/offline.html',
+  '/icons/icon-192x192.png',
+  '/icons/icon-512x512.png',
+  '/icons/icon-144x144.png',
+  '/icons/icon-384x384.png'
 ];
 
 // Install event
 self.addEventListener('install', (event) => {
-  console.log('Service Worker: Install');
+  console.log('Service Worker: Install v4');
   event.waitUntil(
     caches.open(CACHE_NAME)
       .then((cache) => {
-        console.log('Service Worker: Caching Files');
-        return cache.addAll(urlsToCache);
+        console.log('Service Worker: Caching essential files');
+        // Cache files individually to avoid failing on missing files
+        return Promise.allSettled(
+          urlsToCache.map(url => 
+            cache.add(url).catch(err => {
+              console.warn(`Failed to cache ${url}:`, err);
+              return null;
+            })
+          )
+        );
       })
-      .then(() => self.skipWaiting())
+      .then(() => {
+        console.log('Service Worker: Installation complete');
+        return self.skipWaiting();
+      })
   );
 });
 
@@ -36,30 +53,67 @@ self.addEventListener('activate', (event) => {
   );
 });
 
-// Fetch event
+// Fetch event - Critical for PWA installability
 self.addEventListener('fetch', (event) => {
+  // Skip non-GET requests
   if (event.request.method !== 'GET') return;
   
-  event.respondWith(
-    fetch(event.request)
-      .then((response) => {
-        // Clone the response
-        const responseClone = response.clone();
-        
-        // Open cache
-        caches.open(CACHE_NAME)
-          .then((cache) => {
-            // Add response to cache
-            cache.put(event.request, responseClone);
-          });
-        
-        return response;
-      })
-      .catch(() => {
-        // Return from cache if network fails
-        return caches.match(event.request);
-      })
-  );
+  const url = new URL(event.request.url);
+  
+  // Handle different types of requests
+  if (url.pathname.startsWith('/api/')) {
+    // API requests - network first, then cache
+    event.respondWith(
+      fetch(event.request)
+        .then(response => {
+          if (response.status === 200) {
+            const responseClone = response.clone();
+            caches.open(CACHE_NAME).then(cache => {
+              cache.put(event.request, responseClone);
+            });
+          }
+          return response;
+        })
+        .catch(() => {
+          return caches.match(event.request)
+            .then(response => response || new Response('{"error":"Offline"}', {
+              headers: { 'Content-Type': 'application/json' }
+            }));
+        })
+    );
+  } else if (url.pathname === '/' || url.pathname.match(/\.(html|js|css|png|jpg|svg)$/)) {
+    // Static resources - cache first, then network
+    event.respondWith(
+      caches.match(event.request)
+        .then(response => {
+          if (response) {
+            return response;
+          }
+          return fetch(event.request)
+            .then(response => {
+              if (response.status === 200) {
+                const responseClone = response.clone();
+                caches.open(CACHE_NAME).then(cache => {
+                  cache.put(event.request, responseClone);
+                });
+              }
+              return response;
+            });
+        })
+        .catch(() => {
+          // Return offline page for navigation requests
+          if (event.request.mode === 'navigate') {
+            return caches.match(OFFLINE_URL) || caches.match('/') || new Response('App is offline', {
+              headers: { 'Content-Type': 'text/html' }
+            });
+          }
+          return new Response('Resource not available offline');
+        })
+    );
+  } else {
+    // All other requests - network only
+    event.respondWith(fetch(event.request));
+  }
 });
 
 // Listen for skip waiting message

@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Download, Smartphone, CheckCircle, AlertCircle } from 'lucide-react';
 import { pwaManager } from '@/lib/pwa';
+import { pwaForceInstaller } from '@/lib/pwa-force-installer';
 import { useToast } from '@/hooks/use-toast';
 
 export function PWATestButton() {
@@ -26,15 +27,20 @@ export function PWATestButton() {
       }
       
       const pwaStatus = await pwaManager.getInstallationStatus();
+      const forceInstallerStatus = pwaForceInstaller.getInstallabilityStatus();
+      
       const detailedStatus = {
         ...pwaStatus,
+        ...forceInstallerStatus,
         hasManifest,
         hasServiceWorker,
         isHttps,
         hasValidIcons,
         swRegistered,
         protocol: location.protocol,
-        hostname: location.hostname
+        hostname: location.hostname,
+        forceReady: forceInstallerStatus.isReady,
+        canInstall: forceInstallerStatus.canInstall
       };
       
       setStatus(detailedStatus);
@@ -163,14 +169,22 @@ export function PWATestButton() {
       </div>
       
       {status && (
-        <div className="text-xs text-gray-600 dark:text-gray-300 space-y-1 max-h-32 overflow-y-auto">
+        <div className="text-xs text-gray-600 dark:text-gray-300 space-y-1 max-h-40 overflow-y-auto">
+          <div className="font-semibold">Basic Status:</div>
           <div>Installable: {status.isInstallable ? '✅' : '❌'}</div>
           <div>Installed: {status.isInstalled ? '✅' : '❌'}</div>
+          <div>Force Ready: {status.forceReady ? '✅' : '❌'}</div>
+          <div>Can Install: {status.canInstall ? '✅' : '❌'}</div>
+          
+          <div className="font-semibold mt-2">Requirements:</div>
           <div>Manifest: {status.hasManifest ? '✅' : '❌'}</div>
           <div>Service Worker: {status.hasServiceWorker ? '✅' : '❌'}</div>
           <div>SW Registered: {status.swRegistered ? '✅' : '❌'}</div>
           <div>HTTPS: {status.isHttps ? '✅' : '❌'}</div>
           <div>Icons: {status.hasValidIcons ? '✅' : '❌'}</div>
+          <div>User Gesture: {status.hasUserGesture ? '✅' : '❌'}</div>
+          
+          <div className="font-semibold mt-2">Environment:</div>
           <div>Protocol: {status.protocol}</div>
           <div>Host: {status.hostname}</div>
           <div>Notifications: {status.notificationPermission}</div>

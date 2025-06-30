@@ -2,6 +2,8 @@ import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Download, Smartphone, X } from 'lucide-react';
 import { pwaManager } from '@/lib/pwa';
+import { pwaInstaller } from '@/lib/pwa-installer';
+import { pwaForceInstaller } from '@/lib/pwa-force-installer';
 import { useToast } from '@/hooks/use-toast';
 
 export function PWAInstallButton() {
@@ -62,7 +64,7 @@ export function PWAInstallButton() {
   const handleInstall = async () => {
     setIsInstalling(true);
     try {
-      const success = await pwaManager.installApp();
+      const success = await pwaForceInstaller.installApp();
       if (success) {
         toast({
           title: "App Installed",
@@ -71,16 +73,17 @@ export function PWAInstallButton() {
         setShowInstallPrompt(false);
       } else {
         toast({
-          title: "Installation Cancelled",
-          description: "App installation was cancelled",
-          variant: "destructive",
+          title: "Installation Available",
+          description: "Check your browser's address bar or menu for install options",
+          variant: "default",
         });
       }
     } catch (error) {
+      console.error('Install error:', error);
       toast({
-        title: "Installation Failed",
-        description: "Failed to install the app. Please try again.",
-        variant: "destructive",
+        title: "Installation Available",
+        description: "Look for the install icon in your browser menu or address bar",
+        variant: "default",
       });
     } finally {
       setIsInstalling(false);
