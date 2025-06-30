@@ -230,13 +230,16 @@ export default function TablePlan() {
       }
 
       const rect = planRef.current.getBoundingClientRect();
+      
+      // Calculate exact drop position - center table at cursor position
+      const tableHalfSize = 25; // Half of 50px table size
       const x = Math.max(
-        40,
-        Math.min(e.clientX - rect.left - 40, rect.width - 80),
+        tableHalfSize,
+        Math.min(e.clientX - rect.left, rect.width - tableHalfSize),
       );
       const y = Math.max(
-        40,
-        Math.min(e.clientY - rect.top - 40, rect.height - 80),
+        tableHalfSize,
+        Math.min(e.clientY - rect.top, rect.height - tableHalfSize),
       );
 
       console.log("Drop position:", { x, y });
@@ -420,50 +423,16 @@ export default function TablePlan() {
     const tableNumber = position.tableNumber || table?.tableNumber || tableId;
     const shape = position.shape || "square";
 
-    // Use custom width/height if provided, otherwise calculate based on capacity
-    let tableWidth = position.width;
-    let tableHeight = position.height;
-
-    if (!tableWidth || !tableHeight) {
-      // Dynamic table size based on capacity - bigger tables for more people
-      const baseSize = 70;
-      tableWidth = tableWidth || baseSize;
-      tableHeight = tableHeight || baseSize;
-      
-      // Scale tables based on capacity if no custom size is set
-      if (capacity <= 2) {
-        tableWidth = tableWidth || baseSize * 0.8; // 56px
-        tableHeight = tableHeight || baseSize * 0.8; // 56px
-      } else if (capacity <= 4) {
-        tableWidth = tableWidth || baseSize; // 70px
-        tableHeight = tableHeight || baseSize; // 70px
-      } else if (capacity <= 6) {
-        tableWidth = tableWidth || baseSize * 1.3; // 91px
-        tableHeight = tableHeight || baseSize * 1.1; // 77px
-      } else if (capacity <= 8) {
-        tableWidth = tableWidth || baseSize * 1.6; // 112px
-        tableHeight = tableHeight || baseSize * 1.2; // 84px
-      } else if (capacity <= 12) {
-        tableWidth = tableWidth || baseSize * 2.0; // 140px
-        tableHeight = tableHeight || baseSize * 1.4; // 98px
-      } else {
-        // For very large capacities (12+)
-        tableWidth = tableWidth || baseSize * 2.4; // 168px
-        tableHeight = tableHeight || baseSize * 1.6; // 112px
-      }
-
-      // For long tables, make them wider
-      if (shape === "long-rectangle" && capacity > 4) {
-        tableWidth = tableWidth * 1.5; // Make long tables significantly wider
-      }
-    }
+    // Standardized table size for consistency - ALL TABLES SAME SIZE
+    const tableWidth = 50;
+    const tableHeight = 50;
 
     return (
       <div
         style={{
           position: "absolute",
-          left: `${position.x}px`,
-          top: `${position.y}px`,
+          left: `${position.x - tableWidth / 2}px`,
+          top: `${position.y - tableHeight / 2}px`,
           transform: `rotate(${position.rotation || 0}deg)`,
           transformOrigin: "center",
           cursor: isDragging ? "grabbing" : "grab",
