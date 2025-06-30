@@ -34,12 +34,24 @@ export class PWAManager {
   private async registerServiceWorker() {
     if ('serviceWorker' in navigator) {
       try {
+        // First, unregister any existing service workers
+        const registrations = await navigator.serviceWorker.getRegistrations();
+        for (const registration of registrations) {
+          await registration.unregister();
+        }
+        
+        // Register new service worker
         const registration = await navigator.serviceWorker.register('/sw.js', {
           scope: '/'
         });
         
         this.serviceWorkerRegistration = registration;
-        console.log('PWA: Service Worker registered successfully');
+        console.log('PWA: Service Worker registered successfully', registration);
+        
+        // Force activation
+        if (registration.waiting) {
+          registration.waiting.postMessage({ type: 'SKIP_WAITING' });
+        }
         
         // Listen for updates
         registration.addEventListener('updatefound', () => {
@@ -47,32 +59,48 @@ export class PWAManager {
           if (newWorker) {
             newWorker.addEventListener('statechange', () => {
               if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
-                // New version available
                 this.notifyUpdate();
               }
             });
           }
         });
         
+        // Wait for service worker to be ready
+        await navigator.serviceWorker.ready;
+        console.log('PWA: Service Worker is ready');
+        
         return registration;
       } catch (error) {
         console.error('PWA: Service Worker registration failed:', error);
+        throw error;
       }
     }
   }
 
   private setupInstallPrompt() {
+    // Listen for beforeinstallprompt event
     window.addEventListener('beforeinstallprompt', (e) => {
+      console.log('PWA: beforeinstallprompt event fired');
       e.preventDefault();
       this.deferredPrompt = e as BeforeInstallPromptEvent;
       this.showInstallButton();
     });
 
+    // Listen for app installed event
     window.addEventListener('appinstalled', () => {
+      console.log('PWA: appinstalled event fired');
       this.isInstalled = true;
+      this.deferredPrompt = null;
       this.hideInstallButton();
-      console.log('PWA: App installed successfully');
     });
+    
+    // Fallback: Check periodically if PWA criteria are met
+    setTimeout(() => {
+      if (!this.deferredPrompt && !this.isInstalled) {
+        console.log('PWA: No beforeinstallprompt event detected, checking manually');
+        this.checkManualInstallability();
+      }
+    }, 2000);
   }
 
   private checkIfInstalled() {
@@ -96,6 +124,25 @@ export class PWAManager {
     }
   }
 
+  private async checkManualInstallability() {
+    // Check if all PWA criteria are met manually
+    const hasManifest = document.querySelector('link[rel="manifest"]');
+    const hasServiceWorker = 'serviceWorker' in navigator;
+    const isHttps = location.protocol === 'https:' || location.hostname === 'localhost';
+    
+    console.log('PWA Manual Check:', {
+      hasManifest: !!hasManifest,
+      hasServiceWorker,
+      isHttps,
+      isInstalled: this.isInstalled
+    });
+    
+    if (hasManifest && hasServiceWorker && isHttps && !this.isInstalled) {
+      console.log('PWA: Manual installability check passed, showing install button');
+      this.showInstallButton();
+    }
+  }
+
   private showInstallButton() {
     // Dispatch custom event to show install button
     window.dispatchEvent(new CustomEvent('pwa-install-available'));
@@ -113,24 +160,52 @@ export class PWAManager {
 
   // Public methods
   public async installApp(): Promise<boolean> {
-    if (!this.deferredPrompt) {
-      return false;
-    }
-
-    try {
-      this.deferredPrompt.prompt();
-      const { outcome } = await this.deferredPrompt.userChoice;
-      
-      if (outcome === 'accepted') {
-        this.deferredPrompt = null;
-        return true;
+    console.log('PWA: Install app requested');
+    
+    if (this.deferredPrompt) {
+      try {
+        console.log('PWA: Using native install prompt');
+        this.deferredPrompt.prompt();
+        const { outcome } = await this.deferredPrompt.userChoice;
+        
+        if (outcome === 'accepted') {
+          this.deferredPrompt = null;
+          console.log('PWA: User accepted install prompt');
+          return true;
+        }
+        
+        console.log('PWA: User dismissed install prompt');
+        return false;
+      } catch (error) {
+        console.error('PWA: Install prompt failed:', error);
+        return false;
       }
-      
-      return false;
-    } catch (error) {
-      console.error('PWA: Install prompt failed:', error);
+    } else {
+      // Fallback: Show manual install instructions
+      console.log('PWA: No native install prompt, showing manual instructions');
+      this.showManualInstallInstructions();
       return false;
     }
+  }
+
+  private showManualInstallInstructions() {
+    const userAgent = navigator.userAgent;
+    let instructions = '';
+    
+    if (userAgent.includes('Chrome')) {
+      instructions = 'Click the menu (⋮) in Chrome and select "Install ReadyTable"';
+    } else if (userAgent.includes('Firefox')) {
+      instructions = 'Look for the install icon in the address bar';
+    } else if (userAgent.includes('Safari')) {
+      instructions = 'Tap the share button and select "Add to Home Screen"';
+    } else {
+      instructions = 'Look for install options in your browser menu';
+    }
+    
+    // Dispatch event with instructions
+    window.dispatchEvent(new CustomEvent('pwa-manual-install', { 
+      detail: { instructions } 
+    }));
   }
 
   public async updateApp(): Promise<void> {
