@@ -29,6 +29,7 @@ import {
   Users,
 } from "lucide-react";
 import { TABLE_STRUCTURES, TableStructurePreview, getDraggableTableStructure } from "@/components/table-shapes/TableStructures";
+import { TableShapesSVG } from "@/components/table-shapes/TableShapesSVG";
 
 interface TablePosition {
   id: number;
@@ -46,6 +47,109 @@ const TABLE_SHAPES = [
   { value: "circle", label: "Circle" },
   { value: "rectangle", label: "Rectangle" },
 ];
+
+// Component for rendering tables with professional SVG shapes on the floor plan
+interface TableSVGRendererProps {
+  position: TablePosition;
+  table: any;
+  onDragStart: (e: React.DragEvent) => void;
+  onRemove: () => void;
+}
+
+const TableSVGRenderer: React.FC<TableSVGRendererProps> = ({ position, table, onDragStart, onRemove }) => {
+  // Map table shape to appropriate table structure
+  const getTableStructure = () => {
+    const baseCapacity = table.capacity || 4;
+    
+    switch (position.shape) {
+      case "circle":
+      case "round":
+        if (baseCapacity <= 2) return TABLE_STRUCTURES[0]; // Small Round
+        if (baseCapacity <= 4) return TABLE_STRUCTURES[1]; // Round 1
+        if (baseCapacity <= 6) return TABLE_STRUCTURES[2]; // Round 2
+        if (baseCapacity <= 8) return TABLE_STRUCTURES[3]; // Round 3
+        return TABLE_STRUCTURES[3]; // Default to Round 3 for large capacity
+      
+      case "square":
+        if (baseCapacity <= 2) return TABLE_STRUCTURES[4]; // Square 1
+        if (baseCapacity <= 4) return TABLE_STRUCTURES[5]; // Square 2
+        return TABLE_STRUCTURES[6]; // Square 4
+      
+      case "rectangle":
+      case "long-rectangle":
+        return TABLE_STRUCTURES[7]; // Rectangular
+        
+      case "oval":
+        return TABLE_STRUCTURES[8]; // Oval
+        
+      case "octagon":
+        return TABLE_STRUCTURES[9]; // Octagon
+        
+      case "hexagon":
+        return TABLE_STRUCTURES[10]; // Hexagon
+        
+      case "curved":
+        return TABLE_STRUCTURES[11]; // Curved
+        
+      default:
+        return TABLE_STRUCTURES[1]; // Default to Round 1
+    }
+  };
+
+  const structure = getTableStructure();
+  
+  return (
+    <div
+      style={{
+        position: 'absolute',
+        left: `${position.x}px`,
+        top: `${position.y}px`,
+        transform: `rotate(${position.rotation || 0}deg)`,
+        transformOrigin: 'center',
+        cursor: 'grab',
+        zIndex: 10,
+      }}
+      draggable
+      onDragStart={onDragStart}
+      className="group"
+    >
+      {/* Professional SVG Table Shape */}
+      <div className="relative">
+        <TableShapesSVG
+          shape={structure.shape}
+          capacity={table.capacity}
+          width={80}
+          height={80}
+          className="hover:scale-105 transition-transform duration-200 drop-shadow-lg"
+        />
+        
+        {/* Table Info Overlay */}
+        <div 
+          className="absolute inset-0 flex items-center justify-center text-white font-bold text-sm pointer-events-none"
+          style={{ textShadow: '1px 1px 2px rgba(0,0,0,0.8)' }}
+        >
+          <div className="text-center">
+            <div>{table.tableNumber}</div>
+            <div className="text-xs opacity-90">{table.capacity}p</div>
+          </div>
+        </div>
+        
+        {/* Remove Button */}
+        <button
+          className="absolute -top-2 -right-2 w-6 h-6 bg-red-500 hover:bg-red-600 text-white rounded-full text-xs font-bold opacity-0 group-hover:opacity-100 transition-opacity duration-200 flex items-center justify-center z-20"
+          onClick={(e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            onRemove();
+          }}
+          title="Remove table"
+        >
+          ×
+        </button>
+      </div>
+    </div>
+  );
+};
 
 export default function TablePlan() {
   const {
@@ -931,6 +1035,8 @@ export default function TablePlan() {
                     key={structure.id}
                     className="border rounded-lg p-2 hover:bg-gray-50 transition-colors cursor-grab"
                     title={structure.description}
+                    draggable
+                    onDragStart={(e) => handleStructureDragStart(structure, e)}
                   >
                     <TableStructurePreview structure={structure} />
                     <div className="text-center mt-1">
@@ -939,129 +1045,7 @@ export default function TablePlan() {
                     </div>
                   </div>
                 ))}
-                <div
-                  className="w-8 h-8 bg-gray-600 rounded-full cursor-grab hover:bg-gray-700 transition-colors"
-                  draggable
-                  onDragStart={(e) => handleStructureDragStart({
-                    id: "large-round",
-                    name: "Large Round",
-                    shape: "circle",
-                    icon: Circle,
-                    defaultCapacity: 6,
-                    description: "6-person round table",
-                  }, e)}
-                  title="Large Round Table"
-                />
 
-                {/* Row 2 */}
-                <div
-                  className="w-10 h-6 bg-gray-600 cursor-grab hover:bg-gray-700 transition-colors"
-                  draggable
-                  onDragStart={(e) => handleStructureDragStart({
-                    id: "rectangular",
-                    name: "Rectangular",
-                    shape: "rectangle",
-                    icon: Square,
-                    defaultCapacity: 6,
-                    description: "6-person rectangular table",
-                  }, e)}
-                  title="Rectangular Table"
-                />
-                <div
-                  className="w-8 h-8 bg-gray-600 cursor-grab hover:bg-gray-700 transition-colors"
-                  draggable
-                  onDragStart={(e) => handleStructureDragStart({
-                    id: "large-square",
-                    name: "Large Square",
-                    shape: "square",
-                    icon: Square,
-                    defaultCapacity: 6,
-                    description: "6-person square table",
-                  }, e)}
-                  title="Large Square Table"
-                />
-                <div
-                  className="w-8 h-8 bg-gray-600 rounded-full cursor-grab hover:bg-gray-700 transition-colors"
-                  draggable
-                  onDragStart={(e) => handleStructureDragStart({
-                    id: "extra-large-round",
-                    name: "Extra Large Round",
-                    shape: "circle",
-                    icon: Circle,
-                    defaultCapacity: 8,
-                    description: "8-person round table",
-                  }, e)}
-                  title="Extra Large Round Table"
-                />
-
-                {/* Row 3 */}
-                <div
-                  className="w-8 h-8 bg-gray-600 rounded-full cursor-grab hover:bg-gray-700 transition-colors"
-                  draggable
-                  onDragStart={(e) => handleStructureDragStart({
-                    id: "huge-round-1",
-                    name: "Huge Round",
-                    shape: "circle",
-                    icon: Circle,
-                    defaultCapacity: 10,
-                    description: "10-person round table",
-                  }, e)}
-                  title="Huge Round Table"
-                />
-                <div
-                  className="w-10 h-8 bg-gray-600 rounded-full cursor-grab hover:bg-gray-700 transition-colors"
-                  draggable
-                  onDragStart={(e) => handleStructureDragStart({
-                    id: "huge-round-2",
-                    name: "Extra Huge Round",
-                    shape: "circle",
-                    icon: Circle,
-                    defaultCapacity: 12,
-                    description: "12-person round table",
-                  }, e)}
-                  title="Extra Huge Round Table"
-                />
-                <div
-                  className="w-12 h-10 bg-gray-600 rounded-full cursor-grab hover:bg-gray-700 transition-colors"
-                  draggable
-                  onDragStart={(e) => handleStructureDragStart({
-                    id: "massive-round",
-                    name: "Massive Round",
-                    shape: "circle",
-                    icon: Circle,
-                    defaultCapacity: 16,
-                    description: "16-person round table",
-                  }, e)}
-                  title="Massive Round Table"
-                />
-
-                {/* Row 4 - Long rectangles */}
-                <div
-                  className="w-12 h-4 bg-gray-600 cursor-grab hover:bg-gray-700 transition-colors col-span-2"
-                  draggable
-                  onDragStart={(e) => handleStructureDragStart({
-                    id: "long-rectangular-1",
-                    name: "Long Rectangular",
-                    shape: "rectangle",
-                    icon: Square,
-                    defaultCapacity: 8,
-                    description: "8-person long table",
-                  }, e)}
-                  title="Long Rectangular Table"
-                />
-                <div
-                  className="w-12 h-4 bg-gray-600 cursor-grab hover:bg-gray-700 transition-colors col-span-2"
-                  draggable
-                  onDragStart={(e) => handleStructureDragStart({
-                    id: "long-rectangular-2",
-                    name: "Extra Long Rectangular",
-                    shape: "rectangle",
-                    icon: Square,
-                    defaultCapacity: 12,
-                    description: "12-person extra long table",
-                  }, e)}
-                  title="Extra Long Rectangular Table"
-                />
               </div>
 
               <div className="mb-4">
@@ -1254,10 +1238,19 @@ export default function TablePlan() {
                         }
                       }}
                     >
-                      <TableWithChairs
+                      <TableSVGRenderer
                         position={position}
-                        tableId={numericTableId}
                         table={dbTable}
+                        onDragStart={(e) => handleDragStart(numericTableId, e)}
+                        onRemove={() => {
+                          if (window.confirm(`Remove Table ${dbTable.tableNumber} from the floor plan?`)) {
+                            setTablePositions((prev) => {
+                              const newPositions = { ...prev };
+                              delete newPositions[numericTableId];
+                              return newPositions;
+                            });
+                          }
+                        }}
                       />
                     </div>
                   );
