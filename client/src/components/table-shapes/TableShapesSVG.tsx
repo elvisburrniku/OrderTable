@@ -316,33 +316,35 @@ interface TableShapesSVGProps {
   className?: string;
 }
 
-export const getTableSVG = (shape: string, capacity: number, width: number = 60, height: number = 60, className: string = "") => {
-    // Safety check for capacity
+export const getTableSVG = (shape: string, capacity: number, width: number = 80, height: number = 80, className: string = "") => {
+    // Safety check for capacity and ensure consistent sizing
     const safeCapacity = capacity || 4;
+    const standardWidth = 80;
+    const standardHeight = 80;
 
     switch (shape) {
       case "round":
       case "circle":
-        if (safeCapacity <= 2) return <CircleTable2Person width={width} height={height} className={className} />;
-        if (safeCapacity <= 4) return <CircleTable4Person width={width} height={height} className={className} />;
-        return <CircleTable6Person width={width} height={height} className={className} />;
+        if (safeCapacity <= 2) return <CircleTable2Person width={standardWidth} height={standardHeight} className={className} />;
+        if (safeCapacity <= 4) return <CircleTable4Person width={standardWidth} height={standardHeight} className={className} />;
+        return <CircleTable6Person width={standardWidth} height={standardHeight} className={className} />;
 
       case "square":
       case "rectangle":
-        if (safeCapacity <= 4) return <SquareTable4Person width={width} height={height} className={className} />;
-        if (safeCapacity <= 6) return <SquareTable6Person width={width} height={height} className={className} />;
-        return <SquareTable8Person width={width} height={height} className={className} />;
+        if (safeCapacity <= 4) return <SquareTable4Person width={standardWidth} height={standardHeight} className={className} />;
+        if (safeCapacity <= 6) return <SquareTable6Person width={standardWidth} height={standardHeight} className={className} />;
+        return <SquareTable8Person width={standardWidth} height={standardHeight} className={className} />;
 
       case "long-rectangle":
-        if (safeCapacity <= 4) return <SquareTable4Person width={width} height={height} className={className} />;
-        if (safeCapacity <= 6) return <SquareTable6Person width={width} height={height} className={className} />;
-        return <SquareTable8Person width={width} height={height} className={className} />;
+        if (safeCapacity <= 4) return <SquareTable4Person width={standardWidth} height={standardHeight} className={className} />;
+        if (safeCapacity <= 6) return <SquareTable6Person width={standardWidth} height={standardHeight} className={className} />;
+        return <SquareTable8Person width={standardWidth} height={standardHeight} className={className} />;
 
       default:
         // Default to round tables
-        if (safeCapacity <= 2) return <CircleTable2Person width={width} height={height} className={className} />;
-        if (safeCapacity <= 4) return <CircleTable4Person width={width} height={height} className={className} />;
-        return <CircleTable6Person width={width} height={height} className={className} />;
+        if (safeCapacity <= 2) return <CircleTable2Person width={standardWidth} height={standardHeight} className={className} />;
+        if (safeCapacity <= 4) return <CircleTable4Person width={standardWidth} height={standardHeight} className={className} />;
+        return <CircleTable6Person width={standardWidth} height={standardHeight} className={className} />;
     }
   };
 

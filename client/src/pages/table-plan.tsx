@@ -48,109 +48,9 @@ const TABLE_SHAPES = [
   { value: "rectangle", label: "Rectangle" },
 ];
 
-// Component for rendering tables with professional SVG shapes on the floor plan
-interface TableSVGRendererProps {
-  position: TablePosition;
-  table: any;
-  onDragStart: (e: React.DragEvent) => void;
-  onRemove: () => void;
-}
 
-const TableSVGRenderer: React.FC<TableSVGRendererProps> = ({ position, table, onDragStart, onRemove }) => {
-  // Map table shape to appropriate table structure
-  const getTableStructure = () => {
-    const baseCapacity = table.capacity || 4;
 
-    switch (position.shape) {
-      case "circle":
-      case "round":
-        if (baseCapacity <= 2) return TABLE_STRUCTURES[0]; // Small Round
-        if (baseCapacity <= 4) return TABLE_STRUCTURES[1]; // Round 1
-        if (baseCapacity <= 6) return TABLE_STRUCTURES[2]; // Round 2
-        if (baseCapacity <= 8) return TABLE_STRUCTURES[3]; // Round 3
-        return TABLE_STRUCTURES[3]; // Default to Round 3 for large capacity
 
-      case "square":
-        if (baseCapacity <= 2) return TABLE_STRUCTURES[4]; // Square 1
-        if (baseCapacity <= 4) return TABLE_STRUCTURES[5]; // Square 2
-        return TABLE_STRUCTURES[6]; // Square 4
-
-      case "rectangle":
-      case "long-rectangle":
-        return TABLE_STRUCTURES[7]; // Rectangular
-
-      case "oval":
-        return TABLE_STRUCTURES[8]; // Oval
-
-      case "octagon":
-        return TABLE_STRUCTURES[9]; // Octagon
-
-      case "hexagon":
-        return TABLE_STRUCTURES[10]; // Hexagon
-
-      case "curved":
-        return TABLE_STRUCTURES[11]; // Curved
-
-      default:
-        return TABLE_STRUCTURES[1]; // Default to Round 1
-    }
-  };
-
-  const structure = getTableStructure();
-
-  return (
-    <div
-        style={{
-          position: 'absolute',
-          left: `${position.x}px`,
-          top: `${position.y}px`,
-          transform: `rotate(${position.rotation || 0}deg)`,
-          transformOrigin: 'center',
-          cursor: isDragging ? 'grabbing' : 'grab',
-          zIndex: 10,
-        }}
-        draggable
-        onDragStart={onDragStart}
-        onDragEnd={() => setIsDragging(false)}
-        className="group"
-      >
-      {/* Professional SVG Table Shape */}
-      <div className="relative">
-        <TableShapesSVG
-          shape={structure.shape}
-          capacity={table.capacity}
-          width={80}
-          height={80}
-          className="hover:scale-105 transition-transform duration-200 drop-shadow-lg"
-        />
-
-        {/* Table Info Overlay */}
-        <div 
-          className="absolute inset-0 flex items-center justify-center text-white font-bold text-sm pointer-events-none"
-          style={{ textShadow: '1px 1px 2px rgba(0,0,0,0.8)' }}
-        >
-          <div className="text-center">
-            <div>{table.tableNumber}</div>
-            <div className="text-xs opacity-90">{table.capacity}p</div>
-          </div>
-        </div>
-
-        {/* Remove Button */}
-        <button
-          className="absolute -top-2 -right-2 w-6 h-6 bg-red-500 hover:bg-red-600 text-white rounded-full text-xs font-bold opacity-0 group-hover:opacity-100 transition-opacity duration-200 flex items-center justify-center z-20"
-          onClick={(e) => {
-            e.preventDefault();
-            e.stopPropagation();
-            onRemove();
-          }}
-          title="Remove table"
-        >
-          ×
-        </button>
-      </div>
-    </div>
-  );
-};
 
 export default function TablePlan() {
   const {
@@ -499,7 +399,7 @@ export default function TablePlan() {
     const tableNumber = position.tableNumber || table?.tableNumber || tableId;
     const shape = position.shape || 'square';
 
-    // Use the existing getTableSVG function from TableShapesSVG
+    // Standardized table size for consistency
     const tableWidth = 80;
     const tableHeight = 80;
 
@@ -514,6 +414,8 @@ export default function TablePlan() {
           cursor: isDragging ? 'grabbing' : 'grab',
           zIndex: draggedTable === tableId ? 1000 : 10,
           transition: 'transform 0.2s ease, box-shadow 0.2s ease',
+          width: `${tableWidth}px`,
+          height: `${tableHeight}px`,
         }}
         draggable
         onDragStart={(e) => {
@@ -527,30 +429,24 @@ export default function TablePlan() {
           setDraggedTable(null);
           setIsDragging(false);
         }}
+        className="group"
       >
-        {/* SVG Table with professional design */}
-        <div className="relative group">
-          {getTableSVG(shape, capacity, tableWidth, tableHeight, "drop-shadow-lg hover:drop-shadow-xl transition-all")}
+        {/* SVG Table with professional design - standardized size */}
+        <div className="relative w-full h-full">
+          {getTableSVG(shape, capacity, tableWidth, tableHeight, "drop-shadow-lg hover:drop-shadow-xl transition-all w-full h-full")}
 
           {/* Table number overlay */}
           <div
-            style={{
-              position: 'absolute',
-              top: '50%',
-              left: '50%',
-              transform: 'translate(-50%, -50%)',
-              color: '#fff',
-              fontSize: '12px',
-              fontWeight: 'bold',
-              textShadow: '1px 1px 2px rgba(0,0,0,0.8)',
-              pointerEvents: 'none',
-              zIndex: 15,
-            }}
+            className="absolute inset-0 flex items-center justify-center text-white text-xs font-bold pointer-events-none z-15"
+            style={{ textShadow: '1px 1px 2px rgba(0,0,0,0.8)' }}
           >
-            {tableNumber}
+            <div className="text-center">
+              <div>{tableNumber}</div>
+              <div className="text-[10px] opacity-90">{capacity}p</div>
+            </div>
           </div>
 
-          {/* Remove button */}
+          {/* Remove button - always visible on hover */}
           <button
             onClick={(e) => {
               e.preventDefault();
@@ -564,35 +460,7 @@ export default function TablePlan() {
                 });
               }
             }}
-            style={{
-              position: 'absolute',
-              top: '-8px',
-              right: '-8px',
-              width: '20px',
-              height: '20px',
-              borderRadius: '50%',
-              backgroundColor: '#ef4444',
-              color: 'white',
-              border: 'none',
-              fontSize: '12px',
-              fontWeight: 'bold',
-              cursor: 'pointer',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              opacity: 0,
-              transition: 'all 0.2s ease',
-              zIndex: 20,
-            }}
-            className="group-hover:opacity-100"
-            onMouseEnter={(e) => {
-              e.currentTarget.style.backgroundColor = '#dc2626';
-              e.currentTarget.style.transform = 'scale(1.1)';
-            }}
-            onMouseLeave={(e) => {
-              e.currentTarget.style.backgroundColor = '#ef4444';
-              e.currentTarget.style.transform = 'scale(1)';
-            }}
+            className="absolute -top-2 -right-2 w-6 h-6 bg-red-500 hover:bg-red-600 text-white rounded-full text-xs font-bold opacity-0 group-hover:opacity-100 transition-all duration-200 flex items-center justify-center z-20 hover:scale-110 shadow-lg"
             title="Remove table from plan"
           >
             ×
