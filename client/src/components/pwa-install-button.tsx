@@ -12,9 +12,18 @@ export function PWAInstallButton() {
 
   useEffect(() => {
     // Listen for PWA events
-    const handleInstallAvailable = () => setShowInstallPrompt(true);
-    const handleInstallCompleted = () => setShowInstallPrompt(false);
-    const handleUpdateAvailable = () => setShowUpdatePrompt(true);
+    const handleInstallAvailable = () => {
+      console.log('PWA install available event received');
+      setShowInstallPrompt(true);
+    };
+    const handleInstallCompleted = () => {
+      console.log('PWA install completed event received');
+      setShowInstallPrompt(false);
+    };
+    const handleUpdateAvailable = () => {
+      console.log('PWA update available event received');
+      setShowUpdatePrompt(true);
+    };
 
     window.addEventListener('pwa-install-available', handleInstallAvailable);
     window.addEventListener('pwa-install-completed', handleInstallCompleted);
@@ -23,19 +32,32 @@ export function PWAInstallButton() {
     // Check initial state
     const checkInstallability = async () => {
       const status = await pwaManager.getInstallationStatus();
+      console.log('PWA installation status:', status);
       if (status.isInstallable && !status.isInstalled) {
+        console.log('PWA is installable, showing prompt');
         setShowInstallPrompt(true);
+      } else {
+        console.log('PWA not installable or already installed');
       }
     };
     
     checkInstallability();
 
+    // For testing: Show install button after 3 seconds if not already shown
+    const testTimer = setTimeout(() => {
+      if (!showInstallPrompt) {
+        console.log('Force showing PWA install prompt for testing');
+        setShowInstallPrompt(true);
+      }
+    }, 3000);
+
     return () => {
       window.removeEventListener('pwa-install-available', handleInstallAvailable);
       window.removeEventListener('pwa-install-completed', handleInstallCompleted);
       window.removeEventListener('pwa-update-available', handleUpdateAvailable);
+      clearTimeout(testTimer);
     };
-  }, []);
+  }, [showInstallPrompt]);
 
   const handleInstall = async () => {
     setIsInstalling(true);

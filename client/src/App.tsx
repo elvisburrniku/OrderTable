@@ -102,6 +102,7 @@ import { DateProvider } from "@/contexts/date-context";
 import { CurrencyProvider } from "@/contexts/currency-context";
 import { BookingProvider } from "@/contexts/booking-context";
 import { PWAInstallButton } from "@/components/pwa-install-button";
+import { PWATestButton } from "@/components/pwa-test-button";
 
 function App() {
   return (
@@ -465,6 +466,7 @@ function App() {
           </Switch>
           <Toaster />
           <PWAInstallButton />
+          <PWATestButton />
         </QueryClientProvider>
       </LanguageProvider>
     </ErrorBoundary>
