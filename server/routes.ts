@@ -25,30 +25,20 @@ import {
 } from "@shared/schema";
 import { eq, and } from "drizzle-orm";
 import {
+  requirePermission,
+  requireAnyPermission,
   PERMISSIONS,
   ROLE_PERMISSIONS,
   ROLE_REDIRECTS,
   getUserRole,
   getUserPermissions,
   getRoleRedirect,
+  getRoleRedirectFromDB,
 } from "./permissions-middleware";
 import { BrevoEmailService } from "./brevo-service";
 import { BookingHash } from "./booking-hash";
 import { QRCodeService } from "./qr-service";
 import { WebhookService } from "./webhook-service";
-import {
-  getUserRole,
-  getUserPermissions,
-  getRoleRedirect,
-} from "./permissions-middleware";
-import {
-  requirePermission,
-  requireAnyPermission,
-  PERMISSIONS,
-  getUserPermissions,
-  getUserRole,
-  getRoleRedirect,
-} from "./permissions-middleware";
 import { MetaIntegrationService } from "./meta-service";
 import { metaInstallService } from "./meta-install-service";
 import { setupSSO } from "./sso-auth";
@@ -561,7 +551,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           message: "Account suspended",
           details:
             "Your account has been suspended. Please contact support for assistance.",
-          supportEmail: "support@replit.com",
+          supportEmail: "support@readytable.com",
           status: "suspended",
         });
       }
@@ -571,7 +561,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           message: "Account paused",
           details:
             "Your account is temporarily paused. Please contact support for assistance.",
-          supportEmail: "support@replit.com",
+          supportEmail: "support@readytable.com",
           status: "paused",
         });
       }
@@ -597,13 +587,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       // Determine user role and ownership
       let userRole = null;
-      let role = null;
       let isOwner = false;
 
       // Check if user is the restaurant owner
       if (restaurant && restaurant.userId === user.id) {
         isOwner = true;
-        
+
         userRole = "owner";
       } else if (tenantUser.id) {
         // For team members, check if they have a role in the tenant
@@ -620,6 +609,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
           userRole = "agent"; // Default role for team members
         }
       }
+
+      // Determine redirect path based on user role
+      const redirectPath = await getRoleRedirectFromDB(user.id, tenantUser.id);
 
       // Handle "Remember me" functionality
       if (rememberMe) {
@@ -660,6 +652,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         restaurant: restaurant
           ? { ...restaurant, tenantId: restaurant.tenantId || tenantUser.id }
           : null,
+        redirect: redirectPath,
       });
     } catch (error) {
       console.error("Login error:", error);
@@ -720,7 +713,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         sessionUser.id,
         sessionTenant.id,
       );
-      const defaultRedirect = getRoleRedirect(userRole || "agent");
+      const defaultRedirect = await getRoleRedirectFromDB(sessionUser.id, sessionTenant.id);
 
       res.json({
         permissions,
@@ -776,7 +769,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           });
         }
 
-        // Get role permissions data
+        // Get role permissions data with redirects from database
         const rolePermissions = Object.entries(ROLE_PERMISSIONS).map(
           ([role, permissions]) => ({
             role,
@@ -889,7 +882,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         );
 
         // Prevent updating owner role for security
-        if (role === 'owner') {
+        if (role === "owner") {
           return res.status(400).json({
             error: "Cannot update owner permissions",
             message: "Owner permissions are fixed and cannot be modified",
@@ -898,7 +891,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
         // Update redirect if provided
         if (redirect) {
-          updateRoleRedirect(role, redirect);
+          await updateRoleRedirect(role, redirect, tenantId);
         }
 
         // Update role permissions
@@ -17060,7 +17053,7 @@ NEXT STEPS:
       // Get user's role and permissions
       const userRole = await getUserRole(userId, tenantId);
       const permissions = await getUserPermissions(userId, tenantId);
-      const redirect = getRoleRedirect(userRole);
+      const redirect = await getRoleRedirectFromDB(userId, tenantId);
 
       res.json({
         permissions,

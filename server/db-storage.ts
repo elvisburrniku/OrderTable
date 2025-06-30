@@ -28,6 +28,8 @@ const {
   specialPeriods,
   cutOffTimes,
   tableLayouts,
+  roles,
+  permissions,
   integrationConfigurations,
   resolvedConflicts,
   menuCategories,

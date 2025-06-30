@@ -78,6 +78,7 @@ export const roles = pgTable("roles", {
   name: varchar("name", { length: 50 }).notNull(),
   displayName: text("display_name").notNull(),
   permissions: text("permissions").notNull(), // JSON array of permissions
+  redirect: text("redirect").default("dashboard"), // Default page redirect after login
   isSystem: boolean("is_system").default(false), // System roles cannot be deleted
   createdAt: timestamp("created_at").defaultNow(),
 });
