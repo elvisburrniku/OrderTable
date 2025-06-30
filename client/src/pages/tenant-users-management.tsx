@@ -457,7 +457,8 @@ export default function TenantUsersManagement({
 
   // Guard Management mutation
   const saveRolePermissionsMutation = useMutation({
-    mutationFn: async (data: RolePermissionsData) => {
+    mutationFn: async (data: { role: string; permissions: string[]; redirect: string }) => {
+      console.log("🔍 FRONTEND SENDING ROLE UPDATE:", data);
       return await apiRequest(
         "PUT",
         `/api/tenants/${tenantId}/role-permissions`,
@@ -465,11 +466,7 @@ export default function TenantUsersManagement({
       );
     },
     onSuccess: () => {
-      toast({
-        title: "Permissions Saved",
-        description: "Role permissions have been successfully updated.",
-      });
-      setHasUnsavedChanges(false);
+      // Individual success handling is done in handleSavePermissions
       queryClient.invalidateQueries({
         queryKey: [`/api/tenants/${tenantId}/role-permissions`],
       });
@@ -614,9 +611,28 @@ export default function TenantUsersManagement({
   };
 
   const handleSavePermissions = () => {
-    if (localRolePermissions) {
-      saveRolePermissionsMutation.mutate(localRolePermissions);
-    }
+    if (!localRolePermissions) return;
+
+    // Save each role individually since backend expects single role updates
+    const savePromises = localRolePermissions.roles.map(role => {
+      if (role.role === 'owner') return Promise.resolve(); // Skip owner role
+      
+      return saveRolePermissionsMutation.mutateAsync({
+        role: role.role,
+        permissions: role.permissions,
+        redirect: role.redirect
+      });
+    });
+
+    Promise.all(savePromises).then(() => {
+      toast({
+        title: "All Permissions Saved",
+        description: "All role permissions have been successfully updated.",
+      });
+      setHasUnsavedChanges(false);
+    }).catch((error) => {
+      console.error('Error saving permissions:', error);
+    });
   };
 
   const handleResetPermissions = () => {
