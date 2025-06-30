@@ -22,6 +22,7 @@ A comprehensive restaurant booking management system with React frontend and Exp
 - Kitchen order management
 
 ## Recent Changes
+- **2025-06-30**: Added notification indicator with bell icon and green dot to appear on every page across all layouts
 - **2025-06-30**: Implemented role-based sidebar filtering to show only menu items users have permission to access
 - **2025-06-30**: Added permission requirements to all sidebar menu items and restaurant settings dropdown
 - **2025-06-30**: Fixed role permissions system with complete drag-and-drop functionality, remove buttons, and proper backend validation

@@ -3,6 +3,7 @@ import DashboardSidebar from "./dashboard-sidebar";
 import { useAuth } from "@/lib/auth";
 import { useQuery } from "@tanstack/react-query";
 import CookieSettingsButton from "./cookie-settings-button";
+import { NotificationIndicator } from "./notification-indicator";
 
 interface LayoutWrapperProps {
   children: React.ReactNode;
@@ -59,6 +60,10 @@ export function LayoutWrapper({ children }: LayoutWrapperProps) {
     // Render without sidebar for public routes
     return (
       <>
+        {/* Header with notification indicator for public routes */}
+        <div className="flex justify-end items-center p-4 bg-white border-b border-gray-200">
+          <NotificationIndicator />
+        </div>
         {children}
         <CookieSettingsButton />
       </>
@@ -69,6 +74,10 @@ export function LayoutWrapper({ children }: LayoutWrapperProps) {
   if (isBlocked) {
     return (
       <>
+        {/* Header with notification indicator for blocked routes */}
+        <div className="flex justify-end items-center p-4 bg-white border-b border-gray-200">
+          <NotificationIndicator />
+        </div>
         <main className="min-h-screen bg-gray-50">
           {children}
         </main>
@@ -82,7 +91,13 @@ export function LayoutWrapper({ children }: LayoutWrapperProps) {
     <div className="flex min-h-screen bg-gray-50">
       <DashboardSidebar tenantId={tenantId} />
       <main className="flex-1 overflow-auto">
-        {children}
+        {/* Header with notification indicator */}
+        <div className="flex justify-end items-center p-4 bg-white border-b border-gray-200">
+          <NotificationIndicator />
+        </div>
+        <div className="p-6">
+          {children}
+        </div>
       </main>
       <CookieSettingsButton />
     </div>
