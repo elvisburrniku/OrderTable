@@ -113,7 +113,7 @@
                 "view_bookings",
                 "view_menu"
             ],
-            "redirect": "kitchen-management"
+            "redirect": "kitchen-dashboard"
         }
     ],
     "availablePermissions": {

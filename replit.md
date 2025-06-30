@@ -22,6 +22,8 @@ A comprehensive restaurant booking management system with React frontend and Exp
 - Kitchen order management
 
 ## Recent Changes
+- **2025-06-30**: Implemented role-based sidebar filtering to show only menu items users have permission to access
+- **2025-06-30**: Added permission requirements to all sidebar menu items and restaurant settings dropdown
 - **2025-06-30**: Fixed role permissions system with complete drag-and-drop functionality, remove buttons, and proper backend validation
 - **2025-06-30**: Enhanced role permissions backend with improved request validation and owner role protection
 - **2025-06-30**: Added remove functionality to assigned permissions with visual indicators and proper state management

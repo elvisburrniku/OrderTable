@@ -145,7 +145,7 @@ const redirectOptions = [
   { value: "customers", label: "Customers" },
   { value: "menu-management", label: "Menu Management" },
   { value: "tables", label: "Table Management" },
-  { value: "kitchen-management", label: "Kitchen Management" },
+  { value: "kitchen-dashboard", label: "Kitchen Management" },
   { value: "users", label: "User Management" },
   { value: "billing", label: "Billing" },
   { value: "reports", label: "Reports" },
@@ -457,7 +457,11 @@ export default function TenantUsersManagement({
 
   // Guard Management mutation
   const saveRolePermissionsMutation = useMutation({
-    mutationFn: async (data: { role: string; permissions: string[]; redirect: string }) => {
+    mutationFn: async (data: {
+      role: string;
+      permissions: string[];
+      redirect: string;
+    }) => {
       console.log("🔍 FRONTEND SENDING ROLE UPDATE:", data);
       return await apiRequest(
         "PUT",
@@ -614,25 +618,27 @@ export default function TenantUsersManagement({
     if (!localRolePermissions) return;
 
     // Save each role individually since backend expects single role updates
-    const savePromises = localRolePermissions.roles.map(role => {
-      if (role.role === 'owner') return Promise.resolve(); // Skip owner role
-      
+    const savePromises = localRolePermissions.roles.map((role) => {
+      if (role.role === "owner") return Promise.resolve(); // Skip owner role
+
       return saveRolePermissionsMutation.mutateAsync({
         role: role.role,
         permissions: role.permissions,
-        redirect: role.redirect
+        redirect: role.redirect,
       });
     });
 
-    Promise.all(savePromises).then(() => {
-      toast({
-        title: "All Permissions Saved",
-        description: "All role permissions have been successfully updated.",
+    Promise.all(savePromises)
+      .then(() => {
+        toast({
+          title: "All Permissions Saved",
+          description: "All role permissions have been successfully updated.",
+        });
+        setHasUnsavedChanges(false);
+      })
+      .catch((error) => {
+        console.error("Error saving permissions:", error);
       });
-      setHasUnsavedChanges(false);
-    }).catch((error) => {
-      console.error('Error saving permissions:', error);
-    });
   };
 
   const handleResetPermissions = () => {
