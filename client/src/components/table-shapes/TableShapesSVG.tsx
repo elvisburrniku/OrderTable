@@ -337,33 +337,41 @@ export const getTableSVG = (shape: string, capacity: number, width: number = 50,
       maxWidth: `${standardWidth}px`,
       maxHeight: `${standardHeight}px`,
       display: 'block',
+      flexShrink: 0,
+      overflow: 'hidden',
+    };
+
+    const svgStyle = {
+      width: '100%',
+      height: '100%',
+      objectFit: 'contain' as const,
     };
 
     switch (shape) {
       case "round":
       case "circle":
-        if (effectiveCapacity <= 2) return <div style={forceEqualSizeStyle}><CircleTable2Person width={standardWidth} height={standardHeight} className={className} /></div>;
-        if (effectiveCapacity <= 4) return <div style={forceEqualSizeStyle}><CircleTable4Person width={standardWidth} height={standardHeight} className={className} /></div>;
-        if (effectiveCapacity <= 6) return <div style={forceEqualSizeStyle}><CircleTable6Person width={standardWidth} height={standardHeight} className={className} /></div>;
-        return <div style={forceEqualSizeStyle}><CircleTable8Person width={standardWidth} height={standardHeight} className={className} /></div>;
+        if (effectiveCapacity <= 2) return <div style={forceEqualSizeStyle}><CircleTable2Person width={standardWidth} height={standardHeight} className={className} style={svgStyle} /></div>;
+        if (effectiveCapacity <= 4) return <div style={forceEqualSizeStyle}><CircleTable4Person width={standardWidth} height={standardHeight} className={className} style={svgStyle} /></div>;
+        if (effectiveCapacity <= 6) return <div style={forceEqualSizeStyle}><CircleTable6Person width={standardWidth} height={standardHeight} className={className} style={svgStyle} /></div>;
+        return <div style={forceEqualSizeStyle}><CircleTable8Person width={standardWidth} height={standardHeight} className={className} style={svgStyle} /></div>;
 
       case "square":
       case "rectangle":
-        if (effectiveCapacity <= 4) return <div style={forceEqualSizeStyle}><SquareTable4PersonCompact width={standardWidth} height={standardHeight} className={className} /></div>;
-        if (effectiveCapacity <= 6) return <div style={forceEqualSizeStyle}><SquareTable6Person width={standardWidth} height={standardHeight} className={className} /></div>;
-        return <div style={forceEqualSizeStyle}><SquareTable8Person width={standardWidth} height={standardHeight} className={className} /></div>;
+        if (effectiveCapacity <= 4) return <div style={forceEqualSizeStyle}><SquareTable4PersonCompact width={standardWidth} height={standardHeight} className={className} style={svgStyle} /></div>;
+        if (effectiveCapacity <= 6) return <div style={forceEqualSizeStyle}><SquareTable6Person width={standardWidth} height={standardHeight} className={className} style={svgStyle} /></div>;
+        return <div style={forceEqualSizeStyle}><SquareTable8Person width={standardWidth} height={standardHeight} className={className} style={svgStyle} /></div>;
 
       case "long-rectangle":
-        if (effectiveCapacity <= 4) return <div style={forceEqualSizeStyle}><SquareTable4PersonCompact width={standardWidth} height={standardHeight} className={className} /></div>;
-        if (effectiveCapacity <= 6) return <div style={forceEqualSizeStyle}><SquareTable6Person width={standardWidth} height={standardHeight} className={className} /></div>;
-        return <div style={forceEqualSizeStyle}><SquareTable8Person width={standardWidth} height={standardHeight} className={className} /></div>;
+        if (effectiveCapacity <= 4) return <div style={forceEqualSizeStyle}><SquareTable4PersonCompact width={standardWidth} height={standardHeight} className={className} style={svgStyle} /></div>;
+        if (effectiveCapacity <= 6) return <div style={forceEqualSizeStyle}><SquareTable6Person width={standardWidth} height={standardHeight} className={className} style={svgStyle} /></div>;
+        return <div style={forceEqualSizeStyle}><SquareTable8Person width={standardWidth} height={standardHeight} className={className} style={svgStyle} /></div>;
 
       default:
         // Default to round tables
-        if (effectiveCapacity <= 2) return <div style={forceEqualSizeStyle}><CircleTable2Person width={standardWidth} height={standardHeight} className={className} /></div>;
-        if (effectiveCapacity <= 4) return <div style={forceEqualSizeStyle}><CircleTable4Person width={standardWidth} height={standardHeight} className={className} /></div>;
-        if (effectiveCapacity <= 6) return <div style={forceEqualSizeStyle}><CircleTable6Person width={standardWidth} height={standardHeight} className={className} /></div>;
-        return <div style={forceEqualSizeStyle}><CircleTable8Person width={standardWidth} height={standardHeight} className={className} /></div>;
+        if (effectiveCapacity <= 2) return <div style={forceEqualSizeStyle}><CircleTable2Person width={standardWidth} height={standardHeight} className={className} style={svgStyle} /></div>;
+        if (effectiveCapacity <= 4) return <div style={forceEqualSizeStyle}><CircleTable4Person width={standardWidth} height={standardHeight} className={className} style={svgStyle} /></div>;
+        if (effectiveCapacity <= 6) return <div style={forceEqualSizeStyle}><CircleTable6Person width={standardWidth} height={standardHeight} className={className} style={svgStyle} /></div>;
+        return <div style={forceEqualSizeStyle}><CircleTable8Person width={standardWidth} height={standardHeight} className={className} style={svgStyle} /></div>;
     }
   };
 
