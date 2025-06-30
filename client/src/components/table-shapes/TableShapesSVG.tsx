@@ -319,8 +319,9 @@ interface TableShapesSVGProps {
 export const getTableSVG = (shape: string, capacity: number, width: number = 80, height: number = 80, className: string = "") => {
     // Safety check for capacity and ensure consistent sizing
     const safeCapacity = capacity || 4;
-    const standardWidth = 80;
-    const standardHeight = 80;
+    // ALL TABLES USE THE SAME SIZE - 100x100 for perfect consistency
+    const standardWidth = 100;
+    const standardHeight = 100;
 
     // For very high capacities (12+), use the largest available table
     // This handles cases where someone enters 15, 16, or even 20 persons - they all get a 12-person table visual

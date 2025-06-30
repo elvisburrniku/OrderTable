@@ -399,9 +399,9 @@ export default function TablePlan() {
     const tableNumber = position.tableNumber || table?.tableNumber || tableId;
     const shape = position.shape || 'square';
 
-    // Standardized table size for consistency
-    const tableWidth = 80;
-    const tableHeight = 80;
+    // Standardized table size for consistency - ALL TABLES SAME SIZE
+    const tableWidth = 100;
+    const tableHeight = 100;
 
     return (
       <div
