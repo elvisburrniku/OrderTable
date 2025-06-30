@@ -320,77 +320,70 @@ export const getTableSVG = (shape: string, capacity: number, width: number = 50,
     // Safety check for capacity
     const safeCapacity = capacity || 4;
     
-    // Calculate size based on capacity - bigger tables for more people
-    const baseSize = 50;
-    let scaledWidth = baseSize;
-    let scaledHeight = baseSize;
+    // Use provided width/height if available, otherwise calculate based on capacity
+    let scaledWidth = width;
+    let scaledHeight = height;
     
-    // Scale tables based on capacity for better visual representation
-    if (safeCapacity <= 2) {
-      scaledWidth = baseSize * 0.8; // 40px
-      scaledHeight = baseSize * 0.8; // 40px
-    } else if (safeCapacity <= 4) {
-      scaledWidth = baseSize; // 50px
-      scaledHeight = baseSize; // 50px
-    } else if (safeCapacity <= 6) {
-      scaledWidth = baseSize * 1.3; // 65px
-      scaledHeight = baseSize * 1.1; // 55px
-    } else if (safeCapacity <= 8) {
-      scaledWidth = baseSize * 1.6; // 80px
-      scaledHeight = baseSize * 1.2; // 60px
-    } else if (safeCapacity <= 12) {
-      scaledWidth = baseSize * 2.0; // 100px
-      scaledHeight = baseSize * 1.4; // 70px
-    } else {
-      // For very large capacities (12+)
-      scaledWidth = baseSize * 2.4; // 120px
-      scaledHeight = baseSize * 1.6; // 80px
-    }
+    // If width/height are the defaults (50x50), calculate based on capacity
+    if (width === 50 && height === 50) {
+      const baseSize = 50;
+      
+      // Scale tables based on capacity for better visual representation
+      if (safeCapacity <= 2) {
+        scaledWidth = baseSize * 0.8; // 40px
+        scaledHeight = baseSize * 0.8; // 40px
+      } else if (safeCapacity <= 4) {
+        scaledWidth = baseSize; // 50px
+        scaledHeight = baseSize; // 50px
+      } else if (safeCapacity <= 6) {
+        scaledWidth = baseSize * 1.3; // 65px
+        scaledHeight = baseSize * 1.1; // 55px
+      } else if (safeCapacity <= 8) {
+        scaledWidth = baseSize * 1.6; // 80px
+        scaledHeight = baseSize * 1.2; // 60px
+      } else if (safeCapacity <= 12) {
+        scaledWidth = baseSize * 2.0; // 100px
+        scaledHeight = baseSize * 1.4; // 70px
+      } else {
+        // For very large capacities (12+)
+        scaledWidth = baseSize * 2.4; // 120px
+        scaledHeight = baseSize * 1.6; // 80px
+      }
 
-    // For long tables, make them wider
-    if (shape === "long-rectangle" && safeCapacity > 4) {
-      scaledWidth = scaledWidth * 1.5; // Make long tables significantly wider
+      // For long tables, make them wider
+      if (shape === "long-rectangle" && safeCapacity > 4) {
+        scaledWidth = scaledWidth * 1.5; // Make long tables significantly wider
+      }
     }
 
     // For very high capacities (12+), use the largest available table
     const effectiveCapacity = Math.min(safeCapacity, 12);
 
-    // Dynamic sizing style based on capacity
-    const dynamicSizeStyle = {
-      width: `${scaledWidth}px`,
-      height: `${scaledHeight}px`,
-      minWidth: `${scaledWidth}px`,
-      minHeight: `${scaledHeight}px`,
-      maxWidth: `${scaledWidth}px`,
-      maxHeight: `${scaledHeight}px`,
-      display: 'block',
-    };
-
     switch (shape) {
       case "round":
       case "circle":
-        if (effectiveCapacity <= 2) return <div style={dynamicSizeStyle}><CircleTable2Person width={scaledWidth} height={scaledHeight} className={className} /></div>;
-        if (effectiveCapacity <= 4) return <div style={dynamicSizeStyle}><CircleTable4Person width={scaledWidth} height={scaledHeight} className={className} /></div>;
-        if (effectiveCapacity <= 6) return <div style={dynamicSizeStyle}><CircleTable6Person width={scaledWidth} height={scaledHeight} className={className} /></div>;
-        return <div style={dynamicSizeStyle}><CircleTable8Person width={scaledWidth} height={scaledHeight} className={className} /></div>;
+        if (effectiveCapacity <= 2) return <CircleTable2Person width={scaledWidth} height={scaledHeight} className={className} />;
+        if (effectiveCapacity <= 4) return <CircleTable4Person width={scaledWidth} height={scaledHeight} className={className} />;
+        if (effectiveCapacity <= 6) return <CircleTable6Person width={scaledWidth} height={scaledHeight} className={className} />;
+        return <CircleTable8Person width={scaledWidth} height={scaledHeight} className={className} />;
 
       case "square":
       case "rectangle":
-        if (effectiveCapacity <= 4) return <div style={dynamicSizeStyle}><SquareTable4PersonCompact width={scaledWidth} height={scaledHeight} className={className} /></div>;
-        if (effectiveCapacity <= 6) return <div style={dynamicSizeStyle}><SquareTable6Person width={scaledWidth} height={scaledHeight} className={className} /></div>;
-        return <div style={dynamicSizeStyle}><SquareTable8Person width={scaledWidth} height={scaledHeight} className={className} /></div>;
+        if (effectiveCapacity <= 4) return <SquareTable4PersonCompact width={scaledWidth} height={scaledHeight} className={className} />;
+        if (effectiveCapacity <= 6) return <SquareTable6Person width={scaledWidth} height={scaledHeight} className={className} />;
+        return <SquareTable8Person width={scaledWidth} height={scaledHeight} className={className} />;
 
       case "long-rectangle":
-        if (effectiveCapacity <= 4) return <div style={dynamicSizeStyle}><SquareTable4PersonCompact width={scaledWidth} height={scaledHeight} className={className} /></div>;
-        if (effectiveCapacity <= 6) return <div style={dynamicSizeStyle}><SquareTable6Person width={scaledWidth} height={scaledHeight} className={className} /></div>;
-        return <div style={dynamicSizeStyle}><SquareTable8Person width={scaledWidth} height={scaledHeight} className={className} /></div>;
+        if (effectiveCapacity <= 4) return <SquareTable4PersonCompact width={scaledWidth} height={scaledHeight} className={className} />;
+        if (effectiveCapacity <= 6) return <SquareTable6Person width={scaledWidth} height={scaledHeight} className={className} />;
+        return <SquareTable8Person width={scaledWidth} height={scaledHeight} className={className} />;
 
       default:
         // Default to round tables
-        if (effectiveCapacity <= 2) return <div style={dynamicSizeStyle}><CircleTable2Person width={scaledWidth} height={scaledHeight} className={className} /></div>;
-        if (effectiveCapacity <= 4) return <div style={dynamicSizeStyle}><CircleTable4Person width={scaledWidth} height={scaledHeight} className={className} /></div>;
-        if (effectiveCapacity <= 6) return <div style={dynamicSizeStyle}><CircleTable6Person width={scaledWidth} height={scaledHeight} className={className} /></div>;
-        return <div style={dynamicSizeStyle}><CircleTable8Person width={scaledWidth} height={scaledHeight} className={className} /></div>;
+        if (effectiveCapacity <= 2) return <CircleTable2Person width={scaledWidth} height={scaledHeight} className={className} />;
+        if (effectiveCapacity <= 4) return <CircleTable4Person width={scaledWidth} height={scaledHeight} className={className} />;
+        if (effectiveCapacity <= 6) return <CircleTable6Person width={scaledWidth} height={scaledHeight} className={className} />;
+        return <CircleTable8Person width={scaledWidth} height={scaledHeight} className={className} />;
     }
   };
 
