@@ -597,10 +597,12 @@ export default function TablePlan() {
                 <Button
                   className="w-full bg-green-600 hover:bg-green-700 text-white"
                   onClick={() => {
-                    /* Handle done */
+                    // Save layout and show success message
+                    saveLayoutMutation.mutate(tablePositions);
                   }}
+                  disabled={saveLayoutMutation.isPending}
                 >
-                  Done
+                  {saveLayoutMutation.isPending ? "Saving..." : "Done"}
                 </Button>
               </div>
 
@@ -609,10 +611,19 @@ export default function TablePlan() {
                   variant="outline"
                   className="w-full text-red-600 border-red-600 hover:bg-red-50"
                   onClick={() => {
-                    /* Handle delete table */
+                    // Clear all positioned tables from floor plan
+                    if (Object.keys(tablePositions).length === 0) {
+                      alert("No tables positioned on the floor plan to delete.");
+                      return;
+                    }
+                    
+                    if (window.confirm("Are you sure you want to remove all tables from the floor plan? This action cannot be undone.")) {
+                      setTablePositions({});
+                    }
                   }}
+                  disabled={Object.keys(tablePositions).length === 0}
                 >
-                  Delete table
+                  Clear All Tables
                 </Button>
               </div>
             </div>
