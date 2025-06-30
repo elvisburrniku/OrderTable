@@ -685,37 +685,59 @@ export default function TablePlan() {
             {/* Unallocated Tables */}
             <div className="mb-6">
               <h3 className="text-sm font-medium text-gray-700 mb-3">
-                Unallocated tables (drag to the white box)
+                Unallocated Tables
               </h3>
-              <div className="flex flex-wrap gap-2 mb-4">
+              <p className="text-xs text-gray-500 mb-3">
+                Drag these tables to the floor plan to position them
+              </p>
+              <div className="grid grid-cols-3 gap-3 mb-4">
                 {tables
                   .filter((table: any) => !tablePositions[table.id])
                   .map((table: any, index: number) => {
-                    const priorityColors = [
-                      "bg-blue-600",
-                      "bg-blue-500",
-                      "bg-gray-600",
-                      "bg-gray-700",
-                      "bg-gray-800",
-                      "bg-slate-600",
-                      "bg-slate-700",
-                    ];
-                    const colorClass =
-                      priorityColors[index % priorityColors.length];
+                    // Determine shape based on capacity for better visual representation
+                    let shape = "circle"; // default
+                    if (table.capacity <= 2) {
+                      shape = index % 2 === 0 ? "square" : "circle";
+                    } else if (table.capacity <= 4) {
+                      shape = index % 3 === 0 ? "square" : index % 3 === 1 ? "circle" : "rectangle";
+                    } else if (table.capacity <= 6) {
+                      shape = "long-rectangle";
+                    } else {
+                      shape = index % 2 === 0 ? "circle" : "long-rectangle";
+                    }
 
                     return (
                       <div
                         key={`unallocated-${table.id}`}
-                        className={`${colorClass} text-white px-3 py-2 rounded cursor-grab hover:opacity-90 transition-opacity text-xs font-medium`}
+                        className="relative bg-white border-2 border-gray-200 rounded-lg p-2 cursor-grab hover:border-blue-400 hover:shadow-md transition-all duration-200 group"
                         draggable
                         onDragStart={(e) => handleDragStart(table.id, e)}
-                        title={`Table ${table.tableNumber} - ${table.capacity} persons`}
+                        title={`Drag Table ${table.tableNumber} (${table.capacity} persons) to floor plan`}
                       >
+                        {/* SVG Table Shape */}
+                        <div className="flex items-center justify-center mb-1">
+                          {getTableSVG(
+                            shape,
+                            table.capacity,
+                            45,
+                            35,
+                            "drop-shadow-sm group-hover:drop-shadow-md transition-all"
+                          )}
+                        </div>
+                        
+                        {/* Table Info */}
                         <div className="text-center">
-                          <div className="font-bold">{table.tableNumber}</div>
-                          <div className="text-[10px] opacity-90">
+                          <div className="font-bold text-xs text-gray-800">
+                            {table.tableNumber}
+                          </div>
+                          <div className="text-[10px] text-gray-500">
                             {table.capacity} pers.
                           </div>
+                        </div>
+
+                        {/* Drag Indicator */}
+                        <div className="absolute top-1 right-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                          <Move className="h-3 w-3 text-gray-400" />
                         </div>
                       </div>
                     );
