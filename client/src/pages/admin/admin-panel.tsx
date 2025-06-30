@@ -7,6 +7,7 @@ import { AdminSubscriptions } from "./admin-subscriptions";
 import { AdminUsers } from "./admin-users";
 import { AdminLogs } from "./admin-logs";
 import { AdminSettings } from "./admin-settings";
+import ShopManagement from "./shop-management";
 import { useToast } from "@/hooks/use-toast";
 
 interface AdminUser {
@@ -99,6 +100,8 @@ export function AdminPanel() {
         return <AdminSubscriptions token={token} />;
       case "users":
         return <AdminUsers token={token} currentUser={currentUser} />;
+      case "shop":
+        return <ShopManagement />;
       case "logs":
         return <AdminLogs token={token} />;
       case "settings":

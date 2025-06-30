@@ -52,6 +52,9 @@ import { activityCleanupService } from "./activity-cleanup-service";
 import { registerAdminRoutes } from "./admin-routes";
 import { systemSettings } from "./system-settings";
 import { SystemSettingsValidator } from "./system-settings-validator";
+import { db } from "./db";
+import { shopCategories, shopProducts, shopOrders } from "../shared/schema";
+import { eq, desc, and } from "drizzle-orm";
 
 const stripe = new Stripe(
   process.env.STRIPE_SECRET_KEY || "sk_test_your_stripe_secret_key",
@@ -17338,6 +17341,100 @@ NEXT STEPS:
     }
 
     res.json({ received: true });
+  });
+
+  // Public Shop API Routes (accessible without authentication)
+  app.get("/api/shop/categories", async (req: Request, res: Response) => {
+    try {
+      const categories = await db.select()
+        .from(shopCategories)
+        .where(eq(shopCategories.isActive, true))
+        .orderBy(shopCategories.sortOrder);
+      res.json(categories);
+    } catch (error) {
+      console.error("Get shop categories error:", error);
+      res.status(500).json({ message: "Failed to fetch categories" });
+    }
+  });
+
+  app.get("/api/shop/products", async (req: Request, res: Response) => {
+    try {
+      const { category, featured, search, limit = 20, offset = 0 } = req.query;
+      let query = db.select().from(shopProducts).where(eq(shopProducts.isActive, true));
+
+      if (category) {
+        query = query.where(eq(shopProducts.categoryId, parseInt(category as string)));
+      }
+      
+      if (featured === 'true') {
+        query = query.where(eq(shopProducts.isFeatured, true));
+      }
+
+      const products = await query
+        .orderBy(desc(shopProducts.isFeatured), shopProducts.sortOrder)
+        .limit(parseInt(limit as string))
+        .offset(parseInt(offset as string));
+
+      res.json(products);
+    } catch (error) {
+      console.error("Get shop products error:", error);
+      res.status(500).json({ message: "Failed to fetch products" });
+    }
+  });
+
+  app.get("/api/shop/products/:slug", async (req: Request, res: Response) => {
+    try {
+      const { slug } = req.params;
+      const [product] = await db.select()
+        .from(shopProducts)
+        .where(and(eq(shopProducts.slug, slug), eq(shopProducts.isActive, true)));
+
+      if (!product) {
+        return res.status(404).json({ message: "Product not found" });
+      }
+
+      res.json(product);
+    } catch (error) {
+      console.error("Get shop product error:", error);
+      res.status(500).json({ message: "Failed to fetch product" });
+    }
+  });
+
+  app.post("/api/shop/orders", async (req: Request, res: Response) => {
+    try {
+      const orderData = req.body;
+      
+      // Generate unique order number
+      const orderNumber = `ORD-${Date.now()}-${Math.random().toString(36).substr(2, 9).toUpperCase()}`;
+      
+      const [order] = await db.insert(shopOrders).values({
+        ...orderData,
+        orderNumber,
+      }).returning();
+
+      // Create Stripe payment intent
+      const paymentIntent = await stripe.paymentIntents.create({
+        amount: Math.round(parseFloat(order.totalAmount) * 100), // Convert to cents
+        currency: order.currency.toLowerCase(),
+        metadata: {
+          orderId: order.id.toString(),
+          orderNumber: order.orderNumber,
+        },
+      });
+
+      // Update order with Stripe payment intent ID
+      await db.update(shopOrders)
+        .set({ stripePaymentIntentId: paymentIntent.id })
+        .where(eq(shopOrders.id, order.id));
+
+      res.json({
+        order: { ...order, stripePaymentIntentId: paymentIntent.id },
+        clientSecret: paymentIntent.client_secret,
+      });
+    } catch (error) {
+      console.error("Create shop order error:", error);
+      res.status(500).json({ message: "Failed to create order" });
+    }
   });
 
   try {

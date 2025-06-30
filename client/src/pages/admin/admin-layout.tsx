@@ -22,7 +22,8 @@ import {
   Menu,
   X,
   Database,
-  FileText
+  FileText,
+  ShoppingBag
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -65,6 +66,12 @@ const navItems: NavItem[] = [
     label: "Admin Users",
     icon: Users,
     description: "Manage admin panel access"
+  },
+  {
+    id: "shop",
+    label: "Shop Management",
+    icon: ShoppingBag,
+    description: "Manage products, categories, and orders"
   },
   {
     id: "logs",

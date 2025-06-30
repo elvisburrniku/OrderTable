@@ -48,6 +48,7 @@ import GuestFeedbackForm from "./pages/guest-feedback-form";
 import OpeningHours from "./pages/opening-hours";
 import Integrations from "./pages/integrations";
 import WidgetIntegration from "./pages/integrations/widget";
+import Shop from "./pages/shop";
 import WidgetDemo from "./pages/widget-demo";
 import ActiveCampaignIntegration from "./pages/integrations/activecampaign";
 import GoogleIntegration from "./pages/google-integration";
@@ -141,6 +142,7 @@ function App() {
             />
             <Route path="/booking-manage/:id" component={BookingManage} />
             <Route path="/accept-invitation" component={AcceptInvitation} />
+            <Route path="/shop" component={Shop} />
 
             {/* Widget demo with auth context */}
             <Route path="/:tenantId/widget-demo">

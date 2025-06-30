@@ -2,6 +2,9 @@ import type { Express, Request, Response, NextFunction } from "express";
 import { adminStorage } from "./admin-storage";
 import { z } from "zod";
 import type { AdminUser } from "../shared/schema";
+import { db } from "./db";
+import { shopCategories, shopProducts, shopOrders, shopSettings } from "../shared/schema";
+import { eq, desc } from "drizzle-orm";
 
 // Extend Request interface to include admin user
 declare global {
@@ -74,6 +77,43 @@ const systemSettingSchema = z.object({
   value: z.string(),
   description: z.string().optional(),
   type: z.enum(["string", "number", "boolean", "json"]).default("string"),
+});
+
+// Shop management schemas
+const createShopCategorySchema = z.object({
+  name: z.string().min(1),
+  description: z.string().optional(),
+  slug: z.string().min(1),
+  imageUrl: z.string().optional(),
+  isActive: z.boolean().default(true),
+  sortOrder: z.number().default(0),
+});
+
+const createShopProductSchema = z.object({
+  name: z.string().min(1),
+  description: z.string().min(1),
+  shortDescription: z.string().optional(),
+  price: z.string(),
+  originalPrice: z.string().optional(),
+  categoryId: z.number().optional(),
+  imageUrl: z.string().optional(),
+  images: z.array(z.string()).default([]),
+  features: z.array(z.string()).default([]),
+  specifications: z.record(z.string()).default({}),
+  tags: z.array(z.string()).default([]),
+  sku: z.string().optional(),
+  isActive: z.boolean().default(true),
+  isFeatured: z.boolean().default(false),
+  inStock: z.boolean().default(true),
+  stockQuantity: z.number().optional(),
+  minQuantity: z.number().default(1),
+  maxQuantity: z.number().optional(),
+  deliveryTime: z.string().optional(),
+  sortOrder: z.number().default(0),
+  seoTitle: z.string().optional(),
+  seoDescription: z.string().optional(),
+  seoKeywords: z.string().optional(),
+  slug: z.string().min(1),
 });
 
 export function registerAdminRoutes(app: Express) {
@@ -522,6 +562,188 @@ export function registerAdminRoutes(app: Express) {
     } catch (error) {
       console.error("Get system logs error:", error);
       res.status(500).json({ message: "Failed to fetch system logs" });
+    }
+  });
+
+  // Shop Categories Management
+  app.get("/api/admin/shop/categories", requireAdminAuth, async (req: Request, res: Response) => {
+    try {
+      const categories = await db.select().from(shopCategories).orderBy(desc(shopCategories.sortOrder));
+      res.json(categories);
+    } catch (error) {
+      console.error("Get shop categories error:", error);
+      res.status(500).json({ message: "Failed to fetch shop categories" });
+    }
+  });
+
+  app.post("/api/admin/shop/categories", requireAdminAuth, async (req: Request, res: Response) => {
+    try {
+      const categoryData = createShopCategorySchema.parse(req.body);
+      const [category] = await db.insert(shopCategories).values(categoryData).returning();
+      
+      await adminStorage.addSystemLog({
+        level: "info",
+        message: `Shop category created: ${category.name}`,
+        data: JSON.stringify(category),
+        source: "admin_panel",
+        adminUserId: req.adminUser!.id,
+      });
+      
+      res.json(category);
+    } catch (error) {
+      console.error("Create shop category error:", error);
+      res.status(500).json({ message: "Failed to create shop category" });
+    }
+  });
+
+  app.put("/api/admin/shop/categories/:id", requireAdminAuth, async (req: Request, res: Response) => {
+    try {
+      const categoryId = parseInt(req.params.id);
+      const categoryData = createShopCategorySchema.partial().parse(req.body);
+      
+      await db.update(shopCategories)
+        .set({ ...categoryData, updatedAt: new Date() })
+        .where(eq(shopCategories.id, categoryId));
+      
+      await adminStorage.addSystemLog({
+        level: "info",
+        message: `Shop category updated: ${categoryId}`,
+        data: JSON.stringify(categoryData),
+        source: "admin_panel",
+        adminUserId: req.adminUser!.id,
+      });
+      
+      res.json({ success: true });
+    } catch (error) {
+      console.error("Update shop category error:", error);
+      res.status(500).json({ message: "Failed to update shop category" });
+    }
+  });
+
+  app.delete("/api/admin/shop/categories/:id", requireAdminAuth, async (req: Request, res: Response) => {
+    try {
+      const categoryId = parseInt(req.params.id);
+      await db.delete(shopCategories).where(eq(shopCategories.id, categoryId));
+      
+      await adminStorage.addSystemLog({
+        level: "info",
+        message: `Shop category deleted: ${categoryId}`,
+        source: "admin_panel",
+        adminUserId: req.adminUser!.id,
+      });
+      
+      res.json({ success: true });
+    } catch (error) {
+      console.error("Delete shop category error:", error);
+      res.status(500).json({ message: "Failed to delete shop category" });
+    }
+  });
+
+  // Shop Products Management
+  app.get("/api/admin/shop/products", requireAdminAuth, async (req: Request, res: Response) => {
+    try {
+      const products = await db.select().from(shopProducts).orderBy(desc(shopProducts.createdAt));
+      res.json(products);
+    } catch (error) {
+      console.error("Get shop products error:", error);
+      res.status(500).json({ message: "Failed to fetch shop products" });
+    }
+  });
+
+  app.post("/api/admin/shop/products", requireAdminAuth, async (req: Request, res: Response) => {
+    try {
+      const productData = createShopProductSchema.parse(req.body);
+      const [product] = await db.insert(shopProducts).values(productData).returning();
+      
+      await adminStorage.addSystemLog({
+        level: "info",
+        message: `Shop product created: ${product.name}`,
+        data: JSON.stringify(product),
+        source: "admin_panel",
+        adminUserId: req.adminUser!.id,
+      });
+      
+      res.json(product);
+    } catch (error) {
+      console.error("Create shop product error:", error);
+      res.status(500).json({ message: "Failed to create shop product" });
+    }
+  });
+
+  app.put("/api/admin/shop/products/:id", requireAdminAuth, async (req: Request, res: Response) => {
+    try {
+      const productId = parseInt(req.params.id);
+      const productData = createShopProductSchema.partial().parse(req.body);
+      
+      await db.update(shopProducts)
+        .set({ ...productData, updatedAt: new Date() })
+        .where(eq(shopProducts.id, productId));
+      
+      await adminStorage.addSystemLog({
+        level: "info",
+        message: `Shop product updated: ${productId}`,
+        data: JSON.stringify(productData),
+        source: "admin_panel",
+        adminUserId: req.adminUser!.id,
+      });
+      
+      res.json({ success: true });
+    } catch (error) {
+      console.error("Update shop product error:", error);
+      res.status(500).json({ message: "Failed to update shop product" });
+    }
+  });
+
+  app.delete("/api/admin/shop/products/:id", requireAdminAuth, async (req: Request, res: Response) => {
+    try {
+      const productId = parseInt(req.params.id);
+      await db.delete(shopProducts).where(eq(shopProducts.id, productId));
+      
+      await adminStorage.addSystemLog({
+        level: "info",
+        message: `Shop product deleted: ${productId}`,
+        source: "admin_panel",
+        adminUserId: req.adminUser!.id,
+      });
+      
+      res.json({ success: true });
+    } catch (error) {
+      console.error("Delete shop product error:", error);
+      res.status(500).json({ message: "Failed to delete shop product" });
+    }
+  });
+
+  // Shop Orders Management
+  app.get("/api/admin/shop/orders", requireAdminAuth, async (req: Request, res: Response) => {
+    try {
+      const orders = await db.select().from(shopOrders).orderBy(desc(shopOrders.createdAt));
+      res.json(orders);
+    } catch (error) {
+      console.error("Get shop orders error:", error);
+      res.status(500).json({ message: "Failed to fetch shop orders" });
+    }
+  });
+
+  app.put("/api/admin/shop/orders/:id/status", requireAdminAuth, async (req: Request, res: Response) => {
+    try {
+      const orderId = parseInt(req.params.id);
+      const { status } = req.body;
+      
+      await db.update(shopOrders)
+        .set({ status, updatedAt: new Date() })
+        .where(eq(shopOrders.id, orderId));
+      
+      await adminStorage.addSystemLog({
+        level: "info",
+        message: `Shop order status updated: ${orderId} -> ${status}`,
+        source: "admin_panel",
+        adminUserId: req.adminUser!.id,
+      });
+      
+      res.json({ success: true });
+    } catch (error) {
+      console.error("Update shop order status error:", error);
+      res.status(500).json({ message: "Failed to update order status" });
     }
   });
 }

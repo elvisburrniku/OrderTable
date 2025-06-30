@@ -1804,3 +1804,115 @@ export type InsertPaymentSetup = InferInsertModel<typeof paymentSetups>;
 
 export const insertPaymentSetupSchema = createInsertSchema(paymentSetups);
 export const selectPaymentSetupSchema = createSelectSchema(paymentSetups);
+
+// Shop System Tables
+export const shopCategories = pgTable("shop_categories", {
+  id: serial("id").primaryKey(),
+  name: text("name").notNull(),
+  description: text("description"),
+  slug: text("slug").notNull().unique(),
+  imageUrl: text("image_url"),
+  isActive: boolean("is_active").default(true),
+  sortOrder: integer("sort_order").default(0),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+export const shopProducts = pgTable("shop_products", {
+  id: serial("id").primaryKey(),
+  name: text("name").notNull(),
+  description: text("description").notNull(),
+  shortDescription: text("short_description"),
+  price: decimal("price", { precision: 10, scale: 2 }).notNull(),
+  originalPrice: decimal("original_price", { precision: 10, scale: 2 }),
+  categoryId: integer("category_id").references(() => shopCategories.id),
+  imageUrl: text("image_url"),
+  images: jsonb("images").default([]), // array of image URLs
+  features: jsonb("features").default([]), // array of feature strings
+  specifications: jsonb("specifications").default({}), // key-value pairs
+  tags: text("tags").array().default([]),
+  sku: text("sku").unique(),
+  isActive: boolean("is_active").default(true),
+  isFeatured: boolean("is_featured").default(false),
+  inStock: boolean("in_stock").default(true),
+  stockQuantity: integer("stock_quantity"),
+  minQuantity: integer("min_quantity").default(1),
+  maxQuantity: integer("max_quantity"),
+  deliveryTime: text("delivery_time"), // e.g., "3-5 business days"
+  sortOrder: integer("sort_order").default(0),
+  seoTitle: text("seo_title"),
+  seoDescription: text("seo_description"),
+  seoKeywords: text("seo_keywords"),
+  slug: text("slug").notNull().unique(),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+export const shopOrders = pgTable("shop_orders", {
+  id: serial("id").primaryKey(),
+  orderNumber: text("order_number").notNull().unique(),
+  customerName: text("customer_name").notNull(),
+  customerEmail: text("customer_email").notNull(),
+  customerPhone: text("customer_phone"),
+  billingAddress: jsonb("billing_address").notNull(),
+  shippingAddress: jsonb("shipping_address"),
+  items: jsonb("items").notNull(), // array of order items
+  subtotal: decimal("subtotal", { precision: 10, scale: 2 }).notNull(),
+  taxAmount: decimal("tax_amount", { precision: 10, scale: 2 }).default("0"),
+  shippingAmount: decimal("shipping_amount", { precision: 10, scale: 2 }).default("0"),
+  totalAmount: decimal("total_amount", { precision: 10, scale: 2 }).notNull(),
+  currency: text("currency").default("USD"),
+  status: varchar("status", { length: 50 }).default("pending"), // pending, confirmed, processing, shipped, delivered, cancelled
+  paymentStatus: varchar("payment_status", { length: 50 }).default("pending"), // pending, paid, failed, refunded
+  paymentMethod: text("payment_method"),
+  stripePaymentIntentId: text("stripe_payment_intent_id"),
+  notes: text("notes"),
+  trackingNumber: text("tracking_number"),
+  shippedAt: timestamp("shipped_at"),
+  deliveredAt: timestamp("delivered_at"),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+export const shopSettings = pgTable("shop_settings", {
+  id: serial("id").primaryKey(),
+  siteName: text("site_name").default("ReadyTable Shop"),
+  siteDescription: text("site_description"),
+  contactEmail: text("contact_email"),
+  contactPhone: text("contact_phone"),
+  address: jsonb("address"),
+  socialMedia: jsonb("social_media").default({}),
+  paymentMethods: jsonb("payment_methods").default([]),
+  shippingMethods: jsonb("shipping_methods").default([]),
+  taxRate: decimal("tax_rate", { precision: 5, scale: 4 }).default("0"),
+  currency: text("currency").default("USD"),
+  emailNotifications: boolean("email_notifications").default(true),
+  maintenanceMode: boolean("maintenance_mode").default(false),
+  seoSettings: jsonb("seo_settings").default({}),
+  analyticsCode: text("analytics_code"),
+  termsOfService: text("terms_of_service"),
+  privacyPolicy: text("privacy_policy"),
+  returnPolicy: text("return_policy"),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+// Types for Shop System
+export type ShopCategory = InferSelectModel<typeof shopCategories>;
+export type InsertShopCategory = InferInsertModel<typeof shopCategories>;
+export type ShopProduct = InferSelectModel<typeof shopProducts>;
+export type InsertShopProduct = InferInsertModel<typeof shopProducts>;
+export type ShopOrder = InferSelectModel<typeof shopOrders>;
+export type InsertShopOrder = InferInsertModel<typeof shopOrders>;
+export type ShopSettings = InferSelectModel<typeof shopSettings>;
+export type InsertShopSettings = InferInsertModel<typeof shopSettings>;
+
+// Schemas for Shop System
+export const insertShopCategorySchema = createInsertSchema(shopCategories);
+export const selectShopCategorySchema = createSelectSchema(shopCategories);
+export const insertShopProductSchema = createInsertSchema(shopProducts);
+export const selectShopProductSchema = createSelectSchema(shopProducts);
+export const insertShopOrderSchema = createInsertSchema(shopOrders);
+export const selectShopOrderSchema = createSelectSchema(shopOrders);
+export const insertShopSettingsSchema = createInsertSchema(shopSettings);
+export const selectShopSettingsSchema = createSelectSchema(shopSettings);
