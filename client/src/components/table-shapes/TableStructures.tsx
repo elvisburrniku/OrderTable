@@ -1,24 +1,33 @@
-import React from 'react';
-import { 
-  SquareTable1Person, 
-  CircleTable1Person, 
-  SquareTable2Person, 
-  CircleTable2Person, 
-  CircleTable3Person, 
-  SquareTable4Person, 
-  SquareTable4PersonCompact, 
-  CircleTable4Person, 
-  CircleTable5Person, 
-  CircleTable6Person, 
-  CircleTable8Person, 
-  SquareTable6Person, 
-  SquareTable8Person 
-} from './TableShapesSVG';
+import React from "react";
+import {
+  SquareTable1Person,
+  CircleTable1Person,
+  SquareTable2Person,
+  CircleTable2Person,
+  CircleTable3Person,
+  SquareTable4Person,
+  SquareTable4PersonCompact,
+  CircleTable4Person,
+  CircleTable5Person,
+  CircleTable6Person,
+  CircleTable8Person,
+  SquareTable6Person,
+  SquareTable8Person,
+} from "./TableShapesSVG";
 
 interface TableStructure {
   id: string;
   name: string;
-  shape: "square" | "circle" | "rectangle" | "oval" | "round" | "octagon" | "hexagon" | "long-rectangle" | "curved";
+  shape:
+    | "square"
+    | "circle"
+    | "rectangle"
+    | "oval"
+    | "round"
+    | "octagon"
+    | "hexagon"
+    | "long-rectangle"
+    | "curved";
   component: React.FC<{ width?: number; height?: number; className?: string }>;
   defaultCapacity: number;
   description: string;
@@ -34,8 +43,8 @@ export const TABLE_STRUCTURES: TableStructure[] = [
     component: SquareTable1Person,
     defaultCapacity: 1,
     description: "1-person square table",
-    width: 50,
-    height: 50,
+    width: 40,
+    height: 40,
   },
   {
     id: "circle-1",
@@ -44,8 +53,8 @@ export const TABLE_STRUCTURES: TableStructure[] = [
     component: CircleTable1Person,
     defaultCapacity: 1,
     description: "1-person round table",
-    width: 50,
-    height: 50,
+    width: 40,
+    height: 40,
   },
   {
     id: "square-2",
@@ -54,8 +63,8 @@ export const TABLE_STRUCTURES: TableStructure[] = [
     component: SquareTable2Person,
     defaultCapacity: 2,
     description: "2-person square table",
-    width: 50,
-    height: 50,
+    width: 40,
+    height: 40,
   },
   {
     id: "circle-2",
@@ -64,8 +73,8 @@ export const TABLE_STRUCTURES: TableStructure[] = [
     component: CircleTable2Person,
     defaultCapacity: 2,
     description: "2-person round table",
-    width: 50,
-    height: 50,
+    width: 40,
+    height: 40,
   },
   {
     id: "circle-3",
@@ -114,8 +123,8 @@ export const TABLE_STRUCTURES: TableStructure[] = [
     component: CircleTable5Person,
     defaultCapacity: 5,
     description: "5-person round table",
-    width: 50,
-    height: 50,
+    width: 60,
+    height: 55,
   },
   {
     id: "circle-6",
@@ -124,8 +133,8 @@ export const TABLE_STRUCTURES: TableStructure[] = [
     component: CircleTable6Person,
     defaultCapacity: 6,
     description: "6-person round table",
-    width: 50,
-    height: 50,
+    width: 65,
+    height: 55,
   },
   {
     id: "square-6",
@@ -134,8 +143,8 @@ export const TABLE_STRUCTURES: TableStructure[] = [
     component: SquareTable6Person,
     defaultCapacity: 6,
     description: "6-person long table",
-    width: 50,
-    height: 50,
+    width: 95,
+    height: 55,
   },
   {
     id: "circle-8",
@@ -144,8 +153,8 @@ export const TABLE_STRUCTURES: TableStructure[] = [
     component: CircleTable8Person,
     defaultCapacity: 8,
     description: "8-person round table",
-    width: 50,
-    height: 50,
+    width: 80,
+    height: 60,
   },
   {
     id: "square-8",
@@ -154,8 +163,8 @@ export const TABLE_STRUCTURES: TableStructure[] = [
     component: SquareTable8Person,
     defaultCapacity: 8,
     description: "8-person long table",
-    width: 50,
-    height: 50,
+    width: 120,
+    height: 60,
   },
   {
     id: "circle-12",
@@ -164,8 +173,8 @@ export const TABLE_STRUCTURES: TableStructure[] = [
     component: CircleTable8Person,
     defaultCapacity: 12,
     description: "12-person round table",
-    width: 50,
-    height: 50,
+    width: 100,
+    height: 70,
   },
   {
     id: "square-12",
@@ -174,25 +183,31 @@ export const TABLE_STRUCTURES: TableStructure[] = [
     component: SquareTable8Person,
     defaultCapacity: 12,
     description: "12-person long table",
-    width: 50,
-    height: 50,
+    width: 150,
+    height: 70,
   },
 ];
 
-export const TableStructurePreview: React.FC<{ structure: TableStructure }> = ({ structure }) => {
+export const TableStructurePreview: React.FC<{ structure: TableStructure }> = ({
+  structure,
+}) => {
   const TableComponent = structure.component;
-  
+
   return (
     <div className="flex items-center justify-center p-2">
-      <TableComponent 
-        width={50} 
-        height={50} 
+      <TableComponent
+        width={50}
+        height={50}
         className="transition-transform hover:scale-110"
       />
     </div>
   );
 };
 
-export const getDraggableTableStructure = (structureId: string): TableStructure | null => {
-  return TABLE_STRUCTURES.find(structure => structure.id === structureId) || null;
+export const getDraggableTableStructure = (
+  structureId: string,
+): TableStructure | null => {
+  return (
+    TABLE_STRUCTURES.find((structure) => structure.id === structureId) || null
+  );
 };
