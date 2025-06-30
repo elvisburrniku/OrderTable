@@ -442,7 +442,14 @@ export default function TablePlan() {
           >
             <div className="text-center">
               <div>{tableNumber}</div>
-              <div className="text-[10px] opacity-90">{capacity}p</div>
+              <div className="text-[10px] opacity-90">
+                {capacity > 12 ? `${capacity}p*` : `${capacity}p`}
+              </div>
+              {capacity > 12 && (
+                <div className="text-[8px] opacity-75">
+                  (12-seat visual)
+                </div>
+              )}
             </div>
           </div>
 
@@ -883,7 +890,6 @@ export default function TablePlan() {
                 value={tableConfig.capacity}
                 onChange={(e) => {
                   const inputCapacity = parseInt(e.target.value) || 1;
-                  // If user enters more than 12, suggest they might need multiple tables
                   setTableConfig((prev) => ({
                     ...prev,
                     capacity: inputCapacity,
@@ -893,8 +899,13 @@ export default function TablePlan() {
               <p className="text-xs text-gray-500 mt-1">
                 Maximum number of guests this table can accommodate
                 {tableConfig.capacity > 12 && (
+                  <span className="text-blue-600 font-medium block">
+                    ℹ️ Tables with {tableConfig.capacity}+ guests will display as 12-person table visual (largest available design)
+                  </span>
+                )}
+                {tableConfig.capacity > 16 && (
                   <span className="text-orange-600 font-medium block">
-                    ⚠️ For {tableConfig.capacity} guests, consider using multiple tables for better service
+                    ⚠️ For {tableConfig.capacity} guests, consider using multiple tables for better service and guest experience
                   </span>
                 )}
               </p>

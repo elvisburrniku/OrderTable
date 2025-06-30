@@ -323,7 +323,8 @@ export const getTableSVG = (shape: string, capacity: number, width: number = 80,
     const standardHeight = 80;
 
     // For very high capacities (12+), use the largest available table
-    // This handles cases where someone enters 15 persons - they get a 12-person table
+    // This handles cases where someone enters 15, 16, or even 20 persons - they all get a 12-person table visual
+    // The actual capacity number will still be stored and displayed correctly
     const effectiveCapacity = Math.min(safeCapacity, 12);
 
     switch (shape) {
