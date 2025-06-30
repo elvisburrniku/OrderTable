@@ -22,12 +22,12 @@ A comprehensive restaurant booking management system with React frontend and Exp
 - Kitchen order management
 
 ## Recent Changes
-- **2025-06-30**: Completed Progressive Web App (PWA) implementation with testing interface enabling mobile app installation
-- **PWA Features**: Web app manifest with proper icons, service worker for offline functionality, install prompts, and update notifications
-- **Mobile Optimization**: Apple touch icons, Microsoft tile configuration, and comprehensive PWA meta tags for all platforms
-- **App Installation**: Users can install ReadyTable on mobile devices with install button prompts and app shortcuts for Dashboard, Bookings, and Kitchen
-- **Offline Support**: Service worker caches critical resources and API responses for offline functionality with network-first strategy
-- **PWA Testing**: Added comprehensive testing interface with status checks, forced install prompts, and service worker verification for debugging
+- **2025-06-30**: Implemented Dynamic Progressive Web App (PWA) system with route-specific installation capabilities
+- **Dynamic PWA Features**: Route-based PWA manifest generation, allowing different PWA configurations for specific screens (Dashboard, Bookings, Kitchen, Floor Plan, Menu)
+- **Smart Installation**: PWA install prompts appear only on designated routes with customized app names, icons, and functionality per screen
+- **Offline-First Strategy**: Enhanced service worker with comprehensive caching strategies for API responses and static resources
+- **Developer Tools**: Dynamic PWA debug interface for testing route-specific PWA configurations and installation flows
+- **Mobile App Experience**: Each major section can be installed as a separate PWA with tailored shortcuts and branding
 - **2025-06-30**: Implemented database-based role redirects system - user redirects after login now use role redirect settings stored in database instead of static configurations
 - **2025-06-30**: Fixed role determination logic in authentication system to properly query tenant_users table with both tenantId and userId filters
 - **2025-06-30**: Implemented unified booking modal component ensuring consistent booking interface across dashboard and bookings pages

@@ -101,8 +101,8 @@ import { SettingsProvider } from "@/contexts/settings-context";
 import { DateProvider } from "@/contexts/date-context";
 import { CurrencyProvider } from "@/contexts/currency-context";
 import { BookingProvider } from "@/contexts/booking-context";
-import { PWAInstallButton } from "@/components/pwa-install-button";
-import { PWATestButton } from "@/components/pwa-test-button";
+import { DynamicPWAInstall } from "@/components/dynamic-pwa-install";
+import { DynamicPWADebug } from "@/components/dynamic-pwa-debug";
 
 function App() {
   return (
@@ -465,8 +465,8 @@ function App() {
             </Route>
           </Switch>
           <Toaster />
-          <PWAInstallButton />
-          <PWATestButton />
+          <DynamicPWAInstall />
+          <DynamicPWADebug />
         </QueryClientProvider>
       </LanguageProvider>
     </ErrorBoundary>
