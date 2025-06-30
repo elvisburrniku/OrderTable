@@ -316,15 +316,158 @@ interface TableShapesSVGProps {
   className?: string;
 }
 
+// Dynamic chair generation component for exact capacity visualization
+const DynamicTableWithChairs: React.FC<{ 
+  capacity: number; 
+  shape: string; 
+  width: number; 
+  height: number; 
+  className: string; 
+}> = ({ capacity, shape, width, height, className }) => {
+  const chairWidth = 16;
+  const chairHeight = 12;
+  const tableSize = Math.min(width * 0.6, height * 0.6); // Table takes 60% of available space
+  const radius = tableSize / 2;
+  const centerX = width / 2;
+  const centerY = height / 2;
+
+  // Calculate chair positions based on shape and capacity
+  const getChairPositions = () => {
+    const positions = [];
+    
+    if (shape === "round" || shape === "circle") {
+      // Circular arrangement
+      for (let i = 0; i < capacity; i++) {
+        const angle = (i * 2 * Math.PI) / capacity - Math.PI / 2; // Start from top
+        const chairDistance = radius + chairHeight + 4;
+        const x = centerX + Math.cos(angle) * chairDistance - chairWidth / 2;
+        const y = centerY + Math.sin(angle) * chairDistance - chairHeight / 2;
+        const rotation = (angle * 180) / Math.PI + 90; // Point chairs toward center
+        positions.push({ x, y, rotation });
+      }
+    } else {
+      // Rectangular arrangement
+      const tableWidth = tableSize * 0.8;
+      const tableHeight = tableSize * 0.6;
+      
+      // Distribute chairs around the perimeter
+      const perimeter = 2 * (tableWidth + tableHeight);
+      const spacing = perimeter / capacity;
+      
+      for (let i = 0; i < capacity; i++) {
+        const distance = i * spacing;
+        let x, y, rotation;
+        
+        if (distance <= tableWidth) {
+          // Top edge
+          x = centerX - tableWidth / 2 + distance - chairWidth / 2;
+          y = centerY - tableHeight / 2 - chairHeight - 4;
+          rotation = 0;
+        } else if (distance <= tableWidth + tableHeight) {
+          // Right edge
+          x = centerX + tableWidth / 2 + 4;
+          y = centerY - tableHeight / 2 + (distance - tableWidth) - chairHeight / 2;
+          rotation = 90;
+        } else if (distance <= 2 * tableWidth + tableHeight) {
+          // Bottom edge
+          x = centerX + tableWidth / 2 - (distance - tableWidth - tableHeight) - chairWidth / 2;
+          y = centerY + tableHeight / 2 + 4;
+          rotation = 180;
+        } else {
+          // Left edge
+          x = centerX - tableWidth / 2 - chairWidth - 4;
+          y = centerY + tableHeight / 2 - (distance - 2 * tableWidth - tableHeight) - chairHeight / 2;
+          rotation = 270;
+        }
+        
+        positions.push({ x, y, rotation });
+      }
+    }
+    
+    return positions;
+  };
+
+  const chairPositions = getChairPositions();
+
+  return (
+    <svg 
+      preserveAspectRatio="xMidYMid" 
+      viewBox={`0 0 ${width} ${height}`}
+      style={{ width: `${width}px`, height: `${height}px` }}
+      className={className}
+    >
+      <defs>
+        <style>
+          {`.table-surface { fill: #6b7280; stroke: #374151; stroke-width: 2; }
+           .chair { fill: #8b4513; stroke: #654321; stroke-width: 1; }
+           .chair:hover { fill: #a0522d; transform: scale(1.1); }`}
+        </style>
+      </defs>
+      
+      {/* Table surface */}
+      {shape === "round" || shape === "circle" ? (
+        <circle 
+          cx={centerX} 
+          cy={centerY} 
+          r={radius} 
+          className="table-surface"
+        />
+      ) : (
+        <rect 
+          x={centerX - tableSize * 0.4} 
+          y={centerY - tableSize * 0.3} 
+          width={tableSize * 0.8} 
+          height={tableSize * 0.6} 
+          rx={8}
+          className="table-surface"
+        />
+      )}
+      
+      {/* Chairs */}
+      {chairPositions.map((pos, index) => (
+        <g key={index} transform={`translate(${pos.x}, ${pos.y}) rotate(${pos.rotation}, ${chairWidth/2}, ${chairHeight/2})`}>
+          <rect 
+            width={chairWidth} 
+            height={chairHeight} 
+            rx={2}
+            className="chair"
+          />
+          {/* Chair back */}
+          <rect 
+            x={chairWidth * 0.1} 
+            y={-3} 
+            width={chairWidth * 0.8} 
+            height={3} 
+            rx={1}
+            className="chair"
+          />
+        </g>
+      ))}
+    </svg>
+  );
+};
+
 export const getTableSVG = (shape: string, capacity: number, width: number = 80, height: number = 80, className: string = "") => {
     // Safety check for capacity and ensure consistent sizing
     const safeCapacity = capacity || 4;
     const standardWidth = 80;
     const standardHeight = 80;
 
-    // For very high capacities (12+), use the largest available table
-    // This handles cases where someone enters 15, 16, or even 20 persons - they all get a 12-person table visual
-    // The actual capacity number will still be stored and displayed correctly
+    // For capacities 1-16, show exact chair count
+    if (safeCapacity <= 16) {
+      return (
+        <DynamicTableWithChairs 
+          capacity={safeCapacity}
+          shape={shape}
+          width={standardWidth}
+          height={standardHeight}
+          className={className}
+        />
+      );
+    }
+
+    // For very high capacities (17+), use the largest available predefined template
+    // This handles cases where someone enters 20+ persons - they get an 8-person visual template
     const effectiveCapacity = Math.min(safeCapacity, 12);
 
     switch (shape) {

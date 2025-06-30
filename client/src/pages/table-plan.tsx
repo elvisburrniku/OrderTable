@@ -443,11 +443,11 @@ export default function TablePlan() {
             <div className="text-center">
               <div>{tableNumber}</div>
               <div className="text-[10px] opacity-90">
-                {capacity > 12 ? `${capacity}p*` : `${capacity}p`}
+                {capacity <= 16 ? `${capacity}p` : `${capacity}p*`}
               </div>
-              {capacity > 12 && (
+              {capacity > 16 && (
                 <div className="text-[8px] opacity-75">
-                  (12-seat visual)
+                  (template visual)
                 </div>
               )}
             </div>
@@ -898,12 +898,17 @@ export default function TablePlan() {
               />
               <p className="text-xs text-gray-500 mt-1">
                 Maximum number of guests this table can accommodate
-                {tableConfig.capacity > 12 && (
-                  <span className="text-blue-600 font-medium block">
-                    ℹ️ Tables with {tableConfig.capacity}+ guests will display as 12-person table visual (largest available design)
+                {tableConfig.capacity <= 16 && (
+                  <span className="text-green-600 font-medium block">
+                    ✓ Table will show {tableConfig.capacity} individual chairs around the table
                   </span>
                 )}
                 {tableConfig.capacity > 16 && (
+                  <span className="text-blue-600 font-medium block">
+                    ℹ️ Tables with 17+ guests will use template visual (exact capacity still tracked)
+                  </span>
+                )}
+                {tableConfig.capacity > 20 && (
                   <span className="text-orange-600 font-medium block">
                     ⚠️ For {tableConfig.capacity} guests, consider using multiple tables for better service and guest experience
                   </span>
