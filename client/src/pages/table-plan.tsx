@@ -28,6 +28,7 @@ import {
   Circle,
   Users,
 } from "lucide-react";
+import { TABLE_STRUCTURES, TableStructurePreview, getDraggableTableStructure } from "@/components/table-shapes/TableStructures";
 
 interface TablePosition {
   id: number;
@@ -40,126 +41,10 @@ interface TablePosition {
   isConfigured?: boolean;
 }
 
-interface TableStructure {
-  id: string;
-  name: string;
-  shape: "square" | "circle" | "rectangle" | "oval" | "round" | "octagon" | "hexagon" | "long-rectangle" | "curved";
-  icon: any;
-  defaultCapacity: number;
-  description: string;
-}
-
 const TABLE_SHAPES = [
   { value: "square", label: "Square" },
   { value: "circle", label: "Circle" },
   { value: "rectangle", label: "Rectangle" },
-];
-
-const TABLE_STRUCTURES: TableStructure[] = [
-  {
-    id: "square-2",
-    name: "Square 2",
-    shape: "square",
-    icon: Square,
-    defaultCapacity: 2,
-    description: "2-person square table",
-  },
-  {
-    id: "circle-2",
-    name: "Round 2",
-    shape: "circle",
-    icon: Circle,
-    defaultCapacity: 2,
-    description: "2-person round table",
-  },
-  {
-    id: "square-4",
-    name: "Square 4",
-    shape: "square",
-    icon: Square,
-    defaultCapacity: 4,
-    description: "4-person square table",
-  },
-  {
-    id: "circle-4",
-    name: "Round 4",
-    shape: "round",
-    icon: Circle,
-    defaultCapacity: 4,
-    description: "4-person round table",
-  },
-  {
-    id: "circle-6",
-    name: "Round 6",
-    shape: "round",
-    icon: Circle,
-    defaultCapacity: 6,
-    description: "6-person round table",
-  },
-  {
-    id: "curved-6",
-    name: "Curved 6",
-    shape: "curved",
-    icon: Circle,
-    defaultCapacity: 6,
-    description: "6-person curved table",
-  },
-  {
-    id: "curved-8",
-    name: "Curved 8",
-    shape: "curved",
-    icon: Circle,
-    defaultCapacity: 8,
-    description: "8-person curved table",
-  },
-  {
-    id: "octagon-8",
-    name: "Octagon 8",
-    shape: "octagon",
-    icon: Circle,
-    defaultCapacity: 8,
-    description: "8-person octagon table",
-  },
-  {
-    id: "circle-10",
-    name: "Round 10",
-    shape: "round",
-    icon: Circle,
-    defaultCapacity: 10,
-    description: "10-person round table",
-  },
-  {
-    id: "circle-12",
-    name: "Round 12",
-    shape: "round",
-    icon: Circle,
-    defaultCapacity: 12,
-    description: "12-person round table",
-  },
-  {
-    id: "circle-16",
-    name: "Round 16",
-    shape: "round",
-    icon: Circle,
-    defaultCapacity: 16,
-    description: "16-person round table",
-  },
-  {
-    id: "long-rect-8",
-    name: "Long 8",
-    shape: "long-rectangle",
-    icon: Square,
-    defaultCapacity: 8,
-    description: "8-person long table",
-  },
-  {
-    id: "long-rect-12",
-    name: "Long 12",
-    shape: "long-rectangle",
-    icon: Square,
-    defaultCapacity: 12,
-    description: "12-person long table",
-  },
 ];
 
 export default function TablePlan() {
@@ -503,71 +388,142 @@ export default function TablePlan() {
     return null;
   }
 
-  // Professional table rendering with chairs
-  const TableWithChairs = ({ position, tableId, table }: { position: TablePosition, tableId: number, table: any }) => {
-    const shape = position.shape || 'square';
+  // Professional SVG table rendering component
+  const SVGTableRenderer = ({ position, tableId, table }: { position: TablePosition, tableId: number, table: any }) => {
     const capacity = position.capacity || table?.capacity || 4;
     const tableNumber = position.tableNumber || table?.tableNumber || tableId;
+    const shape = position.shape || 'square';
 
-    // Table dimensions based on shape and capacity (made smaller)
-    const getTableDimensions = () => {
-      switch (shape) {
-        case 'square':
-          return { width: capacity <= 2 ? 40 : capacity <= 4 ? 50 : 60, height: capacity <= 2 ? 40 : capacity <= 4 ? 50 : 60 };
-        case 'circle':
-        case 'round':
-          return { width: capacity <= 2 ? 40 : capacity <= 4 ? 50 : capacity <= 8 ? 70 : capacity <= 12 ? 80 : 90, height: capacity <= 2 ? 40 : capacity <= 4 ? 50 : capacity <= 8 ? 70 : capacity <= 12 ? 80 : 90 };
-        case 'octagon':
-          return { width: 70, height: 70 };
-        case 'curved':
-          return { width: capacity <= 6 ? 60 : 80, height: capacity <= 6 ? 50 : 60 };
-        case 'long-rectangle':
-          return { width: capacity <= 8 ? 80 : 100, height: 50 };
-        default:
-          return { width: 50, height: 50 };
+    // Find the matching table structure to get the SVG component
+    const getTableComponent = () => {
+      // Map current shape/capacity to our new table structures
+      if (shape === 'square' || shape === 'rectangle') {
+        if (capacity === 1) return TABLE_STRUCTURES.find(s => s.id === 'square-1');
+        if (capacity === 2) return TABLE_STRUCTURES.find(s => s.id === 'square-2');
+        if (capacity === 4) return TABLE_STRUCTURES.find(s => s.id === 'square-4');
+        if (capacity === 6) return TABLE_STRUCTURES.find(s => s.id === 'square-6');
+        if (capacity >= 8) return TABLE_STRUCTURES.find(s => s.id === 'square-8');
+      } else if (shape === 'circle' || shape === 'round') {
+        if (capacity === 1) return TABLE_STRUCTURES.find(s => s.id === 'circle-1');
+        if (capacity === 2) return TABLE_STRUCTURES.find(s => s.id === 'circle-2');
+        if (capacity === 3) return TABLE_STRUCTURES.find(s => s.id === 'circle-3');
+        if (capacity === 4) return TABLE_STRUCTURES.find(s => s.id === 'circle-4');
+        if (capacity === 5) return TABLE_STRUCTURES.find(s => s.id === 'circle-5');
+        if (capacity === 6) return TABLE_STRUCTURES.find(s => s.id === 'circle-6');
+        if (capacity >= 8) return TABLE_STRUCTURES.find(s => s.id === 'circle-8');
+      } else if (shape === 'long-rectangle') {
+        if (capacity <= 6) return TABLE_STRUCTURES.find(s => s.id === 'square-6');
+        return TABLE_STRUCTURES.find(s => s.id === 'square-8');
       }
+      
+      // Default fallback
+      return TABLE_STRUCTURES.find(s => s.id === 'square-4') || TABLE_STRUCTURES[0];
     };
 
-    const { width: tableWidth, height: tableHeight } = getTableDimensions();
+    const tableStructure = getTableComponent();
+    if (!tableStructure) return null;
 
-    // Table styling based on shape
-    const getTableStyle = () => {
-      const baseStyle = {
-        position: 'absolute' as const,
-        left: `${position.x}px`,
-        top: `${position.y}px`,
-        width: `${tableWidth}px`,
-        height: `${tableHeight}px`,
-        backgroundColor: '#4a5568',
-        border: '3px solid #2d3748',
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-        fontSize: '14px',
-        fontWeight: 'bold',
-        color: '#fff',
-        cursor: 'pointer',
-        userSelect: 'none' as const,
-        zIndex: 10,
-        boxShadow: '0 8px 16px rgba(0, 0, 0, 0.2), inset 0 1px 0 rgba(255, 255, 255, 0.1)',
-        transform: `rotate(${position.rotation || 0}deg)`,
-        transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
-      };
+    const TableSVGComponent = tableStructure.component;
+    const tableWidth = tableStructure.width;
+    const tableHeight = tableStructure.height;
 
-      switch (shape) {
-        case 'circle':
-        case 'round':
-          return { ...baseStyle, borderRadius: '50%' };
-        case 'octagon':
-          return { ...baseStyle, clipPath: 'polygon(30% 0%, 70% 0%, 100% 30%, 100% 70%, 70% 100%, 30% 100%, 0% 70%, 0% 30%)' };
-        case 'curved':
-          return { ...baseStyle, borderRadius: '50px 50px 20px 20px' };
-        case 'long-rectangle':
-          return { ...baseStyle, borderRadius: '12px' };
-        default:
-          return { ...baseStyle, borderRadius: '8px' };
-      }
-    };
+    return (
+      <div
+        style={{
+          position: 'absolute',
+          left: `${position.x}px`,
+          top: `${position.y}px`,
+          transform: `rotate(${position.rotation || 0}deg)`,
+          transformOrigin: 'center',
+          cursor: isDragging ? 'grabbing' : 'grab',
+          zIndex: draggedTable === tableId ? 1000 : 10,
+          transition: 'transform 0.2s ease, box-shadow 0.2s ease',
+        }}
+        draggable
+        onDragStart={(e) => {
+          setDraggedTable(tableId);
+          setIsDragging(true);
+          e.dataTransfer.effectAllowed = "move";
+        }}
+        onDrag={() => {}}
+        onDragEnd={() => {
+          setDraggedTable(null);
+          setIsDragging(false);
+        }}
+        onMouseDown={(e) => e.preventDefault()}
+      >
+        {/* SVG Table with professional design */}
+        <div className="relative group">
+          <TableSVGComponent 
+            width={tableWidth} 
+            height={tableHeight}
+            className="drop-shadow-lg hover:drop-shadow-xl transition-all"
+          />
+          
+          {/* Table number overlay */}
+          <div
+            style={{
+              position: 'absolute',
+              top: '50%',
+              left: '50%',
+              transform: 'translate(-50%, -50%)',
+              color: '#fff',
+              fontSize: '12px',
+              fontWeight: 'bold',
+              textShadow: '1px 1px 2px rgba(0,0,0,0.8)',
+              pointerEvents: 'none',
+              zIndex: 15,
+            }}
+          >
+            {tableNumber}
+          </div>
+
+          {/* Remove button */}
+          <button
+            onClick={(e) => {
+              e.stopPropagation();
+              setTablePositions((prev) => {
+                const newPositions = { ...prev };
+                delete newPositions[tableId];
+                return newPositions;
+              });
+            }}
+            style={{
+              position: 'absolute',
+              top: '-8px',
+              right: '-8px',
+              width: '20px',
+              height: '20px',
+              borderRadius: '50%',
+              backgroundColor: '#ef4444',
+              color: 'white',
+              border: 'none',
+              fontSize: '12px',
+              fontWeight: 'bold',
+              cursor: 'pointer',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              opacity: 0,
+              transition: 'all 0.2s ease',
+              zIndex: 20,
+            }}
+            className="group-hover:opacity-100"
+            onMouseEnter={(e) => {
+              e.currentTarget.style.backgroundColor = '#dc2626';
+              e.currentTarget.style.transform = 'scale(1.1)';
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.backgroundColor = '#ef4444';
+              e.currentTarget.style.transform = 'scale(1)';
+            }}
+            title="Remove table from plan"
+          >
+            ×
+          </button>
+        </div>
+      </div>
+    );
 
     // Chair positioning with even spacing and rotation support
     const getChairPositions = () => {
@@ -831,119 +787,7 @@ export default function TablePlan() {
     );
   };
 
-  // Professional table structure preview component
-  const TableStructurePreview = ({ structure }: { structure: TableStructure }) => {
-    const getPreviewStyle = () => {
-      const baseStyle = {
-        width: structure.shape === "long-rectangle" ? "80px" : "60px",
-        height: structure.shape === "long-rectangle" ? "40px" : "60px",
-        backgroundColor: "#4a5568",
-        border: "2px solid #2d3748",
-        display: "flex",
-        alignItems: "center",
-        justifyContent: "center",
-        cursor: "grab",
-        color: "white",
-        fontSize: "10px",
-        fontWeight: "bold",
-        userSelect: "none" as const,
-        position: "relative" as const,
-        margin: "8px auto",
-        boxShadow: "0 4px 8px rgba(0, 0, 0, 0.2)",
-        transition: "all 0.2s ease",
-      };
 
-      switch (structure.shape) {
-        case 'circle':
-        case 'round':
-          return { ...baseStyle, borderRadius: '50%' };
-        case 'octagon':
-          return { ...baseStyle, clipPath: 'polygon(30% 0%, 70% 0%, 100% 30%, 100% 70%, 70% 100%, 30% 100%, 0% 70%, 0% 30%)' };
-        case 'curved':
-          return { ...baseStyle, borderRadius: '30px 30px 8px 8px' };
-        case 'long-rectangle':
-          return { ...baseStyle, borderRadius: '8px' };
-        default:
-          return { ...baseStyle, borderRadius: '6px' };
-      }
-    };
-
-    // Mini chairs for preview
-    const getMiniChairs = () => {
-      const chairs = [];
-      const capacity = structure.defaultCapacity;
-      const centerX = 30;
-      const centerY = 30;
-
-      if (structure.shape === 'long-rectangle') {
-        // Simplified chair layout for preview
-        for (let i = 0; i < Math.min(4, capacity); i++) {
-          chairs.push(
-            <div
-              key={i}
-              style={{
-                position: 'absolute',
-                width: '4px',
-                height: '6px',
-                backgroundColor: '#8b4513',
-                borderRadius: '1px',
-                left: `${10 + i * 15}px`,
-                top: structure.shape === "long-rectangle" ? '-8px' : `${5 + i * 12}px`,
-              }}
-            />
-          );
-        }
-      } else {
-        // Circular preview chairs
-        const radius = structure.shape === 'circle' || structure.shape === 'round' ? 35 : 32;
-        for (let i = 0; i < Math.min(6, capacity); i++) {
-          const angle = (i * 2 * Math.PI) / Math.min(6, capacity);
-          chairs.push(
-            <div
-              key={i}
-              style={{
-                position: 'absolute',
-                width: '4px',
-                height: '6px',
-                backgroundColor: '#8b4513',
-                borderRadius: '1px',
-                left: `${centerX + radius * Math.cos(angle) - 2}px`,
-                top: `${centerY + radius * Math.sin(angle) - 3}px`,
-              }}
-            />
-          );
-        }
-      }
-      return chairs;
-    };
-
-    return (
-      <div
-        style={{ position: 'relative', width: '100px', height: '80px' }}
-        draggable
-        onDragStart={(e) => handleStructureDragStart(structure, e)}
-        onMouseEnter={(e) => {
-          const target = e.currentTarget.querySelector('.table-preview') as HTMLElement;
-          if (target) {
-            target.style.transform = 'scale(1.1)';
-            target.style.boxShadow = '0 6px 12px rgba(0, 0, 0, 0.3)';
-          }
-        }}
-        onMouseLeave={(e) => {
-          const target = e.currentTarget.querySelector('.table-preview') as HTMLElement;
-          if (target) {
-            target.style.transform = 'scale(1)';
-            target.style.boxShadow = '0 4px 8px rgba(0, 0, 0, 0.2)';
-          }
-        }}
-      >
-        {getMiniChairs()}
-        <div className="table-preview" style={getPreviewStyle()}>
-          {structure.defaultCapacity}
-        </div>
-      </div>
-    );
-  };
 
   // Table styling based on shape
   const getTableStyle = (table: any) => {
