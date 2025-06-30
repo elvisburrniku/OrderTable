@@ -400,8 +400,8 @@ export default function TablePlan() {
     const shape = position.shape || 'square';
 
     // Standardized table size for consistency - ALL TABLES SAME SIZE
-    const tableWidth = 100;
-    const tableHeight = 100;
+    const tableWidth = 50;
+    const tableHeight = 50;
 
     return (
       <div

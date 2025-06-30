@@ -316,12 +316,12 @@ interface TableShapesSVGProps {
   className?: string;
 }
 
-export const getTableSVG = (shape: string, capacity: number, width: number = 80, height: number = 80, className: string = "") => {
+export const getTableSVG = (shape: string, capacity: number, width: number = 50, height: number = 50, className: string = "") => {
     // Safety check for capacity and ensure consistent sizing
     const safeCapacity = capacity || 4;
-    // ALL TABLES USE THE SAME SIZE - 100x100 for perfect consistency
-    const standardWidth = 100;
-    const standardHeight = 100;
+    // ALL TABLES USE THE SAME SIZE - 50x50 for perfect consistency
+    const standardWidth = 50;
+    const standardHeight = 50;
 
     // For very high capacities (12+), use the largest available table
     // This handles cases where someone enters 15, 16, or even 20 persons - they all get a 12-person table visual
@@ -330,12 +330,13 @@ export const getTableSVG = (shape: string, capacity: number, width: number = 80,
 
     // Force all tables to render at exactly the same size with CSS override
     const forceEqualSizeStyle = {
-      width: `${standardWidth}px !important`,
-      height: `${standardHeight}px !important`,
+      width: `${standardWidth}px`,
+      height: `${standardHeight}px`,
       minWidth: `${standardWidth}px`,
       minHeight: `${standardHeight}px`,
       maxWidth: `${standardWidth}px`,
       maxHeight: `${standardHeight}px`,
+      display: 'block',
     };
 
     switch (shape) {
@@ -348,12 +349,12 @@ export const getTableSVG = (shape: string, capacity: number, width: number = 80,
 
       case "square":
       case "rectangle":
-        if (effectiveCapacity <= 4) return <div style={forceEqualSizeStyle}><SquareTable4Person width={standardWidth} height={standardHeight} className={className} /></div>;
+        if (effectiveCapacity <= 4) return <div style={forceEqualSizeStyle}><SquareTable4PersonCompact width={standardWidth} height={standardHeight} className={className} /></div>;
         if (effectiveCapacity <= 6) return <div style={forceEqualSizeStyle}><SquareTable6Person width={standardWidth} height={standardHeight} className={className} /></div>;
         return <div style={forceEqualSizeStyle}><SquareTable8Person width={standardWidth} height={standardHeight} className={className} /></div>;
 
       case "long-rectangle":
-        if (effectiveCapacity <= 4) return <div style={forceEqualSizeStyle}><SquareTable4Person width={standardWidth} height={standardHeight} className={className} /></div>;
+        if (effectiveCapacity <= 4) return <div style={forceEqualSizeStyle}><SquareTable4PersonCompact width={standardWidth} height={standardHeight} className={className} /></div>;
         if (effectiveCapacity <= 6) return <div style={forceEqualSizeStyle}><SquareTable6Person width={standardWidth} height={standardHeight} className={className} /></div>;
         return <div style={forceEqualSizeStyle}><SquareTable8Person width={standardWidth} height={standardHeight} className={className} /></div>;
 

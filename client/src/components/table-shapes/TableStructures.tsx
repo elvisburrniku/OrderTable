@@ -185,8 +185,8 @@ export const TableStructurePreview: React.FC<{ structure: TableStructure }> = ({
   return (
     <div className="flex items-center justify-center p-2">
       <TableComponent 
-        width={Math.min(structure.width * 0.6, 50)} 
-        height={Math.min(structure.height * 0.6, 50)} 
+        width={50} 
+        height={50} 
         className="transition-transform hover:scale-110"
       />
     </div>
