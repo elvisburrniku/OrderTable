@@ -564,42 +564,7 @@ export default function TablePlan() {
               </Select>
             </div>
 
-            {/* Available Tables */}
-            <div className="mb-6">
-              <h3 className="text-sm font-medium text-gray-700 mb-3">
-                Existing Tables
-              </h3>
-              <div className="space-y-2 max-h-60 overflow-y-auto">
-                {tables.map((table: any) => (
-                  <div
-                    key={`table-${table.id}`}
-                    className="p-2 border rounded-lg hover:bg-gray-50"
-                  >
-                    <div className="flex items-center justify-between">
-                      <div>
-                        <div className="font-medium text-sm">
-                          Table {table.tableNumber}
-                        </div>
-                        <div className="text-xs text-gray-500 flex items-center">
-                          <Users className="h-3 w-3 mr-1" />
-                          {table.capacity}
-                        </div>
-                      </div>
-                      <div
-                        draggable
-                        onDragStart={(e) => handleDragStart(table.id, e)}
-                        style={{ cursor: "grab" }}
-                        title={`Drag to place Table ${table.tableNumber}`}
-                      >
-                        {table.tableNumber}
-                      </div>
-                    </div>
 
-
-                  </div>
-                ))}
-              </div>
-            </div>
 
             {/* Professional Table Structures */}
             <div className="mb-6">
