@@ -468,6 +468,46 @@ export default function TablePlan() {
             }
           }, 50);
         }}
+        onDragOver={(e) => {
+          // Allow drop on other tables by preventing default
+          if (draggedTable !== null && draggedTable !== tableId) {
+            e.preventDefault();
+            e.stopPropagation();
+            e.dataTransfer.dropEffect = "move";
+          }
+        }}
+        onDrop={(e) => {
+          // Handle drop on this table - swap positions
+          if (draggedTable !== null && draggedTable !== tableId) {
+            e.preventDefault();
+            e.stopPropagation();
+            console.log(`Swapping positions: table ${draggedTable} with table ${tableId}`);
+            
+            const sourcePosition = tablePositions[draggedTable];
+            const targetPosition = position;
+            
+            if (sourcePosition && targetPosition) {
+              // Swap the positions of the two tables
+              setTablePositions((prev) => ({
+                ...prev,
+                [draggedTable]: {
+                  ...prev[draggedTable],
+                  x: targetPosition.x,
+                  y: targetPosition.y,
+                },
+                [tableId]: {
+                  ...prev[tableId],
+                  x: sourcePosition.x,
+                  y: sourcePosition.y,
+                }
+              }));
+              
+              setDraggedTable(null);
+              setDraggedStructure(null);
+              setIsDragging(false);
+            }
+          }
+        }}
         onClick={(e) => {
           e.preventDefault();
           e.stopPropagation();
