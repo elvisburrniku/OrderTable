@@ -1,4 +1,4 @@
-const CACHE_NAME = 'readytable-v5';
+const CACHE_NAME = 'readytable-v6';
 const OFFLINE_URL = '/offline.html';
 
 // Essential files for PWA installability and offline functionality
@@ -7,9 +7,7 @@ const urlsToCache = [
   '/manifest.json',
   '/offline.html',
   '/icons/icon-192x192.png',
-  '/icons/icon-512x512.png',
-  '/icons/icon-144x144.png',
-  '/icons/icon-384x384.png'
+  '/icons/icon-512x512.png'
 ];
 
 // Install event
