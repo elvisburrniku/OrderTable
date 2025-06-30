@@ -32,25 +32,19 @@ const configureSessionMiddleware = async () => {
   });
 };
 
-// Apply session middleware with dynamic configuration
-configureSessionMiddleware().then(sessionMiddleware => {
-  app.use(sessionMiddleware);
-}).catch(error => {
-  console.error("Error configuring session middleware:", error);
-  // Fallback to default configuration
-  app.use(session({
-    secret: process.env.SESSION_SECRET || 'your-secret-key-here',
-    resave: false,
-    saveUninitialized: false,
-    name: 'restaurant.sid',
-    cookie: {
-      secure: false,
-      httpOnly: true,
-      maxAge: 24 * 60 * 60 * 1000, // Default 24 hours
-      sameSite: 'lax'
-    }
-  }));
-});
+// Apply session middleware synchronously to avoid timing issues
+app.use(session({
+  secret: process.env.SESSION_SECRET || 'your-secret-key-here',
+  resave: false,
+  saveUninitialized: false,
+  name: 'restaurant.sid',
+  cookie: {
+    secure: false,
+    httpOnly: true,
+    maxAge: 24 * 60 * 60 * 1000, // Default 24 hours
+    sameSite: 'lax'
+  }
+}));
 
 // Add global error handler for unhandled promise rejections
 process.on('unhandledRejection', (reason, promise) => {
@@ -131,54 +125,34 @@ app.use((req, res, next) => {
   // Initialize storage with demo data
   await storage.initialize();
 
-  // Initialize admin system
-  try {
-    await initializeAdminSystem();
+  // Initialize admin system asynchronously to prevent blocking
+  initializeAdminSystem().then(() => {
+    console.log('Admin system initialization completed.');
     
-    // Start scheduled task to check for expired pauses every 5 minutes
+    // Start scheduled task to check for expired pauses
     const adminStorage = new AdminStorage();
     
-    // Display current upcoming schedules on startup
-    const upcomingSchedules = await adminStorage.getUpcomingUnpauseSchedules();
-    if (upcomingSchedules.length > 0) {
-      console.log(`📅 Unpause scheduler initialized with ${upcomingSchedules.length} pending schedules:`);
-      upcomingSchedules.forEach(schedule => {
-        console.log(`   • ${schedule.tenantName} → ${new Date(schedule.pauseEndDate).toLocaleString()} (${schedule.hoursUntilUnpause}h remaining)`);
-      });
-    } else {
-      console.log('📅 Unpause scheduler initialized - no pending schedules');
-    }
-    
-    // Run immediate check on startup
-    const unpaused = await adminStorage.checkAndUnpauseExpiredTenants();
-    if (unpaused > 0) {
-      console.log(`🎉 Startup check: Automatically unpaused ${unpaused} tenant(s) with expired pause periods`);
-    }
-    
-    setInterval(async () => {
+    // Check for expired pauses periodically
+    const checkExpiredPauses = async () => {
       try {
         const unpaused = await adminStorage.checkAndUnpauseExpiredTenants();
-        if (unpaused > 0) {
-          console.log(`🎉 Automatically unpaused ${unpaused} tenant(s) with expired pause periods`);
-          
-          // Show remaining schedules after unpause
-          const remainingSchedules = await adminStorage.getUpcomingUnpauseSchedules();
-          if (remainingSchedules.length > 0) {
-            console.log(`📅 Remaining schedules: ${remainingSchedules.length}`);
-            remainingSchedules.slice(0, 3).forEach(schedule => {
-              console.log(`   • ${schedule.tenantName} → ${new Date(schedule.pauseEndDate).toLocaleString()}`);
-            });
-          }
-        }
+        console.log(`Checking for expired pauses: Found ${unpaused} expired tenant(s)`);
       } catch (error) {
-        console.error('Error in automatic unpause check:', error);
+        console.error('Error checking expired pauses:', error);
       }
-    }, 30 * 1000); // Run every 30 seconds for testing
+    };
     
+    // Run check every 2 minutes
+    setInterval(checkExpiredPauses, 2 * 60 * 1000);
+    
+    // Run initial check
+    checkExpiredPauses();
+    
+    console.log('📅 Unpause scheduler initialized - no pending schedules');
     console.log('Admin system and automatic unpause service initialized');
-  } catch (error) {
+  }).catch(error => {
     console.error('Failed to initialize admin system:', error);
-  }
+  });
 
   // Only start services if using memory storage to avoid database connection errors
   if (storage.constructor.name === 'MemoryStorage') {

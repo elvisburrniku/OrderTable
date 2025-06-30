@@ -50,10 +50,10 @@ interface Room {
 export default function Rooms() {
   const { user, restaurant } = useAuth();
   const queryClient = useQueryClient();
-  
+
   // Auto scroll to top when page loads
   useScrollToTop();
-  
+
   const [rooms, setRooms] = useState<Room[]>([]);
   const [originalRooms, setOriginalRooms] = useState<Room[]>([]);
   const [searchTerm, setSearchTerm] = useState("");
@@ -63,6 +63,8 @@ export default function Rooms() {
   const [itemsPerPage, setItemsPerPage] = useState(6);
   const [isNewRoomOpen, setIsNewRoomOpen] = useState(false);
   const [editingRoom, setEditingRoom] = useState<Room | null>(null);
+  const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
+  const [roomToDelete, setRoomToDelete] = useState<Room | null>(null);
   const [newRoom, setNewRoom] = useState({
     name: "",
     priority: "Medium"
@@ -101,6 +103,17 @@ export default function Rooms() {
     onSuccess: () => {
       queryClient.invalidateQueries({ 
         queryKey: ["/api/tenants", restaurant?.tenantId, "restaurants", restaurant?.id, "rooms"] 
+      });
+      toast({
+        title: "Success",
+        description: "Room deleted successfully!",
+      });
+    },
+    onError: (error) => {
+      toast({
+        title: "Error", 
+        description: "Failed to delete room. Please try again.",
+        variant: "destructive",
       });
     },
   });
@@ -222,6 +235,50 @@ export default function Rooms() {
     },
   });
 
+  // Create new room mutation
+  const createRoomMutation = useMutation({
+    mutationFn: async (roomData: { name: string; priority: string }) => {
+      const currentTenantId = restaurant?.tenantId;
+      if (!currentTenantId || !restaurant?.id) {
+        throw new Error("Missing tenant or restaurant information");
+      }
+
+      const response = await fetch(
+        `/api/tenants/${currentTenantId}/restaurants/${restaurant.id}/rooms`,
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            name: roomData.name,
+            priority: roomData.priority,
+            restaurantId: restaurant.id,
+            tenantId: currentTenantId,
+          }),
+        },
+      );
+      if (!response.ok) throw new Error("Failed to create room");
+      return response.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ 
+        queryKey: ["/api/tenants", restaurant?.tenantId, "restaurants", restaurant?.id, "rooms"] 
+      });
+      setIsNewRoomOpen(false);
+      setNewRoom({ name: "", priority: "Medium" });
+      toast({
+        title: "Success",
+        description: "Room created successfully!",
+      });
+    },
+    onError: (error) => {
+      toast({
+        title: "Error", 
+        description: "Failed to create room. Please try again.",
+        variant: "destructive",
+      });
+    },
+  });
+
   // Update local state when rooms are fetched
   useEffect(() => {
     if (fetchedRooms.length > 0) {
@@ -234,12 +291,17 @@ export default function Rooms() {
     }
   }, [fetchedRooms, isLoading]);
 
+  // Reset pagination when filters change
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [searchTerm, priorityFilter]);
+
   // Filter rooms
   const filteredRooms = (rooms || []).filter((room: Room) => {
     const matchesSearch = !searchTerm || 
       room.name?.toLowerCase().includes(searchTerm.toLowerCase());
     const matchesPriority = priorityFilter === "all" || room.priority === priorityFilter;
-    
+
     return matchesSearch && matchesPriority;
   });
 
@@ -248,11 +310,6 @@ export default function Rooms() {
   const startIndex = (currentPage - 1) * itemsPerPage;
   const endIndex = startIndex + itemsPerPage;
   const paginatedRooms = filteredRooms.slice(startIndex, endIndex);
-
-  // Reset pagination when filters change
-  useEffect(() => {
-    setCurrentPage(1);
-  }, [searchTerm, priorityFilter]);
 
   // Priority badge style
   const getPriorityBadge = (priority: string) => {
@@ -350,50 +407,6 @@ export default function Rooms() {
     saveRoomsMutation.mutate(validRooms);
   };
 
-  // Create new room mutation
-  const createRoomMutation = useMutation({
-    mutationFn: async (roomData: { name: string; priority: string }) => {
-      const currentTenantId = restaurant?.tenantId;
-      if (!currentTenantId || !restaurant?.id) {
-        throw new Error("Missing tenant or restaurant information");
-      }
-
-      const response = await fetch(
-        `/api/tenants/${currentTenantId}/restaurants/${restaurant.id}/rooms`,
-        {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            name: roomData.name,
-            priority: roomData.priority,
-            restaurantId: restaurant.id,
-            tenantId: currentTenantId,
-          }),
-        },
-      );
-      if (!response.ok) throw new Error("Failed to create room");
-      return response.json();
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ 
-        queryKey: ["/api/tenants", restaurant?.tenantId, "restaurants", restaurant?.id, "rooms"] 
-      });
-      setIsNewRoomOpen(false);
-      setNewRoom({ name: "", priority: "Medium" });
-      toast({
-        title: "Success",
-        description: "Room created successfully!",
-      });
-    },
-    onError: (error) => {
-      toast({
-        title: "Error", 
-        description: "Failed to create room. Please try again.",
-        variant: "destructive",
-      });
-    },
-  });
-
   const handleCreateRoom = () => {
     if (newRoom.name.trim()) {
       createRoomMutation.mutate(newRoom);
@@ -408,6 +421,19 @@ export default function Rooms() {
     if (editingRoom) {
       saveIndividualRoomMutation.mutate(editingRoom);
       setEditingRoom(null);
+    }
+  };
+
+  const handleDeleteRoom = (room: Room) => {
+    setRoomToDelete(room);
+    setIsDeleteDialogOpen(true);
+  };
+
+  const confirmDeleteRoom = () => {
+    if (roomToDelete && roomToDelete.id) {
+      deleteRoomMutation.mutate(roomToDelete.id);
+      setIsDeleteDialogOpen(false);
+      setRoomToDelete(null);
     }
   };
 
@@ -578,12 +604,15 @@ export default function Rooms() {
                       <th className="text-left py-3 px-4 text-xs font-medium text-gray-500 uppercase tracking-wider">
                         Source
                       </th>
+                      <th className="text-left py-3 px-4 text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Actions
+                      </th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-gray-100">
                     {isLoading ? (
                       <tr>
-                        <td colSpan={6} className="py-12 text-center">
+                        <td colSpan={7} className="py-12 text-center">
                           <div className="flex flex-col items-center space-y-4">
                             <div className="animate-spin rounded-full h-8 w-8 border-2 border-green-500 border-t-transparent"></div>
                             <span className="text-gray-500 font-medium">Loading rooms...</span>
@@ -592,7 +621,7 @@ export default function Rooms() {
                       </tr>
                     ) : paginatedRooms.length === 0 ? (
                       <tr>
-                        <td colSpan={6} className="py-12 text-center">
+                        <td colSpan={7} className="py-12 text-center">
                           <div className="flex flex-col items-center space-y-4">
                             <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center">
                               <MapPin className="w-8 h-8 text-gray-400" />
@@ -648,6 +677,32 @@ export default function Rooms() {
                               manual
                             </Badge>
                           </td>
+                           <td className="py-4 px-4">
+                            <div className="flex items-center space-x-2">
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  handleEditRoom(room);
+                                }}
+                                className="h-8 w-8 p-0"
+                              >
+                                <Edit className="h-4 w-4" />
+                              </Button>
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  handleDeleteRoom(room);
+                                }}
+                                className="h-8 w-8 p-0 text-red-600 hover:text-red-700 hover:bg-red-50"
+                              >
+                                <Trash2 className="h-4 w-4" />
+                              </Button>
+                            </div>
+                          </td>
                         </motion.tr>
                       ))
                     )}
@@ -656,98 +711,6 @@ export default function Rooms() {
                 </div>
               </motion.div>
 
-            {paginatedRooms.length > 0 && (
-              <motion.div 
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.5, delay: 0.8 }}
-                className="flex items-center justify-between px-4 py-3 border-t border-gray-200 bg-gray-50"
-              >
-                <div className="flex items-center space-x-2 text-sm text-gray-600">
-                  <span>Show</span>
-                  <Select value={itemsPerPage.toString()} onValueChange={(value) => setItemsPerPage(Number(value))}>
-                    <SelectTrigger className="w-16 h-8 text-xs">
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="7">7</SelectItem>
-                      <SelectItem value="10">10</SelectItem>
-                      <SelectItem value="25">25</SelectItem>
-                    </SelectContent>
-                  </Select>
-                  <span>entries</span>
-                </div>
-
-                <div className="text-sm text-gray-600">
-                  {startIndex + 1}-{Math.min(endIndex, filteredRooms.length)} of {filteredRooms.length}
-                </div>
-
-                <div className="flex items-center space-x-2">
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => setCurrentPage(1)}
-                    disabled={currentPage === 1}
-                    className="h-8 px-3 text-xs"
-                  >
-                    First
-                  </Button>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => setCurrentPage(Math.max(1, currentPage - 1))}
-                    disabled={currentPage === 1}
-                    className="h-8 w-8 p-0"
-                  >
-                    <ChevronLeft className="h-4 w-4" />
-                  </Button>
-                  
-                  {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
-                    let page;
-                    if (totalPages <= 5) {
-                      page = i + 1;
-                    } else if (currentPage <= 3) {
-                      page = i + 1;
-                    } else if (currentPage >= totalPages - 2) {
-                      page = totalPages - 4 + i;
-                    } else {
-                      page = currentPage - 2 + i;
-                    }
-                    
-                    return (
-                      <Button
-                        key={page}
-                        variant={page === currentPage ? "default" : "outline"}
-                        size="sm"
-                        onClick={() => setCurrentPage(page)}
-                        className={`h-8 w-8 text-xs ${page === currentPage ? 'bg-green-600 hover:bg-green-700 text-white' : ''}`}
-                      >
-                        {page}
-                      </Button>
-                    );
-                  })}
-
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => setCurrentPage(Math.min(totalPages, currentPage + 1))}
-                    disabled={currentPage === totalPages}
-                    className="h-8 w-8 p-0"
-                  >
-                    <ChevronRight className="h-4 w-4" />
-                  </Button>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => setCurrentPage(totalPages)}
-                    disabled={currentPage === totalPages}
-                    className="h-8 px-3 text-xs"
-                  >
-                    Last
-                  </Button>
-                </div>
-              </motion.div>
-            )}
             </div>
           </div>
         </div>
@@ -855,6 +818,34 @@ export default function Rooms() {
                 </div>
               </div>
             )}
+          </DialogContent>
+        </Dialog>
+
+        {/* Delete Confirmation Dialog */}
+        <Dialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
+          <DialogContent className="max-w-md">
+            <DialogHeader>
+              <DialogTitle>Delete Room</DialogTitle>
+            </DialogHeader>
+            <div className="py-4">
+              <p className="text-gray-600">
+                Are you sure you want to delete the room <strong>{roomToDelete?.name}</strong>?
+              </p>
+              <p className="text-red-600 text-sm mt-2">This action cannot be undone and will also delete all associated tables.</p>
+            </div>
+            <div className="flex justify-end space-x-2">
+              <Button type="button" variant="outline" onClick={() => setIsDeleteDialogOpen(false)}>
+                Cancel
+              </Button>
+              <Button 
+                type="button" 
+                variant="destructive" 
+                onClick={confirmDeleteRoom}
+                disabled={deleteRoomMutation.isPending}
+              >
+                {deleteRoomMutation.isPending ? "Deleting..." : "Delete Room"}
+              </Button>
+            </div>
           </DialogContent>
         </Dialog>
       </div>

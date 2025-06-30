@@ -124,6 +124,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const login = async (email: string, password: string, rememberMe?: boolean) => {
+    console.log('Attempting login for email:', email);
+    
     const res = await fetch("/api/auth/login", {
       method: "POST",
       headers: {
@@ -137,8 +139,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       }),
     });
 
+    console.log('Login response status:', res.status);
+
     if (!res.ok) {
       const errorData = await res.json().catch(() => ({}));
+      console.log('Login error data:', errorData);
       
       // Handle specific account status errors
       if (res.status === 403) {
@@ -151,6 +156,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             : `Account Paused: ${errorData.details || 'Your account is temporarily paused. Please contact support for assistance.'}`;
           throw new Error(pauseMessage);
         }
+      }
+      
+      if (res.status === 401) {
+        throw new Error("Invalid email or password. Please check your credentials and try again.");
       }
       
       throw new Error(errorData.message || "Login failed");

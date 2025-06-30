@@ -1,8 +1,7 @@
-import { useEffect } from "react";
-
-// Added for debugging
+import { useAuth } from "@/lib/auth.tsx";
 import { useLocation } from "wouter";
-import { useAuth } from "@/lib/auth";
+import { useEffect } from "react";
+import { StandardLoading } from "./standard-loading";
 
 interface RouteGuardProps {
   children: React.ReactNode;
@@ -136,6 +135,13 @@ export function RouteGuard({ children }: RouteGuardProps) {
       }
     }
   }, [location, user, restaurant, isLoading, setLocation]);
+
+  if (isLoading) {
+    if (location === "/login") {
+      return <>{children}</>;
+    }
+    return <StandardLoading />;
+  }
 
   return <>{children}</>;
 }

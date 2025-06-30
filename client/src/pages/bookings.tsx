@@ -190,23 +190,48 @@ export default function Bookings() {
   // Delete booking mutation
   const deleteBookingMutation = useMutation({
     mutationFn: async (id: number) => {
-      const response = await fetch(`/api/tenants/${tenantId}/restaurants/${restaurantId}/bookings/${id}`, {
-        method: 'DELETE'
-      });
+      const response = await fetch(
+        `/api/tenants/${restaurant?.tenantId}/restaurants/${restaurant?.id}/bookings/${id}`,
+        {
+          method: "DELETE",
+        },
+      );
       if (!response.ok) {
-        const errorText = await response.text();
-        throw new Error(errorText || 'Failed to delete booking');
+        const errorData = await response.json();
+        throw new Error(errorData.message || "Failed to delete booking");
       }
       return response.json();
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: [`/api/tenants/${tenantId}/restaurants/${restaurantId}/bookings`] });
+      // Invalidate all related queries to ensure UI updates
+      queryClient.invalidateQueries({
+        queryKey: [
+          `/api/tenants/${restaurant?.tenantId}/restaurants/${restaurant?.id}/bookings`,
+        ],
+      });
+      queryClient.invalidateQueries({
+        queryKey: [
+          `/api/tenants/${restaurant?.tenantId}/restaurants/${restaurant?.id}`,
+        ],
+      });
+      queryClient.invalidateQueries({
+        queryKey: [`/api/tenants/${restaurant?.tenantId}/bookings`],
+      });
+
       setIsDeleteDialogOpen(false);
       setBookingToDelete(null);
+      toast({
+        title: "Booking deleted successfully",
+        description: "The booking has been removed from your system.",
+      });
     },
     onError: (error: any) => {
-      console.error('Delete booking error:', error);
-    }
+      toast({
+        title: "Failed to delete booking",
+        description: error.message || "Please try again.",
+        variant: "destructive",
+      });
+    },
   });
 
   const handleCreateBooking = (e: React.FormEvent) => {

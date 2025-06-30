@@ -122,7 +122,7 @@ export default function Login() {
         }));
       }
     }
-  }, [plans, formData.selectedPlanId]);
+  }, [plans]);
 
   // Redirect if already authenticated
   useEffect(() => {
@@ -504,12 +504,10 @@ export default function Login() {
                           id="rememberMe"
                           checked={formData.rememberMe}
                           onCheckedChange={(checked) => {
-                            if (checked !== formData.rememberMe) {
-                              setFormData(prev => ({
-                                ...prev,
-                                rememberMe: Boolean(checked),
-                              }));
-                            }
+                            setFormData(prev => ({
+                              ...prev,
+                              rememberMe: Boolean(checked),
+                            }));
                           }}
                           className="border-white/30 data-[state=checked]:bg-emerald-500 data-[state=checked]:border-emerald-500"
                         />

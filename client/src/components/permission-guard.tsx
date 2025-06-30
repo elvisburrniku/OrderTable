@@ -3,6 +3,7 @@ import { useLocation } from "wouter";
 import { useQuery } from "@tanstack/react-query";
 import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
+import { StandardLoading } from "./standard-loading";
 
 interface PermissionGuardProps {
   children: React.ReactNode;
@@ -17,45 +18,55 @@ interface UserPermissions {
 }
 
 const PAGE_PERMISSION_MAP: { [key: string]: string } = {
-  "dashboard": "access_dashboard",
-  "bookings": "access_bookings", 
-  "customers": "access_customers",
+  dashboard: "access_dashboard",
+  bookings: "access_bookings",
+  customers: "access_customers",
   "menu-management": "access_menu",
-  "tables": "access_tables",
+  tables: "access_tables",
   "floor-plan": "access_floor_plan",
   "kitchen-dashboard": "access_kitchen",
-  "users": "access_users",
+  users: "access_users",
   "guard-management": "access_users",
-  "billing": "access_billing",
-  "statistics": "access_reports",
+  billing: "access_billing",
+  statistics: "access_reports",
   "activity-log": "access_reports",
   "global-activity-log": "access_reports",
   "email-notifications": "access_notifications",
   "sms-notifications": "access_notifications",
-  "integrations": "access_integrations",
-  "settings": "access_settings",
+  integrations: "access_integrations",
+  settings: "access_settings",
   "tenant-settings": "access_settings",
-  "restaurant-settings": "access_settings"
+  "restaurant-settings": "access_settings",
 };
 
-export function PermissionGuard({ children, requiredPermission, fallbackPath }: PermissionGuardProps) {
+export function PermissionGuard({
+  children,
+  requiredPermission,
+  fallbackPath,
+}: PermissionGuardProps) {
   const [, setLocation] = useLocation();
   const { toast } = useToast();
   const [hasAccess, setHasAccess] = useState<boolean | null>(null);
 
-  const { data: userPermissions, isLoading, error } = useQuery<UserPermissions>({
+  const {
+    data: userPermissions,
+    isLoading,
+    error,
+  } = useQuery<UserPermissions>({
     queryKey: ["/api/user/permissions"],
     retry: false,
   });
 
   useEffect(() => {
-    console.log("PermissionGuard: Initial Check", { requiredPermission, userPermissions, isLoading });
-    
     if (isLoading || !userPermissions) return;
 
-    const hasPermission = userPermissions.permissions.includes(requiredPermission);
-    console.log("PermissionGuard result:", { hasPermission, userRole: userPermissions.role });
-    
+    const hasPermission =
+      userPermissions.permissions.includes(requiredPermission);
+    console.log("PermissionGuard result:", {
+      hasPermission,
+      userRole: userPermissions.role,
+    });
+
     setHasAccess(hasPermission);
 
     if (!hasPermission) {
@@ -67,20 +78,26 @@ export function PermissionGuard({ children, requiredPermission, fallbackPath }: 
       });
 
       // Redirect to user's default page or fallback with tenant context
-      const currentTenantId = window.location.pathname.split('/')[1];
-      const redirectTo = fallbackPath || `/${currentTenantId}/${userPermissions.redirect}` || `/${currentTenantId}/dashboard`;
+      const currentTenantId = window.location.pathname.split("/")[1];
+      const redirectTo =
+        fallbackPath ||
+        `/${currentTenantId}/${userPermissions.redirect}` ||
+        `/${currentTenantId}/dashboard`;
       setTimeout(() => {
         setLocation(redirectTo);
       }, 1000);
     }
-  }, [userPermissions, isLoading, requiredPermission, fallbackPath, setLocation, toast]);
+  }, [
+    userPermissions,
+    isLoading,
+    requiredPermission,
+    fallbackPath,
+    setLocation,
+    toast,
+  ]);
 
   if (isLoading) {
-    return (
-      <div className="flex items-center justify-center h-64">
-        <div className="animate-spin w-8 h-8 border-4 border-primary border-t-transparent rounded-full" />
-      </div>
-    );
+    return <StandardLoading />;
   }
 
   if (error || hasAccess === false) {
@@ -88,7 +105,9 @@ export function PermissionGuard({ children, requiredPermission, fallbackPath }: 
       <div className="flex flex-col items-center justify-center h-64 space-y-4">
         <div className="text-center">
           <h3 className="text-lg font-medium">Access Denied</h3>
-          <p className="text-muted-foreground">You don't have permission to view this page.</p>
+          <p className="text-muted-foreground">
+            You don't have permission to view this page.
+          </p>
         </div>
       </div>
     );
@@ -103,7 +122,11 @@ export function PermissionGuard({ children, requiredPermission, fallbackPath }: 
 
 // Hook to check permissions for specific actions
 export function usePermissions() {
-  const { data: userPermissions, isLoading: queryLoading, error } = useQuery<UserPermissions>({
+  const {
+    data: userPermissions,
+    isLoading: queryLoading,
+    error,
+  } = useQuery<UserPermissions>({
     queryKey: ["/api/user/permissions"],
     retry: false,
   });
@@ -113,7 +136,7 @@ export function usePermissions() {
   };
 
   const hasAnyPermission = (permissions: string[]): boolean => {
-    return permissions.some(permission => hasPermission(permission));
+    return permissions.some((permission) => hasPermission(permission));
   };
 
   const getUserRole = (): string => {
@@ -131,18 +154,23 @@ export function usePermissions() {
     getDefaultRedirect,
     permissions: userPermissions?.permissions || [],
     isLoading: queryLoading || !userPermissions,
-    error
+    error,
   };
 }
 
 // Auto permission guard based on current route
-export function AutoPermissionGuard({ children }: { children: React.ReactNode }) {
+export function AutoPermissionGuard({
+  children,
+}: {
+  children: React.ReactNode;
+}) {
   const [location] = useLocation();
-  const { getUserRole, hasPermission, isLoading, permissions } = usePermissions();
-  
+  const { getUserRole, hasPermission, isLoading, permissions } =
+    usePermissions();
+
   // Extract the page name from the current route
   const getPageFromRoute = (path: string): string => {
-    const segments = path.split('/').filter(Boolean);
+    const segments = path.split("/").filter(Boolean);
     // Skip tenant ID (first segment) and get the page
     if (segments.length > 1) {
       return segments[1];
@@ -154,27 +182,27 @@ export function AutoPermissionGuard({ children }: { children: React.ReactNode })
   const requiredPermission = PAGE_PERMISSION_MAP[currentPage];
   const userRole = getUserRole();
 
-  console.log("AutoPermissionGuard DEBUG:", { 
-    currentPage, 
-    requiredPermission, 
-    userRole, 
+  console.log("AutoPermissionGuard DEBUG:", {
+    currentPage,
+    requiredPermission,
+    userRole,
     isLoading,
-    hasRequiredPermission: requiredPermission ? hasPermission(requiredPermission) : true,
-    allPermissions: permissions
+    hasRequiredPermission: requiredPermission
+      ? hasPermission(requiredPermission)
+      : true,
+    allPermissions: permissions,
   });
 
   // Wait for user data to load - CRITICAL: Don't redirect while loading
   if (isLoading || !userRole) {
-    console.log("🔄 AutoPermissionGuard: Still loading permissions, showing loading state");
-    return (
-      <div className="flex items-center justify-center h-64">
-        <div className="animate-spin w-8 h-8 border-4 border-primary border-t-transparent rounded-full" />
-      </div>
+    console.log(
+      "🔄 AutoPermissionGuard: Still loading permissions, showing loading state",
     );
+    return <StandardLoading />;
   }
 
   // If user is owner, allow access to all pages
-  if (userRole === 'owner') {
+  if (userRole === "owner") {
     console.log("Owner access granted for all pages");
     return <>{children}</>;
   }

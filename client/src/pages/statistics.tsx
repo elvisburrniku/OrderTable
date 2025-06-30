@@ -71,7 +71,8 @@ import {
   Star,
   Award,
   Sparkles,
-  RefreshCw
+  RefreshCw,
+  ChevronDown
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 
@@ -155,7 +156,7 @@ export default function Statistics() {
       bookings.length === 0 ||
       !restaurant?.id
     ) {
-      return [{ name: "No Data", value: 1, color: "#9CA3AF" }];
+      return [{ name: "No Data", value: 1, color: "#64748B" }];
     }
 
     // Filter bookings for this specific restaurant
@@ -164,7 +165,7 @@ export default function Statistics() {
     );
 
     if (restaurantBookings.length === 0) {
-      return [{ name: "No Bookings", value: 1, color: "#9CA3AF" }];
+      return [{ name: "No Bookings", value: 1, color: "#64748B" }];
     }
 
     // Group by status
@@ -174,19 +175,19 @@ export default function Statistics() {
       return acc;
     }, {});
 
-    // Convert to chart format
+    // Convert to chart format with professional colors
     return Object.entries(statusCounts).map(
       ([status, count]: [string, any]) => ({
         name: status.charAt(0).toUpperCase() + status.slice(1),
         value: count,
         color:
           status === "confirmed"
-            ? "#10B981"
+            ? "#0F172A"
             : status === "pending"
-              ? "#F59E0B"
+              ? "#64748B"
               : status === "cancelled"
-                ? "#EF4444"
-                : "#6B7280",
+                ? "#94A3B8"
+                : "#CBD5E1",
       }),
     );
   };
@@ -302,141 +303,85 @@ export default function Statistics() {
     revenue: item.revenue,
   }));
 
-  const StatCard = ({ icon: Icon, title, value, subtitle, color, trend, delay }: any) => (
+  const StatCard = ({ icon: Icon, title, value, subtitle, delay }: any) => (
     <motion.div
-      initial={{ opacity: 0, y: 20, scale: 0.9 }}
-      animate={{ opacity: 1, y: 0, scale: 1 }}
-      transition={{ delay, duration: 0.6, type: "spring", stiffness: 100 }}
-      whileHover={{ 
-        scale: 1.02, 
-        y: -5,
-        transition: { duration: 0.2 }
-      }}
+      initial={{ opacity: 0, y: 20 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ delay, duration: 0.4 }}
       className="group"
     >
-      <Card className="bg-white/60 backdrop-blur-md border border-slate-200/60 shadow-lg hover:shadow-xl transition-all duration-500 overflow-hidden relative">
-        <div className="absolute inset-0 bg-gradient-to-br from-white/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
-        <CardContent className="p-6 relative z-10">
+      <Card className="bg-white border border-slate-200 hover:shadow-md transition-shadow duration-200">
+        <CardContent className="p-6">
           <div className="flex items-center justify-between">
             <div className="space-y-2">
-              <p className="text-sm font-medium text-slate-600 group-hover:text-slate-700 transition-colors">
+              <p className="text-sm font-medium text-slate-500">
                 {title}
               </p>
-              <motion.p 
-                className="text-3xl font-bold tracking-tight"
-                style={{ color }}
-                initial={{ scale: 0 }}
-                animate={{ scale: 1 }}
-                transition={{ delay: delay + 0.2, type: "spring", stiffness: 200 }}
-              >
+              <p className="text-2xl font-semibold text-slate-900">
                 {value}
-              </motion.p>
+              </p>
               {subtitle && (
-                <p className="text-xs text-slate-500">{subtitle}</p>
+                <p className="text-xs text-slate-400">{subtitle}</p>
               )}
             </div>
-            <motion.div 
-              className={`p-4 rounded-2xl bg-gradient-to-br shadow-lg`}
-              style={{ 
-                backgroundImage: `linear-gradient(135deg, ${color}15, ${color}25)`
-              }}
-              animate={{ 
-                rotate: [0, 5, -5, 0],
-                scale: [1, 1.05, 1]
-              }}
-              transition={{ 
-                duration: 2,
-                repeat: Infinity,
-                ease: "easeInOut"
-              }}
-            >
-              <Icon className="w-8 h-8" style={{ color }} />
-            </motion.div>
+            <div className="p-3 bg-slate-50 rounded-lg">
+              <Icon className="w-5 h-5 text-slate-600" />
+            </div>
           </div>
-          {trend && (
-            <motion.div 
-              className="mt-4 flex items-center text-xs"
-              initial={{ opacity: 0, x: -10 }}
-              animate={{ opacity: 1, x: 0 }}
-              transition={{ delay: delay + 0.4 }}
-            >
-              <TrendingUp className="w-3 h-3 text-green-500 mr-1" />
-              <span className="text-green-600 font-medium">{trend}</span>
-            </motion.div>
-          )}
         </CardContent>
       </Card>
     </motion.div>
   );
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50/30 to-purple-50/20">
-      {/* Premium Header */}
+    <div className="min-h-screen bg-slate-50">
+      {/* Professional Header */}
       <motion.div 
-        className="relative overflow-hidden bg-white/40 backdrop-blur-md border-b border-slate-200/60"
+        className="bg-white border-b border-slate-200"
         initial={{ opacity: 0, y: -20 }}
         animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.8 }}
+        transition={{ duration: 0.5 }}
       >
-        <div className="absolute inset-0 bg-gradient-to-r from-blue-600/5 via-purple-600/5 to-blue-600/5" />
-        <div className="relative z-10 p-8">
+        <div className="p-6">
           <div className="flex items-center justify-between">
-            <div className="space-y-2">
+            <div className="space-y-1">
               <motion.h1 
-                className="text-4xl font-bold tracking-tight flex items-center space-x-4"
+                className="text-2xl font-semibold text-slate-900 flex items-center space-x-3"
                 initial={{ opacity: 0, x: -20 }}
                 animate={{ opacity: 1, x: 0 }}
-                transition={{ delay: 0.2, duration: 0.6 }}
+                transition={{ delay: 0.1, duration: 0.5 }}
               >
-                <motion.div
-                  animate={{ 
-                    rotate: [0, 360],
-                    scale: [1, 1.1, 1]
-                  }}
-                  transition={{ 
-                    duration: 3,
-                    repeat: Infinity,
-                    ease: "easeInOut"
-                  }}
-                >
-                  <BarChart3 className="w-10 h-10 text-blue-600" />
-                </motion.div>
-                <span className="bg-gradient-to-r from-blue-600 via-purple-600 to-blue-800 bg-clip-text text-transparent">
-                  Analytics Dashboard
-                </span>
+                <BarChart3 className="w-6 h-6 text-slate-700" />
+                <span>Analytics Dashboard</span>
               </motion.h1>
               <motion.p 
-                className="text-slate-600 text-lg"
+                className="text-slate-600"
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
-                transition={{ delay: 0.4, duration: 0.6 }}
+                transition={{ delay: 0.2, duration: 0.5 }}
               >
-                Real-time insights and performance metrics for your restaurant
+                Performance insights and metrics for your restaurant
               </motion.p>
             </div>
 
-            {/* Premium Controls */}
+            {/* Controls */}
             <motion.div 
-              className="flex items-center space-x-4"
+              className="flex items-center space-x-3"
               initial={{ opacity: 0, x: 20 }}
               animate={{ opacity: 1, x: 0 }}
-              transition={{ delay: 0.6, duration: 0.6 }}
+              transition={{ delay: 0.3, duration: 0.5 }}
             >
-              <div className="bg-white/60 backdrop-blur-md border border-slate-200 rounded-xl p-3 shadow-lg">
-                <motion.div
-                  animate={{ rotate: isLoading ? 360 : 0 }}
-                  transition={{ duration: 1, repeat: isLoading ? Infinity : 0, ease: "linear" }}
-                >
-                  <RefreshCw className="w-5 h-5 text-slate-600" />
-                </motion.div>
-              </div>
+              <Button variant="outline" size="sm" className="text-slate-600 border-slate-200">
+                <RefreshCw className="w-4 h-4 mr-2" />
+                Refresh
+              </Button>
             </motion.div>
           </div>
         </div>
       </motion.div>
 
       {/* Main Content */}
-      <div className="p-8">
+      <div className="p-6">
         <div className="space-y-8">
           {isLoading ? (
             <motion.div 
@@ -444,13 +389,8 @@ export default function Statistics() {
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
             >
-              <motion.div
-                animate={{ rotate: 360 }}
-                transition={{ duration: 2, repeat: Infinity, ease: "linear" }}
-              >
-                <RefreshCw className="w-12 h-12 mx-auto mb-4 text-blue-600" />
-              </motion.div>
-              <p className="text-slate-600 text-lg">Loading analytics data...</p>
+              <RefreshCw className="w-8 h-8 mx-auto mb-4 text-slate-400 animate-spin" />
+              <p className="text-slate-600">Loading analytics data...</p>
             </motion.div>
           ) : stats ? (
             <>
@@ -461,8 +401,6 @@ export default function Statistics() {
                   title="Total Bookings"
                   value={stats.totalBookings?.toLocaleString() || "0"}
                   subtitle="All-time bookings"
-                  color="#3B82F6"
-                  trend="+12% from last month"
                   delay={0}
                 />
                 <StatCard
@@ -470,8 +408,6 @@ export default function Statistics() {
                   title="Total Customers"
                   value={stats.totalCustomers?.toLocaleString() || "0"}
                   subtitle="Unique customers served"
-                  color="#10B981"
-                  trend="+8% from last month"
                   delay={0.1}
                 />
                 <StatCard
@@ -479,8 +415,6 @@ export default function Statistics() {
                   title="Table Utilization"
                   value={`${stats.tableUtilization?.toFixed(1) || "0.0"}%`}
                   subtitle="Current efficiency"
-                  color="#8B5CF6"
-                  trend="+3.2% this week"
                   delay={0.2}
                 />
                 <StatCard
@@ -488,8 +422,6 @@ export default function Statistics() {
                   title="Monthly Revenue"
                   value={`$${(stats.monthlyRevenue || 0).toLocaleString()}`}
                   subtitle="This month's earnings"
-                  color="#F59E0B"
-                  trend="+15% from last month"
                   delay={0.3}
                 />
               </div>
@@ -501,7 +433,6 @@ export default function Statistics() {
                   title="Monthly Bookings"
                   value={stats.monthlyBookings?.toLocaleString() || "0"}
                   subtitle="This month"
-                  color="#EF4444"
                   delay={0.4}
                 />
                 <StatCard
@@ -509,7 +440,6 @@ export default function Statistics() {
                   title="Avg Bookings/Day"
                   value={stats.avgBookingsPerDay?.toFixed(1) || "0.0"}
                   subtitle="Daily average"
-                  color="#06B6D4"
                   delay={0.5}
                 />
                 <StatCard
@@ -517,39 +447,30 @@ export default function Statistics() {
                   title="Total Tables"
                   value={stats.totalTables?.toLocaleString() || "0"}
                   subtitle="Available tables"
-                  color="#84CC16"
                   delay={0.6}
                 />
               </div>
 
-              {/* Premium Charts Section */}
+              {/* Charts Section */}
               <motion.div
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.8, duration: 0.6 }}
+                transition={{ delay: 0.7, duration: 0.5 }}
               >
                 <Tabs value={activeMetric} onValueChange={setActiveMetric} className="space-y-6">
-                  <TabsList className="grid w-full grid-cols-4 bg-white/60 backdrop-blur-md border border-slate-200 shadow-lg rounded-xl p-1">
+                  <TabsList className="grid w-full grid-cols-4 bg-white border border-slate-200">
                     {[
                       { value: "overview", label: "Overview", icon: BarChart3 },
                       { value: "bookings", label: "Bookings", icon: CalendarIcon2 },
                       { value: "revenue", label: "Revenue", icon: DollarSign },
                       { value: "utilization", label: "Utilization", icon: PieChartIcon }
-                    ].map((tab, index) => (
+                    ].map((tab) => (
                       <TabsTrigger 
                         key={tab.value}
                         value={tab.value}
-                        className="flex items-center space-x-2 data-[state=active]:bg-white data-[state=active]:shadow-md data-[state=active]:border data-[state=active]:border-slate-200 rounded-lg transition-all duration-300"
+                        className="flex items-center space-x-2 data-[state=active]:bg-slate-50 data-[state=active]:text-slate-900"
                       >
-                        <motion.div
-                          animate={{ 
-                            rotate: activeMetric === tab.value ? [0, 10, -10, 0] : 0,
-                            scale: activeMetric === tab.value ? [1, 1.1, 1] : 1
-                          }}
-                          transition={{ duration: 0.5 }}
-                        >
-                          <tab.icon className="w-4 h-4" />
-                        </motion.div>
+                        <tab.icon className="w-4 h-4" />
                         <span>{tab.label}</span>
                       </TabsTrigger>
                     ))}
@@ -562,107 +483,89 @@ export default function Statistics() {
                         initial={{ opacity: 0 }}
                         animate={{ opacity: 1 }}
                         exit={{ opacity: 0 }}
-                        transition={{ duration: 0.5 }}
+                        transition={{ duration: 0.3 }}
                       >
                         {/* Booking Trends Chart */}
-                        <motion.div
-                          initial={{ opacity: 0, x: -20 }}
-                          animate={{ opacity: 1, x: 0 }}
-                          transition={{ delay: 0.2 }}
-                          whileHover={{ scale: 1.01 }}
-                        >
-                          <Card className="bg-white/60 backdrop-blur-md border border-slate-200 shadow-lg hover:shadow-xl transition-all duration-300">
-                            <CardHeader className="pb-2">
-                              <CardTitle className="flex items-center space-x-2 text-lg">
-                                <TrendingUp className="w-5 h-5 text-blue-600" />
-                                <span>Booking Trends</span>
-                              </CardTitle>
-                            </CardHeader>
-                            <CardContent>
-                              <ResponsiveContainer width="100%" height={300}>
-                                <AreaChart data={bookingTrendsData}>
-                                  <defs>
-                                    <linearGradient id="bookingGradient" x1="0" y1="0" x2="0" y2="1">
-                                      <stop offset="5%" stopColor="#3B82F6" stopOpacity={0.3}/>
-                                      <stop offset="95%" stopColor="#3B82F6" stopOpacity={0.05}/>
-                                    </linearGradient>
-                                  </defs>
-                                  <CartesianGrid strokeDasharray="3 3" stroke="#E2E8F0" />
-                                  <XAxis dataKey="month" stroke="#64748B" />
-                                  <YAxis stroke="#64748B" />
-                                  <Tooltip 
-                                    contentStyle={{ 
-                                      backgroundColor: 'rgba(255, 255, 255, 0.9)',
-                                      backdropFilter: 'blur(10px)',
-                                      border: '1px solid #E2E8F0',
-                                      borderRadius: '12px',
-                                      boxShadow: '0 20px 25px -5px rgba(0, 0, 0, 0.1)'
-                                    }}
-                                  />
-                                  <Area
-                                    type="monotone"
-                                    dataKey="bookings"
-                                    stroke="#3B82F6"
-                                    strokeWidth={3}
-                                    fill="url(#bookingGradient)"
-                                    dot={{ fill: '#3B82F6', strokeWidth: 2, r: 4 }}
-                                    activeDot={{ r: 6, stroke: '#3B82F6', strokeWidth: 2 }}
-                                  />
-                                </AreaChart>
-                              </ResponsiveContainer>
-                            </CardContent>
-                          </Card>
-                        </motion.div>
+                        <Card className="bg-white border border-slate-200">
+                          <CardHeader className="pb-4">
+                            <CardTitle className="flex items-center space-x-2 text-lg font-medium text-slate-900">
+                              <TrendingUp className="w-5 h-5 text-slate-600" />
+                              <span>Booking Trends</span>
+                            </CardTitle>
+                          </CardHeader>
+                          <CardContent>
+                            <ResponsiveContainer width="100%" height={300}>
+                              <AreaChart data={bookingTrendsData}>
+                                <defs>
+                                  <linearGradient id="bookingGradient" x1="0" y1="0" x2="0" y2="1">
+                                    <stop offset="5%" stopColor="#0F172A" stopOpacity={0.1}/>
+                                    <stop offset="95%" stopColor="#0F172A" stopOpacity={0.02}/>
+                                  </linearGradient>
+                                </defs>
+                                <CartesianGrid strokeDasharray="3 3" stroke="#E2E8F0" />
+                                <XAxis dataKey="month" stroke="#64748B" fontSize={12} />
+                                <YAxis stroke="#64748B" fontSize={12} />
+                                <Tooltip 
+                                  contentStyle={{ 
+                                    backgroundColor: 'white',
+                                    border: '1px solid #E2E8F0',
+                                    borderRadius: '8px',
+                                    boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)'
+                                  }}
+                                />
+                                <Area
+                                  type="monotone"
+                                  dataKey="bookings"
+                                  stroke="#0F172A"
+                                  strokeWidth={2}
+                                  fill="url(#bookingGradient)"
+                                  dot={{ fill: '#0F172A', strokeWidth: 2, r: 3 }}
+                                />
+                              </AreaChart>
+                            </ResponsiveContainer>
+                          </CardContent>
+                        </Card>
 
                         {/* Booking Status Chart */}
-                        <motion.div
-                          initial={{ opacity: 0, x: 20 }}
-                          animate={{ opacity: 1, x: 0 }}
-                          transition={{ delay: 0.4 }}
-                          whileHover={{ scale: 1.01 }}
-                        >
-                          <Card className="bg-white/60 backdrop-blur-md border border-slate-200 shadow-lg hover:shadow-xl transition-all duration-300">
-                            <CardHeader className="pb-2">
-                              <CardTitle className="flex items-center space-x-2 text-lg">
-                                <PieChartIcon className="w-5 h-5 text-purple-600" />
-                                <span>Booking Status</span>
-                              </CardTitle>
-                            </CardHeader>
-                            <CardContent>
-                              <ResponsiveContainer width="100%" height={300}>
-                                <PieChart>
-                                  <Pie
-                                    data={bookingStatusData}
-                                    cx="50%"
-                                    cy="50%"
-                                    innerRadius={60}
-                                    outerRadius={100}
-                                    paddingAngle={5}
-                                    dataKey="value"
-                                  >
-                                    {bookingStatusData.map((entry, index) => (
-                                      <Cell 
-                                        key={`cell-${index}`} 
-                                        fill={entry.color}
-                                        className="hover:opacity-80 transition-opacity duration-200"
-                                      />
-                                    ))}
-                                  </Pie>
-                                  <Tooltip 
-                                    contentStyle={{ 
-                                      backgroundColor: 'rgba(255, 255, 255, 0.9)',
-                                      backdropFilter: 'blur(10px)',
-                                      border: '1px solid #E2E8F0',
-                                      borderRadius: '12px',
-                                      boxShadow: '0 20px 25px -5px rgba(0, 0, 0, 0.1)'
-                                    }}
-                                  />
-                                  <Legend />
-                                </PieChart>
-                              </ResponsiveContainer>
-                            </CardContent>
-                          </Card>
-                        </motion.div>
+                        <Card className="bg-white border border-slate-200">
+                          <CardHeader className="pb-4">
+                            <CardTitle className="flex items-center space-x-2 text-lg font-medium text-slate-900">
+                              <PieChartIcon className="w-5 h-5 text-slate-600" />
+                              <span>Booking Status</span>
+                            </CardTitle>
+                          </CardHeader>
+                          <CardContent>
+                            <ResponsiveContainer width="100%" height={300}>
+                              <PieChart>
+                                <Pie
+                                  data={bookingStatusData}
+                                  cx="50%"
+                                  cy="50%"
+                                  innerRadius={60}
+                                  outerRadius={100}
+                                  paddingAngle={2}
+                                  dataKey="value"
+                                >
+                                  {bookingStatusData.map((entry, index) => (
+                                    <Cell 
+                                      key={`cell-${index}`} 
+                                      fill={entry.color}
+                                    />
+                                  ))}
+                                </Pie>
+                                <Tooltip 
+                                  contentStyle={{ 
+                                    backgroundColor: 'white',
+                                    border: '1px solid #E2E8F0',
+                                    borderRadius: '8px',
+                                    boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)'
+                                  }}
+                                />
+                                <Legend />
+                              </PieChart>
+                            </ResponsiveContainer>
+                          </CardContent>
+                        </Card>
                       </motion.div>
                     </TabsContent>
 
@@ -672,96 +575,73 @@ export default function Statistics() {
                         initial={{ opacity: 0 }}
                         animate={{ opacity: 1 }}
                         exit={{ opacity: 0 }}
-                        transition={{ duration: 0.5 }}
+                        transition={{ duration: 0.3 }}
                       >
                         {/* Daily Bookings */}
-                        <motion.div
-                          initial={{ opacity: 0, y: 20 }}
-                          animate={{ opacity: 1, y: 0 }}
-                          transition={{ delay: 0.2 }}
-                          whileHover={{ scale: 1.01 }}
-                        >
-                          <Card className="bg-white/60 backdrop-blur-md border border-slate-200 shadow-lg hover:shadow-xl transition-all duration-300">
-                            <CardHeader className="pb-2">
-                              <CardTitle className="flex items-center space-x-2 text-lg">
-                                <CalendarIcon2 className="w-5 h-5 text-green-600" />
-                                <span>Daily Bookings</span>
-                              </CardTitle>
-                            </CardHeader>
-                            <CardContent>
-                              <ResponsiveContainer width="100%" height={300}>
-                                <BarChart data={dailyBookingsData}>
-                                  <CartesianGrid strokeDasharray="3 3" stroke="#E2E8F0" />
-                                  <XAxis dataKey="day" stroke="#64748B" />
-                                  <YAxis stroke="#64748B" />
-                                  <Tooltip 
-                                    contentStyle={{ 
-                                      backgroundColor: 'rgba(255, 255, 255, 0.9)',
-                                      backdropFilter: 'blur(10px)',
-                                      border: '1px solid #E2E8F0',
-                                      borderRadius: '12px',
-                                      boxShadow: '0 20px 25px -5px rgba(0, 0, 0, 0.1)'
-                                    }}
-                                  />
-                                  <Bar 
-                                    dataKey="bookings" 
-                                    fill="url(#barGradient)"
-                                    radius={[4, 4, 0, 0]}
-                                  />
-                                  <defs>
-                                    <linearGradient id="barGradient" x1="0" y1="0" x2="0" y2="1">
-                                      <stop offset="5%" stopColor="#10B981" stopOpacity={0.8}/>
-                                      <stop offset="95%" stopColor="#10B981" stopOpacity={0.3}/>
-                                    </linearGradient>
-                                  </defs>
-                                </BarChart>
-                              </ResponsiveContainer>
-                            </CardContent>
-                          </Card>
-                        </motion.div>
+                        <Card className="bg-white border border-slate-200">
+                          <CardHeader className="pb-4">
+                            <CardTitle className="flex items-center space-x-2 text-lg font-medium text-slate-900">
+                              <CalendarIcon2 className="w-5 h-5 text-slate-600" />
+                              <span>Daily Bookings</span>
+                            </CardTitle>
+                          </CardHeader>
+                          <CardContent>
+                            <ResponsiveContainer width="100%" height={300}>
+                              <BarChart data={dailyBookingsData}>
+                                <CartesianGrid strokeDasharray="3 3" stroke="#E2E8F0" />
+                                <XAxis dataKey="day" stroke="#64748B" fontSize={12} />
+                                <YAxis stroke="#64748B" fontSize={12} />
+                                <Tooltip 
+                                  contentStyle={{ 
+                                    backgroundColor: 'white',
+                                    border: '1px solid #E2E8F0',
+                                    borderRadius: '8px',
+                                    boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)'
+                                  }}
+                                />
+                                <Bar 
+                                  dataKey="bookings" 
+                                  fill="#0F172A"
+                                  radius={[4, 4, 0, 0]}
+                                />
+                              </BarChart>
+                            </ResponsiveContainer>
+                          </CardContent>
+                        </Card>
 
                         {/* Table Utilization */}
-                        <motion.div
-                          initial={{ opacity: 0, y: 20 }}
-                          animate={{ opacity: 1, y: 0 }}
-                          transition={{ delay: 0.4 }}
-                          whileHover={{ scale: 1.01 }}
-                        >
-                          <Card className="bg-white/60 backdrop-blur-md border border-slate-200 shadow-lg hover:shadow-xl transition-all duration-300">
-                            <CardHeader className="pb-2">
-                              <CardTitle className="flex items-center space-x-2 text-lg">
-                                <Activity className="w-5 h-5 text-orange-600" />
-                                <span>Hourly Utilization</span>
-                              </CardTitle>
-                            </CardHeader>
-                            <CardContent>
-                              <ResponsiveContainer width="100%" height={300}>
-                                <LineChart data={tableUtilizationData}>
-                                  <CartesianGrid strokeDasharray="3 3" stroke="#E2E8F0" />
-                                  <XAxis dataKey="time" stroke="#64748B" />
-                                  <YAxis stroke="#64748B" />
-                                  <Tooltip 
-                                    contentStyle={{ 
-                                      backgroundColor: 'rgba(255, 255, 255, 0.9)',
-                                      backdropFilter: 'blur(10px)',
-                                      border: '1px solid #E2E8F0',
-                                      borderRadius: '12px',
-                                      boxShadow: '0 20px 25px -5px rgba(0, 0, 0, 0.1)'
-                                    }}
-                                  />
-                                  <Line
-                                    type="monotone"
-                                    dataKey="utilization"
-                                    stroke="#F59E0B"
-                                    strokeWidth={3}
-                                    dot={{ fill: '#F59E0B', strokeWidth: 2, r: 4 }}
-                                    activeDot={{ r: 6, stroke: '#F59E0B', strokeWidth: 2 }}
-                                  />
-                                </LineChart>
-                              </ResponsiveContainer>
-                            </CardContent>
-                          </Card>
-                        </motion.div>
+                        <Card className="bg-white border border-slate-200">
+                          <CardHeader className="pb-4">
+                            <CardTitle className="flex items-center space-x-2 text-lg font-medium text-slate-900">
+                              <Activity className="w-5 h-5 text-slate-600" />
+                              <span>Hourly Utilization</span>
+                            </CardTitle>
+                          </CardHeader>
+                          <CardContent>
+                            <ResponsiveContainer width="100%" height={300}>
+                              <LineChart data={tableUtilizationData}>
+                                <CartesianGrid strokeDasharray="3 3" stroke="#E2E8F0" />
+                                <XAxis dataKey="time" stroke="#64748B" fontSize={12} />
+                                <YAxis stroke="#64748B" fontSize={12} />
+                                <Tooltip 
+                                  contentStyle={{ 
+                                    backgroundColor: 'white',
+                                    border: '1px solid #E2E8F0',
+                                    borderRadius: '8px',
+                                    boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)'
+                                  }}
+                                />
+                                <Line
+                                  type="monotone"
+                                  dataKey="utilization"
+                                  stroke="#0F172A"
+                                  strokeWidth={2}
+                                  dot={{ fill: '#0F172A', strokeWidth: 2, r: 3 }}
+                                />
+                              </LineChart>
+                            </ResponsiveContainer>
+                          </CardContent>
+                        </Card>
                       </motion.div>
                     </TabsContent>
 
@@ -770,57 +650,48 @@ export default function Statistics() {
                         initial={{ opacity: 0 }}
                         animate={{ opacity: 1 }}
                         exit={{ opacity: 0 }}
-                        transition={{ duration: 0.5 }}
+                        transition={{ duration: 0.3 }}
                       >
-                        <motion.div
-                          initial={{ opacity: 0, y: 20 }}
-                          animate={{ opacity: 1, y: 0 }}
-                          transition={{ delay: 0.2 }}
-                          whileHover={{ scale: 1.005 }}
-                        >
-                          <Card className="bg-white/60 backdrop-blur-md border border-slate-200 shadow-lg hover:shadow-xl transition-all duration-300">
-                            <CardHeader className="pb-2">
-                              <CardTitle className="flex items-center space-x-2 text-xl">
-                                <DollarSign className="w-6 h-6 text-green-600" />
-                                <span>Monthly Revenue Trends</span>
-                              </CardTitle>
-                            </CardHeader>
-                            <CardContent>
-                              <ResponsiveContainer width="100%" height={400}>
-                                <AreaChart data={revenueData}>
-                                  <defs>
-                                    <linearGradient id="revenueGradient" x1="0" y1="0" x2="0" y2="1">
-                                      <stop offset="5%" stopColor="#10B981" stopOpacity={0.4}/>
-                                      <stop offset="95%" stopColor="#10B981" stopOpacity={0.05}/>
-                                    </linearGradient>
-                                  </defs>
-                                  <CartesianGrid strokeDasharray="3 3" stroke="#E2E8F0" />
-                                  <XAxis dataKey="month" stroke="#64748B" />
-                                  <YAxis stroke="#64748B" />
-                                  <Tooltip 
-                                    formatter={(value) => [`$${value?.toLocaleString()}`, 'Revenue']}
-                                    contentStyle={{ 
-                                      backgroundColor: 'rgba(255, 255, 255, 0.9)',
-                                      backdropFilter: 'blur(10px)',
-                                      border: '1px solid #E2E8F0',
-                                      borderRadius: '12px',
-                                      boxShadow: '0 20px 25px -5px rgba(0, 0, 0, 0.1)'
-                                    }}
-                                  />
-                                  <Area
-                                    type="monotone"
-                                    dataKey="revenue"
-                                    stroke="#10B981"
-                                    strokeWidth={4}
-                                    fill="url(#revenueGradient)"
-                                    dot={{ fill: '#10B981', strokeWidth: 2, r: 5 }}
-                                    activeDot={{ r: 8, stroke: '#10B981', strokeWidth: 3 }}
-                                  />
-                                </AreaChart>
-                              </ResponsiveContainer>
-                            </CardContent>
-                          </Card>
-                        </motion.div>
+                        <Card className="bg-white border border-slate-200">
+                          <CardHeader className="pb-4">
+                            <CardTitle className="flex items-center space-x-2 text-lg font-medium text-slate-900">
+                              <DollarSign className="w-5 h-5 text-slate-600" />
+                              <span>Monthly Revenue Trends</span>
+                            </CardTitle>
+                          </CardHeader>
+                          <CardContent>
+                            <ResponsiveContainer width="100%" height={400}>
+                              <AreaChart data={revenueData}>
+                                <defs>
+                                  <linearGradient id="revenueGradient" x1="0" y1="0" x2="0" y2="1">
+                                    <stop offset="5%" stopColor="#0F172A" stopOpacity={0.1}/>
+                                    <stop offset="95%" stopColor="#0F172A" stopOpacity={0.02}/>
+                                  </linearGradient>
+                                </defs>
+                                <CartesianGrid strokeDasharray="3 3" stroke="#E2E8F0" />
+                                <XAxis dataKey="month" stroke="#64748B" fontSize={12} />
+                                <YAxis stroke="#64748B" fontSize={12} />
+                                <Tooltip 
+                                  formatter={(value) => [`$${value?.toLocaleString()}`, 'Revenue']}
+                                  contentStyle={{ 
+                                    backgroundColor: 'white',
+                                    border: '1px solid #E2E8F0',
+                                    borderRadius: '8px',
+                                    boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)'
+                                  }}
+                                />
+                                <Area
+                                  type="monotone"
+                                  dataKey="revenue"
+                                  stroke="#0F172A"
+                                  strokeWidth={2}
+                                  fill="url(#revenueGradient)"
+                                  dot={{ fill: '#0F172A', strokeWidth: 2, r: 3 }}
+                                />
+                              </AreaChart>
+                            </ResponsiveContainer>
+                          </CardContent>
+                        </Card>
                       </motion.div>
                     </TabsContent>
 
@@ -829,92 +700,71 @@ export default function Statistics() {
                         initial={{ opacity: 0 }}
                         animate={{ opacity: 1 }}
                         exit={{ opacity: 0 }}
-                        transition={{ duration: 0.5 }}
+                        transition={{ duration: 0.3 }}
                       >
                         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                           {/* Detailed Utilization Chart */}
-                          <motion.div
-                            initial={{ opacity: 0, scale: 0.9 }}
-                            animate={{ opacity: 1, scale: 1 }}
-                            transition={{ delay: 0.2 }}
-                            whileHover={{ scale: 1.01 }}
-                          >
-                            <Card className="bg-white/60 backdrop-blur-md border border-slate-200 shadow-lg hover:shadow-xl transition-all duration-300">
-                              <CardHeader className="pb-2">
-                                <CardTitle className="flex items-center space-x-2 text-lg">
-                                  <Target className="w-5 h-5 text-purple-600" />
-                                  <span>Peak Hours Analysis</span>
-                                </CardTitle>
-                              </CardHeader>
-                              <CardContent>
-                                <ResponsiveContainer width="100%" height={300}>
-                                  <BarChart data={tableUtilizationData}>
-                                    <CartesianGrid strokeDasharray="3 3" stroke="#E2E8F0" />
-                                    <XAxis dataKey="time" stroke="#64748B" />
-                                    <YAxis stroke="#64748B" />
-                                    <Tooltip 
-                                      formatter={(value) => [`${value}%`, 'Utilization']}
-                                      contentStyle={{ 
-                                        backgroundColor: 'rgba(255, 255, 255, 0.9)',
-                                        backdropFilter: 'blur(10px)',
-                                        border: '1px solid #E2E8F0',
-                                        borderRadius: '12px',
-                                        boxShadow: '0 20px 25px -5px rgba(0, 0, 0, 0.1)'
-                                      }}
-                                    />
-                                    <Bar 
-                                      dataKey="utilization" 
-                                      fill="url(#utilizationGradient)"
-                                      radius={[4, 4, 0, 0]}
-                                    />
-                                    <defs>
-                                      <linearGradient id="utilizationGradient" x1="0" y1="0" x2="0" y2="1">
-                                        <stop offset="5%" stopColor="#8B5CF6" stopOpacity={0.8}/>
-                                        <stop offset="95%" stopColor="#8B5CF6" stopOpacity={0.3}/>
-                                      </linearGradient>
-                                    </defs>
-                                  </BarChart>
-                                </ResponsiveContainer>
-                              </CardContent>
-                            </Card>
-                          </motion.div>
+                          <Card className="bg-white border border-slate-200">
+                            <CardHeader className="pb-4">
+                              <CardTitle className="flex items-center space-x-2 text-lg font-medium text-slate-900">
+                                <Target className="w-5 h-5 text-slate-600" />
+                                <span>Peak Hours Analysis</span>
+                              </CardTitle>
+                            </CardHeader>
+                            <CardContent>
+                              <ResponsiveContainer width="100%" height={300}>
+                                <BarChart data={tableUtilizationData}>
+                                  <CartesianGrid strokeDasharray="3 3" stroke="#E2E8F0" />
+                                  <XAxis dataKey="time" stroke="#64748B" fontSize={12} />
+                                  <YAxis stroke="#64748B" fontSize={12} />
+                                  <Tooltip 
+                                    formatter={(value) => [`${value}%`, 'Utilization']}
+                                    contentStyle={{ 
+                                      backgroundColor: 'white',
+                                      border: '1px solid #E2E8F0',
+                                      borderRadius: '8px',
+                                      boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)'
+                                    }}
+                                  />
+                                  <Bar 
+                                    dataKey="utilization" 
+                                    fill="#0F172A"
+                                    radius={[4, 4, 0, 0]}
+                                  />
+                                </BarChart>
+                              </ResponsiveContainer>
+                            </CardContent>
+                          </Card>
 
                           {/* Utilization Summary */}
-                          <motion.div
-                            initial={{ opacity: 0, scale: 0.9 }}
-                            animate={{ opacity: 1, scale: 1 }}
-                            transition={{ delay: 0.4 }}
-                            className="space-y-4"
-                          >
-                            <Card className="bg-white/60 backdrop-blur-md border border-slate-200 shadow-lg hover:shadow-xl transition-all duration-300">
-                              <CardHeader>
-                                <CardTitle className="flex items-center space-x-2 text-lg">
-                                  <Sparkles className="w-5 h-5 text-yellow-500" />
-                                  <span>Performance Insights</span>
-                                </CardTitle>
-                              </CardHeader>
-                              <CardContent className="space-y-4">
-                                <div className="flex items-center justify-between p-3 bg-blue-50 rounded-lg">
-                                  <span className="font-medium text-blue-800">Peak Hour</span>
-                                  <Badge className="bg-blue-600 text-white">
-                                    {stats.peakHour || 19}:00 ({stats.peakHourBookings || 0} bookings)
-                                  </Badge>
-                                </div>
-                                <div className="flex items-center justify-between p-3 bg-green-50 rounded-lg">
-                                  <span className="font-medium text-green-800">Occupancy Rate</span>
-                                  <Badge className="bg-green-600 text-white">
-                                    {stats.occupancyRate || 0}%
-                                  </Badge>
-                                </div>
-                                <div className="flex items-center justify-between p-3 bg-purple-50 rounded-lg">
-                                  <span className="font-medium text-purple-800">No Shows</span>
-                                  <Badge className="bg-purple-600 text-white">
-                                    {stats.noShows || 0}
-                                  </Badge>
-                                </div>
-                              </CardContent>
-                            </Card>
-                          </motion.div>
+                          <Card className="bg-white border border-slate-200">
+                            <CardHeader>
+                              <CardTitle className="flex items-center space-x-2 text-lg font-medium text-slate-900">
+                                <Sparkles className="w-5 h-5 text-slate-600" />
+                                <span>Performance Insights</span>
+                              </CardTitle>
+                            </CardHeader>
+                            <CardContent className="space-y-4">
+                              <div className="flex items-center justify-between p-4 bg-slate-50 rounded-lg">
+                                <span className="font-medium text-slate-700">Peak Hour</span>
+                                <Badge variant="secondary" className="bg-slate-100 text-slate-700">
+                                  {stats.peakHour || 19}:00 ({stats.peakHourBookings || 0} bookings)
+                                </Badge>
+                              </div>
+                              <div className="flex items-center justify-between p-4 bg-slate-50 rounded-lg">
+                                <span className="font-medium text-slate-700">Occupancy Rate</span>
+                                <Badge variant="secondary" className="bg-slate-100 text-slate-700">
+                                  {stats.occupancyRate || 0}%
+                                </Badge>
+                              </div>
+                              <div className="flex items-center justify-between p-4 bg-slate-50 rounded-lg">
+                                <span className="font-medium text-slate-700">No Shows</span>
+                                <Badge variant="secondary" className="bg-slate-100 text-slate-700">
+                                  {stats.noShows || 0}
+                                </Badge>
+                              </div>
+                            </CardContent>
+                          </Card>
                         </div>
                       </motion.div>
                     </TabsContent>
@@ -928,8 +778,8 @@ export default function Statistics() {
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
             >
-              <Zap className="w-16 h-16 mx-auto mb-4 text-slate-400" />
-              <h3 className="text-xl font-semibold text-slate-600 mb-2">No Data Available</h3>
+              <BarChart3 className="w-12 h-12 mx-auto mb-4 text-slate-400" />
+              <h3 className="text-lg font-medium text-slate-600 mb-2">No Data Available</h3>
               <p className="text-slate-500">Start accepting bookings to see analytics</p>
             </motion.div>
           )}

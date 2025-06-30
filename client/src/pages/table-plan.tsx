@@ -28,91 +28,29 @@ import {
   Circle,
   Users,
 } from "lucide-react";
+import { TABLE_STRUCTURES, TableStructurePreview, getDraggableTableStructure } from "@/components/table-shapes/TableStructures";
+import { getTableSVG } from "@/components/table-shapes/TableShapesSVG";
 
 interface TablePosition {
   id: number;
   x: number;
   y: number;
   rotation: number;
-  shape: "square" | "circle" | "rectangle";
+  shape: "square" | "circle" | "rectangle" | "oval" | "round" | "octagon" | "hexagon" | "long-rectangle" | "curved";
   tableNumber?: string;
   capacity?: number;
   isConfigured?: boolean;
 }
 
-interface TableStructure {
-  id: string;
-  name: string;
-  shape: "square" | "circle" | "rectangle";
-  icon: any;
-  defaultCapacity: number;
-  description: string;
-}
-
 const TABLE_SHAPES = [
-  { value: "square", label: "Square", icon: Square },
-  { value: "circle", label: "Round", icon: Circle },
-  { value: "rectangle", label: "Rectangle", icon: Square },
+  { value: "square", label: "Square" },
+  { value: "circle", label: "Circle" },
+  { value: "rectangle", label: "Rectangle" },
 ];
 
-const TABLE_STRUCTURES: TableStructure[] = [
-  {
-    id: "small-round",
-    name: "Small Round",
-    shape: "circle",
-    icon: Circle,
-    defaultCapacity: 2,
-    description: "2-person round table",
-  },
-  {
-    id: "medium-round",
-    name: "Medium Round",
-    shape: "circle",
-    icon: Circle,
-    defaultCapacity: 4,
-    description: "4-person round table",
-  },
-  {
-    id: "large-round",
-    name: "Large Round",
-    shape: "circle",
-    icon: Circle,
-    defaultCapacity: 6,
-    description: "6-person round table",
-  },
-  {
-    id: "small-square",
-    name: "Small Square",
-    shape: "square",
-    icon: Square,
-    defaultCapacity: 2,
-    description: "2-person square table",
-  },
-  {
-    id: "medium-square",
-    name: "Medium Square",
-    shape: "square",
-    icon: Square,
-    defaultCapacity: 4,
-    description: "4-person square table",
-  },
-  {
-    id: "rectangular",
-    name: "Rectangular",
-    shape: "rectangle",
-    icon: Square,
-    defaultCapacity: 6,
-    description: "6-person rectangular table",
-  },
-  {
-    id: "long-rectangular",
-    name: "Long Rectangular",
-    shape: "rectangle",
-    icon: Square,
-    defaultCapacity: 8,
-    description: "8-person long table",
-  },
-];
+
+
+
 
 export default function TablePlan() {
   const {
@@ -455,78 +393,131 @@ export default function TablePlan() {
     return null;
   }
 
-  const getTableStyle = (table: any, position?: TablePosition) => {
-    const baseStyle = {
-      width: "60px",
-      height: "60px",
-      position: "absolute" as const,
-      cursor: "move",
-      display: "flex",
-      alignItems: "center",
-      justifyContent: "center",
-      fontSize: "12px",
-      fontWeight: "bold",
-      color: "white",
-      userSelect: "none" as const,
-      zIndex:
-        isDragging && draggedTable === (table?.id || position?.id) ? 1000 : 1,
-    };
+  // Professional SVG table rendering component
+  const SVGTableRenderer = ({ position, tableId, table }: { position: TablePosition, tableId: number, table: any }) => {
+    const capacity = position.capacity || table?.capacity || 4;
+    const tableNumber = position.tableNumber || table?.tableNumber || tableId;
+    const shape = position.shape || 'square';
 
-    if (position) {
-      return {
-        ...baseStyle,
-        left: `${position.x}px`,
-        top: `${position.y}px`,
-        transform: `rotate(${position.rotation}deg)`,
-        backgroundColor: position.isConfigured
-          ? "#16a34a"
-          : table?.isActive
-            ? "#16a34a"
-            : "#6b7280",
-        borderRadius:
-          position.shape === "circle"
-            ? "50%"
-            : position.shape === "rectangle"
-              ? "8px"
-              : "4px",
-        width: position.shape === "rectangle" ? "80px" : "60px",
-      };
-    }
+    // Standardized table size for consistency - ALL TABLES SAME SIZE
+    const tableWidth = 100;
+    const tableHeight = 100;
 
-    return {
-      ...baseStyle,
-      backgroundColor: table?.isActive ? "#16a34a" : "#6b7280",
-      borderRadius: "50%",
-      position: "relative" as const,
-      margin: "5px",
-    };
+    return (
+      <div
+        style={{
+          position: 'absolute',
+          left: `${position.x}px`,
+          top: `${position.y}px`,
+          transform: `rotate(${position.rotation || 0}deg)`,
+          transformOrigin: 'center',
+          cursor: isDragging ? 'grabbing' : 'grab',
+          zIndex: draggedTable === tableId ? 1000 : 10,
+          transition: 'transform 0.2s ease, box-shadow 0.2s ease',
+          width: `${tableWidth}px`,
+          height: `${tableHeight}px`,
+        }}
+        draggable
+        onDragStart={(e) => {
+          console.log('Starting drag for table:', tableId);
+          setDraggedTable(tableId);
+          setIsDragging(true);
+          e.dataTransfer.effectAllowed = "move";
+        }}
+        onDragEnd={(e) => {
+          console.log('Drag ended for table:', tableId);
+          setDraggedTable(null);
+          setIsDragging(false);
+        }}
+        className="group"
+      >
+        {/* SVG Table with professional design - standardized size */}
+        <div className="relative w-full h-full">
+          {getTableSVG(shape, capacity, tableWidth, tableHeight, "drop-shadow-lg hover:drop-shadow-xl transition-all w-full h-full")}
+
+          {/* Table number overlay */}
+          <div
+            className="absolute inset-0 flex items-center justify-center text-white text-xs font-bold pointer-events-none z-15"
+            style={{ textShadow: '1px 1px 2px rgba(0,0,0,0.8)' }}
+          >
+            <div className="text-center">
+              <div>{tableNumber}</div>
+              <div className="text-[10px] opacity-90">
+                {capacity > 12 ? `${capacity}p*` : `${capacity}p`}
+              </div>
+              {capacity > 12 && (
+                <div className="text-[8px] opacity-75">
+                  (12-seat visual)
+                </div>
+              )}
+            </div>
+          </div>
+
+          {/* Remove button - always visible on hover */}
+          <button
+            onClick={(e) => {
+              e.preventDefault();
+              e.stopPropagation();
+              console.log('Removing table:', tableId);
+              if (window.confirm(`Remove Table ${tableNumber} from the floor plan?`)) {
+                setTablePositions((prev) => {
+                  const newPositions = { ...prev };
+                  delete newPositions[tableId];
+                  return newPositions;
+                });
+              }
+            }}
+            className="absolute -top-2 -right-2 w-6 h-6 bg-red-500 hover:bg-red-600 text-white rounded-full text-xs font-bold opacity-0 group-hover:opacity-100 transition-all duration-200 flex items-center justify-center z-20 hover:scale-110 shadow-lg"
+            title="Remove table from plan"
+          >
+            ×
+          </button>
+        </div>
+      </div>
+    );
   };
 
-  const getStructureStyle = (structure: TableStructure) => ({
-    width: structure.shape === "rectangle" ? "60px" : "50px",
-    height: "50px",
-    backgroundColor: "#6b7280",
-    borderRadius:
-      structure.shape === "circle"
-        ? "50%"
-        : structure.shape === "rectangle"
-          ? "8px"
-          : "4px",
-    display: "flex",
-    alignItems: "center",
-    justifyContent: "center",
-    cursor: "grab",
-    color: "white",
-    fontSize: "10px",
-    fontWeight: "bold",
-    userSelect: "none" as const,
-  });
+  // Table styling based on shape
+  const getTableStyle = (table: any) => {
+    const baseStyle = {
+      cursor: "grab",
+    };
+    return baseStyle;
+  };
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-gray-50 to-blue-50">
+      {/* Professional Header */}
+      <div className="bg-white shadow-sm border-b">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="flex items-center justify-between h-16">
+            <div className="flex items-center">
+              <h1 className="text-2xl font-bold text-gray-900">Table Plan Designer</h1>
+              <div className="ml-4 text-sm text-gray-500">
+                {restaurant?.name || 'Restaurant Layout'}
+              </div>
+            </div>
+            <div className="flex items-center space-x-4">
+              <Button
+                variant="outline"
+                onClick={() => {/* Save layout */}}
+                className="bg-white hover:bg-gray-50"
+              >
+                <Save className="h-4 w-4 mr-2" />
+                Save Layout
+              </Button>
+            </div>
+          </div>
+        </div>
+      </div>
+
       <div className="flex">
-        {/* Sidebar */}
-        <div className="w-64 bg-white border-r min-h-screen">
+        {/* Professional Sidebar */}
+        <div className="w-80 bg-white border-r shadow-lg min-h-screen">
+          <div className="p-6 bg-gradient-to-b from-gray-50 to-white border-b">
+            <h2 className="text-lg font-semibold text-gray-900 mb-1">Design Tools</h2>
+            <p className="text-sm text-gray-500">Drag tables and shapes to create your layout</p>
+          </div>
           <div className="p-6">
             {/* Room Selection */}
             <div className="mb-6">
@@ -574,7 +565,7 @@ export default function TablePlan() {
                       <div
                         draggable
                         onDragStart={(e) => handleDragStart(table.id, e)}
-                        style={getTableStyle(table)}
+                        style={{cursor: "grab"}}
                         title={`Drag to place Table ${table.tableNumber}`}
                       >
                         {table.tableNumber}
@@ -619,42 +610,103 @@ export default function TablePlan() {
               </div>
             </div>
 
-            {/* Table Structures */}
+            {/* Professional Table Structures */}
             <div className="mb-6">
-              <h3 className="text-sm font-medium text-gray-700 mb-3">
-                Table Structures
-              </h3>
-              <div className="grid grid-cols-2 gap-2 mb-4">
+              <h3 className="text-sm font-medium text-gray-700 mb-3">Table Shapes</h3>
+              <div className="grid grid-cols-2 gap-3 max-h-96 overflow-y-auto">
                 {TABLE_STRUCTURES.map((structure) => (
                   <div
-                    key={`structure-${structure.id}`}
-                    className="p-2 border rounded-lg hover:bg-gray-50 cursor-grab"
+                    key={structure.id}
+                    className="border rounded-lg p-2 hover:bg-gray-50 transition-colors cursor-grab"
+                    title={structure.description}
                     draggable
                     onDragStart={(e) => handleStructureDragStart(structure, e)}
                   >
-                    <div className="flex flex-col items-center">
-                      <div
-                        style={getStructureStyle(structure)}
-                        className="mb-1"
-                      >
-                        {structure.defaultCapacity}
-                      </div>
-                      <div className="text-xs text-center">
-                        <div className="font-medium">{structure.name}</div>
-                        <div className="text-gray-500">
-                          {structure.description}
-                        </div>
-                      </div>
+                    <TableStructurePreview structure={structure} />
+                    <div className="text-center mt-1">
+                      <div className="text-xs font-medium text-gray-700">{structure.name}</div>
+                      <div className="text-xs text-gray-500">{structure.description}</div>
                     </div>
                   </div>
                 ))}
+
               </div>
-              <div className="text-xs text-gray-500 p-2 bg-blue-50 rounded">
-                <strong>Tips:</strong>
-                <br />• Drag table structures onto the floor plan to add new
-                tables
-                <br />• Hover over placed tables to see the remove button (×)
-                <br />• Right-click on tables for quick removal
+
+              <div className="mb-4">
+                <Button
+                  className="w-full bg-green-600 hover:bg-green-700 text-white"
+                  onClick={() => {/* Handle done */}}
+                >
+                  Done
+                </Button>
+              </div>
+
+              <div className="mb-4">
+                <Button
+                  variant="outline"
+                  className="w-full text-red-600 border-red-600 hover:bg-red-50"
+                  onClick={() => {/* Handle delete table */}}
+                >
+                  Delete table
+                </Button>
+              </div>
+            </div>
+
+            {/* Unallocated Tables */}
+            <div className="mb-6">
+              <h3 className="text-sm font-medium text-gray-700 mb-3">
+                Unallocated tables (drag to the white box)
+              </h3>
+              <div className="flex flex-wrap gap-2 mb-4">
+                {tables.filter((table: any) => !tablePositions[table.id]).map((table: any, index: number) => {
+                  const priorityColors = [
+                    'bg-blue-600', 'bg-blue-500', 'bg-gray-600', 'bg-gray-700', 
+                    'bg-gray-800', 'bg-slate-600', 'bg-slate-700'
+                  ];
+                  const colorClass = priorityColors[index % priorityColors.length];
+
+                  return (
+                    <div
+                      key={`unallocated-${table.id}`}
+                      className={`${colorClass} text-white px-3 py-2 rounded cursor-grab hover:opacity-90 transition-opacity text-xs font-medium`}
+                      draggable
+                      onDragStart={(e) => handleDragStart(table.id, e)}
+                      title={`Table ${table.tableNumber} - ${table.capacity} persons`}
+                    >
+                      <div className="text-center">
+                        <div className="font-bold">{table.tableNumber}</div>
+                        <div className="text-[10px] opacity-90">{table.capacity} pers.</div>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+
+              {/* Priority Legend */}
+              <div className="mb-4">
+                <h4 className="text-xs font-medium text-gray-700 mb-2">Priority:</h4>
+                <div className="flex flex-wrap gap-2 text-xs">
+                  <div className="flex items-center gap-1">
+                    <div className="w-3 h-3 bg-green-600 rounded-full"></div>
+                    <span>Highest</span>
+                  </div>
+                  <div className="flex items-center gap-1">
+                    <div className="w-3 h-3 bg-blue-600 rounded-full"></div>
+                    <span>High</span>
+                  </div>
+                  <div className="flex items-center gap-1">
+                    <div className="w-3 h-3 bg-gray-600 rounded-full"></div>
+                    <span>Medium</span>
+                  </div>
+                  <div className="flex items-center gap-1">
+                    <div className="w-3 h-3 bg-yellow-500 rounded-full"></div>
+                    <span>Low</span>
+                  </div>
+                  <div className="flex items-center gap-1">
+                    <div className="w-3 h-3 bg-red-500 rounded-full"></div>
+                    <span>Lowest</span>
+                  </div>
+                </div>
               </div>
             </div>
 
@@ -711,6 +763,7 @@ export default function TablePlan() {
                 onDrop={handleDrop}
               >
                 {/* Grid pattern */}
+
                 <div
                   className="absolute inset-0 opacity-20"
                   style={{
@@ -750,82 +803,18 @@ export default function TablePlan() {
                   </div>
                 )}
 
-                {/* Placed Tables */}
+                {/* Professional Tables */}
                 {Object.entries(tablePositions).map(([tableId, position]) => {
-                  // Find corresponding table from database if it exists
-                  const dbTable = tables.find(
-                    (t: any) => t.id === parseInt(tableId),
-                  );
+                  const dbTable = tables.find((t: any) => t.id === parseInt(tableId));
                   const numericTableId = parseInt(tableId);
 
                   return (
-                    <div
-                      key={`positioned-table-${tableId}`}
-                      draggable
-                      onDragStart={(e) => handleDragStart(numericTableId, e)}
-                      style={getTableStyle(dbTable, position)}
-                      className="shadow-lg border-2 border-white hover:shadow-xl transition-shadow"
-                      title={
-                        dbTable
-                          ? `Table ${dbTable.tableNumber} (${dbTable.capacity} seats) - Right click to remove`
-                          : position.isConfigured
-                            ? `Table ${position.tableNumber} (${position.capacity} seats) - Right click to remove`
-                            : "Unconfigured table - Right click to remove"
-                      }
-                      onContextMenu={(e) => {
-                        e.preventDefault();
-                        if (
-                          window.confirm(
-                            `Are you sure you want to remove this table from the floor plan?`,
-                          )
-                        ) {
-                          setTablePositions((prev) => {
-                            const newPositions = { ...prev };
-                            delete newPositions[numericTableId];
-                            return newPositions;
-                          });
-                        }
-                      }}
-                    >
-                      <div className="text-center relative group">
-                        <div className="font-bold">
-                          {dbTable
-                            ? dbTable.tableNumber
-                            : position.isConfigured
-                              ? position.tableNumber
-                              : "?"}
-                        </div>
-                        <div className="text-xs opacity-80">
-                          {dbTable
-                            ? `${dbTable.capacity} seats`
-                            : position.isConfigured
-                              ? `${position.capacity} seats`
-                              : ""}
-                        </div>
-                        {/* Remove button - shown on hover */}
-                        <button
-                          className="absolute -top-2 -right-2 w-5 h-5 bg-red-600 text-white rounded-full text-xs opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center hover:bg-red-700"
-                          onClick={(e) => {
-                            e.preventDefault();
-                            e.stopPropagation();
-                            if (
-                              window.confirm(
-                                `Are you sure you want to remove this table from the floor plan?`,
-                              )
-                            ) {
-                              setTablePositions((prev) => {
-                                const newPositions = { ...prev };
-                                delete newPositions[numericTableId];
-                                return newPositions;
-                              });
-                            }
-                          }}
-                          title="Remove table from floor plan"
-                        >
-                          ×
-                        </button>
-                      </div>
-                    </div>
+                    <SVGTableRenderer
+                      key={`table-renderer-${tableId}`}
+                      position={position}
+                      tableId={numericTableId}
+                      table={dbTable}
+                    />
                   );
                 })}
               </div>
@@ -854,6 +843,15 @@ export default function TablePlan() {
       </div>
 
       {/* Table Configuration Dialog */}
+      {/* CSS for chair styling */}
+      <style jsx>{`
+        .chair:hover {
+          background-color: #A0522D !important;
+          transform: scale(1.1) rotate(${isDragging ? '0deg' : '0deg'});
+          transition: all 0.2s ease;
+        }
+      `}</style>
+
       <Dialog open={showConfigDialog} onOpenChange={setShowConfigDialog}>
         <DialogContent>
           <DialogHeader>
@@ -890,15 +888,26 @@ export default function TablePlan() {
                 min="1"
                 max="20"
                 value={tableConfig.capacity}
-                onChange={(e) =>
+                onChange={(e) => {
+                  const inputCapacity = parseInt(e.target.value) || 1;
                   setTableConfig((prev) => ({
                     ...prev,
-                    capacity: parseInt(e.target.value) || 1,
-                  }))
-                }
+                    capacity: inputCapacity,
+                  }));
+                }}
               />
               <p className="text-xs text-gray-500 mt-1">
                 Maximum number of guests this table can accommodate
+                {tableConfig.capacity > 12 && (
+                  <span className="text-blue-600 font-medium block">
+                    ℹ️ Tables with {tableConfig.capacity}+ guests will display as 12-person table visual (largest available design)
+                  </span>
+                )}
+                {tableConfig.capacity > 16 && (
+                  <span className="text-orange-600 font-medium block">
+                    ⚠️ For {tableConfig.capacity} guests, consider using multiple tables for better service and guest experience
+                  </span>
+                )}
               </p>
             </div>
             <div className="flex justify-end gap-2 pt-4">

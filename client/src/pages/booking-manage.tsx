@@ -275,14 +275,14 @@ export default function BookingManage() {
   const handleCancelBooking = async () => {
     if (!booking?.canCancel) {
       toast({ 
-        title: "Cannot cancel booking", 
+        title: "Cannot delete booking", 
         description: getRestrictionMessage(),
         variant: "destructive" 
       });
       return;
     }
 
-    if (confirm("Are you sure you want to cancel this booking?")) {
+    if (confirm("Are you sure you want to delete this booking?")) {
       try {
         const urlParams = new URLSearchParams(window.location.search);
         const hash = urlParams.get('hash');
@@ -312,7 +312,7 @@ export default function BookingManage() {
 
         const result = await response.json();
         refetch();
-        toast({ title: "Booking cancelled successfully" });
+        toast({ title: "Booking deleted successfully" });
       } catch (error: any) {
         toast({ title: error.message, variant: "destructive" });
       }
@@ -728,7 +728,7 @@ export default function BookingManage() {
                 <div className="pt-4 border-t">
                   <div className="flex items-center justify-between">
                     <div>
-                      <h3 className="font-medium text-gray-900">Cancel Booking</h3>
+                      <h3 className="font-medium text-gray-900">Delete Booking</h3>
                       <p className="text-sm text-gray-500">This action cannot be undone</p>
                     </div>
                     <Button 
@@ -736,7 +736,7 @@ export default function BookingManage() {
                       onClick={handleCancelBooking}
                       disabled={updateMutation.isPending || !booking?.canCancel}
                     >
-                      Cancel Booking
+                      Delete Booking
                     </Button>
                   </div>
                 </div>

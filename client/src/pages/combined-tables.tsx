@@ -69,6 +69,8 @@ export default function CombinedTables() {
   // State management
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [editingCombination, setEditingCombination] = useState<CombinedTable | null>(null);
+  const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
+  const [combinationToDelete, setCombinationToDelete] = useState<CombinedTable | null>(null);
   const [newCombination, setNewCombination] = useState({
     name: "",
     tableIds: [] as number[],
@@ -301,6 +303,19 @@ export default function CombinedTables() {
       tableIds: parsedTableIds,
     });
     setIsDialogOpen(true);
+  };
+
+  const handleDeleteCombination = (combination: CombinedTable) => {
+    setCombinationToDelete(combination);
+    setIsDeleteDialogOpen(true);
+  };
+
+  const confirmDeleteCombination = () => {
+    if (combinationToDelete && combinationToDelete.id) {
+      deleteCombinedTableMutation.mutate(combinationToDelete.id);
+      setIsDeleteDialogOpen(false);
+      setCombinationToDelete(null);
+    }
   };
 
   const getTableNumbers = (tableIds: number[] | string) => {
@@ -758,20 +773,22 @@ export default function CombinedTables() {
                               <Button
                                 variant="outline"
                                 size="sm"
-                                onClick={() => handleEdit(combination)}
-                                className="text-blue-600 border-blue-600 hover:bg-blue-50 h-8 w-8 p-0"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  handleEdit(combination);
+                                }}
+                                className="h-8 w-8 p-0"
                               >
                                 <Edit className="h-4 w-4" />
                               </Button>
                               <Button
                                 variant="outline"
                                 size="sm"
-                                onClick={() => {
-                                  if (confirm(`Are you sure you want to delete "${combination.name}"?`)) {
-                                    deleteCombinedTableMutation.mutate(combination.id);
-                                  }
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  handleDeleteCombination(combination);
                                 }}
-                                className="text-red-600 border-red-600 hover:bg-red-50 h-8 w-8 p-0"
+                                className="h-8 w-8 p-0 text-red-600 hover:text-red-700 hover:bg-red-50"
                               >
                                 <Trash2 className="h-4 w-4" />
                               </Button>
@@ -862,6 +879,34 @@ export default function CombinedTables() {
           </div>
         </div>
       </div>
+
+      {/* Delete Confirmation Dialog */}
+      <Dialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>Delete Combined Table</DialogTitle>
+          </DialogHeader>
+          <div className="py-4">
+            <p className="text-gray-600">
+              Are you sure you want to delete the combined table <strong>{combinationToDelete?.name}</strong>?
+            </p>
+            <p className="text-red-600 text-sm mt-2">This action cannot be undone.</p>
+          </div>
+          <div className="flex justify-end space-x-2">
+            <Button type="button" variant="outline" onClick={() => setIsDeleteDialogOpen(false)}>
+              Cancel
+            </Button>
+            <Button 
+              type="button" 
+              variant="destructive" 
+              onClick={confirmDeleteCombination}
+              disabled={deleteCombinedTableMutation.isPending}
+            >
+              {deleteCombinedTableMutation.isPending ? "Deleting..." : "Delete Combined Table"}
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
