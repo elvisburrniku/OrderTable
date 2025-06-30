@@ -1,24 +1,33 @@
-import React from 'react';
-import { 
-  SquareTable1Person, 
-  CircleTable1Person, 
-  SquareTable2Person, 
-  CircleTable2Person, 
-  CircleTable3Person, 
-  SquareTable4Person, 
-  SquareTable4PersonCompact, 
-  CircleTable4Person, 
-  CircleTable5Person, 
-  CircleTable6Person, 
-  CircleTable8Person, 
-  SquareTable6Person, 
-  SquareTable8Person 
-} from './TableShapesSVG';
+import React from "react";
+import {
+  SquareTable1Person,
+  CircleTable1Person,
+  SquareTable2Person,
+  CircleTable2Person,
+  CircleTable3Person,
+  SquareTable4Person,
+  SquareTable4PersonCompact,
+  CircleTable4Person,
+  CircleTable5Person,
+  CircleTable6Person,
+  CircleTable8Person,
+  SquareTable6Person,
+  SquareTable8Person,
+} from "./TableShapesSVG";
 
 interface TableStructure {
   id: string;
   name: string;
-  shape: "square" | "circle" | "rectangle" | "oval" | "round" | "octagon" | "hexagon" | "long-rectangle" | "curved";
+  shape:
+    | "square"
+    | "circle"
+    | "rectangle"
+    | "oval"
+    | "round"
+    | "octagon"
+    | "hexagon"
+    | "long-rectangle"
+    | "curved";
   component: React.FC<{ width?: number; height?: number; className?: string }>;
   defaultCapacity: number;
   description: string;
@@ -174,25 +183,31 @@ export const TABLE_STRUCTURES: TableStructure[] = [
     component: SquareTable8Person,
     defaultCapacity: 12,
     description: "12-person long table",
-    width: 50,
-    height: 50,
+    width: 300,
+    height: 70,
   },
 ];
 
-export const TableStructurePreview: React.FC<{ structure: TableStructure }> = ({ structure }) => {
+export const TableStructurePreview: React.FC<{ structure: TableStructure }> = ({
+  structure,
+}) => {
   const TableComponent = structure.component;
-  
+
   return (
     <div className="flex items-center justify-center p-2">
-      <TableComponent 
-        width={50} 
-        height={50} 
+      <TableComponent
+        width={50}
+        height={50}
         className="transition-transform hover:scale-110"
       />
     </div>
   );
 };
 
-export const getDraggableTableStructure = (structureId: string): TableStructure | null => {
-  return TABLE_STRUCTURES.find(structure => structure.id === structureId) || null;
+export const getDraggableTableStructure = (
+  structureId: string,
+): TableStructure | null => {
+  return (
+    TABLE_STRUCTURES.find((structure) => structure.id === structureId) || null
+  );
 };
