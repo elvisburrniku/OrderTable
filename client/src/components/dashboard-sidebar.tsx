@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import {
   Calendar,
   Users,
@@ -47,7 +47,7 @@ export default function DashboardSidebar({
   tenantId,
   restaurantId,
 }: SidebarProps) {
-  const [location] = useLocation();
+  const [location, setLocation] = useLocation();
   const [isRestaurantSettingsOpen, setIsRestaurantSettingsOpen] =
     useState(false);
   const [isHelpOpen, setIsHelpOpen] = useState(false);
@@ -56,10 +56,21 @@ export default function DashboardSidebar({
   const { data: userPermissions } = useQuery<{
     permissions: string[];
     role: string;
+    redirect: string;
   }>({
-    queryKey: [`/api/tenants/${tenantId}/user-permissions`],
+    queryKey: ['/api/user/permissions'],
     enabled: !!tenantId,
   });
+
+  // Handle user redirect based on saved role settings
+  useEffect(() => {
+    if (userPermissions?.redirect && location === `/${tenantId}/dashboard`) {
+      const redirectPath = `/${tenantId}/${userPermissions.redirect}`;
+      if (redirectPath !== location) {
+        setLocation(redirectPath);
+      }
+    }
+  }, [userPermissions, location, tenantId, setLocation]);
 
   const restaurantSettingsItems = [
     { name: "Opening Hours", icon: Clock, href: `/${tenantId}/opening-hours`, requiredPermission: "access_settings" },
@@ -144,10 +155,13 @@ export default function DashboardSidebar({
   ];
 
   // Filter restaurant settings items based on user permissions
-  const visibleRestaurantSettingsItems = restaurantSettingsItems.filter(item => {
-    if (!userPermissions) return true; // Show all items if permissions are loading
-    return userPermissions.permissions.includes(item.requiredPermission);
-  });
+  const visibleRestaurantSettingsItems = userPermissions ? restaurantSettingsItems.filter(item => {
+    const hasPermission = userPermissions.permissions.includes(item.requiredPermission);
+    console.log(`Settings item "${item.name}" requires "${item.requiredPermission}":`, hasPermission);
+    return hasPermission;
+  }) : [];
+
+  console.log('Visible restaurant settings items:', visibleRestaurantSettingsItems.length, visibleRestaurantSettingsItems.map(item => item.name));
 
   const menuItems = [
     {
@@ -286,10 +300,16 @@ export default function DashboardSidebar({
   ];
 
   // Filter menu items based on user permissions
-  const visibleMenuItems = menuItems.filter(item => {
-    if (!userPermissions) return true; // Show all items if permissions are loading
-    return userPermissions.permissions.includes(item.requiredPermission);
-  });
+  const visibleMenuItems = userPermissions ? menuItems.filter(item => {
+    const hasPermission = userPermissions.permissions.includes(item.requiredPermission);
+    console.log(`Menu item "${item.name}" requires "${item.requiredPermission}":`, hasPermission, 'User permissions:', userPermissions.permissions);
+    return hasPermission;
+  }) : [];
+
+  // Debug logging
+  console.log('User permissions data:', userPermissions);
+  console.log('Total menu items:', menuItems.length);
+  console.log('Visible menu items:', visibleMenuItems.length, visibleMenuItems.map(item => item.name));
 
   const helpItems = [
     {
@@ -343,6 +363,12 @@ export default function DashboardSidebar({
 
         {/* Navigation */}
         <nav className="space-y-1">
+          {!userPermissions && (
+            <div className="px-3 py-2 text-sm text-gray-500">Loading menu...</div>
+          )}
+          {userPermissions && visibleMenuItems.length === 0 && (
+            <div className="px-3 py-2 text-sm text-gray-500">No menu items available</div>
+          )}
           {visibleMenuItems.filter(item => item.name !== "Product Groups").map((item) => {
             const Icon = item.icon;
             const active = isActive(item.href);
