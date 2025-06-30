@@ -67,6 +67,9 @@ export default function RealTimeTableStatus({
   const [isAutoRefreshing, setIsAutoRefreshing] = useState(autoRefresh);
   const [lastRefresh, setLastRefresh] = useState<Date>(new Date());
 
+  // All hooks must be called at the top level
+  const { generalSettings } = useSettings();
+
   // Fetch real-time table status
   const { data: tableStatuses = [], isLoading, refetch, isRefetching } = useQuery({
     queryKey: [`/api/tenants/${tenantId}/restaurants/${restaurantId}/tables/real-time-status`],
@@ -195,7 +198,6 @@ export default function RealTimeTableStatus({
       </Card>
     );
   }
-  const { generalSettings } = useSettings();
 
   return (
     <div className="space-y-6">

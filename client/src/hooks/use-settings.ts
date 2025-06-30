@@ -22,15 +22,15 @@ export interface RestaurantSettings {
 export function useSettings() {
   const { restaurant } = useAuth();
   
-  const { data: settings, isLoading } = useQuery({
+  const { data: settings, isLoading: settingsLoading } = useQuery({
     queryKey: [`/api/tenants/${restaurant?.tenantId}/restaurants/${restaurant?.id}/settings`],
     enabled: !!restaurant?.id && !!restaurant?.tenantId,
   });
 
-  // Fallback to booking config if main settings fail (subscription issues)
-  const { data: bookingConfig } = useQuery({
+  // Always call this hook to maintain consistent hook order
+  const { data: bookingConfig, isLoading: configLoading } = useQuery({
     queryKey: [`/api/tenants/${restaurant?.tenantId}/restaurants/${restaurant?.id}/booking-config`],
-    enabled: !!restaurant?.id && !!restaurant?.tenantId && !settings,
+    enabled: !!restaurant?.id && !!restaurant?.tenantId,
   });
 
   // Priority: bookingConfig (no validation) > settings > defaults
@@ -47,6 +47,6 @@ export function useSettings() {
   return {
     settings: settings as RestaurantSettings,
     generalSettings,
-    isLoading
+    isLoading: settingsLoading || configLoading
   };
 }

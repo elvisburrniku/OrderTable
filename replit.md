@@ -22,6 +22,9 @@ A comprehensive restaurant booking management system with React frontend and Exp
 - Kitchen order management
 
 ## Recent Changes
+- **2025-06-30**: Fixed React hooks violation in real-time table status component causing "more hooks than during previous render" error
+- **2025-06-30**: Resolved database constraint issues by making restaurant_id nullable in activity_log table for proper activity logging
+- **2025-06-30**: Successfully migrated to fresh PostgreSQL database instance with all essential tables properly initialized
 - **2025-06-27**: Fixed subscription access restrictions for cancelled subscriptions - users can now access all essential features
 - **Subscription System**: Modified permission middleware to allow core restaurant management functionality even with cancelled subscriptions
 - **Access Control**: Users with cancelled subscriptions can access dashboard, bookings, customers, menu, tables, kitchen, settings, floor plan, user management, and billing features
