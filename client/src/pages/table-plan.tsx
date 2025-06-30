@@ -1042,7 +1042,7 @@ export default function TablePlan() {
                       id="tableWidth"
                       type="number"
                       min="40"
-                      max="200"
+                      max="160"
                       value={tablePositions[selectedTableForConfig]?.width || 70}
                       onChange={(e) => {
                         const width = parseInt(e.target.value) || 70;
@@ -1063,7 +1063,7 @@ export default function TablePlan() {
                       id="tableHeight"
                       type="number"
                       min="40"
-                      max="200"
+                      max="100"
                       value={tablePositions[selectedTableForConfig]?.height || 70}
                       onChange={(e) => {
                         const height = parseInt(e.target.value) || 70;
