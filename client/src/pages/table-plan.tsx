@@ -443,13 +443,8 @@ export default function TablePlan() {
             <div className="text-center">
               <div>{tableNumber}</div>
               <div className="text-[10px] opacity-90">
-                {capacity > 12 ? `${capacity}p*` : `${capacity}p`}
+                {capacity} pers.
               </div>
-              {capacity > 12 && (
-                <div className="text-[8px] opacity-75">
-                  (12-seat visual)
-                </div>
-              )}
             </div>
           </div>
 
