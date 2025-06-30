@@ -60,10 +60,12 @@ export function LayoutWrapper({ children }: LayoutWrapperProps) {
     // Render without sidebar for public routes
     return (
       <>
-        {/* Header with notification indicator for public routes */}
-        <div className="flex justify-end items-center p-4 bg-white border-b border-gray-200">
-          <NotificationIndicator />
-        </div>
+        {/* Header with notification indicator for public routes - only shows if authenticated */}
+        {user && (
+          <div className="flex justify-end items-center p-4 bg-white border-b border-gray-200">
+            <NotificationIndicator />
+          </div>
+        )}
         {children}
         <CookieSettingsButton />
       </>
@@ -74,10 +76,12 @@ export function LayoutWrapper({ children }: LayoutWrapperProps) {
   if (isBlocked) {
     return (
       <>
-        {/* Header with notification indicator for blocked routes */}
-        <div className="flex justify-end items-center p-4 bg-white border-b border-gray-200">
-          <NotificationIndicator />
-        </div>
+        {/* Header with notification indicator for blocked routes - only shows if authenticated */}
+        {user && (
+          <div className="flex justify-end items-center p-4 bg-white border-b border-gray-200">
+            <NotificationIndicator />
+          </div>
+        )}
         <main className="min-h-screen bg-gray-50">
           {children}
         </main>
