@@ -7,7 +7,7 @@ import BookingCalendar from "@/components/booking-calendar";
 import EnhancedGoogleCalendar from "@/components/enhanced-google-calendar";
 import WalkInBookingButton from "@/components/walk-in-booking";
 import RealTimeTableStatus from "@/components/real-time-table-status";
-import DynamicBookingForm from "@/components/dynamic-booking-form";
+import UnifiedBookingModal from "@/components/unified-booking-modal";
 import WelcomeAnimation from "@/components/welcome-animation";
 import ActiveSeasonalThemeDisplay from "@/components/active-seasonal-theme-display";
 import ReservationCountdown from "@/components/reservation-countdown";
@@ -1149,25 +1149,27 @@ export default function Dashboard() {
       </div>
 
       {/* New Booking Dialog */}
-      <Dialog open={isNewBookingOpen} onOpenChange={setIsNewBookingOpen}>
-        <DialogContent className="max-w-md">
-          <DialogHeader>
-            <DialogTitle>
-              Create Booking for Table {selectedTableForBooking?.tableNumber}
-            </DialogTitle>
-          </DialogHeader>
-          <DynamicBookingForm
-            formData={newBooking}
-            onFormDataChange={setNewBooking}
-            tables={[]}
-            combinedTables={[]}
-            onSubmit={handleCreateBooking}
-            isLoading={createBookingMutation.isPending}
-            submitButtonText={createBookingMutation.isPending ? "Creating..." : "Create Booking"}
-            onCancel={() => setIsNewBookingOpen(false)}
-          />
-        </DialogContent>
-      </Dialog>
+      <UnifiedBookingModal
+        open={isNewBookingOpen}
+        onOpenChange={setIsNewBookingOpen}
+        title={selectedTableForBooking 
+          ? `Create Booking for Table ${selectedTableForBooking.tableNumber}`
+          : "Create New Booking"
+        }
+        initialData={{
+          customerName: newBooking.customerName,
+          customerEmail: newBooking.customerEmail,
+          customerPhone: newBooking.customerPhone,
+          guestCount: newBooking.guestCount,
+          startTime: newBooking.startTime,
+          specialRequests: newBooking.notes
+        }}
+        tables={Array.isArray(tables) ? tables : []}
+        onSubmit={handleCreateBooking}
+        isLoading={createBookingMutation.isPending}
+        submitButtonText={createBookingMutation.isPending ? "Creating..." : "Create Booking"}
+        mode="create"
+      />
 
       {/* Booking Management Dialog */}
       <Dialog open={showBookingManager} onOpenChange={setShowBookingManager}>

@@ -15,6 +15,7 @@ import {
   DropdownMenuTrigger
 } from "@/components/ui/dropdown-menu";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import UnifiedBookingModal from "@/components/unified-booking-modal";
 import { Label } from "@/components/ui/label";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { 
@@ -940,138 +941,26 @@ export default function Bookings() {
       </Dialog>
 
       {/* New Booking Dialog */}
-      <Dialog open={isNewBookingOpen} onOpenChange={setIsNewBookingOpen}>
-        <DialogContent className="max-w-2xl">
-          <DialogHeader>
-            <DialogTitle>Create New Booking</DialogTitle>
-          </DialogHeader>
-          <form onSubmit={handleCreateBooking} className="space-y-4">
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <Label htmlFor="customerName">Customer Name</Label>
-                <Input
-                  id="customerName"
-                  value={newBooking.customerName}
-                  onChange={(e) => setNewBooking({ ...newBooking, customerName: e.target.value })}
-                  required
-                />
-              </div>
-              <div>
-                <Label htmlFor="customerEmail">Email</Label>
-                <Input
-                  id="customerEmail"
-                  type="email"
-                  value={newBooking.customerEmail}
-                  onChange={(e) => setNewBooking({ ...newBooking, customerEmail: e.target.value })}
-                  required
-                />
-              </div>
-            </div>
-
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <Label htmlFor="customerPhone">Phone</Label>
-                <Input
-                  id="customerPhone"
-                  type="tel"
-                  value={newBooking.customerPhone}
-                  onChange={(e) => setNewBooking({ ...newBooking, customerPhone: e.target.value })}
-                  placeholder="Phone number"
-                />
-              </div>
-              <div>
-                <Label htmlFor="guestCount">Guest Count</Label>
-                <Input
-                  id="guestCount"
-                  type="number"
-                  min="1"
-                  value={newBooking.guestCount}
-                  onChange={(e) => setNewBooking({ ...newBooking, guestCount: parseInt(e.target.value) })}
-                  required
-                />
-              </div>
-            </div>
-
-            <div className="grid grid-cols-3 gap-4">
-              <div>
-                <Label htmlFor="bookingDate">Date</Label>
-                <Input
-                  id="bookingDate"
-                  type="date"
-                  value={newBooking.bookingDate}
-                  onChange={(e) => setNewBooking({ ...newBooking, bookingDate: e.target.value })}
-                  required
-                />
-              </div>
-              <div>
-                <Label htmlFor="startTime">Start Time</Label>
-                <Input
-                  id="startTime"
-                  type="time"
-                  value={newBooking.startTime}
-                  onChange={(e) => setNewBooking({ ...newBooking, startTime: e.target.value })}
-                  required
-                />
-              </div>
-              <div>
-                <Label htmlFor="endTime">End Time</Label>
-                <Input
-                  id="endTime"
-                  type="time"
-                  value={newBooking.endTime}
-                  onChange={(e) => setNewBooking({ ...newBooking, endTime: e.target.value })}
-                />
-              </div>
-            </div>
-
-            <div>
-              <Label htmlFor="tableId">Table (Optional)</Label>
-              <Select 
-                value={newBooking.tableId} 
-                onValueChange={(value) => setNewBooking({ ...newBooking, tableId: value })}
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder="Auto-assign table" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="auto">Auto-assign</SelectItem>
-                  {Array.isArray(tables) && tables.map((table: any) => (
-                    <SelectItem key={table.id} value={table.id.toString()}>
-                      Table {table.tableNumber} (Capacity: {table.capacity})
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-
-            <div>
-              <Label htmlFor="notes">Notes (Optional)</Label>
-              <Input
-                id="notes"
-                value={newBooking.notes}
-                onChange={(e) => setNewBooking({ ...newBooking, notes: e.target.value })}
-                placeholder="Special requests, allergies, etc."
-              />
-            </div>
-
-            <div className="flex justify-end space-x-2">
-              <Button 
-                type="button" 
-                variant="outline" 
-                onClick={() => setIsNewBookingOpen(false)}
-              >
-                Cancel
-              </Button>
-              <Button 
-                type="submit" 
-                disabled={createBookingMutation.isPending}
-              >
-                {createBookingMutation.isPending ? "Creating..." : "Create Booking"}
-              </Button>
-            </div>
-          </form>
-        </DialogContent>
-      </Dialog>
+      <UnifiedBookingModal
+        open={isNewBookingOpen}
+        onOpenChange={setIsNewBookingOpen}
+        title="Create New Booking"
+        initialData={{
+          customerName: newBooking.customerName,
+          customerEmail: newBooking.customerEmail,
+          customerPhone: newBooking.customerPhone,
+          guestCount: newBooking.guestCount,
+          bookingDate: newBooking.bookingDate,
+          startTime: newBooking.startTime,
+          tableId: newBooking.tableId,
+          specialRequests: newBooking.notes
+        }}
+        tables={tables || []}
+        onSubmit={handleCreateBooking}
+        isLoading={createBookingMutation.isPending}
+        submitButtonText={createBookingMutation.isPending ? "Creating..." : "Create Booking"}
+        mode="create"
+      />
     </div>
   );
 }

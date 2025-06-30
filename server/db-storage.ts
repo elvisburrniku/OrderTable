@@ -2059,7 +2059,7 @@ export class DatabaseStorage implements IStorage {
           eq(customFields.tenantId, tenantId),
         ),
       )
-      .orderBy(customFields.sortOrder, customFields.createdAt);
+      .orderBy(customFields.sortOrder);
     return fields;
   }
   async createCustomField(customFieldData: any): Promise<any> {
