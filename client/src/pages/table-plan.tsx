@@ -87,6 +87,8 @@ export default function TablePlan() {
     tableNumber: "",
     capacity: 2,
   });
+  const [selectedTableForConfig, setSelectedTableForConfig] = useState<number | null>(null);
+  const [showTableConfigPopup, setShowTableConfigPopup] = useState(false);
   const planRef = useRef<HTMLDivElement>(null);
 
   const { data: tables = [], isLoading: tablesLoading } = useQuery({
@@ -474,6 +476,14 @@ export default function TablePlan() {
           setDraggedTable(null);
           setIsDragging(false);
         }}
+        onClick={(e) => {
+          e.preventDefault();
+          e.stopPropagation();
+          if (!isDragging) {
+            setSelectedTableForConfig(tableId);
+            setShowTableConfigPopup(true);
+          }
+        }}
         className="group"
       >
         {/* SVG Table with professional design - standardized size */}
@@ -593,37 +603,12 @@ export default function TablePlan() {
                       </div>
                     </div>
 
-                    {/* Table controls if positioned */}
+                    {/* Show status if positioned */}
                     {tablePositions[table.id] && (
-                      <div className="mt-2 flex items-center gap-1">
-                        <Button
-                          size="sm"
-                          variant="outline"
-                          onClick={() => rotateTable(table.id)}
-                          className="h-6 w-6 p-0"
-                        >
-                          <RotateCw className="h-3 w-3" />
-                        </Button>
-                        <Select
-                          value={tablePositions[table.id]?.shape || "circle"}
-                          onValueChange={(
-                            shape: "square" | "circle" | "rectangle",
-                          ) => changeTableShape(table.id, shape)}
-                        >
-                          <SelectTrigger className="h-6 text-xs">
-                            <SelectValue />
-                          </SelectTrigger>
-                          <SelectContent>
-                            {TABLE_SHAPES.map((shape) => (
-                              <SelectItem
-                                key={`shape-${shape.value}`}
-                                value={shape.value}
-                              >
-                                {shape.label}
-                              </SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
+                      <div className="mt-2">
+                        <Badge variant="outline" className="text-xs">
+                          On Floor Plan
+                        </Badge>
                       </div>
                     )}
                   </div>
@@ -991,6 +976,123 @@ export default function TablePlan() {
                 }
               >
                 {createTableMutation.isPending ? "Creating..." : "Add Table"}
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Table Configuration Popup */}
+      <Dialog open={showTableConfigPopup} onOpenChange={setShowTableConfigPopup}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Configure Table</DialogTitle>
+            {selectedTableForConfig && (
+              <p className="text-sm text-gray-600">
+                Table {tablePositions[selectedTableForConfig]?.tableNumber || 
+                       tables.find((t: any) => t.id === selectedTableForConfig)?.tableNumber || 
+                       selectedTableForConfig} - {tablePositions[selectedTableForConfig]?.capacity || 
+                       tables.find((t: any) => t.id === selectedTableForConfig)?.capacity || 4} persons
+              </p>
+            )}
+          </DialogHeader>
+          <div className="space-y-4">
+            {selectedTableForConfig && (
+              <>
+                {/* Shape Selection */}
+                <div>
+                  <Label htmlFor="tableShape">Table Shape</Label>
+                  <Select
+                    value={tablePositions[selectedTableForConfig]?.shape || "circle"}
+                    onValueChange={(shape: "square" | "circle" | "rectangle") => 
+                      changeTableShape(selectedTableForConfig, shape)
+                    }
+                  >
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="circle">
+                        <div className="flex items-center gap-2">
+                          <Circle className="h-4 w-4" />
+                          Circle
+                        </div>
+                      </SelectItem>
+                      <SelectItem value="square">
+                        <div className="flex items-center gap-2">
+                          <Square className="h-4 w-4" />
+                          Square
+                        </div>
+                      </SelectItem>
+                      <SelectItem value="rectangle">
+                        <div className="flex items-center gap-2">
+                          <Square className="h-4 w-4" />
+                          Rectangle
+                        </div>
+                      </SelectItem>
+                      <SelectItem value="long-rectangle">
+                        <div className="flex items-center gap-2">
+                          <Square className="h-4 w-4" />
+                          Long Rectangle
+                        </div>
+                      </SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                {/* Rotation Control */}
+                <div>
+                  <Label>Table Rotation</Label>
+                  <div className="flex items-center gap-2 mt-2">
+                    <Button
+                      variant="outline"
+                      onClick={() => rotateTable(selectedTableForConfig)}
+                      className="flex items-center gap-2"
+                    >
+                      <RotateCw className="h-4 w-4" />
+                      Rotate 45°
+                    </Button>
+                    <span className="text-sm text-gray-500">
+                      Current: {tablePositions[selectedTableForConfig]?.rotation || 0}°
+                    </span>
+                  </div>
+                </div>
+
+                {/* Table Preview */}
+                <div>
+                  <Label>Preview</Label>
+                  <div className="mt-2 p-4 border rounded-lg bg-gray-50 flex items-center justify-center">
+                    {getTableSVG(
+                      tablePositions[selectedTableForConfig]?.shape || "circle",
+                      tablePositions[selectedTableForConfig]?.capacity || 
+                      tables.find((t: any) => t.id === selectedTableForConfig)?.capacity || 4,
+                      80,
+                      80,
+                      "drop-shadow-lg"
+                    )}
+                  </div>
+                </div>
+              </>
+            )}
+            
+            <div className="flex justify-end gap-2 pt-4">
+              <Button 
+                variant="outline" 
+                onClick={() => {
+                  setShowTableConfigPopup(false);
+                  setSelectedTableForConfig(null);
+                }}
+              >
+                Close
+              </Button>
+              <Button
+                onClick={() => {
+                  setShowTableConfigPopup(false);
+                  setSelectedTableForConfig(null);
+                }}
+                className="bg-green-600 hover:bg-green-700"
+              >
+                Done
               </Button>
             </div>
           </div>
