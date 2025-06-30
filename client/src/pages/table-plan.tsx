@@ -416,9 +416,37 @@ export default function TablePlan() {
     const tableNumber = position.tableNumber || table?.tableNumber || tableId;
     const shape = position.shape || "square";
 
-    // Standardized table size for consistency - ALL TABLES SAME SIZE
-    const tableWidth = 90;
-    const tableHeight = 90;
+    // Dynamic table size based on capacity - bigger tables for more people
+    const baseSize = 70;
+    let tableWidth = baseSize;
+    let tableHeight = baseSize;
+    
+    // Scale tables based on capacity
+    if (capacity <= 2) {
+      tableWidth = baseSize * 0.8; // 56px
+      tableHeight = baseSize * 0.8; // 56px
+    } else if (capacity <= 4) {
+      tableWidth = baseSize; // 70px
+      tableHeight = baseSize; // 70px
+    } else if (capacity <= 6) {
+      tableWidth = baseSize * 1.3; // 91px
+      tableHeight = baseSize * 1.1; // 77px
+    } else if (capacity <= 8) {
+      tableWidth = baseSize * 1.6; // 112px
+      tableHeight = baseSize * 1.2; // 84px
+    } else if (capacity <= 12) {
+      tableWidth = baseSize * 2.0; // 140px
+      tableHeight = baseSize * 1.4; // 98px
+    } else {
+      // For very large capacities (12+)
+      tableWidth = baseSize * 2.4; // 168px
+      tableHeight = baseSize * 1.6; // 112px
+    }
+
+    // For long tables, make them wider
+    if (shape === "long-rectangle" && capacity > 4) {
+      tableWidth = tableWidth * 1.5; // Make long tables significantly wider
+    }
 
     return (
       <div

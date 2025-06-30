@@ -317,53 +317,80 @@ interface TableShapesSVGProps {
 }
 
 export const getTableSVG = (shape: string, capacity: number, width: number = 50, height: number = 50, className: string = "") => {
-    // Safety check for capacity and ensure consistent sizing
+    // Safety check for capacity
     const safeCapacity = capacity || 4;
-    // ALL TABLES USE THE SAME SIZE - 50x50 for perfect consistency
-    const standardWidth = 50;
-    const standardHeight = 50;
+    
+    // Calculate size based on capacity - bigger tables for more people
+    const baseSize = 50;
+    let scaledWidth = baseSize;
+    let scaledHeight = baseSize;
+    
+    // Scale tables based on capacity for better visual representation
+    if (safeCapacity <= 2) {
+      scaledWidth = baseSize * 0.8; // 40px
+      scaledHeight = baseSize * 0.8; // 40px
+    } else if (safeCapacity <= 4) {
+      scaledWidth = baseSize; // 50px
+      scaledHeight = baseSize; // 50px
+    } else if (safeCapacity <= 6) {
+      scaledWidth = baseSize * 1.3; // 65px
+      scaledHeight = baseSize * 1.1; // 55px
+    } else if (safeCapacity <= 8) {
+      scaledWidth = baseSize * 1.6; // 80px
+      scaledHeight = baseSize * 1.2; // 60px
+    } else if (safeCapacity <= 12) {
+      scaledWidth = baseSize * 2.0; // 100px
+      scaledHeight = baseSize * 1.4; // 70px
+    } else {
+      // For very large capacities (12+)
+      scaledWidth = baseSize * 2.4; // 120px
+      scaledHeight = baseSize * 1.6; // 80px
+    }
+
+    // For long tables, make them wider
+    if (shape === "long-rectangle" && safeCapacity > 4) {
+      scaledWidth = scaledWidth * 1.5; // Make long tables significantly wider
+    }
 
     // For very high capacities (12+), use the largest available table
-    // This handles cases where someone enters 15, 16, or even 20 persons - they all get a 12-person table visual
-    // The actual capacity number will still be stored and displayed correctly
     const effectiveCapacity = Math.min(safeCapacity, 12);
 
-    // Force all tables to render at exactly the same size with CSS override
-    const forceEqualSizeStyle = {
-      width: `${standardWidth}px`,
-      height: `${standardHeight}px`,
-      minWidth: `${standardWidth}px`,
-      minHeight: `${standardHeight}px`,
-      maxWidth: `${standardWidth}px`,
-      maxHeight: `${standardHeight}px`,
+    // Dynamic sizing style based on capacity
+    const dynamicSizeStyle = {
+      width: `${scaledWidth}px`,
+      height: `${scaledHeight}px`,
+      minWidth: `${scaledWidth}px`,
+      minHeight: `${scaledHeight}px`,
+      maxWidth: `${scaledWidth}px`,
+      maxHeight: `${scaledHeight}px`,
       display: 'block',
     };
 
     switch (shape) {
       case "round":
       case "circle":
-        if (effectiveCapacity <= 2) return <div style={forceEqualSizeStyle}><CircleTable2Person width={standardWidth} height={standardHeight} className={className} /></div>;
-        if (effectiveCapacity <= 4) return <div style={forceEqualSizeStyle}><CircleTable4Person width={standardWidth} height={standardHeight} className={className} /></div>;
-        if (effectiveCapacity <= 6) return <div style={forceEqualSizeStyle}><CircleTable6Person width={standardWidth} height={standardHeight} className={className} /></div>;
-        return <div style={forceEqualSizeStyle}><CircleTable8Person width={standardWidth} height={standardHeight} className={className} /></div>;
+        if (effectiveCapacity <= 2) return <div style={dynamicSizeStyle}><CircleTable2Person width={scaledWidth} height={scaledHeight} className={className} /></div>;
+        if (effectiveCapacity <= 4) return <div style={dynamicSizeStyle}><CircleTable4Person width={scaledWidth} height={scaledHeight} className={className} /></div>;
+        if (effectiveCapacity <= 6) return <div style={dynamicSizeStyle}><CircleTable6Person width={scaledWidth} height={scaledHeight} className={className} /></div>;
+        return <div style={dynamicSizeStyle}><CircleTable8Person width={scaledWidth} height={scaledHeight} className={className} /></div>;
 
       case "square":
       case "rectangle":
-        if (effectiveCapacity <= 4) return <div style={forceEqualSizeStyle}><SquareTable4PersonCompact width={standardWidth} height={standardHeight} className={className} /></div>;
-        if (effectiveCapacity <= 6) return <div style={forceEqualSizeStyle}><SquareTable6Person width={standardWidth} height={standardHeight} className={className} /></div>;
-        return <div style={forceEqualSizeStyle}><SquareTable8Person width={standardWidth} height={standardHeight} className={className} /></div>;
+        if (effectiveCapacity <= 4) return <div style={dynamicSizeStyle}><SquareTable4PersonCompact width={scaledWidth} height={scaledHeight} className={className} /></div>;
+        if (effectiveCapacity <= 6) return <div style={dynamicSizeStyle}><SquareTable6Person width={scaledWidth} height={scaledHeight} className={className} /></div>;
+        return <div style={dynamicSizeStyle}><SquareTable8Person width={scaledWidth} height={scaledHeight} className={className} /></div>;
 
       case "long-rectangle":
-        if (effectiveCapacity <= 4) return <div style={forceEqualSizeStyle}><SquareTable4PersonCompact width={standardWidth} height={standardHeight} className={className} /></div>;
-        if (effectiveCapacity <= 6) return <div style={forceEqualSizeStyle}><SquareTable6Person width={standardWidth} height={standardHeight} className={className} /></div>;
-        return <div style={forceEqualSizeStyle}><SquareTable8Person width={standardWidth} height={standardHeight} className={className} /></div>;
+        if (effectiveCapacity <= 4) return <div style={dynamicSizeStyle}><SquareTable4PersonCompact width={scaledWidth} height={scaledHeight} className={className} /></div>;
+        if (effectiveCapacity <= 6) return <div style={dynamicSizeStyle}><SquareTable6Person width={scaledWidth} height={scaledHeight} className={className} /></div>;
+        return <div style={dynamicSizeStyle}><SquareTable8Person width={scaledWidth} height={scaledHeight} className={className} /></div>;
 
       default:
         // Default to round tables
-        if (effectiveCapacity <= 2) return <div style={forceEqualSizeStyle}><CircleTable2Person width={standardWidth} height={standardHeight} className={className} /></div>;
-        if (effectiveCapacity <= 4) return <div style={forceEqualSizeStyle}><CircleTable4Person width={standardWidth} height={standardHeight} className={className} /></div>;
-        if (effectiveCapacity <= 6) return <div style={forceEqualSizeStyle}><CircleTable6Person width={standardWidth} height={standardHeight} className={className} /></div>;
-        return <div style={forceEqualSizeStyle}><CircleTable8Person width={standardWidth} height={standardHeight} className={className} /></div>;
+        if (effectiveCapacity <= 2) return <div style={dynamicSizeStyle}><CircleTable2Person width={scaledWidth} height={scaledHeight} className={className} /></div>;
+        if (effectiveCapacity <= 4) return <div style={dynamicSizeStyle}><CircleTable4Person width={scaledWidth} height={scaledHeight} className={className} /></div>;
+        if (effectiveCapacity <= 6) return <div style={dynamicSizeStyle}><CircleTable6Person width={scaledWidth} height={scaledHeight} className={className} /></div>;
+        return <div style={dynamicSizeStyle}><CircleTable8Person width={scaledWidth} height={scaledHeight} className={className} /></div>;
     }
   };
 
