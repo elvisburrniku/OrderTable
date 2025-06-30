@@ -27,6 +27,9 @@ import {
   Square,
   Circle,
   Users,
+  ExternalLink,
+  Book,
+  Menu,
 } from "lucide-react";
 import {
   TABLE_STRUCTURES,
@@ -57,6 +60,268 @@ interface TablePosition {
   height?: number;
 }
 
+// Enhanced table templates that match EasyTableBooking design
+const TABLE_TEMPLATES = [
+  {
+    id: "square_1p",
+    type: "1",
+    shape: "square",
+    seats: 1,
+    canRotate: true,
+    label: "Square 1 Person",
+    svgViewBox: "0 0 90 116",
+    svgContent: `
+      <defs>
+        <style>
+          .cls-2, .cls-3 { fill: #4e4e4e; }
+          .cls-2 { fill-rule: evenodd; opacity: 0.8; }
+        </style>
+      </defs>
+      <g>
+        <path d="M27.000,-0.000 L61.000,-0.000 C65.418,-0.000 69.000,3.582 69.000,8.000 C69.000,12.418 65.418,16.000 61.000,16.000 L27.000,16.000 C22.582,16.000 19.000,12.418 19.000,8.000 C19.000,3.582 22.582,-0.000 27.000,-0.000 Z" class="cls-2"></path>
+        <rect y="8" width="90" height="100" class="cls-3"></rect>
+      </g>
+    `,
+    width: 40.91,
+    height: 52.73,
+  },
+  {
+    id: "circle_1p",
+    type: "20",
+    shape: "circle",
+    seats: 1,
+    canRotate: true,
+    label: "Circle 1 Person",
+    svgViewBox: "0 0 96 96",
+    svgContent: `
+      <defs>
+        <style>
+          .cls-1, .cls-3 { fill: #4e4e4e; }
+          .cls-1 { opacity: 0.8; fill-rule: evenodd; }
+        </style>
+      </defs>
+      <g>
+        <path d="M28.000,-0.000 L62.000,-0.000 C66.418,-0.000 70.000,3.582 70.000,8.000 C70.000,12.418 66.418,16.000 62.000,16.000 L28.000,16.000 C23.582,16.000 20.000,12.418 20.000,8.000 C20.000,3.582 23.582,-0.000 28.000,-0.000 Z" transform="translate(3)" class="cls-1"></path>
+        <circle cx="48" cy="48" r="45" class="cls-3"></circle>
+      </g>
+    `,
+    width: 43.64,
+    height: 43.64,
+  },
+  {
+    id: "square_2p",
+    type: "2",
+    shape: "square",
+    seats: 2,
+    canRotate: true,
+    label: "Square 2 People",
+    svgViewBox: "0 0 90 116",
+    svgContent: `
+      <defs>
+        <style>
+          .cls-1, .cls-2 { fill: #4e4e4e; }
+          .cls-1 { opacity: 0.8; fill-rule: evenodd; }
+        </style>
+      </defs>
+      <g>
+        <path d="M27.000,100.000 L61.000,100.000 C65.418,100.000 69.000,103.582 69.000,108.000 C69.000,112.418 65.418,116.000 61.000,116.000 L27.000,116.000 C22.582,116.000 19.000,112.418 19.000,108.000 C19.000,103.582 22.582,100.000 27.000,100.000 Z" class="cls-1"></path>
+        <path d="M27.000,-0.000 L61.000,-0.000 C65.418,-0.000 69.000,3.582 69.000,8.000 C69.000,12.418 65.418,16.000 61.000,16.000 L27.000,16.000 C22.582,16.000 19.000,12.418 19.000,8.000 C19.000,3.582 22.582,-0.000 27.000,-0.000 Z" class="cls-1"></path>
+        <rect y="8" width="90" height="100" class="cls-2"></rect>
+      </g>
+    `,
+    width: 40.91,
+    height: 52.73,
+  },
+  {
+    id: "circle_2p",
+    type: "21",
+    shape: "circle",
+    seats: 2,
+    canRotate: true,
+    label: "Circle 2 People",
+    svgViewBox: "0 0 96 96",
+    svgContent: `
+      <defs>
+        <style>
+          .cls-1, .cls-2 { fill: #4e4e4e; }
+          .cls-1 { opacity: 0.8; fill-rule: evenodd; }
+        </style>
+      </defs>
+      <g>
+        <path d="M28.000,-0.000 L62.000,-0.000 C66.418,-0.000 70.000,3.582 70.000,8.000 C70.000,12.418 66.418,16.000 62.000,16.000 L28.000,16.000 C23.582,16.000 20.000,12.418 20.000,8.000 C20.000,3.582 23.582,-0.000 28.000,-0.000 Z" transform="translate(3)" class="cls-1"></path>
+        <path d="M28.000,80.000 L62.000,80.000 C66.418,80.000 70.000,83.582 70.000,88.000 C70.000,92.418 66.418,96.000 62.000,96.000 L28.000,96.000 C23.582,96.000 20.000,92.418 20.000,88.000 C20.000,83.582 23.582,80.000 28.000,80.000 Z" transform="translate(3)" class="cls-1"></path>
+        <circle cx="48" cy="48" r="45" class="cls-2"></circle>
+      </g>
+    `,
+    width: 43.64,
+    height: 43.64,
+  },
+  {
+    id: "square_4p",
+    type: "3",
+    shape: "rectangle",
+    seats: 4,
+    canRotate: true,
+    label: "Rectangle 4 People",
+    svgViewBox: "0 0 170 116",
+    svgContent: `
+      <defs>
+        <style>
+          .cls-1, .cls-2 { fill: #4e4e4e; }
+          .cls-1 { opacity: 0.8; fill-rule: evenodd; }
+        </style>
+      </defs>
+      <g>
+        <path d="M29.000,100.000 L63.000,100.000 C67.418,100.000 71.000,103.582 71.000,108.000 C71.000,112.418 67.418,116.000 63.000,116.000 L29.000,116.000 C24.582,116.000 21.000,112.418 21.000,108.000 C21.000,103.582 24.582,100.000 29.000,100.000 Z" class="cls-1"></path>
+        <path d="M29.000,-0.000 L63.000,-0.000 C67.418,-0.000 71.000,3.582 71.000,8.000 C71.000,12.418 67.418,16.000 63.000,16.000 L29.000,16.000 C24.582,16.000 21.000,12.418 21.000,8.000 C21.000,3.582 24.582,-0.000 29.000,-0.000 Z" class="cls-1"></path>
+        <path d="M107.000,100.000 L141.000,100.000 C145.418,100.000 149.000,103.582 149.000,108.000 C149.000,112.418 145.418,116.000 141.000,116.000 L107.000,116.000 C102.582,116.000 99.000,112.418 99.000,108.000 C99.000,103.582 102.582,100.000 107.000,100.000 Z" class="cls-1"></path>
+        <path d="M107.000,-0.000 L141.000,-0.000 C145.418,-0.000 149.000,3.582 149.000,8.000 C149.000,12.418 145.418,16.000 141.000,16.000 L107.000,16.000 C102.582,16.000 99.000,12.418 99.000,8.000 C99.000,3.582 102.582,-0.000 107.000,-0.000 Z" class="cls-1"></path>
+        <rect y="8" width="170" height="100" class="cls-2"></rect>
+      </g>
+    `,
+    width: 77.27,
+    height: 52.73,
+  },
+  {
+    id: "square_4p_2",
+    type: "10",
+    shape: "square",
+    seats: 4,
+    canRotate: true,
+    label: "Square 4 People",
+    svgViewBox: "0 0 136 136",
+    svgContent: `
+      <defs>
+        <style>
+          .cls-1, .cls-2 { fill: #4e4e4e; }
+          .cls-1 { opacity: 0.8; fill-rule: evenodd; }
+        </style>
+      </defs>
+      <g>
+        <path d="M51.000,120.000 L85.000,120.000 C89.418,120.000 93.000,123.582 93.000,128.000 C93.000,132.418 89.418,136.000 85.000,136.000 L51.000,136.000 C46.582,136.000 43.000,132.418 43.000,128.000 C43.000,123.582 46.582,120.000 51.000,120.000 Z" class="cls-1"></path>
+        <path d="M128.000,43.000 C132.418,43.000 136.000,46.582 136.000,51.000 L136.000,85.000 C136.000,89.418 132.418,93.000 128.000,93.000 C123.582,93.000 120.000,89.418 120.000,85.000 L120.000,51.000 C120.000,46.582 123.582,43.000 128.000,43.000 Z" class="cls-1"></path>
+        <path d="M8.000,43.000 C12.418,43.000 16.000,46.582 16.000,51.000 L16.000,85.000 C16.000,89.418 12.418,93.000 8.000,93.000 C3.582,93.000 -0.000,89.418 -0.000,85.000 L-0.000,51.000 C-0.000,46.582 3.582,43.000 8.000,43.000 Z" class="cls-1"></path>
+        <path d="M51.000,-0.000 L85.000,-0.000 C89.418,-0.000 93.000,3.582 93.000,8.000 C93.000,12.418 89.418,16.000 85.000,16.000 L51.000,16.000 C46.582,16.000 43.000,12.418 43.000,8.000 C43.000,3.582 46.582,-0.000 51.000,-0.000 Z" class="cls-1"></path>
+        <rect x="8" y="8" width="120" height="120" class="cls-2"></rect>
+      </g>
+    `,
+    width: 61.82,
+    height: 61.82,
+  },
+  {
+    id: "circle_4p",
+    type: "23",
+    shape: "circle",
+    seats: 4,
+    canRotate: false,
+    label: "Circle 4 People",
+    svgViewBox: "0 0 116 116",
+    svgContent: `
+      <defs>
+        <style>
+          .cls-1, .cls-2 { fill: #4e4e4e; }
+          .cls-1 { opacity: 0.8; fill-rule: evenodd; }
+        </style>
+      </defs>
+      <g>
+        <path d="M41.000,-0.000 L75.000,-0.000 C79.418,-0.000 83.000,3.582 83.000,8.000 C83.000,12.418 79.418,16.000 75.000,16.000 L41.000,16.000 C36.582,16.000 33.000,12.418 33.000,8.000 C33.000,3.582 36.582,-0.000 41.000,-0.000 Z" class="cls-1"></path>
+        <path d="M41.000,100.000 L75.000,100.000 C79.418,100.000 83.000,103.582 83.000,108.000 C83.000,112.418 79.418,116.000 75.000,116.000 L41.000,116.000 C36.582,116.000 33.000,112.418 33.000,108.000 C33.000,103.582 36.582,100.000 41.000,100.000 Z" class="cls-1"></path>
+        <path d="M108.000,33.000 C112.418,33.000 116.000,36.582 116.000,41.000 L116.000,75.000 C116.000,79.418 112.418,83.000 108.000,83.000 C103.582,83.000 100.000,79.418 100.000,75.000 L100.000,41.000 C100.000,36.582 103.582,33.000 108.000,33.000 Z" class="cls-1"></path>
+        <path d="M8.000,33.000 C12.418,33.000 16.000,36.582 16.000,41.000 L16.000,75.000 C16.000,79.418 12.418,83.000 8.000,83.000 C3.582,83.000 -0.000,79.418 -0.000,75.000 L-0.000,41.000 C-0.000,36.582 3.582,33.000 8.000,33.000 Z" class="cls-1"></path>
+        <circle cx="58" cy="58" r="55" class="cls-2"></circle>
+      </g>
+    `,
+    width: 52.73,
+    height: 52.73,
+  },
+  {
+    id: "circle_6p",
+    type: "25",
+    shape: "circle",
+    seats: 6,
+    canRotate: false,
+    label: "Circle 6 People",
+    svgViewBox: "0 0 156.219 157.594",
+    svgContent: `
+      <defs>
+        <style>
+          .cls-1, .cls-2 { fill: #4e4e4e; }
+          .cls-1 { opacity: 0.8; fill-rule: evenodd; }
+        </style>
+      </defs>
+      <g>
+        <path d="M1.064,53.842 L18.064,24.397 C20.273,20.571 25.166,19.260 28.992,21.469 C32.818,23.678 34.129,28.571 31.920,32.397 L14.920,61.842 C12.711,65.668 7.818,66.979 3.992,64.770 C0.166,62.561 -1.145,57.668 1.064,53.842 Z" class="cls-1"></path>
+        <path d="M18.064,133.574 L1.064,104.129 C-1.145,100.303 0.166,95.410 3.992,93.201 C7.818,90.992 12.711,92.303 14.920,96.129 L31.920,125.574 C34.129,129.400 32.818,134.293 28.992,136.502 C25.166,138.711 20.273,137.400 18.064,133.574 Z" class="cls-1"></path>
+        <path d="M94.690,157.586 L60.690,157.586 C56.272,157.586 52.690,154.004 52.690,149.586 C52.690,145.168 56.272,141.586 60.690,141.586 L94.690,141.586 C99.108,141.586 102.690,145.168 102.690,149.586 C102.690,154.004 99.108,157.586 94.690,157.586 Z" class="cls-1"></path>
+        <path d="M155.066,103.727 L138.066,133.172 C135.856,136.998 130.964,138.309 127.137,136.100 C123.311,133.891 122.000,128.998 124.209,125.172 L141.209,95.727 C143.418,91.901 148.311,90.590 152.137,92.799 C155.964,95.008 157.275,99.901 155.066,103.727 Z" class="cls-1"></path>
+        <path d="M138.150,23.624 L155.150,53.069 C157.360,56.895 156.048,61.788 152.222,63.997 C148.396,66.206 143.503,64.895 141.294,61.069 L124.294,31.624 C122.085,27.798 123.396,22.905 127.222,20.696 C131.048,18.487 135.941,19.798 138.150,23.624 Z" class="cls-1"></path>
+        <path d="M61.156,-0.000 L95.156,-0.000 C99.574,-0.000 103.156,3.582 103.156,8.000 C103.156,12.418 99.574,16.000 95.156,16.000 L61.156,16.000 C56.738,16.000 53.156,12.418 53.156,8.000 C53.156,3.582 56.738,-0.000 61.156,-0.000 Z" class="cls-1"></path>
+        <circle cx="77.984" cy="78.61" r="75.016" class="cls-2"></circle>
+      </g>
+    `,
+    width: 70.91,
+    height: 71.82,
+  },
+  {
+    id: "square_6p",
+    type: "4",
+    shape: "rectangle",
+    seats: 6,
+    canRotate: true,
+    label: "Rectangle 6 People",
+    svgViewBox: "0 0 248 116",
+    svgContent: `
+      <defs>
+        <style>
+          .cls-1, .cls-2 { fill: #4e4e4e; }
+          .cls-1 { opacity: 0.8; fill-rule: evenodd; }
+        </style>
+      </defs>
+      <g>
+        <path d="M29.000,100.000 L63.000,100.000 C67.418,100.000 71.000,103.582 71.000,108.000 C71.000,112.418 67.418,116.000 63.000,116.000 L29.000,116.000 C24.582,116.000 21.000,112.418 21.000,108.000 C21.000,103.582 24.582,100.000 29.000,100.000 Z" class="cls-1"></path>
+        <path d="M29.000,-0.000 L63.000,-0.000 C67.418,-0.000 71.000,3.582 71.000,8.000 C71.000,12.418 67.418,16.000 63.000,16.000 L29.000,16.000 C24.582,16.000 21.000,12.418 21.000,8.000 C21.000,3.582 24.582,-0.000 29.000,-0.000 Z" class="cls-1"></path>
+        <path d="M107.000,100.000 L141.000,100.000 C145.418,100.000 149.000,103.582 149.000,108.000 C149.000,112.418 145.418,116.000 141.000,116.000 L107.000,116.000 C102.582,116.000 99.000,112.418 99.000,108.000 C99.000,103.582 102.582,100.000 107.000,100.000 Z" class="cls-1"></path>
+        <path d="M107.000,-0.000 L141.000,-0.000 C145.418,-0.000 149.000,3.582 149.000,8.000 C149.000,12.418 145.418,16.000 141.000,16.000 L107.000,16.000 C102.582,16.000 99.000,12.418 99.000,8.000 C99.000,3.582 102.582,-0.000 107.000,-0.000 Z" class="cls-1"></path>
+        <path d="M185.000,100.000 L219.000,100.000 C223.418,100.000 227.000,103.582 227.000,108.000 C227.000,112.418 223.418,116.000 219.000,116.000 L185.000,116.000 C180.582,116.000 177.000,112.418 177.000,108.000 C177.000,103.582 180.582,100.000 185.000,100.000 Z" class="cls-1"></path>
+        <path d="M185.000,-0.000 L219.000,-0.000 C223.418,-0.000 227.000,3.582 227.000,8.000 C227.000,12.418 223.418,16.000 219.000,16.000 L185.000,16.000 C180.582,16.000 177.000,12.418 177.000,8.000 C177.000,3.582 180.582,-0.000 185.000,-0.000 Z" class="cls-1"></path>
+        <rect y="8" width="248" height="100" class="cls-2"></rect>
+      </g>
+    `,
+    width: 112.73,
+    height: 52.73,
+  },
+  {
+    id: "square_8p",
+    type: "5",
+    shape: "rectangle",
+    seats: 8,
+    canRotate: true,
+    label: "Rectangle 8 People",
+    svgViewBox: "0 0 326 116",
+    svgContent: `
+      <defs>
+        <style>
+          .cls-1, .cls-2 { fill: #4e4e4e; }
+          .cls-1 { opacity: 0.8; fill-rule: evenodd; }
+        </style>
+      </defs>
+      <g>
+        <path d="M29.000,100.000 L63.000,100.000 C67.418,100.000 71.000,103.582 71.000,108.000 C71.000,112.418 67.418,116.000 63.000,116.000 L29.000,116.000 C24.582,116.000 21.000,112.418 21.000,108.000 C21.000,103.582 24.582,100.000 29.000,100.000 Z" class="cls-1"></path>
+        <path d="M29.000,-0.000 L63.000,-0.000 C67.418,-0.000 71.000,3.582 71.000,8.000 C71.000,12.418 67.418,16.000 63.000,16.000 L29.000,16.000 C24.582,16.000 21.000,12.418 21.000,8.000 C21.000,3.582 24.582,-0.000 29.000,-0.000 Z" class="cls-1"></path>
+        <path d="M107.000,100.000 L141.000,100.000 C145.418,100.000 149.000,103.582 149.000,108.000 C149.000,112.418 145.418,116.000 141.000,116.000 L107.000,116.000 C102.582,116.000 99.000,112.418 99.000,108.000 C99.000,103.582 102.582,100.000 107.000,100.000 Z" class="cls-1"></path>
+        <path d="M107.000,-0.000 L141.000,-0.000 C145.418,-0.000 149.000,3.582 149.000,8.000 C149.000,12.418 145.418,16.000 141.000,16.000 L107.000,16.000 C102.582,16.000 99.000,12.418 99.000,8.000 C99.000,3.582 102.582,-0.000 107.000,-0.000 Z" class="cls-1"></path>
+        <path d="M185.000,100.000 L219.000,100.000 C223.418,100.000 227.000,103.582 227.000,108.000 C227.000,112.418 223.418,116.000 219.000,116.000 L185.000,116.000 C180.582,116.000 177.000,112.418 177.000,108.000 C177.000,103.582 180.582,100.000 185.000,100.000 Z" class="cls-1"></path>
+        <path d="M185.000,-0.000 L219.000,-0.000 C223.418,-0.000 227.000,3.582 227.000,8.000 C227.000,12.418 223.418,16.000 219.000,16.000 L185.000,16.000 C180.582,16.000 177.000,12.418 177.000,8.000 C177.000,3.582 180.582,-0.000 185.000,-0.000 Z" class="cls-1"></path>
+        <path d="M263.000,100.000 L297.000,100.000 C301.418,100.000 305.000,103.582 305.000,108.000 C305.000,112.418 301.418,116.000 297.000,116.000 L263.000,116.000 C258.582,116.000 255.000,112.418 255.000,108.000 C255.000,103.582 258.582,100.000 263.000,100.000 Z" class="cls-1"></path>
+        <path d="M263.000,-0.000 L297.000,-0.000 C301.418,-0.000 305.000,3.582 305.000,8.000 C305.000,12.418 301.418,16.000 297.000,16.000 L263.000,16.000 C258.582,16.000 255.000,12.418 255.000,8.000 C255.000,3.582 258.582,-0.000 263.000,-0.000 Z" class="cls-1"></path>
+        <rect y="8" width="326" height="100" class="cls-2"></rect>
+      </g>
+    `,
+    width: 148.18,
+    height: 52.73,
+  },
+];
+
 const TABLE_SHAPES = [
   { value: "square", label: "Square" },
   { value: "circle", label: "Circle" },
@@ -77,13 +342,13 @@ export default function TablePlan() {
   >({});
   const [draggedTable, setDraggedTable] = useState<number | null>(null);
   const [draggedStructure, setDraggedStructure] =
-    useState<TableStructure | null>(null);
+    useState<any | null>(null);
   const [isDragging, setIsDragging] = useState(false);
   const [showConfigDialog, setShowConfigDialog] = useState(false);
   const [pendingTablePosition, setPendingTablePosition] = useState<{
     x: number;
     y: number;
-    structure: TableStructure;
+    structure: any;
   } | null>(null);
   const [tableConfig, setTableConfig] = useState({
     tableNumber: "",
@@ -193,7 +458,7 @@ export default function TablePlan() {
   }, []);
 
   const handleStructureDragStart = useCallback(
-    (structure: TableStructure, e: React.DragEvent) => {
+    (structure: any, e: React.DragEvent) => {
       console.log("Starting drag for structure:", structure);
       setDraggedStructure(structure);
       setDraggedTable(null);
@@ -280,7 +545,7 @@ export default function TablePlan() {
         setPendingTablePosition({ x, y, structure: currentStructure });
         setTableConfig({
           tableNumber: "",
-          capacity: currentStructure.defaultCapacity,
+          capacity: currentStructure.seats || 4,
         });
 
         // Force show dialog with a small delay to ensure state is updated
@@ -536,364 +801,166 @@ export default function TablePlan() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-gray-50 to-blue-50">
-      {/* Professional Header */}
-      <div className="flex">
-        {/* Professional Sidebar */}
-        <div className="w-80 bg-white border-r shadow-lg min-h-screen">
-          <div className="p-6">
-            {/* Room Selection */}
-            <div className="mb-6">
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Room
-              </label>
-              <Select value={selectedRoom} onValueChange={setSelectedRoom}>
-                <SelectTrigger>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  {rooms.map((room: any) => (
-                    <SelectItem
-                      key={`room-${room.id}`}
-                      value={room.id.toString()}
-                    >
-                      {room.name}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+    <div className="min-h-screen bg-white">
+      {/* Header matching EasyTableBooking design */}
+      <div className="bg-white border-b px-6 py-4">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center space-x-4">
+            <h1 className="text-2xl font-semibold text-gray-900 flex items-center">
+              <span>Table plan</span>
+              <Menu className="ml-2 h-5 w-5 text-gray-500" />
+            </h1>
+            <div className="flex items-center text-sm text-blue-600">
+              <Book className="h-4 w-4 mr-1" />
+              <span className="mr-1">Guide</span>
+              <a 
+                href="https://help.easytablebooking.com/knowledge-base/designing-a-visual-table-plan/" 
+                target="_blank" 
+                rel="noopener noreferrer"
+                className="hover:underline flex items-center"
+              >
+                Designing a visual table plan
+                <ExternalLink className="h-3 w-3 ml-1" />
+              </a>
             </div>
+          </div>
+          <Button 
+            onClick={() => saveLayoutMutation.mutate(tablePositions)}
+            disabled={saveLayoutMutation.isPending}
+            className="bg-blue-600 hover:bg-blue-700"
+          >
+            <Save className="h-4 w-4 mr-2" />
+            Save Layout
+          </Button>
+        </div>
+      </div>
 
-            {/* Available Tables */}
-            <div className="mb-6">
-              <h3 className="text-sm font-medium text-gray-700 mb-3">
-                Existing Tables
-              </h3>
-              <div className="space-y-2 max-h-60 overflow-y-auto">
-                {tables.map((table: any) => (
-                  <div
-                    key={`table-${table.id}`}
-                    className="p-2 border rounded-lg hover:bg-gray-50"
+      {/* Main layout matching EasyTableBooking structure */}
+      <div className="flex h-[calc(100vh-80px)]">
+        {/* Left sidebar with room selection and table templates */}
+        <div className="w-64 bg-gray-50 border-r overflow-y-auto">
+          {/* Room Selection Box */}
+          <div className="bg-white m-4 p-4 rounded border shadow-sm">
+            <div className="font-semibold text-gray-900 mb-3">Room</div>
+            <Select value={selectedRoom} onValueChange={setSelectedRoom}>
+              <SelectTrigger className="bg-gray-50">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                {rooms.map((room: any) => (
+                  <SelectItem
+                    key={`room-${room.id}`}
+                    value={room.id.toString()}
                   >
-                    <div className="flex items-center justify-between">
-                      <div>
-                        <div className="font-medium text-sm">
-                          Table {table.tableNumber}
-                        </div>
-                        <div className="text-xs text-gray-500 flex items-center">
-                          <Users className="h-3 w-3 mr-1" />
-                          {table.capacity}
-                        </div>
-                      </div>
-                      <div
-                        draggable
-                        onDragStart={(e) => handleDragStart(table.id, e)}
-                        style={{ cursor: "grab" }}
-                        title={`Drag to place Table ${table.tableNumber}`}
-                      >
-                        {table.tableNumber}
-                      </div>
-                    </div>
-
-                    {/* Show status if positioned */}
-                    {tablePositions[table.id] && (
-                      <div className="mt-2">
-                        <Badge variant="outline" className="text-xs">
-                          On Floor Plan
-                        </Badge>
-                      </div>
-                    )}
-                  </div>
+                    {room.name}
+                  </SelectItem>
                 ))}
-              </div>
+              </SelectContent>
+            </Select>
+            <p className="text-sm text-blue-600 mt-2">
+              <a href="#">Manage rooms</a>
+            </p>
+          </div>
+
+          {/* Add Table Templates Box */}
+          <div className="bg-white m-4 p-4 rounded border shadow-sm">
+            <div className="font-semibold text-gray-900 mb-3">
+              Add table <span className="font-normal text-gray-600">(drag to the white box)</span>
             </div>
-
-            {/* Professional Table Structures */}
-            <div className="mb-6">
-              <h3 className="text-sm font-medium text-gray-700 mb-3">
-                Table Shapes
-              </h3>
-              <div className="grid grid-cols-2 gap-3 max-h-96 overflow-y-auto">
-                {TABLE_STRUCTURES.map((structure) => (
-                  <div
-                    key={structure.id}
-                    className="border rounded-lg p-2 hover:bg-gray-50 transition-colors cursor-grab"
-                    title={structure.description}
-                    draggable
-                    onDragStart={(e) => handleStructureDragStart(structure, e)}
-                  >
-                    <TableStructurePreview structure={structure} />
-                    <div className="text-center mt-1">
-                      <div className="text-xs font-medium text-gray-700">
-                        {structure.name}
-                      </div>
-                      <div className="text-xs text-gray-500">
-                        {structure.description}
-                      </div>
-                    </div>
-                  </div>
-                ))}
-              </div>
-
-              <div className="mb-4">
-                <Button
-                  className="w-full bg-green-600 hover:bg-green-700 text-white"
-                  onClick={() => {
-                    /* Handle done */
-                  }}
+            <div className="grid grid-cols-2 gap-2">
+              {TABLE_TEMPLATES.map((template) => (
+                <div
+                  key={template.id}
+                  className="table new cursor-grab hover:bg-gray-50 p-1 border border-gray-200 rounded transition-colors"
+                  draggable
+                  onDragStart={(e) => handleStructureDragStart(template, e)}
+                  title={`${template.label} - ${template.seats} seats`}
                 >
-                  Done
-                </Button>
-              </div>
-
-              <div className="mb-4">
-                <Button
-                  variant="outline"
-                  className="w-full text-red-600 border-red-600 hover:bg-red-50"
-                  onClick={() => {
-                    /* Handle delete table */
-                  }}
-                >
-                  Delete table
-                </Button>
-              </div>
-            </div>
-
-            {/* Unallocated Tables */}
-            <div className="mb-6">
-              <h3 className="text-sm font-medium text-gray-700 mb-3">
-                Unallocated Tables
-              </h3>
-              <p className="text-xs text-gray-500 mb-3">
-                Drag these tables to the floor plan to position them
-              </p>
-              <div className="grid grid-cols-3 gap-3 mb-4">
-                {tables
-                  .filter((table: any) => !tablePositions[table.id])
-                  .map((table: any, index: number) => {
-                    // Determine shape based on capacity for better visual representation
-                    let shape = "circle"; // default
-                    if (table.capacity <= 2) {
-                      shape = index % 2 === 0 ? "square" : "circle";
-                    } else if (table.capacity <= 4) {
-                      shape = index % 3 === 0 ? "square" : index % 3 === 1 ? "circle" : "rectangle";
-                    } else if (table.capacity <= 6) {
-                      shape = "long-rectangle";
-                    } else {
-                      shape = index % 2 === 0 ? "circle" : "long-rectangle";
-                    }
-
-                    return (
-                      <div
-                        key={`unallocated-${table.id}`}
-                        className="relative bg-white border-2 border-gray-200 rounded-lg p-2 cursor-grab hover:border-blue-400 hover:shadow-md transition-all duration-200 group"
-                        draggable
-                        onDragStart={(e) => handleDragStart(table.id, e)}
-                        title={`Drag Table ${table.tableNumber} (${table.capacity} persons) to floor plan`}
-                      >
-                        {/* SVG Table Shape */}
-                        <div className="flex items-center justify-center mb-1">
-                          {getTableSVG(
-                            shape,
-                            table.capacity,
-                            45,
-                            35,
-                            "drop-shadow-sm group-hover:drop-shadow-md transition-all"
-                          )}
-                        </div>
-                        
-                        {/* Table Info */}
-                        <div className="text-center">
-                          <div className="font-bold text-xs text-gray-800">
-                            {table.tableNumber}
-                          </div>
-                          <div className="text-[10px] text-gray-500">
-                            {table.capacity} pers.
-                          </div>
-                        </div>
-
-                        {/* Drag Indicator */}
-                        <div className="absolute top-1 right-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                          <Move className="h-3 w-3 text-gray-400" />
-                        </div>
-                      </div>
-                    );
-                  })}
-              </div>
-
-              {/* Priority Legend */}
-              <div className="mb-4">
-                <h4 className="text-xs font-medium text-gray-700 mb-2">
-                  Priority:
-                </h4>
-                <div className="flex flex-wrap gap-2 text-xs">
-                  <div className="flex items-center gap-1">
-                    <div className="w-3 h-3 bg-green-600 rounded-full"></div>
-                    <span>Highest</span>
-                  </div>
-                  <div className="flex items-center gap-1">
-                    <div className="w-3 h-3 bg-blue-600 rounded-full"></div>
-                    <span>High</span>
-                  </div>
-                  <div className="flex items-center gap-1">
-                    <div className="w-3 h-3 bg-gray-600 rounded-full"></div>
-                    <span>Medium</span>
-                  </div>
-                  <div className="flex items-center gap-1">
-                    <div className="w-3 h-3 bg-yellow-500 rounded-full"></div>
-                    <span>Low</span>
-                  </div>
-                  <div className="flex items-center gap-1">
-                    <div className="w-3 h-3 bg-red-500 rounded-full"></div>
-                    <span>Lowest</span>
-                  </div>
+                  <svg 
+                    preserveAspectRatio="xMidYMid" 
+                    viewBox={template.svgViewBox}
+                    style={{ 
+                      width: `${Math.min(template.width * 0.5, 40)}px`, 
+                      height: `${Math.min(template.height * 0.5, 40)}px`,
+                      margin: '0 auto',
+                      display: 'block'
+                    }}
+                    dangerouslySetInnerHTML={{
+                      __html: template.svgContent
+                    }}
+                  />
                 </div>
-              </div>
-            </div>
-
-            {/* Legend */}
-            <div className="border-t pt-4">
-              <h3 className="text-sm font-medium text-gray-700 mb-2">Legend</h3>
-              <div className="space-y-1 text-xs">
-                <div className="flex items-center gap-2">
-                  <div className="w-4 h-4 bg-green-600 rounded-full"></div>
-                  <span>Active Table</span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <div className="w-4 h-4 bg-gray-500 rounded-full"></div>
-                  <span>Inactive Table</span>
-                </div>
-              </div>
+              ))}
             </div>
           </div>
         </div>
 
-        {/* Main Content */}
-        <div className="flex-1 p-6">
-          <Card>
-            <CardHeader>
-              <div className="flex items-center justify-between">
-                <CardTitle>
-                  Table Plan -{" "}
-                  {rooms.find(
-                    (room: any) => room.id.toString() === selectedRoom,
-                  )?.name || "Select a room"}
-                </CardTitle>
-                <div className="flex gap-2">
-                  <Button
-                    onClick={() => saveLayoutMutation.mutate(tablePositions)}
-                    disabled={saveLayoutMutation.isPending}
-                    className="bg-green-600 hover:bg-green-700"
-                  >
-                    <Save className="h-4 w-4 mr-2" />
-                    {saveLayoutMutation.isPending ? "Saving..." : "Save Layout"}
-                  </Button>
+        {/* Main table plan area */}
+        <div className="flex-1 bg-white">
+          <div
+            ref={planRef}
+            className="relative h-full min-h-[600px] bg-white border-l"
+            onDragOver={handleDragOver}
+            onDrop={handleDrop}
+          >
+            {/* Grid background */}
+            <div
+              className="absolute inset-0 opacity-10"
+              style={{
+                backgroundImage: "radial-gradient(circle, #999 1px, transparent 1px)",
+                backgroundSize: "25px 25px",
+              }}
+            />
+
+            {/* Drop zone hint */}
+            {Object.keys(tablePositions).length === 0 && !isDragging && (
+              <div className="absolute inset-0 flex items-center justify-center">
+                <div className="text-center text-gray-400">
+                  <Move className="h-16 w-16 mx-auto mb-4 opacity-30" />
+                  <p className="text-xl font-medium mb-2">
+                    Drag tables here to create your floor plan
+                  </p>
+                  <p className="text-sm">
+                    Start by dragging table shapes from the left sidebar
+                  </p>
                 </div>
               </div>
-              <p className="text-sm text-gray-600">
-                Drag tables from the sidebar onto the floor plan to arrange your
-                restaurant layout.
-              </p>
-            </CardHeader>
-            <CardContent>
-              <div
-                ref={planRef}
-                className="relative bg-gray-100 border-2 border-dashed border-gray-300 rounded-lg"
-                style={{ height: "600px", minHeight: "400px" }}
-                onDragOver={handleDragOver}
-                onDrop={handleDrop}
-              >
-                {/* Grid pattern */}
+            )}
 
-                <div
-                  className="absolute inset-0 opacity-20"
-                  style={{
-                    backgroundImage:
-                      "radial-gradient(circle, #666 1px, transparent 1px)",
-                    backgroundSize: "20px 20px",
-                  }}
+            {/* Active drop zone indicator */}
+            {isDragging && draggedStructure && (
+              <div className="absolute inset-0 flex items-center justify-center bg-blue-50 bg-opacity-75 border-2 border-dashed border-blue-300">
+                <div className="text-center text-blue-600">
+                  <Plus className="h-20 w-20 mx-auto mb-4" />
+                  <p className="text-xl font-medium">
+                    Drop here to add {draggedStructure.label}
+                  </p>
+                  <p className="text-sm">
+                    Configuration dialog will appear after drop
+                  </p>
+                </div>
+              </div>
+            )}
+
+            {/* Render placed tables */}
+            {Object.entries(tablePositions).map(([tableId, position]) => {
+              const dbTable = tables.find((t: any) => t.id === parseInt(tableId));
+              const numericTableId = parseInt(tableId);
+
+              return (
+                <SVGTableRenderer
+                  key={`table-renderer-${tableId}`}
+                  position={position}
+                  tableId={numericTableId}
+                  table={dbTable}
                 />
-
-                {/* Drop zone hint */}
-                {Object.keys(tablePositions).length === 0 && !isDragging && (
-                  <div className="absolute inset-0 flex items-center justify-center">
-                    <div className="text-center text-gray-500">
-                      <Move className="h-12 w-12 mx-auto mb-2 opacity-50" />
-                      <p className="text-lg font-medium">
-                        Drag tables here to create your floor plan
-                      </p>
-                      <p className="text-sm">
-                        Start by dragging table structures from the sidebar
-                      </p>
-                    </div>
-                  </div>
-                )}
-
-                {/* Active drop zone indicator */}
-                {isDragging && draggedStructure && (
-                  <div className="absolute inset-0 flex items-center justify-center bg-green-50 bg-opacity-50 border-2 border-dashed border-green-300 rounded-lg">
-                    <div className="text-center text-green-600">
-                      <Plus className="h-16 w-16 mx-auto mb-2" />
-                      <p className="text-lg font-medium">
-                        Drop here to add {draggedStructure.name}
-                      </p>
-                      <p className="text-sm">
-                        Configuration dialog will appear after drop
-                      </p>
-                    </div>
-                  </div>
-                )}
-
-                {/* Professional Tables */}
-                {Object.entries(tablePositions).map(([tableId, position]) => {
-                  const dbTable = tables.find(
-                    (t: any) => t.id === parseInt(tableId),
-                  );
-                  const numericTableId = parseInt(tableId);
-
-                  return (
-                    <SVGTableRenderer
-                      key={`table-renderer-${tableId}`}
-                      position={position}
-                      tableId={numericTableId}
-                      table={dbTable}
-                    />
-                  );
-                })}
-              </div>
-
-              {/* Status */}
-              <div className="mt-4 flex items-center justify-between text-sm text-gray-600">
-                <div>
-                  Tables placed: {Object.keys(tablePositions).length} of{" "}
-                  {tables.length}
-                </div>
-                <div className="flex items-center gap-4">
-                  <Badge variant="outline">
-                    Total Capacity:{" "}
-                    {tables.reduce(
-                      (sum: number, table: any) =>
-                        tablePositions[table.id] ? sum + table.capacity : sum,
-                      0,
-                    )}{" "}
-                    seats
-                  </Badge>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
+              );
+            })}
+          </div>
         </div>
       </div>
 
       {/* Table Configuration Dialog */}
-      {/* CSS for chair styling */}
-      <style jsx>{`
-        .chair:hover {
-          background-color: #a0522d !important;
-          transform: scale(1.1) rotate(${isDragging ? "0deg" : "0deg"});
-          transition: all 0.2s ease;
-        }
-      `}</style>
 
       <Dialog open={showConfigDialog} onOpenChange={setShowConfigDialog}>
         <DialogContent>
