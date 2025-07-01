@@ -244,6 +244,50 @@ export class DatabaseStorage implements IStorage {
       .returning();
     return newTenant;
   }
+
+  async getTenant(id: number): Promise<any> {
+    if (!this.db) throw new Error("Database connection not available");
+    const result = await this.db
+      .select()
+      .from(tenants)
+      .where(eq(tenants.id, id));
+    return result[0];
+  }
+
+  async getUserTenants(userId: number): Promise<any[]> {
+    if (!this.db) throw new Error("Database connection not available");
+    
+    // Get all tenants the user is associated with
+    const result = await this.db
+      .select({
+        id: tenants.id,
+        name: tenants.name,
+        slug: tenants.slug,
+        subscriptionStatus: tenants.subscriptionStatus,
+        maxRestaurants: tenants.maxRestaurants,
+        isOwner: sql<boolean>`CASE WHEN ${tenantUsers.role} = 'owner' THEN true ELSE false END`,
+        restaurantCount: sql<number>`COALESCE((
+          SELECT COUNT(*) 
+          FROM ${restaurants} 
+          WHERE ${restaurants.tenantId} = ${tenants.id}
+        ), 0)`,
+      })
+      .from(tenantUsers)
+      .leftJoin(tenants, eq(tenantUsers.tenantId, tenants.id))
+      .where(eq(tenantUsers.userId, userId));
+
+    return result;
+  }
+
+  async getRestaurantByTenant(tenantId: number): Promise<any> {
+    if (!this.db) throw new Error("Database connection not available");
+    const result = await this.db
+      .select()
+      .from(restaurants)
+      .where(eq(restaurants.tenantId, tenantId))
+      .limit(1);
+    return result[0];
+  }
   async getTenantByUserId(userId: number): Promise<any> {
     if (!this.db) throw new Error("Database connection not available");
     const result = await this.db

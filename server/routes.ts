@@ -729,6 +729,155 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Get user's tenants/restaurants
+  app.get("/api/user/tenants", async (req, res) => {
+    try {
+      const sessionUser = (req as any).session?.user;
+
+      if (!sessionUser) {
+        return res.status(401).json({ error: "Authentication required" });
+      }
+
+      // Get all tenants the user is associated with
+      const userTenants = await storage.getUserTenants(sessionUser.id);
+
+      res.json(userTenants);
+    } catch (error) {
+      console.error("Error getting user tenants:", error);
+      res.status(500).json({ error: "Internal server error" });
+    }
+  });
+
+  // Create new tenant/restaurant
+  app.post("/api/tenants/create", async (req, res) => {
+    try {
+      const sessionUser = (req as any).session?.user;
+      const sessionTenant = (req as any).session?.tenant;
+
+      if (!sessionUser || !sessionTenant) {
+        return res.status(401).json({ error: "Authentication required" });
+      }
+
+      const { name, slug } = req.body;
+
+      if (!name || !slug) {
+        return res.status(400).json({ error: "Name and slug are required" });
+      }
+
+      // Check if user is owner of current tenant
+      const userRole = await getUserRole(sessionUser.id, sessionTenant.id);
+      if (userRole !== "owner") {
+        return res.status(403).json({ error: "Only owners can create new restaurants" });
+      }
+
+      // Check subscription limits
+      const currentTenant = await storage.getTenant(sessionTenant.id);
+      if (!currentTenant) {
+        return res.status(404).json({ error: "Current tenant not found" });
+      }
+
+      const userTenants = await storage.getUserTenants(sessionUser.id);
+      const ownedTenants = userTenants.filter(t => t.isOwner);
+      
+      if (ownedTenants.length >= currentTenant.maxRestaurants) {
+        return res.status(400).json({ 
+          error: "Restaurant limit reached", 
+          message: `Your subscription allows up to ${currentTenant.maxRestaurants} restaurants` 
+        });
+      }
+
+      // Create new tenant
+      const newTenant = await storage.createTenant({
+        name,
+        slug,
+        subscriptionPlanId: currentTenant.subscriptionPlanId,
+        subscriptionStatus: currentTenant.subscriptionStatus,
+        maxRestaurants: currentTenant.maxRestaurants,
+      });
+
+      // Associate user as owner of new tenant
+      await storage.createTenantUser({
+        tenantId: newTenant.id,
+        userId: sessionUser.id,
+        role: "owner",
+      });
+
+      // Create default restaurant for the tenant
+      const restaurant = await storage.createRestaurant({
+        name,
+        tenantId: newTenant.id,
+        address: "",
+        phone: "",
+        email: sessionUser.email,
+        website: "",
+        description: "",
+        cuisine: "",
+        maxCapacity: 100,
+        defaultBookingDuration: 120,
+        maxAdvanceBookingDays: 30,
+        isActive: true,
+      });
+
+      res.json({
+        id: newTenant.id,
+        name: newTenant.name,
+        slug: newTenant.slug,
+        restaurant: restaurant,
+      });
+    } catch (error) {
+      console.error("Error creating tenant:", error);
+      if (error.message?.includes("duplicate key")) {
+        return res.status(400).json({ error: "A restaurant with this URL slug already exists" });
+      }
+      res.status(500).json({ error: "Internal server error" });
+    }
+  });
+
+  // Switch tenant
+  app.post("/api/user/switch-tenant", async (req, res) => {
+    try {
+      const sessionUser = (req as any).session?.user;
+      const { tenantId } = req.body;
+
+      if (!sessionUser) {
+        return res.status(401).json({ error: "Authentication required" });
+      }
+
+      if (!tenantId) {
+        return res.status(400).json({ error: "Tenant ID is required" });
+      }
+
+      // Verify user has access to the tenant
+      const userTenants = await storage.getUserTenants(sessionUser.id);
+      const targetTenant = userTenants.find(t => t.id === tenantId);
+
+      if (!targetTenant) {
+        return res.status(403).json({ error: "Access denied to this restaurant" });
+      }
+
+      // Get the tenant and restaurant info
+      const tenant = await storage.getTenant(tenantId);
+      const restaurant = await storage.getRestaurantByTenant(tenantId);
+
+      if (!tenant) {
+        return res.status(404).json({ error: "Restaurant not found" });
+      }
+
+      // Update session
+      (req as any).session.tenant = tenant;
+      (req as any).session.restaurant = restaurant;
+
+      res.json({ 
+        message: "Tenant switched successfully",
+        tenant: tenant,
+        restaurant: restaurant 
+      });
+    } catch (error) {
+      console.error("Error switching tenant:", error);
+      res.status(500).json({ error: "Internal server error" });
+    }
+  });
+
   // Get role permissions
   app.get(
     "/api/tenants/:tenantId/role-permissions",

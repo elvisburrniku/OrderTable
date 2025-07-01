@@ -22,6 +22,13 @@ A comprehensive restaurant booking management system with React frontend and Exp
 - Kitchen order management
 
 ## Recent Changes
+- **2025-07-01**: Implemented multi-tenant restaurant management system with subscription-based restaurant creation and tenant switching
+- **Multi-Tenant System**: Users can create multiple restaurants based on subscription limits and switch between them seamlessly
+- **Tenant Switcher**: Dashboard sidebar includes restaurant switcher dropdown with owner indicators and subscription status
+- **Restaurant Creation**: Owners can create new restaurants within subscription limits with automatic tenant and restaurant setup
+- **Database Architecture**: Enhanced storage methods for tenant management, user tenant associations, and restaurant-tenant relationships
+- **Subscription Limits**: Restaurant creation respects subscription plan limits with clear error messaging for exceeded limits
+- **Session Management**: Proper tenant switching with session updates and automatic page refreshes for context switching
 - **2025-06-30**: Implemented comprehensive shop system with admin management and public storefront
 - **Shop System**: Complete e-commerce platform for selling services like marketing, branding, design, and printing
 - **Admin Management**: Full CRUD interface for categories, products, and orders accessible via admin@replit.com

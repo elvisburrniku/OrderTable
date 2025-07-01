@@ -115,12 +115,15 @@ export interface IStorage {
 
   // Tenants
   createTenant(tenant: any): Promise<any>;
+  getTenant(id: number): Promise<any>;
   getTenantById(id: number): Promise<any>;
   getTenantByUserId(userId: number): Promise<any>;
   getTenantByStripeCustomerId(stripeCustomerId: string): Promise<any>;
   getAllTenants(): Promise<any[]>;
   updateTenant(id: number, updates: any): Promise<any>;
   createTenantUser(tenantUser: any): Promise<any>;
+  getUserTenants(userId: number): Promise<any[]>;
+  getRestaurantByTenant(tenantId: number): Promise<any>;
 
   // Restaurants
   getRestaurant(id: number): Promise<Restaurant | undefined>;

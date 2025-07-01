@@ -36,6 +36,7 @@ import {
 } from "lucide-react";
 import { useLocation, Link } from "wouter";
 import { SneakPeekWidget } from "./sneak-peek-widget";
+import { TenantSwitcher } from "./tenant-switcher";
 import { useQuery } from "@tanstack/react-query";
 
 interface SidebarProps {
@@ -352,13 +353,23 @@ export default function DashboardSidebar({
     <div className="w-64 bg-white border-r border-gray-200 min-h-screen">
       <div className="p-6">
         {/* Logo */}
-        <div className="flex items-center space-x-2 mb-8">
+        <div className="flex items-center space-x-2 mb-6">
           <div className="w-8 h-8 bg-green-600 rounded flex items-center justify-center">
             <div className="w-4 h-4 bg-white rounded-full"></div>
           </div>
           <span className="text-xl font-semibold text-gray-900">
             ReadyTable
           </span>
+        </div>
+
+        {/* Tenant Switcher */}
+        <div className="mb-6">
+          <TenantSwitcher 
+            onTenantChange={(tenantId) => {
+              // Handle tenant change - redirect to new tenant dashboard
+              window.location.href = `/${tenantId}/dashboard`;
+            }}
+          />
         </div>
 
         {/* Navigation */}
