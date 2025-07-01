@@ -159,15 +159,6 @@ export function TenantSwitcher({
 
   const currentTenant = tenants?.find((t) => t.id === currentTenantId);
   const allRestaurants = tenants?.flatMap((t) => t.restaurants || []) || [];
-  
-  // Debug logs to help identify the issue
-  console.log('TenantSwitcher Debug:', {
-    currentRestaurantId,
-    currentTenantId,
-    allRestaurants: allRestaurants.map(r => ({ id: r.id, name: r.name })),
-    tenants: tenants?.map(t => ({ id: t.id, name: t.name, restaurants: t.restaurants?.length }))
-  });
-  
   const currentRestaurant = allRestaurants.find(
     (r) => r?.id === currentRestaurantId,
   );
