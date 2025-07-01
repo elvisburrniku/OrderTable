@@ -17,6 +17,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
+import { useAuth } from "@/lib/auth";
 
 const createRestaurantSchema = z.object({
   name: z.string().min(1, "Restaurant name is required"),
@@ -57,6 +58,7 @@ export function TenantSwitcher({ currentTenantId, currentRestaurantId, onTenantC
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
   const { toast } = useToast();
   const queryClient = useQueryClient();
+  const { refreshUserData } = useAuth();
 
   const { data: tenants, isLoading } = useQuery<Tenant[]>({
     queryKey: ["/api/user/tenants"],
@@ -115,8 +117,11 @@ export function TenantSwitcher({ currentTenantId, currentRestaurantId, onTenantC
   const switchRestaurantMutation = useMutation({
     mutationFn: (restaurantId: number) =>
       apiRequest("POST", "/api/user/switch-restaurant", { restaurantId }),
-    onSuccess: () => {
-      window.location.reload();
+    onSuccess: async (data: any, restaurantId: number) => {
+      // Refresh auth context to get updated restaurant information
+      await refreshUserData();
+      // Redirect to the dashboard for the selected restaurant
+      window.location.href = `/${currentTenantId}/dashboard`;
     },
     onError: (error: any) => {
       toast({
