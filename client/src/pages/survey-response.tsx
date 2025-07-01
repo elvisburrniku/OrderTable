@@ -3,7 +3,7 @@ import { useParams } from 'wouter';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Textarea } from '@/components/ui/textarea';
-import { Star, CheckCircle, Restaurant, Calendar, Clock, Users } from 'lucide-react';
+import { Star, CheckCircle, Store, Calendar, Clock, Users } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 
 interface SurveyData {
@@ -183,7 +183,7 @@ export default function SurveyResponse() {
     <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 py-8 px-4">
       <div className="max-w-2xl mx-auto">
         <div className="text-center mb-8">
-          <Restaurant className="w-12 h-12 text-blue-600 mx-auto mb-4" />
+          <Store className="w-12 h-12 text-blue-600 mx-auto mb-4" />
           <h1 className="text-3xl font-bold text-gray-900 mb-2">How was your experience?</h1>
           <p className="text-gray-600">Your feedback helps us provide better service</p>
         </div>
@@ -191,7 +191,7 @@ export default function SurveyResponse() {
         <Card className="mb-6">
           <CardHeader className="pb-4">
             <CardTitle className="flex items-center gap-2">
-              <Restaurant className="w-5 h-5" />
+              <Store className="w-5 h-5" />
               {surveyData.restaurant.name}
             </CardTitle>
             <CardDescription>

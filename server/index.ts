@@ -122,6 +122,129 @@ app.use((req, res, next) => {
   next();
 });
 
+// Add public survey routes BEFORE routes.ts authentication middleware
+import { surveySchedules, restaurants, bookings } from "../shared/schema.js";
+import { eq } from "drizzle-orm";
+
+// Public survey response API endpoint (no authentication required)
+app.get("/api/survey/:token", async (req, res) => {
+  try {
+    const token = req.params.token;
+
+    if (!token) {
+      return res.status(400).json({ message: "Survey token is required" });
+    }
+
+    // Get survey schedule by token
+    const schedule = await storage.db
+      .select()
+      .from(surveySchedules)
+      .where(eq(surveySchedules.responseToken, token))
+      .limit(1);
+
+    if (schedule.length === 0) {
+      return res.status(404).json({ message: "Survey not found or expired" });
+    }
+
+    const surveyData = schedule[0];
+
+    // Get restaurant details
+    const restaurant = await storage.db
+      .select()
+      .from(restaurants)
+      .where(eq(restaurants.id, surveyData.restaurantId))
+      .limit(1);
+
+    if (restaurant.length === 0) {
+      return res.status(404).json({ message: "Restaurant not found" });
+    }
+
+    // Get booking details
+    const booking = await storage.db
+      .select()
+      .from(bookings)
+      .where(eq(bookings.id, surveyData.bookingId))
+      .limit(1);
+
+    if (booking.length === 0) {
+      return res.status(404).json({ message: "Booking not found" });
+    }
+
+    const response = {
+      survey: {
+        id: surveyData.id,
+        bookingId: surveyData.bookingId,
+        customerName: surveyData.customerName,
+        customerEmail: surveyData.customerEmail,
+        bookingDate: booking[0].bookingDate,
+        bookingTime: booking[0].bookingTime,
+        guestCount: booking[0].guestCount
+      },
+      restaurant: {
+        id: restaurant[0].id,
+        name: restaurant[0].name,
+        address: restaurant[0].address,
+        phone: restaurant[0].phone
+      }
+    };
+
+    res.json(response);
+  } catch (error) {
+    console.error("Survey API error:", error);
+    res.status(500).json({ message: "Internal server error" });
+  }
+});
+
+// Submit survey response (no authentication required)
+app.post("/api/survey/:token/submit", async (req, res) => {
+  try {
+    const { token } = req.params;
+    const { rating, feedback } = req.body;
+
+    if (!token) {
+      return res.status(400).json({ message: "Survey token is required" });
+    }
+
+    if (!rating || rating < 1 || rating > 5) {
+      return res.status(400).json({ message: "Valid rating (1-5) is required" });
+    }
+
+    // Get survey schedule by token
+    const schedule = await storage.db
+      .select()
+      .from(surveySchedules)
+      .where(eq(surveySchedules.responseToken, token))
+      .limit(1);
+
+    if (schedule.length === 0) {
+      return res.status(404).json({ message: "Survey not found or expired" });
+    }
+
+    const surveyData = schedule[0];
+
+    // Check if already responded
+    if (surveyData.responseReceived) {
+      return res.status(400).json({ message: "Survey already completed" });
+    }
+
+    // Update survey schedule with response
+    await storage.db
+      .update(surveySchedules)
+      .set({
+        responseReceived: true,
+        rating: parseInt(rating),
+        feedback: feedback || null,
+        respondedAt: new Date()
+      })
+      .where(eq(surveySchedules.id, surveyData.id));
+
+    res.json({ message: "Survey response saved successfully" });
+  } catch (error) {
+    console.error("Error submitting survey response:", error);
+    res.status(500).json({ message: "Internal server error" });
+  }
+});
+
 (async () => {
   // Initialize storage with demo data
   await storage.initialize();

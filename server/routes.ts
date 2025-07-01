@@ -288,6 +288,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   };
 
+
+
   // Company Registration route
   app.post("/api/auth/register-company", async (req, res) => {
     try {
@@ -18387,129 +18389,7 @@ NEXT STEPS:
     }
   );
 
-  // Public survey response page (no authentication required)
-  app.get("/api/survey/:token", async (req, res) => {
-    try {
-      const token = req.params.token;
 
-      if (!token) {
-        return res.status(400).json({ message: "Survey token is required" });
-      }
-
-      // Get survey schedule by token
-      const schedule = await storage.db
-        .select()
-        .from(surveySchedules)
-        .where(eq(surveySchedules.responseToken, token))
-        .limit(1);
-
-      if (schedule.length === 0) {
-        return res.status(404).json({ message: "Survey not found or expired" });
-      }
-
-      const surveyData = schedule[0];
-
-      // Get restaurant details
-      const restaurant = await storage.db
-        .select()
-        .from(restaurants)
-        .where(eq(restaurants.id, surveyData.restaurantId))
-        .limit(1);
-
-      if (restaurant.length === 0) {
-        return res.status(404).json({ message: "Restaurant not found" });
-      }
-
-      // Get booking details
-      const booking = await storage.db
-        .select()
-        .from(bookings)
-        .where(eq(bookings.id, surveyData.bookingId))
-        .limit(1);
-
-      if (booking.length === 0) {
-        return res.status(404).json({ message: "Booking not found" });
-      }
-
-      res.json({
-        survey: surveyData,
-        restaurant: restaurant[0],
-        booking: {
-          id: booking[0].id,
-          date: booking[0].bookingDate,
-          startTime: booking[0].startTime,
-          guestCount: booking[0].guestCount
-        }
-      });
-    } catch (error) {
-      console.error("Survey lookup error:", error);
-      res.status(500).json({ message: "Failed to retrieve survey" });
-    }
-  });
-
-  // Submit survey response (no authentication required)
-  app.post("/api/survey/:token/response", async (req, res) => {
-    try {
-      const token = req.params.token;
-      const { rating, feedback, npsScore, wouldRecommend } = req.body;
-
-      if (!token) {
-        return res.status(400).json({ message: "Survey token is required" });
-      }
-
-      if (!rating || rating < 1 || rating > 5) {
-        return res.status(400).json({ message: "Valid rating (1-5) is required" });
-      }
-
-      // Get survey schedule by token
-      const schedule = await storage.db
-        .select()
-        .from(surveySchedules)
-        .where(eq(surveySchedules.responseToken, token))
-        .limit(1);
-
-      if (schedule.length === 0) {
-        return res.status(404).json({ message: "Survey not found or expired" });
-      }
-
-      const surveyData = schedule[0];
-
-      // Check if already responded
-      const existingResponse = await storage.db
-        .select()
-        .from(surveyResponses)
-        .where(eq(surveyResponses.bookingId, surveyData.bookingId))
-        .limit(1);
-
-      if (existingResponse.length > 0) {
-        return res.status(400).json({ message: "Survey already completed" });
-      }
-
-      // Create survey response
-      const response = await storage.db.insert(surveyResponses).values({
-        restaurantId: surveyData.restaurantId,
-        tenantId: surveyData.tenantId,
-        bookingId: surveyData.bookingId,
-        customerPhone: surveyData.customerPhone || "",
-        customerName: surveyData.customerName,
-        rating,
-        feedback: feedback || null,
-        responseMethod: 'web',
-        responseToken: token,
-        respondedAt: new Date()
-      }).returning();
-
-      console.log(`Survey response submitted for booking ${surveyData.bookingId} with rating ${rating}`);
-
-      res.json({
-        message: "Thank you for your feedback!",
-        response: response[0]
-      });
-    } catch (error) {
-      console.error("Survey response error:", error);
-      res.status(500).json({ message: "Failed to submit survey response" });
-    }
-  });
 
   try {
     const { restaurantStorage } = await import("./restaurant-storage");
