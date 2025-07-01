@@ -66,6 +66,7 @@ import CombinedTables from "./pages/combined-tables";
 import Rooms from "./pages/rooms";
 import BookingAgents from "./pages/booking-agents";
 import SmsSettings from "./pages/sms-settings";
+import TwilioSettings from "./pages/twilio-settings";
 import TablePlan from "./pages/table-plan"; //Import the new TablePlan component
 import RestaurantSettings from "./pages/restaurant-settings";
 import { lazy } from "react";
@@ -380,6 +381,10 @@ function App() {
                                       <Route
                                         path="/:tenantId/sms-settings"
                                         component={SmsSettings}
+                                      />
+                                      <Route
+                                        path="/:tenantId/twilio-settings"
+                                        component={TwilioSettings}
                                       />
                                       <Route
                                         path="/:tenantId/restaurants/:restaurantId/settings"

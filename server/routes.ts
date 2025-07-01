@@ -16150,30 +16150,187 @@ NEXT STEPS:
         const { tenantId, restaurantId } = req.params;
         const { phoneNumber, message, type } = req.body;
 
-        // For testing purposes, simulate sending SMS without actual delivery
-        const testMessage = await storage.createSmsMessage(
-          parseInt(restaurantId),
+        if (!phoneNumber) {
+          return res.status(400).json({ message: "Phone number is required" });
+        }
+
+        // Import Twilio SMS service
+        const { twilioSMSService } = await import('./twilio-sms-service.js');
+
+        // Send test SMS via Twilio
+        const result = await twilioSMSService.sendTestSMS(
+          phoneNumber,
           parseInt(tenantId),
-          {
-            phoneNumber,
-            message:
-              message ||
-              "Test SMS from ReadyTable: Your booking has been confirmed!",
-            type: type || "test",
-            cost: "0.00", // Free for testing
-          },
+          parseInt(restaurantId)
         );
 
-        // Simulate successful delivery
-        await storage.updateSmsMessageStatus(testMessage.id, "delivered");
-
-        res.json({
-          message: "Test SMS sent successfully",
-          smsMessage: testMessage,
-          note: "This is a test message - no actual SMS was sent to preserve your balance",
-        });
+        if (result.success) {
+          res.json({
+            message: "Test SMS sent successfully via Twilio",
+            messageId: result.messageId,
+            status: result.status,
+            cost: result.cost,
+            note: "SMS sent via Twilio API"
+          });
+        } else {
+          res.status(400).json({
+            message: "Failed to send SMS",
+            error: result.error
+          });
+        }
       } catch (error) {
         console.error("Error sending test SMS:", error);
+        res.status(500).json({ message: "Internal server error" });
+      }
+    },
+  );
+
+  // Twilio Account Info route
+  app.get(
+    "/api/tenants/:tenantId/twilio/account",
+    async (req, res) => {
+      try {
+        const { twilioSMSService } = await import('./twilio-sms-service.js');
+        const accountInfo = await twilioSMSService.getTwilioAccountInfo();
+        res.json(accountInfo);
+      } catch (error) {
+        console.error("Error fetching Twilio account info:", error);
+        res.status(500).json({ message: "Internal server error" });
+      }
+    },
+  );
+
+  // SMS Status webhook for Twilio
+  app.post("/api/webhooks/twilio/sms-status", async (req, res) => {
+    try {
+      const { twilioSMSService } = await import('./twilio-sms-service.js');
+      await twilioSMSService.handleStatusWebhook(req.body);
+      res.status(200).send('OK');
+    } catch (error) {
+      console.error("Error handling Twilio webhook:", error);
+      res.status(500).send('Error');
+    }
+  });
+
+  // Send booking confirmation SMS
+  app.post(
+    "/api/tenants/:tenantId/restaurants/:restaurantId/sms/booking-confirmation",
+    async (req, res) => {
+      try {
+        const { tenantId, restaurantId } = req.params;
+        const { bookingId, phoneNumber } = req.body;
+
+        if (!bookingId || !phoneNumber) {
+          return res.status(400).json({ 
+            message: "Booking ID and phone number are required" 
+          });
+        }
+
+        // Get booking details
+        const booking = await storage.getBookingById(parseInt(bookingId));
+        if (!booking) {
+          return res.status(404).json({ message: "Booking not found" });
+        }
+
+        // Get restaurant details
+        const restaurant = await storage.getRestaurantById(parseInt(restaurantId));
+        if (!restaurant) {
+          return res.status(404).json({ message: "Restaurant not found" });
+        }
+
+        const { twilioSMSService } = await import('./twilio-sms-service.js');
+        
+        const bookingDetails = {
+          id: booking.id,
+          restaurantName: restaurant.name,
+          date: booking.date,
+          time: booking.time,
+          guests: booking.guests,
+          hash: booking.hash
+        };
+
+        const result = await twilioSMSService.sendBookingConfirmation(
+          phoneNumber,
+          bookingDetails,
+          parseInt(restaurantId),
+          parseInt(tenantId)
+        );
+
+        if (result.success) {
+          res.json({
+            message: "Booking confirmation SMS sent successfully",
+            messageId: result.messageId,
+            cost: result.cost
+          });
+        } else {
+          res.status(400).json({
+            message: "Failed to send booking confirmation SMS",
+            error: result.error
+          });
+        }
+      } catch (error) {
+        console.error("Error sending booking confirmation SMS:", error);
+        res.status(500).json({ message: "Internal server error" });
+      }
+    },
+  );
+
+  // Send booking reminder SMS
+  app.post(
+    "/api/tenants/:tenantId/restaurants/:restaurantId/sms/booking-reminder",
+    async (req, res) => {
+      try {
+        const { tenantId, restaurantId } = req.params;
+        const { bookingId, phoneNumber } = req.body;
+
+        if (!bookingId || !phoneNumber) {
+          return res.status(400).json({ 
+            message: "Booking ID and phone number are required" 
+          });
+        }
+
+        // Get booking details
+        const booking = await storage.getBookingById(parseInt(bookingId));
+        if (!booking) {
+          return res.status(404).json({ message: "Booking not found" });
+        }
+
+        // Get restaurant details
+        const restaurant = await storage.getRestaurantById(parseInt(restaurantId));
+        if (!restaurant) {
+          return res.status(404).json({ message: "Restaurant not found" });
+        }
+
+        const { twilioSMSService } = await import('./twilio-sms-service.js');
+        
+        const bookingDetails = {
+          id: booking.id,
+          restaurantName: restaurant.name,
+          time: booking.time,
+          guests: booking.guests
+        };
+
+        const result = await twilioSMSService.sendBookingReminder(
+          phoneNumber,
+          bookingDetails,
+          parseInt(restaurantId),
+          parseInt(tenantId)
+        );
+
+        if (result.success) {
+          res.json({
+            message: "Booking reminder SMS sent successfully",
+            messageId: result.messageId,
+            cost: result.cost
+          });
+        } else {
+          res.status(400).json({
+            message: "Failed to send booking reminder SMS",
+            error: result.error
+          });
+        }
+      } catch (error) {
+        console.error("Error sending booking reminder SMS:", error);
         res.status(500).json({ message: "Internal server error" });
       }
     },
