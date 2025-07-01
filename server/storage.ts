@@ -462,6 +462,12 @@ export interface IStorage {
   getFloorPlanTemplates(): Promise<FloorPlanTemplate[]>;
   getFloorPlanTemplateById(id: number): Promise<FloorPlanTemplate | undefined>;
   createFloorPlanTemplate(template: InsertFloorPlanTemplate): Promise<FloorPlanTemplate>;
+
+  // Stripe Connect
+  createStripePayment(payment: InsertStripePayment): Promise<StripePayment>;
+  getStripePaymentsByTenant(tenantId: number): Promise<StripePayment[]>;
+  updateStripePaymentByIntentId(paymentIntentId: string, updates: Partial<StripePayment>): Promise<StripePayment | undefined>;
+  getTenantByStripeConnectAccountId(accountId: string): Promise<any | undefined>;
 }
 
 import { DatabaseStorage } from "./db-storage";

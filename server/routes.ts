@@ -18391,6 +18391,284 @@ NEXT STEPS:
 
 
 
+  // ================== STRIPE CONNECT PAYMENT GATEWAY ==================
+  
+  // Get tenant's Stripe Connect status
+  app.get(
+    "/api/tenants/:tenantId/stripe-connect/status",
+    validateTenant,
+    async (req, res) => {
+      try {
+        const tenantId = parseInt(req.params.tenantId);
+        const tenant = await storage.getTenantById(tenantId);
+        
+        if (!tenant) {
+          return res.status(404).json({ message: "Tenant not found" });
+        }
+        
+        res.json({
+          connected: !!tenant.stripeConnectAccountId,
+          accountId: tenant.stripeConnectAccountId,
+          status: tenant.stripeConnectStatus || "not_connected",
+          onboardingCompleted: tenant.stripeConnectOnboardingCompleted || false,
+          chargesEnabled: tenant.stripeConnectChargesEnabled || false,
+          payoutsEnabled: tenant.stripeConnectPayoutsEnabled || false,
+        });
+      } catch (error) {
+        console.error("Error getting Stripe Connect status:", error);
+        res.status(500).json({ message: "Internal server error" });
+      }
+    }
+  );
+
+  // Create Stripe Connect account and onboarding link
+  app.post(
+    "/api/tenants/:tenantId/stripe-connect/onboard",
+    validateTenant,
+    async (req, res) => {
+      try {
+        const tenantId = parseInt(req.params.tenantId);
+        const tenant = await storage.getTenantById(tenantId);
+        
+        if (!tenant) {
+          return res.status(404).json({ message: "Tenant not found" });
+        }
+
+        const result = await withStripe(async (stripe) => {
+          let accountId = tenant.stripeConnectAccountId;
+          
+          // Create account if it doesn't exist
+          if (!accountId) {
+            const account = await stripe.accounts.create({
+              type: "standard",
+              country: "US", // Default to US, can be made configurable
+              email: req.body.email,
+              business_profile: {
+                name: tenant.name,
+                mcc: "5812", // Eating and drinking establishments
+              },
+            });
+            accountId = account.id;
+            
+            // Update tenant with new account ID
+            await storage.updateTenant(tenantId, {
+              stripeConnectAccountId: accountId,
+              stripeConnectStatus: "pending",
+            });
+          }
+          
+          // Create onboarding link
+          const accountLink = await stripe.accountLinks.create({
+            account: accountId,
+            refresh_url: `${req.protocol}://${req.get('host')}/settings/payments?refresh=true`,
+            return_url: `${req.protocol}://${req.get('host')}/settings/payments?success=true`,
+            type: "account_onboarding",
+          });
+          
+          return { url: accountLink.url, accountId };
+        });
+
+        if (!result) {
+          return res.status(500).json({ message: "Stripe not configured" });
+        }
+
+        res.json({
+          onboardingUrl: result.url,
+          accountId: result.accountId,
+        });
+      } catch (error) {
+        console.error("Error creating Stripe Connect onboarding:", error);
+        res.status(500).json({ message: "Failed to create onboarding link" });
+      }
+    }
+  );
+
+  // Update Stripe Connect account status (webhook or manual refresh)
+  app.post(
+    "/api/tenants/:tenantId/stripe-connect/refresh",
+    validateTenant,
+    async (req, res) => {
+      try {
+        const tenantId = parseInt(req.params.tenantId);
+        const tenant = await storage.getTenantById(tenantId);
+        
+        if (!tenant?.stripeConnectAccountId) {
+          return res.status(404).json({ message: "No Stripe Connect account found" });
+        }
+
+        const result = await withStripe(async (stripe) => {
+          const account = await stripe.accounts.retrieve(tenant.stripeConnectAccountId!);
+          
+          // Update tenant status based on Stripe account
+          await storage.updateTenant(tenantId, {
+            stripeConnectStatus: account.details_submitted && account.charges_enabled ? "connected" : "pending",
+            stripeConnectOnboardingCompleted: account.details_submitted,
+            stripeConnectChargesEnabled: account.charges_enabled,
+            stripeConnectPayoutsEnabled: account.payouts_enabled,
+          });
+          
+          return {
+            status: account.details_submitted && account.charges_enabled ? "connected" : "pending",
+            onboardingCompleted: account.details_submitted,
+            chargesEnabled: account.charges_enabled,
+            payoutsEnabled: account.payouts_enabled,
+          };
+        });
+
+        if (!result) {
+          return res.status(500).json({ message: "Stripe not configured" });
+        }
+
+        res.json(result);
+      } catch (error) {
+        console.error("Error refreshing Stripe Connect status:", error);
+        res.status(500).json({ message: "Failed to refresh account status" });
+      }
+    }
+  );
+
+  // Create payment intent for booking
+  app.post(
+    "/api/tenants/:tenantId/restaurants/:restaurantId/bookings/:bookingId/payment",
+    validateTenant,
+    async (req, res) => {
+      try {
+        const tenantId = parseInt(req.params.tenantId);
+        const restaurantId = parseInt(req.params.restaurantId);
+        const bookingId = parseInt(req.params.bookingId);
+        const { amount, currency = "USD", description } = req.body;
+
+        // Validate booking belongs to tenant/restaurant
+        const booking = await storage.getBookingById(bookingId);
+        if (!booking || booking.tenantId !== tenantId || booking.restaurantId !== restaurantId) {
+          return res.status(404).json({ message: "Booking not found" });
+        }
+
+        const tenant = await storage.getTenantById(tenantId);
+        if (!tenant?.stripeConnectAccountId || !tenant.stripeConnectChargesEnabled) {
+          return res.status(400).json({ 
+            message: "Stripe Connect not set up or charges not enabled" 
+          });
+        }
+
+        const result = await withStripe(async (stripe) => {
+          // Calculate application fee (5% platform fee)
+          const applicationFeeAmount = Math.round(amount * 0.05);
+          
+          const paymentIntent = await stripe.paymentIntents.create({
+            amount: amount * 100, // Convert to cents
+            currency: currency.toLowerCase(),
+            application_fee_amount: applicationFeeAmount,
+            transfer_data: {
+              destination: tenant.stripeConnectAccountId!,
+            },
+            metadata: {
+              tenantId: tenantId.toString(),
+              restaurantId: restaurantId.toString(),
+              bookingId: bookingId.toString(),
+            },
+            description: description || `Payment for booking ${bookingId}`,
+          });
+
+          // Save payment record
+          await storage.createStripePayment({
+            tenantId,
+            restaurantId,
+            bookingId,
+            stripePaymentIntentId: paymentIntent.id,
+            stripeConnectAccountId: tenant.stripeConnectAccountId!,
+            amount: amount * 100,
+            applicationFeeAmount,
+            currency: currency.toUpperCase(),
+            status: paymentIntent.status,
+            description: description || `Payment for booking ${bookingId}`,
+            customerEmail: booking.email,
+            customerName: booking.name,
+          });
+
+          return {
+            clientSecret: paymentIntent.client_secret,
+            paymentIntentId: paymentIntent.id,
+          };
+        });
+
+        if (!result) {
+          return res.status(500).json({ message: "Stripe not configured" });
+        }
+
+        res.json(result);
+      } catch (error) {
+        console.error("Error creating payment intent:", error);
+        res.status(500).json({ message: "Failed to create payment intent" });
+      }
+    }
+  );
+
+  // Get payment history for tenant
+  app.get(
+    "/api/tenants/:tenantId/payments",
+    validateTenant,
+    async (req, res) => {
+      try {
+        const tenantId = parseInt(req.params.tenantId);
+        const payments = await storage.getStripePaymentsByTenant(tenantId);
+        res.json(payments);
+      } catch (error) {
+        console.error("Error fetching payments:", error);
+        res.status(500).json({ message: "Internal server error" });
+      }
+    }
+  );
+
+  // Stripe webhooks for Connect accounts
+  app.post("/api/stripe/webhook", async (req, res) => {
+    try {
+      const sig = req.headers['stripe-signature'];
+      if (!sig || !stripe) {
+        return res.status(400).json({ message: "Invalid webhook" });
+      }
+
+      const endpointSecret = process.env.STRIPE_WEBHOOK_SECRET;
+      if (!endpointSecret) {
+        console.warn("Stripe webhook secret not configured");
+        return res.status(200).json({ received: true });
+      }
+
+      const event = stripe.webhooks.constructEvent(req.body, sig, endpointSecret);
+      
+      switch (event.type) {
+        case 'payment_intent.succeeded':
+          const paymentIntent = event.data.object;
+          await storage.updateStripePaymentByIntentId(paymentIntent.id, {
+            status: paymentIntent.status,
+          });
+          break;
+          
+        case 'account.updated':
+          const account = event.data.object;
+          // Find tenant by account ID and update status
+          const tenant = await storage.getTenantByStripeConnectAccountId(account.id);
+          if (tenant) {
+            await storage.updateTenant(tenant.id, {
+              stripeConnectStatus: account.details_submitted && account.charges_enabled ? "connected" : "pending",
+              stripeConnectOnboardingCompleted: account.details_submitted,
+              stripeConnectChargesEnabled: account.charges_enabled,
+              stripeConnectPayoutsEnabled: account.payouts_enabled,
+            });
+          }
+          break;
+          
+        default:
+          console.log(`Unhandled webhook event type: ${event.type}`);
+      }
+
+      res.json({ received: true });
+    } catch (error) {
+      console.error("Webhook error:", error);
+      res.status(400).json({ message: "Webhook error" });
+    }
+  });
+
   try {
     const { restaurantStorage } = await import("./restaurant-storage");
     await restaurantStorage.initializeSystem();

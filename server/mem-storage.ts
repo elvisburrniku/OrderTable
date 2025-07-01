@@ -1183,4 +1183,22 @@ export class MemoryStorage implements IStorage {
     this.printOrders.splice(orderIndex, 1);
     console.log(`Deleted print order ${orderId} from memory storage`);
   }
+
+  // Stripe Connect stub implementations
+  async createStripePayment(payment: any): Promise<any> {
+    const newPayment = { id: this.nextId++, ...payment, createdAt: new Date(), updatedAt: new Date() };
+    return newPayment;
+  }
+
+  async getStripePaymentsByTenant(tenantId: number): Promise<any[]> {
+    return [];
+  }
+
+  async updateStripePaymentByIntentId(paymentIntentId: string, updates: any): Promise<any | undefined> {
+    return null;
+  }
+
+  async getTenantByStripeConnectAccountId(accountId: string): Promise<any | undefined> {
+    return this.tenants.find(t => t.stripeConnectAccountId === accountId);
+  }
 }

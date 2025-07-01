@@ -54,6 +54,12 @@ export const tenants = pgTable("tenants", {
   suspendReason: text("suspend_reason"),
   stripeCustomerId: text("stripe_customer_id"),
   stripeSubscriptionId: text("stripe_subscription_id"),
+  // Stripe Connect fields for payment processing
+  stripeConnectAccountId: text("stripe_connect_account_id"), // Connected Stripe account ID
+  stripeConnectStatus: varchar("stripe_connect_status", { length: 20 }).default("not_connected"), // not_connected, pending, connected, restricted
+  stripeConnectOnboardingCompleted: boolean("stripe_connect_onboarding_completed").default(false),
+  stripeConnectChargesEnabled: boolean("stripe_connect_charges_enabled").default(false),
+  stripeConnectPayoutsEnabled: boolean("stripe_connect_payouts_enabled").default(false),
   maxRestaurants: integer("max_restaurants").default(1),
   additionalRestaurants: integer("additional_restaurants").default(0), // Extra restaurants beyond plan limit
   additionalRestaurantsCost: integer("additional_restaurants_cost").default(0), // Cost in cents for extra restaurants
@@ -1999,3 +2005,52 @@ export const insertShopOrderSchema = createInsertSchema(shopOrders);
 export const selectShopOrderSchema = createSelectSchema(shopOrders);
 export const insertShopSettingsSchema = createInsertSchema(shopSettings);
 export const selectShopSettingsSchema = createSelectSchema(shopSettings);
+
+// Stripe Connect Payments
+export const stripePayments = pgTable("stripe_payments", {
+  id: serial("id").primaryKey(),
+  tenantId: integer("tenant_id").notNull().references(() => tenants.id),
+  restaurantId: integer("restaurant_id").references(() => restaurants.id),
+  bookingId: integer("booking_id").references(() => bookings.id),
+  stripePaymentIntentId: text("stripe_payment_intent_id").notNull().unique(),
+  stripeConnectAccountId: text("stripe_connect_account_id").notNull(),
+  amount: integer("amount").notNull(), // Amount in cents
+  applicationFeeAmount: integer("application_fee_amount").default(0), // Platform fee in cents
+  currency: varchar("currency", { length: 3 }).default("USD"),
+  status: varchar("status", { length: 30 }).notNull(), // requires_payment_method, requires_confirmation, requires_action, processing, requires_capture, canceled, succeeded
+  captureMethod: varchar("capture_method", { length: 20 }).default("automatic"), // automatic, manual
+  customerEmail: text("customer_email"),
+  customerName: text("customer_name"),
+  description: text("description"),
+  metadata: jsonb("metadata").default({}),
+  receiptEmail: text("receipt_email"),
+  transferGroup: text("transfer_group"),
+  onBehalfOf: text("on_behalf_of"), // Stripe Connect account ID
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+export const stripeTransfers = pgTable("stripe_transfers", {
+  id: serial("id").primaryKey(),
+  tenantId: integer("tenant_id").notNull().references(() => tenants.id),
+  paymentId: integer("payment_id").references(() => stripePayments.id),
+  stripeTransferId: text("stripe_transfer_id").notNull().unique(),
+  stripeConnectAccountId: text("stripe_connect_account_id").notNull(),
+  amount: integer("amount").notNull(), // Amount in cents
+  currency: varchar("currency", { length: 3 }).default("USD"),
+  description: text("description"),
+  metadata: jsonb("metadata").default({}),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+// Types for Stripe Connect
+export type StripePayment = InferSelectModel<typeof stripePayments>;
+export type InsertStripePayment = InferInsertModel<typeof stripePayments>;
+export type StripeTransfer = InferSelectModel<typeof stripeTransfers>;
+export type InsertStripeTransfer = InferInsertModel<typeof stripeTransfers>;
+
+// Schemas for Stripe Connect
+export const insertStripePaymentSchema = createInsertSchema(stripePayments);
+export const selectStripePaymentSchema = createSelectSchema(stripePayments);
+export const insertStripeTransferSchema = createInsertSchema(stripeTransfers);
+export const selectStripeTransferSchema = createSelectSchema(stripeTransfers);

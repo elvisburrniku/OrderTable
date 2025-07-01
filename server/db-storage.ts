@@ -54,6 +54,8 @@ const {
   paymentSetups,
   floorPlans,
   floorPlanTemplates,
+  stripePayments,
+  stripeTransfers,
 } = schema;
 export class DatabaseStorage implements IStorage {
   db: any;
@@ -3752,6 +3754,57 @@ export class DatabaseStorage implements IStorage {
       .from(smsMessages)
       .where(eq(smsMessages.bookingId, bookingId))
       .orderBy(desc(smsMessages.sentAt));
+    return result;
+  }
+
+  // Stripe Connect Payment Methods
+  async createStripePayment(payment: any): Promise<any> {
+    if (!this.db) throw new Error("Database connection not available");
+    
+    const [result] = await this.db
+      .insert(stripePayments)
+      .values({
+        ...payment,
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      })
+      .returning();
+    return result;
+  }
+
+  async getStripePaymentsByTenant(tenantId: number): Promise<any[]> {
+    if (!this.db) return [];
+    
+    const result = await this.db
+      .select()
+      .from(stripePayments)
+      .where(eq(stripePayments.tenantId, tenantId))
+      .orderBy(desc(stripePayments.createdAt));
+    return result;
+  }
+
+  async updateStripePaymentByIntentId(paymentIntentId: string, updates: any): Promise<any | undefined> {
+    if (!this.db) throw new Error("Database connection not available");
+    
+    const [result] = await this.db
+      .update(stripePayments)
+      .set({
+        ...updates,
+        updatedAt: new Date(),
+      })
+      .where(eq(stripePayments.stripePaymentIntentId, paymentIntentId))
+      .returning();
+    return result;
+  }
+
+  async getTenantByStripeConnectAccountId(accountId: string): Promise<any | undefined> {
+    if (!this.db) return undefined;
+    
+    const [result] = await this.db
+      .select()
+      .from(tenants)
+      .where(eq(tenants.stripeConnectAccountId, accountId))
+      .limit(1);
     return result;
   }
 }

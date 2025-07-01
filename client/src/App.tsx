@@ -106,6 +106,8 @@ import { CurrencyProvider } from "@/contexts/currency-context";
 import { BookingProvider } from "@/contexts/booking-context";
 import { PWAInstallPrompt } from "@/components/pwa-install-prompt";
 import SurveyResponse from "./pages/survey-response";
+import StripeConnectSettings from "./pages/StripeConnectSettings";
+import PaymentPage from "./pages/PaymentPage";
 
 function App() {
   return (
@@ -146,6 +148,7 @@ function App() {
             <Route path="/booking-manage/:id" component={BookingManage} />
             <Route path="/accept-invitation" component={AcceptInvitation} />
             <Route path="/survey/:token" component={SurveyResponse} />
+            <Route path="/payment" component={PaymentPage} />
             <Route path="/shop" component={Shop} />
 
             {/* Widget demo with auth context */}
@@ -330,6 +333,10 @@ function App() {
                                       <Route
                                         path="/:tenantId/payment-gateway"
                                         component={PaymentGateway}
+                                      />
+                                      <Route
+                                        path="/:tenantId/settings/payments"
+                                        component={StripeConnectSettings}
                                       />
                                       <Route
                                         path="/:tenantId/products"
