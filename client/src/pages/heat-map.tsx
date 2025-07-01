@@ -1,18 +1,23 @@
-
 import { useAuth } from "@/lib/auth";
 import { useState, useEffect, useRef } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { motion, AnimatePresence } from "framer-motion";
-import { 
-  BarChart3, 
-  Calendar, 
-  Clock, 
-  Users, 
+import {
+  BarChart3,
+  Calendar,
+  Clock,
+  Users,
   TrendingUp,
   Eye,
   RotateCcw,
@@ -20,7 +25,7 @@ import {
   Target,
   DollarSign,
   Timer,
-  RefreshCw
+  RefreshCw,
 } from "lucide-react";
 
 interface TableHeatData {
@@ -34,14 +39,18 @@ interface TableHeatData {
   revenueGenerated: number;
   averageStayDuration: number;
   peakHours: string[];
-  status: 'available' | 'occupied' | 'reserved' | 'maintenance';
+  status: "available" | "occupied" | "reserved" | "maintenance";
 }
 
 export default function HeatMap() {
   const { restaurant } = useAuth();
   const [timeRange, setTimeRange] = useState("today");
-  const [viewMode, setViewMode] = useState<"heat" | "occupancy" | "revenue">("heat");
-  const [selectedTable, setSelectedTable] = useState<TableHeatData | null>(null);
+  const [viewMode, setViewMode] = useState<"heat" | "occupancy" | "revenue">(
+    "heat",
+  );
+  const [selectedTable, setSelectedTable] = useState<TableHeatData | null>(
+    null,
+  );
   const [autoRefresh, setAutoRefresh] = useState(true);
   const [hoveredTable, setHoveredTable] = useState<TableHeatData | null>(null);
   const [mousePosition, setMousePosition] = useState({ x: 0, y: 0 });
@@ -51,27 +60,40 @@ export default function HeatMap() {
   if (!restaurant) {
     return (
       <div className="flex items-center justify-center h-64">
-        <p className="text-slate-500">Please select a restaurant to view heat map.</p>
+        <p className="text-slate-500">
+          Please select a restaurant to view heat map.
+        </p>
       </div>
     );
   }
 
   // Fetch table heat map data
-  const { data: heatMapData, isLoading, refetch } = useQuery({
-    queryKey: [`/api/tenants/${restaurant.tenantId}/restaurants/${restaurant.id}/heat-map`, timeRange],
+  const {
+    data: heatMapData,
+    isLoading,
+    refetch,
+  } = useQuery({
+    queryKey: [
+      `/api/tenants/${restaurant.tenantId}/restaurants/${restaurant.id}/heat-map`,
+      timeRange,
+    ],
     enabled: !!restaurant?.tenantId && !!restaurant?.id,
     refetchInterval: autoRefresh ? 30000 : false,
   });
 
   // Fetch table layout data from table-plan
   const { data: tableLayout } = useQuery({
-    queryKey: [`/api/tenants/${restaurant.tenantId}/restaurants/${restaurant.id}/table-layout`],
+    queryKey: [
+      `/api/tenants/${restaurant.tenantId}/restaurants/${restaurant.id}/table-layout`,
+    ],
     enabled: !!restaurant?.tenantId && !!restaurant?.id,
   });
 
   // Fetch rooms data
   const { data: rooms = [] } = useQuery({
-    queryKey: [`/api/tenants/${restaurant.tenantId}/restaurants/${restaurant.id}/rooms`],
+    queryKey: [
+      `/api/tenants/${restaurant.tenantId}/restaurants/${restaurant.id}/rooms`,
+    ],
     enabled: !!restaurant?.tenantId && !!restaurant?.id,
   });
 
@@ -87,35 +109,41 @@ export default function HeatMap() {
   const heatData = heatMapData || [];
 
   // Merge heat map data with table layout positions
-  const mergedTableData = heatData.map(table => {
+  const mergedTableData = heatData.map((table) => {
     const tablePosition = tableLayout?.positions?.[table.tableId];
     return {
       ...table,
-      position: tablePosition ? { x: tablePosition.x, y: tablePosition.y } : table.position,
-      shape: tablePosition?.shape || 'circle',
-      rotation: tablePosition?.rotation || 0
+      position: tablePosition
+        ? { x: tablePosition.x, y: tablePosition.y }
+        : table.position,
+      shape: tablePosition?.shape || "circle",
+      rotation: tablePosition?.rotation || 0,
     };
   });
 
   const getStatusColor = (status: string) => {
     switch (status) {
-      case 'occupied': return '#EF4444'; // Red
-      case 'reserved': return '#F59E0B'; // Amber
-      case 'maintenance': return '#6B7280'; // Gray
-      default: return '#10B981'; // Emerald
+      case "occupied":
+        return "#EF4444"; // Red
+      case "reserved":
+        return "#F59E0B"; // Amber
+      case "maintenance":
+        return "#6B7280"; // Gray
+      default:
+        return "#10B981"; // Emerald
     }
   };
 
   const getHeatIntensity = (table: TableHeatData, mode: string) => {
     let value;
     switch (mode) {
-      case "occupancy": 
+      case "occupancy":
         value = table.occupancyRate;
         break;
-      case "revenue": 
+      case "revenue":
         value = Math.min((table.revenueGenerated / 1000) * 100, 100);
         break;
-      default: 
+      default:
         value = table.heatScore;
     }
     return Math.max(0.1, value / 100);
@@ -125,13 +153,13 @@ export default function HeatMap() {
     { value: "today", label: "Today" },
     { value: "week", label: "This Week" },
     { value: "month", label: "This Month" },
-    { value: "custom", label: "Custom Range" }
+    { value: "custom", label: "Custom Range" },
   ];
 
   const viewModeOptions = [
     { value: "heat", label: "Overall Performance", icon: BarChart3 },
     { value: "occupancy", label: "Table Occupancy", icon: Users },
-    { value: "revenue", label: "Revenue Impact", icon: TrendingUp }
+    { value: "revenue", label: "Revenue Impact", icon: TrendingUp },
   ];
 
   if (isLoading) {
@@ -152,9 +180,7 @@ export default function HeatMap() {
           <div className="space-y-2">
             <p className="text-sm font-medium text-slate-600">{title}</p>
             <p className="text-2xl font-semibold text-slate-900">{value}</p>
-            {subtitle && (
-              <p className="text-xs text-slate-500">{subtitle}</p>
-            )}
+            {subtitle && <p className="text-xs text-slate-500">{subtitle}</p>}
           </div>
           <div className="p-3 bg-slate-50 rounded-lg">
             <Icon className="w-5 h-5 text-slate-600" />
@@ -170,9 +196,9 @@ export default function HeatMap() {
   );
 
   return (
-    <div className="min-h-screen bg-slate-50">
+    <div className="min-h-screen bg-slate-50 bg-white">
       {/* Header */}
-      <motion.div 
+      <motion.div
         className="bg-white border-b border-slate-200"
         initial={{ opacity: 0, y: -20 }}
         animate={{ opacity: 1, y: 0 }}
@@ -203,10 +229,10 @@ export default function HeatMap() {
                   ))}
                 </SelectContent>
               </Select>
-              
-              <Button 
-                variant="outline" 
-                size="sm" 
+
+              <Button
+                variant="outline"
+                size="sm"
                 onClick={() => refetch()}
                 className="text-slate-600 border-slate-200"
               >
@@ -222,7 +248,7 @@ export default function HeatMap() {
       <div className="p-6">
         <div className="space-y-8">
           {/* Key Metrics */}
-          <motion.div 
+          <motion.div
             className="grid grid-cols-1 md:grid-cols-4 gap-6"
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
@@ -237,8 +263,8 @@ export default function HeatMap() {
             <StatCard
               icon={Activity}
               title="Currently Occupied"
-              value={heatData.filter(t => t.status === 'occupied').length}
-              subtitle={`${Math.round((heatData.filter(t => t.status === 'occupied').length / heatData.length) * 100)}% occupancy`}
+              value={heatData.filter((t) => t.status === "occupied").length}
+              subtitle={`${Math.round((heatData.filter((t) => t.status === "occupied").length / heatData.length) * 100)}% occupancy`}
             />
             <StatCard
               icon={TrendingUp}
@@ -260,20 +286,33 @@ export default function HeatMap() {
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.3, duration: 0.5 }}
           >
-            <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
+            <Tabs
+              value={activeTab}
+              onValueChange={setActiveTab}
+              className="space-y-6"
+            >
               <div className="flex items-center justify-between">
                 <TabsList className="bg-white border border-slate-200">
-                  <TabsTrigger value="visualization" className="data-[state=active]:bg-slate-50">
+                  <TabsTrigger
+                    value="visualization"
+                    className="data-[state=active]:bg-slate-50"
+                  >
                     Visualization
                   </TabsTrigger>
-                  <TabsTrigger value="analytics" className="data-[state=active]:bg-slate-50">
+                  <TabsTrigger
+                    value="analytics"
+                    className="data-[state=active]:bg-slate-50"
+                  >
                     Analytics
                   </TabsTrigger>
                 </TabsList>
 
                 <div className="flex items-center space-x-3">
                   <span className="text-sm text-slate-600">View Mode:</span>
-                  <Select value={viewMode} onValueChange={(value) => setViewMode(value as any)}>
+                  <Select
+                    value={viewMode}
+                    onValueChange={(value) => setViewMode(value as any)}
+                  >
                     <SelectTrigger className="w-48 bg-white border-slate-200">
                       <SelectValue />
                     </SelectTrigger>
@@ -303,7 +342,10 @@ export default function HeatMap() {
                             <span>Restaurant Floor Plan</span>
                           </span>
                           <div className="flex items-center space-x-2">
-                            <Badge variant="secondary" className="bg-slate-100 text-slate-700">
+                            <Badge
+                              variant="secondary"
+                              className="bg-slate-100 text-slate-700"
+                            >
                               Live Data
                             </Badge>
                           </div>
@@ -318,7 +360,8 @@ export default function HeatMap() {
                             viewBox="0 0 800 400"
                             className="overflow-visible"
                             onMouseMove={(e) => {
-                              const rect = e.currentTarget.getBoundingClientRect();
+                              const rect =
+                                e.currentTarget.getBoundingClientRect();
                               setMousePosition({
                                 x: e.clientX - rect.left,
                                 y: e.clientY - rect.top,
@@ -340,7 +383,7 @@ export default function HeatMap() {
                                 rx="8"
                               />
                             ))}
-                            
+
                             {/* Room label */}
                             {rooms.map((room) => (
                               <text
@@ -353,41 +396,51 @@ export default function HeatMap() {
                               </text>
                             ))}
                             {mergedTableData.map((table, index) => {
-                              const intensity = getHeatIntensity(table, viewMode);
+                              const intensity = getHeatIntensity(
+                                table,
+                                viewMode,
+                              );
                               const statusColor = getStatusColor(table.status);
-                              const size = 20 + (intensity * 15);
-                              
+                              const size = 20 + intensity * 15;
+
                               return (
-                                <g key={table.tableId} transform={`rotate(${table.rotation} ${table.position.x} ${table.position.y})`}>
-                                  {table.shape === 'rectangle' ? (
+                                <g
+                                  key={table.tableId}
+                                  transform={`rotate(${table.rotation} ${table.position.x} ${table.position.y})`}
+                                >
+                                  {table.shape === "rectangle" ? (
                                     <rect
                                       x={table.position.x - size}
-                                      y={table.position.y - size/2}
+                                      y={table.position.y - size / 2}
                                       width={size * 2}
                                       height={size}
                                       fill={statusColor}
-                                      fillOpacity={0.1 + (intensity * 0.7)}
+                                      fillOpacity={0.1 + intensity * 0.7}
                                       stroke={statusColor}
                                       strokeWidth={2}
                                       rx={4}
                                       className="cursor-pointer transition-all duration-300 hover:stroke-width-3"
-                                      onMouseEnter={() => setHoveredTable(table)}
+                                      onMouseEnter={() =>
+                                        setHoveredTable(table)
+                                      }
                                       onMouseLeave={() => setHoveredTable(null)}
                                       onClick={() => setSelectedTable(table)}
                                     />
-                                  ) : table.shape === 'square' ? (
+                                  ) : table.shape === "square" ? (
                                     <rect
                                       x={table.position.x - size}
                                       y={table.position.y - size}
                                       width={size * 2}
                                       height={size * 2}
                                       fill={statusColor}
-                                      fillOpacity={0.1 + (intensity * 0.7)}
+                                      fillOpacity={0.1 + intensity * 0.7}
                                       stroke={statusColor}
                                       strokeWidth={2}
                                       rx={4}
                                       className="cursor-pointer transition-all duration-300 hover:stroke-width-3"
-                                      onMouseEnter={() => setHoveredTable(table)}
+                                      onMouseEnter={() =>
+                                        setHoveredTable(table)
+                                      }
                                       onMouseLeave={() => setHoveredTable(null)}
                                       onClick={() => setSelectedTable(table)}
                                     />
@@ -397,11 +450,13 @@ export default function HeatMap() {
                                       cy={table.position.y}
                                       r={size}
                                       fill={statusColor}
-                                      fillOpacity={0.1 + (intensity * 0.7)}
+                                      fillOpacity={0.1 + intensity * 0.7}
                                       stroke={statusColor}
                                       strokeWidth={2}
                                       className="cursor-pointer transition-all duration-300 hover:stroke-width-3"
-                                      onMouseEnter={() => setHoveredTable(table)}
+                                      onMouseEnter={() =>
+                                        setHoveredTable(table)
+                                      }
                                       onMouseLeave={() => setHoveredTable(null)}
                                       onClick={() => setSelectedTable(table)}
                                     />
@@ -412,7 +467,7 @@ export default function HeatMap() {
                                     textAnchor="middle"
                                     className="text-xs font-medium fill-slate-700 pointer-events-none"
                                   >
-                                    {table.tableName.replace('Table ', '')}
+                                    {table.tableName.replace("Table ", "")}
                                   </text>
                                 </g>
                               );
@@ -420,7 +475,10 @@ export default function HeatMap() {
 
                             {/* Animated heat rings for high-intensity tables */}
                             {mergedTableData
-                              .filter(table => getHeatIntensity(table, viewMode) > 0.7)
+                              .filter(
+                                (table) =>
+                                  getHeatIntensity(table, viewMode) > 0.7,
+                              )
                               .map((table) => (
                                 <g key={`heat-ring-${table.tableId}`}>
                                   <circle
@@ -456,54 +514,103 @@ export default function HeatMap() {
                                 top: mousePosition.y - 60,
                               }}
                             >
-                              <div className="font-semibold text-sm mb-1">{hoveredTable.tableName}</div>
+                              <div className="font-semibold text-sm mb-1">
+                                {hoveredTable.tableName}
+                              </div>
                               <div className="space-y-1">
                                 <div className="flex justify-between items-center">
-                                  <span className="text-slate-300">Status:</span>
-                                  <span className={`font-medium ${
-                                    hoveredTable.status === 'occupied' ? 'text-red-400' :
-                                    hoveredTable.status === 'reserved' ? 'text-amber-400' :
-                                    hoveredTable.status === 'maintenance' ? 'text-gray-400' :
-                                    'text-emerald-400'
-                                  }`}>
-                                    {hoveredTable.status === 'occupied' && 'Occupied'}
-                                    {hoveredTable.status === 'reserved' && 'Reserved'}
-                                    {hoveredTable.status === 'available' && 'Available'}
-                                    {hoveredTable.status === 'maintenance' && 'Maintenance'}
+                                  <span className="text-slate-300">
+                                    Status:
+                                  </span>
+                                  <span
+                                    className={`font-medium ${
+                                      hoveredTable.status === "occupied"
+                                        ? "text-red-400"
+                                        : hoveredTable.status === "reserved"
+                                          ? "text-amber-400"
+                                          : hoveredTable.status ===
+                                              "maintenance"
+                                            ? "text-gray-400"
+                                            : "text-emerald-400"
+                                    }`}
+                                  >
+                                    {hoveredTable.status === "occupied" &&
+                                      "Occupied"}
+                                    {hoveredTable.status === "reserved" &&
+                                      "Reserved"}
+                                    {hoveredTable.status === "available" &&
+                                      "Available"}
+                                    {hoveredTable.status === "maintenance" &&
+                                      "Maintenance"}
                                   </span>
                                 </div>
                                 <div className="flex justify-between items-center">
-                                  <span className="text-slate-300">Performance:</span>
-                                  <span className="font-medium text-white">{hoveredTable.heatScore}/100</span>
+                                  <span className="text-slate-300">
+                                    Performance:
+                                  </span>
+                                  <span className="font-medium text-white">
+                                    {hoveredTable.heatScore}/100
+                                  </span>
                                 </div>
                                 <div className="flex justify-between items-center">
-                                  <span className="text-slate-300">Capacity:</span>
-                                  <span className="font-medium text-white">{hoveredTable.capacity} guests</span>
+                                  <span className="text-slate-300">
+                                    Capacity:
+                                  </span>
+                                  <span className="font-medium text-white">
+                                    {hoveredTable.capacity} guests
+                                  </span>
                                 </div>
                                 <div className="flex justify-between items-center">
-                                  <span className="text-slate-300">Revenue:</span>
-                                  <span className="font-medium text-emerald-400">${hoveredTable.revenueGenerated}</span>
+                                  <span className="text-slate-300">
+                                    Revenue:
+                                  </span>
+                                  <span className="font-medium text-emerald-400">
+                                    ${hoveredTable.revenueGenerated}
+                                  </span>
                                 </div>
                               </div>
                             </div>
                           )}
-                          
+
                           {/* Legend */}
                           <div className="absolute bottom-4 left-4 bg-white rounded-lg border border-slate-200 p-4 shadow-sm">
-                            <h4 className="text-sm font-medium text-slate-900 mb-3">Status Legend</h4>
+                            <h4 className="text-sm font-medium text-slate-900 mb-3">
+                              Status Legend
+                            </h4>
                             <div className="space-y-2">
                               {[
-                                { status: 'available', label: 'Available', color: '#10B981' },
-                                { status: 'occupied', label: 'Occupied', color: '#EF4444' },
-                                { status: 'reserved', label: 'Reserved', color: '#F59E0B' },
-                                { status: 'maintenance', label: 'Maintenance', color: '#6B7280' }
+                                {
+                                  status: "available",
+                                  label: "Available",
+                                  color: "#10B981",
+                                },
+                                {
+                                  status: "occupied",
+                                  label: "Occupied",
+                                  color: "#EF4444",
+                                },
+                                {
+                                  status: "reserved",
+                                  label: "Reserved",
+                                  color: "#F59E0B",
+                                },
+                                {
+                                  status: "maintenance",
+                                  label: "Maintenance",
+                                  color: "#6B7280",
+                                },
                               ].map((item) => (
-                                <div key={item.status} className="flex items-center space-x-2">
-                                  <div 
-                                    className="w-3 h-3 rounded-full" 
+                                <div
+                                  key={item.status}
+                                  className="flex items-center space-x-2"
+                                >
+                                  <div
+                                    className="w-3 h-3 rounded-full"
                                     style={{ backgroundColor: item.color }}
                                   />
-                                  <span className="text-xs text-slate-600">{item.label}</span>
+                                  <span className="text-xs text-slate-600">
+                                    {item.label}
+                                  </span>
                                 </div>
                               ))}
                             </div>
@@ -518,7 +625,9 @@ export default function HeatMap() {
                     <Card className="bg-white border border-slate-200">
                       <CardHeader>
                         <CardTitle className="text-lg font-medium text-slate-900">
-                          {selectedTable ? selectedTable.tableName : 'Table Details'}
+                          {selectedTable
+                            ? selectedTable.tableName
+                            : "Table Details"}
                         </CardTitle>
                       </CardHeader>
                       <CardContent className="space-y-4">
@@ -526,40 +635,68 @@ export default function HeatMap() {
                           <>
                             <div className="space-y-3">
                               <div className="flex justify-between">
-                                <span className="text-sm text-slate-600">Status</span>
-                                <Badge 
-                                  style={{ backgroundColor: getStatusColor(selectedTable.status) }}
+                                <span className="text-sm text-slate-600">
+                                  Status
+                                </span>
+                                <Badge
+                                  style={{
+                                    backgroundColor: getStatusColor(
+                                      selectedTable.status,
+                                    ),
+                                  }}
                                   className="text-white"
                                 >
                                   {selectedTable.status}
                                 </Badge>
                               </div>
                               <div className="flex justify-between">
-                                <span className="text-sm text-slate-600">Capacity</span>
-                                <span className="text-sm font-medium">{selectedTable.capacity} guests</span>
+                                <span className="text-sm text-slate-600">
+                                  Capacity
+                                </span>
+                                <span className="text-sm font-medium">
+                                  {selectedTable.capacity} guests
+                                </span>
                               </div>
                               <div className="flex justify-between">
-                                <span className="text-sm text-slate-600">Occupancy Rate</span>
-                                <span className="text-sm font-medium">{selectedTable.occupancyRate}%</span>
+                                <span className="text-sm text-slate-600">
+                                  Occupancy Rate
+                                </span>
+                                <span className="text-sm font-medium">
+                                  {selectedTable.occupancyRate}%
+                                </span>
                               </div>
                               <div className="flex justify-between">
-                                <span className="text-sm text-slate-600">Revenue</span>
-                                <span className="text-sm font-medium">${selectedTable.revenueGenerated}</span>
+                                <span className="text-sm text-slate-600">
+                                  Revenue
+                                </span>
+                                <span className="text-sm font-medium">
+                                  ${selectedTable.revenueGenerated}
+                                </span>
                               </div>
                               <div className="flex justify-between">
-                                <span className="text-sm text-slate-600">Bookings</span>
-                                <span className="text-sm font-medium">{selectedTable.bookingCount}</span>
+                                <span className="text-sm text-slate-600">
+                                  Bookings
+                                </span>
+                                <span className="text-sm font-medium">
+                                  {selectedTable.bookingCount}
+                                </span>
                               </div>
                               <div className="flex justify-between">
-                                <span className="text-sm text-slate-600">Performance Score</span>
-                                <span className="text-sm font-medium">{selectedTable.heatScore}</span>
+                                <span className="text-sm text-slate-600">
+                                  Performance Score
+                                </span>
+                                <span className="text-sm font-medium">
+                                  {selectedTable.heatScore}
+                                </span>
                               </div>
                             </div>
                           </>
                         ) : (
                           <div className="text-center py-8">
                             <Target className="w-8 h-8 mx-auto mb-2 text-slate-400" />
-                            <p className="text-sm text-slate-500">Click on a table to view details</p>
+                            <p className="text-sm text-slate-500">
+                              Click on a table to view details
+                            </p>
                           </div>
                         )}
                       </CardContent>
@@ -573,20 +710,48 @@ export default function HeatMap() {
                   {/* Performance Distribution */}
                   <Card className="bg-white border border-slate-200">
                     <CardHeader>
-                      <CardTitle className="text-lg font-medium text-slate-900">Performance Distribution</CardTitle>
+                      <CardTitle className="text-lg font-medium text-slate-900">
+                        Performance Distribution
+                      </CardTitle>
                     </CardHeader>
                     <CardContent className="space-y-4">
                       {[
-                        { label: 'High (80-100%)', count: mergedTableData.filter(t => t.heatScore >= 80).length, color: 'bg-emerald-500' },
-                        { label: 'Medium (50-79%)', count: mergedTableData.filter(t => t.heatScore >= 50 && t.heatScore < 80).length, color: 'bg-amber-500' },
-                        { label: 'Low (<50%)', count: mergedTableData.filter(t => t.heatScore < 50).length, color: 'bg-red-500' }
+                        {
+                          label: "High (80-100%)",
+                          count: mergedTableData.filter(
+                            (t) => t.heatScore >= 80,
+                          ).length,
+                          color: "bg-emerald-500",
+                        },
+                        {
+                          label: "Medium (50-79%)",
+                          count: mergedTableData.filter(
+                            (t) => t.heatScore >= 50 && t.heatScore < 80,
+                          ).length,
+                          color: "bg-amber-500",
+                        },
+                        {
+                          label: "Low (<50%)",
+                          count: mergedTableData.filter((t) => t.heatScore < 50)
+                            .length,
+                          color: "bg-red-500",
+                        },
                       ].map((item) => (
-                        <div key={item.label} className="flex items-center justify-between">
+                        <div
+                          key={item.label}
+                          className="flex items-center justify-between"
+                        >
                           <div className="flex items-center space-x-3">
-                            <div className={`w-3 h-3 rounded-full ${item.color}`} />
-                            <span className="text-sm text-slate-600">{item.label}</span>
+                            <div
+                              className={`w-3 h-3 rounded-full ${item.color}`}
+                            />
+                            <span className="text-sm text-slate-600">
+                              {item.label}
+                            </span>
                           </div>
-                          <span className="text-sm font-medium text-slate-900">{item.count}</span>
+                          <span className="text-sm font-medium text-slate-900">
+                            {item.count}
+                          </span>
                         </div>
                       ))}
                     </CardContent>
@@ -595,24 +760,59 @@ export default function HeatMap() {
                   {/* Status Overview */}
                   <Card className="bg-white border border-slate-200">
                     <CardHeader>
-                      <CardTitle className="text-lg font-medium text-slate-900">Current Status</CardTitle>
+                      <CardTitle className="text-lg font-medium text-slate-900">
+                        Current Status
+                      </CardTitle>
                     </CardHeader>
                     <CardContent className="space-y-4">
                       {[
-                        { status: 'available', label: 'Available', count: mergedTableData.filter(t => t.status === 'available').length },
-                        { status: 'occupied', label: 'Occupied', count: mergedTableData.filter(t => t.status === 'occupied').length },
-                        { status: 'reserved', label: 'Reserved', count: mergedTableData.filter(t => t.status === 'reserved').length },
-                        { status: 'maintenance', label: 'Maintenance', count: mergedTableData.filter(t => t.status === 'maintenance').length }
+                        {
+                          status: "available",
+                          label: "Available",
+                          count: mergedTableData.filter(
+                            (t) => t.status === "available",
+                          ).length,
+                        },
+                        {
+                          status: "occupied",
+                          label: "Occupied",
+                          count: mergedTableData.filter(
+                            (t) => t.status === "occupied",
+                          ).length,
+                        },
+                        {
+                          status: "reserved",
+                          label: "Reserved",
+                          count: mergedTableData.filter(
+                            (t) => t.status === "reserved",
+                          ).length,
+                        },
+                        {
+                          status: "maintenance",
+                          label: "Maintenance",
+                          count: mergedTableData.filter(
+                            (t) => t.status === "maintenance",
+                          ).length,
+                        },
                       ].map((item) => (
-                        <div key={item.status} className="flex items-center justify-between">
+                        <div
+                          key={item.status}
+                          className="flex items-center justify-between"
+                        >
                           <div className="flex items-center space-x-3">
-                            <div 
-                              className="w-3 h-3 rounded-full" 
-                              style={{ backgroundColor: getStatusColor(item.status) }}
+                            <div
+                              className="w-3 h-3 rounded-full"
+                              style={{
+                                backgroundColor: getStatusColor(item.status),
+                              }}
                             />
-                            <span className="text-sm text-slate-600">{item.label}</span>
+                            <span className="text-sm text-slate-600">
+                              {item.label}
+                            </span>
                           </div>
-                          <span className="text-sm font-medium text-slate-900">{item.count}</span>
+                          <span className="text-sm font-medium text-slate-900">
+                            {item.count}
+                          </span>
                         </div>
                       ))}
                     </CardContent>
@@ -621,19 +821,30 @@ export default function HeatMap() {
                   {/* Top Performers */}
                   <Card className="bg-white border border-slate-200">
                     <CardHeader>
-                      <CardTitle className="text-lg font-medium text-slate-900">Top Performers</CardTitle>
+                      <CardTitle className="text-lg font-medium text-slate-900">
+                        Top Performers
+                      </CardTitle>
                     </CardHeader>
                     <CardContent className="space-y-3">
                       {mergedTableData
                         .sort((a, b) => b.heatScore - a.heatScore)
                         .slice(0, 5)
                         .map((table, index) => (
-                          <div key={table.tableId} className="flex items-center justify-between">
+                          <div
+                            key={table.tableId}
+                            className="flex items-center justify-between"
+                          >
                             <div className="flex items-center space-x-3">
-                              <span className="text-xs font-medium text-slate-500 w-4">#{index + 1}</span>
-                              <span className="text-sm text-slate-900">{table.tableName}</span>
+                              <span className="text-xs font-medium text-slate-500 w-4">
+                                #{index + 1}
+                              </span>
+                              <span className="text-sm text-slate-900">
+                                {table.tableName}
+                              </span>
                             </div>
-                            <span className="text-sm font-medium text-slate-700">{table.heatScore}</span>
+                            <span className="text-sm font-medium text-slate-700">
+                              {table.heatScore}
+                            </span>
                           </div>
                         ))}
                     </CardContent>
@@ -654,11 +865,21 @@ export default function HeatMap() {
             top: mousePosition.y - 10,
           }}
         >
-          <div className="text-sm font-medium text-slate-900 mb-1">{hoveredTable.tableName}</div>
+          <div className="text-sm font-medium text-slate-900 mb-1">
+            {hoveredTable.tableName}
+          </div>
           <div className="text-xs text-slate-600 space-y-1">
-            <div>Status: <span className="font-medium">{hoveredTable.status}</span></div>
-            <div>Performance: <span className="font-medium">{hoveredTable.heatScore}</span></div>
-            <div>Occupancy: <span className="font-medium">{hoveredTable.occupancyRate}%</span></div>
+            <div>
+              Status: <span className="font-medium">{hoveredTable.status}</span>
+            </div>
+            <div>
+              Performance:{" "}
+              <span className="font-medium">{hoveredTable.heatScore}</span>
+            </div>
+            <div>
+              Occupancy:{" "}
+              <span className="font-medium">{hoveredTable.occupancyRate}%</span>
+            </div>
           </div>
         </div>
       )}

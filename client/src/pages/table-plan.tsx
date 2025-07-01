@@ -564,49 +564,7 @@ export default function TablePlan() {
               </Select>
             </div>
 
-            {/* Available Tables */}
-            <div className="mb-6">
-              <h3 className="text-sm font-medium text-gray-700 mb-3">
-                Existing Tables
-              </h3>
-              <div className="space-y-2 max-h-60 overflow-y-auto">
-                {tables.map((table: any) => (
-                  <div
-                    key={`table-${table.id}`}
-                    className="p-2 border rounded-lg hover:bg-gray-50"
-                  >
-                    <div className="flex items-center justify-between">
-                      <div>
-                        <div className="font-medium text-sm">
-                          Table {table.tableNumber}
-                        </div>
-                        <div className="text-xs text-gray-500 flex items-center">
-                          <Users className="h-3 w-3 mr-1" />
-                          {table.capacity}
-                        </div>
-                      </div>
-                      <div
-                        draggable
-                        onDragStart={(e) => handleDragStart(table.id, e)}
-                        style={{ cursor: "grab" }}
-                        title={`Drag to place Table ${table.tableNumber}`}
-                      >
-                        {table.tableNumber}
-                      </div>
-                    </div>
 
-                    {/* Show status if positioned */}
-                    {tablePositions[table.id] && (
-                      <div className="mt-2">
-                        <Badge variant="outline" className="text-xs">
-                          On Floor Plan
-                        </Badge>
-                      </div>
-                    )}
-                  </div>
-                ))}
-              </div>
-            </div>
 
             {/* Professional Table Structures */}
             <div className="mb-6">
@@ -639,10 +597,12 @@ export default function TablePlan() {
                 <Button
                   className="w-full bg-green-600 hover:bg-green-700 text-white"
                   onClick={() => {
-                    /* Handle done */
+                    // Save layout and show success message
+                    saveLayoutMutation.mutate(tablePositions);
                   }}
+                  disabled={saveLayoutMutation.isPending}
                 >
-                  Done
+                  {saveLayoutMutation.isPending ? "Saving..." : "Done"}
                 </Button>
               </div>
 
@@ -651,10 +611,19 @@ export default function TablePlan() {
                   variant="outline"
                   className="w-full text-red-600 border-red-600 hover:bg-red-50"
                   onClick={() => {
-                    /* Handle delete table */
+                    // Clear all positioned tables from floor plan
+                    if (Object.keys(tablePositions).length === 0) {
+                      alert("No tables positioned on the floor plan to delete.");
+                      return;
+                    }
+                    
+                    if (window.confirm("Are you sure you want to remove all tables from the floor plan? This action cannot be undone.")) {
+                      setTablePositions({});
+                    }
                   }}
+                  disabled={Object.keys(tablePositions).length === 0}
                 >
-                  Delete table
+                  Clear All Tables
                 </Button>
               </div>
             </div>
