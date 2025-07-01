@@ -42,6 +42,7 @@ const {
   bookingAgents,
   smsSettings,
   smsBalance,
+  surveyResponses,
   kitchenOrders,
   kitchenStations,
   kitchenStaff,
@@ -1604,6 +1605,182 @@ export class DatabaseStorage implements IStorage {
       )
       .orderBy(smsMessages.createdAt);
   }
+
+  // Survey Response methods
+  async createSurveyResponse(
+    restaurantId: number,
+    tenantId: number,
+    responseData: any,
+  ): Promise<any> {
+    if (!this.db) throw new Error("Database connection not available");
+    const [response] = await this.db
+      .insert(surveyResponses)
+      .values({
+        restaurantId,
+        tenantId,
+        bookingId: responseData.bookingId,
+        smsMessageId: responseData.smsMessageId,
+        customerPhone: responseData.customerPhone,
+        customerName: responseData.customerName,
+        rating: responseData.rating,
+        feedback: responseData.feedback,
+        responseMethod: responseData.responseMethod || "sms",
+        responseToken: responseData.responseToken,
+        respondedAt: new Date(),
+      })
+      .returning();
+    return response;
+  }
+
+  async getSurveyResponses(restaurantId: number, tenantId: number): Promise<any[]> {
+    if (!this.db) throw new Error("Database connection not available");
+    return await this.db
+      .select()
+      .from(surveyResponses)
+      .where(
+        and(
+          eq(surveyResponses.restaurantId, restaurantId),
+          eq(surveyResponses.tenantId, tenantId),
+        ),
+      )
+      .orderBy(desc(surveyResponses.createdAt));
+  }
+
+  async getSurveyResponseByToken(token: string): Promise<any> {
+    if (!this.db) throw new Error("Database connection not available");
+    const result = await this.db
+      .select()
+      .from(surveyResponses)
+      .where(eq(surveyResponses.responseToken, token))
+      .limit(1);
+    return result[0] || null;
+  }
+
+  async getSurveyStats(restaurantId: number, tenantId: number): Promise<any> {
+    if (!this.db) throw new Error("Database connection not available");
+    const responses = await this.db
+      .select()
+      .from(surveyResponses)
+      .where(
+        and(
+          eq(surveyResponses.restaurantId, restaurantId),
+          eq(surveyResponses.tenantId, tenantId),
+          sql`${surveyResponses.rating} IS NOT NULL`,
+        ),
+      );
+
+    if (responses.length === 0) {
+      return {
+        totalResponses: 0,
+        averageRating: 0,
+        ratingDistribution: { 1: 0, 2: 0, 3: 0, 4: 0, 5: 0 },
+      };
+    }
+
+    const totalResponses = responses.length;
+    const averageRating = responses.reduce((sum, r) => sum + (r.rating || 0), 0) / totalResponses;
+    const ratingDistribution = responses.reduce((dist, r) => {
+      if (r.rating) {
+        dist[r.rating] = (dist[r.rating] || 0) + 1;
+      }
+      return dist;
+    }, { 1: 0, 2: 0, 3: 0, 4: 0, 5: 0 });
+
+    return {
+      totalResponses,
+      averageRating: parseFloat(averageRating.toFixed(2)),
+      ratingDistribution,
+    };
+  }
+
+  async sendSurveyToBooking(bookingId: number): Promise<any> {
+    if (!this.db) throw new Error("Database connection not available");
+    
+    // Get booking details
+    const booking = await this.db
+      .select()
+      .from(bookings)
+      .where(eq(bookings.id, bookingId))
+      .limit(1);
+    
+    if (!booking.length) {
+      throw new Error("Booking not found");
+    }
+
+    const bookingData = booking[0];
+    
+    // Get SMS settings
+    const settings = await this.db
+      .select()
+      .from(smsSettings)
+      .where(
+        and(
+          eq(smsSettings.restaurantId, bookingData.restaurantId),
+          eq(smsSettings.tenantId, bookingData.tenantId),
+        ),
+      )
+      .limit(1);
+
+    if (!settings.length || !settings[0].satisfactionSurveyEnabled) {
+      throw new Error("Survey not enabled for this restaurant");
+    }
+
+    const surveySettings = settings[0];
+    
+    // Generate response token
+    const responseToken = Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15);
+    
+    // Create survey URL
+    const surveyUrl = surveySettings.surveyUrl || `${process.env.BASE_URL || 'http://localhost:5000'}/survey/${responseToken}`;
+    
+    // Create SMS message
+    const message = `${surveySettings.surveyMessage} ${surveyUrl}`;
+    
+    const smsMessage = await this.createSmsMessage(
+      bookingData.restaurantId,
+      bookingData.tenantId,
+      {
+        bookingId: bookingData.id,
+        phoneNumber: bookingData.phone,
+        message,
+        type: "survey",
+        cost: "0.08",
+      }
+    );
+
+    // Create survey response record with token
+    await this.createSurveyResponse(
+      bookingData.restaurantId,
+      bookingData.tenantId,
+      {
+        bookingId: bookingData.id,
+        smsMessageId: smsMessage.id,
+        customerPhone: bookingData.phone,
+        customerName: bookingData.customerName,
+        responseToken,
+        responseMethod: "sms",
+      }
+    );
+
+    return { smsMessage, responseToken, surveyUrl };
+  }
+
+  async updateSurveyResponse(token: string, updateData: any): Promise<any> {
+    if (!this.db) throw new Error("Database connection not available");
+    
+    const [updatedResponse] = await this.db
+      .update(surveyResponses)
+      .set({
+        rating: updateData.rating,
+        feedback: updateData.feedback,
+        respondedAt: new Date(),
+      })
+      .where(eq(surveyResponses.responseToken, token))
+      .returning();
+    
+    return updatedResponse;
+  }
+
   // Feedback Questions methods
   async getFeedbackQuestions(
     restaurantId: number,

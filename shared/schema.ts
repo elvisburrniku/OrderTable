@@ -1254,6 +1254,9 @@ export const smsSettings = pgTable("sms_settings", {
   satisfactionSurveyEnabled: boolean("satisfaction_survey_enabled").default(
     false,
   ),
+  surveyDelay: integer("survey_delay").default(60), // minutes after booking completion
+  surveyMessage: text("survey_message").default("How was your dining experience? Please rate us:"),
+  surveyUrl: text("survey_url"), // Optional custom survey URL
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
 });
@@ -1289,6 +1292,32 @@ export const smsMessages = pgTable("sms_messages", {
   errorMessage: text("error_message"),
   sentAt: timestamp("sent_at"),
   deliveredAt: timestamp("delivered_at"),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+});
+
+// Survey responses table for tracking customer satisfaction responses
+export const surveyResponses = pgTable("survey_responses", {
+  id: serial("id").primaryKey(),
+  restaurantId: integer("restaurant_id")
+    .notNull()
+    .references(() => restaurants.id, { onDelete: "cascade" }),
+  tenantId: integer("tenant_id")
+    .notNull()
+    .references(() => tenants.id, { onDelete: "cascade" }),
+  bookingId: integer("booking_id")
+    .notNull()
+    .references(() => bookings.id, { onDelete: "cascade" }),
+  smsMessageId: integer("sms_message_id").references(() => smsMessages.id, {
+    onDelete: "set null",
+  }),
+  customerPhone: text("customer_phone").notNull(),
+  customerName: text("customer_name"),
+  rating: integer("rating"), // 1-5 star rating
+  feedback: text("feedback"), // Optional text feedback
+  responseMethod: text("response_method").default("sms"), // sms, web, phone
+  responseToken: text("response_token").unique(), // Unique token for web responses
+  respondedAt: timestamp("responded_at"),
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
 });
@@ -1589,6 +1618,17 @@ export const insertSmsSettingsSchema = createInsertSchema(smsSettings).omit({
   createdAt: true,
   updatedAt: true,
 });
+
+export type SurveyResponse = InferSelectModel<typeof surveyResponses>;
+export type InsertSurveyResponse = InferInsertModel<typeof surveyResponses>;
+
+export const insertSurveyResponseSchema = createInsertSchema(surveyResponses).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
+export const selectSurveyResponseSchema = createSelectSchema(surveyResponses);
 
 // Print Orders Schema
 export const printOrders = pgTable("print_orders", {

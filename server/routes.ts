@@ -46,8 +46,9 @@ import {
   tenantUsers,
   restaurants,
   subscriptionPlans,
+  surveyResponses,
 } from "@shared/schema";
-import { eq, and } from "drizzle-orm";
+import { eq, and, desc, sql } from "drizzle-orm";
 import {
   requirePermission,
   requireAnyPermission,
@@ -16545,6 +16546,244 @@ NEXT STEPS:
       }
     },
   );
+
+  // Survey Response routes
+  app.get(
+    "/api/tenants/:tenantId/restaurants/:restaurantId/survey-responses",
+    async (req, res) => {
+      try {
+        const { tenantId, restaurantId } = req.params;
+        const responses = await storage.getSurveyResponses(
+          parseInt(restaurantId),
+          parseInt(tenantId),
+        );
+        res.json(responses);
+      } catch (error) {
+        console.error("Error fetching survey responses:", error);
+        res.status(500).json({ message: "Internal server error" });
+      }
+    },
+  );
+
+  app.get(
+    "/api/tenants/:tenantId/restaurants/:restaurantId/survey-stats",
+    async (req, res) => {
+      try {
+        const { tenantId, restaurantId } = req.params;
+        const stats = await storage.getSurveyStats(
+          parseInt(restaurantId),
+          parseInt(tenantId),
+        );
+        res.json(stats);
+      } catch (error) {
+        console.error("Error fetching survey stats:", error);
+        res.status(500).json({ message: "Internal server error" });
+      }
+    },
+  );
+
+  app.post(
+    "/api/tenants/:tenantId/restaurants/:restaurantId/send-survey/:bookingId",
+    async (req, res) => {
+      try {
+        const { tenantId, restaurantId, bookingId } = req.params;
+        
+        const result = await storage.sendSurveyToBooking(parseInt(bookingId));
+        
+        res.json({
+          message: "Survey sent successfully",
+          surveyUrl: result.surveyUrl,
+          messageId: result.smsMessage.id,
+        });
+      } catch (error) {
+        console.error("Error sending survey:", error);
+        res.status(500).json({ message: error.message || "Internal server error" });
+      }
+    },
+  );
+
+  // Public survey response endpoint (no authentication required)
+  app.get("/survey/:token", async (req, res) => {
+    try {
+      const { token } = req.params;
+      const surveyResponse = await storage.getSurveyResponseByToken(token);
+      
+      if (!surveyResponse) {
+        return res.status(404).send(`
+          <html>
+            <head><title>Survey Not Found</title></head>
+            <body>
+              <h1>Survey Not Found</h1>
+              <p>This survey link is invalid or has expired.</p>
+            </body>
+          </html>
+        `);
+      }
+
+      // Check if already responded
+      if (surveyResponse.rating || surveyResponse.feedback) {
+        return res.send(`
+          <html>
+            <head><title>Thank You</title></head>
+            <body style="font-family: Arial, sans-serif; max-width: 600px; margin: 50px auto; padding: 20px;">
+              <h1>Thank You!</h1>
+              <p>You have already responded to this survey.</p>
+              <p>Your feedback is valuable to us.</p>
+            </body>
+          </html>
+        `);
+      }
+
+      // Display survey form
+      res.send(`
+        <html>
+          <head>
+            <title>Customer Satisfaction Survey</title>
+            <meta name="viewport" content="width=device-width, initial-scale=1">
+            <style>
+              body { font-family: Arial, sans-serif; max-width: 600px; margin: 50px auto; padding: 20px; }
+              .rating { font-size: 24px; margin: 20px 0; }
+              .star { cursor: pointer; color: #ddd; transition: color 0.2s; }
+              .star:hover, .star.active { color: #ffd700; }
+              textarea { width: 100%; min-height: 100px; padding: 10px; border: 1px solid #ddd; border-radius: 4px; }
+              button { background: #007bff; color: white; padding: 12px 24px; border: none; border-radius: 4px; cursor: pointer; font-size: 16px; }
+              button:hover { background: #0056b3; }
+              .form-group { margin: 20px 0; }
+            </style>
+          </head>
+          <body>
+            <h1>How was your experience?</h1>
+            <p>We'd love to hear about your recent visit. Your feedback helps us improve!</p>
+            
+            <form id="surveyForm">
+              <div class="form-group">
+                <label>Rate your experience:</label>
+                <div class="rating" id="rating">
+                  <span class="star" data-rating="1">★</span>
+                  <span class="star" data-rating="2">★</span>
+                  <span class="star" data-rating="3">★</span>
+                  <span class="star" data-rating="4">★</span>
+                  <span class="star" data-rating="5">★</span>
+                </div>
+              </div>
+              
+              <div class="form-group">
+                <label for="feedback">Additional comments (optional):</label>
+                <textarea id="feedback" name="feedback" placeholder="Tell us more about your experience..."></textarea>
+              </div>
+              
+              <button type="submit">Submit Feedback</button>
+            </form>
+
+            <script>
+              let selectedRating = 0;
+              
+              document.querySelectorAll('.star').forEach(star => {
+                star.addEventListener('click', function() {
+                  selectedRating = parseInt(this.dataset.rating);
+                  updateStars();
+                });
+                
+                star.addEventListener('mouseover', function() {
+                  const rating = parseInt(this.dataset.rating);
+                  highlightStars(rating);
+                });
+              });
+              
+              document.getElementById('rating').addEventListener('mouseleave', function() {
+                updateStars();
+              });
+              
+              function highlightStars(rating) {
+                document.querySelectorAll('.star').forEach((star, index) => {
+                  star.classList.toggle('active', index < rating);
+                });
+              }
+              
+              function updateStars() {
+                highlightStars(selectedRating);
+              }
+              
+              document.getElementById('surveyForm').addEventListener('submit', async function(e) {
+                e.preventDefault();
+                
+                if (selectedRating === 0) {
+                  alert('Please select a rating');
+                  return;
+                }
+                
+                const feedback = document.getElementById('feedback').value;
+                
+                try {
+                  const response = await fetch('/api/survey/${token}/submit', {
+                    method: 'POST',
+                    headers: {
+                      'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                      rating: selectedRating,
+                      feedback: feedback
+                    })
+                  });
+                  
+                  if (response.ok) {
+                    document.body.innerHTML = \`
+                      <h1>Thank You!</h1>
+                      <p>Your feedback has been submitted successfully.</p>
+                      <p>We appreciate you taking the time to help us improve!</p>
+                    \`;
+                  } else {
+                    alert('Error submitting feedback. Please try again.');
+                  }
+                } catch (error) {
+                  alert('Error submitting feedback. Please try again.');
+                }
+              });
+            </script>
+          </body>
+        </html>
+      `);
+    } catch (error) {
+      console.error("Error loading survey:", error);
+      res.status(500).send(`
+        <html>
+          <head><title>Error</title></head>
+          <body>
+            <h1>Error</h1>
+            <p>Unable to load survey. Please try again later.</p>
+          </body>
+        </html>
+      `);
+    }
+  });
+
+  app.post("/api/survey/:token/submit", async (req, res) => {
+    try {
+      const { token } = req.params;
+      const { rating, feedback } = req.body;
+
+      const surveyResponse = await storage.getSurveyResponseByToken(token);
+      
+      if (!surveyResponse) {
+        return res.status(404).json({ message: "Survey not found" });
+      }
+
+      if (surveyResponse.rating || surveyResponse.feedback) {
+        return res.status(400).json({ message: "Survey already completed" });
+      }
+
+      // Update the survey response via storage method
+      await storage.updateSurveyResponse(token, {
+        rating: parseInt(rating),
+        feedback: feedback || null,
+      });
+
+      res.json({ message: "Survey response saved successfully" });
+    } catch (error) {
+      console.error("Error submitting survey response:", error);
+      res.status(500).json({ message: "Internal server error" });
+    }
+  });
 
   // Feedback Questions routes
   app.get(

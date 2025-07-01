@@ -2,9 +2,11 @@ import { useState, useEffect } from "react";
 import { useAuth } from "@/lib/auth.tsx";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Switch } from "@/components/ui/switch";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
@@ -70,6 +72,8 @@ export default function SmsSettings() {
     countryCode: "+381",
     phoneNumber: "",
     satisfactionSurveyEnabled: false,
+    surveyMessage: "Thank you for visiting us! Please share your experience:",
+    surveyUrl: "",
   });
 
   const [testPhone, setTestPhone] = useState("");
@@ -91,6 +95,8 @@ export default function SmsSettings() {
         countryCode: currentSettings.countryCode || "+381",
         phoneNumber: currentSettings.phoneNumber || "",
         satisfactionSurveyEnabled: currentSettings.satisfactionSurveyEnabled || false,
+        surveyMessage: currentSettings.surveyMessage || "Thank you for visiting us! Please share your experience:",
+        surveyUrl: currentSettings.surveyUrl || "",
       });
     }
   }, [currentSettings]);
@@ -382,24 +388,80 @@ export default function SmsSettings() {
                   </div>
                 </div>
 
-                {/* Future Features */}
-                <div className="p-4 rounded-lg border border-dashed border-gray-300 bg-gray-50/50">
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-3">
-                      <div className="p-2 bg-purple-100 rounded-lg">
-                        <Star className="w-4 h-4 text-purple-600" />
-                      </div>
-                      <div>
-                        <Label className="text-base font-medium text-gray-700">
-                          Satisfaction Surveys
-                        </Label>
-                        <p className="text-sm text-gray-500 mt-1">Collect feedback after dining experience</p>
+                {/* Satisfaction Survey Configuration */}
+                <div className="p-4 rounded-lg border border-gray-200 bg-gradient-to-r from-purple-50 to-pink-50">
+                  <div className="flex items-center gap-3 mb-4">
+                    <div className="p-2 bg-purple-100 rounded-lg">
+                      <Star className="w-4 h-4 text-purple-600" />
+                    </div>
+                    <div className="flex-1">
+                      <div className="flex items-center justify-between">
+                        <div>
+                          <Label className="text-base font-medium text-gray-900">
+                            Customer Satisfaction Surveys
+                          </Label>
+                          <p className="text-sm text-gray-600 mt-1">Automatically send survey links to collect customer feedback</p>
+                        </div>
+                        <Switch
+                          checked={smsSettings.satisfactionSurveyEnabled}
+                          onCheckedChange={(checked) =>
+                            setSmsSettings(prev => ({ ...prev, satisfactionSurveyEnabled: checked }))
+                          }
+                        />
                       </div>
                     </div>
-                    <Badge variant="secondary" className="bg-purple-100 text-purple-700">
-                      Coming Soon
-                    </Badge>
                   </div>
+
+                  {smsSettings.satisfactionSurveyEnabled && (
+                    <div className="space-y-4">
+                      <div>
+                        <Label htmlFor="surveyMessage" className="text-sm font-medium text-gray-700">
+                          Survey Message
+                        </Label>
+                        <p className="text-xs text-gray-500 mb-2">Message sent with the survey link</p>
+                        <Textarea
+                          id="surveyMessage"
+                          value={smsSettings.surveyMessage}
+                          onChange={(e) =>
+                            setSmsSettings(prev => ({ ...prev, surveyMessage: e.target.value }))
+                          }
+                          placeholder="Thank you for visiting us! Please share your experience:"
+                          className="w-full"
+                          rows={2}
+                        />
+                      </div>
+
+                      <div>
+                        <Label htmlFor="surveyUrl" className="text-sm font-medium text-gray-700">
+                          Custom Survey URL (Optional)
+                        </Label>
+                        <p className="text-xs text-gray-500 mb-2">Leave empty to use built-in survey system</p>
+                        <Input
+                          id="surveyUrl"
+                          value={smsSettings.surveyUrl}
+                          onChange={(e) =>
+                            setSmsSettings(prev => ({ ...prev, surveyUrl: e.target.value }))
+                          }
+                          placeholder="https://your-custom-survey.com"
+                          className="w-full"
+                        />
+                      </div>
+
+                      <div className="p-3 bg-blue-50 rounded-lg border border-blue-200">
+                        <div className="flex items-start gap-2">
+                          <MessageSquare className="w-4 h-4 text-blue-600 mt-0.5" />
+                          <div className="text-xs text-blue-700">
+                            <p className="font-medium mb-1">How it works:</p>
+                            <ul className="space-y-1 text-blue-600">
+                              <li>• Survey SMS sent automatically after booking completion</li>
+                              <li>• Customers rate 1-5 stars and leave optional feedback</li>
+                              <li>• View responses and statistics in the Surveys page</li>
+                            </ul>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  )}
                 </div>
 
                 <Separator className="my-6" />

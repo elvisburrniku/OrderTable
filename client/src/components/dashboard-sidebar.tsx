@@ -292,6 +292,13 @@ export default function DashboardSidebar({
       requiredPermission: "access_notifications",
     },
     {
+      name: "Surveys",
+      icon: BarChart3,
+      href: `/${tenantId}/surveys`,
+      color: "text-indigo-600",
+      requiredPermission: "access_notifications",
+    },
+    {
       name: "Billing",
       icon: CreditCard,
       href: `/${tenantId}/billing`,
