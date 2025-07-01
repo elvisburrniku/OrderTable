@@ -22,7 +22,6 @@ A comprehensive restaurant booking management system with React frontend and Exp
 - Kitchen order management
 
 ## Recent Changes
-<<<<<<< HEAD
 - **2025-07-01**: Implemented multi-tenant restaurant management system with subscription-based restaurant creation and tenant switching
 - **Multi-Tenant System**: Users can create multiple restaurants based on subscription limits and switch between them seamlessly
 - **Tenant Switcher**: Dashboard sidebar includes restaurant switcher dropdown with owner indicators and subscription status
@@ -37,7 +36,6 @@ A comprehensive restaurant booking management system with React frontend and Exp
 - **Product Categories**: Marketing Services, Branding & Design, Print Services, and Digital Solutions with sample products
 - **Payment Processing**: Integrated Stripe payment system for secure transactions and order management
 - **Database Integration**: Shop tables (categories, products, orders, settings) with proper relationships and validation
-=======
 - **2025-07-01**: Completed comprehensive Twilio SMS integration for restaurant booking notifications
 - **SMS Integration Features**: Implemented booking confirmation SMS, reminder SMS, balance tracking, delivery status monitoring, and cost management
 - **Frontend SMS Interface**: Created SMS settings page with configuration options, balance display, and message history
@@ -46,7 +44,6 @@ A comprehensive restaurant booking management system with React frontend and Exp
 - **API Endpoints**: Created comprehensive SMS API for settings, messages, balance management, and Twilio account info
 - **Automated Services**: Implemented SMS reminder service integrated with existing booking reminder system
 - **Security**: Properly configured Twilio credentials as environment variables with secure access patterns
->>>>>>> 44d87ce (Enable automated text message notifications for bookings and reminders)
 - **2025-06-30**: Successfully completed migration from Replit Agent to Replit environment
 - **Migration Completed**: Fixed database schema issues (missing redirect column in roles table), resolved authentication system, and ensured full application functionality
 - **Table Plan Enhancement**: Removed "On Floor Plan" text from table listings in the floor plan page for cleaner UI
