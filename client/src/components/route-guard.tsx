@@ -104,6 +104,7 @@ export function RouteGuard({ children }: RouteGuardProps) {
         /^\/\d+\/rooms$/,
         /^\/\d+\/booking-agents$/,
         /^\/\d+\/users$/,
+        /^\/\d+\/sms-settings$/,
         /^\/\d+\/table-plan$/,
         /^\/\d+\/profile$/,
         /^\/\d+\/settings$/,
