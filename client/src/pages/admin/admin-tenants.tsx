@@ -255,7 +255,7 @@ export function AdminTenants({ token }: AdminTenantsProps) {
     }
   };
 
-  const updateTenant = async (tenantId: number, updateData: Partial<Tenant>) => {
+  const updateTenant = async (tenantId: number, updateData: Partial<TenantData>) => {
     setIsUpdating(true);
     try {
       const response = await fetch(`/api/admin/tenants/${tenantId}`, {
@@ -274,10 +274,10 @@ export function AdminTenants({ token }: AdminTenantsProps) {
       const updatedTenant = await response.json();
       
       // Update tenants list
-      setTenants(prev => prev.map(t => t.id === tenantId ? { ...t, ...updatedTenant } : t));
+      setTenants(prev => prev.map(t => t.tenant.id === tenantId ? { ...t, ...updatedTenant } : t));
       
       // Update selected tenant if it's the same one
-      if (selectedTenant && selectedTenant.id === tenantId) {
+      if (selectedTenant && selectedTenant.tenant.id === tenantId) {
         setSelectedTenant(prev => prev ? { ...prev, ...updatedTenant } : null);
       }
 
@@ -318,11 +318,11 @@ export function AdminTenants({ token }: AdminTenantsProps) {
 
       // Update tenant status
       setTenants(prev => prev.map(t => 
-        t.id === tenantId ? { ...t, subscriptionStatus: 'suspended' } : t
+        t.tenant.id === tenantId ? { ...t, tenant: { ...t.tenant, subscriptionStatus: 'suspended' } } : t
       ));
       
-      if (selectedTenant && selectedTenant.id === tenantId) {
-        setSelectedTenant(prev => prev ? { ...prev, subscriptionStatus: 'suspended' } : null);
+      if (selectedTenant && selectedTenant.tenant.id === tenantId) {
+        setSelectedTenant(prev => prev ? { ...prev, tenant: { ...prev.tenant, subscriptionStatus: 'suspended' } } : null);
       }
 
       toast({
@@ -397,11 +397,11 @@ export function AdminTenants({ token }: AdminTenantsProps) {
 
       // Update tenant status
       setTenants(prev => prev.map(t => 
-        t.id === tenantId ? { ...t, subscriptionStatus: 'paused' } : t
+        t.tenant.id === tenantId ? { ...t, tenant: { ...t.tenant, subscriptionStatus: 'paused' } } : t
       ));
       
-      if (selectedTenant && selectedTenant.id === tenantId) {
-        setSelectedTenant(prev => prev ? { ...prev, subscriptionStatus: 'paused' } : null);
+      if (selectedTenant && selectedTenant.tenant.id === tenantId) {
+        setSelectedTenant(prev => prev ? { ...prev, tenant: { ...prev.tenant, subscriptionStatus: 'paused' } } : null);
       }
 
       toast({
@@ -520,14 +520,12 @@ export function AdminTenants({ token }: AdminTenantsProps) {
       ));
 
       // Update selected tenant if viewing details
-      if (selectedTenant && selectedTenant.id === tenantId) {
+      if (selectedTenant && selectedTenant.tenant.id === tenantId) {
         const updatedPlan = subscriptionPlans.find(p => p.id.toString() === selectedSubscriptionPlan);
         setSelectedTenant(prev => prev ? {
           ...prev,
-          subscriptionPlanId: parseInt(selectedSubscriptionPlan),
-          planName: updatedPlan?.name || prev.planName,
-          planPrice: updatedPlan?.price || prev.planPrice,
-          planInterval: updatedPlan?.interval || prev.planInterval,
+          tenant: { ...prev.tenant, subscriptionPlanId: parseInt(selectedSubscriptionPlan) },
+          subscriptionPlan: updatedPlan || prev.subscriptionPlan
         } : null);
       }
 
@@ -560,9 +558,9 @@ export function AdminTenants({ token }: AdminTenantsProps) {
   };
 
   const handleSaveEdit = () => {
-    if (editingTenant && editingTenant.id) {
-      const { id, ...updateData } = editingTenant;
-      updateTenant(id, updateData);
+    if (editingTenant && editingTenant.tenant?.id) {
+      const { tenant, ...updateData } = editingTenant;
+      updateTenant(tenant.id, { tenant, ...updateData });
     }
   };
 
@@ -1037,7 +1035,7 @@ export function AdminTenants({ token }: AdminTenantsProps) {
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
               <Building className="h-5 w-5" />
-              {selectedTenant?.name || "Tenant Details"}
+              {selectedTenant?.tenant.name || "Tenant Details"}
             </DialogTitle>
             <DialogDescription>
               Comprehensive view of tenant information and statistics
@@ -1063,25 +1061,25 @@ export function AdminTenants({ token }: AdminTenantsProps) {
                   <CardHeader>
                     <CardTitle className="flex items-center justify-between">
                       Basic Information
-                      {getStatusBadge(selectedTenant.subscriptionStatus)}
+                      {getStatusBadge(selectedTenant.tenant.subscriptionStatus)}
                     </CardTitle>
                   </CardHeader>
                   <CardContent className="grid grid-cols-2 gap-4">
                     <div>
                       <Label className="text-sm font-medium">Organization Name</Label>
-                      <div className="text-lg">{selectedTenant.name}</div>
+                      <div className="text-lg">{selectedTenant.tenant.name}</div>
                     </div>
                     <div>
                       <Label className="text-sm font-medium">Slug</Label>
-                      <div className="text-lg font-mono">{selectedTenant.slug}</div>
+                      <div className="text-lg font-mono">{selectedTenant.tenant.slug}</div>
                     </div>
                     <div>
                       <Label className="text-sm font-medium">Created</Label>
-                      <div>{formatDate(selectedTenant.createdAt)}</div>
+                      <div>{formatDate(selectedTenant.tenant.createdAt)}</div>
                     </div>
                     <div>
                       <Label className="text-sm font-medium">Recent Bookings (30 days)</Label>
-                      <div className="text-lg font-semibold">{selectedTenant.recentBookingsCount}</div>
+                      <div className="text-lg font-semibold">{selectedTenant.recentBookingsCount || 0}</div>
                     </div>
                   </CardContent>
                 </Card>
@@ -1091,7 +1089,7 @@ export function AdminTenants({ token }: AdminTenantsProps) {
                     <CardContent className="flex items-center p-6">
                       <Building className="h-8 w-8 text-blue-600" />
                       <div className="ml-4">
-                        <div className="text-2xl font-bold">{selectedTenant.restaurants.length}</div>
+                        <div className="text-2xl font-bold">{selectedTenant.restaurants?.length || 0}</div>
                         <div className="text-sm text-muted-foreground">Restaurants</div>
                       </div>
                     </CardContent>
@@ -1100,7 +1098,7 @@ export function AdminTenants({ token }: AdminTenantsProps) {
                     <CardContent className="flex items-center p-6">
                       <Users className="h-8 w-8 text-green-600" />
                       <div className="ml-4">
-                        <div className="text-2xl font-bold">{selectedTenant.users.length}</div>
+                        <div className="text-2xl font-bold">{selectedTenant.users?.length || 0}</div>
                         <div className="text-sm text-muted-foreground">Users</div>
                       </div>
                     </CardContent>
@@ -1109,7 +1107,7 @@ export function AdminTenants({ token }: AdminTenantsProps) {
                     <CardContent className="flex items-center p-6">
                       <Calendar className="h-8 w-8 text-purple-600" />
                       <div className="ml-4">
-                        <div className="text-2xl font-bold">{selectedTenant.bookingCount}</div>
+                        <div className="text-2xl font-bold">{selectedTenant.bookingCount || 0}</div>
                         <div className="text-sm text-muted-foreground">Total Bookings</div>
                       </div>
                     </CardContent>
@@ -1126,13 +1124,13 @@ export function AdminTenants({ token }: AdminTenantsProps) {
                     <div className="grid grid-cols-2 gap-4">
                       <div>
                         <Label className="text-sm font-medium">Current Plan</Label>
-                        <div className="text-lg">{selectedTenant.planName || "No Plan"}</div>
+                        <div className="text-lg">{selectedTenant.subscriptionPlan?.name || "No Plan"}</div>
                       </div>
                       <div>
                         <Label className="text-sm font-medium">Price</Label>
                         <div className="text-lg">
-                          {selectedTenant.planPrice ? 
-                            `$${(selectedTenant.planPrice / 100).toFixed(2)}/${selectedTenant.planInterval}` : 
+                          {selectedTenant.subscriptionPlan?.price ? 
+                            `$${(selectedTenant.subscriptionPlan.price / 100).toFixed(2)}/${selectedTenant.subscriptionPlan.interval}` : 
                             "Free"
                           }
                         </div>
@@ -1140,31 +1138,31 @@ export function AdminTenants({ token }: AdminTenantsProps) {
                       <div>
                         <Label className="text-sm font-medium">Trial Period</Label>
                         <div>
-                          {selectedTenant.trialStartDate ? formatDate(selectedTenant.trialStartDate) : "N/A"} - 
-                          {selectedTenant.trialEndDate ? formatDate(selectedTenant.trialEndDate) : "N/A"}
+                          {selectedTenant.tenant.trialStartDate ? formatDate(selectedTenant.tenant.trialStartDate) : "N/A"} - 
+                          {selectedTenant.tenant.trialEndDate ? formatDate(selectedTenant.tenant.trialEndDate) : "N/A"}
                         </div>
                       </div>
                       <div>
                         <Label className="text-sm font-medium">Subscription Period</Label>
                         <div>
-                          {selectedTenant.subscriptionStartDate ? formatDate(selectedTenant.subscriptionStartDate) : "N/A"} - 
-                          {selectedTenant.subscriptionEndDate ? formatDate(selectedTenant.subscriptionEndDate) : "N/A"}
+                          {selectedTenant.tenant.subscriptionStartDate ? formatDate(selectedTenant.tenant.subscriptionStartDate) : "N/A"} - 
+                          {selectedTenant.tenant.subscriptionEndDate ? formatDate(selectedTenant.tenant.subscriptionEndDate) : "N/A"}
                         </div>
                       </div>
                     </div>
                     
-                    {selectedTenant.stripeCustomerId && (
+                    {selectedTenant.tenant.stripeCustomerId && (
                       <div className="pt-4 border-t">
                         <Label className="text-sm font-medium">Stripe Information</Label>
                         <div className="grid grid-cols-2 gap-4 mt-2">
                           <div>
                             <div className="text-sm text-muted-foreground">Customer ID</div>
-                            <div className="font-mono text-sm">{selectedTenant.stripeCustomerId}</div>
+                            <div className="font-mono text-sm">{selectedTenant.tenant.stripeCustomerId}</div>
                           </div>
-                          {selectedTenant.stripeSubscriptionId && (
+                          {selectedTenant.tenant.stripeSubscriptionId && (
                             <div>
                               <div className="text-sm text-muted-foreground">Subscription ID</div>
-                              <div className="font-mono text-sm">{selectedTenant.stripeSubscriptionId}</div>
+                              <div className="font-mono text-sm">{selectedTenant.tenant.stripeSubscriptionId}</div>
                             </div>
                           )}
                         </div>
@@ -1206,7 +1204,7 @@ export function AdminTenants({ token }: AdminTenantsProps) {
                       </div>
                       <div className="flex items-end">
                         <Button 
-                          onClick={() => handleSubscriptionPriceUpdate(selectedTenant.id)}
+                          onClick={() => handleSubscriptionPriceUpdate(selectedTenant.tenant.id)}
                           disabled={!selectedSubscriptionPlan || isUpdating}
                           className="w-full"
                         >
@@ -1219,13 +1217,13 @@ export function AdminTenants({ token }: AdminTenantsProps) {
                       <div className="mt-4 p-4 bg-blue-50 rounded-lg border border-blue-200">
                         <div className="text-sm font-medium text-blue-900 mb-2">Pricing Change Preview</div>
                         <div className="space-y-1 text-sm text-blue-800">
-                          <div>Current: {selectedTenant.planName || "No Plan"} - ${selectedTenant.planPrice ? (selectedTenant.planPrice / 100).toFixed(2) : "0.00"}</div>
+                          <div>Current: {selectedTenant.subscriptionPlan?.name || "No Plan"} - ${selectedTenant.subscriptionPlan?.price ? (selectedTenant.subscriptionPlan.price / 100).toFixed(2) : "0.00"}</div>
                           <div>New: {subscriptionPlans.find(p => p.id.toString() === selectedSubscriptionPlan)?.name} - ${subscriptionPlans.find(p => p.id.toString() === selectedSubscriptionPlan) ? (subscriptionPlans.find(p => p.id.toString() === selectedSubscriptionPlan)!.price / 100).toFixed(2) : "0.00"}</div>
                           <div className="font-medium">
-                            Change: {selectedSubscriptionPlan && selectedTenant.planPrice ? 
-                              (subscriptionPlans.find(p => p.id.toString() === selectedSubscriptionPlan)!.price - selectedTenant.planPrice) > 0 ? 
-                                `+$${((subscriptionPlans.find(p => p.id.toString() === selectedSubscriptionPlan)!.price - selectedTenant.planPrice) / 100).toFixed(2)}` :
-                                `-$${((selectedTenant.planPrice - subscriptionPlans.find(p => p.id.toString() === selectedSubscriptionPlan)!.price) / 100).toFixed(2)}`
+                            Change: {selectedSubscriptionPlan && selectedTenant.subscriptionPlan?.price ? 
+                              (subscriptionPlans.find(p => p.id.toString() === selectedSubscriptionPlan)!.price - selectedTenant.subscriptionPlan.price) > 0 ? 
+                                `+$${((subscriptionPlans.find(p => p.id.toString() === selectedSubscriptionPlan)!.price - selectedTenant.subscriptionPlan.price) / 100).toFixed(2)}` :
+                                `-$${((selectedTenant.subscriptionPlan.price - subscriptionPlans.find(p => p.id.toString() === selectedSubscriptionPlan)!.price) / 100).toFixed(2)}`
                               : "N/A"
                             }
                           </div>
@@ -1244,11 +1242,11 @@ export function AdminTenants({ token }: AdminTenantsProps) {
               <TabsContent value="restaurants" className="space-y-4">
                 <Card>
                   <CardHeader>
-                    <CardTitle>Restaurants ({selectedTenant.restaurants.length})</CardTitle>
+                    <CardTitle>Restaurants ({selectedTenant.restaurants?.length || 0})</CardTitle>
                   </CardHeader>
                   <CardContent>
                     <div className="space-y-4">
-                      {selectedTenant.restaurants.map((restaurant) => (
+                      {selectedTenant.restaurants?.map((restaurant) => (
                         <div key={restaurant.id} className="border rounded-lg p-4">
                           <div className="flex items-start justify-between">
                             <div>
@@ -1280,11 +1278,11 @@ export function AdminTenants({ token }: AdminTenantsProps) {
               <TabsContent value="users" className="space-y-4">
                 <Card>
                   <CardHeader>
-                    <CardTitle>Users ({selectedTenant.users.length})</CardTitle>
+                    <CardTitle>Users ({selectedTenant.users?.length || 0})</CardTitle>
                   </CardHeader>
                   <CardContent>
                     <div className="space-y-4">
-                      {selectedTenant.users.map((user) => (
+                      {selectedTenant.users?.map((user) => (
                         <div key={user.id} className="border rounded-lg p-4">
                           <div className="flex items-center justify-between">
                             <div>
