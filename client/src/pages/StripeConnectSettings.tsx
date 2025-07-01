@@ -1,4 +1,3 @@
-import { useState, useEffect } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { apiRequest } from "@/lib/queryClient";
 import { Button } from "@/components/ui/button";
@@ -7,6 +6,7 @@ import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
 import { AlertCircle, CheckCircle, CreditCard, ExternalLink, RefreshCw } from "lucide-react";
 import { Alert, AlertDescription } from "@/components/ui/alert";
+import { useAuth } from "@/lib/auth";
 
 interface StripeConnectStatus {
   connected: boolean;
@@ -32,23 +32,8 @@ interface Payment {
 export default function StripeConnectSettings() {
   const { toast } = useToast();
   const queryClient = useQueryClient();
-  const [tenantId, setTenantId] = useState<number | null>(null);
-
-  // Get current tenant from session or context
-  useEffect(() => {
-    const getTenantId = async () => {
-      try {
-        const response = await apiRequest("GET", "/api/auth/validate");
-        const data = await response.json();
-        if (data.valid && data.user?.tenantId) {
-          setTenantId(data.user.tenantId);
-        }
-      } catch (error) {
-        console.error("Error getting tenant ID:", error);
-      }
-    };
-    getTenantId();
-  }, []);
+  const { restaurant } = useAuth();
+  const tenantId = restaurant?.tenantId;
 
   // Fetch Stripe Connect status
   const { data: connectStatus, isLoading: statusLoading, refetch: refetchStatus } = useQuery({
@@ -59,6 +44,8 @@ export default function StripeConnectSettings() {
       return response.json() as Promise<StripeConnectStatus>;
     },
     enabled: !!tenantId,
+    staleTime: 30000, // 30 seconds
+    retry: 2,
   });
 
   // Fetch payment history
@@ -144,12 +131,35 @@ export default function StripeConnectSettings() {
     }).format(amount / 100);
   };
 
-  if (statusLoading || !tenantId) {
+  // If no tenant ID, show error state
+  if (!tenantId) {
     return (
       <div className="container mx-auto p-6">
-        <div className="flex items-center justify-center h-64">
-          <div className="animate-spin w-8 h-8 border-4 border-primary border-t-transparent rounded-full" />
+        <Alert>
+          <AlertCircle className="h-4 w-4" />
+          <AlertDescription>
+            Unable to load tenant information. Please try refreshing the page.
+          </AlertDescription>
+        </Alert>
+      </div>
+    );
+  }
+
+  // Show loading only briefly
+  if (statusLoading) {
+    return (
+      <div className="container mx-auto p-6">
+        <div className="mb-6">
+          <h1 className="text-3xl font-bold">Payment Gateway Settings</h1>
+          <p className="text-muted-foreground">
+            Connect your Stripe account to accept payments from customers
+          </p>
         </div>
+        <Card>
+          <CardContent className="flex items-center justify-center h-32">
+            <div className="animate-spin w-6 h-6 border-4 border-primary border-t-transparent rounded-full" />
+          </CardContent>
+        </Card>
       </div>
     );
   }
