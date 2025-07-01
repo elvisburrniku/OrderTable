@@ -71,9 +71,10 @@ export default function StripeConnectSettings() {
       window.location.href = data.onboardingUrl;
     },
     onError: (error) => {
+      console.error("Stripe Connect error:", error);
       toast({
-        title: "Error",
-        description: "Failed to start Stripe Connect onboarding",
+        title: "Stripe Connect Setup Required",
+        description: "Please enable Stripe Connect on your Stripe dashboard first. Visit https://dashboard.stripe.com/connect/overview to get started.",
         variant: "destructive",
       });
     },
@@ -193,6 +194,15 @@ export default function StripeConnectSettings() {
                   <AlertDescription>
                     Connect your Stripe account to start accepting payments from customers. 
                     We use Stripe Connect to securely process payments and transfer funds to your account.
+                  </AlertDescription>
+                </Alert>
+                <Alert className="border-blue-200 bg-blue-50">
+                  <AlertCircle className="h-4 w-4 text-blue-600" />
+                  <AlertDescription className="text-blue-800">
+                    <strong>Setup Required:</strong> Before connecting, ensure Stripe Connect is enabled on your Stripe account. 
+                    Visit <a href="https://dashboard.stripe.com/connect/overview" target="_blank" className="underline hover:no-underline">
+                      Stripe Connect Dashboard
+                    </a> to get started.
                   </AlertDescription>
                 </Alert>
                 <Button 

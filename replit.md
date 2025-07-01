@@ -22,7 +22,7 @@ A comprehensive restaurant booking management system with React frontend and Exp
 - Kitchen order management
 
 ## Recent Changes
-- **2025-07-01**: ✅ STRIPE CONNECT PAYMENT GATEWAY IMPLEMENTED - Complete multi-tenant payment processing system
+- **2025-07-01**: ✅ STRIPE CONNECT PAYMENT GATEWAY IMPLEMENTED - Complete multi-tenant payment processing system with streamlined onboarding
 - **Payment Gateway Features**: Implemented comprehensive Stripe Connect integration allowing tenants to accept payments through their own Stripe accounts
 - **Connect Button & Onboarding**: Created streamlined onboarding flow with Connect button that guides tenants through Stripe account setup and verification
 - **Payment Processing API**: Built secure payment intent creation, webhook handling, and transaction tracking with 5% platform fee structure

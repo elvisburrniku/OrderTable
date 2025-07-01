@@ -18464,8 +18464,8 @@ NEXT STEPS:
           // Create onboarding link
           const accountLink = await stripe.accountLinks.create({
             account: accountId,
-            refresh_url: `${req.protocol}://${req.get('host')}/settings/payments?refresh=true`,
-            return_url: `${req.protocol}://${req.get('host')}/settings/payments?success=true`,
+            refresh_url: `${req.protocol}://${req.get('host')}/${tenantId}/payment-gateway?refresh=true`,
+            return_url: `${req.protocol}://${req.get('host')}/${tenantId}/payment-gateway?success=true`,
             type: "account_onboarding",
           });
           
