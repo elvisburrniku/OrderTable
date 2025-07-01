@@ -22,6 +22,11 @@ A comprehensive restaurant booking management system with React frontend and Exp
 - Kitchen order management
 
 ## Recent Changes
+- **2025-07-01**: Fixed admin panel tenant data display issue - restored proper restaurant and user counts for each tenant
+- **Admin Panel Enhancement**: Fixed missing tenantUsers import causing ReferenceError in admin storage methods
+- **Database Integration**: Enhanced getAllTenants and getTenantById methods to properly fetch restaurant, user, and booking counts
+- **Error Resolution**: Resolved "tenantUsers is not defined" error that was preventing tenant data from loading in admin panel
+- **Data Accuracy**: Admin panel now correctly displays actual counts for restaurants, users, and bookings per tenant
 - **2025-07-01**: Successfully completed migration from Replit Agent to Replit environment with full functionality
 - **Migration Success**: Fixed all startup issues including Stripe initialization, database connections, and admin storage to work gracefully without external dependencies
 - **Development Ready**: Application now runs smoothly on port 5000 with in-memory storage for development and testing

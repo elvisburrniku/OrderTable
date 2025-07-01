@@ -6,6 +6,7 @@ import {
   systemSettings,
   systemLogs,
   tenants,
+  tenantUsers,
   users,
   restaurants,
   subscriptionPlans,
