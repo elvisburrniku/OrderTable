@@ -1677,7 +1677,8 @@ export const printOrders = pgTable("print_orders", {
   printType: text("print_type").notNull(), // menu, flyer, poster, banner, business_card
   printSize: text("print_size").notNull(), // A4, A3, A2, A1, custom
   printQuality: text("print_quality").default("standard").notNull(), // draft, standard, high, premium
-  quantity: integer("quantity").default(1).notNull(),design: json("design").notNull(), // design configuration object
+  quantity: integer("quantity").default(1).notNull(),
+  design: json("design").notNull(), // design configuration object
   specialInstructions: text("special_instructions"),
   rushOrder: boolean("rush_order").default(false).notNull(),
   totalAmount: integer("total_amount").notNull(), // in cents
