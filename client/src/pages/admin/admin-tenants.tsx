@@ -1,15 +1,12 @@
 import { useState, useEffect } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
-import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Textarea } from "@/components/ui/textarea";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { TenantTable } from "@/components/admin/tenant-table";
 import { 
   Building, 
   Search, 
@@ -596,9 +593,9 @@ export function AdminTenants({ token }: AdminTenantsProps) {
     <div className="p-6 space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-3xl font-bold tracking-tight">Tenant Management</h1>
+          <h1 className="text-3xl font-bold tracking-tight">Admin Dashboard</h1>
           <p className="text-muted-foreground">
-            Manage organizations and their subscriptions
+            Manage tenants, subscriptions, and system settings
           </p>
         </div>
         <Button onClick={fetchTenants} variant="outline" size="sm">
@@ -606,6 +603,17 @@ export function AdminTenants({ token }: AdminTenantsProps) {
           Refresh
         </Button>
       </div>
+
+      <TenantTable
+        tenants={tenants}
+        onViewTenant={fetchTenantDetail}
+        onEditTenant={handleEditTenant}
+        onPauseTenant={pauseTenant}
+        selectedTenant={selectedTenant}
+        isLoadingTenant={isLoadingTenant}
+        showDetailDialog={showDetailDialog}
+        setShowDetailDialog={setShowDetailDialog}
+      />
 
       <Card>
         <CardHeader>

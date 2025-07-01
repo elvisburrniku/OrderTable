@@ -522,22 +522,24 @@ export class AdminStorage {
       // Fetch additional data
       console.log(`AdminStorage: getTenantById - About to fetch restaurants and users for tenant ${id}`);
       
+      let restaurants = [];
+      let users = [];
+      
       try {
-        const restaurants = await this.getRestaurantsByTenantId(id);
-        console.log(`AdminStorage: getTenantById - getRestaurantsByTenantId returned:`, restaurants);
+        restaurants = await this.getRestaurantsByTenantId(id);
+        console.log(`AdminStorage: Successfully fetched ${restaurants.length} restaurants`);
       } catch (error) {
-        console.error(`AdminStorage: Error in getRestaurantsByTenantId:`, error);
+        console.error(`AdminStorage: Error fetching restaurants:`, error);
+        restaurants = [];
       }
       
       try {
-        const users = await this.getUsersByTenantId(id);
-        console.log(`AdminStorage: getTenantById - getUsersByTenantId returned:`, users);
+        users = await this.getUsersByTenantId(id);
+        console.log(`AdminStorage: Successfully fetched ${users.length} users`);
       } catch (error) {
-        console.error(`AdminStorage: Error in getUsersByTenantId:`, error);
+        console.error(`AdminStorage: Error fetching users:`, error);
+        users = [];
       }
-      
-      const restaurants = await this.getRestaurantsByTenantId(id);
-      const users = await this.getUsersByTenantId(id);
       
       console.log(`AdminStorage: getTenantById - Found ${restaurants.length} restaurants and ${users.length} users for tenant ${id}`);
 
