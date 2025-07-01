@@ -234,12 +234,20 @@ export function registerAdminRoutes(app: Express) {
   app.get("/api/admin/tenants/:id", requireAdminAuth, async (req: Request, res: Response) => {
     try {
       const tenantId = parseInt(req.params.id);
+      console.log(`Admin route: Getting tenant details for ID ${tenantId}`);
+      
+      // Disable caching for this endpoint to ensure fresh data
+      res.set('Cache-Control', 'no-cache, no-store, must-revalidate');
+      res.set('Pragma', 'no-cache');
+      res.set('Expires', '0');
+      
       const tenant = await adminStorage.getTenantById(tenantId);
       
       if (!tenant) {
         return res.status(404).json({ message: "Tenant not found" });
       }
       
+      console.log(`Admin route: Returning tenant data with ${tenant.restaurants?.length || 0} restaurants and ${tenant.users?.length || 0} users`);
       res.json(tenant);
     } catch (error) {
       console.error("Get tenant error:", error);
