@@ -3450,4 +3450,107 @@ export class DatabaseStorage implements IStorage {
       .returning();
     return result;
   }
+
+  // Twilio SMS Methods
+  async deductSmsBalance(tenantId: number, amount: number): Promise<any> {
+    if (!this.db) throw new Error("Database connection not available");
+    
+    const existing = await this.db
+      .select()
+      .from(smsBalance)
+      .where(eq(smsBalance.tenantId, tenantId))
+      .limit(1);
+
+    if (existing.length > 0) {
+      const currentBalance = parseFloat(existing[0].balance);
+      const newBalance = Math.max(0, currentBalance - amount);
+      
+      const [updated] = await this.db
+        .update(smsBalance)
+        .set({
+          balance: newBalance.toFixed(2),
+          updatedAt: new Date(),
+        })
+        .where(eq(smsBalance.id, existing[0].id))
+        .returning();
+      return updated;
+    } else {
+      // Create balance record with negative amount (debt)
+      const [created] = await this.db
+        .insert(smsBalance)
+        .values({
+          tenantId,
+          balance: (-amount).toFixed(2),
+          currency: "EUR",
+        })
+        .returning();
+      return created;
+    }
+  }
+
+  async logSmsMessage(messageData: any): Promise<any> {
+    if (!this.db) throw new Error("Database connection not available");
+    
+    const [result] = await this.db
+      .insert(smsMessages)
+      .values({
+        restaurantId: messageData.restaurantId,
+        tenantId: messageData.tenantId,
+        phoneNumber: messageData.phoneNumber,
+        message: messageData.message,
+        type: messageData.type,
+        bookingId: messageData.bookingId,
+        status: messageData.status || 'sent',
+        cost: messageData.cost?.toFixed(4) || null,
+        error: messageData.error || null,
+        messageId: messageData.messageId || null,
+        provider: messageData.provider || 'twilio',
+        sentAt: new Date(),
+      })
+      .returning();
+    return result;
+  }
+
+  async updateSmsMessageStatus(messageId: string, updates: any): Promise<any> {
+    if (!this.db) throw new Error("Database connection not available");
+    
+    const [result] = await this.db
+      .update(smsMessages)
+      .set({
+        status: updates.status,
+        error: updates.errorMessage || updates.error,
+        updatedAt: updates.updatedAt || new Date(),
+      })
+      .where(eq(smsMessages.messageId, messageId))
+      .returning();
+    return result;
+  }
+
+  async getSmsMessagesByRestaurant(restaurantId: number, tenantId: number): Promise<any[]> {
+    if (!this.db) return [];
+    
+    const result = await this.db
+      .select()
+      .from(smsMessages)
+      .where(
+        and(
+          eq(smsMessages.restaurantId, restaurantId),
+          eq(smsMessages.tenantId, tenantId)
+        )
+      )
+      .orderBy(desc(smsMessages.sentAt))
+      .limit(100);
+    return result;
+  }
+
+  async getSmsMessagesByBooking(bookingId: number): Promise<any[]> {
+    if (!this.db) return [];
+    
+    const result = await this.db
+      .select()
+      .from(smsMessages)
+      .where(eq(smsMessages.bookingId, bookingId))
+      .orderBy(desc(smsMessages.sentAt));
+    return result;
+  }
 }

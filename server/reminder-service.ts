@@ -4,6 +4,7 @@ import { BrevoEmailService } from "./brevo-service";
 
 export class ReminderService {
   private emailService: BrevoEmailService | null = null;
+  private smsService: any = null;
   private reminderInterval: NodeJS.Timeout | null = null;
 
   constructor() {
@@ -11,6 +12,22 @@ export class ReminderService {
       this.emailService = new BrevoEmailService();
     } catch (error) {
       console.warn('Reminder service: Brevo email service not available');
+    }
+    
+    this.initializeSMSService();
+  }
+
+  private async initializeSMSService() {
+    try {
+      const { twilioSMSService } = await import('./twilio-sms-service.js');
+      if (twilioSMSService.isConfigured()) {
+        this.smsService = twilioSMSService;
+        console.log('Reminder service: Twilio SMS service initialized');
+      } else {
+        console.warn('Reminder service: Twilio SMS service not configured');
+      }
+    } catch (error) {
+      console.warn('Reminder service: Failed to initialize SMS service:', error);
     }
   }
 
@@ -32,8 +49,6 @@ export class ReminderService {
   }
 
   private async processReminders() {
-    if (!this.emailService) return;
-
     try {
       console.log('Processing booking reminders...');
       
@@ -64,8 +79,6 @@ export class ReminderService {
   }
 
   private async sendReminder(booking: any, hoursBeforeVisit: number) {
-    if (!this.emailService) return;
-
     try {
       // Check if reminder was already sent
       const reminderKey = `reminder_${booking.id}_${hoursBeforeVisit}h`;
@@ -73,9 +86,10 @@ export class ReminderService {
       
       if (alreadySent) return;
 
-      // Get restaurant email settings
+      // Get restaurant settings
       const restaurant = await storage.getRestaurantById(booking.restaurantId);
       let emailSettings = null;
+      let smsSettings = null;
       
       if (restaurant?.emailSettings) {
         try {
@@ -85,29 +99,83 @@ export class ReminderService {
         }
       }
 
+      // Get SMS settings
+      try {
+        smsSettings = await storage.getSmsSettings(booking.restaurantId, booking.tenantId);
+      } catch (e) {
+        console.warn("Failed to get SMS settings for reminders");
+      }
+
       // Check if reminders are enabled (default: true)
-      const shouldSendReminder = emailSettings?.guestSettings?.sendReminder !== false;
-      if (!shouldSendReminder) return;
+      const shouldSendEmailReminder = emailSettings?.guestSettings?.sendReminder !== false;
+      const shouldSendSmsReminder = smsSettings?.reminderEnabled === true;
+
+      if (!shouldSendEmailReminder && !shouldSendSmsReminder) return;
 
       // Check if this is the correct reminder timing
-      const configuredHours = parseInt(emailSettings?.guestSettings?.reminderHours || "24");
-      if (hoursBeforeVisit !== configuredHours) return;
+      const emailConfiguredHours = parseInt(emailSettings?.guestSettings?.reminderHours || "24");
+      const smsConfiguredHours = parseInt(smsSettings?.reminderHours || "2");
+      
+      const isEmailTiming = hoursBeforeVisit === emailConfiguredHours;
+      const isSmsTiming = hoursBeforeVisit === smsConfiguredHours;
+      
+      if (!isEmailTiming && !isSmsTiming) return;
 
       // Get customer details
       const customer = await storage.getCustomerById(booking.customerId);
-      if (!customer?.email) return;
+      if (!customer) return;
 
-      await this.emailService.sendBookingReminder(
-        customer.email,
-        customer.name,
-        booking,
-        hoursBeforeVisit
-      );
+      let reminderSent = false;
 
-      // Mark reminder as sent
-      await storage.markReminderSent(reminderKey);
+      // Send email reminder
+      if (shouldSendEmailReminder && isEmailTiming && this.emailService && customer.email) {
+        try {
+          await this.emailService.sendBookingReminder(
+            customer.email,
+            customer.name,
+            booking,
+            hoursBeforeVisit
+          );
+          console.log(`Sent ${hoursBeforeVisit}h email reminder for booking ${booking.id}`);
+          reminderSent = true;
+        } catch (error) {
+          console.error(`Error sending email reminder for booking ${booking.id}:`, error);
+        }
+      }
+
+      // Send SMS reminder
+      if (shouldSendSmsReminder && isSmsTiming && this.smsService && customer.phone) {
+        try {
+          const bookingDetails = {
+            id: booking.id,
+            restaurantName: restaurant.name,
+            time: booking.time,
+            guests: booking.guests
+          };
+
+          const result = await this.smsService.sendBookingReminder(
+            customer.phone,
+            bookingDetails,
+            booking.restaurantId,
+            booking.tenantId
+          );
+
+          if (result.success) {
+            console.log(`Sent ${hoursBeforeVisit}h SMS reminder for booking ${booking.id}`);
+            reminderSent = true;
+          } else {
+            console.error(`Failed to send SMS reminder for booking ${booking.id}:`, result.error);
+          }
+        } catch (error) {
+          console.error(`Error sending SMS reminder for booking ${booking.id}:`, error);
+        }
+      }
+
+      // Mark reminder as sent if any reminder was successfully sent
+      if (reminderSent) {
+        await storage.markReminderSent(reminderKey);
+      }
       
-      console.log(`Sent ${hoursBeforeVisit}h reminder for booking ${booking.id}`);
     } catch (error) {
       console.error(`Error sending reminder for booking ${booking.id}:`, error);
     }
