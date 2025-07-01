@@ -61,11 +61,9 @@ export default function StripeConnectSettings() {
 
   // Start Stripe Connect onboarding
   const onboardMutation = useMutation({
-    mutationFn: async (email: string) => {
+    mutationFn: async () => {
       if (!tenantId) throw new Error("Tenant ID not available");
-      const response = await apiRequest("POST", `/api/tenants/${tenantId}/stripe-connect/onboard`, {
-        email,
-      });
+      const response = await apiRequest("POST", `/api/tenants/${tenantId}/stripe-connect/onboard`, {});
       return response.json();
     },
     onSuccess: (data) => {
@@ -106,10 +104,7 @@ export default function StripeConnectSettings() {
   });
 
   const handleConnect = () => {
-    const email = prompt("Enter your business email address:");
-    if (email) {
-      onboardMutation.mutate(email);
-    }
+    onboardMutation.mutate();
   };
 
   const getStatusBadge = (status: string) => {

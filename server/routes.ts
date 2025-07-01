@@ -18437,12 +18437,16 @@ NEXT STEPS:
         const result = await withStripe(async (stripe) => {
           let accountId = tenant.stripeConnectAccountId;
           
+          // Get user email from session
+          const sessionUser = (req as any).session?.user;
+          const userEmail = req.body.email || sessionUser?.email;
+          
           // Create account if it doesn't exist
           if (!accountId) {
             const account = await stripe.accounts.create({
               type: "standard",
               country: "US", // Default to US, can be made configurable
-              email: req.body.email,
+              email: userEmail,
               business_profile: {
                 name: tenant.name,
                 mcc: "5812", // Eating and drinking establishments
