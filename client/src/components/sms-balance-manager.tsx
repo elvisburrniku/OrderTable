@@ -76,16 +76,33 @@ export function SmsBalanceManager() {
       return data;
     },
     onSuccess: (data) => {
-      toast({
-        title: "Payment Successful",
-        description: `SMS balance topped up with €${selectedAmount}`,
-        duration: 5000,
-      });
-      queryClient.invalidateQueries({
-        queryKey: [`/api/tenants/${restaurant?.tenantId}/sms-balance`],
-      });
-      setShowPaymentSelector(false);
-      setSelectedAmount(null);
+      if (data.requiresPayment && data.invoice?.hosted_invoice_url) {
+        // Payment required - show invoice
+        handleInvoicePayment(data.invoice.hosted_invoice_url);
+        setShowPaymentSelector(false);
+        setSelectedAmount(null);
+      } else if (data.message === "Payment successful and SMS balance added") {
+        // Payment completed
+        toast({
+          title: "Payment Successful",
+          description: `SMS balance topped up with €${selectedAmount}`,
+          duration: 5000,
+        });
+        queryClient.invalidateQueries({
+          queryKey: [`/api/tenants/${restaurant?.tenantId}/sms-balance`],
+        });
+        setShowPaymentSelector(false);
+        setSelectedAmount(null);
+      } else {
+        // Fallback success
+        toast({
+          title: "Request Processed",
+          description: data.message || "SMS balance request processed",
+          duration: 5000,
+        });
+        setShowPaymentSelector(false);
+        setSelectedAmount(null);
+      }
     },
     onError: (error: Error) => {
       toast({
@@ -131,6 +148,19 @@ export function SmsBalanceManager() {
     addBalanceMutation.mutate({ amount: selectedAmount, paymentMethodId });
   };
 
+  // Handle invoice payment completion
+  const handleInvoicePayment = (invoiceUrl: string) => {
+    // Open Stripe invoice in new window
+    window.open(invoiceUrl, '_blank', 'width=800,height=600');
+    
+    // Show message about payment completion
+    toast({
+      title: "Payment Required",
+      description: "Please complete the payment in the opened window. Your SMS balance will be updated automatically after successful payment.",
+      duration: 10000,
+    });
+  };
+
   const handlePaymentSelectionChange = (useSaved: boolean, methodId?: string) => {
     setUseSavedMethod(useSaved);
     setSelectedMethodId(methodId || "");
@@ -167,6 +197,30 @@ export function SmsBalanceManager() {
             Your current SMS credit balance for notifications
           </CardDescription>
         </CardHeader>
+
+
+          {/* Manual Invoice Payment Option */}
+          <div className="mt-4 p-4 bg-blue-50 border border-blue-200 rounded-lg">
+            <h4 className="font-medium text-blue-900 mb-2">Alternative Payment Method</h4>
+            <p className="text-sm text-blue-700 mb-3">
+              You can also create an invoice for manual payment processing.
+            </p>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => {
+                if (selectedAmount) {
+                  addBalanceMutation.mutate({ amount: selectedAmount });
+                }
+              }}
+              disabled={addBalanceMutation.isPending || !selectedAmount}
+              className="border-blue-300 text-blue-700 hover:bg-blue-100"
+            >
+              Create Invoice for €{selectedAmount || 0}
+            </Button>
+          </div>
+
+
         <CardContent className="space-y-4">
           <div className="flex items-center justify-between">
             <div>
