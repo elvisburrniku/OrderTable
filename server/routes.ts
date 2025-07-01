@@ -17106,6 +17106,157 @@ NEXT STEPS:
     },
   );
 
+  // Delete restaurant endpoint for tenant admins
+  app.delete(
+    "/api/tenants/:tenantId/restaurants/:restaurantId",
+    validateTenant,
+    async (req, res) => {
+      try {
+        const tenantId = parseInt(req.params.tenantId);
+        const restaurantId = parseInt(req.params.restaurantId);
+        const sessionUser = (req as any).session?.user;
+        const sessionTenant = (req as any).session?.tenant;
+
+        if (!sessionUser || !sessionTenant || sessionTenant.id !== tenantId) {
+          return res.status(401).json({ error: "Authentication required" });
+        }
+
+        // Check if user has permission to manage restaurants
+        const userPermissions = await getUserPermissions(sessionUser.id, tenantId);
+        const canManageRestaurants = userPermissions.includes("manage_restaurants") || 
+                                   userPermissions.includes("access_settings") ||
+                                   sessionUser.id === sessionTenant.ownerId;
+
+        if (!canManageRestaurants) {
+          return res.status(403).json({ error: "Insufficient permissions to delete restaurants" });
+        }
+
+        // Check if restaurant exists and belongs to tenant
+        const restaurant = await storage.getRestaurantById(restaurantId);
+        if (!restaurant || restaurant.tenantId !== tenantId) {
+          return res.status(404).json({ error: "Restaurant not found" });
+        }
+
+        // Prevent deletion if it's the only restaurant
+        const tenantRestaurants = await storage.db
+          ?.select()
+          .from(restaurants)
+          .where(eq(restaurants.tenantId, tenantId));
+        
+        if (tenantRestaurants && tenantRestaurants.length <= 1) {
+          return res.status(400).json({ 
+            error: "Cannot delete the last restaurant. Each tenant must have at least one restaurant." 
+          });
+        }
+
+        // Delete the restaurant (cascade will handle related data)
+        await storage.db
+          ?.delete(restaurants)
+          .where(and(
+            eq(restaurants.id, restaurantId),
+            eq(restaurants.tenantId, tenantId)
+          ));
+
+        // Log the activity
+        await storage.logActivity(
+          sessionUser.id,
+          tenantId,
+          restaurantId,
+          "restaurant_deleted",
+          `Restaurant "${restaurant.name}" was deleted by ${sessionUser.name || sessionUser.email}`,
+          { restaurantName: restaurant.name }
+        );
+
+        res.json({ 
+          success: true, 
+          message: "Restaurant deleted successfully" 
+        });
+      } catch (error) {
+        console.error("Error deleting restaurant:", error);
+        res.status(500).json({ error: "Failed to delete restaurant" });
+      }
+    }
+  );
+
+  // Pause/unpause restaurant endpoint for tenant admins
+  app.patch(
+    "/api/tenants/:tenantId/restaurants/:restaurantId/pause",
+    validateTenant,
+    async (req, res) => {
+      try {
+        const tenantId = parseInt(req.params.tenantId);
+        const restaurantId = parseInt(req.params.restaurantId);
+        const { paused, reason } = req.body;
+        const sessionUser = (req as any).session?.user;
+        const sessionTenant = (req as any).session?.tenant;
+
+        if (!sessionUser || !sessionTenant || sessionTenant.id !== tenantId) {
+          return res.status(401).json({ error: "Authentication required" });
+        }
+
+        // Check if user has permission to manage restaurants
+        const userPermissions = await getUserPermissions(sessionUser.id, tenantId);
+        const canManageRestaurants = userPermissions.includes("manage_restaurants") || 
+                                   userPermissions.includes("access_settings") ||
+                                   sessionUser.id === sessionTenant.ownerId;
+
+        if (!canManageRestaurants) {
+          return res.status(403).json({ error: "Insufficient permissions to pause/unpause restaurants" });
+        }
+
+        // Check if restaurant exists and belongs to tenant
+        const restaurant = await storage.getRestaurantById(restaurantId);
+        if (!restaurant || restaurant.tenantId !== tenantId) {
+          return res.status(404).json({ error: "Restaurant not found" });
+        }
+
+        // Update restaurant pause status
+        const updateData: any = { 
+          isActive: !paused,
+          pausedAt: paused ? new Date() : null,
+          pauseReason: paused ? reason : null
+        };
+
+        await storage.db
+          ?.update(restaurants)
+          .set(updateData)
+          .where(and(
+            eq(restaurants.id, restaurantId),
+            eq(restaurants.tenantId, tenantId)
+          ));
+
+        // Log the activity
+        const action = paused ? "restaurant_paused" : "restaurant_unpaused";
+        const description = paused 
+          ? `Restaurant "${restaurant.name}" was paused by ${sessionUser.name || sessionUser.email}${reason ? ` (Reason: ${reason})` : ''}`
+          : `Restaurant "${restaurant.name}" was unpaused by ${sessionUser.name || sessionUser.email}`;
+
+        await storage.logActivity(
+          sessionUser.id,
+          tenantId,
+          restaurantId,
+          action,
+          description,
+          { restaurantName: restaurant.name, reason }
+        );
+
+        res.json({ 
+          success: true, 
+          message: `Restaurant ${paused ? 'paused' : 'unpaused'} successfully`,
+          restaurant: {
+            ...restaurant,
+            isActive: !paused,
+            pausedAt: paused ? new Date() : null,
+            pauseReason: paused ? reason : null
+          }
+        });
+      } catch (error) {
+        console.error("Error updating restaurant pause status:", error);
+        res.status(500).json({ error: "Failed to update restaurant status" });
+      }
+    }
+  );
+
   app.get(
     "/api/tenants/:tenantId/can-create-restaurant",
     validateTenant,

@@ -161,6 +161,9 @@ export const restaurants = pgTable("restaurants", {
   description: text("description"),
   setupCompleted: boolean("setup_completed").default(false),
   guestBookingEnabled: boolean("guest_booking_enabled").default(true),
+  isActive: boolean("is_active").default(true),
+  pausedAt: timestamp("paused_at"),
+  pauseReason: text("pause_reason"),
   createdAt: timestamp("created_at").defaultNow(),
   emailSettings: text("email_settings"),
   // General settings as JSON

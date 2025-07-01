@@ -10,7 +10,10 @@ import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Alert, AlertDescription } from "@/components/ui/alert";
-import { Building2, Plus, CreditCard, Crown, Users, Calendar, DollarSign, Eye } from "lucide-react";
+import { Building2, Plus, CreditCard, Crown, Users, Calendar, DollarSign, Eye, Trash2, Pause, Play, AlertTriangle } from "lucide-react";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
 import { SneakPeekModal } from "@/components/sneak-peek-modal";
 import { UpgradeFlowHandler } from "@/components/upgrade-flow-handler";
 import { AdditionalRestaurantBilling } from "@/components/additional-restaurant-billing";
@@ -197,6 +200,10 @@ export default function RestaurantManagement() {
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const [showPurchaseDialog, setShowPurchaseDialog] = useState(false);
+  const [showDeleteDialog, setShowDeleteDialog] = useState(false);
+  const [showPauseDialog, setShowPauseDialog] = useState(false);
+  const [selectedRestaurant, setSelectedRestaurant] = useState<any>(null);
+  const [pauseReason, setPauseReason] = useState("");
   const params = useParams();
   const tenantId = params.tenantId;
 
@@ -208,6 +215,89 @@ export default function RestaurantManagement() {
   const handlePurchaseSuccess = () => {
     setShowPurchaseDialog(false);
     queryClient.invalidateQueries({ queryKey: [`/api/tenants/${tenantId}/restaurant-management`] });
+  };
+
+  // Delete restaurant mutation
+  const deleteRestaurantMutation = useMutation({
+    mutationFn: async (restaurantId: number) => {
+      const response = await apiRequest(`/api/tenants/${tenantId}/restaurants/${restaurantId}`, {
+        method: "DELETE",
+      });
+      return response;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: [`/api/tenants/${tenantId}/restaurant-management`] });
+      setShowDeleteDialog(false);
+      setSelectedRestaurant(null);
+      toast({
+        title: "Success",
+        description: "Restaurant deleted successfully",
+      });
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Error",
+        description: error.message || "Failed to delete restaurant",
+        variant: "destructive",
+      });
+    },
+  });
+
+  // Pause/unpause restaurant mutation
+  const pauseRestaurantMutation = useMutation({
+    mutationFn: async ({ restaurantId, paused, reason }: { restaurantId: number; paused: boolean; reason?: string }) => {
+      const response = await apiRequest(`/api/tenants/${tenantId}/restaurants/${restaurantId}/pause`, {
+        method: "PATCH",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ paused, reason }),
+      });
+      return response;
+    },
+    onSuccess: (data, variables) => {
+      queryClient.invalidateQueries({ queryKey: [`/api/tenants/${tenantId}/restaurant-management`] });
+      setShowPauseDialog(false);
+      setSelectedRestaurant(null);
+      setPauseReason("");
+      toast({
+        title: "Success",
+        description: `Restaurant ${variables.paused ? 'paused' : 'unpaused'} successfully`,
+      });
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Error",
+        description: error.message || "Failed to update restaurant status",
+        variant: "destructive",
+      });
+    },
+  });
+
+  const handleDeleteRestaurant = (restaurant: any) => {
+    setSelectedRestaurant(restaurant);
+    setShowDeleteDialog(true);
+  };
+
+  const handlePauseRestaurant = (restaurant: any) => {
+    setSelectedRestaurant(restaurant);
+    setShowPauseDialog(true);
+  };
+
+  const confirmDelete = () => {
+    if (selectedRestaurant) {
+      deleteRestaurantMutation.mutate(selectedRestaurant.id);
+    }
+  };
+
+  const confirmPause = () => {
+    if (selectedRestaurant) {
+      pauseRestaurantMutation.mutate({
+        restaurantId: selectedRestaurant.id,
+        paused: selectedRestaurant.isActive, // Opposite of current state
+        reason: pauseReason || undefined,
+      });
+    }
   };
 
   if (isLoading) {
@@ -503,19 +593,47 @@ export default function RestaurantManagement() {
                       <div className="font-semibold">{restaurant.name}</div>
                       <div className="text-sm text-gray-500">
                         Created {new Date(restaurant.createdAt).toLocaleDateString()}
+                        {restaurant.pausedAt && (
+                          <span className="ml-2 text-orange-600">
+                            • Paused {new Date(restaurant.pausedAt).toLocaleDateString()}
+                          </span>
+                        )}
                       </div>
+                      {restaurant.pauseReason && (
+                        <div className="text-xs text-gray-400 mt-1">
+                          Reason: {restaurant.pauseReason}
+                        </div>
+                      )}
                     </div>
                   </div>
                   
                   <div className="flex items-center gap-2">
                     <Badge variant={restaurant.isActive ? "default" : "secondary"}>
-                      {restaurant.isActive ? "Active" : "Inactive"}
+                      {restaurant.isActive ? "Active" : "Paused"}
                     </Badge>
                     <Link href={`/${tenantId}/dashboard`}>
                       <Button variant="outline" size="sm">
                         Manage
                       </Button>
                     </Link>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => handlePauseRestaurant(restaurant)}
+                      className={restaurant.isActive ? "text-orange-600 hover:text-orange-700" : "text-green-600 hover:text-green-700"}
+                    >
+                      {restaurant.isActive ? <Pause className="h-4 w-4" /> : <Play className="h-4 w-4" />}
+                    </Button>
+                    {managementInfo.restaurants.length > 1 && (
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => handleDeleteRestaurant(restaurant)}
+                        className="text-red-600 hover:text-red-700"
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
+                    )}
                   </div>
                 </div>
               ))}
@@ -523,6 +641,85 @@ export default function RestaurantManagement() {
           )}
         </CardContent>
       </Card>
+
+      {/* Delete Restaurant Dialog */}
+      <Dialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <AlertTriangle className="h-5 w-5 text-red-600" />
+              Delete Restaurant
+            </DialogTitle>
+            <DialogDescription>
+              Are you sure you want to delete "{selectedRestaurant?.name}"? This action cannot be undone.
+              All bookings, tables, and data associated with this restaurant will be permanently deleted.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="flex justify-end gap-2 mt-4">
+            <Button variant="outline" onClick={() => setShowDeleteDialog(false)}>
+              Cancel
+            </Button>
+            <Button
+              variant="destructive"
+              onClick={confirmDelete}
+              disabled={deleteRestaurantMutation.isPending}
+            >
+              {deleteRestaurantMutation.isPending ? "Deleting..." : "Delete Restaurant"}
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Pause/Unpause Restaurant Dialog */}
+      <Dialog open={showPauseDialog} onOpenChange={setShowPauseDialog}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              {selectedRestaurant?.isActive ? (
+                <Pause className="h-5 w-5 text-orange-600" />
+              ) : (
+                <Play className="h-5 w-5 text-green-600" />
+              )}
+              {selectedRestaurant?.isActive ? "Pause" : "Unpause"} Restaurant
+            </DialogTitle>
+            <DialogDescription>
+              {selectedRestaurant?.isActive 
+                ? `Pausing "${selectedRestaurant?.name}" will disable new bookings and hide it from customers.`
+                : `Unpausing "${selectedRestaurant?.name}" will enable bookings and make it visible to customers again.`
+              }
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4">
+            {selectedRestaurant?.isActive && (
+              <div>
+                <Label htmlFor="pauseReason">Reason for pausing (optional)</Label>
+                <Textarea
+                  id="pauseReason"
+                  value={pauseReason}
+                  onChange={(e) => setPauseReason(e.target.value)}
+                  placeholder="e.g., Renovations, Staff shortage, Holiday closure..."
+                  className="mt-1"
+                />
+              </div>
+            )}
+            <div className="flex justify-end gap-2">
+              <Button variant="outline" onClick={() => setShowPauseDialog(false)}>
+                Cancel
+              </Button>
+              <Button
+                onClick={confirmPause}
+                disabled={pauseRestaurantMutation.isPending}
+                className={selectedRestaurant?.isActive ? "bg-orange-600 hover:bg-orange-700" : "bg-green-600 hover:bg-green-700"}
+              >
+                {pauseRestaurantMutation.isPending 
+                  ? (selectedRestaurant?.isActive ? "Pausing..." : "Unpausing...")
+                  : (selectedRestaurant?.isActive ? "Pause Restaurant" : "Unpause Restaurant")
+                }
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
