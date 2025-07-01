@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useAuth } from "@/lib/auth.tsx";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -7,10 +7,26 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Alert, AlertDescription } from "@/components/ui/alert";
+import { Badge } from "@/components/ui/badge";
+import { Separator } from "@/components/ui/separator";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
-import { Info, MessageSquare, Clock, CreditCard, AlertCircle } from "lucide-react";
+import { 
+  Info, 
+  MessageSquare, 
+  Clock, 
+  CreditCard, 
+  AlertCircle, 
+  Settings,
+  Phone,
+  Send,
+  CheckCircle,
+  Globe,
+  Zap,
+  Star,
+  Shield
+} from "lucide-react";
 import { SmsBalanceManager } from "@/components/sms-balance-manager";
 
 const countryCodes = [
@@ -64,6 +80,20 @@ export default function SmsSettings() {
     queryKey: [`/api/tenants/${restaurant?.tenantId}/restaurants/${restaurant?.id}/sms-settings`],
     enabled: !!restaurant?.id && !!restaurant?.tenantId,
   });
+
+  // Populate form with existing settings
+  useEffect(() => {
+    if (currentSettings) {
+      setSmsSettings({
+        confirmationEnabled: currentSettings.confirmationEnabled || false,
+        reminderEnabled: currentSettings.reminderEnabled || false,
+        reminderHours: currentSettings.reminderHours || 2,
+        countryCode: currentSettings.countryCode || "+381",
+        phoneNumber: currentSettings.phoneNumber || "",
+        satisfactionSurveyEnabled: currentSettings.satisfactionSurveyEnabled || false,
+      });
+    }
+  }, [currentSettings]);
 
   // Fetch SMS balance
   const { data: smsBalance } = useQuery({
@@ -128,14 +158,6 @@ export default function SmsSettings() {
   }
 
   const handleSave = () => {
-    if (!smsEnabled) {
-      toast({
-        title: "SMS Balance Required",
-        description: "Please add SMS balance before configuring SMS settings.",
-        variant: "destructive",
-      });
-      return;
-    }
     saveSettingsMutation.mutate();
   };
 
@@ -151,219 +173,334 @@ export default function SmsSettings() {
     testSMSMutation.mutate();
   };
 
+  if (isLoading) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-gray-50 via-white to-gray-100">
+        <div className="p-8 max-w-6xl mx-auto">
+          <div className="animate-pulse space-y-6">
+            <div className="h-8 bg-gray-200 rounded-md w-1/3"></div>
+            <div className="h-32 bg-gray-200 rounded-lg"></div>
+            <div className="h-64 bg-gray-200 rounded-lg"></div>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   return (
-    <div className="min-h-screen bg-gray-50">
-      <div className="p-6 max-w-4xl mx-auto">
-        <div className="mb-6">
-          <h1 className="text-2xl font-semibold text-gray-900 mb-2">SMS notifications</h1>
+    <div className="min-h-screen bg-gradient-to-br from-gray-50 via-white to-gray-100">
+      <div className="p-8 max-w-6xl mx-auto">
+        {/* Header */}
+        <div className="mb-8">
+          <div className="flex items-center gap-3 mb-3">
+            <div className="p-2 bg-gradient-to-r from-blue-500 to-purple-600 rounded-lg shadow-lg">
+              <MessageSquare className="w-6 h-6 text-white" />
+            </div>
+            <div>
+              <h1 className="text-3xl font-bold text-gray-900">SMS Notifications</h1>
+              <p className="text-gray-600 mt-1">Configure SMS settings for booking confirmations and reminders</p>
+            </div>
+          </div>
+          
+          {/* Status badges */}
+          <div className="flex items-center gap-3">
+            {smsEnabled ? (
+              <Badge className="bg-green-100 text-green-800 border-green-200">
+                <CheckCircle className="w-3 h-3 mr-1" />
+                SMS Active
+              </Badge>
+            ) : (
+              <Badge variant="secondary" className="bg-orange-100 text-orange-800 border-orange-200">
+                <AlertCircle className="w-3 h-3 mr-1" />
+                Balance Required
+              </Badge>
+            )}
+            <Badge variant="outline" className="bg-blue-50 text-blue-700 border-blue-200">
+              <Globe className="w-3 h-3 mr-1" />
+              Global Coverage
+            </Badge>
+          </div>
         </div>
 
-        <div className="space-y-6">
-          {/* Pricing Info */}
-          <Card>
-            <CardContent className="p-4">
-              <div className="bg-gray-100 rounded-lg p-4">
-                <div className="flex items-center gap-2 mb-2">
-                  <MessageSquare className="w-4 h-4 text-gray-600" />
-                  <span className="text-sm text-gray-600">
-                    5 to 13 cent per SMS notification
-                  </span>
-                  <button className="text-blue-600 text-sm hover:underline">
-                    (View international SMS prices)
-                  </button>
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+          {/* Main Settings Panel */}
+          <div className="lg:col-span-2 space-y-6">
+            {/* Pricing Overview */}
+            <Card className="bg-gradient-to-r from-blue-50 to-indigo-50 border-blue-200 shadow-sm">
+              <CardContent className="p-6">
+                <div className="flex items-start justify-between">
+                  <div className="flex items-center gap-3">
+                    <div className="p-2 bg-blue-100 rounded-lg">
+                      <CreditCard className="w-5 h-5 text-blue-600" />
+                    </div>
+                    <div>
+                      <h3 className="font-semibold text-gray-900">SMS Pricing</h3>
+                      <p className="text-sm text-gray-600 mt-1">Competitive rates for global messaging</p>
+                    </div>
+                  </div>
+                  <Badge className="bg-blue-100 text-blue-800 border-blue-200">
+                    $0.05 - $0.13 per SMS
+                  </Badge>
                 </div>
-              </div>
-            </CardContent>
-          </Card>
+                <div className="mt-4 p-3 bg-white rounded-lg border border-blue-100">
+                  <p className="text-sm text-gray-700">
+                    📱 <strong>International coverage:</strong> Send SMS to 190+ countries with reliable delivery
+                  </p>
+                </div>
+              </CardContent>
+            </Card>
 
-          {/* Guest Settings */}
-          <Card>
-            <CardHeader>
-              <CardTitle className="text-lg font-medium">Guest</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-6">
-              {/* SMS Confirmation */}
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                  <Label htmlFor="sms-confirmation">SMS confirmation:</Label>
-                  <Info className="w-4 h-4 text-gray-400" />
-                </div>
-                <div className="flex items-center gap-2">
-                  <Checkbox
-                    id="sms-confirmation"
-                    checked={smsSettings.confirmationEnabled}
-                    disabled={!smsEnabled}
-                    onCheckedChange={(checked) => 
-                      setSmsSettings(prev => ({ ...prev, confirmationEnabled: !!checked }))
-                    }
-                  />
-                  <span className={`text-sm ${smsEnabled ? 'text-gray-600' : 'text-gray-400'}`}>
-                    Send booking confirmation to the guest
-                  </span>
-                </div>
-              </div>
-
-              {/* Reminder */}
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                  <Label htmlFor="reminder">Reminder:</Label>
-                  <Info className="w-4 h-4 text-gray-400" />
-                </div>
+            {/* Guest Notification Settings */}
+            <Card className="shadow-sm border-gray-200">
+              <CardHeader className="bg-gray-50 border-b border-gray-200">
                 <div className="flex items-center gap-3">
-                  <Checkbox
-                    id="reminder"
-                    checked={smsSettings.reminderEnabled}
-                    disabled={!smsEnabled}
-                    onCheckedChange={(checked) => 
-                      setSmsSettings(prev => ({ ...prev, reminderEnabled: !!checked }))
-                    }
-                  />
-                  <span className={`text-sm ${smsEnabled ? 'text-gray-600' : 'text-gray-400'}`}>
-                    Send reminder to the guest
-                  </span>
-                  <Select
-                    value={smsSettings.reminderHours.toString()}
-                    onValueChange={(value) => 
-                      setSmsSettings(prev => ({ ...prev, reminderHours: parseInt(value) }))
-                    }
-                    disabled={!smsSettings.reminderEnabled || !smsEnabled}
-                  >
-                    <SelectTrigger className="w-16">
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="1">1</SelectItem>
-                      <SelectItem value="2">2</SelectItem>
-                      <SelectItem value="3">3</SelectItem>
-                      <SelectItem value="4">4</SelectItem>
-                      <SelectItem value="6">6</SelectItem>
-                      <SelectItem value="12">12</SelectItem>
-                      <SelectItem value="24">24</SelectItem>
-                    </SelectContent>
-                  </Select>
-                  <span className={`text-sm ${smsEnabled ? 'text-gray-600' : 'text-gray-400'}`}>
-                    hours before visit
-                  </span>
-                  <Info className="w-4 h-4 text-gray-400" />
+                  <Settings className="w-5 h-5 text-gray-700" />
+                  <CardTitle className="text-xl text-gray-900">Guest Notifications</CardTitle>
                 </div>
-              </div>
+                <p className="text-sm text-gray-600 mt-1">Configure automatic SMS notifications for your guests</p>
+              </CardHeader>
+              <CardContent className="p-6 space-y-6">
+                {/* Booking Confirmation */}
+                <div className="group p-4 rounded-lg border border-gray-200 hover:border-blue-300 hover:bg-blue-50/30 transition-all duration-200">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-3">
+                      <div className="p-2 bg-green-100 rounded-lg group-hover:bg-green-200 transition-colors">
+                        <CheckCircle className="w-4 h-4 text-green-600" />
+                      </div>
+                      <div>
+                        <Label htmlFor="sms-confirmation" className="text-base font-medium text-gray-900">
+                          Booking Confirmation
+                        </Label>
+                        <p className="text-sm text-gray-600 mt-1">Send instant confirmation when booking is made</p>
+                      </div>
+                    </div>
+                    <Checkbox
+                      id="sms-confirmation"
+                      checked={smsSettings.confirmationEnabled}
+                      onCheckedChange={(checked) => 
+                        setSmsSettings(prev => ({ ...prev, confirmationEnabled: !!checked }))
+                      }
+                      className="h-5 w-5"
+                    />
+                  </div>
+                </div>
 
-              {/* Send to */}
-              <div className="flex items-center justify-between">
-                <Label htmlFor="send-to">Send to:</Label>
-                <div className="flex items-center gap-2">
-                  <Checkbox
-                    id="send-to"
-                    checked={true}
-                    disabled
-                  />
-                  <span className="text-sm text-gray-600">Send booking to</span>
-                  <Select
-                    value={smsSettings.countryCode}
-                    onValueChange={(value) => 
-                      setSmsSettings(prev => ({ ...prev, countryCode: value }))
-                    }
+                {/* Booking Reminder */}
+                <div className="group p-4 rounded-lg border border-gray-200 hover:border-blue-300 hover:bg-blue-50/30 transition-all duration-200">
+                  <div className="flex items-center justify-between mb-4">
+                    <div className="flex items-center gap-3">
+                      <div className="p-2 bg-orange-100 rounded-lg group-hover:bg-orange-200 transition-colors">
+                        <Clock className="w-4 h-4 text-orange-600" />
+                      </div>
+                      <div>
+                        <Label htmlFor="reminder" className="text-base font-medium text-gray-900">
+                          Booking Reminder
+                        </Label>
+                        <p className="text-sm text-gray-600 mt-1">Send reminder before appointment time</p>
+                      </div>
+                    </div>
+                    <Checkbox
+                      id="reminder"
+                      checked={smsSettings.reminderEnabled}
+                      onCheckedChange={(checked) => 
+                        setSmsSettings(prev => ({ ...prev, reminderEnabled: !!checked }))
+                      }
+                      className="h-5 w-5"
+                    />
+                  </div>
+                  
+                  {smsSettings.reminderEnabled && (
+                    <div className="flex items-center gap-3 ml-11 pt-2 border-t border-gray-100">
+                      <span className="text-sm text-gray-600">Send reminder</span>
+                      <Select
+                        value={smsSettings.reminderHours.toString()}
+                        onValueChange={(value) => 
+                          setSmsSettings(prev => ({ ...prev, reminderHours: parseInt(value) }))
+                        }
+                      >
+                        <SelectTrigger className="w-20">
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="1">1</SelectItem>
+                          <SelectItem value="2">2</SelectItem>
+                          <SelectItem value="3">3</SelectItem>
+                          <SelectItem value="4">4</SelectItem>
+                          <SelectItem value="6">6</SelectItem>
+                          <SelectItem value="12">12</SelectItem>
+                          <SelectItem value="24">24</SelectItem>
+                        </SelectContent>
+                      </Select>
+                      <span className="text-sm text-gray-600">hours before visit</span>
+                    </div>
+                  )}
+                </div>
+
+                {/* Restaurant Phone Configuration */}
+                <div className="p-4 rounded-lg border border-gray-200 bg-gray-50">
+                  <div className="flex items-center gap-3 mb-4">
+                    <div className="p-2 bg-blue-100 rounded-lg">
+                      <Phone className="w-4 h-4 text-blue-600" />
+                    </div>
+                    <div>
+                      <Label className="text-base font-medium text-gray-900">
+                        Restaurant Contact Number
+                      </Label>
+                      <p className="text-sm text-gray-600 mt-1">Number displayed in SMS messages for guest replies</p>
+                    </div>
+                  </div>
+                  
+                  <div className="flex items-center gap-3">
+                    <Select
+                      value={smsSettings.countryCode}
+                      onValueChange={(value) => 
+                        setSmsSettings(prev => ({ ...prev, countryCode: value }))
+                      }
+                    >
+                      <SelectTrigger className="w-28">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent className="max-h-60">
+                        {countryCodes.map((country) => (
+                          <SelectItem key={country.code} value={country.code}>
+                            <div className="flex items-center gap-2">
+                              <span>{country.flag}</span>
+                              <span>{country.code}</span>
+                            </div>
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    <Input
+                      value={smsSettings.phoneNumber}
+                      onChange={(e) => 
+                        setSmsSettings(prev => ({ ...prev, phoneNumber: e.target.value }))
+                      }
+                      placeholder="Restaurant phone number"
+                      className="flex-1"
+                    />
+                  </div>
+                </div>
+
+                {/* Future Features */}
+                <div className="p-4 rounded-lg border border-dashed border-gray-300 bg-gray-50/50">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-3">
+                      <div className="p-2 bg-purple-100 rounded-lg">
+                        <Star className="w-4 h-4 text-purple-600" />
+                      </div>
+                      <div>
+                        <Label className="text-base font-medium text-gray-700">
+                          Satisfaction Surveys
+                        </Label>
+                        <p className="text-sm text-gray-500 mt-1">Collect feedback after dining experience</p>
+                      </div>
+                    </div>
+                    <Badge variant="secondary" className="bg-purple-100 text-purple-700">
+                      Coming Soon
+                    </Badge>
+                  </div>
+                </div>
+
+                <Separator className="my-6" />
+
+                {/* Save Button */}
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2 text-sm text-gray-600">
+                    <Shield className="w-4 h-4" />
+                    <span>Settings are saved automatically and applied immediately</span>
+                  </div>
+                  <Button 
+                    onClick={handleSave}
+                    disabled={saveSettingsMutation.isPending}
+                    className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white px-6 py-2 shadow-md"
                   >
-                    <SelectTrigger className="w-24">
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent className="max-h-60">
-                      {countryCodes.map((country) => (
-                        <SelectItem key={country.code} value={country.code}>
-                          <div className="flex items-center gap-2">
-                            <span>{country.flag}</span>
-                            <span>{country.code}</span>
-                          </div>
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
+                    {saveSettingsMutation.isPending ? (
+                      <>
+                        <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                        Saving...
+                      </>
+                    ) : (
+                      <>
+                        <CheckCircle className="w-4 h-4 mr-2" />
+                        Save Settings
+                      </>
+                    )}
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+
+          {/* Sidebar */}
+          <div className="space-y-6">
+            {/* SMS Balance Management */}
+            <SmsBalanceManager />
+
+            {/* Balance Warning */}
+            {parseFloat(smsBalance?.balance || "0") <= 0 && (
+              <Alert className="border-orange-200 bg-orange-50">
+                <AlertCircle className="h-4 w-4 text-orange-600" />
+                <AlertDescription className="text-orange-800">
+                  <strong>SMS Balance Required:</strong> Add balance to enable SMS notifications for your restaurant.
+                </AlertDescription>
+              </Alert>
+            )}
+
+            {/* SMS Testing */}
+            <Card className="shadow-sm border-gray-200">
+              <CardHeader className="bg-gradient-to-r from-green-50 to-emerald-50 border-b border-green-200">
+                <div className="flex items-center gap-3">
+                  <div className="p-2 bg-green-100 rounded-lg">
+                    <Send className="w-4 h-4 text-green-600" />
+                  </div>
+                  <CardTitle className="text-lg text-gray-900">Free SMS Testing</CardTitle>
+                </div>
+                <p className="text-sm text-gray-600 mt-1">Test your SMS configuration without using balance</p>
+              </CardHeader>
+              <CardContent className="p-4 space-y-4">
+                <div className="space-y-3">
                   <Input
-                    value={smsSettings.phoneNumber}
-                    onChange={(e) => 
-                      setSmsSettings(prev => ({ ...prev, phoneNumber: e.target.value }))
-                    }
-                    placeholder="Phone number"
-                    className="w-32"
+                    placeholder="Enter test phone number"
+                    value={testPhone}
+                    onChange={(e) => setTestPhone(e.target.value)}
+                    className="w-full"
                   />
+                  <Button 
+                    onClick={handleTestSMS}
+                    disabled={testSMSMutation.isPending || !testPhone}
+                    className="w-full bg-green-600 hover:bg-green-700 text-white"
+                  >
+                    {testSMSMutation.isPending ? (
+                      <>
+                        <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                        Sending Test...
+                      </>
+                    ) : (
+                      <>
+                        <Zap className="w-4 h-4 mr-2" />
+                        Send Test SMS
+                      </>
+                    )}
+                  </Button>
                 </div>
-              </div>
+                
+                {lastTestResult && (
+                  <div className="mt-4 p-3 bg-green-50 border border-green-200 rounded-lg">
+                    <div className="flex items-center gap-2">
+                      <CheckCircle className="w-4 h-4 text-green-600" />
+                      <span className="text-sm font-medium text-green-800">Test Successful</span>
+                    </div>
+                    <p className="text-sm text-green-700 mt-1">{lastTestResult}</p>
+                  </div>
+                )}
 
-              {/* Satisfaction Surveys */}
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                  <Label htmlFor="satisfaction">Satisfaction surveys:</Label>
-                  <Info className="w-4 h-4 text-gray-400" />
+                <div className="text-xs text-gray-500 bg-gray-50 p-3 rounded border">
+                  <strong>Note:</strong> Test SMS messages don't count against your balance and help verify your configuration.
                 </div>
-                <div className="flex items-center gap-2">
-                  <Checkbox
-                    id="satisfaction"
-                    checked={smsSettings.satisfactionSurveyEnabled}
-                    onCheckedChange={(checked) => 
-                      setSmsSettings(prev => ({ ...prev, satisfactionSurveyEnabled: !!checked }))
-                    }
-                    disabled
-                  />
-                  <span className="text-sm text-gray-400">Coming soon</span>
-                </div>
-              </div>
-
-              <div className="pt-4">
-                <Button 
-                  onClick={handleSave}
-                  disabled={saveSettingsMutation.isPending}
-                  className="bg-green-600 hover:bg-green-700 text-white"
-                >
-                  {saveSettingsMutation.isPending ? "Saving..." : "Save"}
-                </Button>
-              </div>
-            </CardContent>
-          </Card>
-
-          {/* SMS Balance Management */}
-          <SmsBalanceManager />
-
-          {/* SMS Features - Only show if balance is available */}
-          {parseFloat(smsBalance?.balance || "0") <= 0 && (
-            <Alert>
-              <AlertCircle className="h-4 w-4" />
-              <AlertDescription>
-                SMS features are disabled. Please add balance to your account to enable SMS notifications.
-              </AlertDescription>
-            </Alert>
-          )}
-
-          {/* Free Testing Section */}
-          <Card>
-            <CardHeader>
-              <CardTitle className="text-lg font-medium">Test SMS for Free</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <p className="text-sm text-gray-600">
-                Send a test SMS to verify your settings without using your balance
-              </p>
-              <div className="flex gap-2">
-                <Input
-                  placeholder="Test phone number"
-                  value={testPhone}
-                  onChange={(e) => setTestPhone(e.target.value)}
-                  className="flex-1"
-                />
-                <Button 
-                  onClick={handleTestSMS}
-                  disabled={testSMSMutation.isPending || !testPhone}
-                  className="bg-blue-600 hover:bg-blue-700 text-white"
-                >
-                  {testSMSMutation.isPending ? "Sending..." : "Send Test SMS"}
-                </Button>
-              </div>
-              {lastTestResult && (
-                <div className="mt-3 p-3 bg-green-50 border border-green-200 rounded">
-                  <p className="text-sm text-green-800">{lastTestResult}</p>
-                </div>
-              )}
-            </CardContent>
-          </Card>
+              </CardContent>
+            </Card>
+          </div>
         </div>
       </div>
     </div>
