@@ -83,7 +83,8 @@ export default function UnifiedBookingModal({
     const submissionData = {
       ...formData,
       endTime,
-      tags: selectedTags
+      tags: selectedTags,
+      tableId: formData.tableId === 'auto-assign' ? '' : formData.tableId
     };
     
     onSubmit(submissionData);
@@ -238,7 +239,7 @@ export default function UnifiedBookingModal({
                 <SelectValue placeholder="Select an available table" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="">Auto-assign table</SelectItem>
+                <SelectItem value="auto-assign">Auto-assign table</SelectItem>
                 {tables.map((table: any) => (
                   <SelectItem key={table.id} value={table.id.toString()}>
                     Table {table.tableNumber} (Capacity: {table.capacity})

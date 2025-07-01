@@ -247,7 +247,7 @@ export default function Bookings() {
       bookingDate: new Date(newBooking.bookingDate),
       startTime: newBooking.startTime,
       endTime: newBooking.endTime || null,
-      tableId: newBooking.tableId ? parseInt(newBooking.tableId) : null,
+      tableId: newBooking.tableId && newBooking.tableId !== 'auto-assign' ? parseInt(newBooking.tableId) : null,
       notes: newBooking.notes || null,
       status: 'confirmed',
       source: 'manual'
@@ -283,7 +283,7 @@ export default function Bookings() {
       bookingDate: editingBooking.bookingDate,
       startTime: editingBooking.startTime,
       endTime: editingBooking.endTime || null,
-      tableId: editingBooking.tableId ? parseInt(editingBooking.tableId) : null,
+      tableId: editingBooking.tableId && editingBooking.tableId !== 'auto-assign' ? parseInt(editingBooking.tableId) : null,
       notes: editingBooking.notes?.trim() || null,
       status: editingBooking.status || 'confirmed'
     };
@@ -905,7 +905,7 @@ export default function Bookings() {
                   <SelectValue placeholder="Auto-assign table" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="">Auto-assign</SelectItem>
+                  <SelectItem value="auto-assign">Auto-assign</SelectItem>
                   {tables?.map((table: any) => (
                     <SelectItem key={table.id} value={table.id.toString()}>
                       Table {table.tableNumber} ({table.capacity} seats)
