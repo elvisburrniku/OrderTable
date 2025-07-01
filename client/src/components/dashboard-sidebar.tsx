@@ -59,7 +59,7 @@ export default function DashboardSidebar({
     role: string;
     redirect: string;
   }>({
-    queryKey: ['/api/user/permissions'],
+    queryKey: ["/api/user/permissions"],
     enabled: !!tenantId,
   });
 
@@ -74,23 +74,48 @@ export default function DashboardSidebar({
   }, [userPermissions, location, tenantId, setLocation]);
 
   const restaurantSettingsItems = [
-    { name: "Opening Hours", icon: Clock, href: `/${tenantId}/opening-hours`, requiredPermission: "access_settings" },
+    {
+      name: "Opening Hours",
+      icon: Clock,
+      href: `/${tenantId}/opening-hours`,
+      requiredPermission: "access_settings",
+    },
     {
       name: "Special Periods",
       icon: CalendarDays,
       href: `/${tenantId}/special-periods`,
       requiredPermission: "access_settings",
     },
-    { name: "Cut-off Time", icon: Scissors, href: `/${tenantId}/cut-off-time`, requiredPermission: "access_settings" },
-    { name: "Rooms", icon: MapPin, href: `/${tenantId}/rooms`, requiredPermission: "access_settings" },
-    { name: "Tables", icon: Table, href: `/${tenantId}/tables`, requiredPermission: "access_tables" },
+    {
+      name: "Cut-off Time",
+      icon: Scissors,
+      href: `/${tenantId}/cut-off-time`,
+      requiredPermission: "access_settings",
+    },
+    {
+      name: "Rooms",
+      icon: MapPin,
+      href: `/${tenantId}/rooms`,
+      requiredPermission: "access_settings",
+    },
+    {
+      name: "Tables",
+      icon: Table,
+      href: `/${tenantId}/tables`,
+      requiredPermission: "access_tables",
+    },
     {
       name: "Combined Tables",
       icon: Grid3X3,
       href: `/${tenantId}/combined-tables`,
       requiredPermission: "access_tables",
     },
-    { name: "Table Plan", icon: Layout, href: `/${tenantId}/table-plan`, requiredPermission: "access_tables" },
+    {
+      name: "Table Plan",
+      icon: Layout,
+      href: `/${tenantId}/table-plan`,
+      requiredPermission: "access_tables",
+    },
     {
       name: "Seating Configurations",
       icon: Armchair,
@@ -124,7 +149,7 @@ export default function DashboardSidebar({
     {
       name: "SMS Notifications",
       icon: MessageSquare,
-      href: `/${tenantId}/sms-notifications`,
+      href: `/${tenantId}/sms-settings`,
       requiredPermission: "access_notifications",
     },
     {
@@ -133,8 +158,18 @@ export default function DashboardSidebar({
       href: `/${tenantId}/feedback-questions`,
       requiredPermission: "access_settings",
     },
-    { name: "Events", icon: CalendarDays, href: `/${tenantId}/events`, requiredPermission: "access_settings" },
-    { name: "Products", icon: Package, href: `/${tenantId}/products`, requiredPermission: "access_menu" },
+    {
+      name: "Events",
+      icon: CalendarDays,
+      href: `/${tenantId}/events`,
+      requiredPermission: "access_settings",
+    },
+    {
+      name: "Products",
+      icon: Package,
+      href: `/${tenantId}/products`,
+      requiredPermission: "access_menu",
+    },
     {
       name: "Product Groups",
       icon: Layers,
@@ -156,13 +191,24 @@ export default function DashboardSidebar({
   ];
 
   // Filter restaurant settings items based on user permissions
-  const visibleRestaurantSettingsItems = userPermissions ? restaurantSettingsItems.filter(item => {
-    const hasPermission = userPermissions.permissions.includes(item.requiredPermission);
-    console.log(`Settings item "${item.name}" requires "${item.requiredPermission}":`, hasPermission);
-    return hasPermission;
-  }) : [];
+  const visibleRestaurantSettingsItems = userPermissions
+    ? restaurantSettingsItems.filter((item) => {
+        const hasPermission = userPermissions.permissions.includes(
+          item.requiredPermission,
+        );
+        console.log(
+          `Settings item "${item.name}" requires "${item.requiredPermission}":`,
+          hasPermission,
+        );
+        return hasPermission;
+      })
+    : [];
 
-  console.log('Visible restaurant settings items:', visibleRestaurantSettingsItems.length, visibleRestaurantSettingsItems.map(item => item.name));
+  console.log(
+    "Visible restaurant settings items:",
+    visibleRestaurantSettingsItems.length,
+    visibleRestaurantSettingsItems.map((item) => item.name),
+  );
 
   const menuItems = [
     {
@@ -308,47 +354,60 @@ export default function DashboardSidebar({
   ];
 
   // Filter menu items based on user permissions
-  const visibleMenuItems = userPermissions ? menuItems.filter(item => {
-    const hasPermission = userPermissions.permissions.includes(item.requiredPermission);
-    console.log(`Menu item "${item.name}" requires "${item.requiredPermission}":`, hasPermission, 'User permissions:', userPermissions.permissions);
-    return hasPermission;
-  }) : [];
+  const visibleMenuItems = userPermissions
+    ? menuItems.filter((item) => {
+        const hasPermission = userPermissions.permissions.includes(
+          item.requiredPermission,
+        );
+        console.log(
+          `Menu item "${item.name}" requires "${item.requiredPermission}":`,
+          hasPermission,
+          "User permissions:",
+          userPermissions.permissions,
+        );
+        return hasPermission;
+      })
+    : [];
 
   // Debug logging
-  console.log('User permissions data:', userPermissions);
-  console.log('Total menu items:', menuItems.length);
-  console.log('Visible menu items:', visibleMenuItems.length, visibleMenuItems.map(item => item.name));
+  console.log("User permissions data:", userPermissions);
+  console.log("Total menu items:", menuItems.length);
+  console.log(
+    "Visible menu items:",
+    visibleMenuItems.length,
+    visibleMenuItems.map((item) => item.name),
+  );
 
   const helpItems = [
     {
       name: "Documentation",
       icon: BookOpen,
       action: () => window.open("https://docs.readytable.com", "_blank"),
-      description: "Complete user guide and tutorials"
+      description: "Complete user guide and tutorials",
     },
     {
       name: "Video Tutorials",
       icon: Calendar,
       action: () => window.open("https://tutorials.readytable.com", "_blank"),
-      description: "Step-by-step video guides"
+      description: "Step-by-step video guides",
     },
     {
       name: "Contact Support",
       icon: Phone,
       action: () => window.open("mailto:support@readytable.com", "_blank"),
-      description: "Get help from our team"
+      description: "Get help from our team",
     },
     {
       name: "Feature Requests",
       icon: MessageSquare,
       action: () => window.open("https://feedback.readytable.com", "_blank"),
-      description: "Suggest new features"
+      description: "Suggest new features",
     },
     {
       name: "System Status",
       icon: AlertTriangle,
       action: () => window.open("https://status.readytable.com", "_blank"),
-      description: "Check service availability"
+      description: "Check service availability",
     },
   ];
 
@@ -371,7 +430,7 @@ export default function DashboardSidebar({
 
         {/* Tenant Switcher */}
         <div className="mb-6">
-          <TenantSwitcher 
+          <TenantSwitcher
             currentTenantId={tenantId}
             currentRestaurantId={restaurantId}
             onTenantChange={(tenantId) => {
@@ -384,32 +443,38 @@ export default function DashboardSidebar({
         {/* Navigation */}
         <nav className="space-y-1">
           {!userPermissions && (
-            <div className="px-3 py-2 text-sm text-gray-500">Loading menu...</div>
+            <div className="px-3 py-2 text-sm text-gray-500">
+              Loading menu...
+            </div>
           )}
           {userPermissions && visibleMenuItems.length === 0 && (
-            <div className="px-3 py-2 text-sm text-gray-500">No menu items available</div>
+            <div className="px-3 py-2 text-sm text-gray-500">
+              No menu items available
+            </div>
           )}
-          {visibleMenuItems.filter(item => item.name !== "Product Groups").map((item) => {
-            const Icon = item.icon;
-            const active = isActive(item.href);
+          {visibleMenuItems
+            .filter((item) => item.name !== "Product Groups")
+            .map((item) => {
+              const Icon = item.icon;
+              const active = isActive(item.href);
 
-            return (
-              <Link
-                key={item.name}
-                href={item.href}
-                className={`flex items-center space-x-3 px-3 py-2 rounded-lg text-sm font-medium transition-colors ${
-                  active
-                    ? "bg-gray-100 text-gray-900"
-                    : "text-gray-600 hover:text-gray-900 hover:bg-gray-50"
-                }`}
-              >
-                <Icon
-                  className={`w-5 h-5 ${active ? "text-gray-900" : item.color}`}
-                />
-                <span>{item.name}</span>
-              </Link>
-            );
-          })}
+              return (
+                <Link
+                  key={item.name}
+                  href={item.href}
+                  className={`flex items-center space-x-3 px-3 py-2 rounded-lg text-sm font-medium transition-colors ${
+                    active
+                      ? "bg-gray-100 text-gray-900"
+                      : "text-gray-600 hover:text-gray-900 hover:bg-gray-50"
+                  }`}
+                >
+                  <Icon
+                    className={`w-5 h-5 ${active ? "text-gray-900" : item.color}`}
+                  />
+                  <span>{item.name}</span>
+                </Link>
+              );
+            })}
 
           {/* Restaurant Settings Dropdown - Only show if user has access to settings */}
           {userPermissions && visibleRestaurantSettingsItems.length > 0 && (
@@ -459,8 +524,8 @@ export default function DashboardSidebar({
 
           {/* Enterprise Sneak Peek Widget */}
           <div className="mt-6">
-            <SneakPeekWidget 
-              variant="sidebar" 
+            <SneakPeekWidget
+              variant="sidebar"
               currentPlan="basic"
               className="mb-4"
             />
