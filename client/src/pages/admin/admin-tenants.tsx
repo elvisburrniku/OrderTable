@@ -387,6 +387,26 @@ export function AdminTenants({ token }: AdminTenantsProps) {
   const pauseTenant = async (tenantId: number, pauseUntilDate?: string) => {
     setIsUpdating(true);
     try {
+      // Validate pause until date
+      if (!pauseUntilDate) {
+        toast({
+          title: "Error",
+          description: "Please select a pause end date",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      const pauseDate = new Date(pauseUntilDate);
+      if (pauseDate <= new Date()) {
+        toast({
+          title: "Error",
+          description: "Pause end date must be in the future",
+          variant: "destructive",
+        });
+        return;
+      }
+
       const response = await fetch(`/api/admin/tenants/${tenantId}/pause`, {
         method: "POST",
         headers: {
@@ -397,21 +417,40 @@ export function AdminTenants({ token }: AdminTenantsProps) {
       });
 
       if (!response.ok) {
-        throw new Error("Failed to pause tenant");
+        const errorData = await response.json();
+        throw new Error(errorData.message || "Failed to pause tenant");
       }
+
+      const result = await response.json();
 
       // Update tenant status
       setTenants(prev => prev.map(t => 
-        t.tenant.id === tenantId ? { ...t, tenant: { ...t.tenant, subscriptionStatus: 'paused' } } : t
+        t.tenant.id === tenantId ? { 
+          ...t, 
+          tenant: { 
+            ...t.tenant, 
+            subscriptionStatus: 'paused',
+            pauseStartDate: new Date().toISOString(),
+            pauseEndDate: pauseUntilDate
+          } 
+        } : t
       ));
       
       if (selectedTenant && selectedTenant.tenant.id === tenantId) {
-        setSelectedTenant(prev => prev ? { ...prev, tenant: { ...prev.tenant, subscriptionStatus: 'paused' } } : null);
+        setSelectedTenant(prev => prev ? { 
+          ...prev, 
+          tenant: { 
+            ...prev.tenant, 
+            subscriptionStatus: 'paused',
+            pauseStartDate: new Date().toISOString(),
+            pauseEndDate: pauseUntilDate
+          } 
+        } : null);
       }
 
       toast({
         title: "Success",
-        description: "Tenant paused successfully",
+        description: result.message || "Tenant paused successfully",
       });
 
       setPauseUntil("");
@@ -419,7 +458,7 @@ export function AdminTenants({ token }: AdminTenantsProps) {
       console.error("Error pausing tenant:", error);
       toast({
         title: "Error",
-        description: "Failed to pause tenant",
+        description: error instanceof Error ? error.message : "Failed to pause tenant",
         variant: "destructive",
       });
     } finally {

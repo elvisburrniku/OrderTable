@@ -76,7 +76,7 @@ interface TenantTableProps {
   tenants: TenantData[];
   onViewTenant: (tenantId: number) => void;
   onEditTenant: (tenant: TenantData) => void;
-  onPauseTenant: (tenantId: number) => void;
+  onPauseTenant: (tenantId: number, pauseUntil: string) => void;
   onSuspendTenant: (tenantId: number, reason?: string) => void;
   onUnsuspendTenant: (tenantId: number) => void;
   selectedTenant: TenantDetail | null;
@@ -102,6 +102,7 @@ export function TenantTable({
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
   const [suspendReason, setSuspendReason] = useState("");
+  const [pauseUntil, setPauseUntil] = useState("");
 
   const filteredTenants = tenants.filter(tenant => {
     const matchesSearch = tenant.tenant.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -268,7 +269,7 @@ export function TenantTable({
                         >
                           <Edit className="h-4 w-4" />
                         </Button>
-                        
+
                         {tenantData.tenant.subscriptionStatus === 'suspended' ? (
                           <AlertDialog>
                             <AlertDialogTrigger asChild>
@@ -361,15 +362,58 @@ export function TenantTable({
                                 </AlertDialogFooter>
                               </AlertDialogContent>
                             </AlertDialog>
-                            
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              onClick={() => onPauseTenant(tenantData.tenant.id)}
-                              className="hover:bg-yellow-50 dark:hover:bg-yellow-900"
-                            >
-                              <Pause className="h-4 w-4" />
-                            </Button>
+                            <AlertDialog>
+                              <AlertDialogTrigger asChild>
+                                <Button variant="ghost" size="sm" className="hover:bg-yellow-50 dark:hover:bg-yellow-900">
+                                  <Pause className="h-4 w-4" />
+                                </Button>
+                              </AlertDialogTrigger>
+                              <AlertDialogContent>
+                                <AlertDialogHeader>
+                                  <AlertDialogTitle>Pause Tenant</AlertDialogTitle>
+                                  <AlertDialogDescription>
+                                    This will temporarily pause {tenantData.tenant.name} until the specified date.
+                                  </AlertDialogDescription>
+                                </AlertDialogHeader>
+                                <div className="py-4">
+                                  <Label htmlFor="pause-until">Pause Until</Label>
+                                  <Input
+                                    id="pause-until"
+                                    type="datetime-local"
+                                    value={pauseUntil}
+                                    onChange={(e) => setPauseUntil(e.target.value)}
+                                    className="mt-2"
+                                    min={new Date().toISOString().slice(0, 16)}
+                                    required
+                                  />
+                                  {pauseUntil && new Date(pauseUntil) <= new Date() && (
+                                    <p className="text-sm text-red-600 mt-1">
+                                      Pause end date must be in the future
+                                    </p>
+                                  )}
+                                </div>
+                                <AlertDialogFooter>
+                                  <AlertDialogCancel>Cancel</AlertDialogCancel>
+                                  <AlertDialogAction
+                                    onClick={() => {
+                                      if (!pauseUntil) {
+                                        alert("Please select a pause end date");
+                                        return;
+                                      }
+                                      if (new Date(pauseUntil) <= new Date()) {
+                                        alert("Pause end date must be in the future");
+                                        return;
+                                      }
+                                      onPauseTenant(tenantData.tenant.id, pauseUntil);
+                                    }}
+                                    disabled={isUpdating || !pauseUntil || new Date(pauseUntil) <= new Date()}
+                                    className="bg-yellow-600 hover:bg-yellow-700"
+                                  >
+                                    {isUpdating ? "Pausing..." : "Pause Tenant"}
+                                  </AlertDialogAction>
+                                </AlertDialogFooter>
+                              </AlertDialogContent>
+                            </AlertDialog>
                           </>
                         )}
                       </div>
@@ -394,7 +438,7 @@ export function TenantTable({
               </Badge>
             </DialogTitle>
           </DialogHeader>
-          
+
           {isLoadingTenant ? (
             <div className="flex items-center justify-center py-12">
               <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
@@ -508,7 +552,7 @@ export function TenantTable({
                             </div>
                           </div>
                         </div>
-                        
+
                         <div>
                           <div className="text-sm font-medium text-muted-foreground mb-3">Features</div>
                           <div className="space-y-2">
