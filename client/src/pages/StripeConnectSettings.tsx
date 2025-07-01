@@ -67,14 +67,14 @@ export default function StripeConnectSettings() {
       return response.json();
     },
     onSuccess: (data) => {
-      // Redirect to Stripe onboarding
+      // Redirect to Stripe OAuth authorization
       window.location.href = data.onboardingUrl;
     },
     onError: (error) => {
       console.error("Stripe Connect error:", error);
       toast({
         title: "Stripe Connect Setup Required",
-        description: "Please enable Stripe Connect on your Stripe dashboard first. Visit https://dashboard.stripe.com/connect/overview to get started.",
+        description: "Please ensure Stripe Connect is enabled on your Stripe dashboard and STRIPE_CLIENT_ID is configured.",
         variant: "destructive",
       });
     },
