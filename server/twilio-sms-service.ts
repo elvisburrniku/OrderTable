@@ -67,7 +67,7 @@ class TwilioSMSService {
       if (currentBalance <= 0) {
         return {
           success: false,
-          error: 'Insufficient SMS balance'
+          error: 'Insufficient SMS balance. Please add balance to your account before sending SMS messages.'
         };
       }
 
