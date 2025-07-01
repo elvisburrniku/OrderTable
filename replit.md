@@ -22,6 +22,7 @@ A comprehensive restaurant booking management system with React frontend and Exp
 - Kitchen order management
 
 ## Recent Changes
+- **2025-07-01**: Fixed SMS and email notification triggers in booking creation - both manual and guest bookings now send automated confirmation messages when customers provide phone/email
 - **2025-07-01**: Fixed admin panel tenant data display issue - restored proper restaurant and user counts for each tenant
 - **Admin Panel Enhancement**: Fixed missing tenantUsers import causing ReferenceError in admin storage methods
 - **Database Integration**: Enhanced getAllTenants and getTenantById methods to properly fetch restaurant, user, and booking counts

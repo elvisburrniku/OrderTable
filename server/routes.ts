@@ -1965,6 +1965,59 @@ export async function registerRoutes(app: Express): Promise<Server> {
           );
         }
 
+        // Send SMS notifications if configured
+        try {
+          const { twilioSMSService } = await import('./twilio-sms-service.js');
+          
+          // Check if SMS is configured and customer has phone number
+          if (req.body.customerPhone && twilioSMSService.isConfigured()) {
+            console.log(
+              "SMS service available - processing SMS notifications for booking",
+              booking.id,
+            );
+
+            // Get SMS settings for this restaurant
+            const smsSettings = await storage.getSmsSettings(restaurantId, tenantId);
+            
+            // Send booking confirmation SMS if enabled (default: true)
+            const shouldSendSmsConfirmation = smsSettings?.confirmationEnabled !== false;
+            
+            if (shouldSendSmsConfirmation) {
+              console.log(
+                "Sending booking confirmation SMS to:",
+                req.body.customerPhone,
+              );
+
+              const bookingDetails = {
+                id: booking.id,
+                restaurantName: restaurant.name,
+                date: new Date(booking.bookingDate).toLocaleDateString(),
+                time: booking.startTime,
+                guests: booking.guestCount,
+                hash: booking.hash
+              };
+
+              const smsResult = await twilioSMSService.sendBookingConfirmation(
+                req.body.customerPhone,
+                bookingDetails,
+                restaurantId,
+                tenantId
+              );
+
+              if (smsResult.success) {
+                console.log("Booking confirmation SMS sent successfully");
+              } else {
+                console.error("Failed to send booking confirmation SMS:", smsResult.error);
+              }
+            }
+          } else {
+            console.log("SMS service not configured or customer phone missing - skipping SMS notifications");
+          }
+        } catch (smsError) {
+          console.error("Error sending SMS notifications:", smsError);
+          // Don't fail the booking if SMS fails
+        }
+
         // Send webhook notifications
         try {
           const webhookService = new WebhookService(storage);
@@ -5892,6 +5945,59 @@ export async function registerRoutes(app: Express): Promise<Server> {
             );
             // Don't fail the booking if email fails
           }
+        }
+
+        // Send SMS notifications if configured
+        try {
+          const { twilioSMSService } = await import('./twilio-sms-service.js');
+          
+          // Check if SMS is configured and customer has phone number
+          if (bookingData.customerPhone && twilioSMSService.isConfigured()) {
+            console.log(
+              "SMS service available - processing SMS notifications for guest booking",
+              booking.id,
+            );
+
+            // Get SMS settings for this restaurant
+            const smsSettings = await storage.getSmsSettings(restaurantId, tenantId);
+            
+            // Send booking confirmation SMS if enabled (default: true)
+            const shouldSendSmsConfirmation = smsSettings?.confirmationEnabled !== false;
+            
+            if (shouldSendSmsConfirmation) {
+              console.log(
+                "Sending guest booking confirmation SMS to:",
+                bookingData.customerPhone,
+              );
+
+              const smsBookingDetails = {
+                id: booking.id,
+                restaurantName: restaurant.name,
+                date: new Date(booking.bookingDate).toLocaleDateString(),
+                time: booking.startTime,
+                guests: booking.guestCount,
+                hash: booking.hash
+              };
+
+              const smsResult = await twilioSMSService.sendBookingConfirmation(
+                bookingData.customerPhone,
+                smsBookingDetails,
+                restaurantId,
+                tenantId
+              );
+
+              if (smsResult.success) {
+                console.log("Guest booking confirmation SMS sent successfully");
+              } else {
+                console.error("Failed to send guest booking confirmation SMS:", smsResult.error);
+              }
+            }
+          } else {
+            console.log("SMS service not configured or customer phone missing - skipping SMS notifications for guest booking");
+          }
+        } catch (smsError) {
+          console.error("Error sending SMS notifications for guest booking:", smsError);
+          // Don't fail the booking if SMS fails
         }
 
         res.json(booking);
