@@ -483,7 +483,7 @@ export class AdminStorage {
         subscriptionPlan = planResult.rows?.[0] || null;
       }
 
-      return {
+      const result = {
         tenant: {
           id: tenant.id,
           name: tenant.name,
@@ -618,7 +618,7 @@ export class AdminStorage {
     try {
       console.log(`AdminStorage: Fetching users for tenant ${tenantId}`);
       
-      // Use Drizzle ORM query instead of raw SQL
+      // Use Drizzle ORM query with distinct users only
       const usersResult = await db
         .select({
           id: users.id,
@@ -626,20 +626,34 @@ export class AdminStorage {
           email: users.email,
           createdAt: users.createdAt,
           role: tenantUsers.role,
-          restaurantName: restaurants.name,
         })
         .from(users)
         .innerJoin(tenantUsers, eq(users.id, tenantUsers.userId))
-        .leftJoin(restaurants, and(
-          eq(users.id, restaurants.userId),
-          eq(restaurants.tenantId, tenantId)
-        ))
         .where(eq(tenantUsers.tenantId, tenantId))
         .orderBy(desc(users.createdAt));
 
-      console.log(`AdminStorage: Found ${usersResult.length} users for tenant ${tenantId}`);
+      // Get primary restaurant for each user separately to avoid duplicates
+      const usersWithRestaurants = await Promise.all(
+        usersResult.map(async (user) => {
+          const userRestaurant = await db
+            .select({ name: restaurants.name })
+            .from(restaurants)
+            .where(and(
+              eq(restaurants.userId, user.id),
+              eq(restaurants.tenantId, tenantId)
+            ))
+            .limit(1);
+          
+          return {
+            ...user,
+            restaurantName: userRestaurant[0]?.name || null,
+          };
+        })
+      );
+
+      console.log(`AdminStorage: Found ${usersWithRestaurants.length} users for tenant ${tenantId}`);
       
-      const mappedUsers = usersResult.map((user: any) => ({
+      const mappedUsers = usersWithRestaurants.map((user: any) => ({
         id: user.id,
         name: user.name,
         email: user.email,
