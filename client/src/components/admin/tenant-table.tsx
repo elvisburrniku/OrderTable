@@ -7,7 +7,10 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Eye, Edit, Pause, Play, Building, Users, Calendar, Search, Filter, ExternalLink } from "lucide-react";
+import { Eye, Edit, Pause, Play, Ban, Building, Users, Calendar, Search, Filter, ExternalLink } from "lucide-react";
+import { AlertDialog, AlertDialogTrigger, AlertDialogContent, AlertDialogHeader, AlertDialogTitle, AlertDialogDescription, AlertDialogFooter, AlertDialogCancel, AlertDialogAction } from "@/components/ui/alert-dialog";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
 
 interface TenantData {
   tenant: {
@@ -74,24 +77,31 @@ interface TenantTableProps {
   onViewTenant: (tenantId: number) => void;
   onEditTenant: (tenant: TenantData) => void;
   onPauseTenant: (tenantId: number) => void;
+  onSuspendTenant: (tenantId: number, reason?: string) => void;
+  onUnsuspendTenant: (tenantId: number) => void;
   selectedTenant: TenantDetail | null;
   isLoadingTenant: boolean;
   showDetailDialog: boolean;
   setShowDetailDialog: (show: boolean) => void;
+  isUpdating?: boolean;
 }
 
 export function TenantTable({ 
   tenants, 
   onViewTenant, 
   onEditTenant, 
-  onPauseTenant, 
+  onPauseTenant,
+  onSuspendTenant,
+  onUnsuspendTenant, 
   selectedTenant, 
   isLoadingTenant,
   showDetailDialog,
-  setShowDetailDialog
+  setShowDetailDialog,
+  isUpdating = false
 }: TenantTableProps) {
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
+  const [suspendReason, setSuspendReason] = useState("");
 
   const filteredTenants = tenants.filter(tenant => {
     const matchesSearch = tenant.tenant.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -258,16 +268,110 @@ export function TenantTable({
                         >
                           <Edit className="h-4 w-4" />
                         </Button>
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => onPauseTenant(tenantData.tenant.id)}
-                          className="hover:bg-yellow-50 dark:hover:bg-yellow-900"
-                        >
-                          {tenantData.tenant.subscriptionStatus === 'paused' ? 
-                            <Play className="h-4 w-4" /> : <Pause className="h-4 w-4" />
-                          }
-                        </Button>
+                        
+                        {tenantData.tenant.subscriptionStatus === 'suspended' ? (
+                          <AlertDialog>
+                            <AlertDialogTrigger asChild>
+                              <Button variant="ghost" size="sm" className="hover:bg-green-50 dark:hover:bg-green-900">
+                                <Play className="h-4 w-4" />
+                              </Button>
+                            </AlertDialogTrigger>
+                            <AlertDialogContent>
+                              <AlertDialogHeader>
+                                <AlertDialogTitle>Unsuspend Tenant</AlertDialogTitle>
+                                <AlertDialogDescription>
+                                  Are you sure you want to unsuspend {tenantData.tenant.name}? 
+                                  Their service will be restored immediately.
+                                </AlertDialogDescription>
+                              </AlertDialogHeader>
+                              <AlertDialogFooter>
+                                <AlertDialogCancel>Cancel</AlertDialogCancel>
+                                <AlertDialogAction
+                                  onClick={() => onUnsuspendTenant(tenantData.tenant.id)}
+                                  disabled={isUpdating}
+                                >
+                                  Unsuspend
+                                </AlertDialogAction>
+                              </AlertDialogFooter>
+                            </AlertDialogContent>
+                          </AlertDialog>
+                        ) : tenantData.tenant.subscriptionStatus === 'paused' ? (
+                          <AlertDialog>
+                            <AlertDialogTrigger asChild>
+                              <Button variant="ghost" size="sm" className="hover:bg-green-50 dark:hover:bg-green-900">
+                                <Play className="h-4 w-4" />
+                              </Button>
+                            </AlertDialogTrigger>
+                            <AlertDialogContent>
+                              <AlertDialogHeader>
+                                <AlertDialogTitle>Resume Tenant</AlertDialogTitle>
+                                <AlertDialogDescription>
+                                  Are you sure you want to resume {tenantData.tenant.name}? 
+                                  Their service will be restored and billing will continue.
+                                </AlertDialogDescription>
+                              </AlertDialogHeader>
+                              <AlertDialogFooter>
+                                <AlertDialogCancel>Cancel</AlertDialogCancel>
+                                <AlertDialogAction
+                                  onClick={() => onUnsuspendTenant(tenantData.tenant.id)}
+                                  disabled={isUpdating}
+                                >
+                                  Resume
+                                </AlertDialogAction>
+                              </AlertDialogFooter>
+                            </AlertDialogContent>
+                          </AlertDialog>
+                        ) : (
+                          <>
+                            <AlertDialog>
+                              <AlertDialogTrigger asChild>
+                                <Button variant="ghost" size="sm" className="hover:bg-red-50 dark:hover:bg-red-900">
+                                  <Ban className="h-4 w-4" />
+                                </Button>
+                              </AlertDialogTrigger>
+                              <AlertDialogContent>
+                                <AlertDialogHeader>
+                                  <AlertDialogTitle>Suspend Tenant</AlertDialogTitle>
+                                  <AlertDialogDescription>
+                                    This will immediately suspend {tenantData.tenant.name} and block access to their system.
+                                  </AlertDialogDescription>
+                                </AlertDialogHeader>
+                                <div className="py-4">
+                                  <Label htmlFor="suspend-reason">Reason (optional)</Label>
+                                  <Textarea
+                                    id="suspend-reason"
+                                    placeholder="Enter reason for suspension..."
+                                    value={suspendReason}
+                                    onChange={(e) => setSuspendReason(e.target.value)}
+                                    className="mt-2"
+                                  />
+                                </div>
+                                <AlertDialogFooter>
+                                  <AlertDialogCancel>Cancel</AlertDialogCancel>
+                                  <AlertDialogAction
+                                    onClick={() => {
+                                      onSuspendTenant(tenantData.tenant.id, suspendReason);
+                                      setSuspendReason("");
+                                    }}
+                                    disabled={isUpdating}
+                                    className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                                  >
+                                    Suspend
+                                  </AlertDialogAction>
+                                </AlertDialogFooter>
+                              </AlertDialogContent>
+                            </AlertDialog>
+                            
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => onPauseTenant(tenantData.tenant.id)}
+                              className="hover:bg-yellow-50 dark:hover:bg-yellow-900"
+                            >
+                              <Pause className="h-4 w-4" />
+                            </Button>
+                          </>
+                        )}
                       </div>
                     </TableCell>
                   </TableRow>
