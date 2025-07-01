@@ -521,6 +521,21 @@ export class AdminStorage {
 
       // Fetch additional data
       console.log(`AdminStorage: getTenantById - About to fetch restaurants and users for tenant ${id}`);
+      
+      try {
+        const restaurants = await this.getRestaurantsByTenantId(id);
+        console.log(`AdminStorage: getTenantById - getRestaurantsByTenantId returned:`, restaurants);
+      } catch (error) {
+        console.error(`AdminStorage: Error in getRestaurantsByTenantId:`, error);
+      }
+      
+      try {
+        const users = await this.getUsersByTenantId(id);
+        console.log(`AdminStorage: getTenantById - getUsersByTenantId returned:`, users);
+      } catch (error) {
+        console.error(`AdminStorage: Error in getUsersByTenantId:`, error);
+      }
+      
       const restaurants = await this.getRestaurantsByTenantId(id);
       const users = await this.getUsersByTenantId(id);
       

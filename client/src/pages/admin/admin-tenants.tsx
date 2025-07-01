@@ -231,9 +231,12 @@ export function AdminTenants({ token }: AdminTenantsProps) {
   const fetchTenantDetail = async (tenantId: number) => {
     setIsLoadingTenant(true);
     try {
-      const response = await fetch(`/api/admin/tenants/${tenantId}`, {
+      // Add cache-busting parameter to force fresh data
+      const cacheBuster = new Date().getTime();
+      const response = await fetch(`/api/admin/tenants/${tenantId}?_cb=${cacheBuster}`, {
         headers: {
           "Authorization": `Bearer ${token}`,
+          "Cache-Control": "no-cache",
         },
       });
 
@@ -242,6 +245,7 @@ export function AdminTenants({ token }: AdminTenantsProps) {
       }
 
       const data = await response.json();
+      console.log("Fetched tenant detail data:", data);
       setSelectedTenant(data);
     } catch (error) {
       console.error("Error fetching tenant details:", error);
