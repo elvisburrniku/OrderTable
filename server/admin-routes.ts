@@ -259,6 +259,9 @@ export function registerAdminRoutes(app: Express) {
   app.put("/api/admin/tenants/:id", requireAdminAuth, async (req: Request, res: Response) => {
     try {
       const tenantId = parseInt(req.params.id);
+      
+      // Handle both direct fields and nested tenant object
+      const tenant = req.body.tenant || req.body;
       const {
         name,
         subscriptionStatus,
@@ -270,19 +273,60 @@ export function registerAdminRoutes(app: Express) {
         subscriptionEndDate,
         stripeCustomerId,
         stripeSubscriptionId,
-      } = req.body;
+      } = tenant;
+
+      // Get the current tenant to compare against
+      const currentTenant = await adminStorage.getTenantById(tenantId);
+      if (!currentTenant) {
+        return res.status(404).json({ message: "Tenant not found" });
+      }
 
       const updateData: any = {};
-      if (name !== undefined) updateData.name = name;
-      if (subscriptionStatus !== undefined) updateData.subscriptionStatus = subscriptionStatus;
-      if (subscriptionPlanId !== undefined) updateData.subscriptionPlanId = subscriptionPlanId;
-      if (maxRestaurants !== undefined) updateData.maxRestaurants = maxRestaurants;
-      if (additionalRestaurants !== undefined) updateData.additionalRestaurants = additionalRestaurants;
-      if (additionalRestaurantsCost !== undefined) updateData.additionalRestaurantsCost = additionalRestaurantsCost;
-      if (subscriptionStartDate !== undefined) updateData.subscriptionStartDate = new Date(subscriptionStartDate);
-      if (subscriptionEndDate !== undefined) updateData.subscriptionEndDate = new Date(subscriptionEndDate);
-      if (stripeCustomerId !== undefined) updateData.stripeCustomerId = stripeCustomerId;
-      if (stripeSubscriptionId !== undefined) updateData.stripeSubscriptionId = stripeSubscriptionId;
+      
+      // Only include fields that have actually changed
+      if (name !== undefined && name !== currentTenant.tenant.name) {
+        updateData.name = name;
+      }
+      if (subscriptionStatus !== undefined && subscriptionStatus !== currentTenant.tenant.subscriptionStatus) {
+        updateData.subscriptionStatus = subscriptionStatus;
+      }
+      if (subscriptionPlanId !== undefined && subscriptionPlanId !== currentTenant.tenant.subscriptionPlanId) {
+        updateData.subscriptionPlanId = subscriptionPlanId;
+      }
+      if (maxRestaurants !== undefined && maxRestaurants !== currentTenant.tenant.maxRestaurants) {
+        updateData.maxRestaurants = maxRestaurants;
+      }
+      if (additionalRestaurants !== undefined && additionalRestaurants !== currentTenant.tenant.additionalRestaurants) {
+        updateData.additionalRestaurants = additionalRestaurants;
+      }
+      if (additionalRestaurantsCost !== undefined && additionalRestaurantsCost !== currentTenant.tenant.additionalRestaurantsCost) {
+        updateData.additionalRestaurantsCost = additionalRestaurantsCost;
+      }
+      if (subscriptionStartDate !== undefined) {
+        const newStartDate = new Date(subscriptionStartDate);
+        const currentStartDate = currentTenant.tenant.subscriptionStartDate ? new Date(currentTenant.tenant.subscriptionStartDate) : null;
+        if (!currentStartDate || newStartDate.getTime() !== currentStartDate.getTime()) {
+          updateData.subscriptionStartDate = newStartDate;
+        }
+      }
+      if (subscriptionEndDate !== undefined) {
+        const newEndDate = new Date(subscriptionEndDate);
+        const currentEndDate = currentTenant.tenant.subscriptionEndDate ? new Date(currentTenant.tenant.subscriptionEndDate) : null;
+        if (!currentEndDate || newEndDate.getTime() !== currentEndDate.getTime()) {
+          updateData.subscriptionEndDate = newEndDate;
+        }
+      }
+      if (stripeCustomerId !== undefined && stripeCustomerId !== currentTenant.tenant.stripeCustomerId) {
+        updateData.stripeCustomerId = stripeCustomerId;
+      }
+      if (stripeSubscriptionId !== undefined && stripeSubscriptionId !== currentTenant.tenant.stripeSubscriptionId) {
+        updateData.stripeSubscriptionId = stripeSubscriptionId;
+      }
+
+      // If no fields to update, return success without database call
+      if (Object.keys(updateData).length === 0) {
+        return res.json(currentTenant.tenant);
+      }
 
       const updatedTenant = await adminStorage.updateTenant(tenantId, updateData);
       

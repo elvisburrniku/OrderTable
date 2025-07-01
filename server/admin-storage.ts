@@ -483,7 +483,7 @@ export class AdminStorage {
         subscriptionPlan = planResult.rows?.[0] || null;
       }
 
-      return {
+      const result = {
         tenant: {
           id: tenant.id,
           name: tenant.name,
@@ -618,7 +618,7 @@ export class AdminStorage {
     try {
       console.log(`AdminStorage: Fetching users for tenant ${tenantId}`);
       
-      // Use Drizzle ORM query instead of raw SQL
+      // Use Drizzle ORM query with distinct users only
       const usersResult = await db
         .select({
           id: users.id,
@@ -626,20 +626,34 @@ export class AdminStorage {
           email: users.email,
           createdAt: users.createdAt,
           role: tenantUsers.role,
-          restaurantName: restaurants.name,
         })
         .from(users)
         .innerJoin(tenantUsers, eq(users.id, tenantUsers.userId))
-        .leftJoin(restaurants, and(
-          eq(users.id, restaurants.userId),
-          eq(restaurants.tenantId, tenantId)
-        ))
         .where(eq(tenantUsers.tenantId, tenantId))
         .orderBy(desc(users.createdAt));
 
-      console.log(`AdminStorage: Found ${usersResult.length} users for tenant ${tenantId}`);
+      // Get primary restaurant for each user separately to avoid duplicates
+      const usersWithRestaurants = await Promise.all(
+        usersResult.map(async (user) => {
+          const userRestaurant = await db
+            .select({ name: restaurants.name })
+            .from(restaurants)
+            .where(and(
+              eq(restaurants.userId, user.id),
+              eq(restaurants.tenantId, tenantId)
+            ))
+            .limit(1);
+          
+          return {
+            ...user,
+            restaurantName: userRestaurant[0]?.name || null,
+          };
+        })
+      );
+
+      console.log(`AdminStorage: Found ${usersWithRestaurants.length} users for tenant ${tenantId}`);
       
-      const mappedUsers = usersResult.map((user: any) => ({
+      const mappedUsers = usersWithRestaurants.map((user: any) => ({
         id: user.id,
         name: user.name,
         email: user.email,
@@ -669,64 +683,32 @@ export class AdminStorage {
     stripeSubscriptionId?: string;
   }) {
     try {
-      // Build SET clause dynamically
-      const setParts = [];
-      const values = [];
+      // Filter out undefined values and map to database column names
+      const fieldsToUpdate: any = {};
       
-      if (updateData.name !== undefined) {
-        setParts.push('name = $' + (values.length + 1));
-        values.push(updateData.name);
-      }
-      if (updateData.subscriptionStatus !== undefined) {
-        setParts.push('subscription_status = $' + (values.length + 1));
-        values.push(updateData.subscriptionStatus);
-      }
-      if (updateData.subscriptionPlanId !== undefined) {
-        setParts.push('subscription_plan_id = $' + (values.length + 1));
-        values.push(updateData.subscriptionPlanId);
-      }
-      if (updateData.maxRestaurants !== undefined) {
-        setParts.push('max_restaurants = $' + (values.length + 1));
-        values.push(updateData.maxRestaurants);
-      }
-      if (updateData.additionalRestaurants !== undefined) {
-        setParts.push('additional_restaurants = $' + (values.length + 1));
-        values.push(updateData.additionalRestaurants);
-      }
-      if (updateData.additionalRestaurantsCost !== undefined) {
-        setParts.push('additional_restaurants_cost = $' + (values.length + 1));
-        values.push(updateData.additionalRestaurantsCost);
-      }
-      if (updateData.subscriptionStartDate !== undefined) {
-        setParts.push('subscription_start_date = $' + (values.length + 1));
-        values.push(updateData.subscriptionStartDate);
-      }
-      if (updateData.subscriptionEndDate !== undefined) {
-        setParts.push('subscription_end_date = $' + (values.length + 1));
-        values.push(updateData.subscriptionEndDate);
-      }
-      if (updateData.stripeCustomerId !== undefined) {
-        setParts.push('stripe_customer_id = $' + (values.length + 1));
-        values.push(updateData.stripeCustomerId);
-      }
-      if (updateData.stripeSubscriptionId !== undefined) {
-        setParts.push('stripe_subscription_id = $' + (values.length + 1));
-        values.push(updateData.stripeSubscriptionId);
-      }
+      if (updateData.name !== undefined) fieldsToUpdate.name = updateData.name;
+      if (updateData.subscriptionStatus !== undefined) fieldsToUpdate.subscriptionStatus = updateData.subscriptionStatus;
+      if (updateData.subscriptionPlanId !== undefined) fieldsToUpdate.subscriptionPlanId = updateData.subscriptionPlanId;
+      if (updateData.maxRestaurants !== undefined) fieldsToUpdate.maxRestaurants = updateData.maxRestaurants;
+      if (updateData.additionalRestaurants !== undefined) fieldsToUpdate.additionalRestaurants = updateData.additionalRestaurants;
+      if (updateData.additionalRestaurantsCost !== undefined) fieldsToUpdate.additionalRestaurantsCost = updateData.additionalRestaurantsCost;
+      if (updateData.subscriptionStartDate !== undefined) fieldsToUpdate.subscriptionStartDate = updateData.subscriptionStartDate;
+      if (updateData.subscriptionEndDate !== undefined) fieldsToUpdate.subscriptionEndDate = updateData.subscriptionEndDate;
+      if (updateData.stripeCustomerId !== undefined) fieldsToUpdate.stripeCustomerId = updateData.stripeCustomerId;
+      if (updateData.stripeSubscriptionId !== undefined) fieldsToUpdate.stripeSubscriptionId = updateData.stripeSubscriptionId;
 
-      if (setParts.length === 0) {
+      if (Object.keys(fieldsToUpdate).length === 0) {
         throw new Error('No fields to update');
       }
 
-      // Use simple approach for now - just update subscription status
-      if (updateData.subscriptionStatus) {
-        const result = await db.execute(sql`
-          UPDATE tenants SET subscription_status = ${updateData.subscriptionStatus} WHERE id = ${tenantId} RETURNING *
-        `);
-        return result.rows?.[0] || null;
-      }
+      // Use Drizzle ORM update method
+      const [updatedTenant] = await db
+        .update(tenants)
+        .set(fieldsToUpdate)
+        .where(eq(tenants.id, tenantId))
+        .returning();
       
-      return null;
+      return updatedTenant || null;
     } catch (error) {
       console.error('Error in updateTenant:', error);
       throw error;

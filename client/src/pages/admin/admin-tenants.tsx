@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { Textarea } from "@/components/ui/textarea";
 import { Table, TableHeader, TableBody, TableHead, TableRow, TableCell } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
@@ -387,6 +387,26 @@ export function AdminTenants({ token }: AdminTenantsProps) {
   const pauseTenant = async (tenantId: number, pauseUntilDate?: string) => {
     setIsUpdating(true);
     try {
+      // Validate pause until date
+      if (!pauseUntilDate) {
+        toast({
+          title: "Error",
+          description: "Please select a pause end date",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      const pauseDate = new Date(pauseUntilDate);
+      if (pauseDate <= new Date()) {
+        toast({
+          title: "Error",
+          description: "Pause end date must be in the future",
+          variant: "destructive",
+        });
+        return;
+      }
+
       const response = await fetch(`/api/admin/tenants/${tenantId}/pause`, {
         method: "POST",
         headers: {
@@ -397,21 +417,40 @@ export function AdminTenants({ token }: AdminTenantsProps) {
       });
 
       if (!response.ok) {
-        throw new Error("Failed to pause tenant");
+        const errorData = await response.json();
+        throw new Error(errorData.message || "Failed to pause tenant");
       }
+
+      const result = await response.json();
 
       // Update tenant status
       setTenants(prev => prev.map(t => 
-        t.tenant.id === tenantId ? { ...t, tenant: { ...t.tenant, subscriptionStatus: 'paused' } } : t
+        t.tenant.id === tenantId ? { 
+          ...t, 
+          tenant: { 
+            ...t.tenant, 
+            subscriptionStatus: 'paused',
+            pauseStartDate: new Date().toISOString(),
+            pauseEndDate: pauseUntilDate
+          } 
+        } : t
       ));
       
       if (selectedTenant && selectedTenant.tenant.id === tenantId) {
-        setSelectedTenant(prev => prev ? { ...prev, tenant: { ...prev.tenant, subscriptionStatus: 'paused' } } : null);
+        setSelectedTenant(prev => prev ? { 
+          ...prev, 
+          tenant: { 
+            ...prev.tenant, 
+            subscriptionStatus: 'paused',
+            pauseStartDate: new Date().toISOString(),
+            pauseEndDate: pauseUntilDate
+          } 
+        } : null);
       }
 
       toast({
         title: "Success",
-        description: "Tenant paused successfully",
+        description: result.message || "Tenant paused successfully",
       });
 
       setPauseUntil("");
@@ -419,7 +458,7 @@ export function AdminTenants({ token }: AdminTenantsProps) {
       console.error("Error pausing tenant:", error);
       toast({
         title: "Error",
-        description: "Failed to pause tenant",
+        description: error instanceof Error ? error.message : "Failed to pause tenant",
         variant: "destructive",
       });
     } finally {
@@ -613,277 +652,16 @@ export function AdminTenants({ token }: AdminTenantsProps) {
         onViewTenant={fetchTenantDetail}
         onEditTenant={handleEditTenant}
         onPauseTenant={pauseTenant}
+        onSuspendTenant={suspendTenant}
+        onUnsuspendTenant={unsuspendTenant}
         selectedTenant={selectedTenant}
         isLoadingTenant={isLoadingTenant}
         showDetailDialog={showDetailDialog}
         setShowDetailDialog={setShowDetailDialog}
+        isUpdating={isUpdating}
       />
 
-      <Card>
-        <CardHeader>
-          <CardTitle>Filters & Search</CardTitle>
-          <CardDescription>
-            Find and filter tenants by status and search terms
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <div className="flex flex-col sm:flex-row gap-4">
-            <div className="flex-1">
-              <div className="relative">
-                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                <Input
-                  placeholder="Search by name or slug..."
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                  className="pl-10"
-                />
-              </div>
-            </div>
-            <div className="w-full sm:w-48">
-              <Select value={statusFilter} onValueChange={setStatusFilter}>
-                <SelectTrigger>
-                  <Filter className="h-4 w-4 mr-2" />
-                  <SelectValue placeholder="Filter by status" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">All Statuses</SelectItem>
-                  <SelectItem value="active">Active</SelectItem>
-                  <SelectItem value="trial">Trial</SelectItem>
-                  <SelectItem value="expired">Expired</SelectItem>
-                  <SelectItem value="cancelled">Cancelled</SelectItem>
-                  <SelectItem value="suspended">Suspended</SelectItem>
-                  <SelectItem value="paused">Paused</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-          </div>
-        </CardContent>
-      </Card>
 
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Building className="h-5 w-5" />
-            Tenants ({filteredTenants.length})
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="overflow-x-auto">
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Organization</TableHead>
-                  <TableHead>Status</TableHead>
-                  <TableHead>Plan</TableHead>
-                  <TableHead>Resources</TableHead>
-                  <TableHead>Created</TableHead>
-                  <TableHead>Actions</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {filteredTenants.map((tenantData) => (
-                  <TableRow key={tenantData.tenant.id}>
-                    <TableCell>
-                      <div>
-                        <div className="font-medium">{tenantData.tenant.name}</div>
-                        <div className="text-sm text-muted-foreground">
-                          /{tenantData.tenant.slug}
-                        </div>
-                      </div>
-                    </TableCell>
-                    <TableCell>
-                      <div className="space-y-1">
-                        {getStatusBadge(tenantData.tenant.subscriptionStatus)}
-                        {tenantData.tenant.subscriptionStatus === 'paused' && tenantData.tenant.pauseEndDate && (
-                          <div className="text-xs text-muted-foreground">
-                            Auto unpause: <PauseCountdown pauseEndDate={tenantData.tenant.pauseEndDate} />
-                          </div>
-                        )}
-                      </div>
-                    </TableCell>
-                    <TableCell>
-                      <div>
-                        <div className="font-medium">
-                          {tenantData.subscriptionPlan?.name || "No Plan"}
-                        </div>
-                        {tenantData.subscriptionPlan?.price && (
-                          <div className="text-sm text-muted-foreground">
-                            ${(tenantData.subscriptionPlan.price / 100).toFixed(2)}/month
-                          </div>
-                        )}
-                      </div>
-                    </TableCell>
-                    <TableCell>
-                      <div className="flex gap-4 text-sm">
-                        <div className="flex items-center gap-1">
-                          <Building className="h-3 w-3" />
-                          {tenantData.restaurantCount}
-                        </div>
-                        <div className="flex items-center gap-1">
-                          <Users className="h-3 w-3" />
-                          {tenantData.userCount}
-                        </div>
-                        <div className="flex items-center gap-1">
-                          <Calendar className="h-3 w-3" />
-                          {tenantData.bookingCount}
-                        </div>
-                      </div>
-                    </TableCell>
-                    <TableCell>
-                      {formatDate(tenantData.tenant.createdAt)}
-                    </TableCell>
-                    <TableCell>
-                      <div className="flex items-center gap-2">
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => handleViewTenant(tenantData)}
-                        >
-                          <Eye className="h-4 w-4" />
-                        </Button>
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => handleEditTenant(tenantData)}
-                        >
-                          <Edit className="h-4 w-4" />
-                        </Button>
-                        
-                        {tenantData.tenant.subscriptionStatus === 'suspended' ? (
-                          <AlertDialog>
-                            <AlertDialogTrigger asChild>
-                              <Button variant="outline" size="sm">
-                                <Play className="h-4 w-4" />
-                              </Button>
-                            </AlertDialogTrigger>
-                            <AlertDialogContent>
-                              <AlertDialogHeader>
-                                <AlertDialogTitle>Unsuspend Tenant</AlertDialogTitle>
-                                <AlertDialogDescription>
-                                  Are you sure you want to unsuspend {tenantData.tenant.name}? 
-                                  Their service will be restored immediately.
-                                </AlertDialogDescription>
-                              </AlertDialogHeader>
-                              <AlertDialogFooter>
-                                <AlertDialogCancel>Cancel</AlertDialogCancel>
-                                <AlertDialogAction
-                                  onClick={() => unsuspendTenant(tenantData.tenant.id)}
-                                  disabled={isUpdating}
-                                >
-                                  Unsuspend
-                                </AlertDialogAction>
-                              </AlertDialogFooter>
-                            </AlertDialogContent>
-                          </AlertDialog>
-                        ) : tenantData.tenant.subscriptionStatus === 'paused' ? (
-                          <AlertDialog>
-                            <AlertDialogTrigger asChild>
-                              <Button variant="outline" size="sm">
-                                <Play className="h-4 w-4" />
-                              </Button>
-                            </AlertDialogTrigger>
-                            <AlertDialogContent>
-                              <AlertDialogHeader>
-                                <AlertDialogTitle>Resume Tenant</AlertDialogTitle>
-                                <AlertDialogDescription>
-                                  Are you sure you want to resume {tenantData.tenant.name}? 
-                                  Their service will be restored and billing will continue.
-                                </AlertDialogDescription>
-                              </AlertDialogHeader>
-                              <AlertDialogFooter>
-                                <AlertDialogCancel>Cancel</AlertDialogCancel>
-                                <AlertDialogAction
-                                  onClick={() => unsuspendTenant(tenantData.tenant.id)}
-                                  disabled={isUpdating}
-                                >
-                                  Resume
-                                </AlertDialogAction>
-                              </AlertDialogFooter>
-                            </AlertDialogContent>
-                          </AlertDialog>
-                        ) : (
-                          <>
-                            <AlertDialog>
-                              <AlertDialogTrigger asChild>
-                                <Button variant="outline" size="sm">
-                                  <Ban className="h-4 w-4" />
-                                </Button>
-                              </AlertDialogTrigger>
-                              <AlertDialogContent>
-                                <AlertDialogHeader>
-                                  <AlertDialogTitle>Suspend Tenant</AlertDialogTitle>
-                                  <AlertDialogDescription>
-                                    This will immediately suspend {tenantData.tenant.name} and block access to their system.
-                                  </AlertDialogDescription>
-                                </AlertDialogHeader>
-                                <div className="py-4">
-                                  <Label htmlFor="suspend-reason">Reason (optional)</Label>
-                                  <Textarea
-                                    id="suspend-reason"
-                                    placeholder="Enter reason for suspension..."
-                                    value={suspendReason}
-                                    onChange={(e) => setSuspendReason(e.target.value)}
-                                    className="mt-2"
-                                  />
-                                </div>
-                                <AlertDialogFooter>
-                                  <AlertDialogCancel>Cancel</AlertDialogCancel>
-                                  <AlertDialogAction
-                                    onClick={() => suspendTenant(tenantData.tenant.id, suspendReason)}
-                                    disabled={isUpdating}
-                                    className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-                                  >
-                                    Suspend
-                                  </AlertDialogAction>
-                                </AlertDialogFooter>
-                              </AlertDialogContent>
-                            </AlertDialog>
-                            
-                            <AlertDialog>
-                              <AlertDialogTrigger asChild>
-                                <Button variant="outline" size="sm">
-                                  <Pause className="h-4 w-4" />
-                                </Button>
-                              </AlertDialogTrigger>
-                              <AlertDialogContent>
-                                <AlertDialogHeader>
-                                  <AlertDialogTitle>Pause Tenant</AlertDialogTitle>
-                                  <AlertDialogDescription>
-                                    This will pause {tenantData.tenant.name}'s service. They can be resumed later.
-                                  </AlertDialogDescription>
-                                </AlertDialogHeader>
-                                <div className="py-4">
-                                  <Label htmlFor="pause-until">Pause until (optional)</Label>
-                                  <Input
-                                    id="pause-until"
-                                    type="datetime-local"
-                                    value={pauseUntil}
-                                    onChange={(e) => setPauseUntil(e.target.value)}
-                                    className="mt-2"
-                                  />
-                                </div>
-                                <AlertDialogFooter>
-                                  <AlertDialogCancel>Cancel</AlertDialogCancel>
-                                  <AlertDialogAction
-                                    onClick={() => pauseTenant(tenantData.tenant.id, pauseUntil)}
-                                    disabled={isUpdating}
-                                  >
-                                    Pause
-                                  </AlertDialogAction>
-                                </AlertDialogFooter>
-                              </AlertDialogContent>
-                            </AlertDialog>
-                          </>
-                        )}
-                      </div>
-                    </TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-          </div>
-        </CardContent>
-      </Card>
 
       {/* Edit Tenant Dialog */}
       <Dialog open={showEditDialog} onOpenChange={setShowEditDialog}>
@@ -1042,290 +820,6 @@ export function AdminTenants({ token }: AdminTenantsProps) {
               </div>
             </div>
           )}
-        </DialogContent>
-      </Dialog>
-
-      {/* Tenant Detail Dialog */}
-      <Dialog open={showDetailDialog} onOpenChange={setShowDetailDialog}>
-        <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
-          <DialogHeader>
-            <DialogTitle className="flex items-center gap-2">
-              <Building className="h-5 w-5" />
-              {selectedTenant?.tenant.name || "Tenant Details"}
-            </DialogTitle>
-            <DialogDescription>
-              Comprehensive view of tenant information and statistics
-            </DialogDescription>
-          </DialogHeader>
-
-          {isLoadingTenant ? (
-            <div className="animate-pulse space-y-4">
-              <div className="h-4 bg-gray-200 rounded w-3/4"></div>
-              <div className="h-32 bg-gray-200 rounded"></div>
-            </div>
-          ) : selectedTenant ? (
-            <Tabs defaultValue="overview" className="w-full">
-              <TabsList className="grid w-full grid-cols-4">
-                <TabsTrigger value="overview">Overview</TabsTrigger>
-                <TabsTrigger value="subscription">Subscription</TabsTrigger>
-                <TabsTrigger value="restaurants">Restaurants</TabsTrigger>
-                <TabsTrigger value="users">Users</TabsTrigger>
-              </TabsList>
-
-              <TabsContent value="overview" className="space-y-4">
-                <Card>
-                  <CardHeader>
-                    <CardTitle className="flex items-center justify-between">
-                      Basic Information
-                      {getStatusBadge(selectedTenant.tenant.subscriptionStatus)}
-                    </CardTitle>
-                  </CardHeader>
-                  <CardContent className="grid grid-cols-2 gap-4">
-                    <div>
-                      <Label className="text-sm font-medium">Organization Name</Label>
-                      <div className="text-lg">{selectedTenant.tenant.name}</div>
-                    </div>
-                    <div>
-                      <Label className="text-sm font-medium">Slug</Label>
-                      <div className="text-lg font-mono">{selectedTenant.tenant.slug}</div>
-                    </div>
-                    <div>
-                      <Label className="text-sm font-medium">Created</Label>
-                      <div>{formatDate(selectedTenant.tenant.createdAt)}</div>
-                    </div>
-                    <div>
-                      <Label className="text-sm font-medium">Recent Bookings (30 days)</Label>
-                      <div className="text-lg font-semibold">{selectedTenant.recentBookingsCount || 0}</div>
-                    </div>
-                  </CardContent>
-                </Card>
-
-                <div className="grid grid-cols-3 gap-4">
-                  <Card>
-                    <CardContent className="flex items-center p-6">
-                      <Building className="h-8 w-8 text-blue-600" />
-                      <div className="ml-4">
-                        <div className="text-2xl font-bold">{selectedTenant.restaurants?.length || 0}</div>
-                        <div className="text-sm text-muted-foreground">Restaurants</div>
-                      </div>
-                    </CardContent>
-                  </Card>
-                  <Card>
-                    <CardContent className="flex items-center p-6">
-                      <Users className="h-8 w-8 text-green-600" />
-                      <div className="ml-4">
-                        <div className="text-2xl font-bold">{selectedTenant.users?.length || 0}</div>
-                        <div className="text-sm text-muted-foreground">Users</div>
-                      </div>
-                    </CardContent>
-                  </Card>
-                  <Card>
-                    <CardContent className="flex items-center p-6">
-                      <Calendar className="h-8 w-8 text-purple-600" />
-                      <div className="ml-4">
-                        <div className="text-2xl font-bold">{selectedTenant.bookingCount || 0}</div>
-                        <div className="text-sm text-muted-foreground">Total Bookings</div>
-                      </div>
-                    </CardContent>
-                  </Card>
-                </div>
-              </TabsContent>
-
-              <TabsContent value="subscription" className="space-y-4">
-                <Card>
-                  <CardHeader>
-                    <CardTitle>Subscription Details</CardTitle>
-                  </CardHeader>
-                  <CardContent className="space-y-4">
-                    <div className="grid grid-cols-2 gap-4">
-                      <div>
-                        <Label className="text-sm font-medium">Current Plan</Label>
-                        <div className="text-lg">{selectedTenant.subscriptionPlan?.name || "No Plan"}</div>
-                      </div>
-                      <div>
-                        <Label className="text-sm font-medium">Price</Label>
-                        <div className="text-lg">
-                          {selectedTenant.subscriptionPlan?.price ? 
-                            `$${(selectedTenant.subscriptionPlan.price / 100).toFixed(2)}/${selectedTenant.subscriptionPlan.interval}` : 
-                            "Free"
-                          }
-                        </div>
-                      </div>
-                      <div>
-                        <Label className="text-sm font-medium">Trial Period</Label>
-                        <div>
-                          {selectedTenant.tenant.trialStartDate ? formatDate(selectedTenant.tenant.trialStartDate) : "N/A"} - 
-                          {selectedTenant.tenant.trialEndDate ? formatDate(selectedTenant.tenant.trialEndDate) : "N/A"}
-                        </div>
-                      </div>
-                      <div>
-                        <Label className="text-sm font-medium">Subscription Period</Label>
-                        <div>
-                          {selectedTenant.tenant.subscriptionStartDate ? formatDate(selectedTenant.tenant.subscriptionStartDate) : "N/A"} - 
-                          {selectedTenant.tenant.subscriptionEndDate ? formatDate(selectedTenant.tenant.subscriptionEndDate) : "N/A"}
-                        </div>
-                      </div>
-                    </div>
-                    
-                    {selectedTenant.tenant.stripeCustomerId && (
-                      <div className="pt-4 border-t">
-                        <Label className="text-sm font-medium">Stripe Information</Label>
-                        <div className="grid grid-cols-2 gap-4 mt-2">
-                          <div>
-                            <div className="text-sm text-muted-foreground">Customer ID</div>
-                            <div className="font-mono text-sm">{selectedTenant.tenant.stripeCustomerId}</div>
-                          </div>
-                          {selectedTenant.tenant.stripeSubscriptionId && (
-                            <div>
-                              <div className="text-sm text-muted-foreground">Subscription ID</div>
-                              <div className="font-mono text-sm">{selectedTenant.tenant.stripeSubscriptionId}</div>
-                            </div>
-                          )}
-                        </div>
-                      </div>
-                    )}
-                  </CardContent>
-                </Card>
-
-                {/* Subscription Price Update Section */}
-                <Card>
-                  <CardHeader>
-                    <CardTitle className="flex items-center space-x-2">
-                      <DollarSign className="h-5 w-5" />
-                      <span>Update Subscription Pricing</span>
-                    </CardTitle>
-                    <CardDescription>
-                      Change the tenant's subscription plan and automatically update Stripe billing
-                    </CardDescription>
-                  </CardHeader>
-                  <CardContent className="space-y-4">
-                    <div className="grid grid-cols-2 gap-4">
-                      <div>
-                        <Label htmlFor="new-plan">New Subscription Plan</Label>
-                        <Select
-                          value={selectedSubscriptionPlan}
-                          onValueChange={setSelectedSubscriptionPlan}
-                        >
-                          <SelectTrigger>
-                            <SelectValue placeholder="Select new plan" />
-                          </SelectTrigger>
-                          <SelectContent>
-                            {subscriptionPlans.map((plan) => (
-                              <SelectItem key={plan.id} value={plan.id.toString()}>
-                                {plan.name} - ${(plan.price / 100).toFixed(2)}/{plan.interval}
-                              </SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
-                      </div>
-                      <div className="flex items-end">
-                        <Button 
-                          onClick={() => handleSubscriptionPriceUpdate(selectedTenant.tenant.id)}
-                          disabled={!selectedSubscriptionPlan || isUpdating}
-                          className="w-full"
-                        >
-                          {isUpdating ? "Updating..." : "Update Subscription & Billing"}
-                        </Button>
-                      </div>
-                    </div>
-                    
-                    {selectedSubscriptionPlan && (
-                      <div className="mt-4 p-4 bg-blue-50 rounded-lg border border-blue-200">
-                        <div className="text-sm font-medium text-blue-900 mb-2">Pricing Change Preview</div>
-                        <div className="space-y-1 text-sm text-blue-800">
-                          <div>Current: {selectedTenant.subscriptionPlan?.name || "No Plan"} - ${selectedTenant.subscriptionPlan?.price ? (selectedTenant.subscriptionPlan.price / 100).toFixed(2) : "0.00"}</div>
-                          <div>New: {subscriptionPlans.find(p => p.id.toString() === selectedSubscriptionPlan)?.name} - ${subscriptionPlans.find(p => p.id.toString() === selectedSubscriptionPlan) ? (subscriptionPlans.find(p => p.id.toString() === selectedSubscriptionPlan)!.price / 100).toFixed(2) : "0.00"}</div>
-                          <div className="font-medium">
-                            Change: {selectedSubscriptionPlan && selectedTenant.subscriptionPlan?.price ? 
-                              (subscriptionPlans.find(p => p.id.toString() === selectedSubscriptionPlan)!.price - selectedTenant.subscriptionPlan.price) > 0 ? 
-                                `+$${((subscriptionPlans.find(p => p.id.toString() === selectedSubscriptionPlan)!.price - selectedTenant.subscriptionPlan.price) / 100).toFixed(2)}` :
-                                `-$${((selectedTenant.subscriptionPlan.price - subscriptionPlans.find(p => p.id.toString() === selectedSubscriptionPlan)!.price) / 100).toFixed(2)}`
-                              : "N/A"
-                            }
-                          </div>
-                        </div>
-                        <div className="mt-2 text-xs text-blue-600">
-                          ✓ Stripe subscription will be updated automatically<br/>
-                          ✓ Prorated billing will be applied for the current period<br/>
-                          ✓ Next billing cycle will use the new price
-                        </div>
-                      </div>
-                    )}
-                  </CardContent>
-                </Card>
-              </TabsContent>
-
-              <TabsContent value="restaurants" className="space-y-4">
-                <Card>
-                  <CardHeader>
-                    <CardTitle>Restaurants ({selectedTenant.restaurants?.length || 0})</CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="space-y-4">
-                      {selectedTenant.restaurants?.map((restaurant) => (
-                        <div key={restaurant.id} className="border rounded-lg p-4">
-                          <div className="flex items-start justify-between">
-                            <div>
-                              <h4 className="font-semibold">{restaurant.name}</h4>
-                              <p className="text-sm text-muted-foreground">{restaurant.address}</p>
-                              <p className="text-sm">
-                                Owner: {restaurant.userName} ({restaurant.userEmail})
-                              </p>
-                            </div>
-                            <div className="text-right text-sm">
-                              <div>Created: {formatDate(restaurant.createdAt)}</div>
-                              <div className="flex gap-2 mt-1">
-                                <Badge variant={restaurant.setupCompleted ? "default" : "secondary"}>
-                                  {restaurant.setupCompleted ? "Complete" : "Setup Pending"}
-                                </Badge>
-                                <Badge variant={restaurant.guestBookingEnabled ? "default" : "outline"}>
-                                  {restaurant.guestBookingEnabled ? "Guest Booking" : "No Guest Booking"}
-                                </Badge>
-                              </div>
-                            </div>
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  </CardContent>
-                </Card>
-              </TabsContent>
-
-              <TabsContent value="users" className="space-y-4">
-                <Card>
-                  <CardHeader>
-                    <CardTitle>Users ({selectedTenant.users?.length || 0})</CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="space-y-4">
-                      {selectedTenant.users?.map((user) => (
-                        <div key={user.id} className="border rounded-lg p-4">
-                          <div className="flex items-center justify-between">
-                            <div>
-                              <h4 className="font-semibold">{user.name}</h4>
-                              <p className="text-sm text-muted-foreground">{user.email}</p>
-                              {user.restaurantName && (
-                                <p className="text-sm">Restaurant: {user.restaurantName}</p>
-                              )}
-                            </div>
-                            <div className="text-right text-sm">
-                              <div>Joined: {formatDate(user.createdAt)}</div>
-                              <div className="flex gap-2 mt-1">
-                                <Badge>{user.role}</Badge>
-                                {user.ssoProvider && (
-                                  <Badge variant="outline">{user.ssoProvider}</Badge>
-                                )}
-                              </div>
-                            </div>
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  </CardContent>
-                </Card>
-              </TabsContent>
-            </Tabs>
-          ) : null}
         </DialogContent>
       </Dialog>
     </div>

@@ -11,7 +11,7 @@ interface LayoutWrapperProps {
 
 export function LayoutWrapper({ children }: LayoutWrapperProps) {
   const [location] = useLocation();
-  const { user } = useAuth();
+  const { user, restaurant } = useAuth();
   
   // Extract tenant ID from the URL for authenticated routes
   const tenantMatch = location.match(/^\/(\d+)/);
@@ -93,7 +93,7 @@ export function LayoutWrapper({ children }: LayoutWrapperProps) {
   // Render with sidebar for authenticated routes with active subscriptions
   return (
     <div className="flex min-h-screen bg-gray-50">
-      <DashboardSidebar tenantId={tenantId} />
+      <DashboardSidebar tenantId={tenantId} restaurantId={restaurant?.id} />
       <main className="flex-1 overflow-auto">
         {/* Header with notification indicator */}
         <div className="flex justify-end items-center p-4 bg-white border-b border-gray-200">
