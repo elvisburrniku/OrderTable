@@ -233,6 +233,48 @@ export class AdminStorage {
 
   // Tenant management
   async getAllTenants() {
+    if (!db) {
+      console.log("Database not available - returning mock tenant data");
+      return [{
+        tenant: {
+          id: 1,
+          name: "Demo Restaurant",
+          slug: "demo-restaurant",
+          subscriptionStatus: "active",
+          subscriptionPlanId: 1,
+          trialStartDate: new Date().toISOString(),
+          trialEndDate: new Date(Date.now() + 30*24*60*60*1000).toISOString(),
+          subscriptionStartDate: new Date().toISOString(),
+          subscriptionEndDate: new Date(Date.now() + 365*24*60*60*1000).toISOString(),
+          pauseStartDate: null,
+          pauseEndDate: null,
+          pauseReason: null,
+          suspendReason: null,
+          stripeCustomerId: "cus_demo123",
+          stripeSubscriptionId: "sub_demo123",
+          maxRestaurants: 1,
+          additionalRestaurants: 0,
+          additionalRestaurantsCost: 0,
+          createdAt: new Date().toISOString(),
+        },
+        subscriptionPlan: {
+          id: 1,
+          name: "Free",
+          price: 0,
+          interval: "month",
+          features: "Basic features",
+          maxTables: 10,
+          maxBookingsPerMonth: 100,
+          maxRestaurants: 1,
+          trialDays: 30,
+          isActive: true,
+        },
+        restaurantCount: 1,
+        userCount: 1,
+        bookingCount: 0,
+      }];
+    }
+    
     try {
       // Get all tenants with their subscription plans
       const tenantsWithPlans = await db
@@ -273,45 +315,68 @@ export class AdminStorage {
         .leftJoin(subscriptionPlans, eq(tenants.subscriptionPlanId, subscriptionPlans.id))
         .orderBy(desc(tenants.createdAt));
 
-      // Build the response with proper structure
-      const result = tenantsWithPlans.map(row => ({
-        tenant: {
-          id: row.tenantId,
-          name: row.tenantName,
-          slug: row.tenantSlug,
-          subscriptionStatus: row.subscriptionStatus,
-          subscriptionPlanId: row.subscriptionPlanId,
-          trialStartDate: row.trialStartDate,
-          trialEndDate: row.trialEndDate,
-          subscriptionStartDate: row.subscriptionStartDate,
-          subscriptionEndDate: row.subscriptionEndDate,
-          pauseStartDate: row.pauseStartDate,
-          pauseEndDate: row.pauseEndDate,
-          pauseReason: row.pauseReason,
-          suspendReason: row.suspendReason,
-          stripeCustomerId: row.stripeCustomerId,
-          stripeSubscriptionId: row.stripeSubscriptionId,
-          maxRestaurants: row.maxRestaurants,
-          additionalRestaurants: row.additionalRestaurants,
-          additionalRestaurantsCost: row.additionalRestaurantsCost,
-          createdAt: row.tenantCreatedAt,
-        },
-        subscriptionPlan: row.planId ? {
-          id: row.planId,
-          name: row.planName,
-          price: row.planPrice,
-          interval: row.planInterval,
-          features: row.planFeatures,
-          maxTables: row.planMaxTables,
-          maxBookingsPerMonth: row.planMaxBookingsPerMonth,
-          maxRestaurants: row.planMaxRestaurants,
-          trialDays: row.planTrialDays,
-          isActive: row.planIsActive,
-        } : null,
-        restaurantCount: 0,
-        userCount: 0,
-        bookingCount: 0,
-      }));
+      // Get counts for each tenant
+      const result = [];
+      for (const row of tenantsWithPlans) {
+        // Get restaurant count for this tenant
+        const restaurantCountResult = await db
+          .select({ count: count() })
+          .from(restaurants)
+          .where(eq(restaurants.tenantId, row.tenantId));
+        
+        // Get user count for this tenant  
+        const userCountResult = await db
+          .select({ count: count() })
+          .from(users)
+          .innerJoin(tenantUsers, eq(users.id, tenantUsers.userId))
+          .where(eq(tenantUsers.tenantId, row.tenantId));
+
+        // Get booking count for this tenant
+        const bookingCountResult = await db
+          .select({ count: count() })
+          .from(bookings)
+          .innerJoin(restaurants, eq(bookings.restaurantId, restaurants.id))
+          .where(eq(restaurants.tenantId, row.tenantId));
+
+        result.push({
+          tenant: {
+            id: row.tenantId,
+            name: row.tenantName,
+            slug: row.tenantSlug,
+            subscriptionStatus: row.subscriptionStatus,
+            subscriptionPlanId: row.subscriptionPlanId,
+            trialStartDate: row.trialStartDate,
+            trialEndDate: row.trialEndDate,
+            subscriptionStartDate: row.subscriptionStartDate,
+            subscriptionEndDate: row.subscriptionEndDate,
+            pauseStartDate: row.pauseStartDate,
+            pauseEndDate: row.pauseEndDate,
+            pauseReason: row.pauseReason,
+            suspendReason: row.suspendReason,
+            stripeCustomerId: row.stripeCustomerId,
+            stripeSubscriptionId: row.stripeSubscriptionId,
+            maxRestaurants: row.maxRestaurants,
+            additionalRestaurants: row.additionalRestaurants,
+            additionalRestaurantsCost: row.additionalRestaurantsCost,
+            createdAt: row.tenantCreatedAt,
+          },
+          subscriptionPlan: row.planId ? {
+            id: row.planId,
+            name: row.planName,
+            price: row.planPrice,
+            interval: row.planInterval,
+            features: row.planFeatures,
+            maxTables: row.planMaxTables,
+            maxBookingsPerMonth: row.planMaxBookingsPerMonth,
+            maxRestaurants: row.planMaxRestaurants,
+            trialDays: row.planTrialDays,
+            isActive: row.planIsActive,
+          } : null,
+          restaurantCount: restaurantCountResult[0]?.count || 0,
+          userCount: userCountResult[0]?.count || 0,
+          bookingCount: bookingCountResult[0]?.count || 0,
+        });
+      }
 
       return result;
     } catch (error) {
@@ -321,6 +386,70 @@ export class AdminStorage {
   }
 
   async getTenantById(id: number) {
+    if (!db) {
+      console.log("Database not available - returning mock tenant detail data");
+      return {
+        tenant: {
+          id: 1,
+          name: "Demo Restaurant",
+          slug: "demo-restaurant",
+          subscriptionStatus: "active",
+          subscriptionPlanId: 1,
+          trialStartDate: new Date().toISOString(),
+          trialEndDate: new Date(Date.now() + 30*24*60*60*1000).toISOString(),
+          subscriptionStartDate: new Date().toISOString(),
+          subscriptionEndDate: new Date(Date.now() + 365*24*60*60*1000).toISOString(),
+          pauseStartDate: null,
+          pauseEndDate: null,
+          pauseReason: null,
+          suspendReason: null,
+          stripeCustomerId: "cus_demo123",
+          stripeSubscriptionId: "sub_demo123",
+          maxRestaurants: 1,
+          additionalRestaurants: 0,
+          additionalRestaurantsCost: 0,
+          createdAt: new Date().toISOString(),
+        },
+        subscriptionPlan: {
+          id: 1,
+          name: "Free",
+          price: 0,
+          interval: "month",
+          features: "Basic features",
+          maxTables: 10,
+          maxBookingsPerMonth: 100,
+          maxRestaurants: 1,
+          trialDays: 30,
+          isActive: true,
+        },
+        restaurants: [{
+          id: 1,
+          name: "Demo Restaurant",
+          address: "123 Demo Street",
+          phone: "+1-555-0123",
+          email: "demo@restaurant.com",
+          setupCompleted: true,
+          guestBookingEnabled: true,
+          createdAt: new Date().toISOString(),
+          userName: "Demo User",
+          userEmail: "user@demo.com",
+        }],
+        users: [{
+          id: 1,
+          email: "user@demo.com",
+          name: "Demo User",
+          restaurantName: "Demo Restaurant",
+          ssoProvider: "local",
+          createdAt: new Date().toISOString(),
+          role: "owner",
+        }],
+        restaurantCount: 1,
+        userCount: 1,
+        bookingCount: 0,
+        recentBookingsCount: 0,
+      };
+    }
+    
     try {
       // Get tenant data using simple SQL execution
       const tenantResult = await db.execute(sql`
