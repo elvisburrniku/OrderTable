@@ -258,7 +258,7 @@ export class DatabaseStorage implements IStorage {
     if (!this.db) throw new Error("Database connection not available");
     
     // Get all tenants the user is associated with
-    const result = await this.db
+    const tenantsResult = await this.db
       .select({
         id: tenants.id,
         name: tenants.name,
@@ -266,15 +266,32 @@ export class DatabaseStorage implements IStorage {
         subscriptionStatus: tenants.subscriptionStatus,
         maxRestaurants: tenants.maxRestaurants,
         isOwner: sql<boolean>`CASE WHEN ${tenantUsers.role} = 'owner' THEN true ELSE false END`,
-        restaurantCount: sql<number>`COALESCE((
-          SELECT COUNT(*) 
-          FROM ${restaurants} 
-          WHERE ${restaurants.tenantId} = ${tenants.id}
-        ), 0)`,
       })
       .from(tenantUsers)
       .leftJoin(tenants, eq(tenantUsers.tenantId, tenants.id))
       .where(eq(tenantUsers.userId, userId));
+
+    // For each tenant, get their restaurants
+    const result = await Promise.all(
+      tenantsResult.map(async (tenant) => {
+        const tenantRestaurants = await this.db
+          .select({
+            id: restaurants.id,
+            name: restaurants.name,
+            tenantId: restaurants.tenantId,
+            description: restaurants.description,
+            address: restaurants.address,
+            cuisine: restaurants.cuisine,
+          })
+          .from(restaurants)
+          .where(eq(restaurants.tenantId, tenant.id));
+
+        return {
+          ...tenant,
+          restaurants: tenantRestaurants,
+        };
+      })
+    );
 
     return result;
   }

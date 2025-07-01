@@ -75,15 +75,17 @@ export function TenantSwitcher({ currentTenantId, onTenantChange }: TenantSwitch
   });
 
   const createRestaurantMutation = useMutation({
-    mutationFn: (data: CreateRestaurantData) =>
-      apiRequest("POST", "/api/restaurants", data),
-    onSuccess: (newRestaurant) => {
+    mutationFn: async (data: CreateRestaurantData) => {
+      const response = await apiRequest("POST", "/api/restaurants", data);
+      return response.json();
+    },
+    onSuccess: (newRestaurant: any) => {
       queryClient.invalidateQueries({ queryKey: ["/api/user/tenants"] });
       setIsCreateDialogOpen(false);
       form.reset();
       toast({
         title: "Restaurant Created",
-        description: `${newRestaurant.name} has been created successfully.`,
+        description: `${newRestaurant?.name || 'Restaurant'} has been created successfully.`,
       });
     },
     onError: (error: any) => {
@@ -120,8 +122,8 @@ export function TenantSwitcher({ currentTenantId, onTenantChange }: TenantSwitch
   };
 
   const currentTenant = tenants?.find(t => t.id === currentTenantId);
-  const allRestaurants = tenants?.flatMap(t => t.restaurants) || [];
-  const currentRestaurant = allRestaurants.find(r => r.tenantId === currentTenantId);
+  const allRestaurants = tenants?.flatMap(t => t.restaurants || []) || [];
+  const currentRestaurant = allRestaurants.find(r => r?.tenantId === currentTenantId);
   
   const canCreateRestaurant = currentTenant && 
     currentTenant.isOwner && 
