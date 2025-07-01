@@ -538,6 +538,7 @@ export class AdminStorage {
 
   async getRestaurantsByTenantId(tenantId: number) {
     try {
+      console.log(`AdminStorage: Fetching restaurants for tenant ${tenantId}`);
       const restaurantsResult = await db.execute(sql`
         SELECT 
           r.id, r.name, r.address, r.phone, r.email, r.description,
@@ -550,7 +551,9 @@ export class AdminStorage {
         ORDER BY r.created_at DESC
       `);
 
-      return restaurantsResult.rows?.map((restaurant: any) => ({
+      console.log(`AdminStorage: Found ${restaurantsResult.rows?.length || 0} restaurants for tenant ${tenantId}`);
+      
+      const mappedRestaurants = restaurantsResult.rows?.map((restaurant: any) => ({
         id: restaurant.id,
         name: restaurant.name,
         address: restaurant.address,
@@ -566,6 +569,9 @@ export class AdminStorage {
         userName: restaurant.user_name,
         userEmail: restaurant.user_email,
       })) || [];
+
+      console.log(`AdminStorage: Returning ${mappedRestaurants.length} mapped restaurants`);
+      return mappedRestaurants;
     } catch (error) {
       console.error("Error fetching restaurants by tenant ID:", error);
       return [];
