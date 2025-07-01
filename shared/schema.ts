@@ -846,9 +846,7 @@ export const integrationConfigurations = pgTable(
         table.restaurantId,
         table.integrationId,
       ),
-```text
-
-    };
+};
   },
 );
 
