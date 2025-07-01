@@ -6,10 +6,12 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Checkbox } from "@/components/ui/checkbox";
+import { Alert, AlertDescription } from "@/components/ui/alert";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
-import { Info, MessageSquare, Clock, CreditCard } from "lucide-react";
+import { Info, MessageSquare, Clock, CreditCard, AlertCircle } from "lucide-react";
+import { SmsBalanceManager } from "@/components/sms-balance-manager";
 
 const countryCodes = [
   { code: "+1", flag: "🇺🇸", name: "United States" },
@@ -93,28 +95,8 @@ export default function SmsSettings() {
     },
   });
 
-  // Add balance mutation
-  const addBalanceMutation = useMutation({
-    mutationFn: async (amount: number) => {
-      return apiRequest("POST", `/api/tenants/${restaurant.tenantId}/sms-balance/add`, { amount });
-    },
-    onSuccess: () => {
-      toast({
-        title: "Success",
-        description: "SMS balance added successfully",
-      });
-      queryClient.invalidateQueries({ 
-        queryKey: [`/api/tenants/${restaurant.tenantId}/sms-balance`] 
-      });
-    },
-    onError: (error) => {
-      toast({
-        title: "Error",
-        description: "Failed to add SMS balance",
-        variant: "destructive",
-      });
-    },
-  });
+  // Check if SMS features should be enabled
+  const smsEnabled = parseFloat(smsBalance?.balance || "0") > 0;
 
   // Test SMS mutation
   const testSMSMutation = useMutation({
@@ -146,11 +128,15 @@ export default function SmsSettings() {
   }
 
   const handleSave = () => {
+    if (!smsEnabled) {
+      toast({
+        title: "SMS Balance Required",
+        description: "Please add SMS balance before configuring SMS settings.",
+        variant: "destructive",
+      });
+      return;
+    }
     saveSettingsMutation.mutate();
-  };
-
-  const handleAddBalance = (amount: number) => {
-    addBalanceMutation.mutate(amount);
   };
 
   const handleTestSMS = () => {
@@ -206,11 +192,14 @@ export default function SmsSettings() {
                   <Checkbox
                     id="sms-confirmation"
                     checked={smsSettings.confirmationEnabled}
+                    disabled={!smsEnabled}
                     onCheckedChange={(checked) => 
                       setSmsSettings(prev => ({ ...prev, confirmationEnabled: !!checked }))
                     }
                   />
-                  <span className="text-sm text-gray-600">Send booking confirmation to the guest</span>
+                  <span className={`text-sm ${smsEnabled ? 'text-gray-600' : 'text-gray-400'}`}>
+                    Send booking confirmation to the guest
+                  </span>
                 </div>
               </div>
 
@@ -224,17 +213,20 @@ export default function SmsSettings() {
                   <Checkbox
                     id="reminder"
                     checked={smsSettings.reminderEnabled}
+                    disabled={!smsEnabled}
                     onCheckedChange={(checked) => 
                       setSmsSettings(prev => ({ ...prev, reminderEnabled: !!checked }))
                     }
                   />
-                  <span className="text-sm text-gray-600">Send reminder to the guest</span>
+                  <span className={`text-sm ${smsEnabled ? 'text-gray-600' : 'text-gray-400'}`}>
+                    Send reminder to the guest
+                  </span>
                   <Select
                     value={smsSettings.reminderHours.toString()}
                     onValueChange={(value) => 
                       setSmsSettings(prev => ({ ...prev, reminderHours: parseInt(value) }))
                     }
-                    disabled={!smsSettings.reminderEnabled}
+                    disabled={!smsSettings.reminderEnabled || !smsEnabled}
                   >
                     <SelectTrigger className="w-16">
                       <SelectValue />
@@ -249,7 +241,9 @@ export default function SmsSettings() {
                       <SelectItem value="24">24</SelectItem>
                     </SelectContent>
                   </Select>
-                  <span className="text-sm text-gray-600">hours before visit</span>
+                  <span className={`text-sm ${smsEnabled ? 'text-gray-600' : 'text-gray-400'}`}>
+                    hours before visit
+                  </span>
                   <Info className="w-4 h-4 text-gray-400" />
                 </div>
               </div>
@@ -326,97 +320,48 @@ export default function SmsSettings() {
             </CardContent>
           </Card>
 
-          {/* SMS Balance */}
+          {/* SMS Balance Management */}
+          <SmsBalanceManager />
+
+          {/* SMS Features - Only show if balance is available */}
+          {parseFloat(smsBalance?.balance || "0") <= 0 && (
+            <Alert>
+              <AlertCircle className="h-4 w-4" />
+              <AlertDescription>
+                SMS features are disabled. Please add balance to your account to enable SMS notifications.
+              </AlertDescription>
+            </Alert>
+          )}
+
+          {/* Free Testing Section */}
           <Card>
             <CardHeader>
-              <CardTitle className="text-lg font-medium">SMS balance</CardTitle>
+              <CardTitle className="text-lg font-medium">Test SMS for Free</CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
-              <div className="flex items-center justify-between">
-                <span className="text-sm text-gray-600">Current balance:</span>
-                <span className="font-medium">
-                  {smsBalance?.balance || "0.00"} EUR
-                </span>
-              </div>
-
-              <div className="flex items-center justify-between">
-                <span className="text-sm text-gray-600">Payment</span>
+              <p className="text-sm text-gray-600">
+                Send a test SMS to verify your settings without using your balance
+              </p>
+              <div className="flex gap-2">
+                <Input
+                  placeholder="Test phone number"
+                  value={testPhone}
+                  onChange={(e) => setTestPhone(e.target.value)}
+                  className="flex-1"
+                />
                 <Button 
-                  onClick={() => handleAddBalance(10)}
-                  disabled={addBalanceMutation.isPending}
-                  className="bg-green-600 hover:bg-green-700 text-white"
+                  onClick={handleTestSMS}
+                  disabled={testSMSMutation.isPending || !testPhone}
+                  className="bg-blue-600 hover:bg-blue-700 text-white"
                 >
-                  <CreditCard className="w-4 h-4 mr-2" />
-                  Enter billing details
+                  {testSMSMutation.isPending ? "Sending..." : "Send Test SMS"}
                 </Button>
               </div>
-
-              {/* Quick Balance Add Options */}
-              <div className="border-t pt-4">
-                <p className="text-sm text-gray-600 mb-3">Quick add balance:</p>
-                <div className="flex gap-2">
-                  <Button 
-                    variant="outline" 
-                    size="sm"
-                    onClick={() => handleAddBalance(5)}
-                    disabled={addBalanceMutation.isPending}
-                  >
-                    +5 EUR
-                  </Button>
-                  <Button 
-                    variant="outline" 
-                    size="sm"
-                    onClick={() => handleAddBalance(10)}
-                    disabled={addBalanceMutation.isPending}
-                  >
-                    +10 EUR
-                  </Button>
-                  <Button 
-                    variant="outline" 
-                    size="sm"
-                    onClick={() => handleAddBalance(25)}
-                    disabled={addBalanceMutation.isPending}
-                  >
-                    +25 EUR
-                  </Button>
-                  <Button 
-                    variant="outline" 
-                    size="sm"
-                    onClick={() => handleAddBalance(50)}
-                    disabled={addBalanceMutation.isPending}
-                  >
-                    +50 EUR
-                  </Button>
+              {lastTestResult && (
+                <div className="mt-3 p-3 bg-green-50 border border-green-200 rounded">
+                  <p className="text-sm text-green-800">{lastTestResult}</p>
                 </div>
-              </div>
-
-              {/* Free Testing Section */}
-              <div className="border-t pt-4 mt-4">
-                <h4 className="font-medium mb-3">Test SMS for Free</h4>
-                <p className="text-sm text-gray-600 mb-3">
-                  Send a test SMS to verify your settings without using your balance
-                </p>
-                <div className="flex gap-2">
-                  <Input
-                    placeholder="Test phone number"
-                    value={testPhone}
-                    onChange={(e) => setTestPhone(e.target.value)}
-                    className="flex-1"
-                  />
-                  <Button 
-                    onClick={handleTestSMS}
-                    disabled={testSMSMutation.isPending || !testPhone}
-                    className="bg-blue-600 hover:bg-blue-700 text-white"
-                  >
-                    {testSMSMutation.isPending ? "Sending..." : "Send Test SMS"}
-                  </Button>
-                </div>
-                {lastTestResult && (
-                  <div className="mt-3 p-3 bg-green-50 border border-green-200 rounded">
-                    <p className="text-sm text-green-800">{lastTestResult}</p>
-                  </div>
-                )}
-              </div>
+              )}
             </CardContent>
           </Card>
         </div>
