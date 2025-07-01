@@ -87,11 +87,13 @@ export class BrevoEmailService {
     customerName: string,
     bookingDetails: any,
   ) {
-    const restaurant = await this.getRestaurantDetails(
-      bookingDetails.restaurantId,
-    );
-
-    const subject = `Booking Confirmation - ${restaurant?.name || "Restaurant"}`;
+    const subject = `Booking Confirmation - ${bookingDetails.restaurantName || "Restaurant"}`;
+    
+    // Generate management and cancel URLs
+    const baseUrl = process.env.BASE_URL || 'http://localhost:5000';
+    const manageUrl = `${baseUrl}/manage-booking/${bookingDetails.managementHash || bookingDetails.hash}`;
+    const cancelUrl = `${baseUrl}/cancel-booking/${bookingDetails.managementHash || bookingDetails.hash}`;
+    const bookingId = bookingDetails.id;
 
     const paymentSection = bookingDetails.paymentRequired ? `
       <div style="background-color: #fff3cd; border-radius: 8px; padding: 25px; margin: 25px 0; border-left: 4px solid #ffc107;">
@@ -216,6 +218,9 @@ export class BrevoEmailService {
     const senderEmail = process.env.BREVO_SENDER_EMAIL || "noreply@restaurant.com";
     console.log('Using sender email:', senderEmail);
 
+    const sendSmtpEmail = new SendSmtpEmail();
+    sendSmtpEmail.subject = subject;
+    sendSmtpEmail.htmlContent = htmlContent;
     sendSmtpEmail.sender = {
       name: "Trofta",
       email: senderEmail
