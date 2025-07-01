@@ -362,15 +362,87 @@ export class AdminStorage {
           trialDays: subscriptionPlan.trial_days,
           isActive: subscriptionPlan.is_active,
         } : null,
-        restaurants: [],
-        users: [],
-        restaurantCount: 0,
-        userCount: 0,
+      };
+
+      // Fetch additional data
+      const restaurants = await this.getRestaurantsByTenantId(id);
+      const users = await this.getUsersByTenantId(id);
+
+      return {
+        ...result,
+        restaurants,
+        users,
+        restaurantCount: restaurants.length,
+        userCount: users.length,
         recentBookingsCount: 0,
       };
     } catch (error) {
       console.error("Error in getTenantById:", error);
       return null;
+    }
+  }
+
+  async getRestaurantsByTenantId(tenantId: number) {
+    try {
+      const restaurantsResult = await db.execute(sql`
+        SELECT 
+          r.id, r.name, r.address, r.phone, r.email, r.description,
+          r.setup_completed, r.guest_booking_enabled, r.is_active,
+          r.paused_at, r.pause_reason, r.created_at,
+          u.name as user_name, u.email as user_email
+        FROM restaurants r
+        LEFT JOIN users u ON r.user_id = u.id
+        WHERE r.tenant_id = ${tenantId}
+        ORDER BY r.created_at DESC
+      `);
+
+      return restaurantsResult.rows?.map((restaurant: any) => ({
+        id: restaurant.id,
+        name: restaurant.name,
+        address: restaurant.address,
+        phone: restaurant.phone,
+        email: restaurant.email,
+        description: restaurant.description,
+        setupCompleted: restaurant.setup_completed,
+        guestBookingEnabled: restaurant.guest_booking_enabled,
+        isActive: restaurant.is_active,
+        pausedAt: restaurant.paused_at,
+        pauseReason: restaurant.pause_reason,
+        createdAt: restaurant.created_at,
+        userName: restaurant.user_name,
+        userEmail: restaurant.user_email,
+      })) || [];
+    } catch (error) {
+      console.error("Error fetching restaurants by tenant ID:", error);
+      return [];
+    }
+  }
+
+  async getUsersByTenantId(tenantId: number) {
+    try {
+      const usersResult = await db.execute(sql`
+        SELECT 
+          u.id, u.name, u.email, u.created_at,
+          tu.role,
+          r.name as restaurant_name
+        FROM users u
+        INNER JOIN tenant_users tu ON u.id = tu.user_id
+        LEFT JOIN restaurants r ON u.id = r.user_id AND r.tenant_id = ${tenantId}
+        WHERE tu.tenant_id = ${tenantId}
+        ORDER BY u.created_at DESC
+      `);
+
+      return usersResult.rows?.map((user: any) => ({
+        id: user.id,
+        name: user.name,
+        email: user.email,
+        role: user.role,
+        restaurantName: user.restaurant_name,
+        createdAt: user.created_at,
+      })) || [];
+    } catch (error) {
+      console.error("Error fetching users by tenant ID:", error);
+      return [];
     }
   }
 
