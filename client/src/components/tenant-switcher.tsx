@@ -120,8 +120,8 @@ export function TenantSwitcher({ currentTenantId, currentRestaurantId, onTenantC
     onSuccess: async (data: any, restaurantId: number) => {
       // Refresh auth context to get updated restaurant information
       await refreshUserData();
-      // Redirect to the dashboard for the selected restaurant
-      window.location.href = `/${currentTenantId}/dashboard`;
+      // Force a full page reload to ensure all contexts are updated
+      window.location.reload();
     },
     onError: (error: any) => {
       toast({
