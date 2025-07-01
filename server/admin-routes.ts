@@ -5,6 +5,14 @@ import type { AdminUser } from "../shared/schema";
 import { db } from "./db";
 import { shopCategories, shopProducts, shopOrders, shopSettings } from "../shared/schema";
 import { eq, desc } from "drizzle-orm";
+import Stripe from "stripe";
+
+const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
+  apiVersion: "2024-06-20",
+});
+
+// Import storage for getting tenant and plan details
+import { storage } from "./storage";
 
 // Extend Request interface to include admin user
 declare global {
@@ -58,6 +66,11 @@ const updateTenantSubscriptionSchema = z.object({
   endDate: z.string().optional(),
   stripeCustomerId: z.string().optional(),
   stripeSubscriptionId: z.string().optional(),
+});
+
+const updateSubscriptionPriceSchema = z.object({
+  planId: z.number(),
+  updateStripe: z.boolean().default(true),
 });
 
 const createSubscriptionPlanSchema = z.object({
@@ -382,22 +395,294 @@ export function registerAdminRoutes(app: Express) {
       const tenantId = parseInt(req.params.id);
       const subscriptionData = updateTenantSubscriptionSchema.parse(req.body);
       
+      // Get current tenant and new plan details
+      const tenant = await storage.getTenantById(tenantId);
+      if (!tenant) {
+        return res.status(404).json({ message: "Tenant not found" });
+      }
+
+      let stripeUpdateResult = null;
+
+      // If plan is being changed and tenant has active Stripe subscription, update Stripe
+      if (subscriptionData.planId && tenant.stripeSubscriptionId) {
+        try {
+          const newPlan = await storage.getSubscriptionPlanById(subscriptionData.planId);
+          if (!newPlan) {
+            return res.status(400).json({ message: "New subscription plan not found" });
+          }
+
+          // Get current Stripe subscription
+          const stripeSubscription = await stripe.subscriptions.retrieve(tenant.stripeSubscriptionId);
+          
+          if (stripeSubscription.status === 'active') {
+            // Create a new price in Stripe for the updated plan
+            const price = await stripe.prices.create({
+              currency: 'usd',
+              unit_amount: Math.round(newPlan.price * 100), // Convert to cents
+              recurring: {
+                interval: newPlan.interval as 'month' | 'year',
+              },
+              product_data: {
+                name: newPlan.name,
+                description: `Subscription plan: ${newPlan.name}`,
+              },
+            });
+
+            // Update the subscription with the new price
+            const updatedSubscription = await stripe.subscriptions.update(tenant.stripeSubscriptionId, {
+              items: [{
+                id: stripeSubscription.items.data[0].id,
+                price: price.id,
+              }],
+              proration_behavior: 'always_invoice', // This will create a prorated invoice
+            });
+
+            stripeUpdateResult = {
+              subscriptionId: updatedSubscription.id,
+              newPrice: newPlan.price,
+              prorationCreated: true,
+              nextBillingDate: new Date(updatedSubscription.current_period_end * 1000),
+            };
+
+            // Log Stripe update
+            await adminStorage.addSystemLog({
+              level: "info",
+              message: `Stripe subscription updated for tenant ${tenantId}`,
+              data: JSON.stringify({
+                tenantId,
+                stripeSubscriptionId: tenant.stripeSubscriptionId,
+                oldPlanId: tenant.subscriptionPlanId,
+                newPlanId: subscriptionData.planId,
+                newPrice: newPlan.price,
+                priceId: price.id,
+              }),
+              source: "admin_panel",
+              adminUserId: req.adminUser!.id,
+              tenantId: tenantId,
+            });
+          }
+        } catch (stripeError: any) {
+          console.error("Stripe subscription update error:", stripeError);
+          // Log the Stripe error but continue with local update
+          await adminStorage.addSystemLog({
+            level: "warning",
+            message: `Failed to update Stripe subscription for tenant ${tenantId}`,
+            data: JSON.stringify({
+              tenantId,
+              error: stripeError.message,
+              stripeSubscriptionId: tenant.stripeSubscriptionId,
+            }),
+            source: "admin_panel",
+            adminUserId: req.adminUser!.id,
+            tenantId: tenantId,
+          });
+        }
+      }
+      
+      // Update local database subscription
       await adminStorage.updateTenantSubscription(tenantId, subscriptionData);
       
       // Log the action
       await adminStorage.addSystemLog({
         level: "info",
-        message: `Tenant subscription updated`,
-        data: JSON.stringify({ tenantId, subscriptionData }),
+        message: `Tenant subscription updated by admin`,
+        data: JSON.stringify({ 
+          tenantId, 
+          subscriptionData,
+          stripeUpdateResult,
+          adminUser: req.adminUser!.email,
+        }),
         source: "admin_panel",
         adminUserId: req.adminUser!.id,
         tenantId: tenantId,
       });
       
-      res.json({ success: true });
+      res.json({ 
+        success: true,
+        message: "Subscription updated successfully",
+        stripeUpdate: stripeUpdateResult,
+      });
     } catch (error) {
       console.error("Update tenant subscription error:", error);
       res.status(500).json({ message: "Failed to update tenant subscription" });
+    }
+  });
+
+  // Dedicated endpoint for updating subscription pricing with Stripe integration
+  app.put("/api/admin/tenants/:id/subscription-price", requireAdminAuth, async (req: Request, res: Response) => {
+    try {
+      const tenantId = parseInt(req.params.id);
+      const { planId, updateStripe } = updateSubscriptionPriceSchema.parse(req.body);
+
+      // Get tenant and plan details
+      const tenant = await storage.getTenantById(tenantId);
+      const newPlan = await storage.getSubscriptionPlanById(planId);
+      const currentPlan = tenant?.subscriptionPlanId ? await storage.getSubscriptionPlanById(tenant.subscriptionPlanId) : null;
+
+      if (!tenant) {
+        return res.status(404).json({ message: "Tenant not found" });
+      }
+
+      if (!newPlan) {
+        return res.status(400).json({ message: "New subscription plan not found" });
+      }
+
+      let stripeResult = null;
+      let prorationAmount = 0;
+
+      // Handle Stripe subscription update if requested and subscription exists
+      if (updateStripe && tenant.stripeSubscriptionId) {
+        try {
+          const stripeSubscription = await stripe.subscriptions.retrieve(
+            tenant.stripeSubscriptionId,
+            { expand: ['items.data.price'] }
+          );
+
+          if (stripeSubscription.status === 'active') {
+            // Calculate proration preview
+            const upcomingInvoice = await stripe.invoices.retrieveUpcoming({
+              customer: tenant.stripeCustomerId,
+              subscription: tenant.stripeSubscriptionId,
+              subscription_items: [{
+                id: stripeSubscription.items.data[0].id,
+                price_data: {
+                  currency: 'usd',
+                  unit_amount: Math.round(newPlan.price * 100),
+                  recurring: {
+                    interval: newPlan.interval as 'month' | 'year',
+                  },
+                  product_data: {
+                    name: newPlan.name,
+                  },
+                },
+              }],
+            });
+
+            prorationAmount = upcomingInvoice.amount_due / 100;
+
+            // Create new price in Stripe
+            const newPrice = await stripe.prices.create({
+              currency: 'usd',
+              unit_amount: Math.round(newPlan.price * 100),
+              recurring: {
+                interval: newPlan.interval as 'month' | 'year',
+              },
+              product_data: {
+                name: newPlan.name,
+                description: `Updated subscription: ${newPlan.name}`,
+              },
+            });
+
+            // Update subscription with immediate proration
+            const updatedSubscription = await stripe.subscriptions.update(
+              tenant.stripeSubscriptionId,
+              {
+                items: [{
+                  id: stripeSubscription.items.data[0].id,
+                  price: newPrice.id,
+                }],
+                proration_behavior: 'always_invoice',
+              }
+            );
+
+            stripeResult = {
+              success: true,
+              subscriptionId: updatedSubscription.id,
+              oldPrice: currentPlan?.price || 0,
+              newPrice: newPlan.price,
+              prorationAmount,
+              nextBillingDate: new Date(updatedSubscription.current_period_end * 1000),
+              invoiceUrl: `https://dashboard.stripe.com/subscriptions/${updatedSubscription.id}`,
+            };
+
+            await adminStorage.addSystemLog({
+              level: "info",
+              message: `Subscription price updated via Stripe for tenant ${tenantId}`,
+              data: JSON.stringify({
+                tenantId,
+                oldPlanId: tenant.subscriptionPlanId,
+                newPlanId: planId,
+                oldPrice: currentPlan?.price,
+                newPrice: newPlan.price,
+                prorationAmount,
+                stripeSubscriptionId: tenant.stripeSubscriptionId,
+              }),
+              source: "admin_panel",
+              adminUserId: req.adminUser!.id,
+              tenantId,
+            });
+          } else {
+            stripeResult = {
+              success: false,
+              reason: `Subscription status is '${stripeSubscription.status}', not active`,
+            };
+          }
+        } catch (stripeError: any) {
+          console.error("Stripe pricing update error:", stripeError);
+          stripeResult = {
+            success: false,
+            error: stripeError.message,
+          };
+
+          await adminStorage.addSystemLog({
+            level: "error",
+            message: `Failed to update Stripe subscription pricing for tenant ${tenantId}`,
+            data: JSON.stringify({
+              tenantId,
+              error: stripeError.message,
+              newPlanId: planId,
+            }),
+            source: "admin_panel",
+            adminUserId: req.adminUser!.id,
+            tenantId,
+          });
+        }
+      }
+
+      // Update local subscription plan
+      await storage.updateTenant(tenantId, {
+        subscriptionPlanId: planId,
+      });
+
+      await adminStorage.addSystemLog({
+        level: "info",
+        message: `Subscription plan updated for tenant ${tenantId}`,
+        data: JSON.stringify({
+          tenantId,
+          oldPlanId: tenant.subscriptionPlanId,
+          newPlanId: planId,
+          oldPrice: currentPlan?.price,
+          newPrice: newPlan.price,
+          stripeUpdated: updateStripe,
+          stripeResult,
+        }),
+        source: "admin_panel",
+        adminUserId: req.adminUser!.id,
+        tenantId,
+      });
+
+      res.json({
+        success: true,
+        message: "Subscription pricing updated successfully",
+        pricing: {
+          oldPlan: currentPlan ? {
+            id: currentPlan.id,
+            name: currentPlan.name,
+            price: currentPlan.price,
+          } : null,
+          newPlan: {
+            id: newPlan.id,
+            name: newPlan.name,
+            price: newPlan.price,
+          },
+          priceChange: newPlan.price - (currentPlan?.price || 0),
+        },
+        stripe: stripeResult,
+      });
+
+    } catch (error) {
+      console.error("Update subscription pricing error:", error);
+      res.status(500).json({ message: "Failed to update subscription pricing" });
     }
   });
 

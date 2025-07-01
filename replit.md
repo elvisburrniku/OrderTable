@@ -22,6 +22,13 @@ A comprehensive restaurant booking management system with React frontend and Exp
 - Kitchen order management
 
 ## Recent Changes
+- **2025-07-01**: Completed migration from Replit Agent to Replit environment with enhanced subscription billing management
+- **Admin Subscription Management**: Implemented automatic Stripe subscription price updates when admins change tenant subscription plans in the admin panel
+- **Real-time Billing Integration**: When subscription plans are updated via admin panel (e.g., from $299 to $199), the system automatically updates Stripe subscription with prorated billing
+- **Enhanced Admin Interface**: Added subscription pricing update section in tenant management with price change preview and automatic Stripe integration
+- **Comprehensive Logging**: All subscription price changes are logged with detailed information including proration amounts and billing cycle updates
+- **Error Handling**: Robust error handling for Stripe API failures with fallback to local database updates and detailed error logging
+- **User Feedback**: Clear success/error messages showing billing changes, proration details, and next billing cycle information
 - **2025-07-01**: Implemented multi-tenant restaurant management system with subscription-based restaurant creation and tenant switching
 - **Multi-Tenant System**: Users can create multiple restaurants based on subscription limits and switch between them seamlessly
 - **Tenant Switcher**: Dashboard sidebar includes restaurant switcher dropdown with owner indicators and subscription status

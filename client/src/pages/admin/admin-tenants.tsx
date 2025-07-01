@@ -173,6 +173,7 @@ export function AdminTenants({ token }: AdminTenantsProps) {
   const [showDetailDialog, setShowDetailDialog] = useState(false);
   const [suspendReason, setSuspendReason] = useState("");
   const [pauseUntil, setPauseUntil] = useState("");
+  const [selectedSubscriptionPlan, setSelectedSubscriptionPlan] = useState("");
   const { toast } = useToast();
 
   useEffect(() => {
@@ -477,6 +478,80 @@ export function AdminTenants({ token }: AdminTenantsProps) {
       bookingCount: tenantData.bookingCount,
     });
     setShowEditDialog(true);
+  };
+
+  const handleSubscriptionPriceUpdate = async (tenantId: number) => {
+    if (!selectedSubscriptionPlan) {
+      toast({
+        title: "Error",
+        description: "Please select a subscription plan",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setIsUpdating(true);
+    try {
+      const response = await fetch(`/api/admin/tenants/${tenantId}/subscription-price`, {
+        method: "PUT",
+        headers: {
+          "Authorization": `Bearer ${token}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          planId: parseInt(selectedSubscriptionPlan),
+          updateStripe: true,
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error("Failed to update subscription pricing");
+      }
+
+      const result = await response.json();
+      
+      // Update tenant in local state
+      setTenants(prev => prev.map(t => 
+        t.tenant.id === tenantId ? {
+          ...t,
+          tenant: { ...t.tenant, subscriptionPlanId: parseInt(selectedSubscriptionPlan) },
+          subscriptionPlan: subscriptionPlans.find(p => p.id.toString() === selectedSubscriptionPlan) || t.subscriptionPlan
+        } : t
+      ));
+
+      // Update selected tenant if viewing details
+      if (selectedTenant && selectedTenant.id === tenantId) {
+        const updatedPlan = subscriptionPlans.find(p => p.id.toString() === selectedSubscriptionPlan);
+        setSelectedTenant(prev => prev ? {
+          ...prev,
+          subscriptionPlanId: parseInt(selectedSubscriptionPlan),
+          planName: updatedPlan?.name || prev.planName,
+          planPrice: updatedPlan?.price || prev.planPrice,
+          planInterval: updatedPlan?.interval || prev.planInterval,
+        } : null);
+      }
+
+      // Show success message with details
+      const successMessage = result.stripe?.success 
+        ? `Subscription updated successfully! Stripe billing updated with ${result.pricing?.priceChange > 0 ? 'upgrade' : 'downgrade'} proration.`
+        : "Subscription plan updated locally. " + (result.stripe?.error ? `Stripe update failed: ${result.stripe.error}` : "No active Stripe subscription found.");
+
+      toast({
+        title: "Success",
+        description: successMessage,
+      });
+
+      setSelectedSubscriptionPlan("");
+    } catch (error) {
+      console.error("Error updating subscription pricing:", error);
+      toast({
+        title: "Error",
+        description: "Failed to update subscription pricing",
+        variant: "destructive",
+      });
+    } finally {
+      setIsUpdating(false);
+    }
   };
 
   const handleViewTenant = async (tenantData: TenantData) => {
@@ -1092,6 +1167,73 @@ export function AdminTenants({ token }: AdminTenantsProps) {
                               <div className="font-mono text-sm">{selectedTenant.stripeSubscriptionId}</div>
                             </div>
                           )}
+                        </div>
+                      </div>
+                    )}
+                  </CardContent>
+                </Card>
+
+                {/* Subscription Price Update Section */}
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="flex items-center space-x-2">
+                      <DollarSign className="h-5 w-5" />
+                      <span>Update Subscription Pricing</span>
+                    </CardTitle>
+                    <CardDescription>
+                      Change the tenant's subscription plan and automatically update Stripe billing
+                    </CardDescription>
+                  </CardHeader>
+                  <CardContent className="space-y-4">
+                    <div className="grid grid-cols-2 gap-4">
+                      <div>
+                        <Label htmlFor="new-plan">New Subscription Plan</Label>
+                        <Select
+                          value={selectedSubscriptionPlan}
+                          onValueChange={setSelectedSubscriptionPlan}
+                        >
+                          <SelectTrigger>
+                            <SelectValue placeholder="Select new plan" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {subscriptionPlans.map((plan) => (
+                              <SelectItem key={plan.id} value={plan.id.toString()}>
+                                {plan.name} - ${(plan.price / 100).toFixed(2)}/{plan.interval}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </div>
+                      <div className="flex items-end">
+                        <Button 
+                          onClick={() => handleSubscriptionPriceUpdate(selectedTenant.id)}
+                          disabled={!selectedSubscriptionPlan || isUpdating}
+                          className="w-full"
+                        >
+                          {isUpdating ? "Updating..." : "Update Subscription & Billing"}
+                        </Button>
+                      </div>
+                    </div>
+                    
+                    {selectedSubscriptionPlan && (
+                      <div className="mt-4 p-4 bg-blue-50 rounded-lg border border-blue-200">
+                        <div className="text-sm font-medium text-blue-900 mb-2">Pricing Change Preview</div>
+                        <div className="space-y-1 text-sm text-blue-800">
+                          <div>Current: {selectedTenant.planName || "No Plan"} - ${selectedTenant.planPrice ? (selectedTenant.planPrice / 100).toFixed(2) : "0.00"}</div>
+                          <div>New: {subscriptionPlans.find(p => p.id.toString() === selectedSubscriptionPlan)?.name} - ${subscriptionPlans.find(p => p.id.toString() === selectedSubscriptionPlan) ? (subscriptionPlans.find(p => p.id.toString() === selectedSubscriptionPlan)!.price / 100).toFixed(2) : "0.00"}</div>
+                          <div className="font-medium">
+                            Change: {selectedSubscriptionPlan && selectedTenant.planPrice ? 
+                              (subscriptionPlans.find(p => p.id.toString() === selectedSubscriptionPlan)!.price - selectedTenant.planPrice) > 0 ? 
+                                `+$${((subscriptionPlans.find(p => p.id.toString() === selectedSubscriptionPlan)!.price - selectedTenant.planPrice) / 100).toFixed(2)}` :
+                                `-$${((selectedTenant.planPrice - subscriptionPlans.find(p => p.id.toString() === selectedSubscriptionPlan)!.price) / 100).toFixed(2)}`
+                              : "N/A"
+                            }
+                          </div>
+                        </div>
+                        <div className="mt-2 text-xs text-blue-600">
+                          ✓ Stripe subscription will be updated automatically<br/>
+                          ✓ Prorated billing will be applied for the current period<br/>
+                          ✓ Next billing cycle will use the new price
                         </div>
                       </div>
                     )}
