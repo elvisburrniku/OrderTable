@@ -43,6 +43,7 @@ const {
   smsSettings,
   smsBalance,
   surveyResponses,
+  surveySchedules,
   kitchenOrders,
   kitchenStations,
   kitchenStaff,

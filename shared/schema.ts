@@ -1322,6 +1322,34 @@ export const surveyResponses = pgTable("survey_responses", {
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
 });
 
+// Survey scheduling table for automated post-visit feedback requests
+export const surveySchedules = pgTable("survey_schedules", {
+  id: serial("id").primaryKey(),
+  restaurantId: integer("restaurant_id")
+    .notNull()
+    .references(() => restaurants.id, { onDelete: "cascade" }),
+  tenantId: integer("tenant_id")
+    .notNull()
+    .references(() => tenants.id, { onDelete: "cascade" }),
+  bookingId: integer("booking_id")
+    .notNull()
+    .references(() => bookings.id, { onDelete: "cascade" }),
+  customerName: text("customer_name").notNull(),
+  customerEmail: text("customer_email"),
+  customerPhone: text("customer_phone"),
+  scheduledFor: timestamp("scheduled_for").notNull(), // When to send the survey
+  deliveryMethod: text("delivery_method").notNull().default("email"), // email, sms, both
+  status: text("status").notNull().default("pending"), // pending, sent, failed, cancelled
+  attemptCount: integer("attempt_count").default(0),
+  lastAttemptAt: timestamp("last_attempt_at"),
+  sentAt: timestamp("sent_at"),
+  responseToken: text("response_token").unique(), // Unique token for web responses
+  surveyLink: text("survey_link"), // Generated survey URL
+  errorMessage: text("error_message"), // Error details if sending fails
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+});
+
 // Admin system tables - completely separate from tenant system
 export const adminUsers = pgTable("admin_users", {
   id: serial("id").primaryKey(),
@@ -1701,6 +1729,16 @@ export const insertFeedbackQuestionSchema = createInsertSchema(
 });
 export const selectFeedbackQuestionSchema =
   createSelectSchema(feedbackQuestions);
+
+export type SurveySchedule = InferSelectModel<typeof surveySchedules>;
+export type InsertSurveySchedule = InferInsertModel<typeof surveySchedules>;
+
+export const insertSurveyScheduleSchema = createInsertSchema(surveySchedules).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+export const selectSurveyScheduleSchema = createSelectSchema(surveySchedules);
 
 export type SeasonalMenuTheme = InferSelectModel<typeof seasonalMenuThemes>;
 export type InsertSeasonalMenuTheme = InferInsertModel<

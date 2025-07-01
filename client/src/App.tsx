@@ -105,6 +105,7 @@ import { DateProvider } from "@/contexts/date-context";
 import { CurrencyProvider } from "@/contexts/currency-context";
 import { BookingProvider } from "@/contexts/booking-context";
 import { PWAInstallPrompt } from "@/components/pwa-install-prompt";
+import SurveyResponse from "./pages/survey-response";
 
 function App() {
   return (
@@ -144,6 +145,7 @@ function App() {
             />
             <Route path="/booking-manage/:id" component={BookingManage} />
             <Route path="/accept-invitation" component={AcceptInvitation} />
+            <Route path="/survey/:token" component={SurveyResponse} />
             <Route path="/shop" component={Shop} />
 
             {/* Widget demo with auth context */}

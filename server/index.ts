@@ -7,6 +7,7 @@ import { DatabaseStorage } from "./db-storage";
 import { ReminderService } from "./reminder-service";
 import { AutoAssignmentService } from "./auto-assignment-service";
 import { activityCleanupService } from "./activity-cleanup-service";
+import { SurveySchedulerService } from "./survey-scheduler-service";
 import { initializeAdminSystem } from "./init-admin";
 import { systemSettings } from "./system-settings";
 import { AdminStorage } from "./admin-storage";
@@ -153,6 +154,15 @@ app.use((req, res, next) => {
   }).catch(error => {
     console.error('Failed to initialize admin system:', error);
   });
+
+  // Initialize survey scheduler for all storage types
+  try {
+    const surveySchedulerService = new SurveySchedulerService(storage as DatabaseStorage);
+    surveySchedulerService.start();
+    console.log('Survey scheduler service initialized and started');
+  } catch (error) {
+    console.log('Survey scheduler service not available:', error);
+  }
 
   // Only start services if using memory storage to avoid database connection errors
   if (storage.constructor.name === 'MemoryStorage') {

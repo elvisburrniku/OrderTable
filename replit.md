@@ -22,6 +22,14 @@ A comprehensive restaurant booking management system with React frontend and Exp
 - Kitchen order management
 
 ## Recent Changes
+- **2025-07-01**: ✅ AUTOMATED POST-VISIT SURVEY SCHEDULER IMPLEMENTED - Complete survey system with automated scheduling
+- **Survey Scheduling**: Automatically schedules feedback requests 2 hours after customers complete dining
+- **Survey Delivery**: Sends surveys via email and SMS with personalized messages and unique survey links
+- **Survey Response System**: Public survey response page with star ratings, feedback comments, and restaurant branding
+- **Survey Management**: Administrative dashboard with survey statistics, schedules, and response tracking
+- **Database Integration**: Added survey_schedules table with comprehensive tracking of delivery status, attempts, and responses
+- **Automated Processing**: Background service processes pending surveys every 5 minutes with retry logic and error handling
+- **Customer Experience**: Beautifully designed responsive survey page with restaurant context and booking details
 - **2025-07-01**: ✅ MIGRATION COMPLETED - Fixed SMS and email notification triggers in booking creation
 - **Notification System**: Both manual and guest bookings now automatically send SMS and email confirmations when customers provide contact information
 - **SMS Integration**: Twilio service configured and working (trial account limits SMS to verified numbers only)

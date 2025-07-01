@@ -2053,6 +2053,35 @@ export async function registerRoutes(app: Express): Promise<Server> {
           // Don't fail the booking if Meta integration fails
         }
 
+        // Schedule post-visit survey for customer feedback
+        try {
+          const { SurveySchedulerService } = await import('./survey-scheduler-service.js');
+          const surveyScheduler = new SurveySchedulerService(storage as DatabaseStorage);
+          
+          // Only schedule survey if customer provided contact information
+          if (req.body.customerEmail || req.body.customerPhone) {
+            console.log(`Scheduling post-visit survey for booking ${booking.id}`);
+            
+            // Schedule survey to be sent 2 hours after booking end time
+            await surveyScheduler.scheduleSurvey(
+              restaurantId,
+              tenantId,
+              booking.id,
+              req.body.customerName,
+              req.body.customerEmail,
+              req.body.customerPhone,
+              2 // Hours after booking end time
+            );
+            
+            console.log(`Survey scheduled successfully for booking ${booking.id}`);
+          } else {
+            console.log(`No contact information provided for booking ${booking.id} - skipping survey scheduling`);
+          }
+        } catch (surveyError) {
+          console.error("Error scheduling post-visit survey:", surveyError);
+          // Don't fail the booking if survey scheduling fails
+        }
+
         res.json(booking);
       } catch (error) {
         console.error("Booking creation error:", error);
@@ -18298,6 +18327,187 @@ NEXT STEPS:
     } catch (error) {
       console.error("Create shop order error:", error);
       res.status(500).json({ message: "Failed to create order" });
+    }
+  });
+
+  // Survey Management Routes
+  
+  // Get survey statistics for a restaurant or tenant
+  app.get(
+    "/api/tenants/:tenantId/restaurants/:restaurantId/survey-stats",
+    validateTenant,
+    async (req, res) => {
+      try {
+        const tenantId = parseInt(req.params.tenantId);
+        const restaurantId = parseInt(req.params.restaurantId);
+
+        const { SurveySchedulerService } = await import('./survey-scheduler-service.js');
+        const surveyScheduler = new SurveySchedulerService(storage as DatabaseStorage);
+        
+        const stats = await surveyScheduler.getSurveyStats(tenantId, restaurantId);
+        
+        if (!stats) {
+          return res.status(500).json({ message: "Failed to retrieve survey statistics" });
+        }
+        
+        res.json(stats);
+      } catch (error) {
+        console.error("Survey stats error:", error);
+        res.status(500).json({ message: "Failed to retrieve survey statistics" });
+      }
+    }
+  );
+
+  // Get survey schedules for a restaurant
+  app.get(
+    "/api/tenants/:tenantId/restaurants/:restaurantId/survey-schedules",
+    validateTenant,
+    async (req, res) => {
+      try {
+        const tenantId = parseInt(req.params.tenantId);
+        const restaurantId = parseInt(req.params.restaurantId);
+
+        const schedules = await storage.db
+          .select()
+          .from(surveySchedules)
+          .where(
+            and(
+              eq(surveySchedules.tenantId, tenantId),
+              eq(surveySchedules.restaurantId, restaurantId)
+            )
+          )
+          .orderBy(desc(surveySchedules.createdAt))
+          .limit(100);
+
+        res.json(schedules);
+      } catch (error) {
+        console.error("Survey schedules error:", error);
+        res.status(500).json({ message: "Failed to retrieve survey schedules" });
+      }
+    }
+  );
+
+  // Public survey response page (no authentication required)
+  app.get("/api/survey/:token", async (req, res) => {
+    try {
+      const token = req.params.token;
+
+      if (!token) {
+        return res.status(400).json({ message: "Survey token is required" });
+      }
+
+      // Get survey schedule by token
+      const schedule = await storage.db
+        .select()
+        .from(surveySchedules)
+        .where(eq(surveySchedules.responseToken, token))
+        .limit(1);
+
+      if (schedule.length === 0) {
+        return res.status(404).json({ message: "Survey not found or expired" });
+      }
+
+      const surveyData = schedule[0];
+
+      // Get restaurant details
+      const restaurant = await storage.db
+        .select()
+        .from(restaurants)
+        .where(eq(restaurants.id, surveyData.restaurantId))
+        .limit(1);
+
+      if (restaurant.length === 0) {
+        return res.status(404).json({ message: "Restaurant not found" });
+      }
+
+      // Get booking details
+      const booking = await storage.db
+        .select()
+        .from(bookings)
+        .where(eq(bookings.id, surveyData.bookingId))
+        .limit(1);
+
+      if (booking.length === 0) {
+        return res.status(404).json({ message: "Booking not found" });
+      }
+
+      res.json({
+        survey: surveyData,
+        restaurant: restaurant[0],
+        booking: {
+          id: booking[0].id,
+          date: booking[0].bookingDate,
+          startTime: booking[0].startTime,
+          guestCount: booking[0].guestCount
+        }
+      });
+    } catch (error) {
+      console.error("Survey lookup error:", error);
+      res.status(500).json({ message: "Failed to retrieve survey" });
+    }
+  });
+
+  // Submit survey response (no authentication required)
+  app.post("/api/survey/:token/response", async (req, res) => {
+    try {
+      const token = req.params.token;
+      const { rating, feedback, npsScore, wouldRecommend } = req.body;
+
+      if (!token) {
+        return res.status(400).json({ message: "Survey token is required" });
+      }
+
+      if (!rating || rating < 1 || rating > 5) {
+        return res.status(400).json({ message: "Valid rating (1-5) is required" });
+      }
+
+      // Get survey schedule by token
+      const schedule = await storage.db
+        .select()
+        .from(surveySchedules)
+        .where(eq(surveySchedules.responseToken, token))
+        .limit(1);
+
+      if (schedule.length === 0) {
+        return res.status(404).json({ message: "Survey not found or expired" });
+      }
+
+      const surveyData = schedule[0];
+
+      // Check if already responded
+      const existingResponse = await storage.db
+        .select()
+        .from(surveyResponses)
+        .where(eq(surveyResponses.bookingId, surveyData.bookingId))
+        .limit(1);
+
+      if (existingResponse.length > 0) {
+        return res.status(400).json({ message: "Survey already completed" });
+      }
+
+      // Create survey response
+      const response = await storage.db.insert(surveyResponses).values({
+        restaurantId: surveyData.restaurantId,
+        tenantId: surveyData.tenantId,
+        bookingId: surveyData.bookingId,
+        customerPhone: surveyData.customerPhone || "",
+        customerName: surveyData.customerName,
+        rating,
+        feedback: feedback || null,
+        responseMethod: 'web',
+        responseToken: token,
+        respondedAt: new Date()
+      }).returning();
+
+      console.log(`Survey response submitted for booking ${surveyData.bookingId} with rating ${rating}`);
+
+      res.json({
+        message: "Thank you for your feedback!",
+        response: response[0]
+      });
+    } catch (error) {
+      console.error("Survey response error:", error);
+      res.status(500).json({ message: "Failed to submit survey response" });
     }
   });
 
