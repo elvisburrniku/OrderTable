@@ -72,34 +72,8 @@ import { drizzle as drizzlePostgres } from "drizzle-orm/postgres-js";
 import postgres from "postgres";
 import * as schema from "../shared/schema";
 
-// Use Supabase database URL if available, otherwise use the existing DATABASE_URL
-const databaseUrl =
-  process.env.SUPABASE_DATABASE_URL || process.env.DATABASE_URL;
-
-if (!databaseUrl) {
-  console.warn(
-    "No database connection string found. Database operations will be disabled until proper connection is configured.",
-  );
-}
-
-let db: any;
-
-if (!databaseUrl) {
-  db = null;
-} else if (process.env.SUPABASE_DATABASE_URL && databaseUrl) {
-  // Use postgres-js for Supabase connection
-  const client = postgres(databaseUrl);
-  db = drizzlePostgres(client, { schema });
-} else {
-  // Use neon for existing setup - only if URL format is valid
-  try {
-    const sql = neon(databaseUrl);
-    db = drizzle(sql, { schema });
-  } catch (error) {
-    console.error("Invalid database URL format:", error);
-    db = null;
-  }
-}
+// Import the database connection from db.ts
+import { db } from "./db";
 
 export interface IStorage {
   initialize(): Promise<void>;
