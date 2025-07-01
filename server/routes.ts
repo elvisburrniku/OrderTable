@@ -3706,7 +3706,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           return res.status(404).json({ message: "Restaurant not found" });
         }
 
-        const messages = await storage.getSmsMessagesByRestaurant(restaurantId);
+        const messages = await storage.getSmsMessagesByRestaurant(restaurantId, tenantId);
         res.json(messages);
       } catch (error) {
         res.status(400).json({ message: "Invalid request" });

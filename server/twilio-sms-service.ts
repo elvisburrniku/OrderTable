@@ -1,5 +1,5 @@
-import { Twilio } from 'twilio';
-import { storage } from './db-storage';
+import twilio from 'twilio';
+import { storage } from './storage';
 
 interface SMSMessage {
   to: string;
@@ -19,7 +19,7 @@ interface SMSResponse {
 }
 
 class TwilioSMSService {
-  private client: Twilio | null = null;
+  private client: any = null;
   private accountSid: string | null = null;
   private authToken: string | null = null;
   private fromNumber: string | null = null;
@@ -35,7 +35,7 @@ class TwilioSMSService {
 
     if (this.accountSid && this.authToken && this.fromNumber) {
       try {
-        this.client = new Twilio(this.accountSid, this.authToken);
+        this.client = twilio(this.accountSid, this.authToken);
         console.log('Twilio SMS service initialized successfully');
       } catch (error) {
         console.error('Failed to initialize Twilio:', error);
