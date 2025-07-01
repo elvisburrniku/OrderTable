@@ -7,9 +7,29 @@ import { shopCategories, shopProducts, shopOrders, shopSettings } from "../share
 import { eq, desc } from "drizzle-orm";
 import Stripe from "stripe";
 
-const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
-  apiVersion: "2024-06-20",
-});
+// Initialize Stripe only if API key is available
+let stripe: Stripe | null = null;
+if (process.env.STRIPE_SECRET_KEY) {
+  stripe = new Stripe(process.env.STRIPE_SECRET_KEY, {
+    apiVersion: "2024-06-20",
+  });
+} else {
+  console.log("Stripe integration disabled: No STRIPE_SECRET_KEY found");
+}
+
+// Helper function to handle Stripe operations safely
+const withStripe = async <T>(operation: (stripe: Stripe) => Promise<T>, fallback?: T): Promise<T | null> => {
+  if (!stripe) {
+    console.log("Stripe operation skipped: Stripe not initialized");
+    return fallback ?? null;
+  }
+  try {
+    return await operation(stripe);
+  } catch (error) {
+    console.error("Stripe operation failed:", error);
+    return fallback ?? null;
+  }
+};
 
 // Import storage for getting tenant and plan details
 import { storage } from "./storage";

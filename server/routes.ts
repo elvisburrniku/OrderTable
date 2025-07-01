@@ -13,6 +13,30 @@ import {
 } from "@shared/schema";
 import { z } from "zod";
 import Stripe from "stripe";
+
+// Initialize Stripe only if API key is available
+let stripe: Stripe | null = null;
+if (process.env.STRIPE_SECRET_KEY) {
+  stripe = new Stripe(process.env.STRIPE_SECRET_KEY, {
+    apiVersion: "2024-06-20",
+  });
+} else {
+  console.log("Stripe integration disabled: No STRIPE_SECRET_KEY found");
+}
+
+// Helper function to handle Stripe operations safely
+const withStripe = async <T>(operation: (stripe: Stripe) => Promise<T>, fallback?: T): Promise<T | null> => {
+  if (!stripe) {
+    console.log("Stripe operation skipped: Stripe not initialized");
+    return fallback ?? null;
+  }
+  try {
+    return await operation(stripe);
+  } catch (error) {
+    console.error("Stripe operation failed:", error);
+    return fallback ?? null;
+  }
+};
 import * as tenantRoutes from "./tenant-routes";
 import { Request, Response } from "express";
 import bcrypt from "bcrypt";
@@ -56,12 +80,7 @@ import { db } from "./db";
 import { shopCategories, shopProducts, shopOrders } from "../shared/schema";
 import { eq, desc, and } from "drizzle-orm";
 
-const stripe = new Stripe(
-  process.env.STRIPE_SECRET_KEY || "sk_test_your_stripe_secret_key",
-  {
-    apiVersion: "2025-05-28.basil",
-  },
-);
+
 
 // Initialize email service, passing API key from environment variables
 let emailService: BrevoEmailService | null = null;

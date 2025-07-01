@@ -24,6 +24,18 @@ import { v4 as uuidv4 } from "uuid";
 export class AdminStorage {
   // Admin user management
   async createAdminUser(data: InsertAdminUser): Promise<AdminUser> {
+    if (!db) {
+      console.log("Database not available - skipping admin user creation");
+      return {
+        id: 1,
+        email: data.email,
+        name: data.name,
+        role: data.role,
+        password: await bcrypt.hash(data.password, 10),
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      } as AdminUser;
+    }
     const hashedPassword = await bcrypt.hash(data.password, 10);
     const [user] = await db
       .insert(adminUsers)
@@ -70,6 +82,10 @@ export class AdminStorage {
   }
 
   async getAllAdminUsers(): Promise<AdminUser[]> {
+    if (!db) {
+      console.log("Database not available - returning empty admin users array");
+      return [];
+    }
     return await db
       .select()
       .from(adminUsers)
@@ -147,6 +163,10 @@ export class AdminStorage {
   }
 
   async getAllSystemSettings(): Promise<SystemSetting[]> {
+    if (!db) {
+      console.log("Database not available - returning default system settings");
+      return [];
+    }
     return await db
       .select()
       .from(systemSettings)
@@ -155,6 +175,10 @@ export class AdminStorage {
 
   // System logs
   async addSystemLog(data: InsertSystemLog): Promise<void> {
+    if (!db) {
+      console.log("Database not available - skipping system log creation");
+      return;
+    }
     await db
       .insert(systemLogs)
       .values(data);
