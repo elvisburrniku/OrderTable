@@ -1,0 +1,30 @@
+error-boundary.tsx:24 Error caught by boundary: ReferenceError: DialogDescription is not defined
+    at AdminTenants (admin-tenants.tsx:893:14)
+ 
+{componentStack: '\n    at AdminTenants (https://d4e345cf-6f52-4cf2-9…src/components/error-boundary.tsx:7:5)\n    at App'}
+error-boundary.tsx:25 Error stack: ReferenceError: DialogDescription is not defined
+    at AdminTenants (https://d4e345cf-6f52-4cf2-9324-16759e651b0a-00-19q6g2qf0spfe.worf.replit.dev/src/pages/admin/admin-tenants.tsx:1299:32)
+    at renderWithHooks (https://d4e345cf-6f52-4cf2-9324-16759e651b0a-00-19q6g2qf0spfe.worf.replit.d…er/workspace/node_modules/.vite/deps/chunk-RPCDYKBN.js?v=282237dd:11548:26)
+    at updateFunctionComponent (https://d4e345cf-6f52-4cf2-9324-16759e651b0a-00-19q6g2qf0spfe.worf.replit.d…er/workspace/node_modules/.vite/deps/chunk-RPCDYKBN.js?v=282237dd:14582:28)
+    at beginWork (https://d4e345cf-6f52-4cf2-9324-16759e651b0a-00-19q6g2qf0spfe.worf.replit.d…er/workspace/node_modules/.vite/deps/chunk-RPCDYKBN.js?v=282237dd:15924:22)
+    at beginWork$1 (https://d4e345cf-6f52-4cf2-9324-16759e651b0a-00-19q6g2qf0spfe.worf.replit.d…er/workspace/node_modules/.vite/deps/chunk-RPCDYKBN.js?v=282237dd:19753:22)
+    at performUnitOfWork (https://d4e345cf-6f52-4cf2-9324-16759e651b0a-00-19q6g2qf0spfe.worf.replit.d…er/workspace/node_modules/.vite/deps/chunk-RPCDYKBN.js?v=282237dd:19198:20)
+    at workLoopSync (https://d4e345cf-6f52-4cf2-9324-16759e651b0a-00-19q6g2qf0spfe.worf.replit.d…er/workspace/node_modules/.vite/deps/chunk-RPCDYKBN.js?v=282237dd:19137:13)
+    at renderRootSync (https://d4e345cf-6f52-4cf2-9324-16759e651b0a-00-19q6g2qf0spfe.worf.replit.d…er/workspace/node_modules/.vite/deps/chunk-RPCDYKBN.js?v=282237dd:19116:15)
+    at recoverFromConcurrentError (https://d4e345cf-6f52-4cf2-9324-16759e651b0a-00-19q6g2qf0spfe.worf.replit.d…er/workspace/node_modules/.vite/deps/chunk-RPCDYKBN.js?v=282237dd:18736:28)
+    at performConcurrentWorkOnRoot (https://d4e345cf-6f52-4cf2-9324-16759e651b0a-00-19q6g2qf0spfe.worf.replit.d…er/workspace/node_modules/.vite/deps/chunk-RPCDYKBN.js?v=282237dd:18684:30)
+error-boundary.tsx:26 Component stack: 
+    at AdminTenants (https://d4e345cf-6f52-4cf2-9324-16759e651b0a-00-19q6g2qf0spfe.worf.replit.dev/src/pages/admin/admin-tenants.tsx:87:32)
+    at main
+    at div
+    at div
+    at AdminLayout (https://d4e345cf-6f52-4cf2-9324-16759e651b0a-00-19q6g2qf0spfe.worf.replit.dev/src/pages/admin/admin-layout.tsx:89:31)
+    at AdminPanel (https://d4e345cf-6f52-4cf2-9324-16759e651b0a-00-19q6g2qf0spfe.worf.replit.dev/src/pages/admin/admin-panel.tsx:31:29)
+    at Route (https://d4e345cf-6f52-4cf2-9324-16759e651b0a-00-19q6g2qf0spfe.worf.replit.d…/home/runner/workspace/node_modules/.vite/deps/wouter.js?v=282237dd:323:16)
+    at Switch (https://d4e345cf-6f52-4cf2-9324-16759e651b0a-00-19q6g2qf0spfe.worf.replit.d…/home/runner/workspace/node_modules/.vite/deps/wouter.js?v=282237dd:379:17)
+    at QueryClientProvider (https://d4e345cf-6f52-4cf2-9324-16759e651b0a-00-19q6g2qf0spfe.worf.replit.d…rkspace/node_modules/.vite/deps/@tanstack_react-query.js?v=282237dd:2805:3)
+    at LanguageProvider (https://d4e345cf-6f52-4cf2-9324-16759e651b0a-00-19q6g2qf0spfe.worf.replit.dev/src/contexts/language-context.tsx:21:36)
+    at ErrorBoundary (https://d4e345cf-6f52-4cf2-9324-16759e651b0a-00-19q6g2qf0spfe.worf.replit.dev/src/components/error-boundary.tsx:7:5)
+    at App
+﻿
+
