@@ -148,7 +148,7 @@ export function TenantSwitcher({ currentTenantId, currentRestaurantId, onTenantC
 
   const currentTenant = tenants?.find(t => t.id === currentTenantId);
   const allRestaurants = tenants?.flatMap(t => t.restaurants || []) || [];
-  const currentRestaurant = allRestaurants.find(r => r?.tenantId === currentTenantId);
+  const currentRestaurant = allRestaurants.find(r => r?.id === currentRestaurantId);
   
   const canCreateRestaurant = currentTenant && 
     currentTenant.isOwner && 
