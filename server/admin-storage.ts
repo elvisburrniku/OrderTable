@@ -683,64 +683,32 @@ export class AdminStorage {
     stripeSubscriptionId?: string;
   }) {
     try {
-      // Build SET clause dynamically
-      const setParts = [];
-      const values = [];
+      // Filter out undefined values and map to database column names
+      const fieldsToUpdate: any = {};
       
-      if (updateData.name !== undefined) {
-        setParts.push('name = $' + (values.length + 1));
-        values.push(updateData.name);
-      }
-      if (updateData.subscriptionStatus !== undefined) {
-        setParts.push('subscription_status = $' + (values.length + 1));
-        values.push(updateData.subscriptionStatus);
-      }
-      if (updateData.subscriptionPlanId !== undefined) {
-        setParts.push('subscription_plan_id = $' + (values.length + 1));
-        values.push(updateData.subscriptionPlanId);
-      }
-      if (updateData.maxRestaurants !== undefined) {
-        setParts.push('max_restaurants = $' + (values.length + 1));
-        values.push(updateData.maxRestaurants);
-      }
-      if (updateData.additionalRestaurants !== undefined) {
-        setParts.push('additional_restaurants = $' + (values.length + 1));
-        values.push(updateData.additionalRestaurants);
-      }
-      if (updateData.additionalRestaurantsCost !== undefined) {
-        setParts.push('additional_restaurants_cost = $' + (values.length + 1));
-        values.push(updateData.additionalRestaurantsCost);
-      }
-      if (updateData.subscriptionStartDate !== undefined) {
-        setParts.push('subscription_start_date = $' + (values.length + 1));
-        values.push(updateData.subscriptionStartDate);
-      }
-      if (updateData.subscriptionEndDate !== undefined) {
-        setParts.push('subscription_end_date = $' + (values.length + 1));
-        values.push(updateData.subscriptionEndDate);
-      }
-      if (updateData.stripeCustomerId !== undefined) {
-        setParts.push('stripe_customer_id = $' + (values.length + 1));
-        values.push(updateData.stripeCustomerId);
-      }
-      if (updateData.stripeSubscriptionId !== undefined) {
-        setParts.push('stripe_subscription_id = $' + (values.length + 1));
-        values.push(updateData.stripeSubscriptionId);
-      }
+      if (updateData.name !== undefined) fieldsToUpdate.name = updateData.name;
+      if (updateData.subscriptionStatus !== undefined) fieldsToUpdate.subscriptionStatus = updateData.subscriptionStatus;
+      if (updateData.subscriptionPlanId !== undefined) fieldsToUpdate.subscriptionPlanId = updateData.subscriptionPlanId;
+      if (updateData.maxRestaurants !== undefined) fieldsToUpdate.maxRestaurants = updateData.maxRestaurants;
+      if (updateData.additionalRestaurants !== undefined) fieldsToUpdate.additionalRestaurants = updateData.additionalRestaurants;
+      if (updateData.additionalRestaurantsCost !== undefined) fieldsToUpdate.additionalRestaurantsCost = updateData.additionalRestaurantsCost;
+      if (updateData.subscriptionStartDate !== undefined) fieldsToUpdate.subscriptionStartDate = updateData.subscriptionStartDate;
+      if (updateData.subscriptionEndDate !== undefined) fieldsToUpdate.subscriptionEndDate = updateData.subscriptionEndDate;
+      if (updateData.stripeCustomerId !== undefined) fieldsToUpdate.stripeCustomerId = updateData.stripeCustomerId;
+      if (updateData.stripeSubscriptionId !== undefined) fieldsToUpdate.stripeSubscriptionId = updateData.stripeSubscriptionId;
 
-      if (setParts.length === 0) {
+      if (Object.keys(fieldsToUpdate).length === 0) {
         throw new Error('No fields to update');
       }
 
-      // Use simple approach for now - just update subscription status
-      if (updateData.subscriptionStatus) {
-        const result = await db.execute(sql`
-          UPDATE tenants SET subscription_status = ${updateData.subscriptionStatus} WHERE id = ${tenantId} RETURNING *
-        `);
-        return result.rows?.[0] || null;
-      }
+      // Use Drizzle ORM update method
+      const [updatedTenant] = await db
+        .update(tenants)
+        .set(fieldsToUpdate)
+        .where(eq(tenants.id, tenantId))
+        .returning();
       
-      return null;
+      return updatedTenant || null;
     } catch (error) {
       console.error('Error in updateTenant:', error);
       throw error;
