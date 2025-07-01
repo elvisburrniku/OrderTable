@@ -387,6 +387,7 @@ export class AdminStorage {
   }
 
   async getTenantById(id: number) {
+    console.log(`AdminStorage: getTenantById called for tenant ${id}, db available: ${!!db}`);
     if (!db) {
       console.log("Database not available - returning mock tenant detail data");
       return {
@@ -519,10 +520,13 @@ export class AdminStorage {
       };
 
       // Fetch additional data
+      console.log(`AdminStorage: getTenantById - About to fetch restaurants and users for tenant ${id}`);
       const restaurants = await this.getRestaurantsByTenantId(id);
       const users = await this.getUsersByTenantId(id);
+      
+      console.log(`AdminStorage: getTenantById - Found ${restaurants.length} restaurants and ${users.length} users for tenant ${id}`);
 
-      return {
+      const finalResult = {
         ...result,
         restaurants,
         users,
@@ -530,6 +534,9 @@ export class AdminStorage {
         userCount: users.length,
         recentBookingsCount: 0,
       };
+      
+      console.log(`AdminStorage: getTenantById - Returning complete result for tenant ${id}:`, JSON.stringify(finalResult, null, 2));
+      return finalResult;
     } catch (error) {
       console.error("Error in getTenantById:", error);
       return null;
@@ -580,6 +587,7 @@ export class AdminStorage {
 
   async getUsersByTenantId(tenantId: number) {
     try {
+      console.log(`AdminStorage: Fetching users for tenant ${tenantId}`);
       const usersResult = await db.execute(sql`
         SELECT 
           u.id, u.name, u.email, u.created_at,
@@ -592,7 +600,9 @@ export class AdminStorage {
         ORDER BY u.created_at DESC
       `);
 
-      return usersResult.rows?.map((user: any) => ({
+      console.log(`AdminStorage: Found ${usersResult.rows?.length || 0} users for tenant ${tenantId}`);
+      
+      const mappedUsers = usersResult.rows?.map((user: any) => ({
         id: user.id,
         name: user.name,
         email: user.email,
@@ -600,6 +610,9 @@ export class AdminStorage {
         restaurantName: user.restaurant_name,
         createdAt: user.created_at,
       })) || [];
+
+      console.log(`AdminStorage: Returning ${mappedUsers.length} mapped users`);
+      return mappedUsers;
     } catch (error) {
       console.error("Error fetching users by tenant ID:", error);
       return [];
