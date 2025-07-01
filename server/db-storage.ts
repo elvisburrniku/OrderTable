@@ -1623,11 +1623,12 @@ export class DatabaseStorage implements IStorage {
         smsMessageId: responseData.smsMessageId,
         customerPhone: responseData.customerPhone,
         customerName: responseData.customerName,
+        customerEmail: responseData.customerEmail,
         rating: responseData.rating,
         feedback: responseData.feedback,
-        responseMethod: responseData.responseMethod || "sms",
+        responseMethod: responseData.responseMethod || "email",
         responseToken: responseData.responseToken,
-        respondedAt: new Date(),
+        respondedAt: responseData.rating ? new Date() : null, // Only set respondedAt if actually responding
       })
       .returning();
     return response;
@@ -1710,49 +1711,59 @@ export class DatabaseStorage implements IStorage {
 
     const bookingData = booking[0];
     
-    // Check if booking has a phone number
-    if (!bookingData.phone || bookingData.phone.trim() === '') {
-      throw new Error("Booking does not have a phone number - cannot send SMS survey");
-    }
+    // Check if booking has either phone or email for survey delivery
+    const hasPhone = bookingData.phone && bookingData.phone.trim() !== '';
+    const hasEmail = bookingData.customerEmail && bookingData.customerEmail.trim() !== '';
     
-    // Get SMS settings
-    const settings = await this.db
-      .select()
-      .from(smsSettings)
-      .where(
-        and(
-          eq(smsSettings.restaurantId, bookingData.restaurantId),
-          eq(smsSettings.tenantId, bookingData.tenantId),
-        ),
-      )
-      .limit(1);
-
-    if (!settings.length || !settings[0].satisfactionSurveyEnabled) {
-      throw new Error("Survey not enabled for this restaurant");
+    if (!hasPhone && !hasEmail) {
+      throw new Error("Booking does not have contact information (phone or email) - cannot send survey");
     }
-
-    const surveySettings = settings[0];
     
     // Generate response token
     const responseToken = Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15);
     
     // Create survey URL
-    const surveyUrl = surveySettings.surveyUrl || `${process.env.BASE_URL || 'http://localhost:5000'}/survey/${responseToken}`;
+    const surveyUrl = `${process.env.BASE_URL || 'http://localhost:5000'}/survey/${responseToken}`;
     
-    // Create SMS message
-    const message = `${surveySettings.surveyMessage} ${surveyUrl}`;
+    let smsMessage = null;
+    let deliveryMethod = 'email';
     
-    const smsMessage = await this.createSmsMessage(
-      bookingData.restaurantId,
-      bookingData.tenantId,
-      {
-        bookingId: bookingData.id,
-        phoneNumber: bookingData.phone,
-        message,
-        type: "survey",
-        cost: "0.08",
+    // Try SMS delivery if phone is available and SMS settings are enabled
+    if (hasPhone) {
+      try {
+        const smsSettings = await this.db
+          .select()
+          .from(smsSettings)
+          .where(
+            and(
+              eq(smsSettings.restaurantId, bookingData.restaurantId),
+              eq(smsSettings.tenantId, bookingData.tenantId),
+            ),
+          )
+          .limit(1);
+
+        if (smsSettings.length > 0 && smsSettings[0].satisfactionSurveyEnabled) {
+          const surveySettings = smsSettings[0];
+          const message = `${surveySettings.surveyMessage || 'Thank you for visiting us! Please share your experience:'} ${surveyUrl}`;
+          
+          smsMessage = await this.createSmsMessage(
+            bookingData.restaurantId,
+            bookingData.tenantId,
+            {
+              bookingId: bookingData.id,
+              phoneNumber: bookingData.phone,
+              message,
+              type: "survey",
+              cost: "0.08",
+            }
+          );
+          deliveryMethod = 'sms';
+        }
+      } catch (smsError) {
+        console.error('SMS survey failed, falling back to email:', smsError);
+        // Continue with email delivery
       }
-    );
+    }
 
     // Create survey response record with token
     await this.createSurveyResponse(
@@ -1760,15 +1771,22 @@ export class DatabaseStorage implements IStorage {
       bookingData.tenantId,
       {
         bookingId: bookingData.id,
-        smsMessageId: smsMessage.id,
-        customerPhone: bookingData.phone,
+        smsMessageId: smsMessage?.id || null,
+        customerPhone: hasPhone ? bookingData.phone : null,
         customerName: bookingData.customerName,
+        customerEmail: hasEmail ? bookingData.customerEmail : null,
         responseToken,
-        responseMethod: "sms",
+        responseMethod: deliveryMethod,
       }
     );
 
-    return { smsMessage, responseToken, surveyUrl };
+    return { 
+      smsMessage, 
+      responseToken, 
+      surveyUrl,
+      deliveryMethod,
+      message: deliveryMethod === 'sms' ? 'Survey sent via SMS' : 'Survey token created for email delivery'
+    };
   }
 
   async updateSurveyResponse(token: string, updateData: any): Promise<any> {

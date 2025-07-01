@@ -846,6 +846,8 @@ export const integrationConfigurations = pgTable(
         table.restaurantId,
         table.integrationId,
       ),
+```text
+
     };
   },
 );
@@ -1311,12 +1313,13 @@ export const surveyResponses = pgTable("survey_responses", {
   smsMessageId: integer("sms_message_id").references(() => smsMessages.id, {
     onDelete: "set null",
   }),
-  customerPhone: text("customer_phone").notNull(),
-  customerName: text("customer_name"),
+  customerPhone: text("customer_phone"),
+  customerEmail: text("customer_email"),
+  customerName: text("customer_name").notNull(),
   rating: integer("rating"), // 1-5 star rating
   feedback: text("feedback"), // Optional text feedback
-  responseMethod: text("response_method").default("sms"), // sms, web, phone
-  responseToken: text("response_token").unique(), // Unique token for web responses
+  responseMethod: text("response_method").notNull().default("email"), // sms, web, email
+  responseToken: text("response_token").unique(), // For web-based responses
   respondedAt: timestamp("responded_at"),
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
