@@ -561,36 +561,48 @@ export class AdminStorage {
   async getRestaurantsByTenantId(tenantId: number) {
     try {
       console.log(`AdminStorage: Fetching restaurants for tenant ${tenantId}`);
-      const restaurantsResult = await db.execute(sql`
-        SELECT 
-          r.id, r.name, r.address, r.phone, r.email, r.description,
-          r.setup_completed, r.guest_booking_enabled, r.is_active,
-          r.paused_at, r.pause_reason, r.created_at,
-          u.name as user_name, u.email as user_email
-        FROM restaurants r
-        LEFT JOIN users u ON r.user_id = u.id
-        WHERE r.tenant_id = ${tenantId}
-        ORDER BY r.created_at DESC
-      `);
-
-      console.log(`AdminStorage: Found ${restaurantsResult.rows?.length || 0} restaurants for tenant ${tenantId}`);
       
-      const mappedRestaurants = restaurantsResult.rows?.map((restaurant: any) => ({
+      // Use Drizzle ORM query instead of raw SQL
+      const restaurantsResult = await db
+        .select({
+          id: restaurants.id,
+          name: restaurants.name,
+          address: restaurants.address,
+          phone: restaurants.phone,
+          email: restaurants.email,
+          description: restaurants.description,
+          setupCompleted: restaurants.setupCompleted,
+          guestBookingEnabled: restaurants.guestBookingEnabled,
+          isActive: restaurants.isActive,
+          pausedAt: restaurants.pausedAt,
+          pauseReason: restaurants.pauseReason,
+          createdAt: restaurants.createdAt,
+          userName: users.name,
+          userEmail: users.email,
+        })
+        .from(restaurants)
+        .leftJoin(users, eq(restaurants.userId, users.id))
+        .where(eq(restaurants.tenantId, tenantId))
+        .orderBy(desc(restaurants.createdAt));
+
+      console.log(`AdminStorage: Found ${restaurantsResult.length} restaurants for tenant ${tenantId}`);
+      
+      const mappedRestaurants = restaurantsResult.map((restaurant: any) => ({
         id: restaurant.id,
         name: restaurant.name,
         address: restaurant.address,
         phone: restaurant.phone,
         email: restaurant.email,
         description: restaurant.description,
-        setupCompleted: restaurant.setup_completed,
-        guestBookingEnabled: restaurant.guest_booking_enabled,
-        isActive: restaurant.is_active,
-        pausedAt: restaurant.paused_at,
-        pauseReason: restaurant.pause_reason,
-        createdAt: restaurant.created_at,
-        userName: restaurant.user_name,
-        userEmail: restaurant.user_email,
-      })) || [];
+        setupCompleted: restaurant.setupCompleted,
+        guestBookingEnabled: restaurant.guestBookingEnabled,
+        isActive: restaurant.isActive,
+        pausedAt: restaurant.pausedAt,
+        pauseReason: restaurant.pauseReason,
+        createdAt: restaurant.createdAt,
+        userName: restaurant.userName,
+        userEmail: restaurant.userEmail,
+      }));
 
       console.log(`AdminStorage: Returning ${mappedRestaurants.length} mapped restaurants`);
       return mappedRestaurants;
@@ -603,28 +615,36 @@ export class AdminStorage {
   async getUsersByTenantId(tenantId: number) {
     try {
       console.log(`AdminStorage: Fetching users for tenant ${tenantId}`);
-      const usersResult = await db.execute(sql`
-        SELECT 
-          u.id, u.name, u.email, u.created_at,
-          tu.role,
-          r.name as restaurant_name
-        FROM users u
-        INNER JOIN tenant_users tu ON u.id = tu.user_id
-        LEFT JOIN restaurants r ON u.id = r.user_id AND r.tenant_id = ${tenantId}
-        WHERE tu.tenant_id = ${tenantId}
-        ORDER BY u.created_at DESC
-      `);
-
-      console.log(`AdminStorage: Found ${usersResult.rows?.length || 0} users for tenant ${tenantId}`);
       
-      const mappedUsers = usersResult.rows?.map((user: any) => ({
+      // Use Drizzle ORM query instead of raw SQL
+      const usersResult = await db
+        .select({
+          id: users.id,
+          name: users.name,
+          email: users.email,
+          createdAt: users.createdAt,
+          role: tenantUsers.role,
+          restaurantName: restaurants.name,
+        })
+        .from(users)
+        .innerJoin(tenantUsers, eq(users.id, tenantUsers.userId))
+        .leftJoin(restaurants, and(
+          eq(users.id, restaurants.userId),
+          eq(restaurants.tenantId, tenantId)
+        ))
+        .where(eq(tenantUsers.tenantId, tenantId))
+        .orderBy(desc(users.createdAt));
+
+      console.log(`AdminStorage: Found ${usersResult.length} users for tenant ${tenantId}`);
+      
+      const mappedUsers = usersResult.map((user: any) => ({
         id: user.id,
         name: user.name,
         email: user.email,
         role: user.role,
-        restaurantName: user.restaurant_name,
-        createdAt: user.created_at,
-      })) || [];
+        restaurantName: user.restaurantName,
+        createdAt: user.createdAt,
+      }));
 
       console.log(`AdminStorage: Returning ${mappedUsers.length} mapped users`);
       return mappedUsers;
