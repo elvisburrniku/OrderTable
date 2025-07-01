@@ -332,7 +332,7 @@ function App() {
                                       />
                                       <Route
                                         path="/:tenantId/payment-gateway"
-                                        component={PaymentGateway}
+                                        component={StripeConnectSettings}
                                       />
                                       <Route
                                         path="/:tenantId/settings/payments"
