@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { useSearchParams } from "wouter";
+import { useLocation } from "wouter";
 import { Elements } from "@stripe/react-stripe-js";
 import { loadStripe } from "@stripe/stripe-js";
 import { useQuery } from "@tanstack/react-query";
@@ -17,10 +17,13 @@ if (!import.meta.env.VITE_STRIPE_PUBLIC_KEY) {
 const stripePromise = loadStripe(import.meta.env.VITE_STRIPE_PUBLIC_KEY);
 
 export default function PaymentPage() {
-  const [searchParams] = useSearchParams();
-  const bookingId = searchParams.get("booking");
-  const amount = parseFloat(searchParams.get("amount") || "0");
-  const currency = searchParams.get("currency") || "USD";
+  const [location] = useLocation();
+  
+  // Parse search parameters manually
+  const urlParams = new URLSearchParams(location.split('?')[1] || '');
+  const bookingId = urlParams.get("booking");
+  const amount = parseFloat(urlParams.get("amount") || "0");
+  const currency = urlParams.get("currency") || "USD";
   const [clientSecret, setClientSecret] = useState("");
   const [error, setError] = useState("");
 
