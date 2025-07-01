@@ -1,104 +1,90 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
+import { Building2, Plus, Crown } from "lucide-react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { Button } from "@/components/ui/button";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuGroup,
-  DropdownMenuItem,
-  DropdownMenuLabel,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from "@/components/ui/dialog";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
-import { ChevronDown, Plus, Building2, Crown } from "lucide-react";
-import { apiRequest } from "@/lib/queryClient";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import { Button } from "@/components/ui/button";
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
+import { apiRequest } from "@/lib/queryClient";
 
 const createRestaurantSchema = z.object({
   name: z.string().min(1, "Restaurant name is required"),
-  slug: z.string().min(1, "URL slug is required").regex(/^[a-z0-9-]+$/, "Slug must contain only lowercase letters, numbers, and hyphens"),
+  description: z.string().optional(),
+  address: z.string().optional(),
+  phone: z.string().optional(),
+  email: z.string().optional(),
+  cuisine: z.string().optional(),
 });
 
 type CreateRestaurantData = z.infer<typeof createRestaurantSchema>;
 
+interface Restaurant {
+  id: number;
+  name: string;
+  tenantId: number;
+  description?: string;
+  address?: string;
+  cuisine?: string;
+}
+
 interface Tenant {
   id: number;
   name: string;
-  slug: string;
   subscriptionStatus: string;
   maxRestaurants: number;
-  restaurantCount: number;
+  restaurants: Restaurant[];
   isOwner: boolean;
 }
 
 interface TenantSwitcherProps {
-  currentTenant?: Tenant;
+  currentTenantId?: number;
+  currentRestaurantId?: number;
   onTenantChange?: (tenantId: number) => void;
 }
 
-export function TenantSwitcher({ currentTenant, onTenantChange }: TenantSwitcherProps) {
+export function TenantSwitcher({ currentTenantId, onTenantChange }: TenantSwitcherProps) {
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
   const { toast } = useToast();
   const queryClient = useQueryClient();
+
+  const { data: tenants, isLoading } = useQuery<Tenant[]>({
+    queryKey: ["/api/user/tenants"],
+  });
 
   const form = useForm<CreateRestaurantData>({
     resolver: zodResolver(createRestaurantSchema),
     defaultValues: {
       name: "",
-      slug: "",
+      description: "",
+      address: "",
+      phone: "",
+      email: "",
+      cuisine: "",
     },
   });
 
-  // Fetch user's tenants
-  const { data: tenants = [], isLoading } = useQuery({
-    queryKey: ["/api/user/tenants"],
-    enabled: true,
-  });
-
-  // Generate slug from name
-  const watchName = form.watch("name");
-  useEffect(() => {
-    if (watchName) {
-      const slug = watchName
-        .toLowerCase()
-        .replace(/[^a-z0-9\s-]/g, "")
-        .replace(/\s+/g, "-")
-        .replace(/-+/g, "-")
-        .trim();
-      form.setValue("slug", slug);
-    }
-  }, [watchName, form]);
-
   const createRestaurantMutation = useMutation({
     mutationFn: (data: CreateRestaurantData) =>
-      apiRequest("POST", "/api/tenants/create", data),
-    onSuccess: (response: any) => {
-      toast({
-        title: "Restaurant Created",
-        description: `${response.name} has been created successfully!`,
-      });
+      apiRequest("POST", "/api/restaurants", data),
+    onSuccess: (newRestaurant) => {
+      queryClient.invalidateQueries({ queryKey: ["/api/user/tenants"] });
       setIsCreateDialogOpen(false);
       form.reset();
-      queryClient.invalidateQueries({ queryKey: ["/api/user/tenants"] });
-      
-      // Switch to the new tenant
-      if (onTenantChange && response.id) {
-        onTenantChange(response.id);
-      }
+      toast({
+        title: "Restaurant Created",
+        description: `${newRestaurant.name} has been created successfully.`,
+      });
     },
     onError: (error: any) => {
       toast({
@@ -113,7 +99,6 @@ export function TenantSwitcher({ currentTenant, onTenantChange }: TenantSwitcher
     mutationFn: (tenantId: number) =>
       apiRequest("POST", "/api/user/switch-tenant", { tenantId }),
     onSuccess: () => {
-      // Refresh the page to load the new tenant context
       window.location.reload();
     },
     onError: (error: any) => {
@@ -126,7 +111,7 @@ export function TenantSwitcher({ currentTenant, onTenantChange }: TenantSwitcher
   });
 
   const handleSwitchTenant = (tenantId: number) => {
-    if (tenantId === currentTenant?.id) return;
+    if (tenantId === currentTenantId) return;
     switchTenantMutation.mutate(tenantId);
   };
 
@@ -134,9 +119,13 @@ export function TenantSwitcher({ currentTenant, onTenantChange }: TenantSwitcher
     createRestaurantMutation.mutate(data);
   };
 
+  const currentTenant = tenants?.find(t => t.id === currentTenantId);
+  const allRestaurants = tenants?.flatMap(t => t.restaurants) || [];
+  const currentRestaurant = allRestaurants.find(r => r.tenantId === currentTenantId);
+  
   const canCreateRestaurant = currentTenant && 
     currentTenant.isOwner && 
-    currentTenant.restaurantCount < currentTenant.maxRestaurants;
+    currentTenant.restaurants.length < currentTenant.maxRestaurants;
 
   if (isLoading) {
     return (
@@ -150,54 +139,71 @@ export function TenantSwitcher({ currentTenant, onTenantChange }: TenantSwitcher
         <DropdownMenuTrigger asChild>
           <Button
             variant="outline"
-            className="w-[200px] justify-between"
-            disabled={switchTenantMutation.isPending}
+            className="w-full justify-start gap-2 bg-white/50 backdrop-blur-sm border-white/20 hover:bg-white/70 transition-all duration-200"
           >
-            <div className="flex items-center gap-2">
-              <Building2 className="h-4 w-4" />
-              <span className="truncate">
-                {currentTenant?.name || "Select Restaurant"}
-              </span>
-            </div>
-            <ChevronDown className="h-4 w-4 shrink-0 opacity-50" />
+            <Building2 className="h-4 w-4" />
+            <span className="truncate">
+              {currentRestaurant?.name || "Select Restaurant"}
+            </span>
+            {currentTenant?.isOwner && (
+              <Crown className="h-3 w-3 ml-auto text-amber-500" />
+            )}
           </Button>
         </DropdownMenuTrigger>
-        <DropdownMenuContent className="w-[200px]" align="start">
-          <DropdownMenuLabel>Your Restaurants</DropdownMenuLabel>
-          <DropdownMenuSeparator />
-          <DropdownMenuGroup>
-            {(tenants as Tenant[]).map((tenant: Tenant) => (
-              <DropdownMenuItem
-                key={tenant.id}
-                className="flex items-center gap-2 cursor-pointer"
-                onClick={() => handleSwitchTenant(tenant.id)}
-              >
-                <Building2 className="h-4 w-4" />
-                <div className="flex-1">
-                  <div className="flex items-center gap-1">
-                    {tenant.name}
-                    {tenant.isOwner && <Crown className="h-3 w-3 text-yellow-500" />}
-                  </div>
-                  <div className="text-xs text-muted-foreground">
-                    {tenant.subscriptionStatus}
-                  </div>
-                </div>
-                {tenant.id === currentTenant?.id && (
-                  <div className="w-2 h-2 bg-primary rounded-full" />
-                )}
-              </DropdownMenuItem>
-            ))}
-          </DropdownMenuGroup>
-          {canCreateRestaurant && (
+        <DropdownMenuContent className="w-[250px]">
+          {allRestaurants.length > 0 ? (
             <>
-              <DropdownMenuSeparator />
-              <DropdownMenuItem
-                className="flex items-center gap-2 cursor-pointer text-primary"
-                onClick={() => setIsCreateDialogOpen(true)}
-              >
-                <Plus className="h-4 w-4" />
-                Create New Restaurant
-              </DropdownMenuItem>
+              {allRestaurants.map((restaurant) => (
+                <DropdownMenuItem
+                  key={restaurant.id}
+                  onClick={() => handleSwitchTenant(restaurant.tenantId)}
+                  className="cursor-pointer"
+                >
+                  <Building2 className="h-4 w-4 mr-2" />
+                  <div className="flex-1">
+                    <div className="font-medium">{restaurant.name}</div>
+                    {restaurant.cuisine && (
+                      <div className="text-xs text-muted-foreground">
+                        {restaurant.cuisine}
+                      </div>
+                    )}
+                  </div>
+                  {restaurant.tenantId === currentTenantId && (
+                    <div className="w-2 h-2 bg-green-500 rounded-full ml-2" />
+                  )}
+                </DropdownMenuItem>
+              ))}
+              
+              {canCreateRestaurant && (
+                <>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem
+                    onClick={() => setIsCreateDialogOpen(true)}
+                    className="cursor-pointer"
+                  >
+                    <Plus className="h-4 w-4 mr-2" />
+                    Create New Restaurant
+                  </DropdownMenuItem>
+                </>
+              )}
+            </>
+          ) : (
+            <>
+              <div className="px-2 py-1.5 text-sm text-muted-foreground">
+                No restaurants available
+              </div>
+              {canCreateRestaurant && (
+                <>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem
+                    onClick={() => setIsCreateDialogOpen(true)}
+                    className="cursor-pointer"
+                  >
+                    <Plus className="h-4 w-4 mr-2" />
+                    Create Your First Restaurant
+                  </DropdownMenuItem>
+                </>
+              )}
             </>
           )}
         </DropdownMenuContent>
@@ -211,7 +217,7 @@ export function TenantSwitcher({ currentTenant, onTenantChange }: TenantSwitcher
               Create a new restaurant under your subscription plan.
               {currentTenant && (
                 <span className="block mt-2 text-sm">
-                  You can create {currentTenant.maxRestaurants - currentTenant.restaurantCount} more restaurant(s).
+                  You can create {currentTenant.maxRestaurants - currentTenant.restaurants.length} more restaurant(s).
                 </span>
               )}
             </DialogDescription>
@@ -231,17 +237,28 @@ export function TenantSwitcher({ currentTenant, onTenantChange }: TenantSwitcher
               )}
             </div>
             <div className="space-y-2">
-              <Label htmlFor="slug">URL Slug</Label>
+              <Label htmlFor="description">Description (optional)</Label>
               <Input
-                id="slug"
-                {...form.register("slug")}
-                placeholder="restaurant-url-slug"
+                id="description"
+                {...form.register("description")}
+                placeholder="Brief description of your restaurant"
               />
-              {form.formState.errors.slug && (
-                <p className="text-sm text-destructive">
-                  {form.formState.errors.slug.message}
-                </p>
-              )}
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="address">Address (optional)</Label>
+              <Input
+                id="address"
+                {...form.register("address")}
+                placeholder="Restaurant address"
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="cuisine">Cuisine Type (optional)</Label>
+              <Input
+                id="cuisine"
+                {...form.register("cuisine")}
+                placeholder="e.g., Italian, French, Mexican"
+              />
             </div>
             <DialogFooter>
               <Button

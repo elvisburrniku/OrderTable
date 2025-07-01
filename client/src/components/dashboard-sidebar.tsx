@@ -365,6 +365,7 @@ export default function DashboardSidebar({
         {/* Tenant Switcher */}
         <div className="mb-6">
           <TenantSwitcher 
+            currentTenantId={tenantId}
             onTenantChange={(tenantId) => {
               // Handle tenant change - redirect to new tenant dashboard
               window.location.href = `/${tenantId}/dashboard`;
