@@ -1710,6 +1710,11 @@ export class DatabaseStorage implements IStorage {
 
     const bookingData = booking[0];
     
+    // Check if booking has a phone number
+    if (!bookingData.phone || bookingData.phone.trim() === '') {
+      throw new Error("Booking does not have a phone number - cannot send SMS survey");
+    }
+    
     // Get SMS settings
     const settings = await this.db
       .select()
