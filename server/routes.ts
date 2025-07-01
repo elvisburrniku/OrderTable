@@ -878,6 +878,45 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Switch restaurant (within same tenant)
+  app.post("/api/user/switch-restaurant", async (req, res) => {
+    try {
+      const sessionUser = (req as any).session?.user;
+      const sessionTenant = (req as any).session?.tenant;
+      const { restaurantId } = req.body;
+
+      if (!sessionUser || !sessionTenant) {
+        return res.status(401).json({ error: "Authentication required" });
+      }
+
+      if (!restaurantId) {
+        return res.status(400).json({ error: "Restaurant ID is required" });
+      }
+
+      // Get the restaurant and verify it belongs to the current tenant
+      const restaurant = await storage.getRestaurant(restaurantId);
+
+      if (!restaurant) {
+        return res.status(404).json({ error: "Restaurant not found" });
+      }
+
+      if (restaurant.tenantId !== sessionTenant.id) {
+        return res.status(403).json({ error: "Access denied to this restaurant" });
+      }
+
+      // Update session with new restaurant
+      (req as any).session.restaurant = restaurant;
+
+      res.json({ 
+        message: "Restaurant switched successfully",
+        restaurant: restaurant 
+      });
+    } catch (error) {
+      console.error("Error switching restaurant:", error);
+      res.status(500).json({ error: "Internal server error" });
+    }
+  });
+
   // Get role permissions
   app.get(
     "/api/tenants/:tenantId/role-permissions",

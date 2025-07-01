@@ -53,7 +53,7 @@ interface TenantSwitcherProps {
   onTenantChange?: (tenantId: number) => void;
 }
 
-export function TenantSwitcher({ currentTenantId, onTenantChange }: TenantSwitcherProps) {
+export function TenantSwitcher({ currentTenantId, currentRestaurantId, onTenantChange }: TenantSwitcherProps) {
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
   const { toast } = useToast();
   const queryClient = useQueryClient();
@@ -112,9 +112,29 @@ export function TenantSwitcher({ currentTenantId, onTenantChange }: TenantSwitch
     },
   });
 
+  const switchRestaurantMutation = useMutation({
+    mutationFn: (restaurantId: number) =>
+      apiRequest("POST", "/api/user/switch-restaurant", { restaurantId }),
+    onSuccess: () => {
+      window.location.reload();
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Error Switching Restaurant",
+        description: error.message || "Failed to switch restaurant",
+        variant: "destructive",
+      });
+    },
+  });
+
   const handleSwitchTenant = (tenantId: number) => {
     if (tenantId === currentTenantId) return;
     switchTenantMutation.mutate(tenantId);
+  };
+
+  const handleSwitchRestaurant = (restaurantId: number) => {
+    if (restaurantId === currentRestaurantId) return;
+    switchRestaurantMutation.mutate(restaurantId);
   };
 
   const onSubmit = (data: CreateRestaurantData) => {
@@ -158,19 +178,19 @@ export function TenantSwitcher({ currentTenantId, onTenantChange }: TenantSwitch
               {allRestaurants.map((restaurant) => (
                 <DropdownMenuItem
                   key={restaurant.id}
-                  onClick={() => handleSwitchTenant(restaurant.tenantId)}
+                  onClick={() => handleSwitchRestaurant(restaurant.id)}
                   className="cursor-pointer"
                 >
                   <Building2 className="h-4 w-4 mr-2" />
                   <div className="flex-1">
                     <div className="font-medium">{restaurant.name}</div>
-                    {restaurant.cuisine && (
+                    {restaurant.description && (
                       <div className="text-xs text-muted-foreground">
-                        {restaurant.cuisine}
+                        {restaurant.description}
                       </div>
                     )}
                   </div>
-                  {restaurant.tenantId === currentTenantId && (
+                  {restaurant.id === currentRestaurantId && (
                     <div className="w-2 h-2 bg-green-500 rounded-full ml-2" />
                   )}
                 </DropdownMenuItem>

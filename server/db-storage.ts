@@ -257,43 +257,51 @@ export class DatabaseStorage implements IStorage {
   async getUserTenants(userId: number): Promise<any[]> {
     if (!this.db) throw new Error("Database connection not available");
     
-    // Get all tenants the user is associated with
-    const tenantsResult = await this.db
-      .select({
-        id: tenants.id,
-        name: tenants.name,
-        slug: tenants.slug,
-        subscriptionStatus: tenants.subscriptionStatus,
-        maxRestaurants: tenants.maxRestaurants,
-        isOwner: sql<boolean>`CASE WHEN ${tenantUsers.role} = 'owner' THEN true ELSE false END`,
-      })
-      .from(tenantUsers)
-      .leftJoin(tenants, eq(tenantUsers.tenantId, tenants.id))
-      .where(eq(tenantUsers.userId, userId));
+    try {
+      // Get all tenants the user is associated with using raw SQL to avoid complex query issues
+      const tenantsResult = await this.db.execute(sql`
+        SELECT 
+          t.id,
+          t.name,
+          t.slug,
+          t.subscription_status as "subscriptionStatus",
+          t.max_restaurants as "maxRestaurants",
+          CASE WHEN tu.role = 'owner' THEN true ELSE false END as "isOwner"
+        FROM tenant_users tu
+        LEFT JOIN tenants t ON tu.tenant_id = t.id
+        WHERE tu.user_id = ${userId}
+      `);
 
-    // For each tenant, get their restaurants
-    const result = await Promise.all(
-      tenantsResult.map(async (tenant) => {
-        const tenantRestaurants = await this.db
-          .select({
-            id: restaurants.id,
-            name: restaurants.name,
-            tenantId: restaurants.tenantId,
-            description: restaurants.description,
-            address: restaurants.address,
-            cuisine: restaurants.cuisine,
-          })
-          .from(restaurants)
-          .where(eq(restaurants.tenantId, tenant.id));
+      // For each tenant, get their restaurants
+      const result = await Promise.all(
+        tenantsResult.rows.map(async (tenant: any) => {
+          if (!tenant.id) return { ...tenant, restaurants: [] };
+          
+          const restaurantsResult = await this.db.execute(sql`
+            SELECT 
+              id,
+              name,
+              tenant_id as "tenantId",
+              description,
+              address,
+              email,
+              phone
+            FROM restaurants
+            WHERE tenant_id = ${tenant.id}
+          `);
 
-        return {
-          ...tenant,
-          restaurants: tenantRestaurants,
-        };
-      })
-    );
+          return {
+            ...tenant,
+            restaurants: restaurantsResult.rows || [],
+          };
+        })
+      );
 
-    return result;
+      return result.filter(t => t.id); // Filter out any null tenants
+    } catch (error) {
+      console.error("Error in getUserTenants:", error);
+      throw error;
+    }
   }
 
   async getRestaurantByTenant(tenantId: number): Promise<any> {
