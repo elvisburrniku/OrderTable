@@ -132,7 +132,11 @@ function DraggablePermission({
         transition-colors duration-200 group
       `}
     >
-      <div {...attributes} {...listeners} className="flex items-center gap-2 flex-1">
+      <div
+        {...attributes}
+        {...listeners}
+        className="flex items-center gap-2 flex-1"
+      >
         <Grip className="h-4 w-4 text-muted-foreground" />
         <span className="text-sm font-medium">{permission.label}</span>
       </div>
@@ -315,7 +319,7 @@ export default function RolePermissions() {
 
   const handlePermissionToggle = (role: string, permission: string) => {
     // Prevent modifying owner role permissions
-    if (role === 'owner') {
+    if (role === "owner") {
       toast({
         title: "Cannot Modify Owner Role",
         description: "Owner permissions are fixed and cannot be changed.",
@@ -338,7 +342,7 @@ export default function RolePermissions() {
 
   const handleRedirectChange = (role: string, redirect: string) => {
     // Prevent modifying owner role redirect
-    if (role === 'owner') {
+    if (role === "owner") {
       toast({
         title: "Cannot Modify Owner Role",
         description: "Owner redirect settings are fixed and cannot be changed.",
@@ -358,10 +362,11 @@ export default function RolePermissions() {
     if (!selectedRole) return;
 
     // Prevent updating owner role for security
-    if (selectedRole === 'owner') {
+    if (selectedRole === "owner") {
       toast({
         title: "Cannot Update Owner Role",
-        description: "Owner permissions cannot be modified for security reasons.",
+        description:
+          "Owner permissions cannot be modified for security reasons.",
         variant: "destructive",
       });
       return;
@@ -409,7 +414,7 @@ export default function RolePermissions() {
     if (!over || !permissionsData || !selectedRole) return;
 
     // Prevent modifying owner role permissions via drag and drop
-    if (selectedRole === 'owner') {
+    if (selectedRole === "owner") {
       toast({
         title: "Cannot Modify Owner Role",
         description: "Owner permissions cannot be changed via drag and drop.",
@@ -562,7 +567,7 @@ export default function RolePermissions() {
           </p>
         </div>
 
-        {hasChanges && selectedRole !== 'owner' && (
+        {hasChanges && selectedRole !== "owner" && (
           <div className="flex items-center gap-2">
             <Button variant="outline" onClick={handleResetRole} size="sm">
               <RotateCcw className="h-4 w-4 mr-2" />
@@ -669,17 +674,19 @@ export default function RolePermissions() {
             <CardHeader>
               <CardTitle className="capitalize flex items-center gap-2">
                 {selectedRole.replace("_", " ")} Permissions
-                {selectedRole === 'owner' && (
-                  <Badge variant="outline" className="bg-yellow-50 text-yellow-700 border-yellow-200">
+                {selectedRole === "owner" && (
+                  <Badge
+                    variant="outline"
+                    className="bg-yellow-50 text-yellow-700 border-yellow-200"
+                  >
                     Protected
                   </Badge>
                 )}
               </CardTitle>
               <CardDescription>
-                {selectedRole === 'owner' 
+                {selectedRole === "owner"
                   ? "Owner permissions are fixed and cannot be modified for security reasons. Owners have access to all features by default."
-                  : "Configure page access and feature permissions for this role"
-                }
+                  : "Configure page access and feature permissions for this role"}
               </CardDescription>
             </CardHeader>
             <CardContent>
@@ -761,7 +768,12 @@ export default function RolePermissions() {
                                 permission={permission}
                                 isActive={true}
                                 isAssigned={true}
-                                onRemove={() => handlePermissionToggle(selectedRole, permission.key)}
+                                onRemove={() =>
+                                  handlePermissionToggle(
+                                    selectedRole,
+                                    permission.key,
+                                  )
+                                }
                               />
                             ))}
                         </SortableContext>
@@ -922,7 +934,12 @@ export default function RolePermissions() {
                                 permission={permission}
                                 isActive={true}
                                 isAssigned={true}
-                                onRemove={() => handlePermissionToggle(selectedRole, permission.key)}
+                                onRemove={() =>
+                                  handlePermissionToggle(
+                                    selectedRole,
+                                    permission.key,
+                                  )
+                                }
                               />
                             ))}
                         </SortableContext>
