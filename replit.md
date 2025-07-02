@@ -22,6 +22,14 @@ A comprehensive restaurant booking management system with React frontend and Exp
 - Kitchen order management
 
 ## Recent Changes
+- **2025-07-02**: ✅ GUEST PREPAYMENT SYSTEM & ADMIN PAYMENT LINK MANAGEMENT - Complete guest payment interface with admin resend functionality
+- **Guest Payment Interface**: Fixed PrePayment page to work as guest interface without authentication, includes request new payment link functionality for customers
+- **Admin Payment Management**: Added resend payment link button in booking detail page for admins, sends new payment links directly to customer email
+- **Customer Link Request**: Customers can request new payment links by providing contact verification, which notifies restaurant admins via email
+- **Enhanced Error Handling**: PrePayment page now gracefully handles invalid/expired links with user-friendly error messages and recovery options
+- **Payment Status Integration**: Updated booking status system to include "waiting_payment" status and proper status transitions for payment-required bookings
+- **Email Template Enhancement**: Modified booking confirmation emails to use PrePayment links instead of authenticated payment page links
+- **Database Integration**: Fixed authentication middleware issues and ensured proper tenant validation for payment-related endpoints
 - **2025-07-02**: ✅ BOOKING PAYMENT INTEGRATION - Complete payment processing system integrated with booking flow
 - **Payment Integration Features**: Booking payment system with Stripe Connect, payment links in emails, guest booking payment options, and admin payment link generation
 - **Guest Booking Enhancement**: Added payment step to booking flow allowing customers to require payments, set amounts, and send payment links via email

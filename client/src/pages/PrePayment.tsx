@@ -1,18 +1,16 @@
-import { useState, useEffect } from "react";
+import React, { useState, useEffect } from "react";
 import { useLocation } from "wouter";
 import { Elements } from "@stripe/react-stripe-js";
 import { loadStripe } from "@stripe/stripe-js";
 import { useQuery } from "@tanstack/react-query";
-import { apiRequest } from "@/lib/queryClient";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Alert, AlertDescription } from "@/components/ui/alert";
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import { AlertCircle, CheckCircle, CreditCard, Calendar, Users, Clock, MapPin } from "lucide-react";
 import { PaymentElement, useStripe, useElements } from "@stripe/react-stripe-js";
 
-// Make sure to call `loadStripe` outside of a component's render to avoid
-// recreating the `Stripe` object on every render.
 const stripePromise = import.meta.env.VITE_STRIPE_PUBLIC_KEY 
   ? loadStripe(import.meta.env.VITE_STRIPE_PUBLIC_KEY)
   : null;
@@ -52,26 +50,20 @@ function BookingPaymentForm({ booking, amount, currency, onSuccess, onError }: B
         confirmParams: {
           return_url: `${window.location.origin}/payment-success?booking=${booking.id}`,
         },
-        redirect: "if_required",
       });
 
       if (error) {
-        onError(error.message || "Payment failed");
-      } else {
-        // Payment succeeded, update booking status
-        try {
-          await apiRequest("PUT", `/api/bookings/${booking.id}/payment-status`, {
-            status: "confirmed",
-            paymentStatus: "paid"
-          });
-          onSuccess();
-        } catch (updateError) {
-          console.error("Failed to update booking status:", updateError);
-          onSuccess(); // Still redirect even if status update fails
+        if (error.type === "card_error" || error.type === "validation_error") {
+          onError(error.message || "Payment failed");
+        } else {
+          onError("An unexpected error occurred.");
         }
+      } else {
+        // Payment succeeded
+        onSuccess();
       }
-    } catch (err) {
-      onError("An unexpected error occurred");
+    } catch (error) {
+      onError("An error occurred while processing payment");
     } finally {
       setIsProcessing(false);
     }
@@ -142,10 +134,6 @@ function BookingPaymentForm({ booking, amount, currency, onSuccess, onError }: B
             )}
           </Button>
         </form>
-
-        <div className="text-xs text-muted-foreground text-center">
-          Your payment is secured by Stripe. We do not store your card details.
-        </div>
       </CardContent>
     </Card>
   );
@@ -153,59 +141,36 @@ function BookingPaymentForm({ booking, amount, currency, onSuccess, onError }: B
 
 export default function PrePayment() {
   const [location] = useLocation();
-  
-  // Parse search parameters manually
+  const [clientSecret, setClientSecret] = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(null);
+  const [requestingLink, setRequestingLink] = useState(false);
+  const [linkRequestSubmitted, setLinkRequestSubmitted] = useState(false);
+  const [customerEmail, setCustomerEmail] = useState("");
+  const [customerPhone, setCustomerPhone] = useState("");
+
+  // Parse search parameters
   const urlParams = new URLSearchParams(location.split('?')[1] || '');
   const bookingId = urlParams.get("booking");
-  const token = urlParams.get("token"); // For guest access
-  const [clientSecret, setClientSecret] = useState("");
-  const [error, setError] = useState("");
-  const [paymentSuccess, setPaymentSuccess] = useState(false);
+  const amount = parseFloat(urlParams.get("amount") || "0");
+  const currency = urlParams.get("currency") || "USD";
 
-  // Check if Stripe is configured
-  if (!import.meta.env.VITE_STRIPE_PUBLIC_KEY) {
-    return (
-      <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 py-12 px-4">
-        <div className="container mx-auto max-w-md">
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <AlertCircle className="h-5 w-5 text-destructive" />
-                Payment Not Available
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <Alert variant="destructive">
-                <AlertCircle className="h-4 w-4" />
-                <AlertDescription>
-                  Payment processing is not configured. Please contact the restaurant directly to complete your booking.
-                </AlertDescription>
-              </Alert>
-            </CardContent>
-          </Card>
-        </div>
-      </div>
-    );
-  }
-
-  // Fetch booking details using guest access or authenticated access
-  const { data: booking, isLoading: bookingLoading } = useQuery({
-    queryKey: ["guest-booking-details", bookingId, token],
+  // Fetch booking details
+  const { data: booking, isLoading: bookingLoading, error: bookingError } = useQuery({
+    queryKey: ["guest-booking-details", bookingId],
     queryFn: async () => {
       if (!bookingId) throw new Error("Booking ID required");
       
-      // Use guest access endpoint if token is provided
-      const endpoint = token 
-        ? `/api/guest/bookings/${bookingId}?token=${token}`
-        : `/api/bookings/${bookingId}`;
-        
-      const response = await fetch(endpoint);
+      const response = await fetch(`/api/guest/bookings/${bookingId}`);
       if (!response.ok) {
+        if (response.status === 404) {
+          throw new Error("Booking not found");
+        }
         throw new Error("Failed to fetch booking details");
       }
       return response.json();
     },
     enabled: !!bookingId,
+    retry: 1,
   });
 
   // Create payment intent
@@ -249,30 +214,85 @@ export default function PrePayment() {
     }
   }, [booking]);
 
+  const handleRequestNewLink = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setRequestingLink(true);
+
+    try {
+      const response = await fetch(`/api/guest/bookings/${bookingId}/request-payment-link`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          customerEmail,
+          customerPhone,
+        }),
+      });
+
+      if (response.ok) {
+        setLinkRequestSubmitted(true);
+      } else {
+        const errorData = await response.json();
+        setError(errorData.message || "Failed to request new payment link");
+      }
+    } catch (error) {
+      setError("Failed to request new payment link. Please try again.");
+    } finally {
+      setRequestingLink(false);
+    }
+  };
+
   const handlePaymentSuccess = () => {
-    setPaymentSuccess(true);
+    window.location.href = `/payment-success?booking=${bookingId}`;
   };
 
-  const handlePaymentError = (error: string) => {
-    setError(error);
+  const handlePaymentError = (errorMessage: string) => {
+    setError(errorMessage);
   };
 
-  if (!bookingId) {
+  if (!bookingId || !amount) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 py-12 px-4">
+      <div className="min-h-screen bg-gradient-to-br from-red-50 to-rose-100 py-12 px-4">
         <div className="container mx-auto max-w-md">
           <Card>
             <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <AlertCircle className="h-5 w-5 text-destructive" />
-                Invalid Payment Link
+              <CardTitle className="flex items-center gap-2 text-destructive">
+                <AlertCircle className="h-5 w-5" />
+                Invalid Link
               </CardTitle>
             </CardHeader>
             <CardContent>
               <Alert variant="destructive">
                 <AlertCircle className="h-4 w-4" />
                 <AlertDescription>
-                  This payment link is invalid or expired. Please contact the restaurant to get a new payment link.
+                  This payment link is invalid.
+                </AlertDescription>
+              </Alert>
+            </CardContent>
+          </Card>
+        </div>
+      </div>
+    );
+  }
+
+  if (linkRequestSubmitted) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-green-50 to-emerald-100 py-12 px-4">
+        <div className="container mx-auto max-w-md">
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2 text-green-700">
+                <CheckCircle className="h-5 w-5" />
+                Request Sent
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <Alert className="border-green-200 bg-green-50">
+                <CheckCircle className="h-4 w-4 text-green-600" />
+                <AlertDescription className="text-green-800">
+                  Your request for a new payment link has been sent to the restaurant. 
+                  They will contact you with a new link shortly.
                 </AlertDescription>
               </Alert>
             </CardContent>
@@ -294,28 +314,71 @@ export default function PrePayment() {
     );
   }
 
-  if (paymentSuccess) {
+  if (bookingError || !booking) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-green-50 to-emerald-100 py-12 px-4">
+      <div className="min-h-screen bg-gradient-to-br from-red-50 to-rose-100 py-12 px-4">
         <div className="container mx-auto max-w-md">
           <Card>
             <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <CheckCircle className="h-5 w-5 text-green-600" />
-                Payment Successful
+              <CardTitle className="flex items-center gap-2 text-destructive">
+                <AlertCircle className="h-5 w-5" />
+                Payment Link Issue
               </CardTitle>
             </CardHeader>
-            <CardContent className="text-center space-y-4">
-              <div className="text-green-600">
-                <CheckCircle className="h-16 w-16 mx-auto mb-4" />
+            <CardContent className="space-y-4">
+              <Alert variant="destructive">
+                <AlertCircle className="h-4 w-4" />
+                <AlertDescription>
+                  This payment link is invalid or expired. You can request a new payment link below.
+                </AlertDescription>
+              </Alert>
+
+              <div className="space-y-4">
+                <h3 className="font-medium">Request New Payment Link</h3>
+                <p className="text-sm text-muted-foreground">
+                  Please provide your contact information to verify your identity and receive a new payment link.
+                </p>
+                
+                <form onSubmit={handleRequestNewLink} className="space-y-3">
+                  <div>
+                    <Label htmlFor="email">Email Address</Label>
+                    <Input
+                      id="email"
+                      type="email"
+                      value={customerEmail}
+                      onChange={(e) => setCustomerEmail(e.target.value)}
+                      placeholder="Enter your email"
+                      required
+                    />
+                  </div>
+                  
+                  <div>
+                    <Label htmlFor="phone">Phone Number (Optional)</Label>
+                    <Input
+                      id="phone"
+                      type="tel"
+                      value={customerPhone}
+                      onChange={(e) => setCustomerPhone(e.target.value)}
+                      placeholder="Enter your phone number"
+                    />
+                  </div>
+
+                  <Button 
+                    type="submit" 
+                    disabled={requestingLink || !customerEmail}
+                    className="w-full"
+                  >
+                    {requestingLink ? (
+                      <div className="flex items-center gap-2">
+                        <div className="animate-spin w-4 h-4 border-2 border-current border-t-transparent rounded-full" />
+                        Sending Request...
+                      </div>
+                    ) : (
+                      "Request New Payment Link"
+                    )}
+                  </Button>
+                </form>
               </div>
-              <p className="text-lg font-medium">Your booking has been confirmed!</p>
-              <p className="text-muted-foreground">
-                Payment processed successfully. You should receive a confirmation email shortly.
-              </p>
-              <Badge variant="secondary" className="bg-green-100 text-green-800">
-                Booking Confirmed
-              </Badge>
             </CardContent>
           </Card>
         </div>
@@ -329,22 +392,19 @@ export default function PrePayment() {
         <div className="container mx-auto max-w-md">
           <Card>
             <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <AlertCircle className="h-5 w-5 text-destructive" />
+              <CardTitle className="flex items-center gap-2 text-destructive">
+                <AlertCircle className="h-5 w-5" />
                 Payment Error
               </CardTitle>
             </CardHeader>
             <CardContent>
               <Alert variant="destructive">
                 <AlertCircle className="h-4 w-4" />
-                <AlertDescription>
-                  {error}
-                </AlertDescription>
+                <AlertDescription>{error}</AlertDescription>
               </Alert>
               <Button 
                 onClick={() => window.location.reload()} 
                 className="w-full mt-4"
-                variant="outline"
               >
                 Try Again
               </Button>
@@ -355,22 +415,22 @@ export default function PrePayment() {
     );
   }
 
-  if (!booking) {
+  if (!stripePromise) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 py-12 px-4">
+      <div className="min-h-screen bg-gradient-to-br from-red-50 to-rose-100 py-12 px-4">
         <div className="container mx-auto max-w-md">
           <Card>
             <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <AlertCircle className="h-5 w-5 text-destructive" />
-                Booking Not Found
+              <CardTitle className="flex items-center gap-2 text-destructive">
+                <AlertCircle className="h-5 w-5" />
+                Payment Unavailable
               </CardTitle>
             </CardHeader>
             <CardContent>
               <Alert variant="destructive">
                 <AlertCircle className="h-4 w-4" />
                 <AlertDescription>
-                  The booking could not be found or you don't have permission to access it.
+                  Payment processing is not available at this time. Please contact the restaurant directly.
                 </AlertDescription>
               </Alert>
             </CardContent>
@@ -379,131 +439,31 @@ export default function PrePayment() {
       </div>
     );
   }
-
-  // Check if payment is required and not already paid
-  if (!booking.requiresPayment) {
-    return (
-      <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 py-12 px-4">
-        <div className="container mx-auto max-w-md">
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <CheckCircle className="h-5 w-5 text-green-600" />
-                No Payment Required
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <Alert>
-                <CheckCircle className="h-4 w-4" />
-                <AlertDescription>
-                  This booking does not require prepayment. Your booking is already confirmed.
-                </AlertDescription>
-              </Alert>
-            </CardContent>
-          </Card>
-        </div>
-      </div>
-    );
-  }
-
-  if (booking.paymentStatus === "paid") {
-    return (
-      <div className="min-h-screen bg-gradient-to-br from-green-50 to-emerald-100 py-12 px-4">
-        <div className="container mx-auto max-w-md">
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <CheckCircle className="h-5 w-5 text-green-600" />
-                Already Paid
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <Alert>
-                <CheckCircle className="h-4 w-4" />
-                <AlertDescription>
-                  This booking has already been paid for and is confirmed.
-                </AlertDescription>
-              </Alert>
-            </CardContent>
-          </Card>
-        </div>
-      </div>
-    );
-  }
-
-  if (!clientSecret) {
-    return (
-      <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 py-12 px-4">
-        <div className="container mx-auto max-w-md">
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <CreditCard className="h-5 w-5" />
-                Preparing Payment
-              </CardTitle>
-              <CardDescription>
-                Setting up your payment...
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="flex items-center justify-center h-32">
-                <div className="animate-spin w-6 h-6 border-2 border-primary border-t-transparent rounded-full" />
-              </div>
-            </CardContent>
-          </Card>
-        </div>
-      </div>
-    );
-  }
-
-  const appearance = {
-    theme: "stripe" as const,
-    variables: {
-      colorPrimary: "#0570de",
-      colorBackground: "#ffffff",
-      colorText: "#30313d",
-      colorDanger: "#df1b41",
-      fontFamily: "system-ui, sans-serif",
-      spacingUnit: "4px",
-      borderRadius: "8px",
-    },
-  };
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 py-12 px-4">
       <div className="container mx-auto max-w-md">
-        <div className="mb-6 text-center">
-          <h1 className="text-3xl font-bold text-gray-900">Complete Your Payment</h1>
-          <p className="text-gray-600 mt-2">
-            Secure payment to confirm your booking
-          </p>
-        </div>
-
-        {stripePromise ? (
-          <Elements stripe={stripePromise} options={{ clientSecret, appearance }}>
+        {clientSecret && (
+          <Elements stripe={stripePromise} options={{ clientSecret }}>
             <BookingPaymentForm
               booking={booking}
-              amount={booking.paymentAmount}
-              currency="usd"
+              amount={amount}
+              currency={currency}
               onSuccess={handlePaymentSuccess}
               onError={handlePaymentError}
             />
           </Elements>
-        ) : (
+        )}
+        
+        {!clientSecret && (
           <Card>
             <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <AlertCircle className="h-5 w-5 text-destructive" />
-                Payment Not Available
-              </CardTitle>
+              <CardTitle>Loading Payment...</CardTitle>
             </CardHeader>
             <CardContent>
-              <Alert variant="destructive">
-                <AlertCircle className="h-4 w-4" />
-                <AlertDescription>
-                  Payment processing is not configured.
-                </AlertDescription>
-              </Alert>
+              <div className="flex items-center justify-center h-32">
+                <div className="animate-spin w-8 h-8 border-4 border-primary border-t-transparent rounded-full" />
+              </div>
             </CardContent>
           </Card>
         )}
