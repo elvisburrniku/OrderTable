@@ -260,13 +260,13 @@ export default function DashboardSidebar({
       color: "text-blue-600",
       requiredPermission: "access_users",
     },
-    {
-      name: "Floor Plan",
-      icon: Layout,
-      href: `/${tenantId}/floor-plan`,
-      color: "text-violet-600",
-      requiredPermission: "access_floor_plan",
-    },
+    // {
+    //   name: "Floor Plan",
+    //   icon: Layout,
+    //   href: `/${tenantId}/floor-plan`,
+    //   color: "text-violet-600",
+    //   requiredPermission: "access_floor_plan",
+    // },
     {
       name: "Menu Management",
       icon: ChefHat,
