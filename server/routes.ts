@@ -34,7 +34,8 @@ const withStripe = async <T>(operation: (stripe: Stripe) => Promise<T>, fallback
     return await operation(stripe);
   } catch (error) {
     console.error("Stripe operation failed:", error);
-    return fallback ?? null;
+    // Re-throw the error so we can handle it properly in the endpoint
+    throw error;
   }
 };
 import * as tenantRoutes from "./tenant-routes";
@@ -18444,7 +18445,7 @@ NEXT STEPS:
           // Create account if it doesn't exist
           if (!accountId) {
             const account = await stripe.accounts.create({
-              type: "standard",
+              type: "express", // Changed to express for easier onboarding
               country: "US", // Default to US, can be made configurable
               email: userEmail,
               business_profile: {
@@ -18480,9 +18481,28 @@ NEXT STEPS:
           onboardingUrl: result.url,
           accountId: result.accountId,
         });
-      } catch (error) {
+      } catch (error: any) {
         console.error("Error creating Stripe Connect onboarding:", error);
-        res.status(500).json({ message: "Failed to create onboarding link" });
+        
+        // Handle specific Stripe errors
+        if (error.type === 'StripeInvalidRequestError') {
+          if (error.message.includes('Connect')) {
+            return res.status(400).json({ 
+              message: "Stripe Connect not enabled",
+              details: "Please enable Stripe Connect on your Stripe dashboard. Visit https://dashboard.stripe.com/connect/overview to get started.",
+              stripeError: error.message
+            });
+          }
+          return res.status(400).json({ 
+            message: "Invalid request to Stripe",
+            details: error.message
+          });
+        }
+        
+        res.status(500).json({ 
+          message: "Failed to create onboarding link",
+          details: error.message || "Unknown error occurred"
+        });
       }
     }
   );

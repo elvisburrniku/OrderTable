@@ -55,11 +55,32 @@ export default function PaymentGateway() {
     onSuccess: (data) => {
       window.location.href = data.onboardingUrl;
     },
-    onError: (error) => {
+    onError: async (error) => {
       console.error("Stripe Connect error:", error);
+      
+      // Try to get the error details from the response
+      let errorMessage = "Failed to start Stripe Connect onboarding";
+      let errorDetails = "Please try again or contact support";
+      
+      try {
+        const response = await fetch(`/api/tenants/${tenantId}/stripe-connect/onboard`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({})
+        });
+        
+        if (!response.ok) {
+          const errorData = await response.json();
+          errorMessage = errorData.message || errorMessage;
+          errorDetails = errorData.details || errorDetails;
+        }
+      } catch (fetchError) {
+        // Ignore fetch errors, use default messages
+      }
+      
       toast({
-        title: "Stripe Connect Setup Required",
-        description: "Please enable Stripe Connect on your Stripe dashboard first. Visit https://dashboard.stripe.com/connect/overview to get started.",
+        title: errorMessage,
+        description: errorDetails,
         variant: "destructive",
       });
     },
