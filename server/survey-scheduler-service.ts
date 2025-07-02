@@ -99,6 +99,11 @@ export class SurveySchedulerService {
   // Process pending surveys that are ready to be sent
   async processPendingSurveys(): Promise<void> {
     try {
+      if (!this.storage.db) {
+        console.log('Survey scheduler: Database not available - skipping survey processing');
+        return;
+      }
+      
       const now = new Date();
       
       // Get all pending surveys that are ready to be sent

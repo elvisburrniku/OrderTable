@@ -133,6 +133,10 @@ export class AdminStorage {
 
   // System settings management
   async getSystemSetting(key: string): Promise<SystemSetting | null> {
+    if (!db) {
+      console.log("Database not available - returning null for system setting:", key);
+      return null;
+    }
     const [setting] = await db
       .select()
       .from(systemSettings)
