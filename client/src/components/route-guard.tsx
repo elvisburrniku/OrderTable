@@ -24,6 +24,7 @@ export function RouteGuard({ children }: RouteGuardProps) {
         /^\/feedback-responses$/,
         /^\/feedback-responses-popup$/,
         /^\/booking-manage$/,
+        /^\/payment$/,
       ];
 
       const isPublicRoute = publicRoutes.some((pattern) =>
