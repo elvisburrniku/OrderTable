@@ -339,151 +339,18 @@ export default function MenuManagementPage() {
             </div>
           </div>
 
-          {/* Items Section */}
-          <div className="space-y-4">
-            <div className="flex justify-between items-center">
-              <h3 className="text-lg font-medium">Menu Items ({filteredItems.length})</h3>
-              <Dialog open={isItemDialogOpen} onOpenChange={setIsItemDialogOpen}>
-                
-              </Dialog>
-            </div>
-            <div className="space-y-2">
-              {paginatedItems.length === 0 ? (
-                <div className="text-center py-8">
-                  <p className="text-gray-500">
-                    {filteredItems.length === 0 
-                      ? (activeFiltersCount > 0 ? "No items match your filters" : "No menu items yet")
-                      : "No items on this page"
-                    }
-                  </p>
-                </div>
-              ) : (
-                paginatedItems.map((item: any) => (
-                  <div
-                    key={item.id}
-                    className="bg-white rounded-lg shadow-sm border border-gray-200 p-4 flex items-center justify-between"
-                  >
-                    <div>
-                      <h4 className="font-medium text-gray-800">{item.name}</h4>
-                      <p className="text-sm text-gray-600">{item.description}</p>
-                    </div>
-                    <div className="flex items-center space-x-4">
-                      <span className="text-gray-700 font-medium">€{item.price}</span>
-                      
-                    </div>
-                  </div>
-                ))
-              )}
-            </div>
-
-            {/* Pagination */}
-            {totalPages > 1 && (
-              <div className="flex items-center justify-between px-6 py-4 border-t bg-gray-50 rounded-b-lg">
-                <div className="flex items-center space-x-2">
-                  <span className="text-sm text-gray-600">Show</span>
-                  <Select
-                    value={itemsPerPage.toString()}
-                    onValueChange={(value) => {
-                      setItemsPerPage(parseInt(value));
-                      setCurrentPage(1);
-                    }}
-                  >
-                    <SelectTrigger className="w-16 h-8">
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="5">5</SelectItem>
-                      <SelectItem value="10">10</SelectItem>
-                      <SelectItem value="20">20</SelectItem>
-                      <SelectItem value="50">50</SelectItem>
-                    </SelectContent>
-                  </Select>
-                  <span className="text-sm text-gray-600">items per page</span>
-                </div>
-
-                <div className="flex items-center space-x-4">
-                  <div className="text-sm text-gray-600">
-                    {startIndex + 1}-{Math.min(endIndex, filteredItems.length)} of {filteredItems.length}
-                  </div>
-
-                  <div className="flex items-center space-x-2">
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => setCurrentPage(1)}
-                      disabled={currentPage === 1}
-                      className="px-3 py-1 h-8 text-sm"
-                    >
-                      First
-                    </Button>
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => setCurrentPage(currentPage - 1)}
-                      disabled={currentPage === 1}
-                      className="w-8 h-8 p-0"
-                    >
-                      <ChevronLeft className="w-4 h-4" />
-                    </Button>
-
-                    {/* Page Numbers */}
-                    <div className="flex items-center space-x-1">
-                      {Array.from({ length: Math.min(3, totalPages) }, (_, i) => {
-                        let pageNum;
-                        if (totalPages <= 3) {
-                          pageNum = i + 1;
-                        } else if (currentPage <= 2) {
-                          pageNum = i + 1;
-                        } else if (currentPage >= totalPages - 1) {
-                          pageNum = totalPages - 2 + i;
-                        } else {
-                          pageNum = currentPage - 1 + i;
-                        }
-
-                        return (
-                          <Button
-                            key={pageNum}
-                            variant={currentPage === pageNum ? "default" : "outline"}
-                            size="sm"
-                            onClick={() => setCurrentPage(pageNum)}
-                            className={`w-8 h-8 p-0 ${
-                              currentPage === pageNum 
-                                ? "bg-green-600 hover:bg-green-700 text-white" 
-                                : "hover:bg-green-50"
-                            }`}
-                          >
-                            {pageNum}
-                          </Button>
-                        );
-                      })}
-                    </div>
-
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => setCurrentPage(currentPage + 1)}
-                      disabled={currentPage === totalPages}
-                      className="w-8 h-8 p-0"
-                    >
-                      <ChevronRight className="w-4 h-4" />
-                    </Button>
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => setCurrentPage(totalPages)}
-                      disabled={currentPage === totalPages}
-                      className="px-3 py-1 h-8 text-sm"
-                    >
-                      Last
-                    </Button>
-                  </div>
-                </div>
-              </div>
-            )}
-          </div>
+          
                     <MenuManagement 
                       restaurantId={restaurant.id} 
-                      tenantId={restaurant.tenantId} 
+                      tenantId={restaurant.tenantId}
+                      searchTerm={searchTerm}
+                      categoryFilter={categoryFilter}
+                      priceRangeFilter={priceRangeFilter}
+                      availabilityFilter={availabilityFilter}
+                      currentPage={currentPage}
+                      itemsPerPage={itemsPerPage}
+                      setCurrentPage={setCurrentPage}
+                      setItemsPerPage={setItemsPerPage}
                     />
                   </motion.div>
                 </TabsContent>

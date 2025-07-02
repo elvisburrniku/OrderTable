@@ -53,9 +53,28 @@ interface MenuItem {
 interface MenuManagementProps {
   restaurantId: number;
   tenantId: number;
+  searchTerm?: string;
+  categoryFilter?: string;
+  priceRangeFilter?: string;
+  availabilityFilter?: string;
+  currentPage?: number;
+  itemsPerPage?: number;
+  setCurrentPage?: (page: number) => void;
+  setItemsPerPage?: (size: number) => void;
 }
 
-export function MenuManagement({ restaurantId, tenantId }: MenuManagementProps) {
+export function MenuManagement({ 
+  restaurantId, 
+  tenantId, 
+  searchTerm = "",
+  categoryFilter = "all",
+  priceRangeFilter = "all",
+  availabilityFilter = "all",
+  currentPage = 1,
+  itemsPerPage = 10,
+  setCurrentPage = () => {},
+  setItemsPerPage = () => {}
+}: MenuManagementProps) {
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const [selectedCategory, setSelectedCategory] = useState<number | null>(null);
@@ -241,7 +260,28 @@ export function MenuManagement({ restaurantId, tenantId }: MenuManagementProps) 
   };
 
   const getItemsByCategory = (categoryId: number) => {
-    return items.filter(item => item.categoryId === categoryId);
+    return items.filter(item => {
+      const matchesCategory = item.categoryId === categoryId;
+      
+      const matchesSearch = !searchTerm || 
+        item.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        item.description?.toLowerCase().includes(searchTerm.toLowerCase());
+
+      const matchesCategoryFilter = categoryFilter === "all" || item.categoryId?.toString() === categoryFilter;
+
+      const itemPrice = item.price ? item.price / 100 : 0;
+      const matchesPriceRange = priceRangeFilter === "all" || 
+        (priceRangeFilter === "0-5" && itemPrice <= 5) ||
+        (priceRangeFilter === "5-10" && itemPrice > 5 && itemPrice <= 10) ||
+        (priceRangeFilter === "10-20" && itemPrice > 10 && itemPrice <= 20) ||
+        (priceRangeFilter === "20+" && itemPrice > 20);
+
+      const matchesAvailability = availabilityFilter === "all" ||
+        (availabilityFilter === "available" && item.isAvailable) ||
+        (availabilityFilter === "unavailable" && !item.isAvailable);
+
+      return matchesCategory && matchesSearch && matchesCategoryFilter && matchesPriceRange && matchesAvailability;
+    });
   };
 
   if (categoriesLoading || itemsLoading) {
