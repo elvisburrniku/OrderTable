@@ -95,23 +95,26 @@ export class BrevoEmailService {
     const cancelUrl = `${baseUrl}/cancel-booking/${bookingDetails.managementHash || bookingDetails.hash}`;
     const bookingId = bookingDetails.id;
 
-    const paymentSection = bookingDetails.paymentRequired ? `
+    const paymentSection = (bookingDetails.requiresPayment || bookingDetails.paymentRequired) ? `
       <div style="background-color: #fff3cd; border-radius: 8px; padding: 25px; margin: 25px 0; border-left: 4px solid #ffc107;">
         <h3 style="margin: 0 0 15px; font-size: 18px; color: #856404; font-weight: 600;">Payment Required</h3>
         <div style="display: grid; gap: 10px;">
           <div style="display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid #f5e79e;">
             <span style="color: #856404; font-weight: 500;">Amount:</span>
-            <span style="color: #856404; font-weight: 600;">$${bookingDetails.paymentAmount}</span>
+            <span style="color: #856404; font-weight: 600;">$${bookingDetails.paymentAmount || '0.00'}</span>
           </div>
           <div style="display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid #f5e79e;">
             <span style="color: #856404; font-weight: 500;">Payment Deadline:</span>
-            <span style="color: #856404; font-weight: 600;">${bookingDetails.paymentDeadline} hours before booking</span>
+            <span style="color: #856404; font-weight: 600;">${bookingDetails.paymentDeadlineHours || bookingDetails.paymentDeadline || 24} hours before booking</span>
           </div>
           ${bookingDetails.paymentLink ? `
             <div style="text-align: center; margin-top: 15px;">
               <a href="${bookingDetails.paymentLink}" style="background-color: #ffc107; color: #212529; padding: 12px 24px; text-decoration: none; border-radius: 6px; font-weight: 600; display: inline-block;">
-                Complete Payment
+                Complete Payment Now
               </a>
+              <p style="margin: 10px 0 0; font-size: 12px; color: #856404;">
+                Click the button above to securely complete your payment
+              </p>
             </div>
           ` : ''}
         </div>

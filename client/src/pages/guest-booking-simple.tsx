@@ -6,7 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { ChevronLeft, ChevronRight, Users, Calendar, Clock, CheckCircle, MapPin, Phone } from "lucide-react";
+import { ChevronLeft, ChevronRight, Users, Calendar, Clock, CheckCircle, MapPin, Phone, CreditCard } from "lucide-react";
 import { format } from "date-fns";
 
 const timeSlots = [
@@ -28,6 +28,7 @@ const steps: BookingStep[] = [
   { id: 'guests', title: 'Guests', icon: Users },
   { id: 'date', title: 'Date', icon: Calendar },
   { id: 'time', title: 'Time', icon: Clock },
+  { id: 'payment', title: 'Payment', icon: CreditCard },
   { id: 'confirm', title: 'Confirm', icon: CheckCircle },
 ];
 
@@ -48,6 +49,12 @@ export default function GuestBookingSimple() {
     email: "",
     phone: "",
     comment: ""
+  });
+  const [paymentOptions, setPaymentOptions] = useState({
+    requiresPayment: false,
+    paymentAmount: "",
+    sendPaymentLink: false,
+    paymentDeadlineHours: 24,
   });
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [bookingComplete, setBookingComplete] = useState(false);
@@ -73,7 +80,7 @@ export default function GuestBookingSimple() {
 
     setIsSubmitting(true);
     try {
-      const response = await fetch(`/api/tenants/${tenantId}/restaurants/${restaurantId}/bookings/guest`, {
+      const response = await fetch(`/api/restaurants/${restaurantId}/bookings`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -83,9 +90,14 @@ export default function GuestBookingSimple() {
           customerEmail: customerData.email,
           customerPhone: customerData.phone,
           guestCount: guestCount,
-          bookingDate: selectedDate.toISOString().split('T')[0],
-          startTime: selectedTime,
-          specialRequests: customerData.comment
+          bookingDate: new Date(selectedDate.getFullYear(), selectedDate.getMonth(), selectedDate.getDate(), 
+                               parseInt(selectedTime.split(':')[0]), parseInt(selectedTime.split(':')[1])).toISOString(),
+          tenantId: parseInt(tenantId),
+          comment: customerData.comment,
+          requiresPayment: paymentOptions.requiresPayment,
+          paymentAmount: paymentOptions.requiresPayment ? parseFloat(paymentOptions.paymentAmount) : undefined,
+          paymentDeadlineHours: paymentOptions.paymentDeadlineHours,
+          sendPaymentLink: paymentOptions.sendPaymentLink
         })
       });
 
@@ -128,7 +140,26 @@ export default function GuestBookingSimple() {
               <span>Guests:</span>
               <span className="font-medium">{guestCount}</span>
             </div>
+            {paymentOptions.requiresPayment && (
+              <div className="flex justify-between">
+                <span>Payment:</span>
+                <span className="font-medium">${paymentOptions.paymentAmount}</span>
+              </div>
+            )}
           </div>
+          {paymentOptions.requiresPayment && paymentOptions.sendPaymentLink && (
+            <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4 mt-4">
+              <div className="flex items-center">
+                <CreditCard className="h-5 w-5 text-yellow-600 mr-2" />
+                <div className="text-sm">
+                  <p className="text-yellow-800 font-medium">Payment Required</p>
+                  <p className="text-yellow-700">
+                    A secure payment link has been sent to your email. Please complete payment within {paymentOptions.paymentDeadlineHours} hours.
+                  </p>
+                </div>
+              </div>
+            </div>
+          )}
           <p className="text-sm text-gray-500 mt-4">
             A confirmation email has been sent to {customerData.email}
           </p>
@@ -285,6 +316,91 @@ export default function GuestBookingSimple() {
           {/* Step 4: Customer Details & Confirmation */}
           {currentStep === 4 && (
             <div className="space-y-6">
+              <h3 className="text-xl font-semibold text-center">Payment Options</h3>
+              
+              <div className="space-y-4">
+                <div className="flex items-center space-x-2">
+                  <input
+                    type="checkbox"
+                    id="requiresPayment"
+                    checked={paymentOptions.requiresPayment}
+                    onChange={(e) => setPaymentOptions(prev => ({ ...prev, requiresPayment: e.target.checked }))}
+                    className="rounded border-gray-300"
+                  />
+                  <Label htmlFor="requiresPayment" className="text-sm font-medium">
+                    Require payment for this booking
+                  </Label>
+                </div>
+
+                {paymentOptions.requiresPayment && (
+                  <>
+                    <div>
+                      <Label htmlFor="paymentAmount">Payment Amount ($)</Label>
+                      <Input
+                        id="paymentAmount"
+                        type="number"
+                        step="0.01"
+                        value={paymentOptions.paymentAmount}
+                        onChange={(e) => setPaymentOptions(prev => ({ ...prev, paymentAmount: e.target.value }))}
+                        placeholder="Enter amount (e.g., 25.00)"
+                      />
+                    </div>
+
+                    <div>
+                      <Label htmlFor="paymentDeadline">Payment Deadline (hours before booking)</Label>
+                      <Select 
+                        value={paymentOptions.paymentDeadlineHours.toString()} 
+                        onValueChange={(value) => setPaymentOptions(prev => ({ ...prev, paymentDeadlineHours: parseInt(value) }))}
+                      >
+                        <SelectTrigger>
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="1">1 hour</SelectItem>
+                          <SelectItem value="2">2 hours</SelectItem>
+                          <SelectItem value="6">6 hours</SelectItem>
+                          <SelectItem value="12">12 hours</SelectItem>
+                          <SelectItem value="24">24 hours</SelectItem>
+                          <SelectItem value="48">48 hours</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+
+                    <div className="flex items-center space-x-2">
+                      <input
+                        type="checkbox"
+                        id="sendPaymentLink"
+                        checked={paymentOptions.sendPaymentLink}
+                        onChange={(e) => setPaymentOptions(prev => ({ ...prev, sendPaymentLink: e.target.checked }))}
+                        className="rounded border-gray-300"
+                      />
+                      <Label htmlFor="sendPaymentLink" className="text-sm font-medium">
+                        Send payment link via email
+                      </Label>
+                    </div>
+
+                    <div className="bg-blue-50 border border-blue-200 rounded-md p-3">
+                      <div className="flex">
+                        <CreditCard className="h-5 w-5 text-blue-400 mt-0.5 mr-2" />
+                        <div className="text-sm">
+                          <p className="text-blue-800 font-medium">Payment Information</p>
+                          <p className="text-blue-600 mt-1">
+                            {paymentOptions.sendPaymentLink 
+                              ? "A secure payment link will be sent to the customer's email address after booking confirmation."
+                              : "Payment will need to be collected manually or through your preferred method."
+                            }
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+                  </>
+                )}
+              </div>
+            </div>
+          )}
+
+          {currentStep === 5 && (
+            <div className="space-y-6">
               <h3 className="text-xl font-semibold text-center">Your details</h3>
               
               <div className="grid gap-4">
@@ -378,7 +494,8 @@ export default function GuestBookingSimple() {
               disabled={
                 (currentStep === 1 && !guestCount) ||
                 (currentStep === 2 && !selectedDate) ||
-                (currentStep === 3 && !selectedTime)
+                (currentStep === 3 && !selectedTime) ||
+                (currentStep === 4 && paymentOptions.requiresPayment && (!paymentOptions.paymentAmount || parseFloat(paymentOptions.paymentAmount) <= 0))
               }
               className="flex items-center gap-2 bg-amber-600 hover:bg-amber-700"
             >

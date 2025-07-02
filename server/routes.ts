@@ -9435,6 +9435,79 @@ export async function registerRoutes(app: Express): Promise<Server> {
     },
   );
 
+  // Create payment link for existing booking
+  app.post("/api/tenants/:tenantId/bookings/:bookingId/payment-link", validateTenant, async (req, res) => {
+    try {
+      const tenantId = parseInt(req.params.tenantId);
+      const bookingId = parseInt(req.params.bookingId);
+      const { amount, currency = "usd" } = req.body;
+
+      if (isNaN(tenantId) || isNaN(bookingId)) {
+        return res.status(400).json({ message: "Invalid tenant or booking ID" });
+      }
+
+      if (!amount || parseFloat(amount) <= 0) {
+        return res.status(400).json({ message: "Valid payment amount is required" });
+      }
+
+      // Get booking details
+      const booking = await storage.getBookingById(bookingId);
+      if (!booking || booking.tenantId !== tenantId) {
+        return res.status(404).json({ message: "Booking not found" });
+      }
+
+      // Get restaurant details
+      const restaurant = await storage.getRestaurantById(booking.restaurantId);
+      if (!restaurant) {
+        return res.status(404).json({ message: "Restaurant not found" });
+      }
+
+      // Get tenant's Stripe Connect account
+      const tenant = await storage.getTenantById(tenantId);
+      if (!tenant?.stripeConnectAccountId || !tenant.stripeConnectChargesEnabled) {
+        return res.status(400).json({ 
+          message: "Stripe Connect not configured or charges not enabled" 
+        });
+      }
+
+      const { paymentService } = await import("./payment-service");
+      
+      const paymentLinkResult = await paymentService.createBookingPaymentLink(
+        parseFloat(amount),
+        currency,
+        tenant.stripeConnectAccountId,
+        {
+          bookingId: booking.id,
+          customerEmail: booking.customerEmail,
+          customerName: booking.customerName,
+          restaurantName: restaurant.name,
+          bookingDate: new Date(booking.bookingDate).toISOString().split('T')[0],
+          startTime: booking.startTime,
+          guestCount: booking.guestCount,
+        }
+      );
+
+      // Update booking with payment information
+      await storage.updateBooking(bookingId, {
+        requiresPayment: true,
+        paymentAmount: parseFloat(amount),
+        paymentStatus: "pending",
+        paymentIntentId: paymentLinkResult.paymentLinkId,
+      });
+
+      res.json({
+        paymentLink: paymentLinkResult.paymentLinkUrl,
+        paymentLinkId: paymentLinkResult.paymentLinkId,
+        amount: parseFloat(amount),
+        currency: currency,
+        message: "Payment link created successfully",
+      });
+    } catch (error) {
+      console.error("Error creating payment link:", error);
+      res.status(500).json({ message: "Failed to create payment link" });
+    }
+  });
+
   // Create public booking (for guest booking form)
   app.post("/api/restaurants/:restaurantId/bookings", async (req, res) => {
     try {
@@ -9459,6 +9532,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
         source = "website",
         status = "confirmed",
         tenantId,
+        requiresPayment = false,
+        paymentAmount,
+        paymentDeadlineHours = 24,
+        sendPaymentLink = false,
       } = req.body;
 
       if (
@@ -9529,8 +9606,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       assignedTableId = availableTables[0].id;
 
-      // Create the booking
-      const newBooking = await storage.createBooking({
+      // Create the booking with payment information
+      const bookingData = {
         restaurantId,
         tenantId,
         tableId: assignedTableId,
@@ -9543,16 +9620,103 @@ export async function registerRoutes(app: Express): Promise<Server> {
         endTime: `${(bookingDateTime.getHours() + 2).toString().padStart(2, "0")}:${bookingDateTime.getMinutes().toString().padStart(2, "0")}`,
         comment: comment || null,
         source,
-        status,
+        status: requiresPayment ? "pending_payment" : status,
+        requiresPayment,
+        paymentAmount: requiresPayment ? paymentAmount : null,
+        paymentDeadlineHours: requiresPayment ? paymentDeadlineHours : null,
+        paymentStatus: requiresPayment ? "pending" : "not_required",
         createdAt: new Date(),
-      });
+      };
 
-      res.status(201).json({
+      const newBooking = await storage.createBooking(bookingData);
+
+      let paymentLink = null;
+
+      // Generate payment link if required and enabled
+      if (requiresPayment && sendPaymentLink && paymentAmount) {
+        try {
+          // Get tenant's Stripe Connect account
+          const tenant = await storage.getTenantById(tenantId);
+          
+          if (tenant?.stripeConnectAccountId && tenant.stripeConnectChargesEnabled) {
+            const { paymentService } = await import("./payment-service");
+            
+            const paymentLinkResult = await paymentService.createBookingPaymentLink(
+              parseFloat(paymentAmount),
+              "usd",
+              tenant.stripeConnectAccountId,
+              {
+                bookingId: newBooking.id,
+                customerEmail,
+                customerName,
+                restaurantName: restaurant.name,
+                bookingDate: bookingDateTime.toISOString().split('T')[0],
+                startTime: bookingTime,
+                guestCount,
+              }
+            );
+
+            paymentLink = paymentLinkResult.paymentLinkUrl;
+
+            // Update booking with payment link info
+            await storage.updateBooking(newBooking.id, {
+              paymentIntentId: paymentLinkResult.paymentLinkId,
+            });
+          }
+        } catch (paymentError) {
+          console.error("Error creating payment link:", paymentError);
+          // Don't fail booking creation if payment link fails
+        }
+      }
+
+      // Send email notifications if available
+      if (emailService) {
+        try {
+          // Send confirmation email to customer
+          await emailService.sendBookingConfirmation(
+            customerEmail,
+            customerName,
+            {
+              ...newBooking,
+              tableNumber: availableTables[0].tableNumber,
+              restaurantName: restaurant.name,
+              restaurantAddress: restaurant.address,
+              restaurantPhone: restaurant.phone,
+              paymentLink: paymentLink,
+              requiresPayment,
+              paymentAmount: requiresPayment ? paymentAmount : null,
+              paymentDeadlineHours: requiresPayment ? paymentDeadlineHours : null,
+            }
+          );
+
+          // Send notification to restaurant if email is configured
+          if (restaurant.email) {
+            await emailService.sendRestaurantNotification(restaurant.email, {
+              ...newBooking,
+              restaurantName: restaurant.name,
+              paymentRequired: requiresPayment,
+              paymentAmount: requiresPayment ? paymentAmount : null,
+            });
+          }
+        } catch (emailError) {
+          console.error("Error sending emails:", emailError);
+        }
+      }
+
+      const response = {
         id: newBooking.id,
         message: "Booking created successfully",
-        booking: newBooking,
-        tableNumber: availableTables[0].tableNumber,
-      });
+        booking: {
+          ...newBooking,
+          tableNumber: availableTables[0].tableNumber,
+          paymentLink: paymentLink,
+          requiresPayment,
+          paymentAmount: requiresPayment ? paymentAmount : null,
+          paymentDeadlineHours: requiresPayment ? paymentDeadlineHours : null,
+        },
+      };
+
+      res.status(201).json(response);
     } catch (error) {
       console.error("Error creating public booking:", error);
       res.status(500).json({ message: "Internal server error" });

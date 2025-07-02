@@ -22,6 +22,14 @@ A comprehensive restaurant booking management system with React frontend and Exp
 - Kitchen order management
 
 ## Recent Changes
+- **2025-07-02**: ✅ BOOKING PAYMENT INTEGRATION - Complete payment processing system integrated with booking flow
+- **Payment Integration Features**: Booking payment system with Stripe Connect, payment links in emails, guest booking payment options, and admin payment link generation
+- **Guest Booking Enhancement**: Added payment step to booking flow allowing customers to require payments, set amounts, and send payment links via email
+- **Email Payment Links**: Enhanced booking confirmation emails to include secure payment links with clear payment instructions and deadlines
+- **API Payment Endpoints**: New endpoints for creating payment links for existing bookings and processing payments through Stripe Connect
+- **Payment Service**: Comprehensive PaymentService class for handling Stripe Connect payment intents, payment links, and status management
+- **Database Integration**: Enhanced booking schema with payment fields including amount, deadline, status, and payment intent tracking
+- **Admin Payment Management**: Restaurant admins can generate payment links for any booking with automatic Stripe Connect integration
 - **2025-07-02**: ✅ STRIPE CONNECT CHARGES & PAYOUTS ENABLEMENT - Enhanced Stripe Connect onboarding with comprehensive setup guidance
 - **Enhanced Onboarding Flow**: Changed from standard to Express accounts for simplified restaurant setup and faster approval process
 - **Improved Error Handling**: Added specific error messages for Stripe Connect not being enabled, with clear instructions to enable it on Stripe dashboard
