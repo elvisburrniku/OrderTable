@@ -82,6 +82,7 @@ export default function UnifiedBookingModal({
     
     const submissionData = {
       ...formData,
+      bookingDate: formData.bookingDate,
       endTime,
       tags: selectedTags,
       tableId: formData.tableId === 'auto-assign' ? '' : formData.tableId
@@ -178,6 +179,20 @@ export default function UnifiedBookingModal({
 
           {/* Booking Details */}
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div>
+              <Label htmlFor="bookingDate" className="text-sm font-medium text-gray-700">Booking Date *</Label>
+              <div className="relative mt-1">
+                <Input
+                  id="bookingDate"
+                  type="date"
+                  value={formData.bookingDate}
+                  onChange={(e) => handleInputChange('bookingDate', e.target.value)}
+                  required
+                  className="pl-10"
+                />
+                <Calendar className="w-4 h-4 text-gray-400 absolute left-3 top-1/2 transform -translate-y-1/2" />
+              </div>
+            </div>
             <div>
               <Label htmlFor="startTime" className="text-sm font-medium text-gray-700">Start Time *</Label>
               <div className="relative mt-1">

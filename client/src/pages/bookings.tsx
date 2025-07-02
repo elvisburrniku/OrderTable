@@ -234,26 +234,47 @@ export default function Bookings() {
     },
   });
 
-  const handleCreateBooking = (e: React.FormEvent) => {
-    e.preventDefault();
-
-    const bookingData = {
-      tenantId,
-      restaurantId,
-      customerName: newBooking.customerName,
-      customerEmail: newBooking.customerEmail,
-      customerPhone: newBooking.customerPhone,
-      guestCount: newBooking.guestCount,
-      bookingDate: new Date(newBooking.bookingDate),
-      startTime: newBooking.startTime,
-      endTime: newBooking.endTime || null,
-      tableId: newBooking.tableId && newBooking.tableId !== 'auto-assign' ? parseInt(newBooking.tableId) : null,
-      notes: newBooking.notes || null,
-      status: 'confirmed',
-      source: 'manual'
-    };
-
-    createBookingMutation.mutate(bookingData);
+  const handleCreateBooking = (eventOrData: React.FormEvent | any) => {
+    // Check if it's a form event or direct data
+    if (eventOrData && typeof eventOrData.preventDefault === 'function') {
+      eventOrData.preventDefault();
+      // Use newBooking state for form events
+      const bookingData = {
+        tenantId,
+        restaurantId,
+        customerName: newBooking.customerName,
+        customerEmail: newBooking.customerEmail,
+        customerPhone: newBooking.customerPhone,
+        guestCount: newBooking.guestCount,
+        bookingDate: new Date(newBooking.bookingDate),
+        startTime: newBooking.startTime,
+        endTime: newBooking.endTime || null,
+        tableId: newBooking.tableId && newBooking.tableId !== 'auto-assign' ? parseInt(newBooking.tableId) : null,
+        notes: newBooking.notes || null,
+        status: 'confirmed',
+        source: 'manual'
+      };
+      createBookingMutation.mutate(bookingData);
+    } else {
+      // Handle direct data from UnifiedBookingModal
+      const data = eventOrData;
+      const bookingData = {
+        tenantId,
+        restaurantId,
+        customerName: data.customerName,
+        customerEmail: data.customerEmail,
+        customerPhone: data.customerPhone,
+        guestCount: data.guestCount,
+        bookingDate: new Date(data.bookingDate || data.selectedDate),
+        startTime: data.startTime,
+        endTime: data.endTime || null,
+        tableId: data.tableId && data.tableId !== 'auto-assign' ? parseInt(data.tableId) : null,
+        notes: data.specialRequests || data.notes || null,
+        status: 'confirmed',
+        source: 'manual'
+      };
+      createBookingMutation.mutate(bookingData);
+    }
   };
 
   const handleEditBooking = (booking: any) => {
