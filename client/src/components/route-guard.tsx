@@ -25,6 +25,7 @@ export function RouteGuard({ children }: RouteGuardProps) {
         /^\/feedback-responses-popup$/,
         /^\/booking-manage$/,
         /^\/payment$/,
+        /^\/payment\/.+$/, // Payment links with payment intent IDs
       ];
 
       const isPublicRoute = publicRoutes.some((pattern) =>

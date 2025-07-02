@@ -11,10 +11,9 @@ import { AlertCircle, CheckCircle, CreditCard } from "lucide-react";
 
 // Make sure to call `loadStripe` outside of a component's render to avoid
 // recreating the `Stripe` object on every render.
-if (!import.meta.env.VITE_STRIPE_PUBLIC_KEY) {
-  throw new Error('Missing required Stripe key: VITE_STRIPE_PUBLIC_KEY');
-}
-const stripePromise = loadStripe(import.meta.env.VITE_STRIPE_PUBLIC_KEY);
+const stripePromise = import.meta.env.VITE_STRIPE_PUBLIC_KEY 
+  ? loadStripe(import.meta.env.VITE_STRIPE_PUBLIC_KEY)
+  : null;
 
 export default function PaymentPage() {
   const [location] = useLocation();
@@ -26,6 +25,30 @@ export default function PaymentPage() {
   const currency = urlParams.get("currency") || "USD";
   const [clientSecret, setClientSecret] = useState("");
   const [error, setError] = useState("");
+
+  // Check if Stripe is configured
+  if (!import.meta.env.VITE_STRIPE_PUBLIC_KEY) {
+    return (
+      <div className="container mx-auto p-6">
+        <Card className="max-w-md mx-auto">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <AlertCircle className="h-5 w-5 text-destructive" />
+              Payment Not Available
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <Alert variant="destructive">
+              <AlertCircle className="h-4 w-4" />
+              <AlertDescription>
+                Payment processing is not configured. Please contact the restaurant directly to complete your booking.
+              </AlertDescription>
+            </Alert>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
 
   // Fetch booking details
   const { data: booking, isLoading: bookingLoading } = useQuery({
@@ -179,15 +202,34 @@ export default function PaymentPage() {
         </p>
       </div>
 
-      <Elements stripe={stripePromise} options={{ clientSecret, appearance }}>
-        <BookingPayment
-          booking={booking}
-          amount={amount}
-          currency={currency}
-          onSuccess={handlePaymentSuccess}
-          onError={handlePaymentError}
-        />
-      </Elements>
+      {stripePromise ? (
+        <Elements stripe={stripePromise} options={{ clientSecret, appearance }}>
+          <BookingPayment
+            booking={booking}
+            amount={amount}
+            currency={currency}
+            onSuccess={handlePaymentSuccess}
+            onError={handlePaymentError}
+          />
+        </Elements>
+      ) : (
+        <Card className="max-w-md mx-auto">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <AlertCircle className="h-5 w-5 text-destructive" />
+              Payment Not Available
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <Alert variant="destructive">
+              <AlertCircle className="h-4 w-4" />
+              <AlertDescription>
+                Payment processing is not configured.
+              </AlertDescription>
+            </Alert>
+          </CardContent>
+        </Card>
+      )}
     </div>
   );
 }
