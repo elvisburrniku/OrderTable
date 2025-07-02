@@ -194,15 +194,20 @@ export default function PrePayment() {
           );
           
           if (!response.ok) {
-            throw new Error("Failed to create payment intent");
-          }
-          
-          const data = await response.json();
-          
-          if (data.clientSecret) {
-            setClientSecret(data.clientSecret);
+            const errorData = await response.json();
+            if (response.status === 400 && errorData.message?.includes("Stripe Connect")) {
+              setError("stripe_connect_not_setup");
+            } else {
+              throw new Error("Failed to create payment intent");
+            }
           } else {
-            setError(data.message || "Failed to create payment intent");
+            const data = await response.json();
+            
+            if (data.clientSecret) {
+              setClientSecret(data.clientSecret);
+            } else {
+              setError(data.message || "Failed to create payment intent");
+            }
           }
         } catch (error) {
           console.error("Error creating payment intent:", error);
@@ -243,6 +248,34 @@ export default function PrePayment() {
     }
   };
 
+  const handleContactRestaurant = async () => {
+    setRequestingLink(true);
+
+    try {
+      const response = await fetch(`/api/guest/bookings/${bookingId}/contact-restaurant`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          issue: "payment_system_not_setup",
+          customerEmail: booking?.customerEmail,
+          customerName: booking?.customerName,
+        }),
+      });
+
+      if (response.ok) {
+        setLinkRequestSubmitted(true);
+      } else {
+        setError("Failed to contact restaurant. Please try again.");
+      }
+    } catch (error) {
+      setError("Failed to contact restaurant. Please try again.");
+    } finally {
+      setRequestingLink(false);
+    }
+  };
+
   const handlePaymentSuccess = () => {
     window.location.href = `/payment-success?booking=${bookingId}`;
   };
@@ -251,7 +284,7 @@ export default function PrePayment() {
     setError(errorMessage);
   };
 
-  if (!bookingId || !amount) {
+  if (!bookingId) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-red-50 to-rose-100 py-12 px-4">
         <div className="container mx-auto max-w-md">
@@ -266,7 +299,7 @@ export default function PrePayment() {
               <Alert variant="destructive">
                 <AlertCircle className="h-4 w-4" />
                 <AlertDescription>
-                  This payment link is invalid.
+                  This payment link is missing required booking information.
                 </AlertDescription>
               </Alert>
             </CardContent>
@@ -387,6 +420,54 @@ export default function PrePayment() {
   }
 
   if (error) {
+    // Handle Stripe Connect not setup case
+    if (error === "stripe_connect_not_setup") {
+      return (
+        <div className="min-h-screen bg-gradient-to-br from-orange-50 to-amber-100 py-12 px-4">
+          <div className="container mx-auto max-w-md">
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2 text-orange-700">
+                  <AlertCircle className="h-5 w-5" />
+                  Payment System Not Available
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <Alert className="border-orange-200 bg-orange-50">
+                  <AlertCircle className="h-4 w-4 text-orange-600" />
+                  <AlertDescription className="text-orange-800">
+                    The restaurant hasn't set up their payment system yet. We'll notify them about this issue.
+                  </AlertDescription>
+                </Alert>
+
+                <div className="space-y-4">
+                  <h3 className="font-medium">What happens next?</h3>
+                  <p className="text-sm text-muted-foreground">
+                    We'll contact the restaurant to set up their payment system. They will reach out to you with payment instructions.
+                  </p>
+                  
+                  <Button 
+                    onClick={handleContactRestaurant}
+                    disabled={requestingLink}
+                    className="w-full bg-orange-600 hover:bg-orange-700"
+                  >
+                    {requestingLink ? (
+                      <div className="flex items-center gap-2">
+                        <div className="animate-spin w-4 h-4 border-2 border-current border-t-transparent rounded-full" />
+                        Contacting Restaurant...
+                      </div>
+                    ) : (
+                      "Contact Restaurant"
+                    )}
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+        </div>
+      );
+    }
+
     return (
       <div className="min-h-screen bg-gradient-to-br from-red-50 to-rose-100 py-12 px-4">
         <div className="container mx-auto max-w-md">

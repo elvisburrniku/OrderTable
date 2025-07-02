@@ -6216,6 +6216,83 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   );
 
+  // Customer contact restaurant endpoint
+  app.post(
+    "/api/guest/bookings/:bookingId/contact-restaurant",
+    async (req, res) => {
+      try {
+        const bookingId = parseInt(req.params.bookingId);
+        const { issue, customerEmail, customerName } = req.body;
+
+        if (!bookingId) {
+          return res.status(400).json({ message: "Booking ID is required" });
+        }
+
+        const booking = await storage.getBookingById(bookingId);
+        if (!booking) {
+          return res.status(404).json({ message: "Booking not found" });
+        }
+
+        // Get restaurant details
+        const restaurant = await storage.getRestaurantById(booking.restaurantId);
+        if (!restaurant) {
+          return res.status(404).json({ message: "Restaurant not found" });
+        }
+
+        // Send notification to restaurant admin based on issue type
+        if (emailService && restaurant.email) {
+          let subject = "Customer Contact Request";
+          let message = "A customer needs assistance with their booking.";
+
+          if (issue === "payment_system_not_setup") {
+            subject = "Payment System Setup Required";
+            message = "A customer tried to pay for their booking but your payment system is not set up. Please configure Stripe Connect in your admin panel.";
+          }
+
+          await emailService.sendEmail({
+            to: [{ email: restaurant.email, name: restaurant.name }],
+            subject,
+            htmlContent: `
+              <div style="max-width: 600px; margin: 0 auto; font-family: Arial, sans-serif;">
+                <h2 style="color: #d97706;">${subject}</h2>
+                <div style="background-color: #fef3c7; border-left: 4px solid #f59e0b; padding: 20px; margin: 20px 0;">
+                  <p style="color: #92400e; font-weight: 600; margin: 0;">${message}</p>
+                </div>
+                <div style="background-color: #f8f9fa; padding: 20px; border-radius: 8px; margin: 20px 0;">
+                  <h3 style="margin-top: 0;">Booking Details</h3>
+                  <p><strong>Customer:</strong> ${customerName || booking.customerName}</p>
+                  <p><strong>Email:</strong> ${customerEmail || booking.customerEmail}</p>
+                  <p><strong>Phone:</strong> ${booking.customerPhone || 'Not provided'}</p>
+                  <p><strong>Booking Date:</strong> ${new Date(booking.bookingDate).toLocaleDateString()}</p>
+                  <p><strong>Time:</strong> ${booking.startTime}</p>
+                  <p><strong>Party Size:</strong> ${booking.guestCount} guests</p>
+                  ${booking.paymentAmount ? `<p><strong>Payment Amount:</strong> $${booking.paymentAmount}</p>` : ''}
+                </div>
+                ${issue === "payment_system_not_setup" ? `
+                  <div style="background-color: #e3f2fd; padding: 20px; border-radius: 8px; margin: 20px 0;">
+                    <h3 style="color: #1565c0; margin-top: 0;">Next Steps:</h3>
+                    <ol style="color: #1565c0;">
+                      <li>Log into your admin panel</li>
+                      <li>Go to Payment Settings</li>
+                      <li>Complete Stripe Connect setup</li>
+                      <li>Contact the customer with alternative payment instructions</li>
+                    </ol>
+                  </div>
+                ` : ''}
+                <p>Please take action on this request as soon as possible.</p>
+              </div>
+            `
+          });
+        }
+
+        res.json({ message: "Restaurant has been notified. They will contact you shortly." });
+      } catch (error) {
+        console.error("Error contacting restaurant:", error);
+        res.status(500).json({ message: "Internal server error" });
+      }
+    }
+  );
+
   // Admin endpoint to resend payment link
   app.post(
     "/api/tenants/:tenantId/restaurants/:restaurantId/bookings/:bookingId/resend-payment-link",
@@ -6390,28 +6467,30 @@ export async function registerRoutes(app: Express): Promise<Server> {
         const { paymentService } = await import("./payment-service");
         
         try {
-          const paymentIntent = await paymentService.createPaymentIntent(
-            Math.round(amount * 100), // Convert to cents
+          const paymentIntent = await paymentService.createBookingPaymentIntent(
+            parseFloat(amount), // Use the amount directly
             currency || "usd",
             tenant.stripeConnectAccountId,
             {
-              bookingId: bookingId.toString(),
-              tenantId: tenantId.toString(),
-              restaurantId: restaurantId.toString(),
+              bookingId: bookingId,
               customerEmail: booking.customerEmail,
-              type: "booking_prepayment",
+              customerName: booking.customerName,
+              restaurantName: (await storage.getRestaurantById(restaurantId))?.name || "Restaurant",
+              bookingDate: new Date(booking.bookingDate).toISOString().split('T')[0],
+              startTime: booking.startTime,
+              guestCount: booking.guestCount,
             }
           );
 
           // Update booking with payment intent ID
           await storage.updateBooking(bookingId, {
-            paymentIntentId: paymentIntent.id,
+            paymentIntentId: paymentIntent.paymentIntentId,
             paymentStatus: "pending",
           });
 
           res.json({
-            clientSecret: paymentIntent.client_secret,
-            paymentIntentId: paymentIntent.id,
+            clientSecret: paymentIntent.clientSecret,
+            paymentIntentId: paymentIntent.paymentIntentId,
           });
         } catch (stripeError) {
           console.error("Stripe payment intent creation failed:", stripeError);
