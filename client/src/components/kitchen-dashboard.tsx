@@ -1018,6 +1018,7 @@ export function KitchenDashboard({ restaurantId, tenantId }: KitchenDashboardPro
           )}
         </DialogContent>
       </Dialog>
+      </div>
     </div>
   );
 }
