@@ -25,7 +25,10 @@ if (process.env.STRIPE_SECRET_KEY) {
 }
 
 // Helper function to handle Stripe operations safely
-const withStripe = async <T>(operation: (stripe: Stripe) => Promise<T>, fallback?: T): Promise<T | null> => {
+const withStripe = async <T>(
+  operation: (stripe: Stripe) => Promise<T>,
+  fallback?: T,
+): Promise<T | null> => {
   if (!stripe) {
     console.log("Stripe operation skipped: Stripe not initialized");
     return fallback ?? null;
@@ -81,8 +84,6 @@ import { SystemSettingsValidator } from "./system-settings-validator";
 import { db } from "./db";
 import { shopCategories, shopProducts, shopOrders } from "../shared/schema";
 import { eq, desc, and } from "drizzle-orm";
-
-
 
 // Initialize email service, passing API key from environment variables
 let emailService: BrevoEmailService | null = null;
@@ -288,8 +289,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
       console.error("Failed to log activity:", error);
     }
   };
-
-
 
   // Company Registration route
   app.post("/api/auth/register-company", async (req, res) => {
@@ -739,7 +738,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
         sessionUser.id,
         sessionTenant.id,
       );
-      const defaultRedirect = await getRoleRedirectFromDB(sessionUser.id, sessionTenant.id);
+      const defaultRedirect = await getRoleRedirectFromDB(
+        sessionUser.id,
+        sessionTenant.id,
+      );
 
       res.json({
         permissions,
@@ -790,7 +792,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Check if user is owner of current tenant
       const userRole = await getUserRole(sessionUser.id, sessionTenant.id);
       if (userRole !== "owner") {
-        return res.status(403).json({ error: "Only owners can create new restaurants" });
+        return res
+          .status(403)
+          .json({ error: "Only owners can create new restaurants" });
       }
 
       // Check subscription limits
@@ -800,12 +804,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
 
       const userTenants = await storage.getUserTenants(sessionUser.id);
-      const ownedTenants = userTenants.filter(t => t.isOwner);
-      
+      const ownedTenants = userTenants.filter((t) => t.isOwner);
+
       if (ownedTenants.length >= currentTenant.maxRestaurants) {
-        return res.status(400).json({ 
-          error: "Restaurant limit reached", 
-          message: `Your subscription allows up to ${currentTenant.maxRestaurants} restaurants` 
+        return res.status(400).json({
+          error: "Restaurant limit reached",
+          message: `Your subscription allows up to ${currentTenant.maxRestaurants} restaurants`,
         });
       }
 
@@ -850,7 +854,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error("Error creating tenant:", error);
       if (error.message?.includes("duplicate key")) {
-        return res.status(400).json({ error: "A restaurant with this URL slug already exists" });
+        return res
+          .status(400)
+          .json({ error: "A restaurant with this URL slug already exists" });
       }
       res.status(500).json({ error: "Internal server error" });
     }
@@ -872,10 +878,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       // Verify user has access to the tenant
       const userTenants = await storage.getUserTenants(sessionUser.id);
-      const targetTenant = userTenants.find(t => t.id === tenantId);
+      const targetTenant = userTenants.find((t) => t.id === tenantId);
 
       if (!targetTenant) {
-        return res.status(403).json({ error: "Access denied to this restaurant" });
+        return res
+          .status(403)
+          .json({ error: "Access denied to this restaurant" });
       }
 
       // Get the tenant and restaurant info
@@ -890,10 +898,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
       (req as any).session.tenant = tenant;
       (req as any).session.restaurant = restaurant;
 
-      res.json({ 
+      res.json({
         message: "Tenant switched successfully",
         tenant: tenant,
-        restaurant: restaurant 
+        restaurant: restaurant,
       });
     } catch (error) {
       console.error("Error switching tenant:", error);
@@ -924,15 +932,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
 
       if (restaurant.tenantId !== sessionTenant.id) {
-        return res.status(403).json({ error: "Access denied to this restaurant" });
+        return res
+          .status(403)
+          .json({ error: "Access denied to this restaurant" });
       }
 
       // Update session with new restaurant
       (req as any).session.restaurant = restaurant;
 
-      res.json({ 
+      res.json({
         message: "Restaurant switched successfully",
-        restaurant: restaurant 
+        restaurant: restaurant,
       });
     } catch (error) {
       console.error("Error switching restaurant:", error);
@@ -1974,8 +1984,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
         // Send SMS notifications if configured
         try {
-          const { twilioSMSService } = await import('./twilio-sms-service.js');
-          
+          const { twilioSMSService } = await import("./twilio-sms-service.js");
+
           // Check if SMS is configured and customer has phone number
           if (req.body.customerPhone && twilioSMSService.isConfigured()) {
             console.log(
@@ -1984,11 +1994,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
             );
 
             // Get SMS settings for this restaurant
-            const smsSettings = await storage.getSmsSettings(restaurantId, tenantId);
-            
+            const smsSettings = await storage.getSmsSettings(
+              restaurantId,
+              tenantId,
+            );
+
             // Send booking confirmation SMS if enabled (default: true)
-            const shouldSendSmsConfirmation = smsSettings?.confirmationEnabled !== false;
-            
+            const shouldSendSmsConfirmation =
+              smsSettings?.confirmationEnabled !== false;
+
             if (shouldSendSmsConfirmation) {
               console.log(
                 "Sending booking confirmation SMS to:",
@@ -2001,24 +2015,29 @@ export async function registerRoutes(app: Express): Promise<Server> {
                 date: new Date(booking.bookingDate).toLocaleDateString(),
                 time: booking.startTime,
                 guests: booking.guestCount,
-                hash: booking.hash
+                hash: booking.hash,
               };
 
               const smsResult = await twilioSMSService.sendBookingConfirmation(
                 req.body.customerPhone,
                 bookingDetails,
                 restaurantId,
-                tenantId
+                tenantId,
               );
 
               if (smsResult.success) {
                 console.log("Booking confirmation SMS sent successfully");
               } else {
-                console.error("Failed to send booking confirmation SMS:", smsResult.error);
+                console.error(
+                  "Failed to send booking confirmation SMS:",
+                  smsResult.error,
+                );
               }
             }
           } else {
-            console.log("SMS service not configured or customer phone missing - skipping SMS notifications");
+            console.log(
+              "SMS service not configured or customer phone missing - skipping SMS notifications",
+            );
           }
         } catch (smsError) {
           console.error("Error sending SMS notifications:", smsError);
@@ -2058,13 +2077,19 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
         // Schedule post-visit survey for customer feedback
         try {
-          const { SurveySchedulerService } = await import('./survey-scheduler-service.js');
-          const surveyScheduler = new SurveySchedulerService(storage as DatabaseStorage);
-          
+          const { SurveySchedulerService } = await import(
+            "./survey-scheduler-service.js"
+          );
+          const surveyScheduler = new SurveySchedulerService(
+            storage as DatabaseStorage,
+          );
+
           // Only schedule survey if customer provided contact information
           if (req.body.customerEmail || req.body.customerPhone) {
-            console.log(`Scheduling post-visit survey for booking ${booking.id}`);
-            
+            console.log(
+              `Scheduling post-visit survey for booking ${booking.id}`,
+            );
+
             // Schedule survey to be sent 2 hours after booking end time
             await surveyScheduler.scheduleSurvey(
               restaurantId,
@@ -2073,12 +2098,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
               req.body.customerName,
               req.body.customerEmail,
               req.body.customerPhone,
-              2 // Hours after booking end time
+              2, // Hours after booking end time
             );
-            
-            console.log(`Survey scheduled successfully for booking ${booking.id}`);
+
+            console.log(
+              `Survey scheduled successfully for booking ${booking.id}`,
+            );
           } else {
-            console.log(`No contact information provided for booking ${booking.id} - skipping survey scheduling`);
+            console.log(
+              `No contact information provided for booking ${booking.id} - skipping survey scheduling`,
+            );
           }
         } catch (surveyError) {
           console.error("Error scheduling post-visit survey:", surveyError);
@@ -2310,7 +2339,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
         const tenantId = parseInt(req.params.tenantId);
 
         if (isNaN(id) || isNaN(restaurantId) || isNaN(tenantId)) {
-          return res.status(400).json({ message: "Invalid booking, restaurant, or tenant ID" });
+          return res
+            .status(400)
+            .json({ message: "Invalid booking, restaurant, or tenant ID" });
         }
 
         // Verify restaurant belongs to tenant
@@ -2364,9 +2395,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
         // Send webhook notifications for booking deletion
         try {
           const webhookService = new WebhookService(storage);
-          await webhookService.notifyBookingDeleted(restaurantId, existingBooking);
+          await webhookService.notifyBookingDeleted(
+            restaurantId,
+            existingBooking,
+          );
         } catch (webhookError) {
-          console.error("Error sending booking deletion webhook:", webhookError);
+          console.error(
+            "Error sending booking deletion webhook:",
+            webhookError,
+          );
         }
 
         res.json({ message: "Booking deleted successfully" });
@@ -3815,7 +3852,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
           return res.status(404).json({ message: "Restaurant not found" });
         }
 
-        const messages = await storage.getSmsMessagesByRestaurant(restaurantId, tenantId);
+        const messages = await storage.getSmsMessagesByRestaurant(
+          restaurantId,
+          tenantId,
+        );
         res.json(messages);
       } catch (error) {
         res.status(400).json({ message: "Invalid request" });
@@ -5985,8 +6025,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
         // Send SMS notifications if configured
         try {
-          const { twilioSMSService } = await import('./twilio-sms-service.js');
-          
+          const { twilioSMSService } = await import("./twilio-sms-service.js");
+
           // Check if SMS is configured and customer has phone number
           if (bookingData.customerPhone && twilioSMSService.isConfigured()) {
             console.log(
@@ -5995,11 +6035,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
             );
 
             // Get SMS settings for this restaurant
-            const smsSettings = await storage.getSmsSettings(restaurantId, tenantId);
-            
+            const smsSettings = await storage.getSmsSettings(
+              restaurantId,
+              tenantId,
+            );
+
             // Send booking confirmation SMS if enabled (default: true)
-            const shouldSendSmsConfirmation = smsSettings?.confirmationEnabled !== false;
-            
+            const shouldSendSmsConfirmation =
+              smsSettings?.confirmationEnabled !== false;
+
             if (shouldSendSmsConfirmation) {
               console.log(
                 "Sending guest booking confirmation SMS to:",
@@ -6012,27 +6056,35 @@ export async function registerRoutes(app: Express): Promise<Server> {
                 date: new Date(booking.bookingDate).toLocaleDateString(),
                 time: booking.startTime,
                 guests: booking.guestCount,
-                hash: booking.hash
+                hash: booking.hash,
               };
 
               const smsResult = await twilioSMSService.sendBookingConfirmation(
                 bookingData.customerPhone,
                 smsBookingDetails,
                 restaurantId,
-                tenantId
+                tenantId,
               );
 
               if (smsResult.success) {
                 console.log("Guest booking confirmation SMS sent successfully");
               } else {
-                console.error("Failed to send guest booking confirmation SMS:", smsResult.error);
+                console.error(
+                  "Failed to send guest booking confirmation SMS:",
+                  smsResult.error,
+                );
               }
             }
           } else {
-            console.log("SMS service not configured or customer phone missing - skipping SMS notifications for guest booking");
+            console.log(
+              "SMS service not configured or customer phone missing - skipping SMS notifications for guest booking",
+            );
           }
         } catch (smsError) {
-          console.error("Error sending SMS notifications for guest booking:", smsError);
+          console.error(
+            "Error sending SMS notifications for guest booking:",
+            smsError,
+          );
           // Don't fail the booking if SMS fails
         }
 
@@ -16508,13 +16560,13 @@ NEXT STEPS:
         }
 
         // Import Twilio SMS service
-        const { twilioSMSService } = await import('./twilio-sms-service.js');
+        const { twilioSMSService } = await import("./twilio-sms-service.js");
 
         // Send test SMS via Twilio
         const result = await twilioSMSService.sendTestSMS(
           phoneNumber,
           parseInt(tenantId),
-          parseInt(restaurantId)
+          parseInt(restaurantId),
         );
 
         if (result.success) {
@@ -16523,12 +16575,12 @@ NEXT STEPS:
             messageId: result.messageId,
             status: result.status,
             cost: result.cost,
-            note: "SMS sent via Twilio API"
+            note: "SMS sent via Twilio API",
           });
         } else {
           res.status(400).json({
             message: "Failed to send SMS",
-            error: result.error
+            error: result.error,
           });
         }
       } catch (error) {
@@ -16539,29 +16591,26 @@ NEXT STEPS:
   );
 
   // Twilio Account Info route
-  app.get(
-    "/api/tenants/:tenantId/twilio/account",
-    async (req, res) => {
-      try {
-        const { twilioSMSService } = await import('./twilio-sms-service.js');
-        const accountInfo = await twilioSMSService.getTwilioAccountInfo();
-        res.json(accountInfo);
-      } catch (error) {
-        console.error("Error fetching Twilio account info:", error);
-        res.status(500).json({ message: "Internal server error" });
-      }
-    },
-  );
+  app.get("/api/tenants/:tenantId/twilio/account", async (req, res) => {
+    try {
+      const { twilioSMSService } = await import("./twilio-sms-service.js");
+      const accountInfo = await twilioSMSService.getTwilioAccountInfo();
+      res.json(accountInfo);
+    } catch (error) {
+      console.error("Error fetching Twilio account info:", error);
+      res.status(500).json({ message: "Internal server error" });
+    }
+  });
 
   // SMS Status webhook for Twilio
   app.post("/api/webhooks/twilio/sms-status", async (req, res) => {
     try {
-      const { twilioSMSService } = await import('./twilio-sms-service.js');
+      const { twilioSMSService } = await import("./twilio-sms-service.js");
       await twilioSMSService.handleStatusWebhook(req.body);
-      res.status(200).send('OK');
+      res.status(200).send("OK");
     } catch (error) {
       console.error("Error handling Twilio webhook:", error);
-      res.status(500).send('Error');
+      res.status(500).send("Error");
     }
   });
 
@@ -16574,8 +16623,8 @@ NEXT STEPS:
         const { bookingId, phoneNumber } = req.body;
 
         if (!bookingId || !phoneNumber) {
-          return res.status(400).json({ 
-            message: "Booking ID and phone number are required" 
+          return res.status(400).json({
+            message: "Booking ID and phone number are required",
           });
         }
 
@@ -16586,39 +16635,41 @@ NEXT STEPS:
         }
 
         // Get restaurant details
-        const restaurant = await storage.getRestaurantById(parseInt(restaurantId));
+        const restaurant = await storage.getRestaurantById(
+          parseInt(restaurantId),
+        );
         if (!restaurant) {
           return res.status(404).json({ message: "Restaurant not found" });
         }
 
-        const { twilioSMSService } = await import('./twilio-sms-service.js');
-        
+        const { twilioSMSService } = await import("./twilio-sms-service.js");
+
         const bookingDetails = {
           id: booking.id,
           restaurantName: restaurant.name,
           date: booking.date,
           time: booking.time,
           guests: booking.guests,
-          hash: booking.hash
+          hash: booking.hash,
         };
 
         const result = await twilioSMSService.sendBookingConfirmation(
           phoneNumber,
           bookingDetails,
           parseInt(restaurantId),
-          parseInt(tenantId)
+          parseInt(tenantId),
         );
 
         if (result.success) {
           res.json({
             message: "Booking confirmation SMS sent successfully",
             messageId: result.messageId,
-            cost: result.cost
+            cost: result.cost,
           });
         } else {
           res.status(400).json({
             message: "Failed to send booking confirmation SMS",
-            error: result.error
+            error: result.error,
           });
         }
       } catch (error) {
@@ -16637,8 +16688,8 @@ NEXT STEPS:
         const { bookingId, phoneNumber } = req.body;
 
         if (!bookingId || !phoneNumber) {
-          return res.status(400).json({ 
-            message: "Booking ID and phone number are required" 
+          return res.status(400).json({
+            message: "Booking ID and phone number are required",
           });
         }
 
@@ -16649,37 +16700,39 @@ NEXT STEPS:
         }
 
         // Get restaurant details
-        const restaurant = await storage.getRestaurantById(parseInt(restaurantId));
+        const restaurant = await storage.getRestaurantById(
+          parseInt(restaurantId),
+        );
         if (!restaurant) {
           return res.status(404).json({ message: "Restaurant not found" });
         }
 
-        const { twilioSMSService } = await import('./twilio-sms-service.js');
-        
+        const { twilioSMSService } = await import("./twilio-sms-service.js");
+
         const bookingDetails = {
           id: booking.id,
           restaurantName: restaurant.name,
           time: booking.time,
-          guests: booking.guests
+          guests: booking.guests,
         };
 
         const result = await twilioSMSService.sendBookingReminder(
           phoneNumber,
           bookingDetails,
           parseInt(restaurantId),
-          parseInt(tenantId)
+          parseInt(tenantId),
         );
 
         if (result.success) {
           res.json({
             message: "Booking reminder SMS sent successfully",
             messageId: result.messageId,
-            cost: result.cost
+            cost: result.cost,
           });
         } else {
           res.status(400).json({
             message: "Failed to send booking reminder SMS",
-            error: result.error
+            error: result.error,
           });
         }
       } catch (error) {
@@ -16729,9 +16782,9 @@ NEXT STEPS:
     async (req, res) => {
       try {
         const { tenantId, restaurantId, bookingId } = req.params;
-        
+
         const result = await storage.sendSurveyToBooking(parseInt(bookingId));
-        
+
         res.json({
           message: "Survey sent successfully",
           surveyUrl: result.surveyUrl,
@@ -16739,7 +16792,9 @@ NEXT STEPS:
         });
       } catch (error) {
         console.error("Error sending survey:", error);
-        res.status(500).json({ message: error.message || "Internal server error" });
+        res
+          .status(500)
+          .json({ message: error.message || "Internal server error" });
       }
     },
   );
@@ -16749,7 +16804,7 @@ NEXT STEPS:
     try {
       const { token } = req.params;
       const surveyResponse = await storage.getSurveyResponseByToken(token);
-      
+
       if (!surveyResponse) {
         return res.status(404).send(`
           <html>
@@ -16905,7 +16960,7 @@ NEXT STEPS:
       const { rating, feedback } = req.body;
 
       const surveyResponse = await storage.getSurveyResponseByToken(token);
-      
+
       if (!surveyResponse) {
         return res.status(404).json({ message: "Survey not found" });
       }
@@ -17522,13 +17577,19 @@ NEXT STEPS:
         }
 
         // Check if user has permission to manage restaurants
-        const userPermissions = await getUserPermissions(sessionUser.id, tenantId);
-        const canManageRestaurants = userPermissions.includes("manage_restaurants") || 
-                                   userPermissions.includes("access_settings") ||
-                                   sessionUser.id === sessionTenant.ownerId;
+        const userPermissions = await getUserPermissions(
+          sessionUser.id,
+          tenantId,
+        );
+        const canManageRestaurants =
+          userPermissions.includes("manage_restaurants") ||
+          userPermissions.includes("access_settings") ||
+          sessionUser.id === sessionTenant.ownerId;
 
         if (!canManageRestaurants) {
-          return res.status(403).json({ error: "Insufficient permissions to delete restaurants" });
+          return res
+            .status(403)
+            .json({ error: "Insufficient permissions to delete restaurants" });
         }
 
         // Check if restaurant exists and belongs to tenant
@@ -17542,20 +17603,23 @@ NEXT STEPS:
           ?.select()
           .from(restaurants)
           .where(eq(restaurants.tenantId, tenantId));
-        
+
         if (tenantRestaurants && tenantRestaurants.length <= 1) {
-          return res.status(400).json({ 
-            error: "Cannot delete the last restaurant. Each tenant must have at least one restaurant." 
+          return res.status(400).json({
+            error:
+              "Cannot delete the last restaurant. Each tenant must have at least one restaurant.",
           });
         }
 
         // Delete the restaurant (cascade will handle related data)
         await storage.db
           ?.delete(restaurants)
-          .where(and(
-            eq(restaurants.id, restaurantId),
-            eq(restaurants.tenantId, tenantId)
-          ));
+          .where(
+            and(
+              eq(restaurants.id, restaurantId),
+              eq(restaurants.tenantId, tenantId),
+            ),
+          );
 
         // Log the activity
         await storage.logActivity(
@@ -17564,18 +17628,18 @@ NEXT STEPS:
           restaurantId,
           "restaurant_deleted",
           `Restaurant "${restaurant.name}" was deleted by ${sessionUser.name || sessionUser.email}`,
-          { restaurantName: restaurant.name }
+          { restaurantName: restaurant.name },
         );
 
-        res.json({ 
-          success: true, 
-          message: "Restaurant deleted successfully" 
+        res.json({
+          success: true,
+          message: "Restaurant deleted successfully",
         });
       } catch (error) {
         console.error("Error deleting restaurant:", error);
         res.status(500).json({ error: "Failed to delete restaurant" });
       }
-    }
+    },
   );
 
   // Pause/unpause restaurant endpoint for tenant admins
@@ -17595,13 +17659,19 @@ NEXT STEPS:
         }
 
         // Check if user has permission to manage restaurants
-        const userPermissions = await getUserPermissions(sessionUser.id, tenantId);
-        const canManageRestaurants = userPermissions.includes("manage_restaurants") || 
-                                   userPermissions.includes("access_settings") ||
-                                   sessionUser.id === sessionTenant.ownerId;
+        const userPermissions = await getUserPermissions(
+          sessionUser.id,
+          tenantId,
+        );
+        const canManageRestaurants =
+          userPermissions.includes("manage_restaurants") ||
+          userPermissions.includes("access_settings") ||
+          sessionUser.id === sessionTenant.ownerId;
 
         if (!canManageRestaurants) {
-          return res.status(403).json({ error: "Insufficient permissions to pause/unpause restaurants" });
+          return res.status(403).json({
+            error: "Insufficient permissions to pause/unpause restaurants",
+          });
         }
 
         // Check if restaurant exists and belongs to tenant
@@ -17611,24 +17681,26 @@ NEXT STEPS:
         }
 
         // Update restaurant pause status
-        const updateData: any = { 
+        const updateData: any = {
           isActive: !paused,
           pausedAt: paused ? new Date() : null,
-          pauseReason: paused ? reason : null
+          pauseReason: paused ? reason : null,
         };
 
         await storage.db
           ?.update(restaurants)
           .set(updateData)
-          .where(and(
-            eq(restaurants.id, restaurantId),
-            eq(restaurants.tenantId, tenantId)
-          ));
+          .where(
+            and(
+              eq(restaurants.id, restaurantId),
+              eq(restaurants.tenantId, tenantId),
+            ),
+          );
 
         // Log the activity
         const action = paused ? "restaurant_paused" : "restaurant_unpaused";
-        const description = paused 
-          ? `Restaurant "${restaurant.name}" was paused by ${sessionUser.name || sessionUser.email}${reason ? ` (Reason: ${reason})` : ''}`
+        const description = paused
+          ? `Restaurant "${restaurant.name}" was paused by ${sessionUser.name || sessionUser.email}${reason ? ` (Reason: ${reason})` : ""}`
           : `Restaurant "${restaurant.name}" was unpaused by ${sessionUser.name || sessionUser.email}`;
 
         await storage.logActivity(
@@ -17637,24 +17709,24 @@ NEXT STEPS:
           restaurantId,
           action,
           description,
-          { restaurantName: restaurant.name, reason }
+          { restaurantName: restaurant.name, reason },
         );
 
-        res.json({ 
-          success: true, 
-          message: `Restaurant ${paused ? 'paused' : 'unpaused'} successfully`,
+        res.json({
+          success: true,
+          message: `Restaurant ${paused ? "paused" : "unpaused"} successfully`,
           restaurant: {
             ...restaurant,
             isActive: !paused,
             pausedAt: paused ? new Date() : null,
-            pauseReason: paused ? reason : null
-          }
+            pauseReason: paused ? reason : null,
+          },
         });
       } catch (error) {
         console.error("Error updating restaurant pause status:", error);
         res.status(500).json({ error: "Failed to update restaurant status" });
       }
-    }
+    },
   );
 
   app.get(
@@ -18242,7 +18314,8 @@ NEXT STEPS:
   // Public Shop API Routes (accessible without authentication)
   app.get("/api/shop/categories", async (req: Request, res: Response) => {
     try {
-      const categories = await db.select()
+      const categories = await db
+        .select()
         .from(shopCategories)
         .where(eq(shopCategories.isActive, true))
         .orderBy(shopCategories.sortOrder);
@@ -18256,13 +18329,18 @@ NEXT STEPS:
   app.get("/api/shop/products", async (req: Request, res: Response) => {
     try {
       const { category, featured, search, limit = 20, offset = 0 } = req.query;
-      let query = db.select().from(shopProducts).where(eq(shopProducts.isActive, true));
+      let query = db
+        .select()
+        .from(shopProducts)
+        .where(eq(shopProducts.isActive, true));
 
       if (category) {
-        query = query.where(eq(shopProducts.categoryId, parseInt(category as string)));
+        query = query.where(
+          eq(shopProducts.categoryId, parseInt(category as string)),
+        );
       }
-      
-      if (featured === 'true') {
+
+      if (featured === "true") {
         query = query.where(eq(shopProducts.isFeatured, true));
       }
 
@@ -18281,9 +18359,12 @@ NEXT STEPS:
   app.get("/api/shop/products/:slug", async (req: Request, res: Response) => {
     try {
       const { slug } = req.params;
-      const [product] = await db.select()
+      const [product] = await db
+        .select()
         .from(shopProducts)
-        .where(and(eq(shopProducts.slug, slug), eq(shopProducts.isActive, true)));
+        .where(
+          and(eq(shopProducts.slug, slug), eq(shopProducts.isActive, true)),
+        );
 
       if (!product) {
         return res.status(404).json({ message: "Product not found" });
@@ -18299,14 +18380,17 @@ NEXT STEPS:
   app.post("/api/shop/orders", async (req: Request, res: Response) => {
     try {
       const orderData = req.body;
-      
+
       // Generate unique order number
       const orderNumber = `ORD-${Date.now()}-${Math.random().toString(36).substr(2, 9).toUpperCase()}`;
-      
-      const [order] = await db.insert(shopOrders).values({
-        ...orderData,
-        orderNumber,
-      }).returning();
+
+      const [order] = await db
+        .insert(shopOrders)
+        .values({
+          ...orderData,
+          orderNumber,
+        })
+        .returning();
 
       // Create Stripe payment intent
       const paymentIntent = await stripe.paymentIntents.create({
@@ -18319,7 +18403,8 @@ NEXT STEPS:
       });
 
       // Update order with Stripe payment intent ID
-      await db.update(shopOrders)
+      await db
+        .update(shopOrders)
         .set({ stripePaymentIntentId: paymentIntent.id })
         .where(eq(shopOrders.id, order.id));
 
@@ -18334,7 +18419,7 @@ NEXT STEPS:
   });
 
   // Survey Management Routes
-  
+
   // Get survey statistics for a restaurant or tenant
   app.get(
     "/api/tenants/:tenantId/restaurants/:restaurantId/survey-stats",
@@ -18344,21 +18429,32 @@ NEXT STEPS:
         const tenantId = parseInt(req.params.tenantId);
         const restaurantId = parseInt(req.params.restaurantId);
 
-        const { SurveySchedulerService } = await import('./survey-scheduler-service.js');
-        const surveyScheduler = new SurveySchedulerService(storage as DatabaseStorage);
-        
-        const stats = await surveyScheduler.getSurveyStats(tenantId, restaurantId);
-        
+        const { SurveySchedulerService } = await import(
+          "./survey-scheduler-service.js"
+        );
+        const surveyScheduler = new SurveySchedulerService(
+          storage as DatabaseStorage,
+        );
+
+        const stats = await surveyScheduler.getSurveyStats(
+          tenantId,
+          restaurantId,
+        );
+
         if (!stats) {
-          return res.status(500).json({ message: "Failed to retrieve survey statistics" });
+          return res
+            .status(500)
+            .json({ message: "Failed to retrieve survey statistics" });
         }
-        
+
         res.json(stats);
       } catch (error) {
         console.error("Survey stats error:", error);
-        res.status(500).json({ message: "Failed to retrieve survey statistics" });
+        res
+          .status(500)
+          .json({ message: "Failed to retrieve survey statistics" });
       }
-    }
+    },
   );
 
   // Get survey schedules for a restaurant
@@ -18376,8 +18472,8 @@ NEXT STEPS:
           .where(
             and(
               eq(surveySchedules.tenantId, tenantId),
-              eq(surveySchedules.restaurantId, restaurantId)
-            )
+              eq(surveySchedules.restaurantId, restaurantId),
+            ),
           )
           .orderBy(desc(surveySchedules.createdAt))
           .limit(100);
@@ -18385,15 +18481,15 @@ NEXT STEPS:
         res.json(schedules);
       } catch (error) {
         console.error("Survey schedules error:", error);
-        res.status(500).json({ message: "Failed to retrieve survey schedules" });
+        res
+          .status(500)
+          .json({ message: "Failed to retrieve survey schedules" });
       }
-    }
+    },
   );
 
-
-
   // ================== STRIPE CONNECT PAYMENT GATEWAY ==================
-  
+
   // Get tenant's Stripe Connect status
   app.get(
     "/api/tenants/:tenantId/stripe-connect/status",
@@ -18402,11 +18498,11 @@ NEXT STEPS:
       try {
         const tenantId = parseInt(req.params.tenantId);
         const tenant = await storage.getTenantById(tenantId);
-        
+
         if (!tenant) {
           return res.status(404).json({ message: "Tenant not found" });
         }
-        
+
         res.json({
           connected: !!tenant.stripeConnectAccountId,
           accountId: tenant.stripeConnectAccountId,
@@ -18419,7 +18515,7 @@ NEXT STEPS:
         console.error("Error getting Stripe Connect status:", error);
         res.status(500).json({ message: "Internal server error" });
       }
-    }
+    },
   );
 
   // Create Stripe Connect account and onboarding link
@@ -18430,18 +18526,18 @@ NEXT STEPS:
       try {
         const tenantId = parseInt(req.params.tenantId);
         const tenant = await storage.getTenantById(tenantId);
-        
+
         if (!tenant) {
           return res.status(404).json({ message: "Tenant not found" });
         }
 
         const result = await withStripe(async (stripe) => {
           let accountId = tenant.stripeConnectAccountId;
-          
+
           // Get user email from session
           const sessionUser = (req as any).session?.user;
           const userEmail = req.body.email || sessionUser?.email;
-          
+
           // Create account if it doesn't exist
           if (!accountId) {
             const account = await stripe.accounts.create({
@@ -18454,22 +18550,24 @@ NEXT STEPS:
               },
             });
             accountId = account.id;
-            
+
             // Update tenant with new account ID
             await storage.updateTenant(tenantId, {
               stripeConnectAccountId: accountId,
               stripeConnectStatus: "pending",
             });
           }
-          
+
           // Create onboarding link
           const accountLink = await stripe.accountLinks.create({
             account: accountId,
-            refresh_url: `${req.protocol}://${req.get('host')}/${tenantId}/payment-gateway?refresh=true`,
-            return_url: `${req.protocol}://${req.get('host')}/${tenantId}/payment-gateway?success=true`,
+            refresh_url: `${req.protocol}://${req.get("host")}/${tenantId}/payment-gateway?refresh=true`,
+            return_url: `${req.protocol}://${req.get("host")}/${tenantId}/payment-gateway?success=true`,
             type: "account_onboarding",
           });
-          
+
+          console.log("Stripe Connect onboarding link:", accountLink.url);
+          console.log("Stripe Connect account ID:", accountId);
           return { url: accountLink.url, accountId };
         });
 
@@ -18483,28 +18581,29 @@ NEXT STEPS:
         });
       } catch (error: any) {
         console.error("Error creating Stripe Connect onboarding:", error);
-        
+
         // Handle specific Stripe errors
-        if (error.type === 'StripeInvalidRequestError') {
-          if (error.message.includes('Connect')) {
-            return res.status(400).json({ 
+        if (error.type === "StripeInvalidRequestError") {
+          if (error.message.includes("Connect")) {
+            return res.status(400).json({
               message: "Stripe Connect not enabled",
-              details: "Please enable Stripe Connect on your Stripe dashboard. Visit https://dashboard.stripe.com/connect/overview to get started.",
-              stripeError: error.message
+              details:
+                "Please enable Stripe Connect on your Stripe dashboard. Visit https://dashboard.stripe.com/connect/overview to get started.",
+              stripeError: error.message,
             });
           }
-          return res.status(400).json({ 
+          return res.status(400).json({
             message: "Invalid request to Stripe",
-            details: error.message
+            details: error.message,
           });
         }
-        
-        res.status(500).json({ 
+
+        res.status(500).json({
           message: "Failed to create onboarding link",
-          details: error.message || "Unknown error occurred"
+          details: error.message || "Unknown error occurred",
         });
       }
-    }
+    },
   );
 
   // Update Stripe Connect account status (webhook or manual refresh)
@@ -18515,24 +18614,34 @@ NEXT STEPS:
       try {
         const tenantId = parseInt(req.params.tenantId);
         const tenant = await storage.getTenantById(tenantId);
-        
+
         if (!tenant?.stripeConnectAccountId) {
-          return res.status(404).json({ message: "No Stripe Connect account found" });
+          return res
+            .status(404)
+            .json({ message: "No Stripe Connect account found" });
         }
 
         const result = await withStripe(async (stripe) => {
-          const account = await stripe.accounts.retrieve(tenant.stripeConnectAccountId!);
-          
+          const account = await stripe.accounts.retrieve(
+            tenant.stripeConnectAccountId!,
+          );
+
           // Update tenant status based on Stripe account
           await storage.updateTenant(tenantId, {
-            stripeConnectStatus: account.details_submitted && account.charges_enabled ? "connected" : "pending",
+            stripeConnectStatus:
+              account.details_submitted && account.charges_enabled
+                ? "connected"
+                : "pending",
             stripeConnectOnboardingCompleted: account.details_submitted,
             stripeConnectChargesEnabled: account.charges_enabled,
             stripeConnectPayoutsEnabled: account.payouts_enabled,
           });
-          
+
           return {
-            status: account.details_submitted && account.charges_enabled ? "connected" : "pending",
+            status:
+              account.details_submitted && account.charges_enabled
+                ? "connected"
+                : "pending",
             onboardingCompleted: account.details_submitted,
             chargesEnabled: account.charges_enabled,
             payoutsEnabled: account.payouts_enabled,
@@ -18548,7 +18657,7 @@ NEXT STEPS:
         console.error("Error refreshing Stripe Connect status:", error);
         res.status(500).json({ message: "Failed to refresh account status" });
       }
-    }
+    },
   );
 
   // Create payment intent for booking
@@ -18564,21 +18673,28 @@ NEXT STEPS:
 
         // Validate booking belongs to tenant/restaurant
         const booking = await storage.getBookingById(bookingId);
-        if (!booking || booking.tenantId !== tenantId || booking.restaurantId !== restaurantId) {
+        if (
+          !booking ||
+          booking.tenantId !== tenantId ||
+          booking.restaurantId !== restaurantId
+        ) {
           return res.status(404).json({ message: "Booking not found" });
         }
 
         const tenant = await storage.getTenantById(tenantId);
-        if (!tenant?.stripeConnectAccountId || !tenant.stripeConnectChargesEnabled) {
-          return res.status(400).json({ 
-            message: "Stripe Connect not set up or charges not enabled" 
+        if (
+          !tenant?.stripeConnectAccountId ||
+          !tenant.stripeConnectChargesEnabled
+        ) {
+          return res.status(400).json({
+            message: "Stripe Connect not set up or charges not enabled",
           });
         }
 
         const result = await withStripe(async (stripe) => {
           // Calculate application fee (5% platform fee)
           const applicationFeeAmount = Math.round(amount * 0.05);
-          
+
           const paymentIntent = await stripe.paymentIntents.create({
             amount: amount * 100, // Convert to cents
             currency: currency.toLowerCase(),
@@ -18625,7 +18741,7 @@ NEXT STEPS:
         console.error("Error creating payment intent:", error);
         res.status(500).json({ message: "Failed to create payment intent" });
       }
-    }
+    },
   );
 
   // Get payment history for tenant
@@ -18641,13 +18757,13 @@ NEXT STEPS:
         console.error("Error fetching payments:", error);
         res.status(500).json({ message: "Internal server error" });
       }
-    }
+    },
   );
 
   // Stripe webhooks for Connect accounts
   app.post("/api/stripe/webhook", async (req, res) => {
     try {
-      const sig = req.headers['stripe-signature'];
+      const sig = req.headers["stripe-signature"];
       if (!sig || !stripe) {
         return res.status(400).json({ message: "Invalid webhook" });
       }
@@ -18658,30 +18774,39 @@ NEXT STEPS:
         return res.status(200).json({ received: true });
       }
 
-      const event = stripe.webhooks.constructEvent(req.body, sig, endpointSecret);
-      
+      const event = stripe.webhooks.constructEvent(
+        req.body,
+        sig,
+        endpointSecret,
+      );
+
       switch (event.type) {
-        case 'payment_intent.succeeded':
+        case "payment_intent.succeeded":
           const paymentIntent = event.data.object;
           await storage.updateStripePaymentByIntentId(paymentIntent.id, {
             status: paymentIntent.status,
           });
           break;
-          
-        case 'account.updated':
+
+        case "account.updated":
           const account = event.data.object;
           // Find tenant by account ID and update status
-          const tenant = await storage.getTenantByStripeConnectAccountId(account.id);
+          const tenant = await storage.getTenantByStripeConnectAccountId(
+            account.id,
+          );
           if (tenant) {
             await storage.updateTenant(tenant.id, {
-              stripeConnectStatus: account.details_submitted && account.charges_enabled ? "connected" : "pending",
+              stripeConnectStatus:
+                account.details_submitted && account.charges_enabled
+                  ? "connected"
+                  : "pending",
               stripeConnectOnboardingCompleted: account.details_submitted,
               stripeConnectChargesEnabled: account.charges_enabled,
               stripeConnectPayoutsEnabled: account.payouts_enabled,
             });
           }
           break;
-          
+
         default:
           console.log(`Unhandled webhook event type: ${event.type}`);
       }

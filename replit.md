@@ -22,6 +22,13 @@ A comprehensive restaurant booking management system with React frontend and Exp
 - Kitchen order management
 
 ## Recent Changes
+- **2025-07-02**: ✅ STRIPE CONNECT CHARGES & PAYOUTS ENABLEMENT - Enhanced Stripe Connect onboarding with comprehensive setup guidance
+- **Enhanced Onboarding Flow**: Changed from standard to Express accounts for simplified restaurant setup and faster approval process
+- **Improved Error Handling**: Added specific error messages for Stripe Connect not being enabled, with clear instructions to enable it on Stripe dashboard
+- **Status-Based UI**: Payment gateway now shows different alerts based on whether charges and payouts are enabled, with contextual action buttons
+- **Complete Setup Button**: Added "Complete Setup" button that appears when charges or payouts are disabled, directing users to finish onboarding
+- **Setup Instructions**: Added step-by-step instructions for enabling charges and payouts through Stripe's verification process
+- **Better User Experience**: Enhanced status display shows exact account capabilities and provides clear next steps for full functionality
 - **2025-07-02**: ✅ MIGRATION COMPLETED - Successfully migrated from Replit Agent to Replit environment with full Stripe Connect integration
 - **Migration Achievements**: Fixed database connection issues, resolved null reference errors, configured environment variables, and enhanced payment gateway page
 - **Stripe Connect Enhancement**: Updated payment gateway page with real-time status checking, onboarding flow, and comprehensive connection management

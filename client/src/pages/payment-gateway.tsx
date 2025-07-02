@@ -227,13 +227,35 @@ export default function PaymentGateway() {
                   </div>
                 ) : (
                   <div className="space-y-4">
-                    <Alert className="border-green-200 bg-green-50">
-                      <CheckCircle className="h-4 w-4 text-green-600" />
-                      <AlertDescription className="text-green-800">
-                        <strong>Connected!</strong> Your Stripe account is successfully connected. 
-                        You can now accept payments from customers.
-                      </AlertDescription>
-                    </Alert>
+                    {connectStatus.chargesEnabled && connectStatus.payoutsEnabled ? (
+                      <Alert className="border-green-200 bg-green-50">
+                        <CheckCircle className="h-4 w-4 text-green-600" />
+                        <AlertDescription className="text-green-800">
+                          <strong>Connected!</strong> Your Stripe account is successfully connected. 
+                          You can now accept payments from customers.
+                        </AlertDescription>
+                      </Alert>
+                    ) : (
+                      <Alert className="border-yellow-200 bg-yellow-50">
+                        <AlertCircle className="h-4 w-4 text-yellow-600" />
+                        <AlertDescription className="text-yellow-800">
+                          <strong>Setup Required:</strong> Your Stripe account is connected but needs additional information to enable charges and payouts. 
+                          Click "Complete Setup" to finish the onboarding process.
+                        </AlertDescription>
+                      </Alert>
+                    )}
+
+                    {(!connectStatus.chargesEnabled || !connectStatus.payoutsEnabled) && (
+                      <div className="bg-blue-50 border border-blue-200 rounded-md p-4">
+                        <h4 className="font-medium text-blue-900 mb-2">To enable charges and payouts:</h4>
+                        <ol className="text-sm text-blue-800 space-y-1 list-decimal list-inside">
+                          <li>Click "Complete Setup" to continue the Stripe onboarding process</li>
+                          <li>Provide your business information and bank account details</li>
+                          <li>Verify your identity with Stripe</li>
+                          <li>Once approved, charges and payouts will be automatically enabled</li>
+                        </ol>
+                      </div>
+                    )}
 
                     <div className="grid grid-cols-2 gap-4 text-sm">
                       <div>
@@ -261,6 +283,20 @@ export default function PaymentGateway() {
                     </div>
 
                     <div className="flex gap-3">
+                      {!connectStatus.chargesEnabled || !connectStatus.payoutsEnabled ? (
+                        <Button 
+                          onClick={() => onboardMutation.mutate()}
+                          disabled={onboardMutation.isPending}
+                          className="bg-blue-600 hover:bg-blue-700"
+                        >
+                          {onboardMutation.isPending ? (
+                            <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                          ) : (
+                            <ExternalLink className="h-4 w-4 mr-2" />
+                          )}
+                          Complete Setup
+                        </Button>
+                      ) : null}
                       <Button 
                         variant="outline"
                         onClick={() => refreshMutation.mutate()}
