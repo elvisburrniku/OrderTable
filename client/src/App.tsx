@@ -108,6 +108,8 @@ import { PWAInstallPrompt } from "@/components/pwa-install-prompt";
 import SurveyResponse from "./pages/survey-response";
 import StripeConnectSettings from "./pages/StripeConnectSettings";
 import PaymentPage from "./pages/PaymentPage";
+import PrePayment from "./pages/PrePayment";
+import PaymentSuccess from "./pages/payment-success";
 
 function App() {
   return (
@@ -149,6 +151,8 @@ function App() {
             <Route path="/accept-invitation" component={AcceptInvitation} />
             <Route path="/survey/:token" component={SurveyResponse} />
             <Route path="/payment" component={PaymentPage} />
+            <Route path="/prepayment" component={PrePayment} />
+            <Route path="/payment-success" component={PaymentSuccess} />
             <Route path="/shop" component={Shop} />
 
             {/* Widget demo with auth context */}
