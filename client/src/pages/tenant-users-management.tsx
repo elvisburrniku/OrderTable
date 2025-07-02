@@ -4,6 +4,7 @@ import { queryClient, apiRequest } from "@/lib/queryClient";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { Label } from "@/components/ui/label";
 import {
   Dialog,
   DialogContent,
@@ -54,6 +55,11 @@ import {
   Grip,
   ArrowRight,
   X,
+  Search,
+  Filter,
+  ChevronLeft,
+  ChevronRight,
+  User,
 } from "lucide-react";
 import {
   Collapsible,
@@ -77,6 +83,7 @@ import {
   useSortable,
 } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
+import { motion } from "framer-motion";
 
 // Types for tenant user management
 interface TenantUser {
@@ -301,6 +308,15 @@ export default function TenantUsersManagement({
   const [editingUser, setEditingUser] = useState<TenantUser | null>(null);
   const [inviteDialogOpen, setInviteDialogOpen] = useState(false);
   const [editDialogOpen, setEditDialogOpen] = useState(false);
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [userToDelete, setUserToDelete] = useState<TenantUser | null>(null);
+
+  // Pagination and filtering state
+  const [searchTerm, setSearchTerm] = useState("");
+  const [roleFilter, setRoleFilter] = useState("all");
+  const [currentPage, setCurrentPage] = useState(1);
+  const [itemsPerPage, setItemsPerPage] = useState(7);
+  const [showFilters, setShowFilters] = useState(false);
 
   // Guard Management state
   const [guardManagementOpen, setGuardManagementOpen] = useState(false);
@@ -672,6 +688,39 @@ export default function TenantUsersManagement({
     return allPermissions.filter((p) => !assignedPermissions.has(p.key));
   };
 
+  // Filter and pagination logic
+  const filteredUsers = (users || []).filter((user) => {
+    const matchesSearch = !searchTerm || 
+      user.user.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      user.user.email.toLowerCase().includes(searchTerm.toLowerCase());
+    
+    const matchesRole = roleFilter === "all" || user.role === roleFilter;
+    
+    return matchesSearch && matchesRole;
+  });
+
+  // Pagination calculations
+  const totalPages = Math.ceil(filteredUsers.length / itemsPerPage);
+  const startIndex = (currentPage - 1) * itemsPerPage;
+  const endIndex = startIndex + itemsPerPage;
+  const currentUsers = filteredUsers.slice(startIndex, endIndex);
+
+  // Active filters count
+  const activeFiltersCount = [searchTerm, roleFilter !== "all" ? roleFilter : null].filter(Boolean).length;
+
+  // Helper functions
+
+  const handleDeleteUser = (user: TenantUser) => {
+    setUserToDelete(user);
+    setDeleteDialogOpen(true);
+  };
+
+  const confirmDeleteUser = () => {
+    if (userToDelete) {
+      removeUserMutation.mutate(userToDelete.userId);
+    }
+  };
+
   if (usersLoading || rolesLoading) {
     return (
       <div className="flex items-center justify-center h-64">
@@ -681,34 +730,43 @@ export default function TenantUsersManagement({
   }
 
   return (
-    <div className="space-y-6">
-      <Card>
-        <CardHeader className="flex flex-row items-center justify-between">
-          <div className="flex items-center space-x-2">
-            <Users className="h-5 w-5" />
-            <CardTitle>Team Members</CardTitle>
-          </div>
-          <div className="flex items-center space-x-2">
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => setGuardManagementOpen(!guardManagementOpen)}
-            >
-              <Settings className="h-4 w-4 mr-2" />
-              Guard Management
-              {guardManagementOpen ? (
-                <ChevronUp className="h-4 w-4 ml-2" />
-              ) : (
-                <ChevronDown className="h-4 w-4 ml-2" />
-              )}
-            </Button>
-            <Dialog open={inviteDialogOpen} onOpenChange={setInviteDialogOpen}>
-              <DialogTrigger asChild>
-                <Button>
-                  <UserPlus className="h-4 w-4 mr-2" />
-                  Invite User
+    <div className="min-h-screen bg-gray-50">
+      <div className="p-6">
+        <div className="bg-white rounded-lg shadow">
+          {/* Top Header */}
+          <div className="p-6 border-b">
+            <div className="flex items-center justify-between">
+              <motion.h1 
+                initial={{ opacity: 0, x: -20 }}
+                animate={{ opacity: 1, x: 0 }}
+                transition={{ duration: 0.5, delay: 0.1 }}
+                className="text-2xl font-bold text-gray-900 flex items-center space-x-2"
+              >
+                <Users className="h-6 w-6" />
+                <span>Team Members</span>
+              </motion.h1>
+              <div className="flex items-center space-x-2">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setGuardManagementOpen(!guardManagementOpen)}
+                  className="border-2 border-gray-200 hover:border-blue-500 hover:bg-blue-50"
+                >
+                  <Settings className="h-4 w-4 mr-2" />
+                  Guard Management
+                  {guardManagementOpen ? (
+                    <ChevronUp className="h-4 w-4 ml-2" />
+                  ) : (
+                    <ChevronDown className="h-4 w-4 ml-2" />
+                  )}
                 </Button>
-              </DialogTrigger>
+                <Dialog open={inviteDialogOpen} onOpenChange={setInviteDialogOpen}>
+                  <DialogTrigger asChild>
+                    <Button className="bg-green-600 hover:bg-green-700 text-white">
+                      <UserPlus className="h-4 w-4 mr-2" />
+                      Invite User
+                    </Button>
+                  </DialogTrigger>
               <DialogContent>
                 <DialogHeader>
                   <DialogTitle>Invite New Team Member</DialogTitle>
@@ -792,83 +850,435 @@ export default function TenantUsersManagement({
                 </Form>
               </DialogContent>
             </Dialog>
+              </div>
+            </div>
           </div>
-        </CardHeader>
-        <CardContent>
-          {users && users.length > 0 ? (
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>User</TableHead>
-                  <TableHead>Email</TableHead>
-                  <TableHead>Role</TableHead>
-                  <TableHead>Joined</TableHead>
-                  <TableHead>Provider</TableHead>
-                  <TableHead className="text-right">Actions</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {users.map((user) => (
-                  <TableRow key={user.userId}>
-                    <TableCell className="font-medium">
-                      {user.user.name}
-                    </TableCell>
-                    <TableCell>{user.user.email}</TableCell>
-                    <TableCell>
-                      <Badge variant={getRoleBadgeVariant(user.role)}>
-                        {getRoleDisplayName(user.role)}
-                      </Badge>
-                    </TableCell>
-                    <TableCell>
-                      {new Date(user.createdAt).toLocaleDateString()}
-                    </TableCell>
-                    <TableCell>
-                      {user.user.ssoProvider ? (
-                        <Badge variant="outline">{user.user.ssoProvider}</Badge>
-                      ) : (
-                        <Badge variant="secondary">Email</Badge>
-                      )}
-                    </TableCell>
-                    <TableCell className="text-right">
-                      <div className="flex justify-end space-x-2">
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => handleEditUser(user)}
-                        >
-                          <Edit className="h-4 w-4" />
-                        </Button>
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => handleRemoveUser(user.userId)}
-                          disabled={removeUserMutation.isPending}
-                        >
-                          <Trash2 className="h-4 w-4" />
-                        </Button>
+
+          {/* Filters Section */}
+          <div className="p-6 border-b">
+            <h2 className="text-lg font-semibold text-gray-900 mb-6">Team Members</h2>
+
+            {/* Modern Filters Section */}
+            <div className="mb-8">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center space-x-4">
+                  <Collapsible open={showFilters} onOpenChange={setShowFilters}>
+                    <CollapsibleTrigger asChild>
+                      <Button 
+                        variant="outline" 
+                        className="h-10 px-4 border-2 border-gray-200 hover:border-green-500 hover:bg-green-50 transition-all duration-200 flex items-center space-x-2"
+                      >
+                        <Filter className="w-4 h-4" />
+                        <span>Filters</span>
+                        {activeFiltersCount > 0 && (
+                          <div className="bg-green-500 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center ml-2">
+                            {activeFiltersCount}
+                          </div>
+                        )}
+                        <ChevronDown className={`w-4 h-4 transition-transform duration-200 ${showFilters ? 'rotate-180' : ''}`} />
+                      </Button>
+                    </CollapsibleTrigger>
+
+                    <CollapsibleContent className="mt-4">
+                      <div className="bg-gray-50 rounded-lg p-6 border border-gray-200">
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                          {/* Search */}
+                          <div className="space-y-2">
+                            <Label className="text-sm font-medium text-gray-700">Search</Label>
+                            <div className="relative">
+                              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
+                              <Input
+                                placeholder="Search by name or email..."
+                                value={searchTerm}
+                                onChange={(e) => setSearchTerm(e.target.value)}
+                                className="pl-10 h-10 bg-white border-gray-300 focus:border-green-500 focus:ring-green-500"
+                              />
+                            </div>
+                          </div>
+
+                          {/* Role Filter */}
+                          <div className="space-y-2">
+                            <Label className="text-sm font-medium text-gray-700">Role</Label>
+                            <Select value={roleFilter || "all"} onValueChange={setRoleFilter}>
+                              <SelectTrigger className="h-10 bg-white border-gray-300 focus:border-green-500 focus:ring-green-500">
+                                <SelectValue placeholder="All roles" />
+                              </SelectTrigger>
+                              <SelectContent>
+                                <SelectItem value="all">All roles</SelectItem>
+                                {roles?.map((role) => (
+                                  <SelectItem key={role.id} value={role.name}>
+                                    {role.displayName}
+                                  </SelectItem>
+                                ))}
+                              </SelectContent>
+                            </Select>
+                          </div>
+                        </div>
+
+                        {/* Active Filters */}
+                        {activeFiltersCount > 0 && (
+                          <div className="mt-4 pt-4 border-t border-gray-200">
+                            <div className="flex items-center justify-between">
+                              <div className="flex items-center space-x-2">
+                                <span className="text-sm font-medium text-gray-700">Active filters:</span>
+                                <div className="flex items-center space-x-2">
+                                  {roleFilter !== "all" && (
+                                    <Badge className="px-2 py-1 text-xs bg-blue-100 text-blue-800 border-blue-200">
+                                      Role: {getRoleDisplayName(roleFilter)}
+                                    </Badge>
+                                  )}
+                                  {searchTerm && (
+                                    <Badge className="px-2 py-1 text-xs bg-purple-100 text-purple-800 border-purple-200">
+                                      Search: {searchTerm}
+                                    </Badge>
+                                  )}
+                                </div>
+                              </div>
+                              <Button 
+                                variant="outline" 
+                                size="sm"
+                                onClick={() => {
+                                  setSearchTerm("");
+                                  setRoleFilter("all");
+                                  setCurrentPage(1);
+                                }}
+                                className="text-xs px-3 py-1 border-gray-300 hover:bg-gray-50"
+                              >
+                                Clear all
+                              </Button>
+                            </div>
+                          </div>
+                        )}
                       </div>
-                    </TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-          ) : (
-            <div className="text-center py-8">
-              <Users className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
-              <h3 className="text-lg font-semibold mb-2">
-                No team members yet
-              </h3>
-              <p className="text-muted-foreground mb-4">
-                Start building your team by inviting new members.
+                    </CollapsibleContent>
+                  </Collapsible>
+                </div>
+              </div>
+            </div>
+
+            {/* Enhanced Table */}
+            <div className="bg-white rounded-xl border-2 border-gray-100 overflow-hidden shadow-sm">
+              <div className="overflow-x-auto">
+                <table className="w-full">
+                  <thead>
+                    <tr className="bg-gray-50 border-b border-gray-200">
+                      <th className="text-left py-3 px-4 text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        User
+                      </th>
+                      <th className="text-left py-3 px-4 text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Email
+                      </th>
+                      <th className="text-left py-3 px-4 text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Role
+                      </th>
+                      <th className="text-left py-3 px-4 text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Joined
+                      </th>
+                      <th className="text-left py-3 px-4 text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Provider
+                      </th>
+                      <th className="text-left py-3 px-4 text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Actions
+                      </th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-gray-100">
+                    {usersLoading ? (
+                      <tr>
+                        <td colSpan={6} className="py-12 text-center">
+                          <motion.div 
+                            initial={{ opacity: 0, y: 20 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            transition={{ duration: 0.5 }}
+                            className="flex flex-col items-center space-y-4"
+                          >
+                            <div className="animate-spin rounded-full h-8 w-8 border-2 border-green-500 border-t-transparent"></div>
+                            <span className="text-gray-500 font-medium">Loading team members...</span>
+                          </motion.div>
+                        </td>
+                      </tr>
+                    ) : currentUsers.length === 0 ? (
+                      <tr>
+                        <td colSpan={6} className="py-12 text-center">
+                          <div className="flex flex-col items-center space-y-4">
+                            <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center">
+                              <Users className="w-8 h-8 text-gray-400" />
+                            </div>
+                            <div>
+                              <h3 className="text-gray-900 font-medium">No team members found</h3>
+                              <p className="text-gray-500 text-sm mt-1">
+                                {searchTerm || roleFilter !== "all"
+                                  ? "Try adjusting your filters or search terms"
+                                  : "No team members yet"}
+                              </p>
+                            </div>
+                          </div>
+                        </td>
+                      </tr>
+                    ) : (
+                      currentUsers.map((user: TenantUser, index: number) => (
+                        <motion.tr 
+                          key={user.userId}
+                          initial={{ opacity: 0, y: 10 }}
+                          animate={{ opacity: 1, y: 0 }}
+                          transition={{ duration: 0.3, delay: index * 0.05 }}
+                          className={`group hover:bg-blue-50 cursor-pointer transition-all duration-200 ${
+                            index % 2 === 0 ? 'bg-white' : 'bg-gray-50/50'
+                          }`}
+                        >
+                          <td className="py-3 px-4">
+                            <div className="flex items-center space-x-3">
+                              <div className="w-8 h-8 bg-gradient-to-br from-green-400 to-green-600 rounded-full flex items-center justify-center text-white font-medium text-sm">
+                                {user.user.name?.charAt(0)?.toUpperCase() || 'U'}
+                              </div>
+                              <div>
+                                <div className="font-medium text-gray-900">{user.user.name}</div>
+                              </div>
+                            </div>
+                          </td>
+                          <td className="py-3 px-4">
+                            <span className="text-gray-700">{user.user.email}</span>
+                          </td>
+                          <td className="py-3 px-4">
+                            <Badge
+                              className={`px-3 py-1 text-xs font-medium rounded-full ${
+                                user.role === "owner"
+                                  ? "bg-purple-100 text-purple-800 border-purple-200"
+                                  : user.role === "manager"
+                                    ? "bg-blue-100 text-blue-800 border-blue-200"
+                                    : "bg-green-100 text-green-800 border-green-200"
+                              }`}
+                            >
+                              {getRoleDisplayName(user.role)}
+                            </Badge>
+                          </td>
+                          <td className="py-3 px-4">
+                            <div className="text-sm text-gray-600">
+                              {new Date(user.createdAt).toLocaleDateString()}
+                            </div>
+                          </td>
+                          <td className="py-3 px-4">
+                            <Badge className="px-3 py-1 text-xs font-medium rounded-full bg-blue-100 text-blue-800 border-blue-200">
+                              {user.user.ssoProvider || "Email"}
+                            </Badge>
+                          </td>
+                          <td className="py-3 px-4">
+                            <div className="flex items-center space-x-2">
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  handleEditUser(user);
+                                }}
+                                className="h-8 w-8 p-0"
+                              >
+                                <Edit className="h-4 w-4" />
+                              </Button>
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  handleDeleteUser(user);
+                                }}
+                                className="h-8 w-8 p-0 hover:bg-red-50 hover:text-red-600 hover:border-red-300"
+                              >
+                                <Trash2 className="h-4 w-4" />
+                              </Button>
+                            </div>
+                          </td>
+                        </motion.tr>
+                      ))
+                    )}
+                  </tbody>
+                </table>
+              </div>
+
+              {/* Pagination */}
+              {filteredUsers.length > itemsPerPage && (
+                <div className="px-6 py-4 border-t border-gray-200">
+                  <div className="flex items-center justify-between">
+                    <div className="text-sm text-gray-600">
+                      {startIndex + 1}-{Math.min(endIndex, filteredUsers.length)} of {filteredUsers.length}
+                    </div>
+
+                    <div className="flex items-center space-x-2">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => setCurrentPage(1)}
+                        disabled={currentPage === 1}
+                        className="px-3 py-1 h-8 text-sm"
+                      >
+                        First
+                      </Button>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => setCurrentPage(currentPage - 1)}
+                        disabled={currentPage === 1}
+                        className="w-8 h-8 p-0"
+                      >
+                        <ChevronLeft className="w-4 h-4" />
+                      </Button>
+
+                      {/* Page Numbers */}
+                      <div className="flex items-center space-x-1">
+                        {Array.from({ length: Math.min(3, totalPages) }, (_, i) => {
+                          let pageNum;
+                          if (totalPages <= 3) {
+                            pageNum = i + 1;
+                          } else if (currentPage <= 2) {
+                            pageNum = i + 1;
+                          } else if (currentPage >= totalPages - 1) {
+                            pageNum = totalPages - 2 + i;
+                          } else {
+                            pageNum = currentPage - 1 + i;
+                          }
+
+                          return (
+                            <Button
+                              key={pageNum}
+                              variant={currentPage === pageNum ? "default" : "outline"}
+                              size="sm"
+                              onClick={() => setCurrentPage(pageNum)}
+                              className={`w-8 h-8 p-0 ${
+                                currentPage === pageNum 
+                                  ? "bg-green-600 hover:bg-green-700 text-white" 
+                                  : "hover:bg-green-50"
+                              }`}
+                            >
+                              {pageNum}
+                            </Button>
+                          );
+                        })}
+                      </div>
+
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => setCurrentPage(currentPage + 1)}
+                        disabled={currentPage === totalPages}
+                        className="w-8 h-8 p-0"
+                      >
+                        <ChevronRight className="w-4 h-4" />
+                      </Button>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => setCurrentPage(totalPages)}
+                        disabled={currentPage === totalPages}
+                        className="px-3 py-1 h-8 text-sm"
+                      >
+                        Last
+                      </Button>
+                    </div>
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+
+        {/* Edit User Dialog */}
+        <Dialog open={editDialogOpen} onOpenChange={setEditDialogOpen}>
+          <DialogContent className="max-w-md">
+            <DialogHeader>
+              <DialogTitle>Edit Team Member</DialogTitle>
+            </DialogHeader>
+            <Form {...updateForm}>
+              <form onSubmit={updateForm.handleSubmit(handleUpdateUser)} className="space-y-4">
+                <FormField
+                  control={updateForm.control}
+                  name="name"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Full Name</FormLabel>
+                      <FormControl>
+                        <Input placeholder="John Doe" {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  control={updateForm.control}
+                  name="email"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Email</FormLabel>
+                      <FormControl>
+                        <Input placeholder="user@example.com" {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  control={updateForm.control}
+                  name="role"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Role</FormLabel>
+                      <Select onValueChange={field.onChange} defaultValue={field.value}>
+                        <FormControl>
+                          <SelectTrigger>
+                            <SelectValue placeholder="Select a role" />
+                          </SelectTrigger>
+                        </FormControl>
+                        <SelectContent>
+                          {roles?.map((role) => (
+                            <SelectItem key={role.id} value={role.name}>
+                              {role.displayName}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <div className="flex justify-end space-x-2">
+                  <Button type="button" variant="outline" onClick={() => setEditDialogOpen(false)}>
+                    Cancel
+                  </Button>
+                  <Button type="submit" disabled={updateUserMutation.isPending}>
+                    {updateUserMutation.isPending ? "Updating..." : "Update Member"}
+                  </Button>
+                </div>
+              </form>
+            </Form>
+          </DialogContent>
+        </Dialog>
+
+        {/* Delete Confirmation Dialog */}
+        <Dialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
+          <DialogContent className="max-w-md">
+            <DialogHeader>
+              <DialogTitle>Remove Team Member</DialogTitle>
+            </DialogHeader>
+            <div className="py-4">
+              <p className="text-gray-600">
+                Are you sure you want to remove <strong>{userToDelete?.user.name}</strong> from the team?
               </p>
-              <Button onClick={() => setInviteDialogOpen(true)}>
-                <UserPlus className="h-4 w-4 mr-2" />
-                Invite First User
+              <p className="text-red-600 text-sm mt-2">This action cannot be undone and will revoke their access immediately.</p>
+            </div>
+            <div className="flex justify-end space-x-2">
+              <Button type="button" variant="outline" onClick={() => setDeleteDialogOpen(false)}>
+                Cancel
+              </Button>
+              <Button 
+                type="button" 
+                variant="destructive" 
+                onClick={confirmDeleteUser}
+                disabled={removeUserMutation.isPending}
+              >
+                {removeUserMutation.isPending ? "Removing..." : "Remove Member"}
               </Button>
             </div>
-          )}
-        </CardContent>
-      </Card>
+          </DialogContent>
+        </Dialog>
 
       {/* Guard Management Collapsible Section */}
       <Collapsible
@@ -1024,63 +1434,111 @@ export default function TenantUsersManagement({
                     </TabsContent>
 
                     <TabsContent value="overview" className="space-y-4">
-                      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                        {localRolePermissions.roles.map((role) => (
-                          <Card key={role.role}>
-                            <CardHeader className="pb-2">
-                              <CardTitle className="text-base capitalize">
-                                {role.role}
-                              </CardTitle>
-                            </CardHeader>
-                            <CardContent>
-                              <div className="space-y-2">
-                                <div className="flex items-center justify-between">
-                                  <span className="text-sm font-medium">
-                                    Permissions:
-                                  </span>
-                                  <Badge variant="secondary">
-                                    {role.permissions.length}
-                                  </Badge>
-                                </div>
-                                <div className="flex items-center justify-between">
-                                  <span className="text-sm font-medium">
-                                    Default Page:
-                                  </span>
-                                  <Badge variant="outline">
-                                    {role.redirect}
-                                  </Badge>
-                                </div>
-                                <div className="pt-2">
-                                  <span className="text-sm font-medium mb-1 block">
-                                    Granted Access:
-                                  </span>
-                                  <div className="flex flex-wrap gap-1">
-                                    {role.permissions
-                                      .slice(0, 3)
-                                      .map((permission) => (
-                                        <Badge
-                                          key={permission}
-                                          variant="outline"
-                                          className="text-xs"
-                                        >
-                                          {permission}
+                      <Card>
+                        <CardHeader>
+                          <CardTitle className="flex items-center space-x-2">
+                            <Shield className="h-5 w-5" />
+                            <span>Available Roles</span>
+                          </CardTitle>
+                        </CardHeader>
+                        <CardContent>
+                          <div className="bg-white rounded-xl border-2 border-gray-100 overflow-hidden shadow-sm">
+                            <div className="overflow-x-auto">
+                              <table className="w-full">
+                                <thead>
+                                  <tr className="bg-gray-50 border-b border-gray-200">
+                                    <th className="text-left py-3 px-4 text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                      Role
+                                    </th>
+                                    <th className="text-left py-3 px-4 text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                      Permissions
+                                    </th>
+                                    <th className="text-left py-3 px-4 text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                      Default Page
+                                    </th>
+                                    <th className="text-left py-3 px-4 text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                      Access Level
+                                    </th>
+                                  </tr>
+                                </thead>
+                                <tbody className="divide-y divide-gray-100">
+                                  {localRolePermissions.roles.map((role, index) => (
+                                    <motion.tr 
+                                      key={role.role}
+                                      initial={{ opacity: 0, y: 10 }}
+                                      animate={{ opacity: 1, y: 0 }}
+                                      transition={{ duration: 0.3, delay: index * 0.05 }}
+                                      className={`group hover:bg-blue-50 transition-all duration-200 ${
+                                        index % 2 === 0 ? 'bg-white' : 'bg-gray-50/50'
+                                      }`}
+                                    >
+                                      <td className="py-3 px-4">
+                                        <div className="flex items-center space-x-3">
+                                          <div className={`w-3 h-3 rounded-full ${
+                                            role.role === "owner" 
+                                              ? "bg-purple-500" 
+                                              : role.role === "manager"
+                                                ? "bg-blue-500"
+                                                : "bg-green-500"
+                                          }`}></div>
+                                          <div>
+                                            <div className="font-medium text-gray-900 capitalize">
+                                              {role.role.replace('_', ' ')}
+                                            </div>
+                                            <Badge className={`px-2 py-1 text-xs font-medium rounded-full ${
+                                              role.role === "owner"
+                                                ? "bg-purple-100 text-purple-800 border-purple-200"
+                                                : role.role === "manager"
+                                                  ? "bg-blue-100 text-blue-800 border-blue-200"
+                                                  : "bg-green-100 text-green-800 border-green-200"
+                                            }`}>
+                                              System Role
+                                            </Badge>
+                                          </div>
+                                        </div>
+                                      </td>
+                                      <td className="py-3 px-4">
+                                        <div className="flex items-center space-x-2">
+                                          <span className="font-medium text-gray-900">{role.permissions.length}</span>
+                                          <span className="text-sm text-gray-500">permissions</span>
+                                        </div>
+                                      </td>
+                                      <td className="py-3 px-4">
+                                        <Badge className="px-3 py-1 text-xs font-medium rounded-full bg-gray-100 text-gray-800 border-gray-200">
+                                          {role.redirect || 'dashboard'}
                                         </Badge>
-                                      ))}
-                                    {role.permissions.length > 3 && (
-                                      <Badge
-                                        variant="outline"
-                                        className="text-xs"
-                                      >
-                                        +{role.permissions.length - 3} more
-                                      </Badge>
-                                    )}
-                                  </div>
-                                </div>
-                              </div>
-                            </CardContent>
-                          </Card>
-                        ))}
-                      </div>
+                                      </td>
+                                      <td className="py-3 px-4">
+                                        <div className="space-y-1">
+                                          <div className="flex flex-wrap gap-1">
+                                            {role.permissions.slice(0, 2).map((permission) => (
+                                              <Badge
+                                                key={permission}
+                                                variant="outline"
+                                                className="text-xs px-2 py-1"
+                                              >
+                                                {permission.replace('access_', '').replace('_', ' ')}
+                                              </Badge>
+                                            ))}
+                                            {role.permissions.length > 2 && (
+                                              <Badge
+                                                variant="outline"
+                                                className="text-xs px-2 py-1 bg-blue-50 text-blue-700 border-blue-200"
+                                              >
+                                                +{role.permissions.length - 2} more
+                                              </Badge>
+                                            )}
+                                          </div>
+                                        </div>
+                                      </td>
+                                    </motion.tr>
+                                  ))}
+                                </tbody>
+                              </table>
+                            </div>
+                          </div>
+                        </CardContent>
+                      </Card>
                     </TabsContent>
                   </Tabs>
 
@@ -1194,35 +1652,7 @@ export default function TenantUsersManagement({
         </DialogContent>
       </Dialog>
 
-      {/* Roles Summary Card */}
-      {roles && roles.length > 0 && (
-        <Card>
-          <CardHeader>
-            <div className="flex items-center space-x-2">
-              <Shield className="h-5 w-5" />
-              <CardTitle>Available Roles</CardTitle>
-            </div>
-          </CardHeader>
-          <CardContent>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-              {roles.map((role) => (
-                <div key={role.id} className="border rounded-lg p-4">
-                  <h4 className="font-semibold mb-2">{role.displayName}</h4>
-                  <Badge
-                    variant={role.isSystem ? "default" : "secondary"}
-                    className="mb-2"
-                  >
-                    {role.isSystem ? "System Role" : "Custom Role"}
-                  </Badge>
-                  <p className="text-sm text-muted-foreground">
-                    {JSON.parse(role.permissions).length} permissions
-                  </p>
-                </div>
-              ))}
-            </div>
-          </CardContent>
-        </Card>
-      )}
+      </div>
     </div>
   );
 }
