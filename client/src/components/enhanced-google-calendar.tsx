@@ -151,7 +151,7 @@ export default function EnhancedGoogleCalendar({
     specialRequests: "",
     startTime: "",
     endTime: "",
-    duration: generalSettings?.defaultBookingDuration || 60,
+    duration: generalSettings?.defaultBookingDuration ?? 60,
     eventType: "general", // general, birthday, anniversary, business, etc.
     internalNotes: "",
     extraDescription: "",
@@ -843,7 +843,7 @@ export default function EnhancedGoogleCalendar({
         specialRequests: "",
         startTime: "",
         endTime: "",
-        duration: generalSettings?.defaultBookingDuration || 60,
+        duration: generalSettings?.defaultBookingDuration ?? 60,
       });
       toast({
         title: "Booking Created",
@@ -1642,8 +1642,8 @@ export default function EnhancedGoogleCalendar({
                   onChange={(e) => {
                     const newStartTime = e.target.value;
                     const currentDuration =
-                      newBooking.duration ||
-                      generalSettings?.defaultBookingDuration ||
+                      newBooking.duration ??
+                      generalSettings?.defaultBookingDuration ??
                       60;
 
                     // Recalculate end time when start time changes
@@ -1669,8 +1669,8 @@ export default function EnhancedGoogleCalendar({
                 <Label htmlFor="duration">Duration</Label>
                 <Select
                   value={(
-                    newBooking.duration ||
-                    generalSettings?.defaultBookingDuration ||
+                    newBooking.duration ??
+                    generalSettings?.defaultBookingDuration ??
                     60
                   ).toString()}
                   onValueChange={(value) =>
@@ -1879,8 +1879,7 @@ export default function EnhancedGoogleCalendar({
                           }))
                         }
                       >
-                        <SelectTrigger>
-                          <SelectValue />
+                        <SelectTrigger>                          <SelectValue />
                         </SelectTrigger>
                         <SelectContent>
                           <SelectItem value="1">1 hour</SelectItem>
