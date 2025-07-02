@@ -1415,11 +1415,12 @@ export default function TenantUsersManagement({
                         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
                           {/* Available Permissions */}
                           <div className="lg:col-span-1">
-                            <h3 className="text-lg font-semibold mb-4 flex items-center">
-                              <Grip className="h-5 w-5 mr-2" />
-                              Available Permissions
-                            </h3>
-                            <div className="space-y-4">
+                            <div className="sticky top-4">
+                              <h3 className="text-lg font-semibold mb-4 flex items-center">
+                                <Grip className="h-5 w-5 mr-2" />
+                                Available Permissions
+                              </h3>
+                              <div className="space-y-4">
                               <div>
                                 <h4 className="font-medium text-sm text-gray-600 mb-2">
                                   Page Access
@@ -1471,6 +1472,7 @@ export default function TenantUsersManagement({
                                   </div>
                                 </SortableContext>
                               </div>
+                            </div>
                             </div>
                           </div>
 
