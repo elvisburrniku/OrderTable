@@ -538,7 +538,13 @@ export function MenuManagement({
       </div>
 
       <div className="grid gap-6">
-        {categories.map((category) => (
+        {categories
+          .filter((category) => {
+            // Show category if it has items after filtering
+            const categoryItems = getItemsByCategory(category.id);
+            return categoryItems.length > 0;
+          })
+          .map((category) => (
           <Card key={category.id} className="w-full">
             <CardHeader>
               <div className="flex items-center justify-between">
@@ -653,23 +659,26 @@ export function MenuManagement({
                     </div>
                   </div>
                 ))}
-                {getItemsByCategory(category.id).length === 0 && (
-                  <div className="text-center py-8 text-muted-foreground">
-                    No items in this category yet.
-                  </div>
-                )}
               </div>
             </CardContent>
           </Card>
         ))}
       </div>
 
-      {categories.length === 0 && (
+      {categories.length === 0 ? (
         <div className="text-center py-12">
           <ChefHat className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
           <h3 className="text-lg font-medium mb-2">No menu categories yet</h3>
           <p className="text-muted-foreground mb-4">
             Start by creating your first menu category to organize your items.
+          </p>
+        </div>
+      ) : categories.filter((category) => getItemsByCategory(category.id).length > 0).length === 0 && (
+        <div className="text-center py-12">
+          <ChefHat className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
+          <h3 className="text-lg font-medium mb-2">No items match your filters</h3>
+          <p className="text-muted-foreground mb-4">
+            Try adjusting your search criteria or clear the filters to see all items.
           </p>
         </div>
       )}
