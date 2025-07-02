@@ -42,6 +42,7 @@ import { Badge } from "@/components/ui/badge";
 
 export default function MenuManagementPage() {
   const { restaurant } = useAuth();
+  const queryClient = useQueryClient();
   const [activeTab, setActiveTab] = useState("menu");
 
   if (!restaurant) {
@@ -185,7 +186,14 @@ export default function MenuManagementPage() {
               <Button
                 variant="outline"
                 size="sm"
-                onClick={() => window.location.reload()}
+                onClick={() => {
+                  queryClient.invalidateQueries({ 
+                    queryKey: [`/api/tenants/${restaurant?.tenantId}/restaurants/${restaurant?.id}/menu-categories`] 
+                  });
+                  queryClient.invalidateQueries({ 
+                    queryKey: [`/api/tenants/${restaurant?.tenantId}/restaurants/${restaurant?.id}/menu-items`] 
+                  });
+                }}
                 className="text-slate-600 border-slate-200"
               >
                 <RefreshCw className="w-4 h-4 mr-2" />
