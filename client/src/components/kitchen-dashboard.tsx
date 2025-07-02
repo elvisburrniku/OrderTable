@@ -14,6 +14,7 @@ import { Separator } from "@/components/ui/separator";
 import { useToast } from "@/hooks/use-toast";
 import { KitchenPerformanceSparkline } from "@/components/kitchen-performance-sparkline";
 import { CreateKitchenOrder } from "@/components/create-kitchen-order";
+import { motion } from "framer-motion";
 import { 
   Clock, 
   ChefHat, 
@@ -34,7 +35,10 @@ import {
   Trash2,
   PlayCircle,
   PauseCircle,
-  StopCircle
+  StopCircle,
+  Package,
+  Gauge,
+  Award
 } from "lucide-react";
 
 interface KitchenOrder {
@@ -265,139 +269,256 @@ export function KitchenDashboard({ restaurantId, tenantId }: KitchenDashboardPro
   });
 
   return (
-    <div className="p-6 space-y-6">
-      {/* Header */}
-      <div className="flex justify-between items-center">
-        <div>
-          <h1 className="text-3xl font-bold flex items-center gap-2">
-            <ChefHat className="h-8 w-8 text-orange-600" />
-            Kitchen Dashboard
-          </h1>
-          <p className="text-gray-600 mt-1">Real-time kitchen operations and efficiency monitoring</p>
-        </div>
-        <div className="flex items-center gap-4">
-          <CreateKitchenOrder 
-            restaurantId={restaurantId} 
-            tenantId={tenantId}
-            onOrderCreated={() => {
-              queryClient.invalidateQueries({ 
-                queryKey: [`/api/tenants/${tenantId}/restaurants/${restaurantId}/kitchen/orders`] 
-              });
-              queryClient.invalidateQueries({ 
-                queryKey: [`/api/tenants/${tenantId}/restaurants/${restaurantId}/kitchen/metrics`] 
-              });
-            }}
-          />
-          <Select value={selectedTimeRange} onValueChange={setSelectedTimeRange}>
-            <SelectTrigger className="w-40">
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="today">Today</SelectItem>
-              <SelectItem value="week">This Week</SelectItem>
-              <SelectItem value="month">This Month</SelectItem>
-            </SelectContent>
-          </Select>
-          <Button
-            variant={autoRefresh ? "default" : "outline"}
-            size="sm"
-            onClick={() => setAutoRefresh(!autoRefresh)}
-            className="flex items-center gap-2"
-          >
-            <RefreshCw className={`h-4 w-4 ${autoRefresh ? 'animate-spin' : ''}`} />
-            Auto Refresh
-          </Button>
-        </div>
-      </div>
-
-      {/* Key Metrics */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Active Orders</CardTitle>
-            <Activity className="h-4 w-4 text-orange-600" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{activeOrders.length}</div>
-            <p className="text-xs text-muted-foreground">
-              {readyOrders.length} ready to serve
-            </p>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Avg. Prep Time</CardTitle>
-            <Timer className="h-4 w-4 text-blue-600" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{metrics?.averageTime ? formatTime(metrics.averageTime) : '0m'}</div>
-            <p className="text-xs text-muted-foreground">
-              Target: 20-25 minutes
-            </p>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Kitchen Efficiency</CardTitle>
-            <TrendingUp className="h-4 w-4 text-green-600" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{metrics?.efficiency || 0}%</div>
-            <Progress value={metrics?.efficiency || 0} className="mt-2" />
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Orders Completed</CardTitle>
-            <CheckCircle className="h-4 w-4 text-green-600" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{completedToday}</div>
-            <p className="text-xs text-muted-foreground">
-              Since start of day
-            </p>
-          </CardContent>
-        </Card>
-      </div>
-
-      <Tabs defaultValue="orders" className="w-full">
-        <TabsList className="grid w-full grid-cols-5">
-          <TabsTrigger value="orders">Active Orders</TabsTrigger>
-          <TabsTrigger value="stations">Kitchen Stations</TabsTrigger>
-          <TabsTrigger value="staff">Staff Performance</TabsTrigger>
-          <TabsTrigger value="performance">Performance Sparkline</TabsTrigger>
-          <TabsTrigger value="analytics">Analytics</TabsTrigger>
-        </TabsList>
-
-        {/* Active Orders Tab */}
-        <TabsContent value="orders" className="space-y-6">
-          {/* Ready Orders Section */}
-          {readyOrders.length > 0 && (
+    <div className="min-h-screen bg-slate-50">
+      {/* Professional Header */}
+      <motion.div
+        initial={{ opacity: 0, y: -20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.5 }}
+        className="bg-gradient-to-br from-slate-800 to-slate-900 text-white shadow-lg"
+      >
+        <div className="px-6 py-8">
+          <div className="flex justify-between items-center">
             <div>
-              <div className="flex items-center gap-2 mb-4">
-                <CheckCircle className="h-5 w-5 text-green-600" />
-                <h3 className="text-lg font-semibold text-green-600">Ready to Serve ({readyOrders.length})</h3>
-              </div>
-              <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-4">
-                {readyOrders.map((order: KitchenOrder) => (
-                  <Card key={order.id} className="relative border-green-200 bg-green-50">
-                    <CardHeader className="pb-3">
-                      <div className="flex justify-between items-start">
-                        <div>
-                          <CardTitle className="text-lg">#{order.orderNumber}</CardTitle>
-                          <p className="text-sm text-gray-600">Table {order.tableNumber} • {order.customerName}</p>
-                        </div>
-                        <div className="flex flex-col items-end gap-1">
-                          <Badge className={getPriorityColor(order.priority)}>
-                            {order.priority.toUpperCase()}
-                          </Badge>
-                          <div className="w-3 h-3 rounded-full bg-green-500" />
-                        </div>
-                      </div>
-                    </CardHeader>
+              <h1 className="text-4xl font-bold flex items-center gap-3">
+                <motion.div
+                  initial={{ rotate: -20, scale: 0.8 }}
+                  animate={{ rotate: 0, scale: 1 }}
+                  transition={{ duration: 0.5, delay: 0.2 }}
+                >
+                  <ChefHat className="h-10 w-10 text-orange-400" />
+                </motion.div>
+                Kitchen Dashboard
+              </h1>
+              <p className="text-slate-300 mt-2">Real-time kitchen operations and efficiency monitoring</p>
+            </div>
+            <div className="flex items-center gap-4">
+              <motion.div
+                initial={{ opacity: 0, scale: 0.9 }}
+                animate={{ opacity: 1, scale: 1 }}
+                transition={{ duration: 0.3, delay: 0.3 }}
+              >
+                <CreateKitchenOrder 
+                  restaurantId={restaurantId} 
+                  tenantId={tenantId}
+                  onOrderCreated={() => {
+                    queryClient.invalidateQueries({ 
+                      queryKey: [`/api/tenants/${tenantId}/restaurants/${restaurantId}/kitchen/orders`] 
+                    });
+                    queryClient.invalidateQueries({ 
+                      queryKey: [`/api/tenants/${tenantId}/restaurants/${restaurantId}/kitchen/metrics`] 
+                    });
+                  }}
+                />
+              </motion.div>
+              <Select value={selectedTimeRange} onValueChange={setSelectedTimeRange}>
+                <SelectTrigger className="w-40 bg-white/10 border-white/20 text-white hover:bg-white/20">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="today">Today</SelectItem>
+                  <SelectItem value="week">This Week</SelectItem>
+                  <SelectItem value="month">This Month</SelectItem>
+                </SelectContent>
+              </Select>
+              <Button
+                variant={autoRefresh ? "default" : "outline"}
+                size="sm"
+                onClick={() => setAutoRefresh(!autoRefresh)}
+                className={`flex items-center gap-2 ${
+                  autoRefresh 
+                    ? 'bg-orange-500 hover:bg-orange-600 text-white border-orange-500' 
+                    : 'bg-white/10 border-white/20 text-white hover:bg-white/20'
+                }`}
+              >
+                <RefreshCw className={`h-4 w-4 ${autoRefresh ? 'animate-spin' : ''}`} />
+                Auto Refresh
+              </Button>
+            </div>
+          </div>
+        </div>
+      </motion.div>
+
+      {/* Main Content */}
+      <div className="p-6 space-y-6">
+
+        {/* Key Metrics */}
+        <motion.div 
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.5, delay: 0.1 }}
+          className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4"
+        >
+          <motion.div
+            initial={{ opacity: 0, scale: 0.9 }}
+            animate={{ opacity: 1, scale: 1 }}
+            transition={{ duration: 0.3, delay: 0.2 }}
+          >
+            <Card className="bg-white border-slate-200 shadow-sm hover:shadow-md transition-shadow">
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                <CardTitle className="text-sm font-medium text-slate-700">Active Orders</CardTitle>
+                <div className="p-2 bg-orange-100 rounded-lg">
+                  <Activity className="h-4 w-4 text-orange-600" />
+                </div>
+              </CardHeader>
+              <CardContent>
+                <div className="text-3xl font-bold text-slate-900">{activeOrders.length}</div>
+                <p className="text-sm text-slate-500 mt-1">
+                  {readyOrders.length} ready to serve
+                </p>
+              </CardContent>
+            </Card>
+          </motion.div>
+
+          <motion.div
+            initial={{ opacity: 0, scale: 0.9 }}
+            animate={{ opacity: 1, scale: 1 }}
+            transition={{ duration: 0.3, delay: 0.3 }}
+          >
+            <Card className="bg-white border-slate-200 shadow-sm hover:shadow-md transition-shadow">
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                <CardTitle className="text-sm font-medium text-slate-700">Avg. Prep Time</CardTitle>
+                <div className="p-2 bg-blue-100 rounded-lg">
+                  <Timer className="h-4 w-4 text-blue-600" />
+                </div>
+              </CardHeader>
+              <CardContent>
+                <div className="text-3xl font-bold text-slate-900">{metrics?.averageTime ? formatTime(metrics.averageTime) : '0m'}</div>
+                <p className="text-sm text-slate-500 mt-1">
+                  Target: 20-25 minutes
+                </p>
+              </CardContent>
+            </Card>
+          </motion.div>
+
+          <motion.div
+            initial={{ opacity: 0, scale: 0.9 }}
+            animate={{ opacity: 1, scale: 1 }}
+            transition={{ duration: 0.3, delay: 0.4 }}
+          >
+            <Card className="bg-white border-slate-200 shadow-sm hover:shadow-md transition-shadow">
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                <CardTitle className="text-sm font-medium text-slate-700">Kitchen Efficiency</CardTitle>
+                <div className="p-2 bg-green-100 rounded-lg">
+                  <Gauge className="h-4 w-4 text-green-600" />
+                </div>
+              </CardHeader>
+              <CardContent>
+                <div className="text-3xl font-bold text-slate-900">{metrics?.efficiency || 0}%</div>
+                <div className="mt-3">
+                  <Progress 
+                    value={metrics?.efficiency || 0} 
+                    className="h-2 bg-slate-100"
+                  />
+                </div>
+              </CardContent>
+            </Card>
+          </motion.div>
+
+          <motion.div
+            initial={{ opacity: 0, scale: 0.9 }}
+            animate={{ opacity: 1, scale: 1 }}
+            transition={{ duration: 0.3, delay: 0.5 }}
+          >
+            <Card className="bg-white border-slate-200 shadow-sm hover:shadow-md transition-shadow">
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                <CardTitle className="text-sm font-medium text-slate-700">Orders Completed</CardTitle>
+                <div className="p-2 bg-green-100 rounded-lg">
+                  <CheckCircle className="h-4 w-4 text-green-600" />
+                </div>
+              </CardHeader>
+              <CardContent>
+                <div className="text-3xl font-bold text-slate-900">{completedToday}</div>
+                <p className="text-sm text-slate-500 mt-1">
+                  Since start of day
+                </p>
+              </CardContent>
+            </Card>
+          </motion.div>
+        </motion.div>
+
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.5, delay: 0.2 }}
+        >
+          <Tabs defaultValue="orders" className="w-full">
+            <TabsList className="bg-white border border-slate-200 p-1 rounded-lg shadow-sm mb-6">
+              <TabsTrigger 
+                value="orders" 
+                className="flex items-center gap-2 data-[state=active]:bg-slate-100 data-[state=active]:text-slate-900 text-slate-600 px-4 py-2 rounded-md transition-all duration-200"
+              >
+                <Package className="h-4 w-4" />
+                Active Orders
+              </TabsTrigger>
+              <TabsTrigger 
+                value="stations" 
+                className="flex items-center gap-2 data-[state=active]:bg-slate-100 data-[state=active]:text-slate-900 text-slate-600 px-4 py-2 rounded-md transition-all duration-200"
+              >
+                <Flame className="h-4 w-4" />
+                Kitchen Stations
+              </TabsTrigger>
+              <TabsTrigger 
+                value="staff" 
+                className="flex items-center gap-2 data-[state=active]:bg-slate-100 data-[state=active]:text-slate-900 text-slate-600 px-4 py-2 rounded-md transition-all duration-200"
+              >
+                <Users className="h-4 w-4" />
+                Staff Performance
+              </TabsTrigger>
+              <TabsTrigger 
+                value="performance" 
+                className="flex items-center gap-2 data-[state=active]:bg-slate-100 data-[state=active]:text-slate-900 text-slate-600 px-4 py-2 rounded-md transition-all duration-200"
+              >
+                <Activity className="h-4 w-4" />
+                Performance Sparkline
+              </TabsTrigger>
+              <TabsTrigger 
+                value="analytics" 
+                className="flex items-center gap-2 data-[state=active]:bg-slate-100 data-[state=active]:text-slate-900 text-slate-600 px-4 py-2 rounded-md transition-all duration-200"
+              >
+                <BarChart3 className="h-4 w-4" />
+                Analytics
+              </TabsTrigger>
+            </TabsList>
+
+            {/* Active Orders Tab */}
+            <TabsContent value="orders" className="space-y-6">
+              {/* Ready Orders Section */}
+              {readyOrders.length > 0 && (
+                <motion.div
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.3 }}
+                >
+                  <div className="flex items-center gap-3 mb-6">
+                    <div className="p-2 bg-green-100 rounded-lg">
+                      <CheckCircle className="h-5 w-5 text-green-600" />
+                    </div>
+                    <h3 className="text-xl font-semibold text-slate-800">Ready to Serve ({readyOrders.length})</h3>
+                  </div>
+                  <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-4">
+                    {readyOrders.map((order: KitchenOrder, index: number) => (
+                      <motion.div
+                        key={order.id}
+                        initial={{ opacity: 0, x: -20 }}
+                        animate={{ opacity: 1, x: 0 }}
+                        transition={{ duration: 0.3, delay: index * 0.1 }}
+                      >
+                        <Card className="relative bg-gradient-to-br from-green-50 to-green-100/50 border-green-200 shadow-sm hover:shadow-md transition-all duration-200">
+                          <CardHeader className="pb-3">
+                            <div className="flex justify-between items-start">
+                              <div>
+                                <CardTitle className="text-lg font-semibold text-slate-800">#{order.orderNumber}</CardTitle>
+                                <p className="text-sm text-slate-600 mt-1">Table {order.tableNumber} • {order.customerName}</p>
+                              </div>
+                              <div className="flex flex-col items-end gap-2">
+                                <Badge className={`${getPriorityColor(order.priority)} px-3 py-1`}>
+                                  {order.priority.toUpperCase()}
+                                </Badge>
+                                <div className="w-3 h-3 rounded-full bg-green-500 animate-pulse" />
+                              </div>
+                            </div>
+                          </CardHeader>
                     <CardContent className="space-y-3">
                       <div className="space-y-1">
                         {order.items.map((item, idx) => (
@@ -430,42 +551,67 @@ export function KitchenDashboard({ restaurantId, tenantId }: KitchenDashboardPro
                         </Button>
                       </div>
                     </CardContent>
-                  </Card>
-                ))}
-              </div>
-            </div>
-          )}
+                        </Card>
+                      </motion.div>
+                    ))}
+                  </div>
+                </motion.div>
+              )}
 
-          {/* Active Orders Section */}
-          <div>
-            <div className="flex items-center gap-2 mb-4">
-              <Activity className="h-5 w-5 text-orange-600" />
-              <h3 className="text-lg font-semibold">In Progress ({activeOrders.length})</h3>
-            </div>
-            <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-4">
-              {ordersLoading ? (
-                <div className="col-span-full text-center py-8">Loading orders...</div>
-              ) : activeOrders.length === 0 ? (
-                <div className="col-span-full text-center py-8 text-gray-500">
-                  No active orders at the moment
+              {/* Active Orders Section */}
+              <motion.div
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.3, delay: 0.1 }}
+              >
+                <div className="flex items-center gap-3 mb-6">
+                  <div className="p-2 bg-orange-100 rounded-lg">
+                    <Activity className="h-5 w-5 text-orange-600" />
+                  </div>
+                  <h3 className="text-xl font-semibold text-slate-800">In Progress ({activeOrders.length})</h3>
                 </div>
-              ) : (
-                activeOrders.map((order: KitchenOrder) => (
-                <Card key={order.id} className="relative">
-                  <CardHeader className="pb-3">
-                    <div className="flex justify-between items-start">
-                      <div>
-                        <CardTitle className="text-lg">#{order.orderNumber}</CardTitle>
-                        <p className="text-sm text-gray-600">Table {order.tableNumber} • {order.customerName}</p>
-                      </div>
-                      <div className="flex flex-col items-end gap-1">
-                        <Badge className={getPriorityColor(order.priority)}>
-                          {order.priority.toUpperCase()}
-                        </Badge>
-                        <div className={`w-3 h-3 rounded-full ${getStatusColor(order.status)}`} />
-                      </div>
+                <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-4">
+                  {ordersLoading ? (
+                    <div className="col-span-full text-center py-12">
+                      <motion.div
+                        animate={{ rotate: 360 }}
+                        transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
+                        className="inline-block"
+                      >
+                        <RefreshCw className="h-8 w-8 text-slate-400" />
+                      </motion.div>
+                      <p className="text-slate-500 mt-2">Loading orders...</p>
                     </div>
-                  </CardHeader>
+                  ) : activeOrders.length === 0 ? (
+                    <div className="col-span-full text-center py-12">
+                      <div className="p-4 bg-slate-100 rounded-full inline-block mb-4">
+                        <Package className="h-8 w-8 text-slate-400" />
+                      </div>
+                      <p className="text-slate-500">No active orders at the moment</p>
+                    </div>
+                  ) : (
+                    activeOrders.map((order: KitchenOrder, index: number) => (
+                      <motion.div
+                        key={order.id}
+                        initial={{ opacity: 0, y: 20 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ duration: 0.3, delay: index * 0.1 }}
+                      >
+                        <Card className="relative bg-white border-slate-200 shadow-sm hover:shadow-md transition-all duration-200">
+                          <CardHeader className="pb-3">
+                            <div className="flex justify-between items-start">
+                              <div>
+                                <CardTitle className="text-lg font-semibold text-slate-800">#{order.orderNumber}</CardTitle>
+                                <p className="text-sm text-slate-600 mt-1">Table {order.tableNumber} • {order.customerName}</p>
+                              </div>
+                              <div className="flex flex-col items-end gap-2">
+                                <Badge className={`${getPriorityColor(order.priority)} px-3 py-1`}>
+                                  {order.priority.toUpperCase()}
+                                </Badge>
+                                <div className={`w-3 h-3 rounded-full ${getStatusColor(order.status)}`} />
+                              </div>
+                            </div>
+                          </CardHeader>
                   <CardContent className="space-y-3">
                     <div className="space-y-1">
                       {order.items.map((item, idx) => (
@@ -534,24 +680,52 @@ export function KitchenDashboard({ restaurantId, tenantId }: KitchenDashboardPro
                       </Button>
                     </div>
                   </CardContent>
-                </Card>
-              ))
-            )}
-            </div>
-          </div>
-        </TabsContent>
+                        </Card>
+                      </motion.div>
+                    ))
+                  )}
+                </div>
+              </motion.div>
+            </TabsContent>
 
-        {/* Kitchen Stations Tab */}
-        <TabsContent value="stations" className="space-y-4">
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            {stationsLoading ? (
-              <div className="col-span-full text-center py-8">Loading stations...</div>
-            ) : (
-              stationsArray.map((station: KitchenStation) => (
-                <Card key={station.id}>
-                  <CardHeader>
-                    <div className="flex justify-between items-center">
-                      <CardTitle className="text-lg flex items-center gap-2">
+            {/* Kitchen Stations Tab */}
+            <TabsContent value="stations" className="space-y-4">
+              <motion.div 
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.5 }}
+                className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4"
+              >
+                {stationsLoading ? (
+                  <div className="col-span-full text-center py-12">
+                    <motion.div
+                      animate={{ rotate: 360 }}
+                      transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
+                      className="inline-block"
+                    >
+                      <RefreshCw className="h-8 w-8 text-slate-400" />
+                    </motion.div>
+                    <p className="text-slate-500 mt-2">Loading stations...</p>
+                  </div>
+                ) : stationsArray.length === 0 ? (
+                  <div className="col-span-full text-center py-12">
+                    <div className="p-4 bg-slate-100 rounded-full inline-block mb-4">
+                      <Flame className="h-8 w-8 text-slate-400" />
+                    </div>
+                    <p className="text-slate-500">No kitchen stations configured</p>
+                  </div>
+                ) : (
+                  stationsArray.map((station: KitchenStation, index: number) => (
+                    <motion.div
+                      key={station.id}
+                      initial={{ opacity: 0, scale: 0.9 }}
+                      animate={{ opacity: 1, scale: 1 }}
+                      transition={{ duration: 0.3, delay: index * 0.1 }}
+                    >
+                      <Card className="bg-white border-slate-200 shadow-sm hover:shadow-md transition-all duration-200">
+                        <CardHeader>
+                          <div className="flex justify-between items-center">
+                            <CardTitle className="text-lg flex items-center gap-2 text-slate-800">
                         <Flame className="h-5 w-5 text-orange-600" />
                         {station.name}
                       </CardTitle>
@@ -596,10 +770,11 @@ export function KitchenDashboard({ restaurantId, tenantId }: KitchenDashboardPro
                     </Button>
                   </CardContent>
                 </Card>
-              ))
-            )}
-          </div>
-        </TabsContent>
+              </motion.div>
+            ))
+          )}
+        </motion.div>
+      </TabsContent>
 
         {/* Staff Performance Tab */}
         <TabsContent value="staff" className="space-y-4">
@@ -765,6 +940,7 @@ export function KitchenDashboard({ restaurantId, tenantId }: KitchenDashboardPro
           )}
         </TabsContent>
       </Tabs>
+    </motion.div>
 
       {/* Order Details Dialog */}
       <Dialog open={showOrderDialog} onOpenChange={setShowOrderDialog}>
