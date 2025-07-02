@@ -1,0 +1,85 @@
+What you need: Stripe Connect
+Stripe Connect lets your platform:
+
+Onboard your clients to create or connect their own Stripe accounts
+
+Process payments on their behalf
+
+Manage payouts to your clients
+
+Optionally take a platform fee from transactions
+
+Steps to enable your clients to accept payments with Stripe Connect:
+1. Choose your Connect account type
+Standard: Clients create their own Stripe account and log in via Stripe’s dashboard. You redirect them to Stripe onboarding. You have less control but simpler to implement.
+
+Express: You have a custom onboarding UI, Stripe handles the dashboard for your clients.
+
+Custom: Full control, but more responsibility (compliance, KYC, etc.)
+
+Most SaaS platforms use Express or Standard.
+
+2. Create Connect accounts for your clients
+You direct your client to connect or create a Stripe account via OAuth or API.
+
+Example for Standard (OAuth):
+
+plaintext
+Copy
+Edit
+https://connect.stripe.com/oauth/authorize
+?response_type=code
+&client_id=YOUR_CLIENT_ID
+&scope=read_write
+When they authorize, you get a code which you exchange for their Stripe account ID and access tokens.
+
+3. Store connected account IDs
+Once connected, save your client’s Stripe account ID (like acct_1ABC...) in your database.
+
+4. Create charges or payment intents on behalf of connected accounts
+When your client’s customer pays, create the payment on their connected account by passing the stripe_account option.
+
+Example in Node.js:
+
+js
+Copy
+Edit
+const paymentIntent = await stripe.paymentIntents.create({
+  amount: 1000,
+  currency: 'usd',
+  payment_method_types: ['card'],
+  // optional application fee (if you take a cut)
+  application_fee_amount: 100,
+}, {
+  stripeAccount: connectedAccountId // client's Stripe account ID
+});
+This way, the money goes directly to your client’s Stripe account.
+
+5. Handle payouts and compliance
+Stripe handles payouts to your clients automatically depending on their account type.
+
+You might need to collect some info from your clients to satisfy compliance/KYC.
+
+Summary for your case:
+Use Stripe Connect to onboard your clients.
+
+Your clients connect their Stripe account to your platform (via OAuth or API).
+
+You create payments and subscriptions on behalf of their connected accounts.
+
+Your clients receive payouts to their bank accounts directly.
+
+You can charge a platform fee if you want.
+
+Useful resources to get started:
+Stripe Connect Overview:
+https://stripe.com/connect
+
+Onboarding clients via OAuth (Standard accounts):
+https://stripe.com/docs/connect/oauth-reference
+
+Creating charges on connected accounts:
+https://stripe.com/docs/connect/charges-transfers
+
+Express accounts (if you want more control):
+https://stripe.com/docs/connect/express-accounts
