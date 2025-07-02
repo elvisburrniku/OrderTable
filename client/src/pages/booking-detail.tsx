@@ -55,6 +55,7 @@ export default function BookingDetail() {
   const queryClient = useQueryClient();
   const [isEditing, setIsEditing] = useState(false);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
+  const [isResendingPaymentLink, setIsResendingPaymentLink] = useState(false);
   const [editData, setEditData] = useState({
     customerName: "",
     customerEmail: "",
@@ -279,6 +280,53 @@ export default function BookingDetail() {
     deleteMutation.mutate();
   };
 
+  const handleResendPaymentLink = async () => {
+    if (!booking?.requiresPayment || !booking?.paymentAmount) {
+      toast({
+        title: "Payment not required",
+        description: "This booking does not require payment",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setIsResendingPaymentLink(true);
+
+    try {
+      const response = await fetch(
+        `/api/tenants/${restaurant?.tenantId}/restaurants/${restaurant?.id}/bookings/${booking.id}/resend-payment-link`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+        }
+      );
+
+      if (response.ok) {
+        toast({
+          title: "Payment link sent",
+          description: "A new payment link has been sent to the customer's email",
+        });
+      } else {
+        const errorData = await response.json();
+        toast({
+          title: "Failed to send payment link",
+          description: errorData.message || "Please try again",
+          variant: "destructive",
+        });
+      }
+    } catch (error) {
+      toast({
+        title: "Error sending payment link",
+        description: "Please try again or contact support",
+        variant: "destructive",
+      });
+    } finally {
+      setIsResendingPaymentLink(false);
+    }
+  };
+
   const getStatusBadge = (status: string) => {
     const statusConfig = {
       confirmed: { 
@@ -300,6 +348,11 @@ export default function BookingDetail() {
         className: "bg-amber-100 text-amber-800 border-amber-200", 
         icon: AlertCircle,
         label: "Pending" 
+      },
+      waiting_payment: { 
+        className: "bg-orange-100 text-orange-800 border-orange-200", 
+        icon: AlertCircle,
+        label: "Waiting Payment" 
       },
       "no-show": { 
         className: "bg-gray-100 text-gray-800 border-gray-200", 
@@ -670,6 +723,7 @@ export default function BookingDetail() {
                           <SelectContent>
                             <SelectItem value="confirmed">Confirmed</SelectItem>
                             <SelectItem value="pending">Pending</SelectItem>
+                            <SelectItem value="waiting_payment">Waiting Payment</SelectItem>
                             <SelectItem value="cancelled">Cancelled</SelectItem>
                             <SelectItem value="completed">Completed</SelectItem>
                             <SelectItem value="no-show">No Show</SelectItem>
@@ -744,6 +798,26 @@ export default function BookingDetail() {
                       <Edit className="w-4 h-4 mr-2" />
                       Edit Booking
                     </Button>
+                    {booking?.requiresPayment && booking?.paymentAmount && (
+                      <Button
+                        onClick={handleResendPaymentLink}
+                        disabled={isResendingPaymentLink}
+                        variant="outline"
+                        className="text-green-600 border-green-300 hover:bg-green-50 hover:border-green-400 px-6 py-2.5 font-medium"
+                      >
+                        {isResendingPaymentLink ? (
+                          <>
+                            <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-green-600 mr-2"></div>
+                            Sending...
+                          </>
+                        ) : (
+                          <>
+                            <Mail className="w-4 h-4 mr-2" />
+                            Resend Payment Link
+                          </>
+                        )}
+                      </Button>
+                    )}
                     <AlertDialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
                       <AlertDialogTrigger asChild>
                         <Button

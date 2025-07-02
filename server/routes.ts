@@ -5958,6 +5958,22 @@ export async function registerRoutes(app: Express): Promise<Server> {
         // Guest booking is enabled by default for all restaurants
         // In the future, this could be controlled by a restaurant setting
 
+        // Extract payment information if provided
+        const requiresPayment = req.body.requiresPayment || false;
+        const paymentAmount = req.body.paymentAmount || null;
+        const paymentDeadlineHours = req.body.paymentDeadlineHours || 24;
+
+        // Determine booking status based on payment requirements
+        let bookingStatus = "confirmed";
+        let paymentStatus = "pending";
+
+        if (requiresPayment && paymentAmount && paymentAmount > 0) {
+          bookingStatus = "waiting_payment"; // New status for unpaid bookings requiring payment
+          paymentStatus = "pending";
+        } else {
+          paymentStatus = "not_required";
+        }
+
         const bookingData = {
           tenantId,
           restaurantId,
@@ -5968,8 +5984,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
           bookingDate: new Date(req.body.bookingDate),
           startTime: req.body.startTime,
           specialRequests: req.body.specialRequests || null,
-          status: "confirmed",
+          status: bookingStatus,
           source: req.body.source || "guest_booking",
+          // Payment fields
+          requiresPayment,
+          paymentAmount: paymentAmount ? parseFloat(paymentAmount) : null,
+          paymentDeadlineHours,
+          paymentStatus,
         };
 
         // Validate required fields
@@ -6094,6 +6115,392 @@ export async function registerRoutes(app: Express): Promise<Server> {
         res
           .status(400)
           .json({ message: "Failed to create booking. Please try again." });
+      }
+    },
+  );
+
+  // Guest booking details endpoint (public, no authentication required)
+  app.get(
+    "/api/guest/bookings/:bookingId",
+    async (req, res) => {
+      try {
+        const bookingId = parseInt(req.params.bookingId);
+        const token = req.query.token as string;
+
+        if (!bookingId) {
+          return res.status(400).json({ message: "Booking ID is required" });
+        }
+
+        const booking = await storage.getBookingById(bookingId);
+        if (!booking) {
+          return res.status(404).json({ message: "Booking not found" });
+        }
+
+        // For guest access, we can either use a token-based system or allow access
+        // based on the booking hash or other secure identifier
+        // For now, allowing access if the booking exists (can be enhanced with token validation)
+        
+        // Get restaurant details to include restaurant name
+        const restaurant = await storage.getRestaurantById(booking.restaurantId);
+
+        const bookingDetails = {
+          ...booking,
+          restaurantName: restaurant?.name || "Restaurant",
+        };
+
+        res.json(bookingDetails);
+      } catch (error) {
+        console.error("Error fetching guest booking details:", error);
+        res.status(500).json({ message: "Internal server error" });
+      }
+    },
+  );
+
+  // Customer request for new payment link
+  app.post(
+    "/api/guest/bookings/:bookingId/request-payment-link",
+    async (req, res) => {
+      try {
+        const bookingId = parseInt(req.params.bookingId);
+        const { customerEmail, customerPhone } = req.body;
+
+        if (!bookingId) {
+          return res.status(400).json({ message: "Booking ID is required" });
+        }
+
+        const booking = await storage.getBookingById(bookingId);
+        if (!booking) {
+          return res.status(404).json({ message: "Booking not found" });
+        }
+
+        // Verify customer identity
+        if (booking.customerEmail !== customerEmail && booking.customerPhone !== customerPhone) {
+          return res.status(403).json({ message: "Customer verification failed" });
+        }
+
+        // Get restaurant details
+        const restaurant = await storage.getRestaurantById(booking.restaurantId);
+        if (!restaurant) {
+          return res.status(404).json({ message: "Restaurant not found" });
+        }
+
+        // Send notification to restaurant admin
+        if (emailService && restaurant.email) {
+          await emailService.sendEmail({
+            to: [{ email: restaurant.email, name: restaurant.name }],
+            subject: "Customer Requests New Payment Link",
+            htmlContent: `
+              <div style="max-width: 600px; margin: 0 auto; font-family: Arial, sans-serif;">
+                <h2>Payment Link Request</h2>
+                <p>A customer has requested a new payment link for their booking:</p>
+                <div style="background-color: #f8f9fa; padding: 20px; border-radius: 8px; margin: 20px 0;">
+                  <p><strong>Customer:</strong> ${booking.customerName}</p>
+                  <p><strong>Email:</strong> ${booking.customerEmail}</p>
+                  <p><strong>Phone:</strong> ${booking.customerPhone || 'Not provided'}</p>
+                  <p><strong>Booking Date:</strong> ${new Date(booking.bookingDate).toLocaleDateString()}</p>
+                  <p><strong>Time:</strong> ${booking.startTime}</p>
+                  <p><strong>Party Size:</strong> ${booking.guestCount} guests</p>
+                  <p><strong>Payment Amount:</strong> $${booking.paymentAmount}</p>
+                </div>
+                <p>Please log into your admin panel to generate a new payment link for this customer.</p>
+              </div>
+            `
+          });
+        }
+
+        res.json({ message: "Payment link request sent to restaurant. They will contact you with a new link shortly." });
+      } catch (error) {
+        console.error("Error requesting payment link:", error);
+        res.status(500).json({ message: "Internal server error" });
+      }
+    }
+  );
+
+  // Customer contact restaurant endpoint
+  app.post(
+    "/api/guest/bookings/:bookingId/contact-restaurant",
+    async (req, res) => {
+      try {
+        const bookingId = parseInt(req.params.bookingId);
+        const { issue, customerEmail, customerName } = req.body;
+
+        if (!bookingId) {
+          return res.status(400).json({ message: "Booking ID is required" });
+        }
+
+        const booking = await storage.getBookingById(bookingId);
+        if (!booking) {
+          return res.status(404).json({ message: "Booking not found" });
+        }
+
+        // Get restaurant details
+        const restaurant = await storage.getRestaurantById(booking.restaurantId);
+        if (!restaurant) {
+          return res.status(404).json({ message: "Restaurant not found" });
+        }
+
+        // Send notification to restaurant admin based on issue type
+        if (emailService && restaurant.email) {
+          let subject = "Customer Contact Request";
+          let message = "A customer needs assistance with their booking.";
+
+          if (issue === "payment_system_not_setup") {
+            subject = "Payment System Setup Required";
+            message = "A customer tried to pay for their booking but your payment system is not set up. Please configure Stripe Connect in your admin panel.";
+          }
+
+          await emailService.sendEmail({
+            to: [{ email: restaurant.email, name: restaurant.name }],
+            subject,
+            htmlContent: `
+              <div style="max-width: 600px; margin: 0 auto; font-family: Arial, sans-serif;">
+                <h2 style="color: #d97706;">${subject}</h2>
+                <div style="background-color: #fef3c7; border-left: 4px solid #f59e0b; padding: 20px; margin: 20px 0;">
+                  <p style="color: #92400e; font-weight: 600; margin: 0;">${message}</p>
+                </div>
+                <div style="background-color: #f8f9fa; padding: 20px; border-radius: 8px; margin: 20px 0;">
+                  <h3 style="margin-top: 0;">Booking Details</h3>
+                  <p><strong>Customer:</strong> ${customerName || booking.customerName}</p>
+                  <p><strong>Email:</strong> ${customerEmail || booking.customerEmail}</p>
+                  <p><strong>Phone:</strong> ${booking.customerPhone || 'Not provided'}</p>
+                  <p><strong>Booking Date:</strong> ${new Date(booking.bookingDate).toLocaleDateString()}</p>
+                  <p><strong>Time:</strong> ${booking.startTime}</p>
+                  <p><strong>Party Size:</strong> ${booking.guestCount} guests</p>
+                  ${booking.paymentAmount ? `<p><strong>Payment Amount:</strong> $${booking.paymentAmount}</p>` : ''}
+                </div>
+                ${issue === "payment_system_not_setup" ? `
+                  <div style="background-color: #e3f2fd; padding: 20px; border-radius: 8px; margin: 20px 0;">
+                    <h3 style="color: #1565c0; margin-top: 0;">Next Steps:</h3>
+                    <ol style="color: #1565c0;">
+                      <li>Log into your admin panel</li>
+                      <li>Go to Payment Settings</li>
+                      <li>Complete Stripe Connect setup</li>
+                      <li>Contact the customer with alternative payment instructions</li>
+                    </ol>
+                  </div>
+                ` : ''}
+                <p>Please take action on this request as soon as possible.</p>
+              </div>
+            `
+          });
+        }
+
+        res.json({ message: "Restaurant has been notified. They will contact you shortly." });
+      } catch (error) {
+        console.error("Error contacting restaurant:", error);
+        res.status(500).json({ message: "Internal server error" });
+      }
+    }
+  );
+
+  // Admin endpoint to resend payment link
+  app.post(
+    "/api/tenants/:tenantId/restaurants/:restaurantId/bookings/:bookingId/resend-payment-link",
+    validateTenant,
+    requirePermission(PERMISSIONS.ACCESS_BOOKINGS),
+    async (req, res) => {
+      try {
+        const bookingId = parseInt(req.params.bookingId);
+        const restaurantId = parseInt(req.params.restaurantId);
+        const tenantId = parseInt(req.params.tenantId);
+
+        if (!bookingId || !restaurantId || !tenantId) {
+          return res.status(400).json({ message: "Missing required parameters" });
+        }
+
+        const booking = await storage.getBookingById(bookingId);
+        if (!booking || booking.restaurantId !== restaurantId) {
+          return res.status(404).json({ message: "Booking not found" });
+        }
+
+        const restaurant = await storage.getRestaurantById(restaurantId);
+        if (!restaurant) {
+          return res.status(404).json({ message: "Restaurant not found" });
+        }
+
+        // Check if booking requires payment
+        if (!booking.requiresPayment || !booking.paymentAmount) {
+          return res.status(400).json({ message: "This booking does not require payment" });
+        }
+
+        // Send payment link email to customer
+        if (emailService) {
+          const baseUrl = process.env.BASE_URL || 'http://localhost:5000';
+          const paymentLink = `${baseUrl}/prepayment?booking=${bookingId}&amount=${booking.paymentAmount}&currency=USD`;
+
+          await emailService.sendEmail({
+            to: [{ email: booking.customerEmail, name: booking.customerName }],
+            subject: "Payment Link for Your Booking",
+            htmlContent: `
+              <div style="max-width: 600px; margin: 0 auto; font-family: Arial, sans-serif;">
+                <h2>Complete Your Booking Payment</h2>
+                <p>Dear ${booking.customerName},</p>
+                <p>Here is your payment link to complete your booking at ${restaurant.name}:</p>
+                <div style="background-color: #f8f9fa; padding: 20px; border-radius: 8px; margin: 20px 0;">
+                  <p><strong>Booking Date:</strong> ${new Date(booking.bookingDate).toLocaleDateString()}</p>
+                  <p><strong>Time:</strong> ${booking.startTime}</p>
+                  <p><strong>Party Size:</strong> ${booking.guestCount} guests</p>
+                  <p><strong>Payment Amount:</strong> $${booking.paymentAmount}</p>
+                </div>
+                <div style="text-align: center; margin: 30px 0;">
+                  <a href="${paymentLink}" style="background-color: #007bff; color: white; padding: 15px 25px; text-decoration: none; border-radius: 5px; font-weight: bold;">
+                    Complete Payment Now
+                  </a>
+                </div>
+                <p>Please complete your payment within ${booking.paymentDeadlineHours || 24} hours of your booking time.</p>
+                <p>If you have any questions, please contact us directly.</p>
+                <p>Thank you!</p>
+              </div>
+            `
+          });
+        }
+
+        res.json({ message: "Payment link sent successfully to customer" });
+      } catch (error) {
+        console.error("Error resending payment link:", error);
+        res.status(500).json({ message: "Internal server error" });
+      }
+    }
+  );
+
+  // Payment status update endpoint
+  app.put(
+    "/api/bookings/:bookingId/payment-status",
+    async (req, res) => {
+      try {
+        const bookingId = parseInt(req.params.bookingId);
+        const { status, paymentStatus } = req.body;
+
+        if (!bookingId) {
+          return res.status(400).json({ message: "Booking ID is required" });
+        }
+
+        const booking = await storage.getBookingById(bookingId);
+        if (!booking) {
+          return res.status(404).json({ message: "Booking not found" });
+        }
+
+        // Update booking status and payment status
+        const updateData: any = {};
+        
+        if (status) {
+          updateData.status = status;
+        }
+        
+        if (paymentStatus) {
+          updateData.paymentStatus = paymentStatus;
+          if (paymentStatus === "paid") {
+            updateData.paymentPaidAt = new Date();
+            // If payment is completed and booking requires payment, confirm the booking
+            if (booking.requiresPayment) {
+              updateData.status = "confirmed";
+            }
+          }
+        }
+
+        const updatedBooking = await storage.updateBooking(bookingId, updateData);
+
+        // Log the status change
+        const activityLogger = await import("./activity-logger");
+        await activityLogger.logActivity({
+          restaurantId: booking.restaurantId,
+          tenantId: booking.tenantId,
+          eventType: "booking_payment_completed",
+          description: `Payment completed for booking ${bookingId} - ${booking.customerName}`,
+          source: "payment_system",
+          bookingId: bookingId,
+          details: {
+            previousStatus: booking.status,
+            newStatus: updateData.status,
+            previousPaymentStatus: booking.paymentStatus,
+            newPaymentStatus: paymentStatus,
+            paymentAmount: booking.paymentAmount,
+          },
+        });
+
+        res.json({
+          message: "Booking payment status updated successfully",
+          booking: updatedBooking,
+        });
+      } catch (error) {
+        console.error("Error updating booking payment status:", error);
+        res.status(500).json({ message: "Internal server error" });
+      }
+    },
+  );
+
+  // Payment intent creation endpoint for bookings
+  app.post(
+    "/api/tenants/:tenantId/restaurants/:restaurantId/bookings/:bookingId/payment-intent",
+    async (req, res) => {
+      try {
+        const tenantId = parseInt(req.params.tenantId);
+        const restaurantId = parseInt(req.params.restaurantId);
+        const bookingId = parseInt(req.params.bookingId);
+        const { amount, currency, description } = req.body;
+
+        // Verify booking exists
+        const booking = await storage.getBookingById(bookingId);
+        if (!booking || booking.tenantId !== tenantId || booking.restaurantId !== restaurantId) {
+          return res.status(404).json({ message: "Booking not found" });
+        }
+
+        // Verify booking requires payment
+        if (!booking.requiresPayment || !booking.paymentAmount) {
+          return res.status(400).json({ message: "This booking does not require payment" });
+        }
+
+        // Check if already paid
+        if (booking.paymentStatus === "paid") {
+          return res.status(400).json({ message: "This booking has already been paid" });
+        }
+
+        // Get tenant's Stripe Connect account
+        const tenant = await storage.getTenantById(tenantId);
+        if (!tenant?.stripeConnectAccountId || !tenant.stripeConnectChargesEnabled) {
+          return res.status(400).json({ 
+            message: "Payment processing is not set up for this restaurant" 
+          });
+        }
+
+        // Create payment intent using Stripe Connect
+        const { paymentService } = await import("./payment-service");
+        
+        try {
+          const paymentIntent = await paymentService.createBookingPaymentIntent(
+            parseFloat(amount), // Use the amount directly
+            currency || "usd",
+            tenant.stripeConnectAccountId,
+            {
+              bookingId: bookingId,
+              customerEmail: booking.customerEmail,
+              customerName: booking.customerName,
+              restaurantName: (await storage.getRestaurantById(restaurantId))?.name || "Restaurant",
+              bookingDate: new Date(booking.bookingDate).toISOString().split('T')[0],
+              startTime: booking.startTime,
+              guestCount: booking.guestCount,
+            }
+          );
+
+          // Update booking with payment intent ID
+          await storage.updateBooking(bookingId, {
+            paymentIntentId: paymentIntent.paymentIntentId,
+            paymentStatus: "pending",
+          });
+
+          res.json({
+            clientSecret: paymentIntent.clientSecret,
+            paymentIntentId: paymentIntent.paymentIntentId,
+          });
+        } catch (stripeError) {
+          console.error("Stripe payment intent creation failed:", stripeError);
+          res.status(500).json({ 
+            message: "Failed to create payment intent. Please try again." 
+          });
+        }
+      } catch (error) {
+        console.error("Error creating payment intent:", error);
+        res.status(500).json({ message: "Internal server error" });
       }
     },
   );
@@ -9620,7 +10027,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         endTime: `${(bookingDateTime.getHours() + 2).toString().padStart(2, "0")}:${bookingDateTime.getMinutes().toString().padStart(2, "0")}`,
         comment: comment || null,
         source,
-        status: requiresPayment ? "pending_payment" : status,
+        status: requiresPayment ? "waiting_payment" : status,
         requiresPayment,
         paymentAmount: requiresPayment ? paymentAmount : null,
         paymentDeadlineHours: requiresPayment ? paymentDeadlineHours : null,

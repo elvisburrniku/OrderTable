@@ -107,9 +107,9 @@ export class BrevoEmailService {
             <span style="color: #856404; font-weight: 500;">Payment Deadline:</span>
             <span style="color: #856404; font-weight: 600;">${bookingDetails.paymentDeadlineHours || bookingDetails.paymentDeadline || 24} hours before booking</span>
           </div>
-          ${bookingDetails.paymentLink ? `
+          ${bookingDetails.requiresPayment && bookingDetails.paymentAmount ? `
             <div style="text-align: center; margin-top: 15px;">
-              <a href="${bookingDetails.paymentLink}" style="background-color: #ffc107; color: #212529; padding: 12px 24px; text-decoration: none; border-radius: 6px; font-weight: 600; display: inline-block;">
+              <a href="${baseUrl}/prepayment?booking=${bookingDetails.id}&amount=${bookingDetails.paymentAmount}&currency=USD" style="background-color: #ffc107; color: #212529; padding: 12px 24px; text-decoration: none; border-radius: 6px; font-weight: 600; display: inline-block;">
                 Complete Payment Now
               </a>
               <p style="margin: 10px 0 0; font-size: 12px; color: #856404;">
