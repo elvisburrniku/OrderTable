@@ -1641,7 +1641,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           tags: req.body.tags || [],
           language: req.body.language || "en",
           requiresPayment: req.body.requiresPayment || false,
-          paymentAmount: req.body.paymentAmount || null,
+          paymentAmount: req.body.paymentAmount ? req.body.paymentAmount.toString() : null,
           paymentDeadlineHours: req.body.paymentDeadlineHours || 24,
         });
 
