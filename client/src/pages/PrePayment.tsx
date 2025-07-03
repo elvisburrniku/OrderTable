@@ -3,15 +3,33 @@ import { useLocation } from "wouter";
 import { Elements } from "@stripe/react-stripe-js";
 import { loadStripe } from "@stripe/stripe-js";
 import { useQuery } from "@tanstack/react-query";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { AlertCircle, CheckCircle, CreditCard, Calendar, Users, Clock, MapPin } from "lucide-react";
-import { PaymentElement, useStripe, useElements } from "@stripe/react-stripe-js";
+import {
+  AlertCircle,
+  CheckCircle,
+  CreditCard,
+  Calendar,
+  Users,
+  Clock,
+  MapPin,
+} from "lucide-react";
+import {
+  PaymentElement,
+  useStripe,
+  useElements,
+} from "@stripe/react-stripe-js";
 
-const stripePromise = import.meta.env.VITE_STRIPE_PUBLIC_KEY 
+const stripePromise = import.meta.env.VITE_STRIPE_PUBLIC_KEY
   ? loadStripe(import.meta.env.VITE_STRIPE_PUBLIC_KEY)
   : null;
 
@@ -23,14 +41,20 @@ interface BookingPaymentFormProps {
   onError: (error: string) => void;
 }
 
-function BookingPaymentForm({ booking, amount, currency, onSuccess, onError }: BookingPaymentFormProps) {
+function BookingPaymentForm({
+  booking,
+  amount,
+  currency,
+  onSuccess,
+  onError,
+}: BookingPaymentFormProps) {
   const stripe = useStripe();
   const elements = useElements();
   const [isProcessing, setIsProcessing] = useState(false);
 
   const formatCurrency = (amount: number, currency: string) => {
-    return new Intl.NumberFormat('en-US', {
-      style: 'currency',
+    return new Intl.NumberFormat("en-US", {
+      style: "currency",
       currency: currency.toUpperCase(),
     }).format(amount);
   };
@@ -87,7 +111,10 @@ function BookingPaymentForm({ booking, amount, currency, onSuccess, onError }: B
           <div className="space-y-2 text-sm">
             <div className="flex items-center gap-2">
               <Users className="h-4 w-4" />
-              <span>{booking.customerName} - {booking.guestCount} {booking.guestCount === 1 ? "guest" : "guests"}</span>
+              <span>
+                {booking.customerName} - {booking.guestCount}{" "}
+                {booking.guestCount === 1 ? "guest" : "guests"}
+              </span>
             </div>
             <div className="flex items-center gap-2">
               <Calendar className="h-4 w-4" />
@@ -112,15 +139,15 @@ function BookingPaymentForm({ booking, amount, currency, onSuccess, onError }: B
 
         {/* Payment Form */}
         <form onSubmit={handleSubmit} className="space-y-4">
-          <PaymentElement 
+          <PaymentElement
             options={{
-              layout: "tabs"
+              layout: "tabs",
             }}
           />
-          
-          <Button 
-            type="submit" 
-            disabled={!stripe || isProcessing} 
+
+          <Button
+            type="submit"
+            disabled={!stripe || isProcessing}
             className="w-full"
             size="lg"
           >
@@ -149,7 +176,9 @@ export default function PrePayment() {
   const [customerPhone, setCustomerPhone] = useState("");
 
   // Parse search parameters
-  const urlParams = new URLSearchParams(location.split('?')[1] || '');
+  const urlParams = new URLSearchParams(location.split("?")[1] || "");
+  console.log("URL Params:", urlParams);
+  console.log("URL:", location);
   const bookingId = urlParams.get("booking");
   const tenantId = urlParams.get("tenant");
   const restaurantId = urlParams.get("restaurant");
@@ -158,17 +187,27 @@ export default function PrePayment() {
   const currency = urlParams.get("currency") || "USD";
 
   // Fetch booking details using secure hash-based endpoint
-  const { data: booking, isLoading: bookingLoading, error: bookingError } = useQuery({
-    queryKey: ["secure-booking-details", bookingId, tenantId, restaurantId, hash],
+  const {
+    data: booking,
+    isLoading: bookingLoading,
+    error: bookingError,
+  } = useQuery({
+    queryKey: [
+      "secure-booking-details",
+      bookingId,
+      tenantId,
+      restaurantId,
+      hash,
+    ],
     queryFn: async () => {
       if (!bookingId || !tenantId || !restaurantId || !hash) {
         throw new Error("Missing required parameters for secure access");
       }
-      
+
       const response = await fetch(
-        `/api/secure/prepayment/${bookingId}?tenant=${tenantId}&restaurant=${restaurantId}&hash=${hash}`
+        `/api/secure/prepayment/${bookingId}?tenant=${tenantId}&restaurant=${restaurantId}&hash=${hash}`,
       );
-      
+
       if (!response.ok) {
         const errorData = await response.json();
         if (response.status === 403) {
@@ -177,7 +216,10 @@ export default function PrePayment() {
         if (response.status === 404) {
           throw new Error("Booking not found");
         }
-        if (response.status === 400 && errorData.code === "stripe_connect_not_setup") {
+        if (
+          response.status === 400 &&
+          errorData.code === "stripe_connect_not_setup"
+        ) {
           throw new Error("stripe_connect_not_setup");
         }
         throw new Error(errorData.message || "Failed to fetch booking details");
@@ -190,7 +232,14 @@ export default function PrePayment() {
 
   // Create payment intent using secure endpoint
   useEffect(() => {
-    if (booking && booking.requiresPayment && booking.paymentAmount > 0 && tenantId && restaurantId && hash) {
+    if (
+      booking &&
+      booking.requiresPayment &&
+      booking.paymentAmount > 0 &&
+      tenantId &&
+      restaurantId &&
+      hash
+    ) {
       const createPaymentIntent = async () => {
         try {
           const response = await fetch(
@@ -207,21 +256,26 @@ export default function PrePayment() {
                 amount: booking.paymentAmount,
                 currency: "usd",
               }),
-            }
+            },
           );
-          
+
           if (!response.ok) {
             const errorData = await response.json();
             if (response.status === 403) {
               setError("invalid_hash");
-            } else if (response.status === 400 && errorData.code === "stripe_connect_not_setup") {
+            } else if (
+              response.status === 400 &&
+              errorData.code === "stripe_connect_not_setup"
+            ) {
               setError("stripe_connect_not_setup");
             } else {
-              throw new Error(errorData.message || "Failed to create payment intent");
+              throw new Error(
+                errorData.message || "Failed to create payment intent",
+              );
             }
           } else {
             const data = await response.json();
-            
+
             if (data.clientSecret) {
               setClientSecret(data.clientSecret);
             } else {
@@ -243,16 +297,19 @@ export default function PrePayment() {
     setRequestingLink(true);
 
     try {
-      const response = await fetch(`/api/guest/bookings/${bookingId}/request-payment-link`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
+      const response = await fetch(
+        `/api/guest/bookings/${bookingId}/request-payment-link`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            customerEmail,
+            customerPhone,
+          }),
         },
-        body: JSON.stringify({
-          customerEmail,
-          customerPhone,
-        }),
-      });
+      );
 
       if (response.ok) {
         setLinkRequestSubmitted(true);
@@ -271,17 +328,20 @@ export default function PrePayment() {
     setRequestingLink(true);
 
     try {
-      const response = await fetch(`/api/guest/bookings/${bookingId}/contact-restaurant`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
+      const response = await fetch(
+        `/api/guest/bookings/${bookingId}/contact-restaurant`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            issue: "payment_system_not_setup",
+            customerEmail: booking?.customerEmail,
+            customerName: booking?.customerName,
+          }),
         },
-        body: JSON.stringify({
-          issue: "payment_system_not_setup",
-          customerEmail: booking?.customerEmail,
-          customerName: booking?.customerName,
-        }),
-      });
+      );
 
       if (response.ok) {
         setLinkRequestSubmitted(true);
@@ -304,7 +364,7 @@ export default function PrePayment() {
   };
 
   // Validate required parameters for secure access
-  if (!bookingId || !tenantId || !restaurantId || !hash) {
+  if (!bookingId || !hash) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-red-50 to-rose-100 py-12 px-4">
         <div className="container mx-auto max-w-md">
@@ -319,8 +379,9 @@ export default function PrePayment() {
               <Alert variant="destructive">
                 <AlertCircle className="h-4 w-4" />
                 <AlertDescription>
-                  This payment link is invalid or missing required security information. 
-                  Please contact the restaurant for a new payment link.
+                  This payment link is invalid or missing required security
+                  information. Please contact the restaurant for a new payment
+                  link.
                 </AlertDescription>
               </Alert>
             </CardContent>
@@ -345,8 +406,8 @@ export default function PrePayment() {
               <Alert className="border-green-200 bg-green-50">
                 <CheckCircle className="h-4 w-4 text-green-600" />
                 <AlertDescription className="text-green-800">
-                  Your request for a new payment link has been sent to the restaurant. 
-                  They will contact you with a new link shortly.
+                  Your request for a new payment link has been sent to the
+                  restaurant. They will contact you with a new link shortly.
                 </AlertDescription>
               </Alert>
             </CardContent>
@@ -383,16 +444,18 @@ export default function PrePayment() {
               <Alert variant="destructive">
                 <AlertCircle className="h-4 w-4" />
                 <AlertDescription>
-                  This payment link is invalid or expired. You can request a new payment link below.
+                  This payment link is invalid or expired. You can request a new
+                  payment link below.
                 </AlertDescription>
               </Alert>
 
               <div className="space-y-4">
                 <h3 className="font-medium">Request New Payment Link</h3>
                 <p className="text-sm text-muted-foreground">
-                  Please provide your contact information to verify your identity and receive a new payment link.
+                  Please provide your contact information to verify your
+                  identity and receive a new payment link.
                 </p>
-                
+
                 <form onSubmit={handleRequestNewLink} className="space-y-3">
                   <div>
                     <Label htmlFor="email">Email Address</Label>
@@ -405,7 +468,7 @@ export default function PrePayment() {
                       required
                     />
                   </div>
-                  
+
                   <div>
                     <Label htmlFor="phone">Phone Number (Optional)</Label>
                     <Input
@@ -417,8 +480,8 @@ export default function PrePayment() {
                     />
                   </div>
 
-                  <Button 
-                    type="submit" 
+                  <Button
+                    type="submit"
                     disabled={requestingLink || !customerEmail}
                     className="w-full"
                   >
@@ -457,17 +520,19 @@ export default function PrePayment() {
                 <Alert className="border-orange-200 bg-orange-50">
                   <AlertCircle className="h-4 w-4 text-orange-600" />
                   <AlertDescription className="text-orange-800">
-                    The restaurant hasn't set up their payment system yet. We'll notify them about this issue.
+                    The restaurant hasn't set up their payment system yet. We'll
+                    notify them about this issue.
                   </AlertDescription>
                 </Alert>
 
                 <div className="space-y-4">
                   <h3 className="font-medium">What happens next?</h3>
                   <p className="text-sm text-muted-foreground">
-                    We'll contact the restaurant to set up their payment system. They will reach out to you with payment instructions.
+                    We'll contact the restaurant to set up their payment system.
+                    They will reach out to you with payment instructions.
                   </p>
-                  
-                  <Button 
+
+                  <Button
                     onClick={handleContactRestaurant}
                     disabled={requestingLink}
                     className="w-full bg-orange-600 hover:bg-orange-700"
@@ -504,8 +569,8 @@ export default function PrePayment() {
                 <AlertCircle className="h-4 w-4" />
                 <AlertDescription>{error}</AlertDescription>
               </Alert>
-              <Button 
-                onClick={() => window.location.reload()} 
+              <Button
+                onClick={() => window.location.reload()}
                 className="w-full mt-4"
               >
                 Try Again
@@ -532,7 +597,8 @@ export default function PrePayment() {
               <Alert variant="destructive">
                 <AlertCircle className="h-4 w-4" />
                 <AlertDescription>
-                  Payment processing is not available at this time. Please contact the restaurant directly.
+                  Payment processing is not available at this time. Please
+                  contact the restaurant directly.
                 </AlertDescription>
               </Alert>
             </CardContent>
@@ -556,7 +622,7 @@ export default function PrePayment() {
             />
           </Elements>
         )}
-        
+
         {!clientSecret && (
           <Card>
             <CardHeader>
