@@ -322,16 +322,16 @@ export default function PrintOrders() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      <div className="p-6">
-        <motion.div 
+    <div className="min-h-screen bg-gray-50 p-6">
+      <div className="">
+        <motion.div
           initial={{ opacity: 0, y: -20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.5 }}
           className="bg-white rounded-lg shadow-sm border border-gray-200"
         >
           {/* Top Header */}
-          <div className="p-6 border-b border-gray-200">
+          {/* <div className="pt-6 pb-6">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-3">
                 <div className="w-10 h-10 bg-blue-600 rounded-lg flex items-center justify-center">
@@ -342,7 +342,7 @@ export default function PrintOrders() {
                     Order Management
                   </h1>
                   <p className="text-gray-600 text-sm">
-                    Track and manage print orders
+                    Track and manage print orders3
                   </p>
                 </div>
               </div>
@@ -356,7 +356,9 @@ export default function PrintOrders() {
                 >
                   <Filter className="w-4 h-4" />
                   <span>Filters</span>
-                  <ChevronDown className={`w-4 h-4 transition-transform ${showFilters ? 'rotate-180' : ''}`} />
+                  <ChevronDown
+                    className={`w-4 h-4 transition-transform ${showFilters ? "rotate-180" : ""}`}
+                  />
                 </Button>
                 <Button
                   onClick={() => setActiveTab("new-order")}
@@ -367,7 +369,7 @@ export default function PrintOrders() {
                 </Button>
               </div>
             </div>
-          </div>
+          </div> */}
 
           <Tabs value={activeTab} onValueChange={setActiveTab}>
             <div className="px-6 pt-4">
@@ -486,7 +488,7 @@ export default function PrintOrders() {
               </div>
 
               {/* Filter Controls Bar - Billing Style */}
-              <div className="p-6 border-b border-slate-200">
+              <div className="p-6">
                 <div className="flex items-center justify-between">
                   <div>
                     <h2 className="text-lg font-semibold text-slate-900">
@@ -497,7 +499,10 @@ export default function PrintOrders() {
                     </p>
                   </div>
                   <div className="flex items-center space-x-4">
-                    <Collapsible open={showFilters} onOpenChange={setShowFilters}>
+                    <Collapsible
+                      open={showFilters}
+                      onOpenChange={setShowFilters}
+                    >
                       <CollapsibleTrigger asChild>
                         <Button
                           variant="outline"
@@ -537,7 +542,9 @@ export default function PrintOrders() {
                                 <Input
                                   placeholder="Search by name, email or order..."
                                   value={searchTerm}
-                                  onChange={(e) => setSearchTerm(e.target.value)}
+                                  onChange={(e) =>
+                                    setSearchTerm(e.target.value)
+                                  }
                                   className="pl-10 h-11 border-2 border-gray-200 focus:border-green-500 focus:ring-0 rounded-lg transition-all duration-200"
                                 />
                               </div>
@@ -556,34 +563,52 @@ export default function PrintOrders() {
                                   <SelectValue placeholder="All Status" />
                                 </SelectTrigger>
                                 <SelectContent className="rounded-lg border-2 border-gray-200">
-                                  <SelectItem value="all" className="rounded-md">
+                                  <SelectItem
+                                    value="all"
+                                    className="rounded-md"
+                                  >
                                     All Status
                                   </SelectItem>
-                                  <SelectItem value="pending" className="rounded-md">
+                                  <SelectItem
+                                    value="pending"
+                                    className="rounded-md"
+                                  >
                                     <div className="flex items-center space-x-2">
                                       <div className="w-2 h-2 bg-yellow-500 rounded-full"></div>
                                       <span>Pending</span>
                                     </div>
                                   </SelectItem>
-                                  <SelectItem value="processing" className="rounded-md">
+                                  <SelectItem
+                                    value="processing"
+                                    className="rounded-md"
+                                  >
                                     <div className="flex items-center space-x-2">
                                       <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
                                       <span>Processing</span>
                                     </div>
                                   </SelectItem>
-                                  <SelectItem value="completed" className="rounded-md">
+                                  <SelectItem
+                                    value="completed"
+                                    className="rounded-md"
+                                  >
                                     <div className="flex items-center space-x-2">
                                       <div className="w-2 h-2 bg-green-500 rounded-full"></div>
                                       <span>Completed</span>
                                     </div>
                                   </SelectItem>
-                                  <SelectItem value="cancelled" className="rounded-md">
+                                  <SelectItem
+                                    value="cancelled"
+                                    className="rounded-md"
+                                  >
                                     <div className="flex items-center space-x-2">
                                       <div className="w-2 h-2 bg-red-500 rounded-full"></div>
                                       <span>Cancelled</span>
                                     </div>
                                   </SelectItem>
-                                  <SelectItem value="shipped" className="rounded-md">
+                                  <SelectItem
+                                    value="shipped"
+                                    className="rounded-md"
+                                  >
                                     <div className="flex items-center space-x-2">
                                       <div className="w-2 h-2 bg-purple-500 rounded-full"></div>
                                       <span>Shipped</span>
@@ -606,22 +631,34 @@ export default function PrintOrders() {
                                   <SelectValue placeholder="All Payments" />
                                 </SelectTrigger>
                                 <SelectContent className="rounded-lg border-2 border-gray-200">
-                                  <SelectItem value="all" className="rounded-md">
+                                  <SelectItem
+                                    value="all"
+                                    className="rounded-md"
+                                  >
                                     All Payments
                                   </SelectItem>
-                                  <SelectItem value="paid" className="rounded-md">
+                                  <SelectItem
+                                    value="paid"
+                                    className="rounded-md"
+                                  >
                                     <div className="flex items-center space-x-2">
                                       <div className="w-2 h-2 bg-green-500 rounded-full"></div>
                                       <span>Paid</span>
                                     </div>
                                   </SelectItem>
-                                  <SelectItem value="pending" className="rounded-md">
+                                  <SelectItem
+                                    value="pending"
+                                    className="rounded-md"
+                                  >
                                     <div className="flex items-center space-x-2">
                                       <div className="w-2 h-2 bg-yellow-500 rounded-full"></div>
                                       <span>Pending</span>
                                     </div>
                                   </SelectItem>
-                                  <SelectItem value="failed" className="rounded-md">
+                                  <SelectItem
+                                    value="failed"
+                                    className="rounded-md"
+                                  >
                                     <div className="flex items-center space-x-2">
                                       <div className="w-2 h-2 bg-red-500 rounded-full"></div>
                                       <span>Failed</span>
@@ -681,7 +718,7 @@ export default function PrintOrders() {
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.5, delay: 0.7 }}
-                className="bg-white rounded-xl border-2 border-gray-100 overflow-hidden shadow-sm"
+                className="bg-white overflow-hidden rounded-xl border-2 border-gray-100 m-6"
               >
                 <div className="overflow-x-auto">
                   <table className="w-full">
@@ -795,7 +832,7 @@ export default function PrintOrders() {
                                   <div className="text-sm text-gray-500">
                                     {order.printSize} - {order.printQuality}
                                   </div>
-                                  <div className="text-sm text-gray-500 flex items-center">
+                                  {/* <div className="text-sm text-gray-500 flex items-center">
                                     <Package className="w-3 h-3 mr-1" />
                                     {order.quantity} copies
                                     {order.rushOrder && (
@@ -806,7 +843,7 @@ export default function PrintOrders() {
                                         Rush
                                       </Badge>
                                     )}
-                                  </div>
+                                  </div> */}
                                 </div>
                               </td>
                               <td className="py-3 px-4">
@@ -816,7 +853,9 @@ export default function PrintOrders() {
                               </td>
                               <td className="py-3 px-4">
                                 {(() => {
-                                  const getPaymentStatusBadge = (status: string) => {
+                                  const getPaymentStatusBadge = (
+                                    status: string,
+                                  ) => {
                                     switch (status) {
                                       case "paid":
                                         return (
@@ -844,12 +883,16 @@ export default function PrintOrders() {
                                         );
                                     }
                                   };
-                                  return getPaymentStatusBadge(order.paymentStatus);
+                                  return getPaymentStatusBadge(
+                                    order.paymentStatus,
+                                  );
                                 })()}
                               </td>
                               <td className="py-3 px-4">
                                 {(() => {
-                                  const getOrderStatusBadge = (status: string) => {
+                                  const getOrderStatusBadge = (
+                                    status: string,
+                                  ) => {
                                     switch (status) {
                                       case "completed":
                                         return (
@@ -938,7 +981,7 @@ export default function PrintOrders() {
 
               {/* Pagination */}
               {totalPages > 1 && (
-                <motion.div 
+                <motion.div
                   initial={{ opacity: 0, y: 10 }}
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ duration: 0.5, delay: 0.6 }}
