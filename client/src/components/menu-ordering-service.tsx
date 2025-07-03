@@ -270,7 +270,7 @@ export default function MenuOrderingService({
                             <div className="text-xl font-bold text-purple-600">
                               ${option.price.toFixed(2)}
                             </div>
-                          </div>
+                          </motion.div>
                         </div>
                       </motion.div>
                     ))}
