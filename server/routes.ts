@@ -16814,6 +16814,9 @@ NEXT STEPS:
           },
         };
 
+        let paymentIntent;
+        let paymentCompleted = false;
+
         // If user wants to use saved payment method and has a Stripe customer ID
         if (useSavedPaymentMethod && tenant?.stripeCustomerId) {
           try {
@@ -16824,20 +16827,33 @@ NEXT STEPS:
             });
 
             if (paymentMethods.data.length > 0) {
+              // Automatically charge the default payment method
               paymentIntentOptions.customer = tenant.stripeCustomerId;
-              paymentIntentOptions.setup_future_usage = "off_session";
+              paymentIntentOptions.payment_method = paymentMethods.data[0].id;
+              paymentIntentOptions.confirm = true; // Auto-confirm the payment
+              paymentIntentOptions.off_session = true; // For saved payment methods
+              
+              paymentIntent = await stripe.paymentIntents.create(paymentIntentOptions);
+              
+              if (paymentIntent.status === 'succeeded') {
+                paymentCompleted = true;
+                console.log(`Print order payment auto-completed for order ${orderNumber}`);
+              }
+            } else {
+              // No saved payment methods, create regular payment intent
+              paymentIntent = await stripe.paymentIntents.create(paymentIntentOptions);
             }
           } catch (error) {
-            console.error("Error fetching payment methods:", error);
-            // Continue with regular payment flow if error
+            console.error("Error processing saved payment method:", error);
+            // If auto-payment fails, create regular payment intent for manual payment
+            paymentIntent = await stripe.paymentIntents.create(paymentIntentOptions);
           }
+        } else {
+          // Create regular payment intent for manual payment
+          paymentIntent = await stripe.paymentIntents.create(paymentIntentOptions);
         }
 
-        // Create Stripe payment intent
-        const paymentIntent =
-          await stripe.paymentIntents.create(paymentIntentOptions);
-
-        // Create print order in database
+        // Create print order in database with appropriate status
         const printOrder = await storage.createPrintOrder({
           restaurantId,
           tenantId,
@@ -16856,6 +16872,9 @@ NEXT STEPS:
           paymentIntentId: paymentIntent.id,
           deliveryMethod,
           deliveryAddress,
+          paymentStatus: paymentCompleted ? "paid" : "pending",
+          orderStatus: paymentCompleted ? "processing" : "pending",
+          stripePaymentId: paymentCompleted ? paymentIntent.id : null,
           estimatedCompletion: new Date(
             Date.now() + (rushOrder ? 24 : 72) * 60 * 60 * 1000,
           ), // 1-3 days
@@ -16886,9 +16905,13 @@ NEXT STEPS:
 
         res.json({
           printOrder,
-          clientSecret: paymentIntent.client_secret,
+          clientSecret: paymentCompleted ? null : paymentIntent.client_secret,
           totalAmount,
           savedPaymentMethods,
+          paymentCompleted,
+          message: paymentCompleted 
+            ? "Order created and payment completed successfully" 
+            : "Order created - payment required"
         });
       } catch (error) {
         console.error("Error creating print order:", error);

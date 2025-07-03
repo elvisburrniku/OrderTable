@@ -153,15 +153,27 @@ export function PrintOrderForm({
       
 
 
-      toast({
-        title: "Print Order Created",
-        description: `Order ${result.printOrder.orderNumber} has been created successfully.`,
-      });
+      // Handle automatic payment completion
+      if (result.paymentCompleted) {
+        toast({
+          title: "Order Created & Paid",
+          description: `Order ${result.printOrder.orderNumber} has been created and payment completed automatically using your saved card.`,
+        });
+        
+        if (onOrderCreated) {
+          onOrderCreated(result.printOrder);
+        }
+      } else {
+        toast({
+          title: "Print Order Created",
+          description: `Order ${result.printOrder.orderNumber} has been created successfully.`,
+        });
 
-      if (onPaymentRequired && result.clientSecret) {
-        onPaymentRequired(result.clientSecret, result.printOrder, result.savedPaymentMethods);
-      } else if (onOrderCreated) {
-        onOrderCreated(result.printOrder);
+        if (onPaymentRequired && result.clientSecret) {
+          onPaymentRequired(result.clientSecret, result.printOrder, result.savedPaymentMethods);
+        } else if (onOrderCreated) {
+          onOrderCreated(result.printOrder);
+        }
       }
 
     } catch (error) {
