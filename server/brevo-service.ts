@@ -2200,7 +2200,7 @@ export class BrevoEmailService {
                   </div>
                   <div style="display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid #c3e6cb;">
                     <span style="color: #155724; font-weight: 500;">Amount Paid:</span>
-                    <span style="color: #155724; font-weight: 600;">$${paymentDetails.amount.toFixed(2)} ${paymentDetails.currency.toUpperCase()}</span>
+                    <span style="color: #155724; font-weight: 600;">$${Number(paymentDetails.amount).toFixed(2)} ${paymentDetails.currency.toUpperCase()}</span>
                   </div>
                   <div style="display: flex; justify-content: space-between; padding: 8px 0;">
                     <span style="color: #155724; font-weight: 500;">Payment Status:</span>
@@ -2311,7 +2311,7 @@ export class BrevoEmailService {
                   </div>
                   <div style="display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid #c3e6cb;">
                     <span style="color: #155724; font-weight: 500;">Amount Paid:</span>
-                    <span style="color: #155724; font-weight: 600;">$${paymentDetails.amount.toFixed(2)} ${paymentDetails.currency.toUpperCase()}</span>
+                    <span style="color: #155724; font-weight: 600;">$${Number(paymentDetails.amount).toFixed(2)} ${paymentDetails.currency.toUpperCase()}</span>
                   </div>
                   <div style="display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid #c3e6cb;">
                     <span style="color: #155724; font-weight: 500;">Booking Date:</span>
