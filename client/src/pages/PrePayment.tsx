@@ -72,7 +72,7 @@ function BookingPaymentForm({
       const { error } = await stripe.confirmPayment({
         elements,
         confirmParams: {
-          return_url: `${window.location.origin}/payment-success?booking=${booking.id}&tenant=${tenantId}&restaurant=${restaurantId}&hash=${hash}`,
+          return_url: `${window.location.origin}/payment-success?booking=${booking.id}&hash=${hash}`,
         },
       });
 
@@ -178,8 +178,6 @@ export default function PrePayment() {
   // Parse search parameters
   const urlParams = new URLSearchParams(window.location.search);
   const bookingId = urlParams.get("booking");
-  const tenantId = urlParams.get("tenant");
-  const restaurantId = urlParams.get("restaurant");
   const hash = urlParams.get("hash");
   const amount = parseFloat(urlParams.get("amount") || "0");
   const currency = urlParams.get("currency") || "USD";
@@ -193,17 +191,15 @@ export default function PrePayment() {
     queryKey: [
       "secure-booking-details",
       bookingId,
-      tenantId,
-      restaurantId,
       hash,
     ],
     queryFn: async () => {
-      if (!bookingId || !tenantId || !restaurantId || !hash) {
+      if (!bookingId || !hash) {
         throw new Error("Missing required parameters for secure access");
       }
 
       const response = await fetch(
-        `/api/secure/prepayment/${bookingId}?tenant=${tenantId}&restaurant=${restaurantId}&hash=${hash}`,
+        `/api/secure/prepayment/${bookingId}?hash=${hash}`,
       );
 
       if (!response.ok) {
@@ -224,7 +220,7 @@ export default function PrePayment() {
       }
       return response.json();
     },
-    enabled: !!(bookingId && tenantId && restaurantId && hash),
+    enabled: !!(bookingId && hash),
     retry: 1,
   });
 
@@ -234,8 +230,6 @@ export default function PrePayment() {
       booking &&
       booking.requiresPayment &&
       booking.paymentAmount > 0 &&
-      tenantId &&
-      restaurantId &&
       hash
     ) {
       const createPaymentIntent = async () => {
@@ -248,8 +242,6 @@ export default function PrePayment() {
                 "Content-Type": "application/json",
               },
               body: JSON.stringify({
-                tenant: parseInt(tenantId),
-                restaurant: parseInt(restaurantId),
                 hash: hash,
                 amount: booking.paymentAmount,
                 currency: "usd",
@@ -288,7 +280,7 @@ export default function PrePayment() {
 
       createPaymentIntent();
     }
-  }, [booking, tenantId, restaurantId, hash]);
+  }, [booking, hash]);
 
   const handleRequestNewLink = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -354,7 +346,7 @@ export default function PrePayment() {
   };
 
   const handlePaymentSuccess = () => {
-    window.location.href = `/payment-success?booking=${bookingId}&tenant=${tenantId}&restaurant=${restaurantId}&hash=${hash}`;
+    window.location.href = `/payment-success?booking=${bookingId}&hash=${hash}`;
   };
 
   const handlePaymentError = (errorMessage: string) => {

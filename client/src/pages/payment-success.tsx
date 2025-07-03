@@ -25,20 +25,18 @@ export default function PaymentSuccess() {
   // Parse search parameters manually
   const urlParams = new URLSearchParams(window.location.search);
   const bookingId = urlParams.get("booking");
-  const tenantId = urlParams.get("tenant");
-  const restaurantId = urlParams.get("restaurant");
   const hash = urlParams.get("hash");
 
   // Fetch booking details using secure hash-based endpoint
   const { data: booking, isLoading } = useQuery({
-    queryKey: ["secure-booking-payment-success", bookingId, tenantId, restaurantId, hash],
+    queryKey: ["secure-booking-payment-success", bookingId, hash],
     queryFn: async () => {
-      if (!bookingId || !tenantId || !restaurantId || !hash) {
+      if (!bookingId || !hash) {
         throw new Error("Missing required parameters for secure access");
       }
 
       const response = await fetch(
-        `/api/secure/prepayment/${bookingId}?tenant=${tenantId}&restaurant=${restaurantId}&hash=${hash}`
+        `/api/secure/prepayment/${bookingId}?hash=${hash}`
       );
       
       if (!response.ok) {
@@ -52,10 +50,10 @@ export default function PaymentSuccess() {
       }
       return response.json();
     },
-    enabled: !!(bookingId && tenantId && restaurantId && hash),
+    enabled: !!(bookingId && hash),
   });
 
-  if (!bookingId || !tenantId || !restaurantId || !hash) {
+  if (!bookingId || !hash) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-red-50 to-rose-100 py-12 px-4">
         <div className="container mx-auto max-w-md">
