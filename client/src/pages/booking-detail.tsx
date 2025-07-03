@@ -33,6 +33,7 @@ import {
   Phone,
   User,
   Hash,
+  CreditCard,
 } from "lucide-react";
 import { StandardLoading } from "@/components/standard-loading";
 import { useToast } from "@/hooks/use-toast";
@@ -549,6 +550,83 @@ export default function BookingDetail() {
                       )}
                     </div>
                   </div>
+
+                  {/* Payment Information */}
+                  {booking.requiresPayment && booking.paymentAmount && (
+                    <div className={`rounded-xl p-6 border ${
+                      booking.paymentStatus === 'paid' 
+                        ? 'bg-green-50 border-green-100' 
+                        : 'bg-orange-50 border-orange-100'
+                    }`}>
+                      <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center">
+                        <CreditCard className={`w-5 h-5 mr-2 ${
+                          booking.paymentStatus === 'paid' ? 'text-green-600' : 'text-orange-600'
+                        }`} />
+                        Payment Information
+                      </h3>
+                      <div className="space-y-4">
+                        <div className="flex items-start">
+                          <span className="w-4 h-4 mr-3 mt-1 text-gray-400">$</span>
+                          <div>
+                            <p className="text-xs text-gray-500 uppercase tracking-wide font-medium">Amount</p>
+                            <p className="font-semibold text-gray-900">${booking.paymentAmount?.toFixed(2) || '0.00'}</p>
+                          </div>
+                        </div>
+                        <div className="flex items-start">
+                          <AlertCircle className="w-4 h-4 mr-3 mt-1 text-gray-400" />
+                          <div>
+                            <p className="text-xs text-gray-500 uppercase tracking-wide font-medium">Status</p>
+                            <div className="flex items-center gap-2 mt-1">
+                              {booking.paymentStatus === 'paid' ? (
+                                <Badge className="bg-green-100 text-green-800 border-green-200 border">
+                                  <CheckCircle className="w-3 h-3 mr-1" />
+                                  Paid
+                                </Badge>
+                              ) : booking.paymentStatus === 'pending' ? (
+                                <Badge className="bg-orange-100 text-orange-800 border-orange-200 border">
+                                  <AlertCircle className="w-3 h-3 mr-1" />
+                                  Pending
+                                </Badge>
+                              ) : (
+                                <Badge className="bg-gray-100 text-gray-800 border-gray-200 border">
+                                  <AlertCircle className="w-3 h-3 mr-1" />
+                                  {booking.paymentStatus || 'Unknown'}
+                                </Badge>
+                              )}
+                            </div>
+                          </div>
+                        </div>
+                        {booking.paymentPaidAt && (
+                          <div className="flex items-start">
+                            <CheckCircle className="w-4 h-4 mr-3 mt-1 text-gray-400" />
+                            <div>
+                              <p className="text-xs text-gray-500 uppercase tracking-wide font-medium">Paid On</p>
+                              <p className="font-medium text-gray-900">
+                                {new Date(booking.paymentPaidAt).toLocaleDateString('en-US', {
+                                  month: 'short',
+                                  day: 'numeric',
+                                  year: 'numeric',
+                                  hour: '2-digit',
+                                  minute: '2-digit'
+                                })}
+                              </p>
+                            </div>
+                          </div>
+                        )}
+                        {booking.paymentDeadlineHours && booking.paymentStatus !== 'paid' && (
+                          <div className="flex items-start">
+                            <Clock className="w-4 h-4 mr-3 mt-1 text-gray-400" />
+                            <div>
+                              <p className="text-xs text-gray-500 uppercase tracking-wide font-medium">Payment Deadline</p>
+                              <p className="font-medium text-gray-900">
+                                {booking.paymentDeadlineHours} hours before booking
+                              </p>
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  )}
                 </div>
 
                 {/* Additional Information */}

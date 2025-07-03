@@ -2159,4 +2159,215 @@ export class BrevoEmailService {
       throw error;
     }
   }
+
+  async sendPaymentConfirmation(
+    customerEmail: string,
+    customerName: string,
+    paymentDetails: { bookingId: number; amount: number; currency: string; restaurantName?: string }
+  ) {
+    const subject = `Payment Confirmation - ${paymentDetails.restaurantName || "Restaurant"}`;
+    
+    const htmlContent = `
+      <!DOCTYPE html>
+      <html>
+        <head>
+          <meta charset="utf-8">
+          <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        </head>
+        <body style="margin: 0; padding: 20px; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Arial, sans-serif; background-color: #f5f5f5;">
+          <div style="max-width: 600px; margin: 0 auto; background-color: white; border-radius: 8px; overflow: hidden; box-shadow: 0 2px 10px rgba(0,0,0,0.1);">
+
+            <!-- Header -->
+            <div style="background-color: #28a745; padding: 30px 30px 20px; text-align: center;">
+              <h1 style="margin: 0; font-size: 28px; font-weight: 600; color: white; letter-spacing: -0.5px;">Payment Confirmed</h1>
+            </div>
+
+            <!-- Content -->
+            <div style="padding: 30px;">
+              <p style="margin: 0 0 20px; font-size: 16px; color: #333; line-height: 1.5;">Dear ${customerName},</p>
+
+              <p style="margin: 0 0 30px; font-size: 16px; color: #666; line-height: 1.6;">
+                Thank you for your payment! We have successfully received your payment and your booking is now confirmed.
+              </p>
+
+              <!-- Payment Details Card -->
+              <div style="background-color: #d4edda; border-radius: 8px; padding: 25px; margin: 25px 0; border-left: 4px solid #28a745;">
+                <h3 style="margin: 0 0 15px; font-size: 18px; color: #155724; font-weight: 600;">Payment Details</h3>
+                <div style="display: grid; gap: 10px;">
+                  <div style="display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid #c3e6cb;">
+                    <span style="color: #155724; font-weight: 500;">Booking ID:</span>
+                    <span style="color: #155724; font-weight: 600;">#${paymentDetails.bookingId}</span>
+                  </div>
+                  <div style="display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid #c3e6cb;">
+                    <span style="color: #155724; font-weight: 500;">Amount Paid:</span>
+                    <span style="color: #155724; font-weight: 600;">$${paymentDetails.amount.toFixed(2)} ${paymentDetails.currency.toUpperCase()}</span>
+                  </div>
+                  <div style="display: flex; justify-content: space-between; padding: 8px 0;">
+                    <span style="color: #155724; font-weight: 500;">Payment Status:</span>
+                    <span style="color: #155724; font-weight: 600;">✓ Confirmed</span>
+                  </div>
+                </div>
+              </div>
+
+              <p style="margin: 20px 0; font-size: 16px; color: #666; line-height: 1.6;">
+                We look forward to welcoming you at ${paymentDetails.restaurantName || "our restaurant"}. If you have any questions, please don't hesitate to contact us.
+              </p>
+
+              <p style="margin: 30px 0 10px; font-size: 16px; color: #333;">Best regards,</p>
+              <p style="margin: 0; font-size: 16px; color: #333; font-weight: 600;">${paymentDetails.restaurantName || "Restaurant Team"}</p>
+
+              <!-- Booking ID at bottom -->
+              <div style="margin-top: 30px; padding-top: 20px; border-top: 1px solid #e5e5e5;">
+                <p style="margin: 0; font-size: 12px; color: #999; text-align: center;">
+                  Payment confirmed for booking #${paymentDetails.bookingId}
+                </p>
+              </div>
+            </div>
+
+            <!-- Footer -->
+            <div style="background-color: #f8f9fa; padding: 20px 30px; border-top: 1px solid #e5e5e5;">
+              <p style="margin: 0; font-size: 12px; color: #666; line-height: 1.5; text-align: center;">
+                This is an automated confirmation. Please keep this email for your records.
+              </p>
+            </div>
+          </div>
+        </body>
+      </html>
+    `;
+
+    const senderEmail = process.env.BREVO_SENDER_EMAIL || "noreply@restaurant.com";
+    const sendSmtpEmail = new SendSmtpEmail();
+    sendSmtpEmail.subject = subject;
+    sendSmtpEmail.htmlContent = htmlContent;
+    sendSmtpEmail.sender = {
+      name: paymentDetails.restaurantName || "Restaurant",
+      email: senderEmail
+    };
+
+    sendSmtpEmail.to = [{
+      email: customerEmail,
+      name: customerName
+    }];
+
+    try {
+      const result = await this.apiInstance!.sendTransacEmail(sendSmtpEmail);
+      console.log('Payment confirmation email sent:', result);
+      return result;
+    } catch (error) {
+      console.error('Error sending payment confirmation email:', error);
+      throw error;
+    }
+  }
+
+  async sendPaymentNotificationToRestaurant(
+    restaurantEmail: string,
+    paymentDetails: { 
+      bookingId: number; 
+      amount: number; 
+      currency: string; 
+      customerName: string; 
+      restaurantName?: string;
+      bookingDate: string;
+      bookingTime: string;
+      guestCount: number;
+    }
+  ) {
+    const subject = `Payment Received - Booking #${paymentDetails.bookingId}`;
+    
+    const htmlContent = `
+      <!DOCTYPE html>
+      <html>
+        <head>
+          <meta charset="utf-8">
+          <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        </head>
+        <body style="margin: 0; padding: 20px; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Arial, sans-serif; background-color: #f5f5f5;">
+          <div style="max-width: 600px; margin: 0 auto; background-color: white; border-radius: 8px; overflow: hidden; box-shadow: 0 2px 10px rgba(0,0,0,0.1);">
+
+            <!-- Header -->
+            <div style="background-color: #28a745; padding: 30px 30px 20px; text-align: center;">
+              <h1 style="margin: 0; font-size: 28px; font-weight: 600; color: white; letter-spacing: -0.5px;">Payment Received</h1>
+            </div>
+
+            <!-- Content -->
+            <div style="padding: 30px;">
+              <p style="margin: 0 0 20px; font-size: 16px; color: #333; line-height: 1.5;">Dear Restaurant Team,</p>
+
+              <p style="margin: 0 0 30px; font-size: 16px; color: #666; line-height: 1.6;">
+                A payment has been successfully received for booking #${paymentDetails.bookingId}.
+              </p>
+
+              <!-- Payment Details Card -->
+              <div style="background-color: #d4edda; border-radius: 8px; padding: 25px; margin: 25px 0; border-left: 4px solid #28a745;">
+                <h3 style="margin: 0 0 15px; font-size: 18px; color: #155724; font-weight: 600;">Payment Details</h3>
+                <div style="display: grid; gap: 10px;">
+                  <div style="display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid #c3e6cb;">
+                    <span style="color: #155724; font-weight: 500;">Booking ID:</span>
+                    <span style="color: #155724; font-weight: 600;">#${paymentDetails.bookingId}</span>
+                  </div>
+                  <div style="display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid #c3e6cb;">
+                    <span style="color: #155724; font-weight: 500;">Customer:</span>
+                    <span style="color: #155724; font-weight: 600;">${paymentDetails.customerName}</span>
+                  </div>
+                  <div style="display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid #c3e6cb;">
+                    <span style="color: #155724; font-weight: 500;">Amount Paid:</span>
+                    <span style="color: #155724; font-weight: 600;">$${paymentDetails.amount.toFixed(2)} ${paymentDetails.currency.toUpperCase()}</span>
+                  </div>
+                  <div style="display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid #c3e6cb;">
+                    <span style="color: #155724; font-weight: 500;">Booking Date:</span>
+                    <span style="color: #155724; font-weight: 600;">${paymentDetails.bookingDate}</span>
+                  </div>
+                  <div style="display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid #c3e6cb;">
+                    <span style="color: #155724; font-weight: 500;">Booking Time:</span>
+                    <span style="color: #155724; font-weight: 600;">${paymentDetails.bookingTime}</span>
+                  </div>
+                  <div style="display: flex; justify-content: space-between; padding: 8px 0;">
+                    <span style="color: #155724; font-weight: 500;">Guest Count:</span>
+                    <span style="color: #155724; font-weight: 600;">${paymentDetails.guestCount} guests</span>
+                  </div>
+                </div>
+              </div>
+
+              <p style="margin: 20px 0; font-size: 16px; color: #666; line-height: 1.6;">
+                The booking is now confirmed and the customer has been notified.
+              </p>
+
+              <p style="margin: 30px 0 10px; font-size: 16px; color: #333;">Best regards,</p>
+              <p style="margin: 0; font-size: 16px; color: #333; font-weight: 600;">Restaurant Management System</p>
+            </div>
+
+            <!-- Footer -->
+            <div style="background-color: #f8f9fa; padding: 20px 30px; border-top: 1px solid #e5e5e5;">
+              <p style="margin: 0; font-size: 12px; color: #666; line-height: 1.5; text-align: center;">
+                This is an automated notification from your restaurant management system.
+              </p>
+            </div>
+          </div>
+        </body>
+      </html>
+    `;
+
+    const senderEmail = process.env.BREVO_SENDER_EMAIL || "noreply@restaurant.com";
+    const sendSmtpEmail = new SendSmtpEmail();
+    sendSmtpEmail.subject = subject;
+    sendSmtpEmail.htmlContent = htmlContent;
+    sendSmtpEmail.sender = {
+      name: "Restaurant Management System",
+      email: senderEmail
+    };
+
+    sendSmtpEmail.to = [{
+      email: restaurantEmail,
+      name: "Restaurant Team"
+    }];
+
+    try {
+      const result = await this.apiInstance!.sendTransacEmail(sendSmtpEmail);
+      console.log('Payment notification email sent to restaurant:', result);
+      return result;
+    } catch (error) {
+      console.error('Error sending payment notification email to restaurant:', error);
+      throw error;
+    }
+  }
 }
