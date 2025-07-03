@@ -500,143 +500,119 @@ export default function PrintOrders() {
                   </div>
                 </div>
 
-                {/* Search Filters */}
-                <div className="bg-gray-50 rounded-xl p-6 border-2 border-gray-100">
-                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                    {/* Search Input */}
-                    <div className="relative">
-                      <label className="block text-sm font-medium text-gray-700 mb-2">
-                        Search
-                      </label>
-                      <div className="relative">
-                        <Search className="w-4 h-4 text-gray-400 absolute left-3 top-1/2 transform -translate-y-1/2" />
-                        <Input
-                          placeholder="Search by name, email or order..."
-                          value={searchTerm}
-                          onChange={(e) => setSearchTerm(e.target.value)}
-                          className="pl-10 h-11 border-2 border-gray-200 focus:border-green-500 focus:ring-0 rounded-lg transition-all duration-200"
-                        />
+                {/* Compact Filter Bar */}
+                <div className="bg-gray-50 rounded-lg p-4 border border-gray-200">
+                  <Collapsible open={showFilters} onOpenChange={setShowFilters}>
+                    <div className="flex items-center justify-between">
+                      <CollapsibleTrigger asChild>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          className="flex items-center space-x-2 bg-white border-gray-300 hover:bg-gray-50"
+                        >
+                          <Filter className="w-4 h-4" />
+                          <span>Filters</span>
+                          <ChevronDown
+                            className={`w-4 h-4 transition-transform ${showFilters ? "rotate-180" : ""}`}
+                          />
+                        </Button>
+                      </CollapsibleTrigger>
+                    </div>
+
+                    <CollapsibleContent className="mt-4">
+                      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                        {/* Search Input */}
+                        <div className="space-y-2">
+                          <label className="text-sm font-medium text-gray-700">
+                            Search
+                          </label>
+                          <div className="relative">
+                            <Search className="w-4 h-4 text-gray-400 absolute left-3 top-1/2 transform -translate-y-1/2" />
+                            <Input
+                              placeholder="Search by invoice number"
+                              value={searchTerm}
+                              onChange={(e) => setSearchTerm(e.target.value)}
+                              className="pl-10 h-10 border-gray-300 focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
+                            />
+                          </div>
+                        </div>
+
+                        {/* Status Filter */}
+                        <div className="space-y-2">
+                          <label className="text-sm font-medium text-gray-700">
+                            Status
+                          </label>
+                          <Select value={statusFilter} onValueChange={setStatusFilter}>
+                            <SelectTrigger className="h-10 border-gray-300 focus:border-blue-500 focus:ring-1 focus:ring-blue-500">
+                              <SelectValue placeholder="All Status" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="all">All Status</SelectItem>
+                              <SelectItem value="pending">Pending</SelectItem>
+                              <SelectItem value="processing">Processing</SelectItem>
+                              <SelectItem value="completed">Completed</SelectItem>
+                              <SelectItem value="cancelled">Cancelled</SelectItem>
+                              <SelectItem value="shipped">Shipped</SelectItem>
+                            </SelectContent>
+                          </Select>
+                        </div>
+
+                        {/* Time Period Filter */}
+                        <div className="space-y-2">
+                          <label className="text-sm font-medium text-gray-700">
+                            Time Period
+                          </label>
+                          <Select value={paymentFilter} onValueChange={setPaymentFilter}>
+                            <SelectTrigger className="h-10 border-gray-300 focus:border-blue-500 focus:ring-1 focus:ring-blue-500">
+                              <SelectValue placeholder="All Time" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="all">All Time</SelectItem>
+                              <SelectItem value="paid">Last 7 days</SelectItem>
+                              <SelectItem value="pending">Last 30 days</SelectItem>
+                              <SelectItem value="failed">Last 3 months</SelectItem>
+                            </SelectContent>
+                          </Select>
+                        </div>
                       </div>
-                    </div>
 
-                    {/* Status Filter */}
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-2">
-                        Status
-                      </label>
-                      <Select value={statusFilter} onValueChange={setStatusFilter}>
-                        <SelectTrigger className="h-11 border-2 border-gray-200 focus:border-green-500 rounded-lg transition-all duration-200">
-                          <SelectValue placeholder="All Status" />
-                        </SelectTrigger>
-                        <SelectContent className="rounded-lg border-2 border-gray-200">
-                          <SelectItem value="all" className="rounded-md">
-                            All Status
-                          </SelectItem>
-                          <SelectItem value="pending" className="rounded-md">
-                            <div className="flex items-center space-x-2">
-                              <div className="w-2 h-2 bg-yellow-500 rounded-full"></div>
-                              <span>Pending</span>
-                            </div>
-                          </SelectItem>
-                          <SelectItem value="processing" className="rounded-md">
-                            <div className="flex items-center space-x-2">
-                              <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
-                              <span>Processing</span>
-                            </div>
-                          </SelectItem>
-                          <SelectItem value="completed" className="rounded-md">
-                            <div className="flex items-center space-x-2">
-                              <div className="w-2 h-2 bg-green-500 rounded-full"></div>
-                              <span>Completed</span>
-                            </div>
-                          </SelectItem>
-                          <SelectItem value="cancelled" className="rounded-md">
-                            <div className="flex items-center space-x-2">
-                              <div className="w-2 h-2 bg-red-500 rounded-full"></div>
-                              <span>Cancelled</span>
-                            </div>
-                          </SelectItem>
-                          <SelectItem value="shipped" className="rounded-md">
-                            <div className="flex items-center space-x-2">
-                              <div className="w-2 h-2 bg-purple-500 rounded-full"></div>
-                              <span>Shipped</span>
-                            </div>
-                          </SelectItem>
-                        </SelectContent>
-                      </Select>
-                    </div>
-
-                    {/* Payment Filter */}
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-2">
-                        Payment
-                      </label>
-                      <Select value={paymentFilter} onValueChange={setPaymentFilter}>
-                        <SelectTrigger className="h-11 border-2 border-gray-200 focus:border-green-500 rounded-lg transition-all duration-200">
-                          <SelectValue placeholder="All Payments" />
-                        </SelectTrigger>
-                        <SelectContent className="rounded-lg border-2 border-gray-200">
-                          <SelectItem value="all" className="rounded-md">
-                            All Payments
-                          </SelectItem>
-                          <SelectItem value="paid" className="rounded-md">
-                            <div className="flex items-center space-x-2">
-                              <div className="w-2 h-2 bg-green-500 rounded-full"></div>
-                              <span>Paid</span>
-                            </div>
-                          </SelectItem>
-                          <SelectItem value="pending" className="rounded-md">
-                            <div className="flex items-center space-x-2">
-                              <div className="w-2 h-2 bg-yellow-500 rounded-full"></div>
-                              <span>Pending</span>
-                            </div>
-                          </SelectItem>
-                          <SelectItem value="failed" className="rounded-md">
-                            <div className="flex items-center space-x-2">
-                              <div className="w-2 h-2 bg-red-500 rounded-full"></div>
-                              <span>Failed</span>
-                            </div>
-                          </SelectItem>
-                        </SelectContent>
-                      </Select>
-                    </div>
-                  </div>
-
-                  {/* Filter Actions */}
-                  {(statusFilter !== "all" || paymentFilter !== "all" || searchTerm) && (
-                    <div className="flex items-center justify-between mt-4 pt-4 border-t border-gray-200">
-                      <div className="flex items-center space-x-2 text-sm text-gray-600">
-                        <span>Active filters:</span>
-                        {searchTerm && (
-                          <span className="bg-green-100 text-green-800 px-2 py-1 rounded-md text-xs font-medium">
-                            Search: "{searchTerm}"
-                          </span>
-                        )}
-                        {statusFilter !== "all" && (
-                          <span className="bg-blue-100 text-blue-800 px-2 py-1 rounded-md text-xs font-medium">
-                            Status: {statusFilter}
-                          </span>
-                        )}
-                        {paymentFilter !== "all" && (
-                          <span className="bg-purple-100 text-purple-800 px-2 py-1 rounded-md text-xs font-medium">
-                            Payment: {paymentFilter}
-                          </span>
-                        )}
-                      </div>
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => {
-                          setSearchTerm("");
-                          setStatusFilter("all");
-                          setPaymentFilter("all");
-                        }}
-                        className="text-gray-500 hover:text-gray-700 hover:bg-gray-100"
-                      >
-                        Clear all
-                      </Button>
-                    </div>
-                  )}
+                      {/* Active Filters Display */}
+                      {(statusFilter !== "all" || paymentFilter !== "all" || searchTerm) && (
+                        <div className="flex items-center justify-between mt-4 pt-4 border-t border-gray-200">
+                          <div className="flex items-center space-x-2 text-sm text-gray-600">
+                            <span>Active filters:</span>
+                            {searchTerm && (
+                              <span className="bg-blue-100 text-blue-800 px-2 py-1 rounded text-xs font-medium">
+                                Search: "{searchTerm}"
+                              </span>
+                            )}
+                            {statusFilter !== "all" && (
+                              <span className="bg-blue-100 text-blue-800 px-2 py-1 rounded text-xs font-medium">
+                                Status: {statusFilter}
+                              </span>
+                            )}
+                            {paymentFilter !== "all" && (
+                              <span className="bg-blue-100 text-blue-800 px-2 py-1 rounded text-xs font-medium">
+                                Period: {paymentFilter}
+                              </span>
+                            )}
+                          </div>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => {
+                              setSearchTerm("");
+                              setStatusFilter("all");
+                              setPaymentFilter("all");
+                            }}
+                            className="text-gray-500 hover:text-gray-700 hover:bg-gray-100 text-xs"
+                          >
+                            Clear all
+                          </Button>
+                        </div>
+                      )}
+                    </CollapsibleContent>
+                  </Collapsible>
                 </div>
               </div>
 
