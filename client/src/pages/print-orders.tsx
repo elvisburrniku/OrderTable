@@ -459,8 +459,6 @@ export default function PrintOrders() {
                       </div>
                     </div>
                   </div>
-                    </div>
-                  </div>
                 </div>
               </div>
 
