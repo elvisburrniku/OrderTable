@@ -466,6 +466,99 @@ export default function PrePayment() {
     );
   }
 
+  // Check if booking is already paid
+  if (booking && booking.paymentStatus === 'paid') {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-green-50 to-emerald-100 py-12 px-4">
+        <div className="container mx-auto max-w-md">
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2 text-green-700">
+                <CheckCircle className="h-5 w-5" />
+                Payment Complete
+              </CardTitle>
+              <CardDescription>
+                Your booking payment has been successfully processed
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-6">
+              {/* Booking Summary */}
+              <div className="space-y-3 p-4 bg-green-50 rounded-lg border border-green-200">
+                <h3 className="font-medium text-green-800">Booking Summary</h3>
+                <div className="space-y-2 text-sm">
+                  <div className="flex items-center gap-2">
+                    <Users className="h-4 w-4 text-green-600" />
+                    <span className="text-green-700">
+                      {booking.customerName} - {booking.guestCount}{" "}
+                      {booking.guestCount === 1 ? "guest" : "guests"}
+                    </span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <Calendar className="h-4 w-4 text-green-600" />
+                    <span className="text-green-700">{new Date(booking.bookingDate).toLocaleDateString()}</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <Clock className="h-4 w-4 text-green-600" />
+                    <span className="text-green-700">{booking.startTime}</span>
+                  </div>
+                  {booking.restaurantName && (
+                    <div className="flex items-center gap-2">
+                      <MapPin className="h-4 w-4 text-green-600" />
+                      <span className="text-green-700">{booking.restaurantName}</span>
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              {/* Payment Status */}
+              <div className="space-y-3 p-4 bg-white rounded-lg border border-green-200">
+                <h3 className="font-medium text-green-800">Payment Status</h3>
+                <div className="flex items-center justify-between">
+                  <span className="text-sm text-green-700">Amount Paid:</span>
+                  <span className="text-lg font-semibold text-green-800">
+                    {new Intl.NumberFormat("en-US", {
+                      style: "currency",
+                      currency: currency.toUpperCase(),
+                    }).format(amount)}
+                  </span>
+                </div>
+                <div className="flex items-center justify-between">
+                  <span className="text-sm text-green-700">Status:</span>
+                  <div className="flex items-center gap-2">
+                    <CheckCircle className="h-4 w-4 text-green-600" />
+                    <span className="text-sm font-medium text-green-800">Paid</span>
+                  </div>
+                </div>
+                {booking.paymentPaidAt && (
+                  <div className="flex items-center justify-between">
+                    <span className="text-sm text-green-700">Paid On:</span>
+                    <span className="text-sm font-medium text-green-800">
+                      {new Date(booking.paymentPaidAt).toLocaleDateString('en-US', {
+                        month: 'short',
+                        day: 'numeric',
+                        year: 'numeric',
+                        hour: '2-digit',
+                        minute: '2-digit'
+                      })}
+                    </span>
+                  </div>
+                )}
+              </div>
+
+              <Alert className="border-green-200 bg-green-50">
+                <CheckCircle className="h-4 w-4 text-green-600" />
+                <AlertDescription className="text-green-800">
+                  Your booking is confirmed and payment has been processed successfully. 
+                  You should receive a confirmation email shortly.
+                </AlertDescription>
+              </Alert>
+            </CardContent>
+          </Card>
+        </div>
+      </div>
+    );
+  }
+
   if (bookingError || !booking) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-red-50 to-rose-100 py-12 px-4">
