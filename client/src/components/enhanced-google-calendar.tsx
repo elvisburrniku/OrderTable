@@ -216,11 +216,20 @@ export default function EnhancedGoogleCalendar({
   // Check if a time slot contains the current time
   const isCurrentTimeSlot = useCallback(
     (timeSlot: string) => {
+      if (!timeSlot || typeof timeSlot !== 'string') return false;
+      
       const now = currentTime;
+      if (!now || !(now instanceof Date)) return false;
+      
       const currentHour = now.getHours();
       const currentMinute = now.getMinutes();
 
-      const [slotHour, slotMinute] = timeSlot.split(":").map(Number);
+      const timeParts = timeSlot.split(":");
+      if (timeParts.length !== 2) return false;
+      
+      const [slotHour, slotMinute] = timeParts.map(Number);
+      
+      if (isNaN(slotHour) || isNaN(slotMinute)) return false;
 
       // Check if current time falls within this 15-minute slot
       return (
@@ -452,6 +461,7 @@ export default function EnhancedGoogleCalendar({
 
   // Get availability indicator dot
   const getAvailabilityDot = (level: string) => {
+    if (!level) return "w-2 h-2 bg-gray-300 rounded-full";
     switch (level) {
       case "high":
         return "w-2 h-2 bg-green-400 rounded-full";
@@ -470,6 +480,7 @@ export default function EnhancedGoogleCalendar({
 
   // Get availability text for tooltips
   const getAvailabilityText = (level: string) => {
+    if (!level || typeof level !== 'string') return "Availability unknown";
     switch (level) {
       case "high":
         return "High availability - Good time to book";
@@ -920,17 +931,24 @@ export default function EnhancedGoogleCalendar({
 
   // Function to calculate booking duration in minutes
   const getBookingDurationMinutes = (startTime: string, endTime?: string) => {
-    if (!endTime) return 60; // Default 1 hour if no end time
+    if (!startTime || typeof startTime !== 'string') return 60;
+    if (!endTime || typeof endTime !== 'string') return 60; // Default 1 hour if no end time
 
     const toMinutes = (timeStr: string) => {
-      const [hours, minutes] = timeStr.split(":").map(Number);
+      if (!timeStr || typeof timeStr !== 'string') return 0;
+      const parts = timeStr.split(":");
+      if (parts.length !== 2) return 0;
+      const [hours, minutes] = parts.map(Number);
+      if (isNaN(hours) || isNaN(minutes)) return 0;
       return hours * 60 + minutes;
     };
 
     const startMinutes = toMinutes(startTime);
     const endMinutes = toMinutes(endTime);
 
-    return endMinutes - startMinutes;
+    if (startMinutes === 0 || endMinutes === 0) return 60;
+    const duration = endMinutes - startMinutes;
+    return duration > 0 ? duration : 60;
   };
 
   // Function to get timeline bar width based on duration
