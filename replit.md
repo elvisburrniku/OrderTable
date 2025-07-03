@@ -22,6 +22,12 @@ A comprehensive restaurant booking management system with React frontend and Exp
 - Kitchen order management
 
 ## Recent Changes
+- **2025-07-03**: ✅ PRINT ORDERS BILLING INTEGRATION COMPLETED - Integrated print orders with billing system for automatic payment processing
+- **Automatic Payment Processing**: Print orders now automatically use saved payment methods from billing system eliminating manual payment forms
+- **Invoice Creation**: Completed print orders automatically generate invoices in Stripe and appear in billing invoice history
+- **Streamlined Experience**: Removed payment processing components from print orders page - orders are created and paid in one step
+- **Backend Integration**: Enhanced print order API to check billing system for saved cards and process payments automatically
+- **Billing System Connection**: Print orders now fully integrated with /billing system for seamless payment and invoice management
 - **2025-07-03**: ✅ MIGRATION COMPLETED - Successfully migrated from Replit Agent to Replit environment with full functionality restored
 - **Migration Success**: All features operational including PostgreSQL database, multi-tenant restaurant management, payment processing, booking system, and admin panel
 - **Service Integration**: Email (Brevo), SMS (Twilio), Google Calendar, Stripe payments, and survey scheduler all working correctly

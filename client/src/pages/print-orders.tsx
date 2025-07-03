@@ -11,7 +11,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 
 import { useToast } from "@/hooks/use-toast";
 import { PrintOrderForm } from "@/components/print-order-form";
-import { PrintOrderPayment } from "@/components/print-order-payment";
+
 import { OrderTracking } from "@/components/order-tracking";
 import MenuOrderingService from "@/components/menu-ordering-service";
 import { 
@@ -61,13 +61,7 @@ interface PrintOrder {
 export default function PrintOrders() {
   const [activeTab, setActiveTab] = useState("orders");
   const [selectedOrder, setSelectedOrder] = useState<PrintOrder | null>(null);
-  const [showPayment, setShowPayment] = useState(false);
   const [showTracking, setShowTracking] = useState(false);
-  const [paymentData, setPaymentData] = useState<{ 
-    clientSecret: string; 
-    order: any; 
-    savedPaymentMethods?: any[] 
-  } | null>(null);
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
   const [paymentFilter, setPaymentFilter] = useState("all");
@@ -178,21 +172,16 @@ export default function PrintOrders() {
     );
   };
 
-  const handleOrderCreated = (clientSecret: string, order: any, savedPaymentMethods?: any[]) => {
-    setPaymentData({ clientSecret, order, savedPaymentMethods });
-    setShowPayment(true);
-  };
-
-  const handlePaymentSuccess = (order: any) => {
-    setShowPayment(false);
-    setPaymentData(null);
+  const handleOrderCreated = (order: any) => {
     setActiveTab("orders");
     queryClient.invalidateQueries({ queryKey: [`/api/tenants/${restaurant?.tenantId}/restaurants/${restaurant?.id}/print-orders`] });
     toast({
-      title: "Payment Successful",
-      description: `Print order ${order.orderNumber || paymentData?.orderNumber} has been paid successfully!`,
+      title: "Order Created Successfully",
+      description: `Print order ${order.orderNumber} has been created and processed automatically!`,
     });
   };
+
+
 
   const handleViewTracking = (order: PrintOrder) => {
     setSelectedOrder(order);
@@ -251,42 +240,7 @@ export default function PrintOrders() {
     }
   };
 
-  const handlePayNow = async (order: PrintOrder) => {
-    try {
-      const response = await fetch(`/api/tenants/${restaurant?.tenantId}/restaurants/${restaurant?.id}/print-orders/${order.id}/create-payment-intent`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-      });
 
-      if (!response.ok) {
-        throw new Error("Failed to create payment intent");
-      }
-
-      const { clientSecret, savedPaymentMethods } = await response.json();
-
-      setPaymentData({
-        clientSecret,
-        order: {
-          id: order.id,
-          orderNumber: order.orderNumber,
-          printType: order.printType,
-          printSize: order.printSize,
-          printQuality: order.printQuality,
-          quantity: order.quantity,
-          deliveryMethod: order.deliveryMethod,
-          totalAmount: order.totalAmount,
-        },
-        savedPaymentMethods
-      });
-      setShowPayment(true);
-    } catch (error) {
-      toast({
-        title: "Payment Setup Failed",
-        description: "Could not prepare payment. Please try again.",
-        variant: "destructive",
-      });
-    }
-  };
 
   const confirmDeleteOrder = () => {
     if (orderToDelete) {
@@ -311,22 +265,7 @@ export default function PrintOrders() {
     });
   };
 
-  if (showPayment && paymentData) {
-    return (
-      <div className="container mx-auto p-6">
-        <PrintOrderPayment
-          clientSecret={paymentData.clientSecret}
-          order={paymentData.order}
-          savedPaymentMethods={paymentData.savedPaymentMethods}
-          onPaymentSuccess={handlePaymentSuccess}
-          onCancel={() => {
-            setShowPayment(false);
-            setPaymentData(null);
-          }}
-        />
-      </div>
-    );
-  }
+
 
   if (showTracking && selectedOrder) {
     return (
@@ -846,7 +785,7 @@ export default function PrintOrders() {
               <PrintOrderForm
                 restaurantId={restaurant?.id || 1}
                 tenantId={restaurant?.tenantId}
-                onPaymentRequired={handleOrderCreated}
+                onOrderCreated={handleOrderCreated}
               />
             </TabsContent>
 

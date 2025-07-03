@@ -16838,6 +16838,44 @@ NEXT STEPS:
               if (paymentIntent.status === 'succeeded') {
                 paymentCompleted = true;
                 console.log(`Print order payment auto-completed for order ${orderNumber}`);
+                
+                // Create invoice for the completed payment
+                try {
+                  const invoice = await stripe.invoices.create({
+                    customer: tenant.stripeCustomerId,
+                    auto_advance: false, // Don't automatically finalize
+                    collection_method: 'charge_automatically',
+                    description: `Print Order ${orderNumber} - ${printType} (${quantity} copies)`,
+                    metadata: {
+                      orderNumber,
+                      printType,
+                      quantity: quantity.toString(),
+                      tenantId: tenantId.toString(),
+                      restaurantId: restaurantId.toString(),
+                      orderType: 'print_order'
+                    }
+                  });
+                  
+                  // Add invoice item
+                  await stripe.invoiceItems.create({
+                    customer: tenant.stripeCustomerId,
+                    invoice: invoice.id,
+                    amount: totalAmount,
+                    currency: 'usd',
+                    description: `${printType} - ${printSize} (${printQuality}) - ${quantity} copies${rushOrder ? ' (Rush Order)' : ''}`,
+                  });
+                  
+                  // Finalize and mark as paid
+                  await stripe.invoices.finalizeInvoice(invoice.id);
+                  await stripe.invoices.pay(invoice.id, {
+                    payment_method: paymentMethods.data[0].id,
+                  });
+                  
+                  console.log(`Invoice created and paid for print order ${orderNumber}: ${invoice.id}`);
+                } catch (invoiceError) {
+                  console.error("Error creating invoice for print order:", invoiceError);
+                  // Continue execution even if invoice creation fails
+                }
               }
             } else {
               // No saved payment methods, create regular payment intent
