@@ -170,7 +170,7 @@ export default function MenuOrderingService({
             </div>
           ))}
         </div>
-        
+
 
         {/* Main Content Grid */}
         <div className="grid lg:grid-cols-2 gap-6">
@@ -214,11 +214,11 @@ export default function MenuOrderingService({
                       <div>Durability: {option.durability}</div>
                       <div>Min Order: {option.minimumOrder}</div>
                     </div>
-                  
+                  </div>
                 ))}
               </CardContent>
             </Card>
-          
+
 
           {/* Order Configuration */}
           <Card className="bg-white border border-slate-200 shadow-sm">
@@ -270,9 +270,9 @@ export default function MenuOrderingService({
                             <div className="text-xl font-bold text-purple-600">
                               ${option.price.toFixed(2)}
                             </div>
-                          
+                          </div>
                         </div>
-                      
+                      </motion.div>
                     ))}
                   </div>
                 </div>
@@ -304,9 +304,9 @@ export default function MenuOrderingService({
                       <span className="text-blue-600">
                         ${((selectedPrintOption ? selectedPrintOption.pricePerMenu * quantity : 0) + (selectedShipOption?.price || 0)).toFixed(2)}
                       </span>
-                    
+                    </motion.div>
                   </div>
-                
+                </motion.div>
 
                 {/* Order Button */}
                 <motion.div
@@ -320,10 +320,9 @@ export default function MenuOrderingService({
                     <CreditCard className="w-5 h-5 mr-2" />
                     Place Order
                   </Button>
-                
+                </motion.div>
               </CardContent>
             </Card>
-          
         </div>
       </div>
 
@@ -335,7 +334,7 @@ export default function MenuOrderingService({
               Complete Your Order
             </DialogTitle>
           </DialogHeader>
-          
+
           <div className="space-y-6">
             {/* Contact Information */}
             <div className="space-y-4">
@@ -479,7 +478,7 @@ export default function MenuOrderingService({
               <Button
                 onClick={async () => {
                   if (!selectedPrintOption || !selectedShipOption) return;
-                  
+
                   const subtotal = selectedPrintOption.pricePerMenu * quantity;
                   const shippingCost = selectedShipOption.price;
                   const tax = subtotal * 0.08;
@@ -505,7 +504,7 @@ export default function MenuOrderingService({
                     if (response.clientSecret && onOrderCreated) {
                       onOrderCreated(response.clientSecret, response.printOrder, response.savedPaymentMethods);
                     }
-                    
+
                     setShowOrderForm(false);
                     setOrderDetails({
                       contactName: '',
