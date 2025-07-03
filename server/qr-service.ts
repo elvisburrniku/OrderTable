@@ -9,7 +9,7 @@ export class QRCodeService {
     tableNumber: string,
     restaurantId: number,
     tenantId: number,
-    baseUrl: string = process.env.APP_BASE_URL || process.env.REPLIT_DEV_DOMAIN || 'localhost:5000'
+    baseUrl: string = process.env.BASE_URL || process.env.REPLIT_DEV_DOMAIN || 'localhost:5000'
   ): Promise<string> {
     try {
       // Use the correct URL format for the Replit environment
@@ -29,7 +29,7 @@ export class QRCodeService {
   static async generateRestaurantQRCode(
     restaurantId: number,
     tenantId: number,
-    baseUrl: string = process.env.APP_BASE_URL || process.env.REPLIT_DEV_DOMAIN || 'localhost:5000'
+    baseUrl: string = process.env.BASE_URL || process.env.REPLIT_DEV_DOMAIN || 'localhost:5000'
   ): Promise<string> {
     try {
       const bookingUrl = `https://${baseUrl}/book/${tenantId}/${restaurantId}`;
