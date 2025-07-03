@@ -6216,41 +6216,32 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   );
 
-  // Secure hash-based prepayment access endpoint
+  // Secure token-based prepayment access endpoint
   app.get(
-    "/api/secure/prepayment/:bookingId",
+    "/api/secure/prepayment/token",
     async (req, res) => {
       try {
-        const bookingId = parseInt(req.params.bookingId);
-        const { tenant, restaurant, hash } = req.query;
+        const { token } = req.query;
         
-        if (!bookingId || !tenant || !restaurant || !hash) {
+        if (!token) {
           return res.status(400).json({ 
-            message: "Missing required parameters: booking, tenant, restaurant, or hash" 
+            message: "Missing required payment token" 
           });
         }
 
-        const tenantId = parseInt(tenant as string);
-        const restaurantId = parseInt(restaurant as string);
-        const providedHash = hash as string;
-
-        // Import BookingHash for verification
-        const { BookingHash } = await import("./booking-hash");
+        // Import PaymentTokenService for token verification
+        const { PaymentTokenService } = await import("./payment-token-service");
         
-        // Verify the hash for payment action
-        const isValidHash = BookingHash.verifyHash(
-          providedHash, 
-          bookingId, 
-          tenantId, 
-          restaurantId, 
-          'payment'
-        );
+        // Verify and decrypt the token
+        const tokenData = PaymentTokenService.verifyToken(token as string);
 
-        if (!isValidHash) {
+        if (!tokenData) {
           return res.status(403).json({ 
-            message: "Invalid or expired payment link" 
+            message: "Invalid or expired payment token" 
           });
         }
+
+        const { bookingId, tenantId, restaurantId, amount, currency } = tokenData;
 
         // Get booking details
         const booking = await storage.getBookingById(bookingId);
@@ -6303,36 +6294,57 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   // Create payment intent for secure prepayment
   app.post(
-    "/api/secure/prepayment/:bookingId/payment-intent",
+    "/api/secure/prepayment/payment-intent",
     async (req, res) => {
       try {
-        const bookingId = parseInt(req.params.bookingId);
-        const { tenant, restaurant, hash, amount, currency = "usd" } = req.body;
-        
-        if (!bookingId || !tenant || !restaurant || !hash) {
+        const { token, hash } = req.body;
+        let bookingId, tenantId, restaurantId, amount, currency;
+
+        // Support both token and legacy hash systems
+        if (token) {
+          // New secure token system
+          const { PaymentTokenService } = await import("./payment-token-service");
+          const tokenData = PaymentTokenService.verifyToken(token);
+
+          if (!tokenData) {
+            return res.status(403).json({ 
+              message: "Invalid or expired payment token" 
+            });
+          }
+
+          ({ bookingId, tenantId, restaurantId, amount, currency } = tokenData);
+        } else if (hash) {
+          // Legacy hash system support
+          const { tenant, restaurant, bookingId: legacyBookingId } = req.body;
+          
+          if (!legacyBookingId || !tenant || !restaurant) {
+            return res.status(400).json({ 
+              message: "Missing required parameters for legacy hash system" 
+            });
+          }
+
+          bookingId = parseInt(legacyBookingId);
+          tenantId = parseInt(tenant);
+          restaurantId = parseInt(restaurant);
+
+          // Verify hash for legacy system
+          const { BookingHash } = await import("./booking-hash");
+          const isValidHash = BookingHash.verifyHash(
+            hash, 
+            bookingId, 
+            tenantId, 
+            restaurantId, 
+            'payment'
+          );
+
+          if (!isValidHash) {
+            return res.status(403).json({ 
+              message: "Invalid or expired payment link" 
+            });
+          }
+        } else {
           return res.status(400).json({ 
-            message: "Missing required parameters" 
-          });
-        }
-
-        const tenantId = parseInt(tenant);
-        const restaurantId = parseInt(restaurant);
-
-        // Import BookingHash for verification
-        const { BookingHash } = await import("./booking-hash");
-        
-        // Verify the hash for payment action
-        const isValidHash = BookingHash.verifyHash(
-          hash, 
-          bookingId, 
-          tenantId, 
-          restaurantId, 
-          'payment'
-        );
-
-        if (!isValidHash) {
-          return res.status(403).json({ 
-            message: "Invalid or expired payment link" 
+            message: "Missing required payment token or hash" 
           });
         }
 
@@ -6570,9 +6582,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
         if (emailService) {
           const baseUrl = process.env.BASE_URL || 'http://localhost:5000';
           
-          // Generate secure payment link with hash
-          const { BookingHash } = await import("./booking-hash");
-          const paymentLink = BookingHash.generatePaymentUrl(
+          // Generate secure payment link with encrypted token
+          const { PaymentTokenService } = await import("./payment-token-service");
+          const paymentLink = PaymentTokenService.generateSecurePaymentUrl(
             bookingId,
             booking.tenantId,
             booking.restaurantId,

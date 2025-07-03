@@ -1,5 +1,6 @@
 import { TransactionalEmailsApi, SendSmtpEmail } from '@getbrevo/brevo';
 import { BookingHash } from './booking-hash';
+import { PaymentTokenService } from './payment-token-service';
 import { systemSettings } from './system-settings';
 
 export class BrevoEmailService {
@@ -109,7 +110,7 @@ export class BrevoEmailService {
           </div>
           ${bookingDetails.requiresPayment && bookingDetails.paymentAmount ? `
             <div style="text-align: center; margin-top: 15px;">
-              <a href="${BookingHash.generatePaymentUrl(
+              <a href="${PaymentTokenService.generateSecurePaymentUrl(
                 bookingDetails.id,
                 bookingDetails.tenantId,
                 bookingDetails.restaurantId,
