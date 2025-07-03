@@ -151,54 +151,73 @@ export default function PrePayment() {
   // Parse search parameters
   const urlParams = new URLSearchParams(location.split('?')[1] || '');
   const bookingId = urlParams.get("booking");
+  const tenantId = urlParams.get("tenant");
+  const restaurantId = urlParams.get("restaurant");
+  const hash = urlParams.get("hash");
   const amount = parseFloat(urlParams.get("amount") || "0");
   const currency = urlParams.get("currency") || "USD";
 
-  // Fetch booking details
+  // Fetch booking details using secure hash-based endpoint
   const { data: booking, isLoading: bookingLoading, error: bookingError } = useQuery({
-    queryKey: ["guest-booking-details", bookingId],
+    queryKey: ["secure-booking-details", bookingId, tenantId, restaurantId, hash],
     queryFn: async () => {
-      if (!bookingId) throw new Error("Booking ID required");
+      if (!bookingId || !tenantId || !restaurantId || !hash) {
+        throw new Error("Missing required parameters for secure access");
+      }
       
-      const response = await fetch(`/api/guest/bookings/${bookingId}`);
+      const response = await fetch(
+        `/api/secure/prepayment/${bookingId}?tenant=${tenantId}&restaurant=${restaurantId}&hash=${hash}`
+      );
+      
       if (!response.ok) {
+        const errorData = await response.json();
+        if (response.status === 403) {
+          throw new Error("Invalid or expired payment link");
+        }
         if (response.status === 404) {
           throw new Error("Booking not found");
         }
-        throw new Error("Failed to fetch booking details");
+        if (response.status === 400 && errorData.code === "stripe_connect_not_setup") {
+          throw new Error("stripe_connect_not_setup");
+        }
+        throw new Error(errorData.message || "Failed to fetch booking details");
       }
       return response.json();
     },
-    enabled: !!bookingId,
+    enabled: !!(bookingId && tenantId && restaurantId && hash),
     retry: 1,
   });
 
-  // Create payment intent
+  // Create payment intent using secure endpoint
   useEffect(() => {
-    if (booking && booking.requiresPayment && booking.paymentAmount > 0) {
+    if (booking && booking.requiresPayment && booking.paymentAmount > 0 && tenantId && restaurantId && hash) {
       const createPaymentIntent = async () => {
         try {
           const response = await fetch(
-            `/api/tenants/${booking.tenantId}/restaurants/${booking.restaurantId}/bookings/${booking.id}/payment-intent`,
+            `/api/secure/prepayment/${booking.id}/payment-intent`,
             {
               method: "POST",
               headers: {
                 "Content-Type": "application/json",
               },
               body: JSON.stringify({
+                tenant: parseInt(tenantId),
+                restaurant: parseInt(restaurantId),
+                hash: hash,
                 amount: booking.paymentAmount,
                 currency: "usd",
-                description: `Payment for booking at ${booking.restaurantName || "restaurant"} - ${booking.customerName}`,
               }),
             }
           );
           
           if (!response.ok) {
             const errorData = await response.json();
-            if (response.status === 400 && errorData.message?.includes("Stripe Connect")) {
+            if (response.status === 403) {
+              setError("invalid_hash");
+            } else if (response.status === 400 && errorData.code === "stripe_connect_not_setup") {
               setError("stripe_connect_not_setup");
             } else {
-              throw new Error("Failed to create payment intent");
+              throw new Error(errorData.message || "Failed to create payment intent");
             }
           } else {
             const data = await response.json();
@@ -217,7 +236,7 @@ export default function PrePayment() {
 
       createPaymentIntent();
     }
-  }, [booking]);
+  }, [booking, tenantId, restaurantId, hash]);
 
   const handleRequestNewLink = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -284,7 +303,8 @@ export default function PrePayment() {
     setError(errorMessage);
   };
 
-  if (!bookingId) {
+  // Validate required parameters for secure access
+  if (!bookingId || !tenantId || !restaurantId || !hash) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-red-50 to-rose-100 py-12 px-4">
         <div className="container mx-auto max-w-md">
@@ -292,14 +312,15 @@ export default function PrePayment() {
             <CardHeader>
               <CardTitle className="flex items-center gap-2 text-destructive">
                 <AlertCircle className="h-5 w-5" />
-                Invalid Link
+                Invalid Payment Link
               </CardTitle>
             </CardHeader>
             <CardContent>
               <Alert variant="destructive">
                 <AlertCircle className="h-4 w-4" />
                 <AlertDescription>
-                  This payment link is missing required booking information.
+                  This payment link is invalid or missing required security information. 
+                  Please contact the restaurant for a new payment link.
                 </AlertDescription>
               </Alert>
             </CardContent>

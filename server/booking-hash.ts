@@ -12,7 +12,7 @@ export class BookingHash {
    * @param action - The action type ('cancel', 'change', 'manage', 'approve', or 'reject')
    * @returns A secure hash string
    */
-  static generateHash(bookingId: number, tenantId: number, restaurantId: number, action: 'cancel' | 'change' | 'manage' | 'approve' | 'reject'): string {
+  static generateHash(bookingId: number, tenantId: number, restaurantId: number, action: 'cancel' | 'change' | 'manage' | 'approve' | 'reject' | 'payment'): string {
     const data = `${bookingId}-${tenantId}-${restaurantId}-${action}`;
     const hash = crypto.createHmac('sha256', SECRET_KEY).update(data).digest('hex');
     console.log(`Generated hash for data: ${data} -> ${hash}`);
@@ -28,7 +28,7 @@ export class BookingHash {
    * @param action - The action type ('cancel', 'change', 'manage', 'approve', or 'reject')
    * @returns True if hash is valid, false otherwise
    */
-  static verifyHash(hash: string, bookingId: number, tenantId: number, restaurantId: number, action: 'cancel' | 'change' | 'manage' | 'approve' | 'reject'): boolean {
+  static verifyHash(hash: string, bookingId: number, tenantId: number, restaurantId: number, action: 'cancel' | 'change' | 'manage' | 'approve' | 'reject' | 'payment'): boolean {
     const expectedHash = this.generateHash(bookingId, tenantId, restaurantId, action);
     console.log(`Verifying hash: ${hash} vs expected: ${expectedHash}`);
     try {
@@ -59,5 +59,20 @@ export class BookingHash {
       changeUrl: `${baseUrl}/booking-manage/${bookingId}?action=change&hash=${changeHash}`,
       manageUrl: `${baseUrl}/booking-manage/${bookingId}?hash=${manageHash}`
     };
+  }
+
+  /**
+   * Generate secure payment URL for booking
+   * @param bookingId - The booking ID
+   * @param tenantId - The tenant ID
+   * @param restaurantId - The restaurant ID
+   * @param amount - Payment amount
+   * @param currency - Payment currency
+   * @param baseUrl - The base URL of the application
+   * @returns Secure payment URL with hash
+   */
+  static generatePaymentUrl(bookingId: number, tenantId: number, restaurantId: number, amount: number, currency: string = 'USD', baseUrl: string = 'https://your-domain.com') {
+    const paymentHash = this.generateHash(bookingId, tenantId, restaurantId, 'payment');
+    return `${baseUrl}/prepayment?booking=${bookingId}&tenant=${tenantId}&restaurant=${restaurantId}&amount=${amount}&currency=${currency}&hash=${paymentHash}`;
   }
 }

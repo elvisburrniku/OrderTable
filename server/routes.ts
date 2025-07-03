@@ -6216,6 +6216,249 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   );
 
+  // Secure hash-based prepayment access endpoint
+  app.get(
+    "/api/secure/prepayment/:bookingId",
+    async (req, res) => {
+      try {
+        const bookingId = parseInt(req.params.bookingId);
+        const { tenant, restaurant, hash } = req.query;
+        
+        if (!bookingId || !tenant || !restaurant || !hash) {
+          return res.status(400).json({ 
+            message: "Missing required parameters: booking, tenant, restaurant, or hash" 
+          });
+        }
+
+        const tenantId = parseInt(tenant as string);
+        const restaurantId = parseInt(restaurant as string);
+        const providedHash = hash as string;
+
+        // Import BookingHash for verification
+        const { BookingHash } = await import("./booking-hash");
+        
+        // Verify the hash for payment action
+        const isValidHash = BookingHash.verifyHash(
+          providedHash, 
+          bookingId, 
+          tenantId, 
+          restaurantId, 
+          'payment'
+        );
+
+        if (!isValidHash) {
+          return res.status(403).json({ 
+            message: "Invalid or expired payment link" 
+          });
+        }
+
+        // Get booking details
+        const booking = await storage.getBookingById(bookingId);
+        if (!booking || booking.tenantId !== tenantId || booking.restaurantId !== restaurantId) {
+          return res.status(404).json({ message: "Booking not found" });
+        }
+
+        // Check if booking requires payment
+        if (!booking.requiresPayment || !booking.paymentAmount) {
+          return res.status(400).json({ 
+            message: "This booking does not require payment" 
+          });
+        }
+
+        // Check if already paid
+        if (booking.paymentStatus === "paid") {
+          return res.status(400).json({ 
+            message: "This booking has already been paid" 
+          });
+        }
+
+        // Get restaurant details
+        const restaurantDetails = await storage.getRestaurantById(restaurantId);
+        if (!restaurantDetails) {
+          return res.status(404).json({ message: "Restaurant not found" });
+        }
+
+        // Check Stripe Connect status
+        const tenantDetails = await storage.getTenantById(tenantId);
+        if (!tenantDetails?.stripeConnectAccountId || !tenantDetails.stripeConnectChargesEnabled) {
+          return res.status(400).json({ 
+            message: "Payment processing is not available for this restaurant",
+            code: "stripe_connect_not_setup"
+          });
+        }
+
+        const bookingDetails = {
+          ...booking,
+          restaurantName: restaurantDetails.name,
+          stripeConnectReady: true
+        };
+
+        res.json(bookingDetails);
+      } catch (error) {
+        console.error("Error accessing secure prepayment:", error);
+        res.status(500).json({ message: "Internal server error" });
+      }
+    }
+  );
+
+  // Create payment intent for secure prepayment
+  app.post(
+    "/api/secure/prepayment/:bookingId/payment-intent",
+    async (req, res) => {
+      try {
+        const bookingId = parseInt(req.params.bookingId);
+        const { tenant, restaurant, hash, amount, currency = "usd" } = req.body;
+        
+        if (!bookingId || !tenant || !restaurant || !hash) {
+          return res.status(400).json({ 
+            message: "Missing required parameters" 
+          });
+        }
+
+        const tenantId = parseInt(tenant);
+        const restaurantId = parseInt(restaurant);
+
+        // Import BookingHash for verification
+        const { BookingHash } = await import("./booking-hash");
+        
+        // Verify the hash for payment action
+        const isValidHash = BookingHash.verifyHash(
+          hash, 
+          bookingId, 
+          tenantId, 
+          restaurantId, 
+          'payment'
+        );
+
+        if (!isValidHash) {
+          return res.status(403).json({ 
+            message: "Invalid or expired payment link" 
+          });
+        }
+
+        // Get booking details
+        const booking = await storage.getBookingById(bookingId);
+        if (!booking || booking.tenantId !== tenantId || booking.restaurantId !== restaurantId) {
+          return res.status(404).json({ message: "Booking not found" });
+        }
+
+        // Verify booking requires payment
+        if (!booking.requiresPayment || !booking.paymentAmount) {
+          return res.status(400).json({ message: "This booking does not require payment" });
+        }
+
+        // Check if already paid
+        if (booking.paymentStatus === "paid") {
+          return res.status(400).json({ message: "This booking has already been paid" });
+        }
+
+        // Get restaurant and tenant details
+        const restaurantDetails = await storage.getRestaurantById(restaurantId);
+        const tenantDetails = await storage.getTenantById(tenantId);
+
+        if (!tenantDetails?.stripeConnectAccountId || !tenantDetails.stripeConnectChargesEnabled) {
+          return res.status(400).json({ 
+            message: "Payment processing is not set up for this restaurant",
+            code: "stripe_connect_not_setup"
+          });
+        }
+
+        // Create payment intent using PaymentService
+        const { paymentService } = await import("./payment-service");
+        
+        const paymentIntentResult = await paymentService.createBookingPaymentIntent(
+          parseFloat(amount || booking.paymentAmount),
+          currency,
+          tenantDetails.stripeConnectAccountId,
+          {
+            bookingId: booking.id,
+            customerEmail: booking.customerEmail,
+            customerName: booking.customerName,
+            restaurantName: restaurantDetails?.name || "Restaurant",
+            bookingDate: new Date(booking.bookingDate).toISOString().split('T')[0],
+            startTime: booking.startTime,
+            guestCount: booking.guestCount,
+          }
+        );
+
+        // Update booking with payment intent ID
+        await storage.updateBooking(booking.id, {
+          paymentIntentId: paymentIntentResult.paymentIntentId,
+        });
+
+        res.json({
+          clientSecret: paymentIntentResult.clientSecret,
+          amount: paymentIntentResult.amount,
+          currency: paymentIntentResult.currency,
+        });
+      } catch (error) {
+        console.error("Error creating secure payment intent:", error);
+        res.status(500).json({ message: "Failed to create payment intent" });
+      }
+    }
+  );
+
+  // Generate secure payment URL endpoint for booking creation
+  app.post(
+    "/api/tenants/:tenantId/restaurants/:restaurantId/bookings/:bookingId/generate-payment-url",
+    attachUser,
+    validateTenant,
+    async (req, res) => {
+      if (!req.user) {
+        return res.status(401).json({ error: "Not authenticated" });
+      }
+      try {
+        const tenantId = parseInt(req.params.tenantId);
+        const restaurantId = parseInt(req.params.restaurantId);
+        const bookingId = parseInt(req.params.bookingId);
+        const { amount, currency = "usd" } = req.body;
+
+        // Verify user has access to this tenant
+        if (req.user.tenantId !== tenantId) {
+          return res.status(403).json({ message: "Access denied" });
+        }
+
+        // Get booking details
+        const booking = await storage.getBookingById(bookingId);
+        if (!booking || booking.tenantId !== tenantId || booking.restaurantId !== restaurantId) {
+          return res.status(404).json({ message: "Booking not found" });
+        }
+
+        // Check Stripe Connect status
+        const tenantDetails = await storage.getTenantById(tenantId);
+        if (!tenantDetails?.stripeConnectAccountId || !tenantDetails.stripeConnectChargesEnabled) {
+          return res.status(400).json({ 
+            message: "Stripe Connect not configured - payment links cannot be generated",
+            code: "stripe_connect_not_setup"
+          });
+        }
+
+        // Generate secure payment URL
+        const { BookingHash } = await import("./booking-hash");
+        const baseUrl = process.env.BASE_URL || `http://localhost:${process.env.PORT || 5000}`;
+        
+        const paymentUrl = BookingHash.generatePaymentUrl(
+          bookingId,
+          tenantId,
+          restaurantId,
+          parseFloat(amount),
+          currency,
+          baseUrl
+        );
+
+        res.json({
+          paymentUrl,
+          amount: parseFloat(amount),
+          currency,
+          expiresIn: "24 hours" // Payment links don't technically expire but this is for user info
+        });
+      } catch (error) {
+        console.error("Error generating secure payment URL:", error);
+        res.status(500).json({ message: "Failed to generate payment URL" });
+      }
+    }
+  );
+
   // Customer contact restaurant endpoint
   app.post(
     "/api/guest/bookings/:bookingId/contact-restaurant",
