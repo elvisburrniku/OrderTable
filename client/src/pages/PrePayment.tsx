@@ -182,8 +182,8 @@ export default function PrePayment() {
   // Legacy support for old hash-based URLs (to be removed)
   const bookingId = urlParams.get("booking");
   const hash = urlParams.get("hash");
-  const amount = parseFloat(urlParams.get("amount") || "0");
-  const currency = urlParams.get("currency") || "USD";
+  const legacyAmount = parseFloat(urlParams.get("amount") || "0");
+  const legacyCurrency = urlParams.get("currency") || "USD";
 
   // Fetch booking details using secure token endpoint
   const {
@@ -250,6 +250,10 @@ export default function PrePayment() {
     enabled: !!(token || (bookingId && hash)),
     retry: 1,
   });
+
+  // Get amount and currency from booking data (secure token) or URL params (legacy)
+  const amount = booking?.paymentAmount || legacyAmount;
+  const currency = booking?.currency || legacyCurrency || "USD";
 
   // Create payment intent using secure endpoint
   useEffect(() => {
