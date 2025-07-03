@@ -360,11 +360,6 @@ export function PrintOrderForm({
 
           {/* Print Specifications Section */}
           <Card className="bg-white border border-slate-200 shadow-sm mb-6">
-            initial={{ opacity: 0, x: 30 }}
-            animate={{ opacity: 1, x: 0 }}
-            transition={{ duration: 0.8, delay: 0.6 }}
-          >
-            <Card className="bg-white/80 backdrop-blur-xl border-white/20 shadow-2xl">
               <CardHeader className="pb-4">
                 <CardTitle className="flex items-center gap-3 text-xl">
                   <Settings className="w-5 h-5 text-slate-600" />
@@ -584,7 +579,7 @@ export function PrintOrderForm({
                     <div>Rush: {form.watch("rushOrder") ? "Yes (+50%)" : "No"}</div>
                     <div>Delivery: {form.watch("deliveryMethod")}</div>
                   </div>
-                
+                </div>
 
                 {/* Payment Method Selection */}
                 <div>
@@ -598,29 +593,25 @@ export function PrintOrderForm({
                 </div>
 
                 {/* Submit Button */}
-                <motion.div
-                  whileHover={{ scale: 1.02 }}
-                  whileTap={{ scale: 0.98 }}
-                  className="pt-4"
-                >
+                <div className="pt-4">
                   <Button
                     type="submit"
                     disabled={isSubmitting}
                     className="w-full h-14 bg-gradient-to-r from-emerald-600 to-cyan-600 hover:from-emerald-700 hover:to-cyan-700 text-white text-lg font-semibold rounded-xl shadow-lg hover:shadow-xl transition-all duration-300"
                   >
                     {isSubmitting ? (
-                      <motion.div
-                        animate={{ rotate: 360 }}
-                        transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
-                      >
+                      <>
                         <Settings className="w-6 h-6 mr-3" />
-                      
+                        Creating Order...
+                      </>
                     ) : (
-                      <Printer className="w-6 h-6 mr-3" />
+                      <>
+                        <Printer className="w-6 h-6 mr-3" />
+                        Create Order - ${estimatedPrice.toFixed(2)}
+                      </>
                     )}
-                    {isSubmitting ? "Creating Order..." : `Create Order - $${estimatedPrice.toFixed(2)}`}
                   </Button>
-                
+                </div>
               </CardContent>
             </Card>
           
