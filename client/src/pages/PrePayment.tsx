@@ -268,9 +268,15 @@ export default function PrePayment() {
               headers: {
                 "Content-Type": "application/json",
               },
-              body: JSON.stringify({
-                token: token || undefined,
-                hash: hash || undefined,
+              body: JSON.stringify(token ? {
+                token: token,
+                amount: booking.paymentAmount,
+                currency: "usd",
+              } : {
+                hash: hash,
+                tenant: booking.tenantId,
+                restaurant: booking.restaurantId,
+                bookingId: booking.id,
                 amount: booking.paymentAmount,
                 currency: "usd",
               }),
@@ -308,7 +314,7 @@ export default function PrePayment() {
 
       createPaymentIntent();
     }
-  }, [booking, hash]);
+  }, [booking, hash, token]);
 
   const handleRequestNewLink = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -381,8 +387,8 @@ export default function PrePayment() {
     setError(errorMessage);
   };
 
-  // Validate required parameters for secure access
-  if (!bookingId || !hash) {
+  // Validate required parameters for secure access (token or legacy hash system)
+  if (!token && (!bookingId || !hash)) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-red-50 to-rose-100 py-12 px-4">
         <div className="container mx-auto max-w-md">
