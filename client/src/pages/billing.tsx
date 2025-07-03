@@ -32,8 +32,18 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import {
+  Collapsible,
+  CollapsibleContent,
+  CollapsibleTrigger,
+} from "@/components/ui/collapsible";
 import {
   CreditCard,
   Download,
@@ -71,7 +81,7 @@ import { format } from "date-fns";
 import { motion, AnimatePresence } from "framer-motion";
 import { useScrollToTop } from "@/hooks/use-scroll-to-top";
 
-const stripePromise = import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY 
+const stripePromise = import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY
   ? loadStripe(import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY)
   : Promise.resolve(null);
 
@@ -167,8 +177,8 @@ const AddPaymentMethodForm = ({ onSuccess }: { onSuccess: () => void }) => {
   };
 
   return (
-    <motion.form 
-      onSubmit={handleSubmit} 
+    <motion.form
+      onSubmit={handleSubmit}
       className="space-y-6"
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
@@ -235,19 +245,23 @@ const PaymentMethodCard = ({
       whileHover={{ y: -2 }}
       className="group"
     >
-      <Card className={`border transition-all duration-200 hover:shadow-md ${
-        isDefault 
-          ? 'border-gray-900 bg-gray-50' 
-          : 'border-gray-200 hover:border-gray-300 bg-white'
-      }`}>
+      <Card
+        className={`border transition-all duration-200 hover:shadow-md ${
+          isDefault
+            ? "border-gray-900 bg-gray-50"
+            : "border-gray-200 hover:border-gray-300 bg-white"
+        }`}
+      >
         <CardContent className="p-6">
           <div className="flex items-center justify-between">
             <div className="flex items-center space-x-4">
-              <div className={`w-12 h-12 rounded-lg flex items-center justify-center ${
-                isDefault 
-                  ? 'bg-gray-900 text-white' 
-                  : 'bg-gray-100 text-gray-600'
-              }`}>
+              <div
+                className={`w-12 h-12 rounded-lg flex items-center justify-center ${
+                  isDefault
+                    ? "bg-gray-900 text-white"
+                    : "bg-gray-100 text-gray-600"
+                }`}
+              >
                 <CreditCard className="h-6 w-6" />
               </div>
               <div>
@@ -255,7 +269,8 @@ const PaymentMethodCard = ({
                   {brandIcon} •••• {paymentMethod.card.last4}
                 </div>
                 <div className="text-sm text-gray-500">
-                  Expires {paymentMethod.card.exp_month.toString().padStart(2, '0')}/
+                  Expires{" "}
+                  {paymentMethod.card.exp_month.toString().padStart(2, "0")}/
                   {paymentMethod.card.exp_year.toString().slice(-2)}
                 </div>
               </div>
@@ -267,18 +282,18 @@ const PaymentMethodCard = ({
                   Default
                 </Badge>
               ) : (
-                <Button 
-                  variant="outline" 
-                  size="sm" 
+                <Button
+                  variant="outline"
+                  size="sm"
                   onClick={onSetDefault}
                   className="hover:bg-gray-50 transition-colors"
                 >
                   Set Default
                 </Button>
               )}
-              <Button 
-                variant="outline" 
-                size="sm" 
+              <Button
+                variant="outline"
+                size="sm"
                 onClick={onDelete}
                 className="hover:bg-red-50 hover:border-red-200 hover:text-red-600 transition-colors"
               >
@@ -319,7 +334,7 @@ const InvoiceRow = ({ invoice }: { invoice: Invoice }) => {
   };
 
   return (
-    <motion.div 
+    <motion.div
       className="flex items-center justify-between p-6 border border-gray-200 rounded-lg hover:border-gray-300 hover:bg-gray-50 transition-all duration-200 group"
       whileHover={{ y: -1 }}
       initial={{ opacity: 0, y: 10 }}
@@ -327,14 +342,17 @@ const InvoiceRow = ({ invoice }: { invoice: Invoice }) => {
       transition={{ duration: 0.3 }}
     >
       <div className="flex-1">
-        <div className="font-semibold text-gray-900 mb-1">#{invoice.number}</div>
+        <div className="font-semibold text-gray-900 mb-1">
+          #{invoice.number}
+        </div>
         <div className="text-sm text-gray-500 mb-1">
           {formatDate(new Date(invoice.created * 1000))}
         </div>
         {invoice.period_start && invoice.period_end && (
           <div className="text-xs text-gray-400 flex items-center">
             <CalendarIcon className="w-3 h-3 mr-1" />
-            {formatDate(new Date(invoice.period_start * 1000))} - {formatDate(new Date(invoice.period_end * 1000))}
+            {formatDate(new Date(invoice.period_start * 1000))} -{" "}
+            {formatDate(new Date(invoice.period_end * 1000))}
           </div>
         )}
       </div>
@@ -346,7 +364,12 @@ const InvoiceRow = ({ invoice }: { invoice: Invoice }) => {
       </div>
       <div className="flex space-x-2 opacity-60 group-hover:opacity-100 transition-opacity">
         {invoice.hosted_invoice_url && (
-          <Button variant="outline" size="sm" asChild className="hover:bg-gray-50">
+          <Button
+            variant="outline"
+            size="sm"
+            asChild
+            className="hover:bg-gray-50"
+          >
             <a
               href={invoice.hosted_invoice_url}
               target="_blank"
@@ -357,7 +380,12 @@ const InvoiceRow = ({ invoice }: { invoice: Invoice }) => {
           </Button>
         )}
         {invoice.invoice_pdf && (
-          <Button variant="outline" size="sm" asChild className="hover:bg-gray-50">
+          <Button
+            variant="outline"
+            size="sm"
+            asChild
+            className="hover:bg-gray-50"
+          >
             <a
               href={invoice.invoice_pdf}
               target="_blank"
@@ -409,37 +437,43 @@ export default function BillingPage() {
     queryKey: ["/api/subscription-plans"],
   });
 
-  const filteredInvoices = (invoicesData?.invoices || []).filter((invoice: Invoice) => {
-    const matchesSearch = searchTerm === "" || 
-      invoice.number.toLowerCase().includes(searchTerm.toLowerCase());
-    const matchesStatus = statusFilter === "all" || invoice.status === statusFilter;
+  const filteredInvoices = (invoicesData?.invoices || []).filter(
+    (invoice: Invoice) => {
+      const matchesSearch =
+        searchTerm === "" ||
+        invoice.number.toLowerCase().includes(searchTerm.toLowerCase());
+      const matchesStatus =
+        statusFilter === "all" || invoice.status === statusFilter;
 
-    let matchesDate = true;
-    if (dateFilter !== "all") {
-      const invoiceDate = new Date(invoice.created * 1000);
-      const now = new Date();
-      switch (dateFilter) {
-        case "last30":
-          matchesDate = (now.getTime() - invoiceDate.getTime()) <= (30 * 24 * 60 * 60 * 1000);
-          break;
-        case "last90":
-          matchesDate = (now.getTime() - invoiceDate.getTime()) <= (90 * 24 * 60 * 60 * 1000);
-          break;
-        case "thisYear":
-          matchesDate = invoiceDate.getFullYear() === now.getFullYear();
-          break;
+      let matchesDate = true;
+      if (dateFilter !== "all") {
+        const invoiceDate = new Date(invoice.created * 1000);
+        const now = new Date();
+        switch (dateFilter) {
+          case "last30":
+            matchesDate =
+              now.getTime() - invoiceDate.getTime() <= 30 * 24 * 60 * 60 * 1000;
+            break;
+          case "last90":
+            matchesDate =
+              now.getTime() - invoiceDate.getTime() <= 90 * 24 * 60 * 60 * 1000;
+            break;
+          case "thisYear":
+            matchesDate = invoiceDate.getFullYear() === now.getFullYear();
+            break;
+        }
       }
-    }
 
-    return matchesSearch && matchesStatus && matchesDate;
-  });
+      return matchesSearch && matchesStatus && matchesDate;
+    },
+  );
 
   const totalPages = Math.ceil(filteredInvoices.length / itemsPerPage);
   const startIndex = (currentPage - 1) * itemsPerPage;
   const endIndex = startIndex + itemsPerPage;
   const paginatedInvoices = filteredInvoices.slice(startIndex, endIndex);
 
-    const handleViewInvoiceDetails = (invoice: Invoice) => {
+  const handleViewInvoiceDetails = (invoice: Invoice) => {
     setSelectedInvoice(invoice);
     setShowInvoiceModal(true);
   };
@@ -466,9 +500,17 @@ export default function BillingPage() {
           </Badge>
         );
       case "void":
-        return <Badge className="bg-gray-500 text-white font-semibold px-3 py-1">Void</Badge>;
+        return (
+          <Badge className="bg-gray-500 text-white font-semibold px-3 py-1">
+            Void
+          </Badge>
+        );
       default:
-        return <Badge variant="outline" className="font-semibold px-3 py-1">{status}</Badge>;
+        return (
+          <Badge variant="outline" className="font-semibold px-3 py-1">
+            {status}
+          </Badge>
+        );
     }
   };
 
@@ -571,7 +613,8 @@ export default function BillingPage() {
       } else {
         toast({
           title: "Subscription Updated",
-          description: data.message || "Your subscription has been updated successfully",
+          description:
+            data.message || "Your subscription has been updated successfully",
         });
         queryClient.invalidateQueries({ queryKey: ["/api/billing/info"] });
         queryClient.invalidateQueries({
@@ -585,8 +628,12 @@ export default function BillingPage() {
 
       if (errorData.validationFailures) {
         const failures = errorData.validationFailures;
-        const tableFailure = failures.find((f: any) => f.type === "table_limit");
-        const bookingFailure = failures.find((f: any) => f.type === "booking_limit");
+        const tableFailure = failures.find(
+          (f: any) => f.type === "table_limit",
+        );
+        const bookingFailure = failures.find(
+          (f: any) => f.type === "booking_limit",
+        );
 
         let detailedMessage = errorData.message || error.message;
 
@@ -604,7 +651,8 @@ export default function BillingPage() {
           variant: "destructive",
         });
       } else {
-        const message = errorData.message || error.message || "Failed to update subscription";
+        const message =
+          errorData.message || error.message || "Failed to update subscription";
         toast({
           title: "Error",
           description: message,
@@ -623,7 +671,7 @@ export default function BillingPage() {
     return (
       <div className="min-h-screen bg-gray-50">
         <div className="container mx-auto py-8">
-          <motion.div 
+          <motion.div
             className="space-y-6"
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
@@ -647,7 +695,7 @@ export default function BillingPage() {
     <div className="min-h-screen bg-gray-50">
       <div className="container mx-auto py-8 space-y-8">
         {/* Header */}
-        <motion.div 
+        <motion.div
           className="flex items-center justify-between"
           initial={{ opacity: 0, y: -20 }}
           animate={{ opacity: 1, y: 0 }}
@@ -658,7 +706,8 @@ export default function BillingPage() {
               Billing & Subscription
             </h1>
             <p className="text-gray-600 mt-1">
-              Manage your subscription plans, payment methods, and billing history
+              Manage your subscription plans, payment methods, and billing
+              history
             </p>
           </div>
           <div className="flex items-center space-x-2 text-sm text-gray-500">
@@ -682,7 +731,9 @@ export default function BillingPage() {
                       <Crown className="h-5 w-5 text-gray-700" />
                     </div>
                     <div>
-                      <CardTitle className="text-lg">Current Subscription</CardTitle>
+                      <CardTitle className="text-lg">
+                        Current Subscription
+                      </CardTitle>
                       <CardDescription>
                         Restaurant management platform
                       </CardDescription>
@@ -692,7 +743,8 @@ export default function BillingPage() {
                     className={`${
                       subscriptionDetails.tenant.subscriptionStatus === "active"
                         ? "bg-green-50 text-green-700 border-green-200"
-                        : subscriptionDetails.tenant.subscriptionStatus === "trial"
+                        : subscriptionDetails.tenant.subscriptionStatus ===
+                            "trial"
                           ? "bg-blue-50 text-blue-700 border-blue-200"
                           : "bg-red-50 text-red-700 border-red-200"
                     }`}
@@ -716,12 +768,16 @@ export default function BillingPage() {
                   </div>
                   <div className="flex items-center space-x-6">
                     <div className="text-center">
-                      <div className="font-semibold text-gray-900">{subscriptionDetails.usage?.totalTables || 0}</div>
+                      <div className="font-semibold text-gray-900">
+                        {subscriptionDetails.usage?.totalTables || 0}
+                      </div>
                       <div className="text-xs text-gray-500">Tables</div>
                     </div>
                     <Separator orientation="vertical" className="h-8" />
                     <div className="text-center">
-                      <div className="font-semibold text-gray-900">{subscriptionDetails.usage?.bookingsThisMonth || 0}</div>
+                      <div className="font-semibold text-gray-900">
+                        {subscriptionDetails.usage?.bookingsThisMonth || 0}
+                      </div>
                       <div className="text-xs text-gray-500">Bookings</div>
                     </div>
                   </div>
@@ -730,27 +786,33 @@ export default function BillingPage() {
                 {/* Usage Progress */}
                 {subscriptionDetails.plan && (
                   <div className="space-y-4">
-                    <h4 className="font-semibold text-gray-900">Usage & Limits</h4>
+                    <h4 className="font-semibold text-gray-900">
+                      Usage & Limits
+                    </h4>
                     <div className="grid gap-4 md:grid-cols-2">
                       <div className="space-y-2 p-4 bg-gray-50 rounded-lg">
                         <div className="flex justify-between text-sm">
                           <span className="text-gray-600">Tables</span>
                           <span className="font-medium">
-                            {subscriptionDetails.usage?.totalTables || 0} / {subscriptionDetails.plan.maxTables}
+                            {subscriptionDetails.usage?.totalTables || 0} /{" "}
+                            {subscriptionDetails.plan.maxTables}
                           </span>
                         </div>
                         <div className="w-full bg-gray-200 rounded-full h-2">
-                          <motion.div 
+                          <motion.div
                             className={`h-2 rounded-full ${
-                              (subscriptionDetails.usage?.totalTables || 0) >= subscriptionDetails.plan.maxTables 
-                                ? 'bg-red-500' 
-                                : (subscriptionDetails.usage?.totalTables || 0) >= subscriptionDetails.plan.maxTables * 0.8 
-                                  ? 'bg-yellow-500' 
-                                  : 'bg-gray-900'
+                              (subscriptionDetails.usage?.totalTables || 0) >=
+                              subscriptionDetails.plan.maxTables
+                                ? "bg-red-500"
+                                : (subscriptionDetails.usage?.totalTables ||
+                                      0) >=
+                                    subscriptionDetails.plan.maxTables * 0.8
+                                  ? "bg-yellow-500"
+                                  : "bg-gray-900"
                             }`}
                             initial={{ width: 0 }}
-                            animate={{ 
-                              width: `${Math.min(((subscriptionDetails.usage?.totalTables || 0) / subscriptionDetails.plan.maxTables) * 100, 100)}%` 
+                            animate={{
+                              width: `${Math.min(((subscriptionDetails.usage?.totalTables || 0) / subscriptionDetails.plan.maxTables) * 100, 100)}%`,
                             }}
                             transition={{ duration: 1, delay: 0.5 }}
                           />
@@ -758,23 +820,32 @@ export default function BillingPage() {
                       </div>
                       <div className="space-y-2 p-4 bg-gray-50 rounded-lg">
                         <div className="flex justify-between text-sm">
-                          <span className="text-gray-600">Monthly Bookings</span>
+                          <span className="text-gray-600">
+                            Monthly Bookings
+                          </span>
                           <span className="font-medium">
-                            {subscriptionDetails.usage?.bookingsThisMonth || 0} / {subscriptionDetails.plan.maxBookingsPerMonth}
+                            {subscriptionDetails.usage?.bookingsThisMonth || 0}{" "}
+                            / {subscriptionDetails.plan.maxBookingsPerMonth}
                           </span>
                         </div>
                         <div className="w-full bg-gray-200 rounded-full h-2">
-                          <motion.div 
+                          <motion.div
                             className={`h-2 rounded-full ${
-                              (subscriptionDetails.usage?.bookingsThisMonth || 0) >= subscriptionDetails.plan.maxBookingsPerMonth 
-                                ? 'bg-red-500' 
-                                : (subscriptionDetails.usage?.bookingsThisMonth || 0) >= subscriptionDetails.plan.maxBookingsPerMonth * 0.8 
-                                  ? 'bg-yellow-500' 
-                                  : 'bg-gray-900'
+                              (subscriptionDetails.usage?.bookingsThisMonth ||
+                                0) >=
+                              subscriptionDetails.plan.maxBookingsPerMonth
+                                ? "bg-red-500"
+                                : (subscriptionDetails.usage
+                                      ?.bookingsThisMonth || 0) >=
+                                    subscriptionDetails.plan
+                                      .maxBookingsPerMonth *
+                                      0.8
+                                  ? "bg-yellow-500"
+                                  : "bg-gray-900"
                             }`}
                             initial={{ width: 0 }}
-                            animate={{ 
-                              width: `${Math.min(((subscriptionDetails.usage?.bookingsThisMonth || 0) / subscriptionDetails.plan.maxBookingsPerMonth) * 100, 100)}%` 
+                            animate={{
+                              width: `${Math.min(((subscriptionDetails.usage?.bookingsThisMonth || 0) / subscriptionDetails.plan.maxBookingsPerMonth) * 100, 100)}%`,
                             }}
                             transition={{ duration: 1, delay: 0.7 }}
                           />
@@ -786,7 +857,8 @@ export default function BillingPage() {
 
                 {/* Action Buttons */}
                 <div className="flex space-x-3 pt-4 border-t">
-                  {subscriptionDetails.tenant.subscriptionStatus === "active" && (
+                  {subscriptionDetails.tenant.subscriptionStatus ===
+                    "active" && (
                     <Button
                       variant="outline"
                       onClick={() => cancelSubscriptionMutation.mutate()}
@@ -802,32 +874,38 @@ export default function BillingPage() {
                     </Button>
                   )}
 
-                  {subscriptionDetails.tenant.subscriptionStatus === "cancelled" && subscriptionDetails.tenant.subscriptionEndDate && (
-                    <div className="space-y-3 w-full">
-                      <Alert className="border-orange-200 bg-orange-50">
-                        <AlertCircle className="h-4 w-4 text-orange-600" />
-                        <AlertDescription className="text-orange-800">
-                          Your subscription will end on{" "}
-                          {format(
-                            new Date(subscriptionDetails.tenant.subscriptionEndDate),
-                            "MMM dd, yyyy",
+                  {subscriptionDetails.tenant.subscriptionStatus ===
+                    "cancelled" &&
+                    subscriptionDetails.tenant.subscriptionEndDate && (
+                      <div className="space-y-3 w-full">
+                        <Alert className="border-orange-200 bg-orange-50">
+                          <AlertCircle className="h-4 w-4 text-orange-600" />
+                          <AlertDescription className="text-orange-800">
+                            Your subscription will end on{" "}
+                            {format(
+                              new Date(
+                                subscriptionDetails.tenant.subscriptionEndDate,
+                              ),
+                              "MMM dd, yyyy",
+                            )}
+                          </AlertDescription>
+                        </Alert>
+                        <Button
+                          onClick={() =>
+                            reactivateSubscriptionMutation.mutate()
+                          }
+                          disabled={reactivateSubscriptionMutation.isPending}
+                          className="bg-gray-900 hover:bg-gray-800"
+                        >
+                          {reactivateSubscriptionMutation.isPending ? (
+                            <RefreshCw className="w-4 h-4 mr-2 animate-spin" />
+                          ) : (
+                            <CheckCircle className="w-4 h-4 mr-2" />
                           )}
-                        </AlertDescription>
-                      </Alert>
-                      <Button
-                        onClick={() => reactivateSubscriptionMutation.mutate()}
-                        disabled={reactivateSubscriptionMutation.isPending}
-                        className="bg-gray-900 hover:bg-gray-800"
-                      >
-                        {reactivateSubscriptionMutation.isPending ? (
-                          <RefreshCw className="w-4 h-4 mr-2 animate-spin" />
-                        ) : (
-                          <CheckCircle className="w-4 h-4 mr-2" />
-                        )}
-                        Reactivate Subscription
-                      </Button>
-                    </div>
-                  )}
+                          Reactivate Subscription
+                        </Button>
+                      </div>
+                    )}
                 </div>
               </CardContent>
             </Card>
@@ -856,16 +934,17 @@ export default function BillingPage() {
                   <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
                     <AnimatePresence>
                       {subscriptionPlans.map((plan: any, index: number) => {
-                        const isCurrentPlan = subscriptionDetails?.plan?.id === plan.id;
-                        const features = JSON.parse(plan.features || '[]');
+                        const isCurrentPlan =
+                          subscriptionDetails?.plan?.id === plan.id;
+                        const features = JSON.parse(plan.features || "[]");
 
                         return (
-                          <motion.div 
+                          <motion.div
                             key={plan.id}
                             className={`border rounded-lg p-6 transition-all duration-200 ${
-                              isCurrentPlan 
-                                ? 'border-gray-900 bg-gray-50' 
-                                : 'border-gray-200 hover:border-gray-300'
+                              isCurrentPlan
+                                ? "border-gray-900 bg-gray-50"
+                                : "border-gray-200 hover:border-gray-300"
                             }`}
                             initial={{ opacity: 0, y: 20 }}
                             animate={{ opacity: 1, y: 0 }}
@@ -881,36 +960,60 @@ export default function BillingPage() {
                             )}
 
                             <div className="text-center mb-6">
-                              <h3 className="font-semibold text-lg text-gray-900 mb-2">{plan.name}</h3>
+                              <h3 className="font-semibold text-lg text-gray-900 mb-2">
+                                {plan.name}
+                              </h3>
                               <div className="flex items-baseline justify-center mb-2">
                                 <span className="text-3xl font-bold text-gray-900">
                                   ${(plan.price / 100).toFixed(0)}
                                 </span>
-                                <span className="text-gray-500 ml-1">/{plan.interval}</span>
+                                <span className="text-gray-500 ml-1">
+                                  /{plan.interval}
+                                </span>
                               </div>
                             </div>
 
                             <div className="space-y-3 mb-6">
                               <div className="flex items-center justify-between py-2 border-b border-gray-100">
-                                <span className="text-sm text-gray-600">Tables</span>
-                                <span className="font-medium">{plan.maxTables}</span>
+                                <span className="text-sm text-gray-600">
+                                  Tables
+                                </span>
+                                <span className="font-medium">
+                                  {plan.maxTables}
+                                </span>
                               </div>
                               <div className="flex items-center justify-between py-2 border-b border-gray-100">
-                                <span className="text-sm text-gray-600">Bookings/month</span>
-                                <span className="font-medium">{plan.maxBookingsPerMonth}</span>
+                                <span className="text-sm text-gray-600">
+                                  Bookings/month
+                                </span>
+                                <span className="font-medium">
+                                  {plan.maxBookingsPerMonth}
+                                </span>
                               </div>
                             </div>
 
                             {features.length > 0 && (
                               <div className="mb-6">
-                                <div className="text-sm font-medium text-gray-700 mb-3">Features:</div>
+                                <div className="text-sm font-medium text-gray-700 mb-3">
+                                  Features:
+                                </div>
                                 <ul className="space-y-2">
-                                  {features.slice(0, 3).map((feature: string, featureIndex: number) => (
-                                    <li key={featureIndex} className="text-sm text-gray-600 flex items-center">
-                                      <Check className="h-3 w-3 text-gray-400 mr-2 flex-shrink-0" />
-                                      {feature}
-                                    </li>
-                                  ))}
+                                  {features
+                                    .slice(0, 3)
+                                    .map(
+                                      (
+                                        feature: string,
+                                        featureIndex: number,
+                                      ) => (
+                                        <li
+                                          key={featureIndex}
+                                          className="text-sm text-gray-600 flex items-center"
+                                        >
+                                          <Check className="h-3 w-3 text-gray-400 mr-2 flex-shrink-0" />
+                                          {feature}
+                                        </li>
+                                      ),
+                                    )}
                                   {features.length > 3 && (
                                     <li className="text-xs text-gray-500 italic">
                                       +{features.length - 3} more features
@@ -921,9 +1024,11 @@ export default function BillingPage() {
                             )}
 
                             {!isCurrentPlan && (
-                              <Button 
+                              <Button
                                 className="w-full bg-gray-900 hover:bg-gray-800 text-white"
-                                onClick={() => upgradeSubscriptionMutation.mutate(plan.id)}
+                                onClick={() =>
+                                  upgradeSubscriptionMutation.mutate(plan.id)
+                                }
                                 disabled={upgradeSubscriptionMutation.isPending}
                               >
                                 {upgradeSubscriptionMutation.isPending ? (
@@ -980,7 +1085,8 @@ export default function BillingPage() {
                         <span>Add Payment Method</span>
                       </DialogTitle>
                       <DialogDescription>
-                        Your payment information is encrypted and stored securely
+                        Your payment information is encrypted and stored
+                        securely
                       </DialogDescription>
                     </DialogHeader>
                     <Elements stripe={stripePromise}>
@@ -1010,14 +1116,16 @@ export default function BillingPage() {
                           onSetDefault={() =>
                             setDefaultPaymentMethodMutation.mutate(pm.id)
                           }
-                          onDelete={() => deletePaymentMethodMutation.mutate(pm.id)}
+                          onDelete={() =>
+                            deletePaymentMethodMutation.mutate(pm.id)
+                          }
                         />
                       </motion.div>
                     ))}
                   </AnimatePresence>
                 </div>
               ) : (
-                <motion.div 
+                <motion.div
                   className="text-center py-12"
                   initial={{ opacity: 0, scale: 0.95 }}
                   animate={{ opacity: 1, scale: 1 }}
@@ -1026,7 +1134,9 @@ export default function BillingPage() {
                   <div className="w-20 h-20 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
                     <CreditCard className="h-10 w-10 text-gray-400" />
                   </div>
-                  <h3 className="text-lg font-semibold text-gray-900 mb-2">No payment methods</h3>
+                  <h3 className="text-lg font-semibold text-gray-900 mb-2">
+                    No payment methods
+                  </h3>
                   <p className="text-gray-500 mb-6">
                     Add a payment method to manage your subscription
                   </p>
@@ -1067,7 +1177,12 @@ export default function BillingPage() {
                     <div className="flex items-center text-gray-600 mt-1">
                       <CalendarIcon className="w-4 h-4 mr-1" />
                       <span className="text-sm">
-                        Due: {formatDate(new Date(billingInfo.upcomingInvoice.period_end * 1000))}
+                        Due:{" "}
+                        {formatDate(
+                          new Date(
+                            billingInfo.upcomingInvoice.period_end * 1000,
+                          ),
+                        )}
                       </span>
                     </div>
                   </div>
@@ -1100,18 +1215,28 @@ export default function BillingPage() {
                 <div className="flex items-center space-x-4">
                   <Collapsible open={showFilters} onOpenChange={setShowFilters}>
                     <CollapsibleTrigger asChild>
-                      <Button 
-                        variant="outline" 
+                      <Button
+                        variant="outline"
                         className="h-10 px-4 border-2 border-gray-200 hover:border-green-500 hover:bg-green-50 transition-all duration-200 flex items-center space-x-2 font-medium"
                       >
                         <Filter className="w-4 h-4" />
                         <span>Filters</span>
-                        {(statusFilter !== 'all' || dateFilter !== 'all' || searchTerm) && (
+                        {(statusFilter !== "all" ||
+                          dateFilter !== "all" ||
+                          searchTerm) && (
                           <span className="bg-green-500 text-white text-xs px-2 py-0.5 rounded-full ml-1">
-                            {[statusFilter !== 'all', dateFilter !== 'all', searchTerm].filter(Boolean).length}
+                            {
+                              [
+                                statusFilter !== "all",
+                                dateFilter !== "all",
+                                searchTerm,
+                              ].filter(Boolean).length
+                            }
                           </span>
                         )}
-                        <ChevronDown className={`w-4 h-4 transform transition-transform duration-200 ${showFilters ? 'rotate-180' : ''}`} />
+                        <ChevronDown
+                          className={`w-4 h-4 transform transition-transform duration-200 ${showFilters ? "rotate-180" : ""}`}
+                        />
                       </Button>
                     </CollapsibleTrigger>
 
@@ -1120,7 +1245,9 @@ export default function BillingPage() {
                         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                           {/* Search Input */}
                           <div className="relative">
-                            <label className="block text-sm font-medium text-gray-700 mb-2">Search</label>
+                            <label className="block text-sm font-medium text-gray-700 mb-2">
+                              Search
+                            </label>
                             <div className="relative">
                               <Search className="w-4 h-4 text-gray-400 absolute left-3 top-1/2 transform -translate-y-1/2" />
                               <Input
@@ -1134,13 +1261,20 @@ export default function BillingPage() {
 
                           {/* Status Filter */}
                           <div>
-                            <label className="block text-sm font-medium text-gray-700 mb-2">Status</label>
-                            <Select value={statusFilter} onValueChange={setStatusFilter}>
+                            <label className="block text-sm font-medium text-gray-700 mb-2">
+                              Status
+                            </label>
+                            <Select
+                              value={statusFilter}
+                              onValueChange={setStatusFilter}
+                            >
                               <SelectTrigger className="h-11 border-2 border-gray-200 focus:border-green-500 rounded-lg transition-all duration-200">
                                 <SelectValue placeholder="All Status" />
                               </SelectTrigger>
                               <SelectContent className="rounded-lg border-2 border-gray-200">
-                                <SelectItem value="all" className="rounded-md">All Status</SelectItem>
+                                <SelectItem value="all" className="rounded-md">
+                                  All Status
+                                </SelectItem>
                                 <SelectItem value="paid" className="rounded-md">
                                   <div className="flex items-center space-x-2">
                                     <div className="w-2 h-2 bg-green-500 rounded-full"></div>
@@ -1165,26 +1299,42 @@ export default function BillingPage() {
 
                           {/* Date Filter */}
                           <div>
-                            <label className="block text-sm font-medium text-gray-700 mb-2">Time Period</label>
-                            <Select value={dateFilter} onValueChange={setDateFilter}>
+                            <label className="block text-sm font-medium text-gray-700 mb-2">
+                              Time Period
+                            </label>
+                            <Select
+                              value={dateFilter}
+                              onValueChange={setDateFilter}
+                            >
                               <SelectTrigger className="h-11 border-2 border-gray-200 focus:border-green-500 rounded-lg transition-all duration-200">
                                 <SelectValue placeholder="All Time" />
                               </SelectTrigger>
                               <SelectContent className="rounded-lg border-2 border-gray-200">
-                                <SelectItem value="all" className="rounded-md">All Time</SelectItem>
-                                <SelectItem value="last30" className="rounded-md">
+                                <SelectItem value="all" className="rounded-md">
+                                  All Time
+                                </SelectItem>
+                                <SelectItem
+                                  value="last30"
+                                  className="rounded-md"
+                                >
                                   <div className="flex items-center space-x-2">
                                     <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
                                     <span>Last 30 Days</span>
                                   </div>
                                 </SelectItem>
-                                <SelectItem value="last90" className="rounded-md">
+                                <SelectItem
+                                  value="last90"
+                                  className="rounded-md"
+                                >
                                   <div className="flex items-center space-x-2">
                                     <div className="w-2 h-2 bg-purple-500 rounded-full"></div>
                                     <span>Last 90 Days</span>
                                   </div>
                                 </SelectItem>
-                                <SelectItem value="thisYear" className="rounded-md">
+                                <SelectItem
+                                  value="thisYear"
+                                  className="rounded-md"
+                                >
                                   <div className="flex items-center space-x-2">
                                     <div className="w-2 h-2 bg-orange-500 rounded-full"></div>
                                     <span>This Year</span>
@@ -1196,7 +1346,9 @@ export default function BillingPage() {
                         </div>
 
                         {/* Filter Actions */}
-                        {(statusFilter !== 'all' || dateFilter !== 'all' || searchTerm) && (
+                        {(statusFilter !== "all" ||
+                          dateFilter !== "all" ||
+                          searchTerm) && (
                           <div className="flex items-center justify-between mt-4 pt-4 border-t border-gray-200">
                             <div className="flex items-center space-x-2 text-sm text-gray-600">
                               <span>Active filters:</span>
@@ -1205,12 +1357,12 @@ export default function BillingPage() {
                                   Search: "{searchTerm}"
                                 </span>
                               )}
-                              {statusFilter !== 'all' && (
+                              {statusFilter !== "all" && (
                                 <span className="bg-blue-100 text-blue-800 px-2 py-1 rounded-md text-xs font-medium">
                                   Status: {statusFilter}
                                 </span>
                               )}
-                              {dateFilter !== 'all' && (
+                              {dateFilter !== "all" && (
                                 <span className="bg-purple-100 text-purple-800 px-2 py-1 rounded-md text-xs font-medium">
                                   Date: {dateFilter}
                                 </span>
@@ -1236,173 +1388,205 @@ export default function BillingPage() {
                 </div>
               </div>
 
-            {/* Invoice Table with Bookings-style Design */}
-            <motion.div 
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.5, delay: 0.7 }}
-              className="bg-white rounded-xl border-2 border-gray-100 overflow-hidden shadow-sm mt-6 mx-4"
-            >
-              <div className="overflow-x-auto">
-                <table className="w-full">
-                  <thead>
-                    <tr className="bg-gray-50 border-b border-gray-200">
-                      <th className="text-left py-3 px-4 text-xs font-medium text-gray-500 uppercase tracking-wider">
-                        Invoice ID
-                      </th>
-                      <th className="text-left py-3 px-4 text-xs font-medium text-gray-500 uppercase tracking-wider">
-                        Amount
-                      </th>
-                      <th className="text-left py-3 px-4 text-xs font-medium text-gray-500 uppercase tracking-wider">
-                        Status
-                      </th>
-                      <th className="text-left py-3 px-4 text-xs font-medium text-gray-500 uppercase tracking-wider">
-                        Date Created
-                      </th>
-                      <th className="text-left py-3 px-4 text-xs font-medium text-gray-500 uppercase tracking-wider">
-                        Service Period
-                      </th>
-                      <th className="text-left py-3 px-4 text-xs font-medium text-gray-500 uppercase tracking-wider">
-                        Actions
-                      </th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-gray-100">
-                    {invoicesLoading ? (
-                      <tr>
-                        <td colSpan={6} className="py-12 text-center">
-                          <div className="flex flex-col items-center space-y-4">
-                            <div className="animate-spin rounded-full h-8 w-8 border-2 border-green-500 border-t-transparent"></div>
-                            <span className="text-gray-500 font-medium">Loading invoices...</span>
-                          </div>
-                        </td>
+              {/* Invoice Table with Bookings-style Design */}
+              <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.5, delay: 0.7 }}
+                className="bg-white rounded-xl border-2 border-gray-100 overflow-hidden shadow-sm mt-6 "
+              >
+                <div className="overflow-x-auto">
+                  <table className="w-full">
+                    <thead>
+                      <tr className="bg-gray-50 border-b border-gray-200">
+                        <th className="text-left py-3 px-4 text-xs font-medium text-gray-500 uppercase tracking-wider">
+                          Invoice ID
+                        </th>
+                        <th className="text-left py-3 px-4 text-xs font-medium text-gray-500 uppercase tracking-wider">
+                          Amount
+                        </th>
+                        <th className="text-left py-3 px-4 text-xs font-medium text-gray-500 uppercase tracking-wider">
+                          Status
+                        </th>
+                        <th className="text-left py-3 px-4 text-xs font-medium text-gray-500 uppercase tracking-wider">
+                          Date Created
+                        </th>
+                        <th className="text-left py-3 px-4 text-xs font-medium text-gray-500 uppercase tracking-wider">
+                          Service Period
+                        </th>
+                        <th className="text-left py-3 px-4 text-xs font-medium text-gray-500 uppercase tracking-wider">
+                          Actions
+                        </th>
                       </tr>
-                    ) : paginatedInvoices.length === 0 ? (
-                      <tr>
-                        <td colSpan={6} className="py-12 text-center">
-                          <div className="flex flex-col items-center space-y-4">
-                            <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center">
-                              <FileText className="w-8 h-8 text-gray-400" />
-                            </div>
-                            <div>
-                              <h3 className="text-gray-900 font-medium">No invoices found</h3>
-                              <p className="text-gray-500 text-sm mt-1">
-                                {searchTerm || statusFilter !== 'all' || dateFilter !== 'all' 
-                                  ? "Try adjusting your filters" 
-                                  : "Your invoices will appear here"}
-                              </p>
-                            </div>
-                          </div>
-                        </td>
-                      </tr>
-                    ) : (
-                      paginatedInvoices.map((invoice: Invoice, index: number) => (
-                        <motion.tr 
-                          key={invoice.id}
-                          initial={{ opacity: 0, y: 10 }}
-                          animate={{ opacity: 1, y: 0 }}
-                          transition={{ duration: 0.3, delay: index * 0.05 }}
-                          className={`group hover:bg-blue-50 transition-all duration-200 cursor-pointer ${
-                            index % 2 === 0 ? 'bg-white' : 'bg-gray-50/50'
-                          }`}
-                          onClick={() => handleViewInvoiceDetails(invoice)}
-                        >
-                          <td className="py-3 px-4">
-                            <div className="flex items-center">
-                              <span className="text-blue-600 font-semibold text-sm">
-                                #{invoice.number}
+                    </thead>
+                    <tbody className="divide-y divide-gray-100">
+                      {invoicesLoading ? (
+                        <tr>
+                          <td colSpan={6} className="py-12 text-center">
+                            <div className="flex flex-col items-center space-y-4">
+                              <div className="animate-spin rounded-full h-8 w-8 border-2 border-green-500 border-t-transparent"></div>
+                              <span className="text-gray-500 font-medium">
+                                Loading invoices...
                               </span>
                             </div>
                           </td>
-                          <td className="py-3 px-4">
-                            <div className="space-y-1">
-                              <div className="font-semibold text-gray-900">
-                                {formatCurrency(invoice.amount_paid)}
+                        </tr>
+                      ) : paginatedInvoices.length === 0 ? (
+                        <tr>
+                          <td colSpan={6} className="py-12 text-center">
+                            <div className="flex flex-col items-center space-y-4">
+                              <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center">
+                                <FileText className="w-8 h-8 text-gray-400" />
+                              </div>
+                              <div>
+                                <h3 className="text-gray-900 font-medium">
+                                  No invoices found
+                                </h3>
+                                <p className="text-gray-500 text-sm mt-1">
+                                  {searchTerm ||
+                                  statusFilter !== "all" ||
+                                  dateFilter !== "all"
+                                    ? "Try adjusting your filters"
+                                    : "Your invoices will appear here"}
+                                </p>
                               </div>
                             </div>
                           </td>
-                          <td className="py-3 px-4">
-                            {(() => {
-                              const getStatusBadge = (status: string) => {
-                                switch (status) {
-                                  case "paid":
-                                    return (
-                                      <span className="bg-green-500 text-white px-2 py-1 rounded-full text-xs font-medium">
-                                        Paid
-                                      </span>
-                                    );
-                                  case "open":
-                                    return (
-                                      <span className="bg-yellow-500 text-white px-2 py-1 rounded-full text-xs font-medium">
-                                        Open
-                                      </span>
-                                    );
-                                  case "void":
-                                    return <span className="bg-gray-500 text-white px-2 py-1 rounded-full text-xs font-medium">Void</span>;
-                                  default:
-                                    return <span className="bg-gray-500 text-white px-2 py-1 rounded-full text-xs font-medium">{status}</span>;
-                                }
-                              };
-                              return getStatusBadge(invoice.status);
-                            })()}
-                          </td>
-                          <td className="py-3 px-4">
-                            <div className="text-gray-900">
-                              {format(new Date(invoice.created * 1000), "M/d/yyyy")}
-                            </div>
-                          </td>
-                          <td className="py-3 px-4">
-                            {invoice.period_start && invoice.period_end ? (
-                              <div className="text-sm text-gray-600">
-                                {format(new Date(invoice.period_start * 1000), "M/d/yyyy")} - {format(new Date(invoice.period_end * 1000), "M/d/yyyy")}
-                              </div>
-                            ) : (
-                              <span className="text-sm text-gray-400">-</span>
-                            )}
-                          </td>
-                          <td className="py-3 px-4">
-                            <div className="flex items-center space-x-2">
-                              <Button
-                                variant="outline"
-                                size="sm"
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  handleViewInvoiceDetails(invoice);
-                                }}
-                                className="h-8 w-8 p-0"
-                              >
-                                <Eye className="h-4 w-4" />
-                              </Button>
-                              {invoice.invoice_pdf && (
-                                <Button 
-                                  variant="outline" 
-                                  size="sm" 
-                                  asChild 
-                                  className="h-8 w-8 p-0"
-                                  onClick={(e) => e.stopPropagation()}
-                                >
-                                  <a
-                                    href={invoice.invoice_pdf}
-                                    target="_blank"
-                                    rel="noopener noreferrer"
+                        </tr>
+                      ) : (
+                        paginatedInvoices.map(
+                          (invoice: Invoice, index: number) => (
+                            <motion.tr
+                              key={invoice.id}
+                              initial={{ opacity: 0, y: 10 }}
+                              animate={{ opacity: 1, y: 0 }}
+                              transition={{
+                                duration: 0.3,
+                                delay: index * 0.05,
+                              }}
+                              className={`group hover:bg-blue-50 transition-all duration-200 cursor-pointer ${
+                                index % 2 === 0 ? "bg-white" : "bg-gray-50/50"
+                              }`}
+                              onClick={() => handleViewInvoiceDetails(invoice)}
+                            >
+                              <td className="py-3 px-4">
+                                <div className="flex items-center">
+                                  <span className="text-blue-600 font-semibold text-sm">
+                                    #{invoice.number}
+                                  </span>
+                                </div>
+                              </td>
+                              <td className="py-3 px-4">
+                                <div className="space-y-1">
+                                  <div className="font-semibold text-gray-900">
+                                    {formatCurrency(invoice.amount_paid)}
+                                  </div>
+                                </div>
+                              </td>
+                              <td className="py-3 px-4">
+                                {(() => {
+                                  const getStatusBadge = (status: string) => {
+                                    switch (status) {
+                                      case "paid":
+                                        return (
+                                          <span className="bg-green-500 text-white px-2 py-1 rounded-full text-xs font-medium">
+                                            Paid
+                                          </span>
+                                        );
+                                      case "open":
+                                        return (
+                                          <span className="bg-yellow-500 text-white px-2 py-1 rounded-full text-xs font-medium">
+                                            Open
+                                          </span>
+                                        );
+                                      case "void":
+                                        return (
+                                          <span className="bg-gray-500 text-white px-2 py-1 rounded-full text-xs font-medium">
+                                            Void
+                                          </span>
+                                        );
+                                      default:
+                                        return (
+                                          <span className="bg-gray-500 text-white px-2 py-1 rounded-full text-xs font-medium">
+                                            {status}
+                                          </span>
+                                        );
+                                    }
+                                  };
+                                  return getStatusBadge(invoice.status);
+                                })()}
+                              </td>
+                              <td className="py-3 px-4">
+                                <div className="text-gray-900">
+                                  {format(
+                                    new Date(invoice.created * 1000),
+                                    "M/d/yyyy",
+                                  )}
+                                </div>
+                              </td>
+                              <td className="py-3 px-4">
+                                {invoice.period_start && invoice.period_end ? (
+                                  <div className="text-sm text-gray-600">
+                                    {format(
+                                      new Date(invoice.period_start * 1000),
+                                      "M/d/yyyy",
+                                    )}{" "}
+                                    -{" "}
+                                    {format(
+                                      new Date(invoice.period_end * 1000),
+                                      "M/d/yyyy",
+                                    )}
+                                  </div>
+                                ) : (
+                                  <span className="text-sm text-gray-400">
+                                    -
+                                  </span>
+                                )}
+                              </td>
+                              <td className="py-3 px-4">
+                                <div className="flex items-center space-x-2">
+                                  <Button
+                                    variant="outline"
+                                    size="sm"
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      handleViewInvoiceDetails(invoice);
+                                    }}
+                                    className="h-8 w-8 p-0"
                                   >
-                                    <Download className="h-3 w-3" />
-                                  </a>
-                                </Button>
-                              )}
-                            </div>
-                          </td>
-                        </motion.tr>
-                      ))
-                    )}
-                  </tbody>
-                </table>
-              </div>
-            </motion.div>
+                                    <Eye className="h-4 w-4" />
+                                  </Button>
+                                  {invoice.invoice_pdf && (
+                                    <Button
+                                      variant="outline"
+                                      size="sm"
+                                      asChild
+                                      className="h-8 w-8 p-0"
+                                      onClick={(e) => e.stopPropagation()}
+                                    >
+                                      <a
+                                        href={invoice.invoice_pdf}
+                                        target="_blank"
+                                        rel="noopener noreferrer"
+                                      >
+                                        <Download className="h-3 w-3" />
+                                      </a>
+                                    </Button>
+                                  )}
+                                </div>
+                              </td>
+                            </motion.tr>
+                          ),
+                        )
+                      )}
+                    </tbody>
+                  </table>
+                </div>
+              </motion.div>
 
               {/* Pagination */}
               {totalPages > 1 && (
-                <motion.div 
+                <motion.div
                   initial={{ opacity: 0, y: 10 }}
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ duration: 0.5, delay: 0.8 }}
@@ -1432,7 +1616,9 @@ export default function BillingPage() {
 
                   <div className="flex items-center space-x-4">
                     <div className="text-sm text-gray-600">
-                      {startIndex + 1}-{Math.min(endIndex, filteredInvoices.length)} of {filteredInvoices.length}
+                      {startIndex + 1}-
+                      {Math.min(endIndex, filteredInvoices.length)} of{" "}
+                      {filteredInvoices.length}
                     </div>
 
                     <div className="flex items-center space-x-2">
@@ -1457,34 +1643,41 @@ export default function BillingPage() {
 
                       {/* Page Numbers */}
                       <div className="flex items-center space-x-1">
-                        {Array.from({ length: Math.min(3, totalPages) }, (_, i) => {
-                          let pageNum;
-                          if (totalPages <= 3) {
-                            pageNum = i + 1;
-                          } else if (currentPage <= 2) {
-                            pageNum = i + 1;
-                          } else if (currentPage >= totalPages - 1) {
-                            pageNum = totalPages - 2 + i;
-                          } else {
-                            pageNum = currentPage - 1 + i;
-                          }
+                        {Array.from(
+                          { length: Math.min(3, totalPages) },
+                          (_, i) => {
+                            let pageNum;
+                            if (totalPages <= 3) {
+                              pageNum = i + 1;
+                            } else if (currentPage <= 2) {
+                              pageNum = i + 1;
+                            } else if (currentPage >= totalPages - 1) {
+                              pageNum = totalPages - 2 + i;
+                            } else {
+                              pageNum = currentPage - 1 + i;
+                            }
 
-                          return (
-                            <Button
-                              key={pageNum}
-                              variant={currentPage === pageNum ? "default" : "outline"}
-                              size="sm"
-                              onClick={() => setCurrentPage(pageNum)}
-                              className={`w-8 h-8 p-0 ${
-                                currentPage === pageNum 
-                                  ? "bg-green-600 hover:bg-green-700 text-white" 
-                                  : "hover:bg-green-50"
-                              }`}
-                            >
-                              {pageNum}
-                            </Button>
-                          );
-                        })}
+                            return (
+                              <Button
+                                key={pageNum}
+                                variant={
+                                  currentPage === pageNum
+                                    ? "default"
+                                    : "outline"
+                                }
+                                size="sm"
+                                onClick={() => setCurrentPage(pageNum)}
+                                className={`w-8 h-8 p-0 ${
+                                  currentPage === pageNum
+                                    ? "bg-green-600 hover:bg-green-700 text-white"
+                                    : "hover:bg-green-50"
+                                }`}
+                              >
+                                {pageNum}
+                              </Button>
+                            );
+                          },
+                        )}
                       </div>
 
                       <Button
@@ -1512,7 +1705,7 @@ export default function BillingPage() {
             </CardContent>
           </Card>
         </motion.div>
-                {/* Enhanced Invoice Detail Modal */}
+        {/* Enhanced Invoice Detail Modal */}
         <Dialog open={showInvoiceModal} onOpenChange={setShowInvoiceModal}>
           <DialogContent className="sm:max-w-[800px] max-h-[90vh] overflow-y-auto">
             <DialogHeader>
@@ -1536,36 +1729,60 @@ export default function BillingPage() {
                   <CardContent className="space-y-6 p-8">
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                       <div className="space-y-3">
-                        <label className="text-sm font-bold text-gray-600 uppercase tracking-wider">Invoice Number</label>
-                        <p className="text-2xl font-bold text-gray-900">#{selectedInvoice.number}</p>
+                        <label className="text-sm font-bold text-gray-600 uppercase tracking-wider">
+                          Invoice Number
+                        </label>
+                        <p className="text-2xl font-bold text-gray-900">
+                          #{selectedInvoice.number}
+                        </p>
                       </div>
                       <div className="space-y-3">
-                        <label className="text-sm font-bold text-gray-600 uppercase tracking-wider">Amount</label>
+                        <label className="text-sm font-bold text-gray-600 uppercase tracking-wider">
+                          Amount
+                        </label>
                         <p className="text-2xl font-bold text-gray-900">
                           {formatCurrency(selectedInvoice.amount_paid)}
                         </p>
                       </div>
                       <div className="space-y-3">
-                        <label className="text-sm font-bold text-gray-600 uppercase tracking-wider">Status</label>
-                        <div className="mt-2">{getInvoiceStatusBadge(selectedInvoice.status)}</div>
+                        <label className="text-sm font-bold text-gray-600 uppercase tracking-wider">
+                          Status
+                        </label>
+                        <div className="mt-2">
+                          {getInvoiceStatusBadge(selectedInvoice.status)}
+                        </div>
                       </div>
                       <div className="space-y-3">
-                        <label className="text-sm font-bold text-gray-600 uppercase tracking-wider">Created</label>
+                        <label className="text-sm font-bold text-gray-600 uppercase tracking-wider">
+                          Created
+                        </label>
                         <p className="text-2xl font-bold text-gray-900">
                           {formatDate(new Date(selectedInvoice.created * 1000))}
                         </p>
                       </div>
-                      {selectedInvoice.period_start && selectedInvoice.period_end && (
-                        <div className="space-y-3 md:col-span-2">
-                          <label className="text-sm font-bold text-gray-600 uppercase tracking-wider">Service Period</label>
-                          <p className="text-lg text-gray-900 font-semibold">
-                            {formatDate(new Date(selectedInvoice.period_start * 1000))} - {formatDate(new Date(selectedInvoice.period_end * 1000))}
-                          </p>
-                        </div>
-                      )}
-                      {selectedInvoice.amount_due !== selectedInvoice.amount_paid && (
+                      {selectedInvoice.period_start &&
+                        selectedInvoice.period_end && (
+                          <div className="space-y-3 md:col-span-2">
+                            <label className="text-sm font-bold text-gray-600 uppercase tracking-wider">
+                              Service Period
+                            </label>
+                            <p className="text-lg text-gray-900 font-semibold">
+                              {formatDate(
+                                new Date(selectedInvoice.period_start * 1000),
+                              )}{" "}
+                              -{" "}
+                              {formatDate(
+                                new Date(selectedInvoice.period_end * 1000),
+                              )}
+                            </p>
+                          </div>
+                        )}
+                      {selectedInvoice.amount_due !==
+                        selectedInvoice.amount_paid && (
                         <div className="space-y-3">
-                          <label className="text-sm font-bold text-gray-600 uppercase tracking-wider">Amount Due</label>
+                          <label className="text-sm font-bold text-gray-600 uppercase tracking-wider">
+                            Amount Due
+                          </label>
                           <p className="text-2xl font-bold text-red-600">
                             {formatCurrency(selectedInvoice.amount_due)}
                           </p>
@@ -1578,7 +1795,10 @@ export default function BillingPage() {
                 {/* Actions */}
                 <div className="flex gap-4 pt-4">
                   {selectedInvoice.hosted_invoice_url && (
-                    <Button asChild className="flex items-center gap-3 bg-gradient-to-r from-blue-500 to-purple-500 hover:from-blue-600 hover:to-purple-600 rounded-xl px-6 py-3">
+                    <Button
+                      asChild
+                      className="flex items-center gap-3 bg-gradient-to-r from-blue-500 to-purple-500 hover:from-blue-600 hover:to-purple-600 rounded-xl px-6 py-3"
+                    >
                       <a
                         href={selectedInvoice.hosted_invoice_url}
                         target="_blank"
@@ -1590,7 +1810,11 @@ export default function BillingPage() {
                     </Button>
                   )}
                   {selectedInvoice.invoice_pdf && (
-                    <Button variant="outline" asChild className="flex items-center gap-3 hover:bg-green-50 hover:border-green-300 rounded-xl px-6 py-3">
+                    <Button
+                      variant="outline"
+                      asChild
+                      className="flex items-center gap-3 hover:bg-green-50 hover:border-green-300 rounded-xl px-6 py-3"
+                    >
                       <a
                         href={selectedInvoice.invoice_pdf}
                         target="_blank"
@@ -1601,7 +1825,11 @@ export default function BillingPage() {
                       </a>
                     </Button>
                   )}
-                  <Button onClick={handleCloseInvoiceModal} variant="outline" className="flex-1 rounded-xl">
+                  <Button
+                    onClick={handleCloseInvoiceModal}
+                    variant="outline"
+                    className="flex-1 rounded-xl"
+                  >
                     Close
                   </Button>
                 </div>
