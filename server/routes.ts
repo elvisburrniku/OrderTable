@@ -52,7 +52,7 @@ import {
   subscriptionPlans,
   surveyResponses,
 } from "@shared/schema";
-import { eq, and, desc, sql } from "drizzle-orm";
+import { eq, and, desc, sql, inArray } from "drizzle-orm";
 import {
   requirePermission,
   requireAnyPermission,
@@ -19112,32 +19112,147 @@ NEXT STEPS:
         if (bookings.length > 0) {
           const booking = bookings[0];
 
-          // Update booking payment status
-          await storage.updateBooking(booking.id, {
+          // Update booking payment status and confirm booking if payment was required
+          const updateData: any = {
             paymentStatus: "paid",
             paymentPaidAt: new Date(),
-          });
+          };
+
+          // If payment was required and booking wasn't confirmed yet, confirm it
+          if (booking.requiresPayment && booking.status !== "confirmed") {
+            updateData.status = "confirmed";
+          }
+
+          await storage.updateBooking(booking.id, updateData);
 
           console.log(`Payment confirmed for booking ${booking.id}`);
 
-          // Send payment confirmation email
-          if (emailService && booking.customerEmail) {
+          // Get restaurant and tenant details for notifications
+          const restaurant = await storage.getRestaurantById(booking.restaurantId);
+          const tenant = await storage.getTenantById(booking.tenantId);
+
+          // Log the payment completion
+          const activityLogger = await import("./activity-logger");
+          await activityLogger.logActivity({
+            restaurantId: booking.restaurantId,
+            tenantId: booking.tenantId,
+            eventType: "booking_payment_completed",
+            description: `Payment completed for booking ${booking.id} - ${booking.customerName} ($${(paymentIntent.amount / 100).toFixed(2)})`,
+            source: "payment_system",
+            bookingId: booking.id,
+            details: {
+              paymentIntentId: paymentIntent.id,
+              amount: paymentIntent.amount / 100,
+              currency: paymentIntent.currency,
+              previousStatus: booking.status,
+              newStatus: updateData.status || booking.status,
+              paymentMethod: paymentIntent.payment_method,
+            },
+          });
+
+          // Send notifications and emails
+          if (emailService) {
             try {
-              await emailService.sendPaymentConfirmation(
-                booking.customerEmail,
-                booking.customerName,
-                {
-                  bookingId: booking.id,
-                  amount: paymentIntent.amount / 100, // Convert from cents
-                  currency: paymentIntent.currency.toUpperCase(),
-                },
-              );
+              // Send payment confirmation email to customer
+              if (booking.customerEmail) {
+                await emailService.sendPaymentConfirmation(
+                  booking.customerEmail,
+                  booking.customerName,
+                  {
+                    bookingId: booking.id,
+                    amount: paymentIntent.amount / 100, // Convert from cents
+                    currency: paymentIntent.currency.toUpperCase(),
+                    restaurantName: restaurant?.name,
+                  },
+                );
+                console.log(`Payment confirmation email sent to customer: ${booking.customerEmail}`);
+              }
+
+              // Send payment notification to restaurant (owners and managers)
+              if (restaurant?.email) {
+                await emailService.sendPaymentNotificationToRestaurant(
+                  restaurant.email,
+                  {
+                    bookingId: booking.id,
+                    amount: paymentIntent.amount / 100,
+                    currency: paymentIntent.currency.toUpperCase(),
+                    customerName: booking.customerName,
+                    restaurantName: restaurant.name,
+                    bookingDate: new Date(booking.bookingDate).toLocaleDateString(),
+                    bookingTime: booking.startTime,
+                    guestCount: booking.guestCount,
+                  },
+                );
+                console.log(`Payment notification email sent to restaurant: ${restaurant.email}`);
+              }
+
+              // Send notifications to all owners and managers of the restaurant
+              try {
+                const restaurantUsers = await storage.db
+                  .select({
+                    user: storage.users,
+                    role: storage.roles.name,
+                  })
+                  .from(storage.tenantUsers)
+                  .innerJoin(storage.users, eq(storage.tenantUsers.userId, storage.users.id))
+                  .innerJoin(storage.roles, eq(storage.tenantUsers.roleId, storage.roles.id))
+                  .where(
+                    and(
+                      eq(storage.tenantUsers.tenantId, booking.tenantId),
+                      inArray(storage.roles.name, ['owner', 'manager'])
+                    )
+                  );
+
+                for (const userRole of restaurantUsers) {
+                  if (userRole.user.email && userRole.user.email !== restaurant?.email) {
+                    await emailService.sendPaymentNotificationToRestaurant(
+                      userRole.user.email,
+                      {
+                        bookingId: booking.id,
+                        amount: paymentIntent.amount / 100,
+                        currency: paymentIntent.currency.toUpperCase(),
+                        customerName: booking.customerName,
+                        restaurantName: restaurant?.name || 'Restaurant',
+                        bookingDate: new Date(booking.bookingDate).toLocaleDateString(),
+                        bookingTime: booking.startTime,
+                        guestCount: booking.guestCount,
+                      },
+                    );
+                    console.log(`Payment notification sent to ${userRole.role}: ${userRole.user.email}`);
+                  }
+                }
+              } catch (userNotificationError) {
+                console.error("Error sending payment notifications to restaurant users:", userNotificationError);
+              }
+
             } catch (emailError) {
               console.error(
-                "Failed to send payment confirmation email:",
+                "Failed to send payment confirmation emails:",
                 emailError,
               );
             }
+          }
+
+          // Send in-app notifications to restaurant staff
+          try {
+            const notificationService = await import("./notification-service");
+            await notificationService.createNotification({
+              tenantId: booking.tenantId,
+              restaurantId: booking.restaurantId,
+              type: "payment_received",
+              title: "Payment Received",
+              message: `Payment of $${(paymentIntent.amount / 100).toFixed(2)} received for booking #${booking.id} by ${booking.customerName}`,
+              data: {
+                bookingId: booking.id,
+                paymentAmount: paymentIntent.amount / 100,
+                customerName: booking.customerName,
+                paymentIntentId: paymentIntent.id,
+              },
+              priority: "high",
+            });
+            console.log(`In-app notification created for payment received on booking ${booking.id}`);
+          } catch (notificationError) {
+            console.error("Error creating in-app notification:", notificationError);
           }
         }
       } catch (error) {
