@@ -500,16 +500,16 @@ export default function PrintOrders() {
                   </div>
                 </div>
 
-                {/* Filters Section - Matching Design */}
-                <div className="bg-gray-50 rounded-lg p-4 border border-gray-200">
+                {/* Filters Section - Invoice History Style */}
+                <div className="space-y-4">
                   {/* Filters Header */}
-                  <div className="flex items-center gap-2 mb-4">
+                  <div className="flex items-center gap-2">
                     <Filter className="w-4 h-4 text-gray-600" />
                     <span className="text-sm font-medium text-gray-700">Filters</span>
                     <ChevronDown className="w-4 h-4 text-gray-600" />
                   </div>
 
-                  {/* Filter Controls */}
+                  {/* Filter Controls Row */}
                   <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                     {/* Search Input */}
                     <div className="space-y-2">
