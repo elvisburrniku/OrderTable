@@ -569,7 +569,7 @@ export default function BookingDetail() {
                           <span className="w-4 h-4 mr-3 mt-1 text-gray-400">$</span>
                           <div>
                             <p className="text-xs text-gray-500 uppercase tracking-wide font-medium">Amount</p>
-                            <p className="font-semibold text-gray-900">${booking.paymentAmount?.toFixed(2) || '0.00'}</p>
+                            <p className="font-semibold text-gray-900">${typeof booking.paymentAmount === 'number' ? booking.paymentAmount.toFixed(2) : '0.00'}</p>
                           </div>
                         </div>
                         <div className="flex items-start">
