@@ -169,6 +169,7 @@ export default function MenuOrderingService({
               <p className="text-xs text-slate-600 text-center">{feature.description}</p>
             </div>
           ))}
+        </div>
         
 
         {/* Main Content Grid */}
