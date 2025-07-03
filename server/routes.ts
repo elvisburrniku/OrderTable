@@ -6666,23 +6666,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
         const updatedBooking = await storage.updateBooking(bookingId, updateData);
 
-        // Log the status change
-        const activityLogger = await import("./activity-logger");
-        await activityLogger.logActivity({
-          restaurantId: booking.restaurantId,
-          tenantId: booking.tenantId,
-          eventType: "booking_payment_completed",
-          description: `Payment completed for booking ${bookingId} - ${booking.customerName}`,
-          source: "payment_system",
-          bookingId: bookingId,
-          details: {
-            previousStatus: booking.status,
-            newStatus: updateData.status,
-            previousPaymentStatus: booking.paymentStatus,
-            newPaymentStatus: paymentStatus,
-            paymentAmount: booking.paymentAmount,
-          },
-        });
+        console.log(`Successfully updated booking ${bookingId} payment status to ${paymentStatus}`);
 
         res.json({
           message: "Booking payment status updated successfully",
@@ -19167,6 +19151,40 @@ NEXT STEPS:
 
       console.log(`Found booking for payment notification - Restaurant: ${restaurant?.name}, Customer: ${booking.customerName}`);
 
+      // Update booking payment status
+      const updateData: any = {
+        paymentStatus: "paid",
+        paymentPaidAt: new Date(),
+        paymentIntentId: payment_intent
+      };
+
+      // If payment was required and booking wasn't confirmed yet, confirm it
+      if (booking.requiresPayment && booking.status !== "confirmed") {
+        updateData.status = "confirmed";
+      }
+
+      await storage.updateBooking(booking_id, updateData);
+      console.log(`Updated booking ${booking_id} payment status to paid`);
+
+      // Log the payment completion activity
+      const activityLogger = await import("./activity-logger");
+      await activityLogger.logActivity({
+        restaurantId: booking.restaurantId,
+        tenantId: booking.tenantId,
+        eventType: "booking_payment_completed",
+        description: `Payment completed for booking ${booking_id} - ${booking.customerName} ($${amount || booking.paymentAmount || 0})`,
+        source: "payment_system",
+        bookingId: booking_id,
+        details: {
+          paymentIntentId: payment_intent,
+          amount: amount || booking.paymentAmount || 0,
+          currency: currency || "USD",
+          previousStatus: booking.status,
+          newStatus: updateData.status || booking.status,
+          paymentMethod: "stripe"
+        },
+      });
+
       // Send notifications and emails
       if (emailService) {
         try {
@@ -19230,6 +19248,33 @@ NEXT STEPS:
             }
           } catch (userEmailError) {
             console.error("Error sending emails to restaurant users:", userEmailError);
+          }
+
+          // Create system notifications for owners and managers
+          try {
+            const notificationData = {
+              tenantId: booking.tenantId,
+              restaurantId: booking.restaurantId,
+              title: "Payment Received",
+              message: `Payment of $${Number(amount || booking.paymentAmount || 0).toFixed(2)} received for booking #${booking_id} - ${booking.customerName}`,
+              type: "payment_received",
+              category: "payment",
+              bookingId: booking_id,
+              data: {
+                paymentIntentId: payment_intent,
+                amount: amount || booking.paymentAmount || 0,
+                currency: currency || "USD",
+                customerName: booking.customerName,
+                bookingDate: new Date(booking.bookingDate).toLocaleDateString(),
+                bookingTime: booking.startTime
+              }
+            };
+
+            // Create notification for the restaurant/tenant
+            await storage.createNotification(notificationData);
+            console.log(`Created system notification for payment received on booking ${booking_id}`);
+          } catch (notificationError) {
+            console.error("Error creating system notification:", notificationError);
           }
 
           res.json({ success: true, message: "Payment notifications sent successfully" });
