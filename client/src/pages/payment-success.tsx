@@ -25,23 +25,37 @@ export default function PaymentSuccess() {
   // Parse search parameters manually
   const urlParams = new URLSearchParams(window.location.search);
   const bookingId = urlParams.get("booking");
+  const tenantId = urlParams.get("tenant");
+  const restaurantId = urlParams.get("restaurant");
+  const hash = urlParams.get("hash");
 
-  // Fetch booking details to display confirmation
+  // Fetch booking details using secure hash-based endpoint
   const { data: booking, isLoading } = useQuery({
-    queryKey: ["booking-payment-success", bookingId],
+    queryKey: ["secure-booking-payment-success", bookingId, tenantId, restaurantId, hash],
     queryFn: async () => {
-      if (!bookingId) throw new Error("Booking ID required");
+      if (!bookingId || !tenantId || !restaurantId || !hash) {
+        throw new Error("Missing required parameters for secure access");
+      }
 
-      const response = await fetch(`/api/guest/bookings/${bookingId}`);
+      const response = await fetch(
+        `/api/secure/prepayment/${bookingId}?tenant=${tenantId}&restaurant=${restaurantId}&hash=${hash}`
+      );
+      
       if (!response.ok) {
+        if (response.status === 403) {
+          throw new Error("Invalid or expired payment link");
+        }
+        if (response.status === 404) {
+          throw new Error("Booking not found");
+        }
         throw new Error("Failed to fetch booking details");
       }
       return response.json();
     },
-    enabled: !!bookingId,
+    enabled: !!(bookingId && tenantId && restaurantId && hash),
   });
 
-  if (!bookingId) {
+  if (!bookingId || !tenantId || !restaurantId || !hash) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-red-50 to-rose-100 py-12 px-4">
         <div className="container mx-auto max-w-md">
@@ -49,14 +63,14 @@ export default function PaymentSuccess() {
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
                 <AlertCircle className="h-5 w-5 text-destructive" />
-                Invalid Link
+                Invalid Payment Confirmation Link
               </CardTitle>
             </CardHeader>
             <CardContent>
               <Alert variant="destructive">
                 <AlertCircle className="h-4 w-4" />
                 <AlertDescription>
-                  This payment confirmation link is invalid.
+                  This payment confirmation link is invalid or missing required security information.
                 </AlertDescription>
               </Alert>
             </CardContent>

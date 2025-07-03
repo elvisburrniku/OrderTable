@@ -72,7 +72,7 @@ function BookingPaymentForm({
       const { error } = await stripe.confirmPayment({
         elements,
         confirmParams: {
-          return_url: `${window.location.origin}/payment-success?booking=${booking.id}`,
+          return_url: `${window.location.origin}/payment-success?booking=${booking.id}&tenant=${tenantId}&restaurant=${restaurantId}&hash=${hash}`,
         },
       });
 
@@ -354,7 +354,7 @@ export default function PrePayment() {
   };
 
   const handlePaymentSuccess = () => {
-    window.location.href = `/payment-success?booking=${bookingId}`;
+    window.location.href = `/payment-success?booking=${bookingId}&tenant=${tenantId}&restaurant=${restaurantId}&hash=${hash}`;
   };
 
   const handlePaymentError = (errorMessage: string) => {
