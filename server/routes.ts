@@ -6449,7 +6449,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
         const { BookingHash } = await import("./booking-hash");
         const baseUrl = process.env.BASE_URL || `http://localhost:${process.env.PORT || 5000}`;
         
-        const paymentUrl = BookingHash.generatePaymentUrl(
+        const { PaymentTokenService } = await import("./payment-token-service");
+        const paymentUrl = PaymentTokenService.generateSecurePaymentUrl(
           bookingId,
           tenantId,
           restaurantId,
