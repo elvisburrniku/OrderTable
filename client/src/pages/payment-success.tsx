@@ -27,6 +27,36 @@ export default function PaymentSuccess() {
   const token = urlParams.get("token");
   const bookingId = urlParams.get("booking");
   const hash = urlParams.get("hash");
+  const paymentIntentId = urlParams.get("payment_intent");
+
+  // Trigger payment success notification when payment intent is available
+  useEffect(() => {
+    if (paymentIntentId && booking) {
+      // Trigger payment success notification using booking data
+      fetch('/api/payment-notification', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          payment_intent: paymentIntentId,
+          booking_id: booking.id,
+          amount: booking.paymentAmount,
+          currency: 'USD'
+        }),
+      })
+      .then(response => {
+        if (response.ok) {
+          console.log('Payment success notification triggered successfully');
+        } else {
+          console.error('Failed to trigger payment success notification');
+        }
+      })
+      .catch(error => {
+        console.error('Error triggering payment success notification:', error);
+      });
+    }
+  }, [paymentIntentId, booking]);
 
   // Fetch booking details using secure endpoint (token or legacy hash)
   const { data: booking, isLoading } = useQuery({

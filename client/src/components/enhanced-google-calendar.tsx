@@ -216,19 +216,19 @@ export default function EnhancedGoogleCalendar({
   // Check if a time slot contains the current time
   const isCurrentTimeSlot = useCallback(
     (timeSlot: string) => {
-      if (!timeSlot || typeof timeSlot !== 'string') return false;
-      
+      if (!timeSlot || typeof timeSlot !== "string") return false;
+
       const now = currentTime;
       if (!now || !(now instanceof Date)) return false;
-      
+
       const currentHour = now.getHours();
       const currentMinute = now.getMinutes();
 
       const timeParts = timeSlot.split(":");
       if (timeParts.length !== 2) return false;
-      
+
       const [slotHour, slotMinute] = timeParts.map(Number);
-      
+
       if (isNaN(slotHour) || isNaN(slotMinute)) return false;
 
       // Check if current time falls within this 15-minute slot
@@ -480,7 +480,7 @@ export default function EnhancedGoogleCalendar({
 
   // Get availability text for tooltips
   const getAvailabilityText = (level: string) => {
-    if (!level || typeof level !== 'string') return "Availability unknown";
+    if (!level || typeof level !== "string") return "Availability unknown";
     switch (level) {
       case "high":
         return "High availability - Good time to book";
@@ -931,11 +931,11 @@ export default function EnhancedGoogleCalendar({
 
   // Function to calculate booking duration in minutes
   const getBookingDurationMinutes = (startTime: string, endTime?: string) => {
-    if (!startTime || typeof startTime !== 'string') return 60;
-    if (!endTime || typeof endTime !== 'string') return 60; // Default 1 hour if no end time
+    if (!startTime || typeof startTime !== "string") return 60;
+    if (!endTime || typeof endTime !== "string") return 60; // Default 1 hour if no end time
 
     const toMinutes = (timeStr: string) => {
-      if (!timeStr || typeof timeStr !== 'string') return 0;
+      if (!timeStr || typeof timeStr !== "string") return 0;
       const parts = timeStr.split(":");
       if (parts.length !== 2) return 0;
       const [hours, minutes] = parts.map(Number);
@@ -1794,7 +1794,10 @@ export default function EnhancedGoogleCalendar({
                 id="specialRequests"
                 value={newBooking.specialRequests}
                 onChange={(e) =>
-                  setNewBooking((prev) => ({ ...prev, specialRequests: e.target.value }))
+                  setNewBooking((prev) => ({
+                    ...prev,
+                    specialRequests: e.target.value,
+                  }))
                 }
                 placeholder="Dietary requirements, seating preferences, allergies..."
                 className="min-h-[60px]"
@@ -1808,7 +1811,10 @@ export default function EnhancedGoogleCalendar({
                 id="internalNotes"
                 value={newBooking.internalNotes}
                 onChange={(e) =>
-                  setNewBooking((prev) => ({ ...prev, internalNotes: e.target.value }))
+                  setNewBooking((prev) => ({
+                    ...prev,
+                    internalNotes: e.target.value,
+                  }))
                 }
                 placeholder="Staff notes (not visible to customer)..."
                 className="min-h-[60px]"
@@ -1822,7 +1828,10 @@ export default function EnhancedGoogleCalendar({
                 id="extraDescription"
                 value={newBooking.extraDescription}
                 onChange={(e) =>
-                  setNewBooking((prev) => ({ ...prev, extraDescription: e.target.value }))
+                  setNewBooking((prev) => ({
+                    ...prev,
+                    extraDescription: e.target.value,
+                  }))
                 }
                 placeholder="Additional booking details..."
                 className="min-h-[60px]"
@@ -1833,11 +1842,21 @@ export default function EnhancedGoogleCalendar({
             <div>
               <Label>Tags</Label>
               <div className="flex flex-wrap gap-2 mt-2">
-                {["Birthday", "Anniversary", "VIP", "First Time", "Regular", "Special Diet", "Large Party"].map((tag) => (
+                {[
+                  "Birthday",
+                  "Anniversary",
+                  "VIP",
+                  "First Time",
+                  "Regular",
+                  "Special Diet",
+                  "Large Party",
+                ].map((tag) => (
                   <Button
                     key={tag}
                     type="button"
-                    variant={newBooking.tags?.includes(tag) ? "default" : "outline"}
+                    variant={
+                      newBooking.tags?.includes(tag) ? "default" : "outline"
+                    }
                     size="sm"
                     onClick={() => {
                       setNewBooking((prev) => ({
@@ -1860,7 +1879,10 @@ export default function EnhancedGoogleCalendar({
                 <Switch
                   checked={newBooking.requiresPayment}
                   onCheckedChange={(checked) =>
-                    setNewBooking((prev) => ({ ...prev, requiresPayment: checked }))
+                    setNewBooking((prev) => ({
+                      ...prev,
+                      requiresPayment: checked,
+                    }))
                   }
                 />
                 <Label>Require prepayment</Label>
@@ -1889,7 +1911,7 @@ export default function EnhancedGoogleCalendar({
                     <div>
                       <Label htmlFor="paymentDeadline">Payment Deadline</Label>
                       <Select
-                        value={newBooking.paymentDeadlineHours.toString()}
+                        value={newBooking.paymentDeadlineHours?.toString()}
                         onValueChange={(value) =>
                           setNewBooking((prev) => ({
                             ...prev,
@@ -1897,7 +1919,9 @@ export default function EnhancedGoogleCalendar({
                           }))
                         }
                       >
-                        <SelectTrigger>                          <SelectValue />
+                        <SelectTrigger>
+                          {" "}
+                          <SelectValue />
                         </SelectTrigger>
                         <SelectContent>
                           <SelectItem value="1">1 hour</SelectItem>
@@ -1912,10 +1936,7 @@ export default function EnhancedGoogleCalendar({
                     </div>
                   </div>
                   <div className="flex items-center space-x-2 text-sm text-gray-600">
-                    <Switch
-                      checked={true}
-                      disabled
-                    />
+                    <Switch checked={true} disabled />
                     <span>Send email with payment link</span>
                   </div>
                 </div>
