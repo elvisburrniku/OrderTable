@@ -6569,7 +6569,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
         // Send payment link email to customer
         if (emailService) {
           const baseUrl = process.env.BASE_URL || 'http://localhost:5000';
-          const paymentLink = `${baseUrl}/prepayment?booking=${bookingId}&amount=${booking.paymentAmount}&currency=USD`;
+          
+          // Generate secure payment link with hash
+          const { BookingHash } = await import("./booking-hash");
+          const paymentLink = BookingHash.generatePaymentUrl(
+            bookingId,
+            booking.tenantId,
+            booking.restaurantId,
+            booking.paymentAmount,
+            'USD',
+            baseUrl
+          );
 
           await emailService.sendEmail({
             to: [{ email: booking.customerEmail, name: booking.customerName }],

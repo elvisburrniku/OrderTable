@@ -109,7 +109,14 @@ export class BrevoEmailService {
           </div>
           ${bookingDetails.requiresPayment && bookingDetails.paymentAmount ? `
             <div style="text-align: center; margin-top: 15px;">
-              <a href="${baseUrl}/prepayment?booking=${bookingDetails.id}&amount=${bookingDetails.paymentAmount}&currency=USD" style="background-color: #ffc107; color: #212529; padding: 12px 24px; text-decoration: none; border-radius: 6px; font-weight: 600; display: inline-block;">
+              <a href="${BookingHash.generatePaymentUrl(
+                bookingDetails.id,
+                bookingDetails.tenantId,
+                bookingDetails.restaurantId,
+                bookingDetails.paymentAmount,
+                'USD',
+                baseUrl
+              )}" style="background-color: #ffc107; color: #212529; padding: 12px 24px; text-decoration: none; border-radius: 6px; font-weight: 600; display: inline-block;">
                 Complete Payment Now
               </a>
               <p style="margin: 10px 0 0; font-size: 12px; color: #856404;">
