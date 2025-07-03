@@ -175,14 +175,17 @@ export default function PrePayment() {
   const [customerEmail, setCustomerEmail] = useState("");
   const [customerPhone, setCustomerPhone] = useState("");
 
-  // Parse search parameters
+  // Parse search parameters - now using secure token
   const urlParams = new URLSearchParams(window.location.search);
+  const token = urlParams.get("token");
+  
+  // Legacy support for old hash-based URLs (to be removed)
   const bookingId = urlParams.get("booking");
   const hash = urlParams.get("hash");
   const amount = parseFloat(urlParams.get("amount") || "0");
   const currency = urlParams.get("currency") || "USD";
 
-  // Fetch booking details using secure hash-based endpoint
+  // Fetch booking details using secure token endpoint
   const {
     data: booking,
     isLoading: bookingLoading,
@@ -190,37 +193,61 @@ export default function PrePayment() {
   } = useQuery({
     queryKey: [
       "secure-booking-details",
-      bookingId,
+      token || bookingId,
       hash,
     ],
     queryFn: async () => {
-      if (!bookingId || !hash) {
-        throw new Error("Missing required parameters for secure access");
-      }
+      // Support both new token system and legacy hash system
+      if (token) {
+        const response = await fetch(
+          `/api/secure/prepayment/token?token=${encodeURIComponent(token)}`,
+        );
 
-      const response = await fetch(
-        `/api/secure/prepayment/${bookingId}?hash=${hash}`,
-      );
+        if (!response.ok) {
+          const errorData = await response.json();
+          if (response.status === 403) {
+            throw new Error("Invalid or expired payment link");
+          }
+          if (response.status === 404) {
+            throw new Error("Booking not found");
+          }
+          if (
+            response.status === 400 &&
+            errorData.code === "stripe_connect_not_setup"
+          ) {
+            throw new Error("stripe_connect_not_setup");
+          }
+          throw new Error(errorData.message || "Failed to fetch booking details");
+        }
+        return response.json();
+      } else if (bookingId && hash) {
+        // Legacy support for hash-based URLs
+        const response = await fetch(
+          `/api/secure/prepayment/${bookingId}?hash=${hash}`,
+        );
 
-      if (!response.ok) {
-        const errorData = await response.json();
-        if (response.status === 403) {
-          throw new Error("Invalid or expired payment link");
+        if (!response.ok) {
+          const errorData = await response.json();
+          if (response.status === 403) {
+            throw new Error("Invalid or expired payment link");
+          }
+          if (response.status === 404) {
+            throw new Error("Booking not found");
+          }
+          if (
+            response.status === 400 &&
+            errorData.code === "stripe_connect_not_setup"
+          ) {
+            throw new Error("stripe_connect_not_setup");
+          }
+          throw new Error(errorData.message || "Failed to fetch booking details");
         }
-        if (response.status === 404) {
-          throw new Error("Booking not found");
-        }
-        if (
-          response.status === 400 &&
-          errorData.code === "stripe_connect_not_setup"
-        ) {
-          throw new Error("stripe_connect_not_setup");
-        }
-        throw new Error(errorData.message || "Failed to fetch booking details");
+        return response.json();
+      } else {
+        throw new Error("Invalid payment link - missing token or booking parameters");
       }
-      return response.json();
     },
-    enabled: !!(bookingId && hash),
+    enabled: !!(token || (bookingId && hash)),
     retry: 1,
   });
 
@@ -230,19 +257,20 @@ export default function PrePayment() {
       booking &&
       booking.requiresPayment &&
       booking.paymentAmount > 0 &&
-      hash
+      (token || hash)
     ) {
       const createPaymentIntent = async () => {
         try {
           const response = await fetch(
-            `/api/secure/prepayment/${booking.id}/payment-intent`,
+            `/api/secure/prepayment/payment-intent`,
             {
               method: "POST",
               headers: {
                 "Content-Type": "application/json",
               },
               body: JSON.stringify({
-                hash: hash,
+                token: token || undefined,
+                hash: hash || undefined,
                 amount: booking.paymentAmount,
                 currency: "usd",
               }),
