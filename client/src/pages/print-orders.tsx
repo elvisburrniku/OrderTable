@@ -1,26 +1,47 @@
 import { useState, useEffect } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Input } from "@/components/ui/input";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import {
+  Collapsible,
+  CollapsibleContent,
+  CollapsibleTrigger,
+} from "@/components/ui/collapsible";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 
 import { useToast } from "@/hooks/use-toast";
 import { PrintOrderForm } from "@/components/print-order-form";
 
 import { OrderTracking } from "@/components/order-tracking";
 import MenuOrderingService from "@/components/menu-ordering-service";
-import { 
-  Printer, 
-  Plus, 
-  Eye, 
-  Edit, 
-  Clock, 
-  CheckCircle, 
+import {
+  Printer,
+  Plus,
+  Eye,
+  Edit,
+  Clock,
+  CheckCircle,
   AlertCircle,
   Package,
   Truck,
@@ -34,7 +55,7 @@ import {
   Users,
   FileText,
   Receipt,
-  Trash2
+  Trash2,
 } from "lucide-react";
 import { useAuth } from "@/lib/auth";
 import { motion } from "framer-motion";
@@ -75,23 +96,28 @@ export default function PrintOrders() {
   const queryClient = useQueryClient();
 
   const { data: printOrders = [], isLoading } = useQuery({
-    queryKey: [`/api/tenants/${restaurant?.tenantId}/restaurants/${restaurant?.id}/print-orders`],
+    queryKey: [
+      `/api/tenants/${restaurant?.tenantId}/restaurants/${restaurant?.id}/print-orders`,
+    ],
     enabled: !!restaurant?.tenantId && !!restaurant?.id,
   });
 
   const deletePrintOrderMutation = useMutation({
     mutationFn: async (orderId: number) => {
-      const response = await fetch(`/api/tenants/${restaurant?.tenantId}/restaurants/${restaurant?.id}/print-orders/${orderId}`, {
-        method: "DELETE",
-        headers: {
-          "Content-Type": "application/json",
+      const response = await fetch(
+        `/api/tenants/${restaurant?.tenantId}/restaurants/${restaurant?.id}/print-orders/${orderId}`,
+        {
+          method: "DELETE",
+          headers: {
+            "Content-Type": "application/json",
+          },
         },
-      });
+      );
       if (!response.ok) {
         const errorData = await response.text();
         throw new Error(errorData || "Failed to delete print order");
       }
-      
+
       // Handle both JSON and empty responses
       const contentType = response.headers.get("content-type");
       if (contentType && contentType.includes("application/json")) {
@@ -100,8 +126,10 @@ export default function PrintOrders() {
       return { success: true };
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ 
-        queryKey: [`/api/tenants/${restaurant?.tenantId}/restaurants/${restaurant?.id}/print-orders`] 
+      queryClient.invalidateQueries({
+        queryKey: [
+          `/api/tenants/${restaurant?.tenantId}/restaurants/${restaurant?.id}/print-orders`,
+        ],
       });
       setIsDeleteDialogOpen(false);
       setOrderToDelete(null);
@@ -121,13 +149,16 @@ export default function PrintOrders() {
 
   // Filter print orders
   const filteredPrintOrders = (printOrders || []).filter((order: any) => {
-    const matchesSearch = !searchTerm || 
+    const matchesSearch =
+      !searchTerm ||
       order.customerName?.toLowerCase().includes(searchTerm.toLowerCase()) ||
       order.customerEmail?.toLowerCase().includes(searchTerm.toLowerCase()) ||
       order.orderNumber?.toLowerCase().includes(searchTerm.toLowerCase());
 
-    const matchesStatus = statusFilter === "all" || order.orderStatus === statusFilter;
-    const matchesPayment = paymentFilter === "all" || order.paymentStatus === paymentFilter;
+    const matchesStatus =
+      statusFilter === "all" || order.orderStatus === statusFilter;
+    const matchesPayment =
+      paymentFilter === "all" || order.paymentStatus === paymentFilter;
 
     return matchesSearch && matchesStatus && matchesPayment;
   });
@@ -151,7 +182,10 @@ export default function PrintOrders() {
     const Icon = config.icon;
 
     return (
-      <Badge variant={config.color === "green" ? "default" : "secondary"} className="flex items-center gap-1">
+      <Badge
+        variant={config.color === "green" ? "default" : "secondary"}
+        className="flex items-center gap-1"
+      >
         <Icon className="h-3 w-3" />
         {status}
       </Badge>
@@ -160,13 +194,24 @@ export default function PrintOrders() {
 
   const getPaymentStatusBadge = (status: string) => {
     return (
-      <Badge variant={status === "paid" ? "default" : status === "pending" ? "secondary" : "destructive"}
-             className={
-               status === "paid" ? "bg-green-500 text-white" : 
-               status === "pending" ? "bg-yellow-500 text-white" :
-               status === "failed" ? "bg-red-500 text-white" :
-               "bg-gray-500 text-white"
-             }>
+      <Badge
+        variant={
+          status === "paid"
+            ? "default"
+            : status === "pending"
+              ? "secondary"
+              : "destructive"
+        }
+        className={
+          status === "paid"
+            ? "bg-green-500 text-white"
+            : status === "pending"
+              ? "bg-yellow-500 text-white"
+              : status === "failed"
+                ? "bg-red-500 text-white"
+                : "bg-gray-500 text-white"
+        }
+      >
         {status}
       </Badge>
     );
@@ -174,14 +219,16 @@ export default function PrintOrders() {
 
   const handleOrderCreated = (order: any) => {
     setActiveTab("orders");
-    queryClient.invalidateQueries({ queryKey: [`/api/tenants/${restaurant?.tenantId}/restaurants/${restaurant?.id}/print-orders`] });
+    queryClient.invalidateQueries({
+      queryKey: [
+        `/api/tenants/${restaurant?.tenantId}/restaurants/${restaurant?.id}/print-orders`,
+      ],
+    });
     toast({
       title: "Order Created Successfully",
       description: `Print order ${order.orderNumber} has been created and processed automatically!`,
     });
   };
-
-
 
   const handleViewTracking = (order: PrintOrder) => {
     setSelectedOrder(order);
@@ -209,21 +256,24 @@ export default function PrintOrders() {
     }
 
     try {
-      const response = await fetch(`/api/stripe/invoice/${order.stripePaymentId}`, {
-        method: 'GET',
-        headers: {
-          'Content-Type': 'application/json',
+      const response = await fetch(
+        `/api/stripe/invoice/${order.stripePaymentId}`,
+        {
+          method: "GET",
+          headers: {
+            "Content-Type": "application/json",
+          },
         },
-      });
+      );
 
       if (!response.ok) {
-        throw new Error('Failed to retrieve invoice');
+        throw new Error("Failed to retrieve invoice");
       }
 
       const data = await response.json();
-      
+
       if (data.invoiceUrl) {
-        window.open(data.invoiceUrl, '_blank');
+        window.open(data.invoiceUrl, "_blank");
       } else {
         toast({
           title: "Invoice Details",
@@ -231,7 +281,7 @@ export default function PrintOrders() {
         });
       }
     } catch (error) {
-      console.error('Error fetching invoice:', error);
+      console.error("Error fetching invoice:", error);
       toast({
         title: "Error",
         description: "Failed to retrieve invoice. Please try again.",
@@ -240,8 +290,6 @@ export default function PrintOrders() {
     }
   };
 
-
-
   const confirmDeleteOrder = () => {
     if (orderToDelete) {
       deletePrintOrderMutation.mutate(orderToDelete.id);
@@ -249,85 +297,99 @@ export default function PrintOrders() {
   };
 
   const formatCurrency = (amount: number) => {
-    return new Intl.NumberFormat('en-US', {
-      style: 'currency',
-      currency: 'USD',
+    return new Intl.NumberFormat("en-US", {
+      style: "currency",
+      currency: "USD",
     }).format(amount / 100);
   };
 
   const formatDate = (dateString: string) => {
-    return new Date(dateString).toLocaleDateString('en-US', {
-      year: 'numeric',
-      month: 'short',
-      day: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit',
+    return new Date(dateString).toLocaleDateString("en-US", {
+      year: "numeric",
+      month: "short",
+      day: "numeric",
+      hour: "2-digit",
+      minute: "2-digit",
     });
   };
-
-
 
   if (showTracking && selectedOrder) {
     return (
       <div className="container mx-auto p-6">
-        <OrderTracking
-          order={selectedOrder}
-          onClose={handleCloseTracking}
-        />
+        <OrderTracking order={selectedOrder} onClose={handleCloseTracking} />
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-slate-50">
+    <div className="min-h-screen bg-gray-50">
       <div className="p-6">
-        <div className="bg-white rounded-lg shadow-sm border border-slate-200">
+        <motion.div 
+          initial={{ opacity: 0, y: -20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.5 }}
+          className="bg-white rounded-lg shadow-sm border border-gray-200"
+        >
           {/* Top Header */}
-          <div className="p-6 border-b border-slate-200">
+          <div className="p-6 border-b border-gray-200">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-3">
-                <div className="w-10 h-10 bg-slate-600 rounded-lg flex items-center justify-center">
+                <div className="w-10 h-10 bg-blue-600 rounded-lg flex items-center justify-center">
                   <Printer className="h-5 w-5 text-white" />
                 </div>
                 <div>
-                  <h1 className="text-2xl font-semibold text-slate-900">
-                    Print Orders
+                  <h1 className="text-2xl font-semibold text-gray-900">
+                    Order Management
                   </h1>
-                  <p className="text-slate-600 text-sm">Manage printing requests and orders</p>
+                  <p className="text-gray-600 text-sm">
+                    Track and manage print orders
+                  </p>
                 </div>
               </div>
-              
-              <Button
-                onClick={() => setActiveTab("new-order")}
-                className="bg-slate-700 hover:bg-slate-800 text-white px-4 py-2 flex items-center space-x-2"
-              >
-                <Plus className="w-4 h-4" />
-                <span>New Print Order</span>
-              </Button>
+
+              <div className="flex items-center space-x-3">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setShowFilters(!showFilters)}
+                  className="flex items-center space-x-2"
+                >
+                  <Filter className="w-4 h-4" />
+                  <span>Filters</span>
+                  <ChevronDown className={`w-4 h-4 transition-transform ${showFilters ? 'rotate-180' : ''}`} />
+                </Button>
+                <Button
+                  onClick={() => setActiveTab("new-order")}
+                  className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 flex items-center space-x-2"
+                >
+                  <Plus className="w-4 h-4" />
+                  <span>New Print Order</span>
+                </Button>
+              </div>
             </div>
           </div>
 
           <Tabs value={activeTab} onValueChange={setActiveTab}>
             <div className="px-6 pt-4">
               <TabsList className="bg-slate-100 rounded-lg p-1">
-                <TabsTrigger 
-                  value="orders" 
+                <TabsTrigger
+                  value="orders"
                   className="rounded-md font-medium data-[state=active]:bg-white data-[state=active]:shadow-sm px-4 py-2"
                 >
                   Print Orders
                 </TabsTrigger>
-                <TabsTrigger 
+                <TabsTrigger
                   value="new-order"
                   className="rounded-md font-medium data-[state=active]:bg-white data-[state=active]:shadow-sm px-4 py-2"
                 >
                   Create Order
                 </TabsTrigger>
-                <TabsTrigger 
+                {/* <TabsTrigger 
                   value="menu-printing"
                   className="rounded-md font-medium data-[state=active]:bg-white data-[state=active]:shadow-sm px-4 py-2"
                 >
                   Menu Printing
-                </TabsTrigger>
+                </TabsTrigger> */}
               </TabsList>
             </div>
 
@@ -345,7 +407,9 @@ export default function PrintOrders() {
                         <div className="text-2xl font-semibold text-slate-900">
                           {filteredPrintOrders.length}
                         </div>
-                        <div className="text-sm text-slate-600">Total Orders</div>
+                        <div className="text-sm text-slate-600">
+                          Total Orders
+                        </div>
                       </div>
                     </div>
                   </div>
@@ -358,9 +422,15 @@ export default function PrintOrders() {
                       </div>
                       <div>
                         <div className="text-2xl font-semibold text-slate-900">
-                          {filteredPrintOrders.filter((order: any) => order.orderStatus === 'pending').length}
+                          {
+                            filteredPrintOrders.filter(
+                              (order: any) => order.orderStatus === "pending",
+                            ).length
+                          }
                         </div>
-                        <div className="text-sm text-slate-600">Pending Orders</div>
+                        <div className="text-sm text-slate-600">
+                          Pending Orders
+                        </div>
                       </div>
                     </div>
                   </div>
@@ -373,9 +443,15 @@ export default function PrintOrders() {
                       </div>
                       <div>
                         <div className="text-2xl font-semibold text-slate-900">
-                          {filteredPrintOrders.filter((order: any) => order.orderStatus === 'completed').length}
+                          {
+                            filteredPrintOrders.filter(
+                              (order: any) => order.orderStatus === "completed",
+                            ).length
+                          }
                         </div>
-                        <div className="text-sm text-slate-600">Completed Orders</div>
+                        <div className="text-sm text-slate-600">
+                          Completed Orders
+                        </div>
                       </div>
                     </div>
                   </div>
@@ -390,11 +466,19 @@ export default function PrintOrders() {
                         <div className="text-2xl font-semibold text-slate-900">
                           {formatCurrency(
                             filteredPrintOrders
-                              .filter((order: any) => order.paymentStatus === 'paid')
-                              .reduce((sum: number, order: any) => sum + (order.totalAmount || 0), 0)
+                              .filter(
+                                (order: any) => order.paymentStatus === "paid",
+                              )
+                              .reduce(
+                                (sum: number, order: any) =>
+                                  sum + (order.totalAmount || 0),
+                                0,
+                              ),
                           )}
                         </div>
-                        <div className="text-sm text-slate-600">Total Revenue</div>
+                        <div className="text-sm text-slate-600">
+                          Total Revenue
+                        </div>
                       </div>
                     </div>
                   </div>
@@ -405,80 +489,118 @@ export default function PrintOrders() {
               <div className="p-6 border-b border-slate-200">
                 <div className="flex items-center justify-between mb-6">
                   <div>
-                    <h2 className="text-lg font-semibold text-slate-900">Order Management</h2>
-                    <p className="text-sm text-slate-600">Track and manage print orders</p>
+                    <h2 className="text-lg font-semibold text-slate-900">
+                      Order Management
+                    </h2>
+                    <p className="text-sm text-slate-600">
+                      Track and manage print orders
+                    </p>
                   </div>
-                  
+
                   <Collapsible open={showFilters} onOpenChange={setShowFilters}>
                     <CollapsibleTrigger asChild>
-                      <Button 
-                        variant="outline" 
+                      <Button
+                        variant="outline"
                         className="flex items-center space-x-2"
                       >
                         <Filter className="w-4 h-4" />
                         <span>Filters</span>
-                        {(statusFilter !== 'all' || paymentFilter !== 'all' || searchTerm) && (
+                        {(statusFilter !== "all" ||
+                          paymentFilter !== "all" ||
+                          searchTerm) && (
                           <span className="bg-slate-600 text-white text-xs px-2 py-0.5 rounded-full ml-1">
-                            {[statusFilter !== 'all', paymentFilter !== 'all', searchTerm].filter(Boolean).length}
+                            {
+                              [
+                                statusFilter !== "all",
+                                paymentFilter !== "all",
+                                searchTerm,
+                              ].filter(Boolean).length
+                            }
                           </span>
                         )}
-                        <ChevronDown className={showFilters ? "w-4 h-4 rotate-180" : "w-4 h-4"} />
+                        <ChevronDown
+                          className={
+                            showFilters ? "w-4 h-4 rotate-180" : "w-4 h-4"
+                          }
+                        />
                       </Button>
                     </CollapsibleTrigger>
 
                     <CollapsibleContent className="mt-4">
                       <div className="bg-slate-50 rounded-lg p-4 border border-slate-200">
-                            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                        {/* Search Input */}
-                        <div className="relative">
-                          <label className="block text-sm font-medium text-slate-700 mb-2">Search</label>
+                        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                          {/* Search Input */}
                           <div className="relative">
-                            <Search className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 transform -translate-y-1/2" />
-                            <Input
-                              placeholder="Search by name, email or order..."
-                              value={searchTerm}
-                              onChange={(e) => setSearchTerm(e.target.value)}
-                              className="pl-10"
-                            />
+                            <label className="block text-sm font-medium text-slate-700 mb-2">
+                              Search
+                            </label>
+                            <div className="relative">
+                              <Search className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 transform -translate-y-1/2" />
+                              <Input
+                                placeholder="Search by name, email or order..."
+                                value={searchTerm}
+                                onChange={(e) => setSearchTerm(e.target.value)}
+                                className="pl-10"
+                              />
+                            </div>
+                          </div>
+
+                          {/* Status Filter */}
+                          <div>
+                            <label className="block text-sm font-medium text-slate-700 mb-2">
+                              Status
+                            </label>
+                            <Select
+                              value={statusFilter}
+                              onValueChange={setStatusFilter}
+                            >
+                              <SelectTrigger>
+                                <SelectValue placeholder="All Status" />
+                              </SelectTrigger>
+                              <SelectContent>
+                                <SelectItem value="all">All Status</SelectItem>
+                                <SelectItem value="pending">Pending</SelectItem>
+                                <SelectItem value="processing">
+                                  Processing
+                                </SelectItem>
+                                <SelectItem value="completed">
+                                  Completed
+                                </SelectItem>
+                                <SelectItem value="cancelled">
+                                  Cancelled
+                                </SelectItem>
+                              </SelectContent>
+                            </Select>
+                          </div>
+
+                          {/* Payment Filter */}
+                          <div>
+                            <label className="block text-sm font-medium text-slate-700 mb-2">
+                              Payment
+                            </label>
+                            <Select
+                              value={paymentFilter}
+                              onValueChange={setPaymentFilter}
+                            >
+                              <SelectTrigger>
+                                <SelectValue placeholder="All Payments" />
+                              </SelectTrigger>
+                              <SelectContent>
+                                <SelectItem value="all">
+                                  All Payments
+                                </SelectItem>
+                                <SelectItem value="paid">Paid</SelectItem>
+                                <SelectItem value="pending">Pending</SelectItem>
+                                <SelectItem value="failed">Failed</SelectItem>
+                              </SelectContent>
+                            </Select>
                           </div>
                         </div>
 
-                        {/* Status Filter */}
-                        <div>
-                          <label className="block text-sm font-medium text-slate-700 mb-2">Status</label>
-                          <Select value={statusFilter} onValueChange={setStatusFilter}>
-                            <SelectTrigger>
-                              <SelectValue placeholder="All Status" />
-                            </SelectTrigger>
-                            <SelectContent>
-                              <SelectItem value="all">All Status</SelectItem>
-                              <SelectItem value="pending">Pending</SelectItem>
-                              <SelectItem value="processing">Processing</SelectItem>
-                              <SelectItem value="completed">Completed</SelectItem>
-                              <SelectItem value="cancelled">Cancelled</SelectItem>
-                            </SelectContent>
-                          </Select>
-                        </div>
-
-                        {/* Payment Filter */}
-                        <div>
-                          <label className="block text-sm font-medium text-slate-700 mb-2">Payment</label>
-                          <Select value={paymentFilter} onValueChange={setPaymentFilter}>
-                            <SelectTrigger>
-                              <SelectValue placeholder="All Payments" />
-                            </SelectTrigger>
-                            <SelectContent>
-                              <SelectItem value="all">All Payments</SelectItem>
-                              <SelectItem value="paid">Paid</SelectItem>
-                              <SelectItem value="pending">Pending</SelectItem>
-                              <SelectItem value="failed">Failed</SelectItem>
-                            </SelectContent>
-                          </Select>
-                        </div>
-                            </div>
-
                         {/* Filter Actions */}
-                        {(statusFilter !== 'all' || paymentFilter !== 'all' || searchTerm) && (
+                        {(statusFilter !== "all" ||
+                          paymentFilter !== "all" ||
+                          searchTerm) && (
                           <div className="flex items-center justify-between mt-4 pt-4 border-t border-slate-200">
                             <div className="flex items-center space-x-2 text-sm text-slate-600">
                               <span>Active filters:</span>
@@ -487,12 +609,12 @@ export default function PrintOrders() {
                                   Search: "{searchTerm}"
                                 </span>
                               )}
-                              {statusFilter !== 'all' && (
+                              {statusFilter !== "all" && (
                                 <span className="bg-slate-100 text-slate-800 px-2 py-1 rounded text-xs">
                                   Status: {statusFilter}
                                 </span>
                               )}
-                              {paymentFilter !== 'all' && (
+                              {paymentFilter !== "all" && (
                                 <span className="bg-slate-100 text-slate-800 px-2 py-1 rounded text-xs">
                                   Payment: {paymentFilter}
                                 </span>
@@ -518,33 +640,38 @@ export default function PrintOrders() {
               </div>
 
               {/* Orders Table */}
-              <div className="bg-white rounded-lg border border-slate-200 overflow-hidden">
+              <motion.div 
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.5, delay: 0.3 }}
+                className="bg-white rounded-lg border border-gray-200 overflow-hidden shadow-sm"
+              >
                 <div className="overflow-x-auto">
                   <table className="w-full">
                     <thead>
-                      <tr className="bg-slate-50 border-b border-slate-200">
-                        <th className="text-left py-3 px-4 text-xs font-medium text-slate-600 uppercase tracking-wider">
+                      <tr className="bg-gray-50 border-b border-gray-200">
+                        <th className="text-left py-3 px-4 text-xs font-medium text-gray-500 uppercase tracking-wider">
                           Order ID
                         </th>
-                        <th className="text-left py-3 px-4 text-xs font-medium text-slate-600 uppercase tracking-wider">
+                        <th className="text-left py-3 px-4 text-xs font-medium text-gray-500 uppercase tracking-wider">
                           Customer
                         </th>
-                        <th className="text-left py-3 px-4 text-xs font-medium text-slate-600 uppercase tracking-wider">
+                        <th className="text-left py-3 px-4 text-xs font-medium text-gray-500 uppercase tracking-wider">
                           Print Details
                         </th>
-                        <th className="text-left py-3 px-4 text-xs font-medium text-slate-600 uppercase tracking-wider">
+                        <th className="text-left py-3 px-4 text-xs font-medium text-gray-500 uppercase tracking-wider">
                           Amount
                         </th>
-                        <th className="text-left py-3 px-4 text-xs font-medium text-slate-600 uppercase tracking-wider">
+                        <th className="text-left py-3 px-4 text-xs font-medium text-gray-500 uppercase tracking-wider">
                           Payment
                         </th>
-                        <th className="text-left py-3 px-4 text-xs font-medium text-slate-600 uppercase tracking-wider">
+                        <th className="text-left py-3 px-4 text-xs font-medium text-gray-500 uppercase tracking-wider">
                           Status
                         </th>
-                        <th className="text-left py-3 px-4 text-xs font-medium text-slate-600 uppercase tracking-wider">
+                        <th className="text-left py-3 px-4 text-xs font-medium text-gray-500 uppercase tracking-wider">
                           Created
                         </th>
-                        <th className="text-left py-3 px-4 text-xs font-medium text-slate-600 uppercase tracking-wider">
+                        <th className="text-left py-3 px-4 text-xs font-medium text-gray-500 uppercase tracking-wider">
                           Actions
                         </th>
                       </tr>
@@ -555,7 +682,9 @@ export default function PrintOrders() {
                           <td colSpan={8} className="py-12 text-center">
                             <div className="flex flex-col items-center space-y-4">
                               <div className="animate-spin rounded-full h-8 w-8 border-2 border-green-500 border-t-transparent"></div>
-                              <span className="text-gray-500 font-medium">Loading print orders...</span>
+                              <span className="text-gray-500 font-medium">
+                                Loading print orders...
+                              </span>
                             </div>
                           </td>
                         </tr>
@@ -567,117 +696,157 @@ export default function PrintOrders() {
                                 <Printer className="w-8 h-8 text-gray-400" />
                               </div>
                               <div>
-                                <h3 className="text-gray-900 font-medium">No print orders found</h3>
-                                <p className="text-gray-500 text-sm mt-1">Try adjusting your filters or search terms</p>
+                                <h3 className="text-gray-900 font-medium">
+                                  No print orders found
+                                </h3>
+                                <p className="text-gray-500 text-sm mt-1">
+                                  Try adjusting your filters or search terms
+                                </p>
                               </div>
                             </div>
                           </td>
                         </tr>
                       ) : (
-                        paginatedPrintOrders.map((order: PrintOrder, index: number) => (
-                          <tr 
-                            key={order.id}
-                            className={`hover:bg-slate-50 ${
-                              index % 2 === 0 ? 'bg-white' : 'bg-slate-50/50'
-                            }`}
-                            onClick={() => handleViewTracking(order)}
-                          >
-                            <td className="py-3 px-4">
-                              <div className="flex items-center">
-                                <span className="text-blue-600 font-semibold text-sm bg-blue-50 px-2 py-1 rounded-md">
-                                  #{order.orderNumber}
-                                </span>
-                              </div>
-                            </td>
-                            <td className="py-3 px-4">
-                              <div className="flex items-center space-x-3">
-                                <div className="w-8 h-8 bg-gradient-to-br from-green-400 to-green-600 rounded-full flex items-center justify-center text-white font-medium text-sm">
-                                  {order.customerName?.charAt(0)?.toUpperCase() || 'G'}
+                        paginatedPrintOrders.map(
+                          (order: PrintOrder, index: number) => (
+                            <motion.tr
+                              key={order.id}
+                              initial={{ opacity: 0, y: 10 }}
+                              animate={{ opacity: 1, y: 0 }}
+                              transition={{ duration: 0.3, delay: index * 0.05 }}
+                              className={`group hover:bg-blue-50 transition-all duration-200 ${
+                                index % 2 === 0 ? "bg-white" : "bg-gray-50/50"
+                              }`}
+                              onClick={() => handleViewTracking(order)}
+                            >
+                              <td className="py-3 px-4">
+                                <div className="flex items-center">
+                                  <span className="text-blue-600 font-semibold text-sm bg-blue-50 px-2 py-1 rounded-md">
+                                    #PO-{order.orderNumber}
+                                  </span>
                                 </div>
-                                <div>
-                                  <div className="font-medium text-gray-900">{order.customerName}</div>
-                                  <div className="text-sm text-gray-500">{order.customerEmail}</div>
+                              </td>
+                              <td className="py-3 px-4">
+                                <div className="flex items-center space-x-3">
+                                  <div className="w-8 h-8 bg-gradient-to-br from-green-400 to-green-600 rounded-full flex items-center justify-center text-white font-medium text-sm">
+                                    {order.customerName
+                                      ?.charAt(0)
+                                      ?.toUpperCase() || "G"}
+                                  </div>
+                                  <div>
+                                    <div className="font-medium text-gray-900">
+                                      {order.customerName}
+                                    </div>
+                                    <div className="text-sm text-gray-500">
+                                      {order.customerEmail}
+                                    </div>
+                                  </div>
                                 </div>
-                              </div>
-                            </td>
-                            <td className="py-3 px-4">
-                              <div className="space-y-1">
-                                <div className="font-medium text-gray-900 capitalize">
-                                  {order.printType}
+                              </td>
+                              <td className="py-3 px-4">
+                                <div className="space-y-1">
+                                  <div className="font-medium text-gray-900 capitalize">
+                                    {order.printType}
+                                  </div>
+                                  <div className="text-sm text-gray-500">
+                                    {order.printSize} - {order.printQuality}
+                                  </div>
+                                  <div className="text-sm text-gray-500 flex items-center">
+                                    <Package className="w-3 h-3 mr-1" />
+                                    {order.quantity} copies
+                                    {order.rushOrder && (
+                                      <Badge
+                                        variant="secondary"
+                                        className="ml-2 text-xs"
+                                      >
+                                        Rush
+                                      </Badge>
+                                    )}
+                                  </div>
                                 </div>
-                                <div className="text-sm text-gray-500">
-                                  {order.printSize} - {order.printQuality}
+                              </td>
+                              <td className="py-3 px-4">
+                                <div className="font-medium text-gray-900">
+                                  {formatCurrency(order.totalAmount)}
                                 </div>
-                                <div className="text-sm text-gray-500 flex items-center">
-                                  <Package className="w-3 h-3 mr-1" />
-                                  {order.quantity} copies
-                                  {order.rushOrder && <Badge variant="secondary" className="ml-2 text-xs">Rush</Badge>}
-                                </div>
-                              </div>
-                            </td>
-                            <td className="py-3 px-4">
-                              <div className="font-medium text-gray-900">
-                                {formatCurrency(order.totalAmount)}
-                              </div>
-                            </td>
-                            <td className="py-3 px-4">
-                              <Badge variant={order.paymentStatus === "paid" ? "default" : order.paymentStatus === "pending" ? "secondary" : "destructive"}
-                                     className={
-                                       order.paymentStatus === "paid" ? "bg-green-500 text-white" : 
-                                       order.paymentStatus === "pending" ? "bg-yellow-500 text-white" :
-                                       order.paymentStatus === "failed" ? "bg-red-500 text-white" :
-                                       "bg-gray-500 text-white"
-                                     }>
-                                {order.paymentStatus}
-                              </Badge>
-                            </td>
-                            <td className="py-3 px-4">
-                              {getStatusBadge(order.orderStatus)}
-                            </td>
-                            <td className="py-3 px-4">
-                              <div className="text-sm text-gray-600">
-                                {formatDate(order.createdAt)}
-                              </div>
-                            </td>
-                            <td className="py-3 px-4">
-                              <div className="flex items-center space-x-2">
-                                <Button
-                                  variant="outline"
-                                  size="sm"
-                                  onClick={(e) => {
-                                    e.stopPropagation();
-                                    handleViewDetails(order);
-                                  }}
-                                  className="h-8 w-8 p-0"
+                              </td>
+                              <td className="py-3 px-4">
+                                <Badge
+                                  variant={
+                                    order.paymentStatus === "paid"
+                                      ? "default"
+                                      : order.paymentStatus === "pending"
+                                        ? "secondary"
+                                        : "destructive"
+                                  }
+                                  className={
+                                    order.paymentStatus === "paid"
+                                      ? "bg-green-500 text-white"
+                                      : order.paymentStatus === "pending"
+                                        ? "bg-yellow-500 text-white"
+                                        : order.paymentStatus === "failed"
+                                          ? "bg-red-500 text-white"
+                                          : "bg-gray-500 text-white"
+                                  }
                                 >
-                                  <Eye className="h-4 w-4" />
-                                </Button>
-                                <Button
-                                  variant="outline"
-                                  size="sm"
-                                  onClick={(e) => {
-                                    e.stopPropagation();
-                                    setOrderToDelete(order);
-                                    setIsDeleteDialogOpen(true);
-                                  }}
-                                  disabled={deletePrintOrderMutation.isPending}
-                                  className="h-8 w-8 p-0 text-red-600 hover:text-red-700 hover:bg-red-50"
-                                >
-                                  <Trash2 className="h-4 w-4" />
-                                </Button>
-                              </div>
-                            </td>
-                          </tr>
-                        ))
+                                  {order.paymentStatus}
+                                </Badge>
+                              </td>
+                              <td className="py-3 px-4">
+                                {getStatusBadge(order.orderStatus)}
+                              </td>
+                              <td className="py-3 px-4">
+                                <div className="text-sm text-gray-600">
+                                  {formatDate(order.createdAt)}
+                                </div>
+                              </td>
+                              <td className="py-3 px-4">
+                                <div className="flex items-center space-x-2">
+                                  <Button
+                                    variant="outline"
+                                    size="sm"
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      handleViewDetails(order);
+                                    }}
+                                    className="h-8 w-8 p-0"
+                                  >
+                                    <Eye className="h-4 w-4" />
+                                  </Button>
+                                  <Button
+                                    variant="outline"
+                                    size="sm"
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      setOrderToDelete(order);
+                                      setIsDeleteDialogOpen(true);
+                                    }}
+                                    disabled={
+                                      deletePrintOrderMutation.isPending
+                                    }
+                                    className="h-8 w-8 p-0 text-red-600 hover:text-red-700 hover:bg-red-50"
+                                  >
+                                    <Trash2 className="h-4 w-4" />
+                                  </Button>
+                                </div>
+                              </td>
+                            </motion.tr>
+                          ),
+                        )
                       )}
                     </tbody>
                   </table>
                 </div>
-              </div>
+              </motion.div>
 
               {/* Pagination */}
               {totalPages > 1 && (
-                <div className="flex items-center justify-between px-6 py-4 border-t bg-slate-50">
+                <motion.div 
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.5, delay: 0.6 }}
+                  className="flex items-center justify-between px-6 py-4 border-t bg-gray-50"
+                >
                   <div className="flex items-center space-x-2">
                     <span className="text-sm text-gray-600">Show</span>
                     <Select
@@ -702,7 +871,9 @@ export default function PrintOrders() {
 
                   <div className="flex items-center space-x-4">
                     <div className="text-sm text-gray-600">
-                      {startIndex + 1}-{Math.min(endIndex, filteredPrintOrders.length)} of {filteredPrintOrders.length}
+                      {startIndex + 1}-
+                      {Math.min(endIndex, filteredPrintOrders.length)} of{" "}
+                      {filteredPrintOrders.length}
                     </div>
 
                     <div className="flex items-center space-x-2">
@@ -727,34 +898,41 @@ export default function PrintOrders() {
 
                       {/* Page Numbers */}
                       <div className="flex items-center space-x-1">
-                        {Array.from({ length: Math.min(3, totalPages) }, (_, i) => {
-                          let pageNum;
-                          if (totalPages <= 3) {
-                            pageNum = i + 1;
-                          } else if (currentPage <= 2) {
-                            pageNum = i + 1;
-                          } else if (currentPage >= totalPages - 1) {
-                            pageNum = totalPages - 2 + i;
-                          } else {
-                            pageNum = currentPage - 1 + i;
-                          }
+                        {Array.from(
+                          { length: Math.min(3, totalPages) },
+                          (_, i) => {
+                            let pageNum;
+                            if (totalPages <= 3) {
+                              pageNum = i + 1;
+                            } else if (currentPage <= 2) {
+                              pageNum = i + 1;
+                            } else if (currentPage >= totalPages - 1) {
+                              pageNum = totalPages - 2 + i;
+                            } else {
+                              pageNum = currentPage - 1 + i;
+                            }
 
-                          return (
-                            <Button
-                              key={pageNum}
-                              variant={currentPage === pageNum ? "default" : "outline"}
-                              size="sm"
-                              onClick={() => setCurrentPage(pageNum)}
-                              className={`w-8 h-8 p-0 ${
-                                currentPage === pageNum 
-                                  ? "bg-green-600 hover:bg-green-700 text-white" 
-                                  : "hover:bg-green-50"
-                              }`}
-                            >
-                              {pageNum}
-                            </Button>
-                          );
-                        })}
+                            return (
+                              <Button
+                                key={pageNum}
+                                variant={
+                                  currentPage === pageNum
+                                    ? "default"
+                                    : "outline"
+                                }
+                                size="sm"
+                                onClick={() => setCurrentPage(pageNum)}
+                                className={`w-8 h-8 p-0 ${
+                                  currentPage === pageNum
+                                    ? "bg-green-600 hover:bg-green-700 text-white"
+                                    : "hover:bg-green-50"
+                                }`}
+                              >
+                                {pageNum}
+                              </Button>
+                            );
+                          },
+                        )}
                       </div>
 
                       <Button
@@ -777,7 +955,7 @@ export default function PrintOrders() {
                       </Button>
                     </div>
                   </div>
-                </div>
+                </motion.div>
               )}
             </TabsContent>
 
@@ -799,7 +977,7 @@ export default function PrintOrders() {
               />
             </TabsContent>
           </Tabs>
-        </div>
+        </motion.div>
       </div>
 
       {/* Delete Confirmation Dialog */}
@@ -810,15 +988,18 @@ export default function PrintOrders() {
           </DialogHeader>
           <div className="py-4">
             <p className="text-gray-600">
-              Are you sure you want to delete order <strong>#{orderToDelete?.orderNumber}</strong> for{" "}
+              Are you sure you want to delete order{" "}
+              <strong>#{orderToDelete?.orderNumber}</strong> for{" "}
               <strong>{orderToDelete?.customerName}</strong>?
             </p>
-            <p className="text-red-600 text-sm mt-2">This action cannot be undone.</p>
+            <p className="text-red-600 text-sm mt-2">
+              This action cannot be undone.
+            </p>
           </div>
           <div className="flex justify-end space-x-2">
-            <Button 
-              type="button" 
-              variant="outline" 
+            <Button
+              type="button"
+              variant="outline"
               onClick={() => {
                 setIsDeleteDialogOpen(false);
                 setOrderToDelete(null);
@@ -826,13 +1007,15 @@ export default function PrintOrders() {
             >
               Cancel
             </Button>
-            <Button 
-              type="button" 
-              variant="destructive" 
+            <Button
+              type="button"
+              variant="destructive"
               onClick={confirmDeleteOrder}
               disabled={deletePrintOrderMutation.isPending}
             >
-              {deletePrintOrderMutation.isPending ? "Deleting..." : "Delete Order"}
+              {deletePrintOrderMutation.isPending
+                ? "Deleting..."
+                : "Delete Order"}
             </Button>
           </div>
         </DialogContent>
