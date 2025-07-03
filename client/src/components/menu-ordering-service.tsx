@@ -127,134 +127,69 @@ export default function MenuOrderingService({
   const selectedShipOption = shippingOptions.find(opt => opt.id === selectedShipping);
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50 relative overflow-hidden">
-      {/* Floating Background Elements */}
-      <div className="absolute inset-0 overflow-hidden pointer-events-none">
-        {[...Array(6)].map((_, i) => (
-          <motion.div
-            key={i}
-            className="absolute bg-gradient-to-r from-blue-200/20 to-purple-200/20 rounded-full"
-            style={{
-              width: `${120 + i * 40}px`,
-              height: `${120 + i * 40}px`,
-              left: `${Math.random() * 100}%`,
-              top: `${Math.random() * 100}%`,
-            }}
-            animate={{
-              x: [0, 100, 0],
-              y: [0, -100, 0],
-              rotate: [0, 180, 360],
-            }}
-            transition={{
-              duration: 20 + i * 5,
-              repeat: Infinity,
-              ease: "linear",
-            }}
-          />
-        ))}
-      </div>
-
-      <div className="relative z-10 p-8">
+    <div className="bg-slate-50 min-h-screen">
+      <div className="p-6">
         {/* Header Section */}
-        <motion.div
-          initial={{ opacity: 0, y: -30 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.8 }}
-          className="text-center mb-12"
-        >
-          <motion.h1 
-            className="text-4xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent mb-4"
-            animate={{ scale: [1, 1.02, 1] }}
-            transition={{ duration: 3, repeat: Infinity }}
-          >
-            Professional Menu Printing Service
-          </motion.h1>
-          <p className="text-gray-600 text-lg max-w-2xl mx-auto">
+        <div className="text-center mb-8">
+          <h1 className="text-3xl font-semibold text-slate-900 mb-2">
+            Menu Printing Service
+          </h1>
+          <p className="text-slate-600 max-w-2xl mx-auto">
             Order high-quality printed menus delivered directly to your restaurant
           </p>
-        </motion.div>
+        </div>
 
         {/* Service Features */}
-        <motion.div 
-          initial={{ opacity: 0, y: 30 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.8, delay: 0.2 }}
-          className="grid md:grid-cols-3 gap-8 mb-12"
-        >
+        <div className="grid md:grid-cols-3 gap-4 mb-8">
           {[
             {
               icon: Shield,
               title: "Professional Quality",
-              description: "Restaurant-grade printing with premium materials",
-              color: "from-blue-500 to-blue-600"
+              description: "Restaurant-grade printing with premium materials"
             },
             {
               icon: Zap,
               title: "Fast Delivery",
-              description: "Quick turnaround with multiple shipping options",
-              color: "from-green-500 to-green-600"
+              description: "Quick turnaround with multiple shipping options"
             },
             {
               icon: Palette,
               title: "Custom Design",
-              description: "Your menu design with professional formatting",
-              color: "from-purple-500 to-purple-600"
+              description: "Your menu design with professional formatting"
             }
           ].map((feature, index) => (
-            <motion.div
+            <div
               key={index}
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.6, delay: 0.3 + index * 0.1 }}
-              whileHover={{ scale: 1.05, y: -5 }}
-              className="bg-white/80 backdrop-blur-xl rounded-2xl p-6 border border-white/20 shadow-xl hover:shadow-2xl transition-all duration-300"
+              className="bg-white rounded-lg border border-slate-200 p-4"
             >
-              <motion.div
-                className={`w-16 h-16 rounded-2xl bg-gradient-to-br ${feature.color} flex items-center justify-center mb-4 mx-auto`}
-                whileHover={{ rotate: 10 }}
-                transition={{ duration: 0.3 }}
-              >
-                <feature.icon className="w-8 h-8 text-white" />
-              </motion.div>
-              <h3 className="text-xl font-semibold text-gray-800 mb-2 text-center">{feature.title}</h3>
-              <p className="text-gray-600 text-center">{feature.description}</p>
-            </motion.div>
+              <div className="w-10 h-10 rounded-lg bg-slate-100 flex items-center justify-center mb-3 mx-auto">
+                <feature.icon className="w-5 h-5 text-slate-600" />
+              </div>
+              <h3 className="text-sm font-medium text-slate-900 mb-1 text-center">{feature.title}</h3>
+              <p className="text-xs text-slate-600 text-center">{feature.description}</p>
+            </div>
           ))}
-        </motion.div>
+        
 
         {/* Main Content Grid */}
-        <div className="grid lg:grid-cols-2 gap-8">
+        <div className="grid lg:grid-cols-2 gap-6">
           {/* Printing Options */}
-          <motion.div
-            initial={{ opacity: 0, x: -30 }}
-            animate={{ opacity: 1, x: 0 }}
-            transition={{ duration: 0.8, delay: 0.4 }}
-          >
-            <Card className="bg-white/80 backdrop-blur-xl border-white/20 shadow-2xl">
-              <CardHeader className="pb-4">
-                <CardTitle className="flex items-center gap-3 text-2xl">
-                  <motion.div
-                    animate={{ rotate: [0, 5, -5, 0] }}
-                    transition={{ duration: 2, repeat: Infinity }}
-                  >
-                    <Package className="w-6 h-6 text-blue-600" />
-                  </motion.div>
-                  Printing Options
-                </CardTitle>
-              </CardHeader>
+          <Card className="bg-white border border-slate-200 shadow-sm">
+            <CardHeader className="pb-4">
+              <CardTitle className="flex items-center gap-3 text-xl">
+                <Package className="w-5 h-5 text-slate-600" />
+                Printing Options
+              </CardTitle>
+            </CardHeader>
               <CardContent className="space-y-4">
                 {printingOptions.map((option) => (
-                  <motion.div
+                  <div
                     key={option.id}
-                    initial={{ opacity: 0, y: 10 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ duration: 0.5 }}
-                    whileHover={{ scale: 1.02 }}
                     onClick={() => setSelectedPrinting(option.id)}
-                    className={`relative p-4 rounded-xl border-2 cursor-pointer transition-all duration-300 ${
+                    className={`relative p-4 rounded-lg border cursor-pointer transition-all duration-200 ${
                       selectedPrinting === option.id
-                        ? 'border-blue-500 bg-blue-50/50'
-                        : 'border-gray-200 hover:border-blue-300 bg-gray-50/50'
+                        ? 'border-slate-500 bg-slate-50'
+                        : 'border-slate-200 hover:border-slate-300 bg-white'
                     }`}
                   >
                     {option.recommended && (
@@ -263,17 +198,13 @@ export default function MenuOrderingService({
                       </Badge>
                     )}
                     <div className="flex justify-between items-start mb-2">
-                      <h4 className="font-semibold text-lg">{option.name}</h4>
-                      <motion.div
-                        className="text-right"
-                        animate={{ scale: selectedPrinting === option.id ? [1, 1.1, 1] : 1 }}
-                        transition={{ duration: 0.5 }}
-                      >
-                        <div className="text-2xl font-bold text-blue-600">
+                      <h4 className="font-medium text-base">{option.name}</h4>
+                      <div className="text-right">
+                        <div className="text-lg font-semibold text-slate-900">
                           ${option.pricePerMenu.toFixed(2)}
                         </div>
-                        <div className="text-sm text-gray-500">per menu</div>
-                      </motion.div>
+                        <div className="text-xs text-slate-500">per menu</div>
+                      </div>
                     </div>
                     <p className="text-gray-600 text-sm mb-3">{option.description}</p>
                     <div className="grid grid-cols-2 gap-2 text-xs text-gray-500">
@@ -282,30 +213,20 @@ export default function MenuOrderingService({
                       <div>Durability: {option.durability}</div>
                       <div>Min Order: {option.minimumOrder}</div>
                     </div>
-                  </motion.div>
+                  
                 ))}
               </CardContent>
             </Card>
-          </motion.div>
+          
 
           {/* Order Configuration */}
-          <motion.div
-            initial={{ opacity: 0, x: 30 }}
-            animate={{ opacity: 1, x: 0 }}
-            transition={{ duration: 0.8, delay: 0.6 }}
-          >
-            <Card className="bg-white/80 backdrop-blur-xl border-white/20 shadow-2xl">
-              <CardHeader className="pb-4">
-                <CardTitle className="flex items-center gap-3 text-2xl">
-                  <motion.div
-                    animate={{ rotate: [0, 360] }}
-                    transition={{ duration: 4, repeat: Infinity, ease: "linear" }}
-                  >
-                    <ShoppingCart className="w-6 h-6 text-purple-600" />
-                  </motion.div>
-                  Order Configuration
-                </CardTitle>
-              </CardHeader>
+          <Card className="bg-white border border-slate-200 shadow-sm">
+            <CardHeader className="pb-4">
+              <CardTitle className="flex items-center gap-3 text-xl">
+                <ShoppingCart className="w-5 h-5 text-slate-600" />
+                Order Configuration
+              </CardTitle>
+            </CardHeader>
               <CardContent className="space-y-6">
                 {/* Quantity */}
                 <div>
@@ -348,9 +269,9 @@ export default function MenuOrderingService({
                             <div className="text-xl font-bold text-purple-600">
                               ${option.price.toFixed(2)}
                             </div>
-                          </motion.div>
+                          
                         </div>
-                      </motion.div>
+                      
                     ))}
                   </div>
                 </div>
@@ -382,9 +303,9 @@ export default function MenuOrderingService({
                       <span className="text-blue-600">
                         ${((selectedPrintOption ? selectedPrintOption.pricePerMenu * quantity : 0) + (selectedShipOption?.price || 0)).toFixed(2)}
                       </span>
-                    </motion.div>
+                    
                   </div>
-                </motion.div>
+                
 
                 {/* Order Button */}
                 <motion.div
@@ -398,10 +319,10 @@ export default function MenuOrderingService({
                     <CreditCard className="w-5 h-5 mr-2" />
                     Place Order
                   </Button>
-                </motion.div>
+                
               </CardContent>
             </Card>
-          </motion.div>
+          
         </div>
       </div>
 

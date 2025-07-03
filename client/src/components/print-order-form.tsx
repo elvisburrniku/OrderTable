@@ -28,7 +28,7 @@ import { Separator } from "@/components/ui/separator";
 import { useToast } from "@/hooks/use-toast";
 import { PaymentMethodSelector } from "@/components/payment-method-selector";
 import { Printer, Clock, Truck, Mail, MapPin, CreditCard, Zap, Shield, Star, Palette, Package, User, Phone, FileText, Settings } from "lucide-react";
-import { motion } from "framer-motion";
+
 
 const printOrderSchema = z.object({
   customerName: z.string().min(2, "Name must be at least 2 characters"),
@@ -190,142 +190,80 @@ export function PrintOrderForm({
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-emerald-50 via-teal-50 to-cyan-50 relative overflow-hidden">
-      {/* Floating Background Elements */}
-      <div className="absolute inset-0 overflow-hidden pointer-events-none">
-        {[...Array(8)].map((_, i) => (
-          <motion.div
-            key={i}
-            className="absolute bg-gradient-to-r from-emerald-200/20 to-cyan-200/20 rounded-full"
-            style={{
-              width: `${100 + i * 30}px`,
-              height: `${100 + i * 30}px`,
-              left: `${Math.random() * 100}%`,
-              top: `${Math.random() * 100}%`,
-            }}
-            animate={{
-              x: [0, 80, 0],
-              y: [0, -80, 0],
-              rotate: [0, 360],
-            }}
-            transition={{
-              duration: 15 + i * 3,
-              repeat: Infinity,
-              ease: "linear",
-            }}
-          />
-        ))}
-      </div>
-
-      <div className="relative z-10 p-8">
+    <div className="bg-slate-50 min-h-screen">
+      <div className="p-6">
         {/* Header Section */}
-        <motion.div
-          initial={{ opacity: 0, y: -30 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.8 }}
-          className="text-center mb-12"
-        >
-          <motion.h1 
-            className="text-4xl font-bold bg-gradient-to-r from-emerald-600 to-cyan-600 bg-clip-text text-transparent mb-4"
-            animate={{ scale: [1, 1.02, 1] }}
-            transition={{ duration: 3, repeat: Infinity }}
-          >
-            Create Professional Print Order
-          </motion.h1>
-          <p className="text-gray-600 text-lg max-w-2xl mx-auto">
+        <div className="text-center mb-8">
+          <h1 className="text-3xl font-semibold text-slate-900 mb-2">
+            Create Print Order
+          </h1>
+          <p className="text-slate-600 max-w-2xl mx-auto">
             Design and order custom printed materials for your restaurant with professional quality and fast delivery
           </p>
-        </motion.div>
+        </div>
 
         {/* Service Features */}
-        <motion.div 
-          initial={{ opacity: 0, y: 30 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.8, delay: 0.2 }}
-          className="grid md:grid-cols-4 gap-6 mb-12"
-        >
+        <div className="grid md:grid-cols-4 gap-4 mb-8">
           {[
             {
               icon: Zap,
               title: "Fast Turnaround",
-              description: "2-3 business days standard",
-              color: "from-yellow-500 to-orange-500"
+              description: "2-3 business days standard"
             },
             {
               icon: Shield,
               title: "Premium Quality",
-              description: "Professional-grade materials",
-              color: "from-emerald-500 to-teal-500"
+              description: "Professional-grade materials"
             },
             {
               icon: Star,
               title: "Custom Design",
-              description: "Tailored to your brand",
-              color: "from-purple-500 to-pink-500"
+              description: "Tailored to your brand"
             },
             {
               icon: Truck,
               title: "Fast Delivery",
-              description: "Multiple shipping options",
-              color: "from-blue-500 to-cyan-500"
+              description: "Multiple shipping options"
             }
           ].map((feature, index) => (
-            <motion.div
+            <div
               key={index}
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.6, delay: 0.3 + index * 0.1 }}
-              whileHover={{ scale: 1.05, y: -5 }}
-              className="bg-white/80 backdrop-blur-xl rounded-2xl p-6 border border-white/20 shadow-xl hover:shadow-2xl transition-all duration-300"
+              className="bg-white rounded-lg border border-slate-200 p-4"
             >
-              <motion.div
-                className={`w-12 h-12 rounded-xl bg-gradient-to-br ${feature.color} flex items-center justify-center mb-4 mx-auto`}
-                whileHover={{ rotate: 10 }}
-                transition={{ duration: 0.3 }}
-              >
-                <feature.icon className="w-6 h-6 text-white" />
-              </motion.div>
-              <h3 className="text-lg font-semibold text-gray-800 mb-2 text-center">{feature.title}</h3>
-              <p className="text-gray-600 text-center text-sm">{feature.description}</p>
-            </motion.div>
+              <div className="w-10 h-10 rounded-lg bg-slate-100 flex items-center justify-center mb-3 mx-auto">
+                <feature.icon className="w-5 h-5 text-slate-600" />
+              </div>
+              <h3 className="text-sm font-medium text-slate-900 mb-1 text-center">{feature.title}</h3>
+              <p className="text-xs text-slate-600 text-center">{feature.description}</p>
+            </div>
           ))}
-        </motion.div>
+        </div>
 
       <Form {...form}>
         <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
           {/* Customer Information Section */}
-          <motion.div
-            initial={{ opacity: 0, x: -30 }}
-            animate={{ opacity: 1, x: 0 }}
-            transition={{ duration: 0.8, delay: 0.4 }}
-          >
-            <Card className="bg-white/80 backdrop-blur-xl border-white/20 shadow-2xl">
-              <CardHeader className="pb-4">
-                <CardTitle className="flex items-center gap-3 text-2xl">
-                  <motion.div
-                    animate={{ rotate: [0, 5, -5, 0] }}
-                    transition={{ duration: 2, repeat: Infinity }}
-                  >
-                    <User className="w-6 h-6 text-emerald-600" />
-                  </motion.div>
-                  Customer Information
-                </CardTitle>
-                <CardDescription>
-                  Enter your contact details and delivery preferences
-                </CardDescription>
-              </CardHeader>
+          <Card className="bg-white border border-slate-200 shadow-sm mb-6">
+            <CardHeader className="pb-4">
+              <CardTitle className="flex items-center gap-3 text-xl">
+                <User className="w-5 h-5 text-slate-600" />
+                Customer Information
+              </CardTitle>
+              <CardDescription>
+                Enter your contact details and delivery preferences
+              </CardDescription>
+            </CardHeader>
               <CardContent className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <FormField
                   control={form.control}
                   name="customerName"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel className="flex items-center gap-2 text-base font-medium">
-                        <User className="w-4 h-4 text-emerald-600" />
+                      <FormLabel className="flex items-center gap-2 text-sm font-medium">
+                        <User className="w-4 h-4 text-slate-600" />
                         Full Name
                       </FormLabel>
                       <FormControl>
-                        <Input {...field} placeholder="Enter your full name" className="h-12 border-2 focus:border-emerald-500" />
+                        <Input {...field} placeholder="Enter your full name" className="h-10 border border-slate-300 focus:border-slate-500" />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -337,12 +275,12 @@ export function PrintOrderForm({
                   name="customerEmail"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel className="flex items-center gap-2 text-base font-medium">
-                        <Mail className="w-4 h-4 text-emerald-600" />
+                      <FormLabel className="flex items-center gap-2 text-sm font-medium">
+                        <Mail className="w-4 h-4 text-slate-600" />
                         Email Address
                       </FormLabel>
                       <FormControl>
-                        <Input {...field} type="email" placeholder="your.email@restaurant.com" className="h-12 border-2 focus:border-emerald-500" />
+                        <Input {...field} type="email" placeholder="your.email@restaurant.com" className="h-10 border border-slate-300 focus:border-slate-500" />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -354,12 +292,12 @@ export function PrintOrderForm({
                   name="customerPhone"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel className="flex items-center gap-2 text-base font-medium">
-                        <Phone className="w-4 h-4 text-emerald-600" />
+                      <FormLabel className="flex items-center gap-2 text-sm font-medium">
+                        <Phone className="w-4 h-4 text-slate-600" />
                         Phone Number
                       </FormLabel>
                       <FormControl>
-                        <Input {...field} type="tel" placeholder="(555) 123-4567" className="h-12 border-2 focus:border-emerald-500" />
+                        <Input {...field} type="tel" placeholder="(555) 123-4567" className="h-10 border border-slate-300 focus:border-slate-500" />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -371,13 +309,13 @@ export function PrintOrderForm({
                   name="deliveryMethod"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel className="flex items-center gap-2 text-base font-medium">
-                        <Truck className="w-4 h-4 text-emerald-600" />
+                      <FormLabel className="flex items-center gap-2 text-sm font-medium">
+                        <Truck className="w-4 h-4 text-slate-600" />
                         Delivery Method
                       </FormLabel>
                       <Select onValueChange={field.onChange} defaultValue={field.value}>
                         <FormControl>
-                          <SelectTrigger className="h-12 border-2 focus:border-emerald-500">
+                          <SelectTrigger className="h-10 border border-slate-300 focus:border-slate-500">
                             <SelectValue placeholder="Select delivery method" />
                           </SelectTrigger>
                         </FormControl>
@@ -393,26 +331,21 @@ export function PrintOrderForm({
                 />
 
                 {form.watch("deliveryMethod") !== "pickup" && (
-                  <motion.div
-                    initial={{ opacity: 0, height: 0 }}
-                    animate={{ opacity: 1, height: "auto" }}
-                    exit={{ opacity: 0, height: 0 }}
-                    className="md:col-span-2"
-                  >
+                  <div className="md:col-span-2">
                     <FormField
                       control={form.control}
                       name="deliveryAddress"
                       render={({ field }) => (
                         <FormItem>
-                          <FormLabel className="flex items-center gap-2 text-base font-medium">
-                            <MapPin className="w-4 h-4 text-emerald-600" />
+                          <FormLabel className="flex items-center gap-2 text-sm font-medium">
+                            <MapPin className="w-4 h-4 text-slate-600" />
                             Delivery Address
                           </FormLabel>
                           <FormControl>
                             <Textarea 
                               {...field} 
                               placeholder="Enter your complete delivery address including street, city, state, and zip code"
-                              className="border-2 focus:border-emerald-500"
+                              className="border border-slate-300 focus:border-slate-500"
                               rows={3}
                             />
                           </FormControl>
@@ -420,27 +353,21 @@ export function PrintOrderForm({
                         </FormItem>
                       )}
                     />
-                  </motion.div>
+                  </div>
                 )}
               </CardContent>
             </Card>
-          </motion.div>
 
           {/* Print Specifications Section */}
-          <motion.div
+          <Card className="bg-white border border-slate-200 shadow-sm mb-6">
             initial={{ opacity: 0, x: 30 }}
             animate={{ opacity: 1, x: 0 }}
             transition={{ duration: 0.8, delay: 0.6 }}
           >
             <Card className="bg-white/80 backdrop-blur-xl border-white/20 shadow-2xl">
               <CardHeader className="pb-4">
-                <CardTitle className="flex items-center gap-3 text-2xl">
-                  <motion.div
-                    animate={{ rotate: [0, 360] }}
-                    transition={{ duration: 4, repeat: Infinity, ease: "linear" }}
-                  >
-                    <Settings className="w-6 h-6 text-cyan-600" />
-                  </motion.div>
+                <CardTitle className="flex items-center gap-3 text-xl">
+                  <Settings className="w-5 h-5 text-slate-600" />
                   Print Specifications
                 </CardTitle>
                 <CardDescription>
@@ -628,23 +555,12 @@ export function PrintOrderForm({
                 />
               </CardContent>
             </Card>
-          </motion.div>
 
           {/* Price Estimate and Payment Section */}
-          <motion.div
-            initial={{ opacity: 0, y: 30 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.8, delay: 0.8 }}
-          >
-            <Card className="bg-white/80 backdrop-blur-xl border-white/20 shadow-2xl">
+          <Card className="bg-white border border-slate-200 shadow-sm mb-6">
               <CardHeader className="pb-4">
-                <CardTitle className="flex items-center gap-3 text-2xl">
-                  <motion.div
-                    animate={{ scale: [1, 1.1, 1] }}
-                    transition={{ duration: 2, repeat: Infinity }}
-                  >
-                    <CreditCard className="w-6 h-6 text-green-600" />
-                  </motion.div>
+                <CardTitle className="flex items-center gap-3 text-xl">
+                  <CreditCard className="w-5 h-5 text-slate-600" />
                   Order Summary & Payment
                 </CardTitle>
                 <CardDescription>
@@ -653,23 +569,14 @@ export function PrintOrderForm({
               </CardHeader>
               <CardContent className="space-y-6">
                 {/* Price Estimate */}
-                <motion.div
-                  className="bg-gradient-to-r from-green-50 to-emerald-50 rounded-xl p-6 border border-green-200"
-                  initial={{ opacity: 0 }}
-                  animate={{ opacity: 1 }}
-                  transition={{ delay: 1 }}
-                >
-                  <div className="flex items-center justify-between mb-4">
-                    <h4 className="text-lg font-semibold text-green-800">Estimated Price</h4>
-                    <motion.div 
-                      className="text-3xl font-bold text-green-600"
-                      animate={{ scale: [1, 1.05, 1] }}
-                      transition={{ duration: 2, repeat: Infinity }}
-                    >
+                <div className="bg-slate-50 rounded-lg p-4 border border-slate-200">
+                  <div className="flex items-center justify-between mb-3">
+                    <h4 className="text-base font-medium text-slate-900">Estimated Price</h4>
+                    <div className="text-2xl font-semibold text-slate-900">
                       ${estimatedPrice.toFixed(2)}
-                    </motion.div>
+                    </div>
                   </div>
-                  <div className="grid grid-cols-2 gap-4 text-sm text-green-700">
+                  <div className="grid grid-cols-2 gap-4 text-sm text-slate-600">
                     <div>Type: {form.watch("printType")}</div>
                     <div>Size: {form.watch("printSize")}</div>
                     <div>Quality: {form.watch("printQuality")}</div>
@@ -677,7 +584,7 @@ export function PrintOrderForm({
                     <div>Rush: {form.watch("rushOrder") ? "Yes (+50%)" : "No"}</div>
                     <div>Delivery: {form.watch("deliveryMethod")}</div>
                   </div>
-                </motion.div>
+                
 
                 {/* Payment Method Selection */}
                 <div>
@@ -707,16 +614,16 @@ export function PrintOrderForm({
                         transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
                       >
                         <Settings className="w-6 h-6 mr-3" />
-                      </motion.div>
+                      
                     ) : (
                       <Printer className="w-6 h-6 mr-3" />
                     )}
                     {isSubmitting ? "Creating Order..." : `Create Order - $${estimatedPrice.toFixed(2)}`}
                   </Button>
-                </motion.div>
+                
               </CardContent>
             </Card>
-          </motion.div>
+          
         </form>
       </Form>
       </div>
