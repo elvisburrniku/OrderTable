@@ -22,38 +22,55 @@ import {
 export default function PaymentSuccess() {
   const [location] = useLocation();
 
-  // Parse search parameters manually
+  // Parse search parameters manually - support both secure tokens and legacy hash
   const urlParams = new URLSearchParams(window.location.search);
+  const token = urlParams.get("token");
   const bookingId = urlParams.get("booking");
   const hash = urlParams.get("hash");
 
-  // Fetch booking details using secure hash-based endpoint
+  // Fetch booking details using secure endpoint (token or legacy hash)
   const { data: booking, isLoading } = useQuery({
-    queryKey: ["secure-booking-payment-success", bookingId, hash],
+    queryKey: ["secure-booking-payment-success", token || bookingId, hash],
     queryFn: async () => {
-      if (!bookingId || !hash) {
+      // Support both new token system and legacy hash system
+      if (token) {
+        const response = await fetch(
+          `/api/secure/prepayment/token?token=${encodeURIComponent(token)}`
+        );
+        
+        if (!response.ok) {
+          if (response.status === 403) {
+            throw new Error("Invalid or expired payment link");
+          }
+          if (response.status === 404) {
+            throw new Error("Booking not found");
+          }
+          throw new Error("Failed to fetch booking details");
+        }
+        return response.json();
+      } else if (bookingId && hash) {
+        const response = await fetch(
+          `/api/secure/prepayment/${bookingId}?hash=${hash}`
+        );
+        
+        if (!response.ok) {
+          if (response.status === 403) {
+            throw new Error("Invalid or expired payment link");
+          }
+          if (response.status === 404) {
+            throw new Error("Booking not found");
+          }
+          throw new Error("Failed to fetch booking details");
+        }
+        return response.json();
+      } else {
         throw new Error("Missing required parameters for secure access");
       }
-
-      const response = await fetch(
-        `/api/secure/prepayment/${bookingId}?hash=${hash}`
-      );
-      
-      if (!response.ok) {
-        if (response.status === 403) {
-          throw new Error("Invalid or expired payment link");
-        }
-        if (response.status === 404) {
-          throw new Error("Booking not found");
-        }
-        throw new Error("Failed to fetch booking details");
-      }
-      return response.json();
     },
-    enabled: !!(bookingId && hash),
+    enabled: !!(token || (bookingId && hash)),
   });
 
-  if (!bookingId || !hash) {
+  if (!token && (!bookingId || !hash)) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-red-50 to-rose-100 py-12 px-4">
         <div className="container mx-auto max-w-md">
