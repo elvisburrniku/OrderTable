@@ -1,18 +1,36 @@
-import React, { useState } from 'react';
-import { useQuery } from '@tanstack/react-query';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from './ui/card';
-import { Button } from './ui/button';
-import { Alert, AlertDescription } from './ui/alert';
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from './ui/dialog';
-import { CreditCard, Lock, Plus, AlertTriangle } from 'lucide-react';
-import { Elements, CardElement, useStripe, useElements } from '@stripe/react-stripe-js';
-import { loadStripe } from '@stripe/stripe-js';
-import { useToast } from '@/hooks/use-toast';
-import { useMutation } from '@tanstack/react-query';
-import { apiRequest } from '@/lib/queryClient';
+import React, { useState } from "react";
+import { useQuery } from "@tanstack/react-query";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "./ui/card";
+import { Button } from "./ui/button";
+import { Alert, AlertDescription } from "./ui/alert";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "./ui/dialog";
+import { CreditCard, Lock, Plus, AlertTriangle } from "lucide-react";
+import {
+  Elements,
+  CardElement,
+  useStripe,
+  useElements,
+} from "@stripe/react-stripe-js";
+import { loadStripe } from "@stripe/stripe-js";
+import { useToast } from "@/hooks/use-toast";
+import { useMutation } from "@tanstack/react-query";
+import { apiRequest } from "@/lib/queryClient";
 
-const stripePromise = import.meta.env.VITE_STRIPE_PUBLIC_KEY 
-  ? loadStripe(import.meta.env.VITE_STRIPE_PUBLIC_KEY)
+const stripePromise = import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY
+  ? loadStripe(import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY)
   : Promise.resolve(null);
 
 interface PaymentMethodGuardProps {
@@ -56,7 +74,7 @@ function AddPaymentMethodForm({ onSuccess }: { onSuccess: () => void }) {
       if (!cardElement) return;
 
       setIsLoading(true);
-      
+
       const { error } = await stripe.confirmCardSetup(data.clientSecret, {
         payment_method: {
           card: cardElement,
@@ -123,21 +141,26 @@ function AddPaymentMethodForm({ onSuccess }: { onSuccess: () => void }) {
   );
 }
 
-export function PaymentMethodGuard({ 
-  children, 
-  onPaymentMethodAdded, 
-  requiredFor = "subscription upgrade" 
+export function PaymentMethodGuard({
+  children,
+  onPaymentMethodAdded,
+  requiredFor = "subscription upgrade",
 }: PaymentMethodGuardProps) {
   const [showAddPaymentDialog, setShowAddPaymentDialog] = useState(false);
   const { toast } = useToast();
 
-  const { data: billingInfo, isLoading, refetch } = useQuery<BillingInfo>({
+  const {
+    data: billingInfo,
+    isLoading,
+    refetch,
+  } = useQuery<BillingInfo>({
     queryKey: ["/api/billing/info"],
   });
 
   // Remove setup intent query since we handle it in the form
 
-  const hasPaymentMethod = billingInfo?.paymentMethods && billingInfo.paymentMethods.length > 0;
+  const hasPaymentMethod =
+    billingInfo?.paymentMethods && billingInfo.paymentMethods.length > 0;
 
   const handleDialogOpenChange = (open: boolean) => {
     setShowAddPaymentDialog(open);
@@ -149,7 +172,7 @@ export function PaymentMethodGuard({
     onPaymentMethodAdded?.();
     toast({
       title: "Ready to Upgrade",
-      description: "You can now proceed with your subscription upgrade."
+      description: "You can now proceed with your subscription upgrade.",
     });
   };
 
@@ -168,7 +191,8 @@ export function PaymentMethodGuard({
         <Alert className="border-orange-200 bg-orange-50">
           <AlertTriangle className="h-4 w-4 text-orange-600" />
           <AlertDescription className="text-orange-800">
-            <strong>Payment Method Required:</strong> Please add a payment method before proceeding with {requiredFor}.
+            <strong>Payment Method Required:</strong> Please add a payment
+            method before proceeding with {requiredFor}.
           </AlertDescription>
         </Alert>
 
@@ -179,69 +203,81 @@ export function PaymentMethodGuard({
             </div>
             <CardTitle>Add Payment Method</CardTitle>
             <CardDescription>
-              Secure your account with a payment method to access premium features
+              Secure your account with a payment method to access premium
+              features
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
             <div className="bg-blue-50 p-4 rounded-lg">
-              <h4 className="font-semibold text-blue-900 mb-2">Why do we need this?</h4>
+              <h4 className="font-semibold text-blue-900 mb-2">
+                Why do we need this?
+              </h4>
               <ul className="text-sm text-blue-800 space-y-1">
                 <li>• Enables seamless subscription upgrades</li>
-                <li>• Secures your account and prevents service interruption</li>
+                <li>
+                  • Secures your account and prevents service interruption
+                </li>
                 <li>• No charges until you upgrade your plan</li>
                 <li>• 256-bit SSL encryption protects your data</li>
               </ul>
             </div>
 
             {import.meta.env.VITE_STRIPE_PUBLIC_KEY ? (
-              <Dialog open={showAddPaymentDialog} onOpenChange={handleDialogOpenChange}>
+              <Dialog
+                open={showAddPaymentDialog}
+                onOpenChange={handleDialogOpenChange}
+              >
                 <DialogTrigger asChild>
                   <Button className="w-full">
                     <Plus className="h-4 w-4 mr-2" />
                     Add Payment Method
-                </Button>
-              </DialogTrigger>
-              <DialogContent className="max-w-md">
-                <DialogHeader>
-                  <DialogTitle>Add Payment Method</DialogTitle>
-                  <DialogDescription>
-                    Add a new payment method to your account
-                  </DialogDescription>
-                </DialogHeader>
-                
-                <Elements stripe={stripePromise}>
-                  <AddPaymentMethodForm onSuccess={handlePaymentMethodAdded} />
-                </Elements>
-              </DialogContent>
-            </Dialog>
+                  </Button>
+                </DialogTrigger>
+                <DialogContent className="max-w-md">
+                  <DialogHeader>
+                    <DialogTitle>Add Payment Method</DialogTitle>
+                    <DialogDescription>
+                      Add a new payment method to your account
+                    </DialogDescription>
+                  </DialogHeader>
+
+                  <Elements stripe={stripePromise}>
+                    <AddPaymentMethodForm
+                      onSuccess={handlePaymentMethodAdded}
+                    />
+                  </Elements>
+                </DialogContent>
+              </Dialog>
             ) : (
               <div className="p-4 bg-yellow-50 border border-yellow-200 rounded-lg">
                 <p className="text-sm text-yellow-800">
-                  Payment processing is not configured. Please contact support to set up billing.
+                  Payment processing is not configured. Please contact support
+                  to set up billing.
                 </p>
               </div>
             )}
 
             <p className="text-xs text-gray-600 text-center">
-              We use Stripe for secure payment processing. Your card information is encrypted and never stored on our servers.
+              We use Stripe for secure payment processing. Your card information
+              is encrypted and never stored on our servers.
             </p>
           </CardContent>
         </Card>
-
-
 
         {/* Blocked Content Preview */}
         <div className="relative">
           <div className="absolute inset-0 bg-gray-100 bg-opacity-75 backdrop-blur-sm rounded-lg flex items-center justify-center z-10">
             <div className="text-center p-6">
               <Lock className="h-8 w-8 text-gray-400 mx-auto mb-2" />
-              <p className="text-gray-600 font-medium">Payment Method Required</p>
-              <p className="text-sm text-gray-500">Add a payment method to unlock this feature</p>
+              <p className="text-gray-600 font-medium">
+                Payment Method Required
+              </p>
+              <p className="text-sm text-gray-500">
+                Add a payment method to unlock this feature
+              </p>
             </div>
           </div>
-          <div className="opacity-50 pointer-events-none">
-            {children}
-          </div>
+          <div className="opacity-50 pointer-events-none">{children}</div>
         </div>
       </div>
     );

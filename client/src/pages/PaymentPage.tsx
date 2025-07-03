@@ -5,21 +5,27 @@ import { loadStripe } from "@stripe/stripe-js";
 import { useQuery } from "@tanstack/react-query";
 import { apiRequest } from "@/lib/queryClient";
 import BookingPayment from "@/components/BookingPayment";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { AlertCircle, CheckCircle, CreditCard } from "lucide-react";
 
 // Make sure to call `loadStripe` outside of a component's render to avoid
 // recreating the `Stripe` object on every render.
-const stripePromise = import.meta.env.VITE_STRIPE_PUBLIC_KEY 
-  ? loadStripe(import.meta.env.VITE_STRIPE_PUBLIC_KEY)
+const stripePromise = import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY
+  ? loadStripe(import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY)
   : null;
 
 export default function PaymentPage() {
   const [location] = useLocation();
-  
+
   // Parse search parameters manually
-  const urlParams = new URLSearchParams(location.split('?')[1] || '');
+  const urlParams = new URLSearchParams(location.split("?")[1] || "");
   const bookingId = urlParams.get("booking");
   const amount = parseFloat(urlParams.get("amount") || "0");
   const currency = urlParams.get("currency") || "USD";
@@ -27,7 +33,7 @@ export default function PaymentPage() {
   const [error, setError] = useState("");
 
   // Check if Stripe is configured
-  if (!import.meta.env.VITE_STRIPE_PUBLIC_KEY) {
+  if (!import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY) {
     return (
       <div className="container mx-auto p-6">
         <Card className="max-w-md mx-auto">
@@ -41,7 +47,8 @@ export default function PaymentPage() {
             <Alert variant="destructive">
               <AlertCircle className="h-4 w-4" />
               <AlertDescription>
-                Payment processing is not configured. Please contact the restaurant directly to complete your booking.
+                Payment processing is not configured. Please contact the
+                restaurant directly to complete your booking.
               </AlertDescription>
             </Alert>
           </CardContent>
@@ -67,16 +74,16 @@ export default function PaymentPage() {
       const createPaymentIntent = async () => {
         try {
           const response = await apiRequest(
-            "POST", 
+            "POST",
             `/api/tenants/${booking.tenantId}/restaurants/${booking.restaurantId}/bookings/${booking.id}/payment`,
             {
               amount,
               currency,
               description: `Payment for booking at ${booking.restaurantName || "restaurant"} - ${booking.name}`,
-            }
+            },
           );
           const data = await response.json();
-          
+
           if (data.clientSecret) {
             setClientSecret(data.clientSecret);
           } else {
@@ -115,7 +122,8 @@ export default function PaymentPage() {
             <Alert variant="destructive">
               <AlertCircle className="h-4 w-4" />
               <AlertDescription>
-                This payment link is invalid or expired. Please contact the restaurant to get a new payment link.
+                This payment link is invalid or expired. Please contact the
+                restaurant to get a new payment link.
               </AlertDescription>
             </Alert>
           </CardContent>
@@ -147,9 +155,7 @@ export default function PaymentPage() {
           <CardContent>
             <Alert variant="destructive">
               <AlertCircle className="h-4 w-4" />
-              <AlertDescription>
-                {error}
-              </AlertDescription>
+              <AlertDescription>{error}</AlertDescription>
             </Alert>
           </CardContent>
         </Card>
@@ -166,9 +172,7 @@ export default function PaymentPage() {
               <CreditCard className="h-5 w-5" />
               Preparing Payment
             </CardTitle>
-            <CardDescription>
-              Setting up your payment...
-            </CardDescription>
+            <CardDescription>Setting up your payment...</CardDescription>
           </CardHeader>
           <CardContent>
             <div className="flex items-center justify-center h-32">

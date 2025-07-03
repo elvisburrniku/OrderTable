@@ -29,8 +29,8 @@ import {
   useElements,
 } from "@stripe/react-stripe-js";
 
-const stripePromise = import.meta.env.VITE_STRIPE_PUBLIC_KEY
-  ? loadStripe(import.meta.env.VITE_STRIPE_PUBLIC_KEY)
+const stripePromise = import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY
+  ? loadStripe(import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY)
   : null;
 
 interface BookingPaymentFormProps {
@@ -74,7 +74,7 @@ function BookingPaymentForm({
 
     try {
       // Construct return URL based on payment method (secure token or legacy hash)
-      const returnUrl = token 
+      const returnUrl = token
         ? `${window.location.origin}/payment-success?token=${encodeURIComponent(token)}`
         : `${window.location.origin}/payment-success?booking=${booking.id}&hash=${hash}`;
 
@@ -187,7 +187,7 @@ export default function PrePayment() {
   // Parse search parameters - now using secure token
   const urlParams = new URLSearchParams(window.location.search);
   const token = urlParams.get("token");
-  
+
   // Legacy support for old hash-based URLs (to be removed)
   const bookingId = urlParams.get("booking");
   const hash = urlParams.get("hash");
@@ -200,11 +200,7 @@ export default function PrePayment() {
     isLoading: bookingLoading,
     error: bookingError,
   } = useQuery({
-    queryKey: [
-      "secure-booking-details",
-      token || bookingId,
-      hash,
-    ],
+    queryKey: ["secure-booking-details", token || bookingId, hash],
     queryFn: async () => {
       // Support both new token system and legacy hash system
       if (token) {
@@ -226,7 +222,9 @@ export default function PrePayment() {
           ) {
             throw new Error("stripe_connect_not_setup");
           }
-          throw new Error(errorData.message || "Failed to fetch booking details");
+          throw new Error(
+            errorData.message || "Failed to fetch booking details",
+          );
         }
         return response.json();
       } else if (bookingId && hash) {
@@ -249,11 +247,15 @@ export default function PrePayment() {
           ) {
             throw new Error("stripe_connect_not_setup");
           }
-          throw new Error(errorData.message || "Failed to fetch booking details");
+          throw new Error(
+            errorData.message || "Failed to fetch booking details",
+          );
         }
         return response.json();
       } else {
-        throw new Error("Invalid payment link - missing token or booking parameters");
+        throw new Error(
+          "Invalid payment link - missing token or booking parameters",
+        );
       }
     },
     enabled: !!(token || (bookingId && hash)),
@@ -281,18 +283,22 @@ export default function PrePayment() {
               headers: {
                 "Content-Type": "application/json",
               },
-              body: JSON.stringify(token ? {
-                token: token,
-                amount: booking.paymentAmount,
-                currency: "usd",
-              } : {
-                hash: hash,
-                tenant: booking.tenantId,
-                restaurant: booking.restaurantId,
-                bookingId: booking.id,
-                amount: booking.paymentAmount,
-                currency: "usd",
-              }),
+              body: JSON.stringify(
+                token
+                  ? {
+                      token: token,
+                      amount: booking.paymentAmount,
+                      currency: "usd",
+                    }
+                  : {
+                      hash: hash,
+                      tenant: booking.tenantId,
+                      restaurant: booking.restaurantId,
+                      bookingId: booking.id,
+                      amount: booking.paymentAmount,
+                      currency: "usd",
+                    },
+              ),
             },
           );
 
@@ -467,7 +473,7 @@ export default function PrePayment() {
   }
 
   // Check if booking is already paid
-  if (booking && booking.paymentStatus === 'paid') {
+  if (booking && booking.paymentStatus === "paid") {
     return (
       <div className="min-h-screen bg-gradient-to-br from-green-50 to-emerald-100 py-12 px-4">
         <div className="container mx-auto max-w-md">
@@ -495,7 +501,9 @@ export default function PrePayment() {
                   </div>
                   <div className="flex items-center gap-2">
                     <Calendar className="h-4 w-4 text-green-600" />
-                    <span className="text-green-700">{new Date(booking.bookingDate).toLocaleDateString()}</span>
+                    <span className="text-green-700">
+                      {new Date(booking.bookingDate).toLocaleDateString()}
+                    </span>
                   </div>
                   <div className="flex items-center gap-2">
                     <Clock className="h-4 w-4 text-green-600" />
@@ -504,7 +512,9 @@ export default function PrePayment() {
                   {booking.restaurantName && (
                     <div className="flex items-center gap-2">
                       <MapPin className="h-4 w-4 text-green-600" />
-                      <span className="text-green-700">{booking.restaurantName}</span>
+                      <span className="text-green-700">
+                        {booking.restaurantName}
+                      </span>
                     </div>
                   )}
                 </div>
@@ -526,20 +536,25 @@ export default function PrePayment() {
                   <span className="text-sm text-green-700">Status:</span>
                   <div className="flex items-center gap-2">
                     <CheckCircle className="h-4 w-4 text-green-600" />
-                    <span className="text-sm font-medium text-green-800">Paid</span>
+                    <span className="text-sm font-medium text-green-800">
+                      Paid
+                    </span>
                   </div>
                 </div>
                 {booking.paymentPaidAt && (
                   <div className="flex items-center justify-between">
                     <span className="text-sm text-green-700">Paid On:</span>
                     <span className="text-sm font-medium text-green-800">
-                      {new Date(booking.paymentPaidAt).toLocaleDateString('en-US', {
-                        month: 'short',
-                        day: 'numeric',
-                        year: 'numeric',
-                        hour: '2-digit',
-                        minute: '2-digit'
-                      })}
+                      {new Date(booking.paymentPaidAt).toLocaleDateString(
+                        "en-US",
+                        {
+                          month: "short",
+                          day: "numeric",
+                          year: "numeric",
+                          hour: "2-digit",
+                          minute: "2-digit",
+                        },
+                      )}
                     </span>
                   </div>
                 )}
@@ -548,8 +563,8 @@ export default function PrePayment() {
               <Alert className="border-green-200 bg-green-50">
                 <CheckCircle className="h-4 w-4 text-green-600" />
                 <AlertDescription className="text-green-800">
-                  Your booking is confirmed and payment has been processed successfully. 
-                  You should receive a confirmation email shortly.
+                  Your booking is confirmed and payment has been processed
+                  successfully. You should receive a confirmation email shortly.
                 </AlertDescription>
               </Alert>
             </CardContent>

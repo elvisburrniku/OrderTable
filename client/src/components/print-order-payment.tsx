@@ -1,16 +1,33 @@
 import { useState } from "react";
-import { Elements, PaymentElement, useStripe, useElements } from "@stripe/react-stripe-js";
+import {
+  Elements,
+  PaymentElement,
+  useStripe,
+  useElements,
+} from "@stripe/react-stripe-js";
 import { loadStripe } from "@stripe/stripe-js";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { useToast } from "@/hooks/use-toast";
-import { CheckCircle, CreditCard, Clock, Printer, ArrowLeft } from "lucide-react";
+import {
+  CheckCircle,
+  CreditCard,
+  Clock,
+  Printer,
+  ArrowLeft,
+} from "lucide-react";
 
 // Initialize Stripe
-const stripePromise = import.meta.env.VITE_STRIPE_PUBLIC_KEY 
-  ? loadStripe(import.meta.env.VITE_STRIPE_PUBLIC_KEY)
+const stripePromise = import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY
+  ? loadStripe(import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY)
   : Promise.resolve(null);
 
 interface PrintOrderPaymentProps {
@@ -27,7 +44,12 @@ interface PrintOrderPaymentProps {
   onCancel?: () => void;
 }
 
-function PaymentForm({ order, savedPaymentMethods, onPaymentSuccess, onCancel }: {
+function PaymentForm({
+  order,
+  savedPaymentMethods,
+  onPaymentSuccess,
+  onCancel,
+}: {
   order: any;
   savedPaymentMethods?: Array<{
     id: string;
@@ -45,8 +67,6 @@ function PaymentForm({ order, savedPaymentMethods, onPaymentSuccess, onCancel }:
   const [paymentSuccessful, setPaymentSuccessful] = useState(false);
   const { toast } = useToast();
 
-
-
   const handleSubmit = async (event: React.FormEvent) => {
     event.preventDefault();
 
@@ -62,7 +82,7 @@ function PaymentForm({ order, savedPaymentMethods, onPaymentSuccess, onCancel }:
         confirmParams: {
           return_url: `${window.location.origin}/print-orders/success`,
         },
-        redirect: 'if_required',
+        redirect: "if_required",
       });
 
       if (error) {
@@ -71,12 +91,12 @@ function PaymentForm({ order, savedPaymentMethods, onPaymentSuccess, onCancel }:
           description: error.message,
           variant: "destructive",
         });
-      } else if (paymentIntent && paymentIntent.status === 'succeeded') {
+      } else if (paymentIntent && paymentIntent.status === "succeeded") {
         // Confirm payment on backend
-        const response = await fetch('/api/print-orders/confirm-payment', {
-          method: 'POST',
+        const response = await fetch("/api/print-orders/confirm-payment", {
+          method: "POST",
           headers: {
-            'Content-Type': 'application/json',
+            "Content-Type": "application/json",
           },
           body: JSON.stringify({
             paymentIntentId: paymentIntent.id,
@@ -90,19 +110,20 @@ function PaymentForm({ order, savedPaymentMethods, onPaymentSuccess, onCancel }:
             title: "Payment Successful",
             description: `Your print order ${order.orderNumber} has been confirmed!`,
           });
-          
+
           if (onPaymentSuccess) {
             onPaymentSuccess(result.order);
           }
         } else {
-          throw new Error('Failed to confirm payment on server');
+          throw new Error("Failed to confirm payment on server");
         }
       }
     } catch (error) {
-      console.error('Payment error:', error);
+      console.error("Payment error:", error);
       toast({
         title: "Payment Error",
-        description: "There was an error processing your payment. Please try again.",
+        description:
+          "There was an error processing your payment. Please try again.",
         variant: "destructive",
       });
     } finally {
@@ -132,17 +153,22 @@ function PaymentForm({ order, savedPaymentMethods, onPaymentSuccess, onCancel }:
               <span className="font-medium">Estimated Completion:</span>
               <span className="flex items-center gap-1">
                 <Clock className="h-4 w-4" />
-                {order.rushOrder ? '24 hours' : '2-3 business days'}
+                {order.rushOrder ? "24 hours" : "2-3 business days"}
               </span>
             </div>
             <div className="flex justify-between">
               <span className="font-medium">Total Paid:</span>
-              <span className="font-semibold">${(order.totalAmount / 100).toFixed(2)}</span>
+              <span className="font-semibold">
+                ${(order.totalAmount / 100).toFixed(2)}
+              </span>
             </div>
           </div>
           <Separator />
           <div className="text-sm text-gray-600 dark:text-gray-400">
-            <p>We've sent a confirmation email to {order.customerEmail} with your order details and tracking information.</p>
+            <p>
+              We've sent a confirmation email to {order.customerEmail} with your
+              order details and tracking information.
+            </p>
           </div>
         </CardContent>
       </Card>
@@ -163,7 +189,9 @@ function PaymentForm({ order, savedPaymentMethods, onPaymentSuccess, onCancel }:
       <CardContent>
         <form onSubmit={handleSubmit} className="space-y-6">
           <div className="space-y-4">
-            <h3 className="text-sm font-medium text-gray-500 dark:text-gray-400">Order Summary</h3>
+            <h3 className="text-sm font-medium text-gray-500 dark:text-gray-400">
+              Order Summary
+            </h3>
             <div className="space-y-2 text-sm">
               <div className="flex justify-between">
                 <span>Print Type:</span>
@@ -171,7 +199,9 @@ function PaymentForm({ order, savedPaymentMethods, onPaymentSuccess, onCancel }:
               </div>
               <div className="flex justify-between">
                 <span>Size & Quality:</span>
-                <span>{order.printSize} - {order.printQuality}</span>
+                <span>
+                  {order.printSize} - {order.printQuality}
+                </span>
               </div>
               <div className="flex justify-between">
                 <span>Quantity:</span>
@@ -191,10 +221,15 @@ function PaymentForm({ order, savedPaymentMethods, onPaymentSuccess, onCancel }:
 
           {savedPaymentMethods && savedPaymentMethods.length > 0 && (
             <div className="space-y-3">
-              <h3 className="text-sm font-medium text-gray-500 dark:text-gray-400">Available Payment Methods</h3>
+              <h3 className="text-sm font-medium text-gray-500 dark:text-gray-400">
+                Available Payment Methods
+              </h3>
               <div className="space-y-2">
                 {savedPaymentMethods.map((method) => (
-                  <div key={method.id} className="p-3 bg-blue-50 dark:bg-blue-950 rounded-lg border border-blue-200">
+                  <div
+                    key={method.id}
+                    className="p-3 bg-blue-50 dark:bg-blue-950 rounded-lg border border-blue-200"
+                  >
                     <div className="flex items-center justify-between">
                       <div className="flex items-center gap-2">
                         <CreditCard className="h-4 w-4 text-blue-600" />
@@ -209,14 +244,17 @@ function PaymentForm({ order, savedPaymentMethods, onPaymentSuccess, onCancel }:
                   </div>
                 ))}
                 <div className="text-xs text-gray-500 dark:text-gray-400">
-                  Stripe will use your saved payment method or allow you to add a new one
+                  Stripe will use your saved payment method or allow you to add
+                  a new one
                 </div>
               </div>
             </div>
           )}
 
           <div className="space-y-4">
-            <h3 className="text-sm font-medium text-gray-500 dark:text-gray-400">Payment Information</h3>
+            <h3 className="text-sm font-medium text-gray-500 dark:text-gray-400">
+              Payment Information
+            </h3>
             <PaymentElement />
           </div>
 
@@ -254,18 +292,20 @@ function PaymentForm({ order, savedPaymentMethods, onPaymentSuccess, onCancel }:
   );
 }
 
-export function PrintOrderPayment({ 
-  clientSecret, 
-  order, 
+export function PrintOrderPayment({
+  clientSecret,
+  order,
   savedPaymentMethods,
-  onPaymentSuccess, 
-  onCancel 
+  onPaymentSuccess,
+  onCancel,
 }: PrintOrderPaymentProps) {
   if (!stripePromise) {
     return (
       <Card className="border-red-200 bg-red-50 dark:bg-red-950">
         <CardHeader>
-          <CardTitle className="text-red-700 dark:text-red-300">Payment Unavailable</CardTitle>
+          <CardTitle className="text-red-700 dark:text-red-300">
+            Payment Unavailable
+          </CardTitle>
           <CardDescription className="text-red-600 dark:text-red-400">
             Stripe payment processing is not configured. Please contact support.
           </CardDescription>
@@ -278,9 +318,12 @@ export function PrintOrderPayment({
     return (
       <Card className="border-yellow-200 bg-yellow-50 dark:bg-yellow-950">
         <CardHeader>
-          <CardTitle className="text-yellow-700 dark:text-yellow-300">Payment Setup Required</CardTitle>
+          <CardTitle className="text-yellow-700 dark:text-yellow-300">
+            Payment Setup Required
+          </CardTitle>
           <CardDescription className="text-yellow-600 dark:text-yellow-400">
-            Payment information is missing. Please try creating your order again.
+            Payment information is missing. Please try creating your order
+            again.
           </CardDescription>
         </CardHeader>
       </Card>
@@ -290,26 +333,26 @@ export function PrintOrderPayment({
   const options = {
     clientSecret,
     appearance: {
-      theme: 'stripe' as const,
+      theme: "stripe" as const,
       variables: {
-        colorPrimary: '#0F172A',
-        colorBackground: '#ffffff',
-        colorText: '#1f2937',
-        colorDanger: '#ef4444',
-        fontFamily: 'Inter, system-ui, sans-serif',
-        spacingUnit: '4px',
-        borderRadius: '8px',
+        colorPrimary: "#0F172A",
+        colorBackground: "#ffffff",
+        colorText: "#1f2937",
+        colorDanger: "#ef4444",
+        fontFamily: "Inter, system-ui, sans-serif",
+        spacingUnit: "4px",
+        borderRadius: "8px",
       },
     },
   };
 
   return (
     <Elements stripe={stripePromise} options={options}>
-      <PaymentForm 
-        order={order} 
+      <PaymentForm
+        order={order}
         savedPaymentMethods={savedPaymentMethods}
-        onPaymentSuccess={onPaymentSuccess} 
-        onCancel={onCancel} 
+        onPaymentSuccess={onPaymentSuccess}
+        onCancel={onCancel}
       />
     </Elements>
   );

@@ -4,13 +4,39 @@ import { useAuth } from "@/lib/auth";
 import { useParams } from "wouter";
 import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
 import { Alert, AlertDescription } from "@/components/ui/alert";
-import { Building2, Plus, CreditCard, Crown, Users, Calendar, DollarSign, Eye, Trash2, Pause, Play, AlertTriangle } from "lucide-react";
+import {
+  Building2,
+  Plus,
+  CreditCard,
+  Crown,
+  Users,
+  Calendar,
+  DollarSign,
+  Eye,
+  Trash2,
+  Pause,
+  Play,
+  AlertTriangle,
+} from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
@@ -18,11 +44,16 @@ import { SneakPeekModal } from "@/components/sneak-peek-modal";
 import { UpgradeFlowHandler } from "@/components/upgrade-flow-handler";
 import { AdditionalRestaurantBilling } from "@/components/additional-restaurant-billing";
 import { Link } from "wouter";
-import { Elements, PaymentElement, useStripe, useElements } from '@stripe/react-stripe-js';
-import { loadStripe } from '@stripe/stripe-js';
+import {
+  Elements,
+  PaymentElement,
+  useStripe,
+  useElements,
+} from "@stripe/react-stripe-js";
+import { loadStripe } from "@stripe/stripe-js";
 
-const stripePromise = import.meta.env.VITE_STRIPE_PUBLIC_KEY 
-  ? loadStripe(import.meta.env.VITE_STRIPE_PUBLIC_KEY)
+const stripePromise = import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY
+  ? loadStripe(import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY)
   : Promise.resolve(null);
 
 interface RestaurantManagementInfo {
@@ -53,7 +84,11 @@ interface RestaurantManagementInfo {
   };
 }
 
-function PurchaseAdditionalRestaurantFormInner({ onSuccess }: { onSuccess: () => void }) {
+function PurchaseAdditionalRestaurantFormInner({
+  onSuccess,
+}: {
+  onSuccess: () => void;
+}) {
   const stripe = useStripe();
   const elements = useElements();
   const { user } = useAuth();
@@ -62,9 +97,13 @@ function PurchaseAdditionalRestaurantFormInner({ onSuccess }: { onSuccess: () =>
 
   const confirmMutation = useMutation({
     mutationFn: async (paymentIntentId: string) => {
-      const response = await apiRequest("POST", `/api/tenants/${user?.tenantId}/confirm-additional-restaurant`, {
-        paymentIntentId
-      });
+      const response = await apiRequest(
+        "POST",
+        `/api/tenants/${user?.tenantId}/confirm-additional-restaurant`,
+        {
+          paymentIntentId,
+        },
+      );
       return response.json();
     },
   });
@@ -81,7 +120,7 @@ function PurchaseAdditionalRestaurantFormInner({ onSuccess }: { onSuccess: () =>
     try {
       // First create the payment intent
       const purchaseResult = await purchaseMutation.mutateAsync();
-      
+
       if (!purchaseResult.success) {
         throw new Error(purchaseResult.message);
       }
@@ -90,9 +129,9 @@ function PurchaseAdditionalRestaurantFormInner({ onSuccess }: { onSuccess: () =>
       const { error } = await stripe.confirmPayment({
         elements,
         confirmParams: {
-          return_url: window.location.origin + '/restaurant-management',
+          return_url: window.location.origin + "/restaurant-management",
         },
-        redirect: 'if_required'
+        redirect: "if_required",
       });
 
       if (error) {
@@ -122,7 +161,9 @@ function PurchaseAdditionalRestaurantFormInner({ onSuccess }: { onSuccess: () =>
   return (
     <div className="space-y-6">
       <div className="text-center space-y-2">
-        <h3 className="text-lg font-semibold">Purchase Additional Restaurant</h3>
+        <h3 className="text-lg font-semibold">
+          Purchase Additional Restaurant
+        </h3>
         <p className="text-sm text-gray-600">
           Add another restaurant to your Enterprise plan for $50/month
         </p>
@@ -130,8 +171,8 @@ function PurchaseAdditionalRestaurantFormInner({ onSuccess }: { onSuccess: () =>
 
       <form onSubmit={handleSubmit} className="space-y-6">
         <PaymentElement />
-        <Button 
-          type="submit" 
+        <Button
+          type="submit"
           disabled={!stripe || isProcessing}
           className="w-full"
         >
@@ -142,7 +183,11 @@ function PurchaseAdditionalRestaurantFormInner({ onSuccess }: { onSuccess: () =>
   );
 }
 
-function PurchaseAdditionalRestaurantForm({ onSuccess }: { onSuccess: () => void }) {
+function PurchaseAdditionalRestaurantForm({
+  onSuccess,
+}: {
+  onSuccess: () => void;
+}) {
   const { user } = useAuth();
   const { toast } = useToast();
   const [clientSecret, setClientSecret] = useState<string | null>(null);
@@ -150,7 +195,10 @@ function PurchaseAdditionalRestaurantForm({ onSuccess }: { onSuccess: () => void
   // Create payment intent when component mounts
   const purchaseMutation = useMutation({
     mutationFn: async () => {
-      const response = await apiRequest("POST", `/api/tenants/${user?.tenantId}/purchase-additional-restaurant`);
+      const response = await apiRequest(
+        "POST",
+        `/api/tenants/${user?.tenantId}/purchase-additional-restaurant`,
+      );
       return response.json();
     },
     onSuccess: (data) => {
@@ -170,19 +218,23 @@ function PurchaseAdditionalRestaurantForm({ onSuccess }: { onSuccess: () => void
   return (
     <div className="space-y-6">
       <div className="text-center space-y-2">
-        <h3 className="text-lg font-semibold">Purchase Additional Restaurant</h3>
+        <h3 className="text-lg font-semibold">
+          Purchase Additional Restaurant
+        </h3>
         <p className="text-sm text-gray-600">
           Add another restaurant to your Enterprise plan for $50/month
         </p>
       </div>
 
       {!clientSecret && (
-        <Button 
+        <Button
           onClick={() => purchaseMutation.mutate()}
           disabled={purchaseMutation.isPending}
           className="w-full"
         >
-          {purchaseMutation.isPending ? "Setting up payment..." : "Continue to Payment"}
+          {purchaseMutation.isPending
+            ? "Setting up payment..."
+            : "Continue to Payment"}
         </Button>
       )}
 
@@ -207,26 +259,34 @@ export default function RestaurantManagement() {
   const params = useParams();
   const tenantId = params.tenantId;
 
-  const { data: managementInfo, isLoading } = useQuery<RestaurantManagementInfo>({
-    queryKey: [`/api/tenants/${tenantId}/restaurant-management`],
-    enabled: !!tenantId,
-  });
+  const { data: managementInfo, isLoading } =
+    useQuery<RestaurantManagementInfo>({
+      queryKey: [`/api/tenants/${tenantId}/restaurant-management`],
+      enabled: !!tenantId,
+    });
 
   const handlePurchaseSuccess = () => {
     setShowPurchaseDialog(false);
-    queryClient.invalidateQueries({ queryKey: [`/api/tenants/${tenantId}/restaurant-management`] });
+    queryClient.invalidateQueries({
+      queryKey: [`/api/tenants/${tenantId}/restaurant-management`],
+    });
   };
 
   // Delete restaurant mutation
   const deleteRestaurantMutation = useMutation({
     mutationFn: async (restaurantId: number) => {
-      const response = await apiRequest(`/api/tenants/${tenantId}/restaurants/${restaurantId}`, {
-        method: "DELETE",
-      });
+      const response = await apiRequest(
+        `/api/tenants/${tenantId}/restaurants/${restaurantId}`,
+        {
+          method: "DELETE",
+        },
+      );
       return response;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: [`/api/tenants/${tenantId}/restaurant-management`] });
+      queryClient.invalidateQueries({
+        queryKey: [`/api/tenants/${tenantId}/restaurant-management`],
+      });
       setShowDeleteDialog(false);
       setSelectedRestaurant(null);
       toast({
@@ -245,24 +305,37 @@ export default function RestaurantManagement() {
 
   // Pause/unpause restaurant mutation
   const pauseRestaurantMutation = useMutation({
-    mutationFn: async ({ restaurantId, paused, reason }: { restaurantId: number; paused: boolean; reason?: string }) => {
-      const response = await apiRequest(`/api/tenants/${tenantId}/restaurants/${restaurantId}/pause`, {
-        method: "PATCH",
-        headers: {
-          "Content-Type": "application/json",
+    mutationFn: async ({
+      restaurantId,
+      paused,
+      reason,
+    }: {
+      restaurantId: number;
+      paused: boolean;
+      reason?: string;
+    }) => {
+      const response = await apiRequest(
+        `/api/tenants/${tenantId}/restaurants/${restaurantId}/pause`,
+        {
+          method: "PATCH",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({ paused, reason }),
         },
-        body: JSON.stringify({ paused, reason }),
-      });
+      );
       return response;
     },
     onSuccess: (data, variables) => {
-      queryClient.invalidateQueries({ queryKey: [`/api/tenants/${tenantId}/restaurant-management`] });
+      queryClient.invalidateQueries({
+        queryKey: [`/api/tenants/${tenantId}/restaurant-management`],
+      });
       setShowPauseDialog(false);
       setSelectedRestaurant(null);
       setPauseReason("");
       toast({
         title: "Success",
-        description: `Restaurant ${variables.paused ? 'paused' : 'unpaused'} successfully`,
+        description: `Restaurant ${variables.paused ? "paused" : "unpaused"} successfully`,
       });
     },
     onError: (error: any) => {
@@ -335,7 +408,7 @@ export default function RestaurantManagement() {
             Manage your restaurants and subscription limits
           </p>
         </div>
-        
+
         {managementInfo.tenant.isEnterprise && (
           <Badge variant="secondary" className="flex items-center gap-1">
             <Crown className="h-3 w-3" />
@@ -351,9 +424,7 @@ export default function RestaurantManagement() {
             <Users className="h-5 w-5" />
             Subscription Overview
           </CardTitle>
-          <CardDescription>
-            Current plan limits and usage
-          </CardDescription>
+          <CardDescription>Current plan limits and usage</CardDescription>
         </CardHeader>
         <CardContent>
           <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
@@ -363,21 +434,21 @@ export default function RestaurantManagement() {
               </div>
               <div className="text-sm text-gray-600">Current Restaurants</div>
             </div>
-            
+
             <div className="text-center p-4 bg-green-50 rounded-lg">
               <div className="text-2xl font-bold text-green-600">
                 {managementInfo.limits.baseLimit}
               </div>
               <div className="text-sm text-gray-600">Plan Included</div>
             </div>
-            
+
             <div className="text-center p-4 bg-purple-50 rounded-lg">
               <div className="text-2xl font-bold text-purple-600">
                 {managementInfo.limits.additionalCount}
               </div>
               <div className="text-sm text-gray-600">Additional Purchased</div>
             </div>
-            
+
             <div className="text-center p-4 bg-orange-50 rounded-lg">
               <div className="text-2xl font-bold text-orange-600">
                 {managementInfo.limits.totalAllowed}
@@ -392,13 +463,12 @@ export default function RestaurantManagement() {
             <div>
               <h4 className="font-semibold">Restaurant Limit Status</h4>
               <p className="text-sm text-gray-600">
-                {managementInfo.limits.canCreateMore 
+                {managementInfo.limits.canCreateMore
                   ? `You can create ${managementInfo.limits.totalAllowed - managementInfo.limits.currentCount} more restaurant(s)`
-                  : "You've reached your restaurant limit"
-                }
+                  : "You've reached your restaurant limit"}
               </p>
             </div>
-            
+
             {managementInfo.limits.canCreateMore ? (
               <Link href={`/${tenantId}/create-restaurant`}>
                 <Button>
@@ -407,7 +477,10 @@ export default function RestaurantManagement() {
                 </Button>
               </Link>
             ) : managementInfo.tenant.isEnterprise ? (
-              <Dialog open={showPurchaseDialog} onOpenChange={setShowPurchaseDialog}>
+              <Dialog
+                open={showPurchaseDialog}
+                onOpenChange={setShowPurchaseDialog}
+              >
                 <DialogTrigger asChild>
                   <Button>
                     <Plus className="h-4 w-4 mr-2" />
@@ -418,10 +491,13 @@ export default function RestaurantManagement() {
                   <DialogHeader>
                     <DialogTitle>Add Restaurant</DialogTitle>
                     <DialogDescription>
-                      Purchase an additional restaurant slot for your Enterprise plan
+                      Purchase an additional restaurant slot for your Enterprise
+                      plan
                     </DialogDescription>
                   </DialogHeader>
-                  <PurchaseAdditionalRestaurantForm onSuccess={handlePurchaseSuccess} />
+                  <PurchaseAdditionalRestaurantForm
+                    onSuccess={handlePurchaseSuccess}
+                  />
                 </DialogContent>
               </Dialog>
             ) : managementInfo.tenant.isEnterprise ? (
@@ -444,9 +520,7 @@ export default function RestaurantManagement() {
                     </Button>
                   </SneakPeekModal>
                   <UpgradeFlowHandler targetPlan="Enterprise">
-                    <Button size="sm">
-                      Upgrade Plan
-                    </Button>
+                    <Button size="sm">Upgrade Plan</Button>
                   </UpgradeFlowHandler>
                 </div>
               </div>
@@ -468,22 +542,32 @@ export default function RestaurantManagement() {
             <CardContent>
               <div className="space-y-3">
                 <div className="flex justify-between items-center">
-                  <span className="text-sm text-gray-600">Total Restaurants</span>
-                  <span className="font-semibold">{managementInfo.restaurants.length}</span>
+                  <span className="text-sm text-gray-600">
+                    Total Restaurants
+                  </span>
+                  <span className="font-semibold">
+                    {managementInfo.restaurants.length}
+                  </span>
                 </div>
                 <div className="flex justify-between items-center">
-                  <span className="text-sm text-gray-600">Active Locations</span>
+                  <span className="text-sm text-gray-600">
+                    Active Locations
+                  </span>
                   <span className="font-semibold text-green-600">
-                    {managementInfo.restaurants.filter((r: any) => r.status !== 'inactive').length}
+                    {
+                      managementInfo.restaurants.filter(
+                        (r: any) => r.status !== "inactive",
+                      ).length
+                    }
                   </span>
                 </div>
                 <div className="flex justify-between items-center">
                   <span className="text-sm text-gray-600">Available Slots</span>
                   <span className="font-semibold text-blue-600">
-                    {managementInfo.limits.maxRestaurants === -1 
-                      ? '∞' 
-                      : managementInfo.limits.maxRestaurants - managementInfo.restaurants.length
-                    }
+                    {managementInfo.limits.maxRestaurants === -1
+                      ? "∞"
+                      : managementInfo.limits.maxRestaurants -
+                        managementInfo.restaurants.length}
                   </span>
                 </div>
               </div>
@@ -570,7 +654,9 @@ export default function RestaurantManagement() {
           {managementInfo.restaurants.length === 0 ? (
             <div className="text-center py-8">
               <Building2 className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-              <h3 className="text-lg font-semibold text-gray-600 mb-2">No Restaurants</h3>
+              <h3 className="text-lg font-semibold text-gray-600 mb-2">
+                No Restaurants
+              </h3>
               <p className="text-gray-500 mb-4">
                 Create your first restaurant to get started
               </p>
@@ -584,7 +670,10 @@ export default function RestaurantManagement() {
           ) : (
             <div className="space-y-4">
               {managementInfo.restaurants.map((restaurant) => (
-                <div key={restaurant.id} className="flex items-center justify-between p-4 border rounded-lg">
+                <div
+                  key={restaurant.id}
+                  className="flex items-center justify-between p-4 border rounded-lg"
+                >
                   <div className="flex items-center gap-3">
                     <div className="p-2 bg-blue-100 rounded-lg">
                       <Building2 className="h-5 w-5 text-blue-600" />
@@ -592,10 +681,12 @@ export default function RestaurantManagement() {
                     <div>
                       <div className="font-semibold">{restaurant.name}</div>
                       <div className="text-sm text-gray-500">
-                        Created {new Date(restaurant.createdAt).toLocaleDateString()}
+                        Created{" "}
+                        {new Date(restaurant.createdAt).toLocaleDateString()}
                         {restaurant.pausedAt && (
                           <span className="ml-2 text-orange-600">
-                            • Paused {new Date(restaurant.pausedAt).toLocaleDateString()}
+                            • Paused{" "}
+                            {new Date(restaurant.pausedAt).toLocaleDateString()}
                           </span>
                         )}
                       </div>
@@ -606,9 +697,11 @@ export default function RestaurantManagement() {
                       )}
                     </div>
                   </div>
-                  
+
                   <div className="flex items-center gap-2">
-                    <Badge variant={restaurant.isActive ? "default" : "secondary"}>
+                    <Badge
+                      variant={restaurant.isActive ? "default" : "secondary"}
+                    >
                       {restaurant.isActive ? "Active" : "Paused"}
                     </Badge>
                     <Link href={`/${tenantId}/dashboard`}>
@@ -620,9 +713,17 @@ export default function RestaurantManagement() {
                       variant="outline"
                       size="sm"
                       onClick={() => handlePauseRestaurant(restaurant)}
-                      className={restaurant.isActive ? "text-orange-600 hover:text-orange-700" : "text-green-600 hover:text-green-700"}
+                      className={
+                        restaurant.isActive
+                          ? "text-orange-600 hover:text-orange-700"
+                          : "text-green-600 hover:text-green-700"
+                      }
                     >
-                      {restaurant.isActive ? <Pause className="h-4 w-4" /> : <Play className="h-4 w-4" />}
+                      {restaurant.isActive ? (
+                        <Pause className="h-4 w-4" />
+                      ) : (
+                        <Play className="h-4 w-4" />
+                      )}
                     </Button>
                     {managementInfo.restaurants.length > 1 && (
                       <Button
@@ -651,12 +752,16 @@ export default function RestaurantManagement() {
               Delete Restaurant
             </DialogTitle>
             <DialogDescription>
-              Are you sure you want to delete "{selectedRestaurant?.name}"? This action cannot be undone.
-              All bookings, tables, and data associated with this restaurant will be permanently deleted.
+              Are you sure you want to delete "{selectedRestaurant?.name}"? This
+              action cannot be undone. All bookings, tables, and data associated
+              with this restaurant will be permanently deleted.
             </DialogDescription>
           </DialogHeader>
           <div className="flex justify-end gap-2 mt-4">
-            <Button variant="outline" onClick={() => setShowDeleteDialog(false)}>
+            <Button
+              variant="outline"
+              onClick={() => setShowDeleteDialog(false)}
+            >
               Cancel
             </Button>
             <Button
@@ -664,7 +769,9 @@ export default function RestaurantManagement() {
               onClick={confirmDelete}
               disabled={deleteRestaurantMutation.isPending}
             >
-              {deleteRestaurantMutation.isPending ? "Deleting..." : "Delete Restaurant"}
+              {deleteRestaurantMutation.isPending
+                ? "Deleting..."
+                : "Delete Restaurant"}
             </Button>
           </div>
         </DialogContent>
@@ -683,16 +790,17 @@ export default function RestaurantManagement() {
               {selectedRestaurant?.isActive ? "Pause" : "Unpause"} Restaurant
             </DialogTitle>
             <DialogDescription>
-              {selectedRestaurant?.isActive 
+              {selectedRestaurant?.isActive
                 ? `Pausing "${selectedRestaurant?.name}" will disable new bookings and hide it from customers.`
-                : `Unpausing "${selectedRestaurant?.name}" will enable bookings and make it visible to customers again.`
-              }
+                : `Unpausing "${selectedRestaurant?.name}" will enable bookings and make it visible to customers again.`}
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-4">
             {selectedRestaurant?.isActive && (
               <div>
-                <Label htmlFor="pauseReason">Reason for pausing (optional)</Label>
+                <Label htmlFor="pauseReason">
+                  Reason for pausing (optional)
+                </Label>
                 <Textarea
                   id="pauseReason"
                   value={pauseReason}
@@ -703,18 +811,28 @@ export default function RestaurantManagement() {
               </div>
             )}
             <div className="flex justify-end gap-2">
-              <Button variant="outline" onClick={() => setShowPauseDialog(false)}>
+              <Button
+                variant="outline"
+                onClick={() => setShowPauseDialog(false)}
+              >
                 Cancel
               </Button>
               <Button
                 onClick={confirmPause}
                 disabled={pauseRestaurantMutation.isPending}
-                className={selectedRestaurant?.isActive ? "bg-orange-600 hover:bg-orange-700" : "bg-green-600 hover:bg-green-700"}
-              >
-                {pauseRestaurantMutation.isPending 
-                  ? (selectedRestaurant?.isActive ? "Pausing..." : "Unpausing...")
-                  : (selectedRestaurant?.isActive ? "Pause Restaurant" : "Unpause Restaurant")
+                className={
+                  selectedRestaurant?.isActive
+                    ? "bg-orange-600 hover:bg-orange-700"
+                    : "bg-green-600 hover:bg-green-700"
                 }
+              >
+                {pauseRestaurantMutation.isPending
+                  ? selectedRestaurant?.isActive
+                    ? "Pausing..."
+                    : "Unpausing..."
+                  : selectedRestaurant?.isActive
+                    ? "Pause Restaurant"
+                    : "Unpause Restaurant"}
               </Button>
             </div>
           </div>
