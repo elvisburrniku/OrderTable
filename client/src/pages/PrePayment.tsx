@@ -37,6 +37,8 @@ interface BookingPaymentFormProps {
   booking: any;
   amount: number;
   currency: string;
+  token?: string;
+  hash?: string;
   onSuccess: () => void;
   onError: (error: string) => void;
 }
@@ -45,6 +47,8 @@ function BookingPaymentForm({
   booking,
   amount,
   currency,
+  token,
+  hash,
   onSuccess,
   onError,
 }: BookingPaymentFormProps) {
@@ -69,10 +73,15 @@ function BookingPaymentForm({
     setIsProcessing(true);
 
     try {
+      // Construct return URL based on payment method (secure token or legacy hash)
+      const returnUrl = token 
+        ? `${window.location.origin}/payment-success?token=${encodeURIComponent(token)}`
+        : `${window.location.origin}/payment-success?booking=${booking.id}&hash=${hash}`;
+
       const { error } = await stripe.confirmPayment({
         elements,
         confirmParams: {
-          return_url: `${window.location.origin}/payment-success?booking=${booking.id}&hash=${hash}`,
+          return_url: returnUrl,
         },
       });
 
@@ -645,6 +654,8 @@ export default function PrePayment() {
               booking={booking}
               amount={amount}
               currency={currency}
+              token={token}
+              hash={hash}
               onSuccess={handlePaymentSuccess}
               onError={handlePaymentError}
             />
