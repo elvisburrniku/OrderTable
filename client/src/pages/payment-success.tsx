@@ -1,16 +1,29 @@
 import { useEffect, useState } from "react";
 import { useLocation } from "wouter";
 import { useQuery } from "@tanstack/react-query";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
-import { CheckCircle, Calendar, Users, Clock, MapPin, AlertCircle } from "lucide-react";
+import {
+  CheckCircle,
+  Calendar,
+  Users,
+  Clock,
+  MapPin,
+  AlertCircle,
+} from "lucide-react";
 
 export default function PaymentSuccess() {
   const [location] = useLocation();
-  
+
   // Parse search parameters manually
-  const urlParams = new URLSearchParams(location.split('?')[1] || '');
+  const urlParams = new URLSearchParams(window.location.search);
   const bookingId = urlParams.get("booking");
 
   // Fetch booking details to display confirmation
@@ -18,7 +31,7 @@ export default function PaymentSuccess() {
     queryKey: ["booking-payment-success", bookingId],
     queryFn: async () => {
       if (!bookingId) throw new Error("Booking ID required");
-      
+
       const response = await fetch(`/api/guest/bookings/${bookingId}`);
       if (!response.ok) {
         throw new Error("Failed to fetch booking details");
@@ -75,7 +88,8 @@ export default function PaymentSuccess() {
               Payment Successful!
             </CardTitle>
             <CardDescription>
-              Your booking has been confirmed and payment processed successfully.
+              Your booking has been confirmed and payment processed
+              successfully.
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-6">
@@ -99,11 +113,16 @@ export default function PaymentSuccess() {
                 <div className="space-y-3 text-sm">
                   <div className="flex items-center gap-2 text-green-700">
                     <Users className="h-4 w-4" />
-                    <span>{booking.customerName} - {booking.guestCount} {booking.guestCount === 1 ? "guest" : "guests"}</span>
+                    <span>
+                      {booking.customerName} - {booking.guestCount}{" "}
+                      {booking.guestCount === 1 ? "guest" : "guests"}
+                    </span>
                   </div>
                   <div className="flex items-center gap-2 text-green-700">
                     <Calendar className="h-4 w-4" />
-                    <span>{new Date(booking.bookingDate).toLocaleDateString()}</span>
+                    <span>
+                      {new Date(booking.bookingDate).toLocaleDateString()}
+                    </span>
                   </div>
                   <div className="flex items-center gap-2 text-green-700">
                     <Clock className="h-4 w-4" />
@@ -116,12 +135,10 @@ export default function PaymentSuccess() {
                     </div>
                   )}
                 </div>
-                
+
                 <div className="flex justify-between items-center pt-2 border-t border-green-300">
                   <span className="font-medium text-green-800">Status:</span>
-                  <Badge className="bg-green-600 text-white">
-                    Confirmed
-                  </Badge>
+                  <Badge className="bg-green-600 text-white">Confirmed</Badge>
                 </div>
               </div>
             )}

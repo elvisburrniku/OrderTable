@@ -177,10 +177,6 @@ export default function PrePayment() {
 
   // Parse search parameters
   const urlParams = new URLSearchParams(window.location.search);
-  console.log("URL Params:", urlParams);
-  console.log("URL:", location);
-  console.log("Full URL:", window.location.href);
-  console.log("Search:", window.location.search);
   const bookingId = urlParams.get("booking");
   const tenantId = urlParams.get("tenant");
   const restaurantId = urlParams.get("restaurant");
