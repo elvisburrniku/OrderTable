@@ -21,26 +21,24 @@ export class PaymentTokenService {
   static generateToken(data: PaymentTokenData): string {
     try {
       const iv = crypto.randomBytes(16);
-      const cipher = crypto.createCipherGCM(ALGORITHM, Buffer.from(SECRET_KEY, 'utf8').slice(0, 32));
-      cipher.setAAD(Buffer.from('payment-token'));
+      const key = crypto.scryptSync(SECRET_KEY, 'salt', 32);
+      const cipher = crypto.createCipheriv(ALGORITHM, key, iv);
       
       const tokenData = {
         ...data,
         expiresAt: Date.now() + (24 * 60 * 60 * 1000) // 24 hours expiry
       };
       
-      const encrypted = Buffer.concat([
-        cipher.update(JSON.stringify(tokenData), 'utf8'),
-        cipher.final()
-      ]);
+      let encrypted = cipher.update(JSON.stringify(tokenData), 'utf8', 'hex');
+      encrypted += cipher.final('hex');
       
       const authTag = cipher.getAuthTag();
       
       // Combine IV, auth tag, and encrypted data
-      const token = Buffer.concat([iv, authTag, encrypted]).toString('base64url');
+      const token = iv.toString('hex') + ':' + authTag.toString('hex') + ':' + encrypted;
       
       console.log(`Generated secure payment token for booking ${data.bookingId}`);
-      return token;
+      return Buffer.from(token).toString('base64url');
     } catch (error) {
       console.error('Error generating payment token:', error);
       throw new Error('Failed to generate payment token');
@@ -54,26 +52,25 @@ export class PaymentTokenService {
    */
   static verifyToken(token: string): PaymentTokenData | null {
     try {
-      const tokenBuffer = Buffer.from(token, 'base64url');
+      const tokenString = Buffer.from(token, 'base64url').toString('utf8');
+      const parts = tokenString.split(':');
       
-      if (tokenBuffer.length < 32) {
+      if (parts.length !== 3) {
         return null;
       }
       
-      const iv = tokenBuffer.slice(0, 16);
-      const authTag = tokenBuffer.slice(16, 32);
-      const encrypted = tokenBuffer.slice(32);
+      const iv = Buffer.from(parts[0], 'hex');
+      const authTag = Buffer.from(parts[1], 'hex');
+      const encrypted = parts[2];
       
-      const decipher = crypto.createDecipherGCM(ALGORITHM, Buffer.from(SECRET_KEY, 'utf8').slice(0, 32));
+      const key = crypto.scryptSync(SECRET_KEY, 'salt', 32);
+      const decipher = crypto.createDecipheriv(ALGORITHM, key, iv);
       decipher.setAuthTag(authTag);
-      decipher.setAAD(Buffer.from('payment-token'));
       
-      const decrypted = Buffer.concat([
-        decipher.update(encrypted),
-        decipher.final()
-      ]);
+      let decrypted = decipher.update(encrypted, 'hex', 'utf8');
+      decrypted += decipher.final('utf8');
       
-      const data = JSON.parse(decrypted.toString('utf8')) as PaymentTokenData;
+      const data = JSON.parse(decrypted) as PaymentTokenData;
       
       // Check expiry
       if (Date.now() > data.expiresAt) {
