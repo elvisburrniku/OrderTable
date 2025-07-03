@@ -488,7 +488,7 @@ export default function PrintOrders() {
               </div>
 
               {/* Order Management Header */}
-              <div className="p-6 border-b">
+              <div className="pl-6 pt-3">
                 <div className="flex items-center justify-between mb-6">
                   <div>
                     <h2 className="text-lg font-semibold text-slate-900">
@@ -501,29 +501,42 @@ export default function PrintOrders() {
                 </div>
 
                 {/* Modern Filters Section - Bookings Style */}
-                <motion.div 
+                <motion.div
                   initial={{ opacity: 0, y: 10 }}
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ duration: 0.5, delay: 0.4 }}
-                  className="space-y-6 mb-8"
+                  className="space-y-6 mb-2"
                 >
                   {/* Filter Controls Bar */}
                   <div className="flex items-center justify-between">
                     <div className="flex items-center space-x-4">
-                      <Collapsible open={showFilters} onOpenChange={setShowFilters}>
+                      <Collapsible
+                        open={showFilters}
+                        onOpenChange={setShowFilters}
+                      >
                         <CollapsibleTrigger asChild>
-                          <Button 
-                            variant="outline" 
+                          <Button
+                            variant="outline"
                             className="h-10 px-4 border-2 border-gray-200 hover:border-green-500 hover:bg-green-50 transition-all duration-200 flex items-center space-x-2 font-medium"
                           >
                             <Filter className="w-4 h-4" />
                             <span>Filters</span>
-                            {(statusFilter !== 'all' || paymentFilter !== 'all' || searchTerm) && (
+                            {(statusFilter !== "all" ||
+                              paymentFilter !== "all" ||
+                              searchTerm) && (
                               <span className="bg-green-500 text-white text-xs px-2 py-0.5 rounded-full ml-1">
-                                {[statusFilter !== 'all', paymentFilter !== 'all', searchTerm].filter(Boolean).length}
+                                {
+                                  [
+                                    statusFilter !== "all",
+                                    paymentFilter !== "all",
+                                    searchTerm,
+                                  ].filter(Boolean).length
+                                }
                               </span>
                             )}
-                            <ChevronDown className={`w-4 h-4 transform transition-transform duration-200 ${showFilters ? 'rotate-180' : ''}`} />
+                            <ChevronDown
+                              className={`w-4 h-4 transform transition-transform duration-200 ${showFilters ? "rotate-180" : ""}`}
+                            />
                           </Button>
                         </CollapsibleTrigger>
 
@@ -532,13 +545,17 @@ export default function PrintOrders() {
                             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                               {/* Search Input */}
                               <div className="relative">
-                                <label className="block text-sm font-medium text-gray-700 mb-2">Search</label>
+                                <label className="block text-sm font-medium text-gray-700 mb-2">
+                                  Search
+                                </label>
                                 <div className="relative">
                                   <Search className="w-4 h-4 text-gray-400 absolute left-3 top-1/2 transform -translate-y-1/2" />
                                   <Input
                                     placeholder="Search by order number or customer..."
                                     value={searchTerm}
-                                    onChange={(e) => setSearchTerm(e.target.value)}
+                                    onChange={(e) =>
+                                      setSearchTerm(e.target.value)
+                                    }
                                     className="pl-10 h-11 border-2 border-gray-200 focus:border-green-500 focus:ring-0 rounded-lg transition-all duration-200"
                                   />
                                 </div>
@@ -546,38 +563,63 @@ export default function PrintOrders() {
 
                               {/* Status Filter */}
                               <div>
-                                <label className="block text-sm font-medium text-gray-700 mb-2">Status</label>
-                                <Select value={statusFilter} onValueChange={setStatusFilter}>
+                                <label className="block text-sm font-medium text-gray-700 mb-2">
+                                  Status
+                                </label>
+                                <Select
+                                  value={statusFilter}
+                                  onValueChange={setStatusFilter}
+                                >
                                   <SelectTrigger className="h-11 border-2 border-gray-200 focus:border-green-500 rounded-lg transition-all duration-200">
                                     <SelectValue placeholder="All Status" />
                                   </SelectTrigger>
                                   <SelectContent className="rounded-lg border-2 border-gray-200">
-                                    <SelectItem value="all" className="rounded-md">All Status</SelectItem>
-                                    <SelectItem value="pending" className="rounded-md">
+                                    <SelectItem
+                                      value="all"
+                                      className="rounded-md"
+                                    >
+                                      All Status
+                                    </SelectItem>
+                                    <SelectItem
+                                      value="pending"
+                                      className="rounded-md"
+                                    >
                                       <div className="flex items-center space-x-2">
                                         <div className="w-2 h-2 bg-yellow-500 rounded-full"></div>
                                         <span>Pending</span>
                                       </div>
                                     </SelectItem>
-                                    <SelectItem value="processing" className="rounded-md">
+                                    <SelectItem
+                                      value="processing"
+                                      className="rounded-md"
+                                    >
                                       <div className="flex items-center space-x-2">
                                         <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
                                         <span>Processing</span>
                                       </div>
                                     </SelectItem>
-                                    <SelectItem value="completed" className="rounded-md">
+                                    <SelectItem
+                                      value="completed"
+                                      className="rounded-md"
+                                    >
                                       <div className="flex items-center space-x-2">
                                         <div className="w-2 h-2 bg-green-500 rounded-full"></div>
                                         <span>Completed</span>
                                       </div>
                                     </SelectItem>
-                                    <SelectItem value="cancelled" className="rounded-md">
+                                    <SelectItem
+                                      value="cancelled"
+                                      className="rounded-md"
+                                    >
                                       <div className="flex items-center space-x-2">
                                         <div className="w-2 h-2 bg-red-500 rounded-full"></div>
                                         <span>Cancelled</span>
                                       </div>
                                     </SelectItem>
-                                    <SelectItem value="shipped" className="rounded-md">
+                                    <SelectItem
+                                      value="shipped"
+                                      className="rounded-md"
+                                    >
                                       <div className="flex items-center space-x-2">
                                         <div className="w-2 h-2 bg-purple-500 rounded-full"></div>
                                         <span>Shipped</span>
@@ -589,26 +631,45 @@ export default function PrintOrders() {
 
                               {/* Payment Status Filter */}
                               <div>
-                                <label className="block text-sm font-medium text-gray-700 mb-2">Payment</label>
-                                <Select value={paymentFilter} onValueChange={setPaymentFilter}>
+                                <label className="block text-sm font-medium text-gray-700 mb-2">
+                                  Payment
+                                </label>
+                                <Select
+                                  value={paymentFilter}
+                                  onValueChange={setPaymentFilter}
+                                >
                                   <SelectTrigger className="h-11 border-2 border-gray-200 focus:border-green-500 rounded-lg transition-all duration-200">
                                     <SelectValue placeholder="All Payments" />
                                   </SelectTrigger>
                                   <SelectContent className="rounded-lg border-2 border-gray-200">
-                                    <SelectItem value="all" className="rounded-md">All Payments</SelectItem>
-                                    <SelectItem value="paid" className="rounded-md">
+                                    <SelectItem
+                                      value="all"
+                                      className="rounded-md"
+                                    >
+                                      All Payments
+                                    </SelectItem>
+                                    <SelectItem
+                                      value="paid"
+                                      className="rounded-md"
+                                    >
                                       <div className="flex items-center space-x-2">
                                         <div className="w-2 h-2 bg-green-500 rounded-full"></div>
                                         <span>Paid</span>
                                       </div>
                                     </SelectItem>
-                                    <SelectItem value="pending" className="rounded-md">
+                                    <SelectItem
+                                      value="pending"
+                                      className="rounded-md"
+                                    >
                                       <div className="flex items-center space-x-2">
                                         <div className="w-2 h-2 bg-yellow-500 rounded-full"></div>
                                         <span>Pending</span>
                                       </div>
                                     </SelectItem>
-                                    <SelectItem value="failed" className="rounded-md">
+                                    <SelectItem
+                                      value="failed"
+                                      className="rounded-md"
+                                    >
                                       <div className="flex items-center space-x-2">
                                         <div className="w-2 h-2 bg-red-500 rounded-full"></div>
                                         <span>Failed</span>
@@ -620,7 +681,9 @@ export default function PrintOrders() {
                             </div>
 
                             {/* Filter Actions */}
-                            {(statusFilter !== 'all' || paymentFilter !== 'all' || searchTerm) && (
+                            {(statusFilter !== "all" ||
+                              paymentFilter !== "all" ||
+                              searchTerm) && (
                               <div className="flex items-center justify-between mt-4 pt-4 border-t border-gray-200">
                                 <div className="flex items-center space-x-2 text-sm text-gray-600">
                                   <span>Active filters:</span>
@@ -629,12 +692,12 @@ export default function PrintOrders() {
                                       Search: "{searchTerm}"
                                     </span>
                                   )}
-                                  {statusFilter !== 'all' && (
+                                  {statusFilter !== "all" && (
                                     <span className="bg-blue-100 text-blue-800 px-2 py-1 rounded-md text-xs font-medium">
                                       Status: {statusFilter}
                                     </span>
                                   )}
-                                  {paymentFilter !== 'all' && (
+                                  {paymentFilter !== "all" && (
                                     <span className="bg-purple-100 text-purple-800 px-2 py-1 rounded-md text-xs font-medium">
                                       Payment: {paymentFilter}
                                     </span>
