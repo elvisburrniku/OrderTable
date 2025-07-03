@@ -26,7 +26,8 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { useToast } from "@/hooks/use-toast";
-import { PaymentMethodSelector } from "@/components/payment-method-selector";
+import { useQuery } from "@tanstack/react-query";
+
 import { Printer, Clock, Truck, Mail, MapPin, CreditCard, Zap, Shield, Star, Palette, Package, User, Phone, FileText, Settings } from "lucide-react";
 
 
@@ -62,9 +63,13 @@ export function PrintOrderForm({
 }: PrintOrderFormProps) {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [estimatedPrice, setEstimatedPrice] = useState(0);
-  const [useSavedPaymentMethod, setUseSavedPaymentMethod] = useState(false);
-  const [selectedPaymentMethodId, setSelectedPaymentMethodId] = useState<string>("");
+
   const { toast } = useToast();
+
+  // Fetch billing info to show saved payment method
+  const { data: billingInfo } = useQuery({
+    queryKey: ["/api/billing/info"],
+  });
 
   const form = useForm<PrintOrderFormData>({
     resolver: zodResolver(printOrderSchema),
@@ -117,10 +122,7 @@ export function PrintOrderForm({
     setEstimatedPrice(price);
   }, [watchedValues]);
 
-  const handlePaymentMethodChange = (useSaved: boolean, methodId?: string) => {
-    setUseSavedPaymentMethod(useSaved);
-    setSelectedPaymentMethodId(methodId || "");
-  };
+
 
   const onSubmit = async (data: PrintOrderFormData) => {
     setIsSubmitting(true);
@@ -131,8 +133,8 @@ export function PrintOrderForm({
 
       const submitData = {
         ...data,
-        useSavedPaymentMethod,
-        selectedPaymentMethodId: useSavedPaymentMethod ? selectedPaymentMethodId : undefined
+        useSavedPaymentMethod: true, // Always use saved payment method from billing
+        selectedPaymentMethodId: undefined // Let backend use default payment method
       };
 
       const response = await fetch(endpoint, {
@@ -581,28 +583,58 @@ export function PrintOrderForm({
                   </div>
                 </div>
 
-                {/* Payment Method Selection */}
+                {/* Payment Method Information */}
                 <div>
                   <h4 className="text-lg font-semibold mb-4 flex items-center gap-2">
                     <CreditCard className="w-5 h-5 text-green-600" />
                     Payment Method
                   </h4>
-                  <PaymentMethodSelector
-                    onSelectionChange={handlePaymentMethodChange}
-                  />
+                  <div className="bg-slate-50 border border-slate-200 rounded-lg p-4">
+                    <div className="flex items-center gap-3">
+                      <div className="w-10 h-10 bg-green-100 rounded-lg flex items-center justify-center">
+                        <CreditCard className="w-5 h-5 text-green-600" />
+                      </div>
+                      <div className="flex-1">
+                        {billingInfo?.paymentMethods && billingInfo.paymentMethods.length > 0 ? (
+                          <div>
+                            <div className="font-medium text-slate-900">
+                              {billingInfo.paymentMethods[0].brand?.toUpperCase()} •••• {billingInfo.paymentMethods[0].last4}
+                            </div>
+                            <div className="text-sm text-slate-600">
+                              Default payment method • Expires {billingInfo.paymentMethods[0].exp_month}/{billingInfo.paymentMethods[0].exp_year}
+                            </div>
+                          </div>
+                        ) : (
+                          <div>
+                            <div className="font-medium text-slate-900">
+                              No payment method found
+                            </div>
+                            <div className="text-sm text-slate-600">
+                              Please add a payment method in billing settings to continue
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  </div>
                 </div>
 
                 {/* Submit Button */}
                 <div className="pt-4">
                   <Button
                     type="submit"
-                    disabled={isSubmitting}
+                    disabled={isSubmitting || !billingInfo?.paymentMethods || billingInfo.paymentMethods.length === 0}
                     className="w-full h-14 bg-gradient-to-r from-emerald-600 to-cyan-600 hover:from-emerald-700 hover:to-cyan-700 text-white text-lg font-semibold rounded-xl shadow-lg hover:shadow-xl transition-all duration-300"
                   >
                     {isSubmitting ? (
                       <>
                         <Settings className="w-6 h-6 mr-3" />
                         Creating Order...
+                      </>
+                    ) : !billingInfo?.paymentMethods || billingInfo.paymentMethods.length === 0 ? (
+                      <>
+                        <CreditCard className="w-6 h-6 mr-3" />
+                        Add Payment Method Required
                       </>
                     ) : (
                       <>
