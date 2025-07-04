@@ -19300,6 +19300,15 @@ NEXT STEPS:
 
       console.log(`Found booking for payment notification - Restaurant: ${restaurant?.name}, Customer: ${booking.customerName}`);
 
+      // Check if payment has already been processed to avoid duplicates
+      if (booking.paymentStatus === "paid") {
+        console.log(`Payment already processed for booking ${booking_id}, skipping duplicate notification`);
+        return res.json({ 
+          success: true, 
+          message: "Payment already processed, no action needed" 
+        });
+      }
+
       // Update booking payment status
       const updateData: any = {
         paymentStatus: "paid",

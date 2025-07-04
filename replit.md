@@ -22,6 +22,12 @@ A comprehensive restaurant booking management system with React frontend and Exp
 - Kitchen order management
 
 ## Recent Changes
+- **2025-07-04**: ✅ PAYMENT DUPLICATE NOTIFICATION FIX COMPLETED - Fixed payment success page sending duplicate emails on every refresh
+- **Duplicate Prevention Frontend**: Enhanced payment-success.tsx with state management and redirect_status checking to prevent multiple notification triggers
+- **Duplicate Prevention Backend**: Added booking payment status validation in webhook to skip processing for already-paid bookings  
+- **Database Method Fix**: Added missing getStripePaymentByIntentId method to storage interface and database implementation
+- **Webhook Security Enhancement**: Improved payment notification endpoint with comprehensive duplicate detection and logging
+- **Email Notification Control**: Payment confirmations now only sent once per successful payment instead of on every page refresh
 - **2025-07-04**: ✅ STRIPE WEBHOOK PAYMENT PROCESSING FIXED - Fixed duplicate webhook endpoints and enhanced payment_intent.succeeded event handling
 - **Webhook Enhancement**: Fixed duplicate Stripe webhook endpoints that were preventing proper payment confirmation processing
 - **Payment Integration**: Enhanced webhook to handle payment_intent.succeeded events with complete booking payment status updates

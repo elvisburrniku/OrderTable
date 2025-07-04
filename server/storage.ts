@@ -466,6 +466,7 @@ export interface IStorage {
   // Stripe Connect
   createStripePayment(payment: InsertStripePayment): Promise<StripePayment>;
   getStripePaymentsByTenant(tenantId: number): Promise<StripePayment[]>;
+  getStripePaymentByIntentId(paymentIntentId: string): Promise<StripePayment | undefined>;
   updateStripePaymentByIntentId(paymentIntentId: string, updates: Partial<StripePayment>): Promise<StripePayment | undefined>;
   getTenantByStripeConnectAccountId(accountId: string): Promise<any | undefined>;
 }
