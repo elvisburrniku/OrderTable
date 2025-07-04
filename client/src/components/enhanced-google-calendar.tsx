@@ -24,6 +24,7 @@ import { useAuth } from "@/lib/auth";
 import { useMutation, useQueryClient, useQuery } from "@tanstack/react-query";
 import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
+import { useWebSocket } from "@/hooks/use-websocket";
 import {
   format,
   startOfWeek,
@@ -128,6 +129,32 @@ export default function EnhancedGoogleCalendar({
 
     return () => clearInterval(timer);
   }, []);
+
+  // WebSocket integration for real-time updates
+  const { isConnected } = useWebSocket({
+    restaurantId: restaurant?.id || 0,
+    onMessage: (message) => {
+      if (message.type === 'notification' && message.data?.type === 'payment_received') {
+        // Payment received notification - refresh bookings
+        console.log('Payment received notification - refreshing calendar');
+        queryClient.invalidateQueries({
+          queryKey: [`/api/tenants/${restaurant?.tenantId}/bookings`]
+        });
+        
+        // Show toast notification
+        toast({
+          title: "Payment Received",
+          description: `Payment received for ${message.data.data?.customerName || 'booking'}`,
+        });
+      } else if (message.type === 'booking_updated' || message.type === 'booking_created') {
+        // Other booking updates - refresh bookings
+        console.log('Booking update notification - refreshing calendar');
+        queryClient.invalidateQueries({
+          queryKey: [`/api/tenants/${restaurant?.tenantId}/bookings`]
+        });
+      }
+    }
+  });
 
   // Fetch opening hours
   const { data: openingHours = [] } = useQuery({

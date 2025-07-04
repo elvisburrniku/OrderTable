@@ -3,6 +3,7 @@ import { useState } from "react";
 import { useParams } from "wouter";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useAuth } from "@/lib/auth.tsx";
+import { useWebSocket } from "@/hooks/use-websocket";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
@@ -112,6 +113,34 @@ export default function BookingDetail() {
       return response.json();
     },
     enabled: !!restaurant && !!restaurant.tenantId && !!restaurant.id,
+  });
+
+  // WebSocket integration for real-time updates
+  const { isConnected } = useWebSocket({
+    restaurantId: restaurant?.id || 0,
+    onMessage: (message) => {
+      if (message.type === 'notification' && message.data?.type === 'payment_received') {
+        // Check if this payment is for our current booking
+        if (message.data?.bookingId === parseInt(id)) {
+          console.log('Payment received for current booking - refreshing data');
+          queryClient.invalidateQueries({
+            queryKey: [`/api/tenants/${restaurant?.tenantId}/bookings/${id}`]
+          });
+          
+          // Show toast notification
+          toast({
+            title: "Payment Received",
+            description: `Payment completed successfully for this booking`,
+          });
+        }
+      } else if (message.type === 'booking_updated' && message.data?.bookingId === parseInt(id)) {
+        // Booking update for current booking - refresh data
+        console.log('Booking update for current booking - refreshing data');
+        queryClient.invalidateQueries({
+          queryKey: [`/api/tenants/${restaurant?.tenantId}/bookings/${id}`]
+        });
+      }
+    }
   });
 
   const updateMutation = useMutation({

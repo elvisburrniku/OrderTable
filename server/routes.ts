@@ -14640,10 +14640,11 @@ NEXT STEPS:
           if (paymentRecord && paymentRecord.bookingId) {
             console.log(`Found booking ${paymentRecord.bookingId} for payment ${paymentIntent.id}`);
             
-            // Update booking payment status
+            // Update booking payment status with timestamp
             await storage.updateBooking(paymentRecord.bookingId, {
               paymentStatus: 'paid',
-              paymentIntentId: paymentIntent.id
+              paymentIntentId: paymentIntent.id,
+              paymentPaidAt: new Date()
             });
 
             // Get booking and restaurant details for notifications
@@ -14736,6 +14737,48 @@ NEXT STEPS:
                   }
                 } catch (userEmailError) {
                   console.error("Error sending emails to restaurant users:", userEmailError);
+                }
+
+                // Create system notification for payment received
+                try {
+                  const notificationData = {
+                    tenantId: booking.tenantId,
+                    restaurantId: booking.restaurantId,
+                    title: "Payment Received",
+                    message: `Payment of $${(paymentIntent.amount / 100).toFixed(2)} received for booking #${booking.id} - ${booking.customerName}`,
+                    type: "payment_received",
+                    category: "payment",
+                    bookingId: booking.id,
+                    data: {
+                      paymentIntentId: paymentIntent.id,
+                      amount: paymentIntent.amount / 100,
+                      currency: paymentIntent.currency?.toUpperCase() || "USD",
+                      customerName: booking.customerName,
+                      bookingDate: new Date(booking.bookingDate).toLocaleDateString(),
+                      bookingTime: booking.startTime
+                    }
+                  };
+
+                  await storage.createNotification(notificationData);
+                  console.log(`Created system notification for payment received on booking ${booking.id}`);
+
+                  // Send real-time notification via WebSocket
+                  try {
+                    const wsClients = (global as any).wsClients || new Map();
+                    for (const [clientId, client] of wsClients) {
+                      if (client.tenantId === booking.tenantId && client.readyState === 1) {
+                        client.send(JSON.stringify({
+                          type: 'notification',
+                          data: notificationData
+                        }));
+                        console.log(`Sent real-time payment notification to client ${clientId}`);
+                      }
+                    }
+                  } catch (wsError) {
+                    console.error("Error sending WebSocket notification:", wsError);
+                  }
+                } catch (notificationError) {
+                  console.error("Error creating system notification:", notificationError);
                 }
 
               } catch (notificationError) {
