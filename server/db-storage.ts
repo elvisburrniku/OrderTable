@@ -2143,6 +2143,109 @@ export class DatabaseStorage implements IStorage {
     // This maintains interface compatibility while allowing the application to work
     return webhooksData || [];
   }
+
+  // Webhook Logs methods
+  async getWebhookLogs(tenantId?: number, limit: number = 100): Promise<any[]> {
+    if (!this.db) throw new Error("Database connection not available");
+    
+    try {
+      let query = this.db
+        .select()
+        .from(webhookLogs)
+        .orderBy(desc(webhookLogs.createdAt))
+        .limit(limit);
+
+      if (tenantId) {
+        query = query.where(eq(webhookLogs.tenantId, tenantId));
+      }
+
+      const result = await query;
+      return result;
+    } catch (error) {
+      console.error("Error fetching webhook logs:", error);
+      return [];
+    }
+  }
+
+  async getWebhookLogsByEventType(eventType: string, tenantId?: number): Promise<any[]> {
+    if (!this.db) throw new Error("Database connection not available");
+    
+    try {
+      let query = this.db
+        .select()
+        .from(webhookLogs)
+        .where(eq(webhookLogs.eventType, eventType))
+        .orderBy(desc(webhookLogs.createdAt));
+
+      if (tenantId) {
+        query = query.where(
+          and(
+            eq(webhookLogs.eventType, eventType),
+            eq(webhookLogs.tenantId, tenantId)
+          )
+        );
+      }
+
+      const result = await query;
+      return result;
+    } catch (error) {
+      console.error("Error fetching webhook logs by event type:", error);
+      return [];
+    }
+  }
+
+  async createWebhookLog(logData: any): Promise<any> {
+    if (!this.db) throw new Error("Database connection not available");
+    
+    try {
+      const [newLog] = await this.db
+        .insert(webhookLogs)
+        .values({
+          tenantId: logData.tenantId,
+          restaurantId: logData.restaurantId,
+          webhookId: logData.webhookId,
+          eventType: logData.eventType,
+          source: logData.source,
+          status: logData.status,
+          httpMethod: logData.httpMethod || 'POST',
+          requestUrl: logData.requestUrl,
+          requestHeaders: logData.requestHeaders || {},
+          requestBody: logData.requestBody || {},
+          responseStatus: logData.responseStatus,
+          responseBody: logData.responseBody || {},
+          processingTime: logData.processingTime,
+          errorMessage: logData.errorMessage,
+          metadata: logData.metadata || {},
+        })
+        .returning();
+      
+      return newLog;
+    } catch (error) {
+      console.error("Error creating webhook log:", error);
+      throw error;
+    }
+  }
+
+  async getStripePaymentsByTenant(tenantId: number): Promise<any[]> {
+    if (!this.db) throw new Error("Database connection not available");
+    
+    try {
+      let query = this.db
+        .select()
+        .from(stripePayments)
+        .orderBy(desc(stripePayments.createdAt));
+
+      if (tenantId > 0) {
+        query = query.where(eq(stripePayments.tenantId, tenantId));
+      }
+
+      const result = await query;
+      return result;
+    } catch (error) {
+      console.error("Error fetching Stripe payments:", error);
+      return [];
+    }
+  }
   async getSmsMessagesByRestaurant(restaurantId: number): Promise<any[]> {
     return [];
   }
