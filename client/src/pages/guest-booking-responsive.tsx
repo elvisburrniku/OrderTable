@@ -325,15 +325,6 @@ export default function GuestBookingResponsive(props: any) {
     // If no configuration found for this day or explicitly marked as closed
     return !dayHours || !dayHours.isOpen;
   };
-  alert("Guest Booking Page Loaded");
-
-  // Check if date is available based on opening hours and special periods
-  const dateStr = format(date, "yyyy-MM-dd");
-
-  // Check if date is disabled in opening hours
-  if (isDateDisabledInOpeningHours(date, openingHours)) {
-    return false;
-  }
 
   // Check if booking is within cut-off time restrictions
   const isWithinCutOffTime = (timeSlot: string, date: Date) => {
