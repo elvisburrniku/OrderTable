@@ -926,16 +926,16 @@ export default function WaitingList() {
                 type="button"
                 variant="outline"
                 onClick={resetForm}
-                disabled={addEntryMutation.isPending || updateEntryMutation.isPending}
+                disabled={createEntryMutation.isPending || updateEntryMutation.isPending}
               >
                 Cancel
               </Button>
               <Button
                 type="submit"
-                disabled={addEntryMutation.isPending || updateEntryMutation.isPending}
+                disabled={createEntryMutation.isPending || updateEntryMutation.isPending}
                 className="bg-green-600 hover:bg-green-700"
               >
-                {addEntryMutation.isPending || updateEntryMutation.isPending
+                {createEntryMutation.isPending || updateEntryMutation.isPending
                   ? "Processing..."
                   : editingEntry
                   ? "Update Entry"
