@@ -47,6 +47,7 @@ import {
   Tag
 } from "lucide-react";
 import { format } from "date-fns";
+import UnifiedBookingModal from "@/components/unified-booking-modal";
 
 export default function WaitingList() {
   const { user, restaurant } = useAuth();
@@ -63,23 +64,6 @@ export default function WaitingList() {
   const [showFilters, setShowFilters] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage, setItemsPerPage] = useState(10);
-
-  const [formData, setFormData] = useState({
-    customerName: "",
-    customerEmail: "",
-    customerPhone: "",
-    guestCount: 2,
-    requestedDate: "",
-    requestedTime: "",
-    duration: "2 hours",
-    preferredTable: "",
-    specialRequests: "",
-    notes: "",
-    extraDescription: "",
-    tags: [],
-    requirePrepayment: false,
-  });
-
   const [editingEntry, setEditingEntry] = useState(null);
   const [deletingEntry, setDeletingEntry] = useState(null);
 
@@ -221,16 +205,38 @@ export default function WaitingList() {
     return null;
   }
 
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
+  const handleSubmit = (data: any) => {
     if (!restaurant?.id) return;
 
+    // Map UnifiedBookingModal data to waiting list format
+    const mappedData = {
+      customerName: data.customerName,
+      customerEmail: data.customerEmail,
+      customerPhone: data.customerPhone,
+      guestCount: parseInt(data.guestCount),
+      requestedDate: data.bookingDate, // Map bookingDate to requestedDate
+      requestedTime: data.startTime,   // Map startTime to requestedTime
+      duration: data.duration + " hours", // Convert duration to string format
+      preferredTable: data.tableId === 'auto-assign' ? '' : data.tableId,
+      specialRequests: data.specialRequests,
+      notes: data.internalNotes,       // Map internalNotes to notes
+      extraDescription: data.extraDescription,
+      tags: data.tags || [],
+      requirePrepayment: data.requirePrePayment,
+      // Add new payment fields from the modal
+      paymentAmount: data.paymentAmount || 0,
+      paymentDeadline: data.paymentDeadline || "24 hours",
+      sendPaymentEmail: data.sendPaymentEmail || false,
+      language: data.language || "English (GB)",
+      eventType: data.eventType || "General Dining"
+    };
+
     if (
-      !formData.customerName ||
-      !formData.customerEmail ||
-      !formData.guestCount ||
-      !formData.requestedDate ||
-      !formData.requestedTime
+      !mappedData.customerName ||
+      !mappedData.customerEmail ||
+      !mappedData.guestCount ||
+      !mappedData.requestedDate ||
+      !mappedData.requestedTime
     ) {
       toast({
         title: "Error",
@@ -241,48 +247,43 @@ export default function WaitingList() {
     }
 
     if (editingEntry) {
-      handleEditSubmit();
+      handleEditSubmit(mappedData);
     } else {
-      handleCreateSubmit();
+      handleCreateSubmit(mappedData);
     }
   };
 
-  const handleCreateSubmit = () => {
+  const handleCreateSubmit = (mappedData: any) => {
     createEntryMutation.mutate({
-      ...formData,
-      guestCount: parseInt(formData.guestCount),
+      ...mappedData,
       status: "waiting",
     });
   };
 
-  const handleEditSubmit = () => {
+  const handleEditSubmit = (mappedData: any) => {
     if (!editingEntry) return;
 
     updateEntryMutation.mutate({ 
       id: editingEntry.id, 
-      updates: {
-        ...formData,
-        guestCount: parseInt(formData.guestCount),
-      }
+      updates: mappedData
     });
   };
 
   const handleEdit = (entry: any) => {
-    setEditingEntry(entry);
-    setFormData({
-      customerName: entry.customerName,
-      customerEmail: entry.customerEmail,
-      customerPhone: entry.customerPhone || "",
-      guestCount: entry.guestCount,
-      requestedDate: entry.requestedDate,
-      requestedTime: entry.requestedTime,
-      duration: entry.duration || "2 hours",
-      preferredTable: entry.preferredTable || "",
-      specialRequests: entry.specialRequests || "",
-      notes: entry.notes || "",
-      extraDescription: entry.extraDescription || "",
-      tags: entry.tags || [],
-      requirePrepayment: entry.requirePrepayment || false,
+    setEditingEntry({
+      ...entry,
+      // Map waiting list fields to UnifiedBookingModal format
+      eventType: entry.eventType || "General Dining",
+      bookingDate: entry.requestedDate,
+      startTime: entry.requestedTime,
+      duration: parseFloat(entry.duration?.replace(" hours", "") || "2"),
+      tableId: entry.preferredTable || "",
+      internalNotes: entry.notes || "",
+      requirePrePayment: entry.requirePrepayment || false,
+      paymentAmount: entry.paymentAmount || 0,
+      paymentDeadline: entry.paymentDeadline || "24 hours",
+      sendPaymentEmail: entry.sendPaymentEmail || false,
+      language: entry.language || "English (GB)"
     });
     setShowForm(true);
   };
@@ -298,43 +299,12 @@ export default function WaitingList() {
   };
 
   const resetForm = () => {
-    setFormData({
-      customerName: "",
-      customerEmail: "",
-      customerPhone: "",
-      guestCount: 2,
-      requestedDate: "",
-      requestedTime: "",
-      duration: "2 hours",
-      preferredTable: "",
-      specialRequests: "",
-      notes: "",
-      extraDescription: "",
-      tags: [],
-      requirePrepayment: false,
-    });
     setEditingEntry(null);
     setShowForm(false);
   };
 
-  const availableTags = [
-    "Birthday", "Anniversary", "VIP", "First Time", 
-    "Regular", "Special Diet", "Large Party"
-  ];
-
-  const handleTagToggle = (tag: string) => {
-    const newTags = formData.tags.includes(tag)
-      ? formData.tags.filter(t => t !== tag)
-      : [...formData.tags, tag];
-    setFormData({ ...formData, tags: newTags });
-  };
-
   const handleStatusUpdate = (id: number, status: string) => {
     updateEntryMutation.mutate({ id, updates: { status } });
-  };
-
-  const handleInputChange = (field: string, value: string) => {
-    setFormData((prev) => ({ ...prev, [field]: value }));
   };
 
   const getStatusColor = (status: string) => {
@@ -684,267 +654,20 @@ export default function WaitingList() {
       </div>
 
       {/* Add/Edit Entry Dialog */}
-      <Dialog open={showForm} onOpenChange={(open) => {
-        if (!open) resetForm();
-        setShowForm(open);
-      }}>
-        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
-          <DialogHeader>
-            <DialogTitle className="flex items-center space-x-2">
-              <Clock className="w-5 h-5 text-green-600" />
-              <span>{editingEntry ? 'Edit Waiting List Entry' : 'Add to Waiting List'}</span>
-            </DialogTitle>
-          </DialogHeader>
-
-          <form onSubmit={handleSubmit} className="space-y-6">
-            {/* Customer Information */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div>
-                <Label htmlFor="customerName" className="text-sm font-medium text-gray-700">Customer Name *</Label>
-                <div className="relative mt-1">
-                  <Input
-                    id="customerName"
-                    value={formData.customerName}
-                    onChange={(e) => setFormData({ ...formData, customerName: e.target.value })}
-                    placeholder="Enter customer name"
-                    required
-                    className="pl-10"
-                  />
-                  <Users className="w-4 h-4 text-gray-400 absolute left-3 top-1/2 transform -translate-y-1/2" />
-                </div>
-              </div>
-              <div>
-                <Label htmlFor="customerPhone" className="text-sm font-medium text-gray-700">Phone</Label>
-                <div className="relative mt-1">
-                  <Input
-                    id="customerPhone"
-                    type="tel"
-                    value={formData.customerPhone}
-                    onChange={(e) => setFormData({ ...formData, customerPhone: e.target.value })}
-                    placeholder="+1 (555) 123-4567"
-                    className="pl-10"
-                  />
-                  <Phone className="w-4 h-4 text-gray-400 absolute left-3 top-1/2 transform -translate-y-1/2" />
-                </div>
-              </div>
-            </div>
-
-            {/* Email */}
-            <div>
-              <Label htmlFor="customerEmail" className="text-sm font-medium text-gray-700">Email *</Label>
-              <div className="relative mt-1">
-                <Input
-                  id="customerEmail"
-                  type="email"
-                  value={formData.customerEmail}
-                  onChange={(e) => setFormData({ ...formData, customerEmail: e.target.value })}
-                  placeholder="customer@example.com"
-                  required
-                  className="pl-10"
-                />
-                <Mail className="w-4 h-4 text-gray-400 absolute left-3 top-1/2 transform -translate-y-1/2" />
-              </div>
-            </div>
-
-            {/* Booking Details */}
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              <div>
-                <Label htmlFor="requestedDate" className="text-sm font-medium text-gray-700">Requested Date *</Label>
-                <div className="relative mt-1">
-                  <Input
-                    id="requestedDate"
-                    type="date"
-                    value={formData.requestedDate}
-                    onChange={(e) => setFormData({ ...formData, requestedDate: e.target.value })}
-                    required
-                    className="pl-10"
-                  />
-                  <Calendar className="w-4 h-4 text-gray-400 absolute left-3 top-1/2 transform -translate-y-1/2" />
-                </div>
-              </div>
-              <div>
-                <Label htmlFor="requestedTime" className="text-sm font-medium text-gray-700">Requested Time *</Label>
-                <div className="relative mt-1">
-                  <Input
-                    id="requestedTime"
-                    type="time"
-                    value={formData.requestedTime}
-                    onChange={(e) => setFormData({ ...formData, requestedTime: e.target.value })}
-                    required
-                    className="pl-10"
-                  />
-                  <Clock className="w-4 h-4 text-gray-400 absolute left-3 top-1/2 transform -translate-y-1/2" />
-                </div>
-              </div>
-              <div>
-                <Label htmlFor="duration" className="text-sm font-medium text-gray-700">Duration *</Label>
-                <Select 
-                  value={formData.duration} 
-                  onValueChange={(value) => setFormData({ ...formData, duration: value })}
-                >
-                  <SelectTrigger className="mt-1">
-                    <SelectValue placeholder="Select duration" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="1 hour">1 hour</SelectItem>
-                    <SelectItem value="1.5 hours">1.5 hours</SelectItem>
-                    <SelectItem value="2 hours">2 hours</SelectItem>
-                    <SelectItem value="2.5 hours">2.5 hours</SelectItem>
-                    <SelectItem value="3 hours">3 hours</SelectItem>
-                    <SelectItem value="4+ hours">4+ hours</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-            </div>
-
-            {/* Guest Count - moved here to match booking form layout */}
-            <div>
-              <Label htmlFor="guestCount" className="text-sm font-medium text-gray-700">Guests *</Label>
-              <div className="relative mt-1">
-                <Input
-                  id="guestCount"
-                  type="number"
-                  min="1"
-                  max="20"
-                  value={formData.guestCount}
-                  onChange={(e) => setFormData({ ...formData, guestCount: parseInt(e.target.value) })}
-                  required
-                  className="pl-10"
-                />
-                <Users className="w-4 h-4 text-gray-400 absolute left-3 top-1/2 transform -translate-y-1/2" />
-              </div>
-            </div>
-
-            {/* Available Tables */}
-            <div>
-              <Label htmlFor="preferredTable" className="text-sm font-medium text-gray-700">Available Tables</Label>
-              <Select 
-                value={formData.preferredTable} 
-                onValueChange={(value) => setFormData({ ...formData, preferredTable: value })}
-              >
-                <SelectTrigger className="mt-1">
-                  <SelectValue placeholder="Select an available table" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="auto-assign">Auto-assign table</SelectItem>
-                  {tables.map((table: any) => (
-                    <SelectItem key={table.id} value={table.id.toString()}>
-                      Table {table.tableNumber} (Capacity: {table.capacity})
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-              <p className="text-xs text-gray-500 mt-1">
-                Tables displayed based on guest count and time availability
-              </p>
-            </div>
-
-            {/* Special Requests */}
-            <div>
-              <Label htmlFor="specialRequests" className="text-sm font-medium text-gray-700">Special Requests</Label>
-              <Textarea
-                id="specialRequests"
-                value={formData.specialRequests}
-                onChange={(e) => setFormData({ ...formData, specialRequests: e.target.value })}
-                placeholder="Dietary requirements, seating preferences, allergies..."
-                className="mt-1 min-h-[80px]"
-              />
-            </div>
-
-            {/* Internal Notes */}
-            <div>
-              <Label htmlFor="notes" className="text-sm font-medium text-gray-700">Internal Notes</Label>
-              <Textarea
-                id="notes"
-                value={formData.notes}
-                onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
-                placeholder="Staff notes (not visible to customer)..."
-                className="mt-1 min-h-[60px]"
-              />
-            </div>
-
-            {/* Extra Description */}
-            <div>
-              <Label htmlFor="extraDescription" className="text-sm font-medium text-gray-700">Extra Description</Label>
-              <Textarea
-                id="extraDescription"
-                value={formData.extraDescription}
-                onChange={(e) => setFormData({ ...formData, extraDescription: e.target.value })}
-                placeholder="Additional booking details..."
-                className="mt-1 min-h-[60px]"
-              />
-            </div>
-
-            {/* Tags */}
-            <div>
-              <Label className="text-sm font-medium text-gray-700">Tags</Label>
-              <div className="flex flex-wrap gap-2 mt-2">
-                {availableTags.map((tag) => (
-                  <Badge
-                    key={tag}
-                    variant={formData.tags.includes(tag) ? "default" : "outline"}
-                    className={`cursor-pointer transition-all duration-200 ${
-                      formData.tags.includes(tag)
-                        ? "bg-green-600 text-white hover:bg-green-700"
-                        : "hover:bg-green-50 hover:border-green-300"
-                    }`}
-                    onClick={() => handleTagToggle(tag)}
-                  >
-                    <Tag className="w-3 h-3 mr-1" />
-                    {tag}
-                  </Badge>
-                ))}
-              </div>
-              {formData.tags.includes("Large Party") && (
-                <div className="mt-2 p-3 bg-blue-50 border border-blue-200 rounded-lg">
-                  <p className="text-sm text-blue-800">
-                    <strong>Large Party Notice:</strong> Special arrangements may be required for parties of 8 or more guests.
-                  </p>
-                </div>
-              )}
-            </div>
-
-            {/* Pre-payment Option */}
-            <div className="flex items-center space-x-2">
-              <Checkbox
-                id="requirePrepayment"
-                checked={formData.requirePrepayment}
-                onCheckedChange={(checked) => setFormData({ ...formData, requirePrepayment: checked })}
-              />
-              <Label htmlFor="requirePrepayment" className="text-sm text-gray-700">
-                Require prepayment
-              </Label>
-            </div>
-
-            <p className="text-xs text-gray-500">
-              Phone number required for booking confirmation
-            </p>
-
-            {/* Action Buttons */}
-            <div className="flex items-center justify-end space-x-3 pt-4 border-t">
-              <Button
-                type="button"
-                variant="outline"
-                onClick={resetForm}
-                disabled={createEntryMutation.isPending || updateEntryMutation.isPending}
-              >
-                Cancel
-              </Button>
-              <Button
-                type="submit"
-                disabled={createEntryMutation.isPending || updateEntryMutation.isPending}
-                className="bg-green-600 hover:bg-green-700"
-              >
-                {createEntryMutation.isPending || updateEntryMutation.isPending
-                  ? "Processing..."
-                  : editingEntry
-                  ? "Update Entry"
-                  : "Add to Waiting List"}
-              </Button>
-            </div>
-          </form>
-        </DialogContent>
-      </Dialog>
+      <UnifiedBookingModal
+        open={showForm}
+        onOpenChange={(open) => {
+          if (!open) resetForm();
+          setShowForm(open);
+        }}
+        title={editingEntry ? 'Edit Waiting List Entry' : 'Add to Waiting List'}
+        initialData={editingEntry || {}}
+        tables={tables}
+        onSubmit={handleSubmit}
+        isLoading={createEntryMutation.isPending || updateEntryMutation.isPending}
+        submitButtonText={editingEntry ? 'Update Entry' : 'Add to Waiting List'}
+        mode={editingEntry ? 'edit' : 'create'}
+      />
 
       {/* Delete Confirmation Dialog */}
       <Dialog open={!!deletingEntry} onOpenChange={() => setDeletingEntry(null)}>

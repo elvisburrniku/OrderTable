@@ -7,7 +7,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { Checkbox } from "@/components/ui/checkbox";
-import { X, Clock, Users, Calendar, MapPin, Phone, Mail, FileText, Tag } from "lucide-react";
+import { Switch } from "@/components/ui/switch";
+import { X, Clock, Users, Calendar, MapPin, Phone, Mail, FileText, Tag, CreditCard, Globe } from "lucide-react";
 import { useAuth } from "@/lib/auth.tsx";
 import { useBooking } from "@/contexts/booking-context";
 import { useDate } from "@/contexts/date-context";
@@ -54,6 +55,10 @@ export default function UnifiedBookingModal({
     extraDescription: "",
     tags: [],
     requirePrePayment: false,
+    paymentAmount: 0,
+    paymentDeadline: "24 hours",
+    sendPaymentEmail: false,
+    language: "English (GB)",
     ...initialData
   });
 
@@ -333,15 +338,98 @@ export default function UnifiedBookingModal({
           </div>
 
           {/* Pre-payment Option */}
-          <div className="flex items-center space-x-2">
-            <Checkbox
-              id="requirePrePayment"
-              checked={formData.requirePrePayment}
-              onCheckedChange={(checked) => handleInputChange('requirePrePayment', checked)}
-            />
-            <Label htmlFor="requirePrePayment" className="text-sm text-gray-700">
-              Require prepayment
-            </Label>
+          <div className="space-y-4">
+            <div className="flex items-center space-x-2">
+              <Switch
+                id="requirePrePayment"
+                checked={formData.requirePrePayment}
+                onCheckedChange={(checked) => handleInputChange('requirePrePayment', checked)}
+              />
+              <Label htmlFor="requirePrePayment" className="text-sm text-gray-700">
+                Require prepayment
+              </Label>
+            </div>
+
+            {/* Payment Details - Show when prepayment is required */}
+            {formData.requirePrePayment && (
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pl-6 border-l-2 border-green-200">
+                <div>
+                  <Label htmlFor="paymentAmount" className="text-sm font-medium text-gray-700">Amount</Label>
+                  <div className="relative mt-1">
+                    <Input
+                      id="paymentAmount"
+                      type="number"
+                      min="0"
+                      step="0.01"
+                      value={formData.paymentAmount}
+                      onChange={(e) => handleInputChange('paymentAmount', parseFloat(e.target.value) || 0)}
+                      placeholder="0"
+                      className="pl-10"
+                    />
+                    <CreditCard className="w-4 h-4 text-gray-400 absolute left-3 top-1/2 transform -translate-y-1/2" />
+                  </div>
+                </div>
+                <div>
+                  <Label htmlFor="paymentDeadline" className="text-sm font-medium text-gray-700">Payment Deadline</Label>
+                  <Select 
+                    value={formData.paymentDeadline} 
+                    onValueChange={(value) => handleInputChange('paymentDeadline', value)}
+                  >
+                    <SelectTrigger className="mt-1">
+                      <SelectValue placeholder="Select deadline" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="1 hour">1 hour</SelectItem>
+                      <SelectItem value="2 hours">2 hours</SelectItem>
+                      <SelectItem value="6 hours">6 hours</SelectItem>
+                      <SelectItem value="12 hours">12 hours</SelectItem>
+                      <SelectItem value="24 hours">24 hours</SelectItem>
+                      <SelectItem value="48 hours">48 hours</SelectItem>
+                      <SelectItem value="72 hours">72 hours</SelectItem>
+                      <SelectItem value="1 week">1 week</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="md:col-span-2">
+                  <div className="flex items-center space-x-2">
+                    <Switch
+                      id="sendPaymentEmail"
+                      checked={formData.sendPaymentEmail}
+                      onCheckedChange={(checked) => handleInputChange('sendPaymentEmail', checked)}
+                    />
+                    <Label htmlFor="sendPaymentEmail" className="text-sm text-gray-700">
+                      Send email with payment link
+                    </Label>
+                  </div>
+                </div>
+              </div>
+            )}
+          </div>
+
+          {/* Language Selection */}
+          <div>
+            <Label htmlFor="language" className="text-sm font-medium text-gray-700">Language</Label>
+            <div className="relative mt-1">
+              <Select 
+                value={formData.language} 
+                onValueChange={(value) => handleInputChange('language', value)}
+              >
+                <SelectTrigger className="pl-10">
+                  <SelectValue placeholder="Select language" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="English (GB)">English (GB)</SelectItem>
+                  <SelectItem value="English (US)">English (US)</SelectItem>
+                  <SelectItem value="French">French</SelectItem>
+                  <SelectItem value="Spanish">Spanish</SelectItem>
+                  <SelectItem value="German">German</SelectItem>
+                  <SelectItem value="Italian">Italian</SelectItem>
+                  <SelectItem value="Portuguese">Portuguese</SelectItem>
+                  <SelectItem value="Dutch">Dutch</SelectItem>
+                </SelectContent>
+              </Select>
+              <Globe className="w-4 h-4 text-gray-400 absolute left-3 top-1/2 transform -translate-y-1/2" />
+            </div>
           </div>
 
           <p className="text-xs text-gray-500">
