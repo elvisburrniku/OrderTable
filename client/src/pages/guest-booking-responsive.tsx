@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent } from "@/components/ui/card";
+import { Alert, AlertDescription } from "@/components/ui/alert";
 import {
   Calendar,
   Clock,
@@ -17,7 +18,11 @@ import {
   ChevronLeft,
   ChevronRight,
   Sparkles,
+  CreditCard,
+  AlertCircle,
 } from "lucide-react";
+import { loadStripe } from "@stripe/stripe-js";
+import { Elements, useStripe, useElements, PaymentElement } from "@stripe/react-stripe-js";
 import {
   format,
   addDays,
@@ -40,7 +45,53 @@ import {
   ShimmerSkeleton,
 } from "@/components/skeletons/booking-skeleton";
 
-// Dynamic time slot generation will be done based on opening hours
+// Initialize Stripe
+const stripePromise = loadStripe(import.meta.env.VITE_STRIPE_PUBLIC_KEY || "");
+
+// Payment form component for Stripe Elements
+const PaymentForm = ({ onPaymentSuccess, onPaymentError, bookingData }: any) => {
+  const stripe = useStripe();
+  const elements = useElements();
+  const [isProcessing, setIsProcessing] = useState(false);
+
+  const handleSubmit = async (event: React.FormEvent) => {
+    event.preventDefault();
+
+    if (!stripe || !elements) {
+      return;
+    }
+
+    setIsProcessing(true);
+
+    const { error } = await stripe.confirmPayment({
+      elements,
+      confirmParams: {
+        return_url: `${window.location.origin}/payment-success?booking=${bookingData.id}`,
+      },
+    });
+
+    setIsProcessing(false);
+
+    if (error) {
+      onPaymentError(error.message);
+    } else {
+      onPaymentSuccess();
+    }
+  };
+
+  return (
+    <form onSubmit={handleSubmit} className="space-y-6">
+      <PaymentElement />
+      <Button 
+        type="submit" 
+        className="w-full" 
+        disabled={!stripe || !elements || isProcessing}
+      >
+        {isProcessing ? "Processing..." : `Pay ${bookingData.paymentAmount ? `$${bookingData.paymentAmount}` : ""}`}
+      </Button>
+    </form>
+  );
+};
 
 export default function GuestBookingResponsive(props: any) {
   const [match, params] = useRoute("/guest-booking/:tenantId/:restaurantId");
@@ -91,6 +142,10 @@ export default function GuestBookingResponsive(props: any) {
     string | null
   >(null);
   const [bookingId, setBookingId] = useState<number | null>(null);
+  const [clientSecret, setClientSecret] = useState<string | null>(null);
+  const [paymentError, setPaymentError] = useState<string | null>(null);
+  const [bookingCreated, setBookingCreated] = useState(false);
+  const [createdBookingData, setCreatedBookingData] = useState<any>(null);
 
   // Fetch restaurant data
   const { data: restaurant, isLoading: restaurantLoading } = useQuery({
@@ -141,6 +196,14 @@ export default function GuestBookingResponsive(props: any) {
     enabled: !!finalRestaurantId && !!selectedDate,
   });
 
+  // Fetch payment setup information
+  const { data: paymentInfo, isLoading: paymentInfoLoading } = useQuery({
+    queryKey: [
+      `/api/public/tenants/${finalTenantId}/restaurants/${finalRestaurantId}/payment-setup`,
+    ],
+    enabled: !!(finalTenantId && finalRestaurantId),
+  });
+
   // Create booking mutation
   const createBookingMutation = useMutation({
     mutationFn: async (bookingData: any) => {
@@ -152,28 +215,85 @@ export default function GuestBookingResponsive(props: any) {
           body: JSON.stringify(bookingData),
         },
       );
-      if (!response.ok) throw new Error("Booking failed");
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.message || "Booking failed");
+      }
       return response.json();
     },
     onSuccess: (data) => {
-      setBookingId(data.bookingId || data.id);
-      setCurrentStep(4);
-      toast({
-        title: "Booking Confirmed!",
-        description: "Your reservation has been successfully created.",
-      });
+      setBookingId(data.id);
+      setCreatedBookingData(data);
+      setBookingCreated(true);
+      
+      const hasPaymentStep = paymentInfo?.requiresPayment && paymentInfo?.stripeConnectReady;
+      
+      if (hasPaymentStep && data.requiresPayment && data.paymentAmount > 0) {
+        // Create payment intent for the booking
+        createPaymentIntent(data);
+        setCurrentStep(currentStep + 1); // Move to payment step
+      } else {
+        // No payment required, booking is complete
+        setCurrentStep(steps.length); // Go to success screen
+        toast({
+          title: "Booking Confirmed!",
+          description: "Your reservation has been successfully created.",
+        });
+      }
     },
-    onError: () => {
+    onError: (error: any) => {
       toast({
         title: "Booking Failed",
-        description:
-          "There was an error creating your booking. Please try again.",
+        description: error.message || "There was an error creating your booking. Please try again.",
         variant: "destructive",
       });
     },
   });
 
-  // Dynamic steps based on available seasonal themes
+  // Create payment intent for booking
+  const createPaymentIntent = async (bookingData: any) => {
+    try {
+      // Create secure payment token
+      const paymentData = {
+        bookingId: bookingData.id,
+        tenantId: parseInt(finalTenantId),
+        restaurantId: parseInt(finalRestaurantId),
+        amount: bookingData.paymentAmount,
+        currency: bookingData.currency || 'USD',
+        deadline: new Date(Date.now() + (bookingData.paymentDeadlineHours || 24) * 60 * 60 * 1000)
+      };
+
+      const response = await fetch('/api/secure/prepayment/payment-intent', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          token: null, // Will be generated server-side
+          bookingId: bookingData.id,
+          tenantId: parseInt(finalTenantId),
+          restaurantId: parseInt(finalRestaurantId),
+          amount: bookingData.paymentAmount,
+          currency: bookingData.currency || 'USD'
+        })
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.message || 'Failed to create payment intent');
+      }
+
+      const data = await response.json();
+      setClientSecret(data.clientSecret);
+    } catch (error: any) {
+      setPaymentError(error.message);
+      toast({
+        title: "Payment Setup Failed",
+        description: error.message || "Unable to set up payment. Please try again.",
+        variant: "destructive",
+      });
+    }
+  };
+
+  // Dynamic steps based on available seasonal themes and payment requirements
   const steps = [
     { title: "Date", icon: Calendar },
     { title: "Time", icon: Clock },
@@ -182,27 +302,59 @@ export default function GuestBookingResponsive(props: any) {
       ? [{ title: "Experience", icon: Sparkles }]
       : []),
     { title: "Details", icon: User },
+    ...(paymentInfo?.requiresPayment && paymentInfo?.stripeConnectReady
+      ? [{ title: "Payment", icon: CreditCard }]
+      : []),
   ];
 
   const handleNext = () => {
+    const hasPaymentStep = paymentInfo?.requiresPayment && paymentInfo?.stripeConnectReady;
+    const detailsStepIndex = seasonalThemes.length > 0 ? 4 : 3;
+    const paymentStepIndex = hasPaymentStep ? detailsStepIndex + 1 : -1;
+
     if (currentStep < steps.length - 1) {
-      setCurrentStep(currentStep + 1);
+      // If this is the details step and payment is required, create booking first
+      if (currentStep === detailsStepIndex && hasPaymentStep) {
+        const bookingData = {
+          bookingDate: selectedDate ? format(selectedDate, "yyyy-MM-dd") : "",
+          startTime: selectedTime,
+          guestCount: guestCount,
+          customerName: customerData.name,
+          customerEmail: customerData.email,
+          customerPhone: customerData.phone,
+          specialRequests: customerData.comment || null,
+          seasonalThemeId: selectedSeasonalTheme
+            ? parseInt(selectedSeasonalTheme)
+            : null,
+          source: "guest_booking",
+        };
+        
+        // Create booking and then proceed to payment
+        createBookingMutation.mutate(bookingData);
+      } else {
+        // Regular step progression
+        setCurrentStep(currentStep + 1);
+      }
     } else {
-      // Submit booking
-      const bookingData = {
-        bookingDate: selectedDate ? format(selectedDate, "yyyy-MM-dd") : "",
-        startTime: selectedTime,
-        guestCount: guestCount,
-        customerName: customerData.name,
-        customerEmail: customerData.email,
-        customerPhone: customerData.phone,
-        specialRequests: customerData.comment || null,
-        seasonalThemeId: selectedSeasonalTheme
-          ? parseInt(selectedSeasonalTheme)
-          : null,
-        source: "guest_booking",
-      };
-      createBookingMutation.mutate(bookingData);
+      // Final step - either submit booking or handle payment completion
+      if (!hasPaymentStep) {
+        // No payment required, create booking
+        const bookingData = {
+          bookingDate: selectedDate ? format(selectedDate, "yyyy-MM-dd") : "",
+          startTime: selectedTime,
+          guestCount: guestCount,
+          customerName: customerData.name,
+          customerEmail: customerData.email,
+          customerPhone: customerData.phone,
+          specialRequests: customerData.comment || null,
+          seasonalThemeId: selectedSeasonalTheme
+            ? parseInt(selectedSeasonalTheme)
+            : null,
+          source: "guest_booking",
+        };
+        createBookingMutation.mutate(bookingData);
+      }
+      // Payment handling will be done in PaymentForm component
     }
   };
 
@@ -214,6 +366,7 @@ export default function GuestBookingResponsive(props: any) {
 
   const isStepValid = () => {
     const hasThemes = seasonalThemes.length > 0;
+    const hasPaymentStep = paymentInfo?.requiresPayment && paymentInfo?.stripeConnectReady;
 
     switch (currentStep) {
       case 0:
@@ -230,7 +383,19 @@ export default function GuestBookingResponsive(props: any) {
           return customerData.name && customerData.email && customerData.phone;
         }
       case 4:
-        return customerData.name && customerData.email && customerData.phone; // Only when themes exist
+        if (hasThemes) {
+          return customerData.name && customerData.email && customerData.phone; // Details step when themes exist
+        } else if (hasPaymentStep) {
+          return true; // Payment step when no themes
+        } else {
+          return false;
+        }
+      case 5:
+        if (hasThemes && hasPaymentStep) {
+          return true; // Payment step when themes exist
+        } else {
+          return false;
+        }
       default:
         return false;
     }
@@ -1210,6 +1375,79 @@ export default function GuestBookingResponsive(props: any) {
               </div>
             )}
 
+            {/* Payment Step */}
+            {currentStep === (seasonalThemes.length > 0 ? 5 : 4) && 
+             paymentInfo?.requiresPayment && 
+             paymentInfo?.stripeConnectReady && 
+             clientSecret && (
+              <div className="space-y-6">
+                <div className="text-center">
+                  <h2 className="text-xl md:text-2xl font-bold text-gray-900 mb-2">
+                    Complete Payment
+                  </h2>
+                  <p className="text-sm text-gray-600 mb-4">
+                    Please complete the payment to confirm your reservation
+                  </p>
+                  {createdBookingData?.paymentAmount && (
+                    <div className="text-lg font-semibold text-green-600 mb-4">
+                      Amount: ${createdBookingData.paymentAmount}
+                    </div>
+                  )}
+                </div>
+
+                {paymentError && (
+                  <Alert className="bg-red-50 border-red-200">
+                    <AlertCircle className="h-4 w-4" />
+                    <AlertDescription className="text-red-800">
+                      {paymentError}
+                    </AlertDescription>
+                  </Alert>
+                )}
+
+                <Elements stripe={stripePromise} options={{ clientSecret }}>
+                  <PaymentForm
+                    bookingData={createdBookingData}
+                    onPaymentSuccess={() => {
+                      setCurrentStep(steps.length); // Go to success
+                      toast({
+                        title: "Payment Successful!",
+                        description: "Your reservation has been confirmed and payment processed.",
+                      });
+                    }}
+                    onPaymentError={(error: string) => {
+                      setPaymentError(error);
+                      toast({
+                        title: "Payment Failed",
+                        description: error,
+                        variant: "destructive",
+                      });
+                    }}
+                  />
+                </Elements>
+              </div>
+            )}
+
+            {/* Show payment required message if Stripe Connect is not ready */}
+            {currentStep === (seasonalThemes.length > 0 ? 5 : 4) && 
+             paymentInfo?.requiresPayment && 
+             !paymentInfo?.stripeConnectReady && (
+              <div className="space-y-6">
+                <div className="text-center">
+                  <h2 className="text-xl md:text-2xl font-bold text-gray-900 mb-2">
+                    Payment Required
+                  </h2>
+                  <Alert className="bg-yellow-50 border-yellow-200">
+                    <AlertCircle className="h-4 w-4" />
+                    <AlertDescription className="text-yellow-800">
+                      This restaurant requires payment to complete your reservation. 
+                      However, their payment system is not yet configured. 
+                      Please contact the restaurant directly to complete your booking.
+                    </AlertDescription>
+                  </Alert>
+                </div>
+              </div>
+            )}
+
             {/* Navigation Buttons */}
             <div className="flex justify-between mt-8 pt-6 border-t">
               <Button
@@ -1234,7 +1472,9 @@ export default function GuestBookingResponsive(props: any) {
                   </>
                 ) : currentStep === steps.length - 1 ? (
                   <>
-                    <span>Complete Booking</span>
+                    <span>
+                      {(paymentInfo?.requiresPayment && paymentInfo?.stripeConnectReady) ? "Complete Payment" : "Complete Booking"}
+                    </span>
                     <Check className="w-4 h-4" />
                   </>
                 ) : (

@@ -5955,13 +5955,52 @@ export async function registerRoutes(app: Express): Promise<Server> {
           return res.status(404).json({ message: "Restaurant not found" });
         }
 
-        // Guest booking is enabled by default for all restaurants
-        // In the future, this could be controlled by a restaurant setting
+        // Check payment setups to determine if payment is required
+        const paymentSetups = await storage.getPaymentSetupsByRestaurant(restaurantId);
+        
+        let requiresPayment = false;
+        let paymentAmount = null;
+        let paymentSetup = null;
+        let currency = "USD";
 
-        // Extract payment information if provided
-        const requiresPayment = req.body.requiresPayment || false;
-        const paymentAmount = req.body.paymentAmount || null;
-        const paymentDeadlineHours = req.body.paymentDeadlineHours || 24;
+        if (paymentSetups && paymentSetups.length > 0) {
+          // Find active prepayment setup
+          paymentSetup = paymentSetups.find(setup => 
+            setup.type === 'prepayment' && setup.method === 'capture_amount'
+          );
+
+          if (paymentSetup) {
+            requiresPayment = true;
+            
+            // Calculate payment amount based on price unit
+            if (paymentSetup.priceUnit === 'per_guest') {
+              paymentAmount = parseFloat(paymentSetup.amount) * req.body.guestCount;
+            } else if (paymentSetup.priceUnit === 'per_booking') {
+              paymentAmount = parseFloat(paymentSetup.amount);
+            } else {
+              // per_table - default to per_booking logic
+              paymentAmount = parseFloat(paymentSetup.amount);
+            }
+            
+            currency = paymentSetup.currency || "USD";
+          }
+        }
+
+        const paymentDeadlineHours = paymentSetup?.cancellationNotice === '24_hours' ? 24 : 
+                                   paymentSetup?.cancellationNotice === '48_hours' ? 48 :
+                                   paymentSetup?.cancellationNotice === '72_hours' ? 72 :
+                                   paymentSetup?.cancellationNotice === '1_week' ? 168 : 24;
+
+        // If payment is required, check if Stripe Connect is set up
+        if (requiresPayment && paymentAmount && paymentAmount > 0) {
+          const tenant = await storage.getTenantById(tenantId);
+          if (!tenant?.stripeConnectAccountId || !tenant.stripeConnectChargesEnabled) {
+            return res.status(400).json({ 
+              message: "Payment processing is not available for this restaurant. Please contact the restaurant directly.",
+              code: "stripe_connect_not_setup"
+            });
+          }
+        }
 
         // Determine booking status based on payment requirements
         let bookingStatus = "confirmed";
@@ -5991,6 +6030,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
           paymentAmount: paymentAmount ? parseFloat(paymentAmount) : null,
           paymentDeadlineHours,
           paymentStatus,
+          currency: currency,
+          paymentSetupId: paymentSetup?.id || null,
         };
 
         // Validate required fields
@@ -6008,6 +6049,43 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
         const booking = await storage.createBooking(bookingData);
 
+        // Generate payment link if payment is required
+        let paymentLink = null;
+        if (requiresPayment && paymentAmount && paymentAmount > 0) {
+          try {
+            const { PaymentTokenService } = await import('./payment-token-service.js');
+            
+            // Create secure payment token
+            const paymentData = {
+              bookingId: booking.id,
+              tenantId: tenantId,
+              restaurantId: restaurantId,
+              amount: paymentAmount,
+              currency: currency,
+              deadline: new Date(Date.now() + paymentDeadlineHours * 60 * 60 * 1000)
+            };
+            
+            const token = PaymentTokenService.createPaymentToken(paymentData);
+            const baseUrl = req.get('origin') || `http://localhost:5000`;
+            paymentLink = `${baseUrl}/prepayment?token=${encodeURIComponent(token)}`;
+            
+            console.log(`Generated payment link for booking ${booking.id}: ${paymentLink}`);
+          } catch (tokenError) {
+            console.error("Error generating payment link:", tokenError);
+            // Fall back to legacy hash method if token service fails
+            const { BookingHash } = await import('./booking-hash.js');
+            const baseUrl = req.get('origin') || `http://localhost:5000`;
+            paymentLink = BookingHash.generatePaymentUrl(
+              booking.id, 
+              tenantId, 
+              restaurantId, 
+              paymentAmount, 
+              currency, 
+              baseUrl
+            );
+          }
+        }
+
         // Send email notifications if service is available
         if (
           emailService &&
@@ -6015,16 +6093,21 @@ export async function registerRoutes(app: Express): Promise<Server> {
           emailService.checkEnabled()
         ) {
           try {
-            // Send confirmation email to customer
+            // Send confirmation email to customer (with payment link if required)
+            const bookingDetails = {
+              ...bookingData,
+              id: booking.id,
+              restaurantName: restaurant.name,
+              restaurantAddress: restaurant.address,
+              paymentLink: paymentLink,
+              paymentRequired: requiresPayment,
+              paymentDeadline: requiresPayment ? new Date(Date.now() + paymentDeadlineHours * 60 * 60 * 1000) : null
+            };
+
             await emailService.sendBookingConfirmation(
               bookingData.customerEmail,
               bookingData.customerName,
-              {
-                ...bookingData,
-                id: booking.id,
-                restaurantName: restaurant.name,
-                restaurantAddress: restaurant.address,
-              },
+              bookingDetails,
             );
 
             // Send notification to restaurant
@@ -6033,6 +6116,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
                 ...bookingData,
                 id: booking.id,
                 restaurantName: restaurant.name,
+                paymentRequired: requiresPayment,
+                paymentAmount: paymentAmount,
+                currency: currency
               });
             }
           } catch (emailError) {
@@ -6109,7 +6195,21 @@ export async function registerRoutes(app: Express): Promise<Server> {
           // Don't fail the booking if SMS fails
         }
 
-        res.json(booking);
+        // Return booking details with payment information
+        res.json({
+          ...booking,
+          requiresPayment,
+          paymentAmount,
+          currency,
+          paymentLink,
+          paymentDeadlineHours,
+          paymentSetup: paymentSetup ? {
+            id: paymentSetup.id,
+            name: paymentSetup.name,
+            description: paymentSetup.description,
+            cancellationNotice: paymentSetup.cancellationNotice
+          } : null
+        });
       } catch (error) {
         console.error("Guest booking creation error:", error);
         res
@@ -6117,6 +6217,60 @@ export async function registerRoutes(app: Express): Promise<Server> {
           .json({ message: "Failed to create booking. Please try again." });
       }
     },
+  );
+
+  // Public payment setup endpoint for guest booking
+  app.get(
+    "/api/public/tenants/:tenantId/restaurants/:restaurantId/payment-setup",
+    async (req, res) => {
+      try {
+        const tenantId = parseInt(req.params.tenantId);
+        const restaurantId = parseInt(req.params.restaurantId);
+
+        // Verify restaurant exists
+        const restaurant = await storage.getRestaurantById(restaurantId);
+        if (!restaurant || restaurant.tenantId !== tenantId) {
+          return res.status(404).json({ message: "Restaurant not found" });
+        }
+
+        // Get payment setups
+        const paymentSetups = await storage.getPaymentSetupsByRestaurant(restaurantId);
+        
+        // Find active prepayment setup
+        const prepaymentSetup = paymentSetups.find(setup => 
+          setup.type === 'prepayment' && setup.method === 'capture_amount'
+        );
+
+        if (!prepaymentSetup) {
+          return res.json({ 
+            requiresPayment: false,
+            paymentSetup: null
+          });
+        }
+
+        // Check if Stripe Connect is configured
+        const tenant = await storage.getTenantById(tenantId);
+        const stripeConnectReady = !!(tenant?.stripeConnectAccountId && tenant.stripeConnectChargesEnabled);
+
+        res.json({
+          requiresPayment: true,
+          stripeConnectReady,
+          paymentSetup: {
+            id: prepaymentSetup.id,
+            name: prepaymentSetup.name,
+            type: prepaymentSetup.type,
+            amount: prepaymentSetup.amount,
+            currency: prepaymentSetup.currency,
+            priceUnit: prepaymentSetup.priceUnit,
+            description: prepaymentSetup.description,
+            cancellationNotice: prepaymentSetup.cancellationNotice
+          }
+        });
+      } catch (error) {
+        console.error("Error fetching payment setup:", error);
+        res.status(500).json({ message: "Failed to fetch payment setup" });
+      }
+    }
   );
 
   // Guest booking details endpoint (public, no authentication required)
@@ -6342,9 +6496,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
               message: "Invalid or expired payment link" 
             });
           }
+        } else if (req.body.bookingId && req.body.tenantId && req.body.restaurantId) {
+          // Direct booking parameters (for guest booking flow)
+          bookingId = parseInt(req.body.bookingId);
+          tenantId = parseInt(req.body.tenantId);
+          restaurantId = parseInt(req.body.restaurantId);
+          amount = req.body.amount;
+          currency = req.body.currency || 'USD';
         } else {
           return res.status(400).json({ 
-            message: "Missing required payment token or hash" 
+            message: "Missing required payment token, hash, or booking parameters" 
           });
         }
 
