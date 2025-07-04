@@ -28,6 +28,11 @@ A comprehensive restaurant booking management system with React frontend and Exp
 - **Payment Display Enhancement**: Improved StripeConnectSettings with detailed payment statistics, transaction table, and Connect account information
 - **API Endpoints Added**: Created admin endpoints for webhook logs, statistics, Stripe payments, and Connect account management
 - **Authentication Fix**: Fixed admin webhook page authentication to use proper admin token system instead of regular auth provider
+- **2025-07-04**: ✅ WAITING LIST FORM ENHANCEMENT COMPLETED - Successfully updated waiting list form to match booking form design with error fixes
+- **Professional Form Design**: Applied unified design pattern from booking form with proper icons, spacing, customer information fields, booking details grid, tags system, and action buttons
+- **Error Resolution**: Fixed "tables is not defined" error by adding tables query and "addEntryMutation is not defined" error by correcting mutation references
+- **Form Functionality**: Waiting list form now includes customer details, phone/email fields, booking date/time, duration selection, table preferences, special requests, internal notes, extra description, tags system, and prepayment options
+- **Design Consistency**: Form layout matches booking creation interface with professional styling, green accent colors, and proper field organization
 - **2025-07-04**: ✅ PAYMENT DUPLICATE NOTIFICATION FIX COMPLETED - Fixed payment success page sending duplicate emails on every refresh
 - **Duplicate Prevention Frontend**: Enhanced payment-success.tsx with state management and redirect_status checking to prevent multiple notification triggers
 - **Duplicate Prevention Backend**: Added booking payment status validation in webhook to skip processing for already-paid bookings  
