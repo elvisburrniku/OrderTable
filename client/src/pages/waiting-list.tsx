@@ -43,7 +43,8 @@ import {
   ChevronDown,
   ChevronLeft,
   ChevronRight,
-  X
+  X,
+  Tag
 } from "lucide-react";
 import { format } from "date-fns";
 
@@ -308,6 +309,18 @@ export default function WaitingList() {
     });
     setEditingEntry(null);
     setShowForm(false);
+  };
+
+  const availableTags = [
+    "Birthday", "Anniversary", "VIP", "First Time", 
+    "Regular", "Special Diet", "Large Party"
+  ];
+
+  const handleTagToggle = (tag: string) => {
+    const newTags = formData.tags.includes(tag)
+      ? formData.tags.filter(t => t !== tag)
+      : [...formData.tags, tag];
+    setFormData({ ...formData, tags: newTags });
   };
 
   const handleStatusUpdate = (id: number, status: string) => {
@@ -671,106 +684,100 @@ export default function WaitingList() {
       }}>
         <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
-            <DialogTitle>{editingEntry ? 'Edit Waiting List Entry' : 'Add to Waiting List'}</DialogTitle>
+            <DialogTitle className="flex items-center space-x-2">
+              <Clock className="w-5 h-5 text-green-600" />
+              <span>{editingEntry ? 'Edit Waiting List Entry' : 'Add to Waiting List'}</span>
+            </DialogTitle>
           </DialogHeader>
+
           <form onSubmit={handleSubmit} className="space-y-6">
-            {/* Customer Information Section */}
-            <div className="grid grid-cols-2 gap-4">
+            {/* Customer Information */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
-                <Label htmlFor="customerName" className="flex items-center">
-                  <User className="w-4 h-4 mr-1" />
-                  Customer Name <span className="text-red-500 ml-1">*</span>
-                </Label>
-                <Input
-                  id="customerName"
-                  value={formData.customerName}
-                  onChange={(e) =>
-                    setFormData({ ...formData, customerName: e.target.value })
-                  }
-                  placeholder="Enter customer name"
-                  required
-                  className="mt-1"
-                />
+                <Label htmlFor="customerName" className="text-sm font-medium text-gray-700">Customer Name *</Label>
+                <div className="relative mt-1">
+                  <Input
+                    id="customerName"
+                    value={formData.customerName}
+                    onChange={(e) => setFormData({ ...formData, customerName: e.target.value })}
+                    placeholder="Enter customer name"
+                    required
+                    className="pl-10"
+                  />
+                  <Users className="w-4 h-4 text-gray-400 absolute left-3 top-1/2 transform -translate-y-1/2" />
+                </div>
               </div>
               <div>
-                <Label htmlFor="customerPhone" className="flex items-center">
-                  <Phone className="w-4 h-4 mr-1" />
-                  Phone
-                </Label>
-                <Input
-                  id="customerPhone"
-                  value={formData.customerPhone}
-                  onChange={(e) =>
-                    setFormData({ ...formData, customerPhone: e.target.value })
-                  }
-                  placeholder="+1 (555) 123-4567"
-                  className="mt-1"
-                />
+                <Label htmlFor="customerPhone" className="text-sm font-medium text-gray-700">Phone</Label>
+                <div className="relative mt-1">
+                  <Input
+                    id="customerPhone"
+                    type="tel"
+                    value={formData.customerPhone}
+                    onChange={(e) => setFormData({ ...formData, customerPhone: e.target.value })}
+                    placeholder="+1 (555) 123-4567"
+                    className="pl-10"
+                  />
+                  <Phone className="w-4 h-4 text-gray-400 absolute left-3 top-1/2 transform -translate-y-1/2" />
+                </div>
               </div>
             </div>
 
+            {/* Email */}
             <div>
-              <Label htmlFor="customerEmail" className="flex items-center">
-                <Mail className="w-4 h-4 mr-1" />
-                Email <span className="text-red-500 ml-1">*</span>
-              </Label>
-              <Input
-                id="customerEmail"
-                type="email"
-                value={formData.customerEmail}
-                onChange={(e) =>
-                  setFormData({ ...formData, customerEmail: e.target.value })
-                }
-                placeholder="customer@example.com"
-                required
-                className="mt-1"
-              />
+              <Label htmlFor="customerEmail" className="text-sm font-medium text-gray-700">Email *</Label>
+              <div className="relative mt-1">
+                <Input
+                  id="customerEmail"
+                  type="email"
+                  value={formData.customerEmail}
+                  onChange={(e) => setFormData({ ...formData, customerEmail: e.target.value })}
+                  placeholder="customer@example.com"
+                  required
+                  className="pl-10"
+                />
+                <Mail className="w-4 h-4 text-gray-400 absolute left-3 top-1/2 transform -translate-y-1/2" />
+              </div>
             </div>
 
-            {/* Booking Details Section */}
-            <div className="grid grid-cols-3 gap-4">
+            {/* Booking Details */}
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               <div>
-                <Label htmlFor="requestedDate" className="flex items-center">
-                  <Calendar className="w-4 h-4 mr-1" />
-                  Booking Date <span className="text-red-500 ml-1">*</span>
-                </Label>
-                <Input
-                  id="requestedDate"
-                  type="date"
-                  value={formData.requestedDate}
-                  onChange={(e) =>
-                    setFormData({ ...formData, requestedDate: e.target.value })
-                  }
-                  className="mt-1"
-                  required
-                />
+                <Label htmlFor="requestedDate" className="text-sm font-medium text-gray-700">Requested Date *</Label>
+                <div className="relative mt-1">
+                  <Input
+                    id="requestedDate"
+                    type="date"
+                    value={formData.requestedDate}
+                    onChange={(e) => setFormData({ ...formData, requestedDate: e.target.value })}
+                    required
+                    className="pl-10"
+                  />
+                  <Calendar className="w-4 h-4 text-gray-400 absolute left-3 top-1/2 transform -translate-y-1/2" />
+                </div>
               </div>
               <div>
-                <Label htmlFor="requestedTime" className="flex items-center">
-                  <Clock className="w-4 h-4 mr-1" />
-                  Start Time <span className="text-red-500 ml-1">*</span>
-                </Label>
-                <Input
-                  id="requestedTime"
-                  type="time"
-                  value={formData.requestedTime}
-                  onChange={(e) =>
-                    setFormData({ ...formData, requestedTime: e.target.value })
-                  }
-                  className="mt-1"
-                  required
-                />
+                <Label htmlFor="requestedTime" className="text-sm font-medium text-gray-700">Requested Time *</Label>
+                <div className="relative mt-1">
+                  <Input
+                    id="requestedTime"
+                    type="time"
+                    value={formData.requestedTime}
+                    onChange={(e) => setFormData({ ...formData, requestedTime: e.target.value })}
+                    required
+                    className="pl-10"
+                  />
+                  <Clock className="w-4 h-4 text-gray-400 absolute left-3 top-1/2 transform -translate-y-1/2" />
+                </div>
               </div>
               <div>
-                <Label htmlFor="duration" className="flex items-center">
-                  Duration <span className="text-red-500 ml-1">*</span>
-                </Label>
+                <Label htmlFor="duration" className="text-sm font-medium text-gray-700">Duration *</Label>
                 <Select 
-                  value={formData.duration || "2 hours"} 
+                  value={formData.duration} 
                   onValueChange={(value) => setFormData({ ...formData, duration: value })}
                 >
                   <SelectTrigger className="mt-1">
-                    <SelectValue placeholder="2 hours" />
+                    <SelectValue placeholder="Select duration" />
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="1 hour">1 hour</SelectItem>
@@ -778,49 +785,47 @@ export default function WaitingList() {
                     <SelectItem value="2 hours">2 hours</SelectItem>
                     <SelectItem value="2.5 hours">2.5 hours</SelectItem>
                     <SelectItem value="3 hours">3 hours</SelectItem>
-                    <SelectItem value="4 hours">4 hours</SelectItem>
+                    <SelectItem value="4+ hours">4+ hours</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
             </div>
 
+            {/* Guest Count - moved here to match booking form layout */}
             <div>
-              <Label htmlFor="guestCount" className="flex items-center">
-                <Users className="w-4 h-4 mr-1" />
-                Guests <span className="text-red-500 ml-1">*</span>
-              </Label>
-              <Input
-                id="guestCount"
-                type="number"
-                min="1"
-                max="20"
-                value={formData.guestCount}
-                onChange={(e) =>
-                  setFormData({ ...formData, guestCount: parseInt(e.target.value) || 1 })
-                }
-                placeholder="2"
-                required
-                className="mt-1"
-              />
+              <Label htmlFor="guestCount" className="text-sm font-medium text-gray-700">Guests *</Label>
+              <div className="relative mt-1">
+                <Input
+                  id="guestCount"
+                  type="number"
+                  min="1"
+                  max="20"
+                  value={formData.guestCount}
+                  onChange={(e) => setFormData({ ...formData, guestCount: parseInt(e.target.value) })}
+                  required
+                  className="pl-10"
+                />
+                <Users className="w-4 h-4 text-gray-400 absolute left-3 top-1/2 transform -translate-y-1/2" />
+              </div>
             </div>
 
-            {/* Available Tables Section */}
+            {/* Available Tables */}
             <div>
-              <Label className="flex items-center">
-                Available Tables
-              </Label>
+              <Label htmlFor="preferredTable" className="text-sm font-medium text-gray-700">Available Tables</Label>
               <Select 
-                value={formData.preferredTable || ""} 
+                value={formData.preferredTable} 
                 onValueChange={(value) => setFormData({ ...formData, preferredTable: value })}
               >
                 <SelectTrigger className="mt-1">
                   <SelectValue placeholder="Select an available table" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="auto">Any Available Table</SelectItem>
-                  <SelectItem value="table-1">Table 1 (4 seats)</SelectItem>
-                  <SelectItem value="table-2">Table 2 (6 seats)</SelectItem>
-                  <SelectItem value="table-3">Table 3 (2 seats)</SelectItem>
+                  <SelectItem value="auto-assign">Auto-assign table</SelectItem>
+                  {tables.map((table: any) => (
+                    <SelectItem key={table.id} value={table.id.toString()}>
+                      Table {table.tableNumber} (Capacity: {table.capacity})
+                    </SelectItem>
+                  ))}
                 </SelectContent>
               </Select>
               <p className="text-xs text-gray-500 mt-1">
@@ -828,110 +833,107 @@ export default function WaitingList() {
               </p>
             </div>
 
-            {/* Special Requests Section */}
+            {/* Special Requests */}
             <div>
-              <Label htmlFor="specialRequests">Special Requests</Label>
+              <Label htmlFor="specialRequests" className="text-sm font-medium text-gray-700">Special Requests</Label>
               <Textarea
                 id="specialRequests"
-                value={formData.specialRequests || ""}
-                onChange={(e) =>
-                  setFormData({ ...formData, specialRequests: e.target.value })
-                }
+                value={formData.specialRequests}
+                onChange={(e) => setFormData({ ...formData, specialRequests: e.target.value })}
                 placeholder="Dietary requirements, seating preferences, allergies..."
-                rows={3}
-                className="mt-1"
+                className="mt-1 min-h-[80px]"
               />
             </div>
 
-            {/* Internal Notes Section */}
+            {/* Internal Notes */}
             <div>
-              <Label htmlFor="notes">Internal Notes</Label>
+              <Label htmlFor="notes" className="text-sm font-medium text-gray-700">Internal Notes</Label>
               <Textarea
                 id="notes"
                 value={formData.notes}
-                onChange={(e) =>
-                  setFormData({ ...formData, notes: e.target.value })
-                }
+                onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
                 placeholder="Staff notes (not visible to customer)..."
-                rows={3}
-                className="mt-1"
+                className="mt-1 min-h-[60px]"
               />
             </div>
 
-            {/* Extra Description Section */}
+            {/* Extra Description */}
             <div>
-              <Label htmlFor="extraDescription">Extra Description</Label>
+              <Label htmlFor="extraDescription" className="text-sm font-medium text-gray-700">Extra Description</Label>
               <Textarea
                 id="extraDescription"
-                value={formData.extraDescription || ""}
-                onChange={(e) =>
-                  setFormData({ ...formData, extraDescription: e.target.value })
-                }
+                value={formData.extraDescription}
+                onChange={(e) => setFormData({ ...formData, extraDescription: e.target.value })}
                 placeholder="Additional booking details..."
-                rows={3}
-                className="mt-1"
+                className="mt-1 min-h-[60px]"
               />
             </div>
 
-            {/* Tags Section */}
+            {/* Tags */}
             <div>
-              <Label>Tags</Label>
+              <Label className="text-sm font-medium text-gray-700">Tags</Label>
               <div className="flex flex-wrap gap-2 mt-2">
-                {['Birthday', 'Anniversary', 'VIP', 'First Time', 'Regular', 'Special Diet', 'Large Party'].map((tag) => (
-                  <div key={tag} className="flex items-center space-x-2">
-                    <Checkbox 
-                      id={tag}
-                      checked={formData.tags?.includes(tag) || false}
-                      onCheckedChange={(checked) => {
-                        const currentTags = formData.tags || [];
-                        const newTags = checked 
-                          ? [...currentTags, tag]
-                          : currentTags.filter(t => t !== tag);
-                        setFormData({ ...formData, tags: newTags });
-                      }}
-                    />
-                    <Label htmlFor={tag} className="text-sm cursor-pointer">
-                      {tag}
-                    </Label>
-                  </div>
+                {availableTags.map((tag) => (
+                  <Badge
+                    key={tag}
+                    variant={formData.tags.includes(tag) ? "default" : "outline"}
+                    className={`cursor-pointer transition-all duration-200 ${
+                      formData.tags.includes(tag)
+                        ? "bg-green-600 text-white hover:bg-green-700"
+                        : "hover:bg-green-50 hover:border-green-300"
+                    }`}
+                    onClick={() => handleTagToggle(tag)}
+                  >
+                    <Tag className="w-3 h-3 mr-1" />
+                    {tag}
+                  </Badge>
                 ))}
               </div>
+              {formData.tags.includes("Large Party") && (
+                <div className="mt-2 p-3 bg-blue-50 border border-blue-200 rounded-lg">
+                  <p className="text-sm text-blue-800">
+                    <strong>Large Party Notice:</strong> Special arrangements may be required for parties of 8 or more guests.
+                  </p>
+                </div>
+              )}
             </div>
 
-            {/* Require Prepayment Section */}
+            {/* Pre-payment Option */}
             <div className="flex items-center space-x-2">
-              <Checkbox 
+              <Checkbox
                 id="requirePrepayment"
-                checked={formData.requirePrepayment || false}
+                checked={formData.requirePrepayment}
                 onCheckedChange={(checked) => setFormData({ ...formData, requirePrepayment: checked })}
               />
-              <Label htmlFor="requirePrepayment" className="text-sm">
+              <Label htmlFor="requirePrepayment" className="text-sm text-gray-700">
                 Require prepayment
               </Label>
             </div>
-            {formData.requirePrepayment && (
-              <p className="text-xs text-gray-600 mt-1">
-                Phone number required for booking confirmation
-              </p>
-            )}
 
-            <div className="flex justify-end space-x-2 pt-4">
+            <p className="text-xs text-gray-500">
+              Phone number required for booking confirmation
+            </p>
+
+            {/* Action Buttons */}
+            <div className="flex items-center justify-end space-x-3 pt-4 border-t">
               <Button
                 type="button"
                 variant="outline"
-                onClick={() => resetForm()}
+                onClick={resetForm}
+                disabled={addEntryMutation.isPending || updateEntryMutation.isPending}
               >
                 Cancel
               </Button>
               <Button
                 type="submit"
-                className="bg-green-600 hover:bg-green-700 text-white"
-                disabled={createEntryMutation.isPending || updateEntryMutation.isPending}
+                disabled={addEntryMutation.isPending || updateEntryMutation.isPending}
+                className="bg-green-600 hover:bg-green-700"
               >
-                {editingEntry ? 
-                  (updateEntryMutation.isPending ? "Updating..." : "Update Entry") :
-                  (createEntryMutation.isPending ? "Adding..." : "Add to Waiting List")
-                }
+                {addEntryMutation.isPending || updateEntryMutation.isPending
+                  ? "Processing..."
+                  : editingEntry
+                  ? "Update Entry"
+                  : "Add to Waiting List"}
               </Button>
             </div>
           </form>
