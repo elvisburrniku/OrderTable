@@ -231,7 +231,8 @@ export default function GuestBookingResponsive(props: any) {
       if (hasPaymentStep && data.requiresPayment && data.paymentAmount > 0) {
         // Create payment intent for the booking
         createPaymentIntent(data);
-        setCurrentStep(currentStep + 1); // Move to payment step
+        // The step advancement is handled in handleNext function
+        console.log(`Booking created with payment required: ${data.paymentAmount}`);
       } else {
         // No payment required, booking is complete
         setCurrentStep(steps.length); // Go to success screen
@@ -330,7 +331,33 @@ export default function GuestBookingResponsive(props: any) {
         };
         
         // Create booking and then proceed to payment
-        createBookingMutation.mutate(bookingData);
+        createBookingMutation.mutate(bookingData, {
+          onSuccess: (data) => {
+            // This will override the main onSuccess for this specific call
+            setBookingId(data.id);
+            setCreatedBookingData(data);
+            setBookingCreated(true);
+            
+            if (data.requiresPayment && data.paymentAmount > 0) {
+              createPaymentIntent(data);
+              setCurrentStep(currentStep + 1); // Move to payment step
+              console.log(`Moving to payment step after booking creation, current: ${currentStep}, new: ${currentStep + 1}`);
+            } else {
+              setCurrentStep(steps.length); // Go to success screen
+              toast({
+                title: "Booking Confirmed!",
+                description: "Your reservation has been successfully created.",
+              });
+            }
+          },
+          onError: (error: any) => {
+            toast({
+              title: "Booking Failed",
+              description: error.message || "There was an error creating your booking. Please try again.",
+              variant: "destructive",
+            });
+          }
+        });
       } else {
         // Regular step progression
         setCurrentStep(currentStep + 1);
@@ -1461,9 +1488,22 @@ export default function GuestBookingResponsive(props: any) {
               </Button>
 
               <Button
-                onClick={handleNext}
+                onClick={() => {
+                  // Don't use handleNext for payment step - PaymentForm handles payment submission
+                  const isPaymentStep = (currentStep === (seasonalThemes.length > 0 ? 5 : 4)) && 
+                                       paymentInfo?.requiresPayment && 
+                                       paymentInfo?.stripeConnectReady;
+                  if (!isPaymentStep) {
+                    handleNext();
+                  }
+                }}
                 disabled={!isStepValid() || createBookingMutation.isPending}
                 className="flex items-center space-x-2 bg-blue-600 hover:bg-blue-700"
+                style={{
+                  display: (currentStep === (seasonalThemes.length > 0 ? 5 : 4) && 
+                           paymentInfo?.requiresPayment && 
+                           paymentInfo?.stripeConnectReady) ? 'none' : 'flex'
+                }}
               >
                 {createBookingMutation.isPending ? (
                   <>
