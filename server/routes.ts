@@ -14636,8 +14636,28 @@ NEXT STEPS:
 
                 // Get owners and managers for additional notifications
                 try {
-                  const tenantUsers = await storage.getTenantUsers(booking.tenantId);
-                  const owners = tenantUsers.filter(tu => tu.role?.name === 'owner' || tu.role?.name === 'manager');
+                  const { tenantUsers: tenantUsersTable, users: usersTable } = await import("../shared/schema");
+                  const { eq } = await import("drizzle-orm");
+                  
+                  const tenantUsersList = await storage.db
+                    .select({
+                      tenantId: tenantUsersTable.tenantId,
+                      userId: tenantUsersTable.userId,
+                      role: tenantUsersTable.role,
+                      createdAt: tenantUsersTable.createdAt,
+                      user: {
+                        id: usersTable.id,
+                        email: usersTable.email,
+                        name: usersTable.name,
+                        restaurantName: usersTable.restaurantName,
+                        ssoProvider: usersTable.ssoProvider,
+                      },
+                    })
+                    .from(tenantUsersTable)
+                    .leftJoin(usersTable, eq(tenantUsersTable.userId, usersTable.id))
+                    .where(eq(tenantUsersTable.tenantId, booking.tenantId));
+
+                  const owners = tenantUsersList.filter(tu => tu.role === 'owner' || tu.role === 'manager');
                   
                   for (const userRole of owners) {
                     if (userRole.user?.email && userRole.user.email !== restaurant?.email) {
@@ -14654,7 +14674,7 @@ NEXT STEPS:
                           guestCount: booking.guestCount,
                         },
                       );
-                      console.log(`Payment notification email sent to ${userRole.role?.name}: ${userRole.user.email}`);
+                      console.log(`Payment notification email sent to ${userRole.role}: ${userRole.user.email}`);
                     }
                   }
                 } catch (userEmailError) {
