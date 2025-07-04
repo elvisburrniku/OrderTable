@@ -22,6 +22,7 @@ import {
   bookingChangeRequests,
   notifications,
   resolvedConflicts,
+  webhookLogs,
 } from "../shared/schema";
 import type {
   User,
@@ -469,6 +470,11 @@ export interface IStorage {
   getStripePaymentByIntentId(paymentIntentId: string): Promise<StripePayment | undefined>;
   updateStripePaymentByIntentId(paymentIntentId: string, updates: Partial<StripePayment>): Promise<StripePayment | undefined>;
   getTenantByStripeConnectAccountId(accountId: string): Promise<any | undefined>;
+
+  // Webhook Logging
+  createWebhookLog(log: InsertWebhookLog): Promise<WebhookLog>;
+  getWebhookLogs(tenantId?: number, limit?: number): Promise<WebhookLog[]>;
+  getWebhookLogsByEventType(eventType: string, tenantId?: number): Promise<WebhookLog[]>;
 }
 
 import { DatabaseStorage } from "./db-storage";

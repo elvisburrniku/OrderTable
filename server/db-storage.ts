@@ -56,6 +56,7 @@ const {
   floorPlanTemplates,
   stripePayments,
   stripeTransfers,
+  webhookLogs,
 } = schema;
 export class DatabaseStorage implements IStorage {
   db: any;
@@ -3828,5 +3829,56 @@ export class DatabaseStorage implements IStorage {
       .where(eq(tenants.stripeConnectAccountId, accountId))
       .limit(1);
     return result;
+  }
+
+  // Webhook Logging methods
+  async createWebhookLog(log: any): Promise<any> {
+    if (!this.db) throw new Error("Database connection not available");
+    
+    const [result] = await this.db
+      .insert(webhookLogs)
+      .values({
+        ...log,
+        createdAt: new Date(),
+      })
+      .returning();
+    return result;
+  }
+
+  async getWebhookLogs(tenantId?: number, limit: number = 100): Promise<any[]> {
+    if (!this.db) return [];
+    
+    let query = this.db
+      .select()
+      .from(webhookLogs)
+      .orderBy(desc(webhookLogs.createdAt))
+      .limit(limit);
+    
+    if (tenantId) {
+      query = query.where(eq(webhookLogs.tenantId, tenantId));
+    }
+    
+    return await query;
+  }
+
+  async getWebhookLogsByEventType(eventType: string, tenantId?: number): Promise<any[]> {
+    if (!this.db) return [];
+    
+    let query = this.db
+      .select()
+      .from(webhookLogs)
+      .where(eq(webhookLogs.eventType, eventType))
+      .orderBy(desc(webhookLogs.createdAt));
+    
+    if (tenantId) {
+      query = query.where(
+        and(
+          eq(webhookLogs.eventType, eventType),
+          eq(webhookLogs.tenantId, tenantId)
+        )
+      );
+    }
+    
+    return await query;
   }
 }

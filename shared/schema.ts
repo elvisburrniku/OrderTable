@@ -813,6 +813,27 @@ export const webhooks = pgTable("webhooks", {
   updatedAt: timestamp("updated_at").default(sql`now()`),
 });
 
+// Webhook Logs table for tracking all webhook events
+export const webhookLogs = pgTable("webhook_logs", {
+  id: serial("id").primaryKey(),
+  tenantId: integer("tenant_id").references(() => tenants.id, { onDelete: "cascade" }),
+  restaurantId: integer("restaurant_id").references(() => restaurants.id, { onDelete: "cascade" }),
+  webhookId: integer("webhook_id").references(() => webhooks.id, { onDelete: "cascade" }),
+  eventType: varchar("event_type", { length: 100 }).notNull(), // payment_intent.succeeded, booking.created, etc.
+  source: varchar("source", { length: 50 }).notNull(), // stripe, internal, etc.
+  status: varchar("status", { length: 20 }).notNull(), // received, processing, completed, failed
+  httpMethod: varchar("http_method", { length: 10 }).default("POST"),
+  requestUrl: text("request_url"),
+  requestHeaders: jsonb("request_headers").default({}),
+  requestBody: jsonb("request_body").default({}),
+  responseStatus: integer("response_status"),
+  responseBody: jsonb("response_body").default({}),
+  processingTime: integer("processing_time"), // milliseconds
+  errorMessage: text("error_message"),
+  metadata: jsonb("metadata").default({}),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
 export const customFields = pgTable("custom_fields", {
   id: serial("id").primaryKey(),
   tenantId: integer("tenant_id").references(() => tenants.id, {
@@ -2049,8 +2070,13 @@ export type InsertStripePayment = InferInsertModel<typeof stripePayments>;
 export type StripeTransfer = InferSelectModel<typeof stripeTransfers>;
 export type InsertStripeTransfer = InferInsertModel<typeof stripeTransfers>;
 
+export type WebhookLog = InferSelectModel<typeof webhookLogs>;
+export type InsertWebhookLog = InferInsertModel<typeof webhookLogs>;
+
 // Schemas for Stripe Connect
 export const insertStripePaymentSchema = createInsertSchema(stripePayments);
 export const selectStripePaymentSchema = createSelectSchema(stripePayments);
 export const insertStripeTransferSchema = createInsertSchema(stripeTransfers);
 export const selectStripeTransferSchema = createSelectSchema(stripeTransfers);
+export const insertWebhookLogSchema = createInsertSchema(webhookLogs);
+export const selectWebhookLogSchema = createSelectSchema(webhookLogs);

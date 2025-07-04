@@ -14547,10 +14547,30 @@ NEXT STEPS:
     },
   );
 
-  // Stripe webhook handler - handles both subscription and payment events
+  // Enhanced Stripe webhook handler with comprehensive logging and duplicate prevention
   app.post("/api/stripe/webhook", async (req: Request, res: Response) => {
+    const startTime = Date.now();
     const sig = req.headers["stripe-signature"];
     let event;
+
+    // Log webhook receipt
+    const webhookLogData = {
+      eventType: 'unknown',
+      source: 'stripe',
+      status: 'received',
+      httpMethod: 'POST',
+      requestUrl: req.url,
+      requestHeaders: {
+        'stripe-signature': sig ? 'present' : 'missing',
+        'content-type': req.headers['content-type'],
+        'user-agent': req.headers['user-agent'],
+      },
+      requestBody: {},
+      processingTime: 0,
+      metadata: {
+        timestamp: new Date().toISOString(),
+      }
+    };
 
     try {
       event = stripe.webhooks.constructEvent(
@@ -14558,13 +14578,41 @@ NEXT STEPS:
         sig!,
         process.env.STRIPE_WEBHOOK_SECRET || "whsec_test_webhook_secret",
       );
+      
+      // Update log with event details
+      webhookLogData.eventType = event.type;
+      webhookLogData.requestBody = {
+        id: event.id,
+        type: event.type,
+        created: event.created,
+        data: {
+          object: {
+            id: event.data.object.id,
+            object: event.data.object.object,
+            amount: event.data.object.amount,
+            currency: event.data.object.currency,
+            status: event.data.object.status,
+          }
+        }
+      };
+      webhookLogData.status = 'processing';
+      
     } catch (err: any) {
       console.log(`Webhook signature verification failed:`, err.message);
+      
+      // Log failed verification
+      webhookLogData.status = 'failed';
+      webhookLogData.errorMessage = `Webhook signature verification failed: ${err.message}`;
+      webhookLogData.responseStatus = 400;
+      webhookLogData.processingTime = Date.now() - startTime;
+      
+      await storage.createWebhookLog(webhookLogData);
+      
       return res.status(400).send(`Webhook Error: ${err.message}`);
     }
 
     try {
-      console.log(`Processing webhook event: ${event.type}`);
+      console.log(`Processing webhook event: ${event.type} (ID: ${event.id})`);
       
       // Handle different event types
       switch (event.type) {
@@ -14572,6 +14620,15 @@ NEXT STEPS:
           // Handle booking payment success
           const paymentIntent = event.data.object;
           console.log(`Processing payment_intent.succeeded webhook: ${paymentIntent.id}`);
+          
+          // Check for duplicate processing
+          const existingPayment = await storage.getStripePaymentByIntentId(paymentIntent.id);
+          if (existingPayment && existingPayment.status === 'succeeded') {
+            console.log(`Payment intent ${paymentIntent.id} already processed - skipping duplicate`);
+            webhookLogData.status = 'completed';
+            webhookLogData.metadata.note = 'Duplicate webhook - payment already processed';
+            break;
+          }
           
           // Update payment record
           await storage.updateStripePaymentByIntentId(paymentIntent.id, {
@@ -14711,12 +14768,34 @@ NEXT STEPS:
           // Handle subscription events and other events through SubscriptionService
           console.log(`Delegating ${event.type} to SubscriptionService`);
           await SubscriptionService.handleStripeWebhook(event);
+          webhookLogData.metadata.delegated = 'SubscriptionService';
           break;
       }
 
+      // Mark as completed and log success
+      webhookLogData.status = 'completed';
+      webhookLogData.responseStatus = 200;
+      webhookLogData.processingTime = Date.now() - startTime;
+      webhookLogData.responseBody = { received: true };
+      
+      // Log the successful webhook processing
+      await storage.createWebhookLog(webhookLogData);
+      
+      console.log(`Webhook ${event.type} processed successfully in ${webhookLogData.processingTime}ms`);
       res.json({ received: true });
+
     } catch (error) {
       console.error("Error handling webhook:", error);
+      
+      // Log the error
+      webhookLogData.status = 'failed';
+      webhookLogData.errorMessage = error.message || 'Unknown webhook processing error';
+      webhookLogData.responseStatus = 500;
+      webhookLogData.processingTime = Date.now() - startTime;
+      webhookLogData.responseBody = { error: "Webhook processing failed" };
+      
+      await storage.createWebhookLog(webhookLogData);
+      
       res.status(500).json({ error: "Webhook processing failed" });
     }
   });

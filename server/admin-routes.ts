@@ -870,6 +870,142 @@ export function registerAdminRoutes(app: Express) {
     }
   });
 
+  // Webhook Logs Management
+  app.get("/api/admin/webhook-logs", requireAdminAuth, async (req: Request, res: Response) => {
+    try {
+      const { tenantId, eventType, limit = 100 } = req.query;
+      
+      let logs;
+      if (eventType) {
+        logs = await storage.getWebhookLogsByEventType(
+          eventType as string, 
+          tenantId ? parseInt(tenantId as string) : undefined
+        );
+      } else {
+        logs = await storage.getWebhookLogs(
+          tenantId ? parseInt(tenantId as string) : undefined, 
+          parseInt(limit as string)
+        );
+      }
+      
+      res.json(logs);
+    } catch (error) {
+      console.error("Get webhook logs error:", error);
+      res.status(500).json({ message: "Failed to fetch webhook logs" });
+    }
+  });
+
+  app.get("/api/admin/webhook-logs/stats", requireAdminAuth, async (req: Request, res: Response) => {
+    try {
+      const { tenantId } = req.query;
+      
+      // Get all logs for stats
+      const logs = await storage.getWebhookLogs(
+        tenantId ? parseInt(tenantId as string) : undefined,
+        1000 // Get more for accurate stats
+      );
+      
+      // Calculate statistics
+      const stats = {
+        total: logs.length,
+        byStatus: logs.reduce((acc: any, log: any) => {
+          acc[log.status] = (acc[log.status] || 0) + 1;
+          return acc;
+        }, {}),
+        byEventType: logs.reduce((acc: any, log: any) => {
+          acc[log.eventType] = (acc[log.eventType] || 0) + 1;
+          return acc;
+        }, {}),
+        bySource: logs.reduce((acc: any, log: any) => {
+          acc[log.source] = (acc[log.source] || 0) + 1;
+          return acc;
+        }, {}),
+        averageProcessingTime: logs.length > 0 
+          ? logs.reduce((sum: number, log: any) => sum + (log.processingTime || 0), 0) / logs.length 
+          : 0,
+        recentErrors: logs
+          .filter((log: any) => log.status === 'failed')
+          .slice(0, 10)
+          .map((log: any) => ({
+            id: log.id,
+            eventType: log.eventType,
+            errorMessage: log.errorMessage,
+            createdAt: log.createdAt
+          }))
+      };
+      
+      res.json(stats);
+    } catch (error) {
+      console.error("Get webhook stats error:", error);
+      res.status(500).json({ message: "Failed to fetch webhook statistics" });
+    }
+  });
+
+  // Stripe Connect Payment Methods and Transactions
+  app.get("/api/admin/stripe/payments", requireAdminAuth, async (req: Request, res: Response) => {
+    try {
+      const { tenantId, limit = 50 } = req.query;
+      
+      let payments;
+      if (tenantId) {
+        payments = await storage.getStripePaymentsByTenant(parseInt(tenantId as string));
+      } else {
+        // Get all payments across all tenants (admin view)
+        payments = await storage.getStripePaymentsByTenant(0); // This needs to be implemented for admin view
+      }
+      
+      // Enrich with tenant and restaurant information
+      const enrichedPayments = await Promise.all(
+        payments.slice(0, parseInt(limit as string)).map(async (payment: any) => {
+          let tenantInfo = null;
+          let restaurantInfo = null;
+          
+          if (payment.tenantId) {
+            tenantInfo = await storage.getTenantById(payment.tenantId);
+          }
+          
+          if (payment.restaurantId) {
+            restaurantInfo = await storage.getRestaurantById(payment.restaurantId);
+          }
+          
+          return {
+            ...payment,
+            tenant: tenantInfo ? { id: tenantInfo.id, name: tenantInfo.name } : null,
+            restaurant: restaurantInfo ? { id: restaurantInfo.id, name: restaurantInfo.name } : null
+          };
+        })
+      );
+      
+      res.json(enrichedPayments);
+    } catch (error) {
+      console.error("Get Stripe payments error:", error);
+      res.status(500).json({ message: "Failed to fetch Stripe payments" });
+    }
+  });
+
+  app.get("/api/admin/stripe/connect-accounts", requireAdminAuth, async (req: Request, res: Response) => {
+    try {
+      // Get all tenants with Stripe Connect accounts
+      const tenants = await adminStorage.getAllTenants();
+      const connectAccounts = tenants
+        .filter(tenant => tenant.stripeConnectAccountId)
+        .map(tenant => ({
+          tenantId: tenant.id,
+          tenantName: tenant.name,
+          stripeConnectAccountId: tenant.stripeConnectAccountId,
+          stripeConnectStatus: tenant.stripeConnectStatus,
+          stripeConnectChargesEnabled: tenant.stripeConnectChargesEnabled,
+          stripeConnectPayoutsEnabled: tenant.stripeConnectPayoutsEnabled,
+          stripeConnectOnboardingCompleted: tenant.stripeConnectOnboardingCompleted,
+        }));
+      
+      res.json(connectAccounts);
+    } catch (error) {
+      console.error("Get Stripe Connect accounts error:", error);
+      res.status(500).json({ message: "Failed to fetch Stripe Connect accounts" });
+    }
+  });
+
   // System settings
   app.get("/api/admin/system-settings", requireAdminAuth, async (req: Request, res: Response) => {
     try {

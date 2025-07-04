@@ -1201,4 +1201,21 @@ export class MemoryStorage implements IStorage {
   async getTenantByStripeConnectAccountId(accountId: string): Promise<any | undefined> {
     return this.tenants.find(t => t.stripeConnectAccountId === accountId);
   }
+
+  // Webhook Logging stub implementations
+  async createWebhookLog(log: any): Promise<any> {
+    const newLog = { id: this.nextId++, ...log, createdAt: new Date() };
+    console.log('Webhook log created (memory storage):', newLog);
+    return newLog;
+  }
+
+  async getWebhookLogs(tenantId?: number, limit: number = 100): Promise<any[]> {
+    console.log('Getting webhook logs (memory storage)');
+    return [];
+  }
+
+  async getWebhookLogsByEventType(eventType: string, tenantId?: number): Promise<any[]> {
+    console.log(`Getting webhook logs for event type: ${eventType} (memory storage)`);
+    return [];
+  }
 }

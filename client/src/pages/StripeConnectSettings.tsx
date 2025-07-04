@@ -303,36 +303,85 @@ export default function StripeConnectSettings() {
                 </div>
               ) : (
                 <div className="space-y-4">
-                  {payments.slice(0, 10).map((payment) => (
-                    <div
-                      key={payment.id}
-                      className="flex items-center justify-between p-4 border rounded-lg"
-                    >
-                      <div className="space-y-1">
-                        <div className="flex items-center gap-2">
-                          <span className="font-medium">
-                            {formatCurrency(payment.amount, payment.currency)}
-                          </span>
+                  <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-4 p-4 bg-muted/50 rounded-lg">
+                    <div className="text-center">
+                      <div className="text-2xl font-bold text-green-600">
+                        {payments.filter(p => p.status === 'succeeded').length}
+                      </div>
+                      <div className="text-sm text-muted-foreground">Successful</div>
+                    </div>
+                    <div className="text-center">
+                      <div className="text-2xl font-bold">
+                        {formatCurrency(
+                          payments
+                            .filter(p => p.status === 'succeeded')
+                            .reduce((sum, p) => sum + p.amount, 0),
+                          payments[0]?.currency || 'USD'
+                        )}
+                      </div>
+                      <div className="text-sm text-muted-foreground">Total Volume</div>
+                    </div>
+                    <div className="text-center">
+                      <div className="text-2xl font-bold text-orange-600">
+                        {payments.filter(p => p.status === 'processing').length}
+                      </div>
+                      <div className="text-sm text-muted-foreground">Processing</div>
+                    </div>
+                    <div className="text-center">
+                      <div className="text-2xl font-bold text-red-600">
+                        {payments.filter(p => p.status === 'failed' || p.status === 'canceled').length}
+                      </div>
+                      <div className="text-sm text-muted-foreground">Failed</div>
+                    </div>
+                  </div>
+                  
+                  <div className="space-y-2">
+                    <div className="grid grid-cols-5 gap-4 p-3 text-sm font-medium text-muted-foreground border-b">
+                      <div>Amount</div>
+                      <div>Customer</div>
+                      <div>Status</div>
+                      <div>Payment Intent</div>
+                      <div>Date</div>
+                    </div>
+                    
+                    {payments.slice(0, 10).map((payment) => (
+                      <div
+                        key={payment.id}
+                        className="grid grid-cols-5 gap-4 p-3 border rounded-lg hover:bg-muted/50 transition-colors"
+                      >
+                        <div className="font-medium">
+                          {formatCurrency(payment.amount, payment.currency)}
+                        </div>
+                        <div className="space-y-1">
+                          <div className="text-sm font-medium">
+                            {payment.customerName || 'Anonymous'}
+                          </div>
+                          {payment.customerEmail && (
+                            <div className="text-xs text-muted-foreground">
+                              {payment.customerEmail}
+                            </div>
+                          )}
+                        </div>
+                        <div>
                           <Badge 
-                            variant={payment.status === "succeeded" ? "default" : "secondary"}
+                            variant={
+                              payment.status === "succeeded" ? "default" : 
+                              payment.status === "processing" ? "secondary" : 
+                              "destructive"
+                            }
                           >
                             {payment.status}
                           </Badge>
                         </div>
-                        <p className="text-sm text-muted-foreground">
-                          {payment.customerName || payment.customerEmail}
-                        </p>
-                        {payment.description && (
-                          <p className="text-sm text-muted-foreground">
-                            {payment.description}
-                          </p>
-                        )}
+                        <div className="font-mono text-xs text-muted-foreground">
+                          {payment.stripePaymentIntentId.substring(0, 15)}...
+                        </div>
+                        <div className="text-sm text-muted-foreground">
+                          {new Date(payment.createdAt).toLocaleDateString()}
+                        </div>
                       </div>
-                      <div className="text-right text-sm text-muted-foreground">
-                        {new Date(payment.createdAt).toLocaleDateString()}
-                      </div>
-                    </div>
-                  ))}
+                    ))}
+                  </div>
                 </div>
               )}
             </CardContent>
