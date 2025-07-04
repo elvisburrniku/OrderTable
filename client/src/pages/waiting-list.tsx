@@ -20,6 +20,7 @@ import {
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
+import { Checkbox } from "@/components/ui/checkbox";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { 
   Calendar, 
@@ -69,7 +70,13 @@ export default function WaitingList() {
     guestCount: 2,
     requestedDate: "",
     requestedTime: "",
+    duration: "2 hours",
+    preferredTable: "",
+    specialRequests: "",
     notes: "",
+    extraDescription: "",
+    tags: [],
+    requirePrepayment: false,
   });
 
   const [editingEntry, setEditingEntry] = useState(null);
@@ -262,7 +269,13 @@ export default function WaitingList() {
       guestCount: entry.guestCount,
       requestedDate: entry.requestedDate,
       requestedTime: entry.requestedTime,
+      duration: entry.duration || "2 hours",
+      preferredTable: entry.preferredTable || "",
+      specialRequests: entry.specialRequests || "",
       notes: entry.notes || "",
+      extraDescription: entry.extraDescription || "",
+      tags: entry.tags || [],
+      requirePrepayment: entry.requirePrepayment || false,
     });
     setShowForm(true);
   };
@@ -285,7 +298,13 @@ export default function WaitingList() {
       guestCount: 2,
       requestedDate: "",
       requestedTime: "",
+      duration: "2 hours",
+      preferredTable: "",
+      specialRequests: "",
       notes: "",
+      extraDescription: "",
+      tags: [],
+      requirePrepayment: false,
     });
     setEditingEntry(null);
     setShowForm(false);
@@ -335,7 +354,10 @@ export default function WaitingList() {
                 animate={{ opacity: 1, x: 0 }}
                 transition={{ duration: 0.5, delay: 0.2 }}
               >
-                <Button className="bg-green-600 hover:bg-green-700 text-white flex items-center gap-2 transition-all duration-200">
+                <Button 
+                  onClick={() => setShowForm(true)}
+                  className="bg-green-600 hover:bg-green-700 text-white flex items-center gap-2 transition-all duration-200"
+                >
                   <Plus className="w-4 h-4" />
                   Add to Waiting List
                 </Button>
@@ -647,24 +669,51 @@ export default function WaitingList() {
         if (!open) resetForm();
         setShowForm(open);
       }}>
-        <DialogContent className="max-w-md">
+        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>{editingEntry ? 'Edit Waiting List Entry' : 'Add to Waiting List'}</DialogTitle>
           </DialogHeader>
-          <form onSubmit={handleSubmit} className="space-y-4">
-            <div>
-              <Label htmlFor="customerName">Customer Name</Label>
-              <Input
-                id="customerName"
-                value={formData.customerName}
-                onChange={(e) =>
-                  setFormData({ ...formData, customerName: e.target.value })
-                }
-                required
-              />
+          <form onSubmit={handleSubmit} className="space-y-6">
+            {/* Customer Information Section */}
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <Label htmlFor="customerName" className="flex items-center">
+                  <User className="w-4 h-4 mr-1" />
+                  Customer Name <span className="text-red-500 ml-1">*</span>
+                </Label>
+                <Input
+                  id="customerName"
+                  value={formData.customerName}
+                  onChange={(e) =>
+                    setFormData({ ...formData, customerName: e.target.value })
+                  }
+                  placeholder="Enter customer name"
+                  required
+                  className="mt-1"
+                />
+              </div>
+              <div>
+                <Label htmlFor="customerPhone" className="flex items-center">
+                  <Phone className="w-4 h-4 mr-1" />
+                  Phone
+                </Label>
+                <Input
+                  id="customerPhone"
+                  value={formData.customerPhone}
+                  onChange={(e) =>
+                    setFormData({ ...formData, customerPhone: e.target.value })
+                  }
+                  placeholder="+1 (555) 123-4567"
+                  className="mt-1"
+                />
+              </div>
             </div>
+
             <div>
-              <Label htmlFor="customerEmail">Email</Label>
+              <Label htmlFor="customerEmail" className="flex items-center">
+                <Mail className="w-4 h-4 mr-1" />
+                Email <span className="text-red-500 ml-1">*</span>
+              </Label>
               <Input
                 id="customerEmail"
                 type="email"
@@ -672,21 +721,74 @@ export default function WaitingList() {
                 onChange={(e) =>
                   setFormData({ ...formData, customerEmail: e.target.value })
                 }
+                placeholder="customer@example.com"
                 required
+                className="mt-1"
               />
             </div>
-            <div>
-              <Label htmlFor="customerPhone">Phone (optional)</Label>
-              <Input
-                id="customerPhone"
-                value={formData.customerPhone}
-                onChange={(e) =>
-                  setFormData({ ...formData, customerPhone: e.target.value })
-                }
-              />
+
+            {/* Booking Details Section */}
+            <div className="grid grid-cols-3 gap-4">
+              <div>
+                <Label htmlFor="requestedDate" className="flex items-center">
+                  <Calendar className="w-4 h-4 mr-1" />
+                  Booking Date <span className="text-red-500 ml-1">*</span>
+                </Label>
+                <Input
+                  id="requestedDate"
+                  type="date"
+                  value={formData.requestedDate}
+                  onChange={(e) =>
+                    setFormData({ ...formData, requestedDate: e.target.value })
+                  }
+                  className="mt-1"
+                  required
+                />
+              </div>
+              <div>
+                <Label htmlFor="requestedTime" className="flex items-center">
+                  <Clock className="w-4 h-4 mr-1" />
+                  Start Time <span className="text-red-500 ml-1">*</span>
+                </Label>
+                <Input
+                  id="requestedTime"
+                  type="time"
+                  value={formData.requestedTime}
+                  onChange={(e) =>
+                    setFormData({ ...formData, requestedTime: e.target.value })
+                  }
+                  className="mt-1"
+                  required
+                />
+              </div>
+              <div>
+                <Label htmlFor="duration" className="flex items-center">
+                  Duration <span className="text-red-500 ml-1">*</span>
+                </Label>
+                <Select 
+                  value={formData.duration || "2 hours"} 
+                  onValueChange={(value) => setFormData({ ...formData, duration: value })}
+                >
+                  <SelectTrigger className="mt-1">
+                    <SelectValue placeholder="2 hours" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="1 hour">1 hour</SelectItem>
+                    <SelectItem value="1.5 hours">1.5 hours</SelectItem>
+                    <SelectItem value="2 hours">2 hours</SelectItem>
+                    <SelectItem value="2.5 hours">2.5 hours</SelectItem>
+                    <SelectItem value="3 hours">3 hours</SelectItem>
+                    <SelectItem value="4 hours">4 hours</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
             </div>
+
             <div>
-              <Label htmlFor="guestCount">Guest Count</Label>
+              <Label htmlFor="guestCount" className="flex items-center">
+                <Users className="w-4 h-4 mr-1" />
+                Guests <span className="text-red-500 ml-1">*</span>
+              </Label>
               <Input
                 id="guestCount"
                 type="number"
@@ -694,44 +796,126 @@ export default function WaitingList() {
                 max="20"
                 value={formData.guestCount}
                 onChange={(e) =>
-                  setFormData({ ...formData, guestCount: parseInt(e.target.value) })
+                  setFormData({ ...formData, guestCount: parseInt(e.target.value) || 1 })
                 }
+                placeholder="2"
                 required
+                className="mt-1"
               />
             </div>
+
+            {/* Available Tables Section */}
             <div>
-              <Label htmlFor="requestedDate">Requested Date</Label>
-              <Input
-                id="requestedDate"
-                type="date"
-                value={formData.requestedDate}
+              <Label className="flex items-center">
+                Available Tables
+              </Label>
+              <Select 
+                value={formData.preferredTable || ""} 
+                onValueChange={(value) => setFormData({ ...formData, preferredTable: value })}
+              >
+                <SelectTrigger className="mt-1">
+                  <SelectValue placeholder="Select an available table" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="auto">Any Available Table</SelectItem>
+                  <SelectItem value="table-1">Table 1 (4 seats)</SelectItem>
+                  <SelectItem value="table-2">Table 2 (6 seats)</SelectItem>
+                  <SelectItem value="table-3">Table 3 (2 seats)</SelectItem>
+                </SelectContent>
+              </Select>
+              <p className="text-xs text-gray-500 mt-1">
+                Tables displayed based on guest count and time availability
+              </p>
+            </div>
+
+            {/* Special Requests Section */}
+            <div>
+              <Label htmlFor="specialRequests">Special Requests</Label>
+              <Textarea
+                id="specialRequests"
+                value={formData.specialRequests || ""}
                 onChange={(e) =>
-                  setFormData({ ...formData, requestedDate: e.target.value })
+                  setFormData({ ...formData, specialRequests: e.target.value })
                 }
+                placeholder="Dietary requirements, seating preferences, allergies..."
+                rows={3}
+                className="mt-1"
               />
             </div>
+
+            {/* Internal Notes Section */}
             <div>
-              <Label htmlFor="requestedTime">Requested Time</Label>
-              <Input
-                id="requestedTime"
-                type="time"
-                value={formData.requestedTime}
-                onChange={(e) =>
-                  setFormData({ ...formData, requestedTime: e.target.value })
-                }
-              />
-            </div>
-            <div>
+              <Label htmlFor="notes">Internal Notes</Label>
               <Textarea
                 id="notes"
                 value={formData.notes}
                 onChange={(e) =>
                   setFormData({ ...formData, notes: e.target.value })
                 }
+                placeholder="Staff notes (not visible to customer)..."
                 rows={3}
+                className="mt-1"
               />
             </div>
-            <div className="flex justify-end space-x-2">
+
+            {/* Extra Description Section */}
+            <div>
+              <Label htmlFor="extraDescription">Extra Description</Label>
+              <Textarea
+                id="extraDescription"
+                value={formData.extraDescription || ""}
+                onChange={(e) =>
+                  setFormData({ ...formData, extraDescription: e.target.value })
+                }
+                placeholder="Additional booking details..."
+                rows={3}
+                className="mt-1"
+              />
+            </div>
+
+            {/* Tags Section */}
+            <div>
+              <Label>Tags</Label>
+              <div className="flex flex-wrap gap-2 mt-2">
+                {['Birthday', 'Anniversary', 'VIP', 'First Time', 'Regular', 'Special Diet', 'Large Party'].map((tag) => (
+                  <div key={tag} className="flex items-center space-x-2">
+                    <Checkbox 
+                      id={tag}
+                      checked={formData.tags?.includes(tag) || false}
+                      onCheckedChange={(checked) => {
+                        const currentTags = formData.tags || [];
+                        const newTags = checked 
+                          ? [...currentTags, tag]
+                          : currentTags.filter(t => t !== tag);
+                        setFormData({ ...formData, tags: newTags });
+                      }}
+                    />
+                    <Label htmlFor={tag} className="text-sm cursor-pointer">
+                      {tag}
+                    </Label>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            {/* Require Prepayment Section */}
+            <div className="flex items-center space-x-2">
+              <Checkbox 
+                id="requirePrepayment"
+                checked={formData.requirePrepayment || false}
+                onCheckedChange={(checked) => setFormData({ ...formData, requirePrepayment: checked })}
+              />
+              <Label htmlFor="requirePrepayment" className="text-sm">
+                Require prepayment
+              </Label>
+            </div>
+            {formData.requirePrepayment && (
+              <p className="text-xs text-gray-600 mt-1">
+                Phone number required for booking confirmation
+              </p>
+            )}
+
+            <div className="flex justify-end space-x-2 pt-4">
               <Button
                 type="button"
                 variant="outline"
@@ -746,7 +930,7 @@ export default function WaitingList() {
               >
                 {editingEntry ? 
                   (updateEntryMutation.isPending ? "Updating..." : "Update Entry") :
-                  (createEntryMutation.isPending ? "Adding..." : "Add to List")
+                  (createEntryMutation.isPending ? "Adding..." : "Add to Waiting List")
                 }
               </Button>
             </div>
