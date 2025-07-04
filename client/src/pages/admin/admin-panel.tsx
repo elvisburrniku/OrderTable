@@ -8,6 +8,7 @@ import { AdminUsers } from "./admin-users";
 import { AdminLogs } from "./admin-logs";
 import { AdminSettings } from "./admin-settings";
 import ShopManagement from "./shop-management";
+import AdminWebhooks from "./admin-webhooks";
 import { useToast } from "@/hooks/use-toast";
 
 interface AdminUser {
@@ -102,6 +103,8 @@ export function AdminPanel() {
         return <AdminUsers token={token} currentUser={currentUser} />;
       case "shop":
         return <ShopManagement />;
+      case "webhooks":
+        return <AdminWebhooks />;
       case "logs":
         return <AdminLogs token={token} />;
       case "settings":

@@ -74,6 +74,12 @@ const navItems: NavItem[] = [
     description: "Manage products, categories, and orders"
   },
   {
+    id: "webhooks",
+    label: "Webhooks",
+    icon: Activity,
+    description: "Monitor webhook processing and integrations"
+  },
+  {
     id: "logs",
     label: "System Logs",
     icon: Activity,
