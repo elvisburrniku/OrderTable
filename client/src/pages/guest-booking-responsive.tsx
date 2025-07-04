@@ -231,10 +231,10 @@ export default function GuestBookingResponsive(props: any) {
       if (hasPaymentStep && data.requiresPayment && data.paymentAmount > 0) {
         // Create payment intent for the booking
         createPaymentIntent(data);
-        // Move to payment step
+        // Move to payment step - calculate the correct index
         const paymentStepIndex = seasonalThemes.length > 0 ? 5 : 4;
+        console.log(`Moving to payment step after booking creation, payment step index: ${paymentStepIndex}`);
         setCurrentStep(paymentStepIndex);
-        console.log(`Moving to payment step after booking creation, current: ${currentStep}, new: ${paymentStepIndex}`);
       } else {
         // No payment required, booking is complete
         setCurrentStep(steps.length); // Go to success screen
@@ -310,6 +310,10 @@ export default function GuestBookingResponsive(props: any) {
       : []),
   ];
 
+  // Debug logging
+  console.log(`Steps configuration: ${steps.map(s => s.title).join(', ')}`);
+  console.log(`Current step: ${currentStep}, Payment required: ${paymentInfo?.requiresPayment}, Stripe ready: ${paymentInfo?.stripeConnectReady}`);
+
   const handleNext = () => {
     const hasPaymentStep = paymentInfo?.requiresPayment && paymentInfo?.stripeConnectReady;
     const detailsStepIndex = seasonalThemes.length > 0 ? 4 : 3;
@@ -331,6 +335,7 @@ export default function GuestBookingResponsive(props: any) {
           source: "guest_booking",
         };
         
+        console.log(`Creating booking with payment required from step ${currentStep}`);
         // Create booking and then proceed to payment
         createBookingMutation.mutate(bookingData);
         return; // Don't advance step here, let the mutation success handler do it
