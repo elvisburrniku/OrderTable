@@ -688,6 +688,9 @@ export class DatabaseStorage implements IStorage {
   }
   async updateBooking(id: number, updates: any): Promise<any> {
     if (!this.db) throw new Error("Database connection not available");
+    
+    console.log(`UpdateBooking called for ID ${id} with updates:`, JSON.stringify(updates, null, 2));
+    
     // Validate numeric fields to prevent invalid database values
     if (updates.guestCount !== undefined) {
       if (!Number.isFinite(updates.guestCount) || updates.guestCount <= 0) {
@@ -699,12 +702,20 @@ export class DatabaseStorage implements IStorage {
         throw new Error("Invalid tableId value: " + updates.tableId);
       }
     }
-    const result = await this.db
-      .update(bookings)
-      .set(updates)
-      .where(eq(bookings.id, id))
-      .returning();
-    return result[0];
+    
+    try {
+      const result = await this.db
+        .update(bookings)
+        .set(updates)
+        .where(eq(bookings.id, id))
+        .returning();
+      
+      console.log(`UpdateBooking result for ID ${id}:`, JSON.stringify(result[0], null, 2));
+      return result[0];
+    } catch (error) {
+      console.error(`UpdateBooking error for ID ${id}:`, error);
+      throw error;
+    }
   }
   async deleteBooking(id: number): Promise<boolean> {
     if (!this.db) return false;
@@ -3780,6 +3791,17 @@ export class DatabaseStorage implements IStorage {
       .from(stripePayments)
       .where(eq(stripePayments.tenantId, tenantId))
       .orderBy(desc(stripePayments.createdAt));
+    return result;
+  }
+
+  async getStripePaymentByIntentId(paymentIntentId: string): Promise<any | undefined> {
+    if (!this.db) return undefined;
+    
+    const [result] = await this.db
+      .select()
+      .from(stripePayments)
+      .where(eq(stripePayments.stripePaymentIntentId, paymentIntentId))
+      .limit(1);
     return result;
   }
 

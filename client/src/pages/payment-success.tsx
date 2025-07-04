@@ -21,6 +21,7 @@ import {
 
 export default function PaymentSuccess() {
   const [location] = useLocation();
+  const [notificationSent, setNotificationSent] = useState(false);
 
   // Parse search parameters manually - support both secure tokens and legacy hash
   const urlParams = new URLSearchParams(window.location.search);
@@ -28,6 +29,7 @@ export default function PaymentSuccess() {
   const bookingId = urlParams.get("booking");
   const hash = urlParams.get("hash");
   const paymentIntentId = urlParams.get("payment_intent");
+  const redirectStatus = urlParams.get("redirect_status");
 
   // Fetch booking details using secure endpoint (token or legacy hash)
   const { data: booking, isLoading } = useQuery({
@@ -71,9 +73,32 @@ export default function PaymentSuccess() {
     enabled: !!(token || (bookingId && hash)),
   });
 
-  // Trigger payment success notification when booking data is available
+  // Trigger payment success notification only once when payment is successful
   useEffect(() => {
-    if (paymentIntentId && booking && booking.id) {
+    if (!paymentIntentId || !booking || !booking.id) {
+      return; // Don't proceed without required data
+    }
+
+    // Check if notification has already been sent for this payment intent
+    const notificationKey = `payment_notification_sent_${paymentIntentId}`;
+    const alreadySent = localStorage.getItem(notificationKey);
+    
+    // Only send notification if:
+    // 1. We have all required data
+    // 2. Notification hasn't been sent for this payment intent (checked via localStorage)
+    // 3. Booking payment status is not already "paid" (to avoid duplicate notifications)
+    // 4. Either redirect_status is "succeeded" OR we're coming from Stripe redirect (payment_intent param exists)
+    if (
+      !alreadySent &&
+      !notificationSent &&
+      booking.paymentStatus !== "paid" &&
+      (redirectStatus === "succeeded" || paymentIntentId) // Accept either successful redirect or presence of payment intent
+    ) {
+      setNotificationSent(true);
+      localStorage.setItem(notificationKey, 'true');
+      
+      console.log('Triggering payment success notification for payment intent:', paymentIntentId);
+      
       // Trigger payment success notification using booking data
       fetch('/api/payment-notification', {
         method: 'POST',
@@ -96,9 +121,20 @@ export default function PaymentSuccess() {
       })
       .catch(error => {
         console.error('Error triggering payment success notification:', error);
+        // Remove localStorage entry on error so it can be retried
+        localStorage.removeItem(notificationKey);
+        setNotificationSent(false);
+      });
+    } else {
+      console.log('Skipping payment notification - already sent or conditions not met', {
+        alreadySent: !!alreadySent,
+        notificationSent,
+        paymentStatus: booking.paymentStatus,
+        redirectStatus,
+        paymentIntentId
       });
     }
-  }, [paymentIntentId, booking]);
+  }, [paymentIntentId, booking, redirectStatus, notificationSent]);
 
   if (!token && (!bookingId || !hash)) {
     return (

@@ -14547,7 +14547,7 @@ NEXT STEPS:
     },
   );
 
-  // Stripe webhook handler
+  // Stripe webhook handler - handles both subscription and payment events
   app.post("/api/stripe/webhook", async (req: Request, res: Response) => {
     const sig = req.headers["stripe-signature"];
     let event;
@@ -14564,7 +14564,156 @@ NEXT STEPS:
     }
 
     try {
-      await SubscriptionService.handleStripeWebhook(event);
+      console.log(`Processing webhook event: ${event.type}`);
+      
+      // Handle different event types
+      switch (event.type) {
+        case "payment_intent.succeeded":
+          // Handle booking payment success
+          const paymentIntent = event.data.object;
+          console.log(`Processing payment_intent.succeeded webhook: ${paymentIntent.id}`);
+          
+          // Update payment record
+          await storage.updateStripePaymentByIntentId(paymentIntent.id, {
+            status: paymentIntent.status,
+          });
+
+          // Get payment record to find associated booking
+          const paymentRecord = await storage.getStripePaymentByIntentId(paymentIntent.id);
+          if (paymentRecord && paymentRecord.bookingId) {
+            console.log(`Found booking ${paymentRecord.bookingId} for payment ${paymentIntent.id}`);
+            
+            // Update booking payment status
+            await storage.updateBooking(paymentRecord.bookingId, {
+              paymentStatus: 'paid',
+              paymentIntentId: paymentIntent.id
+            });
+
+            // Get booking and restaurant details for notifications
+            const booking = await storage.getBookingById(paymentRecord.bookingId);
+            if (booking) {
+              const restaurant = await storage.getRestaurantById(booking.restaurantId);
+              
+              console.log(`Triggering payment notifications for booking ${booking.id}`);
+              
+              // Send payment notifications
+              try {
+                const { BrevoEmailService } = await import("./brevo-service");
+                const emailService = new BrevoEmailService();
+
+                // Send payment confirmation email to customer
+                if (booking.customerEmail) {
+                  await emailService.sendPaymentConfirmation(
+                    booking.customerEmail,
+                    booking.customerName,
+                    {
+                      bookingId: booking.id,
+                      amount: paymentIntent.amount / 100, // Convert from cents
+                      currency: paymentIntent.currency?.toUpperCase() || 'USD',
+                      restaurantName: restaurant?.name || "Restaurant",
+                    },
+                  );
+                  console.log(`Payment confirmation email sent to customer: ${booking.customerEmail}`);
+                }
+
+                // Send payment notification to restaurant email
+                if (restaurant?.email) {
+                  await emailService.sendPaymentNotificationToRestaurant(
+                    restaurant.email,
+                    {
+                      bookingId: booking.id,
+                      amount: paymentIntent.amount / 100,
+                      currency: paymentIntent.currency?.toUpperCase() || 'USD',
+                      customerName: booking.customerName,
+                      restaurantName: restaurant.name || "Restaurant",
+                      bookingDate: new Date(booking.bookingDate).toLocaleDateString(),
+                      bookingTime: booking.startTime,
+                      guestCount: booking.guestCount,
+                    },
+                  );
+                  console.log(`Payment notification email sent to restaurant: ${restaurant.email}`);
+                }
+
+                // Get owners and managers for additional notifications
+                try {
+                  const { tenantUsers: tenantUsersTable, users: usersTable } = await import("../shared/schema");
+                  const { eq } = await import("drizzle-orm");
+                  
+                  const tenantUsersList = await storage.db
+                    .select({
+                      tenantId: tenantUsersTable.tenantId,
+                      userId: tenantUsersTable.userId,
+                      role: tenantUsersTable.role,
+                      createdAt: tenantUsersTable.createdAt,
+                      user: {
+                        id: usersTable.id,
+                        email: usersTable.email,
+                        name: usersTable.name,
+                        restaurantName: usersTable.restaurantName,
+                        ssoProvider: usersTable.ssoProvider,
+                      },
+                    })
+                    .from(tenantUsersTable)
+                    .leftJoin(usersTable, eq(tenantUsersTable.userId, usersTable.id))
+                    .where(eq(tenantUsersTable.tenantId, booking.tenantId));
+
+                  const owners = tenantUsersList.filter(tu => tu.role === 'owner' || tu.role === 'manager');
+                  
+                  for (const userRole of owners) {
+                    if (userRole.user?.email && userRole.user.email !== restaurant?.email) {
+                      await emailService.sendPaymentNotificationToRestaurant(
+                        userRole.user.email,
+                        {
+                          bookingId: booking.id,
+                          amount: paymentIntent.amount / 100,
+                          currency: paymentIntent.currency?.toUpperCase() || 'USD',
+                          customerName: booking.customerName,
+                          restaurantName: restaurant?.name || 'Restaurant',
+                          bookingDate: new Date(booking.bookingDate).toLocaleDateString(),
+                          bookingTime: booking.startTime,
+                          guestCount: booking.guestCount,
+                        },
+                      );
+                      console.log(`Payment notification email sent to ${userRole.role}: ${userRole.user.email}`);
+                    }
+                  }
+                } catch (userEmailError) {
+                  console.error("Error sending emails to restaurant users:", userEmailError);
+                }
+
+              } catch (notificationError) {
+                console.error("Error sending payment notifications:", notificationError);
+              }
+            }
+          } else {
+            console.log(`No booking found for payment intent ${paymentIntent.id}`);
+          }
+          break;
+
+        case "account.updated":
+          // Handle Stripe Connect account updates
+          const account = event.data.object;
+          const tenant = await storage.getTenantByStripeConnectAccountId(account.id);
+          if (tenant) {
+            await storage.updateTenant(tenant.id, {
+              stripeConnectStatus:
+                account.details_submitted && account.charges_enabled
+                  ? "connected"
+                  : "pending",
+              stripeConnectOnboardingCompleted: account.details_submitted,
+              stripeConnectChargesEnabled: account.charges_enabled,
+              stripeConnectPayoutsEnabled: account.payouts_enabled,
+            });
+          }
+          break;
+
+        default:
+          // Handle subscription events and other events through SubscriptionService
+          console.log(`Delegating ${event.type} to SubscriptionService`);
+          await SubscriptionService.handleStripeWebhook(event);
+          break;
+      }
+
       res.json({ received: true });
     } catch (error) {
       console.error("Error handling webhook:", error);
@@ -19151,6 +19300,15 @@ NEXT STEPS:
 
       console.log(`Found booking for payment notification - Restaurant: ${restaurant?.name}, Customer: ${booking.customerName}`);
 
+      // Check if payment has already been processed to avoid duplicates
+      if (booking.paymentStatus === "paid") {
+        console.log(`Payment already processed for booking ${booking_id}, skipping duplicate notification`);
+        return res.json({ 
+          success: true, 
+          message: "Payment already processed, no action needed" 
+        });
+      }
+
       // Update booking payment status
       const updateData: any = {
         paymentStatus: "paid",
@@ -19926,63 +20084,7 @@ NEXT STEPS:
     },
   );
 
-  // Stripe webhooks for Connect accounts
-  app.post("/api/stripe/webhook", async (req, res) => {
-    try {
-      const sig = req.headers["stripe-signature"];
-      if (!sig || !stripe) {
-        return res.status(400).json({ message: "Invalid webhook" });
-      }
 
-      const endpointSecret = process.env.STRIPE_WEBHOOK_SECRET;
-      if (!endpointSecret) {
-        console.warn("Stripe webhook secret not configured");
-        return res.status(200).json({ received: true });
-      }
-
-      const event = stripe.webhooks.constructEvent(
-        req.body,
-        sig,
-        endpointSecret,
-      );
-
-      switch (event.type) {
-        case "payment_intent.succeeded":
-          const paymentIntent = event.data.object;
-          await storage.updateStripePaymentByIntentId(paymentIntent.id, {
-            status: paymentIntent.status,
-          });
-          break;
-
-        case "account.updated":
-          const account = event.data.object;
-          // Find tenant by account ID and update status
-          const tenant = await storage.getTenantByStripeConnectAccountId(
-            account.id,
-          );
-          if (tenant) {
-            await storage.updateTenant(tenant.id, {
-              stripeConnectStatus:
-                account.details_submitted && account.charges_enabled
-                  ? "connected"
-                  : "pending",
-              stripeConnectOnboardingCompleted: account.details_submitted,
-              stripeConnectChargesEnabled: account.charges_enabled,
-              stripeConnectPayoutsEnabled: account.payouts_enabled,
-            });
-          }
-          break;
-
-        default:
-          console.log(`Unhandled webhook event type: ${event.type}`);
-      }
-
-      res.json({ received: true });
-    } catch (error) {
-      console.error("Webhook error:", error);
-      res.status(400).json({ message: "Webhook error" });
-    }
-  });
 
   try {
     const { restaurantStorage } = await import("./restaurant-storage");

@@ -27,6 +27,18 @@ A comprehensive restaurant booking management system with React frontend and Exp
 - **Error Resolution**: Fixed "tables is not defined" error by adding tables query and "addEntryMutation is not defined" error by correcting mutation references
 - **Form Functionality**: Waiting list form now includes customer details, phone/email fields, booking date/time, duration selection, table preferences, special requests, internal notes, extra description, tags system, and prepayment options
 - **Design Consistency**: Form layout matches booking creation interface with professional styling, green accent colors, and proper field organization
+- **2025-07-04**: ✅ PAYMENT DUPLICATE NOTIFICATION FIX COMPLETED - Fixed payment success page sending duplicate emails on every refresh
+- **Duplicate Prevention Frontend**: Enhanced payment-success.tsx with state management and redirect_status checking to prevent multiple notification triggers
+- **Duplicate Prevention Backend**: Added booking payment status validation in webhook to skip processing for already-paid bookings  
+- **Database Method Fix**: Added missing getStripePaymentByIntentId method to storage interface and database implementation
+- **Webhook Security Enhancement**: Improved payment notification endpoint with comprehensive duplicate detection and logging
+- **Email Notification Control**: Payment confirmations now only sent once per successful payment instead of on every page refresh
+- **2025-07-04**: ✅ STRIPE WEBHOOK PAYMENT PROCESSING FIXED - Fixed duplicate webhook endpoints and enhanced payment_intent.succeeded event handling
+- **Webhook Enhancement**: Fixed duplicate Stripe webhook endpoints that were preventing proper payment confirmation processing
+- **Payment Integration**: Enhanced webhook to handle payment_intent.succeeded events with complete booking payment status updates
+- **Email Notifications**: Fixed automatic payment confirmation emails to customers and restaurant staff after successful payments
+- **Booking Status Updates**: Webhook now properly updates booking payment status and triggers notification system
+- **Migration Completed**: Successfully migrated from Replit Agent to Replit environment with all webhook functionality restored
 - **2025-07-03**: ✅ PAYMENT SUCCESS EMAIL NOTIFICATIONS IMPLEMENTED - Complete payment notification system for customers and restaurant staff
 - **Email Notification System**: Added automatic email notifications when payments are completed including customer payment confirmations and restaurant payment notifications
 - **Payment Success Integration**: Payment success page automatically triggers email notifications using payment intent ID from Stripe payment flow
