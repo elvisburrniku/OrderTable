@@ -89,6 +89,12 @@ export default function WaitingList() {
     enabled: !!tenantId && !!restaurantId
   });
 
+  // Fetch tables for the restaurant
+  const { data: tables = [] } = useQuery({
+    queryKey: [`/api/tenants/${tenantId}/restaurants/${restaurantId}/tables`],
+    enabled: !!tenantId && !!restaurantId
+  });
+
   // Filter waiting list
   const filteredWaitingList = (waitingList || []).filter((entry: any) => {
     const matchesSearch = !searchTerm || 
