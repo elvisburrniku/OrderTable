@@ -4,7 +4,6 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { RefreshCw, Activity, AlertCircle, CheckCircle, Clock, Zap } from "lucide-react";
 import { Alert, AlertDescription } from "@/components/ui/alert";
-import { useAuth } from "@/lib/auth";
 
 interface WebhookLog {
   id: number;
@@ -31,8 +30,11 @@ interface WebhookStats {
   }>;
 }
 
-export default function AdminWebhooks() {
-  const { adminToken } = useAuth();
+interface AdminWebhooksProps {
+  token: string;
+}
+
+export default function AdminWebhooks({ token }: AdminWebhooksProps) {
 
   // Fetch webhook logs
   const { data: logs = [], isLoading: logsLoading, refetch: refetchLogs } = useQuery({
@@ -40,13 +42,13 @@ export default function AdminWebhooks() {
     queryFn: async () => {
       const response = await fetch("/api/admin/webhook-logs", {
         headers: {
-          "Authorization": `Bearer ${adminToken}`,
+          "Authorization": `Bearer ${token}`,
         },
       });
       if (!response.ok) throw new Error("Failed to fetch webhook logs");
       return response.json() as Promise<WebhookLog[]>;
     },
-    enabled: !!adminToken,
+    enabled: !!token,
     refetchInterval: 30000, // Refresh every 30 seconds
   });
 
@@ -56,13 +58,13 @@ export default function AdminWebhooks() {
     queryFn: async () => {
       const response = await fetch("/api/admin/webhook-logs/stats", {
         headers: {
-          "Authorization": `Bearer ${adminToken}`,
+          "Authorization": `Bearer ${token}`,
         },
       });
       if (!response.ok) throw new Error("Failed to fetch webhook stats");
       return response.json() as Promise<WebhookStats>;
     },
-    enabled: !!adminToken,
+    enabled: !!token,
     refetchInterval: 30000, // Refresh every 30 seconds
   });
 

@@ -104,7 +104,7 @@ export function AdminPanel() {
       case "shop":
         return <ShopManagement />;
       case "webhooks":
-        return <AdminWebhooks />;
+        return <AdminWebhooks token={token} />;
       case "logs":
         return <AdminLogs token={token} />;
       case "settings":
