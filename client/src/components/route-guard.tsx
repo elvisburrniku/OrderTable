@@ -24,6 +24,7 @@ export function RouteGuard({ children }: RouteGuardProps) {
         /^\/feedback-responses$/,
         /^\/feedback-responses-popup$/,
         /^\/booking-manage$/,
+        /^\/manage-booking$/,
         /^\/payment$/,
         /^\/payment\/.+$/, // Payment links with payment intent IDs
       ];
