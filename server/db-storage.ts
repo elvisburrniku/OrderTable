@@ -3854,17 +3854,25 @@ export class DatabaseStorage implements IStorage {
     return result;
   }
 
-  async updateSmsMessageStatus(messageId: string, updates: any): Promise<any> {
+  async updateSmsMessageStatus(
+    messageId: number,
+    status: string,
+    errorMessage?: string,
+  ): Promise<any> {
     if (!this.db) throw new Error("Database connection not available");
-    
+    const updateData: any = {
+      status,
+      sentAt: status === "sent" ? new Date() : undefined,
+      deliveredAt: status === "delivered" ? new Date() : undefined,
+      updatedAt: new Date(),
+    };
+    if (errorMessage) {
+      updateData.errorMessage = errorMessage;
+    }
     const [result] = await this.db
       .update(smsMessages)
-      .set({
-        status: updates.status,
-        error: updates.errorMessage || updates.error,
-        updatedAt: updates.updatedAt || new Date(),
-      })
-      .where(eq(smsMessages.messageId, messageId))
+      .set(updateData)
+      .where(eq(smsMessages.id, messageId))
       .returning();
     return result;
   }
@@ -3881,9 +3889,25 @@ export class DatabaseStorage implements IStorage {
           eq(smsMessages.tenantId, tenantId)
         )
       )
-      .orderBy(desc(smsMessages.sentAt))
+      .orderBy(desc(smsMessages.createdAt))
       .limit(100);
-    return result;
+    
+    // Map database structure to frontend interface
+    return result.map(msg => ({
+      id: msg.id,
+      restaurantId: msg.restaurantId,
+      name: `SMS #${msg.id}`, // Generate a name since it's not stored
+      messageType: msg.type,
+      content: msg.message,
+      receivers: msg.phoneNumber,
+      language: "english", // Default since not stored
+      status: msg.status,
+      sentAt: msg.sentAt,
+      createdAt: msg.createdAt,
+      updatedAt: msg.updatedAt,
+      deliveredCount: msg.status === "sent" ? 1 : 0,
+      totalReceivers: 1
+    }));
   }
 
   async getSmsMessagesByBooking(bookingId: number): Promise<any[]> {
