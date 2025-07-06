@@ -1943,6 +1943,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
                 req.body.customerEmail,
                 req.body.customerName,
                 emailBookingData,
+                restaurant,
               );
               console.log("Guest confirmation email sent successfully");
             }
@@ -5887,7 +5888,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
                   ...bookingData,
                   tableNumber: booking.tableId,
                   id: booking.id,
+                  managementHash: booking.managementHash,
+                  restaurantName: restaurant.name,
                 },
+                restaurant,
               );
               console.log("Guest confirmation email sent successfully");
             }
@@ -6108,6 +6112,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
               bookingData.customerEmail,
               bookingData.customerName,
               bookingDetails,
+              restaurant,
             );
 
             // Send notification to restaurant
@@ -6785,6 +6790,54 @@ export async function registerRoutes(app: Express): Promise<Server> {
         res.json({ message: "Payment link sent successfully to customer" });
       } catch (error) {
         console.error("Error resending payment link:", error);
+        res.status(500).json({ message: "Internal server error" });
+      }
+    }
+  );
+
+  // Download payment invoice endpoint (secure)
+  app.get(
+    "/api/tenants/:tenantId/restaurants/:restaurantId/bookings/:bookingId/invoice",
+    validateTenant,
+    async (req, res) => {
+      try {
+        const tenantId = parseInt(req.params.tenantId);
+        const restaurantId = parseInt(req.params.restaurantId);
+        const bookingId = parseInt(req.params.bookingId);
+
+        // Verify user has access to this tenant
+        if (req.user.tenantId !== tenantId) {
+          return res.status(403).json({ message: "Access denied" });
+        }
+
+        // Get booking details
+        const booking = await storage.getBookingById(bookingId);
+        if (!booking || booking.tenantId !== tenantId || booking.restaurantId !== restaurantId) {
+          return res.status(404).json({ message: "Booking not found" });
+        }
+
+        // Check if booking has payment
+        if (booking.paymentStatus !== 'paid' || !booking.paymentPaidAt) {
+          return res.status(400).json({ message: "No payment found for this booking" });
+        }
+
+        // Get restaurant details
+        const restaurant = await storage.getRestaurantById(restaurantId);
+        if (!restaurant) {
+          return res.status(404).json({ message: "Restaurant not found" });
+        }
+
+        // Generate invoice data
+        const invoiceData = {
+          booking: booking,
+          restaurant: restaurant,
+          invoiceNumber: booking.id.toString().padStart(6, '0'),
+          generatedAt: new Date().toISOString(),
+        };
+
+        res.json(invoiceData);
+      } catch (error) {
+        console.error("Error generating invoice:", error);
         res.status(500).json({ message: "Internal server error" });
       }
     }

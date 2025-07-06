@@ -37,6 +37,7 @@ import {
   CreditCard,
 } from "lucide-react";
 import { StandardLoading } from "@/components/standard-loading";
+import PaymentInvoice from "@/components/PaymentInvoice";
 import { useToast } from "@/hooks/use-toast";
 import {
   AlertDialog,
@@ -657,6 +658,18 @@ export default function BookingDetail() {
                     </div>
                   )}
                 </div>
+
+                {/* Payment Invoice */}
+                {booking.paymentStatus === 'paid' && booking.paymentPaidAt && (
+                  <div className="mt-6">
+                    <PaymentInvoice 
+                      booking={booking} 
+                      restaurant={restaurant} 
+                      tenantId={booking.tenantId}
+                      restaurantId={booking.restaurantId}
+                    />
+                  </div>
+                )}
 
                 {/* Additional Information */}
                 <div className="space-y-6">

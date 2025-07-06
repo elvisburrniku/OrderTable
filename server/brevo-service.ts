@@ -40,6 +40,128 @@ export class BrevoEmailService {
     return true;
   }
 
+  private generateInvoiceHTML(bookingDetails: any, restaurantDetails: any): string {
+    const formatCurrency = (amount: number | string, currency: string = 'EUR') => {
+      const numAmount = typeof amount === 'string' ? parseFloat(amount) : amount;
+      return new Intl.NumberFormat('en-US', {
+        style: 'currency',
+        currency: currency.toUpperCase(),
+        minimumFractionDigits: 2
+      }).format(numAmount);
+    };
+
+    const formatDate = (date: string | Date) => {
+      return new Date(date).toLocaleDateString('en-US', {
+        year: 'numeric',
+        month: 'long',
+        day: 'numeric'
+      });
+    };
+
+    const formatDateTime = (date: string | Date) => {
+      return new Date(date).toLocaleString('en-US', {
+        year: 'numeric',
+        month: 'long',
+        day: 'numeric',
+        hour: '2-digit',
+        minute: '2-digit'
+      });
+    };
+
+    return `
+      <div style="max-width: 600px; margin: 20px auto; padding: 20px; border: 1px solid #e0e0e0; border-radius: 8px; font-family: Arial, sans-serif;">
+        <div style="text-align: center; margin-bottom: 30px;">
+          <h2 style="color: #16a34a; margin-bottom: 5px;">Payment Invoice</h2>
+          <p style="color: #666; margin: 0;">Invoice #${bookingDetails.id.toString().padStart(6, '0')}</p>
+          <div style="display: inline-block; background: #16a34a; color: white; padding: 4px 12px; border-radius: 4px; font-size: 12px; margin-top: 10px;">
+            ✓ PAID
+          </div>
+        </div>
+
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 30px; margin-bottom: 30px;">
+          <div>
+            <h3 style="color: #666; font-size: 12px; text-transform: uppercase; margin-bottom: 10px;">From</h3>
+            <p style="font-weight: bold; margin: 0; margin-bottom: 5px;">${restaurantDetails?.name || 'Restaurant'}</p>
+            ${restaurantDetails?.address ? `<p style="margin: 0; color: #666; font-size: 14px;">${restaurantDetails.address}</p>` : ''}
+            ${restaurantDetails?.phone ? `<p style="margin: 0; color: #666; font-size: 14px;">${restaurantDetails.phone}</p>` : ''}
+            ${restaurantDetails?.email ? `<p style="margin: 0; color: #666; font-size: 14px;">${restaurantDetails.email}</p>` : ''}
+          </div>
+          
+          <div>
+            <h3 style="color: #666; font-size: 12px; text-transform: uppercase; margin-bottom: 10px;">To</h3>
+            <p style="font-weight: bold; margin: 0; margin-bottom: 5px;">${bookingDetails.customerName}</p>
+            <p style="margin: 0; color: #666; font-size: 14px;">${bookingDetails.customerEmail}</p>
+            ${bookingDetails.customerPhone ? `<p style="margin: 0; color: #666; font-size: 14px;">${bookingDetails.customerPhone}</p>` : ''}
+          </div>
+        </div>
+
+        <div style="border-top: 1px solid #e0e0e0; padding-top: 20px; margin-bottom: 20px;">
+          <h3 style="color: #666; font-size: 12px; text-transform: uppercase; margin-bottom: 15px;">Booking Details</h3>
+          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px;">
+            <div>
+              <p style="margin: 0; color: #666; font-size: 12px;">Date</p>
+              <p style="margin: 0; font-weight: 500;">${formatDate(bookingDetails.bookingDate)}</p>
+            </div>
+            <div>
+              <p style="margin: 0; color: #666; font-size: 12px;">Time</p>
+              <p style="margin: 0; font-weight: 500;">${bookingDetails.startTime}</p>
+            </div>
+            <div>
+              <p style="margin: 0; color: #666; font-size: 12px;">Party Size</p>
+              <p style="margin: 0; font-weight: 500;">${bookingDetails.guestCount} guests</p>
+            </div>
+            <div>
+              <p style="margin: 0; color: #666; font-size: 12px;">Booking ID</p>
+              <p style="margin: 0; font-weight: 500;">#${bookingDetails.id}</p>
+            </div>
+          </div>
+        </div>
+
+        <div style="border-top: 1px solid #e0e0e0; padding-top: 20px; margin-bottom: 20px;">
+          <h3 style="color: #666; font-size: 12px; text-transform: uppercase; margin-bottom: 15px;">Payment Summary</h3>
+          <div style="display: flex; justify-content: space-between; margin-bottom: 10px;">
+            <span>Booking Payment</span>
+            <span style="font-weight: 500;">${formatCurrency(bookingDetails.paymentAmount || 0, 'EUR')}</span>
+          </div>
+          <div style="display: flex; justify-content: space-between; margin-bottom: 10px;">
+            <span>Payment Processing</span>
+            <span style="font-weight: 500;">€0.00</span>
+          </div>
+          <div style="border-top: 1px solid #e0e0e0; padding-top: 10px; display: flex; justify-content: space-between;">
+            <span style="font-weight: bold;">Total Paid</span>
+            <span style="font-weight: bold; font-size: 18px;">${formatCurrency(bookingDetails.paymentAmount || 0, 'EUR')}</span>
+          </div>
+        </div>
+
+        <div style="border-top: 1px solid #e0e0e0; padding-top: 20px;">
+          <h3 style="color: #666; font-size: 12px; text-transform: uppercase; margin-bottom: 15px;">Payment Information</h3>
+          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; font-size: 14px;">
+            <div style="display: flex; justify-content: space-between;">
+              <span style="color: #666;">Payment Method</span>
+              <span style="font-weight: 500;">Credit Card</span>
+            </div>
+            <div style="display: flex; justify-content: space-between;">
+              <span style="color: #666;">Transaction ID</span>
+              <span style="font-weight: 500; font-family: monospace;">${bookingDetails.paymentIntentId || 'N/A'}</span>
+            </div>
+            <div style="display: flex; justify-content: space-between;">
+              <span style="color: #666;">Payment Date</span>
+              <span style="font-weight: 500;">${formatDateTime(bookingDetails.paymentPaidAt)}</span>
+            </div>
+            <div style="display: flex; justify-content: space-between;">
+              <span style="color: #666;">Status</span>
+              <span style="color: #16a34a; font-weight: 500;">Paid</span>
+            </div>
+          </div>
+        </div>
+
+        <div style="text-align: center; margin-top: 30px; padding-top: 20px; border-top: 1px solid #e0e0e0;">
+          <p style="color: #666; font-size: 12px; margin: 0;">Thank you for your payment!</p>
+        </div>
+      </div>
+    `;
+  }
+
   private generateICSContent(
     customerName: string,
     bookingDetails: any,
@@ -90,6 +212,7 @@ export class BrevoEmailService {
     customerEmail: string,
     customerName: string,
     bookingDetails: any,
+    restaurantDetails?: any,
   ) {
     const subject = `Booking Confirmation - ${bookingDetails.restaurantName || "Restaurant"}`;
 
@@ -113,7 +236,7 @@ export class BrevoEmailService {
         <div style="display: grid; gap: 10px;">
           <div style="display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid #f5e79e;">
             <span style="color: #856404; font-weight: 500;">Amount:</span>
-            <span style="color: #856404; font-weight: 600;">$${bookingDetails.paymentAmount || "0.00"}</span>
+            <span style="color: #856404; font-weight: 600;">€${bookingDetails.paymentAmount || "0.00"}</span>
           </div>
           <div style="display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid #f5e79e;">
             <span style="color: #856404; font-weight: 500;">Payment Deadline:</span>
@@ -128,7 +251,7 @@ export class BrevoEmailService {
                 bookingDetails.tenantId,
                 bookingDetails.restaurantId,
                 bookingDetails.paymentAmount,
-                "USD",
+                "EUR",
                 baseUrl,
               )}" style="background-color: #ffc107; color: #212529; padding: 12px 24px; text-decoration: none; border-radius: 6px; font-weight: 600; display: inline-block;">
                 Complete Payment Now
@@ -150,7 +273,7 @@ export class BrevoEmailService {
         <div style="display: grid; gap: 10px;">
           <div style="display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid #c3e6cb;">
             <span style="color: #155724; font-weight: 500;">Amount Paid:</span>
-            <span style="color: #155724; font-weight: 600;">$${bookingDetails.paymentAmount || "0.00"}</span>
+            <span style="color: #155724; font-weight: 600;">€${bookingDetails.paymentAmount || "0.00"}</span>
           </div>
           <div style="display: flex; justify-content: space-between; padding: 8px 0;">
             <span style="color: #155724; font-weight: 500;">Status:</span>
@@ -158,6 +281,9 @@ export class BrevoEmailService {
           </div>
         </div>
       </div>
+      
+      <!-- Payment Invoice Section -->
+      ${isPaymentRequired && isPaymentPaid ? this.generateInvoiceHTML(bookingDetails, restaurantDetails) : ''}
     `
         : "";
 
