@@ -30,6 +30,10 @@ export default function PaymentSuccess() {
   const hash = urlParams.get("hash");
   const paymentIntentId = urlParams.get("payment_intent");
   const redirectStatus = urlParams.get("redirect_status");
+  
+  // Support return URL flow from guest booking (payment completed in guest booking page)
+  const isReturnFromGuestBooking = !token && !bookingId && !hash && !paymentIntentId;
+  const hasPaymentSuccess = redirectStatus === "succeeded" || urlParams.get("payment") === "success";
 
   // Fetch booking details using secure endpoint (token or legacy hash)
   const { data: booking, isLoading } = useQuery({
@@ -66,16 +70,33 @@ export default function PaymentSuccess() {
           throw new Error("Failed to fetch booking details");
         }
         return response.json();
+      } else if (isReturnFromGuestBooking && hasPaymentSuccess) {
+        // For return URL flow from guest booking, show success without booking details
+        return {
+          id: "guest_booking",
+          customerName: "Guest",
+          guestCount: 1,
+          bookingDate: new Date().toISOString(),
+          startTime: "N/A",
+          restaurantName: "Restaurant",
+          paymentStatus: "paid"
+        };
       } else {
         throw new Error("Missing required parameters for secure access");
       }
     },
-    enabled: !!(token || (bookingId && hash)),
+    enabled: !!(token || (bookingId && hash) || (isReturnFromGuestBooking && hasPaymentSuccess)),
   });
 
   // Trigger payment success notification only once when payment is successful
   useEffect(() => {
-    if (!paymentIntentId || !booking || !booking.id) {
+    // For return URL flow without payment intent, skip notification (handled by guest booking page)
+    if (isReturnFromGuestBooking && hasPaymentSuccess && !paymentIntentId) {
+      console.log('Return URL flow detected - payment already processed in guest booking');
+      return;
+    }
+
+    if (!paymentIntentId || !booking || !booking.id || booking.id === "guest_booking") {
       return; // Don't proceed without required data
     }
 
@@ -129,14 +150,15 @@ export default function PaymentSuccess() {
       console.log('Skipping payment notification - already sent or conditions not met', {
         alreadySent: !!alreadySent,
         notificationSent,
-        paymentStatus: booking.paymentStatus,
+        paymentStatus: booking?.paymentStatus,
         redirectStatus,
         paymentIntentId
       });
     }
-  }, [paymentIntentId, booking, redirectStatus, notificationSent]);
+  }, [paymentIntentId, booking, redirectStatus, notificationSent, isReturnFromGuestBooking, hasPaymentSuccess]);
 
-  if (!token && (!bookingId || !hash)) {
+  // Allow return URL flow from guest booking without token/hash parameters
+  if (!token && (!bookingId || !hash) && !isReturnFromGuestBooking) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-red-50 to-rose-100 py-12 px-4">
         <div className="container mx-auto max-w-md">
@@ -152,6 +174,32 @@ export default function PaymentSuccess() {
                 <AlertCircle className="h-4 w-4" />
                 <AlertDescription>
                   This payment confirmation link is invalid or missing required security information.
+                </AlertDescription>
+              </Alert>
+            </CardContent>
+          </Card>
+        </div>
+      </div>
+    );
+  }
+  
+  // Handle case where return URL doesn't indicate success
+  if (isReturnFromGuestBooking && !hasPaymentSuccess) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-yellow-50 to-orange-100 py-12 px-4">
+        <div className="container mx-auto max-w-md">
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <AlertCircle className="h-5 w-5 text-yellow-600" />
+                Payment Status Unknown
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <Alert className="border-yellow-200 bg-yellow-50">
+                <AlertCircle className="h-4 w-4 text-yellow-600" />
+                <AlertDescription className="text-yellow-800">
+                  Unable to confirm payment status. Please check your booking confirmation email or contact the restaurant.
                 </AlertDescription>
               </Alert>
             </CardContent>
