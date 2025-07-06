@@ -92,9 +92,9 @@ export class BrevoEmailService {
     
     // Generate management and cancel URLs
     const baseUrl = process.env.BASE_URL || 'http://localhost:5000';
-    const manageUrl = `${baseUrl}/manage-booking/${bookingDetails.managementHash || bookingDetails.hash}`;
-    const cancelUrl = `${baseUrl}/cancel-booking/${bookingDetails.managementHash || bookingDetails.hash}`;
     const bookingId = bookingDetails.id;
+    const manageUrl = `${baseUrl}/manage-booking/${bookingId}/${bookingDetails.managementHash || bookingDetails.hash}`;
+    const cancelUrl = `${baseUrl}/cancel-booking/${bookingId}/${bookingDetails.managementHash || bookingDetails.hash}`;
 
     const paymentSection = (bookingDetails.requiresPayment || bookingDetails.paymentRequired) ? `
       <div style="background-color: #fff3cd; border-radius: 8px; padding: 25px; margin: 25px 0; border-left: 4px solid #ffc107;">

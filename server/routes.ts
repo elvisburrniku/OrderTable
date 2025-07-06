@@ -7309,6 +7309,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Register both route patterns for backward compatibility
   app.get("/api/booking-manage/:id", bookingManageHandler);
   app.get("/api/manage-booking/:id", bookingManageHandler);
+  app.get("/api/cancel-booking/:id", bookingManageHandler);
 
   // Get change requests for a specific booking (customer view)
   app.get("/api/booking-manage/:id/change-requests", async (req, res) => {

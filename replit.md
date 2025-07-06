@@ -22,13 +22,16 @@ A comprehensive restaurant booking management system with React frontend and Exp
 - Kitchen order management
 
 ## Recent Changes
-- **2025-07-06**: ✅ MIGRATION FROM REPLIT AGENT TO REPLIT ENVIRONMENT COMPLETED - Successfully migrated project with full functionality
-- **Migration Success**: Fixed all dependencies, resolved authentication issues, and established proper routing for booking management system
-- **Booking Management Fix**: Added support for both /booking-manage/ and /manage-booking/ URL patterns with proper error handling for malformed links
-- **Route Guards Enhanced**: Updated authentication middleware to handle public booking management routes correctly
-- **Security Maintained**: Preserved robust client/server separation and security practices throughout migration process
-- **Error Handling Improved**: Added descriptive error messages for invalid booking management links with user guidance
-- **URL Pattern Support**: System now handles backward compatibility for different booking management URL formats
+- **2025-07-06**: ✅ BOOKING MANAGEMENT URL PATTERN ENHANCEMENT COMPLETED - Extended support for path-based hash URLs and cancel-booking functionality
+- **Enhanced URL Support**: Added support for /manage-booking/{bookingId}/{hash} URL pattern where hash is in the path instead of query parameter
+- **Cancel Booking Integration**: Added /cancel-booking/{bookingId}/{hash} route pattern with automatic action detection for cancellation links
+- **Email Service Fix**: Updated Brevo email service to generate proper booking management URLs with booking ID included in path
+- **Route Enhancement**: Added new route patterns /manage-booking/:id/:hash and /cancel-booking/:id/:hash with proper API endpoint mapping
+- **Auto Action Detection**: BookingManage component automatically sets action to "cancel" when accessed via /cancel-booking/ URLs
+- **Backward Compatibility**: Maintained support for all existing URL patterns while adding new path-based hash functionality
+- **API Endpoint Coverage**: Added /api/cancel-booking/:id endpoint to handle cancel-booking URL pattern with proper hash validation
+- **Route Guards Updated**: Extended route guards and layout wrapper to handle cancel-booking routes as public routes
+- **Migration Success**: Fixed all dependencies, resolved authentication issues, and established comprehensive routing for booking management system
 - **2025-07-04**: ✅ GUEST BOOKING PAYMENT INTEGRATION COMPLETED - Fixed payment step flow in guest booking system to properly show Stripe payment step
 - **Payment Step Flow Fix**: Fixed guest booking flow to properly show payment step when payment is required instead of immediately showing confirmation
 - **Stripe Elements Integration**: Enhanced guest booking with proper Stripe Elements integration for seamless payment processing

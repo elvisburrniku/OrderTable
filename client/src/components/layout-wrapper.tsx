@@ -27,6 +27,7 @@ export function LayoutWrapper({ children }: LayoutWrapperProps) {
     /^\/feedback-responses-popup$/,
     /^\/booking-manage\/.+$/,
     /^\/manage-booking\/.+$/,
+    /^\/cancel-booking\/.+$/,
     /^\/login$/,
     /^\/register$/,
     /^\/setup$/,
