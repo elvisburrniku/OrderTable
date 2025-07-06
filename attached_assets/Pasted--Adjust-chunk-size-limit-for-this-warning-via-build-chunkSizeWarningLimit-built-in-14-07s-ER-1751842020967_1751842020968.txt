@@ -1,0 +1,50 @@
+
+- Adjust chunk size limit for this warning via build.chunkSizeWarningLimit.
+✓ built in 14.07s
+✘ [ERROR] Could not resolve "./SubscriptionService"
+    server/stripe-webhook-handler.ts:2:36:
+      2 │ import { SubscriptionService } from "./SubscriptionService";
+        ╵                                     ~~~~~~~~~~~~~~~~~~~~~~~
+▲ [WARNING] Duplicate member "rooms" in class body [duplicate-class-member]
+    server/mem-storage.ts:50:10:
+      50 │   private rooms: Room[] = [];
+         ╵           ~~~~~
+  The original member "rooms" is here:
+    server/mem-storage.ts:44:10:
+      44 │   private rooms: Room[] = [];
+         ╵           ~~~~~
+▲ [WARNING] Duplicate member "paymentSetups" in class body [duplicate-class-member]
+    server/mem-storage.ts:889:10:
+      889 │   private paymentSetups: any[] = [];
+          ╵           ~~~~~~~~~~~~~
+  The original member "paymentSetups" is here:
+    server/mem-storage.ts:53:10:
+      53 │   private paymentSetups: any[] = [];
+         ╵           ~~~~~~~~~~~~~
+▲ [WARNING] Duplicate member "sendRestaurantNotification" in class body [duplicate-class-member]
+    server/brevo-service.ts:1426:8:
+      1426 │   async sendRestaurantNotification(
+           ╵         ~~~~~~~~~~~~~~~~~~~~~~~~~~
+  The original member "sendRestaurantNotification" is here:
+    server/brevo-service.ts:957:8:
+      957 │   async sendRestaurantNotification(
+          ╵         ~~~~~~~~~~~~~~~~~~~~~~~~~~
+▲ [WARNING] Duplicate member "sendSubscriptionChangeNotification" in class body [duplicate-class-member]
+    server/brevo-service.ts:1551:8:
+      1551 │   async sendSubscriptionChangeNotification(subscriptionData: {
+           ╵         ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+  The original member "sendSubscriptionChangeNotification" is here:
+    server/brevo-service.ts:1006:8:
+      1006 │   async sendSubscriptionChangeNotification(subscriptionData: {
+           ╵         ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+▲ [WARNING] Duplicate member "sendEmail" in class body [duplicate-class-member]
+    server/brevo-service.ts:1660:8:
+      1660 │   async sendEmail(emailData: {
+           ╵         ~~~~~~~~~
+  The original member "sendEmail" is here:
+    server/brevo-service.ts:1115:8:
+      1115 │   async sendEmail(emailData: {
+           ╵         ~~~~~~~~~
+5 of 21 warnings and 1 error shown (disable the message limit with --log-limit=0)
+==> Build failed 😞
+==> Common ways to troubleshoot your deploy: https://render.com/docs/troubleshooting-deploys
