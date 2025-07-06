@@ -11,6 +11,7 @@ import { SurveySchedulerService } from "./survey-scheduler-service";
 import { initializeAdminSystem } from "./init-admin";
 import { systemSettings } from "./system-settings";
 import { AdminStorage } from "./admin-storage";
+import { SubscriptionService } from "./subscription-service";
 
 const app = express();
 
@@ -19,7 +20,7 @@ const app = express();
 app.post("/api/webhooks/stripe", express.raw({ type: 'application/json' }), async (req, res) => {
   // Import stripe and handle webhook
   const stripe = require('stripe')(process.env.STRIPE_SECRET_KEY);
-  
+
   try {
     const sig = req.headers["stripe-signature"];
     let event;
@@ -41,7 +42,7 @@ app.post("/api/webhooks/stripe", express.raw({ type: 'application/json' }), asyn
     // Delegate to the main webhook handler in routes.ts
     const { handleStripeWebhook } = await import('./stripe-webhook-handler');
     await handleStripeWebhook(event, storage);
-    
+
     res.json({ received: true });
   } catch (error) {
     console.error("Stripe webhook error:", error);
@@ -107,14 +108,14 @@ app.use(async (req, res, next) => {
     );
 
     const maintenancePromise = systemSettings.isMaintenanceMode();
-    
+
     const isMaintenanceMode = await Promise.race([maintenancePromise, timeoutPromise])
       .catch(() => false); // Default to not in maintenance mode if check fails
-    
+
     if (isMaintenanceMode) {
       const message = await systemSettings.getSetting('maintenance_message')
         .catch(() => "System is temporarily under maintenance. Please try again later.");
-      
+
       return res.status(503).json({
         error: "Service Unavailable",
         message: message,
@@ -290,10 +291,10 @@ app.post("/api/survey/:token/submit", async (req, res) => {
   // Initialize admin system asynchronously to prevent blocking
   initializeAdminSystem().then(() => {
     console.log('Admin system initialization completed.');
-    
+
     // Start scheduled task to check for expired pauses
     const adminStorage = new AdminStorage();
-    
+
     // Check for expired pauses periodically
     const checkExpiredPauses = async () => {
       try {
@@ -303,13 +304,13 @@ app.post("/api/survey/:token/submit", async (req, res) => {
         console.error('Error checking expired pauses:', error);
       }
     };
-    
+
     // Run check every 2 minutes
     setInterval(checkExpiredPauses, 2 * 60 * 1000);
-    
+
     // Run initial check
     checkExpiredPauses();
-    
+
     console.log('📅 Unpause scheduler initialized - no pending schedules');
     console.log('Admin system and automatic unpause service initialized');
   }).catch(error => {
@@ -328,7 +329,7 @@ app.post("/api/survey/:token/submit", async (req, res) => {
   // Only start services if using memory storage to avoid database connection errors
   if (storage.constructor.name === 'MemoryStorage') {
     console.log('Starting services with memory storage...');
-    
+
     // Start auto-assignment service for unassigned bookings
     const autoAssignmentService = new AutoAssignmentService(storage);
     autoAssignmentService.start();
@@ -340,7 +341,7 @@ app.post("/api/survey/:token/submit", async (req, res) => {
   app.post("/api/payment-notification", async (req, res) => {
     try {
       const { payment_intent, booking_id, amount, currency } = req.body;
-      
+
       if (!payment_intent || !booking_id) {
         return res.status(400).json({ message: "Payment intent ID and booking ID are required" });
       }
@@ -366,7 +367,7 @@ app.post("/api/survey/:token/submit", async (req, res) => {
       // Send notifications and emails
       try {
         console.log(`Sending payment confirmation emails for booking ${booking.id}`);
-        
+
         // Send payment confirmation email to customer
         if (booking.customerEmail) {
           await emailService.sendPaymentConfirmation(
@@ -404,7 +405,7 @@ app.post("/api/survey/:token/submit", async (req, res) => {
         try {
           const { tenantUsers: tenantUsersTable, users: usersTable } = await import("../shared/schema");
           const { eq } = await import("drizzle-orm");
-          
+
           const tenantUsersList = await storage.db
             .select({
               tenantId: tenantUsersTable.tenantId,
@@ -424,7 +425,7 @@ app.post("/api/survey/:token/submit", async (req, res) => {
             .where(eq(tenantUsersTable.tenantId, booking.tenantId));
 
           const owners = tenantUsersList.filter(tu => tu.role === 'owner' || tu.role === 'manager');
-          
+
           for (const userRole of owners) {
             if (userRole.user?.email && userRole.user.email !== restaurant?.email) {
               await emailService.sendPaymentNotificationToRestaurant(
