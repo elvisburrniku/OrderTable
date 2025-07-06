@@ -5,7 +5,7 @@ import { useRoute } from "wouter";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Card, CardContent } from "@/components/ui/card";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import {
   Calendar,
@@ -49,10 +49,17 @@ import {
 const stripePromise = loadStripe(import.meta.env.VITE_STRIPE_PUBLIC_KEY || "");
 
 // Payment form component for Stripe Elements
-const PaymentForm = ({ onPaymentSuccess, onPaymentError, bookingData }: any) => {
+const PaymentForm = ({ onPaymentSuccess, onPaymentError, bookingData, paymentAmount, currency }: any) => {
   const stripe = useStripe();
   const elements = useElements();
   const [isProcessing, setIsProcessing] = useState(false);
+
+  const formatCurrency = (amount: number, currency: string) => {
+    return new Intl.NumberFormat("en-US", {
+      style: "currency",
+      currency: currency.toUpperCase(),
+    }).format(amount);
+  };
 
   const handleSubmit = async (event: React.FormEvent) => {
     event.preventDefault();
@@ -63,33 +70,94 @@ const PaymentForm = ({ onPaymentSuccess, onPaymentError, bookingData }: any) => 
 
     setIsProcessing(true);
 
-    const { error } = await stripe.confirmPayment({
-      elements,
-      confirmParams: {
-        return_url: `${window.location.origin}/payment-success?booking=${bookingData.id}`,
-      },
-    });
+    try {
+      const { error } = await stripe.confirmPayment({
+        elements,
+        confirmParams: {
+          return_url: `${window.location.origin}/payment-success?booking=${bookingData.id}`,
+        },
+      });
 
-    setIsProcessing(false);
-
-    if (error) {
-      onPaymentError(error.message);
-    } else {
-      onPaymentSuccess();
+      if (error) {
+        if (error.type === "card_error" || error.type === "validation_error") {
+          onPaymentError(error.message || "Payment failed");
+        } else {
+          onPaymentError("An unexpected error occurred.");
+        }
+      } else {
+        onPaymentSuccess();
+      }
+    } catch (error) {
+      onPaymentError("An error occurred while processing payment");
+    } finally {
+      setIsProcessing(false);
     }
   };
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-6">
-      <PaymentElement />
-      <Button 
-        type="submit" 
-        className="w-full" 
-        disabled={!stripe || !elements || isProcessing}
-      >
-        {isProcessing ? "Processing..." : `Pay ${bookingData.paymentAmount ? `$${bookingData.paymentAmount}` : ""}`}
-      </Button>
-    </form>
+    <Card className="w-full max-w-md mx-auto">
+      <CardHeader>
+        <CardTitle className="flex items-center gap-2">
+          <CreditCard className="h-5 w-5" />
+          Complete Payment
+        </CardTitle>
+        <CardDescription>
+          Secure payment to confirm your booking
+        </CardDescription>
+      </CardHeader>
+      <CardContent className="space-y-6">
+        {/* Booking Summary */}
+        <div className="space-y-3 p-4 bg-muted rounded-lg">
+          <h3 className="font-medium">Booking Summary</h3>
+          <div className="space-y-2 text-sm">
+            <div className="flex items-center gap-2">
+              <Users className="h-4 w-4" />
+              <span>
+                {bookingData.customerName} - {bookingData.guestCount}{" "}
+                {bookingData.guestCount === 1 ? "guest" : "guests"}
+              </span>
+            </div>
+            <div className="flex items-center gap-2">
+              <Calendar className="h-4 w-4" />
+              <span>{new Date(bookingData.bookingDate).toLocaleDateString()}</span>
+            </div>
+            <div className="flex items-center gap-2">
+              <Clock className="h-4 w-4" />
+              <span>{bookingData.startTime}</span>
+            </div>
+          </div>
+          <div className="flex justify-between items-center pt-2 border-t font-medium">
+            <span>Total Amount:</span>
+            <span className="text-lg">{formatCurrency(paymentAmount, currency)}</span>
+          </div>
+        </div>
+
+        {/* Payment Form */}
+        <form onSubmit={handleSubmit} className="space-y-4">
+          <PaymentElement
+            options={{
+              layout: "tabs",
+            }}
+          />
+
+          <Button
+            type="submit"
+            disabled={!stripe || isProcessing}
+            className="w-full"
+            size="lg"
+          >
+            {isProcessing ? (
+              <div className="flex items-center gap-2">
+                <div className="animate-spin w-4 h-4 border-2 border-current border-t-transparent rounded-full" />
+                Processing...
+              </div>
+            ) : (
+              `Pay ${formatCurrency(paymentAmount, currency)}`
+            )}
+          </Button>
+        </form>
+      </CardContent>
+    </Card>
   );
 };
 
@@ -203,6 +271,25 @@ export default function GuestBookingResponsive(props: any) {
     ],
     enabled: !!(finalTenantId && finalRestaurantId),
   });
+
+  // Calculate payment amount based on setup and guest count
+  const calculatePaymentAmount = () => {
+    if (!paymentInfo?.paymentSetup) return 0;
+    
+    const setup = paymentInfo.paymentSetup;
+    const amount = parseFloat(setup.amount) || 0;
+    
+    if (setup.priceUnit === 'per_guest') {
+      return amount * guestCount;
+    } else if (setup.priceUnit === 'per_booking') {
+      return amount;
+    } else {
+      // per_table - default to per_booking logic
+      return amount;
+    }
+  };
+
+  const paymentAmount = calculatePaymentAmount();
 
   // Create booking mutation
   const createBookingMutation = useMutation({
@@ -1405,7 +1492,7 @@ export default function GuestBookingResponsive(props: any) {
                     </div>
                     <div className="flex justify-between font-medium pt-2 border-t">
                       <span>Payment Amount:</span>
-                      <span>${paymentInfo?.defaultAmount || 0}</span>
+                      <span>{paymentInfo?.paymentSetup?.currency || 'EUR'} {paymentAmount.toFixed(2)}</span>
                     </div>
                   </div>
                 </div>
@@ -1428,8 +1515,8 @@ export default function GuestBookingResponsive(props: any) {
                             : null,
                           source: "guest_booking",
                           requiresPayment: true,
-                          paymentAmount: paymentInfo?.defaultAmount || 0,
-                          paymentDeadlineHours: paymentInfo?.defaultDeadlineHours || 24,
+                          paymentAmount: paymentAmount,
+                          paymentDeadlineHours: 24,
                         };
                         console.log(`Creating booking with payment at payment step`);
                         createBookingMutation.mutate(bookingData);
@@ -1443,7 +1530,7 @@ export default function GuestBookingResponsive(props: any) {
                           Creating booking...
                         </>
                       ) : (
-                        `Create Booking & Pay $${paymentInfo?.defaultAmount || 0}`
+                        `Create Booking & Pay ${paymentInfo?.paymentSetup?.currency || 'EUR'} ${paymentAmount.toFixed(2)}`
                       )}
                     </Button>
                   </div>
@@ -1464,6 +1551,8 @@ export default function GuestBookingResponsive(props: any) {
                     <Elements stripe={stripePromise} options={{ clientSecret }}>
                       <PaymentForm
                         bookingData={createdBookingData}
+                        paymentAmount={paymentAmount}
+                        currency={paymentInfo?.paymentSetup?.currency || 'EUR'}
                         onPaymentSuccess={() => {
                           setBookingId(createdBookingData?.id || null);
                           setBookingCreated(true);
