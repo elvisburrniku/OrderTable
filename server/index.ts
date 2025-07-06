@@ -19,7 +19,10 @@ const app = express();
 // This route will be moved here to ensure it gets raw body
 app.post("/api/webhooks/stripe", express.raw({ type: 'application/json' }), async (req, res) => {
   // Import stripe and handle webhook
-  const stripe = require('stripe')(process.env.STRIPE_SECRET_KEY);
+  const { default: Stripe } = await import('stripe');
+  const stripe = new Stripe(process.env.STRIPE_SECRET_KEY || 'sk_test_your_stripe_secret_key', {
+    apiVersion: '2024-06-20'
+  });
 
   try {
     const sig = req.headers["stripe-signature"];

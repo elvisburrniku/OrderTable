@@ -2247,6 +2247,51 @@ export class DatabaseStorage implements IStorage {
       return [];
     }
   }
+
+  async createStripePayment(payment: any): Promise<any> {
+    if (!this.db) throw new Error("Database connection not available");
+    try {
+      const [result] = await this.db
+        .insert(stripePayments)
+        .values(payment)
+        .returning();
+      return result;
+    } catch (error) {
+      console.error("Error creating Stripe payment:", error);
+      throw error;
+    }
+  }
+
+  async getStripePaymentByIntentId(paymentIntentId: string): Promise<any | undefined> {
+    if (!this.db) throw new Error("Database connection not available");
+    try {
+      const [result] = await this.db
+        .select()
+        .from(stripePayments)
+        .where(eq(stripePayments.stripePaymentIntentId, paymentIntentId))
+        .limit(1);
+      return result;
+    } catch (error) {
+      console.error("Error fetching Stripe payment by intent ID:", error);
+      return undefined;
+    }
+  }
+
+  async updateStripePaymentByIntentId(paymentIntentId: string, updates: any): Promise<any | undefined> {
+    if (!this.db) throw new Error("Database connection not available");
+    try {
+      const [result] = await this.db
+        .update(stripePayments)
+        .set(updates)
+        .where(eq(stripePayments.stripePaymentIntentId, paymentIntentId))
+        .returning();
+      return result;
+    } catch (error) {
+      console.error("Error updating Stripe payment by intent ID:", error);
+      return undefined;
+    }
+  }
+
   async getSmsMessagesByRestaurant(restaurantId: number): Promise<any[]> {
     return [];
   }
