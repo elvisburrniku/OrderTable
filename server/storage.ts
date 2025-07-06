@@ -475,6 +475,14 @@ export interface IStorage {
   createWebhookLog(log: InsertWebhookLog): Promise<WebhookLog>;
   getWebhookLogs(tenantId?: number, limit?: number): Promise<WebhookLog[]>;
   getWebhookLogsByEventType(eventType: string, tenantId?: number): Promise<WebhookLog[]>;
+
+  // Payment Setups
+  getPaymentSetupsByRestaurant(restaurantId: number, tenantId: number): Promise<any[]>;
+  getPaymentSetupByRestaurant(restaurantId: number, tenantId: number): Promise<any>;
+  getPaymentSetupById(id: number): Promise<any>;
+  createPaymentSetup(setup: any): Promise<any>;
+  updatePaymentSetup(id: number, updates: any): Promise<any>;
+  deletePaymentSetup(id: number): Promise<void>;
 }
 
 import { DatabaseStorage } from "./db-storage";

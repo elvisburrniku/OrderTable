@@ -1905,6 +1905,7 @@ export const paymentSetups = pgTable("payment_setups", {
     .notNull(), // 24_hours, 48_hours, 72_hours, 1_week
   description: text("description"),
   language: varchar("language", { length: 10 }).default("en").notNull(),
+  isActive: boolean("is_active").default(true).notNull(),
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
 });

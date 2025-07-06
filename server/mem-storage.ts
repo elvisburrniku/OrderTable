@@ -47,10 +47,10 @@ export class MemoryStorage implements IStorage {
   private feedback: Feedback[] = [];
   private activityLog: ActivityLog[] = [];
   private timeSlots: TimeSlots[] = [];
-  private subscriptionPlans: SubscriptionPlan[] = [];
-  private userSubscriptions: UserSubscription[] = [];
+  private rooms: Room[] = [];
   private combinedTables: CombinedTable[] = [];
   private tableLayouts: TableLayout[] = [];
+  private paymentSetups: any[] = [];
   private openingHours: any[] = [];
   private specialPeriods: any[] = [];
   private cutOffTimes: any[] = [];
@@ -864,7 +864,9 @@ export class MemoryStorage implements IStorage {
     return layout;
   }
   async getOpeningHoursByRestaurant(restaurantId: number): Promise<any> { 
-    return this.openingHours.filter(h => h.restaurantId === restaurantId).sort((a, b) => a.dayOfWeek - b.dayOfWeek);
+    return this.openingHours.filter(h => h.restaurantId === restaurantId).sort((a, b) =>
+Added the `paymentSetups` array to the `MemoryStorage` class.
+a.dayOfWeek - b.dayOfWeek);
   }
 
   async createOrUpdateOpeningHours(restaurantId: number, tenantId: number, hoursData: any[]): Promise<any> { 
