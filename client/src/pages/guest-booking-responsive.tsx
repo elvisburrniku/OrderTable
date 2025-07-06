@@ -333,6 +333,10 @@ export default function GuestBookingResponsive(props: any) {
             ? parseInt(selectedSeasonalTheme)
             : null,
           source: "guest_booking",
+          // Include payment information when payment is required
+          requiresPayment: hasPaymentStep,
+          paymentAmount: paymentInfo?.defaultAmount || 0,
+          paymentDeadlineHours: paymentInfo?.defaultDeadlineHours || 24,
         };
         
         console.log(`Creating booking with payment required from step ${currentStep}`);
@@ -359,6 +363,10 @@ export default function GuestBookingResponsive(props: any) {
             ? parseInt(selectedSeasonalTheme)
             : null,
           source: "guest_booking",
+          // No payment required for this booking
+          requiresPayment: false,
+          paymentAmount: 0,
+          paymentDeadlineHours: 24,
         };
         createBookingMutation.mutate(bookingData);
       }
