@@ -1,0 +1,88 @@
+{
+  "id": "evt_3Ri0l4Ci9JMBFIWG1cm4m50h",
+  "object": "event",
+  "api_version": "2025-03-01.dashboard",
+  "created": 1751839810,
+  "data": {
+    "object": {
+      "id": "pi_3Ri0l4Ci9JMBFIWG18S4qW2j",
+      "object": "payment_intent",
+      "amount": 5940,
+      "amount_capturable": 0,
+      "amount_details": {
+        "tip": {}
+      },
+      "amount_received": 5940,
+      "application": null,
+      "application_fee_amount": 3,
+      "automatic_payment_methods": {
+        "allow_redirects": "always",
+        "enabled": true
+      },
+      "canceled_at": null,
+      "cancellation_reason": null,
+      "capture_method": "automatic_async",
+      "client_secret": "pi_3Ri0l4Ci9JMBFIWG18S4qW2j_secret_tTBlazAFnSl66KtclFHI9B6J2",
+      "confirmation_method": "automatic",
+      "created": 1751839802,
+      "currency": "usd",
+      "customer": null,
+      "description": "Booking payment for The best restaurant - 4 guests on 2025-07-07 at 17:45",
+      "last_payment_error": null,
+      "latest_charge": "ch_3Ri0l4Ci9JMBFIWG16TE9pxF",
+      "livemode": false,
+      "metadata": {
+        "guestCount": "4",
+        "type": "booking_payment",
+        "bookingDate": "2025-07-07",
+        "customerName": "Elvis Burrniku",
+        "restaurantName": "The best restaurant",
+        "startTime": "17:45",
+        "customerEmail": "elvis.burrniku99@gmail.com",
+        "bookingId": "guest_booking"
+      },
+      "next_action": null,
+      "on_behalf_of": null,
+      "payment_method": "pm_1Ri0lCCi9JMBFIWGQCkaD9Pw",
+      "payment_method_configuration_details": {
+        "id": "pmc_1RVaA4Ci9JMBFIWGgvAlXtL3",
+        "parent": null
+      },
+      "payment_method_options": {
+        "card": {
+          "installments": null,
+          "mandate_options": null,
+          "network": null,
+          "request_three_d_secure": "automatic"
+        },
+        "link": {
+          "persistent_token": null
+        }
+      },
+      "payment_method_types": [
+        "card",
+        "link"
+      ],
+      "processing": null,
+      "receipt_email": null,
+      "review": null,
+      "setup_future_usage": null,
+      "shipping": null,
+      "source": null,
+      "statement_descriptor": null,
+      "statement_descriptor_suffix": null,
+      "status": "succeeded",
+      "transfer_data": {
+        "destination": "acct_1RgNhgE0Lj2CV9Va"
+      },
+      "transfer_group": "group_pi_3Ri0l4Ci9JMBFIWG18S4qW2j"
+    }
+  },
+  "livemode": false,
+  "pending_webhooks": 1,
+  "request": {
+    "id": "req_OS3W8JXQiJr5Cp",
+    "idempotency_key": "f27a37c6-1f57-4715-b53f-8fae0d485b4e"
+  },
+  "type": "payment_intent.succeeded"
+}
