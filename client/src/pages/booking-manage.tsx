@@ -25,7 +25,7 @@ export default function BookingManage() {
 
   // Function to check if changes are allowed based on backend permissions
   const isChangeAllowed = () => {
-    return booking?.canModify ?? false;
+    return (booking?.canModify ?? false) && booking?.status !== 'cancelled';
   };
 
   // Check if user has a valid hash parameter
@@ -258,10 +258,14 @@ export default function BookingManage() {
       }
       return response.json();
     },
-    onSuccess: () => {
+    onSuccess: (data, variables) => {
       refetch();
       setIsEditing(false);
-      toast({ title: "Booking updated successfully" });
+      if (variables.status === 'cancelled') {
+        toast({ title: "Booking cancelled successfully" });
+      } else {
+        toast({ title: "Booking updated successfully" });
+      }
     },
     onError: (error: Error) => {
       toast({ title: error.message, variant: "destructive" });
@@ -367,44 +371,25 @@ export default function BookingManage() {
   const handleCancelBooking = async () => {
     if (!booking?.canCancel) {
       toast({ 
-        title: "Cannot delete booking", 
+        title: "Cannot cancel booking", 
         description: getRestrictionMessage(),
         variant: "destructive" 
       });
       return;
     }
 
-    if (confirm("Are you sure you want to delete this booking?")) {
+    if (booking?.status === 'cancelled') {
+      toast({ 
+        title: "Booking already cancelled", 
+        variant: "destructive" 
+      });
+      return;
+    }
+
+    if (confirm("Are you sure you want to cancel this booking? This will change the status to cancelled and prevent future modifications.")) {
       try {
-        const urlParams = new URLSearchParams(window.location.search);
-        const hash = urlParams.get('hash');
-
-        if (!hash) {
-          toast({ title: 'Access denied - invalid link', variant: "destructive" });
-          return;
-        }
-
-        const response = await fetch(`/api/booking-manage/${id}/cancel`, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ hash })
-        });
-
-        if (!response.ok) {
-          const errorText = await response.text();
-          let errorMessage = "Failed to cancel booking";
-          try {
-            const error = JSON.parse(errorText);
-            errorMessage = error.message || errorMessage;
-          } catch {
-            errorMessage = response.statusText || errorMessage;
-          }
-          throw new Error(errorMessage);
-        }
-
-        const result = await response.json();
-        refetch();
-        toast({ title: "Booking deleted successfully" });
+        // Use the update mutation to change status to cancelled
+        updateMutation.mutate({ status: 'cancelled' });
       } catch (error: any) {
         toast({ title: error.message, variant: "destructive" });
       }
@@ -820,15 +805,15 @@ export default function BookingManage() {
                 <div className="pt-4 border-t">
                   <div className="flex items-center justify-between">
                     <div>
-                      <h3 className="font-medium text-gray-900">Delete Booking</h3>
-                      <p className="text-sm text-gray-500">This action cannot be undone</p>
+                      <h3 className="font-medium text-gray-900">Cancel Booking</h3>
+                      <p className="text-sm text-gray-500">This will mark the booking as cancelled</p>
                     </div>
                     <Button 
                       variant="destructive" 
                       onClick={handleCancelBooking}
-                      disabled={updateMutation.isPending || !booking?.canCancel}
+                      disabled={updateMutation.isPending || !booking?.canCancel || booking?.status === 'cancelled'}
                     >
-                      Delete Booking
+                      Cancel Booking
                     </Button>
                   </div>
                 </div>
