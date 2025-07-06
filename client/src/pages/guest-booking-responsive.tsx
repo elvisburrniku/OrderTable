@@ -84,8 +84,8 @@ const PaymentForm = ({ onPaymentSuccess, onPaymentError, bookingData, paymentAmo
         elements,
         redirect: 'if_required',
         confirmParams: {
-          // Only provide return_url for payment methods that absolutely require it
-          return_url: `${window.location.origin}/payment-success?payment=success&inline=true`,
+          // Return to guest booking page with payment status
+          return_url: `${window.location.origin}${window.location.pathname}?payment_status=success&payment_intent={PAYMENT_INTENT_ID}`,
         },
       });
 
@@ -260,6 +260,8 @@ export default function GuestBookingResponsive(props: any) {
   const [paymentError, setPaymentError] = useState<string | null>(null);
   const [bookingCreated, setBookingCreated] = useState(false);
   const [createdBookingData, setCreatedBookingData] = useState<any>(null);
+
+
 
   // Fetch restaurant data
   const { data: restaurant, isLoading: restaurantLoading } = useQuery({
@@ -482,6 +484,68 @@ export default function GuestBookingResponsive(props: any) {
       createPaymentIntentForGuest();
     }
   }, [currentStep, steps.length, paymentInfo, clientSecret, paymentError, customerData]);
+
+  // Handle payment return from Stripe redirect
+  useEffect(() => {
+    const urlParams = new URLSearchParams(window.location.search);
+    const paymentStatus = urlParams.get('payment_status');
+    const paymentIntentId = urlParams.get('payment_intent');
+    const redirectStatus = urlParams.get('redirect_status');
+
+    // Only handle payment return if we have payment setup and seasonal themes loaded
+    if (!paymentInfo || seasonalThemes === undefined) return;
+
+    if (paymentStatus === 'success' && redirectStatus === 'succeeded') {
+      // Payment was successful - show confirmation
+      setBookingCreated(true);
+      setPaymentError(null);
+      setCurrentStep(steps.length); // Go to success step
+      
+      toast({
+        title: "Payment Successful!",
+        description: "Your booking has been confirmed.",
+      });
+
+      // Create booking in background since payment was successful
+      const bookingData = {
+        bookingDate: selectedDate ? format(selectedDate, "yyyy-MM-dd") : "",
+        startTime: selectedTime,
+        guestCount: guestCount,
+        customerName: customerData.name,
+        customerEmail: customerData.email,
+        customerPhone: customerData.phone,
+        specialRequests: customerData.comment || null,
+        seasonalThemeId: selectedSeasonalTheme ? parseInt(selectedSeasonalTheme) : null,
+        source: "guest_booking",
+        requiresPayment: true,
+        paymentAmount: paymentAmount,
+        paymentDeadlineHours: 24,
+      };
+      
+      // Only create booking if we have the necessary data
+      if (customerData.name && customerData.email) {
+        createBookingMutation.mutate(bookingData);
+      }
+
+      // Clean up URL parameters
+      window.history.replaceState({}, document.title, window.location.pathname);
+    } else if (redirectStatus === 'failed' || paymentStatus === 'failed') {
+      // Payment failed - show error and allow retry
+      setPaymentError("Payment failed. Please try again with a different payment method.");
+      
+      // Reset client secret to allow retry
+      setClientSecret(null);
+      
+      toast({
+        title: "Payment Failed",
+        description: "Your payment could not be processed. Please try again.",
+        variant: "destructive",
+      });
+
+      // Clean up URL parameters
+      window.history.replaceState({}, document.title, window.location.pathname);
+    }
+  }, [paymentInfo, seasonalThemes, selectedDate, selectedTime, guestCount, customerData, selectedSeasonalTheme, paymentAmount, steps.length, toast, createBookingMutation]);
 
   // Debug logging
   console.log(`Steps configuration: ${steps.map(s => s.title).join(', ')}`);
