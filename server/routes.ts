@@ -1404,13 +1404,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Stripe webhook endpoint
-  app.post("/api/webhooks/stripe", async (req, res) => {
+  // Stripe webhook endpoint - needs raw body for signature verification
+  app.post("/api/webhooks/stripe", express.raw({ type: 'application/json' }), async (req, res) => {
     try {
       const sig = req.headers["stripe-signature"];
       let event;
 
       try {
+        // req.body is now a Buffer containing the raw request body
         event = stripe.webhooks.constructEvent(
           req.body,
           sig,
@@ -1421,20 +1422,105 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).send(`Webhook Error: ${err.message}`);
       }
 
+      console.log(`✅ Webhook signature verified for event: ${event.type}`);
+
       // Handle the event
       switch (event.type) {
         case "checkout.session.completed":
           const session = event.data.object;
-          // Handle successful payment
           console.log("Payment successful:", session.id);
+          
+          // Process the completed checkout session
+          if (session.metadata) {
+            const { tenantId, planId, userId } = session.metadata;
+            if (tenantId && planId) {
+              try {
+                await SubscriptionService.handleCheckoutCompleted(session);
+                console.log(`✅ Processed checkout completion for tenant ${tenantId}`);
+              } catch (error) {
+                console.error("Error processing checkout completion:", error);
+              }
+            }
+          }
           break;
+
         case "invoice.payment_succeeded":
           const invoice = event.data.object;
-          // Handle subscription renewal
-          console.log("Subscription renewed:", invoice.subscription);
+          console.log("Subscription payment succeeded:", invoice.subscription);
+          
+          try {
+            await SubscriptionService.handlePaymentSucceeded(invoice);
+            console.log(`✅ Processed payment success for subscription ${invoice.subscription}`);
+          } catch (error) {
+            console.error("Error processing payment success:", error);
+          }
           break;
+
+        case "customer.subscription.updated":
+          const subscription = event.data.object;
+          console.log("Subscription updated:", subscription.id);
+          
+          try {
+            await SubscriptionService.handleSubscriptionUpdated(subscription);
+            console.log(`✅ Processed subscription update for ${subscription.id}`);
+          } catch (error) {
+            console.error("Error processing subscription update:", error);
+          }
+          break;
+
+        case "customer.subscription.deleted":
+          const deletedSubscription = event.data.object;
+          console.log("Subscription cancelled:", deletedSubscription.id);
+          
+          try {
+            await SubscriptionService.handleSubscriptionDeleted(deletedSubscription);
+            console.log(`✅ Processed subscription cancellation for ${deletedSubscription.id}`);
+          } catch (error) {
+            console.error("Error processing subscription cancellation:", error);
+          }
+          break;
+
+        case "payment_intent.succeeded":
+          const paymentIntent = event.data.object;
+          console.log("Payment intent succeeded:", paymentIntent.id);
+          
+          // Handle booking payment completion
+          if (paymentIntent.metadata && paymentIntent.metadata.bookingId) {
+            try {
+              const bookingId = parseInt(paymentIntent.metadata.bookingId);
+              await storage.updateBooking(bookingId, {
+                paymentStatus: "paid",
+                paymentPaidAt: new Date(),
+                status: "confirmed"
+              });
+              
+              // Create invoice for the payment
+              const booking = await storage.getBookingById(bookingId);
+              if (booking) {
+                await storage.createInvoice({
+                  bookingId: booking.id,
+                  tenantId: booking.tenantId,
+                  restaurantId: booking.restaurantId,
+                  amount: parseFloat(booking.paymentAmount || "0"),
+                  currency: booking.currency || "EUR",
+                  paymentIntentId: paymentIntent.id,
+                  stripeChargeId: paymentIntent.latest_charge,
+                  customerEmail: booking.customerEmail,
+                  customerName: booking.customerName,
+                  description: `Booking payment for ${booking.customerName} on ${new Date(booking.bookingDate).toLocaleDateString()}`,
+                  paidAt: new Date(),
+                });
+              }
+              
+              console.log(`✅ Updated booking ${bookingId} payment status to paid`);
+            } catch (error) {
+              console.error("Error updating booking payment status:", error);
+            }
+          }
+          break;
+
         default:
-          console.log(`Unhandled event type ${event.type}`);
+          console.log(`Unhandled event type: ${event.type}`);
       }
 
       res.json({ received: true });
