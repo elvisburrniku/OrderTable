@@ -23,7 +23,7 @@ export class PaymentService {
     currency: string = "usd",
     tenantStripeAccountId: string,
     bookingDetails: {
-      bookingId: number;
+      bookingId: number | null;
       customerEmail: string;
       customerName: string;
       restaurantName: string;
@@ -52,7 +52,7 @@ export class PaymentService {
           destination: tenantStripeAccountId,
         },
         metadata: {
-          bookingId: bookingDetails.bookingId.toString(),
+          bookingId: bookingDetails.bookingId ? bookingDetails.bookingId.toString() : "guest_booking",
           customerEmail: bookingDetails.customerEmail,
           customerName: bookingDetails.customerName,
           restaurantName: bookingDetails.restaurantName,
@@ -85,7 +85,7 @@ export class PaymentService {
     currency: string = "usd",
     tenantStripeAccountId: string,
     bookingDetails: {
-      bookingId: number;
+      bookingId: number | null;
       customerEmail: string;
       customerName: string;
       restaurantName: string;
@@ -128,7 +128,7 @@ export class PaymentService {
           destination: tenantStripeAccountId,
         },
         metadata: {
-          bookingId: bookingDetails.bookingId.toString(),
+          bookingId: bookingDetails.bookingId ? bookingDetails.bookingId.toString() : "guest_booking",
           customerEmail: bookingDetails.customerEmail,
           customerName: bookingDetails.customerName,
           restaurantName: bookingDetails.restaurantName,
