@@ -75,6 +75,7 @@ import { safeArray, safeObject } from "@/hooks/use-mobile-safe";
 import { MenuManagement } from "@/components/menu-management";
 import { useSettings } from "@/hooks/use-settings";
 import { useDate } from "@/contexts/date-context";
+import { getTableSVG } from "@/components/table-shapes/TableShapesSVG";
 
 export default function Dashboard() {
   const { user, restaurant, isLoading, logout } = useAuth();
@@ -768,6 +769,95 @@ export default function Dashboard() {
     );
   }
 
+  // Professional SVG table rendering component matching table-plan design
+  const SVGTableRenderer = ({
+    position,
+    tableId,
+    table,
+    bookings,
+  }: {
+    position: any;
+    tableId: number;
+    table: any;
+    bookings: any[];
+  }) => {
+    const capacity = position.capacity || table?.capacity || 4;
+    const tableNumber = position.tableNumber || table?.tableNumber || tableId;
+    const shape = position.shape || "square";
+
+    // Standardized table size for consistency - ALL TABLES SAME SIZE
+    const tableWidth = 50;
+    const tableHeight = 50;
+
+    // Determine if table is booked
+    const isBooked = bookings.length > 0;
+
+    return (
+      <div
+        style={{
+          position: "absolute",
+          left: `${position.x - tableWidth / 2}px`,
+          top: `${position.y - tableHeight / 2}px`,
+          transform: `rotate(${position.rotation || 0}deg)`,
+          transformOrigin: "center",
+          cursor: "pointer",
+          zIndex: 10,
+          transition: "transform 0.2s ease, box-shadow 0.2s ease",
+          width: `${tableWidth}px`,
+          height: `${tableHeight}px`,
+        }}
+        onClick={() => handleTableClick(table, bookings)}
+        className="group hover:scale-110"
+        title={
+          isBooked
+            ? `Table ${tableNumber} - ${bookings.length} booking(s): ${bookings.map((b) => `${b.customerName} (${b.guestCount} guests)`).join(", ")}`
+            : `Table ${tableNumber} - Available (${capacity} seats) - Click to book`
+        }
+      >
+        {/* SVG Table with professional design - standardized size */}
+        <div className="relative w-full h-full">
+          {getTableSVG(
+            shape,
+            capacity,
+            tableWidth,
+            tableHeight,
+            `drop-shadow-lg hover:drop-shadow-xl transition-all w-full h-full ${
+              isBooked ? "filter saturate-150" : ""
+            }`,
+          )}
+
+          {/* Table number overlay */}
+          <div
+            className="absolute inset-0 flex items-center justify-center text-white text-xs font-bold pointer-events-none z-15"
+            style={{ textShadow: "1px 1px 2px rgba(0,0,0,0.8)" }}
+          >
+            <div className="text-center">
+              <div>{tableNumber}</div>
+              <div className="text-[10px] opacity-90">{capacity} pers.</div>
+            </div>
+          </div>
+
+          {/* Booking status indicator */}
+          {isBooked && (
+            <div className="absolute -top-1 -right-1 w-3 h-3 bg-red-500 rounded-full border border-white animate-pulse"></div>
+          )}
+
+          {/* Booking details tooltip on hover */}
+          {isBooked && (
+            <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 opacity-0 group-hover:opacity-100 transition-opacity bg-gray-900 text-white text-xs rounded py-1 px-2 whitespace-nowrap z-20 pointer-events-none">
+              {bookings.map((booking, index) => (
+                <div key={booking.id}>
+                  {booking.startTime} - {booking.customerName} ({booking.guestCount})
+                  {index < bookings.length - 1 && <br />}
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      </div>
+    );
+  };
+
   const getTableStyle = (table: any, position: any) => {
     const baseStyle = {
       width: position?.shape === "rectangle" ? "80px" : "60px",
@@ -846,21 +936,28 @@ export default function Dashboard() {
                   ))}
                 </SelectContent>
               </Select>
+              <Button
+                onClick={() => setLocation("/table-plan")}
+                variant="outline"
+                size="sm"
+              >
+                <Edit className="h-4 w-4 mr-2" />
+                Edit Layout
+              </Button>
             </div>
           </div>
           <p className="text-sm text-gray-600">
-            {formatDate(selectedDate, "EEEE, MMMM d, yyyy")} - Red tables are
-            booked, green tables are available
+            {formatDate(selectedDate, "EEEE, MMMM d, yyyy")} - Click on tables to make bookings or view existing reservations
           </p>
         </CardHeader>
         <CardContent>
           <div
-            className="relative bg-gray-50 border-2 border-gray-200 rounded-lg"
-            style={{ height: "500px", minHeight: "400px" }}
+            className="relative bg-gray-100 border-2 border-dashed border-gray-300 rounded-lg"
+            style={{ height: "600px", minHeight: "400px" }}
           >
-            {/* Grid pattern */}
+            {/* Grid pattern matching table-plan design */}
             <div
-              className="absolute inset-0 opacity-10"
+              className="absolute inset-0 opacity-20"
               style={{
                 backgroundImage:
                   "radial-gradient(circle, #666 1px, transparent 1px)",
@@ -875,54 +972,36 @@ export default function Dashboard() {
                   <p className="text-lg font-medium">
                     No table layout configured
                   </p>
-                  <p className="text-sm">
-                    Visit the Table Plan page to set up your layout
+                  <p className="text-sm mb-4">
+                    Set up your restaurant layout to get started
                   </p>
+                  <Button
+                    onClick={() => setLocation("/table-plan")}
+                    className="bg-green-600 hover:bg-green-700"
+                  >
+                    <Plus className="h-4 w-4 mr-2" />
+                    Configure Layout
+                  </Button>
                 </div>
               </div>
             ) : (
               <>
-                {/* Placed Tables */}
+                {/* Room background */}
+                <div className="absolute inset-4 bg-white bg-opacity-30 rounded-lg border border-gray-300"></div>
+                
+                {/* Placed Tables using SVG renderer */}
                 {tablesWithPositions.map((table: any) => {
                   const position = tablePositions[table.id];
                   const tableBookings = getTableBookings(table.id);
 
                   return (
-                    <div
+                    <SVGTableRenderer
                       key={`positioned-table-${table.id}`}
-                      className={`shadow-lg transition-shadow group ${tableBookings.length === 0 ? "hover:shadow-xl hover:scale-105" : ""}`}
-                      title={
-                        tableBookings.length > 0
-                          ? `Table ${table.tableNumber} - ${tableBookings.length} booking(s): ${tableBookings.map((b) => `${b.customerName} (${b.guestCount} guests)`).join(", ")}`
-                          : `Table ${table.tableNumber} - Available (${table.capacity} seats) - Click to book`
-                      }
-                      onClick={() => handleTableClick(table, tableBookings)}
-                      style={{
-                        ...getTableStyle(table, position),
-                        cursor: "pointer",
-                      }}
-                    >
-                      <div className="text-center relative">
-                        <div className="font-bold">{table.tableNumber}</div>
-                        <div className="text-xs opacity-80">
-                          {tableBookings.length > 0
-                            ? `${tableBookings.map((b) => b.startTime).join(", ")}`
-                            : `${table.capacity} seats`}
-                        </div>
-
-                        {/* Booking details tooltip on hover */}
-                        {tableBookings.length > 0 && (
-                          <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 opacity-0 group-hover:opacity-100 transition-opacity bg-gray-900 text-white text-xs rounded py-1 px-2 whitespace-nowrap z-10 pointer-events-none">
-                            {tableBookings.map((booking) => (
-                              <div key={booking.id}>
-                                {booking.startTime} - {booking.customerName} (
-                                {booking.guestCount})
-                              </div>
-                            ))}
-                          </div>
-                        )}
-                      </div>
-                    </div>
+                      position={position}
+                      tableId={table.id}
+                      table={table}
+                      bookings={tableBookings}
+                    />
                   );
                 })}
               </>
@@ -940,10 +1019,24 @@ export default function Dashboard() {
                 <div className="w-4 h-4 bg-red-600 rounded"></div>
                 <span>Booked</span>
               </div>
+              <div className="flex items-center gap-2">
+                <div className="w-3 h-3 bg-red-500 rounded-full animate-pulse"></div>
+                <span>Active Booking</span>
+              </div>
             </div>
-            <div className="text-sm text-gray-600">
-              {tablesWithPositions.length} tables positioned •{" "}
-              {selectedDateBookings.length} bookings today
+            <div className="flex items-center gap-4">
+              <div className="text-sm text-gray-600">
+                {tablesWithPositions.length} tables positioned •{" "}
+                {selectedDateBookings.length} bookings today
+              </div>
+              <Button
+                onClick={() => setLocation("/table-plan")}
+                variant="outline"
+                size="sm"
+              >
+                <Edit className="h-4 w-4 mr-2" />
+                Edit Layout
+              </Button>
             </div>
           </div>
         </CardContent>
