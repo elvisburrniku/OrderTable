@@ -96,7 +96,12 @@ export class BrevoEmailService {
     const manageUrl = `${baseUrl}/manage-booking/${bookingId}/${bookingDetails.managementHash || bookingDetails.hash}`;
     const cancelUrl = `${baseUrl}/cancel-booking/${bookingId}/${bookingDetails.managementHash || bookingDetails.hash}`;
 
-    const paymentSection = (bookingDetails.requiresPayment || bookingDetails.paymentRequired) ? `
+    // Only show payment section if payment is required AND not yet paid
+    const isPaymentRequired = bookingDetails.requiresPayment || bookingDetails.paymentRequired;
+    const isPaymentPaid = bookingDetails.paymentStatus === 'paid' || bookingDetails.paymentPaidAt;
+    const showPaymentSection = isPaymentRequired && !isPaymentPaid;
+
+    const paymentSection = showPaymentSection ? `
       <div style="background-color: #fff3cd; border-radius: 8px; padding: 25px; margin: 25px 0; border-left: 4px solid #ffc107;">
         <h3 style="margin: 0 0 15px; font-size: 18px; color: #856404; font-weight: 600;">Payment Required</h3>
         <div style="display: grid; gap: 10px;">
@@ -127,7 +132,21 @@ export class BrevoEmailService {
           ` : ''}
         </div>
       </div>
-    ` : '';
+    ` : (isPaymentRequired && isPaymentPaid ? `
+      <div style="background-color: #d4edda; border-radius: 8px; padding: 25px; margin: 25px 0; border-left: 4px solid #28a745;">
+        <h3 style="margin: 0 0 15px; font-size: 18px; color: #155724; font-weight: 600;">Payment Confirmed</h3>
+        <div style="display: grid; gap: 10px;">
+          <div style="display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid #c3e6cb;">
+            <span style="color: #155724; font-weight: 500;">Amount Paid:</span>
+            <span style="color: #155724; font-weight: 600;">$${bookingDetails.paymentAmount || '0.00'}</span>
+          </div>
+          <div style="display: flex; justify-content: space-between; padding: 8px 0;">
+            <span style="color: #155724; font-weight: 500;">Status:</span>
+            <span style="color: #155724; font-weight: 600;">✓ Payment Confirmed</span>
+          </div>
+        </div>
+      </div>
+    ` : '');
 
     const htmlContent = `
       <!DOCTYPE html>
