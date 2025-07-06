@@ -343,28 +343,20 @@ export default function GuestBookingResponsive(props: any) {
   // Create payment intent for booking
   const createPaymentIntent = async (bookingData: any) => {
     try {
-      // Create secure payment token
-      const paymentData = {
-        bookingId: bookingData.id,
-        tenantId: parseInt(finalTenantId),
-        restaurantId: parseInt(finalRestaurantId),
-        amount: bookingData.paymentAmount,
-        currency: bookingData.currency || 'USD',
-        deadline: new Date(Date.now() + (bookingData.paymentDeadlineHours || 24) * 60 * 60 * 1000)
-      };
-
-      const response = await fetch('/api/secure/prepayment/payment-intent', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          token: null, // Will be generated server-side
-          bookingId: bookingData.id,
-          tenantId: parseInt(finalTenantId),
-          restaurantId: parseInt(finalRestaurantId),
-          amount: bookingData.paymentAmount,
-          currency: bookingData.currency || 'USD'
-        })
-      });
+      console.log('Creating payment intent for booking:', bookingData);
+      
+      const response = await fetch(
+        `/api/tenants/${finalTenantId}/restaurants/${finalRestaurantId}/bookings/${bookingData.id}/payment-intent`,
+        {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            amount: bookingData.paymentAmount,
+            currency: paymentInfo?.paymentSetup?.currency || 'EUR',
+            description: `Payment for booking at ${restaurant?.name || 'restaurant'} - ${bookingData.customerName}`
+          })
+        }
+      );
 
       if (!response.ok) {
         const errorData = await response.json();
@@ -372,8 +364,10 @@ export default function GuestBookingResponsive(props: any) {
       }
 
       const data = await response.json();
+      console.log('Payment intent created:', data);
       setClientSecret(data.clientSecret);
     } catch (error: any) {
+      console.error('Payment intent creation error:', error);
       setPaymentError(error.message);
       toast({
         title: "Payment Setup Failed",
@@ -1537,7 +1531,7 @@ export default function GuestBookingResponsive(props: any) {
                 )}
 
                 {/* Show payment form only after booking is created */}
-                {createdBookingData && clientSecret && (
+                {createdBookingData && (
                   <>
                     {paymentError && (
                       <Alert className="bg-red-50 border-red-200">
@@ -1548,29 +1542,36 @@ export default function GuestBookingResponsive(props: any) {
                       </Alert>
                     )}
 
-                    <Elements stripe={stripePromise} options={{ clientSecret }}>
-                      <PaymentForm
-                        bookingData={createdBookingData}
-                        paymentAmount={paymentAmount}
-                        currency={paymentInfo?.paymentSetup?.currency || 'EUR'}
-                        onPaymentSuccess={() => {
-                          setBookingId(createdBookingData?.id || null);
-                          setBookingCreated(true);
-                          toast({
-                            title: "Payment Successful!",
-                            description: "Your reservation has been confirmed and payment processed.",
-                          });
-                        }}
-                        onPaymentError={(error: string) => {
-                          setPaymentError(error);
-                          toast({
-                            title: "Payment Failed",
-                            description: error,
-                            variant: "destructive",
-                          });
-                        }}
-                      />
-                    </Elements>
+                    {!clientSecret ? (
+                      <div className="text-center">
+                        <div className="animate-spin w-8 h-8 border-4 border-blue-600 border-t-transparent rounded-full mx-auto mb-4" />
+                        <p className="text-gray-600">Setting up payment...</p>
+                      </div>
+                    ) : (
+                      <Elements stripe={stripePromise} options={{ clientSecret }}>
+                        <PaymentForm
+                          bookingData={createdBookingData}
+                          paymentAmount={paymentAmount}
+                          currency={paymentInfo?.paymentSetup?.currency || 'EUR'}
+                          onPaymentSuccess={() => {
+                            setBookingId(createdBookingData?.id || null);
+                            setBookingCreated(true);
+                            toast({
+                              title: "Payment Successful!",
+                              description: "Your reservation has been confirmed and payment processed.",
+                            });
+                          }}
+                          onPaymentError={(error: string) => {
+                            setPaymentError(error);
+                            toast({
+                              title: "Payment Failed",
+                              description: error,
+                              variant: "destructive",
+                            });
+                          }}
+                        />
+                      </Elements>
+                    )}
                   </>
                 )}
               </div>
