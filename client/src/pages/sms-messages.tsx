@@ -139,7 +139,7 @@ export default function SmsMessages() {
     mutationFn: async (messageData: any) => {
       return apiRequest("POST", `/api/tenants/${tenantId}/restaurants/${restaurantId}/sms-messages`, messageData);
     },
-    onSuccess: () => {
+    onSuccess: (data) => {
       queryClient.invalidateQueries({
         queryKey: [`/api/tenants/${tenantId}/restaurants/${restaurantId}/sms-messages`],
       });
@@ -153,15 +153,29 @@ export default function SmsMessages() {
         language: "english"
       });
       setShowCreateModal(false);
-      toast({
-        title: "Success",
-        description: "SMS message created successfully",
-      });
+      
+      if (data.status === "sent") {
+        toast({
+          title: "SMS Sent Successfully",
+          description: `Message delivered via Twilio. ID: ${data.smsResult?.messageId || 'N/A'}`,
+        });
+      } else if (data.status === "failed") {
+        toast({
+          title: "SMS Saved but Failed to Send",
+          description: `Error: ${data.error || 'Unknown error'}`,
+          variant: "destructive",
+        });
+      } else {
+        toast({
+          title: "SMS Message Saved",
+          description: "Message saved to database",
+        });
+      }
     },
-    onError: () => {
+    onError: (error: any) => {
       toast({
         title: "Error",
-        description: "Failed to create SMS message",
+        description: error.message || "Failed to create SMS message",
         variant: "destructive",
       });
     },

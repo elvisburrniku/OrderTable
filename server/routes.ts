@@ -3931,6 +3931,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
           return res.status(404).json({ message: "Restaurant not found" });
         }
 
+        // Validate required fields
+        if (!req.body.receivers || !req.body.content) {
+          return res.status(400).json({ 
+            message: "Phone number and message content are required" 
+          });
+        }
+
         // Map frontend data to backend structure
         const messageData = {
           phoneNumber: req.body.receivers, // Map receivers to phoneNumber
@@ -3939,8 +3946,54 @@ export async function registerRoutes(app: Express): Promise<Server> {
           cost: "0.08", // Default cost
         };
 
+        // Save message to database first
         const message = await storage.createSmsMessage(restaurantId, tenantId, messageData);
-        res.json(message);
+
+        // Send SMS via Twilio
+        try {
+          const { twilioSMSService } = await import("./twilio-sms-service.js");
+          
+          const smsData = {
+            to: messageData.phoneNumber,
+            message: messageData.message,
+            type: messageData.type,
+            restaurantId,
+            tenantId
+          };
+
+          const smsResult = await twilioSMSService.sendSMS(smsData);
+          
+          if (smsResult.success) {
+            // Update message status to sent
+            await storage.updateSmsMessageStatus(message.id, "sent");
+            res.json({
+              ...message,
+              status: "sent",
+              smsResult: {
+                messageId: smsResult.messageId,
+                cost: smsResult.cost,
+                note: "SMS sent successfully via Twilio"
+              }
+            });
+          } else {
+            // Update message status to failed
+            await storage.updateSmsMessageStatus(message.id, "failed", smsResult.error);
+            res.json({
+              ...message,
+              status: "failed",
+              error: smsResult.error
+            });
+          }
+        } catch (smsError) {
+          console.error("SMS sending error:", smsError);
+          // Update message status to failed
+          await storage.updateSmsMessageStatus(message.id, "failed", smsError.message);
+          res.json({
+            ...message,
+            status: "failed",
+            error: "Failed to send SMS: " + smsError.message
+          });
+        }
       } catch (error) {
         res.status(400).json({ message: "Invalid message data" });
       }
