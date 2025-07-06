@@ -28,6 +28,7 @@ A comprehensive restaurant booking management system with React frontend and Exp
 - **Environment Setup**: Application now runs cleanly in Replit environment with proper security practices and client/server separation maintained
 - **Service Verification**: Confirmed all integrated services working correctly including email (Brevo), SMS (Twilio), database operations, and payment processing
 - **Stripe Integration Fix**: Fixed guest booking page Stripe integration error by correcting environment variable name from VITE_STRIPE_PUBLIC_KEY to VITE_STRIPE_PUBLISHABLE_KEY
+- **Payment Setup Logic Fix**: Verified and fixed payment setup detection in guest booking system - API correctly returns requiresPayment:false when no payment setup exists, preventing erroneous payment steps
 - **2025-07-06**: ✅ PAYMENT SETUP EDITING & COMPREHENSIVE PAYMENT TYPES SUPPORT COMPLETED - Fixed payment setup editing functionality and enabled all payment types for guest bookings
 - **Payment Setup Editing Fix**: Fixed missing PUT endpoint and getPaymentSetupById storage method enabling proper payment setup editing functionality
 - **All Payment Types Support**: Enhanced guest booking system to support all payment types: deposit, prepayment, reserve, and no_show_fee instead of only prepayment
