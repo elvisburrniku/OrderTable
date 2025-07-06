@@ -22,6 +22,14 @@ A comprehensive restaurant booking management system with React frontend and Exp
 - Kitchen order management
 
 ## Recent Changes
+- **2025-07-06**: ✅ PAYMENT SETUP EDITING & COMPREHENSIVE PAYMENT TYPES SUPPORT COMPLETED - Fixed payment setup editing functionality and enabled all payment types for guest bookings
+- **Payment Setup Editing Fix**: Fixed missing PUT endpoint and getPaymentSetupById storage method enabling proper payment setup editing functionality
+- **All Payment Types Support**: Enhanced guest booking system to support all payment types: deposit, prepayment, reserve, and no_show_fee instead of only prepayment
+- **Enhanced Payment Display**: Updated guest booking form and PaymentForm component to show specific payment type information with descriptions and visual indicators
+- **Currency System**: Confirmed EUR currency formatting throughout payment system with proper tenant settings integration
+- **API Enhancement**: Updated backend routes to recognize and process all payment types in guest booking flow with proper amount calculations
+- **Storage Layer Enhancement**: Added missing getPaymentSetupById method to both database and memory storage implementations
+- **Payment Invoice System**: Maintained all existing invoice functionality while enhancing payment type support
 - **2025-07-06**: ✅ BOOKING MANAGEMENT URL PATTERN ENHANCEMENT COMPLETED - Extended support for path-based hash URLs and cancel-booking functionality
 - **Enhanced URL Support**: Added support for /manage-booking/{bookingId}/{hash} URL pattern where hash is in the path instead of query parameter
 - **Cancel Booking Integration**: Added /cancel-booking/{bookingId}/{hash} route pattern with automatic action detection for cancellation links

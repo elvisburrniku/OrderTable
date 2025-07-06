@@ -2421,6 +2421,15 @@ export class DatabaseStorage implements IStorage {
       .orderBy(desc(paymentSetups.createdAt));
     return paymentSetupsData;
   }
+
+  async getPaymentSetupById(id: number): Promise<any> {
+    if (!this.db) throw new Error("Database connection not available");
+    const result = await this.db
+      .select()
+      .from(paymentSetups)
+      .where(eq(paymentSetups.id, id));
+    return result[0];
+  }
   async createPaymentSetup(setup: any): Promise<any> {
     if (!this.db) throw new Error("Database connection not available");
     const result = await this.db

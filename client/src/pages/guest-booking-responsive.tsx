@@ -55,9 +55,10 @@ interface PaymentFormProps {
   bookingData: any | null;
   paymentAmount: number;
   currency: string;
+  paymentSetup?: any;
 }
 
-const PaymentForm = ({ onPaymentSuccess, onPaymentError, bookingData, paymentAmount, currency }: PaymentFormProps) => {
+const PaymentForm = ({ onPaymentSuccess, onPaymentError, bookingData, paymentAmount, currency, paymentSetup }: PaymentFormProps) => {
   const stripe = useStripe();
   const elements = useElements();
   const [isProcessing, setIsProcessing] = useState(false);
@@ -140,16 +141,36 @@ const PaymentForm = ({ onPaymentSuccess, onPaymentError, bookingData, paymentAmo
     }
   };
 
+  const getPaymentTypeTitle = () => {
+    if (paymentSetup?.type === 'deposit') return 'Complete Deposit Payment';
+    if (paymentSetup?.type === 'prepayment') return 'Complete Prepayment';
+    if (paymentSetup?.type === 'reserve') return 'Pay Reservation Fee';
+    if (paymentSetup?.type === 'no_show_fee') return 'Pay No-Show Fee';
+    return 'Complete Payment';
+  };
+
   return (
     <Card className="w-full max-w-md mx-auto">
       <CardHeader>
         <CardTitle className="flex items-center gap-2">
           <CreditCard className="h-5 w-5" />
-          Complete Payment
+          {getPaymentTypeTitle()}
         </CardTitle>
         <CardDescription>
-          Secure payment to confirm your booking
+          {paymentSetup?.description || 'Secure payment to confirm your booking'}
         </CardDescription>
+        {paymentSetup && (
+          <div className="mt-2 p-3 bg-blue-50 rounded-lg border border-blue-200">
+            <div className="text-sm text-blue-800">
+              <strong>{paymentSetup.name}</strong>
+              {paymentSetup.type && (
+                <span className="ml-2 text-xs bg-blue-100 px-2 py-1 rounded-full capitalize">
+                  {paymentSetup.type.replace('_', ' ')}
+                </span>
+              )}
+            </div>
+          </div>
+        )}
       </CardHeader>
       <CardContent className="space-y-6">
         {/* Booking Summary */}
@@ -1764,6 +1785,7 @@ export default function GuestBookingResponsive(props: any) {
                       bookingData={null} // No booking created yet - payment first
                       paymentAmount={paymentAmount}
                       currency={currency}
+                      paymentSetup={paymentInfo?.paymentSetup}
                       onPaymentSuccess={() => {
                         // Clear any previous payment errors
                         setPaymentError(null);
@@ -1840,7 +1862,11 @@ export default function GuestBookingResponsive(props: any) {
               <div className="space-y-6">
                 <div className="text-center">
                   <h2 className="text-xl md:text-2xl font-bold text-gray-900 mb-2">
-                    Payment Required
+                    {paymentInfo?.paymentSetup?.type === 'deposit' && 'Deposit Required'}
+                    {paymentInfo?.paymentSetup?.type === 'prepayment' && 'Prepayment Required'}
+                    {paymentInfo?.paymentSetup?.type === 'reserve' && 'Reservation Fee Required'}
+                    {paymentInfo?.paymentSetup?.type === 'no_show_fee' && 'No-Show Fee Required'}
+                    {!paymentInfo?.paymentSetup?.type && 'Payment Required'}
                   </h2>
                   <Alert className="bg-yellow-50 border-yellow-200">
                     <AlertCircle className="h-4 w-4" />

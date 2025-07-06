@@ -5968,9 +5968,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
         let currency = "EUR";
 
         if (paymentSetups && paymentSetups.length > 0) {
-          // Find active prepayment setup
+          // Find active payment setup - support all types (deposit, prepayment, reserve, no_show_fee)
           paymentSetup = paymentSetups.find(setup => 
-            setup.type === 'prepayment' && setup.method === 'capture_amount'
+            ['deposit', 'prepayment', 'reserve', 'no_show_fee'].includes(setup.type) && 
+            setup.method === 'capture_amount'
           );
 
           if (paymentSetup) {
@@ -6241,12 +6242,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
         // Get payment setups
         const paymentSetups = await storage.getPaymentSetupsByRestaurant(restaurantId);
         
-        // Find active prepayment setup
-        const prepaymentSetup = paymentSetups.find(setup => 
-          setup.type === 'prepayment' && setup.method === 'capture_amount'
+        // Find active payment setup - support all types (deposit, prepayment, reserve, no_show_fee)
+        const activePaymentSetup = paymentSetups.find(setup => 
+          ['deposit', 'prepayment', 'reserve', 'no_show_fee'].includes(setup.type) && 
+          setup.method === 'capture_amount'
         );
 
-        if (!prepaymentSetup) {
+        if (!activePaymentSetup) {
           return res.json({ 
             requiresPayment: false,
             paymentSetup: null
@@ -6261,14 +6263,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
           requiresPayment: true,
           stripeConnectReady,
           paymentSetup: {
-            id: prepaymentSetup.id,
-            name: prepaymentSetup.name,
-            type: prepaymentSetup.type,
-            amount: prepaymentSetup.amount,
-            currency: prepaymentSetup.currency,
-            priceUnit: prepaymentSetup.priceUnit,
-            description: prepaymentSetup.description,
-            cancellationNotice: prepaymentSetup.cancellationNotice
+            id: activePaymentSetup.id,
+            name: activePaymentSetup.name,
+            type: activePaymentSetup.type,
+            amount: activePaymentSetup.amount,
+            currency: activePaymentSetup.currency,
+            priceUnit: activePaymentSetup.priceUnit,
+            description: activePaymentSetup.description,
+            cancellationNotice: activePaymentSetup.cancellationNotice
           }
         });
       } catch (error) {

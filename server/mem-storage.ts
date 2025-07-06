@@ -782,6 +782,10 @@ export class MemoryStorage implements IStorage {
       .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
   }
 
+  async getPaymentSetupById(id: number): Promise<any> {
+    return this.paymentSetups.find(setup => setup.id === id);
+  }
+
   async createPaymentSetup(setup: any): Promise<any> {
     const newSetup = { 
       id: this.nextId++, 
