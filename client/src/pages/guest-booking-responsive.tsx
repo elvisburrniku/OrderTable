@@ -540,14 +540,14 @@ export default function GuestBookingResponsive(props: any) {
       ? [{ title: "Experience", icon: Sparkles }]
       : []),
     { title: "Details", icon: User },
-    ...(paymentInfo?.requiresPayment && paymentInfo?.stripeConnectReady
+    ...(paymentInfo?.requiresPayment && (paymentInfo?.stripeConnectReady || paymentInfo?.paymentSetup)
       ? [{ title: "Payment", icon: CreditCard }]
       : []),
   ];
 
   // Auto-create payment intent when payment step is reached
   useEffect(() => {
-    const hasPaymentStep = paymentInfo?.requiresPayment && paymentInfo?.stripeConnectReady;
+    const hasPaymentStep = paymentInfo?.requiresPayment && (paymentInfo?.stripeConnectReady || paymentInfo?.paymentSetup);
     const isPaymentStep = currentStep === steps.length - 1 && hasPaymentStep;
     
     if (isPaymentStep && !clientSecret && !paymentError && customerData.name && customerData.email) {
@@ -640,10 +640,11 @@ export default function GuestBookingResponsive(props: any) {
 
   // Debug logging
   console.log(`Steps configuration: ${steps.map(s => s.title).join(', ')}`);
-  console.log(`Current step: ${currentStep}, Payment required: ${paymentInfo?.requiresPayment}, Stripe ready: ${paymentInfo?.stripeConnectReady}`);
+  console.log(`Current step: ${currentStep}, Payment required: ${paymentInfo?.requiresPayment}, Stripe ready: ${paymentInfo?.stripeConnectReady}, Payment setup:`, paymentInfo?.paymentSetup);
+  console.log('Full payment info:', paymentInfo);
 
   const handleNext = () => {
-    const hasPaymentStep = paymentInfo?.requiresPayment && paymentInfo?.stripeConnectReady;
+    const hasPaymentStep = paymentInfo?.requiresPayment && (paymentInfo?.stripeConnectReady || paymentInfo?.paymentSetup);
     const detailsStepIndex = seasonalThemes.length > 0 ? 4 : 3;
 
     if (currentStep < steps.length - 1) {
@@ -686,7 +687,7 @@ export default function GuestBookingResponsive(props: any) {
 
   const isStepValid = () => {
     const hasThemes = seasonalThemes.length > 0;
-    const hasPaymentStep = paymentInfo?.requiresPayment && paymentInfo?.stripeConnectReady;
+    const hasPaymentStep = paymentInfo?.requiresPayment && (paymentInfo?.stripeConnectReady || paymentInfo?.paymentSetup);
 
     switch (currentStep) {
       case 0:
