@@ -618,6 +618,7 @@ export default function GuestBookingResponsive(props: any) {
             requiresPayment: true,
             paymentAmount: parsedData.paymentAmount,
             paymentDeadlineHours: 24,
+            paymentIntentId: paymentIntentId, // Include payment intent ID for webhook matching
           };
           
           // Only create booking if we have the necessary data

@@ -6084,8 +6084,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
         let paymentStatus = "pending";
 
         if (requiresPayment && paymentAmount && paymentAmount > 0) {
-          bookingStatus = "waiting_payment"; // New status for unpaid bookings requiring payment
-          paymentStatus = "pending";
+          // If payment intent ID is provided, payment was already completed
+          if (req.body.paymentIntentId) {
+            bookingStatus = "confirmed";
+            paymentStatus = "paid";
+          } else {
+            bookingStatus = "waiting_payment"; // New status for unpaid bookings requiring payment
+            paymentStatus = "pending";
+          }
         } else {
           paymentStatus = "not_required";
         }
@@ -6109,6 +6115,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           paymentStatus,
           currency: currency,
           paymentSetupId: paymentSetup?.id || null,
+          paymentIntentId: req.body.paymentIntentId || null, // Store payment intent ID if provided
         };
 
         // Validate required fields
