@@ -1,7 +1,7 @@
-import { TransactionalEmailsApi, SendSmtpEmail } from '@getbrevo/brevo';
-import { BookingHash } from './booking-hash';
-import { PaymentTokenService } from './payment-token-service';
-import { systemSettings } from './system-settings';
+import { TransactionalEmailsApi, SendSmtpEmail } from "@getbrevo/brevo";
+import { BookingHash } from "./booking-hash";
+import { PaymentTokenService } from "./payment-token-service";
+import { systemSettings } from "./system-settings";
 
 export class BrevoEmailService {
   private apiInstance: TransactionalEmailsApi | null = null;
@@ -15,34 +15,37 @@ export class BrevoEmailService {
       this.apiInstance = new TransactionalEmailsApi();
       // Set the default headers for authentication
       this.apiInstance.defaultHeaders = {
-        'api-key': apiKey
+        "api-key": apiKey,
       };
     } else {
-      console.log('BREVO_API_KEY not found - email notifications disabled');
+      console.log("BREVO_API_KEY not found - email notifications disabled");
     }
   }
 
   private async checkEnabled(): Promise<boolean> {
     if (!this.isEnabled || !this.apiInstance) {
-      console.log('Email service not enabled - skipping email notification');
+      console.log("Email service not enabled - skipping email notification");
       return false;
     }
 
     // Check system settings for email notifications
-    const emailNotificationsEnabled = await systemSettings.isFeatureEnabled('enable_email_notifications');
+    const emailNotificationsEnabled = await systemSettings.isFeatureEnabled(
+      "enable_email_notifications",
+    );
     if (!emailNotificationsEnabled) {
-      console.log('Email notifications disabled in system settings');
+      console.log("Email notifications disabled in system settings");
       return false;
     }
 
     return true;
   }
 
-
-
-  private generateICSContent(customerName: string, bookingDetails: any): string {
+  private generateICSContent(
+    customerName: string,
+    bookingDetails: any,
+  ): string {
     const startDate = new Date(bookingDetails.bookingDate);
-    const [hours, minutes] = bookingDetails.startTime.split(':');
+    const [hours, minutes] = bookingDetails.startTime.split(":");
     startDate.setHours(parseInt(hours), parseInt(minutes), 0, 0);
 
     const endDate = new Date(startDate);
@@ -51,34 +54,34 @@ export class BrevoEmailService {
     const formatDate = (date: Date) => {
       // Format as local time without timezone conversion
       const year = date.getFullYear();
-      const month = String(date.getMonth() + 1).padStart(2, '0');
-      const day = String(date.getDate()).padStart(2, '0');
-      const hour = String(date.getHours()).padStart(2, '0');
-      const minute = String(date.getMinutes()).padStart(2, '0');
-      const second = String(date.getSeconds()).padStart(2, '0');
+      const month = String(date.getMonth() + 1).padStart(2, "0");
+      const day = String(date.getDate()).padStart(2, "0");
+      const hour = String(date.getHours()).padStart(2, "0");
+      const minute = String(date.getMinutes()).padStart(2, "0");
+      const second = String(date.getSeconds()).padStart(2, "0");
       return `${year}${month}${day}T${hour}${minute}${second}`;
     };
 
     const icsContent = [
-      'BEGIN:VCALENDAR',
-      'VERSION:2.0',
-      'PRODID:-//Restaurant Booking System//EN',
-      'BEGIN:VEVENT',
+      "BEGIN:VCALENDAR",
+      "VERSION:2.0",
+      "PRODID:-//Restaurant Booking System//EN",
+      "BEGIN:VEVENT",
       `UID:booking-${bookingDetails.id || Date.now()}@restaurant.com`,
       `DTSTART:${formatDate(startDate)}`,
       `DTEND:${formatDate(endDate)}`,
       `SUMMARY:Restaurant Reservation - ${customerName}`,
-      `DESCRIPTION:Restaurant reservation for ${bookingDetails.guestCount} guests${bookingDetails.specialRequests ? '\\nSpecial requests: ' + bookingDetails.specialRequests : ''}`,
-      'LOCATION:Restaurant',
-      'STATUS:CONFIRMED',
-      'BEGIN:VALARM',
-      'TRIGGER:-PT30M',
-      'ACTION:DISPLAY',
-      'DESCRIPTION:Restaurant reservation reminder',
-      'END:VALARM',
-      'END:VEVENT',
-      'END:VCALENDAR'
-    ].join('\r\n');
+      `DESCRIPTION:Restaurant reservation for ${bookingDetails.guestCount} guests${bookingDetails.specialRequests ? "\\nSpecial requests: " + bookingDetails.specialRequests : ""}`,
+      "LOCATION:Restaurant",
+      "STATUS:CONFIRMED",
+      "BEGIN:VALARM",
+      "TRIGGER:-PT30M",
+      "ACTION:DISPLAY",
+      "DESCRIPTION:Restaurant reservation reminder",
+      "END:VALARM",
+      "END:VEVENT",
+      "END:VCALENDAR",
+    ].join("\r\n");
 
     return icsContent;
   }
@@ -89,39 +92,44 @@ export class BrevoEmailService {
     bookingDetails: any,
   ) {
     const subject = `Booking Confirmation - ${bookingDetails.restaurantName || "Restaurant"}`;
-    
+
     // Generate management and cancel URLs
-    const baseUrl = process.env.BASE_URL || 'http://localhost:5000';
+    const baseUrl = process.env.BASE_URL || "http://localhost:5000";
     const bookingId = bookingDetails.id;
     const manageUrl = `${baseUrl}/manage-booking/${bookingId}/${bookingDetails.managementHash || bookingDetails.hash}`;
     const cancelUrl = `${baseUrl}/cancel-booking/${bookingId}/${bookingDetails.managementHash || bookingDetails.hash}`;
 
     // Only show payment section if payment is required AND not yet paid
-    const isPaymentRequired = bookingDetails.requiresPayment || bookingDetails.paymentRequired;
-    const isPaymentPaid = bookingDetails.paymentStatus === 'paid' || bookingDetails.paymentPaidAt;
+    const isPaymentRequired =
+      bookingDetails.requiresPayment || bookingDetails.paymentRequired;
+    const isPaymentPaid =
+      bookingDetails.paymentStatus === "paid" || bookingDetails.paymentPaidAt;
     const showPaymentSection = isPaymentRequired && !isPaymentPaid;
 
-    const paymentSection = showPaymentSection ? `
+    const paymentSection = showPaymentSection
+      ? `
       <div style="background-color: #fff3cd; border-radius: 8px; padding: 25px; margin: 25px 0; border-left: 4px solid #ffc107;">
         <h3 style="margin: 0 0 15px; font-size: 18px; color: #856404; font-weight: 600;">Payment Required</h3>
         <div style="display: grid; gap: 10px;">
           <div style="display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid #f5e79e;">
             <span style="color: #856404; font-weight: 500;">Amount:</span>
-            <span style="color: #856404; font-weight: 600;">$${bookingDetails.paymentAmount || '0.00'}</span>
+            <span style="color: #856404; font-weight: 600;">$${bookingDetails.paymentAmount || "0.00"}</span>
           </div>
           <div style="display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid #f5e79e;">
             <span style="color: #856404; font-weight: 500;">Payment Deadline:</span>
             <span style="color: #856404; font-weight: 600;">${bookingDetails.paymentDeadlineHours || bookingDetails.paymentDeadline || 24} hours before booking</span>
           </div>
-          ${bookingDetails.requiresPayment && bookingDetails.paymentAmount ? `
+          ${
+            bookingDetails.requiresPayment && bookingDetails.paymentAmount
+              ? `
             <div style="text-align: center; margin-top: 15px;">
               <a href="${PaymentTokenService.generateSecurePaymentUrl(
                 bookingDetails.id,
                 bookingDetails.tenantId,
                 bookingDetails.restaurantId,
                 bookingDetails.paymentAmount,
-                'USD',
-                baseUrl
+                "USD",
+                baseUrl,
               )}" style="background-color: #ffc107; color: #212529; padding: 12px 24px; text-decoration: none; border-radius: 6px; font-weight: 600; display: inline-block;">
                 Complete Payment Now
               </a>
@@ -129,16 +137,20 @@ export class BrevoEmailService {
                 Click the button above to securely complete your payment
               </p>
             </div>
-          ` : ''}
+          `
+              : ""
+          }
         </div>
       </div>
-    ` : (isPaymentRequired && isPaymentPaid ? `
+    `
+      : isPaymentRequired && isPaymentPaid
+        ? `
       <div style="background-color: #d4edda; border-radius: 8px; padding: 25px; margin: 25px 0; border-left: 4px solid #28a745;">
         <h3 style="margin: 0 0 15px; font-size: 18px; color: #155724; font-weight: 600;">Payment Confirmed</h3>
         <div style="display: grid; gap: 10px;">
           <div style="display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid #c3e6cb;">
             <span style="color: #155724; font-weight: 500;">Amount Paid:</span>
-            <span style="color: #155724; font-weight: 600;">$${bookingDetails.paymentAmount || '0.00'}</span>
+            <span style="color: #155724; font-weight: 600;">$${bookingDetails.paymentAmount || "0.00"}</span>
           </div>
           <div style="display: flex; justify-content: space-between; padding: 8px 0;">
             <span style="color: #155724; font-weight: 500;">Status:</span>
@@ -146,7 +158,8 @@ export class BrevoEmailService {
           </div>
         </div>
       </div>
-    ` : '');
+    `
+        : "";
 
     const htmlContent = `
       <!DOCTYPE html>
@@ -188,16 +201,20 @@ export class BrevoEmailService {
                     <span style="color: #666; font-weight: 500;">Party Size:</span>
                     <span style="color: #333; font-weight: 600;">${bookingDetails.guestCount} guests</span>
                   </div>
-                  <div style="display: flex; justify-content: space-between; padding: 8px 0; ${bookingDetails.tableNumber ? 'border-bottom: 1px solid #e9ecef;' : ''}">
+                  <div style="display: flex; justify-content: space-between; padding: 8px 0; ${bookingDetails.tableNumber ? "border-bottom: 1px solid #e9ecef;" : ""}">
                     <span style="color: #666; font-weight: 500;">Table:</span>
-                    <span style="color: #333; font-weight: 600;">${bookingDetails.tableNumber || 'To be assigned'}</span>
+                    <span style="color: #333; font-weight: 600;">${bookingDetails.tableNumber || "To be assigned"}</span>
                   </div>
-                  ${bookingDetails.specialRequests || bookingDetails.notes ? `
+                  ${
+                    bookingDetails.specialRequests || bookingDetails.notes
+                      ? `
                     <div style="display: flex; justify-content: space-between; padding: 8px 0;">
                       <span style="color: #666; font-weight: 500;">Special Requests:</span>
                       <span style="color: #333; font-weight: 600;">${bookingDetails.specialRequests || bookingDetails.notes}</span>
                     </div>
-                  ` : ''}
+                  `
+                      : ""
+                  }
                 </div>
               </div>
 
@@ -219,7 +236,7 @@ export class BrevoEmailService {
               </p>
 
               <p style="margin: 30px 0 10px; font-size: 16px; color: #333;">Best regards,</p>
-              <p style="margin: 0; font-size: 16px; color: #333; font-weight: 600;">Trofta</p>
+              <p style="margin: 0; font-size: 16px; color: #333; font-weight: 600;">${bookingDetails.restaurantName || "Restaurant"}</p>
 
               <!-- Booking ID at bottom -->
               <div style="margin-top: 30px; padding-top: 20px; border-top: 1px solid #e5e5e5;">
@@ -233,7 +250,7 @@ export class BrevoEmailService {
             <div style="background-color: #f8f9fa; padding: 20px 30px; border-top: 1px solid #e5e5e5;">
               <p style="margin: 0; font-size: 12px; color: #666; line-height: 1.5; text-align: center;">
                 Your personal data is processed in order to improve the customer experience. 
-                You can at any time withdraw your consent or have your personal data deleted by contacting Trofta.
+                You can at any time withdraw your consent or have your personal data deleted by contacting ${bookingDetails.restaurantName || "Restaurant"}.
               </p>
             </div>
           </div>
@@ -243,50 +260,70 @@ export class BrevoEmailService {
 
     // Generate ICS calendar file
     const icsContent = this.generateICSContent(customerName, bookingDetails);
-    const icsBase64 = Buffer.from(icsContent).toString('base64');
+    const icsBase64 = Buffer.from(icsContent).toString("base64");
 
-    const senderEmail = process.env.BREVO_SENDER_EMAIL || "noreply@restaurant.com";
-    console.log('Using sender email:', senderEmail);
+    const senderEmail =
+      process.env.BREVO_SENDER_EMAIL || "noreply@restaurant.com";
+    console.log("Using sender email:", senderEmail);
 
     const sendSmtpEmail = new SendSmtpEmail();
     sendSmtpEmail.subject = subject;
     sendSmtpEmail.htmlContent = htmlContent;
     sendSmtpEmail.sender = {
-      name: "Trofta",
-      email: senderEmail
+      name: bookingDetails.restaurantName || "Restaurant",
+      email: senderEmail,
     };
 
-    sendSmtpEmail.to = [{
-      email: customerEmail,
-      name: customerName
-    }];
+    sendSmtpEmail.to = [
+      {
+        email: customerEmail,
+        name: customerName,
+      },
+    ];
 
     // Add ICS calendar attachment
-    sendSmtpEmail.attachment = [{
-      name: `booking${bookingId}.ics`,
-      content: icsBase64
-    }];
+    sendSmtpEmail.attachment = [
+      {
+        name: `booking${bookingId}.ics`,
+        content: icsBase64,
+      },
+    ];
 
     try {
       const result = await this.apiInstance!.sendTransacEmail(sendSmtpEmail);
-      console.log('Booking confirmation email sent:', result);
+      console.log("Booking confirmation email sent:", result);
       return result;
     } catch (error) {
-      console.error('Error sending booking confirmation email:', error);
+      console.error("Error sending booking confirmation email:", error);
       throw error;
     }
   }
 
-  async sendBookingChangeRequest(restaurantEmail: string, changeRequestDetails: any, bookingDetails: any) {
+  async sendBookingChangeRequest(
+    restaurantEmail: string,
+    changeRequestDetails: any,
+    bookingDetails: any,
+  ) {
     if (!this.checkEnabled()) return;
 
     const sendSmtpEmail = new SendSmtpEmail();
 
-    const baseUrl = process.env.APP_BASE_URL || process.env.REPLIT_DEV_DOMAIN 
-      ? `https://${process.env.REPLIT_DEV_DOMAIN}` 
-      : 'http://localhost:5000';
-    const approveHash = BookingHash.generateHash(changeRequestDetails.id, bookingDetails.tenantId, bookingDetails.restaurantId, 'approve');
-    const rejectHash = BookingHash.generateHash(changeRequestDetails.id, bookingDetails.tenantId, bookingDetails.restaurantId, 'reject');
+    const baseUrl =
+      process.env.APP_BASE_URL || process.env.REPLIT_DEV_DOMAIN
+        ? `https://${process.env.REPLIT_DEV_DOMAIN}`
+        : "http://localhost:5000";
+    const approveHash = BookingHash.generateHash(
+      changeRequestDetails.id,
+      bookingDetails.tenantId,
+      bookingDetails.restaurantId,
+      "approve",
+    );
+    const rejectHash = BookingHash.generateHash(
+      changeRequestDetails.id,
+      bookingDetails.tenantId,
+      bookingDetails.restaurantId,
+      "reject",
+    );
 
     sendSmtpEmail.subject = "Booking Change Request";
     sendSmtpEmail.htmlContent = `
@@ -335,30 +372,46 @@ export class BrevoEmailService {
               <div style="background-color: #fff3cd; border-radius: 8px; padding: 25px; margin: 25px 0; border-left: 4px solid #ffc107;">
                 <h3 style="margin: 0 0 15px; font-size: 18px; color: #333; font-weight: 600;">Requested Changes</h3>
                 <div style="display: grid; gap: 10px;">
-                  ${changeRequestDetails.requestedDate ? `
+                  ${
+                    changeRequestDetails.requestedDate
+                      ? `
                     <div style="display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid #f0d89e;">
                       <span style="color: #666; font-weight: 500;">New Date:</span>
                       <span style="color: #333; font-weight: 600;">${new Date(changeRequestDetails.requestedDate).toLocaleDateString()}</span>
                     </div>
-                  ` : ''}
-                  ${changeRequestDetails.requestedTime ? `
+                  `
+                      : ""
+                  }
+                  ${
+                    changeRequestDetails.requestedTime
+                      ? `
                     <div style="display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid #f0d89e;">
                       <span style="color: #666; font-weight: 500;">New Time:</span>
                       <span style="color: #333; font-weight: 600;">${changeRequestDetails.requestedTime}</span>
                     </div>
-                  ` : ''}
-                  ${changeRequestDetails.requestedGuestCount ? `
+                  `
+                      : ""
+                  }
+                  ${
+                    changeRequestDetails.requestedGuestCount
+                      ? `
                     <div style="display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid #f0d89e;">
                       <span style="color: #666; font-weight: 500;">New Party Size:</span>
                       <span style="color: #333; font-weight: 600;">${changeRequestDetails.requestedGuestCount} guests</span>
                     </div>
-                  ` : ''}
-                  ${changeRequestDetails.requestNotes ? `
+                  `
+                      : ""
+                  }
+                  ${
+                    changeRequestDetails.requestNotes
+                      ? `
                     <div style="display: flex; justify-content: space-between; padding: 8px 0;">
                       <span style="color: #666; font-weight: 500;">Notes:</span>
                       <span style="color: #333; font-weight: 600;">${changeRequestDetails.requestNotes}</span>
                     </div>
-                  ` : ''}
+                  `
+                      : ""
+                  }
                 </div>
               </div>
 
@@ -384,40 +437,51 @@ export class BrevoEmailService {
       </html>
     `;
 
-    const senderEmail = process.env.BREVO_SENDER_EMAIL || "noreply@restaurant.com";
-    console.log('Using sender email:', senderEmail);
+    const senderEmail =
+      process.env.BREVO_SENDER_EMAIL || "noreply@restaurant.com";
+    console.log("Using sender email:", senderEmail);
 
     sendSmtpEmail.sender = {
       name: "Restaurant Booking System",
-      email: senderEmail
+      email: senderEmail,
     };
 
-    sendSmtpEmail.to = [{
-      email: restaurantEmail,
-      name: "Restaurant Team"
-    }];
+    sendSmtpEmail.to = [
+      {
+        email: restaurantEmail,
+        name: "Restaurant Team",
+      },
+    ];
 
     try {
       const result = await this.apiInstance!.sendTransacEmail(sendSmtpEmail);
-      console.log('Booking change request email sent:', result);
+      console.log("Booking change request email sent:", result);
       return result;
     } catch (error) {
-      console.error('Error sending booking change request email:', error);
+      console.error("Error sending booking change request email:", error);
       throw error;
     }
   }
 
-  async sendChangeRequestResponse(customerEmail: string, customerName: string, approved: boolean, bookingDetails: any, changeDetails: any, restaurantResponse?: string) {
+  async sendChangeRequestResponse(
+    customerEmail: string,
+    customerName: string,
+    approved: boolean,
+    bookingDetails: any,
+    changeDetails: any,
+    restaurantResponse?: string,
+  ) {
     if (!this.checkEnabled()) return;
 
     const sendSmtpEmail = new SendSmtpEmail();
 
-    const baseUrl = process.env.APP_BASE_URL || process.env.REPLIT_DEV_DOMAIN 
-      ? `https://${process.env.REPLIT_DEV_DOMAIN}` 
-      : 'http://localhost:5000';
+    const baseUrl =
+      process.env.APP_BASE_URL || process.env.REPLIT_DEV_DOMAIN
+        ? `https://${process.env.REPLIT_DEV_DOMAIN}`
+        : "http://localhost:5000";
 
     // Use stored management hash for cancel URL
-    let cancelUrl = '';
+    let cancelUrl = "";
     if (bookingDetails.managementHash) {
       cancelUrl = `${baseUrl}/booking-manage/${bookingDetails.id}?action=cancel&hash=${bookingDetails.managementHash}`;
     } else {
@@ -426,12 +490,14 @@ export class BrevoEmailService {
         bookingDetails.id,
         bookingDetails.tenantId,
         bookingDetails.restaurantId,
-        'cancel'
+        "cancel",
       );
       cancelUrl = `${baseUrl}/booking-manage/${bookingDetails.id}?action=cancel&hash=${cancelHash}`;
     }
 
-    sendSmtpEmail.subject = approved ? "Booking Changes Approved" : "Booking Changes Rejected";
+    sendSmtpEmail.subject = approved
+      ? "Booking Changes Approved"
+      : "Booking Changes Rejected";
     sendSmtpEmail.htmlContent = `
       <!DOCTYPE html>
       <html>
@@ -443,9 +509,9 @@ export class BrevoEmailService {
           <div style="max-width: 600px; margin: 0 auto; background-color: white; border-radius: 8px; overflow: hidden; box-shadow: 0 2px 10px rgba(0,0,0,0.1);">
 
             <!-- Header -->
-            <div style="background-color: ${approved ? '#d4edda' : '#f8d7da'}; padding: 30px 30px 20px; text-align: center; border-bottom: 1px solid #e5e5e5;">
-              <h1 style="margin: 0; font-size: 28px; font-weight: 600; color: ${approved ? '#155724' : '#721c24'}; letter-spacing: -0.5px;">
-                ${approved ? 'Changes Approved' : 'Changes Rejected'}
+            <div style="background-color: ${approved ? "#d4edda" : "#f8d7da"}; padding: 30px 30px 20px; text-align: center; border-bottom: 1px solid #e5e5e5;">
+              <h1 style="margin: 0; font-size: 28px; font-weight: 600; color: ${approved ? "#155724" : "#721c24"}; letter-spacing: -0.5px;">
+                ${approved ? "Changes Approved" : "Changes Rejected"}
               </h1>
             </div>
 
@@ -454,13 +520,16 @@ export class BrevoEmailService {
               <p style="margin: 0 0 20px; font-size: 16px; color: #333; line-height: 1.5;">Dear ${customerName},</p>
 
               <p style="margin: 0 0 30px; font-size: 16px; color: #666; line-height: 1.6;">
-                ${approved 
-                  ? 'Great news! Your requested booking changes have been approved by the restaurant.'
-                  : 'We apologize, but your requested booking changes could not be approved at this time.'
+                ${
+                  approved
+                    ? "Great news! Your requested booking changes have been approved by the restaurant."
+                    : "We apologize, but your requested booking changes could not be approved at this time."
                 }
               </p>
 
-              ${approved ? `
+              ${
+                approved
+                  ? `
                 <!-- Updated Booking Details -->
                 <div style="background-color: #d4edda; border-radius: 8px; padding: 25px; margin: 25px 0; border-left: 4px solid #28a745;">
                   <h3 style="margin: 0 0 15px; font-size: 18px; color: #333; font-weight: 600;">Updated Booking Details</h3>
@@ -479,7 +548,8 @@ export class BrevoEmailService {
                     </div>
                   </div>
                 </div>
-              ` : `
+              `
+                  : `
                 <!-- Original Booking Remains -->
                 <div style="background-color: #f8f9fa; border-radius: 8px; padding: 25px; margin: 25px 0; border-left: 4px solid #6c757d;">
                   <h3 style="margin: 0 0 15px; font-size: 18px; color: #333; font-weight: 600;">Your Original Booking Remains</h3>
@@ -503,47 +573,60 @@ export class BrevoEmailService {
                 <div style="text-align: center; margin: 30px 0;">
                   <a href="${cancelUrl}" style="background-color: #dc3545; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; font-weight: 600;">Cancel Booking</a>
                 </div>
-              `}
+              `
+              }
 
-              ${restaurantResponse ? `
+              ${
+                restaurantResponse
+                  ? `
                 <div style="background-color: #e9ecef; border-radius: 8px; padding: 20px; margin: 25px 0;">
                   <h4 style="margin: 0 0 10px; color: #333;">Message from Restaurant:</h4>
                   <p style="margin: 0; color: #666; font-style: italic;">"${restaurantResponse}"</p>
                 </div>
-              ` : ''}
+              `
+                  : ""
+              }
 
               <p style="margin: 30px 0 10px; font-size: 16px; color: #333;">Best regards,</p>
-              <p style="margin: 0; font-size: 16px; color: #333; font-weight: 600;">Trofta</p>
+              <p style="margin: 0; font-size: 16px; color: #333; font-weight: 600;">${bookingDetails.restaurantName || "Restaurant"}</p>
             </div>
           </div>
         </body>
       </html>
     `;
 
-    const senderEmail = process.env.BREVO_SENDER_EMAIL || "noreply@restaurant.com";
-    console.log('Using sender email:', senderEmail);
+    const senderEmail =
+      process.env.BREVO_SENDER_EMAIL || "noreply@restaurant.com";
+    console.log("Using sender email:", senderEmail);
 
     sendSmtpEmail.sender = {
-      name: "Trofta",
-      email: senderEmail
+      name: bookingDetails.restaurantName || "Restaurant",
+      email: senderEmail,
     };
 
-    sendSmtpEmail.to = [{
-      email: customerEmail,
-      name: customerName
-    }];
+    sendSmtpEmail.to = [
+      {
+        email: customerEmail,
+        name: customerName,
+      },
+    ];
 
     try {
       const result = await this.apiInstance!.sendTransacEmail(sendSmtpEmail);
-      console.log('Change request response email sent:', result);
+      console.log("Change request response email sent:", result);
       return result;
     } catch (error) {
-      console.error('Error sending change request response email:', error);
+      console.error("Error sending change request response email:", error);
       throw error;
     }
   }
 
-  async sendBookingReminder(customerEmail: string, customerName: string, bookingDetails: any, hoursBeforeVisit: number) {
+  async sendBookingReminder(
+    customerEmail: string,
+    customerName: string,
+    bookingDetails: any,
+    hoursBeforeVisit: number,
+  ) {
     if (!this.checkEnabled()) return;
 
     const sendSmtpEmail = new SendSmtpEmail();
@@ -559,7 +642,7 @@ export class BrevoEmailService {
             <li><strong>Date:</strong> ${new Date(bookingDetails.bookingDate).toLocaleDateString()}</li>
             <li><strong>Time:</strong> ${bookingDetails.startTime}</li>
             <li><strong>Party Size:</strong> ${bookingDetails.guestCount} guests</li>
-            <li><strong>Table:</strong> ${bookingDetails.tableNumber || 'To be assigned'}</li>
+            <li><strong>Table:</strong> ${bookingDetails.tableNumber || "To be assigned"}</li>
           </ul>
           <p>We're excited to see you soon!</p>
           <p>Best regards,<br>The Restaurant Team</p>
@@ -569,19 +652,22 @@ export class BrevoEmailService {
 
     sendSmtpEmail.sender = {
       name: "Restaurant Booking System",
-      email: process.env.BREVO_SENDER_EMAIL || "noreply@restaurant.com"
+      email: process.env.BREVO_SENDER_EMAIL || "noreply@restaurant.com",
     };
 
-    sendSmtpEmail.to = [{
-      email: customerEmail,
-      name: customerName    }];
+    sendSmtpEmail.to = [
+      {
+        email: customerEmail,
+        name: customerName,
+      },
+    ];
 
     try {
       const result = await this.apiInstance!.sendTransacEmail(sendSmtpEmail);
-      console.log('Booking reminder email sent:', result);
+      console.log("Booking reminder email sent:", result);
       return result;
     } catch (error) {
-      console.error('Error sending booking reminder email:', error);
+      console.error("Error sending booking reminder email:", error);
       return false;
     }
   }
@@ -622,19 +708,27 @@ export class BrevoEmailService {
                     <span style="color: #333; font-weight: 600;">${contactData.email}</span>
                   </div>
 
-                  ${contactData.company ? `
+                  ${
+                    contactData.company
+                      ? `
                     <div style="display: flex; justify-content: space-between; padding: 10px 0; border-bottom: 1px solid #e9ecef;">
                       <span style="color: #666; font-weight: 500;">Company:</span>
                       <span style="color: #333; font-weight: 600;">${contactData.company}</span>
                     </div>
-                  ` : ''}
+                  `
+                      : ""
+                  }
 
-                  ${contactData.phone ? `
+                  ${
+                    contactData.phone
+                      ? `
                     <div style="display: flex; justify-content: space-between; padding: 10px 0; border-bottom: 1px solid #e9ecef;">
                       <span style="color: #666; font-weight: 500;">Phone:</span>
                       <span style="color: #333; font-weight: 600;">${contactData.phone}</span>
                     </div>
-                  ` : ''}
+                  `
+                      : ""
+                  }
 
                   <div style="display: flex; justify-content: space-between; padding: 10px 0; border-bottom: 1px solid #e9ecef;">
                     <span style="color: #666; font-weight: 500;">Category:</span>
@@ -667,13 +761,15 @@ export class BrevoEmailService {
 
     sendSmtpEmail.sender = {
       name: "MozRest Contact Form",
-      email: process.env.BREVO_SENDER_EMAIL || "no-reply@mozrest.com"
+      email: process.env.BREVO_SENDER_EMAIL || "no-reply@mozrest.com",
     };
 
-    sendSmtpEmail.to = [{
-      email: process.env.CONTACT_NOTIFICATION_EMAIL || "support@mozrest.com",
-      name: "MozRest Support"
-    }];
+    sendSmtpEmail.to = [
+      {
+        email: process.env.CONTACT_NOTIFICATION_EMAIL || "support@mozrest.com",
+        name: "MozRest Support",
+      },
+    ];
 
     // Also send auto-reply to customer
     const autoReply = new SendSmtpEmail();
@@ -704,31 +800,38 @@ export class BrevoEmailService {
 
     autoReply.sender = {
       name: "MozRest Support",
-      email: process.env.BREVO_SENDER_EMAIL || "no-reply@mozrest.com"
+      email: process.env.BREVO_SENDER_EMAIL || "no-reply@mozrest.com",
     };
 
-    autoReply.to = [{
-      email: contactData.email,
-      name: contactData.name
-    }];
+    autoReply.to = [
+      {
+        email: contactData.email,
+        name: contactData.name,
+      },
+    ];
 
     try {
       // Send notification to support team
-      const supportResult = await this.apiInstance!.sendTransacEmail(sendSmtpEmail);
-      console.log('Contact form notification sent to support:', supportResult);
+      const supportResult =
+        await this.apiInstance!.sendTransacEmail(sendSmtpEmail);
+      console.log("Contact form notification sent to support:", supportResult);
 
       // Send auto-reply to customer
-      const customerResult = await this.apiInstance!.sendTransacEmail(autoReply);
-      console.log('Contact form auto-reply sent to customer:', customerResult);
+      const customerResult =
+        await this.apiInstance!.sendTransacEmail(autoReply);
+      console.log("Contact form auto-reply sent to customer:", customerResult);
 
       return { supportResult, customerResult };
     } catch (error) {
-      console.error('Error sending contact form emails:', error);
+      console.error("Error sending contact form emails:", error);
       throw error;
     }
   }
 
-  async sendRestaurantNotification(restaurantEmail: string, bookingDetails: any) {
+  async sendRestaurantNotification(
+    restaurantEmail: string,
+    bookingDetails: any,
+  ) {
     if (!this.checkEnabled()) return;
 
     const sendSmtpEmail = new SendSmtpEmail();
@@ -742,11 +845,11 @@ export class BrevoEmailService {
           <ul>
             <li><strong>Customer:</strong> ${bookingDetails.customerName}</li>
             <li><strong>Email:</strong> ${bookingDetails.customerEmail}</li>
-            <li><strong>Phone:</strong> ${bookingDetails.customerPhone || 'Not provided'}</li>
+            <li><strong>Phone:</strong> ${bookingDetails.customerPhone || "Not provided"}</li>
             <li><strong>Date:</strong> ${new Date(bookingDetails.bookingDate).toLocaleDateString()}</li>
             <li><strong>Time:</strong> ${bookingDetails.startTime}</li>
             <li><strong>Party Size:</strong> ${bookingDetails.guestCount} guests</li>
-            <li><strong>Special Requests:</strong> ${bookingDetails.specialRequests || 'None'}</li>
+            <li><strong>Special Requests:</strong> ${bookingDetails.specialRequests || "None"}</li>
           </ul>
         </body>
       </html>
@@ -754,48 +857,48 @@ export class BrevoEmailService {
 
     sendSmtpEmail.sender = {
       name: "Restaurant Booking System",
-      email: process.env.BREVO_SENDER_EMAIL || "noreply@restaurant.com"
+      email: process.env.BREVO_SENDER_EMAIL || "noreply@restaurant.com",
     };
 
-    sendSmtpEmail.to = [{
-      email: restaurantEmail,
-      name: "Restaurant Team"
-    }];
+    sendSmtpEmail.to = [
+      {
+        email: restaurantEmail,
+        name: "Restaurant Team",
+      },
+    ];
 
     try {
       const result = await this.apiInstance!.sendTransacEmail(sendSmtpEmail);
-      console.log('Restaurant notification email sent:', result);
+      console.log("Restaurant notification email sent:", result);
       return result;
     } catch (error) {
-      console.error('Error sending restaurant notification email:', error);
+      console.error("Error sending restaurant notification email:", error);
       throw error;
     }
   }
 
-  async sendSubscriptionChangeNotification(
-    subscriptionData: {
-      tenantName: string;
-      customerEmail: string;
-      customerName: string;
-      action: 'upgrade' | 'downgrade' | 'cancel' | 'reactivate';
-      fromPlan: string;
-      toPlan?: string;
-      amount?: number;
-      currency?: string;
-    }
-  ) {
+  async sendSubscriptionChangeNotification(subscriptionData: {
+    tenantName: string;
+    customerEmail: string;
+    customerName: string;
+    action: "upgrade" | "downgrade" | "cancel" | "reactivate";
+    fromPlan: string;
+    toPlan?: string;
+    amount?: number;
+    currency?: string;
+  }) {
     if (!this.checkEnabled()) return;
 
     const sendSmtpEmail = new SendSmtpEmail();
 
     const actionText = {
-      upgrade: 'upgraded',
-      downgrade: 'downgraded', 
-      cancel: 'cancelled',
-      reactivate: 'reactivated'
+      upgrade: "upgraded",
+      downgrade: "downgraded",
+      cancel: "cancelled",
+      reactivate: "reactivated",
     }[subscriptionData.action];
 
-    const planChangeText = subscriptionData.toPlan 
+    const planChangeText = subscriptionData.toPlan
       ? `from ${subscriptionData.fromPlan} to ${subscriptionData.toPlan}`
       : `their ${subscriptionData.fromPlan} subscription`;
 
@@ -825,7 +928,7 @@ export class BrevoEmailService {
                 <p style="margin: 0 0 8px; color: #333;"><strong>Customer:</strong> ${subscriptionData.customerName}</p>
                 <p style="margin: 0 0 8px; color: #333;"><strong>Email:</strong> ${subscriptionData.customerEmail}</p>
                 <p style="margin: 0 0 8px; color: #333;"><strong>Action:</strong> ${planChangeText}</p>
-                ${subscriptionData.amount ? `<p style="margin: 0; color: #333;"><strong>Amount:</strong> ${subscriptionData.currency || '$'}${subscriptionData.amount}</p>` : ''}
+                ${subscriptionData.amount ? `<p style="margin: 0; color: #333;"><strong>Amount:</strong> ${subscriptionData.currency || "$"}${subscriptionData.amount}</p>` : ""}
               </div>
 
               <p style="margin: 30px 0 10px; font-size: 16px; color: #333;">This notification was sent automatically from the subscription management system.</p>
@@ -835,58 +938,68 @@ export class BrevoEmailService {
       </html>
     `;
 
-    const senderEmail = process.env.BREVO_SENDER_EMAIL || "noreply@restaurant.com";
+    const senderEmail =
+      process.env.BREVO_SENDER_EMAIL || "noreply@restaurant.com";
 
     sendSmtpEmail.sender = {
       name: "Restaurant Management System",
-      email: senderEmail
+      email: senderEmail,
     };
 
     const adminEmail = process.env.ADMIN_EMAIL || "admin@restaurant.com";
 
-    sendSmtpEmail.to = [{
-      email: adminEmail,
-      name: "System Administrator"
-    }];
+    sendSmtpEmail.to = [
+      {
+        email: adminEmail,
+        name: "System Administrator",
+      },
+    ];
 
     console.log(`Sending subscription notification email:`, {
       to: adminEmail,
       from: senderEmail,
       action: subscriptionData.action,
       restaurant: subscriptionData.tenantName,
-      subject: sendSmtpEmail.subject
+      subject: sendSmtpEmail.subject,
     });
 
     try {
       const result = await this.apiInstance!.sendTransacEmail(sendSmtpEmail);
-      console.log(`Subscription change notification sent successfully to ${adminEmail}:`, {
-        messageId: result.body?.messageId,
-        action: subscriptionData.action,
-        restaurant: subscriptionData.tenantName,
-        from: senderEmail,
-        subject: sendSmtpEmail.subject,
-        brevoResponse: result.response?.statusCode
-      });
+      console.log(
+        `Subscription change notification sent successfully to ${adminEmail}:`,
+        {
+          messageId: result.body?.messageId,
+          action: subscriptionData.action,
+          restaurant: subscriptionData.tenantName,
+          from: senderEmail,
+          subject: sendSmtpEmail.subject,
+          brevoResponse: result.response?.statusCode,
+        },
+      );
       return result;
     } catch (error) {
-      console.error(`Error sending subscription change notification to ${adminEmail}:`, error);
+      console.error(
+        `Error sending subscription change notification to ${adminEmail}:`,
+        error,
+      );
       throw error;
     }
   }
 
   async sendEmail(emailData: {
-    to: Array<{email: string, name?: string}>;
+    to: Array<{ email: string; name?: string }>;
     subject: string;
     htmlContent: string;
     textContent?: string;
-    attachment?: Array<{content: string, name: string}>;
+    attachment?: Array<{ content: string; name: string }>;
   }) {
     if (!this.checkEnabled()) {
       return;
     }
 
     const sendSmtpEmail = new SendSmtpEmail();
-    const senderEmail = process.env.BREVO_SENDER_EMAIL || "noreply@restaurant.com";
+    const senderEmail =
+      process.env.BREVO_SENDER_EMAIL || "noreply@restaurant.com";
 
     sendSmtpEmail.sender = { email: senderEmail, name: "Restaurant System" };
     sendSmtpEmail.to = emailData.to;
@@ -903,14 +1016,20 @@ export class BrevoEmailService {
 
     try {
       const result = await this.apiInstance!.sendTransacEmail(sendSmtpEmail);
-      console.log(`Email sent successfully to ${emailData.to.map(t => t.email).join(', ')}:`, {
-        messageId: result.body?.messageId,
-        subject: emailData.subject,
-        brevoResponse: result.response?.statusCode
-      });
+      console.log(
+        `Email sent successfully to ${emailData.to.map((t) => t.email).join(", ")}:`,
+        {
+          messageId: result.body?.messageId,
+          subject: emailData.subject,
+          brevoResponse: result.response?.statusCode,
+        },
+      );
       return result;
     } catch (error) {
-      console.error(`Error sending email to ${emailData.to.map(t => t.email).join(', ')}:`, error);
+      console.error(
+        `Error sending email to ${emailData.to.map((t) => t.email).join(", ")}:`,
+        error,
+      );
       throw error;
     }
   }
@@ -921,13 +1040,21 @@ export class BrevoEmailService {
     }
 
     const sendSmtpEmail = new SendSmtpEmail();
-    const senderEmail = process.env.BREVO_SENDER_EMAIL || "noreply@restaurant.com";
+    const senderEmail =
+      process.env.BREVO_SENDER_EMAIL || "noreply@restaurant.com";
 
-    sendSmtpEmail.sender = { email: senderEmail, name: "Restaurant Print Services" };
-    sendSmtpEmail.to = [{ email: customerEmail, name: orderDetails.customerName }];
+    sendSmtpEmail.sender = {
+      email: senderEmail,
+      name: "Restaurant Print Services",
+    };
+    sendSmtpEmail.to = [
+      { email: customerEmail, name: orderDetails.customerName },
+    ];
     sendSmtpEmail.subject = `Print Order Confirmation - ${orderDetails.orderNumber}`;
 
-    const estimatedCompletion = new Date(orderDetails.estimatedCompletion).toLocaleDateString();
+    const estimatedCompletion = new Date(
+      orderDetails.estimatedCompletion,
+    ).toLocaleDateString();
     const totalAmount = (orderDetails.totalAmount / 100).toFixed(2);
 
     sendSmtpEmail.htmlContent = `
@@ -958,7 +1085,7 @@ export class BrevoEmailService {
                   <td style="padding: 8px 0; font-weight: bold;">Delivery Method:</td>
                   <td style="padding: 8px 0; text-transform: capitalize;">${orderDetails.deliveryMethod}</td>
                 </tr>
-                ${orderDetails.rushOrder ? '<tr style="border-bottom: 1px solid #e5e7eb;"><td style="padding: 8px 0; font-weight: bold;">Rush Order:</td><td style="padding: 8px 0; color: #dc2626;">Yes (+50% fee)</td></tr>' : ''}
+                ${orderDetails.rushOrder ? '<tr style="border-bottom: 1px solid #e5e7eb;"><td style="padding: 8px 0; font-weight: bold;">Rush Order:</td><td style="padding: 8px 0; color: #dc2626;">Yes (+50% fee)</td></tr>' : ""}
                 <tr>
                   <td style="padding: 8px 0; font-weight: bold; font-size: 18px;">Total Paid:</td>
                   <td style="padding: 8px 0; font-size: 18px; font-weight: bold; color: #059669;">$${totalAmount}</td>
@@ -970,23 +1097,31 @@ export class BrevoEmailService {
               <h3 style="color: #065f46; margin-top: 0;">Production Timeline</h3>
               <p style="margin: 0; color: #047857;">
                 <strong>Estimated Completion:</strong> ${estimatedCompletion}<br>
-                ${orderDetails.rushOrder ? 'Your rush order will be prioritized and completed within 24 hours.' : 'Standard processing time is 2-3 business days.'}
+                ${orderDetails.rushOrder ? "Your rush order will be prioritized and completed within 24 hours." : "Standard processing time is 2-3 business days."}
               </p>
             </div>
 
-            ${orderDetails.deliveryAddress ? `
+            ${
+              orderDetails.deliveryAddress
+                ? `
             <div style="background-color: #f3f4f6; padding: 20px; border-radius: 8px; margin-bottom: 20px;">
               <h3 style="color: #374151; margin-top: 0;">Delivery Information</h3>
               <p style="margin: 0; color: #6b7280;">${orderDetails.deliveryAddress}</p>
             </div>
-            ` : ''}
+            `
+                : ""
+            }
 
-            ${orderDetails.specialInstructions ? `
+            ${
+              orderDetails.specialInstructions
+                ? `
             <div style="background-color: #fef3c7; padding: 20px; border-radius: 8px; margin-bottom: 20px;">
               <h3 style="color: #92400e; margin-top: 0;">Special Instructions</h3>
               <p style="margin: 0; color: #b45309;">${orderDetails.specialInstructions}</p>
             </div>
-            ` : ''}
+            `
+                : ""
+            }
 
             <div style="text-align: center; padding: 20px; background-color: #f9fafb; border-radius: 8px;">
               <h3 style="color: #374151; margin-top: 0;">What's Next?</h3>
@@ -1010,19 +1145,29 @@ export class BrevoEmailService {
 
     try {
       const result = await this.apiInstance!.sendTransacEmail(sendSmtpEmail);
-      console.log(`Print order confirmation sent successfully to ${customerEmail}:`, {
-        messageId: result.body?.messageId,
-        orderNumber: orderDetails.orderNumber,
-        brevoResponse: result.response?.statusCode
-      });
+      console.log(
+        `Print order confirmation sent successfully to ${customerEmail}:`,
+        {
+          messageId: result.body?.messageId,
+          orderNumber: orderDetails.orderNumber,
+          brevoResponse: result.response?.statusCode,
+        },
+      );
       return result;
     } catch (error) {
-      console.error(`Error sending print order confirmation to ${customerEmail}:`, error);
+      console.error(
+        `Error sending print order confirmation to ${customerEmail}:`,
+        error,
+      );
       throw error;
     }
   }
 
-  async sendBookingCancellationNotification(restaurantEmail: string, restaurantName: string, bookingDetails: any) {
+  async sendBookingCancellationNotification(
+    restaurantEmail: string,
+    restaurantName: string,
+    bookingDetails: any,
+  ) {
     if (!this.checkEnabled()) return;
 
     const sendSmtpEmail = new SendSmtpEmail();
@@ -1059,25 +1204,33 @@ export class BrevoEmailService {
                     <span style="color: #666; font-weight: 500;">Customer:</span>
                     <span style="color: #333; font-weight: 600;">${bookingDetails.customerName}</span>
                   </div>
-                  ${bookingDetails.customerEmail ? `
+                  ${
+                    bookingDetails.customerEmail
+                      ? `
                     <div style="display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid #f1aeb5;">
                       <span style="color: #666; font-weight: 500;">Email:</span>
                       <span style="color: #333; font-weight: 600;">${bookingDetails.customerEmail}</span>
                     </div>
-                  ` : ''}
-                  ${bookingDetails.customerPhone ? `
+                  `
+                      : ""
+                  }
+                  ${
+                    bookingDetails.customerPhone
+                      ? `
                     <div style="display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid #f1aeb5;">
                       <span style="color: #666; font-weight: 500;">Phone:</span>
                       <span style="color: #333; font-weight: 600;">${bookingDetails.customerPhone}</span>
                     </div>
-                  ` : ''}
+                  `
+                      : ""
+                  }
                   <div style="display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid #f1aeb5;">
                     <span style="color: #666; font-weight: 500;">Date:</span>
                     <span style="color: #333; font-weight: 600;">${new Date(bookingDetails.bookingDate).toLocaleDateString()}</span>
                   </div>
                   <div style="display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid #f1aeb5;">
                     <span style="color: #666; font-weight: 500;">Time:</span>
-                    <span style="color: #333; font-weight: 600;">${bookingDetails.startTime}${bookingDetails.endTime ? ` - ${bookingDetails.endTime}` : ''}</span>
+                    <span style="color: #333; font-weight: 600;">${bookingDetails.startTime}${bookingDetails.endTime ? ` - ${bookingDetails.endTime}` : ""}</span>
                   </div>
                   <div style="display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid #f1aeb5;">
                     <span style="color: #666; font-weight: 500;">Party Size:</span>
@@ -1090,12 +1243,16 @@ export class BrevoEmailService {
                 </div>
               </div>
 
-              ${bookingDetails.notes ? `
+              ${
+                bookingDetails.notes
+                  ? `
                 <div style="background-color: #f8f9fa; border-radius: 8px; padding: 20px; margin: 25px 0;">
                   <h4 style="margin: 0 0 10px; color: #333;">Original Notes:</h4>
                   <p style="margin: 0; color: #666; font-style: italic;">"${bookingDetails.notes}"</p>
                 </div>
-              ` : ''}
+              `
+                  : ""
+              }
 
               <div style="background-color: #d1ecf1; border-radius: 8px; padding: 20px; margin: 25px 0; border-left: 4px solid #17a2b8;">
                 <p style="margin: 0; color: #0c5460; font-weight: 500;">
@@ -1104,37 +1261,46 @@ export class BrevoEmailService {
               </div>
 
               <p style="margin: 30px 0 10px; font-size: 16px; color: #333;">Best regards,</p>
-              <p style="margin: 0; font-size: 16px; color: #333; font-weight: 600;">Trofta Booking System</p>
+              <p style="margin: 0; font-size: 16px; color: #333; font-weight: 600;">${restaurantName || "Restaurant"} Booking System</p>
             </div>
           </div>
         </body>
       </html>
     `;
 
-    const senderEmail = process.env.BREVO_SENDER_EMAIL || "noreply@restaurant.com";
-    console.log('Using sender email:', senderEmail);
+    const senderEmail =
+      process.env.BREVO_SENDER_EMAIL || "noreply@restaurant.com";
+    console.log("Using sender email:", senderEmail);
 
     sendSmtpEmail.sender = {
-      name: "Trofta",
-      email: senderEmail
+      name: restaurantName || "Restaurant",
+      email: senderEmail,
     };
 
-    sendSmtpEmail.to = [{
-      email: restaurantEmail,
-      name: restaurantName
-    }];
+    sendSmtpEmail.to = [
+      {
+        email: restaurantEmail,
+        name: restaurantName,
+      },
+    ];
 
     try {
       const result = await this.apiInstance!.sendTransacEmail(sendSmtpEmail);
-      console.log('Booking cancellation notification email sent:', result);
+      console.log("Booking cancellation notification email sent:", result);
       return result;
     } catch (error) {
-      console.error('Error sending booking cancellation notification email:', error);
+      console.error(
+        "Error sending booking cancellation notification email:",
+        error,
+      );
       throw error;
     }
   }
 
-  async sendRestaurantNotification(restaurantEmail: string, bookingDetails: any) {
+  async sendRestaurantNotification(
+    restaurantEmail: string,
+    bookingDetails: any,
+  ) {
     if (!this.checkEnabled()) return;
 
     const sendSmtpEmail = new SendSmtpEmail();
@@ -1171,36 +1337,48 @@ export class BrevoEmailService {
                     <span style="color: #666; font-weight: 500;">Customer:</span>
                     <span style="color: #333; font-weight: 600;">${bookingDetails.customerName}</span>
                   </div>
-                  ${bookingDetails.customerEmail ? `
+                  ${
+                    bookingDetails.customerEmail
+                      ? `
                     <div style="display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid #e9ecef;">
                       <span style="color: #666; font-weight: 500;">Email:</span>
                       <span style="color: #333; font-weight: 600;">${bookingDetails.customerEmail}</span>
                     </div>
-                  ` : ''}
-                  ${bookingDetails.customerPhone ? `
+                  `
+                      : ""
+                  }
+                  ${
+                    bookingDetails.customerPhone
+                      ? `
                     <div style="display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid #e9ecef;">
                       <span style="color: #666; font-weight: 500;">Phone:</span>
                       <span style="color: #333; font-weight: 600;">${bookingDetails.customerPhone}</span>
                     </div>
-                  ` : ''}
+                  `
+                      : ""
+                  }
                   <div style="display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid #e9ecef;">
                     <span style="color: #666; font-weight: 500;">Date:</span>
                     <span style="color: #333; font-weight: 600;">${new Date(bookingDetails.bookingDate).toLocaleDateString()}</span>
                   </div>
                   <div style="display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid #e9ecef;">
                     <span style="color: #666; font-weight: 500;">Time:</span>
-                    <span style="color: #333; font-weight: 600;">${bookingDetails.startTime}${bookingDetails.endTime ? ` - ${bookingDetails.endTime}` : ''}</span>
+                    <span style="color: #333; font-weight: 600;">${bookingDetails.startTime}${bookingDetails.endTime ? ` - ${bookingDetails.endTime}` : ""}</span>
                   </div>
                   <div style="display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid #e9ecef;">
                     <span style="color: #666; font-weight: 500;">Party Size:</span>
                     <span style="color: #333; font-weight: 600;">${bookingDetails.guestCount} guests</span>
                   </div>
-                  ${bookingDetails.specialRequests ? `
+                  ${
+                    bookingDetails.specialRequests
+                      ? `
                     <div style="display: flex; justify-content: space-between; padding: 8px 0;">
                       <span style="color: #666; font-weight: 500;">Special Requests:</span>
                       <span style="color: #333; font-weight: 600;">${bookingDetails.specialRequests}</span>
                     </div>
-                  ` : ''}
+                  `
+                      : ""
+                  }
                 </div>
               </div>
 
@@ -1211,60 +1389,61 @@ export class BrevoEmailService {
               </div>
 
               <p style="margin: 30px 0 10px; font-size: 16px; color: #333;">Best regards,</p>
-              <p style="margin: 0; font-size: 16px; color: #333; font-weight: 600;">Trofta Booking System</p>
+              <p style="margin: 0; font-size: 16px; color: #333; font-weight: 600;">${bookingDetails.restaurantName || "Restaurant"} Booking System</p>
             </div>
           </div>
         </body>
       </html>
     `;
 
-    const senderEmail = process.env.BREVO_SENDER_EMAIL || "noreply@restaurant.com";
-    console.log('Using sender email:', senderEmail);
+    const senderEmail =
+      process.env.BREVO_SENDER_EMAIL || "noreply@restaurant.com";
+    console.log("Using sender email:", senderEmail);
 
     sendSmtpEmail.sender = {
-      name: "Trofta",
-      email: senderEmail
+      name: bookingDetails.restaurantName || "Restaurant",
+      email: senderEmail,
     };
 
-    sendSmtpEmail.to = [{
-      email: restaurantEmail,
-      name: "Restaurant Team"
-    }];
+    sendSmtpEmail.to = [
+      {
+        email: restaurantEmail,
+        name: "Restaurant Team",
+      },
+    ];
 
     try {
       const result = await this.apiInstance!.sendTransacEmail(sendSmtpEmail);
-      console.log('Restaurant notification email sent:', result);
+      console.log("Restaurant notification email sent:", result);
       return result;
     } catch (error) {
-      console.error('Error sending restaurant notification email:', error);
+      console.error("Error sending restaurant notification email:", error);
       throw error;
     }
   }
 
-  async sendSubscriptionChangeNotification(
-    subscriptionData: {
-      tenantName: string;
-      customerEmail: string;
-      customerName: string;
-      action: 'upgrade' | 'downgrade' | 'cancel' | 'reactivate';
-      fromPlan: string;
-      toPlan?: string;
-      amount?: number;
-      currency?: string;
-    }
-  ) {
+  async sendSubscriptionChangeNotification(subscriptionData: {
+    tenantName: string;
+    customerEmail: string;
+    customerName: string;
+    action: "upgrade" | "downgrade" | "cancel" | "reactivate";
+    fromPlan: string;
+    toPlan?: string;
+    amount?: number;
+    currency?: string;
+  }) {
     if (!this.checkEnabled()) return;
 
     const sendSmtpEmail = new SendSmtpEmail();
 
     const actionText = {
-      upgrade: 'upgraded',
-      downgrade: 'downgraded', 
-      cancel: 'cancelled',
-      reactivate: 'reactivated'
+      upgrade: "upgraded",
+      downgrade: "downgraded",
+      cancel: "cancelled",
+      reactivate: "reactivated",
     }[subscriptionData.action];
 
-    const planChangeText = subscriptionData.toPlan 
+    const planChangeText = subscriptionData.toPlan
       ? `from ${subscriptionData.fromPlan} to ${subscriptionData.toPlan}`
       : `their ${subscriptionData.fromPlan} subscription`;
 
@@ -1294,7 +1473,7 @@ export class BrevoEmailService {
                 <p style="margin: 0 0 8px; color: #333;"><strong>Customer:</strong> ${subscriptionData.customerName}</p>
                 <p style="margin: 0 0 8px; color: #333;"><strong>Email:</strong> ${subscriptionData.customerEmail}</p>
                 <p style="margin: 0 0 8px; color: #333;"><strong>Action:</strong> ${planChangeText}</p>
-                ${subscriptionData.amount ? `<p style="margin: 0; color: #333;"><strong>Amount:</strong> ${subscriptionData.currency || '$'}${subscriptionData.amount}</p>` : ''}
+                ${subscriptionData.amount ? `<p style="margin: 0; color: #333;"><strong>Amount:</strong> ${subscriptionData.currency || "$"}${subscriptionData.amount}</p>` : ""}
               </div>
 
               <p style="margin: 30px 0 10px; font-size: 16px; color: #333;">This notification was sent automatically from the subscription management system.</p>
@@ -1304,58 +1483,68 @@ export class BrevoEmailService {
       </html>
     `;
 
-    const senderEmail = process.env.BREVO_SENDER_EMAIL || "noreply@restaurant.com";
+    const senderEmail =
+      process.env.BREVO_SENDER_EMAIL || "noreply@restaurant.com";
 
     sendSmtpEmail.sender = {
       name: "Restaurant Management System",
-      email: senderEmail
+      email: senderEmail,
     };
 
     const adminEmail = process.env.ADMIN_EMAIL || "admin@restaurant.com";
 
-    sendSmtpEmail.to = [{
-      email: adminEmail,
-      name: "System Administrator"
-    }];
+    sendSmtpEmail.to = [
+      {
+        email: adminEmail,
+        name: "System Administrator",
+      },
+    ];
 
     console.log(`Sending subscription notification email:`, {
       to: adminEmail,
       from: senderEmail,
       action: subscriptionData.action,
       restaurant: subscriptionData.tenantName,
-      subject: sendSmtpEmail.subject
+      subject: sendSmtpEmail.subject,
     });
 
     try {
       const result = await this.apiInstance!.sendTransacEmail(sendSmtpEmail);
-      console.log(`Subscription change notification sent successfully to ${adminEmail}:`, {
-        messageId: result.body?.messageId,
-        action: subscriptionData.action,
-        restaurant: subscriptionData.tenantName,
-        from: senderEmail,
-        subject: sendSmtpEmail.subject,
-        brevoResponse: result.response?.statusCode
-      });
+      console.log(
+        `Subscription change notification sent successfully to ${adminEmail}:`,
+        {
+          messageId: result.body?.messageId,
+          action: subscriptionData.action,
+          restaurant: subscriptionData.tenantName,
+          from: senderEmail,
+          subject: sendSmtpEmail.subject,
+          brevoResponse: result.response?.statusCode,
+        },
+      );
       return result;
     } catch (error) {
-      console.error(`Error sending subscription change notification to ${adminEmail}:`, error);
+      console.error(
+        `Error sending subscription change notification to ${adminEmail}:`,
+        error,
+      );
       throw error;
     }
   }
 
   async sendEmail(emailData: {
-    to: Array<{email: string, name?: string}>;
+    to: Array<{ email: string; name?: string }>;
     subject: string;
     htmlContent: string;
     textContent?: string;
-    attachment?: Array<{content: string, name: string}>;
+    attachment?: Array<{ content: string; name: string }>;
   }) {
     if (!this.checkEnabled()) {
       return;
     }
 
     const sendSmtpEmail = new SendSmtpEmail();
-    const senderEmail = process.env.BREVO_SENDER_EMAIL || "noreply@restaurant.com";
+    const senderEmail =
+      process.env.BREVO_SENDER_EMAIL || "noreply@restaurant.com";
 
     sendSmtpEmail.sender = { email: senderEmail, name: "Restaurant System" };
     sendSmtpEmail.to = emailData.to;
@@ -1372,14 +1561,20 @@ export class BrevoEmailService {
 
     try {
       const result = await this.apiInstance!.sendTransacEmail(sendSmtpEmail);
-      console.log(`Email sent successfully to ${emailData.to.map(t => t.email).join(', ')}:`, {
-        messageId: result.body?.messageId,
-        subject: emailData.subject,
-        brevoResponse: result.response?.statusCode
-      });
+      console.log(
+        `Email sent successfully to ${emailData.to.map((t) => t.email).join(", ")}:`,
+        {
+          messageId: result.body?.messageId,
+          subject: emailData.subject,
+          brevoResponse: result.response?.statusCode,
+        },
+      );
       return result;
     } catch (error) {
-      console.error(`Error sending email to ${emailData.to.map(t => t.email).join(', ')}:`, error);
+      console.error(
+        `Error sending email to ${emailData.to.map((t) => t.email).join(", ")}:`,
+        error,
+      );
       throw error;
     }
   }
@@ -1390,13 +1585,21 @@ export class BrevoEmailService {
     }
 
     const sendSmtpEmail = new SendSmtpEmail();
-    const senderEmail = process.env.BREVO_SENDER_EMAIL || "noreply@restaurant.com";
+    const senderEmail =
+      process.env.BREVO_SENDER_EMAIL || "noreply@restaurant.com";
 
-    sendSmtpEmail.sender = { email: senderEmail, name: "Restaurant Print Services" };
-    sendSmtpEmail.to = [{ email: customerEmail, name: orderDetails.customerName }];
+    sendSmtpEmail.sender = {
+      email: senderEmail,
+      name: "Restaurant Print Services",
+    };
+    sendSmtpEmail.to = [
+      { email: customerEmail, name: orderDetails.customerName },
+    ];
     sendSmtpEmail.subject = `Print Order Confirmation - ${orderDetails.orderNumber}`;
 
-    const estimatedCompletion = new Date(orderDetails.estimatedCompletion).toLocaleDateString();
+    const estimatedCompletion = new Date(
+      orderDetails.estimatedCompletion,
+    ).toLocaleDateString();
     const totalAmount = (orderDetails.totalAmount / 100).toFixed(2);
 
     sendSmtpEmail.htmlContent = `
@@ -1427,7 +1630,7 @@ export class BrevoEmailService {
                   <td style="padding: 8px 0; font-weight: bold;">Delivery Method:</td>
                   <td style="padding: 8px 0; text-transform: capitalize;">${orderDetails.deliveryMethod}</td>
                 </tr>
-                ${orderDetails.rushOrder ? '<tr style="border-bottom: 1px solid #e5e7eb;"><td style="padding: 8px 0; font-weight: bold;">Rush Order:</td><td style="padding: 8px 0; color: #dc2626;">Yes (+50% fee)</td></tr>' : ''}
+                ${orderDetails.rushOrder ? '<tr style="border-bottom: 1px solid #e5e7eb;"><td style="padding: 8px 0; font-weight: bold;">Rush Order:</td><td style="padding: 8px 0; color: #dc2626;">Yes (+50% fee)</td></tr>' : ""}
                 <tr>
                   <td style="padding: 8px 0; font-weight: bold; font-size: 18px;">Total Paid:</td>
                   <td style="padding: 8px 0; font-size: 18px; font-weight: bold; color: #059669;">$${totalAmount}</td>
@@ -1439,23 +1642,31 @@ export class BrevoEmailService {
               <h3 style="color: #065f46; margin-top: 0;">Production Timeline</h3>
               <p style="margin: 0; color: #047857;">
                 <strong>Estimated Completion:</strong> ${estimatedCompletion}<br>
-                ${orderDetails.rushOrder ? 'Your rush order will be prioritized and completed within 24 hours.' : 'Standard processing time is 2-3 business days.'}
+                ${orderDetails.rushOrder ? "Your rush order will be prioritized and completed within 24 hours." : "Standard processing time is 2-3 business days."}
               </p>
             </div>
 
-            ${orderDetails.deliveryAddress ? `
+            ${
+              orderDetails.deliveryAddress
+                ? `
             <div style="background-color: #f3f4f6; padding: 20px; border-radius: 8px; margin-bottom: 20px;">
               <h3 style="color: #374151; margin-top: 0;">Delivery Information</h3>
               <p style="margin: 0; color: #6b7280;">${orderDetails.deliveryAddress}</p>
             </div>
-            ` : ''}
+            `
+                : ""
+            }
 
-            ${orderDetails.specialInstructions ? `
+            ${
+              orderDetails.specialInstructions
+                ? `
             <div style="background-color: #fef3c7; padding: 20px; border-radius: 8px; margin-bottom: 20px;">
               <h3 style="color: #92400e; margin-top: 0;">Special Instructions</h3>
               <p style="margin: 0; color: #b45309;">${orderDetails.specialInstructions}</p>
             </div>
-            ` : ''}
+            `
+                : ""
+            }
 
             <div style="text-align: center; padding: 20px; background-color: #f9fafb; border-radius: 8px;">
               <h3 style="color: #374151; margin-top: 0;">What's Next?</h3>
@@ -1479,19 +1690,29 @@ export class BrevoEmailService {
 
     try {
       const result = await this.apiInstance!.sendTransacEmail(sendSmtpEmail);
-      console.log(`Print order confirmation sent successfully to ${customerEmail}:`, {
-        messageId: result.body?.messageId,
-        orderNumber: orderDetails.orderNumber,
-        brevoResponse: result.response?.statusCode
-      });
+      console.log(
+        `Print order confirmation sent successfully to ${customerEmail}:`,
+        {
+          messageId: result.body?.messageId,
+          orderNumber: orderDetails.orderNumber,
+          brevoResponse: result.response?.statusCode,
+        },
+      );
       return result;
     } catch (error) {
-      console.error(`Error sending print order confirmation to ${customerEmail}:`, error);
+      console.error(
+        `Error sending print order confirmation to ${customerEmail}:`,
+        error,
+      );
       throw error;
     }
   }
 
-  async sendBookingCancellationNotification(restaurantEmail: string, restaurantName: string, bookingDetails: any) {
+  async sendBookingCancellationNotification(
+    restaurantEmail: string,
+    restaurantName: string,
+    bookingDetails: any,
+  ) {
     if (!this.checkEnabled()) return;
 
     const sendSmtpEmail = new SendSmtpEmail();
@@ -1528,25 +1749,33 @@ export class BrevoEmailService {
                     <span style="color: #666; font-weight: 500;">Customer:</span>
                     <span style="color: #333; font-weight: 600;">${bookingDetails.customerName}</span>
                   </div>
-                  ${bookingDetails.customerEmail ? `
+                  ${
+                    bookingDetails.customerEmail
+                      ? `
                     <div style="display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid #f1aeb5;">
                       <span style="color: #666; font-weight: 500;">Email:</span>
                       <span style="color: #333; font-weight: 600;">${bookingDetails.customerEmail}</span>
                     </div>
-                  ` : ''}
-                  ${bookingDetails.customerPhone ? `
+                  `
+                      : ""
+                  }
+                  ${
+                    bookingDetails.customerPhone
+                      ? `
                     <div style="display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid #f1aeb5;">
                       <span style="color: #666; font-weight: 500;">Phone:</span>
                       <span style="color: #333; font-weight: 600;">${bookingDetails.customerPhone}</span>
                     </div>
-                  ` : ''}
+                  `
+                      : ""
+                  }
                   <div style="display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid #f1aeb5;">
                     <span style="color: #666; font-weight: 500;">Date:</span>
                     <span style="color: #333; font-weight: 600;">${new Date(bookingDetails.bookingDate).toLocaleDateString()}</span>
                   </div>
                   <div style="display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid #f1aeb5;">
                     <span style="color: #666; font-weight: 500;">Time:</span>
-                    <span style="color: #333; font-weight: 600;">${bookingDetails.startTime}${bookingDetails.endTime ? ` - ${bookingDetails.endTime}` : ''}</span>
+                    <span style="color: #333; font-weight: 600;">${bookingDetails.startTime}${bookingDetails.endTime ? ` - ${bookingDetails.endTime}` : ""}</span>
                   </div>
                   <div style="display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid #f1aeb5;">
                     <span style="color: #666; font-weight: 500;">Party Size:</span>
@@ -1559,12 +1788,16 @@ export class BrevoEmailService {
                 </div>
               </div>
 
-              ${bookingDetails.notes ? `
+              ${
+                bookingDetails.notes
+                  ? `
                 <div style="background-color: #f8f9fa; border-radius: 8px; padding: 20px; margin: 25px 0;">
                   <h4 style="margin: 0 0 10px; color: #333;">Original Notes:</h4>
                   <p style="margin: 0; color: #666; font-style: italic;">"${bookingDetails.notes}"</p>
                 </div>
-              ` : ''}
+              `
+                  : ""
+              }
 
               <div style="background-color: #d1ecf1; border-radius: 8px; padding: 20px; margin: 25px 0; border-left: 4px solid #17a2b8;">
                 <p style="margin: 0; color: #0c5460; font-weight: 500;">
@@ -1573,37 +1806,46 @@ export class BrevoEmailService {
               </div>
 
               <p style="margin: 30px 0 10px; font-size: 16px; color: #333;">Best regards,</p>
-              <p style="margin: 0; font-size: 16px; color: #333; font-weight: 600;">Trofta Booking System</p>
+              <p style="margin: 0; font-size: 16px; color: #333; font-weight: 600;">${bookingDetails.restaurantName || "Restaurant"} Booking System</p>
             </div>
           </div>
         </body>
       </html>
     `;
 
-    const senderEmail = process.env.BREVO_SENDER_EMAIL || "noreply@restaurant.com";
-    console.log('Using sender email:', senderEmail);
+    const senderEmail =
+      process.env.BREVO_SENDER_EMAIL || "noreply@restaurant.com";
+    console.log("Using sender email:", senderEmail);
 
     sendSmtpEmail.sender = {
-      name: "Trofta",
-      email: senderEmail
+      name: bookingDetails.restaurantName || "Restaurant",
+      email: senderEmail,
     };
 
-    sendSmtpEmail.to = [{
-      email: restaurantEmail,
-      name: restaurantName
-    }];
+    sendSmtpEmail.to = [
+      {
+        email: restaurantEmail,
+        name: restaurantName,
+      },
+    ];
 
     try {
       const result = await this.apiInstance!.sendTransacEmail(sendSmtpEmail);
-      console.log('Booking cancellation notification email sent:', result);
+      console.log("Booking cancellation notification email sent:", result);
       return result;
     } catch (error) {
-      console.error('Error sending booking cancellation notification email:', error);
+      console.error(
+        "Error sending booking cancellation notification email:",
+        error,
+      );
       throw error;
     }
   }
 
-  async sendRestaurantNotification(restaurantEmail: string, bookingDetails: any) {
+  async sendRestaurantNotification(
+    restaurantEmail: string,
+    bookingDetails: any,
+  ) {
     if (!this.checkEnabled()) return;
 
     const sendSmtpEmail = new SendSmtpEmail();
@@ -1640,36 +1882,48 @@ export class BrevoEmailService {
                     <span style="color: #666; font-weight: 500;">Customer:</span>
                     <span style="color: #333; font-weight: 600;">${bookingDetails.customerName}</span>
                   </div>
-                  ${bookingDetails.customerEmail ? `
+                  ${
+                    bookingDetails.customerEmail
+                      ? `
                     <div style="display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid #e9ecef;">
                       <span style="color: #666; font-weight: 500;">Email:</span>
                       <span style="color: #333; font-weight: 600;">${bookingDetails.customerEmail}</span>
                     </div>
-                  ` : ''}
-                  ${bookingDetails.customerPhone ? `
+                  `
+                      : ""
+                  }
+                  ${
+                    bookingDetails.customerPhone
+                      ? `
                     <div style="display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid #e9ecef;">
                       <span style="color: #666; font-weight: 500;">Phone:</span>
                       <span style="color: #333; font-weight: 600;">${bookingDetails.customerPhone}</span>
                     </div>
-                  ` : ''}
+                  `
+                      : ""
+                  }
                   <div style="display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid #e9ecef;">
                     <span style="color: #666; font-weight: 500;">Date:</span>
                     <span style="color: #333; font-weight: 600;">${new Date(bookingDetails.bookingDate).toLocaleDateString()}</span>
                   </div>
                   <div style="display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid #e9ecef;">
                     <span style="color: #666; font-weight: 500;">Time:</span>
-                    <span style="color: #333; font-weight: 600;">${bookingDetails.startTime}${bookingDetails.endTime ? ` - ${bookingDetails.endTime}` : ''}</span>
+                    <span style="color: #333; font-weight: 600;">${bookingDetails.startTime}${bookingDetails.endTime ? ` - ${bookingDetails.endTime}` : ""}</span>
                   </div>
                   <div style="display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid #e9ecef;">
                     <span style="color: #666; font-weight: 500;">Party Size:</span>
                     <span style="color: #333; font-weight: 600;">${bookingDetails.guestCount} guests</span>
                   </div>
-                  ${bookingDetails.specialRequests ? `
+                  ${
+                    bookingDetails.specialRequests
+                      ? `
                     <div style="display: flex; justify-content: space-between; padding: 8px 0;">
                       <span style="color: #666; font-weight: 500;">Special Requests:</span>
                       <span style="color: #333; font-weight: 600;">${bookingDetails.specialRequests}</span>
                     </div>
-                  ` : ''}
+                  `
+                      : ""
+                  }
                 </div>
               </div>
 
@@ -1680,60 +1934,61 @@ export class BrevoEmailService {
               </div>
 
               <p style="margin: 30px 0 10px; font-size: 16px; color: #333;">Best regards,</p>
-              <p style="margin: 0; font-size: 16px; color: #333; font-weight: 600;">Trofta Booking System</p>
+              <p style="margin: 0; font-size: 16px; color: #333; font-weight: 600;">${bookingDetails.restaurantName || "Restaurant"} Booking System</p>
             </div>
           </div>
         </body>
       </html>
     `;
 
-    const senderEmail = process.env.BREVO_SENDER_EMAIL || "noreply@restaurant.com";
-    console.log('Using sender email:', senderEmail);
+    const senderEmail =
+      process.env.BREVO_SENDER_EMAIL || "noreply@restaurant.com";
+    console.log("Using sender email:", senderEmail);
 
     sendSmtpEmail.sender = {
-      name: "Trofta",
-      email: senderEmail
+      name: bookingDetails.restaurantName || "Restaurant",
+      email: senderEmail,
     };
 
-    sendSmtpEmail.to = [{
-      email: restaurantEmail,
-      name: "Restaurant Team"
-    }];
+    sendSmtpEmail.to = [
+      {
+        email: restaurantEmail,
+        name: "Restaurant Team",
+      },
+    ];
 
     try {
       const result = await this.apiInstance!.sendTransacEmail(sendSmtpEmail);
-      console.log('Restaurant notification email sent:', result);
+      console.log("Restaurant notification email sent:", result);
       return result;
     } catch (error) {
-      console.error('Error sending restaurant notification email:', error);
+      console.error("Error sending restaurant notification email:", error);
       throw error;
     }
   }
 
-  async sendSubscriptionChangeNotification(
-    subscriptionData: {
-      tenantName: string;
-      customerEmail: string;
-      customerName: string;
-      action: 'upgrade' | 'downgrade' | 'cancel' | 'reactivate';
-      fromPlan: string;
-      toPlan?: string;
-      amount?: number;
-      currency?: string;
-    }
-  ) {
+  async sendSubscriptionChangeNotification(subscriptionData: {
+    tenantName: string;
+    customerEmail: string;
+    customerName: string;
+    action: "upgrade" | "downgrade" | "cancel" | "reactivate";
+    fromPlan: string;
+    toPlan?: string;
+    amount?: number;
+    currency?: string;
+  }) {
     if (!this.checkEnabled()) return;
 
     const sendSmtpEmail = new SendSmtpEmail();
 
     const actionText = {
-      upgrade: 'upgraded',
-      downgrade: 'downgraded', 
-      cancel: 'cancelled',
-      reactivate: 'reactivated'
+      upgrade: "upgraded",
+      downgrade: "downgraded",
+      cancel: "cancelled",
+      reactivate: "reactivated",
     }[subscriptionData.action];
 
-    const planChangeText = subscriptionData.toPlan 
+    const planChangeText = subscriptionData.toPlan
       ? `from ${subscriptionData.fromPlan} to ${subscriptionData.toPlan}`
       : `their ${subscriptionData.fromPlan} subscription`;
 
@@ -1763,7 +2018,7 @@ export class BrevoEmailService {
                 <p style="margin: 0 0 8px; color: #333;"><strong>Customer:</strong> ${subscriptionData.customerName}</p>
                 <p style="margin: 0 0 8px; color: #333;"><strong>Email:</strong> ${subscriptionData.customerEmail}</p>
                 <p style="margin: 0 0 8px; color: #333;"><strong>Action:</strong> ${planChangeText}</p>
-                ${subscriptionData.amount ? `<p style="margin: 0; color: #333;"><strong>Amount:</strong> ${subscriptionData.currency || '$'}${subscriptionData.amount}</p>` : ''}
+                ${subscriptionData.amount ? `<p style="margin: 0; color: #333;"><strong>Amount:</strong> ${subscriptionData.currency || "$"}${subscriptionData.amount}</p>` : ""}
               </div>
 
               <p style="margin: 30px 0 10px; font-size: 16px; color: #333;">This notification was sent automatically from the subscription management system.</p>
@@ -1773,58 +2028,68 @@ export class BrevoEmailService {
       </html>
     `;
 
-    const senderEmail = process.env.BREVO_SENDER_EMAIL || "noreply@restaurant.com";
+    const senderEmail =
+      process.env.BREVO_SENDER_EMAIL || "noreply@restaurant.com";
 
     sendSmtpEmail.sender = {
       name: "Restaurant Management System",
-      email: senderEmail
+      email: senderEmail,
     };
 
     const adminEmail = process.env.ADMIN_EMAIL || "admin@restaurant.com";
 
-    sendSmtpEmail.to = [{
-      email: adminEmail,
-      name: "System Administrator"
-    }];
+    sendSmtpEmail.to = [
+      {
+        email: adminEmail,
+        name: "System Administrator",
+      },
+    ];
 
     console.log(`Sending subscription notification email:`, {
       to: adminEmail,
       from: senderEmail,
       action: subscriptionData.action,
       restaurant: subscriptionData.tenantName,
-      subject: sendSmtpEmail.subject
+      subject: sendSmtpEmail.subject,
     });
 
     try {
       const result = await this.apiInstance!.sendTransacEmail(sendSmtpEmail);
-      console.log(`Subscription change notification sent successfully to ${adminEmail}:`, {
-        messageId: result.body?.messageId,
-        action: subscriptionData.action,
-        restaurant: subscriptionData.tenantName,
-        from: senderEmail,
-        subject: sendSmtpEmail.subject,
-        brevoResponse: result.response?.statusCode
-      });
+      console.log(
+        `Subscription change notification sent successfully to ${adminEmail}:`,
+        {
+          messageId: result.body?.messageId,
+          action: subscriptionData.action,
+          restaurant: subscriptionData.tenantName,
+          from: senderEmail,
+          subject: sendSmtpEmail.subject,
+          brevoResponse: result.response?.statusCode,
+        },
+      );
       return result;
     } catch (error) {
-      console.error(`Error sending subscription change notification to ${adminEmail}:`, error);
+      console.error(
+        `Error sending subscription change notification to ${adminEmail}:`,
+        error,
+      );
       throw error;
     }
   }
 
   async sendEmail(emailData: {
-    to: Array<{email: string, name?: string}>;
+    to: Array<{ email: string; name?: string }>;
     subject: string;
     htmlContent: string;
     textContent?: string;
-    attachment?: Array<{content: string, name: string}>;
+    attachment?: Array<{ content: string; name: string }>;
   }) {
     if (!this.checkEnabled()) {
       return;
     }
 
     const sendSmtpEmail = new SendSmtpEmail();
-    const senderEmail = process.env.BREVO_SENDER_EMAIL || "noreply@restaurant.com";
+    const senderEmail =
+      process.env.BREVO_SENDER_EMAIL || "noreply@restaurant.com";
 
     sendSmtpEmail.sender = { email: senderEmail, name: "Restaurant System" };
     sendSmtpEmail.to = emailData.to;
@@ -1841,14 +2106,20 @@ export class BrevoEmailService {
 
     try {
       const result = await this.apiInstance!.sendTransacEmail(sendSmtpEmail);
-      console.log(`Email sent successfully to ${emailData.to.map(t => t.email).join(', ')}:`, {
-        messageId: result.body?.messageId,
-        subject: emailData.subject,
-        brevoResponse: result.response?.statusCode
-      });
+      console.log(
+        `Email sent successfully to ${emailData.to.map((t) => t.email).join(", ")}:`,
+        {
+          messageId: result.body?.messageId,
+          subject: emailData.subject,
+          brevoResponse: result.response?.statusCode,
+        },
+      );
       return result;
     } catch (error) {
-      console.error(`Error sending email to ${emailData.to.map(t => t.email).join(', ')}:`, error);
+      console.error(
+        `Error sending email to ${emailData.to.map((t) => t.email).join(", ")}:`,
+        error,
+      );
       throw error;
     }
   }
@@ -1859,13 +2130,21 @@ export class BrevoEmailService {
     }
 
     const sendSmtpEmail = new SendSmtpEmail();
-    const senderEmail = process.env.BREVO_SENDER_EMAIL || "noreply@restaurant.com";
+    const senderEmail =
+      process.env.BREVO_SENDER_EMAIL || "noreply@restaurant.com";
 
-    sendSmtpEmail.sender = { email: senderEmail, name: "Restaurant Print Services" };
-    sendSmtpEmail.to = [{ email: customerEmail, name: orderDetails.customerName }];
+    sendSmtpEmail.sender = {
+      email: senderEmail,
+      name: "Restaurant Print Services",
+    };
+    sendSmtpEmail.to = [
+      { email: customerEmail, name: orderDetails.customerName },
+    ];
     sendSmtpEmail.subject = `Print Order Confirmation - ${orderDetails.orderNumber}`;
 
-    const estimatedCompletion = new Date(orderDetails.estimatedCompletion).toLocaleDateString();
+    const estimatedCompletion = new Date(
+      orderDetails.estimatedCompletion,
+    ).toLocaleDateString();
     const totalAmount = (orderDetails.totalAmount / 100).toFixed(2);
 
     sendSmtpEmail.htmlContent = `
@@ -1896,7 +2175,7 @@ export class BrevoEmailService {
                   <td style="padding: 8px 0; font-weight: bold;">Delivery Method:</td>
                   <td style="padding: 8px 0; text-transform: capitalize;">${orderDetails.deliveryMethod}</td>
                 </tr>
-                ${orderDetails.rushOrder ? '<tr style="border-bottom: 1px solid #e5e7eb;"><td style="padding: 8px 0; font-weight: bold;">Rush Order:</td><td style="padding: 8px 0; color: #dc2626;">Yes (+50% fee)</td></tr>' : ''}
+                ${orderDetails.rushOrder ? '<tr style="border-bottom: 1px solid #e5e7eb;"><td style="padding: 8px 0; font-weight: bold;">Rush Order:</td><td style="padding: 8px 0; color: #dc2626;">Yes (+50% fee)</td></tr>' : ""}
                 <tr>
                   <td style="padding: 8px 0; font-weight: bold; font-size: 18px;">Total Paid:</td>
                   <td style="padding: 8px 0; font-size: 18px; font-weight: bold; color: #059669;">$${totalAmount}</td>
@@ -1908,23 +2187,31 @@ export class BrevoEmailService {
               <h3 style="color: #065f46; margin-top: 0;">Production Timeline</h3>
               <p style="margin: 0; color: #047857;">
                 <strong>Estimated Completion:</strong> ${estimatedCompletion}<br>
-                ${orderDetails.rushOrder ? 'Your rush order will be prioritized and completed within 24 hours.' : 'Standard processing time is 2-3 business days.'}
+                ${orderDetails.rushOrder ? "Your rush order will be prioritized and completed within 24 hours." : "Standard processing time is 2-3 business days."}
               </p>
             </div>
 
-            ${orderDetails.deliveryAddress ? `
+            ${
+              orderDetails.deliveryAddress
+                ? `
             <div style="background-color: #f3f4f6; padding: 20px; border-radius: 8px; margin-bottom: 20px;">
               <h3 style="color: #374151; margin-top: 0;">Delivery Information</h3>
               <p style="margin: 0; color: #6b7280;">${orderDetails.deliveryAddress}</p>
             </div>
-            ` : ''}
+            `
+                : ""
+            }
 
-            ${orderDetails.specialInstructions ? `
+            ${
+              orderDetails.specialInstructions
+                ? `
             <div style="background-color: #fef3c7; padding: 20px; border-radius: 8px; margin-bottom: 20px;">
               <h3 style="color: #92400e; margin-top: 0;">Special Instructions</h3>
               <p style="margin: 0; color: #b45309;">${orderDetails.specialInstructions}</p>
             </div>
-            ` : ''}
+            `
+                : ""
+            }
 
             <div style="text-align: center; padding: 20px; background-color: #f9fafb; border-radius: 8px;">
               <h3 style="color: #374151; margin-top: 0;">What's Next?</h3>
@@ -1948,19 +2235,29 @@ export class BrevoEmailService {
 
     try {
       const result = await this.apiInstance!.sendTransacEmail(sendSmtpEmail);
-      console.log(`Print order confirmation sent successfully to ${customerEmail}:`, {
-        messageId: result.body?.messageId,
-        orderNumber: orderDetails.orderNumber,
-        brevoResponse: result.response?.statusCode
-      });
+      console.log(
+        `Print order confirmation sent successfully to ${customerEmail}:`,
+        {
+          messageId: result.body?.messageId,
+          orderNumber: orderDetails.orderNumber,
+          brevoResponse: result.response?.statusCode,
+        },
+      );
       return result;
     } catch (error) {
-      console.error(`Error sending print order confirmation to ${customerEmail}:`, error);
+      console.error(
+        `Error sending print order confirmation to ${customerEmail}:`,
+        error,
+      );
       throw error;
     }
   }
 
-  async sendBookingCancellationNotification(restaurantEmail: string, restaurantName: string, bookingDetails: any) {
+  async sendBookingCancellationNotification(
+    restaurantEmail: string,
+    restaurantName: string,
+    bookingDetails: any,
+  ) {
     if (!this.checkEnabled()) return;
 
     const sendSmtpEmail = new SendSmtpEmail();
@@ -1997,25 +2294,33 @@ export class BrevoEmailService {
                     <span style="color: #666; font-weight: 500;">Customer:</span>
                     <span style="color: #333; font-weight: 600;">${bookingDetails.customerName}</span>
                   </div>
-                  ${bookingDetails.customerEmail ? `
+                  ${
+                    bookingDetails.customerEmail
+                      ? `
                     <div style="display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid #f1aeb5;">
                       <span style="color: #666; font-weight: 500;">Email:</span>
                       <span style="color: #333; font-weight: 600;">${bookingDetails.customerEmail}</span>
                     </div>
-                  ` : ''}
-                  ${bookingDetails.customerPhone ? `
+                  `
+                      : ""
+                  }
+                  ${
+                    bookingDetails.customerPhone
+                      ? `
                     <div style="display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid #f1aeb5;">
                       <span style="color: #666; font-weight: 500;">Phone:</span>
                       <span style="color: #333; font-weight: 600;">${bookingDetails.customerPhone}</span>
                     </div>
-                  ` : ''}
+                  `
+                      : ""
+                  }
                   <div style="display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid #f1aeb5;">
                     <span style="color: #666; font-weight: 500;">Date:</span>
                     <span style="color: #333; font-weight: 600;">${new Date(bookingDetails.bookingDate).toLocaleDateString()}</span>
                   </div>
                   <div style="display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid #f1aeb5;">
                     <span style="color: #666; font-weight: 500;">Time:</span>
-                    <span style="color: #333; font-weight: 600;">${bookingDetails.startTime}${bookingDetails.endTime ? ` - ${bookingDetails.endTime}` : ''}</span>
+                    <span style="color: #333; font-weight: 600;">${bookingDetails.startTime}${bookingDetails.endTime ? ` - ${bookingDetails.endTime}` : ""}</span>
                   </div>
                   <div style="display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid #f1aeb5;">
                     <span style="color: #666; font-weight: 500;">Party Size:</span>
@@ -2028,12 +2333,16 @@ export class BrevoEmailService {
                 </div>
               </div>
 
-              ${bookingDetails.notes ? `
+              ${
+                bookingDetails.notes
+                  ? `
                 <div style="background-color: #f8f9fa; border-radius: 8px; padding: 20px; margin: 25px 0;">
                   <h4 style="margin: 0 0 10px; color: #333;">Original Notes:</h4>
                   <p style="margin: 0; color: #666; font-style: italic;">"${bookingDetails.notes}"</p>
                 </div>
-              ` : ''}
+              `
+                  : ""
+              }
 
               <div style="background-color: #d1ecf1; border-radius: 8px; padding: 20px; margin: 25px 0; border-left: 4px solid #17a2b8;">
                 <p style="margin: 0; color: #0c5460; font-weight: 500;">
@@ -2042,37 +2351,46 @@ export class BrevoEmailService {
               </div>
 
               <p style="margin: 30px 0 10px; font-size: 16px; color: #333;">Best regards,</p>
-              <p style="margin: 0; font-size: 16px; color: #333; font-weight: 600;">Trofta Booking System</p>
+              <p style="margin: 0; font-size: 16px; color: #333; font-weight: 600;">${bookingDetails.restaurantName || "Restaurant"} Booking System</p>
             </div>
           </div>
         </body>
       </html>
     `;
 
-    const senderEmail = process.env.BREVO_SENDER_EMAIL || "noreply@restaurant.com";
-    console.log('Using sender email:', senderEmail);
+    const senderEmail =
+      process.env.BREVO_SENDER_EMAIL || "noreply@restaurant.com";
+    console.log("Using sender email:", senderEmail);
 
     sendSmtpEmail.sender = {
-      name: "Trofta",
-      email: senderEmail
+      name: bookingDetails.restaurantName || "Restaurant",
+      email: senderEmail,
     };
 
-    sendSmtpEmail.to = [{
-      email: restaurantEmail,
-      name: restaurantName
-    }];
+    sendSmtpEmail.to = [
+      {
+        email: restaurantEmail,
+        name: restaurantName,
+      },
+    ];
 
     try {
       const result = await this.apiInstance!.sendTransacEmail(sendSmtpEmail);
-      console.log('Booking cancellation notification email sent:', result);
+      console.log("Booking cancellation notification email sent:", result);
       return result;
     } catch (error) {
-      console.error('Error sending booking cancellation notification email:', error);
+      console.error(
+        "Error sending booking cancellation notification email:",
+        error,
+      );
       throw error;
     }
   }
 
-  async sendRestaurantNotification(restaurantEmail: string, bookingDetails: any) {
+  async sendRestaurantNotification(
+    restaurantEmail: string,
+    bookingDetails: any,
+  ) {
     if (!this.checkEnabled()) return;
 
     const sendSmtpEmail = new SendSmtpEmail();
@@ -2109,36 +2427,48 @@ export class BrevoEmailService {
                     <span style="color: #666; font-weight: 500;">Customer:</span>
                     <span style="color: #333; font-weight: 600;">${bookingDetails.customerName}</span>
                   </div>
-                  ${bookingDetails.customerEmail ? `
+                  ${
+                    bookingDetails.customerEmail
+                      ? `
                     <div style="display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid #e9ecef;">
                       <span style="color: #666; font-weight: 500;">Email:</span>
                       <span style="color: #333; font-weight: 600;">${bookingDetails.customerEmail}</span>
                     </div>
-                  ` : ''}
-                  ${bookingDetails.customerPhone ? `
+                  `
+                      : ""
+                  }
+                  ${
+                    bookingDetails.customerPhone
+                      ? `
                     <div style="display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid #e9ecef;">
                       <span style="color: #666; font-weight: 500;">Phone:</span>
                       <span style="color: #333; font-weight: 600;">${bookingDetails.customerPhone}</span>
                     </div>
-                  ` : ''}
+                  `
+                      : ""
+                  }
                   <div style="display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid #e9ecef;">
                     <span style="color: #666; font-weight: 500;">Date:</span>
                     <span style="color: #333; font-weight: 600;">${new Date(bookingDetails.bookingDate).toLocaleDateString()}</span>
                   </div>
                   <div style="display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid #e9ecef;">
                     <span style="color: #666; font-weight: 500;">Time:</span>
-                    <span style="color: #333; font-weight: 600;">${bookingDetails.startTime}${bookingDetails.endTime ? ` - ${bookingDetails.endTime}` : ''}</span>
+                    <span style="color: #333; font-weight: 600;">${bookingDetails.startTime}${bookingDetails.endTime ? ` - ${bookingDetails.endTime}` : ""}</span>
                   </div>
                   <div style="display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid #e9ecef;">
                     <span style="color: #666; font-weight: 500;">Party Size:</span>
                     <span style="color: #333; font-weight: 600;">${bookingDetails.guestCount} guests</span>
                   </div>
-                  ${bookingDetails.specialRequests ? `
+                  ${
+                    bookingDetails.specialRequests
+                      ? `
                     <div style="display: flex; justify-content: space-between; padding: 8px 0;">
                       <span style="color: #666; font-weight: 500;">Special Requests:</span>
                       <span style="color: #333; font-weight: 600;">${bookingDetails.specialRequests}</span>
                     </div>
-                  ` : ''}
+                  `
+                      : ""
+                  }
                 </div>
               </div>
 
@@ -2149,32 +2479,35 @@ export class BrevoEmailService {
               </div>
 
               <p style="margin: 30px 0 10px; font-size: 16px; color: #333;">Best regards,</p>
-              <p style="margin: 0; font-size: 16px; color: #333; font-weight: 600;">Trofta Booking System</p>
+              <p style="margin: 0; font-size: 16px; color: #333; font-weight: 600;">${bookingDetails.restaurantName || "Restaurant"} Booking System</p>
             </div>
           </div>
         </body>
       </html>
     `;
 
-    const senderEmail = process.env.BREVO_SENDER_EMAIL || "noreply@restaurant.com";
-    console.log('Using sender email:', senderEmail);
+    const senderEmail =
+      process.env.BREVO_SENDER_EMAIL || "noreply@restaurant.com";
+    console.log("Using sender email:", senderEmail);
 
     sendSmtpEmail.sender = {
-      name: "Trofta",
-      email: senderEmail
+      name: bookingDetails.restaurantName || "Restaurant",
+      email: senderEmail,
     };
 
-    sendSmtpEmail.to = [{
-      email: restaurantEmail,
-      name: "Restaurant Team"
-    }];
+    sendSmtpEmail.to = [
+      {
+        email: restaurantEmail,
+        name: "Restaurant Team",
+      },
+    ];
 
     try {
       const result = await this.apiInstance!.sendTransacEmail(sendSmtpEmail);
-      console.log('Restaurant notification email sent:', result);
+      console.log("Restaurant notification email sent:", result);
       return result;
     } catch (error) {
-      console.error('Error sending restaurant notification email:', error);
+      console.error("Error sending restaurant notification email:", error);
       throw error;
     }
   }
@@ -2182,10 +2515,15 @@ export class BrevoEmailService {
   async sendPaymentConfirmation(
     customerEmail: string,
     customerName: string,
-    paymentDetails: { bookingId: number; amount: number; currency: string; restaurantName?: string }
+    paymentDetails: {
+      bookingId: number;
+      amount: number;
+      currency: string;
+      restaurantName?: string;
+    },
   ) {
     const subject = `Payment Confirmation - ${paymentDetails.restaurantName || "Restaurant"}`;
-    
+
     const htmlContent = `
       <!DOCTYPE html>
       <html>
@@ -2254,45 +2592,48 @@ export class BrevoEmailService {
       </html>
     `;
 
-    const senderEmail = process.env.BREVO_SENDER_EMAIL || "noreply@restaurant.com";
+    const senderEmail =
+      process.env.BREVO_SENDER_EMAIL || "noreply@restaurant.com";
     const sendSmtpEmail = new SendSmtpEmail();
     sendSmtpEmail.subject = subject;
     sendSmtpEmail.htmlContent = htmlContent;
     sendSmtpEmail.sender = {
       name: paymentDetails.restaurantName || "Restaurant",
-      email: senderEmail
+      email: senderEmail,
     };
 
-    sendSmtpEmail.to = [{
-      email: customerEmail,
-      name: customerName
-    }];
+    sendSmtpEmail.to = [
+      {
+        email: customerEmail,
+        name: customerName,
+      },
+    ];
 
     try {
       const result = await this.apiInstance!.sendTransacEmail(sendSmtpEmail);
-      console.log('Payment confirmation email sent:', result);
+      console.log("Payment confirmation email sent:", result);
       return result;
     } catch (error) {
-      console.error('Error sending payment confirmation email:', error);
+      console.error("Error sending payment confirmation email:", error);
       throw error;
     }
   }
 
   async sendPaymentNotificationToRestaurant(
     restaurantEmail: string,
-    paymentDetails: { 
-      bookingId: number; 
-      amount: number; 
-      currency: string; 
-      customerName: string; 
+    paymentDetails: {
+      bookingId: number;
+      amount: number;
+      currency: string;
+      customerName: string;
       restaurantName?: string;
       bookingDate: string;
       bookingTime: string;
       guestCount: number;
-    }
+    },
   ) {
     const subject = `Payment Received - Booking #${paymentDetails.bookingId}`;
-    
+
     const htmlContent = `
       <!DOCTYPE html>
       <html>
@@ -2366,26 +2707,32 @@ export class BrevoEmailService {
       </html>
     `;
 
-    const senderEmail = process.env.BREVO_SENDER_EMAIL || "noreply@restaurant.com";
+    const senderEmail =
+      process.env.BREVO_SENDER_EMAIL || "noreply@restaurant.com";
     const sendSmtpEmail = new SendSmtpEmail();
     sendSmtpEmail.subject = subject;
     sendSmtpEmail.htmlContent = htmlContent;
     sendSmtpEmail.sender = {
       name: "Restaurant Management System",
-      email: senderEmail
+      email: senderEmail,
     };
 
-    sendSmtpEmail.to = [{
-      email: restaurantEmail,
-      name: "Restaurant Team"
-    }];
+    sendSmtpEmail.to = [
+      {
+        email: restaurantEmail,
+        name: "Restaurant Team",
+      },
+    ];
 
     try {
       const result = await this.apiInstance!.sendTransacEmail(sendSmtpEmail);
-      console.log('Payment notification email sent to restaurant:', result);
+      console.log("Payment notification email sent to restaurant:", result);
       return result;
     } catch (error) {
-      console.error('Error sending payment notification email to restaurant:', error);
+      console.error(
+        "Error sending payment notification email to restaurant:",
+        error,
+      );
       throw error;
     }
   }
