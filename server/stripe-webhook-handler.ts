@@ -49,9 +49,8 @@ export async function handleStripeWebhook(event: Stripe.Event, storage: IStorage
         // Update payment record
         await storage.updateStripePaymentByIntentId(paymentIntent.id, {
           status: 'succeeded',
-          chargeId: paymentIntent.latest_charge as string,
-          receiptUrl: null, // Will be updated when charge.succeeded webhook arrives
-          metadata: paymentIntent.metadata
+          metadata: paymentIntent.metadata,
+          updatedAt: new Date()
         });
         
         // Handle guest booking payment
@@ -88,22 +87,15 @@ export async function handleStripeWebhook(event: Stripe.Event, storage: IStorage
               bookingId: bookingId,
               tenantId: booking.tenantId,
               restaurantId: booking.restaurantId,
-              customerId: booking.customerId,
               invoiceNumber: `INV-${Date.now()}-${bookingId}`,
-              amount: paymentIntent.amount / 100, // Convert from cents
+              paymentIntentId: paymentIntent.id,
+              stripeReceiptUrl: null, // Will be updated when available
+              customerName: booking.customerName || paymentIntent.metadata.customerName || 'Guest',
+              customerEmail: booking.customerEmail || paymentIntent.metadata.customerEmail || '',
+              amount: (paymentIntent.amount / 100).toString(), // Convert from cents to decimal string
               currency: paymentIntent.currency.toUpperCase(),
               status: 'paid' as const,
-              paymentMethod: 'stripe',
-              stripePaymentIntentId: paymentIntent.id,
-              stripeChargeId: paymentIntent.latest_charge as string,
-              stripeReceiptUrl: null, // Will be updated when available
-              metadata: {
-                customerName: paymentIntent.metadata.customerName,
-                customerEmail: paymentIntent.metadata.customerEmail,
-                bookingDate: paymentIntent.metadata.bookingDate,
-                restaurantName: paymentIntent.metadata.restaurantName
-              },
-              paidAt: new Date(),
+              description: `Payment for booking #${bookingId}`,
               createdAt: new Date()
             };
             
@@ -154,17 +146,15 @@ export async function handleStripeWebhook(event: Stripe.Event, storage: IStorage
         // Update receipt URL when charge succeeds
         const charge = event.data.object as Stripe.Charge;
         if (charge.payment_intent) {
-          await storage.updateStripePaymentByIntentId(charge.payment_intent as string, {
-            receiptUrl: charge.receipt_url
-          });
-          
-          // Update invoice with receipt URL
+          // Update invoice with receipt URL (stripePayments table doesn't have receiptUrl field)
           const { invoices } = await import("../shared/schema");
           const { eq } = await import("drizzle-orm");
           await storage.db
             .update(invoices)
             .set({ stripeReceiptUrl: charge.receipt_url })
-            .where(eq(invoices.stripePaymentIntentId, charge.payment_intent as string));
+            .where(eq(invoices.paymentIntentId, charge.payment_intent as string));
+          
+          console.log(`Updated receipt URL for payment intent: ${charge.payment_intent}`);
         }
         break;
 
