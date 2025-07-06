@@ -82,7 +82,7 @@ const PaymentForm = ({ onPaymentSuccess, onPaymentError, bookingData, paymentAmo
       const { error } = await stripe.confirmPayment({
         elements,
         confirmParams: {
-          return_url: `${window.location.origin}/payment-success?booking=${bookingData.id}`,
+          return_url: `${window.location.origin}/payment-success${bookingData ? `?booking=${bookingData.id}` : ''}`,
         },
       });
 
