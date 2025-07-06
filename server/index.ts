@@ -13,6 +13,43 @@ import { systemSettings } from "./system-settings";
 import { AdminStorage } from "./admin-storage";
 
 const app = express();
+
+// IMPORTANT: Stripe webhook needs raw body, so we need to add it BEFORE the JSON parser
+// This route will be moved here to ensure it gets raw body
+app.post("/api/webhooks/stripe", express.raw({ type: 'application/json' }), async (req, res) => {
+  // Import stripe and handle webhook
+  const stripe = require('stripe')(process.env.STRIPE_SECRET_KEY);
+  
+  try {
+    const sig = req.headers["stripe-signature"];
+    let event;
+
+    try {
+      // req.body is now a Buffer containing the raw request body
+      event = stripe.webhooks.constructEvent(
+        req.body,
+        sig,
+        process.env.STRIPE_WEBHOOK_SECRET,
+      );
+    } catch (err) {
+      console.log(`Webhook signature verification failed.`, err.message);
+      return res.status(400).send(`Webhook Error: ${err.message}`);
+    }
+
+    console.log(`✅ Webhook signature verified for event: ${event.type}`);
+
+    // Delegate to the main webhook handler in routes.ts
+    const { handleStripeWebhook } = await import('./stripe-webhook-handler');
+    await handleStripeWebhook(event, storage);
+    
+    res.json({ received: true });
+  } catch (error) {
+    console.error("Stripe webhook error:", error);
+    res.status(500).json({ error: "Webhook processing failed" });
+  }
+});
+
+// NOW apply the global JSON parser for all other routes
 app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
 
