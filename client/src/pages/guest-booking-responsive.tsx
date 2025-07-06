@@ -1602,7 +1602,12 @@ export default function GuestBookingResponsive(props: any) {
                       paymentAmount={paymentAmount}
                       currency={paymentInfo?.paymentSetup?.currency || 'EUR'}
                       onPaymentSuccess={() => {
-                        // Now create the booking after payment success
+                        // Payment successful - show confirmation immediately
+                        console.log('Payment successful, showing confirmation');
+                        setBookingCreated(true);
+                        setCurrentStep(steps.length); // Go to success screen
+                        
+                        // Also create the booking record in background
                         const bookingData = {
                           bookingDate: selectedDate ? format(selectedDate, "yyyy-MM-dd") : "",
                           startTime: selectedTime,
@@ -1618,6 +1623,11 @@ export default function GuestBookingResponsive(props: any) {
                           paymentDeadlineHours: 24,
                         };
                         createBookingMutation.mutate(bookingData);
+                        
+                        toast({
+                          title: "Payment Successful!",
+                          description: "Your booking has been confirmed.",
+                        });
                       }}
                       onPaymentError={(error: string) => {
                         setPaymentError(error);
