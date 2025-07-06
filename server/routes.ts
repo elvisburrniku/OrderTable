@@ -14991,7 +14991,8 @@ NEXT STEPS:
   );
 
   // Enhanced Stripe webhook handler with comprehensive logging and duplicate prevention
-  app.post("/api/stripe/webhook", async (req: Request, res: Response) => {
+  // Use raw body parser for Stripe webhook signature verification
+  app.post("/api/stripe/webhook", express.raw({ type: 'application/json' }), async (req: Request, res: Response) => {
     const startTime = Date.now();
     const sig = req.headers["stripe-signature"];
     let event;
