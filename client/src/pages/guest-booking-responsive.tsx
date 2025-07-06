@@ -49,7 +49,15 @@ import {
 const stripePromise = loadStripe(import.meta.env.VITE_STRIPE_PUBLIC_KEY || "");
 
 // Payment form component for Stripe Elements
-const PaymentForm = ({ onPaymentSuccess, onPaymentError, bookingData, paymentAmount, currency }: any) => {
+interface PaymentFormProps {
+  onPaymentSuccess: () => void;
+  onPaymentError: (error: string) => void;
+  bookingData: any | null;
+  paymentAmount: number;
+  currency: string;
+}
+
+const PaymentForm = ({ onPaymentSuccess, onPaymentError, bookingData, paymentAmount, currency }: PaymentFormProps) => {
   const stripe = useStripe();
   const elements = useElements();
   const [isProcessing, setIsProcessing] = useState(false);
@@ -113,17 +121,17 @@ const PaymentForm = ({ onPaymentSuccess, onPaymentError, bookingData, paymentAmo
             <div className="flex items-center gap-2">
               <Users className="h-4 w-4" />
               <span>
-                {bookingData.customerName} - {bookingData.guestCount}{" "}
-                {bookingData.guestCount === 1 ? "guest" : "guests"}
+                {bookingData ? `${bookingData.customerName} - ${bookingData.guestCount}` : "Guest Booking"} {" "}
+                {bookingData ? (bookingData.guestCount === 1 ? "guest" : "guests") : ""}
               </span>
             </div>
             <div className="flex items-center gap-2">
               <Calendar className="h-4 w-4" />
-              <span>{new Date(bookingData.bookingDate).toLocaleDateString()}</span>
+              <span>{bookingData ? new Date(bookingData.bookingDate).toLocaleDateString() : "Selected Date"}</span>
             </div>
             <div className="flex items-center gap-2">
               <Clock className="h-4 w-4" />
-              <span>{bookingData.startTime}</span>
+              <span>{bookingData ? bookingData.startTime : "Selected Time"}</span>
             </div>
           </div>
           <div className="flex justify-between items-center pt-2 border-t font-medium">
