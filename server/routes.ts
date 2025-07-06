@@ -9646,6 +9646,48 @@ export async function registerRoutes(app: Express): Promise<Server> {
               }
               break;
 
+            case "slack":
+              if (configuration.webhookUrl) {
+                const response = await fetch(configuration.webhookUrl, {
+                  method: "POST",
+                  headers: { "Content-Type": "application/json" },
+                  body: JSON.stringify({
+                    text: `Test message from ${restaurant.name} booking system`,
+                    channel: configuration.channel || "#general",
+                  }),
+                });
+                testResult = response.ok;
+                if (!testResult)
+                  errorMessage = "Slack webhook URL unreachable or returned error";
+              } else {
+                errorMessage = "Slack webhook URL is required";
+              }
+              break;
+
+            case "notion":
+              // Test Notion connection using environment variables
+              if (process.env.NOTION_INTEGRATION_SECRET && process.env.NOTION_PAGE_URL) {
+                try {
+                  const response = await fetch("https://api.notion.com/v1/users/me", {
+                    headers: {
+                      "Authorization": `Bearer ${process.env.NOTION_INTEGRATION_SECRET}`,
+                      "Notion-Version": "2022-06-28",
+                    },
+                  });
+                  testResult = response.ok;
+                  if (!testResult) {
+                    errorMessage = "Failed to authenticate with Notion API";
+                  }
+                } catch (error) {
+                  testResult = false;
+                  errorMessage = "Failed to connect to Notion API";
+                }
+              } else {
+                testResult = false;
+                errorMessage = "Notion API credentials not configured. Contact administrator.";
+              }
+              break;
+
             default:
               // For integrations without API testing capability
               testResult = true;
@@ -11807,6 +11849,28 @@ export async function registerRoutes(app: Express): Promise<Server> {
   );
 
   // Contact form submission endpoint
+  // Check secrets endpoint
+  app.post("/api/check-secrets", validateTenant, async (req, res) => {
+    try {
+      const { secret_keys } = req.body;
+      
+      if (!Array.isArray(secret_keys)) {
+        return res.status(400).json({ message: "secret_keys must be an array" });
+      }
+
+      const existing = secret_keys.filter(key => process.env[key]);
+      const missing = secret_keys.filter(key => !process.env[key]);
+
+      res.json({
+        existing,
+        missing,
+      });
+    } catch (error) {
+      console.error("Error checking secrets:", error);
+      res.status(500).json({ message: "Internal server error" });
+    }
+  });
+
   app.post("/api/contact", async (req, res) => {
     try {
       const contactSchema = z.object({

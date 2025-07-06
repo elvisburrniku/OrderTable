@@ -58,6 +58,8 @@ import MetaIntegration from "./pages/integrations/meta";
 import MichelinIntegration from "./pages/integrations/michelin";
 import WebhooksIntegration from "./pages/integrations/webhooks";
 import TripAdvisorIntegration from "./pages/integrations/tripadvisor";
+import SlackIntegration from "./pages/integrations/slack";
+import NotionIntegration from "./pages/integrations/notion";
 import SpecialPeriods from "./pages/special-periods";
 import CutOffTime from "./pages/cut-off-time";
 import PeriodicCriteria from "./pages/periodic-criteria";
@@ -265,6 +267,14 @@ function App() {
                                       <Route
                                         path="/:tenantId/integrations/tripadvisor"
                                         component={TripAdvisorIntegration}
+                                      />
+                                      <Route
+                                        path="/:tenantId/integrations/slack"
+                                        component={SlackIntegration}
+                                      />
+                                      <Route
+                                        path="/:tenantId/integrations/notion"
+                                        component={NotionIntegration}
                                       />
                                       <Route
                                         path="/:tenantId/statistics"

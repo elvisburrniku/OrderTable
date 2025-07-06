@@ -162,6 +162,220 @@ const integrations: Integration[] = [
     price: 'Enterprise',
     premium: true,
     status: 'healthy'
+  },
+  {
+    id: 'tripadvisor',
+    name: 'TripAdvisor',
+    description: 'World\'s largest travel platform for reviews and bookings',
+    icon: '🦉',
+    connected: false,
+    category: 'Recognition',
+    features: ['Review management', 'Booking integration', 'Analytics dashboard'],
+    price: 'Free',
+    status: 'healthy'
+  },
+  {
+    id: 'opentable',
+    name: 'OpenTable',
+    description: 'Leading restaurant reservation platform',
+    icon: '🍽️',
+    connected: false,
+    category: 'Booking Platforms',
+    features: ['Reservation sync', 'Guest management', 'Points program'],
+    price: '$299/month',
+    premium: true,
+    status: 'healthy'
+  },
+  {
+    id: 'resy',
+    name: 'Resy',
+    description: 'Modern reservation platform for restaurants',
+    icon: '📅',
+    connected: false,
+    category: 'Booking Platforms',
+    features: ['Waitlist management', 'Table optimization', 'Guest insights'],
+    price: '$249/month',
+    premium: true,
+    status: 'healthy'
+  },
+  {
+    id: 'yelp',
+    name: 'Yelp for Business',
+    description: 'Local business reviews and discovery platform',
+    icon: '⭐',
+    connected: false,
+    category: 'Recognition',
+    features: ['Review monitoring', 'Response management', 'Analytics'],
+    price: 'Free tier available',
+    status: 'healthy'
+  },
+  {
+    id: 'square',
+    name: 'Square',
+    description: 'All-in-one payment and POS system',
+    icon: '◼️',
+    connected: false,
+    category: 'Payments',
+    features: ['POS integration', 'Online payments', 'Inventory sync'],
+    price: '2.6% + 10¢',
+    status: 'healthy'
+  },
+  {
+    id: 'toast',
+    name: 'Toast POS',
+    description: 'Restaurant-specific POS and management system',
+    icon: '🍞',
+    connected: false,
+    category: 'POS Systems',
+    features: ['Order management', 'Kitchen display', 'Analytics'],
+    price: 'Custom pricing',
+    premium: true,
+    status: 'healthy'
+  },
+  {
+    id: 'doordash',
+    name: 'DoorDash',
+    description: 'Food delivery and pickup platform',
+    icon: '🚗',
+    connected: false,
+    category: 'Delivery',
+    features: ['Delivery integration', 'Pickup orders', 'Menu sync'],
+    price: '15-30% commission',
+    status: 'healthy'
+  },
+  {
+    id: 'ubereats',
+    name: 'Uber Eats',
+    description: 'Global food delivery marketplace',
+    icon: '🍔',
+    connected: false,
+    category: 'Delivery',
+    features: ['Delivery orders', 'Real-time tracking', 'Promotions'],
+    price: '15-30% commission',
+    status: 'healthy'
+  },
+  {
+    id: 'grubhub',
+    name: 'Grubhub',
+    description: 'Online food ordering and delivery platform',
+    icon: '🥡',
+    connected: false,
+    category: 'Delivery',
+    features: ['Order management', 'Marketing tools', 'Analytics'],
+    price: '15-30% commission',
+    status: 'healthy'
+  },
+  {
+    id: 'salesforce',
+    name: 'Salesforce CRM',
+    description: 'Customer relationship management platform',
+    icon: '☁️',
+    connected: false,
+    category: 'CRM',
+    features: ['Customer profiles', 'Marketing automation', 'Analytics'],
+    price: '$25/user/month',
+    premium: true,
+    status: 'healthy'
+  },
+  {
+    id: 'hubspot',
+    name: 'HubSpot',
+    description: 'All-in-one CRM and marketing platform',
+    icon: '🔧',
+    connected: false,
+    category: 'CRM',
+    features: ['Contact management', 'Email marketing', 'Analytics'],
+    price: 'Free tier available',
+    status: 'healthy'
+  },
+  {
+    id: 'quickbooks',
+    name: 'QuickBooks',
+    description: 'Accounting and financial management software',
+    icon: '💼',
+    connected: false,
+    category: 'Accounting',
+    features: ['Invoice sync', 'Expense tracking', 'Financial reports'],
+    price: '$25/month',
+    status: 'healthy'
+  },
+  {
+    id: 'xero',
+    name: 'Xero',
+    description: 'Cloud-based accounting software',
+    icon: '📊',
+    connected: false,
+    category: 'Accounting',
+    features: ['Bookkeeping', 'Payroll', 'Financial reporting'],
+    price: '$13/month',
+    status: 'healthy'
+  },
+  {
+    id: 'spotify',
+    name: 'Spotify for Business',
+    description: 'Background music for restaurants',
+    icon: '🎵',
+    connected: false,
+    category: 'Entertainment',
+    features: ['Licensed music', 'Playlist curation', 'Scheduling'],
+    price: '$26.99/month',
+    status: 'healthy'
+  },
+  {
+    id: 'zoom',
+    name: 'Zoom Events',
+    description: 'Virtual events and private dining',
+    icon: '📹',
+    connected: false,
+    category: 'Communication',
+    features: ['Virtual events', 'Webinars', 'Recording'],
+    price: '$79/month',
+    status: 'healthy'
+  },
+  {
+    id: 'calendly',
+    name: 'Calendly',
+    description: 'Automated scheduling for events and consultations',
+    icon: '📆',
+    connected: false,
+    category: 'Scheduling',
+    features: ['Event scheduling', 'Calendar sync', 'Reminders'],
+    price: 'Free tier available',
+    status: 'healthy'
+  },
+  {
+    id: 'googleanalytics',
+    name: 'Google Analytics',
+    description: 'Website traffic and conversion tracking',
+    icon: '📈',
+    connected: false,
+    category: 'Analytics',
+    features: ['Traffic analysis', 'Conversion tracking', 'Custom reports'],
+    price: 'Free',
+    status: 'healthy'
+  },
+  {
+    id: 'mixpanel',
+    name: 'Mixpanel',
+    description: 'Product analytics for user behavior',
+    icon: '📊',
+    connected: false,
+    category: 'Analytics',
+    features: ['Event tracking', 'User analytics', 'Funnel analysis'],
+    price: 'Free tier available',
+    status: 'healthy'
+  },
+  {
+    id: 'segment',
+    name: 'Segment',
+    description: 'Customer data platform',
+    icon: '🔄',
+    connected: false,
+    category: 'Analytics',
+    features: ['Data collection', 'Integration hub', 'Customer profiles'],
+    price: 'Free tier available',
+    premium: true,
+    status: 'healthy'
   }
 ];
 
@@ -251,7 +465,23 @@ export default function Integrations() {
   };
 
   if (!user || !tenant || !restaurant) {
-    return <div>Loading...</div>;
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50/30 to-purple-50/20 flex items-center justify-center">
+        <motion.div 
+          className="bg-white rounded-xl p-6 shadow-xl"
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+        >
+          <motion.div
+            animate={{ rotate: 360 }}
+            transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
+          >
+            <RefreshCw className="w-6 h-6 text-blue-600 mx-auto mb-3" />
+          </motion.div>
+          <p className="text-slate-600">Loading integrations...</p>
+        </motion.div>
+      </div>
+    );
   }
 
   const uniqueCategories = mergedIntegrations.map(int => int.category);
@@ -265,6 +495,13 @@ export default function Integrations() {
       case 'Payments': return Shield;
       case 'Communication': return Mail;
       case 'Recognition': return Star;
+      case 'Booking Platforms': return Zap;
+      case 'POS Systems': return Activity;
+      case 'Delivery': return Globe;
+      case 'CRM': return Users;
+      case 'Accounting': return BarChart3;
+      case 'Entertainment': return Sparkles;
+      case 'Scheduling': return RefreshCw;
       default: return Layers;
     }
   };
