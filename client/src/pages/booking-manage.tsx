@@ -182,34 +182,26 @@ export default function BookingManage() {
   const { data: availableTables } = useQuery({
     queryKey: [`/api/booking-manage/${id}/available-tables`, newDate, newTime],
     queryFn: async () => {
-      if (!newDate || !newTime || !booking) return [];
-      const urlParams = new URLSearchParams(window.location.search);
-      const hash = urlParams.get('hash');
-
-      if (!hash) return [];
-
+      if (!newDate || !newTime || !booking || !hash) return [];
+      
       const response = await fetch(`/api/booking-manage/${id}/available-tables?hash=${encodeURIComponent(hash)}`);
       if (!response.ok) return [];
       return response.json();
     },
-    enabled: !!booking && !!newDate && !!newTime && !!isChangeAllowed()
+    enabled: !!booking && !!newDate && !!newTime && !!hash && !!isChangeAllowed()
   });
 
   // Fetch change requests for this booking
   const { data: changeRequests = [] } = useQuery({
     queryKey: [`/api/booking-manage/${id}/change-requests`],
     queryFn: async () => {
-      if (!id) return [];
-      const urlParams = new URLSearchParams(window.location.search);
-      const hash = urlParams.get('hash');
-      
-      if (!hash) return [];
+      if (!id || !hash) return [];
       
       const response = await fetch(`/api/booking-manage/${id}/change-requests?hash=${encodeURIComponent(hash)}`);
       if (!response.ok) return [];
       return response.json();
     },
-    enabled: !!id && !!booking
+    enabled: !!id && !!booking && !!hash
   });
 
   // Fetch booking change history
@@ -242,9 +234,7 @@ export default function BookingManage() {
       startTime?: string;
       guestCount?: number;
     }) => {
-      const urlParams = new URLSearchParams(window.location.search);
-      const hash = urlParams.get('hash');
-
+      // Use the same hash extraction logic as the main query
       if (!hash) {
         throw new Error('Access denied - invalid link');
       }
@@ -364,9 +354,6 @@ export default function BookingManage() {
   }
 
   const handleUpdateTable = () => {
-    const urlParams = new URLSearchParams(window.location.search);
-    const hash = urlParams.get('hash');
-
     if (!hash) {
       toast({ title: 'Access denied - invalid link', variant: "destructive" });
       return;
