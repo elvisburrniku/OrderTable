@@ -72,7 +72,9 @@ class TwilioSMSService {
       }
 
       // Format phone number
+      console.log('Original phone number:', messageData.to);
       const formattedPhone = this.formatPhoneNumber(messageData.to);
+      console.log('Formatted phone number:', formattedPhone);
       if (!formattedPhone) {
         return {
           success: false,
@@ -127,26 +129,35 @@ class TwilioSMSService {
   }
 
   private formatPhoneNumber(phone: string): string | null {
+    console.log('formatPhoneNumber input:', phone);
+    
     // Remove all non-numeric characters except +
     const cleaned = phone.replace(/[^\d+]/g, '');
+    console.log('formatPhoneNumber cleaned:', cleaned);
     
     // If it starts with +, it's already formatted
     if (cleaned.startsWith('+')) {
+      console.log('formatPhoneNumber returning cleaned:', cleaned);
       return cleaned;
     }
     
     // If it starts with 00, replace with +
     if (cleaned.startsWith('00')) {
-      return '+' + cleaned.substring(2);
+      const result = '+' + cleaned.substring(2);
+      console.log('formatPhoneNumber returning 00 format:', result);
+      return result;
     }
     
     // If it doesn't start with country code, assume it's a local number
     // You might want to customize this based on your default country
     if (cleaned.length >= 10) {
       // Assume US/Canada if no country code
-      return '+1' + cleaned;
+      const result = '+1' + cleaned;
+      console.log('formatPhoneNumber returning US format:', result);
+      return result;
     }
     
+    console.log('formatPhoneNumber returning null');
     return null;
   }
 
