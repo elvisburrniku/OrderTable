@@ -130,7 +130,7 @@ class SystemSettingsService {
         reminder_hours_before: settingsObject.reminder_hours_before || 24,
         
         // Billing & Payments
-        default_currency: settingsObject.default_currency || "USD",
+        default_currency: settingsObject.default_currency || "EUR",
         enable_stripe_payments: settingsObject.enable_stripe_payments !== false,
         subscription_grace_period_days: settingsObject.subscription_grace_period_days || 7,
         

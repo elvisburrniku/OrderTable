@@ -344,6 +344,14 @@ export default function GuestBookingResponsive(props: any) {
     enabled: !!(finalTenantId && finalRestaurantId),
   });
 
+  // Fetch booking configuration to get currency settings
+  const { data: bookingConfig } = useQuery({
+    queryKey: [
+      `/api/tenants/${finalTenantId}/restaurants/${finalRestaurantId}/booking-config`,
+    ],
+    enabled: !!(finalTenantId && finalRestaurantId),
+  });
+
   // Calculate payment amount based on setup and guest count
   const calculatePaymentAmount = () => {
     if (!paymentInfo?.paymentSetup) return 0;
@@ -362,6 +370,9 @@ export default function GuestBookingResponsive(props: any) {
   };
 
   const paymentAmount = calculatePaymentAmount();
+  
+  // Get currency from booking config, defaulting to EUR
+  const currency = bookingConfig?.currency || 'EUR';
 
   // Create booking mutation
   const createBookingMutation = useMutation({
@@ -436,7 +447,7 @@ export default function GuestBookingResponsive(props: any) {
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
             amount: paymentAmount,
-            currency: paymentInfo?.paymentSetup?.currency || 'EUR',
+            currency: currency,
             metadata: {
               customerName: customerData.name,
               customerEmail: customerData.email,
@@ -474,7 +485,7 @@ export default function GuestBookingResponsive(props: any) {
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
             amount: bookingData.paymentAmount,
-            currency: paymentInfo?.paymentSetup?.currency || 'EUR',
+            currency: currency,
             description: `Payment for booking at ${restaurant?.name || 'restaurant'} - ${bookingData.customerName}`
           })
         }
@@ -1752,7 +1763,7 @@ export default function GuestBookingResponsive(props: any) {
                     <PaymentForm
                       bookingData={null} // No booking created yet - payment first
                       paymentAmount={paymentAmount}
-                      currency={paymentInfo?.paymentSetup?.currency || 'EUR'}
+                      currency={currency}
                       onPaymentSuccess={() => {
                         // Clear any previous payment errors
                         setPaymentError(null);

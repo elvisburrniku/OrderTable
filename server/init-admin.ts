@@ -116,7 +116,7 @@ export async function initializeAdminSystem() {
       // Billing & Payments
       {
         key: "default_currency",
-        value: "USD",
+        value: "EUR",
         description: "Default currency for pricing",
         type: "string"
       },

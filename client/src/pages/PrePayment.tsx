@@ -264,7 +264,7 @@ export default function PrePayment() {
 
   // Get amount and currency from booking data (secure token) or URL params (legacy)
   const amount = booking?.paymentAmount || legacyAmount;
-  const currency = booking?.currency || legacyCurrency || "USD";
+  const currency = booking?.currency || legacyCurrency || "EUR";
 
   // Create payment intent using secure endpoint
   useEffect(() => {
@@ -288,7 +288,7 @@ export default function PrePayment() {
                   ? {
                       token: token,
                       amount: booking.paymentAmount,
-                      currency: "usd",
+                      currency: currency,
                     }
                   : {
                       hash: hash,
@@ -296,7 +296,7 @@ export default function PrePayment() {
                       restaurant: booking.restaurantId,
                       bookingId: booking.id,
                       amount: booking.paymentAmount,
-                      currency: "usd",
+                      currency: currency,
                     },
               ),
             },

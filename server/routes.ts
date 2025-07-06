@@ -5156,7 +5156,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           maxAdvanceBookingDays:
             settings.generalSettings?.maxAdvanceBookingDays || 30,
           timeZone: settings.generalSettings?.timeZone || "America/New_York",
-          currency: settings.generalSettings?.currency || "USD",
+          currency: settings.generalSettings?.currency || "EUR",
         };
 
         console.log("Returning booking config:", bookingConfig);
@@ -5961,7 +5961,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         let requiresPayment = false;
         let paymentAmount = null;
         let paymentSetup = null;
-        let currency = "USD";
+        let currency = "EUR";
 
         if (paymentSetups && paymentSetups.length > 0) {
           // Find active prepayment setup
@@ -5982,7 +5982,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
               paymentAmount = parseFloat(paymentSetup.amount);
             }
             
-            currency = paymentSetup.currency || "USD";
+            currency = paymentSetup.currency || "EUR";
           }
         }
 
@@ -6502,7 +6502,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           tenantId = parseInt(req.body.tenantId);
           restaurantId = parseInt(req.body.restaurantId);
           amount = req.body.amount;
-          currency = req.body.currency || 'USD';
+          currency = req.body.currency || 'EUR';
         } else {
           return res.status(400).json({ 
             message: "Missing required payment token, hash, or booking parameters" 
@@ -6584,7 +6584,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         const tenantId = parseInt(req.params.tenantId);
         const restaurantId = parseInt(req.params.restaurantId);
         const bookingId = parseInt(req.params.bookingId);
-        const { amount, currency = "usd" } = req.body;
+        const { amount, currency = "EUR" } = req.body;
 
         // Verify user has access to this tenant
         if (req.user.tenantId !== tenantId) {
@@ -6751,7 +6751,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
             booking.tenantId,
             booking.restaurantId,
             booking.paymentAmount,
-            'USD',
+            'EUR',
             baseUrl
           );
 
@@ -6880,7 +6880,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         try {
           const paymentIntent = await paymentService.createBookingPaymentIntent(
             parseFloat(amount), // Use the amount directly
-            currency || "usd",
+            currency || "EUR",
             tenant.stripeConnectAccountId,
             {
               bookingId: bookingId,
@@ -6949,7 +6949,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         try {
           const paymentIntent = await paymentService.createBookingPaymentIntent(
             amount,
-            currency || "eur",
+            currency || "EUR",
             tenant.stripeConnectAccountId,
             {
               bookingId: null, // No booking created yet
@@ -20400,7 +20400,7 @@ NEXT STEPS:
         const tenantId = parseInt(req.params.tenantId);
         const restaurantId = parseInt(req.params.restaurantId);
         const bookingId = parseInt(req.params.bookingId);
-        const { amount, currency = "USD", description } = req.body;
+        const { amount, currency = "EUR", description } = req.body;
 
         // Validate booking belongs to tenant/restaurant
         const booking = await storage.getBookingById(bookingId);
