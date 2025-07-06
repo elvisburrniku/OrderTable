@@ -153,7 +153,7 @@ export default function SmsMessages() {
         language: "english"
       });
       setShowCreateModal(false);
-      
+
       if (data.status === "sent") {
         toast({
           title: "SMS Sent Successfully",
@@ -809,7 +809,8 @@ export default function SmsMessages() {
 
             <div>
               <Label htmlFor="language">Language</Label>
-              <Select value={formData.language} onValueChange={(value) => setFormData({ ...formData, language: value })}>
+              <Select value={```python
+formData.language} onValueChange={(value) => setFormData({ ...formData, language: value })}>
                 <SelectTrigger>
                   <SelectValue placeholder="Select language" />
                 </SelectTrigger>
@@ -866,7 +867,7 @@ export default function SmsMessages() {
                 Enter the phone number in international format (e.g., +38345370650)
               </p>
             </div>
-            
+
             <div className="bg-blue-50 p-4 rounded-lg">
               <h4 className="font-medium text-blue-900 mb-2">Test Message Preview:</h4>
               <p className="text-sm text-blue-800">
@@ -952,7 +953,7 @@ export default function SmsMessages() {
                       </div>
                     )}
                   </div>
-                  
+
                   <div>
                     <label className="text-sm font-medium text-gray-600">Content</label>
                     <p className="text-sm text-gray-900 mt-1 p-3 bg-gray-50 rounded-md">
