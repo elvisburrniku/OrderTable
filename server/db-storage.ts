@@ -2460,8 +2460,7 @@ export class DatabaseStorage implements IStorage {
       .where(
         and(
           eq(paymentSetups.restaurantId, restaurantId),
-          eq(paymentSetups.tenantId, tenantId),
-          eq(paymentSetups.isActive, true)
+          eq(paymentSetups.tenantId, tenantId)
         )
       )
       .orderBy(desc(paymentSetups.createdAt))
