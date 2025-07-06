@@ -311,19 +311,17 @@ export default function GuestBookingResponsive(props: any) {
     onSuccess: (data) => {
       setBookingId(data.id);
       setCreatedBookingData(data);
-      setBookingCreated(true);
       
       const hasPaymentStep = paymentInfo?.requiresPayment && paymentInfo?.stripeConnectReady;
       
       if (hasPaymentStep && data.requiresPayment && data.paymentAmount > 0) {
         // Create payment intent for the booking
         createPaymentIntent(data);
-        // Move to payment step - calculate the correct index
-        const paymentStepIndex = seasonalThemes.length > 0 ? 5 : 4;
-        console.log(`Moving to payment step after booking creation, payment step index: ${paymentStepIndex}`);
-        setCurrentStep(paymentStepIndex);
+        // Don't set bookingCreated to true yet - wait for payment completion
+        console.log(`Booking created with payment required, setting up payment form`);
       } else {
         // No payment required, booking is complete
+        setBookingCreated(true);
         setCurrentStep(steps.length); // Go to success screen
         toast({
           title: "Booking Confirmed!",
@@ -906,7 +904,8 @@ export default function GuestBookingResponsive(props: any) {
 
   const recommendedSlots = getRecommendedTimeSlots(timeSlots);
 
-  if (bookingId) {
+  // Show success screen only when booking is truly complete (no payment required OR payment successful)
+  if (bookingCreated) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-slate-900 via-blue-900 to-indigo-900 flex items-center justify-center p-4">
         <Card className="w-full max-w-md mx-auto bg-white/95 backdrop-blur-sm shadow-2xl">
