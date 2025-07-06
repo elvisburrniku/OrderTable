@@ -7629,26 +7629,56 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Verify hash - accept manage, cancel, or change hashes
       let isValidHash = false;
 
-      // Try verifying with the specific action if provided
-      if (action && (action === "cancel" || action === "change")) {
-        isValidHash = BookingHash.verifyHash(
-          hash as string,
-          booking.id,
-          booking.tenantId,
-          booking.restaurantId,
-          action as "cancel" | "change",
+      // First check if the provided hash matches the stored management hash
+      // The management hash should work for all actions (manage, cancel, change)
+      if (booking.managementHash && hash === booking.managementHash) {
+        isValidHash = true;
+        console.log(`Hash matches stored management hash`);
+      } else if (booking.managementHash) {
+        // If we have a stored hash but it doesn't match, still try action-specific verification
+        // for backwards compatibility with old email links
+        console.log(
+          `Hash does not match stored management hash, trying action-specific verification`,
         );
-      }
-
-      // If no specific action or verification failed, try with manage hash
-      if (!isValidHash) {
-        isValidHash = BookingHash.verifyHash(
-          hash as string,
-          booking.id,
-          booking.tenantId,
-          booking.restaurantId,
-          "manage",
-        );
+        if (action && (action === "cancel" || action === "change")) {
+          isValidHash = BookingHash.verifyHash(
+            hash as string,
+            booking.id,
+            booking.tenantId,
+            booking.restaurantId,
+            action as "cancel" | "change",
+          );
+        } else {
+          isValidHash = BookingHash.verifyHash(
+            hash as string,
+            booking.id,
+            booking.tenantId,
+            booking.restaurantId,
+            "manage",
+          );
+        }
+        console.log(`Action-specific hash verification result: ${isValidHash}`);
+      } else {
+        // Fallback for old bookings without stored hashes
+        console.log(`No stored management hash, trying action verification`);
+        if (action && (action === "cancel" || action === "change")) {
+          isValidHash = BookingHash.verifyHash(
+            hash as string,
+            booking.id,
+            booking.tenantId,
+            booking.restaurantId,
+            action as "cancel" | "change",
+          );
+        } else {
+          isValidHash = BookingHash.verifyHash(
+            hash as string,
+            booking.id,
+            booking.tenantId,
+            booking.restaurantId,
+            "manage",
+          );
+        }
+        console.log(`Fallback hash verification result: ${isValidHash}`);
       }
 
       if (!isValidHash) {
