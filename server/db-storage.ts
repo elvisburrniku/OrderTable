@@ -2451,6 +2451,23 @@ export class DatabaseStorage implements IStorage {
     if (!this.db) throw new Error("Database connection not available");
     await this.db.delete(paymentSetups).where(eq(paymentSetups.id, id));
   }
+
+  async getPaymentSetupByRestaurant(restaurantId: number, tenantId: number): Promise<any> {
+    if (!this.db) throw new Error("Database connection not available");
+    const result = await this.db
+      .select()
+      .from(paymentSetups)
+      .where(
+        and(
+          eq(paymentSetups.restaurantId, restaurantId),
+          eq(paymentSetups.tenantId, tenantId),
+          eq(paymentSetups.isActive, true)
+        )
+      )
+      .orderBy(desc(paymentSetups.createdAt))
+      .limit(1);
+    return result[0] || null;
+  }
   // Custom Fields methods
   async getCustomFieldsByRestaurant(
     restaurantId: number,

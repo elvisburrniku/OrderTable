@@ -931,6 +931,12 @@ export class MemoryStorage implements IStorage {
       this.paymentSetups.splice(index, 1);
     }
   }
+
+  async getPaymentSetupByRestaurant(restaurantId: number, tenantId: number): Promise<any> {
+    return this.paymentSetups
+      .filter((setup) => setup.restaurantId === restaurantId && setup.tenantId === tenantId && setup.isActive)
+      .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())[0] || null;
+  }
   async getTimeSlotsByRestaurant(
     restaurantId: number,
     date?: string,
