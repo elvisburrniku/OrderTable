@@ -7051,6 +7051,26 @@ export async function registerRoutes(app: Express): Promise<Server> {
             }
           );
 
+          // Create stripePayments record
+          await storage.createStripePayment({
+            tenantId: tenantId,
+            restaurantId: restaurantId,
+            bookingId: bookingId,
+            stripePaymentIntentId: paymentIntent.paymentIntentId,
+            stripeConnectAccountId: tenant.stripeConnectAccountId,
+            amount: Math.round(parseFloat(amount) * 100), // Convert to cents
+            applicationFeeAmount: Math.round(parseFloat(amount) * 100 * 0.05), // 5% fee
+            currency: (currency || "EUR").toUpperCase(),
+            status: "requires_payment_method",
+            description: description || `Payment for booking #${bookingId}`,
+            customerEmail: booking.customerEmail,
+            customerName: booking.customerName,
+            metadata: {
+              bookingId: bookingId.toString(),
+              restaurantName: (await storage.getRestaurantById(restaurantId))?.name || "Restaurant",
+            }
+          });
+
           // Update booking with payment intent ID
           await storage.updateBooking(bookingId, {
             paymentIntentId: paymentIntent.paymentIntentId,

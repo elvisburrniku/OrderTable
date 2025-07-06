@@ -36,6 +36,7 @@ export async function handleStripeWebhook(event: Stripe.Event, storage: IStorage
         // Handle booking payment success
         const paymentIntent = event.data.object as Stripe.PaymentIntent;
         console.log(`Processing payment_intent.succeeded webhook: ${paymentIntent.id}`);
+        console.log(`Payment intent metadata:`, JSON.stringify(paymentIntent.metadata, null, 2));
         
         // Check for duplicate processing
         const existingPayment = await storage.getStripePaymentByIntentId(paymentIntent.id);
@@ -47,11 +48,12 @@ export async function handleStripeWebhook(event: Stripe.Event, storage: IStorage
         }
         
         // Update payment record
-        await storage.updateStripePaymentByIntentId(paymentIntent.id, {
+        const updatedPayment = await storage.updateStripePaymentByIntentId(paymentIntent.id, {
           status: 'succeeded',
           metadata: paymentIntent.metadata,
           updatedAt: new Date()
         });
+        console.log(`Updated payment record: ${updatedPayment ? 'Success' : 'Failed'}`);
         
         // Handle guest booking payment
         if (paymentIntent.metadata?.bookingId === 'guest_booking') {
@@ -64,22 +66,27 @@ export async function handleStripeWebhook(event: Stripe.Event, storage: IStorage
         // Handle regular booking payment
         if (paymentIntent.metadata?.bookingId) {
           const bookingId = parseInt(paymentIntent.metadata.bookingId);
+          console.log(`Processing payment for booking ID: ${bookingId}`);
+          
           const booking = await storage.getBookingById(bookingId);
+          console.log(`Found booking: ${booking ? 'Yes' : 'No'}, Status: ${booking?.status}, Payment Status: ${booking?.paymentStatus}`);
           
           if (booking) {
-            // Update booking payment status
-            await storage.updateBooking(bookingId, {
+            // Update booking payment status and booking status in one call
+            const updateData: any = {
               paymentStatus: 'paid',
-              paymentIntentId: paymentIntent.id
-            });
+              paymentIntentId: paymentIntent.id,
+              paymentPaidAt: new Date()
+            };
             
             // Change booking status from waiting_payment to confirmed
             if (booking.status === 'waiting_payment') {
-              await storage.updateBooking(bookingId, {
-                status: 'confirmed'
-              });
-              console.log(`Updated booking ${bookingId} status from waiting_payment to confirmed`);
+              updateData.status = 'confirmed';
+              console.log(`Updating booking ${bookingId} status from waiting_payment to confirmed`);
             }
+            
+            await storage.updateBooking(bookingId, updateData);
+            console.log(`Updated booking ${bookingId} with payment status: paid and intent: ${paymentIntent.id}`);
             
             // Create invoice record
             const { invoices } = await import("../shared/schema");
@@ -96,6 +103,7 @@ export async function handleStripeWebhook(event: Stripe.Event, storage: IStorage
               currency: paymentIntent.currency.toUpperCase(),
               status: 'paid' as const,
               description: `Payment for booking #${bookingId}`,
+              paidAt: new Date(),
               createdAt: new Date()
             };
             
@@ -103,40 +111,87 @@ export async function handleStripeWebhook(event: Stripe.Event, storage: IStorage
             console.log(`Created invoice for booking ${bookingId}`);
             
             // Send payment confirmation emails
-            const emailService = await import("./brevo-service").then(m => new m.BrevoEmailService());
-            const restaurant = await storage.getRestaurantById(booking.restaurantId);
-            
-            // Send confirmation to customer
-            if (booking.customerEmail) {
-              await emailService.sendPaymentConfirmation(
-                booking.customerEmail,
-                booking.customerName,
-                {
-                  bookingId: booking.id,
-                  amount: paymentIntent.amount / 100,
-                  currency: paymentIntent.currency.toUpperCase(),
-                  restaurantName: restaurant?.name || "Restaurant",
-                  invoiceNumber: invoiceData.invoiceNumber
-                }
-              );
+            try {
+              const emailService = await import("./brevo-service").then(m => new m.BrevoEmailService());
+              const restaurant = await storage.getRestaurantById(booking.restaurantId);
+              
+              // Send confirmation to customer using generic email method
+              if (booking.customerEmail && emailService.sendEmail) {
+                const subject = `Payment Confirmation - ${restaurant?.name || "Restaurant"}`;
+                const htmlContent = `
+                  <h1>Payment Confirmed</h1>
+                  <p>Dear ${booking.customerName},</p>
+                  <p>Your payment of ${paymentIntent.currency.toUpperCase()} ${(paymentIntent.amount / 100).toFixed(2)} has been confirmed for your booking.</p>
+                  <p><strong>Booking Details:</strong></p>
+                  <ul>
+                    <li>Booking ID: ${booking.id}</li>
+                    <li>Restaurant: ${restaurant?.name || "Restaurant"}</li>
+                    <li>Invoice Number: ${invoiceData.invoiceNumber}</li>
+                  </ul>
+                  <p>Thank you for your payment!</p>
+                `;
+                
+                await emailService.sendEmail({
+                  to: [{ email: booking.customerEmail, name: booking.customerName }],
+                  subject: subject,
+                  htmlContent: htmlContent
+                });
+                console.log(`Payment confirmation email sent to ${booking.customerEmail}`);
+              }
+            } catch (emailError) {
+              console.error("Error sending payment confirmation email:", emailError);
+              // Don't fail the webhook if email fails
             }
             
-            // Send notification to restaurant
-            if (restaurant?.email) {
-              await emailService.sendPaymentNotificationToRestaurant(
-                restaurant.email,
-                {
-                  bookingId: booking.id,
-                  amount: paymentIntent.amount / 100,
-                  currency: paymentIntent.currency.toUpperCase(),
-                  customerName: booking.customerName,
-                  restaurantName: restaurant.name,
-                  bookingDate: new Date(booking.bookingDate).toLocaleDateString(),
-                  bookingTime: booking.startTime,
-                  guestCount: booking.guestCount,
-                  invoiceNumber: invoiceData.invoiceNumber
+            // Send notification to restaurant team
+            try {
+              const emailService = await import("./brevo-service").then(m => new m.BrevoEmailService());
+              const restaurant = await storage.getRestaurantById(booking.restaurantId);
+              if (restaurant?.email) {
+                // Try to use the specific payment notification method if it exists
+                if (typeof emailService.sendPaymentNotificationToRestaurant === 'function') {
+                  await emailService.sendPaymentNotificationToRestaurant(
+                    restaurant.email,
+                    {
+                      bookingId: booking.id,
+                      amount: paymentIntent.amount / 100,
+                      currency: paymentIntent.currency.toUpperCase(),
+                      customerName: booking.customerName,
+                      restaurantName: restaurant.name,
+                      bookingDate: new Date(booking.bookingDate).toLocaleDateString(),
+                      bookingTime: booking.startTime,
+                      guestCount: booking.guestCount,
+                      invoiceNumber: invoiceData.invoiceNumber
+                    }
+                  );
+                } else {
+                  // Fallback to generic email method
+                  const notificationSubject = `Payment Received - Booking #${booking.id}`;
+                  const notificationHtml = `
+                    <h1>Payment Received</h1>
+                    <p>A payment has been received for booking #${booking.id}</p>
+                    <p><strong>Details:</strong></p>
+                    <ul>
+                      <li>Customer: ${booking.customerName}</li>
+                      <li>Amount: ${paymentIntent.currency.toUpperCase()} ${(paymentIntent.amount / 100).toFixed(2)}</li>
+                      <li>Date: ${new Date(booking.bookingDate).toLocaleDateString()}</li>
+                      <li>Time: ${booking.startTime}</li>
+                      <li>Guests: ${booking.guestCount}</li>
+                      <li>Invoice Number: ${invoiceData.invoiceNumber}</li>
+                    </ul>
+                  `;
+                  
+                  await emailService.sendEmail({
+                    to: [{ email: restaurant.email, name: restaurant.name }],
+                    subject: notificationSubject,
+                    htmlContent: notificationHtml
+                  });
                 }
-              );
+                console.log(`Payment notification sent to restaurant ${restaurant.name}`);
+              }
+            } catch (notificationError) {
+              console.error("Error sending restaurant payment notification:", notificationError);
+              // Don't fail the webhook if notifications fail
             }
           }
         }
