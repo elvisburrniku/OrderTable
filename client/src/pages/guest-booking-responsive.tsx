@@ -319,34 +319,8 @@ export default function GuestBookingResponsive(props: any) {
     const detailsStepIndex = seasonalThemes.length > 0 ? 4 : 3;
 
     if (currentStep < steps.length - 1) {
-      // If this is the details step and payment is required, create booking first
-      if (currentStep === detailsStepIndex && hasPaymentStep) {
-        const bookingData = {
-          bookingDate: selectedDate ? format(selectedDate, "yyyy-MM-dd") : "",
-          startTime: selectedTime,
-          guestCount: guestCount,
-          customerName: customerData.name,
-          customerEmail: customerData.email,
-          customerPhone: customerData.phone,
-          specialRequests: customerData.comment || null,
-          seasonalThemeId: selectedSeasonalTheme
-            ? parseInt(selectedSeasonalTheme)
-            : null,
-          source: "guest_booking",
-          // Include payment information when payment is required
-          requiresPayment: hasPaymentStep,
-          paymentAmount: paymentInfo?.defaultAmount || 0,
-          paymentDeadlineHours: paymentInfo?.defaultDeadlineHours || 24,
-        };
-        
-        console.log(`Creating booking with payment required from step ${currentStep}`);
-        // Create booking and then proceed to payment
-        createBookingMutation.mutate(bookingData);
-        return; // Don't advance step here, let the mutation success handler do it
-      } else {
-        // Regular step progression
-        setCurrentStep(currentStep + 1);
-      }
+      // Regular step progression - don't create booking until payment step if payment is required
+      setCurrentStep(currentStep + 1);
     } else {
       // Final step - either submit booking or handle payment completion
       if (!hasPaymentStep) {
@@ -1394,54 +1368,122 @@ export default function GuestBookingResponsive(props: any) {
             {/* Payment Step */}
             {currentStep === (seasonalThemes.length > 0 ? 5 : 4) && 
              paymentInfo?.requiresPayment && 
-             paymentInfo?.stripeConnectReady && 
-             clientSecret && (
+             paymentInfo?.stripeConnectReady && (
               <div className="space-y-6">
                 <div className="text-center">
                   <h2 className="text-xl md:text-2xl font-bold text-gray-900 mb-2">
                     Complete Payment
                   </h2>
-                  <p className="text-sm text-gray-600 mb-4">
-                    Please complete the payment to confirm your reservation
+                  <p className="text-sm text-gray-600 mb-6">
+                    Secure your reservation with payment
                   </p>
-                  {createdBookingData?.paymentAmount && (
-                    <div className="text-lg font-semibold text-green-600 mb-4">
-                      Amount: ${createdBookingData.paymentAmount}
-                    </div>
-                  )}
                 </div>
 
-                {paymentError && (
-                  <Alert className="bg-red-50 border-red-200">
-                    <AlertCircle className="h-4 w-4" />
-                    <AlertDescription className="text-red-800">
-                      {paymentError}
-                    </AlertDescription>
-                  </Alert>
+                {/* Booking Summary */}
+                <div className="bg-gray-50 p-4 rounded-lg">
+                  <h3 className="font-medium text-gray-900 mb-3">Booking Summary</h3>
+                  <div className="space-y-2 text-sm text-gray-700">
+                    <div className="flex justify-between">
+                      <span>Restaurant:</span>
+                      <span>{(restaurant as any)?.name}</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span>Date:</span>
+                      <span>{selectedDate && format(selectedDate, "MMMM d, yyyy")}</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span>Time:</span>
+                      <span>{selectedTime}</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span>Guests:</span>
+                      <span>{guestCount}</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span>Name:</span>
+                      <span>{customerData.name}</span>
+                    </div>
+                    <div className="flex justify-between font-medium pt-2 border-t">
+                      <span>Payment Amount:</span>
+                      <span>${paymentInfo?.defaultAmount || 0}</span>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Create booking with payment if not yet created */}
+                {!createdBookingData && (
+                  <div className="text-center">
+                    <Button
+                      onClick={() => {
+                        const bookingData = {
+                          bookingDate: selectedDate ? format(selectedDate, "yyyy-MM-dd") : "",
+                          startTime: selectedTime,
+                          guestCount: guestCount,
+                          customerName: customerData.name,
+                          customerEmail: customerData.email,
+                          customerPhone: customerData.phone,
+                          specialRequests: customerData.comment || null,
+                          seasonalThemeId: selectedSeasonalTheme
+                            ? parseInt(selectedSeasonalTheme)
+                            : null,
+                          source: "guest_booking",
+                          requiresPayment: true,
+                          paymentAmount: paymentInfo?.defaultAmount || 0,
+                          paymentDeadlineHours: paymentInfo?.defaultDeadlineHours || 24,
+                        };
+                        console.log(`Creating booking with payment at payment step`);
+                        createBookingMutation.mutate(bookingData);
+                      }}
+                      disabled={createBookingMutation.isPending || !customerData.name || !customerData.email}
+                      className="w-full bg-blue-600 hover:bg-blue-700"
+                    >
+                      {createBookingMutation.isPending ? (
+                        <>
+                          <div className="animate-spin w-4 h-4 border-2 border-white border-t-transparent rounded-full mr-2" />
+                          Creating booking...
+                        </>
+                      ) : (
+                        `Create Booking & Pay $${paymentInfo?.defaultAmount || 0}`
+                      )}
+                    </Button>
+                  </div>
                 )}
 
-                <Elements stripe={stripePromise} options={{ clientSecret }}>
-                  <PaymentForm
-                    bookingData={createdBookingData}
-                    onPaymentSuccess={() => {
-                      // Set booking as complete and show success
-                      setBookingId(createdBookingData?.id || null);
-                      setBookingCreated(true);
-                      toast({
-                        title: "Payment Successful!",
-                        description: "Your reservation has been confirmed and payment processed.",
-                      });
-                    }}
-                    onPaymentError={(error: string) => {
-                      setPaymentError(error);
-                      toast({
-                        title: "Payment Failed",
-                        description: error,
-                        variant: "destructive",
-                      });
-                    }}
-                  />
-                </Elements>
+                {/* Show payment form only after booking is created */}
+                {createdBookingData && clientSecret && (
+                  <>
+                    {paymentError && (
+                      <Alert className="bg-red-50 border-red-200">
+                        <AlertCircle className="h-4 w-4" />
+                        <AlertDescription className="text-red-800">
+                          {paymentError}
+                        </AlertDescription>
+                      </Alert>
+                    )}
+
+                    <Elements stripe={stripePromise} options={{ clientSecret }}>
+                      <PaymentForm
+                        bookingData={createdBookingData}
+                        onPaymentSuccess={() => {
+                          setBookingId(createdBookingData?.id || null);
+                          setBookingCreated(true);
+                          toast({
+                            title: "Payment Successful!",
+                            description: "Your reservation has been confirmed and payment processed.",
+                          });
+                        }}
+                        onPaymentError={(error: string) => {
+                          setPaymentError(error);
+                          toast({
+                            title: "Payment Failed",
+                            description: error,
+                            variant: "destructive",
+                          });
+                        }}
+                      />
+                    </Elements>
+                  </>
+                )}
               </div>
             )}
 
