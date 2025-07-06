@@ -532,6 +532,9 @@ export default function GuestBookingResponsive(props: any) {
   };
 
   // Dynamic steps based on available seasonal themes and payment requirements
+  const hasPaymentStep = paymentInfo?.requiresPayment && 
+    (paymentInfo?.stripeConnectReady || (paymentInfo?.paymentSetup?.isActive));
+  
   const steps = [
     { title: "Date", icon: Calendar },
     { title: "Time", icon: Clock },
@@ -540,20 +543,30 @@ export default function GuestBookingResponsive(props: any) {
       ? [{ title: "Experience", icon: Sparkles }]
       : []),
     { title: "Details", icon: User },
-    ...(paymentInfo?.requiresPayment && (paymentInfo?.stripeConnectReady || paymentInfo?.paymentSetup)
+    ...(hasPaymentStep
       ? [{ title: "Payment", icon: CreditCard }]
       : []),
   ];
 
   // Auto-create payment intent when payment step is reached
   useEffect(() => {
-    const hasPaymentStep = paymentInfo?.requiresPayment && (paymentInfo?.stripeConnectReady || paymentInfo?.paymentSetup);
     const isPaymentStep = currentStep === steps.length - 1 && hasPaymentStep;
     
+    console.log('Payment intent effect:', {
+      currentStep,
+      stepsLength: steps.length,
+      hasPaymentStep,
+      isPaymentStep,
+      hasClientSecret: !!clientSecret,
+      hasPaymentError: !!paymentError,
+      hasCustomerData: !!(customerData.name && customerData.email)
+    });
+    
     if (isPaymentStep && !clientSecret && !paymentError && customerData.name && customerData.email) {
+      console.log('Creating payment intent for guest...');
       createPaymentIntentForGuest();
     }
-  }, [currentStep, steps.length, paymentInfo, clientSecret, paymentError, customerData]);
+  }, [currentStep, steps.length, hasPaymentStep, clientSecret, paymentError, customerData]);
 
   // Handle payment return from Stripe redirect
   useEffect(() => {
@@ -642,10 +655,26 @@ export default function GuestBookingResponsive(props: any) {
   console.log(`Steps configuration: ${steps.map(s => s.title).join(', ')}`);
   console.log(`Current step: ${currentStep}, Payment required: ${paymentInfo?.requiresPayment}, Stripe ready: ${paymentInfo?.stripeConnectReady}, Payment setup:`, paymentInfo?.paymentSetup);
   console.log('Full payment info:', paymentInfo);
+  console.log('Payment step detection:', {
+    hasPaymentInfo: !!paymentInfo,
+    requiresPayment: paymentInfo?.requiresPayment,
+    stripeConnectReady: paymentInfo?.stripeConnectReady,
+    hasPaymentSetup: !!paymentInfo?.paymentSetup,
+    paymentSetupActive: paymentInfo?.paymentSetup?.isActive,
+    shouldShowPaymentStep: paymentInfo?.requiresPayment && (paymentInfo?.stripeConnectReady || paymentInfo?.paymentSetup),
+    stepsLength: steps.length,
+    isPaymentStep: currentStep === steps.length - 1
+  });
 
   const handleNext = () => {
-    const hasPaymentStep = paymentInfo?.requiresPayment && (paymentInfo?.stripeConnectReady || paymentInfo?.paymentSetup);
     const detailsStepIndex = seasonalThemes.length > 0 ? 4 : 3;
+
+    console.log('HandleNext called:', {
+      currentStep,
+      stepsLength: steps.length,
+      hasPaymentStep,
+      isLastStep: currentStep === steps.length - 1
+    });
 
     if (currentStep < steps.length - 1) {
       // Regular step progression - don't create booking until payment step if payment is required
@@ -687,7 +716,18 @@ export default function GuestBookingResponsive(props: any) {
 
   const isStepValid = () => {
     const hasThemes = seasonalThemes.length > 0;
-    const hasPaymentStep = paymentInfo?.requiresPayment && (paymentInfo?.stripeConnectReady || paymentInfo?.paymentSetup);
+
+    console.log('Step validation:', {
+      currentStep,
+      hasThemes,
+      hasPaymentStep,
+      selectedDate: !!selectedDate,
+      selectedTime: !!selectedTime,
+      guestCount,
+      customerName: customerData.name,
+      customerEmail: customerData.email,
+      customerPhone: customerData.phone
+    });
 
     switch (currentStep) {
       case 0:
@@ -1722,8 +1762,7 @@ export default function GuestBookingResponsive(props: any) {
 
             {/* Payment Step */}
             {currentStep === (seasonalThemes.length > 0 ? 5 : 4) && 
-             paymentInfo?.requiresPayment && 
-             paymentInfo?.stripeConnectReady && (
+             hasPaymentStep && (
               <div className="space-y-6">
                 <div className="text-center">
                   <h2 className="text-xl md:text-2xl font-bold text-gray-900 mb-2">
@@ -1856,9 +1895,10 @@ export default function GuestBookingResponsive(props: any) {
               </div>
             )}
 
-            {/* Show payment required message if Stripe Connect is not ready */}
+            {/* Show payment required message if payment setup exists but Stripe Connect is not ready */}
             {currentStep === (seasonalThemes.length > 0 ? 5 : 4) && 
              paymentInfo?.requiresPayment && 
+             paymentInfo?.paymentSetup?.isActive &&
              !paymentInfo?.stripeConnectReady && (
               <div className="space-y-6">
                 <div className="text-center">
@@ -1907,7 +1947,7 @@ export default function GuestBookingResponsive(props: any) {
                 className="flex items-center space-x-2 bg-blue-600 hover:bg-blue-700"
                 style={{
                   display: (currentStep === (seasonalThemes.length > 0 ? 5 : 4) && 
-                           paymentInfo?.requiresPayment && 
+                           hasPaymentStep && 
                            paymentInfo?.stripeConnectReady) ? 'none' : 'flex'
                 }}
               >

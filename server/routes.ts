@@ -3354,6 +3354,60 @@ export async function registerRoutes(app: Express): Promise<Server> {
     },
   );
 
+  // Public payment setup endpoint (for guest booking)
+  app.get(
+    "/api/public/tenants/:tenantId/restaurants/:restaurantId/payment-setup",
+    async (req, res) => {
+      try {
+        const restaurantId = parseInt(req.params.restaurantId);
+        const tenantId = parseInt(req.params.tenantId);
+
+        const restaurant = await storage.getRestaurantById(restaurantId);
+        if (!restaurant || restaurant.tenantId !== tenantId) {
+          return res.status(404).json({ message: "Restaurant not found" });
+        }
+
+        // Get payment setup information
+        const paymentSetup = await storage.getPaymentSetupByRestaurant(restaurantId, tenantId);
+        
+        console.log(`Payment setup for restaurant ${restaurantId}:`, paymentSetup);
+
+        if (!paymentSetup) {
+          return res.json({
+            requiresPayment: false,
+            stripeConnectReady: false,
+            paymentSetup: null
+          });
+        }
+
+        // Check if Stripe Connect is set up for the tenant
+        const tenant = await storage.getTenantById(tenantId);
+        const stripeConnectReady = !!(tenant?.stripeConnectAccountId);
+
+        const response = {
+          requiresPayment: paymentSetup.isActive,
+          stripeConnectReady: stripeConnectReady,
+          paymentSetup: {
+            id: paymentSetup.id,
+            name: paymentSetup.name,
+            type: paymentSetup.type,
+            amount: paymentSetup.amount,
+            currency: paymentSetup.currency,
+            priceUnit: paymentSetup.priceUnit,
+            description: paymentSetup.description,
+            isActive: paymentSetup.isActive
+          }
+        };
+
+        console.log(`Returning payment setup response:`, response);
+        res.json(response);
+      } catch (error) {
+        console.error("Error fetching public payment setup:", error);
+        res.status(500).json({ message: "Internal server error" });
+      }
+    },
+  );
+
   // Public restaurant info (for customers via QR code)
   app.get(
     "/api/tenants/:tenantId/restaurants/:restaurantId",
