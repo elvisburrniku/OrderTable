@@ -46,7 +46,7 @@ import {
 } from "@/components/skeletons/booking-skeleton";
 
 // Initialize Stripe
-const stripePromise = loadStripe(import.meta.env.VITE_STRIPE_PUBLIC_KEY || "");
+const stripePromise = loadStripe(import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY || "");
 
 // Payment form component for Stripe Elements
 interface PaymentFormProps {

@@ -222,7 +222,7 @@ export function PaymentMethodGuard({
               </ul>
             </div>
 
-            {import.meta.env.VITE_STRIPE_PUBLIC_KEY ? (
+            {import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY ? (
               <Dialog
                 open={showAddPaymentDialog}
                 onOpenChange={handleDialogOpenChange}
