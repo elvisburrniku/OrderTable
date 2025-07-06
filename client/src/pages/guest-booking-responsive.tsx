@@ -261,6 +261,30 @@ export default function GuestBookingResponsive(props: any) {
   const [bookingCreated, setBookingCreated] = useState(false);
   const [createdBookingData, setCreatedBookingData] = useState<any>(null);
 
+  // Restore booking data from localStorage on component mount (in case of page refresh after payment)
+  useEffect(() => {
+    const savedBookingData = localStorage.getItem('guest_booking_data');
+    if (savedBookingData) {
+      try {
+        const parsedData = JSON.parse(savedBookingData);
+        
+        // Only restore if we're at the start of the booking flow and no data is already set
+        if (!selectedDate && !selectedTime && !customerData.name) {
+          if (parsedData.selectedDate) {
+            setSelectedDate(new Date(parsedData.selectedDate));
+          }
+          setSelectedTime(parsedData.selectedTime || "");
+          setGuestCount(parsedData.guestCount || 2);
+          setCustomerData(parsedData.customerData || {});
+          setSelectedSeasonalTheme(parsedData.selectedSeasonalTheme);
+        }
+      } catch (error) {
+        console.error('Error parsing saved booking data:', error);
+        localStorage.removeItem('guest_booking_data');
+      }
+    }
+  }, []); // Run only once on mount
+
 
 
   // Fetch restaurant data
@@ -391,6 +415,20 @@ export default function GuestBookingResponsive(props: any) {
     try {
       console.log('Creating payment intent for guest booking (no booking created yet)');
       
+      // Store booking data in localStorage before payment to preserve it after redirect
+      const bookingData = {
+        selectedDate: selectedDate ? format(selectedDate, "yyyy-MM-dd") : "",
+        selectedTime: selectedTime,
+        guestCount: guestCount,
+        customerData: customerData,
+        selectedSeasonalTheme: selectedSeasonalTheme,
+        paymentAmount: paymentAmount,
+        restaurant: restaurant?.name || '',
+        tenantId: finalTenantId,
+        restaurantId: finalRestaurantId
+      };
+      localStorage.setItem('guest_booking_data', JSON.stringify(bookingData));
+      
       const response = await fetch(
         `/api/tenants/${finalTenantId}/restaurants/${finalRestaurantId}/guest-payment-intent`,
         {
@@ -496,39 +534,60 @@ export default function GuestBookingResponsive(props: any) {
     if (!paymentInfo || seasonalThemes === undefined) return;
 
     if (paymentStatus === 'success' && redirectStatus === 'succeeded') {
-      // Payment was successful - show confirmation
-      setBookingCreated(true);
-      setPaymentError(null);
-      setCurrentStep(steps.length); // Go to success step
-      
-      toast({
-        title: "Payment Successful!",
-        description: "Your booking has been confirmed.",
-      });
+      // Restore booking data from localStorage
+      const savedBookingData = localStorage.getItem('guest_booking_data');
+      if (savedBookingData) {
+        try {
+          const parsedData = JSON.parse(savedBookingData);
+          
+          // Restore form state
+          if (parsedData.selectedDate) {
+            setSelectedDate(new Date(parsedData.selectedDate));
+          }
+          setSelectedTime(parsedData.selectedTime || "");
+          setGuestCount(parsedData.guestCount || 2);
+          setCustomerData(parsedData.customerData || {});
+          setSelectedSeasonalTheme(parsedData.selectedSeasonalTheme);
+          
+          // Payment was successful - show confirmation
+          setBookingCreated(true);
+          setPaymentError(null);
+          setCurrentStep(steps.length); // Go to success step
+          
+          toast({
+            title: "Payment Successful!",
+            description: "Your booking has been confirmed.",
+          });
 
-      // Create booking in background since payment was successful
-      const bookingData = {
-        bookingDate: selectedDate ? format(selectedDate, "yyyy-MM-dd") : "",
-        startTime: selectedTime,
-        guestCount: guestCount,
-        customerName: customerData.name,
-        customerEmail: customerData.email,
-        customerPhone: customerData.phone,
-        specialRequests: customerData.comment || null,
-        seasonalThemeId: selectedSeasonalTheme ? parseInt(selectedSeasonalTheme) : null,
-        source: "guest_booking",
-        requiresPayment: true,
-        paymentAmount: paymentAmount,
-        paymentDeadlineHours: 24,
-      };
-      
-      // Only create booking if we have the necessary data
-      if (customerData.name && customerData.email) {
-        createBookingMutation.mutate(bookingData);
+          // Create booking in background since payment was successful
+          const bookingData = {
+            bookingDate: parsedData.selectedDate,
+            startTime: parsedData.selectedTime,
+            guestCount: parsedData.guestCount,
+            customerName: parsedData.customerData?.name,
+            customerEmail: parsedData.customerData?.email,
+            customerPhone: parsedData.customerData?.phone,
+            specialRequests: parsedData.customerData?.comment || null,
+            seasonalThemeId: parsedData.selectedSeasonalTheme ? parseInt(parsedData.selectedSeasonalTheme) : null,
+            source: "guest_booking",
+            requiresPayment: true,
+            paymentAmount: parsedData.paymentAmount,
+            paymentDeadlineHours: 24,
+          };
+          
+          // Only create booking if we have the necessary data
+          if (parsedData.customerData?.name && parsedData.customerData?.email) {
+            createBookingMutation.mutate(bookingData);
+          }
+
+          // Clean up localStorage and URL parameters
+          localStorage.removeItem('guest_booking_data');
+          window.history.replaceState({}, document.title, window.location.pathname);
+        } catch (error) {
+          console.error('Error parsing saved booking data:', error);
+          localStorage.removeItem('guest_booking_data');
+        }
       }
-
-      // Clean up URL parameters
-      window.history.replaceState({}, document.title, window.location.pathname);
     } else if (redirectStatus === 'failed' || paymentStatus === 'failed') {
       // Payment failed - show error and allow retry
       setPaymentError("Payment failed. Please try again with a different payment method.");
@@ -542,10 +601,10 @@ export default function GuestBookingResponsive(props: any) {
         variant: "destructive",
       });
 
-      // Clean up URL parameters
+      // Clean up URL parameters but keep localStorage for retry
       window.history.replaceState({}, document.title, window.location.pathname);
     }
-  }, [paymentInfo, seasonalThemes, selectedDate, selectedTime, guestCount, customerData, selectedSeasonalTheme, paymentAmount, steps.length, toast, createBookingMutation]);
+  }, [paymentInfo, seasonalThemes, steps.length, toast, createBookingMutation]);
 
   // Debug logging
   console.log(`Steps configuration: ${steps.map(s => s.title).join(', ')}`);
