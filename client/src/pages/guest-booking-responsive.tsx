@@ -79,24 +79,33 @@ const PaymentForm = ({ onPaymentSuccess, onPaymentError, bookingData, paymentAmo
     setIsProcessing(true);
 
     try {
-      // Use confirmPayment without redirect to handle success in the same page
+      // Use confirmPayment with return_url to handle all payment methods including Bancontact
       const { error, paymentIntent } = await stripe.confirmPayment({
         elements,
+        confirmParams: {
+          return_url: `${window.location.origin}/payment-success${bookingData ? `?booking=${bookingData.id}` : ''}`,
+        },
         redirect: 'if_required',
       });
 
       if (error) {
+        console.error('Payment error:', error);
         if (error.type === "card_error" || error.type === "validation_error") {
           onPaymentError(error.message || "Payment failed");
+        } else if (error.code === "payment_intent_authentication_failure") {
+          onPaymentError("Payment authentication failed. Please try again.");
+        } else if (error.code === "card_declined") {
+          onPaymentError("Your card was declined. Please try a different payment method.");
         } else {
-          onPaymentError("An unexpected error occurred.");
+          onPaymentError(error.message || "An unexpected error occurred.");
         }
       } else if (paymentIntent && paymentIntent.status === 'succeeded') {
         // Payment successful, trigger the success callback
         onPaymentSuccess();
       }
-    } catch (error) {
-      onPaymentError("An error occurred while processing payment");
+    } catch (error: any) {
+      console.error('Payment processing error:', error);
+      onPaymentError(error.message || "An error occurred while processing payment");
     } finally {
       setIsProcessing(false);
     }
