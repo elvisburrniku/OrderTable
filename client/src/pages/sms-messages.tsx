@@ -70,6 +70,8 @@ export default function SmsMessages() {
   const [showDetailModal, setShowDetailModal] = useState(false);
   const [selectedMessage, setSelectedMessage] = useState<SmsMessage | null>(null);
   const [showCreateModal, setShowCreateModal] = useState(false);
+  const [showTestModal, setShowTestModal] = useState(false);
+  const [testPhoneNumber, setTestPhoneNumber] = useState("");
 
   // Form data for creating new messages
   const [formData, setFormData] = useState({
@@ -160,6 +162,30 @@ export default function SmsMessages() {
       toast({
         title: "Error",
         description: "Failed to create SMS message",
+        variant: "destructive",
+      });
+    },
+  });
+
+  // Test SMS mutation
+  const testSmsMutation = useMutation({
+    mutationFn: async (testData: { phoneNumber: string; message?: string }) => {
+      return apiRequest("POST", `/api/tenants/${tenantId}/restaurants/${restaurantId}/sms-messages/test`, {
+        phoneNumber: testData.phoneNumber,
+        message: testData.message || "Test SMS from your restaurant booking system. Twilio integration is working correctly!",
+        type: "test"
+      });
+    },
+    onSuccess: (data) => {
+      toast({
+        title: "Test SMS Sent Successfully",
+        description: `Message ID: ${data.messageId}. Check your phone for the test message.`,
+      });
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Test SMS Failed",
+        description: error.message || "Failed to send test SMS. Please check your phone number and try again.",
         variant: "destructive",
       });
     },
@@ -284,6 +310,14 @@ export default function SmsMessages() {
                 transition={{ duration: 0.5, delay: 0.2 }}
                 className="flex items-center gap-3"
               >
+                <Button 
+                  variant="outline" 
+                  onClick={() => setShowTestModal(true)}
+                  className="flex items-center gap-2 hover:bg-blue-50 hover:border-blue-500 transition-all duration-200"
+                >
+                  <Send className="h-4 w-4" />
+                  Test SMS
+                </Button>
                 <Button variant="outline" className="flex items-center gap-2 hover:bg-green-50 hover:border-green-500 transition-all duration-200">
                   <Download className="h-4 w-4" />
                   Export
@@ -779,6 +813,62 @@ export default function SmsMessages() {
                 {createMessageMutation.isPending ? "Creating..." : "Create Message"}
               </Button>
               <Button type="button" variant="outline" onClick={() => setShowCreateModal(false)}>
+                Cancel
+              </Button>
+            </div>
+          </form>
+        </DialogContent>
+      </Dialog>
+
+      {/* Test SMS Modal */}
+      <Dialog open={showTestModal} onOpenChange={setShowTestModal}>
+        <DialogContent className="sm:max-w-[500px]">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Send className="w-5 h-5 text-blue-600" />
+              Test SMS Message
+            </DialogTitle>
+          </DialogHeader>
+          <form onSubmit={(e) => {
+            e.preventDefault();
+            if (testPhoneNumber) {
+              testSmsMutation.mutate({ phoneNumber: testPhoneNumber });
+              setTestPhoneNumber("");
+              setShowTestModal(false);
+            }
+          }} className="space-y-4">
+            <div>
+              <Label htmlFor="testPhone">Phone Number</Label>
+              <Input
+                id="testPhone"
+                type="tel"
+                placeholder="+38345370650"
+                value={testPhoneNumber}
+                onChange={(e) => setTestPhoneNumber(e.target.value)}
+                required
+                className="mt-1"
+              />
+              <p className="text-sm text-gray-500 mt-1">
+                Enter the phone number in international format (e.g., +38345370650)
+              </p>
+            </div>
+            
+            <div className="bg-blue-50 p-4 rounded-lg">
+              <h4 className="font-medium text-blue-900 mb-2">Test Message Preview:</h4>
+              <p className="text-sm text-blue-800">
+                "Test SMS from your restaurant booking system. Twilio integration is working correctly!"
+              </p>
+            </div>
+
+            <div className="flex gap-3 pt-4">
+              <Button 
+                type="submit" 
+                disabled={testSmsMutation.isPending || !testPhoneNumber}
+                className="flex-1 bg-blue-600 hover:bg-blue-700"
+              >
+                {testSmsMutation.isPending ? "Sending..." : "Send Test SMS"}
+              </Button>
+              <Button type="button" variant="outline" onClick={() => setShowTestModal(false)}>
                 Cancel
               </Button>
             </div>

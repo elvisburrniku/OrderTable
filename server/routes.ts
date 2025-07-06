@@ -3931,13 +3931,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
           return res.status(404).json({ message: "Restaurant not found" });
         }
 
+        // Map frontend data to backend structure
         const messageData = {
-          ...req.body,
-          restaurantId,
-          tenantId,
+          phoneNumber: req.body.receivers, // Map receivers to phoneNumber
+          message: req.body.content,
+          type: req.body.messageType || "information",
+          cost: "0.08", // Default cost
         };
 
-        const message = await storage.createSmsMessage(messageData);
+        const message = await storage.createSmsMessage(restaurantId, tenantId, messageData);
         res.json(message);
       } catch (error) {
         res.status(400).json({ message: "Invalid message data" });
