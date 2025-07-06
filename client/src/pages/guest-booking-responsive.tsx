@@ -79,11 +79,10 @@ const PaymentForm = ({ onPaymentSuccess, onPaymentError, bookingData, paymentAmo
     setIsProcessing(true);
 
     try {
-      const { error } = await stripe.confirmPayment({
+      // Use confirmPayment without redirect to handle success in the same page
+      const { error, paymentIntent } = await stripe.confirmPayment({
         elements,
-        confirmParams: {
-          return_url: `${window.location.origin}/payment-success${bookingData ? `?booking=${bookingData.id}` : ''}`,
-        },
+        redirect: 'if_required',
       });
 
       if (error) {
@@ -92,7 +91,8 @@ const PaymentForm = ({ onPaymentSuccess, onPaymentError, bookingData, paymentAmo
         } else {
           onPaymentError("An unexpected error occurred.");
         }
-      } else {
+      } else if (paymentIntent && paymentIntent.status === 'succeeded') {
+        // Payment successful, trigger the success callback
         onPaymentSuccess();
       }
     } catch (error) {
