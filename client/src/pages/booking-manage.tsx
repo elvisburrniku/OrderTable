@@ -72,12 +72,18 @@ export default function BookingManage() {
     );
   }
 
+  // Determine API endpoint based on current URL pattern
+  const currentPath = window.location.pathname;
+  const apiEndpoint = currentPath.includes('/manage-booking/') 
+    ? `/api/manage-booking/${id}` 
+    : `/api/booking-manage/${id}`;
+
   const { data: booking, isLoading, error, refetch } = useQuery({
-    queryKey: [`/api/booking-manage/${id}`, hash],
+    queryKey: [apiEndpoint, hash],
     queryFn: async () => {
       const action = urlParams.get('action');
 
-      let url = `/api/booking-manage/${id}?hash=${encodeURIComponent(hash)}`;
+      let url = `${apiEndpoint}?hash=${encodeURIComponent(hash)}`;
       if (action) {
         url += `&action=${encodeURIComponent(action)}`;
       }

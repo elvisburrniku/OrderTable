@@ -7145,7 +7145,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
   );
 
   // Booking Management Routes (Public - for customer email links)
-  app.get("/api/booking-manage/:id", async (req, res) => {
+  // Handle both /api/booking-manage/:id and /api/manage-booking/:id for backward compatibility
+  const bookingManageHandler = async (req: any, res: any) => {
     try {
       const bookingId = parseInt(req.params.id);
       const { hash, action } = req.query;
@@ -7303,7 +7304,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
       console.error("Error fetching booking for customer:", error);
       res.status(500).json({ message: "Internal server error" });
     }
-  });
+  };
+
+  // Register both route patterns for backward compatibility
+  app.get("/api/booking-manage/:id", bookingManageHandler);
+  app.get("/api/manage-booking/:id", bookingManageHandler);
 
   // Get change requests for a specific booking (customer view)
   app.get("/api/booking-manage/:id/change-requests", async (req, res) => {
@@ -7863,6 +7868,31 @@ export async function registerRoutes(app: Express): Promise<Server> {
       console.error("Error updating booking:", error);
       res.status(500).json({ message: "Internal server error" });
     }
+  });
+
+  // Add alternative route handlers for /manage-booking/ pattern (backward compatibility)
+  app.get("/api/manage-booking/:id/change-requests", async (req, res) => {
+    // Redirect to the main booking-manage handler
+    req.url = req.url.replace('/manage-booking/', '/booking-manage/');
+    return app._router.handle(req, res);
+  });
+
+  app.get("/api/manage-booking/:id/available-tables", async (req, res) => {
+    // Redirect to the main booking-manage handler
+    req.url = req.url.replace('/manage-booking/', '/booking-manage/');
+    return app._router.handle(req, res);
+  });
+
+  app.post("/api/manage-booking/:id/cancel", async (req, res) => {
+    // Redirect to the main booking-manage handler
+    req.url = req.url.replace('/manage-booking/', '/booking-manage/');
+    return app._router.handle(req, res);
+  });
+
+  app.put("/api/manage-booking/:id", async (req, res) => {
+    // Redirect to the main booking-manage handler
+    req.url = req.url.replace('/manage-booking/', '/booking-manage/');
+    return app._router.handle(req, res);
   });
 
   // Booking Change Request Management Routes
