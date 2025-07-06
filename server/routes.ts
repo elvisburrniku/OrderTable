@@ -3938,85 +3938,62 @@ export async function registerRoutes(app: Express): Promise<Server> {
           });
         }
 
-        // Split comma-separated phone numbers
-        const phoneNumbers = req.body.receivers
-          .split(',')
-          .map((phone: string) => phone.trim())
-          .filter((phone: string) => phone.length > 0);
+        // Map frontend data to backend structure
+        const messageData = {
+          phoneNumber: req.body.receivers, // Map receivers to phoneNumber
+          message: req.body.content,
+          type: req.body.messageType || "information",
+          cost: "0.08", // Default cost
+        };
 
-        if (phoneNumbers.length === 0) {
-          return res.status(400).json({ 
-            message: "At least one valid phone number is required" 
-          });
-        }
+        // Save message to database first
+        const message = await storage.createSmsMessage(restaurantId, tenantId, messageData);
 
-        const { twilioSMSService } = await import("./twilio-sms-service.js");
-        const results = [];
-        let successCount = 0;
-        let failureCount = 0;
+        // Send SMS via Twilio
+        try {
+          const { twilioSMSService } = await import("./twilio-sms-service.js");
+          
+          const smsData = {
+            to: messageData.phoneNumber,
+            message: messageData.message,
+            type: messageData.type,
+            restaurantId,
+            tenantId
+          };
 
-        // Send SMS to each phone number
-        for (const phoneNumber of phoneNumbers) {
-          try {
-            // Save message to database for each recipient
-            const messageData = {
-              phoneNumber: phoneNumber,
-              message: req.body.content,
-              type: req.body.messageType || "information",
-              cost: "0.08", // Default cost
-            };
-
-            const message = await storage.createSmsMessage(restaurantId, tenantId, messageData);
-
-            // Send SMS via Twilio
-            const smsData = {
-              to: phoneNumber,
-              message: req.body.content,
-              type: req.body.messageType || "information",
-              restaurantId,
-              tenantId
-            };
-
-            const smsResult = await twilioSMSService.sendSMS(smsData);
-            
-            if (smsResult.success) {
-              // Update message status to sent
-              await storage.updateSmsMessageStatus(message.id, "sent");
-              successCount++;
-              results.push({
-                phoneNumber,
-                status: "sent",
+          const smsResult = await twilioSMSService.sendSMS(smsData);
+          
+          if (smsResult.success) {
+            // Update message status to sent
+            await storage.updateSmsMessageStatus(message.id, "sent");
+            res.json({
+              ...message,
+              status: "sent",
+              smsResult: {
                 messageId: smsResult.messageId,
-                cost: smsResult.cost
-              });
-            } else {
-              // Update message status to failed
-              await storage.updateSmsMessageStatus(message.id, "failed", smsResult.error);
-              failureCount++;
-              results.push({
-                phoneNumber,
-                status: "failed",
-                error: smsResult.error
-              });
-            }
-          } catch (smsError) {
-            console.error(`SMS sending error for ${phoneNumber}:`, smsError);
-            failureCount++;
-            results.push({
-              phoneNumber,
+                cost: smsResult.cost,
+                note: "SMS sent successfully via Twilio"
+              }
+            });
+          } else {
+            // Update message status to failed
+            await storage.updateSmsMessageStatus(message.id, "failed", smsResult.error);
+            res.json({
+              ...message,
               status: "failed",
-              error: smsError.message || "Failed to send SMS"
+              error: smsResult.error
             });
           }
+        } catch (smsError) {
+          console.error("SMS sending error:", smsError);
+          // Update message status to failed
+          await storage.updateSmsMessageStatus(message.id, "failed", smsError.message);
+          res.json({
+            ...message,
+            status: "failed",
+            error: "Failed to send SMS: " + smsError.message
+          });
         }
-
-        res.json({
-          message: `SMS sending completed. ${successCount} successful, ${failureCount} failed.`,
-          totalRecipients: phoneNumbers.length,
-          successCount,
-          failureCount,
-          results
-        });
       } catch (error) {
         res.status(400).json({ message: "Invalid message data" });
       }
