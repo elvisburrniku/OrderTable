@@ -34,6 +34,7 @@ export default function PaymentSuccess() {
   // Support return URL flow from guest booking (payment completed in guest booking page)
   const isReturnFromGuestBooking = !token && !bookingId && !hash && !paymentIntentId;
   const hasPaymentSuccess = redirectStatus === "succeeded" || urlParams.get("payment") === "success";
+  const isInlineRedirect = urlParams.get("inline") === "true";
 
   // Fetch booking details using secure endpoint (token or legacy hash)
   const { data: booking, isLoading } = useQuery({
@@ -157,6 +158,22 @@ export default function PaymentSuccess() {
     }
   }, [paymentIntentId, booking, redirectStatus, notificationSent, isReturnFromGuestBooking, hasPaymentSuccess]);
 
+  // Auto-redirect inline payments back to booking page with success message
+  useEffect(() => {
+    if (isInlineRedirect && hasPaymentSuccess) {
+      // Show a brief success message then redirect back
+      const timer = setTimeout(() => {
+        window.close(); // Close this tab/window
+        // If window.close doesn't work (some browsers block it), try to go back
+        if (!window.closed) {
+          window.history.back();
+        }
+      }, 2000);
+      
+      return () => clearTimeout(timer);
+    }
+  }, [isInlineRedirect, hasPaymentSuccess]);
+
   // Allow return URL flow from guest booking without token/hash parameters
   if (!token && (!bookingId || !hash) && !isReturnFromGuestBooking) {
     return (
@@ -183,6 +200,38 @@ export default function PaymentSuccess() {
     );
   }
   
+  // Handle inline redirect case - show brief success and auto-redirect
+  if (isInlineRedirect && hasPaymentSuccess) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-green-50 to-emerald-100 py-12 px-4">
+        <div className="container mx-auto max-w-md">
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2 text-green-700">
+                <CheckCircle className="h-6 w-6" />
+                Payment Successful!
+              </CardTitle>
+              <CardDescription>
+                Your payment was processed successfully. Redirecting back to your booking...
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="text-center space-y-4">
+              <div className="mx-auto w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mb-4">
+                <CheckCircle className="w-10 h-10 text-green-600" />
+              </div>
+              <p className="text-green-600">
+                Please wait while we redirect you back to complete your booking confirmation.
+              </p>
+              <div className="text-sm text-gray-600">
+                If you are not redirected automatically, you can close this window.
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+      </div>
+    );
+  }
+
   // Handle case where return URL doesn't indicate success
   if (isReturnFromGuestBooking && !hasPaymentSuccess) {
     return (

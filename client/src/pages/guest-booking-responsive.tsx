@@ -79,33 +79,62 @@ const PaymentForm = ({ onPaymentSuccess, onPaymentError, bookingData, paymentAmo
     setIsProcessing(true);
 
     try {
-      // Use confirmPayment with return_url to handle all payment methods including Bancontact
+      // First, try to confirm payment without redirect
       const { error, paymentIntent } = await stripe.confirmPayment({
         elements,
-        confirmParams: {
-          return_url: `${window.location.origin}/payment-success?payment=success${bookingData ? `&booking=${bookingData.id}` : ''}`,
-        },
         redirect: 'if_required',
+        confirmParams: {
+          // Only provide return_url for payment methods that absolutely require it
+          return_url: `${window.location.origin}/payment-success?payment=success&inline=true`,
+        },
       });
 
       if (error) {
         console.error('Payment error:', error);
-        if (error.type === "card_error" || error.type === "validation_error") {
-          onPaymentError(error.message || "Payment failed");
+        
+        // Handle specific error types with user-friendly messages
+        if (error.type === "card_error") {
+          if (error.code === "card_declined") {
+            onPaymentError("Your card was declined. Please check your card details or try a different payment method.");
+          } else if (error.code === "expired_card") {
+            onPaymentError("Your card has expired. Please use a different payment method.");
+          } else if (error.code === "insufficient_funds") {
+            onPaymentError("Insufficient funds. Please try a different payment method.");
+          } else {
+            onPaymentError(error.message || "Your card could not be processed. Please check your details and try again.");
+          }
+        } else if (error.type === "validation_error") {
+          onPaymentError("Please check your payment details and try again.");
         } else if (error.code === "payment_intent_authentication_failure") {
-          onPaymentError("Payment authentication failed. Please try again.");
-        } else if (error.code === "card_declined") {
-          onPaymentError("Your card was declined. Please try a different payment method.");
+          onPaymentError("Payment authentication failed. Your card may require additional verification.");
+        } else if (error.code === "payment_method_unactivated") {
+          onPaymentError("This payment method is not yet activated. Please contact your bank or try a different method.");
+        } else if (error.message?.includes("return_url")) {
+          // For payment methods that require return_url, show a specific message
+          onPaymentError("This payment method requires additional verification. Please contact the restaurant to complete your booking.");
         } else {
-          onPaymentError(error.message || "An unexpected error occurred.");
+          onPaymentError(error.message || "Payment failed. Please try again or contact support.");
         }
-      } else if (paymentIntent && paymentIntent.status === 'succeeded') {
-        // Payment successful, trigger the success callback
-        onPaymentSuccess();
+      } else if (paymentIntent) {
+        // Check payment status
+        if (paymentIntent.status === 'succeeded') {
+          console.log('Payment successful inline');
+          onPaymentSuccess();
+        } else if (paymentIntent.status === 'requires_action') {
+          // This shouldn't happen with redirect: 'if_required', but handle it
+          onPaymentError("Payment requires additional verification. Please try again.");
+        } else if (paymentIntent.status === 'processing') {
+          // Payment is being processed - wait a moment and check status
+          onPaymentError("Payment is being processed. Please wait a moment and refresh the page to check status.");
+        } else {
+          onPaymentError("Payment could not be completed. Please try again.");
+        }
+      } else {
+        onPaymentError("Payment failed. Please try again.");
       }
     } catch (error: any) {
       console.error('Payment processing error:', error);
-      onPaymentError(error.message || "An error occurred while processing payment");
+      onPaymentError("An error occurred while processing your payment. Please try again or contact support.");
     } finally {
       setIsProcessing(false);
     }
@@ -1582,7 +1611,7 @@ export default function GuestBookingResponsive(props: any) {
 
                 {/* Payment Form - Show directly without creating booking first */}
                 {paymentError && (
-                  <Alert className="bg-red-50 border-red-200">
+                  <Alert className="bg-red-50 border-red-200 mb-4">
                     <AlertCircle className="h-4 w-4" />
                     <AlertDescription className="text-red-800">
                       {paymentError}
@@ -1602,6 +1631,9 @@ export default function GuestBookingResponsive(props: any) {
                       paymentAmount={paymentAmount}
                       currency={paymentInfo?.paymentSetup?.currency || 'EUR'}
                       onPaymentSuccess={() => {
+                        // Clear any previous payment errors
+                        setPaymentError(null);
+                        
                         // Payment successful - show confirmation immediately
                         console.log('Payment successful, showing confirmation');
                         setBookingCreated(true);
@@ -1631,6 +1663,7 @@ export default function GuestBookingResponsive(props: any) {
                       }}
                       onPaymentError={(error: string) => {
                         setPaymentError(error);
+                        console.log('Payment failed:', error);
                         toast({
                           title: "Payment Failed",
                           description: error,
@@ -1639,6 +1672,29 @@ export default function GuestBookingResponsive(props: any) {
                       }}
                     />
                   </Elements>
+                )}
+
+                {/* Retry payment button if there was an error */}
+                {paymentError && clientSecret && (
+                  <div className="text-center mt-4">
+                    <p className="text-sm text-gray-600 mb-2">
+                      Having trouble? You can try again or contact the restaurant directly.
+                    </p>
+                    <Button 
+                      variant="outline" 
+                      onClick={() => {
+                        setPaymentError(null);
+                        // Force re-render of payment form
+                        setClientSecret(null);
+                        setTimeout(() => {
+                          createPaymentIntentForGuest();
+                        }, 100);
+                      }}
+                      className="mr-2"
+                    >
+                      Try Again
+                    </Button>
+                  </div>
                 )}
               </div>
             )}
