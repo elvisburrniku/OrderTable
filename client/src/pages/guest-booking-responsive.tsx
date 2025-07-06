@@ -338,7 +338,45 @@ export default function GuestBookingResponsive(props: any) {
     },
   });
 
-  // Create payment intent for booking
+  // Create payment intent without booking first
+  const createPaymentIntentForGuest = async () => {
+    try {
+      console.log('Creating payment intent for guest booking (no booking created yet)');
+      
+      const response = await fetch(
+        `/api/tenants/${finalTenantId}/restaurants/${finalRestaurantId}/guest-payment-intent`,
+        {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            amount: paymentAmount,
+            currency: paymentInfo?.paymentSetup?.currency || 'EUR',
+            metadata: {
+              customerName: customerData.name,
+              customerEmail: customerData.email,
+              bookingDate: selectedDate ? format(selectedDate, "yyyy-MM-dd") : "",
+              startTime: selectedTime,
+              guestCount: guestCount,
+            }
+          })
+        }
+      );
+      
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.message || 'Payment setup failed');
+      }
+      
+      const data = await response.json();
+      setClientSecret(data.clientSecret);
+      console.log('Payment intent created successfully');
+    } catch (error: any) {
+      console.error('Error creating payment intent:', error);
+      setPaymentError(error.message);
+    }
+  };
+
+  // Create payment intent for booking (legacy)
   const createPaymentIntent = async (bookingData: any) => {
     try {
       console.log('Creating payment intent for booking:', bookingData);
@@ -389,6 +427,16 @@ export default function GuestBookingResponsive(props: any) {
       : []),
   ];
 
+  // Auto-create payment intent when payment step is reached
+  useEffect(() => {
+    const hasPaymentStep = paymentInfo?.requiresPayment && paymentInfo?.stripeConnectReady;
+    const isPaymentStep = currentStep === steps.length - 1 && hasPaymentStep;
+    
+    if (isPaymentStep && !clientSecret && !paymentError && customerData.name && customerData.email) {
+      createPaymentIntentForGuest();
+    }
+  }, [currentStep, steps.length, paymentInfo, clientSecret, paymentError, customerData]);
+
   // Debug logging
   console.log(`Steps configuration: ${steps.map(s => s.title).join(', ')}`);
   console.log(`Current step: ${currentStep}, Payment required: ${paymentInfo?.requiresPayment}, Stripe ready: ${paymentInfo?.stripeConnectReady}`);
@@ -403,7 +451,7 @@ export default function GuestBookingResponsive(props: any) {
     } else {
       // Final step - either submit booking or handle payment completion
       if (!hasPaymentStep) {
-        // No payment required, create booking
+        // No payment required, create booking directly
         const bookingData = {
           bookingDate: selectedDate ? format(selectedDate, "yyyy-MM-dd") : "",
           startTime: selectedTime,
@@ -422,8 +470,10 @@ export default function GuestBookingResponsive(props: any) {
           paymentDeadlineHours: 24,
         };
         createBookingMutation.mutate(bookingData);
+      } else {
+        // Payment required - just go to payment step (don't create booking yet)
+        setCurrentStep(currentStep + 1);
       }
-      // Payment handling will be done in PaymentForm component
     }
   };
 
@@ -1490,11 +1540,29 @@ export default function GuestBookingResponsive(props: any) {
                   </div>
                 </div>
 
-                {/* Create booking with payment if not yet created */}
-                {!createdBookingData && (
+                {/* Payment Form - Show directly without creating booking first */}
+                {paymentError && (
+                  <Alert className="bg-red-50 border-red-200">
+                    <AlertCircle className="h-4 w-4" />
+                    <AlertDescription className="text-red-800">
+                      {paymentError}
+                    </AlertDescription>
+                  </Alert>
+                )}
+
+                {!clientSecret ? (
                   <div className="text-center">
-                    <Button
-                      onClick={() => {
+                    <div className="animate-spin w-8 h-8 border-4 border-blue-600 border-t-transparent rounded-full mx-auto mb-4" />
+                    <p className="text-gray-600">Setting up payment...</p>
+                  </div>
+                ) : (
+                  <Elements stripe={stripePromise} options={{ clientSecret }}>
+                    <PaymentForm
+                      bookingData={null} // No booking created yet - payment first
+                      paymentAmount={paymentAmount}
+                      currency={paymentInfo?.paymentSetup?.currency || 'EUR'}
+                      onPaymentSuccess={() => {
+                        // Now create the booking after payment success
                         const bookingData = {
                           bookingDate: selectedDate ? format(selectedDate, "yyyy-MM-dd") : "",
                           startTime: selectedTime,
@@ -1503,75 +1571,24 @@ export default function GuestBookingResponsive(props: any) {
                           customerEmail: customerData.email,
                           customerPhone: customerData.phone,
                           specialRequests: customerData.comment || null,
-                          seasonalThemeId: selectedSeasonalTheme
-                            ? parseInt(selectedSeasonalTheme)
-                            : null,
+                          seasonalThemeId: selectedSeasonalTheme ? parseInt(selectedSeasonalTheme) : null,
                           source: "guest_booking",
                           requiresPayment: true,
                           paymentAmount: paymentAmount,
                           paymentDeadlineHours: 24,
                         };
-                        console.log(`Creating booking with payment at payment step`);
                         createBookingMutation.mutate(bookingData);
                       }}
-                      disabled={createBookingMutation.isPending || !customerData.name || !customerData.email}
-                      className="w-full bg-blue-600 hover:bg-blue-700"
-                    >
-                      {createBookingMutation.isPending ? (
-                        <>
-                          <div className="animate-spin w-4 h-4 border-2 border-white border-t-transparent rounded-full mr-2" />
-                          Creating booking...
-                        </>
-                      ) : (
-                        `Create Booking & Pay ${paymentInfo?.paymentSetup?.currency || 'EUR'} ${paymentAmount.toFixed(2)}`
-                      )}
-                    </Button>
-                  </div>
-                )}
-
-                {/* Show payment form only after booking is created */}
-                {createdBookingData && (
-                  <>
-                    {paymentError && (
-                      <Alert className="bg-red-50 border-red-200">
-                        <AlertCircle className="h-4 w-4" />
-                        <AlertDescription className="text-red-800">
-                          {paymentError}
-                        </AlertDescription>
-                      </Alert>
-                    )}
-
-                    {!clientSecret ? (
-                      <div className="text-center">
-                        <div className="animate-spin w-8 h-8 border-4 border-blue-600 border-t-transparent rounded-full mx-auto mb-4" />
-                        <p className="text-gray-600">Setting up payment...</p>
-                      </div>
-                    ) : (
-                      <Elements stripe={stripePromise} options={{ clientSecret }}>
-                        <PaymentForm
-                          bookingData={createdBookingData}
-                          paymentAmount={paymentAmount}
-                          currency={paymentInfo?.paymentSetup?.currency || 'EUR'}
-                          onPaymentSuccess={() => {
-                            setBookingId(createdBookingData?.id || null);
-                            setBookingCreated(true);
-                            toast({
-                              title: "Payment Successful!",
-                              description: "Your reservation has been confirmed and payment processed.",
-                            });
-                          }}
-                          onPaymentError={(error: string) => {
-                            setPaymentError(error);
-                            toast({
-                              title: "Payment Failed",
-                              description: error,
-                              variant: "destructive",
-                            });
-                          }}
-                        />
-                      </Elements>
-                    )}
-                  </>
+                      onPaymentError={(error: string) => {
+                        setPaymentError(error);
+                        toast({
+                          title: "Payment Failed",
+                          description: error,
+                          variant: "destructive",
+                        });
+                      }}
+                    />
+                  </Elements>
                 )}
               </div>
             )}

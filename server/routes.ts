@@ -6916,6 +6916,69 @@ export async function registerRoutes(app: Express): Promise<Server> {
     },
   );
 
+  // Guest payment intent creation endpoint (without booking first)
+  app.post(
+    "/api/tenants/:tenantId/restaurants/:restaurantId/guest-payment-intent",
+    async (req, res) => {
+      try {
+        const tenantId = parseInt(req.params.tenantId);
+        const restaurantId = parseInt(req.params.restaurantId);
+        const { amount, currency, metadata } = req.body;
+
+        if (!amount || amount <= 0) {
+          return res.status(400).json({ message: "Invalid payment amount" });
+        }
+
+        // Get tenant's Stripe Connect account
+        const tenant = await storage.getTenantById(tenantId);
+        if (!tenant?.stripeConnectAccountId || !tenant.stripeConnectChargesEnabled) {
+          return res.status(400).json({ 
+            message: "Payment processing is not set up for this restaurant" 
+          });
+        }
+
+        // Get restaurant name for metadata
+        const restaurant = await storage.getRestaurantById(restaurantId);
+        if (!restaurant || restaurant.tenantId !== tenantId) {
+          return res.status(404).json({ message: "Restaurant not found" });
+        }
+
+        // Create payment intent using Stripe Connect
+        const { paymentService } = await import("./payment-service");
+        
+        try {
+          const paymentIntent = await paymentService.createBookingPaymentIntent(
+            amount,
+            currency || "eur",
+            tenant.stripeConnectAccountId,
+            {
+              bookingId: null, // No booking created yet
+              customerEmail: metadata.customerEmail,
+              customerName: metadata.customerName,
+              restaurantName: restaurant.name,
+              bookingDate: metadata.bookingDate,
+              startTime: metadata.startTime,
+              guestCount: metadata.guestCount,
+            }
+          );
+
+          res.json({
+            clientSecret: paymentIntent.clientSecret,
+            paymentIntentId: paymentIntent.paymentIntentId,
+          });
+        } catch (stripeError) {
+          console.error("Stripe payment intent creation failed:", stripeError);
+          res.status(500).json({ 
+            message: "Failed to create payment intent. Please try again." 
+          });
+        }
+      } catch (error) {
+        console.error("Error creating guest payment intent:", error);
+        res.status(500).json({ message: "Internal server error" });
+      }
+    },
+  );
+
   app.put(
     "/api/tenants/:tenantId/bookings/:id",
     validateTenant,
