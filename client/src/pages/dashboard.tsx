@@ -83,9 +83,9 @@ export default function Dashboard() {
   const { formatDate, formatTime, formatDateTime } = useDate();
   const [, setLocation] = useLocation();
   const [selectedDate, setSelectedDate] = useState(new Date());
-  const [viewMode, setViewMode] = useState<"calendar" | "layout" | "status" | "menu">(
-    "calendar",
-  );
+  const [viewMode, setViewMode] = useState<
+    "calendar" | "layout" | "status" | "menu"
+  >("calendar");
   const [selectedRoom, setSelectedRoom] = useState<string>("");
   const [isNewBookingOpen, setIsNewBookingOpen] = useState(false);
   const [selectedTableForBooking, setSelectedTableForBooking] =
@@ -106,7 +106,7 @@ export default function Dashboard() {
   const [currentTime, setCurrentTime] = useState(new Date());
   const [showWelcomeAnimation, setShowWelcomeAnimation] = useState(() => {
     // Check if user has seen welcome animation today
-    const lastWelcomeDate = localStorage.getItem('lastWelcomeDate');
+    const lastWelcomeDate = localStorage.getItem("lastWelcomeDate");
     const today = new Date().toDateString();
     return lastWelcomeDate !== today;
   });
@@ -120,7 +120,7 @@ export default function Dashboard() {
   // Handle welcome animation completion
   const handleWelcomeComplete = () => {
     setShowWelcomeAnimation(false);
-    localStorage.setItem('lastWelcomeDate', new Date().toDateString());
+    localStorage.setItem("lastWelcomeDate", new Date().toDateString());
   };
 
   // Update current time every second
@@ -287,7 +287,7 @@ export default function Dashboard() {
   const calculateTimeRemaining = (targetTime: string) => {
     const now = new Date();
     const target = new Date();
-    const [hours, minutes] = targetTime.split(':');
+    const [hours, minutes] = targetTime.split(":");
     target.setHours(parseInt(hours), parseInt(minutes), 0, 0);
 
     if (target < now) {
@@ -299,14 +299,14 @@ export default function Dashboard() {
   };
 
   const getUpcomingReservations = () => {
-    return selectedDateBookings.filter(booking => {
+    return selectedDateBookings.filter((booking) => {
       const timeRemaining = calculateTimeRemaining(booking.startTime);
       return timeRemaining > 0 && timeRemaining <= 480; // Within 8 hours
     });
   };
 
   const getUrgentReservations = () => {
-    return selectedDateBookings.filter(booking => {
+    return selectedDateBookings.filter((booking) => {
       const timeRemaining = calculateTimeRemaining(booking.startTime);
       return timeRemaining > 0 && timeRemaining <= 30; // Within 30 minutes
     });
@@ -704,7 +704,8 @@ export default function Dashboard() {
       })
       .map((booking: any) => booking.tableId);
 
-    return safeTables.filter((table: any) => !bookedTableIds.includes(table.id)).length;
+    return safeTables.filter((table: any) => !bookedTableIds.includes(table.id))
+      .length;
   };
 
   const getOpeningHoursForDay = (date: Date) => {
@@ -758,7 +759,7 @@ export default function Dashboard() {
       <div className="min-h-screen flex items-center justify-center">
         <div className="text-center">
           <p>Please log in to access the dashboard</p>
-          <button 
+          <button
             onClick={() => setLocation("/login")}
             className="mt-4 px-4 py-2 bg-green-600 text-white rounded"
           >
@@ -847,8 +848,8 @@ export default function Dashboard() {
             <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 opacity-0 group-hover:opacity-100 transition-opacity bg-gray-900 text-white text-xs rounded py-1 px-2 whitespace-nowrap z-20 pointer-events-none">
               {bookings.map((booking, index) => (
                 <div key={booking.id}>
-                  {booking.startTime} - {booking.customerName} ({booking.guestCount})
-                  {index < bookings.length - 1 && <br />}
+                  {booking.startTime} - {booking.customerName} (
+                  {booking.guestCount}){index < bookings.length - 1 && <br />}
                 </div>
               ))}
             </div>
@@ -907,8 +908,8 @@ export default function Dashboard() {
   const renderTableLayout = () => {
     const tablePositions = safeObject(savedLayout?.positions, {});
     const safeTables = safeArray(tables);
-    const tablesWithPositions = safeTables.filter((table: any) => 
-      table && table.id && tablePositions[table.id]
+    const tablesWithPositions = safeTables.filter(
+      (table: any) => table && table.id && tablePositions[table.id],
     );
 
     return (
@@ -936,18 +937,19 @@ export default function Dashboard() {
                   ))}
                 </SelectContent>
               </Select>
-              <Button
+              {/* <Button
                 onClick={() => setLocation("/table-plan")}
                 variant="outline"
                 size="sm"
               >
                 <Edit className="h-4 w-4 mr-2" />
                 Edit Layout
-              </Button>
+              </Button> */}
             </div>
           </div>
           <p className="text-sm text-gray-600">
-            {formatDate(selectedDate, "EEEE, MMMM d, yyyy")} - Click on tables to make bookings or view existing reservations
+            {formatDate(selectedDate, "EEEE, MMMM d, yyyy")} - Click on tables
+            to make bookings or view existing reservations
           </p>
         </CardHeader>
         <CardContent>
@@ -988,7 +990,7 @@ export default function Dashboard() {
               <>
                 {/* Room background */}
                 <div className="absolute inset-4 bg-white bg-opacity-30 rounded-lg border border-gray-300"></div>
-                
+
                 {/* Placed Tables using SVG renderer */}
                 {tablesWithPositions.map((table: any) => {
                   const position = tablePositions[table.id];
@@ -1069,10 +1071,15 @@ export default function Dashboard() {
                   <div className="flex items-center bg-blue-50 border border-blue-200 rounded-lg px-3 py-2">
                     <Clock className="h-4 w-4 mr-2 text-blue-600" />
                     <span className="text-sm font-medium text-blue-800">
-                      {formatTime(currentTime, generalSettings?.timeFormat === '12' ? "hh:mm:ss a" : "HH:mm:ss")}
+                      {formatTime(
+                        currentTime,
+                        generalSettings?.timeFormat === "12"
+                          ? "hh:mm:ss a"
+                          : "HH:mm:ss",
+                      )}
                     </span>
                   </div>
-                  <AnimatedNotificationBadge 
+                  <AnimatedNotificationBadge
                     count={getUpcomingReservations().length}
                     urgentCount={getUrgentReservations().length}
                   />
@@ -1185,16 +1192,12 @@ export default function Dashboard() {
             </Button>
             <WalkInBookingButton />
           </div>
-
         </div>
 
         {/* Main Interface */}
         <div className="flex-1 p-6">
           {/* Sneak Peek Banner for non-enterprise users */}
-          <SneakPeekBanner 
-            currentPlan="basic" 
-            className="mb-6" 
-          />
+          <SneakPeekBanner currentPlan="basic" className="mb-6" />
 
           {/* Active Seasonal Theme Banner */}
           <ActiveSeasonalThemeDisplay
@@ -1206,8 +1209,8 @@ export default function Dashboard() {
           {/* Reservation Countdown - only show in calendar view */}
           {viewMode === "calendar" && (
             <div className="mb-6">
-              <ReservationCountdown 
-                reservations={selectedDateBookings || []} 
+              <ReservationCountdown
+                reservations={selectedDateBookings || []}
                 className="max-w-6xl mx-auto"
               />
             </div>
@@ -1245,9 +1248,10 @@ export default function Dashboard() {
       <UnifiedBookingModal
         open={isNewBookingOpen}
         onOpenChange={setIsNewBookingOpen}
-        title={selectedTableForBooking 
-          ? `Create Booking for Table ${selectedTableForBooking.tableNumber}`
-          : "Create New Booking"
+        title={
+          selectedTableForBooking
+            ? `Create Booking for Table ${selectedTableForBooking.tableNumber}`
+            : "Create New Booking"
         }
         initialData={{
           customerName: newBooking.customerName,
@@ -1255,12 +1259,14 @@ export default function Dashboard() {
           customerPhone: newBooking.customerPhone,
           guestCount: newBooking.guestCount,
           startTime: newBooking.startTime,
-          specialRequests: newBooking.notes
+          specialRequests: newBooking.notes,
         }}
         tables={Array.isArray(tables) ? tables : []}
         onSubmit={handleCreateBooking}
         isLoading={createBookingMutation.isPending}
-        submitButtonText={createBookingMutation.isPending ? "Creating..." : "Create Booking"}
+        submitButtonText={
+          createBookingMutation.isPending ? "Creating..." : "Create Booking"
+        }
         mode="create"
       />
 
