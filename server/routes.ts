@@ -99,6 +99,111 @@ try {
   emailService = null;
 }
 
+// Helper function to check if a table is available for a specific time slot
+async function isTableAvailable(
+  tableId: number,
+  bookingDate: string,
+  startTime: string,
+  endTime: string,
+  excludeBookingId?: number,
+  bufferMinutes: number = 30
+): Promise<{ available: boolean; conflicts: any[] }> {
+  try {
+    // Get all bookings for this table on the given date
+    const table = await storage.getTableById(tableId);
+    if (!table) {
+      return { available: false, conflicts: [] };
+    }
+
+    const existingBookings = await storage.getBookingsByDate(
+      table.restaurantId,
+      bookingDate
+    );
+
+    // Filter bookings for this specific table
+    const tableBookings = existingBookings.filter(
+      (booking) =>
+        booking.tableId === tableId &&
+        booking.status !== "cancelled" &&
+        booking.id !== excludeBookingId
+    );
+
+    // Convert time strings to minutes for easier comparison
+    const timeToMinutes = (time: string): number => {
+      const [hours, minutes] = time.split(":").map(Number);
+      return hours * 60 + minutes;
+    };
+
+    const requestedStart = timeToMinutes(startTime) - bufferMinutes;
+    const requestedEnd = timeToMinutes(endTime || startTime) + 120 + bufferMinutes; // Default 2 hours if no end time
+
+    const conflicts = [];
+
+    for (const booking of tableBookings) {
+      const bookingStart = timeToMinutes(booking.startTime) - bufferMinutes;
+      const bookingEnd = timeToMinutes(booking.endTime || booking.startTime) + 120 + bufferMinutes;
+
+      // Check for overlap
+      if (requestedStart < bookingEnd && bookingStart < requestedEnd) {
+        conflicts.push({
+          bookingId: booking.id,
+          customerName: booking.customerName,
+          startTime: booking.startTime,
+          endTime: booking.endTime,
+          status: booking.status,
+          guestCount: booking.guestCount
+        });
+      }
+    }
+
+    return {
+      available: conflicts.length === 0,
+      conflicts
+    };
+  } catch (error) {
+    console.error("Error checking table availability:", error);
+    return { available: false, conflicts: [] };
+  }
+}
+
+// Helper function to find available tables for a time slot
+async function findAvailableTables(
+  restaurantId: number,
+  bookingDate: string,
+  startTime: string,
+  endTime: string,
+  guestCount: number,
+  excludeBookingId?: number
+): Promise<any[]> {
+  try {
+    const allTables = await storage.getTablesByRestaurant(restaurantId);
+    const availableTables = [];
+
+    for (const table of allTables) {
+      // Skip tables that don't have enough capacity
+      if (table.capacity < guestCount) continue;
+
+      const { available } = await isTableAvailable(
+        table.id,
+        bookingDate,
+        startTime,
+        endTime,
+        excludeBookingId
+      );
+
+      if (available) {
+        availableTables.push(table);
+      }
+    }
+
+    // Sort by capacity (smallest suitable table first)
+    return availableTables.sort((a, b) => a.capacity - b.capacity);
+  } catch (error) {
+    console.error("Error finding available tables:", error);
+    return [];
+  }
+}
+
 // Initialize webhook service
 const webhookService = new WebhookService(storage);
 
@@ -1661,92 +1766,63 @@ export async function registerRoutes(app: Express): Promise<Server> {
               return `${endHours.toString().padStart(2, "0")}:${minutes.toString().padStart(2, "0")}`;
             })();
 
-          // Get all existing bookings for this table on the same date
-          const existingBookings = await storage.getBookingsByDate(
-            restaurantId,
+          // Use our enhanced availability checking function
+          const { available, conflicts } = await isTableAvailable(
+            tableId,
             bookingDate,
-          );
-          const tableBookings = existingBookings.filter(
-            (booking) =>
-              booking.tableId === tableId && booking.status !== "cancelled",
+            startTime,
+            endTime
           );
 
-          // Check for time conflicts
-          const hasConflict = tableBookings.some((existingBooking) => {
-            const existingStartTime = existingBooking.startTime;
-            const existingEndTime =
-              existingBooking.endTime ||
-              (() => {
-                // Default to 2 hours for existing bookings without end time
-                const [hours, minutes] = existingStartTime
-                  .split(":")
-                  .map(Number);
-                const endHours = (hours + 2) % 24;
-                return `${endHours.toString().padStart(2, "0")}:${minutes.toString().padStart(2, "0")}`;
-              })();
-
-            // Convert times to minutes for easier comparison
-            const timeToMinutes = (timeStr: string) => {
-              const [hours, minutes] = timeStr.split(":").map(Number);
-              return hours * 60 + minutes;
-            };
-
-            const newStartMinutes = timeToMinutes(startTime);
-            const newEndMinutes = timeToMinutes(endTime);
-            const existingStartMinutes = timeToMinutes(existingStartTime);
-            const existingEndMinutes = timeToMinutes(existingEndTime);
-
-            // Check for overlap: bookings overlap if one starts before the other ends
-            // Using strict overlap check without buffer for exact table conflict detection
-            return (
-              newStartMinutes < existingEndMinutes &&
-              existingStartMinutes < newEndMinutes
-            );
-          });
-
-          if (hasConflict) {
-            const conflictingBooking = tableBookings.find((existingBooking) => {
-              const existingStartTime = existingBooking.startTime;
-              const existingEndTime =
-                existingBooking.endTime ||
-                (() => {
-                  const [hours, minutes] = existingStartTime
-                    .split(":")
-                    .map(Number);
-                  const endHours = (hours + 2) % 24;
-                  return `${endHours.toString().padStart(2, "0")}:${minutes.toString().padStart(2, "0")}`;
-                })();
-
-              const timeToMinutes = (timeStr: string) => {
-                const [hours, minutes] = timeStr.split(":").map(Number);
-                return hours * 60 + minutes;
-              };
-
-              const newStartMinutes = timeToMinutes(startTime);
-              const newEndMinutes = timeToMinutes(endTime);
-              const existingStartMinutes = timeToMinutes(existingStartTime);
-              const existingEndMinutes = timeToMinutes(existingEndTime);
-
-              return (
-                newStartMinutes < existingEndMinutes &&
-                existingStartMinutes < newEndMinutes
-              );
-            });
-
+          if (!available && conflicts.length > 0) {
             const table = await storage.getTableById(tableId);
             const tableNumber = table?.tableNumber || tableId;
+            
+            // Create conflict notification immediately
+            try {
+              await storage.createNotification({
+                restaurantId: restaurantId,
+                tenantId: tenantId,
+                type: "booking_conflict",
+                title: "Booking Conflict Detected",
+                message: `Table ${tableNumber} double-booking attempt for ${bookingDate} at ${startTime}`,
+                bookingId: null,
+                isRead: false,
+              });
+
+              // Broadcast real-time notification
+              broadcastNotification(restaurantId, {
+                type: "booking_conflict_detected",
+                table: {
+                  id: tableId,
+                  number: tableNumber
+                },
+                attemptedBooking: {
+                  date: bookingDate,
+                  time: startTime,
+                  customerName: req.body.customerName,
+                  guestCount: bookingData.guestCount
+                },
+                conflicts: conflicts,
+                timestamp: new Date().toISOString(),
+              });
+            } catch (notifError) {
+              console.error("Failed to create conflict notification:", notifError);
+            }
 
             return res.status(400).json({
-              message: `Table ${tableNumber} is already booked from ${conflictingBooking?.startTime} to ${conflictingBooking?.endTime || "unknown"} on ${bookingDate}. Please select a different table or time slot.`,
+              message: `Table ${tableNumber} is already booked from ${conflicts[0].startTime} to ${conflicts[0].endTime || "unknown"} on ${bookingDate}. Please select a different table or time slot.`,
               conflictDetails: {
                 tableId: tableId,
                 tableNumber: tableNumber,
-                conflictingBooking: {
-                  id: conflictingBooking?.id,
-                  startTime: conflictingBooking?.startTime,
-                  endTime: conflictingBooking?.endTime,
-                  customerName: conflictingBooking?.customerName,
-                },
+                conflicts: conflicts,
+                suggestedAlternatives: await findAvailableTables(
+                  restaurantId,
+                  bookingDate,
+                  startTime,
+                  endTime,
+                  bookingData.guestCount
+                )
               },
             });
           }
@@ -2433,6 +2509,39 @@ export async function registerRoutes(app: Express): Promise<Server> {
         const restaurant = await storage.getRestaurantById(restaurantId);
         if (!restaurant || restaurant.tenantId !== tenantId) {
           return res.status(404).json({ message: "Restaurant not found" });
+        }
+
+        // Check subscription table limits
+        const tenant = await storage.getTenantById(tenantId);
+        if (!tenant) {
+          return res.status(404).json({ message: "Tenant not found" });
+        }
+
+        const subscriptionPlan = await storage.getSubscriptionPlanById(
+          tenant.subscriptionPlanId,
+        );
+        if (!subscriptionPlan) {
+          return res.status(400).json({ message: "Invalid subscription plan" });
+        }
+
+        // Get all restaurants for this tenant to count total tables
+        const restaurants = await storage.getRestaurantsByTenantId(tenantId);
+        let totalTables = 0;
+        
+        for (const rest of restaurants) {
+          const tables = await storage.getTablesByRestaurant(rest.id);
+          totalTables += tables.length;
+        }
+
+        const maxTables = subscriptionPlan.maxTables || 10;
+        
+        if (totalTables >= maxTables) {
+          return res.status(400).json({
+            message: `You have reached your table limit of ${maxTables} tables for your ${subscriptionPlan.name} plan. Please upgrade your subscription to add more tables.`,
+            currentTables: totalTables,
+            maxTables: maxTables,
+            subscriptionPlan: subscriptionPlan.name
+          });
         }
 
         const tableData = {
@@ -11458,37 +11567,47 @@ export async function registerRoutes(app: Express): Promise<Server> {
           (booking) => booking.status !== "cancelled",
         );
 
-        // Find the first available table
-        const bookingStartMinutes = timeToMinutes(bookingData.startTime);
-        const bookingEndMinutes = bookingStartMinutes + 120; // 2-hour duration
-        const bufferMinutes = 60; // 1-hour buffer
+        // Find available tables using enhanced availability checking
+        const endTime = (() => {
+          const [hours, minutes] = bookingData.startTime.split(":").map(Number);
+          const endHours = (hours + 2) % 24;
+          return `${endHours.toString().padStart(2, "0")}:${minutes.toString().padStart(2, "0")}`;
+        })();
 
-        let availableTable = null;
-        for (const table of suitableTables) {
-          const hasConflict = activeBookings.some((booking) => {
-            if (booking.tableId !== table.id) return false;
+        const availableTables = await findAvailableTables(
+          restaurantId,
+          dateStr,
+          bookingData.startTime,
+          endTime,
+          bookingData.guestCount
+        );
 
-            const existingStart = timeToMinutes(booking.startTime);
-            const existingEnd = booking.endTime
-              ? timeToMinutes(booking.endTime)
-              : existingStart + 120; // Default 2-hour duration
-
-            // Check overlap with buffer
-            const requestedStart = bookingStartMinutes - bufferMinutes;
-            const requestedEnd = bookingEndMinutes + bufferMinutes;
-            const existingStartWithBuffer = existingStart - bufferMinutes;
-            const existingEndWithBuffer = existingEnd + bufferMinutes;
-
-            return (
-              requestedStart < existingEndWithBuffer &&
-              existingStartWithBuffer < requestedEnd
+        if (availableTables.length === 0) {
+          // Check if there are any tables with conflicts to provide better error messages
+          let conflictInfo = [];
+          for (const table of suitableTables) {
+            const { available, conflicts } = await isTableAvailable(
+              table.id,
+              dateStr,
+              bookingData.startTime,
+              endTime
             );
-          });
-
-          if (!hasConflict) {
-            availableTable = table;
-            break;
+            if (!available && conflicts.length > 0) {
+              conflictInfo.push({
+                table: table.tableNumber,
+                conflicts: conflicts
+              });
+            }
           }
+
+          return res.status(400).json({
+            message: `No tables available for ${bookingData.guestCount} guests at ${bookingData.startTime} on ${dateStr}. All suitable tables are already booked.`,
+            conflictingBookings: conflictInfo,
+            suggestion: "Please try a different time or date."
+          });
+        }
+
+        const availableTable = availableTables[0]; // Get the smallest suitable table
         }
 
         if (!availableTable) {
