@@ -45,7 +45,6 @@ export const PERMISSIONS = {
   MANAGE_KITCHEN: "manage_kitchen",
 
   // User management
-  ACCESS_USERS: "access_users",
   VIEW_USERS: "view_users",
   MANAGE_USERS: "manage_users",
 

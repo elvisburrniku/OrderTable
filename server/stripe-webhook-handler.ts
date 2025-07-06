@@ -1,5 +1,5 @@
 import { IStorage } from "./storage";
-import { SubscriptionService } from "./SubscriptionService";
+import { SubscriptionService } from "./subscription-service";
 import Stripe from "stripe";
 
 export async function handleStripeWebhook(event: Stripe.Event, storage: IStorage) {

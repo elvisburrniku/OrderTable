@@ -47,7 +47,6 @@ export class MemoryStorage implements IStorage {
   private feedback: Feedback[] = [];
   private activityLog: ActivityLog[] = [];
   private timeSlots: TimeSlots[] = [];
-  private rooms: Room[] = [];
   private combinedTables: CombinedTable[] = [];
   private tableLayouts: TableLayout[] = [];
   private paymentSetups: any[] = [];
@@ -886,7 +885,6 @@ export class MemoryStorage implements IStorage {
   }
 
   // Payment Setups
-  private paymentSetups: any[] = [];
 
   async getPaymentSetupsByRestaurant(restaurantId: number): Promise<any[]> {
     return this.paymentSetups
