@@ -23,8 +23,8 @@ export function RouteGuard({ children }: RouteGuardProps) {
         /^\/contact$/,
         /^\/feedback-responses$/,
         /^\/feedback-responses-popup$/,
-        /^\/booking-manage\/.+$/,
-        /^\/manage-booking\/.+$/,
+        /^\/booking-manage$/,
+        /^\/manage-booking$\/.+$/,
         /^\/payment$/,
         /^\/payment\/.+$/, // Payment links with payment intent IDs
       ];
@@ -123,6 +123,7 @@ export function RouteGuard({ children }: RouteGuardProps) {
         /^\/contact$/,
         /^\/guest-booking\/\d+\/\d+$/,
         /^\/feedback\/\d+\/\d+$/,
+        /^\/booking-manage$/,
       ];
 
       const isKnownRoute = knownRoutes.some((pattern) =>

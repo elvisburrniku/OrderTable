@@ -29,9 +29,20 @@ export default function BookingManage() {
 
   // Check if user has a valid hash parameter
   const urlParams = new URLSearchParams(window.location.search);
-  const hash = urlParams.get('hash');
+  let hash = urlParams.get('hash');
+  
+  // Handle malformed URLs where hash might be in the path instead of query parameter
+  // If no hash in query but ID looks like a hash (long hex string), treat ID as hash
+  if (!hash && id && id.length > 30 && /^[a-f0-9]+$/i.test(id)) {
+    console.log('Detected malformed URL: hash appears to be in path instead of query parameter');
+    hash = id;
+    // For malformed URLs, we can't determine the actual booking ID, so show error
+  }
 
-  // If no hash is provided, show access denied message
+  // Check if this is a malformed URL (hash in path instead of query parameter)
+  const isMalformedUrl = !hash && id && id.length > 30 && /^[a-f0-9]+$/i.test(id);
+  
+  // If no hash is provided or URL is malformed, show access denied message
   if (!hash) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
@@ -40,17 +51,43 @@ export default function BookingManage() {
             <div className="mx-auto w-12 h-12 bg-red-100 rounded-full flex items-center justify-center mb-4">
               <AlertTriangle className="w-6 h-6 text-red-600" />
             </div>
-            <CardTitle className="text-xl text-gray-900">Access Denied</CardTitle>
+            <CardTitle className="text-xl text-gray-900">
+              {isMalformedUrl ? "Invalid Link Format" : "Access Denied"}
+            </CardTitle>
           </CardHeader>
           <CardContent className="text-center space-y-4">
-            <p className="text-gray-600">
-              This page requires a valid security link. You may have arrived here by mistake.
-            </p>
-            <div className="bg-blue-50 p-4 rounded-lg">
-              <p className="text-sm text-blue-800">
-                <strong>For restaurant staff:</strong> Please access booking management through your dashboard.
-              </p>
-            </div>
+            {isMalformedUrl ? (
+              <>
+                <p className="text-gray-600">
+                  This booking management link appears to be incorrectly formatted. The link may be outdated or corrupted.
+                </p>
+                <div className="bg-amber-50 p-4 rounded-lg">
+                  <p className="text-sm text-amber-800">
+                    <strong>Expected format:</strong> /manage-booking/123?hash=abc...
+                    <br />
+                    <strong>Received format:</strong> /manage-booking/{id}
+                  </p>
+                </div>
+                <div className="bg-blue-50 p-4 rounded-lg">
+                  <p className="text-sm text-blue-800">
+                    <strong>For customers:</strong> Please request a new booking management link from the restaurant.
+                    <br />
+                    <strong>For restaurant staff:</strong> Please access booking management through your dashboard.
+                  </p>
+                </div>
+              </>
+            ) : (
+              <>
+                <p className="text-gray-600">
+                  This page requires a valid security link. You may have arrived here by mistake.
+                </p>
+                <div className="bg-blue-50 p-4 rounded-lg">
+                  <p className="text-sm text-blue-800">
+                    <strong>For restaurant staff:</strong> Please access booking management through your dashboard.
+                  </p>
+                </div>
+              </>
+            )}
             <div className="space-y-2">
               <Button 
                 onClick={() => setLocation('/login')}
