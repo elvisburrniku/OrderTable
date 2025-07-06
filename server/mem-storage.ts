@@ -932,6 +932,45 @@ export class MemoryStorage implements IStorage {
     }
   }
 
+  // Invoice methods
+  invoices: any[] = [];
+
+  async createInvoice(invoice: any): Promise<any> {
+    const newInvoice = {
+      id: this.nextId++,
+      ...invoice,
+      createdAt: new Date(),
+    };
+    this.invoices.push(newInvoice);
+    return newInvoice;
+  }
+
+  async getInvoiceById(id: number): Promise<any | undefined> {
+    return this.invoices.find((invoice) => invoice.id === id);
+  }
+
+  async getInvoiceByBookingId(bookingId: number): Promise<any | undefined> {
+    return this.invoices.find((invoice) => invoice.bookingId === bookingId);
+  }
+
+  async getInvoicesByTenant(tenantId: number): Promise<any[]> {
+    return this.invoices.filter((invoice) => invoice.tenantId === tenantId)
+      .sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime());
+  }
+
+  async getInvoicesByRestaurant(restaurantId: number): Promise<any[]> {
+    return this.invoices.filter((invoice) => invoice.restaurantId === restaurantId)
+      .sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime());
+  }
+
+  async updateInvoice(id: number, updates: any): Promise<any | undefined> {
+    const invoice = this.invoices.find((inv) => inv.id === id);
+    if (invoice) {
+      Object.assign(invoice, updates);
+    }
+    return invoice;
+  }
+
   async getPaymentSetupByRestaurant(restaurantId: number, tenantId: number): Promise<any> {
     return this.paymentSetups
       .filter((setup) => setup.restaurantId === restaurantId && setup.tenantId === tenantId && setup.isActive)

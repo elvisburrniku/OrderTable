@@ -6917,7 +6917,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         const bookingId = parseInt(req.params.bookingId);
 
         // Verify user has access to this tenant
-        if (req.user.tenantId !== tenantId) {
+        if (!req.user || req.user.tenantId !== tenantId) {
           return res.status(403).json({ message: "Access denied" });
         }
 
@@ -6932,23 +6932,54 @@ export async function registerRoutes(app: Express): Promise<Server> {
           return res.status(400).json({ message: "No payment found for this booking" });
         }
 
+        // Get the invoice from the database
+        const invoice = await storage.getInvoiceByBookingId(bookingId);
+        if (!invoice) {
+          return res.status(404).json({ message: "Invoice not found for this booking" });
+        }
+
         // Get restaurant details
         const restaurant = await storage.getRestaurantById(restaurantId);
         if (!restaurant) {
           return res.status(404).json({ message: "Restaurant not found" });
         }
 
-        // Generate invoice data
+        // Return invoice data with additional booking and restaurant context
         const invoiceData = {
+          invoice: invoice,
           booking: booking,
           restaurant: restaurant,
-          invoiceNumber: booking.id.toString().padStart(6, '0'),
           generatedAt: new Date().toISOString(),
         };
 
         res.json(invoiceData);
       } catch (error) {
         console.error("Error generating invoice:", error);
+        res.status(500).json({ message: "Internal server error" });
+      }
+    }
+  );
+
+  // Get all invoices for a restaurant
+  app.get(
+    "/api/tenants/:tenantId/restaurants/:restaurantId/invoices",
+    validateTenant,
+    async (req, res) => {
+      try {
+        const tenantId = parseInt(req.params.tenantId);
+        const restaurantId = parseInt(req.params.restaurantId);
+
+        // Verify user has access to this tenant
+        if (!req.user || req.user.tenantId !== tenantId) {
+          return res.status(403).json({ message: "Access denied" });
+        }
+
+        // Get all invoices for the restaurant
+        const invoices = await storage.getInvoicesByRestaurant(restaurantId);
+        
+        res.json(invoices);
+      } catch (error) {
+        console.error("Error fetching invoices:", error);
         res.status(500).json({ message: "Internal server error" });
       }
     }
@@ -15089,8 +15120,9 @@ NEXT STEPS:
           if (paymentRecord && paymentRecord.bookingId) {
             console.log(`Found booking ${paymentRecord.bookingId} for payment ${paymentIntent.id}`);
             
-            // Update booking payment status with timestamp
+            // Update booking payment status to confirmed
             await storage.updateBooking(paymentRecord.bookingId, {
+              status: 'confirmed', // Change status from waiting_payment to confirmed
               paymentStatus: 'paid',
               paymentIntentId: paymentIntent.id,
               paymentPaidAt: new Date()
@@ -15103,24 +15135,62 @@ NEXT STEPS:
               
               console.log(`Triggering payment notifications for booking ${booking.id}`);
               
+              // Generate invoice for the payment
+              try {
+                // Check if invoice already exists to prevent duplicates
+                const existingInvoice = await storage.getInvoiceByBookingId(booking.id);
+                if (!existingInvoice) {
+                  // Generate unique invoice number
+                  const invoiceNumber = `INV-${booking.tenantId}-${booking.restaurantId}-${booking.id}-${Date.now()}`;
+                  
+                  // Create invoice record
+                  const invoice = await storage.createInvoice({
+                    tenantId: booking.tenantId,
+                    restaurantId: booking.restaurantId,
+                    bookingId: booking.id,
+                    invoiceNumber: invoiceNumber,
+                    paymentIntentId: paymentIntent.id,
+                    stripeInvoiceId: paymentIntent.invoice as string | null,
+                    stripeReceiptUrl: paymentIntent.charges?.data?.[0]?.receipt_url || null,
+                    customerName: booking.customerName,
+                    customerEmail: booking.customerEmail || '',
+                    amount: (paymentIntent.amount / 100).toFixed(2), // Convert from cents
+                    currency: paymentIntent.currency?.toUpperCase() || 'EUR',
+                    status: 'paid',
+                    description: `Payment for booking #${booking.id} on ${new Date(booking.bookingDate).toLocaleDateString()} at ${booking.startTime}`,
+                    paidAt: new Date(),
+                  });
+                  
+                  console.log(`Invoice ${invoice.invoiceNumber} created for booking ${booking.id}`);
+                }
+              } catch (invoiceError) {
+                console.error("Error creating invoice:", invoiceError);
+                // Don't fail the webhook if invoice creation fails
+              }
+              
               // Send payment notifications
               try {
                 const { BrevoEmailService } = await import("./brevo-service");
                 const emailService = new BrevoEmailService();
 
-                // Send payment confirmation email to customer
+                // Send payment confirmation email to customer with invoice
                 if (booking.customerEmail) {
+                  // Get the invoice we just created
+                  const invoice = await storage.getInvoiceByBookingId(booking.id);
+                  
                   await emailService.sendPaymentConfirmation(
                     booking.customerEmail,
                     booking.customerName,
                     {
                       bookingId: booking.id,
                       amount: paymentIntent.amount / 100, // Convert from cents
-                      currency: paymentIntent.currency?.toUpperCase() || 'USD',
+                      currency: paymentIntent.currency?.toUpperCase() || 'EUR',
                       restaurantName: restaurant?.name || "Restaurant",
+                      invoiceNumber: invoice?.invoiceNumber,
+                      receiptUrl: invoice?.stripeReceiptUrl || paymentIntent.charges?.data?.[0]?.receipt_url,
                     },
                   );
-                  console.log(`Payment confirmation email sent to customer: ${booking.customerEmail}`);
+                  console.log(`Payment confirmation email with invoice sent to customer: ${booking.customerEmail}`);
                 }
 
                 // Send payment notification to restaurant email

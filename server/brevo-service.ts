@@ -2646,6 +2646,8 @@ export class BrevoEmailService {
       amount: number;
       currency: string;
       restaurantName?: string;
+      invoiceNumber?: string;
+      receiptUrl?: string;
     },
   ) {
     const subject = `Payment Confirmation - ${paymentDetails.restaurantName || "Restaurant"}`;
@@ -2685,12 +2687,26 @@ export class BrevoEmailService {
                     <span style="color: #155724; font-weight: 500;">Amount Paid:</span>
                     <span style="color: #155724; font-weight: 600;">$${Number(paymentDetails.amount).toFixed(2)} ${paymentDetails.currency.toUpperCase()}</span>
                   </div>
-                  <div style="display: flex; justify-content: space-between; padding: 8px 0;">
+                  <div style="display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid #c3e6cb;">
                     <span style="color: #155724; font-weight: 500;">Payment Status:</span>
                     <span style="color: #155724; font-weight: 600;">✓ Confirmed</span>
                   </div>
+                  ${paymentDetails.invoiceNumber ? `
+                  <div style="display: flex; justify-content: space-between; padding: 8px 0;">
+                    <span style="color: #155724; font-weight: 500;">Invoice Number:</span>
+                    <span style="color: #155724; font-weight: 600;">${paymentDetails.invoiceNumber}</span>
+                  </div>
+                  ` : ''}
                 </div>
               </div>
+
+              ${paymentDetails.receiptUrl ? `
+              <div style="text-align: center; margin: 25px 0;">
+                <a href="${paymentDetails.receiptUrl}" style="display: inline-block; background-color: #007bff; color: white; padding: 12px 24px; text-decoration: none; border-radius: 5px; font-weight: bold;">
+                  View Receipt
+                </a>
+              </div>
+              ` : ''}
 
               <p style="margin: 20px 0; font-size: 16px; color: #666; line-height: 1.6;">
                 We look forward to welcoming you at ${paymentDetails.restaurantName || "our restaurant"}. If you have any questions, please don't hesitate to contact us.

@@ -240,6 +240,32 @@ export const bookings = pgTable("bookings", {
   createdAt: timestamp("created_at").defaultNow(),
 });
 
+// Invoices table for booking payments
+export const invoices = pgTable("invoices", {
+  id: serial("id").primaryKey(),
+  tenantId: integer("tenant_id")
+    .references(() => tenants.id)
+    .notNull(),
+  restaurantId: integer("restaurant_id")
+    .references(() => restaurants.id)
+    .notNull(),
+  bookingId: integer("booking_id")
+    .references(() => bookings.id)
+    .notNull(),
+  invoiceNumber: text("invoice_number").notNull().unique(),
+  paymentIntentId: text("payment_intent_id").notNull(),
+  stripeInvoiceId: text("stripe_invoice_id"),
+  stripeReceiptUrl: text("stripe_receipt_url"),
+  customerName: text("customer_name").notNull(),
+  customerEmail: text("customer_email").notNull(),
+  amount: decimal("amount", { precision: 10, scale: 2 }).notNull(),
+  currency: varchar("currency", { length: 10 }).default("EUR").notNull(),
+  status: varchar("status", { length: 20 }).default("paid").notNull(), // paid, refunded, cancelled
+  description: text("description"),
+  paidAt: timestamp("paid_at").notNull(),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
 export const customers = pgTable("customers", {
   id: serial("id").primaryKey(),
   restaurantId: integer("restaurant_id")
@@ -2080,4 +2106,12 @@ export const selectStripePaymentSchema = createSelectSchema(stripePayments);
 export const insertStripeTransferSchema = createInsertSchema(stripeTransfers);
 export const selectStripeTransferSchema = createSelectSchema(stripeTransfers);
 export const insertWebhookLogSchema = createInsertSchema(webhookLogs);
+
+// Invoice types
+export type Invoice = InferSelectModel<typeof invoices>;
+export type InsertInvoice = InferInsertModel<typeof invoices>;
+
+// Invoice schemas
+export const insertInvoiceSchema = createInsertSchema(invoices);
+export const selectInvoiceSchema = createSelectSchema(invoices);
 export const selectWebhookLogSchema = createSelectSchema(webhookLogs);

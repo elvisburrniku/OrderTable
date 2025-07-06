@@ -57,6 +57,7 @@ const {
   stripePayments,
   stripeTransfers,
   webhookLogs,
+  invoices,
 } = schema;
 export class DatabaseStorage implements IStorage {
   db: any;
@@ -2450,6 +2451,73 @@ export class DatabaseStorage implements IStorage {
   async deletePaymentSetup(id: number): Promise<void> {
     if (!this.db) throw new Error("Database connection not available");
     await this.db.delete(paymentSetups).where(eq(paymentSetups.id, id));
+  }
+
+  // Invoice methods
+  async createInvoice(invoice: any): Promise<any> {
+    if (!this.db) throw new Error("Database connection not available");
+    
+    const [result] = await this.db
+      .insert(invoices)
+      .values({
+        ...invoice,
+        createdAt: new Date(),
+      })
+      .returning();
+    return result;
+  }
+
+  async getInvoiceById(id: number): Promise<any | undefined> {
+    if (!this.db) return undefined;
+    
+    const [result] = await this.db
+      .select()
+      .from(invoices)
+      .where(eq(invoices.id, id))
+      .limit(1);
+    return result;
+  }
+
+  async getInvoiceByBookingId(bookingId: number): Promise<any | undefined> {
+    if (!this.db) return undefined;
+    
+    const [result] = await this.db
+      .select()
+      .from(invoices)
+      .where(eq(invoices.bookingId, bookingId))
+      .limit(1);
+    return result;
+  }
+
+  async getInvoicesByTenant(tenantId: number): Promise<any[]> {
+    if (!this.db) return [];
+    
+    return await this.db
+      .select()
+      .from(invoices)
+      .where(eq(invoices.tenantId, tenantId))
+      .orderBy(desc(invoices.createdAt));
+  }
+
+  async getInvoicesByRestaurant(restaurantId: number): Promise<any[]> {
+    if (!this.db) return [];
+    
+    return await this.db
+      .select()
+      .from(invoices)
+      .where(eq(invoices.restaurantId, restaurantId))
+      .orderBy(desc(invoices.createdAt));
+  }
+
+  async updateInvoice(id: number, updates: any): Promise<any | undefined> {
+    if (!this.db) throw new Error("Database connection not available");
+    
+    const [result] = await this.db
+      .update(invoices)
+      .set(updates)
+      .where(eq(invoices.id, id))
+      .returning();
+    return result;
   }
 
   async getPaymentSetupByRestaurant(restaurantId: number, tenantId: number): Promise<any> {

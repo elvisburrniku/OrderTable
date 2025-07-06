@@ -66,6 +66,8 @@ import type {
   InsertFloorPlan,
   FloorPlanTemplate,
   InsertFloorPlanTemplate,
+  Invoice,
+  InsertInvoice,
 } from "../shared/schema";
 import { neon } from "@neondatabase/serverless";
 import { drizzle } from "drizzle-orm/neon-http";
@@ -483,6 +485,14 @@ export interface IStorage {
   createPaymentSetup(setup: any): Promise<any>;
   updatePaymentSetup(id: number, updates: any): Promise<any>;
   deletePaymentSetup(id: number): Promise<void>;
+
+  // Invoices
+  createInvoice(invoice: InsertInvoice): Promise<Invoice>;
+  getInvoiceById(id: number): Promise<Invoice | undefined>;
+  getInvoiceByBookingId(bookingId: number): Promise<Invoice | undefined>;
+  getInvoicesByTenant(tenantId: number): Promise<Invoice[]>;
+  getInvoicesByRestaurant(restaurantId: number): Promise<Invoice[]>;
+  updateInvoice(id: number, updates: Partial<Invoice>): Promise<Invoice | undefined>;
 }
 
 import { DatabaseStorage } from "./db-storage";

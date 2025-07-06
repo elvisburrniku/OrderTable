@@ -38,6 +38,7 @@ import {
 } from "lucide-react";
 import { StandardLoading } from "@/components/standard-loading";
 import PaymentInvoice from "@/components/PaymentInvoice";
+import { InvoiceViewer } from "@/components/invoice-viewer";
 import { useToast } from "@/hooks/use-toast";
 import {
   AlertDialog,
@@ -918,6 +919,14 @@ export default function BookingDetail() {
                       <Edit className="w-4 h-4 mr-2" />
                       Edit Booking
                     </Button>
+                    
+                    {booking.paymentStatus === 'paid' && (
+                      <InvoiceViewer 
+                        bookingId={booking.id}
+                        tenantId={restaurant.tenantId}
+                        restaurantId={restaurant.id}
+                      />
+                    )}
                     {booking?.requiresPayment && booking?.paymentAmount && booking?.paymentStatus !== 'paid' && (
                       <Button
                         onClick={handleResendPaymentLink}
