@@ -149,6 +149,7 @@ function App() {
             />
             <Route path="/booking-manage/:id" component={BookingManage} />
             <Route path="/manage-booking/:id" component={BookingManage} />
+            <Route path="/manage-booking/:id/:hash" component={BookingManage} />
             <Route path="/accept-invitation" component={AcceptInvitation} />
             <Route path="/survey/:token" component={SurveyResponse} />
             <Route path="/payment" component={PaymentPage} />

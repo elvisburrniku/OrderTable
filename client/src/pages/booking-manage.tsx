@@ -12,7 +12,8 @@ import { useToast } from "@/hooks/use-toast";
 import { format, parseISO, addDays, isBefore, isAfter } from "date-fns";
 
 export default function BookingManage() {
-  const { id } = useParams();
+  const params = useParams();
+  const { id } = params;
   const [, setLocation] = useLocation();
   const { toast } = useToast();
   const [selectedTable, setSelectedTable] = useState<string>("");
@@ -30,17 +31,29 @@ export default function BookingManage() {
   // Check if user has a valid hash parameter
   const urlParams = new URLSearchParams(window.location.search);
   let hash = urlParams.get('hash');
+  let bookingId = id;
   
-  // Handle malformed URLs where hash might be in the path instead of query parameter
-  // If no hash in query but ID looks like a hash (long hex string), treat ID as hash
-  if (!hash && id && id.length > 30 && /^[a-f0-9]+$/i.test(id)) {
-    console.log('Detected malformed URL: hash appears to be in path instead of query parameter');
-    hash = id;
-    // For malformed URLs, we can't determine the actual booking ID, so show error
+  // Handle different URL patterns:
+  // 1. /manage-booking/123?hash=abc123 (correct format)
+  // 2. /manage-booking/123/abc123 (hash in path)
+  // 3. /manage-booking/abc123 (only hash, no booking ID)
+  
+  if (!hash) {
+    // Check if hash is in the URL path (pattern: /manage-booking/bookingId/hash)
+    if (params.hash) {
+      hash = params.hash;
+      bookingId = id;
+      console.log('Detected hash in URL path - converting to query parameter format');
+    } else if (id && id.length > 30 && /^[a-f0-9]+$/i.test(id)) {
+      // Malformed URL where only hash is provided without booking ID
+      console.log('Detected malformed URL: hash appears to be in path instead of query parameter');
+      hash = id;
+      bookingId = null; // Can't determine booking ID
+    }
   }
 
   // Check if this is a malformed URL (hash in path instead of query parameter)
-  const isMalformedUrl = !hash && id && id.length > 30 && /^[a-f0-9]+$/i.test(id);
+  const isMalformedUrl = !hash && bookingId === null;
   
   // If no hash is provided or URL is malformed, show access denied message
   if (!hash) {
@@ -112,8 +125,8 @@ export default function BookingManage() {
   // Determine API endpoint based on current URL pattern
   const currentPath = window.location.pathname;
   const apiEndpoint = currentPath.includes('/manage-booking/') 
-    ? `/api/manage-booking/${id}` 
-    : `/api/booking-manage/${id}`;
+    ? `/api/manage-booking/${bookingId}` 
+    : `/api/booking-manage/${bookingId}`;
 
   const { data: booking, isLoading, error, refetch } = useQuery({
     queryKey: [apiEndpoint, hash],
@@ -134,7 +147,7 @@ export default function BookingManage() {
       }
       return response.json();
     },
-    enabled: !!id && !!hash
+    enabled: !!bookingId && !!hash
   });
 
   const { data: cutOffTimes } = useQuery({
