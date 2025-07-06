@@ -123,7 +123,6 @@ export function RouteGuard({ children }: RouteGuardProps) {
         /^\/contact$/,
         /^\/guest-booking\/\d+\/\d+$/,
         /^\/feedback\/\d+\/\d+$/,
-        /^\/booking-manage$/,
       ];
 
       const isKnownRoute = knownRoutes.some((pattern) =>

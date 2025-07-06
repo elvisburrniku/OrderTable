@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { useParams } from "wouter";
+import { useParams, useLocation } from "wouter";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -7,12 +7,13 @@ import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
-import { Calendar, Clock, Users, MapPin, CheckCircle, XCircle, AlertCircle, Edit3, History, ArrowRight } from "lucide-react";
+import { Calendar, Clock, Users, MapPin, CheckCircle, XCircle, AlertCircle, Edit3, History, ArrowRight, AlertTriangle } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { format, parseISO, addDays, isBefore, isAfter } from "date-fns";
 
 export default function BookingManage() {
   const { id } = useParams();
+  const [, setLocation] = useLocation();
   const { toast } = useToast();
   const [selectedTable, setSelectedTable] = useState<string>("");
   const [selectedStatus, setSelectedStatus] = useState<string>("");
@@ -26,16 +27,55 @@ export default function BookingManage() {
     return booking?.canModify ?? false;
   };
 
-  const { data: booking, isLoading, error, refetch } = useQuery({
-    queryKey: [`/api/booking-manage/${id}`],
-    queryFn: async () => {
-      const urlParams = new URLSearchParams(window.location.search);
-      const hash = urlParams.get('hash');
-      const action = urlParams.get('action');
+  // Check if user has a valid hash parameter
+  const urlParams = new URLSearchParams(window.location.search);
+  const hash = urlParams.get('hash');
 
-      if (!hash) {
-        throw new Error('Access denied - invalid link');
-      }
+  // If no hash is provided, show access denied message
+  if (!hash) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <Card className="w-full max-w-md">
+          <CardHeader className="text-center">
+            <div className="mx-auto w-12 h-12 bg-red-100 rounded-full flex items-center justify-center mb-4">
+              <AlertTriangle className="w-6 h-6 text-red-600" />
+            </div>
+            <CardTitle className="text-xl text-gray-900">Access Denied</CardTitle>
+          </CardHeader>
+          <CardContent className="text-center space-y-4">
+            <p className="text-gray-600">
+              This page requires a valid security link. You may have arrived here by mistake.
+            </p>
+            <div className="bg-blue-50 p-4 rounded-lg">
+              <p className="text-sm text-blue-800">
+                <strong>For restaurant staff:</strong> Please access booking management through your dashboard.
+              </p>
+            </div>
+            <div className="space-y-2">
+              <Button 
+                onClick={() => setLocation('/login')}
+                className="w-full"
+              >
+                Go to Dashboard Login
+              </Button>
+              <Button 
+                variant="outline"
+                onClick={() => window.history.back()}
+                className="w-full"
+              >
+                Go Back
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
+
+  const { data: booking, isLoading, error, refetch } = useQuery({
+    queryKey: [`/api/booking-manage/${id}`, hash],
+    queryFn: async () => {
+      const action = urlParams.get('action');
 
       let url = `/api/booking-manage/${id}?hash=${encodeURIComponent(hash)}`;
       if (action) {
@@ -51,7 +91,7 @@ export default function BookingManage() {
       }
       return response.json();
     },
-    enabled: !!id
+    enabled: !!id && !!hash
   });
 
   const { data: cutOffTimes } = useQuery({
