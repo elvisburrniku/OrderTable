@@ -974,40 +974,63 @@ export default function GuestBookingResponsive(props: any) {
   // Show success screen only when booking is truly complete (no payment required OR payment successful)
   if (bookingCreated) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-slate-900 via-blue-900 to-indigo-900 flex items-center justify-center p-4">
-        <Card className="w-full max-w-md mx-auto bg-white/95 backdrop-blur-sm shadow-2xl">
+      <div className="min-h-screen bg-gradient-to-br from-blue-900 via-indigo-900 to-purple-900 flex items-center justify-center p-4">
+        <Card className="w-full max-w-md mx-auto bg-white shadow-2xl rounded-2xl overflow-hidden">
           <CardContent className="p-8 text-center">
+            {/* Success Icon */}
             <div className="w-20 h-20 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-6">
               <Check className="w-10 h-10 text-green-600" />
             </div>
+            
+            {/* Main Heading */}
             <h1 className="text-2xl font-bold text-gray-900 mb-4">
               Booking Confirmed!
             </h1>
-            <p className="text-gray-600 mb-6">
-              Your reservation at {(restaurant as any)?.name} has been
-              successfully created.
+            
+            {/* Subtitle */}
+            <p className="text-gray-600 mb-8">
+              Your reservation at {(restaurant as any)?.name} has been successfully created.
             </p>
-            <div className="bg-gray-50 p-4 rounded-lg text-left space-y-2">
-              <p>
-                <strong>Booking ID:</strong> #{bookingId}
+            
+            {/* Booking Details */}
+            <div className="space-y-4 text-left">
+              <div className="flex justify-between items-center">
+                <span className="font-medium text-gray-700">Booking ID:</span>
+                <span className="text-gray-900 font-semibold">#{bookingId}</span>
+              </div>
+              
+              <div className="flex justify-between items-center">
+                <span className="font-medium text-gray-700">Date:</span>
+                <span className="text-gray-900">
+                  {selectedDate && format(selectedDate, "MMMM d, yyyy")}
+                </span>
+              </div>
+              
+              <div className="flex justify-between items-center">
+                <span className="font-medium text-gray-700">Time:</span>
+                <span className="text-gray-900">{selectedTime}</span>
+              </div>
+              
+              <div className="flex justify-between items-center">
+                <span className="font-medium text-gray-700">Guests:</span>
+                <span className="text-gray-900">{guestCount}</span>
+              </div>
+              
+              <div className="flex justify-between items-center">
+                <span className="font-medium text-gray-700">Name:</span>
+                <span className="text-gray-900">{customerData.name}</span>
+              </div>
+            </div>
+            
+            {/* Email Confirmation Note */}
+            <div className="mt-8 p-4 bg-gray-50 rounded-lg">
+              <p className="text-sm text-gray-600">
+                A confirmation email has been sent to
               </p>
-              <p>
-                <strong>Date:</strong>{" "}
-                {selectedDate && format(selectedDate, "MMMM d, yyyy")}
-              </p>
-              <p>
-                <strong>Time:</strong> {selectedTime}
-              </p>
-              <p>
-                <strong>Guests:</strong> {guestCount}
-              </p>
-              <p>
-                <strong>Name:</strong> {customerData.name}
+              <p className="text-sm font-medium text-gray-900 mt-1">
+                {customerData.email}
               </p>
             </div>
-            <p className="text-sm text-gray-500 mt-4">
-              A confirmation email has been sent to {customerData.email}
-            </p>
           </CardContent>
         </Card>
       </div>
