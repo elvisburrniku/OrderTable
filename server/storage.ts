@@ -168,6 +168,9 @@ export interface IStorage {
   addSmsBalance(tenantId: number, amount: number): Promise<any>;
   deductSmsBalance(tenantId: number, amount: number): Promise<any>;
 
+  // Seasonal Menu Themes
+  getSeasonalMenuThemes(restaurantId: number): Promise<any[]>;
+
   // Waiting List
   getWaitingListByRestaurant(restaurantId: number): Promise<WaitingList[]>;
   createWaitingListEntry(entry: InsertWaitingList): Promise<WaitingList>;

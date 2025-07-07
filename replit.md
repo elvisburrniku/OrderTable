@@ -22,6 +22,13 @@ A comprehensive restaurant booking management system with React frontend and Exp
 - Kitchen order management
 
 ## Recent Changes
+- **2025-07-07**: ✅ COUNTRY-BASED SMS PRICING SYSTEM IMPLEMENTED - Enhanced SMS service with comprehensive global pricing based on 190+ countries
+- **SMS Pricing Features**: Implemented real-time pricing calculation based on phone number country detection, comprehensive country pricing database with search functionality, SMS cost calculator for testing phone numbers, pricing statistics dashboard showing cheapest/most expensive countries
+- **Enhanced SMS Settings**: Added tabbed interface with dedicated pricing section, country pricing display with search and filtering, phone number cost calculator with country detection, pricing overview with global statistics
+- **Backend Infrastructure**: Created SMSPricingService with country code mapping for 190+ countries, accurate pricing data from Twilio's global SMS rates, automatic country detection from phone numbers, bulk SMS cost calculation capabilities
+- **API Endpoints**: Added /api/sms-pricing/countries for country pricing data, /api/sms-pricing/stats for pricing statistics, /api/sms-pricing/calculate for phone number cost calculation
+- **Database Integration**: Fixed missing storage methods (deductSmsBalance, logSmsMessage, getSeasonalMenuThemes), enhanced SMS balance tracking with country-specific pricing, improved SMS message logging with cost tracking
+- **Migration Completed**: Successfully migrated from Replit Agent to Replit environment with all SMS functionality operational, fixed all storage interface issues, ensured proper error handling and graceful fallbacks
 - **2025-07-06**: ✅ THIRD-PARTY INTEGRATIONS EXPANSION - Added 20+ new integrations including Slack, Notion, TripAdvisor, OpenTable, Resy, Square, DoorDash, Uber Eats, and more
 - **Integration Categories Added**: Booking Platforms (OpenTable, Resy), POS Systems (Square, Toast), Delivery (DoorDash, UberEats, Grubhub), CRM (Salesforce, HubSpot), Accounting (QuickBooks, Xero), Entertainment (Spotify), Scheduling (Calendly), Analytics (Google Analytics, Mixpanel, Segment)
 - **Integration Pages Created**: TripAdvisor (/integrations/tripadvisor), Slack (/integrations/slack), Notion (/integrations/notion) with full configuration interfaces

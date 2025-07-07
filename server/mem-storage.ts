@@ -737,6 +737,10 @@ export class MemoryStorage implements IStorage {
   async deductSmsBalance(tenantId: number, amount: number): Promise<any> {
     return { balance: "10.00", currency: "EUR" }; // Mock response for memory storage
   }
+
+  async getSeasonalMenuThemes(restaurantId: number): Promise<any[]> {
+    return []; // Return empty array for memory storage
+  }
   async getWaitingListByRestaurant(
     restaurantId: number,
   ): Promise<WaitingList[]> {

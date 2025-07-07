@@ -1706,6 +1706,11 @@ export class DatabaseStorage implements IStorage {
       .returning();
     return created;
   }
+
+  async getSeasonalMenuThemes(restaurantId: number): Promise<any[]> {
+    // Return empty array as this feature is not yet implemented
+    return [];
+  }
   // SMS Message methods
   async createSmsMessage(
     restaurantId: number,
