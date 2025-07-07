@@ -680,6 +680,10 @@ export class MemoryStorage implements IStorage {
     return this.bookings.find((b) => b.id === id);
   }
 
+  async getBookingsByPaymentIntentId(paymentIntentId: string): Promise<Booking[]> {
+    return this.bookings.filter((b) => b.paymentIntentId === paymentIntentId);
+  }
+
   async getWaitingListEntryById(id: number): Promise<WaitingList | undefined> {
     return this.waitingList.find((w) => w.id === id);
   }

@@ -4,9 +4,14 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
-import { AlertCircle, CheckCircle, CreditCard, ExternalLink, RefreshCw } from "lucide-react";
+import { AlertCircle, CheckCircle, CreditCard, ExternalLink, RefreshCw, TrendingUp, Users, Calendar, DollarSign, BarChart3, Activity } from "lucide-react";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { useAuth } from "@/lib/auth";
+import { Progress } from "@/components/ui/progress";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { useState } from "react";
+import { format, subDays, startOfMonth, endOfMonth } from "date-fns";
 
 interface StripeConnectStatus {
   connected: boolean;
@@ -29,11 +34,94 @@ interface Payment {
   createdAt: string;
 }
 
+interface PaymentStatistics {
+  totalPayments: number;
+  successfulPayments: number;
+  failedPayments: number;
+  pendingPayments: number;
+  totalRevenue: number;
+  totalFees: number;
+  netRevenue: number;
+  averagePaymentAmount: number;
+  paymentsByDay: Record<string, number>;
+  paymentsByStatus: Record<string, number>;
+  paymentsByCurrency: Record<string, { count: number; amount: number }>;
+  topCustomers: Array<{ 
+    customerId: string;
+    name: string;
+    email: string; 
+    totalAmount: number;
+    paymentCount: number;
+  }>;
+  recentPayments: Array<{
+    id: string;
+    amount: number;
+    currency: string;
+    status: string;
+    created: string;
+    customerEmail?: string;
+    customerName?: string;
+    bookingId?: string;
+    description?: string;
+    receiptUrl?: string;
+  }>;
+  monthlyRevenue: Record<string, number>;
+  payoutSummary: {
+    totalPayouts: number;
+    totalPayoutAmount: number;
+    pendingPayouts: number;
+    completedPayouts: number;
+  };
+  payouts: Array<{
+    id: string;
+    amount: number;
+    currency: string;
+    status: string;
+    arrivalDate: string;
+    created: string;
+  }>;
+  accountBalance: {
+    available: number;
+    pending: number;
+  };
+}
+
 export default function StripeConnectSettings() {
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const { restaurant } = useAuth();
   const tenantId = restaurant?.tenantId;
+  const [dateRange, setDateRange] = useState("30days");
+  
+  // Calculate date range
+  const getDateRange = () => {
+    const endDate = new Date();
+    let startDate = new Date();
+    
+    switch (dateRange) {
+      case "7days":
+        startDate = subDays(endDate, 7);
+        break;
+      case "30days":
+        startDate = subDays(endDate, 30);
+        break;
+      case "thisMonth":
+        startDate = startOfMonth(endDate);
+        endDate.setDate(endOfMonth(endDate).getDate());
+        break;
+      case "90days":
+        startDate = subDays(endDate, 90);
+        break;
+      case "all":
+        startDate = new Date("2020-01-01"); // Far past date
+        break;
+    }
+    
+    return { 
+      startDate: format(startDate, "yyyy-MM-dd"), 
+      endDate: format(endDate, "yyyy-MM-dd") 
+    };
+  };
 
   // Fetch Stripe Connect status
   const { data: connectStatus, isLoading: statusLoading, refetch: refetchStatus } = useQuery({
@@ -57,6 +145,22 @@ export default function StripeConnectSettings() {
       return response.json() as Promise<Payment[]>;
     },
     enabled: !!tenantId && connectStatus?.connected,
+  });
+
+  // Fetch payment statistics
+  const { data: statistics, isLoading: statsLoading } = useQuery({
+    queryKey: ["stripe-payment-statistics", tenantId, dateRange],
+    queryFn: async () => {
+      if (!tenantId) return null;
+      const { startDate, endDate } = getDateRange();
+      const response = await apiRequest(
+        "GET", 
+        `/api/tenants/${tenantId}/stripe-payments/statistics?startDate=${startDate}&endDate=${endDate}&restaurantId=${restaurant?.id}`
+      );
+      return response.json() as Promise<PaymentStatistics>;
+    },
+    enabled: !!tenantId && connectStatus?.connected,
+    staleTime: 60000, // 1 minute
   });
 
   // Start Stripe Connect onboarding
@@ -120,11 +224,21 @@ export default function StripeConnectSettings() {
     return <Badge variant={statusInfo.variant}>{statusInfo.label}</Badge>;
   };
 
-  const formatCurrency = (amount: number, currency: string) => {
+  const formatCurrency = (amount: number, currency: string = "EUR") => {
     return new Intl.NumberFormat("en-US", {
       style: "currency",
       currency: currency.toUpperCase(),
-    }).format(amount / 100);
+    }).format(amount);
+  };
+
+  const getPaymentStatusColor = (status: string) => {
+    switch (status) {
+      case "succeeded": return "text-green-600";
+      case "processing": return "text-yellow-600";
+      case "failed": return "text-red-600";
+      case "canceled": return "text-gray-600";
+      default: return "text-gray-500";
+    }
   };
 
   // If no tenant ID, show error state
@@ -283,109 +397,347 @@ export default function StripeConnectSettings() {
           </CardContent>
         </Card>
 
-        {/* Payment History Card */}
+        {/* Payment Statistics and History */}
         {connectStatus?.connected && (
-          <Card>
-            <CardHeader>
-              <CardTitle>Recent Payments</CardTitle>
-              <CardDescription>
-                View your recent payment transactions
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              {paymentsLoading ? (
-                <div className="flex items-center justify-center h-32">
-                  <div className="animate-spin w-6 h-6 border-2 border-primary border-t-transparent rounded-full" />
-                </div>
-              ) : payments.length === 0 ? (
-                <div className="text-center py-8 text-muted-foreground">
-                  No payments yet. Start accepting payments from your customers!
-                </div>
-              ) : (
-                <div className="space-y-4">
-                  <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-4 p-4 bg-muted/50 rounded-lg">
-                    <div className="text-center">
-                      <div className="text-2xl font-bold text-green-600">
-                        {payments.filter(p => p.status === 'succeeded').length}
+          <div className="space-y-6">
+            {/* Date Range Selector */}
+            <div className="flex justify-between items-center">
+              <h2 className="text-2xl font-bold">Payment Analytics</h2>
+              <Select value={dateRange} onValueChange={setDateRange}>
+                <SelectTrigger className="w-[200px]">
+                  <SelectValue placeholder="Select date range" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="7days">Last 7 days</SelectItem>
+                  <SelectItem value="30days">Last 30 days</SelectItem>
+                  <SelectItem value="thisMonth">This month</SelectItem>
+                  <SelectItem value="90days">Last 90 days</SelectItem>
+                  <SelectItem value="all">All time</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+
+            {/* Key Metrics Cards */}
+            {statsLoading ? (
+              <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+                {[...Array(4)].map((_, i) => (
+                  <Card key={i}>
+                    <CardContent className="p-6">
+                      <div className="animate-pulse space-y-2">
+                        <div className="h-4 bg-gray-200 rounded w-1/2"></div>
+                        <div className="h-8 bg-gray-200 rounded"></div>
                       </div>
-                      <div className="text-sm text-muted-foreground">Successful</div>
-                    </div>
-                    <div className="text-center">
-                      <div className="text-2xl font-bold">
-                        {formatCurrency(
-                          payments
-                            .filter(p => p.status === 'succeeded')
-                            .reduce((sum, p) => sum + p.amount, 0),
-                          payments[0]?.currency || 'USD'
-                        )}
+                    </CardContent>
+                  </Card>
+                ))}
+              </div>
+            ) : statistics && (
+              <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+                <Card>
+                  <CardContent className="p-6">
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <p className="text-sm font-medium text-muted-foreground">Total Revenue</p>
+                        <p className="text-2xl font-bold">{formatCurrency(statistics.totalRevenue)}</p>
                       </div>
-                      <div className="text-sm text-muted-foreground">Total Volume</div>
+                      <DollarSign className="h-8 w-8 text-green-600" />
                     </div>
-                    <div className="text-center">
-                      <div className="text-2xl font-bold text-orange-600">
-                        {payments.filter(p => p.status === 'processing').length}
+                    <div className="mt-2">
+                      <p className="text-xs text-muted-foreground">
+                        Net: {formatCurrency(statistics.netRevenue)} after fees
+                      </p>
+                    </div>
+                  </CardContent>
+                </Card>
+
+                <Card>
+                  <CardContent className="p-6">
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <p className="text-sm font-medium text-muted-foreground">Total Payments</p>
+                        <p className="text-2xl font-bold">{statistics.totalPayments}</p>
                       </div>
-                      <div className="text-sm text-muted-foreground">Processing</div>
+                      <Activity className="h-8 w-8 text-blue-600" />
                     </div>
-                    <div className="text-center">
-                      <div className="text-2xl font-bold text-red-600">
-                        {payments.filter(p => p.status === 'failed' || p.status === 'canceled').length}
+                    <div className="mt-2">
+                      <p className="text-xs text-green-600">{statistics.successfulPayments} successful</p>
+                    </div>
+                  </CardContent>
+                </Card>
+
+                <Card>
+                  <CardContent className="p-6">
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <p className="text-sm font-medium text-muted-foreground">Average Payment</p>
+                        <p className="text-2xl font-bold">{formatCurrency(statistics.averagePaymentAmount)}</p>
                       </div>
-                      <div className="text-sm text-muted-foreground">Failed</div>
+                      <TrendingUp className="h-8 w-8 text-purple-600" />
                     </div>
-                  </div>
-                  
-                  <div className="space-y-2">
-                    <div className="grid grid-cols-5 gap-4 p-3 text-sm font-medium text-muted-foreground border-b">
-                      <div>Amount</div>
-                      <div>Customer</div>
-                      <div>Status</div>
-                      <div>Payment Intent</div>
-                      <div>Date</div>
+                    <div className="mt-2">
+                      <p className="text-xs text-muted-foreground">Per transaction</p>
                     </div>
-                    
-                    {payments.slice(0, 10).map((payment) => (
-                      <div
-                        key={payment.id}
-                        className="grid grid-cols-5 gap-4 p-3 border rounded-lg hover:bg-muted/50 transition-colors"
-                      >
-                        <div className="font-medium">
-                          {formatCurrency(payment.amount, payment.currency)}
-                        </div>
-                        <div className="space-y-1">
-                          <div className="text-sm font-medium">
-                            {payment.customerName || 'Anonymous'}
-                          </div>
-                          {payment.customerEmail && (
-                            <div className="text-xs text-muted-foreground">
-                              {payment.customerEmail}
-                            </div>
-                          )}
-                        </div>
+                  </CardContent>
+                </Card>
+
+                <Card>
+                  <CardContent className="p-6">
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <p className="text-sm font-medium text-muted-foreground">Account Balance</p>
+                        <p className="text-2xl font-bold">{formatCurrency(statistics.accountBalance.available)}</p>
+                      </div>
+                      <CreditCard className="h-8 w-8 text-orange-600" />
+                    </div>
+                    <div className="mt-2">
+                      <p className="text-xs text-muted-foreground">
+                        Pending: {formatCurrency(statistics.accountBalance.pending)}
+                      </p>
+                    </div>
+                  </CardContent>
+                </Card>
+              </div>
+            )}
+
+            {/* Detailed Statistics Tabs */}
+            <Tabs defaultValue="overview" className="space-y-4">
+              <TabsList>
+                <TabsTrigger value="overview">Overview</TabsTrigger>
+                <TabsTrigger value="payments">Recent Payments</TabsTrigger>
+                <TabsTrigger value="customers">Top Customers</TabsTrigger>
+                <TabsTrigger value="payouts">Payouts</TabsTrigger>
+              </TabsList>
+
+              <TabsContent value="overview">
+                <Card>
+                  <CardHeader>
+                    <CardTitle>Payment Overview</CardTitle>
+                    <CardDescription>
+                      Detailed breakdown of your payment statistics
+                    </CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                    {statistics && (
+                      <div className="space-y-6">
+                        {/* Payment Status Breakdown */}
                         <div>
-                          <Badge 
-                            variant={
-                              payment.status === "succeeded" ? "default" : 
-                              payment.status === "processing" ? "secondary" : 
-                              "destructive"
-                            }
-                          >
-                            {payment.status}
-                          </Badge>
+                          <h4 className="text-sm font-medium mb-3">Payment Status Distribution</h4>
+                          <div className="space-y-2">
+                            {Object.entries(statistics.paymentsByStatus).map(([status, count]) => (
+                              <div key={status} className="flex items-center justify-between">
+                                <div className="flex items-center gap-2">
+                                  <div className={`w-3 h-3 rounded-full ${
+                                    status === 'succeeded' ? 'bg-green-500' :
+                                    status === 'processing' ? 'bg-yellow-500' :
+                                    status === 'failed' ? 'bg-red-500' :
+                                    'bg-gray-500'
+                                  }`} />
+                                  <span className="text-sm capitalize">{status}</span>
+                                </div>
+                                <span className="text-sm font-medium">{count}</span>
+                              </div>
+                            ))}
+                          </div>
                         </div>
-                        <div className="font-mono text-xs text-muted-foreground">
-                          {payment.stripePaymentIntentId.substring(0, 15)}...
+
+                        {/* Currency Breakdown */}
+                        <div>
+                          <h4 className="text-sm font-medium mb-3">Revenue by Currency</h4>
+                          <div className="space-y-2">
+                            {Object.entries(statistics.paymentsByCurrency).map(([currency, data]) => (
+                              <div key={currency} className="flex items-center justify-between">
+                                <span className="text-sm uppercase">{currency}</span>
+                                <div className="text-sm">
+                                  <span className="font-medium">{formatCurrency(data.amount, currency)}</span>
+                                  <span className="text-muted-foreground ml-2">({data.count} payments)</span>
+                                </div>
+                              </div>
+                            ))}
+                          </div>
                         </div>
-                        <div className="text-sm text-muted-foreground">
-                          {new Date(payment.createdAt).toLocaleDateString()}
+
+                        {/* Monthly Trend */}
+                        <div>
+                          <h4 className="text-sm font-medium mb-3">Monthly Revenue</h4>
+                          <div className="space-y-2">
+                            {Object.entries(statistics.monthlyRevenue).slice(-6).map(([month, amount]) => (
+                              <div key={month} className="flex items-center justify-between">
+                                <span className="text-sm">{month}</span>
+                                <span className="text-sm font-medium">{formatCurrency(amount)}</span>
+                              </div>
+                            ))}
+                          </div>
                         </div>
                       </div>
-                    ))}
-                  </div>
-                </div>
-              )}
-            </CardContent>
-          </Card>
+                    )}
+                  </CardContent>
+                </Card>
+              </TabsContent>
+
+              <TabsContent value="payments">
+                <Card>
+                  <CardHeader>
+                    <CardTitle>Recent Payments</CardTitle>
+                    <CardDescription>
+                      View your recent payment transactions
+                    </CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                    {paymentsLoading ? (
+                      <div className="flex items-center justify-center h-32">
+                        <div className="animate-spin w-6 h-6 border-2 border-primary border-t-transparent rounded-full" />
+                      </div>
+                    ) : payments.length === 0 ? (
+                      <div className="text-center py-8 text-muted-foreground">
+                        No payments yet. Start accepting payments from your customers!
+                      </div>
+                    ) : (
+                      <div className="space-y-2">
+                        <div className="grid grid-cols-5 gap-4 p-3 text-sm font-medium text-muted-foreground border-b">
+                          <div>Amount</div>
+                          <div>Customer</div>
+                          <div>Status</div>
+                          <div>Payment Intent</div>
+                          <div>Date</div>
+                        </div>
+                        
+                        {payments.slice(0, 10).map((payment) => (
+                          <div
+                            key={payment.id}
+                            className="grid grid-cols-5 gap-4 p-3 border rounded-lg hover:bg-muted/50 transition-colors"
+                          >
+                            <div className="font-medium">
+                              {formatCurrency(payment.amount / 100, payment.currency)}
+                            </div>
+                            <div className="space-y-1">
+                              <div className="text-sm font-medium">
+                                {payment.customerName || 'Anonymous'}
+                              </div>
+                              {payment.customerEmail && (
+                                <div className="text-xs text-muted-foreground">
+                                  {payment.customerEmail}
+                                </div>
+                              )}
+                            </div>
+                            <div>
+                              <Badge 
+                                variant={
+                                  payment.status === "succeeded" ? "default" : 
+                                  payment.status === "processing" ? "secondary" : 
+                                  "destructive"
+                                }
+                              >
+                                {payment.status}
+                              </Badge>
+                            </div>
+                            <div className="font-mono text-xs text-muted-foreground">
+                              {payment.stripePaymentIntentId.substring(0, 15)}...
+                            </div>
+                            <div className="text-sm text-muted-foreground">
+                              {new Date(payment.createdAt).toLocaleDateString()}
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </CardContent>
+                </Card>
+              </TabsContent>
+
+              <TabsContent value="customers">
+                <Card>
+                  <CardHeader>
+                    <CardTitle>Top Customers</CardTitle>
+                    <CardDescription>
+                      Your most valuable customers by revenue
+                    </CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                    {statistics && statistics.topCustomers.length > 0 ? (
+                      <div className="space-y-4">
+                        {statistics.topCustomers.map((customer, index) => (
+                          <div key={customer.customerId} className="flex items-center justify-between p-4 border rounded-lg">
+                            <div className="flex items-center gap-3">
+                              <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center">
+                                <span className="text-sm font-semibold">{index + 1}</span>
+                              </div>
+                              <div>
+                                <p className="font-medium">{customer.name}</p>
+                                <p className="text-sm text-muted-foreground">{customer.email}</p>
+                              </div>
+                            </div>
+                            <div className="text-right">
+                              <p className="font-semibold">{formatCurrency(customer.totalAmount)}</p>
+                              <p className="text-sm text-muted-foreground">{customer.paymentCount} payments</p>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    ) : (
+                      <div className="text-center py-8 text-muted-foreground">
+                        No customer data available for the selected period
+                      </div>
+                    )}
+                  </CardContent>
+                </Card>
+              </TabsContent>
+
+              <TabsContent value="payouts">
+                <Card>
+                  <CardHeader>
+                    <CardTitle>Payouts</CardTitle>
+                    <CardDescription>
+                      Your recent payout history
+                    </CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                    {statistics && statistics.payouts.length > 0 ? (
+                      <div className="space-y-2">
+                        <div className="grid grid-cols-4 gap-4 p-3 text-sm font-medium text-muted-foreground border-b">
+                          <div>Amount</div>
+                          <div>Status</div>
+                          <div>Arrival Date</div>
+                          <div>Created</div>
+                        </div>
+                        
+                        {statistics.payouts.map((payout) => (
+                          <div
+                            key={payout.id}
+                            className="grid grid-cols-4 gap-4 p-3 border rounded-lg hover:bg-muted/50 transition-colors"
+                          >
+                            <div className="font-medium">
+                              {formatCurrency(payout.amount, payout.currency)}
+                            </div>
+                            <div>
+                              <Badge 
+                                variant={
+                                  payout.status === "paid" ? "default" : 
+                                  payout.status === "pending" ? "secondary" : 
+                                  "outline"
+                                }
+                              >
+                                {payout.status}
+                              </Badge>
+                            </div>
+                            <div className="text-sm">
+                              {new Date(payout.arrivalDate).toLocaleDateString()}
+                            </div>
+                            <div className="text-sm text-muted-foreground">
+                              {new Date(payout.created).toLocaleDateString()}
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    ) : (
+                      <div className="text-center py-8 text-muted-foreground">
+                        No payouts available for the selected period
+                      </div>
+                    )}
+                  </CardContent>
+                </Card>
+              </TabsContent>
+            </Tabs>
+          </div>
         )}
 
         {/* Platform Fee Information */}

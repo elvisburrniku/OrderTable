@@ -15284,11 +15284,31 @@ NEXT STEPS:
 
           // Get payment record to find associated booking
           const paymentRecord = await storage.getStripePaymentByIntentId(paymentIntent.id);
+          
+          // For guest bookings, the booking might be created with paymentIntentId
+          let booking = null;
           if (paymentRecord && paymentRecord.bookingId) {
             console.log(`Found booking ${paymentRecord.bookingId} for payment ${paymentIntent.id}`);
-            
+            booking = await storage.getBookingById(paymentRecord.bookingId);
+          } else if (paymentIntent.metadata && paymentIntent.metadata.customerEmail) {
+            // Try to find booking by payment intent ID for guest bookings
+            console.log(`Attempting to find guest booking with payment intent ${paymentIntent.id}`);
+            const bookings = await storage.getBookingsByPaymentIntentId(paymentIntent.id);
+            if (bookings && bookings.length > 0) {
+              booking = bookings[0];
+              console.log(`Found guest booking ${booking.id} by payment intent ID`);
+            } else {
+              // If no booking found yet, it might be created after webhook
+              console.log(`No booking found yet for payment intent ${paymentIntent.id}, might be created after webhook`);
+              webhookLogData.status = 'completed';
+              webhookLogData.metadata.note = 'Guest booking payment processed - booking will be created by frontend';
+              break;
+            }
+          }
+          
+          if (booking) {
             // Update booking payment status to confirmed
-            await storage.updateBooking(paymentRecord.bookingId, {
+            await storage.updateBooking(booking.id, {
               status: 'confirmed', // Change status from waiting_payment to confirmed
               paymentStatus: 'paid',
               paymentIntentId: paymentIntent.id,
@@ -20788,6 +20808,194 @@ NEXT STEPS:
       } catch (error) {
         console.error("Error refreshing Stripe Connect status:", error);
         res.status(500).json({ message: "Failed to refresh account status" });
+      }
+    },
+  );
+
+  // Get comprehensive Stripe payment statistics and report
+  app.get(
+    "/api/tenants/:tenantId/stripe-payments/statistics",
+    validateTenant,
+    async (req, res) => {
+      try {
+        const tenantId = parseInt(req.params.tenantId);
+        const { startDate, endDate, restaurantId } = req.query;
+        
+        const tenant = await storage.getTenantById(tenantId);
+        if (!tenant?.stripeConnectAccountId) {
+          return res.status(404).json({ message: "No Stripe Connect account found" });
+        }
+
+        const result = await withStripe(async (stripe) => {
+          // Build query parameters
+          const params: any = {
+            limit: 100,
+            expand: ['data.charges', 'data.customer', 'data.invoice'],
+          };
+
+          // Add date filters if provided
+          if (startDate) {
+            params.created = { gte: Math.floor(new Date(startDate as string).getTime() / 1000) };
+          }
+          if (endDate) {
+            if (params.created) {
+              params.created.lte = Math.floor(new Date(endDate as string).getTime() / 1000);
+            } else {
+              params.created = { lte: Math.floor(new Date(endDate as string).getTime() / 1000) };
+            }
+          }
+
+          // Get payment intents from Stripe
+          const paymentIntents = await stripe.paymentIntents.list(params, {
+            stripeAccount: tenant.stripeConnectAccountId,
+          });
+
+          // Get balance transactions for detailed fee information
+          const balanceTransactions = await stripe.balanceTransactions.list({
+            limit: 100,
+            type: 'charge',
+            created: params.created,
+          }, {
+            stripeAccount: tenant.stripeConnectAccountId,
+          });
+
+          // Get account balance
+          const balance = await stripe.balance.retrieve({
+            stripeAccount: tenant.stripeConnectAccountId,
+          });
+
+          // Get payouts
+          const payouts = await stripe.payouts.list({
+            limit: 20,
+            created: params.created,
+          }, {
+            stripeAccount: tenant.stripeConnectAccountId,
+          });
+
+          // Filter by restaurant if specified
+          let filteredPayments = paymentIntents.data;
+          if (restaurantId) {
+            filteredPayments = filteredPayments.filter(
+              pi => pi.metadata?.restaurantId === restaurantId
+            );
+          }
+
+          // Calculate statistics
+          const statistics = {
+            totalPayments: filteredPayments.length,
+            successfulPayments: filteredPayments.filter(pi => pi.status === 'succeeded').length,
+            failedPayments: filteredPayments.filter(pi => pi.status === 'canceled' || pi.status === 'failed').length,
+            pendingPayments: filteredPayments.filter(pi => pi.status === 'processing' || pi.status === 'requires_payment_method').length,
+            totalRevenue: filteredPayments
+              .filter(pi => pi.status === 'succeeded')
+              .reduce((sum, pi) => sum + pi.amount, 0) / 100,
+            totalFees: balanceTransactions.data
+              .reduce((sum, bt) => sum + bt.fee, 0) / 100,
+            netRevenue: 0, // Will calculate below
+            averagePaymentAmount: 0, // Will calculate below
+            paymentsByDay: {} as Record<string, number>,
+            paymentsByStatus: {} as Record<string, number>,
+            paymentsByCurrency: {} as Record<string, { count: number; amount: number }>,
+            topCustomers: [] as any[],
+            recentPayments: [] as any[],
+            monthlyRevenue: {} as Record<string, number>,
+            payoutSummary: {
+              totalPayouts: payouts.data.length,
+              totalPayoutAmount: payouts.data.reduce((sum, p) => sum + p.amount, 0) / 100,
+              pendingPayouts: payouts.data.filter(p => p.status === 'pending').length,
+              completedPayouts: payouts.data.filter(p => p.status === 'paid').length,
+            },
+            accountBalance: {
+              available: balance.available.reduce((sum, b) => sum + b.amount, 0) / 100,
+              pending: balance.pending.reduce((sum, b) => sum + b.amount, 0) / 100,
+            },
+          };
+
+          // Calculate net revenue and average
+          statistics.netRevenue = statistics.totalRevenue - statistics.totalFees;
+          statistics.averagePaymentAmount = statistics.successfulPayments > 0 
+            ? statistics.totalRevenue / statistics.successfulPayments 
+            : 0;
+
+          // Group payments by day
+          filteredPayments.forEach(pi => {
+            const date = new Date(pi.created * 1000).toISOString().split('T')[0];
+            if (!statistics.paymentsByDay[date]) {
+              statistics.paymentsByDay[date] = 0;
+            }
+            if (pi.status === 'succeeded') {
+              statistics.paymentsByDay[date] += pi.amount / 100;
+            }
+          });
+
+          // Group payments by status
+          filteredPayments.forEach(pi => {
+            if (!statistics.paymentsByStatus[pi.status]) {
+              statistics.paymentsByStatus[pi.status] = 0;
+            }
+            statistics.paymentsByStatus[pi.status]++;
+          });
+
+          // Group payments by currency
+          filteredPayments.forEach(pi => {
+            if (!statistics.paymentsByCurrency[pi.currency]) {
+              statistics.paymentsByCurrency[pi.currency] = { count: 0, amount: 0 };
+            }
+            statistics.paymentsByCurrency[pi.currency].count++;
+            if (pi.status === 'succeeded') {
+              statistics.paymentsByCurrency[pi.currency].amount += pi.amount / 100;
+            }
+          });
+
+          // Get top customers
+          const customerPayments: Record<string, { email: string; count: number; total: number }> = {};
+          filteredPayments.filter(pi => pi.status === 'succeeded').forEach(pi => {
+            const email = pi.receipt_email || pi.metadata?.customerEmail || 'Unknown';
+            if (!customerPayments[email]) {
+              customerPayments[email] = { email, count: 0, total: 0 };
+            }
+            customerPayments[email].count++;
+            customerPayments[email].total += pi.amount / 100;
+          });
+          statistics.topCustomers = Object.values(customerPayments)
+            .sort((a, b) => b.total - a.total)
+            .slice(0, 10);
+
+          // Get recent payments with details
+          statistics.recentPayments = filteredPayments.slice(0, 10).map(pi => ({
+            id: pi.id,
+            amount: pi.amount / 100,
+            currency: pi.currency.toUpperCase(),
+            status: pi.status,
+            created: new Date(pi.created * 1000).toISOString(),
+            customerEmail: pi.receipt_email || pi.metadata?.customerEmail,
+            customerName: pi.metadata?.customerName,
+            bookingId: pi.metadata?.bookingId,
+            description: pi.description,
+            receiptUrl: pi.charges?.data?.[0]?.receipt_url,
+          }));
+
+          // Calculate monthly revenue
+          filteredPayments.filter(pi => pi.status === 'succeeded').forEach(pi => {
+            const date = new Date(pi.created * 1000);
+            const monthKey = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
+            if (!statistics.monthlyRevenue[monthKey]) {
+              statistics.monthlyRevenue[monthKey] = 0;
+            }
+            statistics.monthlyRevenue[monthKey] += pi.amount / 100;
+          });
+
+          return statistics;
+        });
+
+        if (!result) {
+          return res.status(500).json({ message: "Stripe not configured" });
+        }
+
+        res.json(result);
+      } catch (error) {
+        console.error("Error fetching Stripe payment statistics:", error);
+        res.status(500).json({ message: "Failed to fetch payment statistics" });
       }
     },
   );

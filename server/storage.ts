@@ -124,6 +124,7 @@ export interface IStorage {
   getBookingsByRestaurant(restaurantId: number): Promise<Booking[]>;
   getBookingsByDate(restaurantId: number, date: string): Promise<Booking[]>;
   getBookingById(id: number): Promise<Booking | undefined>;
+  getBookingsByPaymentIntentId(paymentIntentId: string): Promise<Booking[]>;
   getUnassignedBookings(restaurantId: number): Promise<Booking[]>;
   createBooking(booking: InsertBooking): Promise<Booking>;
   updateBooking(

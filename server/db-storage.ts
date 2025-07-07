@@ -909,6 +909,15 @@ export class DatabaseStorage implements IStorage {
       .where(eq(bookings.id, id));
     return result[0];
   }
+
+  async getBookingsByPaymentIntentId(paymentIntentId: string): Promise<any[]> {
+    if (!this.db) return [];
+    const result = await this.db
+      .select()
+      .from(bookings)
+      .where(eq(bookings.paymentIntentId, paymentIntentId));
+    return result;
+  }
   async getUnassignedBookings(restaurantId: number): Promise<any[]> {
     if (!this.db) return [];
     const result = await this.db
