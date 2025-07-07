@@ -239,6 +239,13 @@ export default function Tables() {
 
       if (!response.ok) {
         const errorData = await response.json().catch(() => null);
+        
+        // Handle our new error format
+        if (errorData?.error && errorData?.type) {
+          throw new Error(errorData.message);
+        }
+        
+        // Legacy error handling
         if (errorData?.requiresUpgrade) {
           throw new Error(`Table Limit Exceeded: ${errorData.message}`);
         }
@@ -275,6 +282,17 @@ export default function Tables() {
       setIsDialogOpen(false);
       setEditingTable(null);
       setNewTable({ tableNumber: "", capacity: 4, isActive: true });
+      toast({
+        title: "Success",
+        description: "Table created successfully!",
+      });
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Error",
+        description: error.message || "Failed to create table. Please try again.",
+        variant: "destructive",
+      });
     },
   });
 

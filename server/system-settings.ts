@@ -5,6 +5,7 @@ interface SystemSettings {
   system_name: string;
   system_version: string;
   support_email: string;
+  adminNotificationEmail?: string;
   
   // Tenant Management
   max_trial_days: number;

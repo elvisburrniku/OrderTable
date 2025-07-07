@@ -522,11 +522,21 @@ export default function MenuOrderingService({
                       description: "Your menu printing order has been created successfully!"
                     });
                   } catch (error: any) {
-                    toast({
-                      title: "Order Failed",
-                      description: error.message || "Failed to create order. Please try again.",
-                      variant: "destructive"
-                    });
+                    // Check if it's our API error format
+                    if (error.response?.data?.error && error.response?.data?.type) {
+                      const apiError = error.response.data;
+                      toast({
+                        title: "Order Failed",
+                        description: apiError.message,
+                        variant: "destructive"
+                      });
+                    } else {
+                      toast({
+                        title: "Order Failed",
+                        description: error.message || "Failed to create order. Please try again.",
+                        variant: "destructive"
+                      });
+                    }
                   }
                 }}
                 disabled={!orderDetails.contactName || !orderDetails.contactEmail || !orderDetails.contactPhone || !orderDetails.shippingAddress || !orderDetails.city || !orderDetails.state || !orderDetails.zipCode}

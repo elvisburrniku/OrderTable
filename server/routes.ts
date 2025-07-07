@@ -13,6 +13,7 @@ import {
 } from "@shared/schema";
 import { z } from "zod";
 import Stripe from "stripe";
+import { errorHandler } from "./error-handler";
 
 // Initialize Stripe only if API key is available
 let stripe: Stripe | null = null;
@@ -5512,13 +5513,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
             }
 
             if (totalTables >= plan.maxTables) {
-              return res.status(400).json({
-                error: "Table limit exceeded",
-                message: `Your ${plan.name} plan allows a maximum of ${plan.maxTables} tables. You currently have ${totalTables} tables. Please upgrade your subscription to add more tables.`,
-                currentTables: totalTables,
-                maxTablesAllowed: plan.maxTables,
-                requiresUpgrade: true,
-              });
+              return errorHandler.handleError(
+                res,
+                errorHandler.tableLimitError(totalTables, plan.maxTables)
+              );
             }
           }
         }
@@ -5533,7 +5531,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
         res.json(table);
       } catch (error) {
         console.error("Error creating table:", error);
-        res.status(400).json({ message: "Invalid table data" });
+        if (error instanceof z.ZodError) {
+          return errorHandler.handleError(
+            res,
+            errorHandler.validationError("table data", error.errors[0].message)
+          );
+        }
+        return errorHandler.handleError(
+          res,
+          errorHandler.databaseError("create table", error)
+        );
       }
     },
   );
@@ -16888,6 +16895,41 @@ NEXT STEPS:
     },
   );
 
+  // Test error handling endpoint
+  app.get("/api/test-error/:type", async (req, res) => {
+    const errorType = req.params.type;
+    
+    switch(errorType) {
+      case 'table-limit':
+        return errorHandler.handleError(
+          res,
+          errorHandler.tableLimitError(10, 10)
+        );
+      case 'subscription-limit':
+        return errorHandler.handleError(
+          res,
+          errorHandler.subscriptionLimitError(5, 10, 'bookings')
+        );
+      case 'validation':
+        return errorHandler.handleError(
+          res,
+          errorHandler.validationError('email', 'Please enter a valid email address')
+        );
+      case 'payment':
+        return errorHandler.handleError(
+          res,
+          errorHandler.paymentError('Card declined', { code: 'card_declined' })
+        );
+      case 'system':
+        return errorHandler.handleError(
+          res,
+          errorHandler.systemError('Test system error', new Error('Test error'))
+        );
+      default:
+        res.json({ message: 'Use /api/test-error/[table-limit|subscription-limit|validation|payment|system]' });
+    }
+  });
+
   // Legacy waiting list routes for backward compatibility
   app.get("/api/restaurants/:restaurantId/waiting-list", async (req, res) => {
     try {
@@ -17135,10 +17177,13 @@ NEXT STEPS:
         );
 
         if (missingFields.length > 0) {
-          return res.status(400).json({
-            success: false,
-            message: `Missing required fields: ${missingFields.join(", ")}`,
-          });
+          return errorHandler.handleError(
+            res,
+            errorHandler.validationError(
+              "order fields",
+              `Missing required fields: ${missingFields.join(", ")}`
+            )
+          );
         }
 
         // Generate unique order number
@@ -17284,10 +17329,10 @@ NEXT STEPS:
         });
       } catch (error) {
         console.error("Error creating menu order:", error);
-        res.status(500).json({
-          success: false,
-          message: "Failed to place menu order",
-        });
+        return errorHandler.handleError(
+          res,
+          errorHandler.databaseError("create menu order", error)
+        );
       }
     },
   );
