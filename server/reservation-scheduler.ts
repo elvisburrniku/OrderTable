@@ -70,43 +70,60 @@ export class ReservationScheduler {
    */
   private async getPendingReservations(): Promise<any[]> {
     try {
-      // Get all bookings with pending payment status and payment intent
-      const allBookings = await storage.getAllBookings();
-      
-      const now = new Date();
-      const pendingReservations = [];
-
-      for (const booking of allBookings) {
-        // Skip if not a reservation payment
-        if (booking.paymentStatus !== 'pending' || !booking.paymentIntentId) {
-          continue;
-        }
-
-        // Check if this booking has a "reserve" payment setup
-        const paymentSetup = await this.getPaymentSetupForBooking(booking);
-        if (!paymentSetup || paymentSetup.type !== 'reserve') {
-          continue;
-        }
-
-        // Calculate 6 hours before arrival
-        const bookingDateTime = new Date(booking.bookingDate);
-        const [hours, minutes] = booking.startTime.split(':');
-        bookingDateTime.setHours(parseInt(hours), parseInt(minutes), 0, 0);
+      // Use database storage directly to get all bookings with pending payment status
+      if (storage.constructor.name === 'DatabaseStorage') {
+        const dbStorage = storage as any;
+        const { bookings } = await import('../shared/schema');
+        const { eq, and } = await import('drizzle-orm');
         
-        const sixHoursBeforeArrival = new Date(bookingDateTime.getTime() - (6 * 60 * 60 * 1000));
+        const pendingBookings = await dbStorage.db
+          .select()
+          .from(bookings)
+          .where(
+            and(
+              eq(bookings.paymentStatus, 'pending'),
+              // Only get bookings that have payment intent IDs
+            )
+          );
 
-        // Check if it's time to capture the payment (6 hours before arrival)
-        if (now >= sixHoursBeforeArrival) {
-          pendingReservations.push({
-            ...booking,
-            paymentSetup,
-            captureReason: 'arrival_time',
-            sixHoursBeforeArrival: sixHoursBeforeArrival.toISOString()
-          });
+        const now = new Date();
+        const pendingReservations = [];
+
+        for (const booking of pendingBookings) {
+          // Skip if no payment intent
+          if (!booking.paymentIntentId) {
+            continue;
+          }
+
+          // Check if this booking has a "reserve" payment setup
+          const paymentSetup = await this.getPaymentSetupForBooking(booking);
+          if (!paymentSetup || paymentSetup.type !== 'reserve') {
+            continue;
+          }
+
+          // Calculate 6 hours before arrival
+          const bookingDateTime = new Date(booking.bookingDate);
+          const [hours, minutes] = booking.startTime.split(':');
+          bookingDateTime.setHours(parseInt(hours), parseInt(minutes), 0, 0);
+          
+          const sixHoursBeforeArrival = new Date(bookingDateTime.getTime() - (6 * 60 * 60 * 1000));
+
+          // Check if it's time to capture the payment (6 hours before arrival)
+          if (now >= sixHoursBeforeArrival) {
+            pendingReservations.push({
+              ...booking,
+              paymentSetup,
+              captureReason: 'arrival_time',
+              sixHoursBeforeArrival: sixHoursBeforeArrival.toISOString()
+            });
+          }
         }
-      }
 
-      return pendingReservations;
+        return pendingReservations;
+      } else {
+        // For memory storage, we'll skip automatic processing
+        return [];
+      }
     } catch (error) {
       console.error('❌ Error getting pending reservations:', error);
       return [];
