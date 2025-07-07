@@ -3370,8 +3370,8 @@ export class DatabaseStorage implements IStorage {
         revenue: 0,
         peakHour: 12,
         popularItems: [],
-        stationUtilization: {},
-        waitTimes: {}
+        stationUtilization: [],
+        waitTimes: []
       };
     }
     try {
@@ -3400,8 +3400,8 @@ export class DatabaseStorage implements IStorage {
         revenue: totalRevenue,
         peakHour: 12,
         popularItems: [],
-        stationUtilization: {},
-        waitTimes: {}
+        stationUtilization: [],
+        waitTimes: []
       };
     } catch (error) {
       console.error("Error calculating kitchen metrics:", error);
@@ -3412,8 +3412,8 @@ export class DatabaseStorage implements IStorage {
         revenue: 0,
         peakHour: 12,
         popularItems: [],
-        stationUtilization: {},
-        waitTimes: {}
+        stationUtilization: [],
+        waitTimes: []
       };
     }
   }

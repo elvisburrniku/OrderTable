@@ -41,6 +41,8 @@ A comprehensive restaurant booking management system with React frontend and Exp
 - **Database Schema**: Added proper imports for kitchen tables (kitchenOrders, kitchenStations, kitchenStaff, kitchenMetrics) from schema
 - **Full CRUD Operations**: Kitchen system now supports complete create, read, update operations for orders, stations, and staff management
 - **Testing Verified**: Successfully tested kitchen order creation and retrieval, confirming all endpoints are operational
+- **Frontend Error Fixed**: Resolved TypeError "metrics.stationUtilization?.map is not a function" by updating backend to return arrays instead of objects
+- **Data Structure Fix**: Fixed calculateKitchenMetrics method to return stationUtilization and waitTimes as arrays for proper frontend compatibility
 - **2025-07-07**: ✅ SMS MESSAGES MANAGEMENT SYSTEM COMPLETED - Successfully migrated and enhanced SMS messages system with comprehensive status tracking and database integration
 - **SMS Messages Enhancement**: Updated SMS messages page with proper database structure integration, including sent/failed/pending status display, cost tracking, and delivery confirmation
 - **Database Integration**: Fixed getSmsMessagesByRestaurant method to include proper tenant filtering for security, added sample SMS data for testing with various status types
