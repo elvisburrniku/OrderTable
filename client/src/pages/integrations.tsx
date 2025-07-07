@@ -45,7 +45,19 @@ interface Integration {
   premium?: boolean;
   status?: "healthy" | "warning" | "error";
   lastSync?: string;
+  comingSoon?: boolean;
 }
+
+// Define which integrations are currently implemented
+const implementedIntegrations = [
+  "google",
+  "stripe", 
+  "meta",
+  "webhooks",
+  "slack",
+  "tripadvisor",
+  "notion"
+];
 
 const integrations: Integration[] = [
   {
@@ -62,6 +74,7 @@ const integrations: Integration[] = [
     ],
     price: "Free",
     status: "healthy",
+    comingSoon: !implementedIntegrations.includes("activecampaign"),
   },
   {
     id: "google",
@@ -86,6 +99,7 @@ const integrations: Integration[] = [
     price: "$20/month",
     premium: true,
     status: "warning",
+    comingSoon: !implementedIntegrations.includes("klaviyo"),
   },
   {
     id: "mailchimp",
@@ -97,6 +111,7 @@ const integrations: Integration[] = [
     features: ["Email templates", "Audience management", "Campaign analytics"],
     price: "Free tier available",
     status: "healthy",
+    comingSoon: !implementedIntegrations.includes("mailchimp"),
   },
   {
     id: "meta",
@@ -136,6 +151,7 @@ const integrations: Integration[] = [
     price: "Free",
     premium: true,
     status: "healthy",
+    comingSoon: !implementedIntegrations.includes("whatsapp"),
   },
   {
     id: "twilio",
@@ -147,6 +163,7 @@ const integrations: Integration[] = [
     features: ["SMS notifications", "Voice calls", "Two-way messaging"],
     price: "Pay per use",
     status: "healthy",
+    comingSoon: !implementedIntegrations.includes("twilio"),
   },
   {
     id: "slack",
@@ -170,6 +187,7 @@ const integrations: Integration[] = [
     price: "Enterprise",
     premium: true,
     status: "healthy",
+    comingSoon: !implementedIntegrations.includes("michelin"),
   },
   {
     id: "tripadvisor",
@@ -220,6 +238,7 @@ const integrations: Integration[] = [
     features: ["Review monitoring", "Response management", "Analytics"],
     price: "Free tier available",
     status: "healthy",
+    comingSoon: !implementedIntegrations.includes("yelp"),
   },
   {
     id: "square",
@@ -231,6 +250,7 @@ const integrations: Integration[] = [
     features: ["POS integration", "Online payments", "Inventory sync"],
     price: "2.6% + 10¢",
     status: "healthy",
+    comingSoon: !implementedIntegrations.includes("square"),
   },
   {
     id: "toast",
@@ -243,6 +263,7 @@ const integrations: Integration[] = [
     price: "Custom pricing",
     premium: true,
     status: "healthy",
+    comingSoon: !implementedIntegrations.includes("toast"),
   },
   {
     id: "doordash",
@@ -254,6 +275,7 @@ const integrations: Integration[] = [
     features: ["Delivery integration", "Pickup orders", "Menu sync"],
     price: "15-30% commission",
     status: "healthy",
+    comingSoon: !implementedIntegrations.includes("doordash"),
   },
   {
     id: "ubereats",
@@ -265,6 +287,7 @@ const integrations: Integration[] = [
     features: ["Delivery orders", "Real-time tracking", "Promotions"],
     price: "15-30% commission",
     status: "healthy",
+    comingSoon: !implementedIntegrations.includes("ubereats"),
   },
   {
     id: "grubhub",
@@ -276,6 +299,7 @@ const integrations: Integration[] = [
     features: ["Order management", "Marketing tools", "Analytics"],
     price: "15-30% commission",
     status: "healthy",
+    comingSoon: !implementedIntegrations.includes("grubhub"),
   },
   {
     id: "salesforce",
@@ -288,6 +312,7 @@ const integrations: Integration[] = [
     price: "$25/user/month",
     premium: true,
     status: "healthy",
+    comingSoon: !implementedIntegrations.includes("salesforce"),
   },
   {
     id: "hubspot",
@@ -299,6 +324,7 @@ const integrations: Integration[] = [
     features: ["Contact management", "Email marketing", "Analytics"],
     price: "Free tier available",
     status: "healthy",
+    comingSoon: !implementedIntegrations.includes("hubspot"),
   },
   {
     id: "quickbooks",
@@ -310,6 +336,7 @@ const integrations: Integration[] = [
     features: ["Invoice sync", "Expense tracking", "Financial reports"],
     price: "$25/month",
     status: "healthy",
+    comingSoon: !implementedIntegrations.includes("quickbooks"),
   },
   {
     id: "xero",
@@ -321,6 +348,7 @@ const integrations: Integration[] = [
     features: ["Bookkeeping", "Payroll", "Financial reporting"],
     price: "$13/month",
     status: "healthy",
+    comingSoon: !implementedIntegrations.includes("xero"),
   },
   {
     id: "spotify",
@@ -332,6 +360,7 @@ const integrations: Integration[] = [
     features: ["Licensed music", "Playlist curation", "Scheduling"],
     price: "$26.99/month",
     status: "healthy",
+    comingSoon: !implementedIntegrations.includes("spotify"),
   },
   {
     id: "zoom",
@@ -343,6 +372,7 @@ const integrations: Integration[] = [
     features: ["Virtual events", "Webinars", "Recording"],
     price: "$79/month",
     status: "healthy",
+    comingSoon: !implementedIntegrations.includes("zoom"),
   },
   {
     id: "calendly",
@@ -354,6 +384,7 @@ const integrations: Integration[] = [
     features: ["Event scheduling", "Calendar sync", "Reminders"],
     price: "Free tier available",
     status: "healthy",
+    comingSoon: !implementedIntegrations.includes("calendly"),
   },
   {
     id: "googleanalytics",
@@ -365,6 +396,7 @@ const integrations: Integration[] = [
     features: ["Traffic analysis", "Conversion tracking", "Custom reports"],
     price: "Free",
     status: "healthy",
+    comingSoon: !implementedIntegrations.includes("googleanalytics"),
   },
   {
     id: "mixpanel",
@@ -376,6 +408,7 @@ const integrations: Integration[] = [
     features: ["Event tracking", "User analytics", "Funnel analysis"],
     price: "Free tier available",
     status: "healthy",
+    comingSoon: !implementedIntegrations.includes("mixpanel"),
   },
   {
     id: "segment",
@@ -388,6 +421,7 @@ const integrations: Integration[] = [
     price: "Free tier available",
     premium: true,
     status: "healthy",
+    comingSoon: !implementedIntegrations.includes("segment"),
   },
 ];
 
@@ -778,8 +812,13 @@ export default function Integrations() {
                                     whileHover={{ scale: 1.02, y: -2 }}
                                     className="group"
                                   >
-                                    <div className="bg-white/80 backdrop-blur-sm border border-slate-200/60 rounded-xl p-5 hover:shadow-lg transition-all duration-300 relative overflow-hidden">
+                                    <div className={`bg-white/80 backdrop-blur-sm border border-slate-200/60 rounded-xl p-5 hover:shadow-lg transition-all duration-300 relative overflow-hidden ${integration.comingSoon ? 'opacity-75' : ''}`}>
                                       <div className="absolute inset-0 bg-gradient-to-br from-blue-50/20 to-purple-50/20 opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+                                      {integration.comingSoon && (
+                                        <div className="absolute top-2 right-2 bg-blue-100 text-blue-800 text-xs px-2 py-1 rounded-full font-medium">
+                                          Coming Soon
+                                        </div>
+                                      )}
 
                                       <div className="relative z-10">
                                         <div className="flex items-start justify-between mb-3">
@@ -796,7 +835,12 @@ export default function Integrations() {
                                                 <h4 className="font-semibold text-slate-800 group-hover:text-blue-600 transition-colors">
                                                   {integration.name}
                                                 </h4>
-                                                {integration.premium && (
+                                                {integration.comingSoon && (
+                                                  <Badge className="bg-gradient-to-r from-blue-400 to-indigo-500 text-white text-xs">
+                                                    Coming Soon
+                                                  </Badge>
+                                                )}
+                                                {integration.premium && !integration.comingSoon && (
                                                   <Badge className="bg-gradient-to-r from-yellow-400 to-orange-500 text-white text-xs">
                                                     <Star className="w-3 h-3 mr-1" />
                                                     Premium
@@ -839,34 +883,42 @@ export default function Integrations() {
                                             <Switch
                                               checked={integration.connected}
                                               onCheckedChange={() =>
-                                                toggleIntegration(
+                                                !integration.comingSoon && toggleIntegration(
                                                   integration.id,
                                                 )
                                               }
                                               disabled={
-                                                saveConfigMutation.isPending
+                                                saveConfigMutation.isPending || integration.comingSoon
                                               }
-                                              className="data-[state=checked]:bg-gradient-to-r data-[state=checked]:from-green-500 data-[state=checked]:to-blue-500"
+                                              className="data-[state=checked]:bg-gradient-to-r data-[state=checked]:from-green-500 data-[state=checked]:to-blue-500 disabled:opacity-50"
                                             />
                                             <motion.div
-                                              whileHover={{ scale: 1.1 }}
-                                              whileTap={{ scale: 0.9 }}
+                                              whileHover={{ scale: integration.comingSoon ? 1 : 1.1 }}
+                                              whileTap={{ scale: integration.comingSoon ? 1 : 0.9 }}
                                             >
                                               <Button
                                                 variant="ghost"
                                                 size="sm"
-                                                asChild
+                                                asChild={!integration.comingSoon}
+                                                disabled={integration.comingSoon}
+                                                className={integration.comingSoon ? "opacity-50 cursor-not-allowed" : ""}
                                               >
-                                                <a
-                                                  href={
-                                                    integration.id === "google"
-                                                      ? `/${tenant.id}/integrations/google`
-                                                      : `/${tenant.id}/integrations/${integration.id}`
-                                                  }
-                                                  className="text-slate-400 hover:text-slate-600"
-                                                >
-                                                  <Settings className="w-4 h-4" />
-                                                </a>
+                                                {integration.comingSoon ? (
+                                                  <div className="text-slate-400">
+                                                    <Settings className="w-4 h-4" />
+                                                  </div>
+                                                ) : (
+                                                  <a
+                                                    href={
+                                                      integration.id === "google"
+                                                        ? `/${tenant.id}/integrations/google`
+                                                        : `/${tenant.id}/integrations/${integration.id}`
+                                                    }
+                                                    className="text-slate-400 hover:text-slate-600"
+                                                  >
+                                                    <Settings className="w-4 h-4" />
+                                                  </a>
+                                                )}
                                               </Button>
                                             </motion.div>
                                           </div>
