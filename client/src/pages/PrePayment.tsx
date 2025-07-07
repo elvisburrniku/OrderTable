@@ -57,6 +57,7 @@ function BookingPaymentForm({
   const [isProcessing, setIsProcessing] = useState(false);
 
   const formatCurrency = (amount: number, currency: string) => {
+    console.log("Formatting currency:", amount, currency);
     return new Intl.NumberFormat("en-US", {
       style: "currency",
       currency: currency.toUpperCase(),
