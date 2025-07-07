@@ -5659,7 +5659,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
           restaurantId,
           tenantId,
           userId: req.user?.id,
-          eventType: "settings_update",
           action: "update_settings",
           details: `Settings updated: ${Object.keys(settingsData).join(', ')}`,
           timestamp: new Date(),
