@@ -1,0 +1,683 @@
+rror processing guest booking payment: TypeError: Cannot read properties of undefined (reading 'Symbol(drizzle:Columns)')
+
+Jul 7 12:28:10 PM
+
+
+
+at getTableColumns (file:///opt/render/project/src/node_modules/drizzle-orm/utils.js:108:15)
+
+Jul 7 12:28:10 PM
+
+
+
+at PgSelectBuilder.from (file:///opt/render/project/src/node_modules/drizzle-orm/pg-core/query-builders/select.js:61:16)
+
+Jul 7 12:28:10 PM
+
+
+
+at handleStripeWebhook (file:///opt/render/project/src/dist/index.js:11958:72)
+
+Jul 7 12:28:10 PM
+
+
+
+at process.processTicksAndRejections (node:internal/process/task_queues:105:5)
+
+Jul 7 12:28:10 PM
+
+
+
+at async file:///opt/render/project/src/dist/index.js:31902:5
+
+Jul 7 12:28:10 PM
+
+
+
+Processing payment for booking ID: NaN
+
+Jul 7 12:28:10 PM
+
+
+
+Error handling webhook: NeonDbError: invalid input syntax for type integer: "NaN"
+
+Jul 7 12:28:10 PM
+
+
+
+at execute (file:///opt/render/project/src/node_modules/@neondatabase/serverless/index.mjs:1556:55)
+
+Jul 7 12:28:10 PM
+
+
+
+at process.processTicksAndRejections (node:internal/process/task_queues:105:5)
+
+Jul 7 12:28:10 PM
+
+
+
+at async NeonHttpPreparedQuery.execute (file:///opt/render/project/src/node_modules/drizzle-orm/neon-http/session.js:40:20)
+
+Jul 7 12:28:10 PM
+
+
+
+at async DatabaseStorage.getBookingById (file:///opt/render/project/src/dist/index.js:2751:24)
+
+Jul 7 12:28:10 PM
+
+
+
+at async handleStripeWebhook (file:///opt/render/project/src/dist/index.js:12139:27)
+
+Jul 7 12:28:10 PM
+
+
+
+at async file:///opt/render/project/src/dist/index.js:31902:5 {
+
+Jul 7 12:28:10 PM
+
+
+
+severity: 'ERROR',
+
+Jul 7 12:28:10 PM
+
+
+
+code: '22P02',
+
+Jul 7 12:28:10 PM
+
+
+
+detail: undefined,
+
+Jul 7 12:28:10 PM
+
+
+
+hint: undefined,
+
+Jul 7 12:28:10 PM
+
+
+
+position: undefined,
+
+Jul 7 12:28:10 PM
+
+
+
+internalPosition: undefined,
+
+Jul 7 12:28:10 PM
+
+
+
+internalQuery: undefined,
+
+Jul 7 12:28:10 PM
+
+
+
+where: "unnamed portal parameter $1 = '...'",
+
+Jul 7 12:28:10 PM
+
+
+
+schema: undefined,
+
+Jul 7 12:28:10 PM
+
+
+
+table: undefined,
+
+Jul 7 12:28:10 PM
+
+
+
+column: undefined,
+
+Jul 7 12:28:10 PM
+
+
+
+dataType: undefined,
+
+Jul 7 12:28:10 PM
+
+
+
+constraint: undefined,
+
+Jul 7 12:28:10 PM
+
+
+
+file: 'numutils.c',
+
+Jul 7 12:28:10 PM
+
+
+
+line: '616',
+
+Jul 7 12:28:10 PM
+
+
+
+routine: 'pg_strtoint32_safe',
+
+Jul 7 12:28:10 PM
+
+
+
+sourceError: undefined
+
+Jul 7 12:28:10 PM
+
+
+
+}
+
+Jul 7 12:28:10 PM
+
+
+
+Stripe webhook error: NeonDbError: invalid input syntax for type integer: "NaN"
+
+Jul 7 12:28:10 PM
+
+
+
+at execute (file:///opt/render/project/src/node_modules/@neondatabase/serverless/index.mjs:1556:55)
+
+Jul 7 12:28:10 PM
+
+
+
+at process.processTicksAndRejections (node:internal/process/task_queues:105:5)
+
+Jul 7 12:28:10 PM
+
+
+
+at async NeonHttpPreparedQuery.execute (file:///opt/render/project/src/node_modules/drizzle-orm/neon-http/session.js:40:20)
+
+Jul 7 12:28:10 PM
+
+
+
+at async DatabaseStorage.getBookingById (file:///opt/render/project/src/dist/index.js:2751:24)
+
+Jul 7 12:28:10 PM
+
+
+
+at async handleStripeWebhook (file:///opt/render/project/src/dist/index.js:12139:27)
+
+Jul 7 12:28:10 PM
+
+
+
+at async file:///opt/render/project/src/dist/index.js:31902:5 {
+
+Jul 7 12:28:10 PM
+
+
+
+severity: 'ERROR',
+
+Jul 7 12:28:10 PM
+
+
+
+code: '22P02',
+
+Jul 7 12:28:10 PM
+
+
+
+detail: undefined,
+
+Jul 7 12:28:10 PM
+
+
+
+hint: undefined,
+
+Jul 7 12:28:10 PM
+
+
+
+position: undefined,
+
+Jul 7 12:28:10 PM
+
+
+
+internalPosition: undefined,
+
+Jul 7 12:28:10 PM
+
+
+
+internalQuery: undefined,
+
+Jul 7 12:28:10 PM
+
+
+
+where: "unnamed portal parameter $1 = '...'",
+
+Jul 7 12:28:10 PM
+
+
+
+schema: undefined,
+
+Jul 7 12:28:10 PM
+
+
+
+table: undefined,
+
+Jul 7 12:28:10 PM
+
+
+
+column: undefined,
+
+Jul 7 12:28:10 PM
+
+
+
+dataType: undefined,
+
+Jul 7 12:28:10 PM
+
+
+
+constraint: undefined,
+
+Jul 7 12:28:10 PM
+
+
+
+file: 'numutils.c',
+
+Jul 7 12:28:10 PM
+
+
+
+line: '616',
+
+Jul 7 12:28:10 PM
+
+
+
+routine: 'pg_strtoint32_safe',
+
+Jul 7 12:28:10 PM
+
+
+
+sourceError: undefined
+
+Jul 7 12:28:10 PM
+
+
+
+}
+
+
+
+Let's break down the error logs you've provided. There are two main issues indicated:
+
+TypeError: Cannot read properties of undefined (reading 'Symbol(drizzle:Columns)')
+This error, specifically at PgSelectBuilder.from (file:///opt/render/project/src/node_modules/drizzle-orm/pg-core/query-builders/select.js:61:16), strongly suggests that one of the Drizzle ORM schema objects you're trying to use in a query is undefined. This typically happens when:
+
+You are importing a Drizzle schema object (like storage.bookings or storage.invoices) but it hasn't been properly initialized or exported/imported correctly.
+
+The storage object passed to handleStripeWebhook doesn't have the bookings or invoices property defined, or they are undefined.
+
+NeonDbError: invalid input syntax for type integer: "NaN"
+This error, accompanied by "Processing payment for booking ID: NaN", clearly indicates that parseInt(paymentIntent.metadata.bookingId) resulted in NaN (Not a Number) when it was expected to be a valid integer for a database query (likely getBookingById). This can happen if:
+
+paymentIntent.metadata.bookingId is missing (undefined).
+
+paymentIntent.metadata.bookingId is present but contains a string that cannot be parsed into a number (e.g., "abc", an empty string, or even "guest_booking" which you specifically check for).
+
+The sourceError: undefined and the stack trace point to DatabaseStorage.getBookingById which confirms the NaN is being passed to a database function expecting an integer.
+
+Let's look at the relevant part of your handleStripeWebhook function (based on the previous code) and identify where these might occur:
+
+TypeScript
+
+// ... (inside payment_intent.succeeded case) ...
+
+// Handle regular booking payment
+if (paymentIntent.metadata?.bookingId) {
+  const bookingId = parseInt(paymentIntent.metadata.bookingId); // <-- This is likely producing NaN
+  console.log(`Processing payment for booking ID: ${bookingId}`);
+
+  const booking = await storage.getBookingById(bookingId); // <-- This then receives NaN, causing NeonDbError
+  // ...
+}
+And for the Drizzle error:
+
+TypeScript
+
+// ... (inside guest booking payment completion block) ...
+const { eq, and, desc, gte } = await import("drizzle-orm");
+let booking = null;
+
+// Try to find booking by payment intent ID first
+const bookingsByPaymentIntent = await storage.db
+  .select()
+  .from(storage.bookings) // <-- This is where 'storage.bookings' is used
+  .where(eq(storage.bookings.paymentIntentId, paymentIntent.id))
+  .limit(1);
+And similarly for storage.invoices:
+
+TypeScript
+
+// ...
+const { invoices } = await import("../shared/schema");
+// ...
+await storage.db.insert(invoices).values(invoiceData); // <-- This is where 'invoices' from schema is used
+Proposed Solutions
+Let's address both issues:
+
+1. Fixing TypeError: Cannot read properties of undefined (reading 'Symbol(drizzle:Columns)')
+This error suggests storage.bookings or invoices is not properly defined when Drizzle tries to access its column definitions.
+
+Verify IStorage implementation: Ensure your concrete implementation of IStorage (e.g., DatabaseStorage) correctly initializes this.bookings and this.invoices (or whatever your table references are named) as Drizzle schema objects. They should be imported and assigned correctly in the constructor or initialization method of DatabaseStorage.
+
+Example (conceptual for DatabaseStorage):
+
+TypeScript
+
+import { drizzle } from 'drizzle-orm/neon-http';
+import { Pool } from '@neondatabase/serverless';
+import * as schema from '../shared/schema'; // Your Drizzle schema definitions
+
+export class DatabaseStorage implements IStorage {
+  public db;
+  public bookings = schema.bookings; // Ensure these are correctly assigned
+  public invoices = schema.invoices;
+  // ... other tables you might have
+
+  constructor(connectionString: string) {
+    const sql = new Pool({ connectionString });
+    this.db = drizzle(sql, { schema }); // If you're using schema object directly, ensure it's structured for Drizzle
+                                        // Or if you map them individually:
+                                        // this.db = drizzle(sql, { schema: { bookings: schema.bookings, invoices: schema.invoices, ... } });
+  }
+
+  // ... other methods
+}
+If you're directly passing the schema object to drizzle, ensure schema.bookings and schema.invoices are indeed the Drizzle table objects.
+
+Check Import Paths: Double-check the import paths for ../shared/schema and ensure they are correct relative to the handleStripeWebhook file.
+
+Initialization Order: Ensure the storage instance is fully initialized before handleStripeWebhook is called.
+
+2. Fixing NeonDbError: invalid input syntax for type integer: "NaN"
+This requires more robust handling of paymentIntent.metadata.bookingId.
+
+Pre-check bookingId for validity: Before calling parseInt and using the result, check if paymentIntent.metadata.bookingId exists and can be meaningfully converted to a number.
+
+Handle guest_booking explicitly: You already have a check for paymentIntent.metadata?.bookingId === 'guest_booking', but it's important to remember that parseInt('guest_booking') will result in NaN.
+
+Here's an improved version of the payment_intent.succeeded block to address the NaN issue and make the flow clearer:
+
+TypeScript
+
+case "payment_intent.succeeded":
+  const paymentIntent = event.data.object as Stripe.PaymentIntent;
+  console.log(`Processing payment_intent.succeeded webhook: ${paymentIntent.id}`);
+  console.log(`Payment intent metadata:`, JSON.stringify(paymentIntent.metadata, null, 2));
+
+  const existingPayment = await storage.getStripePaymentByIntentId(paymentIntent.id);
+  if (existingPayment && existingPayment.status === 'succeeded') {
+    console.log(`Payment intent ${paymentIntent.id} already processed - skipping duplicate`);
+    webhookLogData.status = 'completed';
+    webhookLogData.metadata.note = 'Duplicate webhook - payment already processed';
+    break;
+  }
+
+  const updatedPayment = await storage.updateStripePaymentByIntentId(paymentIntent.id, {
+    status: 'succeeded',
+    metadata: paymentIntent.metadata,
+    updatedAt: new Date()
+  });
+  console.log(`Updated payment record: ${updatedPayment ? 'Success' : 'Failed'}`);
+
+  let bookingToProcess = null;
+  const metadataBookingId = paymentIntent.metadata?.bookingId;
+  const metadataType = paymentIntent.metadata?.type;
+
+  // Prioritize guest booking logic if metadata indicates it
+  if (metadataBookingId === 'guest_booking' || metadataType === 'guest_booking') {
+    console.log('Processing guest booking payment completion');
+    console.log('Guest booking payment metadata:', paymentIntent.metadata);
+
+    try {
+      const { eq, and, desc, gte } = await import("drizzle-orm");
+      let foundBooking = null;
+
+      // Try to find booking by payment intent ID first
+      const bookingsByPaymentIntent = await storage.db
+        .select()
+        .from(storage.bookings)
+        .where(eq(storage.bookings.paymentIntentId, paymentIntent.id))
+        .limit(1);
+
+      if (bookingsByPaymentIntent.length > 0) {
+        foundBooking = bookingsByPaymentIntent[0];
+        console.log(`Found booking ${foundBooking.id} by payment intent ID ${paymentIntent.id}`);
+      } else if (paymentIntent.metadata.customerEmail) {
+        console.log('Searching for booking by customer details...');
+        const bookingDate = new Date(paymentIntent.metadata.bookingDate);
+        bookingDate.setHours(0, 0, 0, 0);
+
+        const searchConditions = [
+          eq(storage.bookings.customerEmail, paymentIntent.metadata.customerEmail),
+          gte(storage.bookings.bookingDate, bookingDate),
+          eq(storage.bookings.startTime, paymentIntent.metadata.startTime)
+        ];
+
+        if (paymentIntent.metadata.guestCount && !isNaN(parseInt(paymentIntent.metadata.guestCount))) {
+          searchConditions.push(eq(storage.bookings.guestCount, parseInt(paymentIntent.metadata.guestCount)));
+        }
+
+        const recentBookings = await storage.db
+          .select()
+          .from(storage.bookings)
+          .where(and(...searchConditions))
+          .orderBy(desc(storage.bookings.createdAt))
+          .limit(5);
+
+        console.log(`Found ${recentBookings.length} bookings matching search criteria`);
+
+        if (recentBookings.length > 0) {
+          foundBooking = recentBookings.find(b => {
+            const bDate = new Date(b.bookingDate);
+            bDate.setHours(0, 0, 0, 0);
+            return bDate.getTime() === bookingDate.getTime();
+          }) || recentBookings[0];
+
+          console.log(`Found guest booking ${foundBooking.id} by customer details for payment intent ${paymentIntent.id}`);
+        } else {
+          console.log('No bookings found matching search criteria for guest booking.');
+        }
+      } else {
+        console.log('No customerEmail in payment metadata, cannot search for guest booking.');
+      }
+      bookingToProcess = foundBooking; // Assign found guest booking
+    } catch (error) {
+      console.error('Error finding guest booking:', error);
+      // Decide if you want to break or continue with other logic
+      // For now, let the outer catch handle the full webhook error
+    }
+  } else if (metadataBookingId) {
+    // This block handles regular bookings with a valid bookingId
+    const parsedBookingId = parseInt(metadataBookingId);
+
+    if (isNaN(parsedBookingId)) {
+      console.warn(`Payment intent ${paymentIntent.id} has invalid bookingId metadata: '${metadataBookingId}'. Skipping regular booking processing.`);
+      // Optionally, set webhookLogData status to something like 'skipped_invalid_data'
+      webhookLogData.status = 'completed'; // Or 'failed' if this is critical
+      webhookLogData.metadata.note = `Invalid bookingId in metadata: ${metadataBookingId}`;
+      break; // Exit the switch case
+    }
+    console.log(`Processing payment for booking ID: ${parsedBookingId}`);
+    bookingToProcess = await storage.getBookingById(parsedBookingId);
+    console.log(`Found booking: ${bookingToProcess ? 'Yes' : 'No'}, Status: ${bookingToProcess?.status}, Payment Status: ${bookingToProcess?.paymentStatus}`);
+  } else {
+    console.log(`No 'bookingId' or 'type' metadata indicating a booking for payment intent ${paymentIntent.id}.`);
+    webhookLogData.status = 'completed'; // Or 'failed' if this is unexpected
+    webhookLogData.metadata.note = 'No relevant booking metadata found.';
+    break; // Exit the switch case if no booking ID is present
+  }
+
+
+  if (bookingToProcess) {
+    // Check if already processed
+    if (bookingToProcess.paymentStatus === 'paid' && bookingToProcess.paymentIntentId === paymentIntent.id) {
+      console.log(`Booking ${bookingToProcess.id} already processed for payment intent ${paymentIntent.id}`);
+    } else {
+      const updateData: any = {
+        paymentStatus: 'paid',
+        paymentIntentId: paymentIntent.id,
+        paymentPaidAt: new Date()
+      };
+
+      if (bookingToProcess.status === 'waiting_payment') {
+        updateData.status = 'confirmed';
+        console.log(`Updating booking ${bookingToProcess.id} status from waiting_payment to confirmed`);
+      }
+
+      await storage.updateBooking(bookingToProcess.id, updateData);
+      console.log(`Updated booking ${bookingToProcess.id} with payment status: paid`);
+
+      const { invoices } = await import("../shared/schema");
+      const invoiceData = {
+        bookingId: bookingToProcess.id,
+        tenantId: bookingToProcess.tenantId,
+        restaurantId: bookingToProcess.restaurantId,
+        invoiceNumber: `INV-${Date.now()}-${bookingToProcess.id}`,
+        paymentIntentId: paymentIntent.id,
+        stripeReceiptUrl: null,
+        customerName: bookingToProcess.customerName || paymentIntent.metadata.customerName || 'Guest',
+        customerEmail: bookingToProcess.customerEmail || paymentIntent.metadata.customerEmail || '',
+        amount: (paymentIntent.amount / 100).toString(),
+        currency: paymentIntent.currency.toUpperCase(),
+        status: 'paid' as const,
+        description: `Payment for booking #${bookingToProcess.id}`,
+        paidAt: new Date(),
+        createdAt: new Date()
+      };
+
+      await storage.db.insert(invoices).values(invoiceData);
+      console.log(`Created invoice for booking ${bookingToProcess.id}`);
+
+      try {
+        const emailService = await import("./brevo-service").then(m => new m.BrevoEmailService());
+        const restaurant = await storage.getRestaurantById(bookingToProcess.restaurantId);
+
+        if (bookingToProcess.customerEmail && emailService.sendEmail) {
+          const subject = `Payment Confirmation - ${restaurant?.name || "Restaurant"}`;
+          const htmlContent = `
+            <h1>Payment Confirmed</h1>
+            <p>Dear ${bookingToProcess.customerName},</p>
+            <p>Your payment of ${paymentIntent.currency.toUpperCase()} ${(paymentIntent.amount / 100).toFixed(2)} has been confirmed for your booking.</p>
+            <p><strong>Booking Details:</strong></p>
+            <ul>
+              <li>Booking ID: ${bookingToProcess.id}</li>
+              <li>Restaurant: ${restaurant?.name || "Restaurant"}</li>
+              <li>Date: ${new Date(bookingToProcess.bookingDate).toLocaleDateString()}</li>
+              <li>Time: ${bookingToProcess.startTime}</li>
+              <li>Guests: ${bookingToProcess.guestCount}</li>
+              <li>Invoice Number: ${invoiceData.invoiceNumber}</li>
+            </ul>
+            <p>Thank you for your payment!</p>
+          `;
+          await emailService.sendEmail({ to: [{ email: bookingToProcess.customerEmail, name: bookingToProcess.customerName }], subject: subject, htmlContent: htmlContent });
+          console.log(`Payment confirmation email sent to ${bookingToProcess.customerEmail}`);
+        }
+
+        if (restaurant?.email) {
+          const notificationSubject = `Payment Received - Booking #${bookingToProcess.id}`;
+          const notificationHtml = `
+            <h1>Payment Received</h1>
+            <p>A payment has been received for booking #${bookingToProcess.id}</p>
+            <p><strong>Details:</strong></p>
+            <ul>
+              <li>Customer: ${bookingToProcess.customerName}</li>
+              <li>Amount: ${paymentIntent.currency.toUpperCase()} ${(paymentIntent.amount / 100).toFixed(2)}</li>
+              <li>Date: ${new Date(bookingToProcess.bookingDate).toLocaleDateString()}</li>
+              <li>Time: ${bookingToProcess.startTime}</li>
+              <li>Guests: ${bookingToProcess.guestCount}</li>
+              <li>Invoice Number: ${invoiceData.invoiceNumber}</li>
+            </ul>
+          `;
+          if (typeof emailService.sendPaymentNotificationToRestaurant === 'function') {
+            await emailService.sendPaymentNotificationToRestaurant(
+              restaurant.email,
+              {
+                bookingId: bookingToProcess.id,
+                amount: paymentIntent.amount / 100,
+                currency: paymentIntent.currency.toUpperCase(),
+                customerName: bookingToProcess.customerName,
+                restaurantName: restaurant.name,
+                bookingDate: new Date(bookingToProcess.bookingDate).toLocaleDateString(),
+                bookingTime: bookingToProcess.startTime,
+                guestCount: bookingToProcess.guestCount,
+                invoiceNumber: invoiceData.invoiceNumber
+              }
+            );
+          } else {
+            await emailService.sendEmail({ to: [{ email: restaurant.email, name: restaurant.name }], subject: notificationSubject, htmlContent: notificationHtml });
+          }
+          console.log(`Payment notification sent to restaurant ${restaurant.name}`);
+        }
+      } catch (emailError) {
+        console.error("Error sending payment confirmation/notification emails:", emailError);
+      }
+    }
+  } else {
+    console.log(`No valid booking found for payment intent ${paymentIntent.id}.`);
+    // This might be an expected scenario if a payment intent is created without a direct booking.
+    // Or it indicates a deeper issue if every payment intent should link to a booking.
+    // Decide if this should be a 'failed' status for the webhook log or just 'completed' with a note.
+    webhookLogData.status = 'completed';
+    webhookLogData.metadata.note = 'No associated booking found for payment intent.';
+  }
+  break; // End of payment_intent.succeeded case
+Summary of Changes in the payment_intent.succeeded case:
+
+Introduced a bookingToProcess variable to hold the identified booking, simplifying the subsequent logic.
+
+Explicitly check isNaN(parsedBookingId) after parseInt. If it's NaN, log a warning and break from the switch case, preventing the database error. This handles cases where paymentIntent.metadata.bookingId might be present but not a valid number.
+
+Reorganized the logic to first try finding guest bookings, then regular bookings, before falling through to "no booking found" scenarios.
+
+Improved console logs for clarity during debugging.
+
+Action Plan:
+
+Crucially, verify your IStorage implementation and how storage.bookings and storage.invoices are initialized and passed around. The TypeError strongly points to an issue there.
+
+Implement the changes to the payment_intent.succeeded case as shown above, specifically the isNaN check and clearer flow for handling bookingId.
+
+Test with various payment_intent.succeeded events, including those for guest bookings and regular bookings, and cases where bookingId might be missing or invalid.
+
+By addressing these two points, you should resolve both the Drizzle TypeError and the Neon NaN database error.
