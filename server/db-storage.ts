@@ -176,22 +176,49 @@ export class DatabaseStorage implements IStorage {
 
       if (existingRoles.length === 0) {
         console.log("Creating default system roles...");
-        
+
         const defaultRoles = [
           {
             tenantId: null,
             name: "owner",
             displayName: "Owner",
             permissions: JSON.stringify([
-              "access_dashboard", "access_bookings", "access_customers", "access_menu",
-              "access_tables", "access_kitchen", "access_users", "access_billing",
-              "access_reports", "access_notifications", "access_integrations", "access_settings",
-              "access_floor_plan", "view_bookings", "create_bookings", "edit_bookings",
-              "delete_bookings", "view_customers", "edit_customers", "view_settings",
-              "edit_settings", "view_menu", "edit_menu", "view_tables", "edit_tables",
-              "view_kitchen", "manage_kitchen", "view_users", "manage_users",
-              "view_billing", "manage_billing", "view_reports", "view_notifications",
-              "manage_notifications", "view_integrations", "manage_integrations"
+              "access_dashboard",
+              "access_bookings",
+              "access_customers",
+              "access_menu",
+              "access_tables",
+              "access_kitchen",
+              "access_users",
+              "access_billing",
+              "access_reports",
+              "access_notifications",
+              "access_integrations",
+              "access_settings",
+              "access_floor_plan",
+              "view_bookings",
+              "create_bookings",
+              "edit_bookings",
+              "delete_bookings",
+              "view_customers",
+              "edit_customers",
+              "view_settings",
+              "edit_settings",
+              "view_menu",
+              "edit_menu",
+              "view_tables",
+              "edit_tables",
+              "view_kitchen",
+              "manage_kitchen",
+              "view_users",
+              "manage_users",
+              "view_billing",
+              "manage_billing",
+              "view_reports",
+              "view_notifications",
+              "manage_notifications",
+              "view_integrations",
+              "manage_integrations",
             ]),
             isSystem: true,
           },
@@ -200,12 +227,29 @@ export class DatabaseStorage implements IStorage {
             name: "manager",
             displayName: "Manager",
             permissions: JSON.stringify([
-              "access_dashboard", "access_bookings", "access_customers", "access_menu",
-              "access_tables", "access_kitchen", "access_reports", "access_settings",
-              "view_bookings", "create_bookings", "edit_bookings", "delete_bookings",
-              "view_customers", "edit_customers", "view_settings", "edit_settings",
-              "view_menu", "edit_menu", "view_tables", "edit_tables",
-              "view_kitchen", "manage_kitchen", "view_reports"
+              "access_dashboard",
+              "access_bookings",
+              "access_customers",
+              "access_menu",
+              "access_tables",
+              "access_kitchen",
+              "access_reports",
+              "access_settings",
+              "view_bookings",
+              "create_bookings",
+              "edit_bookings",
+              "delete_bookings",
+              "view_customers",
+              "edit_customers",
+              "view_settings",
+              "edit_settings",
+              "view_menu",
+              "edit_menu",
+              "view_tables",
+              "edit_tables",
+              "view_kitchen",
+              "manage_kitchen",
+              "view_reports",
             ]),
             isSystem: true,
           },
@@ -214,9 +258,14 @@ export class DatabaseStorage implements IStorage {
             name: "agent",
             displayName: "Booking Agent",
             permissions: JSON.stringify([
-              "access_dashboard", "access_bookings", "access_customers",
-              "view_bookings", "create_bookings", "edit_bookings",
-              "view_customers", "edit_customers"
+              "access_dashboard",
+              "access_bookings",
+              "access_customers",
+              "view_bookings",
+              "create_bookings",
+              "edit_bookings",
+              "view_customers",
+              "edit_customers",
             ]),
             isSystem: true,
           },
@@ -225,8 +274,10 @@ export class DatabaseStorage implements IStorage {
             name: "kitchen_staff",
             displayName: "Kitchen Staff",
             permissions: JSON.stringify([
-              "access_dashboard", "access_kitchen",
-              "view_kitchen", "manage_kitchen"
+              "access_dashboard",
+              "access_kitchen",
+              "view_kitchen",
+              "manage_kitchen",
             ]),
             isSystem: true,
           },
@@ -262,7 +313,7 @@ export class DatabaseStorage implements IStorage {
 
   async getUserTenants(userId: number): Promise<any[]> {
     if (!this.db) throw new Error("Database connection not available");
-    
+
     try {
       // Get all tenants the user is associated with using raw SQL to avoid complex query issues
       const tenantsResult = await this.db.execute(sql`
@@ -282,7 +333,7 @@ export class DatabaseStorage implements IStorage {
       const result = await Promise.all(
         tenantsResult.rows.map(async (tenant: any) => {
           if (!tenant.id) return { ...tenant, restaurants: [] };
-          
+
           const restaurantsResult = await this.db.execute(sql`
             SELECT 
               id,
@@ -300,10 +351,10 @@ export class DatabaseStorage implements IStorage {
             ...tenant,
             restaurants: restaurantsResult.rows || [],
           };
-        })
+        }),
       );
 
-      return result.filter(t => t.id); // Filter out any null tenants
+      return result.filter((t) => t.id); // Filter out any null tenants
     } catch (error) {
       console.error("Error in getUserTenants:", error);
       throw error;
@@ -690,9 +741,12 @@ export class DatabaseStorage implements IStorage {
   }
   async updateBooking(id: number, updates: any): Promise<any> {
     if (!this.db) throw new Error("Database connection not available");
-    
-    console.log(`UpdateBooking called for ID ${id} with updates:`, JSON.stringify(updates, null, 2));
-    
+
+    console.log(
+      `UpdateBooking called for ID ${id} with updates:`,
+      JSON.stringify(updates, null, 2),
+    );
+
     // Validate numeric fields to prevent invalid database values
     if (updates.guestCount !== undefined) {
       if (!Number.isFinite(updates.guestCount) || updates.guestCount <= 0) {
@@ -704,15 +758,18 @@ export class DatabaseStorage implements IStorage {
         throw new Error("Invalid tableId value: " + updates.tableId);
       }
     }
-    
+
     try {
       const result = await this.db
         .update(bookings)
         .set(updates)
         .where(eq(bookings.id, id))
         .returning();
-      
-      console.log(`UpdateBooking result for ID ${id}:`, JSON.stringify(result[0], null, 2));
+
+      console.log(
+        `UpdateBooking result for ID ${id}:`,
+        JSON.stringify(result[0], null, 2),
+      );
       return result[0];
     } catch (error) {
       console.error(`UpdateBooking error for ID ${id}:`, error);
@@ -843,6 +900,7 @@ export class DatabaseStorage implements IStorage {
       .select()
       .from(subscriptionPlans)
       .where(eq(subscriptionPlans.id, id));
+
     return result[0];
   }
   async createSubscriptionPlan(plan: any): Promise<any> {
@@ -1675,7 +1733,10 @@ export class DatabaseStorage implements IStorage {
     return response;
   }
 
-  async getSurveyResponses(restaurantId: number, tenantId: number): Promise<any[]> {
+  async getSurveyResponses(
+    restaurantId: number,
+    tenantId: number,
+  ): Promise<any[]> {
     if (!this.db) throw new Error("Database connection not available");
     return await this.db
       .select()
@@ -1721,13 +1782,17 @@ export class DatabaseStorage implements IStorage {
     }
 
     const totalResponses = responses.length;
-    const averageRating = responses.reduce((sum, r) => sum + (r.rating || 0), 0) / totalResponses;
-    const ratingDistribution = responses.reduce((dist, r) => {
-      if (r.rating) {
-        dist[r.rating] = (dist[r.rating] || 0) + 1;
-      }
-      return dist;
-    }, { 1: 0, 2: 0, 3: 0, 4: 0, 5: 0 });
+    const averageRating =
+      responses.reduce((sum, r) => sum + (r.rating || 0), 0) / totalResponses;
+    const ratingDistribution = responses.reduce(
+      (dist, r) => {
+        if (r.rating) {
+          dist[r.rating] = (dist[r.rating] || 0) + 1;
+        }
+        return dist;
+      },
+      { 1: 0, 2: 0, 3: 0, 4: 0, 5: 0 },
+    );
 
     return {
       totalResponses,
@@ -1738,37 +1803,42 @@ export class DatabaseStorage implements IStorage {
 
   async sendSurveyToBooking(bookingId: number): Promise<any> {
     if (!this.db) throw new Error("Database connection not available");
-    
+
     // Get booking details
     const booking = await this.db
       .select()
       .from(bookings)
       .where(eq(bookings.id, bookingId))
       .limit(1);
-    
+
     if (!booking.length) {
       throw new Error("Booking not found");
     }
 
     const bookingData = booking[0];
-    
+
     // Check if booking has either phone or email for survey delivery
-    const hasPhone = bookingData.phone && bookingData.phone.trim() !== '';
-    const hasEmail = bookingData.customerEmail && bookingData.customerEmail.trim() !== '';
-    
+    const hasPhone = bookingData.phone && bookingData.phone.trim() !== "";
+    const hasEmail =
+      bookingData.customerEmail && bookingData.customerEmail.trim() !== "";
+
     if (!hasPhone && !hasEmail) {
-      throw new Error("Booking does not have contact information (phone or email) - cannot send survey");
+      throw new Error(
+        "Booking does not have contact information (phone or email) - cannot send survey",
+      );
     }
-    
+
     // Generate response token
-    const responseToken = Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15);
-    
+    const responseToken =
+      Math.random().toString(36).substring(2, 15) +
+      Math.random().toString(36).substring(2, 15);
+
     // Create survey URL
-    const surveyUrl = `${process.env.BASE_URL || 'http://localhost:5000'}/survey/${responseToken}`;
-    
+    const surveyUrl = `${process.env.BASE_URL || "http://localhost:5000"}/survey/${responseToken}`;
+
     let smsMessage = null;
-    let deliveryMethod = 'email';
-    
+    let deliveryMethod = "email";
+
     // Try SMS delivery if phone is available and SMS settings are enabled
     if (hasPhone) {
       try {
@@ -1783,10 +1853,13 @@ export class DatabaseStorage implements IStorage {
           )
           .limit(1);
 
-        if (smsSettings.length > 0 && smsSettings[0].satisfactionSurveyEnabled) {
+        if (
+          smsSettings.length > 0 &&
+          smsSettings[0].satisfactionSurveyEnabled
+        ) {
           const surveySettings = smsSettings[0];
-          const message = `${surveySettings.surveyMessage || 'Thank you for visiting us! Please share your experience:'} ${surveyUrl}`;
-          
+          const message = `${surveySettings.surveyMessage || "Thank you for visiting us! Please share your experience:"} ${surveyUrl}`;
+
           smsMessage = await this.createSmsMessage(
             bookingData.restaurantId,
             bookingData.tenantId,
@@ -1796,12 +1869,12 @@ export class DatabaseStorage implements IStorage {
               message,
               type: "survey",
               cost: "0.08",
-            }
+            },
           );
-          deliveryMethod = 'sms';
+          deliveryMethod = "sms";
         }
       } catch (smsError) {
-        console.error('SMS survey failed, falling back to email:', smsError);
+        console.error("SMS survey failed, falling back to email:", smsError);
         // Continue with email delivery
       }
     }
@@ -1818,21 +1891,24 @@ export class DatabaseStorage implements IStorage {
         customerEmail: hasEmail ? bookingData.customerEmail : null,
         responseToken,
         responseMethod: deliveryMethod,
-      }
+      },
     );
 
-    return { 
-      smsMessage, 
-      responseToken, 
+    return {
+      smsMessage,
+      responseToken,
       surveyUrl,
       deliveryMethod,
-      message: deliveryMethod === 'sms' ? 'Survey sent via SMS' : 'Survey token created for email delivery'
+      message:
+        deliveryMethod === "sms"
+          ? "Survey sent via SMS"
+          : "Survey token created for email delivery",
     };
   }
 
   async updateSurveyResponse(token: string, updateData: any): Promise<any> {
     if (!this.db) throw new Error("Database connection not available");
-    
+
     const [updatedResponse] = await this.db
       .update(surveyResponses)
       .set({
@@ -1842,7 +1918,7 @@ export class DatabaseStorage implements IStorage {
       })
       .where(eq(surveyResponses.responseToken, token))
       .returning();
-    
+
     return updatedResponse;
   }
 
@@ -2174,7 +2250,7 @@ export class DatabaseStorage implements IStorage {
   // Webhook Logs methods
   async getWebhookLogs(tenantId?: number, limit: number = 100): Promise<any[]> {
     if (!this.db) throw new Error("Database connection not available");
-    
+
     try {
       let query = this.db
         .select()
@@ -2194,9 +2270,12 @@ export class DatabaseStorage implements IStorage {
     }
   }
 
-  async getWebhookLogsByEventType(eventType: string, tenantId?: number): Promise<any[]> {
+  async getWebhookLogsByEventType(
+    eventType: string,
+    tenantId?: number,
+  ): Promise<any[]> {
     if (!this.db) throw new Error("Database connection not available");
-    
+
     try {
       let query = this.db
         .select()
@@ -2208,8 +2287,8 @@ export class DatabaseStorage implements IStorage {
         query = query.where(
           and(
             eq(webhookLogs.eventType, eventType),
-            eq(webhookLogs.tenantId, tenantId)
-          )
+            eq(webhookLogs.tenantId, tenantId),
+          ),
         );
       }
 
@@ -2223,7 +2302,7 @@ export class DatabaseStorage implements IStorage {
 
   async createWebhookLog(logData: any): Promise<any> {
     if (!this.db) throw new Error("Database connection not available");
-    
+
     try {
       const [newLog] = await this.db
         .insert(webhookLogs)
@@ -2234,7 +2313,7 @@ export class DatabaseStorage implements IStorage {
           eventType: logData.eventType,
           source: logData.source,
           status: logData.status,
-          httpMethod: logData.httpMethod || 'POST',
+          httpMethod: logData.httpMethod || "POST",
           requestUrl: logData.requestUrl,
           requestHeaders: logData.requestHeaders || {},
           requestBody: logData.requestBody || {},
@@ -2245,7 +2324,7 @@ export class DatabaseStorage implements IStorage {
           metadata: logData.metadata || {},
         })
         .returning();
-      
+
       return newLog;
     } catch (error) {
       console.error("Error creating webhook log:", error);
@@ -2255,7 +2334,7 @@ export class DatabaseStorage implements IStorage {
 
   async getStripePaymentsByTenant(tenantId: number): Promise<any[]> {
     if (!this.db) throw new Error("Database connection not available");
-    
+
     try {
       let query = this.db
         .select()
@@ -2288,7 +2367,9 @@ export class DatabaseStorage implements IStorage {
     }
   }
 
-  async getStripePaymentByIntentId(paymentIntentId: string): Promise<any | undefined> {
+  async getStripePaymentByIntentId(
+    paymentIntentId: string,
+  ): Promise<any | undefined> {
     if (!this.db) throw new Error("Database connection not available");
     try {
       const [result] = await this.db
@@ -2303,7 +2384,10 @@ export class DatabaseStorage implements IStorage {
     }
   }
 
-  async updateStripePaymentByIntentId(paymentIntentId: string, updates: any): Promise<any | undefined> {
+  async updateStripePaymentByIntentId(
+    paymentIntentId: string,
+    updates: any,
+  ): Promise<any | undefined> {
     if (!this.db) throw new Error("Database connection not available");
     try {
       const [result] = await this.db
@@ -2527,7 +2611,7 @@ export class DatabaseStorage implements IStorage {
   // Invoice methods
   async createInvoice(invoice: any): Promise<any> {
     if (!this.db) throw new Error("Database connection not available");
-    
+
     const [result] = await this.db
       .insert(invoices)
       .values({
@@ -2540,7 +2624,7 @@ export class DatabaseStorage implements IStorage {
 
   async getInvoiceById(id: number): Promise<any | undefined> {
     if (!this.db) return undefined;
-    
+
     const [result] = await this.db
       .select()
       .from(invoices)
@@ -2551,7 +2635,7 @@ export class DatabaseStorage implements IStorage {
 
   async getInvoiceByBookingId(bookingId: number): Promise<any | undefined> {
     if (!this.db) return undefined;
-    
+
     const [result] = await this.db
       .select()
       .from(invoices)
@@ -2562,7 +2646,7 @@ export class DatabaseStorage implements IStorage {
 
   async getInvoicesByTenant(tenantId: number): Promise<any[]> {
     if (!this.db) return [];
-    
+
     return await this.db
       .select()
       .from(invoices)
@@ -2572,7 +2656,7 @@ export class DatabaseStorage implements IStorage {
 
   async getInvoicesByRestaurant(restaurantId: number): Promise<any[]> {
     if (!this.db) return [];
-    
+
     return await this.db
       .select()
       .from(invoices)
@@ -2582,7 +2666,7 @@ export class DatabaseStorage implements IStorage {
 
   async updateInvoice(id: number, updates: any): Promise<any | undefined> {
     if (!this.db) throw new Error("Database connection not available");
-    
+
     const [result] = await this.db
       .update(invoices)
       .set(updates)
@@ -2591,7 +2675,10 @@ export class DatabaseStorage implements IStorage {
     return result;
   }
 
-  async getPaymentSetupByRestaurant(restaurantId: number, tenantId: number): Promise<any> {
+  async getPaymentSetupByRestaurant(
+    restaurantId: number,
+    tenantId: number,
+  ): Promise<any> {
     if (!this.db) throw new Error("Database connection not available");
     const result = await this.db
       .select()
@@ -2599,8 +2686,8 @@ export class DatabaseStorage implements IStorage {
       .where(
         and(
           eq(paymentSetups.restaurantId, restaurantId),
-          eq(paymentSetups.tenantId, tenantId)
-        )
+          eq(paymentSetups.tenantId, tenantId),
+        ),
       )
       .orderBy(desc(paymentSetups.createdAt))
       .limit(1);

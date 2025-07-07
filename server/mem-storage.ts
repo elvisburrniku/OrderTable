@@ -383,9 +383,7 @@ export class MemoryStorage implements IStorage {
     return this.subscriptionPlans.find((p) => p.id === id);
   }
 
-  async getSubscriptionPlanById(
-    id: number,
-  ): Promise<SubscriptionPlan | undefined> {
+  async getSubscriptionPlanById(id: number): Promise<SubscriptionPlan | undefined> {
     return this.subscriptionPlans.find((p) => p.id === id);
   }
 
