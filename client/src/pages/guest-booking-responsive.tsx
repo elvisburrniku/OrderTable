@@ -142,8 +142,14 @@ const PaymentForm = ({ onPaymentSuccess, onPaymentError, bookingData, paymentAmo
   };
 
   const getPaymentTypeTitle = () => {
+    const storedPaymentType = localStorage.getItem('payment_type');
+    const storedSetupType = localStorage.getItem('setup_type');
+    
+    if (storedSetupType === 'reserve') return 'Authorize Payment';
     if (paymentSetup?.type === 'deposit') return 'Complete Deposit Payment';
     if (paymentSetup?.type === 'prepayment') return 'Complete Prepayment';
+    if (paymentSetup?.type === 'reserve') return 'Authorize Payment';
+    if (paymentSetup?.type === 'no_show_fee') return 'Authorize No-Show Fee';
     if (paymentSetup?.type === 'reserve') return 'Pay Reservation Fee';
     if (paymentSetup?.type === 'no_show_fee') return 'Pay No-Show Fee';
     return 'Complete Payment';
@@ -487,7 +493,18 @@ export default function GuestBookingResponsive(props: any) {
       
       const data = await response.json();
       setClientSecret(data.clientSecret);
-      console.log('Payment intent created successfully');
+      
+      // Store payment type information for displaying appropriate messages
+      if (data.paymentType) {
+        localStorage.setItem('payment_type', data.paymentType);
+        localStorage.setItem('setup_type', data.setupType || 'immediate');
+      }
+      
+      console.log('Payment intent created successfully:', {
+        paymentType: data.paymentType,
+        setupType: data.setupType,
+        captureMethod: data.captureMethod
+      });
     } catch (error: any) {
       console.error('Error creating payment intent:', error);
       setPaymentError(error.message);
@@ -1770,7 +1787,10 @@ export default function GuestBookingResponsive(props: any) {
                     Complete Payment
                   </h2>
                   <p className="text-sm text-gray-600 mb-6">
-                    Secure your reservation with payment
+                    {localStorage.getItem('setup_type') === 'reserve' 
+                      ? 'We will reserve the amount on your card but won\'t charge you until your visit'
+                      : 'Secure your reservation with payment'
+                    }
                   </p>
                 </div>
 
