@@ -329,14 +329,14 @@ export async function handleStripeWebhook(
         if (paymentIntent.metadata?.bookingId && 
             paymentIntent.metadata.bookingId !== "guest_booking") {
           const bookingId = parseInt(paymentIntent.metadata.bookingId);
-          
+
           // Check if bookingId is valid before proceeding
           if (isNaN(bookingId)) {
             console.error(`Invalid booking ID in payment metadata: ${paymentIntent.metadata.bookingId}`);
             console.log("Skipping regular booking processing due to invalid booking ID");
             break;
           }
-          
+
           console.log(`Processing payment for booking ID: ${bookingId}`);
 
           const booking = await storage.getBookingById(bookingId);
@@ -345,11 +345,12 @@ export async function handleStripeWebhook(
           );
 
           if (booking) {
-            // Update booking payment status and booking status in one call
+            // Update booking with payment information and disable requiresPayment
             const updateData: any = {
               paymentStatus: "paid",
               paymentIntentId: paymentIntent.id,
               paymentPaidAt: new Date(),
+              requiresPayment: false, // Disable payment requirement after successful payment
             };
 
             // Change booking status from waiting_payment to confirmed

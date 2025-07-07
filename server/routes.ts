@@ -2724,6 +2724,125 @@ export async function registerRoutes(app: Express): Promise<Server> {
     },
   );
 
+  // Create payment intent for existing booking (with duplicate prevention)
+  app.post(
+    "/api/tenants/:tenantId/restaurants/:restaurantId/bookings/:bookingId/payment-intent",
+    validateTenant,
+    async (req, res) => {
+      try {
+        const restaurantId = parseInt(req.params.restaurantId);
+        const tenantId = parseInt(req.params.tenantId);
+        const bookingId = parseInt(req.params.bookingId);
+
+        // Verify restaurant belongs to tenant
+        const restaurant = await storage.getRestaurantById(restaurantId);
+        if (!restaurant || restaurant.tenantId !== tenantId) {
+          return res.status(404).json({ message: "Restaurant not found" });
+        }
+
+        // Get the booking
+        const booking = await storage.getBookingById(bookingId);
+        if (!booking || booking.restaurantId !== restaurantId || booking.tenantId !== tenantId) {
+          return res.status(404).json({ message: "Booking not found" });
+        }
+
+        // Check if payment is already completed
+        if (booking.paymentStatus === "paid" || !booking.requiresPayment) {
+          return res.status(400).json({ 
+            message: "Payment already completed for this booking",
+            paymentStatus: booking.paymentStatus,
+            requiresPayment: booking.requiresPayment
+          });
+        }
+
+        // Check if there's already an active payment intent
+        if (booking.paymentIntentId) {
+          try {
+            // Check the status of existing payment intent with Stripe
+            const paymentIntentStatus = await withStripe(async (stripe) => {
+              const paymentIntent = await stripe.paymentIntents.retrieve(booking.paymentIntentId);
+              return paymentIntent.status;
+            });
+
+            if (paymentIntentStatus === "succeeded") {
+              return res.status(400).json({ 
+                message: "Payment already completed via existing payment intent",
+                paymentIntentId: booking.paymentIntentId
+              });
+            } else if (paymentIntentStatus === "requires_payment_method" || 
+                      paymentIntentStatus === "requires_confirmation") {
+              // Return existing payment intent if it's still active
+              const clientSecret = await withStripe(async (stripe) => {
+                const paymentIntent = await stripe.paymentIntents.retrieve(booking.paymentIntentId);
+                return paymentIntent.client_secret;
+              });
+
+              return res.json({
+                clientSecret,
+                paymentIntentId: booking.paymentIntentId,
+                amount: booking.paymentAmount,
+                message: "Using existing payment intent"
+              });
+            }
+          } catch (stripeError) {
+            console.error("Error checking existing payment intent:", stripeError);
+            // Continue to create new payment intent if the old one is invalid
+          }
+        }
+
+        // Get tenant for Stripe Connect account
+        const tenant = await storage.getTenantById(tenantId);
+        if (!tenant?.stripeConnectAccountId) {
+          return res.status(400).json({ 
+            message: "Restaurant payment processing not configured" 
+          });
+        }
+
+        // Create new payment intent
+        const paymentIntent = await withStripe(async (stripe) => {
+          return await stripe.paymentIntents.create({
+            amount: Math.round(booking.paymentAmount * 100), // Convert to cents
+            currency: "eur",
+            application_fee_amount: Math.round(booking.paymentAmount * 100 * 0.05), // 5% platform fee
+            transfer_data: {
+              destination: tenant.stripeConnectAccountId,
+            },
+            metadata: {
+              bookingId: booking.id.toString(),
+              tenantId: tenantId.toString(),
+              restaurantId: restaurantId.toString(),
+              customerEmail: booking.customerEmail,
+              customerName: booking.customerName,
+              type: "booking_payment"
+            },
+            description: `Payment for booking #${booking.id} - ${booking.customerName}`,
+          });
+        });
+
+        if (!paymentIntent) {
+          return res.status(500).json({ message: "Failed to create payment intent" });
+        }
+
+        // Update booking with new payment intent ID
+        await storage.updateBooking(bookingId, {
+          paymentIntentId: paymentIntent.id,
+          paymentStatus: "pending"
+        });
+
+        res.json({
+          clientSecret: paymentIntent.client_secret,
+          paymentIntentId: paymentIntent.id,
+          amount: booking.paymentAmount,
+          currency: "eur"
+        });
+
+      } catch (error) {
+        console.error("Error creating payment intent:", error);
+        res.status(500).json({ message: "Internal server error" });
+      }
+    },
+  );
+
   // Real-time table status route
   app.get(
     "/api/tenants/:tenantId/restaurants/:restaurantId/tables/real-time-status",
@@ -3422,6 +3541,98 @@ export async function registerRoutes(app: Express): Promise<Server> {
       } catch (error) {
         console.error("Error deleting waiting list entry:", error);
         res.status(400).json({ message: "Invalid request" });
+      }
+    },
+  );
+
+  // Create guest payment intent (with duplicate prevention)
+  app.post(
+    "/api/tenants/:tenantId/restaurants/:restaurantId/guest-payment-intent",
+    async (req, res) => {
+      try {
+        const restaurantId = parseInt(req.params.restaurantId);
+        const tenantId = parseInt(req.params.tenantId);
+        const { amount, currency = "eur", metadata } = req.body;
+
+        // Verify restaurant exists
+        const restaurant = await storage.getRestaurantById(restaurantId);
+        if (!restaurant || restaurant.tenantId !== tenantId) {
+          return res.status(404).json({ message: "Restaurant not found" });
+        }
+
+        // Get tenant for Stripe Connect account
+        const tenant = await storage.getTenantById(tenantId);
+        if (!tenant?.stripeConnectAccountId) {
+          return res.status(400).json({ 
+            message: "Restaurant payment processing not configured" 
+          });
+        }
+
+        // Check if there's already a recent booking with the same details that has been paid
+        if (metadata?.customerEmail && metadata?.bookingDate && metadata?.startTime) {
+          const { eq, and, gte } = await import("drizzle-orm");
+          const { bookings } = await import("../shared/schema");
+          
+          const bookingDate = new Date(metadata.bookingDate);
+          bookingDate.setHours(0, 0, 0, 0);
+
+          const recentBookings = await storage.db
+            .select()
+            .from(bookings)
+            .where(and(
+              eq(bookings.customerEmail, metadata.customerEmail),
+              eq(bookings.startTime, metadata.startTime),
+              gte(bookings.bookingDate, bookingDate),
+              eq(bookings.restaurantId, restaurantId),
+              eq(bookings.tenantId, tenantId)
+            ))
+            .limit(1);
+
+          if (recentBookings.length > 0) {
+            const existingBooking = recentBookings[0];
+            if (existingBooking.paymentStatus === "paid" || !existingBooking.requiresPayment) {
+              return res.status(400).json({
+                message: "A booking with the same details already exists and has been paid",
+                bookingId: existingBooking.id,
+                paymentStatus: existingBooking.paymentStatus
+              });
+            }
+          }
+        }
+
+        // Create payment intent
+        const paymentIntent = await withStripe(async (stripe) => {
+          return await stripe.paymentIntents.create({
+            amount: Math.round(amount * 100), // Convert to cents
+            currency: currency.toLowerCase(),
+            application_fee_amount: Math.round(amount * 100 * 0.05), // 5% platform fee
+            transfer_data: {
+              destination: tenant.stripeConnectAccountId,
+            },
+            metadata: {
+              ...metadata,
+              tenantId: tenantId.toString(),
+              restaurantId: restaurantId.toString(),
+              type: "guest_booking"
+            },
+            description: `Guest booking payment for ${restaurant.name}`,
+          });
+        });
+
+        if (!paymentIntent) {
+          return res.status(500).json({ message: "Failed to create payment intent" });
+        }
+
+        res.json({
+          clientSecret: paymentIntent.client_secret,
+          paymentIntentId: paymentIntent.id,
+          amount: amount,
+          currency: currency
+        });
+
+      } catch (error) {
+        console.error("Error creating guest payment intent:", error);
+        res.status(500).json({ message: "Internal server error" });
       }
     },
   );
