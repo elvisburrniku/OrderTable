@@ -329,15 +329,6 @@ app.post("/api/survey/:token/submit", async (req, res) => {
     console.log('Survey scheduler service not available:', error);
   }
 
-  // Initialize reservation scheduler for automatic payment capture
-  try {
-    const { reservationScheduler } = await import('./reservation-scheduler');
-    reservationScheduler.start();
-    console.log('💳 Reservation scheduler initialized and started');
-  } catch (error) {
-    console.log('Reservation scheduler not available:', error);
-  }
-
   // Only start services if using memory storage to avoid database connection errors
   if (storage.constructor.name === 'MemoryStorage') {
     console.log('Starting services with memory storage...');

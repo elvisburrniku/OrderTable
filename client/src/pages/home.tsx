@@ -48,62 +48,62 @@ import {
 import { Link } from "wouter";
 
 export default function Home() {
-  const { t } = useTranslations();
+  const t = useTranslations();
 
   const pricingPlans = [
     {
-      name: t("pricing.starter", "Starter"),
+      name: t.pricing.starter,
       price: "$0",
-      period: "forever", 
-      description: t("pricing.starterDesc", "Perfect for small restaurants getting started"),
+      period: "forever",
+      description: t.pricing.starterDesc,
       features: [
-        t("pricing.features.bookings50", "Up to 50 bookings per month"),
-        t("pricing.features.tableBasic", "Basic table management"),
-        t("pricing.features.emailNotifications", "Email notifications"),
-        t("pricing.features.guestForms", "Guest booking forms"),
-        t("pricing.features.analyticsBasic", "Basic analytics"),
-        t("pricing.features.communitySupport", "Community support")
+        t.pricing.features.bookings50,
+        t.pricing.features.tableBasic,
+        t.pricing.features.emailNotifications,
+        t.pricing.features.guestForms,
+        t.pricing.features.analyticsBasic,
+        t.pricing.features.communitySupport
       ],
-      buttonText: t("pricing.startFree", "Start Free"),
+      buttonText: t.pricing.startFree,
       buttonStyle: "outline",
       popular: false
     },
     {
-      name: t("pricing.professional", "Professional"),
+      name: t.pricing.professional,
       price: "$29",
       period: "per month",
-      description: t("pricing.professionalDesc", "Everything you need to run a successful restaurant"),
+      description: t.pricing.professionalDesc,
       features: [
-        t("pricing.features.bookingsUnlimited", "Unlimited bookings"),
-        t("pricing.features.tableAdvanced", "Advanced table management"),
-        t("pricing.features.smsEmail", "SMS & email notifications"),
-        t("pricing.features.qrFeedback", "QR code feedback system"),
-        t("pricing.features.analyticsAdvanced", "Advanced analytics & reports"),
-        t("pricing.features.kitchenDashboard", "Kitchen dashboard"),
-        t("pricing.features.multiLocation", "Multi-location support"),
-        t("pricing.features.prioritySupport", "Priority support"),
-        t("pricing.features.customIntegrations", "Custom integrations")
+        t.pricing.features.bookingsUnlimited,
+        t.pricing.features.tableAdvanced,
+        t.pricing.features.smsEmail,
+        t.pricing.features.qrFeedback,
+        t.pricing.features.analyticsAdvanced,
+        t.pricing.features.kitchenDashboard,
+        t.pricing.features.multiLocation,
+        t.pricing.features.prioritySupport,
+        t.pricing.features.customIntegrations
       ],
-      buttonText: t("pricing.startTrial", "Start Trial"),
+      buttonText: t.pricing.startTrial,
       buttonStyle: "default",
       popular: true
     },
     {
-      name: t("pricing.enterprise", "Enterprise"),
+      name: t.pricing.enterprise,
       price: "$99",
       period: "per month",
-      description: t("pricing.enterpriseDesc", "Advanced features for restaurant chains"),
+      description: t.pricing.enterpriseDesc,
       features: [
-        t("pricing.features.everythingPro", "Everything in Professional"),
-        t("pricing.features.whiteLabel", "White-label solution"),
-        t("pricing.features.advancedApi", "Advanced API access"),
-        t("pricing.features.customIntegrations", "Custom integrations"),
-        t("pricing.features.accountManager", "Dedicated account manager"),
-        t("pricing.features.phoneSupport", "24/7 phone support"),
-        t("pricing.features.customTraining", "Custom training sessions"),
-        t("pricing.features.slaGuarantee", "SLA guarantee")
+        t.pricing.features.everythingPro,
+        t.pricing.features.whiteLabel,
+        t.pricing.features.advancedApi,
+        t.pricing.features.customIntegrations,
+        t.pricing.features.accountManager,
+        t.pricing.features.phoneSupport,
+        t.pricing.features.customTraining,
+        t.pricing.features.slaGuarantee
       ],
-      buttonText: t("pricing.contactSales", "Contact Sales"),
+      buttonText: t.pricing.contactSales,
       buttonStyle: "outline",
       popular: false
     }
@@ -111,94 +111,69 @@ export default function Home() {
 
   const features = [
     {
-      category: t("features.bookingManagement", "Booking Management"),
+      category: t.features.bookingManagement,
       icon: Calendar,
       color: "from-blue-500 to-blue-600",
-      items: [
-        "Real-time availability checking",
-        "Smart table assignment", 
-        "Booking modifications & cancellations",
-        "Walk-in management"
-      ]
+      items: t.features.bookingFeatures
     },
     {
-      category: t("features.restaurantOperations", "Restaurant Operations"),
+      category: t.features.restaurantOperations,
       icon: Utensils,
       color: "from-green-500 to-green-600", 
-      items: [
-        "Multi-restaurant management",
-        "Table & room configuration",
-        "Capacity optimization"
-      ]
+      items: t.features.operationsFeatures
     },
     {
-      category: t("features.customerExperience", "Customer Experience"),
+      category: t.features.customerExperience,
       icon: Users,
       color: "from-purple-500 to-purple-600",
-      items: [
-        "Complete customer profiles",
-        "QR code feedback collection",
-        "Satisfaction surveys"
-      ]
+      items: t.features.customerFeatures
     },
     {
-      category: t("features.analyticsInsights", "Analytics & Insights"),
+      category: t.features.analyticsInsights,
       icon: BarChart3,
       color: "from-orange-500 to-orange-600",
-      items: [
-        "Booking trends & statistics",
-        "Table utilization heat maps",
-        "Revenue analytics"
-      ]
+      items: t.features.analyticsFeatures
     },
     {
-      category: t("features.kitchenOperations", "Kitchen Operations"),
+      category: t.features.kitchenOperations,
       icon: ChefHat,
       color: "from-red-500 to-red-600",
-      items: [
-        "Kitchen order tracking",
-        "Menu management system",
-        "Product organization"
-      ]
+      items: t.features.kitchenFeatures
     },
     {
-      category: t("features.integrations", "Integrations"),
+      category: t.features.integrations,
       icon: Link2,
       color: "from-indigo-500 to-indigo-600",
-      items: [
-        "Google Calendar sync",
-        "Stripe payment processing",
-        "Email service integration"
-      ]
+      items: t.features.integrationFeatures
     }
   ];
 
   const deviceShowcase = [
     {
-      device: t("devices.desktop", "Desktop"),
+      device: t.devices.desktop,
       icon: Monitor,
       image: "https://images.unsplash.com/photo-1551650975-87deedd944c3?ixlib=rb-4.0.3&auto=format&fit=crop&w=1200&h=800",
-      description: t("devices.desktopDesc", "Complete restaurant management dashboard")
+      description: t.devices.desktopDesc
     },
     {
-      device: t("devices.tablet", "Tablet"),
+      device: t.devices.tablet,
       icon: Tablet,
       image: "https://images.unsplash.com/photo-1559526324-4b87b5e36e44?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&h=600",
-      description: t("devices.tabletDesc", "Table-side booking and order management")
+      description: t.devices.tabletDesc
     },
     {
-      device: t("devices.mobile", "Mobile"),
+      device: t.devices.mobile,
       icon: Smartphone,
       image: "https://images.unsplash.com/photo-1512941937669-90a1b58e7e9c?ixlib=rb-4.0.3&auto=format&fit=crop&w=600&h=800",
-      description: t("devices.mobileDesc", "On-the-go access for staff and customers")
+      description: t.devices.mobileDesc
     }
   ];
 
   const stats = [
-    { number: "50+", label: t("stats.features", "Features Available"), icon: Target },
-    { number: "99.9%", label: t("stats.uptime", "Uptime Guarantee"), icon: Activity },
-    { number: "∞", label: t("stats.bookings", "Bookings Supported"), icon: Infinity },
-    { number: "24/7", label: t("stats.support", "Support Available"), icon: Clock }
+    { number: "50+", label: t.stats.features, icon: Target },
+    { number: "99.9%", label: t.stats.uptime, icon: Activity },
+    { number: "∞", label: t.stats.bookings, icon: Infinity },
+    { number: "24/7", label: t.stats.support, icon: Clock }
   ];
 
   return (
@@ -215,24 +190,24 @@ export default function Home() {
         <div className="relative max-w-7xl mx-auto">
           <div className="text-center">
             <Badge className="mb-6 bg-gradient-to-r from-blue-600 to-purple-600 text-white hover:from-blue-700 hover:to-purple-700 px-6 py-2 text-sm font-medium">
-              {t("hero.badge", "🚀 Complete Restaurant Management Platform")}
+              {t.hero.badge}
             </Badge>
             <h1 className="text-6xl md:text-8xl font-extrabold mb-6">
               <span className="bg-gradient-to-r from-gray-900 via-blue-800 to-purple-800 bg-clip-text text-transparent">
-                {t("hero.title", "ReadyTable")}
+                {t.hero.title}
               </span>
               <span className="block text-4xl md:text-5xl bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent mt-2">
-                {t("hero.subtitle", "Restaurant Revolution")}
+                {t.hero.subtitle}
               </span>
             </h1>
             <p className="text-2xl text-gray-700 mb-8 max-w-4xl mx-auto leading-relaxed font-light">
-              {t("hero.description", "Transform your restaurant with our comprehensive booking and management solution.")}
+              {t.hero.description}
               <span className="font-medium text-blue-600"> 30+ advanced features</span> designed for modern restaurants.
             </p>
             <div className="flex flex-col sm:flex-row gap-6 justify-center mb-12">
               <Link href="/login">
                 <Button size="lg" className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white px-8 py-4 text-lg font-semibold shadow-lg hover:shadow-xl transition-all duration-300">
-                  {t("hero.startTrial", "Start Free Trial")} <Sparkles className="ml-2 h-5 w-5" />
+                  {t.hero.startTrial} <Sparkles className="ml-2 h-5 w-5" />
                 </Button>
               </Link>
               <Button 
@@ -242,7 +217,7 @@ export default function Home() {
                 onClick={() => window.open('https://www.youtube.com/watch?v=dQw4w9WgXcQ', '_blank')}
               >
                 <Play className="mr-2 h-5 w-5 text-white group-hover:text-blue-600" />
-                {t("hero.watchDemo", "Watch Demo")}
+                {t.hero.watchDemo}
               </Button>
             </div>
             
@@ -252,15 +227,15 @@ export default function Home() {
             <div className="flex flex-wrap justify-center items-center gap-8 text-sm text-gray-500">
               <div className="flex items-center gap-2">
                 <Shield className="h-4 w-4 text-green-500" />
-                <span>{t("hero.enterpriseSecurity", "Enterprise Security")}</span>
+                <span>{t.hero.enterpriseSecurity}</span>
               </div>
               <div className="flex items-center gap-2">
                 <Clock className="h-4 w-4 text-blue-500" />
-                <span>{t("hero.uptime", "99.9% Uptime")}</span>
+                <span>{t.hero.uptime}</span>
               </div>
               <div className="flex items-center gap-2">
                 <Globe className="h-4 w-4 text-purple-500" />
-                <span>{t("hero.globalSupport", "Global Support")}</span>
+                <span>{t.hero.globalSupport}</span>
               </div>
             </div>
           </div>
@@ -272,10 +247,10 @@ export default function Home() {
         <div className="max-w-7xl mx-auto">
           <div className="text-center mb-16">
             <h2 className="text-4xl font-bold text-gray-900 mb-4">
-              {t("devices.title", "Works Perfectly on Every Device")}
+              {t.devices.title}
             </h2>
             <p className="text-xl text-gray-600 max-w-3xl mx-auto">
-              {t("devices.description", "Your restaurant management platform, available anywhere. Desktop, tablet, mobile - seamless experience across all devices.")}
+              {t.devices.description}
             </p>
           </div>
           
@@ -321,13 +296,13 @@ export default function Home() {
         <div className="max-w-7xl mx-auto">
           <div className="text-center mb-16">
             <Badge className="mb-4 bg-green-100 text-green-800 hover:bg-green-200">
-              {t("pricing.badge", "Simple, Transparent Pricing")}
+              {t.pricing.badge}
             </Badge>
             <h2 className="text-5xl font-bold text-gray-900 mb-6">
-              {t("pricing.title", "Choose Your Perfect Plan")}
+              {t.pricing.title}
             </h2>
             <p className="text-xl text-gray-600 max-w-3xl mx-auto">
-              {t("pricing.description", "Start free and scale as you grow. No hidden fees, no surprises. Cancel anytime.")}
+              {t.pricing.description}
             </p>
           </div>
           
@@ -342,7 +317,7 @@ export default function Home() {
                   <div className="absolute -top-4 left-1/2 transform -translate-x-1/2">
                     <Badge className="bg-gradient-to-r from-blue-600 to-purple-600 text-white px-6 py-2 text-sm font-semibold">
                       <Crown className="w-4 h-4 mr-1" />
-                      {t("pricing.mostPopular", "Most Popular")}
+                      {t.pricing.mostPopular}
                     </Badge>
                   </div>
                 )}
@@ -388,11 +363,11 @@ export default function Home() {
           
           <div className="text-center mt-16">
             <p className="text-gray-600 mb-4">
-              {t("pricing.customSolution", "Need a custom solution? We've got you covered.")}
+              {t.pricing.customSolution}
             </p>
             <Link href="/contact">
               <Button variant="outline" size="lg" className="border-2 border-gray-300 hover:border-blue-400">
-                {t("pricing.contactSalesTeam", "Contact Sales Team")}
+                {t.pricing.contactSalesTeam}
               </Button>
             </Link>
           </div>
@@ -404,10 +379,10 @@ export default function Home() {
         <div className="max-w-7xl mx-auto">
           <div className="text-center mb-20">
             <Badge className="mb-4 bg-purple-100 text-purple-800 hover:bg-purple-200">
-              {t("features.badge", "30+ Powerful Features")}
+              {t.features.badge}
             </Badge>
             <h2 className="text-5xl font-bold text-gray-900 mb-6">
-              {t("features.title", "Everything Your Restaurant Needs")}
+              {t.features.title}
             </h2>
             <p className="text-xl text-gray-600 max-w-4xl mx-auto">
               {t.features.description}
