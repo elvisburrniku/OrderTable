@@ -1,20 +1,20 @@
-import { useState, useEffect } from 'react';
-import { useAuth } from '@/lib/auth';
-import { useTenant } from '@/lib/tenant';
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { useToast } from '@/hooks/use-toast';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Switch } from '@/components/ui/switch';
-import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
-import { Separator } from '@/components/ui/separator';
-import { 
-  ChevronDown, 
-  ChevronRight, 
-  Settings, 
-  ExternalLink, 
-  Check, 
-  X, 
+import { useState, useEffect } from "react";
+import { useAuth } from "@/lib/auth";
+import { useTenant } from "@/lib/tenant";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { useToast } from "@/hooks/use-toast";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Switch } from "@/components/ui/switch";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import { Separator } from "@/components/ui/separator";
+import {
+  ChevronDown,
+  ChevronRight,
+  Settings,
+  ExternalLink,
+  Check,
+  X,
   Plug,
   Zap,
   Globe,
@@ -29,9 +29,9 @@ import {
   Users,
   Star,
   Lock,
-  RefreshCw
-} from 'lucide-react';
-import { motion, AnimatePresence } from 'framer-motion';
+  RefreshCw,
+} from "lucide-react";
+import { motion, AnimatePresence } from "framer-motion";
 
 interface Integration {
   id: string;
@@ -43,340 +43,352 @@ interface Integration {
   features: string[];
   price?: string;
   premium?: boolean;
-  status?: 'healthy' | 'warning' | 'error';
+  status?: "healthy" | "warning" | "error";
   lastSync?: string;
 }
 
 const integrations: Integration[] = [
   {
-    id: 'activecampaign',
-    name: 'ActiveCampaign',
-    description: 'Email marketing automation and customer experience platform',
-    icon: '🎯',
+    id: "activecampaign",
+    name: "ActiveCampaign",
+    description: "Email marketing automation and customer experience platform",
+    icon: "🎯",
     connected: false,
-    category: 'Marketing',
-    features: ['Email campaigns', 'Customer segmentation', 'Automated workflows'],
-    price: 'Free',
-    status: 'healthy'
+    category: "Marketing",
+    features: [
+      "Email campaigns",
+      "Customer segmentation",
+      "Automated workflows",
+    ],
+    price: "Free",
+    status: "healthy",
   },
   {
-    id: 'google',
-    name: 'Google',
-    description: 'Google Business Profile and Analytics integration',
-    icon: '🔍',
+    id: "google",
+    name: "Google",
+    description: "Google Business Profile and Analytics integration",
+    icon: "🔍",
     connected: true,
-    category: 'Analytics',
-    features: ['Business listings', 'Analytics tracking', 'Maps integration'],
-    price: 'Free',
-    status: 'healthy',
-    lastSync: '2 minutes ago'
+    category: "Analytics",
+    features: ["Business listings", "Analytics tracking", "Maps integration"],
+    price: "Free",
+    status: "healthy",
+    lastSync: "2 minutes ago",
   },
   {
-    id: 'klaviyo',
-    name: 'Klaviyo',
-    description: 'Email and SMS marketing platform for restaurants',
-    icon: '📧',
+    id: "klaviyo",
+    name: "Klaviyo",
+    description: "Email and SMS marketing platform for restaurants",
+    icon: "📧",
     connected: false,
-    category: 'Marketing',
-    features: ['Email marketing', 'SMS campaigns', 'Customer insights'],
-    price: '$20/month',
+    category: "Marketing",
+    features: ["Email marketing", "SMS campaigns", "Customer insights"],
+    price: "$20/month",
     premium: true,
-    status: 'warning'
+    status: "warning",
   },
   {
-    id: 'mailchimp',
-    name: 'Mailchimp',
-    description: 'All-in-one marketing platform for email campaigns',
-    icon: '🐵',
+    id: "mailchimp",
+    name: "Mailchimp",
+    description: "All-in-one marketing platform for email campaigns",
+    icon: "🐵",
     connected: false,
-    category: 'Marketing',
-    features: ['Email templates', 'Audience management', 'Campaign analytics'],
-    price: 'Free tier available',
-    status: 'healthy'
+    category: "Marketing",
+    features: ["Email templates", "Audience management", "Campaign analytics"],
+    price: "Free tier available",
+    status: "healthy",
   },
   {
-    id: 'meta',
-    name: 'Meta (Facebook & Instagram)',
-    description: 'Social media marketing and advertising platform',
-    icon: '📱',
+    id: "meta",
+    name: "Meta (Facebook & Instagram)",
+    description: "Social media marketing and advertising platform",
+    icon: "📱",
     connected: false,
-    category: 'Social Media',
-    features: ['Social posting', 'Ad management', 'Audience targeting'],
-    price: 'Free',
-    status: 'healthy'
+    category: "Social Media",
+    features: ["Social posting", "Ad management", "Audience targeting"],
+    price: "Free",
+    status: "healthy",
   },
   {
-    id: 'stripe',
-    name: 'Stripe',
-    description: 'Payment processing and financial services',
-    icon: '💳',
+    id: "stripe",
+    name: "Stripe",
+    description: "Payment processing and financial services",
+    icon: "💳",
     connected: true,
-    category: 'Payments',
-    features: ['Payment processing', 'Subscription billing', 'Financial reporting'],
-    price: '2.9% + 30¢',
-    status: 'healthy',
-    lastSync: '5 minutes ago'
+    category: "Payments",
+    features: [
+      "Payment processing",
+      "Subscription billing",
+      "Financial reporting",
+    ],
+    price: "2.9% + 30¢",
+    status: "healthy",
+    lastSync: "5 minutes ago",
   },
   {
-    id: 'whatsapp',
-    name: 'WhatsApp Business',
-    description: 'Customer communication via WhatsApp',
-    icon: '💬',
+    id: "whatsapp",
+    name: "WhatsApp Business",
+    description: "Customer communication via WhatsApp",
+    icon: "💬",
     connected: false,
-    category: 'Communication',
-    features: ['Direct messaging', 'Booking confirmations', 'Customer support'],
-    price: 'Free',
+    category: "Communication",
+    features: ["Direct messaging", "Booking confirmations", "Customer support"],
+    price: "Free",
     premium: true,
-    status: 'healthy'
+    status: "healthy",
   },
   {
-    id: 'twilio',
-    name: 'Twilio',
-    description: 'SMS and voice communication platform',
-    icon: '📞',
+    id: "twilio",
+    name: "Twilio",
+    description: "SMS and voice communication platform",
+    icon: "📞",
     connected: false,
-    category: 'Communication',
-    features: ['SMS notifications', 'Voice calls', 'Two-way messaging'],
-    price: 'Pay per use',
-    status: 'healthy'
+    category: "Communication",
+    features: ["SMS notifications", "Voice calls", "Two-way messaging"],
+    price: "Pay per use",
+    status: "healthy",
   },
   {
-    id: 'slack',
-    name: 'Slack',
-    description: 'Team collaboration and notification platform',
-    icon: '💬',
+    id: "slack",
+    name: "Slack",
+    description: "Team collaboration and notification platform",
+    icon: "💬",
     connected: false,
-    category: 'Communication',
-    features: ['Team alerts', 'Booking notifications', 'Staff coordination'],
-    price: 'Free',
-    status: 'healthy'
+    category: "Communication",
+    features: ["Team alerts", "Booking notifications", "Staff coordination"],
+    price: "Free",
+    status: "healthy",
   },
   {
-    id: 'michelin',
-    name: 'Michelin Guide',
-    description: 'Premium restaurant listing and recognition platform',
-    icon: '⭐',
+    id: "michelin",
+    name: "Michelin Guide",
+    description: "Premium restaurant listing and recognition platform",
+    icon: "⭐",
     connected: false,
-    category: 'Recognition',
-    features: ['Guide listing', 'Star ratings', 'Premium visibility'],
-    price: 'Enterprise',
+    category: "Recognition",
+    features: ["Guide listing", "Star ratings", "Premium visibility"],
+    price: "Enterprise",
     premium: true,
-    status: 'healthy'
+    status: "healthy",
   },
   {
-    id: 'tripadvisor',
-    name: 'TripAdvisor',
-    description: 'World\'s largest travel platform for reviews and bookings',
-    icon: '🦉',
+    id: "tripadvisor",
+    name: "TripAdvisor",
+    description: "World's largest travel platform for reviews and bookings",
+    icon: "🦉",
     connected: false,
-    category: 'Recognition',
-    features: ['Review management', 'Booking integration', 'Analytics dashboard'],
-    price: 'Free',
-    status: 'healthy'
+    category: "Recognition",
+    features: [
+      "Review management",
+      "Booking integration",
+      "Analytics dashboard",
+    ],
+    price: "Free",
+    status: "healthy",
+  },
+  // {
+  //   id: 'opentable',
+  //   name: 'OpenTable',
+  //   description: 'Leading restaurant reservation platform',
+  //   icon: '🍽️',
+  //   connected: false,
+  //   category: 'Booking Platforms',
+  //   features: ['Reservation sync', 'Guest management', 'Points program'],
+  //   price: '$299/month',
+  //   premium: true,
+  //   status: 'healthy'
+  // },
+  // {
+  //   id: 'resy',
+  //   name: 'Resy',
+  //   description: 'Modern reservation platform for restaurants',
+  //   icon: '📅',
+  //   connected: false,
+  //   category: 'Booking Platforms',
+  //   features: ['Waitlist management', 'Table optimization', 'Guest insights'],
+  //   price: '$249/month',
+  //   premium: true,
+  //   status: 'healthy'
+  // },
+  {
+    id: "yelp",
+    name: "Yelp for Business",
+    description: "Local business reviews and discovery platform",
+    icon: "⭐",
+    connected: false,
+    category: "Recognition",
+    features: ["Review monitoring", "Response management", "Analytics"],
+    price: "Free tier available",
+    status: "healthy",
   },
   {
-    id: 'opentable',
-    name: 'OpenTable',
-    description: 'Leading restaurant reservation platform',
-    icon: '🍽️',
+    id: "square",
+    name: "Square",
+    description: "All-in-one payment and POS system",
+    icon: "◼️",
     connected: false,
-    category: 'Booking Platforms',
-    features: ['Reservation sync', 'Guest management', 'Points program'],
-    price: '$299/month',
+    category: "Payments",
+    features: ["POS integration", "Online payments", "Inventory sync"],
+    price: "2.6% + 10¢",
+    status: "healthy",
+  },
+  {
+    id: "toast",
+    name: "Toast POS",
+    description: "Restaurant-specific POS and management system",
+    icon: "🍞",
+    connected: false,
+    category: "POS Systems",
+    features: ["Order management", "Kitchen display", "Analytics"],
+    price: "Custom pricing",
     premium: true,
-    status: 'healthy'
+    status: "healthy",
   },
   {
-    id: 'resy',
-    name: 'Resy',
-    description: 'Modern reservation platform for restaurants',
-    icon: '📅',
+    id: "doordash",
+    name: "DoorDash",
+    description: "Food delivery and pickup platform",
+    icon: "🚗",
     connected: false,
-    category: 'Booking Platforms',
-    features: ['Waitlist management', 'Table optimization', 'Guest insights'],
-    price: '$249/month',
+    category: "Delivery",
+    features: ["Delivery integration", "Pickup orders", "Menu sync"],
+    price: "15-30% commission",
+    status: "healthy",
+  },
+  {
+    id: "ubereats",
+    name: "Uber Eats",
+    description: "Global food delivery marketplace",
+    icon: "🍔",
+    connected: false,
+    category: "Delivery",
+    features: ["Delivery orders", "Real-time tracking", "Promotions"],
+    price: "15-30% commission",
+    status: "healthy",
+  },
+  {
+    id: "grubhub",
+    name: "Grubhub",
+    description: "Online food ordering and delivery platform",
+    icon: "🥡",
+    connected: false,
+    category: "Delivery",
+    features: ["Order management", "Marketing tools", "Analytics"],
+    price: "15-30% commission",
+    status: "healthy",
+  },
+  {
+    id: "salesforce",
+    name: "Salesforce CRM",
+    description: "Customer relationship management platform",
+    icon: "☁️",
+    connected: false,
+    category: "CRM",
+    features: ["Customer profiles", "Marketing automation", "Analytics"],
+    price: "$25/user/month",
     premium: true,
-    status: 'healthy'
+    status: "healthy",
   },
   {
-    id: 'yelp',
-    name: 'Yelp for Business',
-    description: 'Local business reviews and discovery platform',
-    icon: '⭐',
+    id: "hubspot",
+    name: "HubSpot",
+    description: "All-in-one CRM and marketing platform",
+    icon: "🔧",
     connected: false,
-    category: 'Recognition',
-    features: ['Review monitoring', 'Response management', 'Analytics'],
-    price: 'Free tier available',
-    status: 'healthy'
+    category: "CRM",
+    features: ["Contact management", "Email marketing", "Analytics"],
+    price: "Free tier available",
+    status: "healthy",
   },
   {
-    id: 'square',
-    name: 'Square',
-    description: 'All-in-one payment and POS system',
-    icon: '◼️',
+    id: "quickbooks",
+    name: "QuickBooks",
+    description: "Accounting and financial management software",
+    icon: "💼",
     connected: false,
-    category: 'Payments',
-    features: ['POS integration', 'Online payments', 'Inventory sync'],
-    price: '2.6% + 10¢',
-    status: 'healthy'
+    category: "Accounting",
+    features: ["Invoice sync", "Expense tracking", "Financial reports"],
+    price: "$25/month",
+    status: "healthy",
   },
   {
-    id: 'toast',
-    name: 'Toast POS',
-    description: 'Restaurant-specific POS and management system',
-    icon: '🍞',
+    id: "xero",
+    name: "Xero",
+    description: "Cloud-based accounting software",
+    icon: "📊",
     connected: false,
-    category: 'POS Systems',
-    features: ['Order management', 'Kitchen display', 'Analytics'],
-    price: 'Custom pricing',
+    category: "Accounting",
+    features: ["Bookkeeping", "Payroll", "Financial reporting"],
+    price: "$13/month",
+    status: "healthy",
+  },
+  {
+    id: "spotify",
+    name: "Spotify for Business",
+    description: "Background music for restaurants",
+    icon: "🎵",
+    connected: false,
+    category: "Entertainment",
+    features: ["Licensed music", "Playlist curation", "Scheduling"],
+    price: "$26.99/month",
+    status: "healthy",
+  },
+  {
+    id: "zoom",
+    name: "Zoom Events",
+    description: "Virtual events and private dining",
+    icon: "📹",
+    connected: false,
+    category: "Communication",
+    features: ["Virtual events", "Webinars", "Recording"],
+    price: "$79/month",
+    status: "healthy",
+  },
+  {
+    id: "calendly",
+    name: "Calendly",
+    description: "Automated scheduling for events and consultations",
+    icon: "📆",
+    connected: false,
+    category: "Scheduling",
+    features: ["Event scheduling", "Calendar sync", "Reminders"],
+    price: "Free tier available",
+    status: "healthy",
+  },
+  {
+    id: "googleanalytics",
+    name: "Google Analytics",
+    description: "Website traffic and conversion tracking",
+    icon: "📈",
+    connected: false,
+    category: "Analytics",
+    features: ["Traffic analysis", "Conversion tracking", "Custom reports"],
+    price: "Free",
+    status: "healthy",
+  },
+  {
+    id: "mixpanel",
+    name: "Mixpanel",
+    description: "Product analytics for user behavior",
+    icon: "📊",
+    connected: false,
+    category: "Analytics",
+    features: ["Event tracking", "User analytics", "Funnel analysis"],
+    price: "Free tier available",
+    status: "healthy",
+  },
+  {
+    id: "segment",
+    name: "Segment",
+    description: "Customer data platform",
+    icon: "🔄",
+    connected: false,
+    category: "Analytics",
+    features: ["Data collection", "Integration hub", "Customer profiles"],
+    price: "Free tier available",
     premium: true,
-    status: 'healthy'
+    status: "healthy",
   },
-  {
-    id: 'doordash',
-    name: 'DoorDash',
-    description: 'Food delivery and pickup platform',
-    icon: '🚗',
-    connected: false,
-    category: 'Delivery',
-    features: ['Delivery integration', 'Pickup orders', 'Menu sync'],
-    price: '15-30% commission',
-    status: 'healthy'
-  },
-  {
-    id: 'ubereats',
-    name: 'Uber Eats',
-    description: 'Global food delivery marketplace',
-    icon: '🍔',
-    connected: false,
-    category: 'Delivery',
-    features: ['Delivery orders', 'Real-time tracking', 'Promotions'],
-    price: '15-30% commission',
-    status: 'healthy'
-  },
-  {
-    id: 'grubhub',
-    name: 'Grubhub',
-    description: 'Online food ordering and delivery platform',
-    icon: '🥡',
-    connected: false,
-    category: 'Delivery',
-    features: ['Order management', 'Marketing tools', 'Analytics'],
-    price: '15-30% commission',
-    status: 'healthy'
-  },
-  {
-    id: 'salesforce',
-    name: 'Salesforce CRM',
-    description: 'Customer relationship management platform',
-    icon: '☁️',
-    connected: false,
-    category: 'CRM',
-    features: ['Customer profiles', 'Marketing automation', 'Analytics'],
-    price: '$25/user/month',
-    premium: true,
-    status: 'healthy'
-  },
-  {
-    id: 'hubspot',
-    name: 'HubSpot',
-    description: 'All-in-one CRM and marketing platform',
-    icon: '🔧',
-    connected: false,
-    category: 'CRM',
-    features: ['Contact management', 'Email marketing', 'Analytics'],
-    price: 'Free tier available',
-    status: 'healthy'
-  },
-  {
-    id: 'quickbooks',
-    name: 'QuickBooks',
-    description: 'Accounting and financial management software',
-    icon: '💼',
-    connected: false,
-    category: 'Accounting',
-    features: ['Invoice sync', 'Expense tracking', 'Financial reports'],
-    price: '$25/month',
-    status: 'healthy'
-  },
-  {
-    id: 'xero',
-    name: 'Xero',
-    description: 'Cloud-based accounting software',
-    icon: '📊',
-    connected: false,
-    category: 'Accounting',
-    features: ['Bookkeeping', 'Payroll', 'Financial reporting'],
-    price: '$13/month',
-    status: 'healthy'
-  },
-  {
-    id: 'spotify',
-    name: 'Spotify for Business',
-    description: 'Background music for restaurants',
-    icon: '🎵',
-    connected: false,
-    category: 'Entertainment',
-    features: ['Licensed music', 'Playlist curation', 'Scheduling'],
-    price: '$26.99/month',
-    status: 'healthy'
-  },
-  {
-    id: 'zoom',
-    name: 'Zoom Events',
-    description: 'Virtual events and private dining',
-    icon: '📹',
-    connected: false,
-    category: 'Communication',
-    features: ['Virtual events', 'Webinars', 'Recording'],
-    price: '$79/month',
-    status: 'healthy'
-  },
-  {
-    id: 'calendly',
-    name: 'Calendly',
-    description: 'Automated scheduling for events and consultations',
-    icon: '📆',
-    connected: false,
-    category: 'Scheduling',
-    features: ['Event scheduling', 'Calendar sync', 'Reminders'],
-    price: 'Free tier available',
-    status: 'healthy'
-  },
-  {
-    id: 'googleanalytics',
-    name: 'Google Analytics',
-    description: 'Website traffic and conversion tracking',
-    icon: '📈',
-    connected: false,
-    category: 'Analytics',
-    features: ['Traffic analysis', 'Conversion tracking', 'Custom reports'],
-    price: 'Free',
-    status: 'healthy'
-  },
-  {
-    id: 'mixpanel',
-    name: 'Mixpanel',
-    description: 'Product analytics for user behavior',
-    icon: '📊',
-    connected: false,
-    category: 'Analytics',
-    features: ['Event tracking', 'User analytics', 'Funnel analysis'],
-    price: 'Free tier available',
-    status: 'healthy'
-  },
-  {
-    id: 'segment',
-    name: 'Segment',
-    description: 'Customer data platform',
-    icon: '🔄',
-    connected: false,
-    category: 'Analytics',
-    features: ['Data collection', 'Integration hub', 'Customer profiles'],
-    price: 'Free tier available',
-    premium: true,
-    status: 'healthy'
-  }
 ];
 
 export default function Integrations() {
@@ -384,12 +396,20 @@ export default function Integrations() {
   const { tenant } = useTenant();
   const { toast } = useToast();
   const queryClient = useQueryClient();
-  const [expandedCategory, setExpandedCategory] = useState<string | null>('Marketing');
-  const [searchTerm, setSearchTerm] = useState('');
+  const [expandedCategory, setExpandedCategory] = useState<string | null>(
+    "Marketing",
+  );
+  const [searchTerm, setSearchTerm] = useState("");
 
   // Fetch integration configurations from database
-  const { data: savedConfigurations = [], isLoading, error } = useQuery({
-    queryKey: [`/api/tenants/${tenant?.id}/restaurants/${restaurant?.id}/integrations`],
+  const {
+    data: savedConfigurations = [],
+    isLoading,
+    error,
+  } = useQuery({
+    queryKey: [
+      `/api/tenants/${tenant?.id}/restaurants/${restaurant?.id}/integrations`,
+    ],
     enabled: !!(tenant?.id && restaurant?.id && user),
     retry: 3,
     staleTime: 30000, // Consider data fresh for 30 seconds
@@ -405,23 +425,25 @@ export default function Integrations() {
       const response = await fetch(
         `/api/tenants/${tenant?.id}/restaurants/${restaurant?.id}/integrations`,
         {
-          method: 'POST',
+          method: "POST",
           headers: {
-            'Content-Type': 'application/json',
+            "Content-Type": "application/json",
           },
           body: JSON.stringify(data),
-        }
+        },
       );
 
       if (!response.ok) {
-        throw new Error('Failed to save integration configuration');
+        throw new Error("Failed to save integration configuration");
       }
 
       return response.json();
     },
     onSuccess: () => {
       queryClient.invalidateQueries({
-        queryKey: [`/api/tenants/${tenant?.id}/restaurants/${restaurant?.id}/integrations`],
+        queryKey: [
+          `/api/tenants/${tenant?.id}/restaurants/${restaurant?.id}/integrations`,
+        ],
       });
       toast({
         title: "Integration updated",
@@ -429,7 +451,7 @@ export default function Integrations() {
       });
     },
     onError: (error) => {
-      console.error('Integration update error:', error);
+      console.error("Integration update error:", error);
       toast({
         title: "Error",
         description: "Failed to update integration settings. Please try again.",
@@ -439,16 +461,19 @@ export default function Integrations() {
   });
 
   // Create a map of saved configurations for quick lookup
-  const configMap = (savedConfigurations as any[]).reduce((acc: Record<string, any>, config: any) => {
-    acc[config.integrationId] = config;
-    return acc;
-  }, {});
+  const configMap = (savedConfigurations as any[]).reduce(
+    (acc: Record<string, any>, config: any) => {
+      acc[config.integrationId] = config;
+      return acc;
+    },
+    {},
+  );
 
   // Merge static integrations with saved configurations
-  const mergedIntegrations = integrations.map(integration => ({
+  const mergedIntegrations = integrations.map((integration) => ({
     ...integration,
     connected: configMap[integration.id]?.isEnabled || integration.connected,
-    configuration: configMap[integration.id]?.configuration || {}
+    configuration: configMap[integration.id]?.configuration || {},
   }));
 
   const toggleIntegration = (integrationId: string) => {
@@ -456,18 +481,18 @@ export default function Integrations() {
     saveConfigMutation.mutate({
       integrationId,
       isEnabled: !currentState,
-      configuration: configMap[integrationId]?.configuration || {}
+      configuration: configMap[integrationId]?.configuration || {},
     });
   };
 
   const toggleCategory = (category: string) => {
-    setExpandedCategory(prev => prev === category ? null : category);
+    setExpandedCategory((prev) => (prev === category ? null : category));
   };
 
   if (!user || !tenant || !restaurant) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50/30 to-purple-50/20 flex items-center justify-center">
-        <motion.div 
+        <motion.div
           className="bg-white rounded-xl p-6 shadow-xl"
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
@@ -484,49 +509,70 @@ export default function Integrations() {
     );
   }
 
-  const uniqueCategories = mergedIntegrations.map(int => int.category);
-  const categories = uniqueCategories.filter((category, index) => uniqueCategories.indexOf(category) === index);
+  const uniqueCategories = mergedIntegrations.map((int) => int.category);
+  const categories = uniqueCategories.filter(
+    (category, index) => uniqueCategories.indexOf(category) === index,
+  );
 
   const getCategoryIcon = (category: string) => {
     switch (category) {
-      case 'Marketing': return Megaphone;
-      case 'Analytics': return BarChart3;
-      case 'Social Media': return Smartphone;
-      case 'Payments': return Shield;
-      case 'Communication': return Mail;
-      case 'Recognition': return Star;
-      case 'Booking Platforms': return Zap;
-      case 'POS Systems': return Activity;
-      case 'Delivery': return Globe;
-      case 'CRM': return Users;
-      case 'Accounting': return BarChart3;
-      case 'Entertainment': return Sparkles;
-      case 'Scheduling': return RefreshCw;
-      default: return Layers;
+      case "Marketing":
+        return Megaphone;
+      case "Analytics":
+        return BarChart3;
+      case "Social Media":
+        return Smartphone;
+      case "Payments":
+        return Shield;
+      case "Communication":
+        return Mail;
+      case "Recognition":
+        return Star;
+      case "Booking Platforms":
+        return Zap;
+      case "POS Systems":
+        return Activity;
+      case "Delivery":
+        return Globe;
+      case "CRM":
+        return Users;
+      case "Accounting":
+        return BarChart3;
+      case "Entertainment":
+        return Sparkles;
+      case "Scheduling":
+        return RefreshCw;
+      default:
+        return Layers;
     }
   };
 
   const getStatusColor = (status: string) => {
     switch (status) {
-      case 'healthy': return 'text-green-500';
-      case 'warning': return 'text-yellow-500';
-      case 'error': return 'text-red-500';
-      default: return 'text-gray-500';
+      case "healthy":
+        return "text-green-500";
+      case "warning":
+        return "text-yellow-500";
+      case "error":
+        return "text-red-500";
+      default:
+        return "text-gray-500";
     }
   };
 
-  const filteredIntegrations = mergedIntegrations.filter(integration =>
-    integration.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    integration.description.toLowerCase().includes(searchTerm.toLowerCase())
+  const filteredIntegrations = mergedIntegrations.filter(
+    (integration) =>
+      integration.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      integration.description.toLowerCase().includes(searchTerm.toLowerCase()),
   );
 
-  const connectedCount = mergedIntegrations.filter(i => i.connected).length;
+  const connectedCount = mergedIntegrations.filter((i) => i.connected).length;
   const totalCount = mergedIntegrations.length;
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50/30 to-purple-50/20">
       {/* Premium Header */}
-      <motion.div 
+      <motion.div
         className="relative overflow-hidden bg-white/40 backdrop-blur-md border-b border-slate-200/60"
         initial={{ opacity: 0, y: -20 }}
         animate={{ opacity: 1, y: 0 }}
@@ -537,21 +583,21 @@ export default function Integrations() {
           <div className="max-w-6xl mx-auto">
             <div className="flex items-center justify-between">
               <div className="space-y-2">
-                <motion.h1 
+                <motion.h1
                   className="text-4xl font-bold tracking-tight flex items-center space-x-4"
                   initial={{ opacity: 0, x: -20 }}
                   animate={{ opacity: 1, x: 0 }}
                   transition={{ delay: 0.2, duration: 0.6 }}
                 >
                   <motion.div
-                    animate={{ 
+                    animate={{
                       rotate: [0, 360],
-                      scale: [1, 1.1, 1]
+                      scale: [1, 1.1, 1],
                     }}
-                    transition={{ 
+                    transition={{
                       duration: 3,
                       repeat: Infinity,
-                      ease: "easeInOut"
+                      ease: "easeInOut",
                     }}
                   >
                     <Plug className="w-10 h-10 text-blue-600" />
@@ -560,18 +606,19 @@ export default function Integrations() {
                     Integrations Hub
                   </span>
                 </motion.h1>
-                <motion.p 
+                <motion.p
                   className="text-slate-600 text-lg"
                   initial={{ opacity: 0 }}
                   animate={{ opacity: 1 }}
                   transition={{ delay: 0.4, duration: 0.6 }}
                 >
-                  Connect your restaurant with powerful third-party services to enhance operations
+                  Connect your restaurant with powerful third-party services to
+                  enhance operations
                 </motion.p>
               </div>
 
               {/* Connection Status */}
-              <motion.div 
+              <motion.div
                 className="flex items-center space-x-6"
                 initial={{ opacity: 0, x: 20 }}
                 animate={{ opacity: 1, x: 0 }}
@@ -586,7 +633,9 @@ export default function Integrations() {
                       <Activity className="w-5 h-5 text-green-500" />
                     </motion.div>
                     <div className="text-sm">
-                      <p className="font-medium text-slate-700">{connectedCount} Connected</p>
+                      <p className="font-medium text-slate-700">
+                        {connectedCount} Connected
+                      </p>
                       <p className="text-slate-500">{totalCount} Available</p>
                     </div>
                   </div>
@@ -636,9 +685,11 @@ export default function Integrations() {
             {categories.map((category, categoryIndex) => {
               const CategoryIcon = getCategoryIcon(category);
               const categoryIntegrations = filteredIntegrations.filter(
-                integration => integration.category === category
+                (integration) => integration.category === category,
               );
-              const connectedInCategory = categoryIntegrations.filter(i => i.connected).length;
+              const connectedInCategory = categoryIntegrations.filter(
+                (i) => i.connected,
+              ).length;
               const isExpanded = expandedCategory === category;
 
               return (
@@ -650,11 +701,13 @@ export default function Integrations() {
                 >
                   <Card className="bg-white/60 backdrop-blur-md border border-slate-200 shadow-lg hover:shadow-xl transition-all duration-300 overflow-hidden">
                     <motion.div
-                      whileHover={{ backgroundColor: "rgba(248, 250, 252, 0.8)" }}
+                      whileHover={{
+                        backgroundColor: "rgba(248, 250, 252, 0.8)",
+                      }}
                       transition={{ duration: 0.2 }}
                     >
-                      <CardHeader 
-                        className="cursor-pointer" 
+                      <CardHeader
+                        className="cursor-pointer"
                         onClick={() => toggleCategory(category)}
                       >
                         <div className="flex items-center justify-between">
@@ -671,14 +724,23 @@ export default function Integrations() {
                                 {category}
                               </CardTitle>
                               <p className="text-sm text-slate-600 mt-1">
-                                {connectedInCategory} of {categoryIntegrations.length} connected
+                                {connectedInCategory} of{" "}
+                                {categoryIntegrations.length} connected
                               </p>
                             </div>
                           </div>
                           <div className="flex items-center space-x-3">
-                            <Badge 
-                              variant={connectedInCategory > 0 ? "default" : "secondary"}
-                              className={connectedInCategory > 0 ? "bg-green-100 text-green-800" : ""}
+                            <Badge
+                              variant={
+                                connectedInCategory > 0
+                                  ? "default"
+                                  : "secondary"
+                              }
+                              className={
+                                connectedInCategory > 0
+                                  ? "bg-green-100 text-green-800"
+                                  : ""
+                              }
                             >
                               {categoryIntegrations.length} services
                             </Badge>
@@ -703,131 +765,172 @@ export default function Integrations() {
                         >
                           <CardContent className="pt-0">
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                              {categoryIntegrations.map((integration, index) => (
-                                <motion.div
-                                  key={integration.id}
-                                  initial={{ opacity: 0, x: -20 }}
-                                  animate={{ opacity: 1, x: 0 }}
-                                  transition={{ delay: index * 0.1, duration: 0.4 }}
-                                  whileHover={{ scale: 1.02, y: -2 }}
-                                  className="group"
-                                >
-                                  <div className="bg-white/80 backdrop-blur-sm border border-slate-200/60 rounded-xl p-5 hover:shadow-lg transition-all duration-300 relative overflow-hidden">
-                                    <div className="absolute inset-0 bg-gradient-to-br from-blue-50/20 to-purple-50/20 opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
-                                    
-                                    <div className="relative z-10">
-                                      <div className="flex items-start justify-between mb-3">
-                                        <div className="flex items-center space-x-3">
-                                          <motion.div 
-                                            className="w-12 h-12 bg-gradient-to-br from-slate-100 to-slate-200 rounded-xl flex items-center justify-center text-xl shadow-sm"
-                                            whileHover={{ rotate: 360 }}
-                                            transition={{ duration: 0.6 }}
-                                          >
-                                            {integration.icon}
-                                          </motion.div>
-                                          <div>
-                                            <div className="flex items-center space-x-2">
-                                              <h4 className="font-semibold text-slate-800 group-hover:text-blue-600 transition-colors">
-                                                {integration.name}
-                                              </h4>
-                                              {integration.premium && (
-                                                <Badge className="bg-gradient-to-r from-yellow-400 to-orange-500 text-white text-xs">
-                                                  <Star className="w-3 h-3 mr-1" />
-                                                  Premium
+                              {categoryIntegrations.map(
+                                (integration, index) => (
+                                  <motion.div
+                                    key={integration.id}
+                                    initial={{ opacity: 0, x: -20 }}
+                                    animate={{ opacity: 1, x: 0 }}
+                                    transition={{
+                                      delay: index * 0.1,
+                                      duration: 0.4,
+                                    }}
+                                    whileHover={{ scale: 1.02, y: -2 }}
+                                    className="group"
+                                  >
+                                    <div className="bg-white/80 backdrop-blur-sm border border-slate-200/60 rounded-xl p-5 hover:shadow-lg transition-all duration-300 relative overflow-hidden">
+                                      <div className="absolute inset-0 bg-gradient-to-br from-blue-50/20 to-purple-50/20 opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+
+                                      <div className="relative z-10">
+                                        <div className="flex items-start justify-between mb-3">
+                                          <div className="flex items-center space-x-3">
+                                            <motion.div
+                                              className="w-12 h-12 bg-gradient-to-br from-slate-100 to-slate-200 rounded-xl flex items-center justify-center text-xl shadow-sm"
+                                              whileHover={{ rotate: 360 }}
+                                              transition={{ duration: 0.6 }}
+                                            >
+                                              {integration.icon}
+                                            </motion.div>
+                                            <div>
+                                              <div className="flex items-center space-x-2">
+                                                <h4 className="font-semibold text-slate-800 group-hover:text-blue-600 transition-colors">
+                                                  {integration.name}
+                                                </h4>
+                                                {integration.premium && (
+                                                  <Badge className="bg-gradient-to-r from-yellow-400 to-orange-500 text-white text-xs">
+                                                    <Star className="w-3 h-3 mr-1" />
+                                                    Premium
+                                                  </Badge>
+                                                )}
+                                              </div>
+                                              {integration.price && (
+                                                <Badge
+                                                  variant="outline"
+                                                  className="text-xs mt-1"
+                                                >
+                                                  {integration.price}
                                                 </Badge>
                                               )}
                                             </div>
-                                            {integration.price && (
-                                              <Badge variant="outline" className="text-xs mt-1">
-                                                {integration.price}
-                                              </Badge>
+                                          </div>
+
+                                          <div className="flex items-center space-x-2">
+                                            {integration.connected && (
+                                              <motion.div
+                                                animate={{ scale: [1, 1.2, 1] }}
+                                                transition={{
+                                                  duration: 2,
+                                                  repeat: Infinity,
+                                                }}
+                                              >
+                                                <div
+                                                  className={`w-2 h-2 rounded-full ${
+                                                    integration.status ===
+                                                    "healthy"
+                                                      ? "bg-green-500"
+                                                      : integration.status ===
+                                                          "warning"
+                                                        ? "bg-yellow-500"
+                                                        : "bg-red-500"
+                                                  }`}
+                                                />
+                                              </motion.div>
+                                            )}
+                                            <Switch
+                                              checked={integration.connected}
+                                              onCheckedChange={() =>
+                                                toggleIntegration(
+                                                  integration.id,
+                                                )
+                                              }
+                                              disabled={
+                                                saveConfigMutation.isPending
+                                              }
+                                              className="data-[state=checked]:bg-gradient-to-r data-[state=checked]:from-green-500 data-[state=checked]:to-blue-500"
+                                            />
+                                            <motion.div
+                                              whileHover={{ scale: 1.1 }}
+                                              whileTap={{ scale: 0.9 }}
+                                            >
+                                              <Button
+                                                variant="ghost"
+                                                size="sm"
+                                                asChild
+                                              >
+                                                <a
+                                                  href={
+                                                    integration.id === "google"
+                                                      ? `/${tenant.id}/integrations/google`
+                                                      : `/${tenant.id}/integrations/${integration.id}`
+                                                  }
+                                                  className="text-slate-400 hover:text-slate-600"
+                                                >
+                                                  <Settings className="w-4 h-4" />
+                                                </a>
+                                              </Button>
+                                            </motion.div>
+                                          </div>
+                                        </div>
+
+                                        <p className="text-sm text-slate-600 mb-3">
+                                          {integration.description}
+                                        </p>
+
+                                        {integration.connected &&
+                                          integration.lastSync && (
+                                            <motion.div
+                                              className="flex items-center text-xs text-green-600 mb-3"
+                                              initial={{ opacity: 0 }}
+                                              animate={{ opacity: 1 }}
+                                              transition={{ delay: 0.3 }}
+                                            >
+                                              <Check className="w-3 h-3 mr-1" />
+                                              Last synced {integration.lastSync}
+                                            </motion.div>
+                                          )}
+
+                                        <div className="space-y-1">
+                                          <p className="text-xs font-medium text-slate-700">
+                                            Features:
+                                          </p>
+                                          <div className="flex flex-wrap gap-1">
+                                            {integration.features
+                                              .slice(0, 3)
+                                              .map((feature, idx) => (
+                                                <motion.span
+                                                  key={idx}
+                                                  initial={{
+                                                    opacity: 0,
+                                                    scale: 0.8,
+                                                  }}
+                                                  animate={{
+                                                    opacity: 1,
+                                                    scale: 1,
+                                                  }}
+                                                  transition={{
+                                                    delay: 0.2 + idx * 0.1,
+                                                  }}
+                                                  className="text-xs px-2 py-1 bg-slate-100 text-slate-600 rounded-md"
+                                                >
+                                                  {feature}
+                                                </motion.span>
+                                              ))}
+                                            {integration.features.length >
+                                              3 && (
+                                              <span className="text-xs px-2 py-1 bg-slate-100 text-slate-600 rounded-md">
+                                                +
+                                                {integration.features.length -
+                                                  3}{" "}
+                                                more
+                                              </span>
                                             )}
                                           </div>
                                         </div>
-                                        
-                                        <div className="flex items-center space-x-2">
-                                          {integration.connected && (
-                                            <motion.div
-                                              animate={{ scale: [1, 1.2, 1] }}
-                                              transition={{ duration: 2, repeat: Infinity }}
-                                            >
-                                              <div className={`w-2 h-2 rounded-full ${
-                                                integration.status === 'healthy' ? 'bg-green-500' :
-                                                integration.status === 'warning' ? 'bg-yellow-500' :
-                                                'bg-red-500'
-                                              }`} />
-                                            </motion.div>
-                                          )}
-                                          <Switch
-                                            checked={integration.connected}
-                                            onCheckedChange={() => toggleIntegration(integration.id)}
-                                            disabled={saveConfigMutation.isPending}
-                                            className="data-[state=checked]:bg-gradient-to-r data-[state=checked]:from-green-500 data-[state=checked]:to-blue-500"
-                                          />
-                                          <motion.div
-                                            whileHover={{ scale: 1.1 }}
-                                            whileTap={{ scale: 0.9 }}
-                                          >
-                                            <Button
-                                              variant="ghost"
-                                              size="sm"
-                                              asChild
-                                            >
-                                              <a 
-                                                href={integration.id === 'google' ? 
-                                                  `/${tenant.id}/integrations/google` : 
-                                                  `/${tenant.id}/integrations/${integration.id}`
-                                                }
-                                                className="text-slate-400 hover:text-slate-600"
-                                              >
-                                                <Settings className="w-4 h-4" />
-                                              </a>
-                                            </Button>
-                                          </motion.div>
-                                        </div>
-                                      </div>
-
-                                      <p className="text-sm text-slate-600 mb-3">
-                                        {integration.description}
-                                      </p>
-
-                                      {integration.connected && integration.lastSync && (
-                                        <motion.div 
-                                          className="flex items-center text-xs text-green-600 mb-3"
-                                          initial={{ opacity: 0 }}
-                                          animate={{ opacity: 1 }}
-                                          transition={{ delay: 0.3 }}
-                                        >
-                                          <Check className="w-3 h-3 mr-1" />
-                                          Last synced {integration.lastSync}
-                                        </motion.div>
-                                      )}
-
-                                      <div className="space-y-1">
-                                        <p className="text-xs font-medium text-slate-700">Features:</p>
-                                        <div className="flex flex-wrap gap-1">
-                                          {integration.features.slice(0, 3).map((feature, idx) => (
-                                            <motion.span
-                                              key={idx}
-                                              initial={{ opacity: 0, scale: 0.8 }}
-                                              animate={{ opacity: 1, scale: 1 }}
-                                              transition={{ delay: 0.2 + idx * 0.1 }}
-                                              className="text-xs px-2 py-1 bg-slate-100 text-slate-600 rounded-md"
-                                            >
-                                              {feature}
-                                            </motion.span>
-                                          ))}
-                                          {integration.features.length > 3 && (
-                                            <span className="text-xs px-2 py-1 bg-slate-100 text-slate-600 rounded-md">
-                                              +{integration.features.length - 3} more
-                                            </span>
-                                          )}
-                                        </div>
                                       </div>
                                     </div>
-                                  </div>
-                                </motion.div>
-                              ))}
+                                  </motion.div>
+                                ),
+                              )}
                             </div>
                           </CardContent>
                         </motion.div>
@@ -849,9 +952,12 @@ export default function Integrations() {
               <CardContent className="p-6">
                 <div className="flex items-center justify-between">
                   <div>
-                    <h3 className="text-lg font-semibold text-slate-800 mb-2">Need Help?</h3>
+                    <h3 className="text-lg font-semibold text-slate-800 mb-2">
+                      Need Help?
+                    </h3>
                     <p className="text-sm text-slate-600">
-                      Our integration specialists can help you connect and configure services
+                      Our integration specialists can help you connect and
+                      configure services
                     </p>
                   </div>
                   <div className="flex space-x-3">
@@ -883,7 +989,7 @@ export default function Integrations() {
 
       {/* Loading State */}
       {isLoading && (!tenant?.id || !restaurant?.id || !user) && (
-        <motion.div 
+        <motion.div
           className="fixed inset-0 bg-black/20 backdrop-blur-sm z-50 flex items-center justify-center"
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
@@ -902,7 +1008,7 @@ export default function Integrations() {
 
       {/* Error State */}
       {error && (
-        <motion.div 
+        <motion.div
           className="fixed inset-0 bg-black/20 backdrop-blur-sm z-50 flex items-center justify-center"
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
@@ -912,11 +1018,18 @@ export default function Integrations() {
               <X className="w-6 h-6 text-red-500" />
               <h3 className="font-semibold text-slate-800">Connection Error</h3>
             </div>
-            <p className="text-slate-600 mb-4">Unable to load integrations. Please check your connection and try again.</p>
-            <Button 
-              onClick={() => queryClient.invalidateQueries({
-                queryKey: [`/api/tenants/${tenant?.id}/restaurants/${restaurant?.id}/integrations`]
-              })}
+            <p className="text-slate-600 mb-4">
+              Unable to load integrations. Please check your connection and try
+              again.
+            </p>
+            <Button
+              onClick={() =>
+                queryClient.invalidateQueries({
+                  queryKey: [
+                    `/api/tenants/${tenant?.id}/restaurants/${restaurant?.id}/integrations`,
+                  ],
+                })
+              }
               className="w-full"
             >
               <RefreshCw className="w-4 h-4 mr-2" />
