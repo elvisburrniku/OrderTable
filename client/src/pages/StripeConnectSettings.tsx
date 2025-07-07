@@ -653,7 +653,7 @@ export default function StripeConnectSettings() {
                     </CardDescription>
                   </CardHeader>
                   <CardContent>
-                    {statistics && statistics.topCustomers.length > 0 ? (
+                    {statistics && statistics.topCustomers && statistics.topCustomers.length > 0 ? (
                       <div className="space-y-4">
                         {statistics.topCustomers.map((customer, index) => (
                           <div key={customer.customerId} className="flex items-center justify-between p-4 border rounded-lg">
@@ -691,7 +691,7 @@ export default function StripeConnectSettings() {
                     </CardDescription>
                   </CardHeader>
                   <CardContent>
-                    {statistics && statistics.payouts.length > 0 ? (
+                    {statistics && statistics.payouts && statistics.payouts.length > 0 ? (
                       <div className="space-y-2">
                         <div className="grid grid-cols-4 gap-4 p-3 text-sm font-medium text-muted-foreground border-b">
                           <div>Amount</div>
