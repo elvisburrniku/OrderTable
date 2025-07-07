@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import { useAuth } from "@/lib/auth.tsx";
+import { useLanguage } from "@/contexts/LanguageContext";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -55,6 +56,7 @@ export default function Settings() {
   const { user, restaurant } = useAuth();
   const { toast } = useToast();
   const queryClient = useQueryClient();
+  const { language, setLanguage, t } = useLanguage();
 
   const [emailSettings, setEmailSettings] = useState({
     enableBookingConfirmation: true,
@@ -72,7 +74,7 @@ export default function Settings() {
     defaultBookingDuration: 120,
     maxAdvanceBookingDays: 30,
     currency: "USD",
-    language: "en",
+    language: language, // Use current language from context
   });
 
   // Timezone selector state
@@ -211,6 +213,11 @@ export default function Settings() {
   });
 
   const handleSaveSettings = () => {
+    // Update global language when saving settings
+    if (generalSettings.language !== language) {
+      setLanguage(generalSettings.language);
+    }
+    
     updateSettingsMutation.mutate({
       emailSettings,
       generalSettings,
@@ -218,6 +225,11 @@ export default function Settings() {
       notificationSettings,
     });
   };
+
+  // Update local settings when global language changes
+  useEffect(() => {
+    setGeneralSettings(prev => ({ ...prev, language }));
+  }, [language]);
 
   if (isLoading) {
     return (
@@ -234,10 +246,10 @@ export default function Settings() {
         <div className="mb-8">
           <h1 className="text-3xl font-bold text-gray-900 dark:text-white flex items-center gap-3">
             <SettingsIcon className="h-8 w-8" />
-            Restaurant Settings
+            {t('settings.title')}
           </h1>
           <p className="text-gray-600 dark:text-gray-400 mt-2">
-            Configure your restaurant's operational preferences and system behavior
+            {t('settings.subtitle')}
           </p>
         </div>
 
@@ -246,16 +258,16 @@ export default function Settings() {
           <CardHeader>
             <CardTitle className="flex items-center space-x-2">
               <Globe className="h-5 w-5" />
-              <span>General Settings</span>
+              <span>{t('settings.general')}</span>
             </CardTitle>
             <CardDescription>
-              Configure basic system preferences including timezone, formatting, and regional settings
+              {t('settings.subtitle')}
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-6">
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
               <div className="space-y-2">
-                <Label htmlFor="timeZone" className="text-sm font-medium">Time Zone</Label>
+                <Label htmlFor="timeZone" className="text-sm font-medium">{t('settings.timezone')}</Label>
                 <Popover open={timezoneOpen} onOpenChange={setTimezoneOpen}>
                   <PopoverTrigger asChild>
                     <Button
@@ -326,7 +338,7 @@ export default function Settings() {
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="dateFormat" className="text-sm font-medium">Date Format</Label>
+                <Label htmlFor="dateFormat" className="text-sm font-medium">{t('settings.dateformat')}</Label>
                 <Select
                   value={generalSettings.dateFormat}
                   onValueChange={(value) =>
@@ -346,7 +358,7 @@ export default function Settings() {
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="timeFormat" className="text-sm font-medium">Time Format</Label>
+                <Label htmlFor="timeFormat" className="text-sm font-medium">{t('settings.timeformat')}</Label>
                 <Select
                   value={generalSettings.timeFormat}
                   onValueChange={(value) =>
@@ -366,7 +378,7 @@ export default function Settings() {
 
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
               <div className="space-y-2">
-                <Label htmlFor="currency" className="text-sm font-medium">Currency</Label>
+                <Label htmlFor="currency" className="text-sm font-medium">{t('settings.currency')}</Label>
                 <Select
                   value={generalSettings.currency}
                   onValueChange={(value) =>
@@ -402,12 +414,14 @@ export default function Settings() {
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="language" className="text-sm font-medium">Language</Label>
+                <Label htmlFor="language" className="text-sm font-medium">{t('settings.language')}</Label>
                 <Select
                   value={generalSettings.language}
-                  onValueChange={(value) =>
-                    setGeneralSettings({ ...generalSettings, language: value })
-                  }
+                  onValueChange={(value) => {
+                    setGeneralSettings({ ...generalSettings, language: value });
+                    // Immediately update global language for instant UI translation
+                    setLanguage(value);
+                  }}
                 >
                   <SelectTrigger>
                     <SelectValue placeholder="Select language" />
@@ -2120,8 +2134,8 @@ export default function Settings() {
           >
             <Save className="h-4 w-4 mr-2" />
             {updateSettingsMutation.isPending
-              ? "Saving..."
-              : "Save All Settings"}
+              ? t('common.loading')
+              : t('settings.save')}
           </Button>
         </div>
       </div>
