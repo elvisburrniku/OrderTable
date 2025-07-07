@@ -11650,7 +11650,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
         }
 
         const availableTable = availableTables[0]; // Get the smallest suitable table
-        }
 
         if (!availableTable) {
           return res
@@ -11700,12 +11699,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
             },
           );
         }
-
-        // Calculate end time (2 hours from start time)
-        const [startHour, startMinute] = bookingData.startTime
-          .split(":")
-          .map(Number);
-        const endTime = `${(startHour + 2).toString().padStart(2, "0")}:${startMinute.toString().padStart(2, "0")}`;
 
         // Generate management hash
         const managementHash = BookingHash.generateHash(
