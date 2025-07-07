@@ -115,16 +115,29 @@ class TwilioSMSService {
     } catch (error: any) {
       console.error('Twilio SMS error:', error);
       
+      // Handle specific Twilio error codes with user-friendly messages
+      let userFriendlyError = error.message;
+      if (error.code === 21408) {
+        const country = this.getCountryFromPhone(messageData.to);
+        userFriendlyError = `SMS permission not enabled for ${country}. Please enable SMS permissions for this region in your Twilio Console.`;
+      } else if (error.code === 21614) {
+        userFriendlyError = `Phone number ${messageData.to} is not verified. For trial accounts, you can only send SMS to verified phone numbers.`;
+      } else if (error.code === 21211) {
+        userFriendlyError = `Invalid phone number format: ${messageData.to}`;
+      } else if (error.code === 21610) {
+        userFriendlyError = `Phone number ${messageData.to} is unreachable or invalid.`;
+      }
+      
       // Log failed SMS attempt
       await this.logSMSMessage({
         ...messageData,
-        error: error.message,
+        error: userFriendlyError,
         status: 'failed'
       });
 
       return {
         success: false,
-        error: error.message || 'Failed to send SMS'
+        error: userFriendlyError
       };
     }
   }
@@ -289,6 +302,88 @@ We look forward to seeing you!`;
       console.error('Failed to fetch Twilio account info:', error);
       return { error: error.message };
     }
+  }
+
+  private getCountryFromPhone(phoneNumber: string): string {
+    const countryMap: { [key: string]: string } = {
+      '+1': 'US/Canada',
+      '+44': 'United Kingdom',
+      '+49': 'Germany',
+      '+33': 'France',
+      '+34': 'Spain',
+      '+39': 'Italy',
+      '+46': 'Sweden',
+      '+47': 'Norway',
+      '+45': 'Denmark',
+      '+31': 'Netherlands',
+      '+32': 'Belgium',
+      '+41': 'Switzerland',
+      '+43': 'Austria',
+      '+351': 'Portugal',
+      '+358': 'Finland',
+      '+91': 'India',
+      '+86': 'China',
+      '+81': 'Japan',
+      '+82': 'South Korea',
+      '+61': 'Australia',
+      '+64': 'New Zealand',
+      '+27': 'South Africa',
+      '+55': 'Brazil',
+      '+52': 'Mexico',
+      '+54': 'Argentina',
+      '+7': 'Russia',
+      '+380': 'Ukraine',
+      '+48': 'Poland',
+      '+90': 'Turkey',
+      '+30': 'Greece',
+      '+353': 'Ireland',
+      '+354': 'Iceland',
+      '+356': 'Malta',
+      '+357': 'Cyprus',
+      '+377': 'Monaco',
+      '+378': 'San Marino',
+      '+379': 'Vatican City',
+      '+852': 'Hong Kong',
+      '+853': 'Macau',
+      '+886': 'Taiwan',
+      '+65': 'Singapore',
+      '+60': 'Malaysia',
+      '+66': 'Thailand',
+      '+84': 'Vietnam',
+      '+62': 'Indonesia',
+      '+63': 'Philippines',
+      '+92': 'Pakistan',
+      '+98': 'Iran',
+      '+972': 'Israel',
+      '+971': 'UAE',
+      '+966': 'Saudi Arabia',
+      '+20': 'Egypt',
+      '+212': 'Morocco',
+      '+213': 'Algeria',
+      '+216': 'Tunisia',
+      '+218': 'Libya',
+      '+249': 'Sudan',
+      '+251': 'Ethiopia',
+      '+254': 'Kenya',
+      '+255': 'Tanzania',
+      '+256': 'Uganda',
+      '+260': 'Zambia',
+      '+263': 'Zimbabwe',
+      '+264': 'Namibia',
+      '+265': 'Malawi',
+      '+266': 'Lesotho',
+      '+267': 'Botswana',
+      '+268': 'Eswatini'
+    };
+
+    // Check for exact match first
+    for (const [code, country] of Object.entries(countryMap)) {
+      if (phoneNumber.startsWith(code)) {
+        return country;
+      }
+    }
+    
+    return 'Unknown Region';
   }
 }
 
