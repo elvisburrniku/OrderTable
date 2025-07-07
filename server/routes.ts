@@ -7687,6 +7687,44 @@ export async function registerRoutes(app: Express): Promise<Server> {
     },
   );
 
+  // Process late cancellation charge endpoint
+  app.post(
+    "/api/tenants/:tenantId/restaurants/:restaurantId/bookings/:bookingId/late-cancellation",
+    validateTenant,
+    async (req, res) => {
+      try {
+        const tenantId = parseInt(req.params.tenantId);
+        const restaurantId = parseInt(req.params.restaurantId);
+        const bookingId = parseInt(req.params.bookingId);
+        const { reason = 'late_cancellation' } = req.body;
+
+        // Get booking and verify ownership
+        const booking = await storage.getBookingById(bookingId);
+        if (!booking || booking.tenantId !== tenantId || booking.restaurantId !== restaurantId) {
+          return res.status(404).json({ message: "Booking not found" });
+        }
+
+        // Import reservation scheduler and process late cancellation
+        const { reservationScheduler } = await import('./reservation-scheduler');
+        const result = await reservationScheduler.processLateCancellation(bookingId, reason);
+
+        if (result.success) {
+          res.json({ 
+            success: true, 
+            message: "Late cancellation charge processed successfully",
+            chargedAmount: result.amount,
+            currency: result.currency
+          });
+        } else {
+          res.status(400).json({ success: false, error: result.error });
+        }
+      } catch (error) {
+        console.error('Error processing late cancellation:', error);
+        res.status(500).json({ message: "Internal server error" });
+      }
+    },
+  );
+
   app.put(
     "/api/tenants/:tenantId/bookings/:id",
     validateTenant,
