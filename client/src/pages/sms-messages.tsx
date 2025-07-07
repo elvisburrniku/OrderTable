@@ -279,8 +279,8 @@ export default function SmsMessages() {
     switch (status) {
       case 'sent':
         return <Badge className="bg-green-100 text-green-800 border-green-200">✓ Sent</Badge>;
-      case 'pending':
-        return <Badge className="bg-yellow-100 text-yellow-800 border-yellow-200">⏳ Pending</Badge>;
+      case 'queued':
+        return <Badge className="bg-yellow-100 text-yellow-800 border-yellow-200">⏳ Queued</Badge>;
       case 'failed':
         return <Badge className="bg-red-100 text-red-800 border-red-200">✗ Failed</Badge>;
       case 'delivered':
@@ -417,10 +417,10 @@ export default function SmsMessages() {
                                     <span>Sent</span>
                                   </div>
                                 </SelectItem>
-                                <SelectItem value="pending" className="rounded-md">
+                                <SelectItem value="queued" className="rounded-md">
                                   <div className="flex items-center space-x-2">
                                     <div className="w-2 h-2 bg-yellow-500 rounded-full"></div>
-                                    <span>Pending</span>
+                                    <span>Queued</span>
                                   </div>
                                 </SelectItem>
                                 <SelectItem value="failed" className="rounded-md">
