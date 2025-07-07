@@ -32,7 +32,11 @@ export function LanguageProvider({ children }: LanguageProviderProps) {
       }
     }
 
-    initializeLanguage();
+    initializeLanguage().catch(error => {
+      console.log('Language initialization failed:', error);
+      setLanguageState('en');
+      setIsLoading(false);
+    });
   }, []);
 
   const setLanguage = (newLanguage: Language) => {
