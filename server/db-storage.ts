@@ -2461,12 +2461,17 @@ export class DatabaseStorage implements IStorage {
     }
   }
 
-  async getSmsMessagesByRestaurant(restaurantId: number): Promise<any[]> {
+  async getSmsMessagesByRestaurant(restaurantId: number, tenantId: number): Promise<any[]> {
     if (!this.db) throw new Error("Database connection not available");
     return await this.db
       .select()
       .from(smsMessages)
-      .where(eq(smsMessages.restaurantId, restaurantId))
+      .where(
+        and(
+          eq(smsMessages.restaurantId, restaurantId),
+          eq(smsMessages.tenantId, tenantId)
+        )
+      )
       .orderBy(desc(smsMessages.createdAt));
   }
   async getWaitingListByRestaurant(restaurantId: number): Promise<any[]> {

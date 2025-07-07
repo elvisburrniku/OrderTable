@@ -40,17 +40,17 @@ import { formatDate, formatDateTime } from "@/lib/time-formatter";
 interface SmsMessage {
   id: number;
   restaurantId: number;
-  name: string;
-  messageType: string;
-  content: string;
-  receivers: string;
-  bookingDateFrom?: string;
-  bookingDateTo?: string;
-  language: string;
+  tenantId: number;
+  bookingId?: number;
+  phoneNumber: string;
+  message: string;
+  type: string;
   status: string;
+  cost?: string;
+  providerId?: string;
+  errorMessage?: string;
   sentAt?: string;
-  deliveredCount?: number;
-  totalReceivers?: number;
+  deliveredAt?: string;
   createdAt: string;
   updatedAt: string;
 }
@@ -244,10 +244,11 @@ export default function SmsMessages() {
 
   const filteredMessages = (messages as SmsMessage[])?.filter((message: SmsMessage) => {
     const matchesFilter = statusFilter === "all" || message.status === statusFilter;
-    const matchesType = typeFilter === "all" || message.messageType === typeFilter;
+    const matchesType = typeFilter === "all" || message.type === typeFilter;
     const matchesSearch = searchTerm === "" || 
-      message.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      message.content.toLowerCase().includes(searchTerm.toLowerCase());
+      message.phoneNumber.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      message.message.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      message.type.toLowerCase().includes(searchTerm.toLowerCase());
     return matchesFilter && matchesType && matchesSearch;
   }) || [];
 
@@ -277,15 +278,15 @@ export default function SmsMessages() {
   const getStatusBadge = (status: string) => {
     switch (status) {
       case 'sent':
-        return <Badge className="bg-green-500 text-white">Sent</Badge>;
+        return <Badge className="bg-green-100 text-green-800 border-green-200">✓ Sent</Badge>;
       case 'pending':
-        return <Badge className="bg-yellow-500 text-white">Pending</Badge>;
+        return <Badge className="bg-yellow-100 text-yellow-800 border-yellow-200">⏳ Pending</Badge>;
       case 'failed':
-        return <Badge className="bg-red-500 text-white">Failed</Badge>;
-      case 'draft':
-        return <Badge className="bg-gray-500 text-white">Draft</Badge>;
+        return <Badge className="bg-red-100 text-red-800 border-red-200">✗ Failed</Badge>;
+      case 'delivered':
+        return <Badge className="bg-blue-100 text-blue-800 border-blue-200">✓ Delivered</Badge>;
       default:
-        return <Badge variant="outline">{status}</Badge>;
+        return <Badge variant="outline" className="capitalize">{status}</Badge>;
     }
   };
 
@@ -519,9 +520,9 @@ export default function SmsMessages() {
                     <tr className="bg-gray-50 border-b border-gray-200">
                       <th className="text-left py-3 px-4 font-medium text-gray-700 text-sm">MESSAGE</th>
                       <th className="text-left py-3 px-4 font-medium text-gray-700 text-sm">TYPE</th>
-                      <th className="text-left py-3 px-4 font-medium text-gray-700 text-sm">RECIPIENTS</th>
+                      <th className="text-left py-3 px-4 font-medium text-gray-700 text-sm">PHONE / COST</th>
                       <th className="text-left py-3 px-4 font-medium text-gray-700 text-sm">STATUS</th>
-                      <th className="text-left py-3 px-4 font-medium text-gray-700 text-sm">CREATED</th>
+                      <th className="text-left py-3 px-4 font-medium text-gray-700 text-sm">SENT AT</th>
                       <th className="text-left py-3 px-4 font-medium text-gray-700 text-sm">ACTIONS</th>
                     </tr>
                   </thead>
@@ -563,27 +564,27 @@ export default function SmsMessages() {
                           <td className="py-3 px-4">
                             <div className="flex items-center space-x-3">
                               <div className="w-8 h-8 bg-gradient-to-br from-blue-400 to-blue-600 rounded-full flex items-center justify-center text-white font-medium text-sm">
-                                {getTypeIcon(message.messageType)}
+                                {getTypeIcon(message.type)}
                               </div>
                               <div className="min-w-0 flex-1">
-                                <div className="font-medium text-gray-900 truncate">{message.name}</div>
-                                <div className="text-sm text-gray-500 truncate max-w-md">{message.content}</div>
+                                <div className="font-medium text-gray-900 truncate">{message.phoneNumber}</div>
+                                <div className="text-sm text-gray-500 truncate max-w-md">{message.message}</div>
                               </div>
                             </div>
                           </td>
                           <td className="py-3 px-4">
                             <Badge variant="outline" className="text-xs capitalize">
-                              {message.messageType}
+                              {message.type}
                             </Badge>
                           </td>
                           <td className="py-3 px-4">
                             <div className="text-sm">
                               <div className="text-gray-900 font-medium">
-                                {message.totalReceivers || 0} recipients
+                                {message.phoneNumber}
                               </div>
-                              {message.deliveredCount !== undefined && (
+                              {message.cost && (
                                 <div className="text-gray-500">
-                                  {message.deliveredCount} delivered
+                                  Cost: €{message.cost}
                                 </div>
                               )}
                             </div>
@@ -595,20 +596,28 @@ export default function SmsMessages() {
                           </td>
                           <td className="py-3 px-4">
                             <div className="text-sm">
-                              <div className="text-gray-900 font-medium">
-                                {new Date(message.createdAt).toLocaleDateString('en-US', {
-                                  year: 'numeric',
-                                  month: 'short',
-                                  day: 'numeric'
-                                })}
-                              </div>
-                              <div className="text-gray-500 flex items-center">
-                                <Clock className="w-3 h-3 mr-1" />
-                                {new Date(message.createdAt).toLocaleTimeString('en-US', {
-                                  hour: '2-digit',
-                                  minute: '2-digit'
-                                })}
-                              </div>
+                              {message.sentAt ? (
+                                <>
+                                  <div className="text-gray-900 font-medium">
+                                    {new Date(message.sentAt).toLocaleDateString('en-US', {
+                                      year: 'numeric',
+                                      month: 'short',
+                                      day: 'numeric'
+                                    })}
+                                  </div>
+                                  <div className="text-gray-500 flex items-center">
+                                    <Clock className="w-3 h-3 mr-1" />
+                                    {new Date(message.sentAt).toLocaleTimeString('en-US', {
+                                      hour: '2-digit',
+                                      minute: '2-digit'
+                                    })}
+                                  </div>
+                                </>
+                              ) : (
+                                <div className="text-gray-500 italic">
+                                  Not sent yet
+                                </div>
+                              )}
                             </div>
                           </td>
                           <td className="py-3 px-4">
