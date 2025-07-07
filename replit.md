@@ -22,6 +22,13 @@ A comprehensive restaurant booking management system with React frontend and Exp
 - Kitchen order management
 
 ## Recent Changes
+- **2025-01-13**: ✅ GUEST BOOKING PAYMENT WEBHOOK PROCESSING ENHANCED - Fixed issues with guest booking payments not being properly updated in webhook handler
+- **Enhanced Webhook Processing**: Improved guest booking payment intent search logic with better date comparison and fallback mechanisms
+- **Metadata Validation**: Added comprehensive logging and validation for payment intent metadata to ensure all required fields are present
+- **Date Handling Fix**: Fixed date comparison issues by properly parsing and comparing booking dates with timezone normalization
+- **Search Optimization**: Enhanced booking search to handle cases where paymentIntentId might not be set immediately, using customer details as fallback
+- **Duplicate Prevention**: Added checks to prevent duplicate payment processing for already-paid bookings
+- **Error Logging**: Improved error logging throughout the webhook handler for better debugging and monitoring
 - **2025-07-06**: ✅ THIRD-PARTY INTEGRATIONS EXPANSION - Added 20+ new integrations including Slack, Notion, TripAdvisor, OpenTable, Resy, Square, DoorDash, Uber Eats, and more
 - **Integration Categories Added**: Booking Platforms (OpenTable, Resy), POS Systems (Square, Toast), Delivery (DoorDash, UberEats, Grubhub), CRM (Salesforce, HubSpot), Accounting (QuickBooks, Xero), Entertainment (Spotify), Scheduling (Calendly), Analytics (Google Analytics, Mixpanel, Segment)
 - **Integration Pages Created**: TripAdvisor (/integrations/tripadvisor), Slack (/integrations/slack), Notion (/integrations/notion) with full configuration interfaces

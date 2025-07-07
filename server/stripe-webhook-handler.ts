@@ -62,43 +62,80 @@ export async function handleStripeWebhook(event: Stripe.Event, storage: IStorage
           
           // For guest bookings, we need to find the booking that was created after payment
           // The booking might have been created with the payment intent ID or matching details
-          if (paymentIntent.metadata.customerEmail) {
-            try {
-              // First try to find booking by payment intent ID
-              const { eq, and, desc } = await import("drizzle-orm");
-              let booking = null;
+          try {
+            // First try to find booking by payment intent ID
+            const { eq, and, desc, gte } = await import("drizzle-orm");
+            let booking = null;
+            
+            // Try to find booking by payment intent ID first
+            const bookingsByPaymentIntent = await storage.db
+              .select()
+              .from(storage.bookings)
+              .where(eq(storage.bookings.paymentIntentId, paymentIntent.id))
+              .limit(1);
+            
+            if (bookingsByPaymentIntent.length > 0) {
+              booking = bookingsByPaymentIntent[0];
+              console.log(`Found booking ${booking.id} by payment intent ID ${paymentIntent.id}`);
+            } else if (paymentIntent.metadata.customerEmail) {
+              // If not found by payment intent, try by customer details and recent creation
+              console.log('Searching for booking by customer details...');
+              console.log('Search criteria:', {
+                customerEmail: paymentIntent.metadata.customerEmail,
+                bookingDate: paymentIntent.metadata.bookingDate,
+                startTime: paymentIntent.metadata.startTime,
+                guestCount: paymentIntent.metadata.guestCount
+              });
               
-              // Try to find booking by payment intent ID first
-              const bookingsByPaymentIntent = await storage.db
-                .select()
-                .from(storage.bookings)
-                .where(eq(storage.bookings.paymentIntentId, paymentIntent.id))
-                .limit(1);
+              // Parse the booking date properly
+              const bookingDate = new Date(paymentIntent.metadata.bookingDate);
+              bookingDate.setHours(0, 0, 0, 0); // Reset to start of day for date comparison
               
-              if (bookingsByPaymentIntent.length > 0) {
-                booking = bookingsByPaymentIntent[0];
-                console.log(`Found booking ${booking.id} by payment intent ID ${paymentIntent.id}`);
-              } else {
-                // If not found by payment intent, try by customer details and recent creation
-                const recentBookings = await storage.db
-                  .select()
-                  .from(storage.bookings)
-                  .where(and(
-                    eq(storage.bookings.customerEmail, paymentIntent.metadata.customerEmail),
-                    eq(storage.bookings.bookingDate, new Date(paymentIntent.metadata.bookingDate)),
-                    eq(storage.bookings.startTime, paymentIntent.metadata.startTime),
-                    eq(storage.bookings.guestCount, parseInt(paymentIntent.metadata.guestCount))
-                  ))
-                  .orderBy(desc(storage.bookings.createdAt))
-                  .limit(1);
-                
-                if (recentBookings.length > 0) {
-                  booking = recentBookings[0];
-                  console.log(`Found guest booking ${booking.id} by customer details for payment intent ${paymentIntent.id}`);
-                }
+              const nextDay = new Date(bookingDate);
+              nextDay.setDate(nextDay.getDate() + 1);
+              
+              // Build search conditions
+              const searchConditions = [
+                eq(storage.bookings.customerEmail, paymentIntent.metadata.customerEmail),
+                gte(storage.bookings.bookingDate, bookingDate),
+                eq(storage.bookings.startTime, paymentIntent.metadata.startTime)
+              ];
+              
+              // Only add guestCount condition if it's a valid number
+              if (paymentIntent.metadata.guestCount && !isNaN(parseInt(paymentIntent.metadata.guestCount))) {
+                searchConditions.push(eq(storage.bookings.guestCount, parseInt(paymentIntent.metadata.guestCount)));
               }
               
-              if (booking) {
+              const recentBookings = await storage.db
+                .select()
+                .from(storage.bookings)
+                .where(and(...searchConditions))
+                .orderBy(desc(storage.bookings.createdAt))
+                .limit(5); // Get more results to debug
+              
+              console.log(`Found ${recentBookings.length} bookings matching search criteria`);
+              
+              if (recentBookings.length > 0) {
+                // Find the most recent booking that matches our date
+                booking = recentBookings.find(b => {
+                  const bDate = new Date(b.bookingDate);
+                  bDate.setHours(0, 0, 0, 0);
+                  return bDate.getTime() === bookingDate.getTime();
+                }) || recentBookings[0];
+                
+                console.log(`Found guest booking ${booking.id} by customer details for payment intent ${paymentIntent.id}`);
+              } else {
+                console.log('No bookings found matching search criteria');
+              }
+            } else {
+              console.log('No customerEmail in payment metadata, cannot search for booking');
+            }
+              
+            if (booking) {
+              // Check if already processed
+              if (booking.paymentStatus === 'paid' && booking.paymentIntentId === paymentIntent.id) {
+                console.log(`Booking ${booking.id} already processed for payment intent ${paymentIntent.id}`);
+              } else {
                 // Update booking with payment information
                 const updateData: any = {
                   paymentStatus: 'paid',
@@ -197,13 +234,16 @@ export async function handleStripeWebhook(event: Stripe.Event, storage: IStorage
                   console.error("Error sending payment confirmation emails:", emailError);
                   // Don't fail the webhook if email fails
                 }
-              } else {
+              }
+            } else {
                 console.log(`No matching booking found for payment intent ${paymentIntent.id}`);
                 console.log('Payment metadata:', paymentIntent.metadata);
               }
             } catch (error) {
               console.error('Error processing guest booking payment:', error);
             }
+          } catch (error) {
+            console.error('Error processing guest booking payment:', error);
           }
           break;
         }
