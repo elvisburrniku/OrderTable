@@ -1,5 +1,6 @@
 import twilio from 'twilio';
 import { storage } from './storage';
+import { smsPricingService } from './sms-pricing-service';
 
 interface SMSMessage {
   to: string;
@@ -162,19 +163,8 @@ class TwilioSMSService {
   }
 
   private calculateSMSCost(phoneNumber: string): number {
-    // Basic cost calculation - you should update this based on Twilio's pricing
-    // This is a simplified version
-    
-    if (phoneNumber.startsWith('+1')) {
-      // US/Canada
-      return 0.0075; // $0.0075 per SMS
-    } else if (phoneNumber.startsWith('+44') || phoneNumber.startsWith('+33') || phoneNumber.startsWith('+49')) {
-      // UK, France, Germany
-      return 0.05; // €0.05 per SMS
-    } else {
-      // International
-      return 0.10; // €0.10 per SMS
-    }
+    // Use the comprehensive SMS pricing service based on country data
+    return smsPricingService.calculateSMSCost(phoneNumber);
   }
 
   private async logSMSMessage(data: any): Promise<void> {

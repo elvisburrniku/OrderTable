@@ -30,6 +30,7 @@ import {
   Shield
 } from "lucide-react";
 import { SmsBalanceManager } from "@/components/sms-balance-manager";
+import { SMSPricingDisplay } from "@/components/sms-pricing-display";
 
 const countryCodes = [
   { code: "+1", flag: "🇺🇸", name: "United States" },
@@ -78,6 +79,7 @@ export default function SmsSettings() {
 
   const [testPhone, setTestPhone] = useState("");
   const [lastTestResult, setLastTestResult] = useState("");
+  const [activeTab, setActiveTab] = useState("settings");
 
   // Fetch SMS settings
   const { data: currentSettings, isLoading } = useQuery({
@@ -228,7 +230,43 @@ export default function SmsSettings() {
           </div>
         </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+        {/* Tab Navigation */}
+        <div className="mb-6">
+          <div className="border-b border-gray-200">
+            <nav className="-mb-px flex space-x-8">
+              <button
+                onClick={() => setActiveTab("settings")}
+                className={`py-2 px-1 border-b-2 font-medium text-sm ${
+                  activeTab === "settings"
+                    ? "border-blue-500 text-blue-600"
+                    : "border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300"
+                }`}
+              >
+                <div className="flex items-center gap-2">
+                  <Settings className="w-4 h-4" />
+                  SMS Settings
+                </div>
+              </button>
+              <button
+                onClick={() => setActiveTab("pricing")}
+                className={`py-2 px-1 border-b-2 font-medium text-sm ${
+                  activeTab === "pricing"
+                    ? "border-blue-500 text-blue-600"
+                    : "border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300"
+                }`}
+              >
+                <div className="flex items-center gap-2">
+                  <Globe className="w-4 h-4" />
+                  Pricing & Countries
+                </div>
+              </button>
+            </nav>
+          </div>
+        </div>
+
+        {/* Tab Content */}
+        {activeTab === "settings" && (
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
           {/* Main Settings Panel */}
           <div className="lg:col-span-2 space-y-6">
             {/* Pricing Overview */}
@@ -564,6 +602,12 @@ export default function SmsSettings() {
             </Card>
           </div>
         </div>
+        )}
+
+        {/* Pricing Tab Content */}
+        {activeTab === "pricing" && (
+          <SMSPricingDisplay />
+        )}
       </div>
     </div>
   );

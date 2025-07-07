@@ -18406,6 +18406,51 @@ NEXT STEPS:
     }
   });
 
+  // SMS Pricing routes
+  app.get("/api/sms-pricing/countries", async (req, res) => {
+    try {
+      const { smsPricingService } = await import("./sms-pricing-service.js");
+      const countries = smsPricingService.getAllCountryPricing();
+      res.json(countries);
+    } catch (error) {
+      console.error("Error fetching SMS pricing:", error);
+      res.status(500).json({ message: "Internal server error" });
+    }
+  });
+
+  app.get("/api/sms-pricing/stats", async (req, res) => {
+    try {
+      const { smsPricingService } = await import("./sms-pricing-service.js");
+      const stats = smsPricingService.getPricingStats();
+      res.json(stats);
+    } catch (error) {
+      console.error("Error fetching SMS pricing stats:", error);
+      res.status(500).json({ message: "Internal server error" });
+    }
+  });
+
+  app.post("/api/sms-pricing/calculate", async (req, res) => {
+    try {
+      const { phoneNumber, phoneNumbers } = req.body;
+      const { smsPricingService } = await import("./sms-pricing-service.js");
+      
+      if (phoneNumber) {
+        // Single phone number
+        const phoneInfo = smsPricingService.getPhoneNumberInfo(phoneNumber);
+        res.json(phoneInfo);
+      } else if (phoneNumbers && Array.isArray(phoneNumbers)) {
+        // Multiple phone numbers
+        const bulkInfo = smsPricingService.calculateBulkSMSCost(phoneNumbers);
+        res.json(bulkInfo);
+      } else {
+        res.status(400).json({ message: "Phone number or phone numbers array required" });
+      }
+    } catch (error) {
+      console.error("Error calculating SMS pricing:", error);
+      res.status(500).json({ message: "Internal server error" });
+    }
+  });
+
   // SMS Test route for free testing
   app.post(
     "/api/tenants/:tenantId/restaurants/:restaurantId/sms-messages/test",
