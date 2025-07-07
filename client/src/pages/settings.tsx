@@ -16,6 +16,18 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import {
+  Command,
+  CommandEmpty,
+  CommandGroup,
+  CommandInput,
+  CommandItem,
+} from "@/components/ui/command";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
+import {
   Settings as SettingsIcon,
   Clock,
   Bell,
@@ -31,9 +43,13 @@ import {
   AlertCircle,
   DollarSign,
   Utensils,
+  Search,
+  Check,
+  ChevronsUpDown,
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
+import { getCurrentTimezone, getTimezoneWithAutoDetection, searchTimezones, type TimezoneInfo } from "@/lib/timezone-utils";
 
 export default function Settings() {
   const { user, restaurant } = useAuth();
@@ -50,7 +66,7 @@ export default function Settings() {
   });
 
   const [generalSettings, setGeneralSettings] = useState({
-    timeZone: "America/New_York",
+    timeZone: getCurrentTimezone(), // Auto-detect current timezone
     dateFormat: "MM/dd/yyyy",
     timeFormat: "12h",
     defaultBookingDuration: 120,
@@ -58,6 +74,16 @@ export default function Settings() {
     currency: "USD",
     language: "en",
   });
+
+  // Timezone selector state
+  const [timezoneOpen, setTimezoneOpen] = useState(false);
+  const [timezoneSearch, setTimezoneSearch] = useState("");
+  const [availableTimezones, setAvailableTimezones] = useState<TimezoneInfo[]>([]);
+  
+  // Initialize timezones on mount
+  useEffect(() => {
+    setAvailableTimezones(getTimezoneWithAutoDetection());
+  }, []);
 
   const [bookingSettings, setBookingSettings] = useState({
     // Basic booking settings
@@ -230,28 +256,73 @@ export default function Settings() {
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
               <div className="space-y-2">
                 <Label htmlFor="timeZone" className="text-sm font-medium">Time Zone</Label>
-                <Select
-                  value={generalSettings.timeZone}
-                  onValueChange={(value) =>
-                    setGeneralSettings({ ...generalSettings, timeZone: value })
-                  }
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder="Select timezone" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="America/New_York">Eastern Time (EST/EDT)</SelectItem>
-                    <SelectItem value="America/Chicago">Central Time (CST/CDT)</SelectItem>
-                    <SelectItem value="America/Denver">Mountain Time (MST/MDT)</SelectItem>
-                    <SelectItem value="America/Los_Angeles">Pacific Time (PST/PDT)</SelectItem>
-                    <SelectItem value="America/Phoenix">Arizona Time</SelectItem>
-                    <SelectItem value="America/Anchorage">Alaska Time</SelectItem>
-                    <SelectItem value="Pacific/Honolulu">Hawaii Time</SelectItem>
-                    <SelectItem value="Europe/London">GMT (London)</SelectItem>
-                    <SelectItem value="Europe/Paris">CET (Paris)</SelectItem>
-                    <SelectItem value="Asia/Tokyo">JST (Tokyo)</SelectItem>
-                  </SelectContent>
-                </Select>
+                <Popover open={timezoneOpen} onOpenChange={setTimezoneOpen}>
+                  <PopoverTrigger asChild>
+                    <Button
+                      variant="outline"
+                      role="combobox"
+                      aria-expanded={timezoneOpen}
+                      className="w-full justify-between"
+                    >
+                      {generalSettings.timeZone
+                        ? (() => {
+                            const selectedTz = availableTimezones.find(
+                              (tz) => tz.value === generalSettings.timeZone
+                            );
+                            return selectedTz 
+                              ? `${selectedTz.label} (${selectedTz.offset})`
+                              : generalSettings.timeZone;
+                          })()
+                        : "Select timezone..."}
+                      <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-[400px] p-0">
+                    <Command>
+                      <CommandInput 
+                        placeholder="Search timezones..." 
+                        value={timezoneSearch}
+                        onValueChange={setTimezoneSearch}
+                      />
+                      <CommandEmpty>No timezone found.</CommandEmpty>
+                      <CommandGroup className="max-h-[300px] overflow-auto">
+                        {(timezoneSearch 
+                          ? searchTimezones(timezoneSearch) 
+                          : availableTimezones
+                        ).map((timezone) => (
+                          <CommandItem
+                            key={timezone.value}
+                            value={timezone.value}
+                            onSelect={(currentValue) => {
+                              setGeneralSettings({ 
+                                ...generalSettings, 
+                                timeZone: currentValue 
+                              });
+                              setTimezoneOpen(false);
+                              setTimezoneSearch("");
+                            }}
+                          >
+                            <Check
+                              className={`mr-2 h-4 w-4 ${
+                                generalSettings.timeZone === timezone.value 
+                                  ? "opacity-100" 
+                                  : "opacity-0"
+                              }`}
+                            />
+                            <div className="flex flex-col">
+                              <span className="font-medium">
+                                {timezone.label}
+                              </span>
+                              <span className="text-xs text-muted-foreground">
+                                {timezone.city}, {timezone.country} • {timezone.offset}
+                              </span>
+                            </div>
+                          </CommandItem>
+                        ))}
+                      </CommandGroup>
+                    </Command>
+                  </PopoverContent>
+                </Popover>
               </div>
 
               <div className="space-y-2">
@@ -306,12 +377,26 @@ export default function Settings() {
                     <SelectValue placeholder="Select currency" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="USD">USD ($)</SelectItem>
-                    <SelectItem value="EUR">EUR (€)</SelectItem>
-                    <SelectItem value="GBP">GBP (£)</SelectItem>
-                    <SelectItem value="CAD">CAD (C$)</SelectItem>
-                    <SelectItem value="AUD">AUD (A$)</SelectItem>
-                    <SelectItem value="JPY">JPY (¥)</SelectItem>
+                    <SelectItem value="USD">USD ($) - US Dollar</SelectItem>
+                    <SelectItem value="EUR">EUR (€) - Euro</SelectItem>
+                    <SelectItem value="GBP">GBP (£) - British Pound</SelectItem>
+                    <SelectItem value="CAD">CAD (C$) - Canadian Dollar</SelectItem>
+                    <SelectItem value="AUD">AUD (A$) - Australian Dollar</SelectItem>
+                    <SelectItem value="JPY">JPY (¥) - Japanese Yen</SelectItem>
+                    <SelectItem value="CHF">CHF (₣) - Swiss Franc</SelectItem>
+                    <SelectItem value="SEK">SEK (kr) - Swedish Krona</SelectItem>
+                    <SelectItem value="NOK">NOK (kr) - Norwegian Krone</SelectItem>
+                    <SelectItem value="DKK">DKK (kr) - Danish Krone</SelectItem>
+                    <SelectItem value="PLN">PLN (zł) - Polish Złoty</SelectItem>
+                    <SelectItem value="CZK">CZK (Kč) - Czech Koruna</SelectItem>
+                    <SelectItem value="INR">INR (₹) - Indian Rupee</SelectItem>
+                    <SelectItem value="CNY">CNY (¥) - Chinese Yuan</SelectItem>
+                    <SelectItem value="KRW">KRW (₩) - South Korean Won</SelectItem>
+                    <SelectItem value="SGD">SGD (S$) - Singapore Dollar</SelectItem>
+                    <SelectItem value="HKD">HKD (HK$) - Hong Kong Dollar</SelectItem>
+                    <SelectItem value="NZD">NZD (NZ$) - New Zealand Dollar</SelectItem>
+                    <SelectItem value="MXN">MXN ($) - Mexican Peso</SelectItem>
+                    <SelectItem value="BRL">BRL (R$) - Brazilian Real</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
@@ -328,12 +413,25 @@ export default function Settings() {
                     <SelectValue placeholder="Select language" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="en">English</SelectItem>
-                    <SelectItem value="es">Español</SelectItem>
-                    <SelectItem value="fr">Français</SelectItem>
-                    <SelectItem value="de">Deutsch</SelectItem>
-                    <SelectItem value="it">Italiano</SelectItem>
-                    <SelectItem value="pt">Português</SelectItem>
+                    <SelectItem value="en">🇺🇸 English</SelectItem>
+                    <SelectItem value="es">🇪🇸 Español (Spanish)</SelectItem>
+                    <SelectItem value="fr">🇫🇷 Français (French)</SelectItem>
+                    <SelectItem value="de">🇩🇪 Deutsch (German)</SelectItem>
+                    <SelectItem value="it">🇮🇹 Italiano (Italian)</SelectItem>
+                    <SelectItem value="pt">🇵🇹 Português (Portuguese)</SelectItem>
+                    <SelectItem value="nl">🇳🇱 Nederlands (Dutch)</SelectItem>
+                    <SelectItem value="sv">🇸🇪 Svenska (Swedish)</SelectItem>
+                    <SelectItem value="da">🇩🇰 Dansk (Danish)</SelectItem>
+                    <SelectItem value="no">🇳🇴 Norsk (Norwegian)</SelectItem>
+                    <SelectItem value="fi">🇫🇮 Suomi (Finnish)</SelectItem>
+                    <SelectItem value="pl">🇵🇱 Polski (Polish)</SelectItem>
+                    <SelectItem value="cs">🇨🇿 Čeština (Czech)</SelectItem>
+                    <SelectItem value="zh">🇨🇳 中文 (Chinese)</SelectItem>
+                    <SelectItem value="ja">🇯🇵 日本語 (Japanese)</SelectItem>
+                    <SelectItem value="ko">🇰🇷 한국어 (Korean)</SelectItem>
+                    <SelectItem value="ar">🇸🇦 العربية (Arabic)</SelectItem>
+                    <SelectItem value="hi">🇮🇳 हिन्दी (Hindi)</SelectItem>
+                    <SelectItem value="ru">🇷🇺 Русский (Russian)</SelectItem>
                   </SelectContent>
                 </Select>
               </div>

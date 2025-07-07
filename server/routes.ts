@@ -5612,6 +5612,51 @@ export async function registerRoutes(app: Express): Promise<Server> {
     },
   );
 
+  // Update restaurant settings - only managers and owners can update settings
+  app.put(
+    "/api/tenants/:tenantId/restaurants/:restaurantId/settings",
+    validateTenant,
+    requirePermission(PERMISSIONS.EDIT_SETTINGS),
+    async (req, res) => {
+      try {
+        const restaurantId = parseInt(req.params.restaurantId);
+        const tenantId = parseInt(req.params.tenantId);
+        const settingsData = req.body;
+
+        // Validate restaurant ownership
+        const restaurant = await storage.getRestaurantById(restaurantId);
+        if (!restaurant || restaurant.tenantId !== tenantId) {
+          return res.status(404).json({ message: "Restaurant not found" });
+        }
+
+        // Update settings in database
+        const updatedSettings = await storage.updateRestaurantSettings(
+          restaurantId,
+          tenantId,
+          settingsData
+        );
+
+        // Log the settings update for audit trail
+        await storage.createActivityLog({
+          restaurantId,
+          tenantId,
+          userId: req.user?.id,
+          action: "update_settings",
+          details: `Settings updated: ${Object.keys(settingsData).join(', ')}`,
+          timestamp: new Date(),
+        });
+
+        res.json({
+          message: "Settings updated successfully",
+          settings: updatedSettings,
+        });
+      } catch (error) {
+        console.error("Error updating settings:", error);
+        res.status(500).json({ message: "Internal server error" });
+      }
+    },
+  );
+
   app.put(
     "/api/tenants/:tenantId/restaurants/:restaurantId/settings",
     validateTenant,
