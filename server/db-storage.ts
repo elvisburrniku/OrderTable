@@ -2986,4 +2986,206 @@ export class DatabaseStorage implements IStorage {
   async deleteExpiredReschedulingSuggestions(): Promise<void> {
     // Simplified implementation
   }
+
+  // Menu Categories
+  async getMenuCategoriesByRestaurant(restaurantId: number): Promise<any[]> {
+    if (!this.db) {
+      return [];
+    }
+    try {
+      const result = await this.db
+        .select()
+        .from(menuCategories)
+        .where(eq(menuCategories.restaurantId, restaurantId));
+      return result;
+    } catch (error) {
+      console.error("Error fetching menu categories:", error);
+      return [];
+    }
+  }
+
+  async getMenuCategories(restaurantId: number, tenantId: number): Promise<any[]> {
+    if (!this.db) {
+      return [];
+    }
+    try {
+      const result = await this.db
+        .select()
+        .from(menuCategories)
+        .where(
+          and(
+            eq(menuCategories.restaurantId, restaurantId),
+            eq(menuCategories.tenantId, tenantId)
+          )
+        );
+      return result;
+    } catch (error) {
+      console.error("Error fetching menu categories:", error);
+      return [];
+    }
+  }
+
+  async createMenuCategory(category: any): Promise<any> {
+    if (!this.db) {
+      throw new Error("Database not available");
+    }
+    try {
+      const result = await this.db
+        .insert(menuCategories)
+        .values({
+          ...category,
+          createdAt: new Date(),
+          updatedAt: new Date(),
+        })
+        .returning();
+      return result[0];
+    } catch (error) {
+      console.error("Error creating menu category:", error);
+      throw error;
+    }
+  }
+
+  async updateMenuCategory(id: number, updates: any): Promise<any | undefined> {
+    if (!this.db) {
+      return undefined;
+    }
+    try {
+      const result = await this.db
+        .update(menuCategories)
+        .set({
+          ...updates,
+          updatedAt: new Date(),
+        })
+        .where(eq(menuCategories.id, id))
+        .returning();
+      return result[0];
+    } catch (error) {
+      console.error("Error updating menu category:", error);
+      return undefined;
+    }
+  }
+
+  async deleteMenuCategory(id: number): Promise<boolean> {
+    if (!this.db) {
+      return false;
+    }
+    try {
+      await this.db
+        .delete(menuCategories)
+        .where(eq(menuCategories.id, id));
+      return true;
+    } catch (error) {
+      console.error("Error deleting menu category:", error);
+      return false;
+    }
+  }
+
+  // Menu Items
+  async getMenuItemsByRestaurant(restaurantId: number): Promise<any[]> {
+    if (!this.db) {
+      return [];
+    }
+    try {
+      const result = await this.db
+        .select()
+        .from(menuItems)
+        .where(eq(menuItems.restaurantId, restaurantId));
+      return result;
+    } catch (error) {
+      console.error("Error fetching menu items:", error);
+      return [];
+    }
+  }
+
+  async getMenuItems(restaurantId: number, tenantId: number): Promise<any[]> {
+    if (!this.db) {
+      return [];
+    }
+    try {
+      const result = await this.db
+        .select()
+        .from(menuItems)
+        .where(
+          and(
+            eq(menuItems.restaurantId, restaurantId),
+            eq(menuItems.tenantId, tenantId)
+          )
+        );
+      return result;
+    } catch (error) {
+      console.error("Error fetching menu items:", error);
+      return [];
+    }
+  }
+
+  async getMenuItemsByCategory(categoryId: number): Promise<any[]> {
+    if (!this.db) {
+      return [];
+    }
+    try {
+      const result = await this.db
+        .select()
+        .from(menuItems)
+        .where(eq(menuItems.categoryId, categoryId));
+      return result;
+    } catch (error) {
+      console.error("Error fetching menu items by category:", error);
+      return [];
+    }
+  }
+
+  async createMenuItem(item: any): Promise<any> {
+    if (!this.db) {
+      throw new Error("Database not available");
+    }
+    try {
+      const result = await this.db
+        .insert(menuItems)
+        .values({
+          ...item,
+          createdAt: new Date(),
+          updatedAt: new Date(),
+        })
+        .returning();
+      return result[0];
+    } catch (error) {
+      console.error("Error creating menu item:", error);
+      throw error;
+    }
+  }
+
+  async updateMenuItem(id: number, updates: any): Promise<any | undefined> {
+    if (!this.db) {
+      return undefined;
+    }
+    try {
+      const result = await this.db
+        .update(menuItems)
+        .set({
+          ...updates,
+          updatedAt: new Date(),
+        })
+        .where(eq(menuItems.id, id))
+        .returning();
+      return result[0];
+    } catch (error) {
+      console.error("Error updating menu item:", error);
+      return undefined;
+    }
+  }
+
+  async deleteMenuItem(id: number): Promise<boolean> {
+    if (!this.db) {
+      return false;
+    }
+    try {
+      await this.db
+        .delete(menuItems)
+        .where(eq(menuItems.id, id));
+      return true;
+    } catch (error) {
+      console.error("Error deleting menu item:", error);
+      return false;
+    }
+  }
 }

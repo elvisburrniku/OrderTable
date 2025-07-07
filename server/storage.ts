@@ -68,6 +68,10 @@ import type {
   InsertFloorPlanTemplate,
   Invoice,
   InsertInvoice,
+  MenuCategory,
+  InsertMenuCategory,
+  MenuItem,
+  InsertMenuItem,
 } from "../shared/schema";
 import { neon } from "@neondatabase/serverless";
 import { drizzle } from "drizzle-orm/neon-http";
