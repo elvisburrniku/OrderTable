@@ -1651,6 +1651,61 @@ export class DatabaseStorage implements IStorage {
       return created;
     }
   }
+
+  async deductSmsBalance(tenantId: number, amount: number): Promise<any> {
+    if (!this.db) throw new Error("Database connection not available");
+    const existing = await this.db
+      .select()
+      .from(smsBalance)
+      .where(eq(smsBalance.tenantId, tenantId))
+      .limit(1);
+    
+    if (existing.length > 0) {
+      const currentBalance = parseFloat(existing[0].balance || "0");
+      const newBalance = Math.max(0, currentBalance - amount); // Don't allow negative balance
+      const [updated] = await this.db
+        .update(smsBalance)
+        .set({
+          balance: newBalance.toFixed(2),
+          updatedAt: new Date(),
+        })
+        .where(eq(smsBalance.id, existing[0].id))
+        .returning();
+      return updated;
+    } else {
+      // If no balance record exists, create one with 0 balance
+      const [created] = await this.db
+        .insert(smsBalance)
+        .values({
+          tenantId,
+          balance: "0.00",
+          currency: "EUR",
+        })
+        .returning();
+      return created;
+    }
+  }
+
+  async logSmsMessage(messageData: any): Promise<SmsMessage> {
+    if (!this.db) throw new Error("Database connection not available");
+    const [created] = await this.db
+      .insert(smsMessages)
+      .values({
+        restaurantId: messageData.restaurantId,
+        tenantId: messageData.tenantId,
+        bookingId: messageData.bookingId || null,
+        phoneNumber: messageData.phoneNumber || messageData.to,
+        message: messageData.message,
+        type: messageData.type,
+        messageId: messageData.messageId,
+        status: messageData.status || 'sent',
+        cost: messageData.cost ? messageData.cost.toString() : null,
+        error: messageData.error || null,
+        provider: messageData.provider || 'twilio',
+      })
+      .returning();
+    return created;
+  }
   // SMS Message methods
   async createSmsMessage(
     restaurantId: number,

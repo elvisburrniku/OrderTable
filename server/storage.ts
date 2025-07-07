@@ -161,6 +161,12 @@ export interface IStorage {
   // SMS Messages
   getSmsMessagesByRestaurant(restaurantId: number): Promise<SmsMessage[]>;
   createSmsMessage(message: InsertSmsMessage): Promise<SmsMessage>;
+  logSmsMessage(message: any): Promise<SmsMessage>;
+  
+  // SMS Balance
+  getSmsBalance(tenantId: number): Promise<any>;
+  addSmsBalance(tenantId: number, amount: number): Promise<any>;
+  deductSmsBalance(tenantId: number, amount: number): Promise<any>;
 
   // Waiting List
   getWaitingListByRestaurant(restaurantId: number): Promise<WaitingList[]>;

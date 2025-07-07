@@ -134,12 +134,12 @@ export default function DashboardSidebar({
       href: `/${tenantId}/custom-fields`,
       requiredPermission: "access_settings",
     },
-    {
-      name: "Booking Agents",
-      icon: Users,
-      href: `/${tenantId}/booking-agents`,
-      requiredPermission: "access_users",
-    },
+    // {
+    //   name: "Booking Agents",
+    //   icon: Users,
+    //   href: `/${tenantId}/booking-agents`,
+    //   requiredPermission: "access_users",
+    // },
     {
       name: "E-mail Notifications",
       icon: Mail,
@@ -164,18 +164,18 @@ export default function DashboardSidebar({
       href: `/${tenantId}/events`,
       requiredPermission: "access_settings",
     },
-    {
-      name: "Products",
-      icon: Package,
-      href: `/${tenantId}/products`,
-      requiredPermission: "access_menu",
-    },
-    {
-      name: "Product Groups",
-      icon: Layers,
-      href: `/${tenantId}/product-groups`,
-      requiredPermission: "access_menu",
-    },
+    // {
+    //   name: "Products",
+    //   icon: Package,
+    //   href: `/${tenantId}/products`,
+    //   requiredPermission: "access_menu",
+    // },
+    // {
+    //   name: "Product Groups",
+    //   icon: Layers,
+    //   href: `/${tenantId}/product-groups`,
+    //   requiredPermission: "access_menu",
+    // },
     {
       name: "Payment Setups",
       icon: Settings,

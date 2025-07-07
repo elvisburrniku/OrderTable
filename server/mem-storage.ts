@@ -705,6 +705,38 @@ export class MemoryStorage implements IStorage {
     this.smsMessages.push(newMessage);
     return newMessage;
   }
+
+  async logSmsMessage(messageData: any): Promise<SmsMessage> {
+    const newMessage: SmsMessage = {
+      id: this.nextId++,
+      restaurantId: messageData.restaurantId,
+      tenantId: messageData.tenantId,
+      bookingId: messageData.bookingId || null,
+      phoneNumber: messageData.phoneNumber || messageData.to,
+      message: messageData.message,
+      type: messageData.type,
+      messageId: messageData.messageId,
+      status: messageData.status || 'sent',
+      cost: messageData.cost ? messageData.cost.toString() : null,
+      error: messageData.error || null,
+      provider: messageData.provider || 'twilio',
+      createdAt: new Date(),
+    };
+    this.smsMessages.push(newMessage);
+    return newMessage;
+  }
+
+  async getSmsBalance(tenantId: number): Promise<any> {
+    return { balance: "10.00", currency: "EUR" }; // Mock balance for memory storage
+  }
+
+  async addSmsBalance(tenantId: number, amount: number): Promise<any> {
+    return { balance: "10.00", currency: "EUR" }; // Mock response for memory storage
+  }
+
+  async deductSmsBalance(tenantId: number, amount: number): Promise<any> {
+    return { balance: "10.00", currency: "EUR" }; // Mock response for memory storage
+  }
   async getWaitingListByRestaurant(
     restaurantId: number,
   ): Promise<WaitingList[]> {
