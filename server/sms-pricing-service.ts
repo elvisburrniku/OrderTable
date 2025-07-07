@@ -128,32 +128,32 @@ class SMSPricingService {
   }
 
   private initializePricing(): void {
-    // Default pricing structure based on the provided data
+    // Official Twilio SMS pricing data (updated from latest Twilio pricing document)
     const defaultPricing: CountryPricing[] = [
-      // North America
-      { iso: 'US', country: 'United States', price: 0.0075 },
-      { iso: 'CA', country: 'Canada', price: 0.0083 },
+      // North America - Updated to match official Twilio pricing
+      { iso: 'US', country: 'United States', price: 0.00830 },
+      { iso: 'CA', country: 'Canada', price: 0.00830 },
       { iso: 'MX', country: 'Mexico', price: 0.0525 },
       
-      // Europe
-      { iso: 'GB', country: 'United Kingdom', price: 0.0525 },
-      { iso: 'DE', country: 'Germany', price: 0.0959 },
-      { iso: 'FR', country: 'France', price: 0.0959 },
-      { iso: 'IT', country: 'Italy', price: 0.0959 },
-      { iso: 'ES', country: 'Spain', price: 0.0959 },
-      { iso: 'NL', country: 'Netherlands', price: 0.0959 },
-      { iso: 'BE', country: 'Belgium', price: 0.1050 },
-      { iso: 'CH', country: 'Switzerland', price: 0.0725 },
-      { iso: 'AT', country: 'Austria', price: 0.0979 },
-      { iso: 'DK', country: 'Denmark', price: 0.0525 },
-      { iso: 'SE', country: 'Sweden', price: 0.0666 },
-      { iso: 'NO', country: 'Norway', price: 0.0959 },
-      { iso: 'FI', country: 'Finland', price: 0.0959 },
-      { iso: 'IE', country: 'Ireland', price: 0.0959 },
-      { iso: 'PT', country: 'Portugal', price: 0.0525 },
-      { iso: 'GR', country: 'Greece', price: 0.0959 },
-      { iso: 'PL', country: 'Poland', price: 0.0525 },
-      { iso: 'CZ', country: 'Czech Republic', price: 0.0666 },
+      // Europe - Updated to match official Twilio pricing
+      { iso: 'GB', country: 'United Kingdom', price: 0.04630 },
+      { iso: 'DE', country: 'Germany', price: 0.09400 },
+      { iso: 'FR', country: 'France', price: 0.07980 },
+      { iso: 'IT', country: 'Italy', price: 0.08750 },
+      { iso: 'ES', country: 'Spain', price: 0.08750 },
+      { iso: 'NL', country: 'Netherlands', price: 0.08750 },
+      { iso: 'BE', country: 'Belgium', price: 0.10500 },
+      { iso: 'CH', country: 'Switzerland', price: 0.07250 },
+      { iso: 'AT', country: 'Austria', price: 0.09790 },
+      { iso: 'DK', country: 'Denmark', price: 0.05240 },
+      { iso: 'SE', country: 'Sweden', price: 0.06660 },
+      { iso: 'NO', country: 'Norway', price: 0.06830 },
+      { iso: 'FI', country: 'Finland', price: 0.08610 },
+      { iso: 'IE', country: 'Ireland', price: 0.07370 },
+      { iso: 'PT', country: 'Portugal', price: 0.05250 },
+      { iso: 'GR', country: 'Greece', price: 0.06200 },
+      { iso: 'PL', country: 'Poland', price: 0.05250 },
+      { iso: 'CZ', country: 'Czech Republic', price: 0.06660 },
       { iso: 'SK', country: 'Slovakia', price: 0.0959 },
       { iso: 'HU', country: 'Hungary', price: 0.0959 },
       { iso: 'RO', country: 'Romania', price: 0.0959 },
@@ -179,7 +179,7 @@ class SMSPricingService {
       { iso: 'PH', country: 'Philippines', price: 0.0525 },
       { iso: 'IN', country: 'India', price: 0.0525 },
       { iso: 'PK', country: 'Pakistan', price: 0.0959 },
-      { iso: 'BD', country: 'Bangladesh', price: 0.3869 },
+      { iso: 'BD', country: 'Bangladesh', price: 0.38690 },
       { iso: 'LK', country: 'Sri Lanka', price: 0.0959 },
       
       // Middle East
