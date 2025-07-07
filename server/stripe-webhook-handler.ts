@@ -89,13 +89,14 @@ export async function handleStripeWebhook(
           try {
             // First try to find booking by payment intent ID
             const { eq, and, desc, gte } = await import("drizzle-orm");
+            const { bookings } = await import("../shared/schema");
             let booking = null;
 
             // Try to find booking by payment intent ID first
             const bookingsByPaymentIntent = await storage.db
               .select()
-              .from(storage.bookings)
-              .where(eq(storage.bookings.paymentIntentId, paymentIntent.id))
+              .from(bookings)
+              .where(eq(bookings.paymentIntentId, paymentIntent.id))
               .limit(1);
 
             if (bookingsByPaymentIntent.length > 0) {
@@ -123,12 +124,12 @@ export async function handleStripeWebhook(
               // Build search conditions
               const searchConditions = [
                 eq(
-                  storage.bookings.customerEmail,
+                  bookings.customerEmail,
                   paymentIntent.metadata.customerEmail,
                 ),
-                gte(storage.bookings.bookingDate, bookingDate),
+                gte(bookings.bookingDate, bookingDate),
                 eq(
-                  storage.bookings.startTime,
+                  bookings.startTime,
                   paymentIntent.metadata.startTime,
                 ),
               ];
@@ -140,7 +141,7 @@ export async function handleStripeWebhook(
               ) {
                 searchConditions.push(
                   eq(
-                    storage.bookings.guestCount,
+                    bookings.guestCount,
                     parseInt(paymentIntent.metadata.guestCount),
                   ),
                 );
@@ -148,9 +149,9 @@ export async function handleStripeWebhook(
 
               const recentBookings = await storage.db
                 .select()
-                .from(storage.bookings)
+                .from(bookings)
                 .where(and(...searchConditions))
-                .orderBy(desc(storage.bookings.createdAt))
+                .orderBy(desc(bookings.createdAt))
                 .limit(5); // Get more results to debug
 
               console.log(
@@ -325,8 +326,17 @@ export async function handleStripeWebhook(
         }
 
         // Handle regular booking payment
-        if (paymentIntent.metadata?.bookingId) {
+        if (paymentIntent.metadata?.bookingId && 
+            paymentIntent.metadata.bookingId !== "guest_booking") {
           const bookingId = parseInt(paymentIntent.metadata.bookingId);
+          
+          // Check if bookingId is valid before proceeding
+          if (isNaN(bookingId)) {
+            console.error(`Invalid booking ID in payment metadata: ${paymentIntent.metadata.bookingId}`);
+            console.log("Skipping regular booking processing due to invalid booking ID");
+            break;
+          }
+          
           console.log(`Processing payment for booking ID: ${bookingId}`);
 
           const booking = await storage.getBookingById(bookingId);
