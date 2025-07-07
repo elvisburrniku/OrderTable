@@ -23,6 +23,10 @@ import {
   notifications,
   resolvedConflicts,
   webhookLogs,
+  kitchenOrders,
+  kitchenStations,
+  kitchenStaff,
+  kitchenMetrics,
 } from "../shared/schema";
 import type {
   User,
@@ -72,6 +76,14 @@ import type {
   InsertMenuCategory,
   MenuItem,
   InsertMenuItem,
+  KitchenOrder,
+  InsertKitchenOrder,
+  KitchenStation,
+  InsertKitchenStation,
+  KitchenStaff,
+  InsertKitchenStaff,
+  KitchenMetrics,
+  InsertKitchenMetrics,
 } from "../shared/schema";
 import { neon } from "@neondatabase/serverless";
 import { drizzle } from "drizzle-orm/neon-http";
@@ -507,6 +519,18 @@ export interface IStorage {
   getInvoicesByTenant(tenantId: number): Promise<Invoice[]>;
   getInvoicesByRestaurant(restaurantId: number): Promise<Invoice[]>;
   updateInvoice(id: number, updates: Partial<Invoice>): Promise<Invoice | undefined>;
+
+  // Kitchen Management
+  getKitchenOrders(restaurantId: number, tenantId: number): Promise<any[]>;
+  createKitchenOrder(orderData: any): Promise<any>;
+  updateKitchenOrder(orderId: number, updates: any): Promise<any>;
+  getKitchenStations(restaurantId: number, tenantId: number): Promise<any[]>;
+  createKitchenStation(stationData: any): Promise<any>;
+  updateKitchenStation(stationId: number, updates: any): Promise<any>;
+  getKitchenStaff(restaurantId: number, tenantId: number): Promise<any[]>;
+  createKitchenStaff(staffData: any): Promise<any>;
+  updateKitchenStaff(staffId: number, updates: any): Promise<any>;
+  calculateKitchenMetrics(restaurantId: number, tenantId: number, timeRange?: string): Promise<any>;
 }
 
 import { DatabaseStorage } from "./db-storage";

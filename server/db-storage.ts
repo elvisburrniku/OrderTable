@@ -3188,4 +3188,233 @@ export class DatabaseStorage implements IStorage {
       return false;
     }
   }
+
+  // Kitchen Management Methods
+  async getKitchenOrders(restaurantId: number, tenantId: number): Promise<any[]> {
+    if (!this.db) {
+      return [];
+    }
+    try {
+      const result = await this.db
+        .select()
+        .from(kitchenOrders)
+        .where(
+          and(
+            eq(kitchenOrders.restaurantId, restaurantId),
+            eq(kitchenOrders.tenantId, tenantId)
+          )
+        );
+      return result;
+    } catch (error) {
+      console.error("Error fetching kitchen orders:", error);
+      return [];
+    }
+  }
+
+  async createKitchenOrder(orderData: any): Promise<any> {
+    if (!this.db) {
+      throw new Error("Database not available");
+    }
+    try {
+      const result = await this.db
+        .insert(kitchenOrders)
+        .values(orderData)
+        .returning();
+      return result[0];
+    } catch (error) {
+      console.error("Error creating kitchen order:", error);
+      throw error;
+    }
+  }
+
+  async updateKitchenOrder(orderId: number, updates: any): Promise<any> {
+    if (!this.db) {
+      return undefined;
+    }
+    try {
+      const result = await this.db
+        .update(kitchenOrders)
+        .set({
+          ...updates,
+          updatedAt: new Date(),
+        })
+        .where(eq(kitchenOrders.id, orderId))
+        .returning();
+      return result[0];
+    } catch (error) {
+      console.error("Error updating kitchen order:", error);
+      return undefined;
+    }
+  }
+
+  async getKitchenStations(restaurantId: number, tenantId: number): Promise<any[]> {
+    if (!this.db) {
+      return [];
+    }
+    try {
+      const result = await this.db
+        .select()
+        .from(kitchenStations)
+        .where(
+          and(
+            eq(kitchenStations.restaurantId, restaurantId),
+            eq(kitchenStations.tenantId, tenantId)
+          )
+        );
+      return result;
+    } catch (error) {
+      console.error("Error fetching kitchen stations:", error);
+      return [];
+    }
+  }
+
+  async createKitchenStation(stationData: any): Promise<any> {
+    if (!this.db) {
+      throw new Error("Database not available");
+    }
+    try {
+      const result = await this.db
+        .insert(kitchenStations)
+        .values(stationData)
+        .returning();
+      return result[0];
+    } catch (error) {
+      console.error("Error creating kitchen station:", error);
+      throw error;
+    }
+  }
+
+  async updateKitchenStation(stationId: number, updates: any): Promise<any> {
+    if (!this.db) {
+      return undefined;
+    }
+    try {
+      const result = await this.db
+        .update(kitchenStations)
+        .set({
+          ...updates,
+          updatedAt: new Date(),
+        })
+        .where(eq(kitchenStations.id, stationId))
+        .returning();
+      return result[0];
+    } catch (error) {
+      console.error("Error updating kitchen station:", error);
+      return undefined;
+    }
+  }
+
+  async getKitchenStaff(restaurantId: number, tenantId: number): Promise<any[]> {
+    if (!this.db) {
+      return [];
+    }
+    try {
+      const result = await this.db
+        .select()
+        .from(kitchenStaff)
+        .where(
+          and(
+            eq(kitchenStaff.restaurantId, restaurantId),
+            eq(kitchenStaff.tenantId, tenantId)
+          )
+        );
+      return result;
+    } catch (error) {
+      console.error("Error fetching kitchen staff:", error);
+      return [];
+    }
+  }
+
+  async createKitchenStaff(staffData: any): Promise<any> {
+    if (!this.db) {
+      throw new Error("Database not available");
+    }
+    try {
+      const result = await this.db
+        .insert(kitchenStaff)
+        .values(staffData)
+        .returning();
+      return result[0];
+    } catch (error) {
+      console.error("Error creating kitchen staff:", error);
+      throw error;
+    }
+  }
+
+  async updateKitchenStaff(staffId: number, updates: any): Promise<any> {
+    if (!this.db) {
+      return undefined;
+    }
+    try {
+      const result = await this.db
+        .update(kitchenStaff)
+        .set({
+          ...updates,
+          updatedAt: new Date(),
+        })
+        .where(eq(kitchenStaff.id, staffId))
+        .returning();
+      return result[0];
+    } catch (error) {
+      console.error("Error updating kitchen staff:", error);
+      return undefined;
+    }
+  }
+
+  async calculateKitchenMetrics(restaurantId: number, tenantId: number, timeRange?: string): Promise<any> {
+    if (!this.db) {
+      return {
+        ordersCompleted: 0,
+        averageTime: 0,
+        efficiency: 0,
+        revenue: 0,
+        peakHour: 12,
+        popularItems: [],
+        stationUtilization: {},
+        waitTimes: {}
+      };
+    }
+    try {
+      // Calculate basic metrics from kitchen orders
+      const orders = await this.db
+        .select()
+        .from(kitchenOrders)
+        .where(
+          and(
+            eq(kitchenOrders.restaurantId, restaurantId),
+            eq(kitchenOrders.tenantId, tenantId)
+          )
+        );
+
+      const ordersCompleted = orders.filter(order => order.status === 'served').length;
+      const totalRevenue = orders.reduce((sum, order) => sum + (order.totalAmount || 0), 0);
+      const completedOrders = orders.filter(order => order.actualTime);
+      const averageTime = completedOrders.length > 0 
+        ? completedOrders.reduce((sum, order) => sum + (order.actualTime || 0), 0) / completedOrders.length
+        : 0;
+
+      return {
+        ordersCompleted,
+        averageTime: Math.round(averageTime),
+        efficiency: ordersCompleted > 0 ? Math.round((ordersCompleted / orders.length) * 100) : 100,
+        revenue: totalRevenue,
+        peakHour: 12,
+        popularItems: [],
+        stationUtilization: {},
+        waitTimes: {}
+      };
+    } catch (error) {
+      console.error("Error calculating kitchen metrics:", error);
+      return {
+        ordersCompleted: 0,
+        averageTime: 0,
+        efficiency: 0,
+        revenue: 0,
+        peakHour: 12,
+        popularItems: [],
+        stationUtilization: {},
+        waitTimes: {}
+      };
+    }
+  }
 }
