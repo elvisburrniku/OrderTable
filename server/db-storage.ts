@@ -1712,26 +1712,25 @@ export class DatabaseStorage implements IStorage {
     return [];
   }
   // SMS Message methods
-  async createSmsMessage(
-    restaurantId: number,
-    tenantId: number,
-    messageData: any,
-  ): Promise<any> {
+  async createSmsMessage(message: any): Promise<any> {
     if (!this.db) throw new Error("Database connection not available");
-    const [message] = await this.db
+    const [created] = await this.db
       .insert(smsMessages)
       .values({
-        restaurantId,
-        tenantId,
-        bookingId: messageData.bookingId,
-        phoneNumber: messageData.phoneNumber,
-        message: messageData.message,
-        type: messageData.type,
-        status: "pending",
-        cost: messageData.cost || "0.08",
+        restaurantId: message.restaurantId,
+        tenantId: message.tenantId,
+        bookingId: message.bookingId || null,
+        phoneNumber: message.phoneNumber,
+        message: message.message,
+        type: message.type,
+        messageId: message.messageId || null,
+        status: message.status || "pending",
+        cost: message.cost || "0.08",
+        error: message.error || null,
+        provider: message.provider || 'twilio',
       })
       .returning();
-    return message;
+    return created;
   }
   async updateSmsMessageStatus(
     messageId: number,
@@ -2463,7 +2462,12 @@ export class DatabaseStorage implements IStorage {
   }
 
   async getSmsMessagesByRestaurant(restaurantId: number): Promise<any[]> {
-    return [];
+    if (!this.db) throw new Error("Database connection not available");
+    return await this.db
+      .select()
+      .from(smsMessages)
+      .where(eq(smsMessages.restaurantId, restaurantId))
+      .orderBy(desc(smsMessages.createdAt));
   }
   async getWaitingListByRestaurant(restaurantId: number): Promise<any[]> {
     if (!this.db) throw new Error("Database connection not available");

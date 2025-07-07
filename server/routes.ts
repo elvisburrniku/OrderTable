@@ -4019,7 +4019,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
         };
 
         // Save message to database first
-        const message = await storage.createSmsMessage(restaurantId, tenantId, messageData);
+        const smsMessageData = {
+          restaurantId,
+          tenantId,
+          bookingId: messageData.bookingId,
+          phoneNumber: messageData.phoneNumber,
+          message: messageData.message,
+          type: messageData.type,
+          status: "pending",
+          cost: messageData.cost,
+        };
+        const message = await storage.createSmsMessage(smsMessageData);
 
         // Send SMS via Twilio
         try {
