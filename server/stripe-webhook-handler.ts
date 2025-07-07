@@ -236,16 +236,19 @@ export async function handleStripeWebhook(event: Stripe.Event, storage: IStorage
                 }
               }
             } else {
-                console.log(`No matching booking found for payment intent ${paymentIntent.id}`);
-                console.log('Payment metadata:', paymentIntent.metadata);
-              }
-            } catch (error) {
-              console.error('Error processing guest booking payment:', error);
+              console.log(`No matching booking found for payment intent ${paymentIntent.id}`);
+              console.log('Payment metadata:', paymentIntent.metadata);
             }
           } catch (error) {
             console.error('Error processing guest booking payment:', error);
           }
-          break;
+          } catch (error) {
+            console.error('Error processing guest booking payment:', error);
+          }
+        } catch (error) {
+          console.error('Error processing guest booking payment:', error);
+        }
+        break;
         }
         
         // Handle regular booking payment
