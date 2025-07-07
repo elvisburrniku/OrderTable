@@ -341,8 +341,17 @@ export default function PrePayment() {
     setRequestingLink(true);
 
     try {
+      // Get the actual booking ID from the booking data or URL params
+      const actualBookingId = booking?.id || bookingId;
+      
+      if (!actualBookingId) {
+        setError("Unable to identify booking. Please contact the restaurant directly.");
+        setRequestingLink(false);
+        return;
+      }
+
       const response = await fetch(
-        `/api/guest/bookings/${bookingId}/request-payment-link`,
+        `/api/guest/bookings/${actualBookingId}/request-payment-link`,
         {
           method: "POST",
           headers: {
@@ -372,8 +381,17 @@ export default function PrePayment() {
     setRequestingLink(true);
 
     try {
+      // Get the actual booking ID from the booking data or URL params
+      const actualBookingId = booking?.id || bookingId;
+      
+      if (!actualBookingId) {
+        setError("Unable to identify booking. Please contact the restaurant directly.");
+        setRequestingLink(false);
+        return;
+      }
+
       const response = await fetch(
-        `/api/guest/bookings/${bookingId}/contact-restaurant`,
+        `/api/guest/bookings/${actualBookingId}/contact-restaurant`,
         {
           method: "POST",
           headers: {
@@ -400,7 +418,13 @@ export default function PrePayment() {
   };
 
   const handlePaymentSuccess = () => {
-    window.location.href = `/payment-success?booking=${bookingId}&hash=${hash}`;
+    // Use token for new system or fallback to legacy hash system
+    if (token) {
+      window.location.href = `/payment-success?token=${encodeURIComponent(token)}`;
+    } else {
+      const actualBookingId = booking?.id || bookingId;
+      window.location.href = `/payment-success?booking=${actualBookingId}&hash=${hash}`;
+    }
   };
 
   const handlePaymentError = (errorMessage: string) => {
