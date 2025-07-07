@@ -59,7 +59,7 @@ export class PaymentService {
           bookingDate: bookingDetails.bookingDate,
           startTime: bookingDetails.startTime,
           guestCount: bookingDetails.guestCount.toString(),
-          type: "booking_payment"
+          type: bookingDetails.bookingId ? "booking_payment" : "guest_booking"
         },
         description: `Booking payment for ${bookingDetails.restaurantName} - ${bookingDetails.guestCount} guests on ${bookingDetails.bookingDate} at ${bookingDetails.startTime}`,
       });
@@ -135,7 +135,7 @@ export class PaymentService {
           bookingDate: bookingDetails.bookingDate,
           startTime: bookingDetails.startTime,
           guestCount: bookingDetails.guestCount.toString(),
-          type: "booking_payment"
+          type: bookingDetails.bookingId ? "booking_payment" : "guest_booking"
         },
         after_completion: {
           type: "redirect",

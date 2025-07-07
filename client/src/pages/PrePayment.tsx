@@ -57,6 +57,7 @@ function BookingPaymentForm({
   const [isProcessing, setIsProcessing] = useState(false);
 
   const formatCurrency = (amount: number, currency: string) => {
+    console.log("Formatting currency:", amount, currency);
     return new Intl.NumberFormat("en-US", {
       style: "currency",
       currency: currency.toUpperCase(),
@@ -209,24 +210,39 @@ export default function PrePayment() {
         );
 
         if (!response.ok) {
-          const errorData = await response.json();
-          if (response.status === 403) {
-            throw new Error("Invalid or expired payment link");
+            const errorData = await response.json();
+            if (response.status === 403) {
+              throw new Error("Invalid or expired payment link");
+            }
+            if (response.status === 404) {
+              throw new Error("Booking not found");
+            }
+            if (
+              response.status === 400 &&
+              errorData.code === "stripe_connect_not_setup"
+            ) {
+              throw new Error("stripe_connect_not_setup");
+            }
+            if (
+              response.status === 400 &&
+              errorData.message === "This booking has already been paid"
+            ) {
+              // Set a flag to show payment complete instead of error
+              setError("payment_already_complete");
+              return null;
+            }
+            throw new Error(
+              errorData.message || "Failed to fetch booking details",
+            );
           }
-          if (response.status === 404) {
-            throw new Error("Booking not found");
-          }
-          if (
-            response.status === 400 &&
-            errorData.code === "stripe_connect_not_setup"
-          ) {
-            throw new Error("stripe_connect_not_setup");
-          }
-          throw new Error(
-            errorData.message || "Failed to fetch booking details",
-          );
+        const data = await response.json();
+
+        // If response indicates payment is already complete, mark booking as paid
+        if (data.isPaid || data.paymentStatus === 'paid') {
+          data.paymentStatus = 'paid';
         }
-        return response.json();
+
+        return data;
       } else if (bookingId && hash) {
         // Legacy support for hash-based URLs
         const response = await fetch(
@@ -234,24 +250,39 @@ export default function PrePayment() {
         );
 
         if (!response.ok) {
-          const errorData = await response.json();
-          if (response.status === 403) {
-            throw new Error("Invalid or expired payment link");
+            const errorData = await response.json();
+            if (response.status === 403) {
+              throw new Error("Invalid or expired payment link");
+            }
+            if (response.status === 404) {
+              throw new Error("Booking not found");
+            }
+            if (
+              response.status === 400 &&
+              errorData.code === "stripe_connect_not_setup"
+            ) {
+              throw new Error("stripe_connect_not_setup");
+            }
+            if (
+              response.status === 400 &&
+              errorData.message === "This booking has already been paid"
+            ) {
+              // Set a flag to show payment complete instead of error
+              setError("payment_already_complete");
+              return null;
+            }
+            throw new Error(
+              errorData.message || "Failed to fetch booking details",
+            );
           }
-          if (response.status === 404) {
-            throw new Error("Booking not found");
-          }
-          if (
-            response.status === 400 &&
-            errorData.code === "stripe_connect_not_setup"
-          ) {
-            throw new Error("stripe_connect_not_setup");
-          }
-          throw new Error(
-            errorData.message || "Failed to fetch booking details",
-          );
+        const data = await response.json();
+
+        // If response indicates payment is already complete, mark booking as paid
+        if (data.isPaid || data.paymentStatus === 'paid') {
+          data.paymentStatus = 'paid';
         }
-        return response.json();
+
+        return data;
       } else {
         throw new Error(
           "Invalid payment link - missing token or booking parameters",
@@ -340,8 +371,17 @@ export default function PrePayment() {
     setRequestingLink(true);
 
     try {
+      // Get the actual booking ID from the booking data or URL params
+      const actualBookingId = booking?.id || bookingId;
+
+      if (!actualBookingId) {
+        setError("Unable to identify booking. Please contact the restaurant directly.");
+        setRequestingLink(false);
+        return;
+      }
+
       const response = await fetch(
-        `/api/guest/bookings/${bookingId}/request-payment-link`,
+        `/api/guest/bookings/${actualBookingId}/request-payment-link`,
         {
           method: "POST",
           headers: {
@@ -371,8 +411,17 @@ export default function PrePayment() {
     setRequestingLink(true);
 
     try {
+      // Get the actual booking ID from the booking data or URL params
+      const actualBookingId = booking?.id || bookingId;
+
+      if (!actualBookingId) {
+        setError("Unable to identify booking. Please contact the restaurant directly.");
+        setRequestingLink(false);
+        return;
+      }
+
       const response = await fetch(
-        `/api/guest/bookings/${bookingId}/contact-restaurant`,
+        `/api/guest/bookings/${actualBookingId}/contact-restaurant`,
         {
           method: "POST",
           headers: {
@@ -399,7 +448,13 @@ export default function PrePayment() {
   };
 
   const handlePaymentSuccess = () => {
-    window.location.href = `/payment-success?booking=${bookingId}&hash=${hash}`;
+    // Use token for new system or fallback to legacy hash system
+    if (token) {
+      window.location.href = `/payment-success?token=${encodeURIComponent(token)}`;
+    } else {
+      const actualBookingId = booking?.id || bookingId;
+      window.location.href = `/payment-success?booking=${actualBookingId}&hash=${hash}`;
+    }
   };
 
   const handlePaymentError = (errorMessage: string) => {
@@ -574,7 +629,7 @@ export default function PrePayment() {
     );
   }
 
-  if (bookingError || !booking) {
+  if (bookingError || (!booking && error !== "payment_already_complete")) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-red-50 to-rose-100 py-12 px-4">
         <div className="container mx-auto max-w-md">
@@ -647,6 +702,35 @@ export default function PrePayment() {
       </div>
     );
   }
+
+  if (error === "payment_already_complete") {
+        return (
+            <div className="min-h-screen bg-gradient-to-br from-green-50 to-emerald-100 py-12 px-4">
+                <div className="container mx-auto max-w-md">
+                    <Card>
+                        <CardHeader>
+                            <CardTitle className="flex items-center gap-2 text-green-700">
+                                <CheckCircle className="h-5 w-5" />
+                                Payment Complete
+                            </CardTitle>
+                            <CardDescription>
+                                This booking has already been paid.
+                            </CardDescription>
+                        </CardHeader>
+                        <CardContent>
+                            <Alert className="border-green-200 bg-green-50">
+                                <CheckCircle className="h-4 w-4 text-green-600" />
+                                <AlertDescription className="text-green-800">
+                                    The payment for this booking has already been completed.
+                                </AlertDescription>
+                            </Alert>
+                        </CardContent>
+                    </Card>
+                </div>
+            </div>
+        );
+    }
+
 
   if (error) {
     // Handle Stripe Connect not setup case

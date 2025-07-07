@@ -1,0 +1,101 @@
+Why Guest Bookings Might Not Be Updated
+paymentIntent.metadata.customerEmail is Missing:
+The entire guest booking processing block is wrapped within if (paymentIntent.metadata.customerEmail). If, for any reason, the customerEmail is not present in the payment intent's metadata for a guest booking, this entire section will be skipped, and no booking update or invoice creation will occur.
+
+Troubleshooting:
+
+Inspect Stripe Payment Intent: Go to your Stripe Dashboard, find the payment_intent.succeeded event for a guest booking, and inspect its metadata. Ensure customerEmail is present and correctly populated.
+
+Review Payment Intent Creation Logic: Check where you create the Stripe Payment Intent on your frontend or backend for guest bookings. Make sure customerEmail (and bookingDate, startTime, guestCount) is being correctly added to the metadata object.
+
+Booking Not Found by paymentIntentId (Primary Search):
+The code first attempts to find the booking using eq(storage.bookings.paymentIntentId, paymentIntent.id). If the paymentIntentId is not being set on the booking record when it's initially created (before payment), this query will return no results.
+
+Troubleshooting:
+
+Booking Creation Flow: Verify that when a guest booking is initially created, the paymentIntentId is stored in your bookings table. This is crucial for matching the Stripe payment intent back to your internal booking record. It's common practice to create the booking first, then create the payment intent, and finally link them.
+
+Booking Not Found by Customer Details (Fallback Search):
+If the paymentIntentId search fails, the code attempts to find a recent booking using:
+
+customerEmail
+
+bookingDate
+
+startTime
+
+guestCount
+
+Potential Issues:
+
+Data Type Mismatch for bookingDate: new Date(paymentIntent.metadata.bookingDate) expects bookingDate in metadata to be a string that can be reliably converted to a Date object. If bookingDate in the metadata is in a different format or is not a string (e.g., a Unix timestamp number), new Date() might create an invalid date, causing the eq comparison to fail.
+
+startTime Format Mismatch: Ensure paymentIntent.metadata.startTime exactly matches the format stored in storage.bookings.startTime. Even subtle differences (e.g., "18:00" vs "06:00 PM") can cause mismatches.
+
+guestCount Conversion Issue: parseInt(paymentIntent.metadata.guestCount) assumes guestCount in metadata is a string that can be parsed as an integer. If it's missing, null, or not a valid number string, parseInt might return NaN, leading to a failed comparison.
+
+Too Restrictive Search: While orderBy(desc(storage.bookings.createdAt)).limit(1) is good for finding the most recent matching booking, if multiple guest bookings with the exact same customer details, date, time, and guest count are created very close together (e.g., by the same person trying multiple times), it might not pick the correct one if the paymentIntentId isn't set. This highlights the importance of the paymentIntentId as the primary key for linking.
+
+Timing Issues: There's a small window between when the payment intent is created and when the booking record is finalized in your database with the payment intent ID. If the webhook arrives before your booking record is fully updated with the paymentIntentId, the initial search will fail. The fallback relies on other details, but it's less robust.
+
+Troubleshooting:
+
+Log paymentIntent.metadata: Add a console.log(paymentIntent.metadata) right at the start of the payment_intent.succeeded block to see the exact values Stripe sends.
+
+Compare with Database: Manually query your bookings table for a specific guest booking and compare its customerEmail, bookingDate, startTime, and guestCount with what you see in the Stripe paymentIntent.metadata. Pay close attention to data types and formats.
+
+Ensure bookingDate is Stored as Date in DB: If storage.bookings.bookingDate is a Date object in your schema, ensure new Date(paymentIntent.metadata.bookingDate) correctly produces a comparable Date object.
+
+booking Object is null:
+If both the paymentIntentId search and the customer details search fail to find a booking, the if (booking) condition will be false, and the code responsible for updating the booking and creating the invoice will be skipped entirely, leading to the console.log("No matching booking found for payment intent...") message.
+
+Errors within the try...catch Block for Guest Bookings:
+Although less likely to cause a silent failure (it would typically log an error), any unhandled error within the try block for guest booking processing (e.g., an issue with storage.updateBooking or storage.db.insert(invoices)) could prevent the updates and invoice creation.
+
+Troubleshooting:
+
+Check Server Logs: Look for the error message Error processing guest booking payment: followed by the actual error. This would indicate an issue with your database operations rather than finding the booking itself.
+
+Step-by-Step Debugging Strategy
+Reproduce the Issue: Create a new guest booking that triggers a payment_intent.succeeded webhook.
+
+Examine Stripe Webhook Event:
+
+Go to your Stripe Dashboard -> Developers -> Webhooks.
+
+Find the payment_intent.succeeded event that corresponds to your test guest booking.
+
+Click on the event and inspect the Event data tab.
+
+Specifically, look at the data.object.metadata field. Note down the exact values for bookingId (should be 'guest_booking' or 'guest_booking'), type (if present and 'guest_booking'), customerEmail, bookingDate, startTime, and guestCount.
+
+Check Your Application Logs:
+
+Deploy your webhook handler with extensive logging.
+
+Focus on the console.log statements within the payment_intent.succeeded block for guest bookings.
+
+Crucially, add a console.log(paymentIntent.metadata); at the very beginning of the payment_intent.succeeded case.
+
+Observe the output of console.log(Found booking ${booking.id} by payment intent ID ${paymentIntent.id}); or console.log(Found guest booking ${booking.id} by customer details for payment intent ${paymentIntent.id});. If you don't see either, it means booking remains null.
+
+Look for the console.log("No matching booking found for payment intent...") message. If you see this, it confirms the booking wasn't found.
+
+Database Inspection:
+
+After the webhook is processed, manually check your bookings table in the database.
+
+Look for the booking that should have been updated.
+
+Compare its paymentIntentId, customerEmail, bookingDate, startTime, and guestCount values against what you observed in the Stripe webhook metadata.
+
+Also, check your stripePayments table and invoices table to see if any partial records were created or if the paymentIntentId matches.
+
+Most Likely Culprits
+Missing or Incorrect paymentIntentId on the booking record: This is the most robust way to link. Ensure your booking creation process explicitly saves the paymentIntentId to the booking record as soon as the Stripe Payment Intent is created (even before it succeeds).
+
+Mismatched bookingDate, startTime, or guestCount formats/types between Stripe metadata and your database: Especially bookingDate needing proper Date object conversion.
+
+paymentIntent.metadata.customerEmail is absent: If this key is missing in the Stripe metadata, the guest booking logic won't even execute the search.
+
+By systematically going through these points and adding more granular logging, you should be able to pinpoint exactly why the guest booking isn't being updated and the invoice isn't being created.
