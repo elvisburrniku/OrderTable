@@ -1,10 +1,10 @@
-import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
-import { Language, detectLanguage, translations, Translations } from '@/lib/i18n';
+import React, { createContext, useContext, useEffect, useState, ReactNode } from 'react';
+import { useTranslation } from '@/lib/translations';
 
 interface LanguageContextType {
-  language: Language;
-  setLanguage: (language: Language) => void;
-  translations: Translations;
+  language: string;
+  setLanguage: (lang: string) => void;
+  t: (key: string, fallback?: string) => string;
   isLoading: boolean;
 }
 
@@ -14,57 +14,69 @@ interface LanguageProviderProps {
   children: ReactNode;
 }
 
-export function LanguageProvider({ children }: LanguageProviderProps) {
-  const [language, setLanguageState] = useState<Language>('en'); // Start with English default
+export const LanguageProvider: React.FC<LanguageProviderProps> = ({ children }) => {
+  const [language, setLanguageState] = useState<string>('en');
   const [isLoading, setIsLoading] = useState(true);
+  const { t } = useTranslation(language);
 
+  // Load language from localStorage on mount
   useEffect(() => {
-    async function initializeLanguage() {
-      try {
-        const detectedLang = await detectLanguage();
-        setLanguageState(detectedLang);
-        console.log(`Language initialized: ${detectedLang}`);
-      } catch (error) {
-        console.log('Language detection failed, using English default');
-        setLanguageState('en');
-      } finally {
-        setIsLoading(false);
+    const savedLanguage = localStorage.getItem('restaurant-language');
+    if (savedLanguage) {
+      setLanguageState(savedLanguage);
+    } else {
+      // Try to detect browser language
+      const browserLanguage = navigator.language.substring(0, 2);
+      const supportedLanguages = ['en', 'es', 'fr', 'de', 'it', 'pt', 'nl', 'sv', 'da', 'no', 'fi', 'pl', 'cs', 'zh', 'ja', 'ko', 'ar', 'hi', 'ru'];
+      if (supportedLanguages.includes(browserLanguage)) {
+        setLanguageState(browserLanguage);
       }
     }
-
-    initializeLanguage();
+    setIsLoading(false);
   }, []);
 
-  const setLanguage = (newLanguage: Language) => {
-    setLanguageState(newLanguage);
-    localStorage.setItem('readytable-language', newLanguage);
-    console.log(`Language changed to: ${newLanguage}`);
+  // Save language to localStorage when it changes
+  const setLanguage = (lang: string) => {
+    setLanguageState(lang);
+    localStorage.setItem('restaurant-language', lang);
+    
+    // Apply RTL for Arabic
+    if (lang === 'ar') {
+      document.documentElement.dir = 'rtl';
+      document.documentElement.lang = 'ar';
+    } else {
+      document.documentElement.dir = 'ltr';
+      document.documentElement.lang = lang;
+    }
   };
 
-  const contextValue: LanguageContextType = {
-    language,
-    setLanguage,
-    translations: translations[language],
-    isLoading
-  };
+  // Apply language direction on mount
+  useEffect(() => {
+    if (language === 'ar') {
+      document.documentElement.dir = 'rtl';
+      document.documentElement.lang = 'ar';
+    } else {
+      document.documentElement.dir = 'ltr';
+      document.documentElement.lang = language;
+    }
+  }, [language]);
 
   return (
-    <LanguageContext.Provider value={contextValue}>
+    <LanguageContext.Provider value={{ language, setLanguage, t, isLoading }}>
       {children}
     </LanguageContext.Provider>
   );
-}
+};
 
-export function useLanguage() {
+export const useLanguage = (): LanguageContextType => {
   const context = useContext(LanguageContext);
-  if (context === undefined) {
+  if (!context) {
     throw new Error('useLanguage must be used within a LanguageProvider');
   }
   return context;
-}
+};
 
-// Updated hook for translations that uses the context
-export function useTranslations(): Translations {
-  const { translations } = useLanguage();
-  return translations;
-}
+export const useTranslations = () => {
+  const { t } = useLanguage();
+  return { t };
+};

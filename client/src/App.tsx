@@ -8,7 +8,7 @@ import { RestaurantAuthProvider } from "./lib/restaurant-auth";
 import { RouteGuard } from "./components/route-guard";
 import { LayoutWrapper } from "./components/layout-wrapper";
 import { SessionTimeoutHandler } from "./components/session-timeout-handler";
-import { LanguageProvider } from "./contexts/LanguageContext";
+import { LanguageProvider } from "./contexts/language-context";
 import Home from "./pages/home";
 import Login from "./pages/login";
 import Register from "./pages/register";

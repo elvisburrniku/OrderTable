@@ -1,6 +1,6 @@
 import { Link, useLocation } from "wouter";
 import { cn } from "@/lib/utils";
-import { useLanguage } from "@/contexts/LanguageContext";
+import { useLanguage } from "@/contexts/language-context";
 import {
   LayoutDashboard,
   Calendar,
