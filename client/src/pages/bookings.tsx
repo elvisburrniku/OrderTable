@@ -4,29 +4,44 @@ import { useAuth } from "@/lib/auth.tsx";
 import DashboardSidebar from "@/components/dashboard-sidebar";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
-import { 
+import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuLabel,
   DropdownMenuSeparator,
-  DropdownMenuTrigger
+  DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import UnifiedBookingModal from "@/components/unified-booking-modal";
 import { Label } from "@/components/ui/label";
-import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
-import { 
-  Calendar, 
-  Clock, 
-  Plus, 
-  Search, 
-  Filter, 
-  MoreHorizontal, 
-  Eye, 
-  Edit, 
+import {
+  Collapsible,
+  CollapsibleContent,
+  CollapsibleTrigger,
+} from "@/components/ui/collapsible";
+import {
+  Calendar,
+  Clock,
+  Plus,
+  Search,
+  Filter,
+  MoreHorizontal,
+  Eye,
+  Edit,
   Trash2,
   Users,
   Phone,
@@ -37,7 +52,7 @@ import {
   List,
   ChevronDown,
   ChevronLeft,
-  ChevronRight
+  ChevronRight,
 } from "lucide-react";
 // import { InternationalPhoneInput } from "@/components/international-phone-input";
 import { motion } from "framer-motion";
@@ -76,7 +91,7 @@ export default function Bookings() {
     startTime: "",
     endTime: "",
     tableId: "",
-    notes: ""
+    notes: "",
   });
   const [editingBooking, setEditingBooking] = useState<any>(null);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
@@ -86,29 +101,32 @@ export default function Bookings() {
   // Fetch restaurant data
   const { data: restaurantData } = useQuery({
     queryKey: [`/api/tenants/${tenantId}/restaurants/${restaurantId}`],
-    enabled: !!tenantId && !!restaurantId
+    enabled: !!tenantId && !!restaurantId,
   });
 
   // Fetch bookings
   const { data: bookings, isLoading } = useQuery({
     queryKey: [`/api/tenants/${tenantId}/restaurants/${restaurantId}/bookings`],
-    enabled: !!tenantId && !!restaurantId
+    enabled: !!tenantId && !!restaurantId,
   });
 
   // Fetch tables
   const { data: tables } = useQuery({
     queryKey: [`/api/tenants/${tenantId}/restaurants/${restaurantId}/tables`],
-    enabled: !!tenantId && !!restaurantId
+    enabled: !!tenantId && !!restaurantId,
   });
 
   // Filter bookings
   const filteredBookings = (bookings || []).filter((booking: any) => {
-    const matchesSearch = !searchTerm || 
+    const matchesSearch =
+      !searchTerm ||
       booking.customerName?.toLowerCase().includes(searchTerm.toLowerCase()) ||
       booking.customerEmail?.toLowerCase().includes(searchTerm.toLowerCase());
 
-    const matchesStatus = statusFilter === "all" || booking.status === statusFilter;
-    const matchesSource = sourceFilter === "all" || booking.source === sourceFilter;
+    const matchesStatus =
+      statusFilter === "all" || booking.status === statusFilter;
+    const matchesSource =
+      sourceFilter === "all" || booking.source === sourceFilter;
 
     return matchesSearch && matchesStatus && matchesSource;
   });
@@ -122,32 +140,39 @@ export default function Bookings() {
   // Format date helper
   // const formatDate = (dateString: string) => {
   //   const date = new Date(dateString);
-  //   return date.toLocaleDateString('en-US', { 
-  //     month: 'numeric', 
-  //     day: 'numeric', 
-  //     year: 'numeric' 
+  //   return date.toLocaleDateString('en-US', {
+  //     month: 'numeric',
+  //     day: 'numeric',
+  //     year: 'numeric'
   //   });
   // };
 
   // Format time helper
   const formatTimeHelper = (timeString: string | null | undefined) => {
-    if (!timeString) return '-';
+    if (!timeString) return "-";
     return timeString.substring(0, 5); // Extract HH:MM from HH:MM:SS
   };
 
   // Create booking mutation
   const createBookingMutation = useMutation({
     mutationFn: async (bookingData: any) => {
-      const response = await fetch(`/api/tenants/${tenantId}/restaurants/${restaurantId}/bookings`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(bookingData)
-      });
-      if (!response.ok) throw new Error('Failed to create booking');
+      const response = await fetch(
+        `/api/tenants/${tenantId}/restaurants/${restaurantId}/bookings`,
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(bookingData),
+        },
+      );
+      if (!response.ok) throw new Error("Failed to create booking");
       return response.json();
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: [`/api/tenants/${tenantId}/restaurants/${restaurantId}/bookings`] });
+      queryClient.invalidateQueries({
+        queryKey: [
+          `/api/tenants/${tenantId}/restaurants/${restaurantId}/bookings`,
+        ],
+      });
       setIsNewBookingOpen(false);
       setNewBooking({
         customerName: "",
@@ -158,33 +183,40 @@ export default function Bookings() {
         startTime: "",
         endTime: "",
         tableId: "",
-        notes: ""
+        notes: "",
       });
-    }
+    },
   });
 
   // Update booking mutation
   const updateBookingMutation = useMutation({
     mutationFn: async ({ id, updates }: { id: number; updates: any }) => {
-      const response = await fetch(`/api/tenants/${tenantId}/restaurants/${restaurantId}/bookings/${id}`, {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(updates)
-      });
+      const response = await fetch(
+        `/api/tenants/${tenantId}/restaurants/${restaurantId}/bookings/${id}`,
+        {
+          method: "PUT",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(updates),
+        },
+      );
       if (!response.ok) {
         const errorText = await response.text();
-        throw new Error(errorText || 'Failed to update booking');
+        throw new Error(errorText || "Failed to update booking");
       }
       return response.json();
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: [`/api/tenants/${tenantId}/restaurants/${restaurantId}/bookings`] });
+      queryClient.invalidateQueries({
+        queryKey: [
+          `/api/tenants/${tenantId}/restaurants/${restaurantId}/bookings`,
+        ],
+      });
       setIsEditDialogOpen(false);
       setEditingBooking(null);
     },
     onError: (error: any) => {
-      console.error('Update booking error:', error);
-    }
+      console.error("Update booking error:", error);
+    },
   });
 
   // Delete booking mutation
@@ -236,7 +268,7 @@ export default function Bookings() {
 
   const handleCreateBooking = (eventOrData: React.FormEvent | any) => {
     // Check if it's a form event or direct data
-    if (eventOrData && typeof eventOrData.preventDefault === 'function') {
+    if (eventOrData && typeof eventOrData.preventDefault === "function") {
       eventOrData.preventDefault();
       // Use newBooking state for form events
       const bookingData = {
@@ -249,10 +281,13 @@ export default function Bookings() {
         bookingDate: new Date(newBooking.bookingDate),
         startTime: newBooking.startTime,
         endTime: newBooking.endTime || null,
-        tableId: newBooking.tableId && newBooking.tableId !== 'auto-assign' ? parseInt(newBooking.tableId) : null,
+        tableId:
+          newBooking.tableId && newBooking.tableId !== "auto-assign"
+            ? parseInt(newBooking.tableId)
+            : null,
         notes: newBooking.notes || null,
-        status: 'confirmed',
-        source: 'manual'
+        status: "confirmed",
+        source: "manual",
       };
       createBookingMutation.mutate(bookingData);
     } else {
@@ -268,10 +303,13 @@ export default function Bookings() {
         bookingDate: new Date(data.bookingDate || data.selectedDate),
         startTime: data.startTime,
         endTime: data.endTime || null,
-        tableId: data.tableId && data.tableId !== 'auto-assign' ? parseInt(data.tableId) : null,
+        tableId:
+          data.tableId && data.tableId !== "auto-assign"
+            ? parseInt(data.tableId)
+            : null,
         notes: data.specialRequests || data.notes || null,
-        status: 'confirmed',
-        source: 'manual'
+        status: "confirmed",
+        source: "manual",
       };
       createBookingMutation.mutate(bookingData);
     }
@@ -280,8 +318,8 @@ export default function Bookings() {
   const handleEditBooking = (booking: any) => {
     setEditingBooking({
       ...booking,
-      bookingDate: new Date(booking.bookingDate).toISOString().split('T')[0],
-      tableId: booking.tableId?.toString() || ""
+      bookingDate: new Date(booking.bookingDate).toISOString().split("T")[0],
+      tableId: booking.tableId?.toString() || "",
     });
     setIsEditDialogOpen(true);
   };
@@ -291,8 +329,13 @@ export default function Bookings() {
     if (!editingBooking) return;
 
     // Validate required fields
-    if (!editingBooking.customerName || !editingBooking.customerEmail || !editingBooking.bookingDate || !editingBooking.startTime) {
-      console.error('Missing required fields');
+    if (
+      !editingBooking.customerName ||
+      !editingBooking.customerEmail ||
+      !editingBooking.bookingDate ||
+      !editingBooking.startTime
+    ) {
+      console.error("Missing required fields");
       return;
     }
 
@@ -304,9 +347,12 @@ export default function Bookings() {
       bookingDate: editingBooking.bookingDate,
       startTime: editingBooking.startTime,
       endTime: editingBooking.endTime || null,
-      tableId: editingBooking.tableId && editingBooking.tableId !== 'auto-assign' ? parseInt(editingBooking.tableId) : null,
+      tableId:
+        editingBooking.tableId && editingBooking.tableId !== "auto-assign"
+          ? parseInt(editingBooking.tableId)
+          : null,
       notes: editingBooking.notes?.trim() || null,
-      status: editingBooking.status || 'confirmed'
+      status: editingBooking.status || "confirmed",
     };
 
     updateBookingMutation.mutate({ id: editingBooking.id, updates });
@@ -325,12 +371,20 @@ export default function Bookings() {
 
   const getStatusBadge = (status: string) => {
     const colors = {
-      confirmed: "bg-green-500 text-white px-2 py-1 rounded-full text-xs font-medium",
-      pending: "bg-yellow-500 text-white px-2 py-1 rounded-full text-xs font-medium",
-      cancelled: "bg-red-500 text-white px-2 py-1 rounded-full text-xs font-medium"
+      confirmed:
+        "bg-green-500 text-white px-2 py-1 rounded-full text-xs font-medium",
+      pending:
+        "bg-yellow-500 text-white px-2 py-1 rounded-full text-xs font-medium",
+      cancelled:
+        "bg-red-500 text-white px-2 py-1 rounded-full text-xs font-medium",
     };
     return (
-      <span className={colors[status as keyof typeof colors] || "bg-gray-500 text-white px-2 py-1 rounded-full text-xs font-medium"}>
+      <span
+        className={
+          colors[status as keyof typeof colors] ||
+          "bg-gray-500 text-white px-2 py-1 rounded-full text-xs font-medium"
+        }
+      >
         {status}
       </span>
     );
@@ -338,12 +392,20 @@ export default function Bookings() {
 
   const getSourceBadge = (source: string) => {
     const colors = {
-      manual: "bg-blue-500 text-white px-2 py-1 rounded-full text-xs font-medium",
-      online: "bg-purple-500 text-white px-2 py-1 rounded-full text-xs font-medium",
-      google: "bg-orange-500 text-white px-2 py-1 rounded-full text-xs font-medium"
+      manual:
+        "bg-blue-500 text-white px-2 py-1 rounded-full text-xs font-medium",
+      online:
+        "bg-purple-500 text-white px-2 py-1 rounded-full text-xs font-medium",
+      google:
+        "bg-orange-500 text-white px-2 py-1 rounded-full text-xs font-medium",
     };
     return (
-      <span className={colors[source as keyof typeof colors] || "bg-gray-500 text-white px-2 py-1 rounded-full text-xs font-medium"}>
+      <span
+        className={
+          colors[source as keyof typeof colors] ||
+          "bg-gray-500 text-white px-2 py-1 rounded-full text-xs font-medium"
+        }
+      >
         {source}
       </span>
     );
@@ -358,9 +420,9 @@ export default function Bookings() {
       <div className="p-6">
         <div className="bg-white rounded-lg shadow">
           {/* Header */}
-          <div className="p-6 border-b">
+          <div className="pl-6 pr-6 pt-3">
             <div className="flex items-center justify-between">
-              <motion.h1 
+              <motion.h1
                 initial={{ opacity: 0, x: -20 }}
                 animate={{ opacity: 1, x: 0 }}
                 transition={{ duration: 0.5, delay: 0.1 }}
@@ -375,7 +437,7 @@ export default function Bookings() {
                 transition={{ duration: 0.5, delay: 0.2 }}
               >
                 <Button
-                onClick={() => setIsNewBookingOpen(true)}
+                  onClick={() => setIsNewBookingOpen(true)}
                   className="bg-green-600 hover:bg-green-700 text-white flex items-center space-x-2"
                 >
                   <Plus className="w-4 h-4" />
@@ -386,11 +448,11 @@ export default function Bookings() {
           </div>
 
           {/* Filters Section */}
-          <div className="p-6 border-b">
-            <h2 className="text-lg font-semibold text-gray-900 mb-6">Bookings</h2>
+          <div className="p-6">
+            {/* <h2 className="text-lg font-semibold text-gray-900 mb-6">Bookings</h2> */}
 
             {/* Modern Filters Section */}
-            <motion.div 
+            <motion.div
               initial={{ opacity: 0, y: 10 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.5, delay: 0.4 }}
@@ -401,18 +463,28 @@ export default function Bookings() {
                 <div className="flex items-center space-x-4">
                   <Collapsible open={showFilters} onOpenChange={setShowFilters}>
                     <CollapsibleTrigger asChild>
-                      <Button 
-                        variant="outline" 
+                      <Button
+                        variant="outline"
                         className="h-10 px-4 border-2 border-gray-200 hover:border-green-500 hover:bg-green-50 transition-all duration-200 flex items-center space-x-2 font-medium"
                       >
                         <Filter className="w-4 h-4" />
                         <span>Filters</span>
-                        {(statusFilter !== 'all' || sourceFilter !== 'all' || searchTerm) && (
+                        {(statusFilter !== "all" ||
+                          sourceFilter !== "all" ||
+                          searchTerm) && (
                           <span className="bg-green-500 text-white text-xs px-2 py-0.5 rounded-full ml-1">
-                            {[statusFilter !== 'all', sourceFilter !== 'all', searchTerm].filter(Boolean).length}
+                            {
+                              [
+                                statusFilter !== "all",
+                                sourceFilter !== "all",
+                                searchTerm,
+                              ].filter(Boolean).length
+                            }
                           </span>
                         )}
-                        <ChevronDown className={`w-4 h-4 transform transition-transform duration-200 ${showFilters ? 'rotate-180' : ''}`} />
+                        <ChevronDown
+                          className={`w-4 h-4 transform transition-transform duration-200 ${showFilters ? "rotate-180" : ""}`}
+                        />
                       </Button>
                     </CollapsibleTrigger>
 
@@ -421,7 +493,9 @@ export default function Bookings() {
                         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                           {/* Search Input */}
                           <div className="relative">
-                            <label className="block text-sm font-medium text-gray-700 mb-2">Search</label>
+                            <label className="block text-sm font-medium text-gray-700 mb-2">
+                              Search
+                            </label>
                             <div className="relative">
                               <Search className="w-4 h-4 text-gray-400 absolute left-3 top-1/2 transform -translate-y-1/2" />
                               <Input
@@ -435,26 +509,42 @@ export default function Bookings() {
 
                           {/* Status Filter */}
                           <div>
-                            <label className="block text-sm font-medium text-gray-700 mb-2">Status</label>
-                            <Select value={statusFilter} onValueChange={setStatusFilter}>
+                            <label className="block text-sm font-medium text-gray-700 mb-2">
+                              Status
+                            </label>
+                            <Select
+                              value={statusFilter}
+                              onValueChange={setStatusFilter}
+                            >
                               <SelectTrigger className="h-11 border-2 border-gray-200 focus:border-green-500 rounded-lg transition-all duration-200">
                                 <SelectValue placeholder="All Status" />
                               </SelectTrigger>
                               <SelectContent className="rounded-lg border-2 border-gray-200">
-                                <SelectItem value="all" className="rounded-md">All Status</SelectItem>
-                                <SelectItem value="confirmed" className="rounded-md">
+                                <SelectItem value="all" className="rounded-md">
+                                  All Status
+                                </SelectItem>
+                                <SelectItem
+                                  value="confirmed"
+                                  className="rounded-md"
+                                >
                                   <div className="flex items-center space-x-2">
                                     <div className="w-2 h-2 bg-green-500 rounded-full"></div>
                                     <span>Confirmed</span>
                                   </div>
                                 </SelectItem>
-                                <SelectItem value="pending" className="rounded-md">
+                                <SelectItem
+                                  value="pending"
+                                  className="rounded-md"
+                                >
                                   <div className="flex items-center space-x-2">
                                     <div className="w-2 h-2 bg-yellow-500 rounded-full"></div>
                                     <span>Pending</span>
                                   </div>
                                 </SelectItem>
-                                <SelectItem value="cancelled" className="rounded-md">
+                                <SelectItem
+                                  value="cancelled"
+                                  className="rounded-md"
+                                >
                                   <div className="flex items-center space-x-2">
                                     <div className="w-2 h-2 bg-red-500 rounded-full"></div>
                                     <span>Cancelled</span>
@@ -466,44 +556,69 @@ export default function Bookings() {
 
                           {/* Source Filter */}
                           <div>
-                            <label className="block text-sm font-medium text-gray-700 mb-2">Source</label>
-                            <Select value={sourceFilter} onValueChange={setSourceFilter}>
+                            <label className="block text-sm font-medium text-gray-700 mb-2">
+                              Source
+                            </label>
+                            <Select
+                              value={sourceFilter}
+                              onValueChange={setSourceFilter}
+                            >
                               <SelectTrigger className="h-11 border-2 border-gray-200 focus:border-green-500 rounded-lg transition-all duration-200">
                                 <SelectValue placeholder="All Sources" />
                               </SelectTrigger>
                               <SelectContent className="rounded-lg border-2 border-gray-200">
-                                <SelectItem value="all" className="rounded-md">All Sources</SelectItem>
-                                <SelectItem value="manual" className="rounded-md">
+                                <SelectItem value="all" className="rounded-md">
+                                  All Sources
+                                </SelectItem>
+                                <SelectItem
+                                  value="manual"
+                                  className="rounded-md"
+                                >
                                   <div className="flex items-center space-x-2">
                                     <div className="w-2 h-2 bg-gray-500 rounded-full"></div>
                                     <span>Manual</span>
                                   </div>
                                 </SelectItem>
-                                <SelectItem value="guest_booking" className="rounded-md">
+                                <SelectItem
+                                  value="guest_booking"
+                                  className="rounded-md"
+                                >
                                   <div className="flex items-center space-x-2">
                                     <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
                                     <span>Guest Booking</span>
                                   </div>
                                 </SelectItem>
-                                <SelectItem value="online" className="rounded-md">
+                                <SelectItem
+                                  value="online"
+                                  className="rounded-md"
+                                >
                                   <div className="flex items-center space-x-2">
                                     <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
                                     <span>Online</span>
                                   </div>
                                 </SelectItem>
-                                <SelectItem value="agent" className="rounded-md">
+                                <SelectItem
+                                  value="agent"
+                                  className="rounded-md"
+                                >
                                   <div className="flex items-center space-x-2">
                                     <div className="w-2 h-2 bg-purple-500 rounded-full"></div>
                                     <span>Agent</span>
                                   </div>
                                 </SelectItem>
-                                <SelectItem value="google" className="rounded-md">
+                                <SelectItem
+                                  value="google"
+                                  className="rounded-md"
+                                >
                                   <div className="flex items-center space-x-2">
                                     <div className="w-2 h-2 bg-green-500 rounded-full"></div>
                                     <span>Google</span>
                                   </div>
                                 </SelectItem>
-                                <SelectItem value="walk_in" className="rounded-md">
+                                <SelectItem
+                                  value="walk_in"
+                                  className="rounded-md"
+                                >
                                   <div className="flex items-center space-x-2">
                                     <div className="w-2 h-2 bg-orange-500 rounded-full"></div>
                                     <span>Walk-in</span>
@@ -515,7 +630,9 @@ export default function Bookings() {
                         </div>
 
                         {/* Filter Actions */}
-                        {(statusFilter !== 'all' || sourceFilter !== 'all' || searchTerm) && (
+                        {(statusFilter !== "all" ||
+                          sourceFilter !== "all" ||
+                          searchTerm) && (
                           <div className="flex items-center justify-between mt-4 pt-4 border-t border-gray-200">
                             <div className="flex items-center space-x-2 text-sm text-gray-600">
                               <span>Active filters:</span>
@@ -524,12 +641,12 @@ export default function Bookings() {
                                   Search: "{searchTerm}"
                                 </span>
                               )}
-                              {statusFilter !== 'all' && (
+                              {statusFilter !== "all" && (
                                 <span className="bg-blue-100 text-blue-800 px-2 py-1 rounded-md text-xs font-medium">
                                   Status: {statusFilter}
                                 </span>
                               )}
-                              {sourceFilter !== 'all' && (
+                              {sourceFilter !== "all" && (
                                 <span className="bg-purple-100 text-purple-800 px-2 py-1 rounded-md text-xs font-medium">
                                   Source: {sourceFilter}
                                 </span>
@@ -552,13 +669,12 @@ export default function Bookings() {
                       </div>
                     </CollapsibleContent>
                   </Collapsible>
-
                 </div>
               </div>
             </motion.div>
 
             {/* Enhanced Table */}
-            <motion.div 
+            <motion.div
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.5, delay: 0.5 }}
@@ -600,7 +716,9 @@ export default function Bookings() {
                         <td colSpan={8} className="py-12 text-center">
                           <div className="flex flex-col items-center space-y-4">
                             <div className="animate-spin rounded-full h-8 w-8 border-2 border-green-500 border-t-transparent"></div>
-                            <span className="text-gray-500 font-medium">Loading bookings...</span>
+                            <span className="text-gray-500 font-medium">
+                              Loading bookings...
+                            </span>
                           </div>
                         </td>
                       </tr>
@@ -612,21 +730,25 @@ export default function Bookings() {
                               <Calendar className="w-8 h-8 text-gray-400" />
                             </div>
                             <div>
-                              <h3 className="text-gray-900 font-medium">No bookings found</h3>
-                              <p className="text-gray-500 text-sm mt-1">Try adjusting your filters or search terms</p>
+                              <h3 className="text-gray-900 font-medium">
+                                No bookings found
+                              </h3>
+                              <p className="text-gray-500 text-sm mt-1">
+                                Try adjusting your filters or search terms
+                              </p>
                             </div>
                           </div>
                         </td>
                       </tr>
                     ) : (
                       paginatedBookings.map((booking: any, index: number) => (
-                        <motion.tr 
+                        <motion.tr
                           key={booking.id}
                           initial={{ opacity: 0, y: 10 }}
                           animate={{ opacity: 1, y: 0 }}
                           transition={{ duration: 0.3, delay: index * 0.05 }}
                           className={`group hover:bg-blue-50 transition-all duration-200 ${
-                            index % 2 === 0 ? 'bg-white' : 'bg-gray-50/50'
+                            index % 2 === 0 ? "bg-white" : "bg-gray-50/50"
                           }`}
                         >
                           <td className="py-3 px-4">
@@ -639,11 +761,17 @@ export default function Bookings() {
                           <td className="py-3 px-4">
                             <div className="flex items-center space-x-3">
                               <div className="w-8 h-8 bg-gradient-to-br from-green-400 to-green-600 rounded-full flex items-center justify-center text-white font-medium text-sm">
-                                {booking.customerName?.charAt(0)?.toUpperCase() || 'G'}
+                                {booking.customerName
+                                  ?.charAt(0)
+                                  ?.toUpperCase() || "G"}
                               </div>
                               <div>
-                                <div className="font-medium text-gray-900">{booking.customerName}</div>
-                                <div className="text-sm text-gray-500">{booking.customerEmail}</div>
+                                <div className="font-medium text-gray-900">
+                                  {booking.customerName}
+                                </div>
+                                <div className="text-sm text-gray-500">
+                                  {booking.customerEmail}
+                                </div>
                               </div>
                             </div>
                           </td>
@@ -661,33 +789,58 @@ export default function Bookings() {
                           <td className="py-3 px-4">
                             <div className="flex items-center space-x-1">
                               <Users className="w-4 h-4 text-gray-400" />
-                              <span className="font-medium text-gray-900">{booking.guestCount}</span>
-                              <span className="text-sm text-gray-500">guest{booking.guestCount !== 1 ? 's' : ''}</span>
+                              <span className="font-medium text-gray-900">
+                                {booking.guestCount}
+                              </span>
+                              <span className="text-sm text-gray-500">
+                                guest{booking.guestCount !== 1 ? "s" : ""}
+                              </span>
                             </div>
                           </td>
                           <td className="py-3 px-4">
-                            {getStatusBadge(booking.status || 'confirmed')}
+                            {getStatusBadge(booking.status || "confirmed")}
                           </td>
                           <td className="py-3 px-4">
                             <div className="text-sm text-gray-600">
-                              {booking.createdAt ? formatDate(booking.createdAt) : formatDate(booking.bookingDate)}
+                              {booking.createdAt
+                                ? formatDate(booking.createdAt)
+                                : formatDate(booking.bookingDate)}
                             </div>
                           </td>
                           <td className="py-3 px-4">
-                            <Badge variant={booking.source === "online" || booking.source === "guest_booking" ? "default" : booking.source === "agent" ? "default" : "secondary"} 
-                               className={
-                                 booking.source === "online" || booking.source === "guest_booking" ? "bg-blue-500 text-white" : 
-                                 booking.source === "agent" ? "bg-purple-500 text-white" :
-                                 booking.source === "google" ? "bg-green-500 text-white" : 
-                                 booking.source === "walk_in" ? "bg-orange-500 text-white" :
-                                 "bg-gray-500 text-white"
-                               }>
-                          {booking.source === "online" || booking.source === "guest_booking" ? "Guest Booking" : 
-                           booking.source === "agent" ? "Agent" :
-                           booking.source === "google" ? "Google" : 
-                           booking.source === "walk_in" ? "Walk-in" :
-                           "Manual"}
-                        </Badge>
+                            <Badge
+                              variant={
+                                booking.source === "online" ||
+                                booking.source === "guest_booking"
+                                  ? "default"
+                                  : booking.source === "agent"
+                                    ? "default"
+                                    : "secondary"
+                              }
+                              className={
+                                booking.source === "online" ||
+                                booking.source === "guest_booking"
+                                  ? "bg-blue-500 text-white"
+                                  : booking.source === "agent"
+                                    ? "bg-purple-500 text-white"
+                                    : booking.source === "google"
+                                      ? "bg-green-500 text-white"
+                                      : booking.source === "walk_in"
+                                        ? "bg-orange-500 text-white"
+                                        : "bg-gray-500 text-white"
+                              }
+                            >
+                              {booking.source === "online" ||
+                              booking.source === "guest_booking"
+                                ? "Guest Booking"
+                                : booking.source === "agent"
+                                  ? "Agent"
+                                  : booking.source === "google"
+                                    ? "Google"
+                                    : booking.source === "walk_in"
+                                      ? "Walk-in"
+                                      : "Manual"}
+                            </Badge>
                           </td>
                           <td className="py-3 px-4">
                             <div className="flex items-center space-x-2">
@@ -725,7 +878,7 @@ export default function Bookings() {
 
             {/* Pagination */}
             {totalPages > 1 && (
-              <motion.div 
+              <motion.div
                 initial={{ opacity: 0, y: 10 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.5, delay: 0.6 }}
@@ -755,7 +908,9 @@ export default function Bookings() {
 
                 <div className="flex items-center space-x-4">
                   <div className="text-sm text-gray-600">
-                    {startIndex + 1}-{Math.min(endIndex, filteredBookings.length)} of {filteredBookings.length}
+                    {startIndex + 1}-
+                    {Math.min(endIndex, filteredBookings.length)} of{" "}
+                    {filteredBookings.length}
                   </div>
 
                   <div className="flex items-center space-x-2">
@@ -780,34 +935,39 @@ export default function Bookings() {
 
                     {/* Page Numbers */}
                     <div className="flex items-center space-x-1">
-                      {Array.from({ length: Math.min(3, totalPages) }, (_, i) => {
-                        let pageNum;
-                        if (totalPages <= 3) {
-                          pageNum = i + 1;
-                        } else if (currentPage <= 2) {
-                          pageNum = i + 1;
-                        } else if (currentPage >= totalPages - 1) {
-                          pageNum = totalPages - 2 + i;
-                        } else {
-                          pageNum = currentPage - 1 + i;
-                        }
+                      {Array.from(
+                        { length: Math.min(3, totalPages) },
+                        (_, i) => {
+                          let pageNum;
+                          if (totalPages <= 3) {
+                            pageNum = i + 1;
+                          } else if (currentPage <= 2) {
+                            pageNum = i + 1;
+                          } else if (currentPage >= totalPages - 1) {
+                            pageNum = totalPages - 2 + i;
+                          } else {
+                            pageNum = currentPage - 1 + i;
+                          }
 
-                        return (
-                          <Button
-                            key={pageNum}
-                            variant={currentPage === pageNum ? "default" : "outline"}
-                            size="sm"
-                            onClick={() => setCurrentPage(pageNum)}
-                            className={`w-8 h-8 p-0 ${
-                              currentPage === pageNum 
-                                ? "bg-green-600 hover:bg-green-700 text-white" 
-                                : "hover:bg-green-50"
-                            }`}
-                          >
-                            {pageNum}
-                          </Button>
-                        );
-                      })}
+                          return (
+                            <Button
+                              key={pageNum}
+                              variant={
+                                currentPage === pageNum ? "default" : "outline"
+                              }
+                              size="sm"
+                              onClick={() => setCurrentPage(pageNum)}
+                              className={`w-8 h-8 p-0 ${
+                                currentPage === pageNum
+                                  ? "bg-green-600 hover:bg-green-700 text-white"
+                                  : "hover:bg-green-50"
+                              }`}
+                            >
+                              {pageNum}
+                            </Button>
+                          );
+                        },
+                      )}
                     </div>
 
                     <Button
@@ -818,7 +978,8 @@ export default function Bookings() {
                       className="w-8 h-8 p-0"
                     >
                       <ChevronRight className="w-4 h-4" />
-                    </Button><Button
+                    </Button>
+                    <Button
                       variant="outline"
                       size="sm"
                       onClick={() => setCurrentPage(totalPages)}
@@ -847,7 +1008,11 @@ export default function Bookings() {
               <Input
                 id="edit-customerName"
                 value={editingBooking?.customerName || ""}
-                onChange={(e) => setEditingBooking(prev => prev ? {...prev, customerName: e.target.value} : null)}
+                onChange={(e) =>
+                  setEditingBooking((prev) =>
+                    prev ? { ...prev, customerName: e.target.value } : null,
+                  )
+                }
                 required
               />
             </div>
@@ -857,7 +1022,11 @@ export default function Bookings() {
                 id="edit-customerEmail"
                 type="email"
                 value={editingBooking?.customerEmail || ""}
-                onChange={(e) => setEditingBooking(prev => prev ? {...prev, customerEmail: e.target.value} : null)}
+                onChange={(e) =>
+                  setEditingBooking((prev) =>
+                    prev ? { ...prev, customerEmail: e.target.value } : null,
+                  )
+                }
                 required
               />
             </div>
@@ -866,7 +1035,11 @@ export default function Bookings() {
               <Input
                 id="edit-customerPhone"
                 value={editingBooking?.customerPhone || ""}
-                onChange={(e) => setEditingBooking(prev => prev ? {...prev, customerPhone: e.target.value} : null)}
+                onChange={(e) =>
+                  setEditingBooking((prev) =>
+                    prev ? { ...prev, customerPhone: e.target.value } : null,
+                  )
+                }
               />
             </div>
             <div className="grid grid-cols-2 gap-4">
@@ -877,13 +1050,26 @@ export default function Bookings() {
                   type="number"
                   min="1"
                   value={editingBooking?.guestCount || 1}
-                  onChange={(e) => setEditingBooking(prev => prev ? {...prev, guestCount: parseInt(e.target.value)} : null)}
+                  onChange={(e) =>
+                    setEditingBooking((prev) =>
+                      prev
+                        ? { ...prev, guestCount: parseInt(e.target.value) }
+                        : null,
+                    )
+                  }
                   required
                 />
               </div>
               <div>
                 <Label htmlFor="edit-status">Status</Label>
-                <Select value={editingBooking?.status || "confirmed"} onValueChange={(value) => setEditingBooking(prev => prev ? {...prev, status: value} : null)}>
+                <Select
+                  value={editingBooking?.status || "confirmed"}
+                  onValueChange={(value) =>
+                    setEditingBooking((prev) =>
+                      prev ? { ...prev, status: value } : null,
+                    )
+                  }
+                >
                   <SelectTrigger>
                     <SelectValue />
                   </SelectTrigger>
@@ -904,7 +1090,11 @@ export default function Bookings() {
                   id="edit-bookingDate"
                   type="date"
                   value={editingBooking?.bookingDate || ""}
-                  onChange={(e) => setEditingBooking(prev => prev ? {...prev, bookingDate: e.target.value} : null)}
+                  onChange={(e) =>
+                    setEditingBooking((prev) =>
+                      prev ? { ...prev, bookingDate: e.target.value } : null,
+                    )
+                  }
                   required
                 />
               </div>
@@ -914,14 +1104,25 @@ export default function Bookings() {
                   id="edit-startTime"
                   type="time"
                   value={editingBooking?.startTime || ""}
-                  onChange={(e) => setEditingBooking(prev => prev ? {...prev, startTime: e.target.value} : null)}
+                  onChange={(e) =>
+                    setEditingBooking((prev) =>
+                      prev ? { ...prev, startTime: e.target.value } : null,
+                    )
+                  }
                   required
                 />
               </div>
             </div>
             <div>
               <Label htmlFor="edit-tableId">Table</Label>
-              <Select value={editingBooking?.tableId || ""} onValueChange={(value) => setEditingBooking(prev => prev ? {...prev, tableId: value} : null)}>
+              <Select
+                value={editingBooking?.tableId || ""}
+                onValueChange={(value) =>
+                  setEditingBooking((prev) =>
+                    prev ? { ...prev, tableId: value } : null,
+                  )
+                }
+              >
                 <SelectTrigger>
                   <SelectValue placeholder="Auto-assign table" />
                 </SelectTrigger>
@@ -940,16 +1141,26 @@ export default function Bookings() {
               <Input
                 id="edit-notes"
                 value={editingBooking?.notes || ""}
-                onChange={(e) => setEditingBooking(prev => prev ? {...prev, notes: e.target.value} : null)}
+                onChange={(e) =>
+                  setEditingBooking((prev) =>
+                    prev ? { ...prev, notes: e.target.value } : null,
+                  )
+                }
                 placeholder="Special requests or notes"
               />
             </div>
             <div className="flex justify-end space-x-2">
-              <Button type="button" variant="outline" onClick={() => setIsEditDialogOpen(false)}>
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => setIsEditDialogOpen(false)}
+              >
                 Cancel
               </Button>
               <Button type="submit" disabled={updateBookingMutation.isPending}>
-                {updateBookingMutation.isPending ? "Updating..." : "Update Booking"}
+                {updateBookingMutation.isPending
+                  ? "Updating..."
+                  : "Update Booking"}
               </Button>
             </div>
           </form>
@@ -964,23 +1175,40 @@ export default function Bookings() {
           </DialogHeader>
           <div className="py-4">
             <p className="text-gray-600">
-              Are you sure you want to delete the booking for <strong>{bookingToDelete?.customerName}</strong> on{" "}
-              <strong>{bookingToDelete ? formatDate(bookingToDelete.bookingDate) : ""}</strong> at{" "}
-              <strong>{bookingToDelete ? formatTimeHelper(bookingToDelete.startTime) : ""}</strong>?
+              Are you sure you want to delete the booking for{" "}
+              <strong>{bookingToDelete?.customerName}</strong> on{" "}
+              <strong>
+                {bookingToDelete ? formatDate(bookingToDelete.bookingDate) : ""}
+              </strong>{" "}
+              at{" "}
+              <strong>
+                {bookingToDelete
+                  ? formatTimeHelper(bookingToDelete.startTime)
+                  : ""}
+              </strong>
+              ?
             </p>
-            <p className="text-red-600 text-sm mt-2">This action cannot be undone.</p>
+            <p className="text-red-600 text-sm mt-2">
+              This action cannot be undone.
+            </p>
           </div>
           <div className="flex justify-end space-x-2">
-            <Button type="button" variant="outline" onClick={() => setIsDeleteDialogOpen(false)}>
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => setIsDeleteDialogOpen(false)}
+            >
               Cancel
             </Button>
-            <Button 
-              type="button" 
-              variant="destructive" 
+            <Button
+              type="button"
+              variant="destructive"
               onClick={confirmDeleteBooking}
               disabled={deleteBookingMutation.isPending}
             >
-              {deleteBookingMutation.isPending ? "Deleting..." : "Delete Booking"}
+              {deleteBookingMutation.isPending
+                ? "Deleting..."
+                : "Delete Booking"}
             </Button>
           </div>
         </DialogContent>
@@ -999,12 +1227,14 @@ export default function Bookings() {
           bookingDate: newBooking.bookingDate,
           startTime: newBooking.startTime,
           tableId: newBooking.tableId,
-          specialRequests: newBooking.notes
+          specialRequests: newBooking.notes,
         }}
         tables={tables || []}
         onSubmit={handleCreateBooking}
         isLoading={createBookingMutation.isPending}
-        submitButtonText={createBookingMutation.isPending ? "Creating..." : "Create Booking"}
+        submitButtonText={
+          createBookingMutation.isPending ? "Creating..." : "Create Booking"
+        }
         mode="create"
       />
     </div>
