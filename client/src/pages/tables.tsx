@@ -226,9 +226,9 @@ export default function Tables() {
 
   // Check if user can create more tables based on subscription
   const canCreateMoreTables = () => {
-    if (!subscriptionDetails?.plan) return false;
-    const currentTableCount = tables.length;
-    const maxTables = subscriptionDetails.plan.maxTables;
+    if (!subscriptionDetails?.plan) return true; // Allow creation while loading
+    const currentTableCount = tables?.length || 0;
+    const maxTables = subscriptionDetails.plan.maxTables || 999;
     return currentTableCount < maxTables;
   };
 
@@ -537,13 +537,13 @@ export default function Tables() {
                     <div className="relative">
                       <Button
                         className={`${
-                          canCreateMoreTables()
+                          !subscriptionDetails?.plan || canCreateMoreTables()
                             ? "bg-green-600 hover:bg-green-700 text-white"
                             : "bg-gray-400 cursor-not-allowed text-gray-600"
                         }`}
-                        disabled={!canCreateMoreTables()}
+                        disabled={subscriptionDetails?.plan && !canCreateMoreTables()}
                         onClick={() => {
-                          if (!canCreateMoreTables()) {
+                          if (subscriptionDetails?.plan && !canCreateMoreTables()) {
                             toast({
                               title: "Table Limit Reached",
                               description: `You have reached your plan's table limit of ${subscriptionDetails?.plan?.maxTables || 0} tables. Please upgrade your subscription to add more tables.`,
