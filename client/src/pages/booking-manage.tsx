@@ -10,6 +10,7 @@ import { Input } from "@/components/ui/input";
 import { Calendar, Clock, Users, MapPin, CheckCircle, XCircle, AlertCircle, Edit3, History, ArrowRight, AlertTriangle } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { format, parseISO, addDays, isBefore, isAfter } from "date-fns";
+import { BookingCancelConfirmation } from "@/components/booking-cancel-confirmation";
 
 export default function BookingManage() {
   const params = useParams();
@@ -368,7 +369,7 @@ export default function BookingManage() {
     }
   };
 
-  const handleCancelBooking = async () => {
+  const handleCancelBooking = async (reason?: string) => {
     if (!booking?.canCancel) {
       toast({ 
         title: "Cannot cancel booking", 
@@ -386,13 +387,15 @@ export default function BookingManage() {
       return;
     }
 
-    if (confirm("Are you sure you want to cancel this booking? This will change the status to cancelled and prevent future modifications.")) {
-      try {
-        // Use the update mutation to change status to cancelled
-        updateMutation.mutate({ status: 'cancelled' });
-      } catch (error: any) {
-        toast({ title: error.message, variant: "destructive" });
+    try {
+      // Use the update mutation to change status to cancelled with optional reason
+      const updateData: any = { status: 'cancelled' };
+      if (reason?.trim()) {
+        updateData.cancellationReason = reason.trim();
       }
+      updateMutation.mutate(updateData);
+    } catch (error: any) {
+      toast({ title: error.message, variant: "destructive" });
     }
   };
 
@@ -808,13 +811,28 @@ export default function BookingManage() {
                       <h3 className="font-medium text-gray-900">Cancel Booking</h3>
                       <p className="text-sm text-gray-500">This will mark the booking as cancelled</p>
                     </div>
-                    <Button 
-                      variant="destructive" 
-                      onClick={handleCancelBooking}
-                      disabled={updateMutation.isPending || !booking?.canCancel || booking?.status === 'cancelled'}
+                    <BookingCancelConfirmation
+                      booking={{
+                        id: booking.id,
+                        customerName: booking.customerName,
+                        customerEmail: booking.customerEmail,
+                        customerPhone: booking.customerPhone,
+                        bookingDate: booking.bookingDate,
+                        startTime: booking.startTime,
+                        guestCount: booking.guestCount,
+                        tableId: booking.tableId,
+                        status: booking.status
+                      }}
+                      onConfirm={handleCancelBooking}
+                      isLoading={updateMutation.isPending}
                     >
-                      Cancel Booking
-                    </Button>
+                      <Button 
+                        variant="destructive" 
+                        disabled={updateMutation.isPending || !booking?.canCancel || booking?.status === 'cancelled'}
+                      >
+                        Cancel Booking
+                      </Button>
+                    </BookingCancelConfirmation>
                   </div>
                 </div>
               </CardContent>
