@@ -22,6 +22,11 @@ A comprehensive restaurant booking management system with React frontend and Exp
 - Kitchen order management
 
 ## Recent Changes
+- **2025-07-08**: ✅ REAL-TIME MENU SYNCHRONIZATION BETWEEN PAGES - Fixed cache synchronization issue between menu management and kitchen dashboard
+- **Cache Invalidation Enhancement**: Implemented global React Query cache invalidation using predicate-based queries to sync menu data across components
+- **Kitchen Dashboard Integration**: Kitchen dashboard now automatically shows new menu items/categories without requiring page reload after creation in menu management
+- **Cross-Component Synchronization**: All menu mutations (create, update, delete) now invalidate cached data globally, ensuring immediate updates across all pages
+- **User Experience Improvement**: Eliminated need for manual page refreshes when switching between menu management and kitchen dashboard after adding new items
 - **2025-07-08**: ✅ MENU MANAGEMENT MODAL SCROLL ENHANCEMENT - Added vertical scrolling to menu item creation/edit modal for better user experience
 - **Enhanced User Interface**: Menu item modal now includes `max-h-[80vh] overflow-y-auto` for proper vertical scrolling when content exceeds viewport height
 - **Form Accessibility**: Large menu item forms with multiple fields (categories, pricing, dietary info, allergens, nutritional data) now scroll smoothly within modal

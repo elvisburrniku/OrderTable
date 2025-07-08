@@ -112,7 +112,14 @@ export function MenuManagement({
     mutationFn: (data: Partial<MenuCategory>) =>
       apiRequest('POST', `/api/tenants/${tenantId}/restaurants/${restaurantId}/menu-categories`, data),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['/api/tenants', tenantId, 'restaurants', restaurantId, 'menu-categories'] });
+      // Invalidate all menu-related queries globally to sync with kitchen dashboard
+      queryClient.invalidateQueries({ 
+        predicate: (query) => {
+          const key = query.queryKey[0] as string;
+          return key.includes(`/api/tenants/${tenantId}/restaurants/${restaurantId}/menu-categories`) ||
+                 key.includes(`/api/tenants/${tenantId}/restaurants/${restaurantId}/menu-items`);
+        }
+      });
       setCategoryDialogOpen(false);
       setEditingCategory(null);
       toast({ title: "Category saved successfully" });
@@ -126,7 +133,14 @@ export function MenuManagement({
     mutationFn: ({ id, data }: { id: number; data: Partial<MenuCategory> }) =>
       apiRequest('PUT', `/api/tenants/${tenantId}/restaurants/${restaurantId}/menu-categories/${id}`, data),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['/api/tenants', tenantId, 'restaurants', restaurantId, 'menu-categories'] });
+      // Invalidate all menu-related queries globally to sync with kitchen dashboard
+      queryClient.invalidateQueries({ 
+        predicate: (query) => {
+          const key = query.queryKey[0] as string;
+          return key.includes(`/api/tenants/${tenantId}/restaurants/${restaurantId}/menu-categories`) ||
+                 key.includes(`/api/tenants/${tenantId}/restaurants/${restaurantId}/menu-items`);
+        }
+      });
       setCategoryDialogOpen(false);
       setEditingCategory(null);
       toast({ title: "Category updated successfully" });
@@ -140,8 +154,14 @@ export function MenuManagement({
     mutationFn: (id: number) =>
       apiRequest('DELETE', `/api/tenants/${tenantId}/restaurants/${restaurantId}/menu-categories/${id}`),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['/api/tenants', tenantId, 'restaurants', restaurantId, 'menu-categories'] });
-      queryClient.invalidateQueries({ queryKey: ['/api/tenants', tenantId, 'restaurants', restaurantId, 'menu-items'] });
+      // Invalidate all menu-related queries globally to sync with kitchen dashboard
+      queryClient.invalidateQueries({ 
+        predicate: (query) => {
+          const key = query.queryKey[0] as string;
+          return key.includes(`/api/tenants/${tenantId}/restaurants/${restaurantId}/menu-categories`) ||
+                 key.includes(`/api/tenants/${tenantId}/restaurants/${restaurantId}/menu-items`);
+        }
+      });
       toast({ title: "Category deleted successfully" });
     },
     onError: (error: any) => {
@@ -154,7 +174,14 @@ export function MenuManagement({
     mutationFn: (data: Partial<MenuItem>) =>
       apiRequest('POST', `/api/tenants/${tenantId}/restaurants/${restaurantId}/menu-items`, data),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['/api/tenants', tenantId, 'restaurants', restaurantId, 'menu-items'] });
+      // Invalidate all menu-related queries globally to sync with kitchen dashboard
+      queryClient.invalidateQueries({ 
+        predicate: (query) => {
+          const key = query.queryKey[0] as string;
+          return key.includes(`/api/tenants/${tenantId}/restaurants/${restaurantId}/menu-categories`) ||
+                 key.includes(`/api/tenants/${tenantId}/restaurants/${restaurantId}/menu-items`);
+        }
+      });
       setItemDialogOpen(false);
       setEditingItem(null);
       toast({ title: "Menu item saved successfully" });
@@ -168,7 +195,14 @@ export function MenuManagement({
     mutationFn: ({ id, data }: { id: number; data: Partial<MenuItem> }) =>
       apiRequest('PUT', `/api/tenants/${tenantId}/restaurants/${restaurantId}/menu-items/${id}`, data),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['/api/tenants', tenantId, 'restaurants', restaurantId, 'menu-items'] });
+      // Invalidate all menu-related queries globally to sync with kitchen dashboard
+      queryClient.invalidateQueries({ 
+        predicate: (query) => {
+          const key = query.queryKey[0] as string;
+          return key.includes(`/api/tenants/${tenantId}/restaurants/${restaurantId}/menu-categories`) ||
+                 key.includes(`/api/tenants/${tenantId}/restaurants/${restaurantId}/menu-items`);
+        }
+      });
       setItemDialogOpen(false);
       setEditingItem(null);
       toast({ title: "Menu item updated successfully" });
@@ -182,7 +216,14 @@ export function MenuManagement({
     mutationFn: (id: number) =>
       apiRequest('DELETE', `/api/tenants/${tenantId}/restaurants/${restaurantId}/menu-items/${id}`),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['/api/tenants', tenantId, 'restaurants', restaurantId, 'menu-items'] });
+      // Invalidate all menu-related queries globally to sync with kitchen dashboard
+      queryClient.invalidateQueries({ 
+        predicate: (query) => {
+          const key = query.queryKey[0] as string;
+          return key.includes(`/api/tenants/${tenantId}/restaurants/${restaurantId}/menu-categories`) ||
+                 key.includes(`/api/tenants/${tenantId}/restaurants/${restaurantId}/menu-items`);
+        }
+      });
       toast({ title: "Menu item deleted successfully" });
     },
     onError: (error: any) => {
