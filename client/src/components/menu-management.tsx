@@ -13,6 +13,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useToast } from "@/hooks/use-toast";
 import { Plus, Edit, Trash2, DollarSign, Eye, EyeOff, ChefHat, Leaf, Printer } from "lucide-react";
 import { apiRequest } from "@/lib/queryClient";
+import { useWebSocket } from "@/hooks/use-websocket";
 import PrintableMenu from "./printable-menu";
 import SeasonalMenuThemes from "./seasonal-menu-themes";
 
@@ -82,6 +83,40 @@ export function MenuManagement({
   const [itemDialogOpen, setItemDialogOpen] = useState(false);
   const [editingCategory, setEditingCategory] = useState<MenuCategory | null>(null);
   const [editingItem, setEditingItem] = useState<MenuItem | null>(null);
+
+  // WebSocket integration for real-time updates
+  const { isConnected } = useWebSocket({
+    restaurantId: restaurantId,
+    onMessage: (message) => {
+      if (message.type === 'menu_updated' || message.type === 'menu_item_created' || 
+          message.type === 'menu_category_created' || message.type === 'menu_item_updated' ||
+          message.type === 'menu_category_updated' || message.type === 'menu_item_deleted' ||
+          message.type === 'menu_category_deleted') {
+        // Real-time menu updates - refresh menu data immediately
+        console.log('Menu update received via WebSocket - refreshing data');
+        queryClient.invalidateQueries({ 
+          predicate: (query) => {
+            const key = query.queryKey[0] as string;
+            return key.includes(`/api/tenants/${tenantId}/restaurants/${restaurantId}/menu-categories`) ||
+                   key.includes(`/api/tenants/${tenantId}/restaurants/${restaurantId}/menu-items`);
+          }
+        });
+        
+        // Show toast notification for real-time feedback
+        if (message.type === 'menu_item_created') {
+          toast({
+            title: "Menu Item Added",
+            description: `New menu item "${message.data?.name || 'item'}" has been added`,
+          });
+        } else if (message.type === 'menu_category_created') {
+          toast({
+            title: "Category Added", 
+            description: `New category "${message.data?.name || 'category'}" has been created`,
+          });
+        }
+      }
+    }
+  });
 
   // Fetch menu categories
   const { data: categories = [], isLoading: categoriesLoading } = useQuery({

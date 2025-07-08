@@ -12623,6 +12623,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
         };
 
         const category = await storage.createMenuCategory(categoryData);
+        
+        // Broadcast real-time update to all connected clients
+        broadcastNotification(parseInt(restaurantId), {
+          type: 'menu_category_created',
+          data: category,
+          timestamp: new Date().toISOString()
+        });
+        
         res.json(category);
       } catch (error) {
         console.error("Error creating menu category:", error);
@@ -12651,6 +12659,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
         if (!category) {
           return res.status(404).json({ message: "Category not found" });
         }
+        
+        // Broadcast real-time update to all connected clients
+        broadcastNotification(parseInt(restaurantId), {
+          type: 'menu_category_updated',
+          data: category,
+          timestamp: new Date().toISOString()
+        });
+        
         res.json(category);
       } catch (error) {
         console.error("Error updating menu category:", error);
@@ -12676,6 +12692,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
         if (!success) {
           return res.status(404).json({ message: "Category not found" });
         }
+        
+        // Broadcast real-time update to all connected clients
+        broadcastNotification(parseInt(restaurantId), {
+          type: 'menu_category_deleted',
+          data: { categoryId: parseInt(categoryId) },
+          timestamp: new Date().toISOString()
+        });
+        
         res.json({ message: "Category deleted successfully" });
       } catch (error) {
         console.error("Error deleting menu category:", error);
@@ -12739,6 +12763,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
         };
 
         const item = await storage.createMenuItem(itemData);
+        
+        // Broadcast real-time update to all connected clients
+        broadcastNotification(parseInt(restaurantId), {
+          type: 'menu_item_created',
+          data: item,
+          timestamp: new Date().toISOString()
+        });
+        
         res.json(item);
       } catch (error) {
         console.error("Error creating menu item:", error);
@@ -12769,6 +12801,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
         if (!item) {
           return res.status(404).json({ message: "Item not found" });
         }
+        
+        // Broadcast real-time update to all connected clients
+        broadcastNotification(parseInt(restaurantId), {
+          type: 'menu_item_updated',
+          data: item,
+          timestamp: new Date().toISOString()
+        });
+        
         res.json(item);
       } catch (error) {
         console.error("Error updating menu item:", error);
@@ -12794,6 +12834,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
         if (!success) {
           return res.status(404).json({ message: "Item not found" });
         }
+        
+        // Broadcast real-time update to all connected clients
+        broadcastNotification(parseInt(restaurantId), {
+          type: 'menu_item_deleted',
+          data: { itemId: parseInt(itemId) },
+          timestamp: new Date().toISOString()
+        });
+        
         res.json({ message: "Item deleted successfully" });
       } catch (error) {
         console.error("Error deleting menu item:", error);
