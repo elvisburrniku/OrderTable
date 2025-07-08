@@ -6,7 +6,13 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import {
   Dialog,
   DialogContent,
@@ -16,14 +22,18 @@ import {
 } from "@/components/ui/dialog";
 import { Badge } from "@/components/ui/badge";
 import { Switch } from "@/components/ui/switch";
-import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
-import { 
+import {
+  Collapsible,
+  CollapsibleContent,
+  CollapsibleTrigger,
+} from "@/components/ui/collapsible";
+import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuLabel,
   DropdownMenuSeparator,
-  DropdownMenuTrigger
+  DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import {
   Plus,
@@ -41,7 +51,7 @@ import {
   MoreHorizontal,
   Eye,
   MapPin,
-  Activity
+  Activity,
 } from "lucide-react";
 import { motion } from "framer-motion";
 import { useSubscription } from "@/hooks/use-subscription";
@@ -58,7 +68,7 @@ export default function Tables() {
   const { canCreateTable } = useSubscription();
   const queryClient = useQueryClient();
   const { toast } = useToast();
-  
+
   // Auto scroll to top when page loads
   useScrollToTop();
 
@@ -75,7 +85,8 @@ export default function Tables() {
   const [showQRDialog, setShowQRDialog] = useState(false);
   const [selectedTableQR, setSelectedTableQR] = useState<any>(null);
   const [showFeedbackModal, setShowFeedbackModal] = useState(false);
-  const [selectedTableForFeedback, setSelectedTableForFeedback] = useState<any>(null);
+  const [selectedTableForFeedback, setSelectedTableForFeedback] =
+    useState<any>(null);
 
   // Filter and pagination states
   const [searchTerm, setSearchTerm] = useState("");
@@ -204,9 +215,9 @@ export default function Tables() {
 
   // Fetch subscription details for table limits
   const { data: subscriptionDetails } = useQuery({
-    queryKey: ['/api/subscription/details'],
+    queryKey: ["/api/subscription/details"],
     queryFn: async () => {
-      const response = await fetch('/api/subscription/details');
+      const response = await fetch("/api/subscription/details");
       if (!response.ok) throw new Error("Failed to fetch subscription");
       return response.json();
     },
@@ -231,16 +242,21 @@ export default function Tables() {
 
   // Filter tables
   const filteredTables = (tables || []).filter((table: any) => {
-    const matchesSearch = !searchTerm || 
+    const matchesSearch =
+      !searchTerm ||
       table.tableNumber?.toLowerCase().includes(searchTerm.toLowerCase());
-    
-    const matchesStatus = statusFilter === "all" || 
+
+    const matchesStatus =
+      statusFilter === "all" ||
       (statusFilter === "active" && table.isActive) ||
       (statusFilter === "inactive" && !table.isActive);
-    
-    const matchesCapacity = capacityFilter === "all" ||
+
+    const matchesCapacity =
+      capacityFilter === "all" ||
       (capacityFilter === "small" && table.capacity <= 2) ||
-      (capacityFilter === "medium" && table.capacity >= 3 && table.capacity <= 6) ||
+      (capacityFilter === "medium" &&
+        table.capacity >= 3 &&
+        table.capacity <= 6) ||
       (capacityFilter === "large" && table.capacity > 6);
 
     return matchesSearch && matchesStatus && matchesCapacity;
@@ -432,11 +448,11 @@ export default function Tables() {
 
   const getStatusBadge = (isActive: boolean) => {
     return (
-      <span className={`px-2 py-1 rounded-full text-xs font-medium ${
-        isActive 
-          ? "bg-green-500 text-white" 
-          : "bg-gray-500 text-white"
-      }`}>
+      <span
+        className={`px-2 py-1 rounded-full text-xs font-medium ${
+          isActive ? "bg-green-500 text-white" : "bg-gray-500 text-white"
+        }`}
+      >
         {isActive ? "Active" : "Inactive"}
       </span>
     );
@@ -484,7 +500,7 @@ export default function Tables() {
           {/* Header */}
           <div className="p-6 border-b">
             <div className="flex items-center justify-between">
-              <motion.h1 
+              <motion.h1
                 initial={{ opacity: 0, x: -20 }}
                 animate={{ opacity: 1, x: 0 }}
                 transition={{ duration: 0.5, delay: 0.1 }}
@@ -499,14 +515,14 @@ export default function Tables() {
                 transition={{ duration: 0.5, delay: 0.2 }}
                 className="flex gap-2"
               >
-                <Button
+                {/* <Button
                   variant="outline"
                   onClick={() => (window.location.href = "/table-plan")}
                   className="border-green-600 text-green-600 hover:bg-green-50"
                 >
                   <MapPin className="h-4 w-4 mr-2" />
                   View Table Plan
-                </Button>
+                </Button> */}
                 <Button
                   variant="outline"
                   onClick={downloadAllQRCodes}
@@ -520,9 +536,11 @@ export default function Tables() {
                   <DialogTrigger asChild>
                     <div className="relative">
                       <Button
-                        className={`${canCreateMoreTables() 
-                          ? "bg-green-600 hover:bg-green-700 text-white" 
-                          : "bg-gray-400 cursor-not-allowed text-gray-600"}`}
+                        className={`${
+                          canCreateMoreTables()
+                            ? "bg-green-600 hover:bg-green-700 text-white"
+                            : "bg-gray-400 cursor-not-allowed text-gray-600"
+                        }`}
                         disabled={!canCreateMoreTables()}
                         onClick={() => {
                           if (!canCreateMoreTables()) {
@@ -534,7 +552,9 @@ export default function Tables() {
                                 <Button
                                   variant="outline"
                                   size="sm"
-                                  onClick={() => window.location.href = "/billing"}
+                                  onClick={() =>
+                                    (window.location.href = "/billing")
+                                  }
                                 >
                                   Upgrade Plan
                                 </Button>
@@ -543,28 +563,41 @@ export default function Tables() {
                             return;
                           }
                           setEditingTable(null);
-                          setNewTable({ tableNumber: "", capacity: 4, isActive: true });
+                          setNewTable({
+                            tableNumber: "",
+                            capacity: 4,
+                            isActive: true,
+                          });
                         }}
                       >
                         <Plus className="h-4 w-4 mr-2" />
                         Add Table
                       </Button>
-                      {subscriptionDetails?.plan && (
-                        <div className={`absolute -top-2 -right-2 text-xs px-2 py-1 rounded-full whitespace-nowrap ${
-                          canCreateMoreTables() 
-                            ? "bg-green-100 text-green-700" 
-                            : "bg-red-100 text-red-700"
-                        }`}>
+                      {/* {subscriptionDetails?.plan && (
+                        <div
+                          className={`absolute -top-2 -right-2 text-xs px-2 py-1 rounded-full whitespace-nowrap ${
+                            canCreateMoreTables()
+                              ? "bg-green-100 text-green-700"
+                              : "bg-red-100 text-red-700"
+                          }`}
+                        >
                           {getTableLimitText()}
                         </div>
-                      )}
+                      )} */}
                     </div>
                   </DialogTrigger>
                   <DialogContent>
                     <DialogHeader>
-                      <DialogTitle>{editingTable ? 'Edit Table' : 'Add New Table'}</DialogTitle>
+                      <DialogTitle>
+                        {editingTable ? "Edit Table" : "Add New Table"}
+                      </DialogTitle>
                     </DialogHeader>
-                    <form onSubmit={editingTable ? handleUpdateTable : handleCreateTable} className="space-y-4">
+                    <form
+                      onSubmit={
+                        editingTable ? handleUpdateTable : handleCreateTable
+                      }
+                      className="space-y-4"
+                    >
                       <div>
                         <Label htmlFor="tableNumber">Table Number</Label>
                         <Input
@@ -609,11 +642,19 @@ export default function Tables() {
                       <Button
                         type="submit"
                         className="w-full"
-                        disabled={createTableMutation.isPending || updateTableMutation.isPending}
+                        disabled={
+                          createTableMutation.isPending ||
+                          updateTableMutation.isPending
+                        }
                       >
-                        {createTableMutation.isPending || updateTableMutation.isPending
-                          ? (editingTable ? "Updating..." : "Adding...")
-                          : (editingTable ? "Update Table" : "Add Table")}
+                        {createTableMutation.isPending ||
+                        updateTableMutation.isPending
+                          ? editingTable
+                            ? "Updating..."
+                            : "Adding..."
+                          : editingTable
+                            ? "Update Table"
+                            : "Add Table"}
                       </Button>
                     </form>
                   </DialogContent>
@@ -623,33 +664,37 @@ export default function Tables() {
           </div>
 
           {/* Subscription Usage Summary */}
-          {subscriptionDetails?.plan && (
+          {/* {subscriptionDetails?.plan && (
             <div className="p-6 border-b bg-gray-50">
               <div className="flex items-center justify-between">
                 <div className="flex items-center space-x-4">
                   <div className="text-sm text-gray-600">
-                    <span className="font-medium">Plan:</span> {subscriptionDetails.plan.name}
+                    <span className="font-medium">Plan:</span>{" "}
+                    {subscriptionDetails.plan.name}
                   </div>
                   <div className="h-4 w-px bg-gray-300"></div>
                   <div className="text-sm text-gray-600">
                     <span className="font-medium">Tables:</span>
-                    <span className={`ml-1 ${
-                      tables.length >= subscriptionDetails.plan.maxTables 
-                        ? "text-red-600 font-semibold" 
-                        : tables.length >= subscriptionDetails.plan.maxTables * 0.8
-                        ? "text-orange-600 font-medium"
-                        : "text-green-600"
-                    }`}>
+                    <span
+                      className={`ml-1 ${
+                        tables.length >= subscriptionDetails.plan.maxTables
+                          ? "text-red-600 font-semibold"
+                          : tables.length >=
+                              subscriptionDetails.plan.maxTables * 0.8
+                            ? "text-orange-600 font-medium"
+                            : "text-green-600"
+                      }`}
+                    >
                       {tables.length}/{subscriptionDetails.plan.maxTables}
                     </span>
                   </div>
                 </div>
-                
+
                 {!canCreateMoreTables() && (
                   <Button
                     variant="outline"
                     size="sm"
-                    onClick={() => window.location.href = "/billing"}
+                    onClick={() => (window.location.href = "/billing")}
                     className="border-orange-500 text-orange-600 hover:bg-orange-50"
                   >
                     Upgrade Plan
@@ -657,20 +702,26 @@ export default function Tables() {
                 )}
               </div>
 
-              {/* Progress Bar */}
               <div className="mt-3">
                 <div className="flex justify-between text-xs text-gray-500 mb-1">
                   <span>Table Usage</span>
-                  <span>{Math.round((tables.length / subscriptionDetails.plan.maxTables) * 100)}%</span>
+                  <span>
+                    {Math.round(
+                      (tables.length / subscriptionDetails.plan.maxTables) *
+                        100,
+                    )}
+                    %
+                  </span>
                 </div>
                 <div className="w-full bg-gray-200 rounded-full h-2">
                   <motion.div
                     className={`h-2 rounded-full ${
                       tables.length >= subscriptionDetails.plan.maxTables
                         ? "bg-red-500"
-                        : tables.length >= subscriptionDetails.plan.maxTables * 0.8
-                        ? "bg-orange-500"
-                        : "bg-green-500"
+                        : tables.length >=
+                            subscriptionDetails.plan.maxTables * 0.8
+                          ? "bg-orange-500"
+                          : "bg-green-500"
                     }`}
                     initial={{ width: 0 }}
                     animate={{
@@ -681,14 +732,14 @@ export default function Tables() {
                 </div>
               </div>
             </div>
-          )}
+          )} */}
 
           {/* Filters Section */}
           <div className="p-6 border-b">
             <h2 className="text-lg font-semibold text-gray-900 mb-6">Tables</h2>
 
             {/* Modern Filters Section */}
-            <motion.div 
+            <motion.div
               initial={{ opacity: 0, y: 10 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.5, delay: 0.4 }}
@@ -699,18 +750,28 @@ export default function Tables() {
                 <div className="flex items-center space-x-4">
                   <Collapsible open={showFilters} onOpenChange={setShowFilters}>
                     <CollapsibleTrigger asChild>
-                      <Button 
-                        variant="outline" 
+                      <Button
+                        variant="outline"
                         className="h-10 px-4 border-2 border-gray-200 hover:border-green-500 hover:bg-green-50 transition-all duration-200 flex items-center space-x-2 font-medium"
                       >
                         <Filter className="w-4 h-4" />
                         <span>Filters</span>
-                        {(statusFilter !== 'all' || capacityFilter !== 'all' || searchTerm) && (
+                        {(statusFilter !== "all" ||
+                          capacityFilter !== "all" ||
+                          searchTerm) && (
                           <span className="bg-green-500 text-white text-xs px-2 py-0.5 rounded-full ml-1">
-                            {[statusFilter !== 'all', capacityFilter !== 'all', searchTerm].filter(Boolean).length}
+                            {
+                              [
+                                statusFilter !== "all",
+                                capacityFilter !== "all",
+                                searchTerm,
+                              ].filter(Boolean).length
+                            }
                           </span>
                         )}
-                        <ChevronDown className={`w-4 h-4 transform transition-transform duration-200 ${showFilters ? 'rotate-180' : ''}`} />
+                        <ChevronDown
+                          className={`w-4 h-4 transform transition-transform duration-200 ${showFilters ? "rotate-180" : ""}`}
+                        />
                       </Button>
                     </CollapsibleTrigger>
 
@@ -719,7 +780,9 @@ export default function Tables() {
                         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                           {/* Search Input */}
                           <div className="relative">
-                            <label className="block text-sm font-medium text-gray-700 mb-2">Search</label>
+                            <label className="block text-sm font-medium text-gray-700 mb-2">
+                              Search
+                            </label>
                             <div className="relative">
                               <Search className="w-4 h-4 text-gray-400 absolute left-3 top-1/2 transform -translate-y-1/2" />
                               <Input
@@ -733,20 +796,33 @@ export default function Tables() {
 
                           {/* Status Filter */}
                           <div>
-                            <label className="block text-sm font-medium text-gray-700 mb-2">Status</label>
-                            <Select value={statusFilter} onValueChange={setStatusFilter}>
+                            <label className="block text-sm font-medium text-gray-700 mb-2">
+                              Status
+                            </label>
+                            <Select
+                              value={statusFilter}
+                              onValueChange={setStatusFilter}
+                            >
                               <SelectTrigger className="h-11 border-2 border-gray-200 focus:border-green-500 rounded-lg transition-all duration-200">
                                 <SelectValue placeholder="All Status" />
                               </SelectTrigger>
                               <SelectContent className="rounded-lg border-2 border-gray-200">
-                                <SelectItem value="all" className="rounded-md">All Status</SelectItem>
-                                <SelectItem value="active" className="rounded-md">
+                                <SelectItem value="all" className="rounded-md">
+                                  All Status
+                                </SelectItem>
+                                <SelectItem
+                                  value="active"
+                                  className="rounded-md"
+                                >
                                   <div className="flex items-center space-x-2">
                                     <div className="w-2 h-2 bg-green-500 rounded-full"></div>
                                     <span>Active</span>
                                   </div>
                                 </SelectItem>
-                                <SelectItem value="inactive" className="rounded-md">
+                                <SelectItem
+                                  value="inactive"
+                                  className="rounded-md"
+                                >
                                   <div className="flex items-center space-x-2">
                                     <div className="w-2 h-2 bg-gray-500 rounded-full"></div>
                                     <span>Inactive</span>
@@ -758,26 +834,42 @@ export default function Tables() {
 
                           {/* Capacity Filter */}
                           <div>
-                            <label className="block text-sm font-medium text-gray-700 mb-2">Capacity</label>
-                            <Select value={capacityFilter} onValueChange={setCapacityFilter}>
+                            <label className="block text-sm font-medium text-gray-700 mb-2">
+                              Capacity
+                            </label>
+                            <Select
+                              value={capacityFilter}
+                              onValueChange={setCapacityFilter}
+                            >
                               <SelectTrigger className="h-11 border-2 border-gray-200 focus:border-green-500 rounded-lg transition-all duration-200">
                                 <SelectValue placeholder="All Capacities" />
                               </SelectTrigger>
                               <SelectContent className="rounded-lg border-2 border-gray-200">
-                                <SelectItem value="all" className="rounded-md">All Capacities</SelectItem>
-                                <SelectItem value="small" className="rounded-md">
+                                <SelectItem value="all" className="rounded-md">
+                                  All Capacities
+                                </SelectItem>
+                                <SelectItem
+                                  value="small"
+                                  className="rounded-md"
+                                >
                                   <div className="flex items-center space-x-2">
                                     <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
                                     <span>Small (1-2 people)</span>
                                   </div>
                                 </SelectItem>
-                                <SelectItem value="medium" className="rounded-md">
+                                <SelectItem
+                                  value="medium"
+                                  className="rounded-md"
+                                >
                                   <div className="flex items-center space-x-2">
                                     <div className="w-2 h-2 bg-orange-500 rounded-full"></div>
                                     <span>Medium (3-6 people)</span>
                                   </div>
                                 </SelectItem>
-                                <SelectItem value="large" className="rounded-md">
+                                <SelectItem
+                                  value="large"
+                                  className="rounded-md"
+                                >
                                   <div className="flex items-center space-x-2">
                                     <div className="w-2 h-2 bg-purple-500 rounded-full"></div>
                                     <span>Large (7+ people)</span>
@@ -789,7 +881,9 @@ export default function Tables() {
                         </div>
 
                         {/* Filter Actions */}
-                        {(statusFilter !== 'all' || capacityFilter !== 'all' || searchTerm) && (
+                        {(statusFilter !== "all" ||
+                          capacityFilter !== "all" ||
+                          searchTerm) && (
                           <div className="flex items-center justify-between mt-4 pt-4 border-t border-gray-200">
                             <div className="flex items-center space-x-2 text-sm text-gray-600">
                               <span>Active filters:</span>
@@ -798,12 +892,12 @@ export default function Tables() {
                                   Search: "{searchTerm}"
                                 </span>
                               )}
-                              {statusFilter !== 'all' && (
+                              {statusFilter !== "all" && (
                                 <span className="bg-blue-100 text-blue-800 px-2 py-1 rounded-md text-xs font-medium">
                                   Status: {statusFilter}
                                 </span>
                               )}
-                              {capacityFilter !== 'all' && (
+                              {capacityFilter !== "all" && (
                                 <span className="bg-purple-100 text-purple-800 px-2 py-1 rounded-md text-xs font-medium">
                                   Capacity: {capacityFilter}
                                 </span>
@@ -831,7 +925,7 @@ export default function Tables() {
             </motion.div>
 
             {/* Enhanced Table */}
-            <motion.div 
+            <motion.div
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.5, delay: 0.5 }}
@@ -864,7 +958,9 @@ export default function Tables() {
                         <td colSpan={5} className="py-12 text-center">
                           <div className="flex flex-col items-center space-y-4">
                             <div className="animate-spin rounded-full h-8 w-8 border-2 border-green-500 border-t-transparent"></div>
-                            <span className="text-gray-500 font-medium">Loading tables...</span>
+                            <span className="text-gray-500 font-medium">
+                              Loading tables...
+                            </span>
                           </div>
                         </td>
                       </tr>
@@ -876,42 +972,57 @@ export default function Tables() {
                               <Users className="w-8 h-8 text-gray-400" />
                             </div>
                             <div>
-                              <h3 className="text-gray-900 font-medium">No tables found</h3>
-                              <p className="text-gray-500 text-sm mt-1">Try adjusting your filters or search terms</p>
+                              <h3 className="text-gray-900 font-medium">
+                                No tables found
+                              </h3>
+                              <p className="text-gray-500 text-sm mt-1">
+                                Try adjusting your filters or search terms
+                              </p>
                             </div>
                           </div>
                         </td>
                       </tr>
                     ) : (
                       paginatedTables.map((table: any, index: number) => (
-                        <motion.tr 
+                        <motion.tr
                           key={table.id}
                           initial={{ opacity: 0, y: 10 }}
                           animate={{ opacity: 1, y: 0 }}
                           transition={{ duration: 0.3, delay: index * 0.05 }}
                           className={`group hover:bg-blue-50 transition-all duration-200 ${
-                            index % 2 === 0 ? 'bg-white' : 'bg-gray-50/50'
+                            index % 2 === 0 ? "bg-white" : "bg-gray-50/50"
                           }`}
                         >
                           <td className="py-3 px-4">
                             <div className="flex items-center space-x-3">
                               <div className="w-8 h-8 bg-gradient-to-br from-green-400 to-green-600 rounded-full flex items-center justify-center text-white font-medium text-sm">
-                                {table.tableNumber?.charAt(0)?.toUpperCase() || 'T'}
+                                {table.tableNumber?.charAt(0)?.toUpperCase() ||
+                                  "T"}
                               </div>
                               <div>
-                                <div className="font-medium text-gray-900">Table {table.tableNumber}</div>
+                                <div className="font-medium text-gray-900">
+                                  Table {table.tableNumber}
+                                </div>
                               </div>
                             </div>
                           </td>
                           <td className="py-3 px-4">
                             <div className="flex items-center space-x-2">
                               <Users className="w-4 h-4 text-gray-400" />
-                              <span className="font-medium text-gray-900">{table.capacity}</span>
-                              <span className="text-sm text-gray-500">
-                                {table.capacity === 1 ? 'person' : 'people'}
+                              <span className="font-medium text-gray-900">
+                                {table.capacity}
                               </span>
-                              <span className={getCapacityBadge(table.capacity)}>
-                                {table.capacity <= 2 ? 'Small' : table.capacity <= 6 ? 'Medium' : 'Large'}
+                              <span className="text-sm text-gray-500">
+                                {table.capacity === 1 ? "person" : "people"}
+                              </span>
+                              <span
+                                className={getCapacityBadge(table.capacity)}
+                              >
+                                {table.capacity <= 2
+                                  ? "Small"
+                                  : table.capacity <= 6
+                                    ? "Medium"
+                                    : "Large"}
                               </span>
                             </div>
                           </td>
@@ -939,8 +1050,13 @@ export default function Tables() {
                                   });
                                   setShowQRDialog(true);
                                 } catch (error) {
-                                  console.error("Failed to fetch QR code:", error);
-                                  alert("Failed to load QR code. Please try again.");
+                                  console.error(
+                                    "Failed to fetch QR code:",
+                                    error,
+                                  );
+                                  alert(
+                                    "Failed to load QR code. Please try again.",
+                                  );
                                 }
                               }}
                               className="text-blue-600 border-blue-600 hover:bg-blue-50"
@@ -994,12 +1110,17 @@ export default function Tables() {
                   <div className="flex items-center justify-between">
                     <div className="flex items-center space-x-2 text-sm text-gray-600">
                       <span>
-                        Showing {startIndex + 1} to {Math.min(endIndex, filteredTables.length)} of {filteredTables.length} tables
+                        Showing {startIndex + 1} to{" "}
+                        {Math.min(endIndex, filteredTables.length)} of{" "}
+                        {filteredTables.length} tables
                       </span>
-                      <Select value={itemsPerPage.toString()} onValueChange={(value) => {
-                        setItemsPerPage(parseInt(value));
-                        setCurrentPage(1);
-                      }}>
+                      <Select
+                        value={itemsPerPage.toString()}
+                        onValueChange={(value) => {
+                          setItemsPerPage(parseInt(value));
+                          setCurrentPage(1);
+                        }}
+                      >
                         <SelectTrigger className="w-20 h-8">
                           <SelectValue />
                         </SelectTrigger>
@@ -1012,24 +1133,27 @@ export default function Tables() {
                       </Select>
                       <span>per page</span>
                     </div>
-                    
+
                     <div className="flex items-center space-x-2">
                       <Button
                         variant="outline"
                         size="sm"
-                        onClick={() => setCurrentPage(Math.max(1, currentPage - 1))}
+                        onClick={() =>
+                          setCurrentPage(Math.max(1, currentPage - 1))
+                        }
                         disabled={currentPage === 1}
                         className="h-8 w-8 p-0"
                       >
                         <ChevronLeft className="h-4 w-4" />
                       </Button>
-                      
+
                       <div className="flex items-center space-x-1">
                         {Array.from({ length: totalPages }, (_, i) => i + 1)
-                          .filter(page => 
-                            page === 1 || 
-                            page === totalPages || 
-                            Math.abs(page - currentPage) <= 1
+                          .filter(
+                            (page) =>
+                              page === 1 ||
+                              page === totalPages ||
+                              Math.abs(page - currentPage) <= 1,
                           )
                           .map((page, index, array) => (
                             <div key={page} className="flex items-center">
@@ -1037,7 +1161,9 @@ export default function Tables() {
                                 <span className="px-2 text-gray-400">...</span>
                               )}
                               <Button
-                                variant={currentPage === page ? "default" : "outline"}
+                                variant={
+                                  currentPage === page ? "default" : "outline"
+                                }
                                 size="sm"
                                 onClick={() => setCurrentPage(page)}
                                 className="h-8 w-8 p-0"
@@ -1045,14 +1171,15 @@ export default function Tables() {
                                 {page}
                               </Button>
                             </div>
-                          ))
-                        }
+                          ))}
                       </div>
-                      
+
                       <Button
                         variant="outline"
                         size="sm"
-                        onClick={() => setCurrentPage(Math.min(totalPages, currentPage + 1))}
+                        onClick={() =>
+                          setCurrentPage(Math.min(totalPages, currentPage + 1))
+                        }
                         disabled={currentPage === totalPages}
                         className="h-8 w-8 p-0"
                       >
@@ -1071,7 +1198,9 @@ export default function Tables() {
       <Dialog open={showQRDialog} onOpenChange={setShowQRDialog}>
         <DialogContent className="max-w-md">
           <DialogHeader>
-            <DialogTitle>QR Code - Table {selectedTableQR?.tableNumber}</DialogTitle>
+            <DialogTitle>
+              QR Code - Table {selectedTableQR?.tableNumber}
+            </DialogTitle>
           </DialogHeader>
           <div className="flex flex-col items-center space-y-4">
             {selectedTableQR?.qrCode && (
@@ -1099,17 +1228,25 @@ export default function Tables() {
           </DialogHeader>
           <div className="py-4">
             <p className="text-gray-600">
-              Are you sure you want to delete <strong>Table {tableToDelete?.tableNumber}</strong>?
+              Are you sure you want to delete{" "}
+              <strong>Table {tableToDelete?.tableNumber}</strong>?
             </p>
-            <p className="text-red-600 text-sm mt-2">This action cannot be undone and will also delete all associated bookings.</p>
+            <p className="text-red-600 text-sm mt-2">
+              This action cannot be undone and will also delete all associated
+              bookings.
+            </p>
           </div>
           <div className="flex justify-end space-x-2">
-            <Button type="button" variant="outline" onClick={() => setIsDeleteDialogOpen(false)}>
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => setIsDeleteDialogOpen(false)}
+            >
               Cancel
             </Button>
-            <Button 
-              type="button" 
-              variant="destructive" 
+            <Button
+              type="button"
+              variant="destructive"
               onClick={confirmDeleteTable}
               disabled={deleteTableMutation.isPending}
             >
