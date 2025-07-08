@@ -968,7 +968,7 @@ export default function BookingManage() {
           <Card>
             <CardContent className="pt-6">
               <div className="text-center text-sm text-gray-500">
-                <p>Booking ID: #{booking.id}</p>
+                <p>Booking ID: #{booking.tenantBookingId || booking.id}</p>
                 <p>Created: {new Date(booking.createdAt).toLocaleDateString()} at {new Date(booking.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</p>
               </div>
             </CardContent>

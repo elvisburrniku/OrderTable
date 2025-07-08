@@ -139,7 +139,7 @@ export default function PaymentInvoice({ booking, restaurant, onDownload, tenant
               <MapPin className="h-4 w-4 text-muted-foreground" />
               <div>
                 <p className="text-sm font-medium">Booking ID</p>
-                <p className="text-sm text-muted-foreground">#{booking.id}</p>
+                <p className="text-sm text-muted-foreground">#{booking.tenantBookingId || booking.id}</p>
               </div>
             </div>
           </div>

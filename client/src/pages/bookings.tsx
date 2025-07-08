@@ -632,7 +632,7 @@ export default function Bookings() {
                           <td className="py-3 px-4">
                             <div className="flex items-center">
                               <span className="text-blue-600 font-semibold text-sm bg-blue-50 px-2 py-1 rounded-md">
-                                #{booking.id}
+                                #{booking.tenantBookingId || booking.id}
                               </span>
                             </div>
                           </td>
