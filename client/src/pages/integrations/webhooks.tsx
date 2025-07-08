@@ -199,7 +199,7 @@ export default function WebhooksIntegration() {
           <Card className="mb-6">
             <CardContent className="bg-gray-50 pt-6">
               <p className="text-gray-700">
-                Webhooks make it possible to send data in real time from EasyTable to external systems. When an action occurs - such as a new booking, a modification, or a cancellation - the system automatically sends data as JSON to a specified URL.
+                Webhooks make it possible to send data in real time from ReadyTable to external systems. When an action occurs - such as a new booking, a modification, or a cancellation - the system automatically sends data as JSON to a specified URL.
               </p>
             </CardContent>
           </Card>

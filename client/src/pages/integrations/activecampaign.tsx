@@ -85,7 +85,7 @@ export default function ActiveCampaignIntegration() {
                 If you would like to the fields <strong>ZipCode</strong>, <strong>Restaurant name</strong>, and/or <strong>Number of bookings</strong>, then it is required that the fields are created at ActiveCampaign before activating the integration.
               </p>
               <p className="text-gray-700 mb-4">
-                Before the fields can be filled with data from easyTable, it is important that the fields are created with the following names in ActiveCampaign:
+                Before the fields can be filled with data from ReadyTable, it is important that the fields are created with the following names in ActiveCampaign:
               </p>
               <div className="space-y-1 text-gray-700">
                 <p>ZipCode: <strong>ZipCode</strong></p>

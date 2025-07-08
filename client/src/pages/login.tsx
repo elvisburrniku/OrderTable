@@ -333,7 +333,7 @@ export default function Login() {
                 
                 <div className="flex justify-between items-center mb-8 relative z-10">
                   <h3 className="text-3xl font-bold bg-gradient-to-r from-white to-emerald-200 bg-clip-text text-transparent">
-                    {isLogin ? "Welcome Back" : "Join easyTable"}
+                    {isLogin ? "Welcome Back" : "Join ReadyTable"}
                   </h3>
                   <Link href="/">
                     <Button variant="ghost" size="sm" className="text-white/70 hover:text-white hover:bg-white/10 backdrop-blur-sm">
