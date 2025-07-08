@@ -202,6 +202,33 @@ export default function Tables() {
     enabled: !!restaurant?.id,
   });
 
+  // Fetch subscription details for table limits
+  const { data: subscriptionDetails } = useQuery({
+    queryKey: ['/api/subscription/details'],
+    queryFn: async () => {
+      const response = await fetch('/api/subscription/details');
+      if (!response.ok) throw new Error("Failed to fetch subscription");
+      return response.json();
+    },
+    enabled: !!restaurant?.id,
+  });
+
+  // Check if user can create more tables based on subscription
+  const canCreateMoreTables = () => {
+    if (!subscriptionDetails?.plan) return false;
+    const currentTableCount = tables.length;
+    const maxTables = subscriptionDetails.plan.maxTables;
+    return currentTableCount < maxTables;
+  };
+
+  // Get table limit display text
+  const getTableLimitText = () => {
+    if (!subscriptionDetails?.plan) return "";
+    const currentTableCount = tables.length;
+    const maxTables = subscriptionDetails.plan.maxTables;
+    return `${currentTableCount}/${maxTables} tables used`;
+  };
+
   // Filter tables
   const filteredTables = (tables || []).filter((table: any) => {
     const matchesSearch = !searchTerm || 
@@ -491,17 +518,47 @@ export default function Tables() {
                 </Button>
                 <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
                   <DialogTrigger asChild>
-                    <Button
-                      className="bg-green-600 hover:bg-green-700 text-white"
-                      disabled={!canCreateTable(tables.length)}
-                      onClick={() => {
-                        setEditingTable(null);
-                        setNewTable({ tableNumber: "", capacity: 4, isActive: true });
-                      }}
-                    >
-                      <Plus className="h-4 w-4 mr-2" />
-                      Add Table
-                    </Button>
+                    <div className="relative">
+                      <Button
+                        className={`${canCreateMoreTables() 
+                          ? "bg-green-600 hover:bg-green-700 text-white" 
+                          : "bg-gray-400 cursor-not-allowed text-gray-600"}`}
+                        disabled={!canCreateMoreTables()}
+                        onClick={() => {
+                          if (!canCreateMoreTables()) {
+                            toast({
+                              title: "Table Limit Reached",
+                              description: `You have reached your plan's table limit of ${subscriptionDetails?.plan?.maxTables || 0} tables. Please upgrade your subscription to add more tables.`,
+                              variant: "destructive",
+                              action: (
+                                <Button
+                                  variant="outline"
+                                  size="sm"
+                                  onClick={() => window.location.href = "/billing"}
+                                >
+                                  Upgrade Plan
+                                </Button>
+                              ),
+                            });
+                            return;
+                          }
+                          setEditingTable(null);
+                          setNewTable({ tableNumber: "", capacity: 4, isActive: true });
+                        }}
+                      >
+                        <Plus className="h-4 w-4 mr-2" />
+                        Add Table
+                      </Button>
+                      {subscriptionDetails?.plan && (
+                        <div className={`absolute -top-2 -right-2 text-xs px-2 py-1 rounded-full whitespace-nowrap ${
+                          canCreateMoreTables() 
+                            ? "bg-green-100 text-green-700" 
+                            : "bg-red-100 text-red-700"
+                        }`}>
+                          {getTableLimitText()}
+                        </div>
+                      )}
+                    </div>
                   </DialogTrigger>
                   <DialogContent>
                     <DialogHeader>
@@ -564,6 +621,67 @@ export default function Tables() {
               </motion.div>
             </div>
           </div>
+
+          {/* Subscription Usage Summary */}
+          {subscriptionDetails?.plan && (
+            <div className="p-6 border-b bg-gray-50">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center space-x-4">
+                  <div className="text-sm text-gray-600">
+                    <span className="font-medium">Plan:</span> {subscriptionDetails.plan.name}
+                  </div>
+                  <div className="h-4 w-px bg-gray-300"></div>
+                  <div className="text-sm text-gray-600">
+                    <span className="font-medium">Tables:</span>
+                    <span className={`ml-1 ${
+                      tables.length >= subscriptionDetails.plan.maxTables 
+                        ? "text-red-600 font-semibold" 
+                        : tables.length >= subscriptionDetails.plan.maxTables * 0.8
+                        ? "text-orange-600 font-medium"
+                        : "text-green-600"
+                    }`}>
+                      {tables.length}/{subscriptionDetails.plan.maxTables}
+                    </span>
+                  </div>
+                </div>
+                
+                {!canCreateMoreTables() && (
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => window.location.href = "/billing"}
+                    className="border-orange-500 text-orange-600 hover:bg-orange-50"
+                  >
+                    Upgrade Plan
+                  </Button>
+                )}
+              </div>
+
+              {/* Progress Bar */}
+              <div className="mt-3">
+                <div className="flex justify-between text-xs text-gray-500 mb-1">
+                  <span>Table Usage</span>
+                  <span>{Math.round((tables.length / subscriptionDetails.plan.maxTables) * 100)}%</span>
+                </div>
+                <div className="w-full bg-gray-200 rounded-full h-2">
+                  <motion.div
+                    className={`h-2 rounded-full ${
+                      tables.length >= subscriptionDetails.plan.maxTables
+                        ? "bg-red-500"
+                        : tables.length >= subscriptionDetails.plan.maxTables * 0.8
+                        ? "bg-orange-500"
+                        : "bg-green-500"
+                    }`}
+                    initial={{ width: 0 }}
+                    animate={{
+                      width: `${Math.min((tables.length / subscriptionDetails.plan.maxTables) * 100, 100)}%`,
+                    }}
+                    transition={{ duration: 1, delay: 0.5 }}
+                  />
+                </div>
+              </div>
+            </div>
+          )}
 
           {/* Filters Section */}
           <div className="p-6 border-b">

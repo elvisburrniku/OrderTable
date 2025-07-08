@@ -3417,4 +3417,53 @@ export class DatabaseStorage implements IStorage {
       };
     }
   }
+
+  // Print Orders Methods
+  async getPrintOrdersByRestaurant(restaurantId: number, tenantId: number): Promise<any[]> {
+    try {
+      const orders = await this.db
+        .select()
+        .from(schema.printOrders)
+        .where(
+          and(
+            eq(schema.printOrders.restaurantId, restaurantId),
+            eq(schema.printOrders.tenantId, tenantId)
+          )
+        )
+        .orderBy(desc(schema.printOrders.id));
+      
+      return orders;
+    } catch (error) {
+      console.error("Error fetching print orders:", error);
+      return [];
+    }
+  }
+
+  async createPrintOrder(orderData: any): Promise<any> {
+    try {
+      const [order] = await this.db
+        .insert(schema.printOrders)
+        .values(orderData)
+        .returning();
+      
+      return order;
+    } catch (error) {
+      console.error("Error creating print order:", error);
+      throw error;
+    }
+  }
+
+  async getPrintOrderById(orderId: number): Promise<any> {
+    try {
+      const [order] = await this.db
+        .select()
+        .from(schema.printOrders)
+        .where(eq(schema.printOrders.id, orderId));
+      
+      return order;
+    } catch (error) {
+      console.error("Error fetching print order by ID:", error);
+      return null;
+    }
+  }
 }

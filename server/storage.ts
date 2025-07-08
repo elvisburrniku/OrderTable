@@ -531,6 +531,11 @@ export interface IStorage {
   createKitchenStaff(staffData: any): Promise<any>;
   updateKitchenStaff(staffId: number, updates: any): Promise<any>;
   calculateKitchenMetrics(restaurantId: number, tenantId: number, timeRange?: string): Promise<any>;
+
+  // Print Orders
+  getPrintOrdersByRestaurant(restaurantId: number, tenantId: number): Promise<any[]>;
+  createPrintOrder(orderData: any): Promise<any>;
+  getPrintOrderById(orderId: number): Promise<any>;
 }
 
 import { DatabaseStorage } from "./db-storage";
