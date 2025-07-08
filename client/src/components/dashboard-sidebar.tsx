@@ -128,12 +128,12 @@ export default function DashboardSidebar({
       href: `/${tenantId}/periodic-criteria`,
       requiredPermission: "access_settings",
     },
-    {
-      name: "Custom Fields",
-      icon: FileText,
-      href: `/${tenantId}/custom-fields`,
-      requiredPermission: "access_settings",
-    },
+    // {
+    //   name: "Custom Fields",
+    //   icon: FileText,
+    //   href: `/${tenantId}/custom-fields`,
+    //   requiredPermission: "access_settings",
+    // },
     // {
     //   name: "Booking Agents",
     //   icon: Users,
@@ -158,12 +158,12 @@ export default function DashboardSidebar({
       href: `/${tenantId}/feedback-questions`,
       requiredPermission: "access_settings",
     },
-    {
-      name: "Events",
-      icon: CalendarDays,
-      href: `/${tenantId}/events`,
-      requiredPermission: "access_settings",
-    },
+    // {
+    //   name: "Events",
+    //   icon: CalendarDays,
+    //   href: `/${tenantId}/events`,
+    //   requiredPermission: "access_settings",
+    // },
     // {
     //   name: "Products",
     //   icon: Package,

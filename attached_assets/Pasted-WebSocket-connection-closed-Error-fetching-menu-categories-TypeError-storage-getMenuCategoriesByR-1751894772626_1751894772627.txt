@@ -1,0 +1,26 @@
+WebSocket connection closed
+Error fetching menu categories: TypeError: storage.getMenuCategoriesByRestaurant is not a function
+    at <anonymous> (/home/runner/workspace/server/routes.ts:12580:42)
+    at process.processTicksAndRejections (node:internal/process/task_queues:95:5)
+1:25:11 PM [express] GET /api/tenants/6/restaurants/15/menu-categories 500 in 283ms :: {"error":"Fai…
+Error fetching menu items: TypeError: storage.getMenuItemsByRestaurant is not a function
+    at <anonymous> (/home/runner/workspace/server/routes.ts:12693:33)
+    at process.processTicksAndRejections (node:internal/process/task_queues:95:5)
+1:25:11 PM [express] GET /api/tenants/6/restaurants/15/menu-items 500 in 284ms :: {"error":"Failed t…
+Error fetching menu items: TypeError: storage.getMenuItemsByRestaurant is not a function
+    at <anonymous> (/home/runner/workspace/server/routes.ts:12693:33)
+    at process.processTicksAndRejections (node:internal/process/task_queues:95:5)
+1:25:12 PM [express] GET /api/tenants/6/restaurants/15/menu-items 500 in 245ms :: {"error":"Failed t…
+Error fetching menu categories: TypeError: storage.getMenuCategoriesByRestaurant is not a function
+    at <anonymous> (/home/runner/workspace/server/routes.ts:12580:42)
+    at process.processTicksAndRejections (node:internal/process/task_queues:95:5)
+1:25:12 PM [express] GET /api/tenants/6/restaurants/15/menu-categories 500 in 245ms :: {"error":"Fai…
+New WebSocket connection established
+Client subscribed to restaurant 15 notifications
+Error creating menu category: TypeError: storage.createMenuCategory is not a function
+    at <anonymous> (/home/runner/workspace/server/routes.ts:12610:40)
+    at process.processTicksAndRejections (node:internal/process/task_queues:95:5)
+1:25:16 PM [express] POST /api/tenants/6/restaurants/15/menu-categories 500 in 725ms :: {"error":"Fa…
+Error fetching menu categories: TypeError: storage.getMenuCategoriesByRestaurant is not a function
+    at <anonymous> (/home/runner/workspace/server/routes.ts:12580:42)
+    at process.processTicksAndRejections (node:internal/process/task_queues:95:5)

@@ -538,13 +538,7 @@ export function MenuManagement({
       </div>
 
       <div className="grid gap-6">
-        {categories
-          .filter((category) => {
-            // Show category if it has items after filtering
-            const categoryItems = getItemsByCategory(category.id);
-            return categoryItems.length > 0;
-          })
-          .map((category) => (
+        {categories.map((category) => (
           <Card key={category.id} className="w-full">
             <CardHeader>
               <div className="flex items-center justify-between">
@@ -585,7 +579,8 @@ export function MenuManagement({
             </CardHeader>
             <CardContent>
               <div className="grid gap-3">
-                {getItemsByCategory(category.id).map((item) => (
+                {getItemsByCategory(category.id).length > 0 ? (
+                  getItemsByCategory(category.id).map((item) => (
                   <div key={item.id} className="flex items-center justify-between p-3 border rounded-lg">
                     <div className="flex-1">
                       <div className="flex items-center gap-2">
@@ -658,27 +653,25 @@ export function MenuManagement({
                       </Button>
                     </div>
                   </div>
-                ))}
+                  ))
+                ) : (
+                  <div className="text-center py-8 text-muted-foreground">
+                    <p>No items in this category yet.</p>
+                    <p className="text-sm">Add items using the "Add Item" button above.</p>
+                  </div>
+                )}
               </div>
             </CardContent>
           </Card>
         ))}
       </div>
 
-      {categories.length === 0 ? (
+      {categories.length === 0 && (
         <div className="text-center py-12">
           <ChefHat className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
           <h3 className="text-lg font-medium mb-2">No menu categories yet</h3>
           <p className="text-muted-foreground mb-4">
             Start by creating your first menu category to organize your items.
-          </p>
-        </div>
-      ) : categories.filter((category) => getItemsByCategory(category.id).length > 0).length === 0 && (
-        <div className="text-center py-12">
-          <ChefHat className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
-          <h3 className="text-lg font-medium mb-2">No items match your filters</h3>
-          <p className="text-muted-foreground mb-4">
-            Try adjusting your search criteria or clear the filters to see all items.
           </p>
         </div>
       )}

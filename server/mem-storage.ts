@@ -61,8 +61,6 @@ export class MemoryStorage implements IStorage {
   private printOrders: any[] = [];
   private menuCategories: any[] = [];
   private menuItems: any[] = [];
-  private subscriptionPlans: SubscriptionPlan[] = [];
-  private userSubscriptions: UserSubscription[] = [];
 
   private nextId = 1;
 

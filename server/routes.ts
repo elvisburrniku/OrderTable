@@ -3591,47 +3591,32 @@ export async function registerRoutes(app: Express): Promise<Server> {
           if (recentBookings.length > 0) {
             const existingBooking = recentBookings[0];
             if (existingBooking.paymentStatus === "paid" || !existingBooking.requiresPayment) {
-              // Allow duplicate bookings for testing - just log the warning
-              console.log("Warning: Similar booking exists but allowing creation for testing purposes", {
-                existingBookingId: existingBooking.id,
+              return res.status(400).json({
+                message: "A booking with the same details already exists and has been paid",
+                bookingId: existingBooking.id,
                 paymentStatus: existingBooking.paymentStatus
               });
             }
           }
         }
 
-        // Get payment setup to determine payment type
-        const paymentSetups = await storage.getPaymentSetupsByRestaurant(restaurantId);
-        const activePaymentSetup = paymentSetups.find(setup => setup.isActive);
-        const paymentType = activePaymentSetup?.type || 'deposit';
-        
-        // Configure payment intent based on payment type
-        const paymentIntentConfig: any = {
-          amount: Math.round(amount * 100), // Convert to cents
-          currency: currency.toLowerCase(),
-          application_fee_amount: Math.round(amount * 100 * 0.05), // 5% platform fee
-          transfer_data: {
-            destination: tenant.stripeConnectAccountId,
-          },
-          metadata: {
-            ...metadata,
-            tenantId: tenantId.toString(),
-            restaurantId: restaurantId.toString(),
-            type: "guest_booking",
-            paymentType: paymentType
-          },
-          description: `Guest booking ${paymentType === 'reserve' ? 'reservation' : 'payment'} for ${restaurant.name}`,
-        };
-
-        // For reserve payments, use manual capture
-        if (paymentType === 'reserve') {
-          paymentIntentConfig.capture_method = 'manual';
-          paymentIntentConfig.confirmation_method = 'automatic';
-        }
-
         // Create payment intent
         const paymentIntent = await withStripe(async (stripe) => {
-          return await stripe.paymentIntents.create(paymentIntentConfig);
+          return await stripe.paymentIntents.create({
+            amount: Math.round(amount * 100), // Convert to cents
+            currency: currency.toLowerCase(),
+            application_fee_amount: Math.round(amount * 100 * 0.05), // 5% platform fee
+            transfer_data: {
+              destination: tenant.stripeConnectAccountId,
+            },
+            metadata: {
+              ...metadata,
+              tenantId: tenantId.toString(),
+              restaurantId: restaurantId.toString(),
+              type: "guest_booking"
+            },
+            description: `Guest booking payment for ${restaurant.name}`,
+          });
         });
 
         if (!paymentIntent) {
@@ -3642,10 +3627,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           clientSecret: paymentIntent.client_secret,
           paymentIntentId: paymentIntent.id,
           amount: amount,
-          currency: currency,
-          paymentType: paymentType,
-          setupType: activePaymentSetup?.type,
-          captureMethod: paymentType === 'reserve' ? 'manual' : 'automatic'
+          currency: currency
         });
 
       } catch (error) {
@@ -7494,7 +7476,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     },
   );
 
-  // Guest payment intent creation endpoint with reservation support
+  // Guest payment intent creation endpoint (without booking first)
   app.post(
     "/api/tenants/:tenantId/restaurants/:restaurantId/guest-payment-intent",
     async (req, res) => {
@@ -7515,25 +7497,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
           });
         }
 
-        // Get restaurant and payment setup information
+        // Get restaurant name for metadata
         const restaurant = await storage.getRestaurantById(restaurantId);
         if (!restaurant || restaurant.tenantId !== tenantId) {
           return res.status(404).json({ message: "Restaurant not found" });
         }
 
-        // Get payment setup to determine payment type
-        const paymentSetups = await storage.getPaymentSetupsByRestaurant(restaurantId);
-        const activePaymentSetup = paymentSetups?.find(setup => 
-          ['deposit', 'prepayment', 'reserve', 'no_show_fee'].includes(setup.type) && 
-          setup.method === 'capture_amount'
-        );
-
-        // Determine if this should be a reservation (authorize only) or immediate capture
-        const paymentType = activePaymentSetup?.type === 'reserve' ? 'reserve' : 'capture';
-        
-        console.log(`Creating ${paymentType} payment intent for guest booking - Setup type: ${activePaymentSetup?.type}`);
-
-        // Create payment intent using Stripe Connect with reservation support
+        // Create payment intent using Stripe Connect
         const { paymentService } = await import("./payment-service");
         
         try {
@@ -7549,17 +7519,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
               bookingDate: metadata.bookingDate,
               startTime: metadata.startTime,
               guestCount: metadata.guestCount,
-            },
-            paymentType, // 'reserve' for authorization only, 'capture' for immediate
-            paymentType === 'reserve' ? 'manual' : 'automatic'
+            }
           );
 
           res.json({
             clientSecret: paymentIntent.clientSecret,
             paymentIntentId: paymentIntent.paymentIntentId,
-            paymentType: paymentIntent.paymentType,
-            captureMethod: paymentIntent.captureMethod,
-            setupType: activePaymentSetup?.type || 'immediate'
           });
         } catch (stripeError) {
           console.error("Stripe payment intent creation failed:", stripeError);
@@ -7569,174 +7534,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
         }
       } catch (error) {
         console.error("Error creating guest payment intent:", error);
-        res.status(500).json({ message: "Internal server error" });
-      }
-    },
-  );
-
-  // Capture reserved payment endpoint
-  app.post(
-    "/api/tenants/:tenantId/restaurants/:restaurantId/bookings/:bookingId/capture-payment",
-    validateTenant,
-    async (req, res) => {
-      try {
-        const tenantId = parseInt(req.params.tenantId);
-        const restaurantId = parseInt(req.params.restaurantId);
-        const bookingId = parseInt(req.params.bookingId);
-        const { amountToCapture } = req.body;
-
-        // Get booking and verify ownership
-        const booking = await storage.getBookingById(bookingId);
-        if (!booking || booking.tenantId !== tenantId || booking.restaurantId !== restaurantId) {
-          return res.status(404).json({ message: "Booking not found" });
-        }
-
-        if (!booking.paymentIntentId) {
-          return res.status(400).json({ message: "No payment intent found for this booking" });
-        }
-
-        // Import payment service and capture the payment
-        const { paymentService } = await import("./payment-service");
-        
-        try {
-          const result = await paymentService.captureReservedPayment(
-            booking.paymentIntentId,
-            amountToCapture
-          );
-
-          // Update booking payment status
-          await storage.updateBooking(bookingId, {
-            paymentStatus: "paid",
-            paymentCapturedAt: new Date()
-          });
-
-          // Log the activity
-          await storage.createActivityLog({
-            tenantId,
-            restaurantId,
-            userId: (req as any).user?.id || null,
-            action: "capture_payment",
-            details: `Captured payment for booking #${bookingId} - Amount: ${result.amount} ${result.currency}`,
-            entityType: "booking",
-            entityId: bookingId
-          });
-
-          res.json({
-            success: true,
-            paymentIntentId: result.paymentIntentId,
-            capturedAmount: result.amount,
-            currency: result.currency,
-            status: result.status
-          });
-        } catch (stripeError) {
-          console.error("Error capturing payment:", stripeError);
-          res.status(500).json({ 
-            message: "Failed to capture payment. Please try again." 
-          });
-        }
-      } catch (error) {
-        console.error("Error in capture payment endpoint:", error);
-        res.status(500).json({ message: "Internal server error" });
-      }
-    },
-  );
-
-  // Cancel reserved payment endpoint
-  app.post(
-    "/api/tenants/:tenantId/restaurants/:restaurantId/bookings/:bookingId/cancel-payment",
-    validateTenant,
-    async (req, res) => {
-      try {
-        const tenantId = parseInt(req.params.tenantId);
-        const restaurantId = parseInt(req.params.restaurantId);
-        const bookingId = parseInt(req.params.bookingId);
-
-        // Get booking and verify ownership
-        const booking = await storage.getBookingById(bookingId);
-        if (!booking || booking.tenantId !== tenantId || booking.restaurantId !== restaurantId) {
-          return res.status(404).json({ message: "Booking not found" });
-        }
-
-        if (!booking.paymentIntentId) {
-          return res.status(400).json({ message: "No payment intent found for this booking" });
-        }
-
-        // Import payment service and cancel the payment
-        const { paymentService } = await import("./payment-service");
-        
-        try {
-          const result = await paymentService.cancelReservedPayment(booking.paymentIntentId);
-
-          // Update booking payment status
-          await storage.updateBooking(bookingId, {
-            paymentStatus: "cancelled",
-            paymentCancelledAt: new Date()
-          });
-
-          // Log the activity
-          await storage.createActivityLog({
-            tenantId,
-            restaurantId,
-            userId: (req as any).user?.id || null,
-            action: "cancel_payment",
-            details: `Cancelled reserved payment for booking #${bookingId} - Amount: ${result.amount} ${result.currency}`,
-            entityType: "booking",
-            entityId: bookingId
-          });
-
-          res.json({
-            success: true,
-            paymentIntentId: result.paymentIntentId,
-            cancelledAmount: result.amount,
-            currency: result.currency,
-            status: result.status
-          });
-        } catch (stripeError) {
-          console.error("Error cancelling payment:", stripeError);
-          res.status(500).json({ 
-            message: "Failed to cancel payment. Please try again." 
-          });
-        }
-      } catch (error) {
-        console.error("Error in cancel payment endpoint:", error);
-        res.status(500).json({ message: "Internal server error" });
-      }
-    },
-  );
-
-  // Process late cancellation charge endpoint
-  app.post(
-    "/api/tenants/:tenantId/restaurants/:restaurantId/bookings/:bookingId/late-cancellation",
-    validateTenant,
-    async (req, res) => {
-      try {
-        const tenantId = parseInt(req.params.tenantId);
-        const restaurantId = parseInt(req.params.restaurantId);
-        const bookingId = parseInt(req.params.bookingId);
-        const { reason = 'late_cancellation' } = req.body;
-
-        // Get booking and verify ownership
-        const booking = await storage.getBookingById(bookingId);
-        if (!booking || booking.tenantId !== tenantId || booking.restaurantId !== restaurantId) {
-          return res.status(404).json({ message: "Booking not found" });
-        }
-
-        // Import reservation scheduler and process late cancellation
-        const { reservationScheduler } = await import('./reservation-scheduler');
-        const result = await reservationScheduler.processLateCancellation(bookingId, reason);
-
-        if (result.success) {
-          res.json({ 
-            success: true, 
-            message: "Late cancellation charge processed successfully",
-            chargedAmount: result.amount,
-            currency: result.currency
-          });
-        } else {
-          res.status(400).json({ success: false, error: result.error });
-        }
-      } catch (error) {
-        console.error('Error processing late cancellation:', error);
         res.status(500).json({ message: "Internal server error" });
       }
     },
