@@ -113,6 +113,26 @@ export function MenuManagement({
             title: "Category Added", 
             description: `New category "${message.data?.name || 'category'}" has been created`,
           });
+        } else if (message.type === 'menu_item_updated') {
+          toast({
+            title: "Menu Item Updated",
+            description: `Menu item "${message.data?.name || 'item'}" has been updated`,
+          });
+        } else if (message.type === 'menu_category_updated') {
+          toast({
+            title: "Category Updated", 
+            description: `Category "${message.data?.name || 'category'}" has been updated`,
+          });
+        } else if (message.type === 'menu_item_deleted') {
+          toast({
+            title: "Menu Item Deleted",
+            description: `Menu item has been deleted`,
+          });
+        } else if (message.type === 'menu_category_deleted') {
+          toast({
+            title: "Category Deleted", 
+            description: `Category has been deleted`,
+          });
         }
       }
     }
