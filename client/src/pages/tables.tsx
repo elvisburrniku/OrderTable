@@ -546,7 +546,7 @@ export default function Tables() {
                           if (subscriptionDetails?.plan && !canCreateMoreTables()) {
                             toast({
                               title: "Table Limit Reached",
-                              description: `You have reached your plan's table limit of ${subscriptionDetails?.plan?.maxTables || 0} tables. Please upgrade your subscription to add more tables.`,
+                              description: "You've reached your table limit. Please upgrade your subscription.",
                               variant: "destructive",
                               action: (
                                 <Button
