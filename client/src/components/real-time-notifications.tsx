@@ -758,7 +758,7 @@ export function RealTimeNotifications() {
     switch (type) {
       case 'new_booking':
         if (!booking?.customerName || !booking?.bookingDate) return 'New booking received';
-        const newBookingId = booking.id || 'N/A';
+        const newBookingId = booking.tenantBookingId || booking.id || 'N/A';
         return `Booking #${newBookingId}: ${booking.customerName} booked for ${booking.guestCount || 0} guests on ${(() => {
           try {
             const date = new Date(booking.bookingDate);
@@ -768,7 +768,7 @@ export function RealTimeNotifications() {
           }
         })()} at ${booking.startTime || 'TBD'}`;
       case 'booking_changed':
-        const changedBookingId = booking?.id || 'N/A';
+        const changedBookingId = booking?.tenantBookingId || booking?.id || 'N/A';
         if (!changes || Object.keys(changes).length === 0) {
           return `Booking #${changedBookingId}: ${booking?.customerName || 'Customer'} updated their booking`;
         }
@@ -836,7 +836,7 @@ export function RealTimeNotifications() {
         return `Booking #${changedBookingId}: ${booking?.customerName || 'Customer'} changed ${changeDetails}`;
       case 'booking_cancelled':
         if (!booking?.customerName || !booking?.bookingDate) return 'Booking cancelled';
-        const cancelledBookingId = booking.id || 'N/A';
+        const cancelledBookingId = booking.tenantBookingId || booking.id || 'N/A';
         return `Booking #${cancelledBookingId}: ${booking.customerName} cancelled their ${(() => {
           try {
             const date = new Date(booking.bookingDate);
@@ -846,7 +846,7 @@ export function RealTimeNotifications() {
           }
         })()}reservation${booking.startTime ? ` at ${booking.startTime}` : ''}`;
       case 'booking_change_request':
-        const requestBookingId = booking?.id || 'N/A';
+        const requestBookingId = booking?.tenantBookingId || booking?.id || 'N/A';
         const requestedChanges = [];
         if (changeRequest?.requestedDate) {
           try {
@@ -862,7 +862,7 @@ export function RealTimeNotifications() {
         if (changeRequest?.requestedGuestCount) requestedChanges.push(`party size to ${changeRequest.requestedGuestCount} guests`);
         return `Booking #${requestBookingId}: ${booking?.customerName || 'Customer'} requests to change ${requestedChanges.join(', ') || 'booking details'}`;
       case 'change_request_responded':
-        const responseBookingId = booking?.id || 'N/A';
+        const responseBookingId = booking?.tenantBookingId || booking?.id || 'N/A';
         return `Booking #${responseBookingId}: Change request ${approved ? 'approved' : 'rejected'} for ${booking?.customerName || 'customer'}`;
       default:
         return 'New notification';

@@ -471,7 +471,7 @@ export default function BookingDetail() {
             </Button>
             <div className="flex items-center space-x-3">
               <Hash className="w-5 h-5 text-gray-400" />
-              <span className="text-lg font-semibold text-gray-900">Booking #{booking.id}</span>
+              <span className="text-lg font-semibold text-gray-900">Booking #{booking.tenantBookingId || booking.id}</span>
             </div>
           </div>
         </div>
@@ -690,7 +690,7 @@ export default function BookingDetail() {
                     <div className="space-y-3 text-sm">
                       <div className="flex items-center justify-between">
                         <span className="text-gray-600">Booking ID</span>
-                        <span className="font-mono font-semibold text-gray-900">#{booking.id}</span>
+                        <span className="font-mono font-semibold text-gray-900">#{booking.tenantBookingId || booking.id}</span>
                       </div>
                       <div className="flex items-center justify-between">
                         <span className="text-gray-600">Created</span>
