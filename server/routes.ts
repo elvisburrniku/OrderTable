@@ -6471,6 +6471,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
           paymentStatus = "not_required";
         }
 
+        // Generate management hash for booking management
+        const { BookingHash } = await import('./booking-hash.js');
+        const managementHash = BookingHash.generateHash(0, tenantId, restaurantId, 'manage'); // Temporary booking ID, will be updated after creation
+
         const bookingData = {
           tenantId,
           restaurantId,
@@ -6483,6 +6487,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           specialRequests: req.body.specialRequests || null,
           status: bookingStatus,
           source: req.body.source || "guest_booking",
+          managementHash: managementHash, // Add management hash for booking management URLs
           // Payment fields
           requiresPayment,
           paymentAmount: paymentAmount ? parseFloat(paymentAmount) : null,
@@ -6507,6 +6512,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
         }
 
         const booking = await storage.createBooking(bookingData);
+
+        // Update the management hash with the actual booking ID
+        const actualHash = BookingHash.generateHash(booking.id, tenantId, restaurantId, 'manage');
+        await storage.updateBooking(booking.id, { managementHash: actualHash });
+        
+        // Update booking object with correct hash for further use
+        booking.managementHash = actualHash;
 
         // Generate payment link if payment is required
         let paymentLink = null;
@@ -6623,7 +6635,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
                 date: new Date(booking.bookingDate).toLocaleDateString(),
                 time: booking.startTime,
                 guests: booking.guestCount,
-                hash: booking.hash,
+                hash: booking.managementHash,
               };
 
               const smsResult = await twilioSMSService.sendBookingConfirmation(
