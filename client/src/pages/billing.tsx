@@ -1024,20 +1024,29 @@ export default function BillingPage() {
                             )}
 
                             {!isCurrentPlan && (
-                              <Button
-                                className="w-full bg-gray-900 hover:bg-gray-800 text-white"
-                                onClick={() =>
-                                  upgradeSubscriptionMutation.mutate(plan.id)
-                                }
-                                disabled={upgradeSubscriptionMutation.isPending}
-                              >
-                                {upgradeSubscriptionMutation.isPending ? (
-                                  <RefreshCw className="w-4 h-4 mr-2 animate-spin" />
-                                ) : (
-                                  <ArrowUpRight className="w-4 h-4 mr-2" />
-                                )}
-                                Upgrade to {plan.name}
-                              </Button>
+                              (() => {
+                                const currentPlanPrice = subscriptionDetails?.plan?.price || 0;
+                                const targetPlanPrice = plan.price;
+                                const isUpgrade = targetPlanPrice > currentPlanPrice;
+                                const buttonText = isUpgrade ? `Upgrade to ${plan.name}` : `Downgrade to ${plan.name}`;
+                                
+                                return (
+                                  <Button
+                                    className="w-full bg-gray-900 hover:bg-gray-800 text-white"
+                                    onClick={() =>
+                                      upgradeSubscriptionMutation.mutate(plan.id)
+                                    }
+                                    disabled={upgradeSubscriptionMutation.isPending}
+                                  >
+                                    {upgradeSubscriptionMutation.isPending ? (
+                                      <RefreshCw className="w-4 h-4 mr-2 animate-spin" />
+                                    ) : (
+                                      <ArrowUpRight className="w-4 h-4 mr-2" />
+                                    )}
+                                    {buttonText}
+                                  </Button>
+                                );
+                              })()
                             )}
                           </motion.div>
                         );
