@@ -6568,6 +6568,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
             const bookingDetails = {
               ...bookingData,
               id: booking.id,
+              managementHash: booking.managementHash,
+              tenantId: tenantId,
+              restaurantId: restaurantId,
               restaurantName: restaurant.name,
               restaurantAddress: restaurant.address,
               paymentLink: paymentLink,
