@@ -717,13 +717,27 @@ export class DatabaseStorage implements IStorage {
         throw new Error("Invalid customerId value: " + booking.customerId);
       }
     }
+    
+    // Get the next tenant booking ID for sequential numbering per tenant
+    const maxTenantBookingIdResult = await this.db
+      .select({ maxId: sql`COALESCE(MAX(tenant_booking_id), 0)` })
+      .from(bookings)
+      .where(eq(bookings.tenantId, booking.tenantId));
+    
+    const nextTenantBookingId = (maxTenantBookingIdResult[0]?.maxId || 0) + 1;
+    
     // Import BookingHash for generating management hash
     const { BookingHash } = await import("./booking-hash");
-    // Insert the booking first to get the ID
+    
+    // Insert the booking with the tenant-specific booking ID
     const [newBooking] = await this.db
       .insert(bookings)
-      .values(booking)
+      .values({
+        ...booking,
+        tenantBookingId: nextTenantBookingId
+      })
       .returning();
+    
     // Generate management hash with the actual booking ID
     const managementHash = BookingHash.generateHash(
       newBooking.id,
@@ -731,6 +745,7 @@ export class DatabaseStorage implements IStorage {
       newBooking.restaurantId,
       "manage",
     );
+    
     // Update the booking with the management hash
     const [updatedBooking] = await this.db
       .update(bookings)

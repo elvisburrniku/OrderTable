@@ -225,13 +225,13 @@ export default function DashboardSidebar({
       color: "text-blue-600",
       requiredPermission: "access_bookings",
     },
-    {
-      name: "Calendar",
-      icon: CalendarDays,
-      href: `/${tenantId}/calendar`,
-      color: "text-teal-600",
-      requiredPermission: "access_bookings",
-    },
+    // {
+    //   name: "Calendar",
+    //   icon: CalendarDays,
+    //   href: `/${tenantId}/calendar`,
+    //   color: "text-teal-600",
+    //   requiredPermission: "access_bookings",
+    // },
     {
       name: "Heat Map",
       icon: Thermometer,

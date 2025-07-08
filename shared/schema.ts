@@ -205,6 +205,7 @@ export const combinedTables = pgTable("combined_tables", {
 
 export const bookings = pgTable("bookings", {
   id: serial("id").primaryKey(),
+  tenantBookingId: integer("tenant_booking_id"), // Sequential ID per tenant (1, 2, 3...)
   restaurantId: integer("restaurant_id")
     .references(() => restaurants.id)
     .notNull(),
