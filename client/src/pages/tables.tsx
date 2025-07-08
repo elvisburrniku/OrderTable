@@ -533,59 +533,54 @@ export default function Tables() {
                   Download All QR Codes
                 </Button>
                 <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-                  <DialogTrigger asChild>
+                  {(!subscriptionDetails?.plan || canCreateMoreTables()) ? (
+                    <DialogTrigger asChild>
+                      <div className="relative">
+                        <Button
+                          className="bg-green-600 hover:bg-green-700 text-white"
+                          onClick={() => {
+                            setEditingTable(null);
+                            setNewTable({
+                              tableNumber: "",
+                              capacity: 4,
+                              isActive: true,
+                            });
+                          }}
+                        >
+                          <Plus className="h-4 w-4 mr-2" />
+                          Add Table
+                        </Button>
+                      </div>
+                    </DialogTrigger>
+                  ) : (
                     <div className="relative">
                       <Button
-                        className={`${
-                          !subscriptionDetails?.plan || canCreateMoreTables()
-                            ? "bg-green-600 hover:bg-green-700 text-white"
-                            : "bg-gray-400 cursor-not-allowed text-gray-600"
-                        }`}
-                        disabled={subscriptionDetails?.plan && !canCreateMoreTables()}
+                        className="bg-gray-400 cursor-not-allowed text-gray-600"
+                        disabled={true}
                         onClick={() => {
-                          if (subscriptionDetails?.plan && !canCreateMoreTables()) {
-                            toast({
-                              title: "Table Limit Reached",
-                              description: "You've reached your table limit. Please upgrade your subscription.",
-                              variant: "destructive",
-                              action: (
-                                <Button
-                                  variant="outline"
-                                  size="sm"
-                                  onClick={() =>
-                                    (window.location.href = "/billing")
-                                  }
-                                >
-                                  Upgrade Plan
-                                </Button>
-                              ),
-                            });
-                            return;
-                          }
-                          setEditingTable(null);
-                          setNewTable({
-                            tableNumber: "",
-                            capacity: 4,
-                            isActive: true,
+                          toast({
+                            title: "Table Limit Reached",
+                            description: "You've reached your table limit. Please upgrade your subscription.",
+                            variant: "destructive",
+                            action: (
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() =>
+                                  (window.location.href = "/billing")
+                                }
+                              >
+                                Upgrade Plan
+                              </Button>
+                            ),
                           });
                         }}
                       >
                         <Plus className="h-4 w-4 mr-2" />
                         Add Table
                       </Button>
-                      {/* {subscriptionDetails?.plan && (
-                        <div
-                          className={`absolute -top-2 -right-2 text-xs px-2 py-1 rounded-full whitespace-nowrap ${
-                            canCreateMoreTables()
-                              ? "bg-green-100 text-green-700"
-                              : "bg-red-100 text-red-700"
-                          }`}
-                        >
-                          {getTableLimitText()}
-                        </div>
-                      )} */}
                     </div>
-                  </DialogTrigger>
+                  )}
                   <DialogContent>
                     <DialogHeader>
                       <DialogTitle>
