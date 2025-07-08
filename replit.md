@@ -22,6 +22,12 @@ A comprehensive restaurant booking management system with React frontend and Exp
 - Kitchen order management
 
 ## Recent Changes
+- **2025-07-08**: ✅ GUEST BOOKING MANAGEMENT HASH GENERATION FIXED - Successfully resolved booking management URL issues with proper hash generation
+- **Hash Generation Fix**: Fixed email service not receiving managementHash, causing URLs to be generated with booking ID 0 instead of actual booking ID
+- **Email Service Enhancement**: Added managementHash, tenantId, and restaurantId to booking details passed to email service for correct URL generation
+- **Validation Success**: New booking (ID 180) confirmed working with correct hash verification and management URL functionality
+- **Legacy URL Issue Resolved**: Provided correct management URLs for existing problematic bookings with proper hash values
+- **System Verification**: All booking management features now operational including email notifications, hash verification, and booking modifications
 - **2025-07-08**: ✅ MIGRATION FROM REPLIT AGENT TO REPLIT ENVIRONMENT COMPLETED - Successfully completed migration with table button disable bug fix
 - **Button Disable Fix**: Fixed tables page buttons being disabled on load by improving subscription loading logic to allow table creation while subscription data loads
 - **Migration Success**: All core functionality verified working including database connectivity, authentication system, booking management, payment processing, and admin panel
