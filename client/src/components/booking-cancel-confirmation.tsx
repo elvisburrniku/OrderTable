@@ -63,137 +63,77 @@ export function BookingCancelConfirmation({
       <DialogTrigger asChild>
         {children}
       </DialogTrigger>
-      <DialogContent className="sm:max-w-2xl">
+      <DialogContent className="sm:max-w-md">
         <DialogHeader>
-          <DialogTitle className="flex items-center gap-3 text-xl">
-            <div className="p-2 bg-red-100 rounded-full">
-              <XCircle className="h-6 w-6 text-red-600" />
-            </div>
+          <DialogTitle className="flex items-center gap-2">
+            <XCircle className="h-5 w-5 text-red-600" />
             Cancel Booking
           </DialogTitle>
         </DialogHeader>
 
-        <div className="space-y-6">
-          {/* Booking Details Card */}
-          <Card className="border-gray-200">
-            <CardHeader className="pb-3">
-              <CardTitle className="text-lg flex items-center justify-between">
-                Booking Details
-                <Badge variant="outline" className="bg-blue-50 text-blue-700 border-blue-200">
-                  #{booking.id}
-                </Badge>
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="grid grid-cols-2 gap-4">
-                <div className="flex items-center gap-3">
-                  <Calendar className="h-5 w-5 text-gray-500" />
-                  <div>
-                    <p className="text-sm text-gray-500">Date</p>
-                    <p className="font-medium">{formatDate(booking.bookingDate)}</p>
-                  </div>
-                </div>
-                <div className="flex items-center gap-3">
-                  <Clock className="h-5 w-5 text-gray-500" />
-                  <div>
-                    <p className="text-sm text-gray-500">Time</p>
-                    <p className="font-medium">{formatTime(booking.startTime)}</p>
-                  </div>
-                </div>
-                <div className="flex items-center gap-3">
-                  <Users className="h-5 w-5 text-gray-500" />
-                  <div>
-                    <p className="text-sm text-gray-500">Party Size</p>
-                    <p className="font-medium">{booking.guestCount} {booking.guestCount === 1 ? 'guest' : 'guests'}</p>
-                  </div>
-                </div>
-                {booking.tableId && (
-                  <div className="flex items-center gap-3">
-                    <MapPin className="h-5 w-5 text-gray-500" />
-                    <div>
-                      <p className="text-sm text-gray-500">Table</p>
-                      <p className="font-medium">Table {booking.tableId}</p>
-                    </div>
-                  </div>
-                )}
-              </div>
-              
-              <div className="pt-2 border-t border-gray-100">
-                <div className="flex items-center gap-3">
-                  <MessageCircle className="h-5 w-5 text-gray-500" />
-                  <div>
-                    <p className="text-sm text-gray-500">Customer</p>
-                    <p className="font-medium">{booking.customerName}</p>
-                    <p className="text-sm text-gray-500">{booking.customerEmail}</p>
-                  </div>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-
-          {/* Warning Alert */}
-          <Alert className="border-amber-200 bg-amber-50">
-            <AlertTriangle className="h-5 w-5 text-amber-600" />
-            <AlertDescription className="text-amber-800">
-              <div className="space-y-2">
-                <p className="font-medium">This action cannot be undone</p>
-                <ul className="text-sm space-y-1 ml-4">
-                  <li>• The booking will be permanently cancelled</li>
-                  <li>• The customer will be notified via email</li>
-                  <li>• The table will become available for other bookings</li>
-                  {hoursUntilBooking <= 24 && (
-                    <li className="text-red-600 font-medium">• This is a last-minute cancellation ({hoursUntilBooking} hours before booking)</li>
-                  )}
-                </ul>
-              </div>
-            </AlertDescription>
-          </Alert>
-
-          {/* Cancellation Reason */}
-          <div className="space-y-3">
-            <Label htmlFor="cancel-reason" className="text-base font-medium">
-              Cancellation Reason (Optional)
-            </Label>
-            <Textarea
-              id="cancel-reason"
-              placeholder="Please provide a reason for the cancellation. This will help us improve our service and may be shared with the customer if appropriate."
-              value={reason}
-              onChange={(e) => setReason(e.target.value)}
-              rows={4}
-              className="resize-none"
-            />
-            <p className="text-sm text-gray-500">
-              This information is optional but helps us understand cancellation patterns and improve our service.
+        <div className="space-y-4">
+          {/* Compact Booking Info */}
+          <div className="bg-gray-50 p-3 rounded-lg">
+            <p className="font-medium text-sm">{booking.customerName}</p>
+            <p className="text-sm text-gray-600">
+              {formatDate(booking.bookingDate)} at {formatTime(booking.startTime)}
+            </p>
+            <p className="text-sm text-gray-600">
+              {booking.guestCount} guests{booking.tableId ? ` • Table ${booking.tableId}` : ''}
             </p>
           </div>
 
+          {/* Simple Warning */}
+          <Alert className="border-red-200 bg-red-50">
+            <AlertTriangle className="h-4 w-4 text-red-600" />
+            <AlertDescription className="text-red-800 text-sm">
+              This will permanently cancel the booking and notify the customer.
+              {hoursUntilBooking <= 24 && (
+                <span className="block font-medium mt-1">
+                  Last-minute cancellation ({hoursUntilBooking} hours before booking)
+                </span>
+              )}
+            </AlertDescription>
+          </Alert>
+
+          {/* Optional Reason */}
+          <div className="space-y-2">
+            <Label htmlFor="cancel-reason" className="text-sm">Reason (Optional)</Label>
+            <Textarea
+              id="cancel-reason"
+              placeholder="Cancellation reason..."
+              value={reason}
+              onChange={(e) => setReason(e.target.value)}
+              rows={2}
+              className="resize-none text-sm"
+            />
+          </div>
+
           {/* Action Buttons */}
-          <div className="flex gap-3 pt-4 border-t border-gray-200">
+          <div className="flex gap-2 pt-2">
             <Button
               variant="outline"
               onClick={() => setIsOpen(false)}
               disabled={isLoading}
               className="flex-1"
+              size="sm"
             >
-              <X className="h-4 w-4 mr-2" />
-              Keep Booking
+              Keep
             </Button>
             <Button
               variant="destructive"
               onClick={handleConfirm}
               disabled={isLoading}
               className="flex-1"
+              size="sm"
             >
               {isLoading ? (
                 <div className="flex items-center gap-2">
-                  <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                  <div className="w-3 h-3 border-2 border-white border-t-transparent rounded-full animate-spin" />
                   Cancelling...
                 </div>
               ) : (
-                <>
-                  <CheckCircle2 className="h-4 w-4 mr-2" />
-                  Confirm Cancellation
-                </>
+                "Cancel Booking"
               )}
             </Button>
           </div>
