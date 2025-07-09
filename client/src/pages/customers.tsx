@@ -33,7 +33,24 @@ import {
   CollapsibleContent,
   CollapsibleTrigger,
 } from "@/components/ui/collapsible";
-import { Search, Plus, Mail, Phone, Calendar, Star, Filter, ChevronDown, ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight, User, Users, Edit, Trash2 } from "lucide-react";
+import {
+  Search,
+  Plus,
+  Mail,
+  Phone,
+  Calendar,
+  Star,
+  Filter,
+  ChevronDown,
+  ChevronLeft,
+  ChevronRight,
+  ChevronsLeft,
+  ChevronsRight,
+  User,
+  Users,
+  Edit,
+  Trash2,
+} from "lucide-react";
 import { format } from "date-fns";
 import { useSettings } from "@/hooks/use-settings";
 import { formatDate } from "@/lib/time-formatter";
@@ -118,17 +135,17 @@ export default function Customers() {
       const response = await fetch(
         `/api/tenants/${restaurant?.tenantId}/restaurants/${restaurant?.id}/customers/${id}`,
         {
-          method: 'PUT',
+          method: "PUT",
           headers: {
-            'Content-Type': 'application/json',
+            "Content-Type": "application/json",
             "x-tenant-id": restaurant?.tenantId?.toString() || "1",
           },
-          body: JSON.stringify(updates)
-        }
+          body: JSON.stringify(updates),
+        },
       );
       if (!response.ok) {
         const errorText = await response.text();
-        throw new Error(errorText || 'Failed to update customer');
+        throw new Error(errorText || "Failed to update customer");
       }
       return response.json();
     },
@@ -146,8 +163,8 @@ export default function Customers() {
       setEditingCustomer(null);
     },
     onError: (error: any) => {
-      console.error('Update customer error:', error);
-    }
+      console.error("Update customer error:", error);
+    },
   });
 
   // Delete customer mutation
@@ -156,15 +173,15 @@ export default function Customers() {
       const response = await fetch(
         `/api/tenants/${restaurant?.tenantId}/restaurants/${restaurant?.id}/customers/${id}`,
         {
-          method: 'DELETE',
+          method: "DELETE",
           headers: {
             "x-tenant-id": restaurant?.tenantId?.toString() || "1",
-          }
-        }
+          },
+        },
       );
       if (!response.ok) {
         const errorText = await response.text();
-        throw new Error(errorText || 'Failed to delete customer');
+        throw new Error(errorText || "Failed to delete customer");
       }
       return response.json();
     },
@@ -182,18 +199,23 @@ export default function Customers() {
       setCustomerToDelete(null);
     },
     onError: (error: any) => {
-      console.error('Delete customer error:', error);
-    }
+      console.error("Delete customer error:", error);
+    },
   });
 
   const filteredCustomers = customers.filter((customer: any) => {
-    const matchesSearch = 
+    const matchesSearch =
       customer.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
       customer.email.toLowerCase().includes(searchTerm.toLowerCase());
 
-    const customerStatus = (customer.totalBookings || 0) > 5 ? "VIP" : 
-                          (customer.totalBookings || 0) > 2 ? "Regular" : "New";
-    const matchesStatus = statusFilter === "all" || customerStatus === statusFilter;
+    const customerStatus =
+      (customer.totalBookings || 0) > 5
+        ? "VIP"
+        : (customer.totalBookings || 0) > 2
+          ? "Regular"
+          : "New";
+    const matchesStatus =
+      statusFilter === "all" || customerStatus === statusFilter;
 
     return matchesSearch && matchesStatus;
   });
@@ -205,7 +227,10 @@ export default function Customers() {
   const currentCustomers = filteredCustomers.slice(startIndex, endIndex);
 
   // Active filters count
-  const activeFiltersCount = [searchTerm, statusFilter !== "all" ? statusFilter : null].filter(Boolean).length;
+  const activeFiltersCount = [
+    searchTerm,
+    statusFilter !== "all" ? statusFilter : null,
+  ].filter(Boolean).length;
 
   const handleCreateCustomer = (e: React.FormEvent) => {
     e.preventDefault();
@@ -214,7 +239,7 @@ export default function Customers() {
 
   const handleEditCustomer = (customer: any) => {
     setEditingCustomer({
-      ...customer
+      ...customer,
     });
     setIsEditDialogOpen(true);
   };
@@ -225,7 +250,7 @@ export default function Customers() {
 
     // Validate required fields
     if (!editingCustomer.name || !editingCustomer.email) {
-      console.error('Missing required fields');
+      console.error("Missing required fields");
       return;
     }
 
@@ -258,9 +283,9 @@ export default function Customers() {
       <div className="p-6">
         <div className="bg-white rounded-lg shadow">
           {/* Top Header */}
-          <div className="p-6 border-b">
+          <div className="pl-6 pr-6 pt-3">
             <div className="flex items-center justify-between">
-              <motion.h1 
+              <motion.h1
                 initial={{ opacity: 0, x: -20 }}
                 animate={{ opacity: 1, x: 0 }}
                 transition={{ duration: 0.5, delay: 0.1 }}
@@ -338,8 +363,8 @@ export default function Customers() {
           </div>
 
           {/* Filters Section */}
-          <div className="p-6 border-b">
-            <h2 className="text-lg font-semibold text-gray-900 mb-6">Customers</h2>
+          <div className="p-6">
+            {/* <h2 className="text-lg font-semibold text-gray-900 mb-6">Customers</h2> */}
 
             {/* Modern Filters Section */}
             <div className="mb-8">
@@ -347,8 +372,8 @@ export default function Customers() {
                 <div className="flex items-center space-x-4">
                   <Collapsible open={showFilters} onOpenChange={setShowFilters}>
                     <CollapsibleTrigger asChild>
-                      <Button 
-                        variant="outline" 
+                      <Button
+                        variant="outline"
                         className="h-10 px-4 border-2 border-gray-200 hover:border-green-500 hover:bg-green-50 transition-all duration-200 flex items-center space-x-2"
                       >
                         <Filter className="w-4 h-4" />
@@ -358,7 +383,9 @@ export default function Customers() {
                             {activeFiltersCount}
                           </div>
                         )}
-                        <ChevronDown className={`w-4 h-4 transition-transform duration-200 ${showFilters ? 'rotate-180' : ''}`} />
+                        <ChevronDown
+                          className={`w-4 h-4 transition-transform duration-200 ${showFilters ? "rotate-180" : ""}`}
+                        />
                       </Button>
                     </CollapsibleTrigger>
 
@@ -367,7 +394,9 @@ export default function Customers() {
                         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                           {/* Search */}
                           <div className="space-y-2">
-                            <Label className="text-sm font-medium text-gray-700">Search</Label>
+                            <Label className="text-sm font-medium text-gray-700">
+                              Search
+                            </Label>
                             <div className="relative">
                               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
                               <Input
@@ -381,13 +410,20 @@ export default function Customers() {
 
                           {/* Status Filter */}
                           <div className="space-y-2">
-                            <Label className="text-sm font-medium text-gray-700">Status</Label>
-                            <Select value={statusFilter || "all"} onValueChange={setStatusFilter}>
+                            <Label className="text-sm font-medium text-gray-700">
+                              Status
+                            </Label>
+                            <Select
+                              value={statusFilter || "all"}
+                              onValueChange={setStatusFilter}
+                            >
                               <SelectTrigger className="h-10 bg-white border-gray-300 focus:border-green-500 focus:ring-green-500">
                                 <SelectValue placeholder="All statuses" />
                               </SelectTrigger>
                               <SelectContent>
-                                <SelectItem value="all">All statuses</SelectItem>
+                                <SelectItem value="all">
+                                  All statuses
+                                </SelectItem>
                                 <SelectItem value="VIP">VIP</SelectItem>
                                 <SelectItem value="Regular">Regular</SelectItem>
                                 <SelectItem value="New">New</SelectItem>
@@ -397,7 +433,9 @@ export default function Customers() {
 
                           {/* Source Filter */}
                           <div className="space-y-2">
-                            <Label className="text-sm font-medium text-gray-700">Source</Label>
+                            <Label className="text-sm font-medium text-gray-700">
+                              Source
+                            </Label>
                             <Select value="manual">
                               <SelectTrigger className="h-10 bg-white border-gray-300 focus:border-green-500 focus:ring-green-500">
                                 <SelectValue placeholder="All sources" />
@@ -414,7 +452,9 @@ export default function Customers() {
                           <div className="mt-6 pt-4 border-t border-gray-200">
                             <div className="flex items-center justify-between">
                               <div className="flex items-center space-x-2">
-                                <span className="text-sm font-medium text-gray-700">Active filters:</span>
+                                <span className="text-sm font-medium text-gray-700">
+                                  Active filters:
+                                </span>
                                 <div className="flex items-center space-x-2">
                                   {statusFilter !== "all" && (
                                     <Badge className="px-2 py-1 text-xs bg-blue-100 text-blue-800 border-blue-200">
@@ -428,8 +468,8 @@ export default function Customers() {
                                   )}
                                 </div>
                               </div>
-                              <Button 
-                                variant="outline" 
+                              <Button
+                                variant="outline"
                                 size="sm"
                                 onClick={() => {
                                   setSearchTerm("");
@@ -446,7 +486,6 @@ export default function Customers() {
                       </div>
                     </CollapsibleContent>
                   </Collapsible>
-
                 </div>
               </div>
             </div>
@@ -487,14 +526,16 @@ export default function Customers() {
                     {isLoading ? (
                       <tr>
                         <td colSpan={8} className="py-12 text-center">
-                          <motion.div 
+                          <motion.div
                             initial={{ opacity: 0, y: 20 }}
                             animate={{ opacity: 1, y: 0 }}
                             transition={{ duration: 0.5 }}
                             className="flex flex-col items-center space-y-4"
                           >
                             <div className="animate-spin rounded-full h-8 w-8 border-2 border-green-500 border-t-transparent"></div>
-                            <span className="text-gray-500 font-medium">Loading customers...</span>
+                            <span className="text-gray-500 font-medium">
+                              Loading customers...
+                            </span>
                           </motion.div>
                         </td>
                       </tr>
@@ -506,7 +547,9 @@ export default function Customers() {
                               <User className="w-8 h-8 text-gray-400" />
                             </div>
                             <div>
-                              <h3 className="text-gray-900 font-medium">No customers found</h3>
+                              <h3 className="text-gray-900 font-medium">
+                                No customers found
+                              </h3>
                               <p className="text-gray-500 text-sm mt-1">
                                 {searchTerm || statusFilter
                                   ? "Try adjusting your filters or search terms"
@@ -518,13 +561,13 @@ export default function Customers() {
                       </tr>
                     ) : (
                       currentCustomers.map((customer: any, index: number) => (
-                        <motion.tr 
+                        <motion.tr
                           key={customer.id}
                           initial={{ opacity: 0, y: 10 }}
                           animate={{ opacity: 1, y: 0 }}
                           transition={{ duration: 0.3, delay: index * 0.05 }}
                           className={`group hover:bg-blue-50 cursor-pointer transition-all duration-200 ${
-                            index % 2 === 0 ? 'bg-white' : 'bg-gray-50/50'
+                            index % 2 === 0 ? "bg-white" : "bg-gray-50/50"
                           }`}
                         >
                           <td className="py-3 px-4">
@@ -537,11 +580,15 @@ export default function Customers() {
                           <td className="py-3 px-4">
                             <div className="flex items-center space-x-3">
                               <div className="w-8 h-8 bg-gradient-to-br from-green-400 to-green-600 rounded-full flex items-center justify-center text-white font-medium text-sm">
-                                {customer.name?.charAt(0)?.toUpperCase() || 'C'}
+                                {customer.name?.charAt(0)?.toUpperCase() || "C"}
                               </div>
                               <div>
-                                <div className="font-medium text-gray-900">{customer.name}</div>
-                                <div className="text-sm text-gray-500">{customer.email}</div>
+                                <div className="font-medium text-gray-900">
+                                  {customer.name}
+                                </div>
+                                <div className="text-sm text-gray-500">
+                                  {customer.email}
+                                </div>
                               </div>
                             </div>
                           </td>
@@ -553,8 +600,13 @@ export default function Customers() {
                           <td className="py-3 px-4">
                             <div className="flex items-center space-x-1">
                               <Users className="w-4 h-4 text-gray-400" />
-                              <span className="font-medium text-gray-900">{customer.totalBookings || 0}</span>
-                              <span className="text-sm text-gray-500">booking{(customer.totalBookings || 0) !== 1 ? 's' : ''}</span>
+                              <span className="font-medium text-gray-900">
+                                {customer.totalBookings || 0}
+                              </span>
+                              <span className="text-sm text-gray-500">
+                                booking
+                                {(customer.totalBookings || 0) !== 1 ? "s" : ""}
+                              </span>
                             </div>
                           </td>
                           <td className="py-3 px-4">
@@ -576,7 +628,12 @@ export default function Customers() {
                           </td>
                           <td className="py-3 px-4">
                             <div className="text-sm text-gray-600">
-                              {customer.createdAt ? format(new Date(customer.createdAt), "M/d/yyyy") : format(new Date(), "M/d/yyyy")}
+                              {customer.createdAt
+                                ? format(
+                                    new Date(customer.createdAt),
+                                    "M/d/yyyy",
+                                  )
+                                : format(new Date(), "M/d/yyyy")}
                             </div>
                           </td>
                           <td className="py-3 px-4">
@@ -648,7 +705,9 @@ export default function Customers() {
 
                 <div className="flex items-center space-x-4">
                   <div className="text-sm text-gray-600">
-                    {startIndex + 1}-{Math.min(endIndex, filteredCustomers.length)} of {filteredCustomers.length}
+                    {startIndex + 1}-
+                    {Math.min(endIndex, filteredCustomers.length)} of{" "}
+                    {filteredCustomers.length}
                   </div>
 
                   <div className="flex items-center space-x-2">
@@ -673,34 +732,39 @@ export default function Customers() {
 
                     {/* Page Numbers */}
                     <div className="flex items-center space-x-1">
-                      {Array.from({ length: Math.min(3, totalPages) }, (_, i) => {
-                        let pageNum;
-                        if (totalPages <= 3) {
-                          pageNum = i + 1;
-                        } else if (currentPage <= 2) {
-                          pageNum = i + 1;
-                        } else if (currentPage >= totalPages - 1) {
-                          pageNum = totalPages - 2 + i;
-                        } else {
-                          pageNum = currentPage - 1 + i;
-                        }
+                      {Array.from(
+                        { length: Math.min(3, totalPages) },
+                        (_, i) => {
+                          let pageNum;
+                          if (totalPages <= 3) {
+                            pageNum = i + 1;
+                          } else if (currentPage <= 2) {
+                            pageNum = i + 1;
+                          } else if (currentPage >= totalPages - 1) {
+                            pageNum = totalPages - 2 + i;
+                          } else {
+                            pageNum = currentPage - 1 + i;
+                          }
 
-                        return (
-                          <Button
-                            key={pageNum}
-                            variant={currentPage === pageNum ? "default" : "outline"}
-                            size="sm"
-                            onClick={() => setCurrentPage(pageNum)}
-                            className={`w-8 h-8 p-0 ${
-                              currentPage === pageNum 
-                                ? "bg-green-600 hover:bg-green-700 text-white" 
-                                : "hover:bg-green-50"
-                            }`}
-                          >
-                            {pageNum}
-                          </Button>
-                        );
-                      })}
+                          return (
+                            <Button
+                              key={pageNum}
+                              variant={
+                                currentPage === pageNum ? "default" : "outline"
+                              }
+                              size="sm"
+                              onClick={() => setCurrentPage(pageNum)}
+                              className={`w-8 h-8 p-0 ${
+                                currentPage === pageNum
+                                  ? "bg-green-600 hover:bg-green-700 text-white"
+                                  : "hover:bg-green-50"
+                              }`}
+                            >
+                              {pageNum}
+                            </Button>
+                          );
+                        },
+                      )}
                     </div>
 
                     <Button
@@ -740,7 +804,11 @@ export default function Customers() {
                 <Input
                   id="edit-name"
                   value={editingCustomer?.name || ""}
-                  onChange={(e) => setEditingCustomer(prev => prev ? {...prev, name: e.target.value} : null)}
+                  onChange={(e) =>
+                    setEditingCustomer((prev) =>
+                      prev ? { ...prev, name: e.target.value } : null,
+                    )
+                  }
                   required
                 />
               </div>
@@ -750,7 +818,11 @@ export default function Customers() {
                   id="edit-email"
                   type="email"
                   value={editingCustomer?.email || ""}
-                  onChange={(e) => setEditingCustomer(prev => prev ? {...prev, email: e.target.value} : null)}
+                  onChange={(e) =>
+                    setEditingCustomer((prev) =>
+                      prev ? { ...prev, email: e.target.value } : null,
+                    )
+                  }
                   required
                 />
               </div>
@@ -759,15 +831,28 @@ export default function Customers() {
                 <Input
                   id="edit-phone"
                   value={editingCustomer?.phone || ""}
-                  onChange={(e) => setEditingCustomer(prev => prev ? {...prev, phone: e.target.value} : null)}
+                  onChange={(e) =>
+                    setEditingCustomer((prev) =>
+                      prev ? { ...prev, phone: e.target.value } : null,
+                    )
+                  }
                 />
               </div>
               <div className="flex justify-end space-x-2">
-                <Button type="button" variant="outline" onClick={() => setIsEditDialogOpen(false)}>
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => setIsEditDialogOpen(false)}
+                >
                   Cancel
                 </Button>
-                <Button type="submit" disabled={updateCustomerMutation.isPending}>
-                  {updateCustomerMutation.isPending ? "Updating..." : "Update Customer"}
+                <Button
+                  type="submit"
+                  disabled={updateCustomerMutation.isPending}
+                >
+                  {updateCustomerMutation.isPending
+                    ? "Updating..."
+                    : "Update Customer"}
                 </Button>
               </div>
             </form>
@@ -782,21 +867,31 @@ export default function Customers() {
             </DialogHeader>
             <div className="py-4">
               <p className="text-gray-600">
-                Are you sure you want to delete <strong>{customerToDelete?.name}</strong>?
+                Are you sure you want to delete{" "}
+                <strong>{customerToDelete?.name}</strong>?
               </p>
-              <p className="text-red-600 text-sm mt-2">This action cannot be undone and will also delete all associated bookings.</p>
+              <p className="text-red-600 text-sm mt-2">
+                This action cannot be undone and will also delete all associated
+                bookings.
+              </p>
             </div>
             <div className="flex justify-end space-x-2">
-              <Button type="button" variant="outline" onClick={() => setIsDeleteDialogOpen(false)}>
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => setIsDeleteDialogOpen(false)}
+              >
                 Cancel
               </Button>
-              <Button 
-                type="button" 
-                variant="destructive" 
+              <Button
+                type="button"
+                variant="destructive"
                 onClick={confirmDeleteCustomer}
                 disabled={deleteCustomerMutation.isPending}
               >
-                {deleteCustomerMutation.isPending ? "Deleting..." : "Delete Customer"}
+                {deleteCustomerMutation.isPending
+                  ? "Deleting..."
+                  : "Delete Customer"}
               </Button>
             </div>
           </DialogContent>

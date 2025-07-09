@@ -738,7 +738,7 @@ export default function TenantUsersManagement({
       <div className="p-6">
         <div className="bg-white rounded-lg shadow">
           {/* Top Header */}
-          <div className="p-6 border-b">
+          <div className="pl-6 pr-6 pt-3">
             <div className="flex items-center justify-between">
               <motion.h1
                 initial={{ opacity: 0, x: -20 }}
@@ -865,10 +865,10 @@ export default function TenantUsersManagement({
           </div>
 
           {/* Filters Section */}
-          <div className="p-6 border-b">
-            <h2 className="text-lg font-semibold text-gray-900 mb-6">
+          <div className="p-6">
+            {/* <h2 className="text-lg font-semibold text-gray-900 mb-6">
               Team Members
-            </h2>
+            </h2> */}
 
             {/* Modern Filters Section */}
             <div className="mb-8">
@@ -1421,58 +1421,60 @@ export default function TenantUsersManagement({
                                 Available Permissions
                               </h3>
                               <div className="space-y-4">
-                              <div>
-                                <h4 className="font-medium text-sm text-gray-600 mb-2">
-                                  Page Access
-                                </h4>
-                                <SortableContext
-                                  items={localRolePermissions.availablePermissions.pageAccess.map(
-                                    (p) => p.key,
-                                  )}
-                                  strategy={verticalListSortingStrategy}
-                                >
-                                  <div className="space-y-2">
-                                    {localRolePermissions.availablePermissions.pageAccess.map(
-                                      (permission) => (
-                                        <DraggablePermission
-                                          key={permission.key}
-                                          permission={permission}
-                                          isActive={
-                                            activePermission === permission.key
-                                          }
-                                        />
-                                      ),
+                                <div>
+                                  <h4 className="font-medium text-sm text-gray-600 mb-2">
+                                    Page Access
+                                  </h4>
+                                  <SortableContext
+                                    items={localRolePermissions.availablePermissions.pageAccess.map(
+                                      (p) => p.key,
                                     )}
-                                  </div>
-                                </SortableContext>
-                              </div>
+                                    strategy={verticalListSortingStrategy}
+                                  >
+                                    <div className="space-y-2">
+                                      {localRolePermissions.availablePermissions.pageAccess.map(
+                                        (permission) => (
+                                          <DraggablePermission
+                                            key={permission.key}
+                                            permission={permission}
+                                            isActive={
+                                              activePermission ===
+                                              permission.key
+                                            }
+                                          />
+                                        ),
+                                      )}
+                                    </div>
+                                  </SortableContext>
+                                </div>
 
-                              <div>
-                                <h4 className="font-medium text-sm text-gray-600 mb-2">
-                                  Feature Access
-                                </h4>
-                                <SortableContext
-                                  items={localRolePermissions.availablePermissions.features.map(
-                                    (p) => p.key,
-                                  )}
-                                  strategy={verticalListSortingStrategy}
-                                >
-                                  <div className="space-y-2">
-                                    {localRolePermissions.availablePermissions.features.map(
-                                      (permission) => (
-                                        <DraggablePermission
-                                          key={permission.key}
-                                          permission={permission}
-                                          isActive={
-                                            activePermission === permission.key
-                                          }
-                                        />
-                                      ),
+                                <div>
+                                  <h4 className="font-medium text-sm text-gray-600 mb-2">
+                                    Feature Access
+                                  </h4>
+                                  <SortableContext
+                                    items={localRolePermissions.availablePermissions.features.map(
+                                      (p) => p.key,
                                     )}
-                                  </div>
-                                </SortableContext>
+                                    strategy={verticalListSortingStrategy}
+                                  >
+                                    <div className="space-y-2">
+                                      {localRolePermissions.availablePermissions.features.map(
+                                        (permission) => (
+                                          <DraggablePermission
+                                            key={permission.key}
+                                            permission={permission}
+                                            isActive={
+                                              activePermission ===
+                                              permission.key
+                                            }
+                                          />
+                                        ),
+                                      )}
+                                    </div>
+                                  </SortableContext>
+                                </div>
                               </div>
-                            </div>
                             </div>
                           </div>
 
